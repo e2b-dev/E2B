@@ -224,8 +224,8 @@ job "cni-network-configuration-example" {
 ```
 
 ##  Demo
-[![asciicast](https://asciinema.org/a/256519.svg)](https://asciinema.org/a/256519)
-
+[![asciicast](https://asciinema.org/a/279855.svg)](https://asciinema.org/a/279855)
+  
 ## Support
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J4YM9U)  
