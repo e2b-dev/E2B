@@ -1,0 +1,1 @@
+plugin "firecracker-task-driver" {}
