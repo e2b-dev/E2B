@@ -131,16 +131,6 @@ Prebuilt kernel images and rootfs are provided:
 
 * Disable CPU Hyperthreading.
 
-### Nic (not required)
-
-* Static network configuration, which requires the following variables:
-
-- Ip
-- Gateway
-- Interface
-- Nameservers
-
-
 When the microvm starts a file will be created in /tmp/ with the following name <task-name>-<allocation id>, 
 for example :  /tmp/test01-785f9472-52a7-3dbf-8305-d482b1f7dc6f
 will contain the following info :
