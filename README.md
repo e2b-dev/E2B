@@ -9,7 +9,7 @@ Requirements
 ------------
 
 - [Nomad](https://www.nomadproject.io/downloads.html) 0.9+
-- [Go](https://golang.org/doc/install) 1.11 (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.11 
 - Linux 4.14+ Firecracker currently supports physical Linux x86_64 and aarch64 hosts, running kernel version 4.14 or later. However, the aarch64 support is not feature complete (alpha stage).
 - KVM enabled in your Linux kernel, and you have read/write access to /dev/kvm.
 - tun module loaded
