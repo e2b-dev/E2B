@@ -153,14 +153,16 @@ will contain the following info :
   "Pid": "14118"
 }
 ```
-### AllocId (given by nomad)
-### Ip (Ip address assigned by cni configuration)
-### Serial (tty where a serial console is setup for the vm)
-### Pid ( Pid for the firecracker process that started the vm)
+- AllocId (given by nomad)
+- Ip (Ip address assigned by cni configuration)
+- Serial (tty where a serial console is setup for the vm)
+- Pid ( Pid for the firecracker process that started the vm)
  
 ## Examples:
 
-### Don't specifying *KernelImage* and *BootDisk* it will default to rootfs.ext4 and vmlinux in the allocation directory.
+### Omitting KernelImage and BootDisk
+
+Don't specifying *KernelImage* and *BootDisk* it will default to rootfs.ext4 and vmlinux in the allocation directory.
 
 ```hcl
 job "example" {
