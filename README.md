@@ -16,6 +16,7 @@ Requirements
 - ip6tables package
 - [Container networking plugins](https://github.com/containernetworking/plugins)
 - [tc-redirect-tap](https://github.com/firecracker-microvm/firecracker-go-sdk/tree/master/cni)
+- [Firecracker binary](https://github.com/firecracker-microvm/firecracker/releases/download/v0.16.0/firecracker-v0.16.0)
 
 
 Installation
