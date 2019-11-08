@@ -68,11 +68,19 @@ func taskConfig2FirecrackerOpts(taskConfig TaskConfig, cfg *drivers.TaskConfig) 
 		opts.Debug = true
 		opts.FcLogLevel = "Debug"
 	}
-
-	opts.FcCPUCount = int64(taskConfig.Vcpus)
+	if taskConfig.Vcpus > 0 {
+		opts.FcCPUCount = int64(taskConfig.Vcpus)
+	} else {
+		opts.FcCPUCount = int64(1)
+	}
 	opts.FcCPUTemplate = taskConfig.Cputype
 	opts.FcDisableHt = taskConfig.DisableHt
-	opts.FcMemSz = int64(taskConfig.Mem)
+
+	if taskConfig.Mem > 0 {
+		opts.FcMemSz = int64(taskConfig.Mem)
+	} else {
+		opts.FcMemSz = int64(512)
+	}
 	opts.FcBinary = taskConfig.Firecracker
 
 	return opts, nil
@@ -171,9 +179,14 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	if errpid != nil {
 		return nil, fmt.Errorf("Failed getting pid for machine: %v", errpid)
 	}
-
+	var ip string
+	if len(opts.FcNetworkName) > 0 {
+		ip = fcCfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.String()
+	} else {
+		ip = "No network chosen"
+	}
 	info := Instance_info{Serial: ftty, AllocId: cfg.AllocID,
-		Ip:  fcCfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.String(),
+		Ip:  ip,
 		Pid: strconv.Itoa(pid)}
 
 	f, _ := json.MarshalIndent(info, "", " ")

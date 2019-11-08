@@ -12,3 +12,5 @@
 *.out
 .plan
 alloc
+plugin
+client

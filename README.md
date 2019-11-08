@@ -79,7 +79,7 @@ Also the filename must match the name of the network, and the suffix .conflist.
 Creating a rootfs and kernel image for firecracker
 -------------------------------------------------
 We need to an ext4 root filesystem to use as disk and an uncompressed vmlinux image, the process on how to generate them is described [here](https://github.com/firecracker-microvm/firecracker/blob/master/docs/rootfs-and-kernel-setup.md).
-Prebuilt kernel images and rootfs are provided:
+Prebuilt kernel images and rootfs are provided, default root password for these images is 'toor':
 
 - [Kernel Image Linux-5.4.0-rc5](https://firecracker-kernels.s3-sa-east-1.amazonaws.com/vmlinux-5.4.0-rc5.tar.gz)
 - [Rootfs for Ubuntu 16.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu16.04.rootfs.tar.gz)
