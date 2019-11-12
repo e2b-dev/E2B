@@ -122,7 +122,7 @@ Prebuilt kernel images and rootfs are provided, default root password for these 
 * Amount of memory in Megabytes to assign to micro-vm.
 
 
-### Firecracker (required, default: "/usr/bin/firecracker") 
+### Firecracker (not required, default: "/usr/bin/firecracker") 
 
 * Location of the firecracker binary, the option could be omitted if the environment variable FIRECRACKER_BIN is set.
 
@@ -158,6 +158,33 @@ will contain the following info :
 Don't specifying *KernelImage* and *BootDisk* it will default to rootfs.ext4 and vmlinux in the allocation directory.
 
 ```hcl
+job "example" {
+  datacenters = ["dc1"]
+  type        = "service"
+  group "test" {
+    restart {
+      attempts = 0
+      mode     = "fail"
+    }
+
+  task "test01" {
+   artifact {
+  	source = "https://firecracker-kernels.s3-sa-east-1.amazonaws.com/vmlinux-5.4.0-rc5.tar.gz"
+	  destination = "."
+  }
+  artifact {
+	  source = "https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu16.04.rootfs.tar.gz"
+	  destination = "."
+  }
+  driver = "firecracker-task-driver"
+    config {
+      Vcpus = 1 
+      Mem = 128
+      Network = "default"
+     }
+    }
+  }
+}
 ```
   
 ### CNI network configuration
