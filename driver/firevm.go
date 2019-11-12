@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -206,10 +205,14 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	logfile := fmt.Sprintf("/tmp/%s-%s", cfg.Name, cfg.AllocID)
 
-	err = ioutil.WriteFile(logfile, f, 0644)
+	d.logger.Info("Writing to", "driver_initialize_container", hclog.Fmt("%v+", logfile))
+	log, err := os.OpenFile(logfile,os.O_CREATE|os.O_APPEND|os.O_WRONLY,0644)
+
 	if err != nil {
 		return nil, fmt.Errorf("Failed creating info file=%s err=%v", logfile, err)
 	}
+	defer log.Close()
+	fmt.Fprintf(log,"%s",f)
 
 	return &vminfo{Machine: m, tty: ftty, Info: info}, nil
 }
