@@ -83,7 +83,7 @@ Prebuilt kernel images and rootfs are provided, default root password for these 
 
 - [Kernel Image Linux-5.4.0-rc5](https://firecracker-kernels.s3-sa-east-1.amazonaws.com/vmlinux-5.4.0-rc5.tar.gz)
 - [Rootfs for Ubuntu 16.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu16.04.rootfs.tar.gz)
-- [Rootfs for Ubuntu 18.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu16.08.rootfs.tar.gz)
+- [Rootfs for Ubuntu 18.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu18.04.rootfs.tar.gz)
 - [Rootfs for Debian 10](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/debian10.rootfs.tar.gz)
 
 
