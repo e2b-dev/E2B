@@ -45,7 +45,7 @@ For more details see the nomad [docs](https://www.nomadproject.io/docs/configura
 
 Container network configuration 
 ---------------------------------------
-- Build [cni plugins](https://github.com/containernetworking/plugins) and [tc-redirect-tap](https://github.com/firecracker-microvm/firecracker-go-sdk/tree/master/cni) and copy them /opt/cni
+- Build [cni plugins](https://github.com/containernetworking/plugins) and [tc-redirect-tap](https://github.com/firecracker-microvm/firecracker-go-sdk/tree/master/cni) and copy them /opt/cni/bin
 - Create a network configuration to be used by micro-vms on /etc/cni/conf.d/, for example: default.conflist.
    
 
