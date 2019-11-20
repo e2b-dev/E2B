@@ -85,6 +85,7 @@ Prebuilt kernel images and rootfs are provided, default root password for these 
 - [Rootfs for Ubuntu 16.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu16.04.rootfs.tar.gz)
 - [Rootfs for Ubuntu 18.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu18.04.rootfs.tar.gz)
 - [Rootfs for Debian 10](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/debian10.rootfs.tar.gz)
+- [Rootfs for Centos 7] (https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/centos-7-x86_64_rootfs.tar.gz)
 
 
 
