@@ -104,6 +104,11 @@ Prebuilt kernel images and rootfs are provided, default root password for these 
 
 * ext4 rootfs to use, if this is omitted it expects a rootfs called rootfs.ext4 in the allocation dir.
 
+### Disks (not required)
+
+* Additional disks to add to the micro-vm, must use the suffix :ro or :rw, can be specified multiple times. 
+
+
 ### Network (not required) 
 
 * Network name if using [CNI](https://github.com/containernetworking/cni)
@@ -213,6 +218,27 @@ job "cni-network-configuration-example" {
       }
     }
   }
+}
+```
+
+  
+### Additional Disks configuration
+    -----------------------------
+```hcl
+job "neverwinter" {
+  datacenters = ["dc1"]
+  type        = "service"
+   task "nwn-server" {
+      driver = "firecracker-task-driver"
+      config {
+       Vcpus = 1 
+       KernelImage = "/home/cneira/Development/vmlinuxs/vmlinux"
+       BootDisk= "/home/cneira/Development/rootfs/ubuntu/18.04/nwnrootfs.ext4"
+       Disks = [ "/home/cneira/Development/disks/disk0.ext4:rw" ]
+       Mem = 1000 
+       Network = "default"
+      }
+    }
 }
 ```
 

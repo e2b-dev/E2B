@@ -14,3 +14,5 @@
 alloc
 plugin
 client
+plugin
+firecracker-task-driver

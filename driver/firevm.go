@@ -62,6 +62,10 @@ func taskConfig2FirecrackerOpts(taskConfig TaskConfig, cfg *drivers.TaskConfig) 
 		opts.FcRootDrivePath = filepath.Join(cfg.AllocDir, cfg.Name) + "/rootfs.ext4"
 	}
 
+	if len(taskConfig.Disks) > 0 {
+		opts.FcAdditionalDrives = taskConfig.Disks
+	}
+
 	if len(taskConfig.BootOptions) > 0 {
 		opts.FcKernelCmdLine = taskConfig.BootOptions + defaultbootoptions
 	} else {

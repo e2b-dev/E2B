@@ -1,19 +1,19 @@
 /* Firecracker-task-driver is a task driver for Hashicorp's nomad that allows
  * to create microvms using AWS Firecracker vmm
  * Copyright (C) 2019  Carlos Neira cneirabustos@gmail.com
- * 
+ *
  * This file is part of Firecracker-task-driver.
- * 
+ *
  * Foobar is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Firecracker-task-driver is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Firecracker-task-driver. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -60,6 +60,7 @@ var (
 		"KernelImage": hclspec.NewAttr("KernelImage", "string", false),
 		"BootOptions": hclspec.NewAttr("BootOptions", "string", false),
 		"BootDisk":    hclspec.NewAttr("BootDisk", "string", false),
+		"Disks":       hclspec.NewAttr("Disks", "list(string)", false),
 		"Network":     hclspec.NewAttr("Network", "string", false),
 		"Vcpus":       hclspec.NewAttr("Vcpus", "number", false),
 		"Cputype":     hclspec.NewAttr("Cputype", "string", false),
@@ -122,17 +123,18 @@ type Nic struct {
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
-	KernelImage string `codec:"KernelImage"`
-	BootOptions string `codec:"BootOptions"`
-	BootDisk    string `codec:"BootDisk"`
-	Network     string `codec:"Network"`
-	Nic         Nic    `codec:"Nic"`
-	Vcpus       uint64 `codec:"Vcpus"`
-	Cputype     string `codec:"Cputype"`
-	Mem         uint64 `codec:"Mem"`
-	Firecracker string `codec:"Firecracker"`
-	Log         string `code:"Log"`
-	DisableHt   bool   `code:"DisableHt"`
+	KernelImage string   `codec:"KernelImage"`
+	BootOptions string   `codec:"BootOptions"`
+	BootDisk    string   `codec:"BootDisk"`
+	Disks       []string `codec:"Disks"`
+	Network     string   `codec:"Network"`
+	Nic         Nic      `codec:"Nic"`
+	Vcpus       uint64   `codec:"Vcpus"`
+	Cputype     string   `codec:"Cputype"`
+	Mem         uint64   `codec:"Mem"`
+	Firecracker string   `codec:"Firecracker"`
+	Log         string   `code:"Log"`
+	DisableHt   bool     `code:"DisableHt"`
 }
 
 // TaskState is the state which is encoded in the handle returned in
