@@ -72,6 +72,41 @@ Container network configuration
   ]
 }
 ```
+Expose port 27960 on micro-vm
+-----------------------------
+```json
+{
+        "name": "microvms2",
+                "cniVersion": "0.4.0",
+                "plugins": [
+
+                {
+                        "type": "ptp",
+                        "ipMasq": true,
+                        "ipam": {
+                                "type": "host-local",
+                                "subnet": "192.168.127.0/24",
+                                "resolvConf": "/etc/resolv.conf"
+                        }
+                },
+                {
+                        "type": "firewall"
+                },
+                {
+                        "type": "portmap",
+                        "capabilities": {"portMappings": true},
+                        "runTimeConfig":  { 
+                                "portMappings":
+                                        [ { "hostPort": 27960, "containerPort": 27960, "protocol": "udp" }
+                                        ] }
+                },
+                {
+                        "type": "tc-redirect-tap"
+                }
+
+        ]
+}
+```
 
 In this example with outside world connectivity for your vms. *The name of this network is default and this name is the parameter used in Network on the task driver job spec*.
 Also the filename must match the name of the network, and the suffix .conflist.
@@ -220,7 +255,6 @@ job "cni-network-configuration-example" {
   }
 }
 ```
-
   
 ### Additional Disks configuration
    -------------------------------
