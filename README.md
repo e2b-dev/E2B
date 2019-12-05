@@ -72,8 +72,8 @@ Container network configuration
   ]
 }
 ```
-Expose port 27960 on micro-vm
------------------------------
+Example : exposing port 27960 on micro-vm
+
 ```json
 {
         "name": "microvms2",
