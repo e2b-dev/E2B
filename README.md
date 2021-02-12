@@ -15,7 +15,7 @@ Requirements
 - tun module loaded
 - ip6tables package
 - [Container networking plugins](https://github.com/containernetworking/plugins)
-- [tc-redirect-tap](https://github.com/firecracker-microvm/firecracker-go-sdk/tree/master/cni)
+- [tc-redirect-tap](https://github.com/awslabs/tc-redirect-tap)
 - [Firecracker binary](https://github.com/firecracker-microvm/firecracker/releases/download/v0.16.0/firecracker-v0.16.0)
 
 
@@ -45,7 +45,7 @@ For more details see the nomad [docs](https://www.nomadproject.io/docs/configura
 
 Container network configuration 
 ---------------------------------------
-- Build [cni plugins](https://github.com/containernetworking/plugins) and [tc-redirect-tap](https://github.com/firecracker-microvm/firecracker-go-sdk/tree/master/cni) and copy them /opt/cni/bin
+- Build [cni plugins](https://github.com/containernetworking/plugins) and [tc-redirect-tap](https://github.com/awslabs/tc-redirect-tap) and copy them /opt/cni/bin
 - Create a network configuration to be used by micro-vms on /etc/cni/conf.d/, for example: default.conflist.
    
 
