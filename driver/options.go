@@ -153,7 +153,7 @@ func (opts *options) getNetwork() ([]firecracker.NetworkInterface, error) {
 	var NICs []firecracker.NetworkInterface
 
 	if len(opts.FcNetworkName) > 0 && len(opts.FcNicConfig.Ip) > 0 {
-		return nil, errConflictingLogOpts
+		return nil, errConflictingNetworkOpts
 	}
 
 	if len(opts.FcNetworkName) > 0 {

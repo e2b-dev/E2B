@@ -28,6 +28,7 @@ var (
 	errUnableToParseVsockCID     = errors.New("unable to parse vsock CID as a number")
 
 	errConflictingLogOpts        = errors.New("vmm-log-fifo and firecracker-log cannot be used together")
+	errConflictingNetworkOpts    = errors.New("network and nic cannot be used together")
 	errUnableToCreateFifoLogFile = errors.New("failed to create fifo log file")
 
 	// error with firecracker config
