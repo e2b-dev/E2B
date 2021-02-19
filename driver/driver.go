@@ -298,6 +298,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		State:           drivers.TaskStateRunning,
 		startedAt:       time.Now().Round(time.Millisecond),
 		MachineInstance: m.Machine,
+		Info:            m.Info,
 		logger:          d.logger,
 	}
 

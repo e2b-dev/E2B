@@ -87,8 +87,30 @@ func (h *taskHandle) run() {
 	 *  https://github.com/firecracker-microvm/firecracker-go-sdk/issues/115
 	 */
 	h.stateLock.Unlock()
+
+	pid, err := strconv.Atoi(h.Info.Pid)
+	if err != nil {
+		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.Info.Pid))
+		h.stateLock.Lock()
+		h.State = drivers.TaskStateExited
+		h.exitResult.ExitCode = 127
+		h.exitResult.Signal = 0
+		h.completedAt = time.Now()
+		h.stateLock.Unlock()
+		return
+	}
+
 	for {
 		time.Sleep(containerMonitorIntv)
+
+		process, err := os.FindProcess(int(pid))
+		if err != nil {
+			break
+		}
+
+		if process.Signal(syscall.Signal(0)) != nil {
+			break
+		}
 	}
 	h.stateLock.Lock()
 	defer h.stateLock.Unlock()
@@ -97,7 +119,6 @@ func (h *taskHandle) run() {
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0
 	h.completedAt = time.Now()
-
 }
 
 /*
