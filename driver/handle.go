@@ -1,39 +1,45 @@
 /* Firecracker-task-driver is a task driver for Hashicorp's nomad that allows
  * to create microvms using AWS Firecracker vmm
  * Copyright (C) 2019  Carlos Neira cneirabustos@gmail.com
- * 
+ *
  * This file is part of Firecracker-task-driver.
- * 
+ *
  * Foobar is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Firecracker-task-driver is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Firecracker-task-driver. If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 
 package firevm
 
 import (
 	"context"
 	"fmt"
-	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
-	hclog "github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/nomad/plugins/drivers"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
+	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/nomad/client/stats"
+	"github.com/hashicorp/nomad/plugins/drivers"
+	"github.com/shirou/gopsutil/process"
+)
+
+var (
+	firecrackerCPUStats = []string{"System Mode", "User Mode", "Percent"}
+	firecrackerMemStats = []string{"RSS", "Swap"}
 )
 
 type taskHandle struct {
@@ -49,6 +55,10 @@ type taskHandle struct {
 	startedAt       time.Time
 	completedAt     time.Time
 	exitResult      *drivers.ExitResult
+
+	cpuStatsSys   *stats.CpuStats
+	cpuStatsUser  *stats.CpuStats
+	cpuStatsTotal *stats.CpuStats
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
@@ -121,16 +131,62 @@ func (h *taskHandle) run() {
 	h.completedAt = time.Now()
 }
 
-/*
- * TODO: add cpu + memory stats from container
- */
-func (h *taskHandle) stats(ctx context.Context, interval time.Duration) (<-chan *drivers.TaskResourceUsage, error) {
-	return nil, nil
-}
+func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
+	defer close(statsChannel)
+	timer := time.NewTimer(0)
+	h.logger.Debug("Starting stats collection for ", h.taskConfig.ID)
+	for {
+		select {
+		case <-ctx.Done():
+			h.logger.Debug("Stopping stats collection for ", h.taskConfig.ID)
+			return
+		case <-timer.C:
+			timer.Reset(interval)
+		}
 
-func (h *taskHandle) handleStats(ctx context.Context, ch chan *drivers.TaskResourceUsage, interval time.Duration) {
-	defer close(ch)
+		h.stateLock.Lock()
+		t := time.Now()
 
+		pid, err := strconv.Atoi(h.Info.Pid)
+		if err != nil {
+			h.logger.Error("unable to convert pid ", h.Info.Pid, " to int from ", h.taskConfig.ID)
+			continue
+		}
+
+		p, err := process.NewProcess(int32(pid))
+		if err != nil {
+			h.logger.Error("unable create new process ", h.Info.Pid, " from ", h.taskConfig.ID)
+			continue
+		}
+		ms := &drivers.MemoryStats{}
+		if memInfo, err := p.MemoryInfo(); err == nil {
+			ms.RSS = memInfo.RSS
+			ms.Swap = memInfo.Swap
+			ms.Measured = firecrackerMemStats
+		}
+
+		cs := &drivers.CpuStats{}
+		if cpuStats, err := p.Times(); err == nil {
+			cs.SystemMode = h.cpuStatsSys.Percent(cpuStats.System * float64(time.Second))
+			cs.UserMode = h.cpuStatsUser.Percent(cpuStats.User * float64(time.Second))
+			cs.Measured = firecrackerCPUStats
+
+			// calculate cpu usage percent
+			cs.Percent = h.cpuStatsTotal.Percent(cpuStats.Total() * float64(time.Second))
+		}
+		h.stateLock.Unlock()
+
+		// update uasge
+		usage := drivers.TaskResourceUsage{
+			ResourceUsage: &drivers.ResourceUsage{
+				CpuStats:    cs,
+				MemoryStats: ms,
+			},
+			Timestamp: t.UTC().UnixNano(),
+		}
+		// send stats to nomad
+		statsChannel <- &usage
+	}
 }
 
 func keysToVal(line string) (string, uint64, error) {

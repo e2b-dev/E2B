@@ -1,19 +1,19 @@
 /* Firecracker-task-driver is a task driver for Hashicorp's nomad that allows
  * to create microvms using AWS Firecracker vmm
  * Copyright (C) 2019  Carlos Neira cneirabustos@gmail.com
- * 
+ *
  * This file is part of Firecracker-task-driver.
- * 
+ *
  * Foobar is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Firecracker-task-driver is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Firecracker-task-driver. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -84,18 +84,19 @@ func taskConfig2FirecrackerOpts(taskConfig TaskConfig, cfg *drivers.TaskConfig) 
 		opts.Debug = true
 		opts.FcLogLevel = "Debug"
 	}
-	if taskConfig.Vcpus > 0 {
-		opts.FcCPUCount = int64(taskConfig.Vcpus)
+
+	if cfg.Resources.NomadResources.Cpu.CpuShares > 100 {
+		opts.FcCPUCount = cfg.Resources.NomadResources.Cpu.CpuShares / 100
 	} else {
-		opts.FcCPUCount = int64(1)
+		opts.FcCPUCount = 1
 	}
 	opts.FcCPUTemplate = taskConfig.Cputype
 	opts.FcDisableHt = taskConfig.DisableHt
 
-	if taskConfig.Mem > 0 {
-		opts.FcMemSz = int64(taskConfig.Mem)
+	if cfg.Resources.NomadResources.Memory.MemoryMB > 0 {
+		opts.FcMemSz = cfg.Resources.NomadResources.Memory.MemoryMB
 	} else {
-		opts.FcMemSz = int64(512)
+		opts.FcMemSz = 300
 	}
 	opts.FcBinary = taskConfig.Firecracker
 

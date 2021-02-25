@@ -26,6 +26,7 @@ import (
 	"time"
 
 	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
 	"github.com/hashicorp/nomad/plugins/base"
 	"github.com/hashicorp/nomad/plugins/drivers"
@@ -265,6 +266,9 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 		MachineInstance: m.Machine,
 		Info:            m.Info,
 		logger:          d.logger,
+		cpuStatsSys:     stats.NewCpuStats(),
+		cpuStatsUser:    stats.NewCpuStats(),
+		cpuStatsTotal:   stats.NewCpuStats(),
 	}
 
 	d.tasks.Set(taskState.TaskConfig.ID, h)
@@ -300,6 +304,9 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		MachineInstance: m.Machine,
 		Info:            m.Info,
 		logger:          d.logger,
+		cpuStatsSys:     stats.NewCpuStats(),
+		cpuStatsUser:    stats.NewCpuStats(),
+		cpuStatsTotal:   stats.NewCpuStats(),
 	}
 
 	driverState := TaskState{
@@ -398,13 +405,17 @@ func (d *Driver) InspectTask(taskID string) (*drivers.TaskStatus, error) {
 	return handle.TaskStatus(), nil
 }
 
+// TaskStats will query the driver and return the current usage for the vm
 func (d *Driver) TaskStats(ctx context.Context, taskID string, interval time.Duration) (<-chan *drivers.TaskResourceUsage, error) {
 	handle, ok := d.tasks.Get(taskID)
 	if !ok {
 		return nil, drivers.ErrTaskNotFound
 	}
 
-	return handle.stats(ctx, interval)
+	statsChannel := make(chan *drivers.TaskResourceUsage)
+	go handle.stats(ctx, statsChannel, interval)
+
+	return statsChannel, nil
 }
 
 func (d *Driver) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, error) {
