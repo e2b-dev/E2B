@@ -1,5 +1,7 @@
 module github.com/cneira/firecracker-task-driver
 
+go 1.14
+
 require (
 	github.com/LK4D4/joincontext v0.0.0-20171026170139-1724345da6d5 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -19,7 +21,7 @@ require (
 	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/shirou/gopsutil v0.0.0-20180427012116-c95755e4bcd7 // indirect
+	github.com/shirou/gopsutil v0.0.0-20180427012116-c95755e4bcd7
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/ugorji/go v0.0.0-20170620060102-0053ebfd9d0e // indirect
