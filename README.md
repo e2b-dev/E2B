@@ -357,6 +357,9 @@ Kernel 4.14.225 on an x86_64
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J4YM9U)  
       
 It's also possible to support the project on [Patreon](https://www.patreon.com/neirac)  
+
+I work on this project on  my free time and my country is not on the list available for
+github sponsors so any help for me continue working on this is appreciated.
     
 ## References
 
