@@ -35,6 +35,7 @@ import (
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/shirou/gopsutil/process"
+	"github.com/vishvananda/netlink"
 )
 
 var (
@@ -227,6 +228,11 @@ func (h *taskHandle) Signal(sig string) error {
 // shutdown shuts down the container, with `timeout` grace period
 // before shutdown vm
 func (h *taskHandle) shutdown(timeout time.Duration) error {
+	vnic, _ := netlink.LinkByName(h.Info.Vnic)
+	err := netlink.LinkDel(vnic)
+	if err != nil {
+			h.logger.Error("unable to remove veth ", h.Info.Vnic, " from ", h.taskConfig.ID)
+	}
 	time.Sleep(timeout)
 	h.MachineInstance.StopVMM()
 	return nil

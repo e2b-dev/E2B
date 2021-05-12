@@ -18,10 +18,6 @@
  * along with Firecracker-task-driver. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
-
-
 package firevm
 
 import (
@@ -58,6 +54,18 @@ func genmacaddr() (string, error) {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
 
+func RandomVethName() (string, error) {
+	entropy := make([]byte, 4)
+	_, err := rand.Read(entropy)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random veth name: %v", err)
+	}
+
+	// NetworkManager (recent versions) will ignore veth devices that start with "veth"
+	return fmt.Sprintf("veth%x", entropy), nil
+}
+
+
 type options struct {
 	FcBinary           string   `long:"firecracker-binary" description:"Path to firecracker binary"`
 	FcKernelImage      string   `long:"kernel" description:"Path to the kernel image" default:"./vmlinux"`
@@ -88,7 +96,7 @@ type options struct {
 }
 
 // Converts options to a usable firecracker config
-func (opts *options) getFirecrackerConfig() (firecracker.Config, error) {
+func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, error) {
 	// validate metadata json
 	if opts.FcMetadata != "" {
 		if err := json.Unmarshal([]byte(opts.FcMetadata), &opts.validMetadata); err != nil {
@@ -97,7 +105,7 @@ func (opts *options) getFirecrackerConfig() (firecracker.Config, error) {
 		}
 	}
 	//setup NICs
-	NICs, err := opts.getNetwork()
+	NICs, err := opts.getNetwork(AllocId)
 	if err != nil {
 		return firecracker.Config{}, err
 	}
@@ -149,7 +157,7 @@ func (opts *options) getFirecrackerConfig() (firecracker.Config, error) {
 	}, nil
 }
 
-func (opts *options) getNetwork() ([]firecracker.NetworkInterface, error) {
+func (opts *options) getNetwork(AllocId string) ([]firecracker.NetworkInterface, error) {
 	var NICs []firecracker.NetworkInterface
 
 	if len(opts.FcNetworkName) > 0 && len(opts.FcNicConfig.Ip) > 0 {
@@ -157,10 +165,15 @@ func (opts *options) getNetwork() ([]firecracker.NetworkInterface, error) {
 	}
 
 	if len(opts.FcNetworkName) > 0 {
+		veth, err := RandomVethName()
+		if err != nil {
+			return nil, err
+		}
+
 		nic := firecracker.NetworkInterface{
 			CNIConfiguration: &firecracker.CNIConfiguration{
 				NetworkName: opts.FcNetworkName,
-				IfName:      "veth0",
+				IfName:  veth,
 			},
 		}
 		NICs = append(NICs, nic)

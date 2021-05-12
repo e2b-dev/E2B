@@ -113,11 +113,12 @@ type Instance_info struct {
 	Ip      string
 	Serial  string
 	Pid     string
+	Vnic    string
 }
 
 func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfig, taskConfig TaskConfig) (*vminfo, error) {
 	opts, _ := taskConfig2FirecrackerOpts(taskConfig, cfg)
-	fcCfg, err := opts.getFirecrackerConfig()
+	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
 		log.Errorf("Error: %s", err)
 		return nil, err
@@ -197,27 +198,30 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Failed getting pid for machine: %v", errpid)
 	}
 	var ip string
+	var vnic string
 	if len(opts.FcNetworkName) > 0 {
 		ip = fcCfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.String()
+		vnic = fcCfg.NetworkInterfaces[0].CNIConfiguration.IfName + "vm"
 	} else {
 		ip = "No network chosen"
+		vnic = ip
 	}
 	info := Instance_info{Serial: ftty, AllocId: cfg.AllocID,
 		Ip:  ip,
-		Pid: strconv.Itoa(pid)}
+		Pid: strconv.Itoa(pid), Vnic: vnic}
 
 	f, _ := json.MarshalIndent(info, "", " ")
 
 	logfile := fmt.Sprintf("/tmp/%s-%s", cfg.Name, cfg.AllocID)
 
 	d.logger.Info("Writing to", "driver_initialize_container", hclog.Fmt("%v+", logfile))
-	log, err := os.OpenFile(logfile,os.O_CREATE|os.O_APPEND|os.O_WRONLY,0644)
+	log, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 
 	if err != nil {
 		return nil, fmt.Errorf("Failed creating info file=%s err=%v", logfile, err)
 	}
 	defer log.Close()
-	fmt.Fprintf(log,"%s",f)
+	fmt.Fprintf(log, "%s", f)
 
 	return &vminfo{Machine: m, tty: ftty, Info: info}, nil
 }
