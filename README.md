@@ -114,14 +114,50 @@ Also the filename must match the name of the network, and the suffix .conflist.
 Creating a rootfs and kernel image for firecracker
 -------------------------------------------------
 We need to an ext4 root filesystem to use as disk and an uncompressed vmlinux image, the process on how to generate them is described [here](https://github.com/firecracker-microvm/firecracker/blob/master/docs/rootfs-and-kernel-setup.md).
-Prebuilt kernel images and rootfs are provided, default root password for these images is 'toor':
 
-- [Kernel Image Linux-5.4.0-rc5](https://firecracker-kernels.s3-sa-east-1.amazonaws.com/vmlinux-5.4.0-rc5.tar.gz)
-- [Rootfs for Ubuntu 16.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu16.04.rootfs.tar.gz)
-- [Rootfs for Ubuntu 18.04](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/ubuntu18.04.rootfs.tar.gz)
-- [Rootfs for Debian 10](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/debian10.rootfs.tar.gz)
-- [Rootfs for Centos 7](https://firecracker-rootfs.s3-sa-east-1.amazonaws.com/centos-7-x86_64_rootfs.tar.gz)
+## Using [ZFS](https://github.com/openzfs/zfs) zvols to create a rootfs for microvms 
 
+Leveraging zvols to expose rootfs to firecracker, is this is really simple, and zfs buys you a lot of benefits.
+For example to create a Centos rootfs is as simple as:
+First download a template image, for example from [OpenVZ](openvz.org)
+http://download.openvz.org/template/precreated/centos-7-x86_64-minimal.tar.gz
+
+### Now create a ZVOL to host this tarball
+    
+```sh
+# zfs create -V 1G  zpool/centos7vm 
+# mkfs.ext4  /dev/zvol/zpool/centos7vm
+# mount -t ext4  /dev/zvol/zpool/centos7vm /mnt
+# tar xfvz centos-7-x86_64-minimal.tar.gz -C /mnt
+# zfs snapshot zpool/centos7vm@final 
+```
+Now you could tell the firecracker-task-driver to use that zvol as your BootDisk.
+For example:
+   
+```hcl
+job "example3" {
+  datacenters = ["dc1"]
+  type        = "service"
+
+  group "test" {
+    restart {
+      attempts = 0
+      mode     = "fail"
+    }
+    task "test01" {
+     driver = "firecracker-task-driver"
+      config {
+       Vcpus = 1 
+       Mem = 128
+       KernelImage= "/home/cneira/kernel-images/vmlinux.bin"
+       BootDisk = "/dev/zvol/vms/centos7vm"
+       Network = "default"
+      }
+    }
+  }
+}
+
+```
 
 
 ## Firecracker task driver options 
@@ -312,50 +348,6 @@ CentOS Linux 7 (Core)
 Kernel 4.14.225 on an x86_64
 
 192 login: 
-
-```
-## Using ZFS zvols to create Firecracker Rootfs microvms 
-
-Leveraging zvols to expose rootfs to firecracker, is this is really simple, and zfs buys you a lot of benefits.
-
-For example to create a Centos rootfs is as simple as:
-First download a template image, for example from [OpenVZ](openvz.org)
-http://download.openvz.org/template/precreated/centos-7-x86_64-minimal.tar.gz
-
-### Now create a ZVOL to host this tarball
-    
-```sh
-# zfs create -V 1G  zpool/centos7vm 
-# mkfs.ext4  /dev/zvol/zpool/centos7vm
-# mount -t ext4  /dev/zvol/zpool/centos7vm /mnt
-# tar xfvz centos-7-x86_64-minimal.tar.gz -C /mnt
-# zfs snapshot zpool/centos7vm@final 
-```
-Now you could tell the firecracker-task-driver to use that zvol as your BootDisk.
-For example:
-   
-```hcl
-job "example3" {
-  datacenters = ["dc1"]
-  type        = "service"
-
-  group "test" {
-    restart {
-      attempts = 0
-      mode     = "fail"
-    }
-    task "test01" {
-     driver = "firecracker-task-driver"
-      config {
-       Vcpus = 1 
-       Mem = 128
-       KernelImage= "/home/cneira/kernel-images/vmlinux.bin"
-       BootDisk = "/dev/zvol/vms/centos7vm"
-       Network = "default"
-      }
-    }
-  }
-}
 
 ```
 
