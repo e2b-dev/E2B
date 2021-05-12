@@ -359,17 +359,6 @@ job "example3" {
 
 ```
 
-
-
-### Now you could send the rootfs to another zfs system
-```sh
-# zfs send zpool/centos7vm@final > centos7vm.img  
-```
-On your other system just receive it
-```sh
-# zfs receive zpool/centos7vm2 < centos7vm.img
-``` 
-
 ##  Demo
 [![asciicast](https://asciinema.org/a/279855.svg)](https://asciinema.org/a/279855)
   
