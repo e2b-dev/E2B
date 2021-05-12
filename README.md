@@ -124,11 +124,11 @@ First download a template image, for example from [OpenVZ](openvz.org)[Centos7](
 Now create a ZVOL to host this tarball
     
 ```sh
-# zfs create -V 1G  zpool/centos7vm 
-# mkfs.ext4  /dev/zvol/zpool/centos7vm
-# mount -t ext4  /dev/zvol/zpool/centos7vm /mnt
-# tar xfvz centos-7-x86_64-minimal.tar.gz -C /mnt
-# zfs snapshot zpool/centos7vm@final 
+$ zfs create -V 1G  zpool/centos7vm 
+$ mkfs.ext4  /dev/zvol/zpool/centos7vm
+$ mount -t ext4  /dev/zvol/zpool/centos7vm /mnt
+$ tar xfvz centos-7-x86_64-minimal.tar.gz -C /mnt
+$ zfs snapshot zpool/centos7vm@final 
 ```
 Now just use your new zvol as your BootDisk For example:
    
