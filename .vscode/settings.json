@@ -1,0 +1,32 @@
+{
+  "search.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "lib/**": true,
+    ".next/**": true,
+    ".vscode/**": true,
+    ".git/**": true,
+    "node_modules/**": true,
+    "package-lock.json": true,
+  },
+  "files.watcherExclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "lib/**": true,
+    ".next/**": true,
+    ".vscode/**": true,
+    ".git/**": true,
+    "node_modules/**": true,
+    "package-lock.json": true,
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+}
