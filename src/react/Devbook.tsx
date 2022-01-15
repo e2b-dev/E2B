@@ -1,8 +1,5 @@
-import { DevbookRunner } from '../core'
-
-const runner = new DevbookRunner()
-
-const context = runner.initializeDocumentContext({ documentID: 'react' })
+import useDevbook from './useDevbook'
+import { Template } from '../core'
 
 export interface Props {
   children?: string | never[]
@@ -11,6 +8,7 @@ export interface Props {
 function Devbook({
   children = ''
 }: Props) {
+  const devbook = useDevbook({ template: Template.NextJS })
 
   return (
     <div>

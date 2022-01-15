@@ -1,5 +1,7 @@
-import Runner from './runner'
+import DevbookEvaluator from './devbookEvaluator'
+import { Template } from './constants'
 
 export {
-  Runner as DevbookRunner,
+  DevbookEvaluator,
+  Template,
 }

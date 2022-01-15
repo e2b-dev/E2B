@@ -1,9 +1,8 @@
 import debounce from 'lodash/debounce'
 
-import Logger from '../../../utils/Logger'
-import { TemplateConfig } from '../../../common-ts/TemplateConfig'
-import { template, runner } from '../../constants'
-import { TemplateID } from '../../constants/template'
+import Logger from 'src/utils/Logger'
+import { TemplateConfig } from 'src/common-ts/TemplateConfig'
+import { runner, Template, templates } from 'src/core/constants'
 
 
 export enum OutputSource {
@@ -29,7 +28,7 @@ interface DocumentEnvironment {
    * Must be unique accross a document this document environment belongs to.
    */
   id: string
-  templateID: TemplateID
+  templateID: Template
 }
 
 /**
@@ -70,7 +69,7 @@ class RunningEnvironment {
   ) {
     this.id = `${documentID}_${docEnv.id}`
     this.logger = new Logger(`RunningEnvironment (${this.id})`)
-    this.template = template.templates[this.docEnv.templateID]
+    this.template = templates[this.docEnv.templateID]
   }
 
   logOutput(message: string, source: OutputSource) {

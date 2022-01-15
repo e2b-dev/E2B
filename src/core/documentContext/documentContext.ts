@@ -11,12 +11,12 @@ import {
 } from './runningEnvironment'
 import { OutputSource } from './runningEnvironment/runningEnvironment'
 import hash from '../../utils/hash'
-import { template } from 'core/constants'
+import { templates, Template } from '../constants'
 
-const generateCodeCellID = makeIDGenerator(8)
+export const generateCodeCellID = makeIDGenerator(8)
 const generateFileSufix = makeIDGenerator(3)
 
-export function getDefaultDocumentEnvID(templateID: template.TemplateID) {
+export function getDefaultDocumentEnvID(templateID: Template) {
   return hash(templateID)
 }
 
@@ -28,6 +28,10 @@ export interface DeleteDocumentEnvironment extends Pick<DocumentEnvironment, 'id
 export interface DocumentContextOpts {
   documentID: string
   conn: WebSocketConnection
+  onStdout?: (stdout: string) => any
+  onStderr?: (stderr: string) => any
+  onCmdOut?: (out: { stdout: string | null, stderr: string | null }) => any
+  onURLChange?: (url: string) => any
 }
 
 class DocumentContext {
@@ -142,6 +146,7 @@ class DocumentContext {
       return
     }
     env.logOutput(payload.message, OutputSource.Stderr)
+    this.opts.onStderr?.(payload.message)
   }
 
   vmenv_handleStdout(payload: rws.RunningEnvironment_Stdout['payload']) {
@@ -152,19 +157,20 @@ class DocumentContext {
       return
     }
     env.logOutput(payload.message, OutputSource.Stdout)
+    this.opts.onStdout?.(payload.message)
   }
 
   vmenv_handleCmdOut(payload: rws.RunningEnvironment_CmdOut['payload']) {
     this.logger.log('[vmenv] Handling "CmdOut"', payload)
-    throw new Error('cmdOut handling not implemented')
-    // const out = {
-    //   documentID: this.documentID,
-    //   output: {
-    //     stdout: payload.stdout ?? null,
-    //     stderr: payload.stderr ?? null,
-    //     executionID: payload.executionID,
-    //   },
-    // }
+    const out = {
+      documentID: this.documentID,
+      output: {
+        stdout: payload.stdout ?? null,
+        stderr: payload.stderr ?? null,
+        executionID: payload.executionID,
+      },
+    }
+    this.opts.onCmdOut?.(out.output)
   }
 
   findRunningEnv({ envID }: { envID: string }) {
@@ -208,7 +214,7 @@ class DocumentContext {
   /* === SHELL CODE CELLS === */
   createShellCodeCell(args: {
     documentEnvID?: string,
-    templateID: template.TemplateID,
+    templateID: Template,
   }) {
     this.logger.log('Create shell code cell', args)
 
@@ -217,7 +223,7 @@ class DocumentContext {
       documentEnvID,
     } = args
 
-    const defaultDocumentEnvID = documentEnvID || getDefaultDocumentEnvID(templateID as template.TemplateID)
+    const defaultDocumentEnvID = documentEnvID || getDefaultDocumentEnvID(templateID as Template)
     let env = this.findDocumentEnvironment({ documentEnvID: defaultDocumentEnvID })
     if (env) return env.documentEnvID
 
@@ -300,7 +306,7 @@ class DocumentContext {
     }
   }
 
-  updateCodeCellTemplateID(id: string, templateID: template.TemplateID) {
+  updateCodeCellTemplateID(id: string, templateID: Template) {
     this.logger.log('Update code cell template ID', { id, templateID })
     const cc = this.findCodeCell(id)
     if (!cc) {
@@ -327,7 +333,7 @@ class DocumentContext {
 
   deleteCodeCell(id: string) {
     this.logger.log('Delete code cell', { id })
-    this.codeCells = [...this.codeCells.filter(cc => cc.id !== id)]
+    this.codeCells = this.codeCells.filter(cc => cc.id !== id)
   }
 
   createCodeCell(args: {
@@ -335,7 +341,7 @@ class DocumentContext {
     name?: string,
     initialCode?: string,
     documentEnvID?: string,
-    templateID: template.TemplateID,
+    templateID: Template,
   }) {
     this.logger.log('Creating code cell', { ...args })
     const {
@@ -383,10 +389,10 @@ class DocumentContext {
       id,
       name: uniqueName,
       code: initialCode,
-      templateID: env?.template.id as template.TemplateID || templateID,
+      templateID: env?.template.id as Template || templateID,
       documentEnvID: defaultDocumentEnvID,
     })
-    this.codeCells = [...this.codeCells, codeCell]
+    this.codeCells.push(codeCell)
     this.logger.log('Created code cell', { ...args, id, inEnv: env, runningEnvs: this.runningEnvs })
     return codeCell
   }

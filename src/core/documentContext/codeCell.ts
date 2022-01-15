@@ -1,10 +1,10 @@
-import { template } from '../constants'
+import { Template } from '../constants'
 
 export class EnvironmentCodeCell {
   readonly id: string
 
   name: string
-  templateID: template.TemplateID
+  templateID: Template
   documentEnvID?: string
 
   // No need for the `_code` variable to be reactive like `_id` and `_name` because
@@ -23,7 +23,7 @@ export class EnvironmentCodeCell {
     id: string,
     name: string,
     documentEnvID: string,
-    templateID: template.TemplateID,
+    templateID: Template,
     code?: string,
   }) {
     this.id = id
