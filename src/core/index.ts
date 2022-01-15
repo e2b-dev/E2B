@@ -1,5 +1,5 @@
-import DevbookView from './DevbookView'
+import Runner from './runner'
 
 export {
-  DevbookView
+  Runner as DevbookRunner,
 }

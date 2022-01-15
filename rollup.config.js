@@ -48,5 +48,6 @@ export default {
     typescript({
       tsconfig: 'tsconfig.json',
     }),
+    // TODO: Add terser
   ],
 }
