@@ -11,9 +11,6 @@
     "watch": "rollup -c -w"
   },
   "author": "Devbook",
-  "peerDependencies": {
-    "react": "^17.0.2"
-  },
   "devDependencies": {
     "@babel/core": "^7.16.7",
     "@babel/preset-react": "^7.16.7",

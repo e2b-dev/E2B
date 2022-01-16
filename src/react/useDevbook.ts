@@ -7,6 +7,15 @@ import {
 
 import { Evaluator, Template } from 'src/core'
 
+export interface Config {
+  template: Template
+  port?: number
+  code: string
+  name?: string
+  isShellCommand?: boolean
+  autorun?: boolean
+}
+
 function useDevbook({
   template,
   port,
@@ -14,14 +23,7 @@ function useDevbook({
   name,
   isShellCommand,
   autorun,
-}: {
-  template: Template,
-  port?: number,
-  code: string,
-  name?: string,
-  isShellCommand?: boolean,
-  autorun?: boolean,
-}) {
+}: Config) {
   const [evaluator, setEvaluator] = useState<Evaluator>()
   const forceUpdate = useReducer(() => ({}), {})[1]
 

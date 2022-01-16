@@ -5,14 +5,16 @@ import useDevbook from './useDevbook'
 
 export interface Props {
   children: ReactNode
+  code?: string
 }
 
 function Devbook({
-  children
+  children,
+  code = '',
 }: Props) {
   const { stderr, stdout, url } = useDevbook({
     template: Template.NextJS,
-    code: '',
+    code,
   })
 
   return (
