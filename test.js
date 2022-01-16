@@ -1,6 +1,8 @@
-import { Devbook } from './lib/cjs'
+import { } from './lib/esm'
 
 function lore() {
+  const {} = useDevboo
+
   return (
     <Devbook>
     </Devbook>

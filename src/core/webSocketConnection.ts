@@ -4,17 +4,29 @@ import wait from '../utils/wait'
 import * as rws from '../common-ts/RunnerWebSocket'
 import { runner as consts } from './constants'
 
+interface Handler {
+  onMessage: (msg: rws.BaseMessage) => void
+  onOpen: () => void
+}
+
 export class WebSocketConnection {
   private readonly url = `wss://${consts.REMOTE_RUNNER_HOSTNAME}`
   sessionID?: string
   private client?: WebSocket
   private logger = new Logger('WebSocketConnection')
 
-  onMessage?: (msg: rws.BaseMessage) => void
-  onOpen?: () => void
+  private handlers: Handler[] = []
 
   get state() {
     return this.client?.readyState
+  }
+
+  subscribeHandler(handler: Handler) {
+    this.handlers.push(handler)
+
+    return () => {
+      this.handlers = this.handlers.filter(h => h !== handler)
+    }
   }
 
   connect(sessionID?: string) {
@@ -70,7 +82,9 @@ export class WebSocketConnection {
 
   private handleOpen() {
     this.logger.log('Connection opened', { readyState: this.client?.readyState })
-    this.onOpen?.()
+    this.handlers.forEach(h => {
+      h.onOpen()
+    })
   }
 
   // Private version of the `send()` method that doesn't check if a client is ready
@@ -123,6 +137,8 @@ export class WebSocketConnection {
     }
 
     this.logger.log('Received (parsed)', baseMsg)
-    this.onMessage?.(baseMsg)
+    this.handlers.forEach(h => {
+      h.onMessage(baseMsg)
+    })
   }
 }

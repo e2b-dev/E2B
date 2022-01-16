@@ -28,9 +28,9 @@ export interface DeleteDocumentEnvironment extends Pick<DocumentEnvironment, 'id
 export interface DocumentContextOpts {
   documentID: string
   conn: WebSocketConnection
-  onStdout?: (stdout: string) => any
-  onStderr?: (stderr: string) => any
-  onCmdOut?: (out: { stdout: string | null, stderr: string | null }) => any
+  onStdout?: (payload: rws.RunningEnvironment_Stdout['payload']) => any
+  onStderr?: (payload: rws.RunningEnvironment_Stderr['payload']) => any
+  onCmdOut?: (payload: rws.RunningEnvironment_CmdOut['payload']) => any
   onURLChange?: (url: string) => any
 }
 
@@ -44,9 +44,13 @@ class DocumentContext {
   runningEnvs: RunningEnvironment[] = []
   codeCells: EnvironmentCodeCell[] = []
 
+  private unsubscribeConnHandler: () => void
+
   constructor(private readonly opts: DocumentContextOpts) {
-    this.opts.conn.onOpen = this.restart.bind(this)
-    this.opts.conn.onMessage = this.handleConnectionMessage.bind(this)
+    this.unsubscribeConnHandler = this.opts.conn.subscribeHandler({
+      onOpen: this.restart.bind(this),
+      onMessage: this.handleConnectionMessage.bind(this),
+    })
   }
 
   /**
@@ -69,6 +73,7 @@ class DocumentContext {
     this.logger.log('Destroy')
     this.runningEnvs = []
     this.codeCells = []
+    this.unsubscribeConnHandler()
   }
 
   private handleConnectionMessage(message: rws.BaseMessage) {
@@ -146,7 +151,7 @@ class DocumentContext {
       return
     }
     env.logOutput(payload.message, OutputSource.Stderr)
-    this.opts.onStderr?.(payload.message)
+    this.opts.onStderr?.(payload)
   }
 
   vmenv_handleStdout(payload: rws.RunningEnvironment_Stdout['payload']) {
@@ -157,20 +162,12 @@ class DocumentContext {
       return
     }
     env.logOutput(payload.message, OutputSource.Stdout)
-    this.opts.onStdout?.(payload.message)
+    this.opts.onStdout?.(payload)
   }
 
   vmenv_handleCmdOut(payload: rws.RunningEnvironment_CmdOut['payload']) {
     this.logger.log('[vmenv] Handling "CmdOut"', payload)
-    const out = {
-      documentID: this.documentID,
-      output: {
-        stdout: payload.stdout ?? null,
-        stderr: payload.stderr ?? null,
-        executionID: payload.executionID,
-      },
-    }
-    this.opts.onCmdOut?.(out.output)
+    this.opts.onCmdOut?.(payload)
   }
 
   findRunningEnv({ envID }: { envID: string }) {
@@ -181,7 +178,7 @@ class DocumentContext {
     return this.runningEnvs.find(env => env.documentEnvID === documentEnvID)
   }
 
-  private async evaluateEnvironment(documentEnvID: string) {
+  private evaluateEnvironment(documentEnvID: string) {
     this.logger.log('Evaluate environment', { documentEnvID })
     const env = this.findDocumentEnvironment({ documentEnvID })
 
@@ -205,6 +202,7 @@ class DocumentContext {
       templateID: env.template.id,
       code: cc.code,
     }))
+
     env.debounceFunction(() => envWS.evaluate(this.opts.conn, {
       envID: env.id,
       codeCells: ccs,

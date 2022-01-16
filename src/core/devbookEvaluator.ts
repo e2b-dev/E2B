@@ -21,9 +21,31 @@ class DevbookEvaluator {
 
   constructor(private opts: Opts) {
     if (!Runner.obj) throw new Error('Runner is not defined')
-    this.documentContext = Runner.obj.initializeDocumentContext({ ...opts, documentID: 'default' })
+
     this.documentEnvID = getDefaultDocumentEnvID(opts.template)
-    this.codeCellID = this.executionID = generateCodeCellID()
+    const codeCellID = generateCodeCellID()
+    const executionID = generateCodeCellID()
+    this.codeCellID = codeCellID
+    this.executionID = executionID
+
+    this.documentContext = Runner.obj.initializeDocumentContext({
+      documentID: 'default',
+      onURLChange: opts.onURLChange,
+      onCmdOut(payload) {
+        if (payload.executionID !== executionID) return
+        const out = {
+          stdout: payload.stdout ?? null,
+          stderr: payload.stderr ?? null,
+        }
+        opts.onCmdOut?.(out)
+      },
+      onStderr(payload) {
+        opts.onStderr?.(payload.message)
+      },
+      onStdout(payload) {
+        opts.onStdout?.(payload.message)
+      },
+    })
   }
 
   /* ==== Shell Code Cell === */
@@ -70,7 +92,11 @@ class DevbookEvaluator {
   }
 
   createURL(port: number) {
-    throw new Error('Not implemented')
+    const sessionID = Runner.obj?.session?.id
+    const env = this.documentContext.runningEnvs.find(e => e.documentEnvID === this.documentEnvID)
+    const codeCell = this.documentContext.codeCells.find(cc => cc.id === this.codeCellID)
+    if (!env || !sessionID || !codeCell) return
+    return `https://${port}-${env.id}-${sessionID}.o.usedevbook.com/${codeCell.name}`
   }
 }
 

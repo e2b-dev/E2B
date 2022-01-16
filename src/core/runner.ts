@@ -11,6 +11,7 @@ class Runner {
     if (typeof window === 'undefined') return
     return Runner._obj || (Runner._obj = new Runner())
   }
+
   private readonly conn = new WebSocketConnection()
 
   private readonly sessManager = new SessionManager(this.conn)

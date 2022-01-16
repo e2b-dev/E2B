@@ -8,7 +8,10 @@ export interface Props {
 function Devbook({
   children = ''
 }: Props) {
-  const devbook = useDevbook({ template: Template.NextJS })
+  const { stderr, stdout, url } = useDevbook({
+    template: Template.NextJS,
+    code: '',
+  })
 
   return (
     <div>
