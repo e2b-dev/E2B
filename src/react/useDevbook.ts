@@ -5,7 +5,7 @@ import {
   useCallback,
 } from 'react'
 
-import { Evaluator, Template } from '../core'
+import { Evaluator, Template } from 'src/core'
 
 function useDevbook({
   template,

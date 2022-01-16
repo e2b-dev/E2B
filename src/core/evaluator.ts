@@ -1,7 +1,8 @@
+import { makeIDGenerator } from 'src/utils/id'
+
 import DocumentContext, { generateCodeCellID, getDefaultDocumentEnvID } from './documentContext/documentContext'
 import { Template } from './constants'
 import Runner from './runner'
-import { makeIDGenerator } from '../utils/id'
 
 const generateDocumentID = makeIDGenerator(4)
 

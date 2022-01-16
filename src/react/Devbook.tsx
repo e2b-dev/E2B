@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
+
+import { Template } from 'src/core'
 import useDevbook from './useDevbook'
-import { Template } from '../core'
 
 export interface Props {
   children: ReactNode

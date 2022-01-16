@@ -1,7 +1,8 @@
-import stringify from '../utils/stringify'
-import Logger from '../utils/Logger'
-import wait from '../utils/wait'
-import * as rws from '../common-ts/RunnerWebSocket'
+import Logger from 'src/utils/Logger'
+import stringify from 'src/utils/stringify'
+import wait from 'src/utils/wait'
+import * as rws from 'src/common-ts/RunnerWebSocket'
+
 import { runner as consts } from './constants'
 
 interface Handler {

@@ -1,7 +1,7 @@
-import wait from '../../utils/wait'
-import Logger from '../../utils/Logger'
-import { runner as consts } from '../constants'
-import { WebSocketConnection } from '../webSocketConnection'
+import wait from 'src/utils/wait'
+import Logger from 'src/utils/Logger'
+import { runner as consts } from 'src/core/constants'
+import { WebSocketConnection } from 'src/core/webSocketConnection'
 import RunnerSession from './runnerSession'
 
 export enum SessionStatus {
@@ -36,7 +36,7 @@ class SessionManager {
 
   session?: RunnerSession
   status = SessionStatus.Disconnected
-  
+
   constructor(
     private readonly conn: WebSocketConnection
   ) {

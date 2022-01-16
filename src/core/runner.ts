@@ -1,4 +1,5 @@
-import Logger from '../utils/Logger'
+import Logger from 'src/utils/Logger'
+
 import { WebSocketConnection } from './webSocketConnection'
 import SessionManager from './session/sessionManager'
 import DocumentContext, { DocumentContextOpts } from './documentContext/documentContext'

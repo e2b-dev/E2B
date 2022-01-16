@@ -4,7 +4,6 @@ import Logger from 'src/utils/Logger'
 import { TemplateConfig } from 'src/common-ts/TemplateConfig'
 import { runner, Template, templates } from 'src/core/constants'
 
-
 export enum OutputSource {
   Stdout,
   Stderr,

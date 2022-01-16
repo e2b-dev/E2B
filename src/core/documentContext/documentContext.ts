@@ -1,7 +1,9 @@
-import * as rws from '../../common-ts/RunnerWebSocket'
-import { WebSocketConnection } from '../webSocketConnection'
-import { makeIDGenerator } from '../../utils/id'
-import Logger from '../../utils/Logger'
+import * as rws from 'src/common-ts/RunnerWebSocket'
+import { WebSocketConnection } from 'src/core/webSocketConnection'
+import { makeIDGenerator } from 'src/utils/id'
+import hash from 'src/utils/hash'
+import Logger from 'src/utils/Logger'
+import { templates, Template } from 'src/core/constants'
 
 import { EnvironmentCodeCell } from './codeCell'
 import {
@@ -10,8 +12,6 @@ import {
   ws as envWS,
 } from './runningEnvironment'
 import { OutputSource } from './runningEnvironment/runningEnvironment'
-import hash from '../../utils/hash'
-import { templates, Template } from '../constants'
 
 export const generateCodeCellID = makeIDGenerator(8)
 const generateFileSufix = makeIDGenerator(3)

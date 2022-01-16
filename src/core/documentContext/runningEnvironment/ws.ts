@@ -1,7 +1,7 @@
-import * as rws from '../../../common-ts/RunnerWebSocket'
-import { TemplateConfig } from '../../../common-ts/TemplateConfig'
-import { CodeCell } from '../../../common-ts/CodeCell'
-import { WebSocketConnection } from '../../webSocketConnection'
+import * as rws from 'src/common-ts/RunnerWebSocket'
+import { TemplateConfig } from 'src/common-ts/TemplateConfig'
+import { CodeCell } from 'src/common-ts/CodeCell'
+import { WebSocketConnection } from 'src/core/webSocketConnection'
 
 function start(
   conn: WebSocketConnection, {

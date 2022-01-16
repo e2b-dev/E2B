@@ -1,4 +1,4 @@
-import { Template } from '../constants'
+import { Template } from 'src/core/constants'
 
 export class EnvironmentCodeCell {
   readonly id: string
