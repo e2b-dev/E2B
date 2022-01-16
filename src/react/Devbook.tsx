@@ -1,12 +1,13 @@
+import { ReactNode } from 'react'
 import useDevbook from './useDevbook'
 import { Template } from '../core'
 
 export interface Props {
-  children?: string | never[]
+  children: ReactNode
 }
 
 function Devbook({
-  children = ''
+  children
 }: Props) {
   const { stderr, stdout, url } = useDevbook({
     template: Template.NextJS,
