@@ -13,7 +13,7 @@ interface Opts {
   onURLChange?: () => any
 }
 
-class DevbookEvaluator {
+class Evaluator {
   private documentContext: DocumentContext
   private documentEnvID: string
   private codeCellID: string
@@ -100,4 +100,4 @@ class DevbookEvaluator {
   }
 }
 
-export default DevbookEvaluator
+export default Evaluator

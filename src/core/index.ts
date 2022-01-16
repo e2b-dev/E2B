@@ -1,7 +1,7 @@
-import DevbookEvaluator from './devbookEvaluator'
+import Evaluator from './evaluator'
 import { Template } from './constants'
 
 export {
-  DevbookEvaluator,
+  Evaluator,
   Template,
 }

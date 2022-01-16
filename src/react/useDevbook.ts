@@ -1,6 +1,11 @@
-import { useEffect, useState, useReducer, useCallback } from 'react'
+import {
+  useEffect,
+  useState,
+  useReducer,
+  useCallback,
+} from 'react'
 
-import { DevbookEvaluator, Template } from '../core'
+import { Evaluator, Template } from '../core'
 
 function useDevbook({
   template,
@@ -17,27 +22,27 @@ function useDevbook({
   isShellCommand?: boolean,
   autorun?: boolean,
 }) {
-  const [devbookEvaluator, setDevbookEvaluator] = useState<DevbookEvaluator>()
+  const [evaluator, setEvaluator] = useState<Evaluator>()
   const forceUpdate = useReducer(() => ({}), {})[1]
 
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
   const [cmdOuts, setCmdOuts] = useState<{ stderr: string | null, stdout: string | null }[]>([])
 
-  const url = port && !isShellCommand && devbookEvaluator ? devbookEvaluator.createURL(port) : undefined
+  const url = port && !isShellCommand && evaluator ? evaluator.createURL(port) : undefined
 
   const runCode = useCallback(() => {
-    if (!devbookEvaluator) return
+    if (!evaluator) return
 
     if (isShellCommand) {
       setCmdOuts([])
-      devbookEvaluator.execShellCodeCell({ command: code })
+      evaluator.execShellCodeCell({ command: code })
     } else {
-      devbookEvaluator.updateCodeCellCode(code)
+      evaluator.updateCodeCellCode(code)
     }
   }, [
     code,
-    devbookEvaluator,
+    evaluator,
     isShellCommand,
   ])
 
@@ -47,7 +52,7 @@ function useDevbook({
   }, [autorun, runCode])
 
   useEffect(function initializeEvaluator() {
-    const evaluator = new DevbookEvaluator({
+    const evaluator = new Evaluator({
       template,
       onStderr(stderr) {
         setStderr(s => [...s, stderr])
@@ -69,7 +74,7 @@ function useDevbook({
       templateID: template,
     })
 
-    setDevbookEvaluator(evaluator)
+    setEvaluator(evaluator)
     return () => {
       evaluator.destroy()
     }
