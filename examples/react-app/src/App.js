@@ -1,27 +1,28 @@
-import logo from './logo.svg';
 import './App.css';
-import { Devbook } from '@devbookhq/dbk-react'
+import { useDevbook } from '@devbookhq/sdk'
+import { useState } from 'react';
 
 function App() {
+  const [code, setCode] = useState('console.log("4")')
+
+  // const { stderr, stdout, run, isLoading, isReady } = useDevbook({ code, debug: true, env: 'nodejs-v16' })
+  const devbook = useDevbook({ code, debug: true, env: 'nodejs-v16' })
+
+  console.log('stdout', stdout)
+  console.log('stderr', stderr)
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <Devbook
-          code="console.log('Hello')"
-        />
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <input value={code} onChange={e => setCode(e.target.value)} disabled={isLoading || !isReady}></input>
+      <button onClick={run}>Run</button>
+      <div>
+        STDOUT
+        {stdout.map(s => <p>{s}</p>)}
+      </div>
+      <div>
+        STDERR
+        {stderr.map(s => <p>{s}</p>)}
+      </div>
     </div>
   );
 }

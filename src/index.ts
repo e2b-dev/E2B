@@ -1,1 +1,1 @@
-export { Devbook } from './react'
+export { useDevbook } from './react'

@@ -4,14 +4,14 @@ import babel from '@rollup/plugin-babel'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import autoExternal from 'rollup-plugin-auto-external'
-import postcss from 'rollup-plugin-postcss';
-import alias from '@rollup/plugin-alias';
+import { terser } from 'rollup-plugin-terser'
+import alias from '@rollup/plugin-alias'
 
 const aliasResolver = resolve({
   extensions: ['.ts', '.js', '.tsx', '.jsx']
-});
-const rootDir = path.resolve(__dirname);
+})
 
+const rootDir = path.resolve(__dirname)
 
 import pkg from './package.json'
 
@@ -42,12 +42,12 @@ export default {
   plugins: [
     alias({
       entries: [
-        { find: 'src', replacement: path.resolve(rootDir, 'src') },
+        {
+          find: 'src',
+          replacement: path.resolve(rootDir, 'src'),
+        },
       ],
       customResolver: aliasResolver,
-    }),
-    postcss({
-      plugins: [],
     }),
     autoExternal({
       packagePath: 'package.json',
@@ -62,5 +62,6 @@ export default {
     typescript({
       tsconfig: 'tsconfig.json',
     }),
+    terser(),
   ],
 }

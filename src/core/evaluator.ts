@@ -1,103 +1,68 @@
+import EvaluationContext from './evaluationContext'
 import { makeIDGenerator } from 'src/utils/id'
-
-import DocumentContext, { generateCodeCellID, getDefaultDocumentEnvID } from './documentContext/documentContext'
-import { Template } from './constants'
+import {
+  TemplateID,
+  templates,
+} from './constants'
 import Runner from './runner'
+import { RunningEnvironment } from './runningEnvironment'
 
-const generateDocumentID = makeIDGenerator(4)
+const generateExecutionID = makeIDGenerator(6)
 
 interface Opts {
-  template: Template
+  templateID: TemplateID
   onStdout?: (stdout: string) => any
   onStderr?: (stderr: string) => any
-  onCmdOut?: (out: { stdout: string | null, stderr: string | null }) => any
-  onURLChange?: () => any
+  onEnvChange?: (env: RunningEnvironment) => any
+  debug?: boolean
 }
 
 class Evaluator {
-  private documentContext: DocumentContext
-  private documentEnvID: string
-  private codeCellID: string
-  private executionID: string
+  private readonly context: EvaluationContext
+  private readonly templateID: TemplateID
+  private readonly executionID: string
+  private readonly contextID = 'default'
 
-  constructor(private opts: Opts) {
+  constructor({
+    templateID,
+    onStderr,
+    onStdout,
+    onEnvChange,
+    debug,
+  }: Opts) {
     if (!Runner.obj) throw new Error('Runner is not defined')
 
-    this.documentEnvID = getDefaultDocumentEnvID(opts.template)
-    const codeCellID = generateCodeCellID()
-    const executionID = generateCodeCellID()
-    this.codeCellID = codeCellID
+    this.templateID = templateID
+    const executionID = generateExecutionID()
     this.executionID = executionID
 
-    this.documentContext = Runner.obj.initializeDocumentContext({
-      documentID: 'default',
-      onURLChange: opts.onURLChange,
+    this.context = Runner.obj.createContext({
+      debug,
+      contextID: this.contextID,
+      onEnvChange,
       onCmdOut(payload) {
         if (payload.executionID !== executionID) return
-        const out = {
-          stdout: payload.stdout ?? null,
-          stderr: payload.stderr ?? null,
+        if (payload.stdout !== undefined) {
+          onStdout?.(payload.stdout)
         }
-        opts.onCmdOut?.(out)
+        if (payload.stderr !== undefined) {
+          onStderr?.(payload.stderr)
+        }
       },
-      onStderr(payload) {
-        opts.onStderr?.(payload.message)
-      },
-      onStdout(payload) {
-        opts.onStdout?.(payload.message)
-      },
+    })
+
+    this.context.createRunningEnvironment({
+      templateID,
     })
   }
 
-  /* ==== Shell Code Cell === */
-  createShellCodeCell(opts: {
-    templateID: Template,
-  }) {
-    return this.documentContext?.createShellCodeCell(opts)
-  }
-
-  execShellCodeCell({ command }: { command: string }) {
-    return this.documentContext?.execShellCodeCell({
-      documentEnvID: this.documentEnvID,
-      execID: this.executionID,
+  evaluate(code: string) {
+    const command = `${templates[this.templateID].command}"${code}"`
+    this.context.executeCommand({
+      templateID: this.templateID,
+      executionID: this.executionID,
       command,
     })
-  }
-  /* ======== */
-
-  /* ==== Code Cells ==== */
-  createCodeCell(opts: {
-    name?: string,
-    initialCode?: string,
-    templateID: Template,
-  }) {
-    return this.documentContext?.createCodeCell({
-      ...opts,
-      documentEnvID: this.documentEnvID,
-      id: this.codeCellID,
-    })
-  }
-
-  deleteCodeCell() {
-    this.documentContext?.deleteCodeCell(this.codeCellID)
-  }
-
-  updateCodeCellCode(code: string) {
-    this.documentContext?.updateCodeCellCode(this.codeCellID, code)
-  }
-
-  /* ======== */
-
-  destroy() {
-    this.documentContext.destroy()
-  }
-
-  createURL(port: number) {
-    const sessionID = Runner.obj?.session?.id
-    const env = this.documentContext.runningEnvs.find(e => e.documentEnvID === this.documentEnvID)
-    const codeCell = this.documentContext.codeCells.find(cc => cc.id === this.codeCellID)
-    if (!env || !sessionID || !codeCell) return
-    return `https://${port}-${env.id}-${sessionID}.o.usedevbook.com/${codeCell.name}`
   }
 }
 

@@ -1,5 +1,5 @@
-import Devbook from './Devbook'
+import useDevbook from './useDevbook'
 
 export {
-  Devbook,
+  useDevbook,
 }

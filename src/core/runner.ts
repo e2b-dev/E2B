@@ -2,7 +2,9 @@ import Logger from 'src/utils/Logger'
 
 import { WebSocketConnection } from './webSocketConnection'
 import SessionManager from './session/sessionManager'
-import DocumentContext, { DocumentContextOpts } from './documentContext/documentContext'
+import EvaluationContext, {
+  EvaluationContextOpts,
+} from './evaluationContext'
 
 class Runner {
   private logger = new Logger('Runner')
@@ -24,27 +26,21 @@ class Runner {
   }
 
   /**
-   * Close current session and destroy current `DocumentContext`. The session manager will try to get a new session.
+   * Close current session. The session manager will try to get a new session.
    */
   reset() {
     this.logger.log('Reset')
     this.sessManager.reset()
   }
 
-  initializeDocumentContext(opts: Omit<DocumentContextOpts, 'conn'>) {
-    return new DocumentContext({
+  createContext(opts: Omit<EvaluationContextOpts, 'conn'>) {
+    return new EvaluationContext({
       ...opts,
       conn: this.conn,
     })
   }
 
-  /* ======== */
-
   /* ==== Debug Methods ==== */
-  /**
-   * Close current session, get a new one and then restart all `RunningEnvironment` in the `DocumentContext`.
-   * This function works almost like calling `.reset` but it keeps the `DocumentContext` for the current document.
-   */
   __debug__loadNewSession() {
     this.logger.log('__debug__loadNewSession')
     this.sessManager.reset()

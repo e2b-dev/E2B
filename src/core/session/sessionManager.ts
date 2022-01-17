@@ -97,7 +97,11 @@ class SessionManager {
             resp.headers,
             sessionResp,
           )
-          await wait(consts.SESSION_RESTART_PERIOD)
+          if (this.cachedSessionID) {
+            this.cachedSessionID = null
+          } else {
+            await wait(consts.SESSION_RESTART_PERIOD)
+          }
           continue
         }
 
@@ -105,10 +109,15 @@ class SessionManager {
         //
         this.session = new RunnerSession(sessionResp.sessionID)
         this.logger.log(`Acquired session "${this.session.id}"`)
+
+        if (this.session.id !== this.cachedSessionID) {
+          await wait(1000)
+        }
         this.cachedSessionID = this.session.id
         this.status = SessionStatus.Connected
         // TODO: Make sure that we can actually connect to the Websocket server
         // Orchestrator server should communicate that the Firecracker machine's Runner process is ready.
+        console.log('connecting right here!!')
         this.conn.connect(this.session.id)
 
         this.logger.log(`Started pinging session "${this.session.id}"`)

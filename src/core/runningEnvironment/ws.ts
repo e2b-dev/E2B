@@ -1,59 +1,40 @@
 import * as rws from 'src/common-ts/RunnerWebSocket'
 import { TemplateConfig } from 'src/common-ts/TemplateConfig'
-import { CodeCell } from 'src/common-ts/CodeCell'
 import { WebSocketConnection } from 'src/core/webSocketConnection'
 
 function start(
   conn: WebSocketConnection, {
-    envID,
+    environmentID,
     template,
   }: {
-    envID: string,
+    environmentID: string,
     template: TemplateConfig,
   },
 ) {
   const msg: rws.RunningEnvironment_Start = {
     type: rws.MessageType.RunningEnvironment.Start,
     payload: {
-      environmentID: envID,
+      environmentID,
       template,
     },
   }
   conn.send(msg)
 }
 
-function evaluate(conn: WebSocketConnection, {
-  envID,
-  codeCells,
-}: {
-  envID: string,
-  codeCells: CodeCell[]
-},
-) {
-  const msg: rws.RunningEnvironment_Eval = {
-    type: rws.MessageType.RunningEnvironment.Eval,
-    payload: {
-      environmentID: envID,
-      codeCells,
-    },
-  }
-  conn.send(msg)
-}
-
 function execCmd(conn: WebSocketConnection, {
-  envID,
-  execID,
+  environmentID,
+  executionID,
   command,
 }: {
-  envID: string,
-  execID: string,
+  environmentID: string,
+  executionID: string,
   command: string,
 }) {
   const msg: rws.RunningEnvironment_ExecCmd = {
     type: rws.MessageType.RunningEnvironment.ExecCmd,
     payload: {
-      environmentID: envID,
-      executionID: execID,
+      environmentID,
+      executionID,
       command,
     },
   }
@@ -62,6 +43,5 @@ function execCmd(conn: WebSocketConnection, {
 
 export {
   start,
-  evaluate,
   execCmd,
 }

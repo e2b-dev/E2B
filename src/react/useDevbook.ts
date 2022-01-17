@@ -1,96 +1,119 @@
 import {
   useEffect,
   useState,
-  useReducer,
   useCallback,
 } from 'react'
 
-import { Evaluator, Template } from 'src/core'
+import {
+  Evaluator,
+  TemplateID,
+} from 'src/core'
 
-export interface Config {
-  template: Template
-  port?: number
+/**
+ * 
+ */
+export interface DevbookOptions {
+  /**
+   * ENV
+   */
+  env: TemplateID
+  /**
+   * CODE
+   */
   code: string
-  name?: string
-  isShellCommand?: boolean
-  autorun?: boolean
+  /**
+   * DEBUG
+   */
+  debug?: boolean
 }
 
+export interface DevbookState {
+  /**
+   * STDERR
+   */
+  stderr: string[]
+  /**
+   * 
+   */
+  stdout: string[]
+  /**
+   * 
+   */
+  isReady: boolean
+  /**
+   * 
+   */
+  isLoading: boolean
+  /**
+   * 
+   */
+  run: () => void
+}
+
+/**
+ * 
+ * @param
+ * @returns 
+ */
 function useDevbook({
-  template,
-  port,
+  env,
   code,
-  name,
-  isShellCommand,
-  autorun,
-}: Config) {
+  debug,
+}: DevbookOptions): DevbookState {
   const [evaluator, setEvaluator] = useState<Evaluator>()
-  const forceUpdate = useReducer(() => ({}), {})[1]
 
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
-  const [cmdOuts, setCmdOuts] = useState<{ stderr: string | null, stdout: string | null }[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isReady, setIsReady] = useState(false)
 
-  const url = port && !isShellCommand && evaluator ? evaluator.createURL(port) : undefined
-
-  const runCode = useCallback(() => {
+  const run = useCallback(() => {
     if (!evaluator) return
+    if (!isReady) return
+    if (code === '') return
 
-    if (isShellCommand) {
-      setCmdOuts([])
-      evaluator.execShellCodeCell({ command: code })
-    } else {
-      evaluator.updateCodeCellCode(code)
-    }
+    // TODO: Fix how we add and delete stderr and stdout -
+    // If we try to evaluate code again before the previous evaluation sends outputs
+    // then we may receive he results two times without and both results will be saved to stderr/stdout.
+    setStdout([])
+    setStderr([])
+    setIsLoading(true)
+    evaluator.evaluate(code)
   }, [
     code,
     evaluator,
-    isShellCommand,
+    isReady,
   ])
-
-  useEffect(function handleCodeChange() {
-    if (!autorun) return
-    runCode()
-  }, [autorun, runCode])
 
   useEffect(function initializeEvaluator() {
     const evaluator = new Evaluator({
-      template,
-      onStderr(stderr) {
-        setStderr(s => [...s, stderr])
+      debug,
+      templateID: env,
+      onEnvChange(env) {
+        setIsReady(env.isReady)
       },
-      onStdout(stdout) {
-        setStdout(s => [...s, stdout])
+      onStderr(err) {
+        setStderr(s => [...s, err])
+        setIsLoading(false)
       },
-      onCmdOut(cmdOut) {
-        setCmdOuts(c => [...c, cmdOut])
-      },
-      onURLChange() {
-        forceUpdate()
+      onStdout(out) {
+        setStdout(s => [...s, out])
+        setIsLoading(false)
       },
     })
-
-    evaluator.createCodeCell({
-      name,
-      initialCode: code,
-      templateID: template,
-    })
-
+    setStdout([])
+    setStderr([])
+    setIsLoading(false)
+    setIsReady(false)
     setEvaluator(evaluator)
-    return () => {
-      evaluator.destroy()
-    }
-  }, [
-    template,
-    name,
-  ])
+  }, [env, debug])
 
   return {
     stderr,
     stdout,
-    cmdOuts,
-    url,
-    runCode,
+    run,
+    isLoading,
+    isReady,
   }
 }
 

@@ -69,7 +69,6 @@ export class WebSocketConnection {
       )
       return
     }
-
     this.logger.log('Send', msg)
     this._send(msg)
   }

@@ -1,10 +1,10 @@
 type LogID = string | (() => string)
 
 class Logger {
-  static isEnabled = process.env.NODE_ENV === 'development'
+  static readonly isEnabled = process.env.NODE_ENV === 'development'
 
   constructor(
-    public logID: LogID,
+    public readonly logID: LogID,
   ) { }
 
   private id() {
