@@ -10,9 +10,9 @@ import {
 } from 'src/core'
 
 /**
- * 
+ *
  */
-export interface DevbookOptions {
+export interface Options {
   /**
    * ENV
    */
@@ -27,39 +27,39 @@ export interface DevbookOptions {
   debug?: boolean
 }
 
-export interface DevbookState {
+export interface State {
   /**
    * STDERR
    */
   stderr: string[]
   /**
-   * 
+   *
    */
   stdout: string[]
   /**
-   * 
+   *
    */
   isReady: boolean
   /**
-   * 
+   *
    */
   isLoading: boolean
   /**
-   * 
+   *
    */
   run: () => void
 }
 
 /**
- * 
+ *
  * @param
- * @returns 
+ * @returns
  */
 function useDevbook({
   env,
   code,
   debug,
-}: DevbookOptions): DevbookState {
+}: Options): State {
   const [evaluator, setEvaluator] = useState<Evaluator>()
 
   const [stderr, setStderr] = useState<string[]>([])
