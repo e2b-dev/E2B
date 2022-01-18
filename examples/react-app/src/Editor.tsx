@@ -3,9 +3,38 @@ import {
   useRef,
   memo,
 } from 'react';
-
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
-import { javascript } from '@codemirror/lang-javascript';
+import { bracketMatching } from '@codemirror/matchbrackets'
+import {
+  closeBrackets,
+  closeBracketsKeymap,
+} from '@codemirror/closebrackets'
+import { commentKeymap } from '@codemirror/comment'
+import { indentOnInput } from '@codemirror/language'
+import {
+  codeFolding,
+  foldGutter,
+} from '@codemirror/fold'
+import {
+  keymap,
+  drawSelection,
+} from '@codemirror/view'
+import { foldKeymap } from '@codemirror/fold'
+import {
+  defaultKeymap,
+  indentWithTab,
+} from '@codemirror/commands'
+import {
+  lineNumbers,
+  highlightActiveLineGutter,
+} from '@codemirror/gutter'
+import { classHighlightStyle } from '@codemirror/highlight'
+import {
+  javascriptLanguage,
+} from '@codemirror/lang-javascript'
+
+
+import './Editor.css';
 
 export interface Props {
   initialCode: string
@@ -30,8 +59,29 @@ function Editor({
       doc: initialCode,
       extensions: [
         basicSetup,
-        //javascript(),
         changeWatcher,
+        javascriptLanguage,
+        drawSelection(),
+        highlightActiveLineGutter(),
+        indentOnInput(),
+        bracketMatching(),
+        closeBrackets(),
+        classHighlightStyle,
+        lineNumbers(),
+        codeFolding(),
+        foldGutter(),
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...commentKeymap,
+          ...foldKeymap,
+          indentWithTab,
+          // Override default browser Ctrl/Cmd+S shortcut when a code cell is focused.
+          {
+            key: 'Mod-s',
+            run: () => true,
+          },
+        ]),
       ],
     });
 
@@ -39,7 +89,7 @@ function Editor({
     return () => {
       view.destroy();
     };
-  }, [initialCode, onChange, editorEl.current]);
+  }, [initialCode, onChange, editorEl]);
 
   return (
     <div

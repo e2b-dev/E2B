@@ -1,44 +1,11 @@
 .app {
-  flex: 1;
-  align-self: stretch;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  @apply pt-2;
+  @apply flex-1 self-stretch;
+  @apply flex flex-col items-center space-y-2;
 }
 
-.editor-wrapper {
-  display: flex;
-}
-.editor {
-  flex: 1;
-  display: flex;
-  overflow: auto;
-  max-height: 100%;
-}
-
-.cm-editor {
-  flex: 1;
-}
-
-.output {
-  padding: 8px;
-  flex: 1;
-
-  display: flex;
-  flex-direction: column;
-
-  white-space: pre-wrap;
-  font-size: 13px;
-  line-height: 1.4;
-  font-family: monospace, source-code-pro, Menlo, Monaco, Consolas, 'Courier New';
-}
-
-.output .error {
-  color: #f00;
-}
-
-.output .header {
-  font-weight: bold;
-  text-transform: uppercase;
+.run-btn {
+  @apply py-1 px-3;
+  @apply rounded;
+  @apply bg-black-600 hover:bg-black-700;
 }

@@ -26,9 +26,9 @@ function App() {
 
   return (
     <div className="app">
-      <button onClick={run}>Run</button>
+      <button className="run-btn" onClick={run}>Run</button>
       <Splitter
-        classes={['editor-wrapper']}
+        classes={['flex', 'flex']}
         initialSizes={sizes}
         onResizeFinished={(_, sizes) => {
           setSizes(sizes);
