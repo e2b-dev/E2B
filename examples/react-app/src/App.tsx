@@ -18,12 +18,7 @@ function App() {
   const [sizes, setSizes] = useState([50, 50]);
   const [code, setCode] = useState(initialCode);
 
-  const { stderr, stdout, run, isLoading, isReady } = useDevbook({ code, debug: true, env: 'nodejs-v16' });
-
-  function handleRunClick() {
-    console.log({ isLoading, isReady, code });
-    run();
-  }
+  const { stderr, stdout, run } = useDevbook({ code, debug: true, env: 'nodejs-v16' });
 
   const handleEditorChange = useCallback((content: string) => {
     setCode(content);
@@ -31,7 +26,7 @@ function App() {
 
   return (
     <div className="app">
-      <button onClick={handleRunClick}>Run</button>
+      <button onClick={run}>Run</button>
       <Splitter
         classes={['editor-wrapper']}
         initialSizes={sizes}
@@ -48,24 +43,6 @@ function App() {
           stderr={stderr}
         />
       </Splitter>
-
-      {/*
-      {isLoading
-        ? <div>Loading...</div>
-        : (
-          <>
-            <div>
-              STDOUT
-              {stdout.map(s => <p>{s}</p>)}
-            </div>
-            <div>
-              STDERR
-              {stderr.map(s => <p>{s}</p>)}
-            </div>
-        </>
-      )}
-      */}
-
     </div>
   );
 }

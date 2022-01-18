@@ -30,7 +30,7 @@ function Editor({
       doc: initialCode,
       extensions: [
         basicSetup,
-        javascript(),
+        //javascript(),
         changeWatcher,
       ],
     });

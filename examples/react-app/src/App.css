@@ -37,3 +37,8 @@
 .output .error {
   color: #f00;
 }
+
+.output .header {
+  font-weight: bold;
+  text-transform: uppercase;
+}

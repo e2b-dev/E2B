@@ -12,6 +12,8 @@ function Output({
     <div
       className="output"
     >
+      <div className="header">Output</div>
+
       {stdout && stdout.map((out, idx) => (
         <span key={`out_${idx}`}>{out}</span>
       ))}

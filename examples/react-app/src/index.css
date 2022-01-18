@@ -1,7 +1,15 @@
+@tailwind utilities;
+@tailwind components;
+@tailwind base;
+
+@import './codemirror.css';
+
 html, body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
+  @apply w-full h-full m-0;
+
+  @apply text-base overflow-hidden;
+  @apply text-gray-200;
+  @apply bg-black-800;
 }
 
 body {
