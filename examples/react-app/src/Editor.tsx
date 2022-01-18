@@ -1,6 +1,7 @@
 import {
   useEffect,
   useRef,
+  memo,
 } from 'react';
 
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
@@ -48,4 +49,4 @@ function Editor({
   )
 }
 
-export default Editor;
+export default memo(Editor);

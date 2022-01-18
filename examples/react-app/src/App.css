@@ -1,13 +1,39 @@
 .app {
-  padding: 16px;
-  max-width: 720px;
-  margin: 0 auto;
+  flex: 1;
+  align-self: stretch;
 
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
 }
 
+.editor-wrapper {
+  display: flex;
+}
 .editor {
-  width: 100%;
+  flex: 1;
+  display: flex;
+  overflow: auto;
+  max-height: 100%;
+}
+
+.cm-editor {
+  flex: 1;
+}
+
+.output {
+  padding: 8px;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.4;
+  font-family: monospace, source-code-pro, Menlo, Monaco, Consolas, 'Courier New';
+}
+
+.output .error {
+  color: #f00;
 }

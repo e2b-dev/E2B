@@ -60,7 +60,7 @@ function useDevbook({
   code,
   debug,
 }: Opts): State {
-  const [evaluator, setEvaluator] = useState<Devbook>()
+  const [devbook, setDevbook] = useState<Devbook>()
 
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
@@ -68,7 +68,7 @@ function useDevbook({
   const [isReady, setIsReady] = useState(false)
 
   const run = useCallback(() => {
-    if (!evaluator) return
+    if (!devbook) return
     if (!isReady) return
     if (code === '') return
 
@@ -78,14 +78,14 @@ function useDevbook({
     setStdout([])
     setStderr([])
     setIsLoading(true)
-    evaluator.evaluate(code)
+    devbook.evaluate(code)
   }, [
     code,
-    evaluator,
+    devbook,
     isReady,
   ])
 
-  useEffect(function initializeEvaluator() {
+  useEffect(function initializeDevbook() {
     const devbook = new Devbook({
       debug,
       templateID: env,
@@ -105,7 +105,7 @@ function useDevbook({
     setStderr([])
     setIsLoading(false)
     setIsReady(false)
-    setEvaluator(evaluator)
+    setDevbook(devbook)
   }, [env, debug])
 
   return {
