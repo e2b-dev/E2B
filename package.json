@@ -1,5 +1,5 @@
 {
-  "name": "@devbookhq/react-sdk",
+  "name": "@devbookhq/sdk",
   "version": "0.1.0",
   "description": "",
   "license": "",
@@ -9,10 +9,10 @@
     "email": "hello@usedevbook.com",
     "url": "https://usedevbook.com"
   },
-  "bugs": "https://github.com/DevbookHQ/react-sdk/issues",
+  "bugs": "https://github.com/DevbookHQ/sdk/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DevbookHQ/react-sdk"
+    "url": "https://github.com/DevbookHQ/sdk"
   },
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
@@ -21,9 +21,6 @@
     "prepublishOnly": "rollup -c",
     "build": "rollup -c",
     "watch": "rollup -c -w"
-  },
-  "peerDependencies": {
-    "react": "*"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",

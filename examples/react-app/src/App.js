@@ -5,8 +5,7 @@ import { useState } from 'react';
 function App() {
   const [code, setCode] = useState('console.log("4")')
 
-  // const { stderr, stdout, run, isLoading, isReady } = useDevbook({ code, debug: true, env: 'nodejs-v16' })
-  const devbook = useDevbook({ code, debug: true, env: 'nodejs-v16' })
+  const { stderr, stdout, run, isLoading, isReady } = useDevbook({ code, debug: true, env: 'nodejs-v16' })
 
   console.log('stdout', stdout)
   console.log('stderr', stderr)
