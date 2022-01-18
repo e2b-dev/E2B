@@ -7,12 +7,14 @@ import {
   RunningEnvironment,
   ws as envWS,
 } from './runningEnvironment'
+import { SessionStatus } from './session/sessionManager'
 
 export interface EvaluationContextOpts {
   contextID: string
   debug?: boolean
   conn: WebSocketConnection
   onCmdOut?: (payload: rws.RunningEnvironment_CmdOut['payload']) => any
+  onSessionChange?: (session: { status: SessionStatus }) => any
   onEnvChange?: (env: RunningEnvironment) => any
 }
 
@@ -32,9 +34,26 @@ class EvaluationContext {
       this.logger = new Logger('EvaluationContext')
     }
     this.unsubscribeConnHandler = this.opts.conn.subscribeHandler({
-      onOpen: this.restart.bind(this),
+      onOpen: this.handleConnectionOpen.bind(this),
       onMessage: this.handleConnectionMessage.bind(this),
+      onClose: this.handleConnectionClose.bind(this),
     })
+
+    if (this.opts.conn.isOpen) {
+      this.handleConnectionOpen()
+    }
+    if (this.opts.conn.isClosed) {
+      this.handleConnectionClose()
+    }
+  }
+
+  handleConnectionOpen() {
+    this.restart()
+    this.opts.onSessionChange?.({ status: SessionStatus.Connected })
+  }
+
+  handleConnectionClose() {
+    this.opts.onSessionChange?.({ status: SessionStatus.Connecting })
   }
 
   /**

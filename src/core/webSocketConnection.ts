@@ -8,6 +8,7 @@ import { runner as consts } from './constants'
 interface Handler {
   onMessage: (msg: rws.BaseMessage) => void
   onOpen: () => void
+  onClose: () => void
 }
 
 export class WebSocketConnection {
@@ -20,6 +21,26 @@ export class WebSocketConnection {
 
   get state() {
     return this.client?.readyState
+  }
+
+  get isClosed() {
+    if (this.client === undefined) return
+    return this.client.readyState === this.client.CLOSED
+  }
+
+  get isClosing() {
+    if (this.client === undefined) return
+    return this.client.readyState === this.client.CLOSING
+  }
+
+  get isOpen() {
+    if (this.client === undefined) return
+    return this.client.readyState === this.client.OPEN
+  }
+
+  get isConnecting() {
+    if (this.client === undefined) return
+    return this.client.readyState === this.client.CONNECTING
   }
 
   subscribeHandler(handler: Handler) {
@@ -82,9 +103,7 @@ export class WebSocketConnection {
 
   private handleOpen() {
     this.logger.log('Connection opened', { readyState: this.client?.readyState })
-    this.handlers.forEach(h => {
-      h.onOpen()
-    })
+    this.handlers.forEach(h => h.onOpen())
   }
 
   // Private version of the `send()` method that doesn't check if a client is ready
@@ -95,6 +114,7 @@ export class WebSocketConnection {
 
   private async handleClose(event: CloseEvent) {
     this.logger.log('Connection closed', event)
+    this.handlers.forEach(h => h.onClose())
 
     this.logger.log(`Will try to reconnect in ${consts.WSCONN_RESTART_PERIOD / 1000}s`)
     await wait(consts.WSCONN_RESTART_PERIOD)
@@ -137,8 +157,6 @@ export class WebSocketConnection {
     }
 
     this.logger.log('Received (parsed)', baseMsg)
-    this.handlers.forEach(h => {
-      h.onMessage(baseMsg)
-    })
+    this.handlers.forEach(h => h.onMessage(baseMsg))
   }
 }

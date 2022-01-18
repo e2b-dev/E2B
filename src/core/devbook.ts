@@ -6,6 +6,7 @@ import {
 import Runner from './runner'
 import { RunningEnvironment } from './runningEnvironment'
 import EvaluationContext from './evaluationContext'
+import { SessionStatus } from './session/sessionManager'
 
 const generateExecutionID = makeIDGenerator(6)
 
@@ -14,6 +15,7 @@ interface Opts {
   onStdout?: (stdout: string) => any
   onStderr?: (stderr: string) => any
   onEnvChange?: (env: RunningEnvironment) => any
+  onSessionChange?: (session: { status: SessionStatus }) => any
   debug?: boolean
 }
 
@@ -27,6 +29,7 @@ class Devbook {
     templateID,
     onStderr,
     onStdout,
+    onSessionChange,
     onEnvChange,
     debug,
   }: Opts) {
@@ -40,6 +43,7 @@ class Devbook {
       debug,
       contextID: this.contextID,
       onEnvChange,
+      onSessionChange,
       onCmdOut(payload) {
         if (payload.executionID !== executionID) return
         if (payload.stdout !== undefined) {
