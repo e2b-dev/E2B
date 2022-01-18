@@ -5,9 +5,9 @@ import { WebSocketConnection } from 'src/core/webSocketConnection'
 import RunnerSession from './runnerSession'
 
 export enum SessionStatus {
-  Connected = "Connected",
-  Connecting = "Connecting",
-  Disconnected = "Disconnected",
+  Connected = 'Connected',
+  Connecting = 'Connecting',
+  Disconnected = 'Disconnected',
 }
 
 interface GetSessionResponse {
@@ -117,7 +117,6 @@ class SessionManager {
         this.status = SessionStatus.Connected
         // TODO: Make sure that we can actually connect to the Websocket server
         // Orchestrator server should communicate that the Firecracker machine's Runner process is ready.
-        console.log('connecting right here!!')
         this.conn.connect(this.session.id)
 
         this.logger.log(`Started pinging session "${this.session.id}"`)

@@ -5,14 +5,14 @@ import {
 } from 'react'
 
 import {
-  Evaluator,
+  Devbook,
   TemplateID,
 } from 'src/core'
 
 /**
  *
  */
-export interface Options {
+export interface Opts {
   /**
    * ENV
    */
@@ -59,8 +59,8 @@ function useDevbook({
   env,
   code,
   debug,
-}: Options): State {
-  const [evaluator, setEvaluator] = useState<Evaluator>()
+}: Opts): State {
+  const [evaluator, setEvaluator] = useState<Devbook>()
 
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
@@ -86,7 +86,7 @@ function useDevbook({
   ])
 
   useEffect(function initializeEvaluator() {
-    const evaluator = new Evaluator({
+    const devbook = new Devbook({
       debug,
       templateID: env,
       onEnvChange(env) {

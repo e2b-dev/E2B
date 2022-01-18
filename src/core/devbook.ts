@@ -1,4 +1,3 @@
-import EvaluationContext from './evaluationContext'
 import { makeIDGenerator } from 'src/utils/id'
 import {
   TemplateID,
@@ -6,6 +5,7 @@ import {
 } from './constants'
 import Runner from './runner'
 import { RunningEnvironment } from './runningEnvironment'
+import EvaluationContext from './evaluationContext'
 
 const generateExecutionID = makeIDGenerator(6)
 
@@ -17,7 +17,7 @@ interface Opts {
   debug?: boolean
 }
 
-class Evaluator {
+class Devbook {
   private readonly context: EvaluationContext
   private readonly templateID: TemplateID
   private readonly executionID: string
@@ -66,4 +66,4 @@ class Evaluator {
   }
 }
 
-export default Evaluator
+export default Devbook

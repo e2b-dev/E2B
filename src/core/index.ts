@@ -1,4 +1,4 @@
-import Evaluator from './evaluator'
+import Devbook from './devbook'
 import { TemplateID } from './constants'
 
 export type {
@@ -6,5 +6,5 @@ export type {
 }
 
 export {
-  Evaluator,
+  Devbook,
 }
