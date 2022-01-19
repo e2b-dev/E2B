@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Devbook allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM",
   "homepage": "https://usedevbook.com",
+  "license": "SEE LICENSE IN LICENSE",
   "author": {
     "name": "FoundryLabs, Inc.",
     "email": "hello@usedevbook.com",
@@ -40,6 +41,7 @@
   "files": [
     "lib",
     "README.md",
+    "LICENSE",
     "package.json",
     "package-lock.json"
   ],
