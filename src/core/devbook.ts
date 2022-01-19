@@ -38,6 +38,15 @@ class Devbook {
   private readonly executionID: string
   private readonly contextID: string
 
+  private _isDestroyed = false
+  private get isDestroyed() {
+    return this._isDestroyed
+  }
+  private set isDestroyed(value: boolean) {
+    this._isDestroyed = value
+    this.updateStatus()
+  }
+
   private _isEnvReady = false
   private get isEnvReady() {
     return this._isEnvReady
@@ -59,8 +68,8 @@ class Devbook {
   private _status = DevbookStatus.Disconnected
 
   /**
-  * Current status of this `Devbook`'s connection.
-  */
+   * Current status of this `Devbook`'s connection.
+   */
   get status() {
     return this._status
   }
@@ -138,6 +147,8 @@ class Devbook {
    * @param command Command to run
    */
   runCmd(command: string) {
+    if (this.status === DevbookStatus.Disconnected) return
+
     this.context.executeCommand({
       templateID: this.opts.env,
       executionID: this.executionID,
@@ -157,7 +168,22 @@ class Devbook {
     this.runCmd(command)
   }
 
+  /**
+   * Disconnect this Devbook from the VM.
+   */
+  destroy() {
+    this.context.destroy()
+    this.isDestroyed = true
+  }
+
   private updateStatus() {
+    if (this.isDestroyed) {
+      if (this.status !== DevbookStatus.Disconnected) {
+        this.status = DevbookStatus.Disconnected
+      }
+      return
+    }
+
     let status: DevbookStatus
     switch (this.sessionStatus) {
       case SessionStatus.Disconnected:

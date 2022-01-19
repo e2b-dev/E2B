@@ -110,9 +110,14 @@ function useDevbook({
         setStdout(s => [...s, out])
       },
     })
+
     setStdout([])
     setStderr([])
     setDevbook(devbook)
+
+    return () => {
+      devbook.destroy()
+    }
   }, [env, debug])
 
   return {
