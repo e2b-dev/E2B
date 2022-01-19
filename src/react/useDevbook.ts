@@ -9,44 +9,17 @@ import {
   Env,
 } from 'src/core'
 
-/**
- *
- */
 export interface Opts {
-  /**
-   * ENV
-   */
   env: Env
-  /**
-   * CODE
-   */
   code: string
-  /**
-   * DEBUG
-   */
   debug?: boolean
 }
 
 export interface State {
-  /**
-   * STDERR
-   */
   stderr: string[]
-  /**
-   *
-   */
   stdout: string[]
-  /**
-   *
-   */
   isReady: boolean
-  /**
-   *
-   */
   isLoading: boolean
-  /**
-   *
-   */
   run: () => void
 }
 

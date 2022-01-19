@@ -1,11 +1,11 @@
 import { TemplateConfig } from 'src/common-ts/TemplateConfig'
 import {
-  TemplateID,
+  Env,
   templates,
 } from 'src/core/constants'
 import hash from 'src/utils/hash'
 
-function hashTemplateID(templateID: TemplateID) {
+function hashTemplateID(templateID: Env) {
   return hash(templateID)
 }
 
@@ -18,7 +18,7 @@ class RunningEnvironment {
 
   constructor(
     readonly contextID: string,
-    readonly templateID: TemplateID,
+    readonly templateID: Env,
   ) {
     this.id = `${contextID}_${hashTemplateID(templateID)}`
     this.template = templates[this.templateID]
