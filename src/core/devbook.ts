@@ -9,27 +9,34 @@ import { SessionStatus } from './session/sessionManager'
 
 const generateExecutionID = makeIDGenerator(6)
 
+/**
+ * States of the Devbook connection to a VM.
+ */
 export enum DevbookStatus {
+  /**
+   * Devbook is not connected to a VM.
+   */
   Disconnected,
+  /**
+   * Devbook is trying to start or connect to a VM.
+   */
   Connecting,
-  WaitingForEnv,
-  EnvReady,
-  Executing,
+  /**
+   * Devbook is connected to a VM and ready to run code or a command.
+   */
+  Connected,
 }
 
+/**
+ * Class representing connection to a VM that is used for running code and commands.
+ * 
+ * You can have multiple `Devbook` class instances -
+ * instances with the same {@link Env} will share filesystem and process namespace.
+ */
 class Devbook {
   private readonly context: EvaluationContext
   private readonly executionID: string
   private readonly contextID: string
-
-  private _isExecuting = false
-  private get isExecuting() {
-    return this._isExecuting
-  }
-  private set isExecuting(value: boolean) {
-    this._isExecuting = value
-    this.updateStatus()
-  }
 
   private _isEnvReady = false
   private get isEnvReady() {
@@ -49,31 +56,11 @@ class Devbook {
     this.updateStatus()
   }
 
-  private updateStatus() {
-    let status: DevbookStatus
-    switch (this.sessionStatus) {
-      case SessionStatus.Disconnected:
-        status = DevbookStatus.Disconnected
-        break
-      case SessionStatus.Connecting:
-        status = DevbookStatus.Connecting
-        break
-      case SessionStatus.Connected:
-        if (!this.isEnvReady) {
-          status = DevbookStatus.WaitingForEnv
-          break
-        }
-        if (this.isExecuting) {
-          status = DevbookStatus.Executing
-          break
-        }
-        status = DevbookStatus.EnvReady
-        break
-    }
-    this.status = status
-  }
-
   private _status = DevbookStatus.Disconnected
+
+  /**
+  * Current status of this `Devbook`'s connection.
+  */
   get status() {
     return this._status
   }
@@ -84,10 +71,29 @@ class Devbook {
   }
 
   constructor(private readonly opts: {
+    /**
+     * Environment that this Devbook should use.
+     * 
+     * This affects which runtime (NodeJS, etc...) will be available and used in the {@link Devbook.runCode} function.
+     *
+     * {@link Devbook} classes with different environments are isolated - each has their own filesystem and process namespace.
+     */
     env: Env
+    /**
+     * This function will be called when this `Devbook` receives new stdout after you called {@link Devbook.runCode} or {@link Devbook.runCode}.
+     */
     onStdout?: (stdout: string) => void
+    /**
+     * This function will be called when this `Devbook` receives new stderr after you called {@link Devbook.runCode} or {@link Devbook.runCode}.
+     */
     onStderr?: (stderr: string) => void
+    /**
+     * This function will be called when the {@link Devbook.status} on this `Devbook` changes.
+     */
     onStatusChange?: (status: DevbookStatus) => void
+    /**
+     * If this value is true then this Devbook will print detailed logs.
+     */
     debug?: boolean
   }) {
     const contextID = 'default'
@@ -98,7 +104,6 @@ class Devbook {
 
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
     const setSessionStatus = (value: SessionStatus) => this.sessionStatus = value
-    const setIsExecuting = (value: boolean) => this.isExecuting = value
 
     this.context = Runner.obj.createContext({
       debug: opts.debug,
@@ -111,7 +116,6 @@ class Devbook {
       },
       onCmdOut(payload) {
         if (payload.executionID !== executionID) return
-        setIsExecuting(false)
         if (payload.stdout !== undefined) {
           opts.onStdout?.(payload.stdout)
         }
@@ -126,8 +130,14 @@ class Devbook {
     })
   }
 
+  /**
+   * Execute `command` in the VM.
+   * 
+   * This `Devbook`'s VM shares filesystem and process namespace with other `Devbook`s with the same `env`({@link Env}) passed to their constructors.
+   * 
+   * @param command Command to execute
+   */
   runCmd(command: string) {
-    this.isExecuting = true
     this.context.executeCommand({
       templateID: this.opts.env,
       executionID: this.executionID,
@@ -135,9 +145,36 @@ class Devbook {
     })
   }
 
+  /**
+   * Execute `code` in the VM using the runtime you passed to this `Devbook`'s constructor as the `env`({@link Env}) parameter.
+   * 
+   * This `Devbook`'s VM shares filesystem and process namespace with other `Devbook`s with the same `env`({@link Env}) passed to their constructors.
+   * 
+   * @param code Code to execute
+   */
   runCode(code: string) {
     const command = templates[this.opts.env].toCommand(code)
     this.runCmd(command)
+  }
+
+  private updateStatus() {
+    let status: DevbookStatus
+    switch (this.sessionStatus) {
+      case SessionStatus.Disconnected:
+        status = DevbookStatus.Disconnected
+        break
+      case SessionStatus.Connecting:
+        status = DevbookStatus.Connecting
+        break
+      case SessionStatus.Connected:
+        if (!this.isEnvReady) {
+          status = DevbookStatus.Connecting
+          break
+        }
+        status = DevbookStatus.Connected
+        break
+    }
+    this.status = status
   }
 }
 

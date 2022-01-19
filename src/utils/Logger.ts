@@ -1,10 +1,10 @@
 type LogID = string | (() => string)
 
 class Logger {
-  static readonly isEnabled = process.env.NODE_ENV === 'development'
-
   constructor(
     public readonly logID: LogID,
+    // public readonly isEnabled = process.env.NODE_ENV === 'development'
+    public readonly isEnabled = false
   ) { }
 
   private id() {
@@ -13,13 +13,13 @@ class Logger {
   }
 
   log(...args: any[]) {
-    if (Logger.isEnabled) {
+    if (this.isEnabled) {
       console.log(`\x1b[36m[${this.id()}]\x1b[0m`, ...args)
     }
   }
 
   warn(...args: any[]) {
-    if (Logger.isEnabled) {
+    if (this.isEnabled) {
       console.warn(`\x1b[36m[${this.id()}]\x1b[0m`, ...args)
     }
   }

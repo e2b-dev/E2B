@@ -30,9 +30,8 @@ class EvaluationContext {
   private unsubscribeConnHandler: () => void
 
   constructor(private readonly opts: EvaluationContextOpts) {
-    if (opts.debug) {
-      this.logger = new Logger('EvaluationContext')
-    }
+    this.logger = new Logger('EvaluationContext', opts.debug)
+
     this.unsubscribeConnHandler = this.opts.conn.subscribeHandler({
       onOpen: this.handleConnectionOpen.bind(this),
       onMessage: this.handleConnectionMessage.bind(this),

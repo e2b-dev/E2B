@@ -1,4 +1,4 @@
-import {
+import React, {
   useEffect,
   useRef,
   memo,
@@ -47,7 +47,7 @@ function Editor({
   const editorEl = useRef<HTMLDivElement>(null);
 
   useEffect(function createEditor() {
-    if (!editorEl.current)  return;
+    if (!editorEl.current) return;
 
     const changeWatcher = EditorView.updateListener.of(update => {
       if (update.docChanged) {
