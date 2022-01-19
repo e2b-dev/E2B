@@ -9,6 +9,10 @@ They can experiment and explore your API/SDK right from your docs. Zero setup an
 
 **Check this [Twitter thread](https://twitter.com/mlejva/status/1482767780265050126) with a video to see Devbook in action.**
 
+## Installation
+```sh
+npm install @devbookhq/sdk
+```
 ## Usage
 
 ### React
@@ -65,7 +69,7 @@ export default InteractiveCodeSnippet
 
 ## Supported runtimes
 - NodeJS
-- Custom environment based on a container (coming soon)
+- *(coming soon)* Custom container based environment
 
 ## Usage of Devbook in example apps
 - [React](examples/react-app)
