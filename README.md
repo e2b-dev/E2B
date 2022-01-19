@@ -18,10 +18,7 @@ npm install @devbookhq/sdk
 ### React
 ```tsx
 // 1. Import the hook.
-import {
-  useDevbook,
-  Env,
-} from '@devbookhq/sdk'
+import { useDevbook, Env } from '@devbookhq/sdk'
 
 // 2. Define your code.
 const code = `
