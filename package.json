@@ -1,8 +1,7 @@
 {
   "name": "@devbookhq/sdk",
   "version": "0.1.0",
-  "description": "",
-  "license": "",
+  "description": "Devbook allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM",
   "homepage": "https://usedevbook.com",
   "author": {
     "name": "FoundryLabs, Inc.",
@@ -47,6 +46,10 @@
   "keywords": [
     "devbook",
     "react",
+    "documentation",
+    "sandbox",
+    "code",
+    "runtime",
     "vm",
     "nodejs"
   ]
