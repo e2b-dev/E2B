@@ -13,13 +13,15 @@ They can experiment and explore your API/SDK right from your docs. Zero setup an
 
 ### React
 ```tsx
+// 1. Import the hook.
 import {
   useDevbook,
   Env,
 } from '@devbookhq/sdk'
 
-// TODO
+// 2. Define your code.
 const code = `
+ > Code that you want to execute in a VM goes here.
 `
 
 function InteractiveCodeSnippet() {
@@ -42,10 +44,12 @@ export default InteractiveCodeSnippet
 ```ts
   import { Devbook, Env } from '@devbookhq/sdk'
 
-  // TODO
+  // 2. Define your code.
   const code = `
+   > Code that you want to execute in a VM goes here.
   `
 
+  // 3. Define callbacks.
   function handleStdout(out: string) {
     console.log('stdout', { err })
   }
@@ -54,6 +58,7 @@ export default InteractiveCodeSnippet
     console.log('stderr', { err })
   }
 
+  // 4. Create new Devbook instance.
   const dbk = new Devbook({ env: Env.NodeJS, onStdout: handleStdout, onStderr: handleStderr })
   dbk.runCode(code)
 ```
