@@ -4,11 +4,11 @@ import { TemplateConfig } from 'src/common-ts/TemplateConfig'
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
 // it makes more sense to name it `Env` because it's less confusing for users.
 /**
- * Environments that you can use with the Devbook VM
+ * Runtime environments that you can use with the Devbook VM.
  */
 export enum Env {
   /**
-  * Environment that supports executing JS code with NodeJS 16 runtime
+  * Runtime environment that supports executing JS code with NodeJS 16 runtime.
   */
   NodeJS = 'nodejs-v16',
 }

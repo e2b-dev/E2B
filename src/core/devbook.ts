@@ -10,7 +10,7 @@ import { SessionStatus } from './session/sessionManager'
 const generateExecutionID = makeIDGenerator(6)
 
 /**
- * States of the Devbook connection to a VM.
+ * States of a {@link Devbook} connection to a VM.
  */
 export enum DevbookStatus {
   /**
@@ -31,7 +31,7 @@ export enum DevbookStatus {
  * Class representing connection to a VM that is used for running code and commands.
  * 
  * You can have multiple `Devbook` class instances -
- * instances with the same {@link Env} will share filesystem and process namespace.
+ * instances with the same `env`({@link Env}) parameter passed to the constructor will share filesystem and process namespace.
  */
 class Devbook {
   private readonly context: EvaluationContext
@@ -131,11 +131,11 @@ class Devbook {
   }
 
   /**
-   * Execute `command` in the VM.
+   * Run `command` in the VM.
    * 
-   * This `Devbook`'s VM shares filesystem and process namespace with other `Devbook`s with the same `env`({@link Env}) passed to their constructors.
+   * This {@link Devboook}'s VM shares filesystem and process namespace with other Devbook`s with the same `env`({@link Env}) passed to their constructors.
    * 
-   * @param command Command to execute
+   * @param command Command to run
    */
   runCmd(command: string) {
     this.context.executeCommand({
@@ -146,11 +146,11 @@ class Devbook {
   }
 
   /**
-   * Execute `code` in the VM using the runtime you passed to this `Devbook`'s constructor as the `env`({@link Env}) parameter.
+   * Run `code` in the VM using the runtime you passed to this `Devbook`'s constructor as the `env`({@link Env}) parameter.
    * 
-   * This `Devbook`'s VM shares filesystem and process namespace with other `Devbook`s with the same `env`({@link Env}) passed to their constructors.
+   * This {@link Devboook}'s VM shares filesystem and process namespace with other Devbook`s with the same `env`({@link Env}) passed to their constructors.
    * 
-   * @param code Code to execute
+   * @param code Code to run
    */
   runCode(code: string) {
     const command = templates[this.opts.env].toCommand(code)
