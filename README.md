@@ -7,6 +7,8 @@ Devbook is a JS library that allows visitors of your docs to interact and execut
 Every time a user visits a page where you use Devbook (like your docs), we spin up a private VM just for that user.
 They can experiment and explore your API/SDK right from your dev docs. Zero setup and overhead.
 
+**Check this [Twitter thread](https://twitter.com/mlejva/status/1482767780265050126) with video to Devbook in action.**
+
 ## Usage
 
 ### React
@@ -27,8 +29,8 @@ function InteractiveCodeSnippet() {
     <div>
       <button onClick={run}>Run</button>
       <h3>Output</h3>
-      {stdout.map((o, idx) => <span key={`out_{idx}`}>{o}</span>)}
-      {stderr.map((e, idx) => <span key={`err_{idx}`}>{e}</span>)}
+      {stdout.map((o, idx) => <span key={`out_${idx}`}>{o}</span>)}
+      {stderr.map((e, idx) => <span key={`err_${idx}`}>{e}</span>)}
     </div>
   )
 }
@@ -38,7 +40,7 @@ export default InteractiveCodeSnippet
 
 ### Vanilla JS
 ```js
-  import { Devbook } from '@devbookhq/sdk'
+  import { Devbook, Env } from '@devbookhq/sdk'
 
   // TODO
   const code = `
@@ -52,7 +54,7 @@ export default InteractiveCodeSnippet
     console.log('stderr', { err })
   }
 
-  const dbk = new Devbook({ onStdout: handleStdout, onStderr: handleStderr })
+  const dbk = new Devbook({ env: Env.NodeJS, onStdout: handleStdout, onStderr: handleStderr })
   dbk.evaluate(code)
 ```
 
