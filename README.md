@@ -1,13 +1,13 @@
 # Devbook SDK
-Devbook makes your dev docs interactive with just 3 lines of code.
+**Devbook makes your dev docs interactive with just 3 lines of code.**
 
-Devbook is a JS library that allows visitors of your docs to interact and execute any code snippet or shell commands.
+Devbook is a JS library that allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM.
 
 ## How Devbook works
-Every time a user visits a page where you use Devbook (like your docs), we spin up a private VM just for that user.
-They can experiment and explore your API/SDK right from your dev docs. Zero setup and overhead.
+Every time a user visits a page where you use Devbook (like your docs), we quickly spin up a private VM just for that user.
+They can experiment and explore your API/SDK right from your docs. Zero setup and overhead.
 
-**Check this [Twitter thread](https://twitter.com/mlejva/status/1482767780265050126) with video to Devbook in action.**
+**Check this [Twitter thread](https://twitter.com/mlejva/status/1482767780265050126) with a video to see Devbook in action.**
 
 ## Usage
 
@@ -62,6 +62,6 @@ export default InteractiveCodeSnippet
 - NodeJS
 - Custom environment based on a container (coming soon)
 
-## Example apps
-- [React]('examples/react-app')
-- [MDX (Docusaurus and other docs themes)]('examples/docusaurus')
+## Usage of Devbook in example apps
+- [React](examples/react-app)
+- [MDX (Docusaurus and other docs themes)](examples/docusaurus)
