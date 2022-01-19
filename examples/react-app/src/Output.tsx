@@ -1,3 +1,5 @@
+import './Output.css';
+
 export interface Props {
   stdout?: string[]
   stderr?: string[]

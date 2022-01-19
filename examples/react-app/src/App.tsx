@@ -3,7 +3,7 @@ import {
   useCallback,
 } from 'react';
 
-import { useDevbook } from '@devbookhq/sdk';
+import { useDevbook, Env } from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
 
 import './App.css';
@@ -12,14 +12,14 @@ import Output from './Output';
 
 
 const initialCode = `const os = require('os');
-console.log('Hostname: ', os.hostname());
+console.log('Hostname:', os.hostname());
 console.log(process.env)`
 
 function App() {
   const [sizes, setSizes] = useState([50, 50]);
   const [code, setCode] = useState(initialCode);
 
-  const { stderr, stdout, run } = useDevbook({ code, debug: true, env: 'nodejs-v16' });
+  const { stderr, stdout, run } = useDevbook({ code, debug: true, env: Env.NodeJS });
 
   const handleEditorChange = useCallback((content: string) => {
     setCode(content);
@@ -27,9 +27,9 @@ function App() {
 
   return (
     <div className="app">
-      <button onClick={run}>Run</button>
+      <button className="run-btn" onClick={run}>Run</button>
       <Splitter
-        classes={['editor-wrapper']}
+        classes={['flex', 'flex']}
         initialSizes={sizes}
         onResizeFinished={(_, sizes) => {
           setSizes(sizes);

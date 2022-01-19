@@ -1,11 +1,1 @@
-import useDevbook, { State, Opts, DevbookStatus } from './useDevbook'
-
-export {
-  useDevbook,
-  DevbookStatus,
-}
-
-export type {
-  State,
-  Opts,
-}
+export { default as useDevbook, State, Opts, DevbookStatus } from './useDevbook'

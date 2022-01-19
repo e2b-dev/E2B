@@ -1,11 +1,8 @@
 import * as runner from './runner'
-import { templates, TemplateID } from './template'
-
-export type {
-  TemplateID
-}
+import { templates, Env } from './template'
 
 export {
   runner,
   templates,
+  Env,
 }

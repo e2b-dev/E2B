@@ -7,25 +7,13 @@ import {
 
 import {
   Devbook,
-  TemplateID,
+  Env,
 } from 'src/core'
 import { SessionStatus } from 'src/core/session/sessionManager'
 
-/**
- *
- */
 export interface Opts {
-  /**
-   * ENV
-   */
-  env: TemplateID
-  /**
-   * CODE
-   */
+  env: Env
   code: string
-  /**
-   * DEBUG
-   */
   debug?: boolean
 }
 
@@ -38,13 +26,7 @@ export enum DevbookStatus {
 }
 
 export interface State {
-  /**
-   * STDERR
-   */
   stderr: string[]
-  /**
-   *
-   */
   stdout: string[]
   /**
    *
@@ -108,7 +90,7 @@ function useDevbook({
   useEffect(function initializeDevbook() {
     const devbook = new Devbook({
       debug,
-      templateID: env,
+      env,
       onEnvChange(env) {
         setIsReady(env.isReady)
       },

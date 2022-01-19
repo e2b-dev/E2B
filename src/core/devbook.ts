@@ -1,6 +1,6 @@
 import { makeIDGenerator } from 'src/utils/id'
 import {
-  TemplateID,
+  Env,
   templates,
 } from './constants'
 import Runner from './runner'
@@ -11,7 +11,7 @@ import { SessionStatus } from './session/sessionManager'
 const generateExecutionID = makeIDGenerator(6)
 
 interface Opts {
-  templateID: TemplateID
+  env: Env
   onStdout?: (stdout: string) => any
   onStderr?: (stderr: string) => any
   onEnvChange?: (env: RunningEnvironment) => any
@@ -21,12 +21,12 @@ interface Opts {
 
 class Devbook {
   private readonly context: EvaluationContext
-  private readonly templateID: TemplateID
+  private readonly env: Env
   private readonly executionID: string
   private readonly contextID = 'default'
 
   constructor({
-    templateID,
+    env,
     onStderr,
     onStdout,
     onSessionChange,
@@ -35,7 +35,7 @@ class Devbook {
   }: Opts) {
     if (!Runner.obj) throw new Error('Runner is not defined')
 
-    this.templateID = templateID
+    this.env = env
     const executionID = generateExecutionID()
     this.executionID = executionID
 
@@ -56,14 +56,14 @@ class Devbook {
     })
 
     this.context.createRunningEnvironment({
-      templateID,
+      templateID: env,
     })
   }
 
   evaluate(code: string) {
-    const command = `${templates[this.templateID].command}"${code}"`
+    const command = `${templates[this.env].command}"${code}"`
     this.context.executeCommand({
-      templateID: this.templateID,
+      templateID: this.env,
       executionID: this.executionID,
       command,
     })

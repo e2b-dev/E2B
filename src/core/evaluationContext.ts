@@ -1,7 +1,7 @@
 import * as rws from 'src/common-ts/RunnerWebSocket'
 import { WebSocketConnection } from 'src/core/webSocketConnection'
 import Logger from 'src/utils/Logger'
-import { TemplateID } from 'src/core/constants'
+import { Env } from 'src/core/constants'
 
 import {
   RunningEnvironment,
@@ -100,7 +100,7 @@ class EvaluationContext {
     this.envs = this.envs.filter(env => env.templateID !== templateID)
   }
 
-  createRunningEnvironment({ templateID }: { templateID: TemplateID }) {
+  createRunningEnvironment({ templateID }: { templateID: Env }) {
     this.logger?.log('Handling "CreateEnvironment"', { templateID })
 
     const existingEnv = this.envs.find(e => e.templateID === templateID)
