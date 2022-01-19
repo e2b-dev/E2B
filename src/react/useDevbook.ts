@@ -6,7 +6,7 @@ import {
 
 import {
   Devbook,
-  TemplateID,
+  Env,
 } from 'src/core'
 
 /**
@@ -16,7 +16,7 @@ export interface Opts {
   /**
    * ENV
    */
-  env: TemplateID
+  env: Env
   /**
    * CODE
    */
@@ -88,7 +88,7 @@ function useDevbook({
   useEffect(function initializeDevbook() {
     const devbook = new Devbook({
       debug,
-      templateID: env,
+      env,
       onEnvChange(env) {
         setIsReady(env.isReady)
       },

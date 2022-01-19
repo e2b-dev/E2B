@@ -1,10 +1,7 @@
 import Devbook from './devbook'
-import { TemplateID } from './constants'
-
-export type {
-  TemplateID,
-}
+import { Env } from './constants'
 
 export {
   Devbook,
+  Env,
 }
