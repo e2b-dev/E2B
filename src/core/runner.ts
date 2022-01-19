@@ -11,7 +11,6 @@ class Runner {
 
   private static _obj: Runner
   static get obj() {
-    if (typeof window === 'undefined') return
     return Runner._obj || (Runner._obj = new Runner())
   }
 

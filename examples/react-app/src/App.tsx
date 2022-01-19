@@ -3,7 +3,7 @@ import {
   useCallback,
 } from 'react';
 
-import { useDevbook, Env } from '@devbookhq/sdk';
+import { useDevbook, Env, DevbookStatus } from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
 
 import './App.css';
@@ -19,15 +19,15 @@ function App() {
   const [sizes, setSizes] = useState([50, 50]);
   const [code, setCode] = useState(initialCode);
 
-  const { stderr, stdout, run } = useDevbook({ code, debug: true, env: Env.NodeJS });
+  const { stderr, stdout, runCode, status } = useDevbook({ debug: true, env: Env.NodeJS });
 
   const handleEditorChange = useCallback((content: string) => {
     setCode(content);
-  }, [setCode])
+  }, [setCode]);
 
   return (
     <div className="app">
-      <button className="run-btn" onClick={run}>Run</button>
+      <button className="run-btn" disabled={status !== DevbookStatus.EnvReady} onClick={() => runCode(code)}>Run</button>
       <Splitter
         classes={['flex', 'flex']}
         initialSizes={sizes}
@@ -44,7 +44,7 @@ function App() {
           stderr={stderr}
         />
       </Splitter>
-    </div>
+    </div >
   );
 }
 

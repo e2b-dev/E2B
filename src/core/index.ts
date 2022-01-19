@@ -1,2 +1,2 @@
-export { default as Devbook } from './devbook'
+export { default as Devbook, DevbookStatus } from './devbook'
 export { Env } from './constants'

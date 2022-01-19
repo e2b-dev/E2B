@@ -13,9 +13,9 @@ export interface EvaluationContextOpts {
   contextID: string
   debug?: boolean
   conn: WebSocketConnection
-  onCmdOut?: (payload: rws.RunningEnvironment_CmdOut['payload']) => any
-  onSessionChange?: (session: { status: SessionStatus }) => any
-  onEnvChange?: (env: RunningEnvironment) => any
+  onCmdOut?: (payload: rws.RunningEnvironment_CmdOut['payload']) => void
+  onSessionChange?: (session: { status: SessionStatus }) => void
+  onEnvChange?: (env: RunningEnvironment) => void
 }
 
 class EvaluationContext {

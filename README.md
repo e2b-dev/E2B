@@ -23,11 +23,11 @@ const code = `
 `
 
 function InteractiveCodeSnippet() {
-  const { stdout, stderr, run } = useDevbook({ code, env: Env.NodeJS })
+  const { stdout, stderr, runCode } = useDevbook({ env: Env.NodeJS })
 
   return (
     <div>
-      <button onClick={run}>Run</button>
+      <button onClick={() => runCode(code)}>Run</button>
       <h3>Output</h3>
       {stdout.map((o, idx) => <span key={`out_${idx}`}>{o}</span>)}
       {stderr.map((e, idx) => <span key={`err_${idx}`}>{e}</span>)}
@@ -39,7 +39,7 @@ export default InteractiveCodeSnippet
 ```
 
 ### Vanilla JS
-```js
+```ts
   import { Devbook, Env } from '@devbookhq/sdk'
 
   // TODO
@@ -55,7 +55,7 @@ export default InteractiveCodeSnippet
   }
 
   const dbk = new Devbook({ env: Env.NodeJS, onStdout: handleStdout, onStderr: handleStderr })
-  dbk.evaluate(code)
+  dbk.runCode(code)
 ```
 
 ## Supported runtimes

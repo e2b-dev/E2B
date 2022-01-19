@@ -8,12 +8,12 @@ export enum Env {
   NodeJS = 'nodejs-v16',
 }
 
-export const templates: { [key in Env]: TemplateConfig & { command: string } } = {
+export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: string) => string } } = {
   'nodejs-v16': {
     id: 'nodejs-v16',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nodejs-v16:latest',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner/src',
-    command: 'node -e ',
+    toCommand: (code) => `node -e "${code}"`,
   },
 }
