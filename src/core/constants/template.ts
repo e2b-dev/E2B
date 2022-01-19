@@ -19,6 +19,16 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: str
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nodejs-v16:latest',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner/src',
-    toCommand: (code) => `node -e "${code}"`,
+    toCommand: (code) => {
+      let escapedCode = ''
+      for (const char of code) {
+        if (char === "'") {
+          escapedCode += "\'"
+        } else
+          escapedCode += char
+      }
+      console.log(escapedCode)
+      return `node -e '${escapedCode}'`
+    }
   },
 }
