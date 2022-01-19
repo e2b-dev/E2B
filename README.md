@@ -62,6 +62,6 @@ export default InteractiveCodeSnippet
 - NodeJS
 - Custom environment based on a container (coming soon)
 
-## Example apps
-- [React]('examples/react-app')
-- [MDX (Docusaurus and other docs themes)]('examples/docusaurus')
+## Usage of Devbook in example apps
+- [React](examples/react-app)
+- [MDX (Docusaurus and other docs themes)](examples/docusaurus)
