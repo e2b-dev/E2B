@@ -1,7 +1,2 @@
-import Devbook from './devbook'
-import { Env } from './constants'
-
-export {
-  Devbook,
-  Env,
-}
+export { default as Devbook } from './devbook'
+export { Env } from './constants'

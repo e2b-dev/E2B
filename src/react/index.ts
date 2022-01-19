@@ -1,5 +1,2 @@
-import useDevbook from './useDevbook'
+export { default as useDevbook } from './useDevbook'
 
-export {
-  useDevbook,
-}
