@@ -28,9 +28,9 @@ export enum DevbookStatus {
 }
 
 /**
- * Class representing connection to a VM that is used for running code and commands.
+ * Representation of a connection to a VM that is used for running code and commands.
  * 
- * You can have multiple `Devbook` class instances -
+ * You can have multiple `Devbook` class instances connected to the same VM -
  * instances with the same `env`({@link Env}) parameter passed to the constructor will share filesystem and process namespace.
  */
 class Devbook {
