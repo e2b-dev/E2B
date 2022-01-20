@@ -18,7 +18,11 @@ npm install @devbookhq/sdk
 ### React
 ```tsx
 // 1. Import the hook
-import { useDevbook, Env } from '@devbookhq/sdk'
+import {
+  useDevbook,
+  Env,
+  DevbookStatus,
+} from '@devbookhq/sdk'
 
 // 2. Define your code
 const code = `
@@ -27,7 +31,7 @@ const code = `
 
 function InteractiveCodeSnippet() {
   // 3. Use the hook
-  const { stdout, stderr, runCode } = useDevbook({ env: Env.NodeJS })
+  const { stdout, stderr, status, runCode } = useDevbook({ env: Env.NodeJS })
 
   function handleRun() {
     // 4. Execute the code
@@ -36,7 +40,11 @@ function InteractiveCodeSnippet() {
 
   return (
     <div>
-      <button onClick={handleRun}>Run</button>
+      {status === DevbookStatus.Disconnected && <div>Status: Disconnected, will start VM</div>}
+      {status === DevbookStatus.Connecting && <div>Status: Starting VM...</div>}
+      {status === DevbookStatus.Connected && (
+        <button onClick={handleRun}>Run</button>
+      )}
       <h3>Output</h3>
       {stdout.map((o, idx) => <span key={`out_${idx}`}>{o}</span>)}
       {stderr.map((e, idx) => <span key={`err_${idx}`}>{e}</span>)}
@@ -47,10 +55,10 @@ function InteractiveCodeSnippet() {
 export default InteractiveCodeSnippet
 ```
 
-### Vanilla JS
+### JavaScript/TypeScript
 ```ts
   // 1. Import the class
-  import { Devbook, Env } from '@devbookhq/sdk'
+  import { Devbook, Env, DevbookStatus } from '@devbookhq/sdk'
 
   // 2. Define your code
   const code = `
@@ -58,7 +66,7 @@ export default InteractiveCodeSnippet
   `
 
   // 3. Create new Devbook instance
-  const dbk = new Devbook({ 
+  const dbk = new Devbook({
     env: Env.NodeJS,
     onStdout(out) {
       console.log('stdout', { err })
@@ -72,7 +80,9 @@ export default InteractiveCodeSnippet
   })
 
   // 4. Execute the code
-  dbk.runCode(code)
+  if (dbk.status === DevbookStatus.Connected) {
+    dbk.runCode(code)
+  }
 ```
 
 ## Supported runtimes
