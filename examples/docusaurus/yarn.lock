@@ -1384,7 +1384,7 @@
 
 "@devbookhq/sdk@file:../..":
   "resolved" "file:../.."
-  "version" "0.1.2"
+  "version" "0.1.3"
 
 "@devbookhq/splitter@^1.3.2":
   "integrity" "sha512-M75y8oGhHPbtIoV3Bo5R5zzQEJzvyA7G7B1R4fOjV12xFQEVJXY6hc/BOy4e7sVFu4MxGCmGeZsAOtoB4l7Fpg=="
@@ -4150,6 +4150,11 @@
   "integrity" "sha1-FQStJSMVjKpA20onh8sBQRmU6k8="
   "resolved" "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   "version" "1.0.0"
+
+"fsevents@~2.3.2":
+  "integrity" "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA=="
+  "resolved" "https://registry.npmjs.org/fsevents/-/fsevents-2.3.2.tgz"
+  "version" "2.3.2"
 
 "function-bind@^1.1.1":
   "integrity" "sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A=="
