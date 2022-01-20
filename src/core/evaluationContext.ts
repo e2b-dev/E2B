@@ -94,19 +94,21 @@ class EvaluationContext {
     const basename = `${executionID}${extension}`
     const filepath = path.join('/src', basename)
 
-    let resolveFileWritten: (value: void) => void
-    const fileWritten = new Promise<void>((resolve, reject) => {
-      resolveFileWritten = resolve
-      setTimeout(() => {
-        reject()
-      }, 10000)
-    })
+    // TODO: Make sure that the file is already written when we send the execCmd message.
+    // let resolveFileWritten: (value: void) => void
+    // const fileWritten = new Promise<void>((resolve, reject) => {
+    //   resolveFileWritten = resolve
+    //   setTimeout(() => {
+    //     reject()
+    //   }, 10000)
+    // })
 
-    const fsWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => {
-      if (!payload.path.endsWith(filepath)) return
-      resolveFileWritten()
-    }
-    this.subscribeFSWrite(fsWriteSubscriber)
+    // const fsWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => {
+    //   console.log('fs >>')
+    //   if (!payload.path.endsWith(filepath)) return
+    //   resolveFileWritten()
+    // }
+    // this.subscribeFSWrite(fsWriteSubscriber)
 
     envWS.writeFile(this.opts.conn, {
       environmentID: env.id,
@@ -114,14 +116,14 @@ class EvaluationContext {
       content: code,
     })
 
-    try {
-      await fileWritten
-    } catch (err: any) {
-      this.logger.error(`File ${filepath} not written to VM`)
-      return
-    } finally {
-      this.unsubscribeFSWrite(fsWriteSubscriber)
-    }
+    // try {
+    //   // await fileWritten
+    // } catch (err: any) {
+    //   this.logger.error(`File ${filepath} not written to VM`)
+    //   return
+    // } finally {
+    //   this.unsubscribeFSWrite(fsWriteSubscriber)
+    // }
 
     // Send command to execute file as code
     const vmFilepath = path.join(templates[templateID].root_dir, filepath)
@@ -160,10 +162,7 @@ class EvaluationContext {
     if (existingEnv) return
 
     const env = new RunningEnvironment(this.contextID, templateID)
-    this.envs = [
-      ...this.envs,
-      env,
-    ]
+    this.envs.push(env)
     envWS.start(this.opts.conn, {
       environmentID: env.id,
       template: env.template,
@@ -172,11 +171,16 @@ class EvaluationContext {
   }
 
   private subscribeFSWrite(subscriber: FSWriteSubscriber) {
+    console.log('len', this.fsWriteSubscribers.length)
     this.fsWriteSubscribers.push(subscriber)
   }
 
   private unsubscribeFSWrite(subscriber: FSWriteSubscriber) {
-    this.fsWriteSubscribers = this.fsWriteSubscribers.filter(s => s !== subscriber)
+    console.log('len', this.fsWriteSubscribers.length)
+    const index = this.fsWriteSubscribers.indexOf(subscriber)
+    if (index > -1) {
+      this.fsWriteSubscribers.splice(index, 1);
+    }
   }
 
   private handleConnectionOpen() {

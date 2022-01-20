@@ -106,8 +106,7 @@ class Devbook {
     const contextID = 'default'
     this.contextID = contextID
 
-    // const executionID = generateExecutionID()
-    const executionID = 'def'
+    const executionID = generateExecutionID()
     this.executionID = executionID
 
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
