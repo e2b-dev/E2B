@@ -28,6 +28,7 @@ export interface BaseRunningEnvironment extends BaseMessage {
   | TRunningEnvironment.CmdOut
   | TRunningEnvironment.CmdExit
   | TRunningEnvironment.RunningCmds
+  | TRunningEnvironment.RunCode
   payload: {
     environmentID: string
   }
@@ -335,5 +336,23 @@ export interface RunningEnvironment_RunningCmds extends BaseRunningEnvironment {
        */
       startedAt: number
     }[]
+  }
+}
+
+/**
+ * Sent to remote runner Runner to run a single command.
+ * Usually like so: `node index.js`.
+ */
+export interface RunningEnvironment_RunCode extends BaseRunningEnvironment {
+  type: TRunningEnvironment.RunCode
+  payload: {
+    environmentID: string
+    /**
+     * A unique ID that Runner received via the `RunningEnvironment_ExecCmd` message.
+     */
+    executionID: string
+    code: string
+    filename: string
+    command: string
   }
 }
