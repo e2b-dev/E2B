@@ -1,17 +1,8 @@
-import * as path from 'path';
 import typescript from 'rollup-plugin-typescript2'
-import babel from '@rollup/plugin-babel'
-import resolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
+import nodeResolve from '@rollup/plugin-node-resolve'
 import autoExternal from 'rollup-plugin-auto-external'
+import nodePolyfills from 'rollup-plugin-polyfill-node'
 import { terser } from 'rollup-plugin-terser'
-import alias from '@rollup/plugin-alias'
-
-const aliasResolver = resolve({
-  extensions: ['.ts', '.js', '.tsx', '.jsx']
-})
-
-const rootDir = path.resolve(__dirname)
 
 import pkg from './package.json'
 
@@ -38,30 +29,16 @@ export default {
       sourcemap: true,
     },
   ],
-  external: ['react', 'react-dom', 'react/jsx-runtime'],
+  external: [
+    'react',
+    'react-dom',
+    'react/jsx-runtime',
+  ],
   plugins: [
-    alias({
-      entries: [
-        {
-          find: 'src',
-          replacement: path.resolve(rootDir, 'src'),
-        },
-      ],
-      customResolver: aliasResolver,
-    }),
-    autoExternal({
-      packagePath: 'package.json',
-    }),
-    resolve(),
-    commonjs(),
-    babel({
-      presets: ["@babel/preset-react"],
-      babelHelpers: 'bundled',
-      exclude: 'node_modules/**'
-    }),
-    typescript({
-      tsconfig: 'tsconfig.json',
-    }),
+    autoExternal({ builtins: false }),
+    typescript(),
+    nodePolyfills(),
+    nodeResolve(),
     terser(),
   ],
 }
