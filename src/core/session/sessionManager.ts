@@ -2,6 +2,7 @@ import wait from 'src/utils/wait'
 import Logger from 'src/utils/Logger'
 import { runner as consts } from 'src/core/constants'
 import { WebSocketConnection } from 'src/core/webSocketConnection'
+
 import RunnerSession from './runnerSession'
 
 export enum SessionStatus {

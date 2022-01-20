@@ -41,7 +41,57 @@ function execCmd(conn: WebSocketConnection, {
   conn.send(msg)
 }
 
+
+/**
+ * Request to write a content to a file in the environment's filesystem.
+ */
+function writeFile(
+  conn: WebSocketConnection, {
+    environmentID,
+    path,
+    content,
+  }: {
+    environmentID: string,
+    path: string,
+    content: string,
+  },
+) {
+  const msg: rws.RunningEnvironment_WriteFile = {
+    type: rws.MessageType.RunningEnvironment.WriteFile,
+    payload: {
+      environmentID,
+      path,
+      content,
+    },
+  }
+  conn.send(msg)
+}
+
+/**
+ * Request to delete a file from the environment's filesystem.
+ */
+function deleteFile(
+  conn: WebSocketConnection, {
+    environmentID,
+    path,
+  }: {
+    environmentID: string,
+    path: string,
+  },
+) {
+  const msg: rws.RunningEnvironment_RemoveFile = {
+    type: rws.MessageType.RunningEnvironment.RemoveFile,
+    payload: {
+      environmentID,
+      path,
+    },
+  }
+  conn.send(msg)
+}
+
 export {
   start,
   execCmd,
+  writeFile,
+  deleteFile,
 }

@@ -4,7 +4,7 @@ import { TemplateConfig } from 'src/common-ts/TemplateConfig'
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
 // it makes more sense to name it `Env` because it's less confusing for users.
 /**
- * Runtime environments that you can use with the Devbook VM.
+ * Runtime environments that you can use with the Devbooks' VMs.
  */
 export enum Env {
   /**
@@ -13,22 +13,13 @@ export enum Env {
   NodeJS = 'nodejs-v16',
 }
 
-export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: string) => string } } = {
+export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: string) => string, fileExtension: string } } = {
   'nodejs-v16': {
     id: 'nodejs-v16',
+    fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nodejs-v16:latest',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner/src',
-    toCommand: (code) => {
-      let escapedCode = ''
-      for (const char of code) {
-        if (char === "'") {
-          escapedCode += "\'"
-        } else
-          escapedCode += char
-      }
-      console.log(escapedCode)
-      return `node -e '${escapedCode}'`
-    }
+    toCommand: (filepath: string) => `node "${filepath}"`,
   },
 }

@@ -10,7 +10,6 @@ import './App.css';
 import Editor from './Editor';
 import Output from './Output';
 
-
 const initialCode = `const os = require('os');
 console.log('Hostname:', os.hostname());
 console.log(process.env)`

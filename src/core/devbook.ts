@@ -1,8 +1,6 @@
 import { makeIDGenerator } from 'src/utils/id'
-import {
-  Env,
-  templates,
-} from './constants'
+
+import { Env } from './constants'
 import Runner from './runner'
 import EvaluationContext from './evaluationContext'
 import { SessionStatus } from './session/sessionManager'
@@ -81,11 +79,11 @@ class Devbook {
 
   constructor(private readonly opts: {
     /**
-     * Environment that this Devbook should use.
+     * Environment that this `Devbook` should use.
      * 
      * This affects which runtime (NodeJS, etc...) will be available and used in the {@link Devbook.runCode} function.
      *
-     * {@link Devbook} classes with different environments are isolated - each has their own filesystem and process namespace.
+     * `Devbook` instances with different environments are isolated - each has their own filesystem and process namespace.
      */
     env: Env
     /**
@@ -101,14 +99,15 @@ class Devbook {
      */
     onStatusChange?: (status: DevbookStatus) => void
     /**
-     * If this value is true then this Devbook will print detailed logs.
+     * If this value is true then this `Devbook` will print detailed logs.
      */
     debug?: boolean
   }) {
     const contextID = 'default'
     this.contextID = contextID
 
-    const executionID = generateExecutionID()
+    // const executionID = generateExecutionID()
+    const executionID = 'def'
     this.executionID = executionID
 
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
@@ -142,7 +141,7 @@ class Devbook {
   /**
    * Run `command` in the VM.
    * 
-   * This {@link Devboook}'s VM shares filesystem and process namespace with other Devbook`s with the same `env`({@link Env}) passed to their constructors.
+   * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
    * 
    * @param command Command to run
    */
@@ -159,17 +158,22 @@ class Devbook {
   /**
    * Run `code` in the VM using the runtime you passed to this `Devbook`'s constructor as the `env`({@link Env}) parameter.
    * 
-   * This {@link Devboook}'s VM shares filesystem and process namespace with other Devbook`s with the same `env`({@link Env}) passed to their constructors.
+   * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
    * 
    * @param code Code to run
    */
   runCode(code: string) {
-    const command = templates[this.opts.env].toCommand(code)
-    this.runCmd(command)
+    if (this.status === DevbookStatus.Disconnected) return
+
+    this.context.executeCode({
+      templateID: this.opts.env,
+      executionID: this.executionID,
+      code,
+    })
   }
 
   /**
-   * Disconnect this Devbook from the VM.
+   * Disconnect this `Devbook` from the VM.
    */
   destroy() {
     this.context.destroy()
