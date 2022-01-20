@@ -31,6 +31,7 @@ export type {
   RunningEnvironment_CmdOut,
   RunningEnvironment_CmdExit,
   RunningEnvironment_RunningCmds,
+  RunningEnvironment_RunCode,
 } from './RunningEnvironmentMessage'
 
 export type {

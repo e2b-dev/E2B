@@ -38,6 +38,10 @@ export enum TRunningEnvironment {
   CmdOut = 'RunningEnvironment.CmdOut',
   CmdExit = 'RunningEnvironment.CmdExit',
   RunningCmds = 'RunningEnvironment.RunningCmds',
+
+
+  // Sent to remote Runner.
+  RunCode = 'RunningEnvironment.Run',
 }
 
 export enum TCodeCell {
