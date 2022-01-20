@@ -1,9 +1,14 @@
 import {
   useState,
   useCallback,
+  useEffect,
 } from 'react';
 
-import { useDevbook, Env } from '@devbookhq/sdk';
+import {
+  useDevbook,
+  Env,
+  DevbookStatus,
+} from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
 
 import './App.css';
@@ -18,7 +23,7 @@ function App() {
   const [sizes, setSizes] = useState([50, 50]);
   const [code, setCode] = useState(initialCode);
 
-  const { stderr, stdout, runCode } = useDevbook({ debug: true, env: Env.NodeJS });
+  const { stderr, stdout, runCode, status } = useDevbook({ debug: true, env: Env.NodeJS });
 
   const handleEditorChange = useCallback((content: string) => {
     setCode(content);
@@ -26,7 +31,12 @@ function App() {
 
   return (
     <div className="app">
-      <button className="run-btn" onClick={() => runCode(code)}>Run</button>
+      {status === DevbookStatus.Disconnected && <div>Status: Disconnected, will start VM</div>}
+      {status === DevbookStatus.Connecting && <div>Status: Starting VM...</div>}
+      {status === DevbookStatus.Connected && (
+        <button className="run-btn" onClick={() => runCode(code)}>Run</button>
+      )}
+
       <Splitter
         classes={['flex', 'flex']}
         initialSizes={sizes}
