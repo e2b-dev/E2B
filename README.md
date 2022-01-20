@@ -87,7 +87,7 @@ export default InteractiveCodeSnippet
 
 ## Supported runtimes
 - NodeJS
-- *(coming soon)* Custom container based environment
+- *(coming soon)* Custom environments based on containers
 
 ## Usage of Devbook in example apps
 - [React](examples/react-app)
