@@ -52,7 +52,7 @@ export default InteractiveCodeSnippet
   // 1. Import the class
   import { Devbook, Env } from '@devbookhq/sdk'
 
-  // 2. Define your code.
+  // 2. Define your code
   const code = `
    > Code that you want to execute in a VM goes here.
   `
@@ -65,6 +65,9 @@ export default InteractiveCodeSnippet
     },
     onStderr(err) {
       console.log('stderr', { err })
+    },
+    onStatusChange(status) {
+      console.log('status', { status })
     },
   })
 
