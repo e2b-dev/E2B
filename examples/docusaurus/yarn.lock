@@ -1384,7 +1384,7 @@
 
 "@devbookhq/sdk@file:../..":
   "resolved" "file:../.."
-  "version" "0.1.0"
+  "version" "0.1.2"
 
 "@devbookhq/splitter@^1.3.2":
   "integrity" "sha512-M75y8oGhHPbtIoV3Bo5R5zzQEJzvyA7G7B1R4fOjV12xFQEVJXY6hc/BOy4e7sVFu4MxGCmGeZsAOtoB4l7Fpg=="
