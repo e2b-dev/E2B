@@ -17,20 +17,26 @@ npm install @devbookhq/sdk
 
 ### React
 ```tsx
-// 1. Import the hook.
+// 1. Import the hook
 import { useDevbook, Env } from '@devbookhq/sdk'
 
-// 2. Define your code.
+// 2. Define your code
 const code = `
  > Code that you want to execute in a VM goes here.
 `
 
 function InteractiveCodeSnippet() {
+  // 3. Use the hook
   const { stdout, stderr, runCode } = useDevbook({ env: Env.NodeJS })
+
+  function handleRun() {
+    // 4. Execute the code
+    runCode(code)
+  }
 
   return (
     <div>
-      <button onClick={() => runCode(code)}>Run</button>
+      <button onClick={handleRun}>Run</button>
       <h3>Output</h3>
       {stdout.map((o, idx) => <span key={`out_${idx}`}>{o}</span>)}
       {stderr.map((e, idx) => <span key={`err_${idx}`}>{e}</span>)}
@@ -43,6 +49,7 @@ export default InteractiveCodeSnippet
 
 ### Vanilla JS
 ```ts
+  // 1. Import the class
   import { Devbook, Env } from '@devbookhq/sdk'
 
   // 2. Define your code.
@@ -50,17 +57,18 @@ export default InteractiveCodeSnippet
    > Code that you want to execute in a VM goes here.
   `
 
-  // 3. Define callbacks.
-  function handleStdout(out: string) {
-    console.log('stdout', { err })
-  }
+  // 3. Create new Devbook instance
+  const dbk = new Devbook({ 
+    env: Env.NodeJS,
+    onStdout(out) {
+      console.log('stdout', { err })
+    },
+    onStderr(err) {
+      console.log('stderr', { err })
+    },
+  })
 
-  function handleStderr(err: string) {
-    console.log('stderr', { err })
-  }
-
-  // 4. Create new Devbook instance.
-  const dbk = new Devbook({ env: Env.NodeJS, onStdout: handleStdout, onStderr: handleStderr })
+  // 4. Execute the code
   dbk.runCode(code)
 ```
 
