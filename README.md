@@ -87,6 +87,7 @@ export default InteractiveCodeSnippet
 
 ## Supported runtimes
 - NodeJS
+- Looking for more runtimes? Please open an issue
 - *(coming soon)* Custom environments based on containers
 
 ## Usage of Devbook in example apps
