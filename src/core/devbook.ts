@@ -106,9 +106,9 @@ class Devbook {
     const contextID = 'default'
     this.contextID = contextID
 
-    const executionID = generateExecutionID()
-    this.executionID = executionID
+    this.executionID = generateExecutionID()
 
+    const getExecutionID = () => this.executionID
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
     const setSessionStatus = (value: SessionStatus) => this.sessionStatus = value
 
@@ -122,7 +122,7 @@ class Devbook {
         setSessionStatus(status)
       },
       onCmdOut(payload) {
-        if (payload.executionID !== executionID) return
+        if (payload.executionID !== getExecutionID()) return
         if (payload.stdout !== undefined) {
           opts.onStdout?.(payload.stdout)
         }
