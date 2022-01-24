@@ -54,7 +54,7 @@ function App() {
       {status === DevbookStatus.Connecting && <div>Status: Starting VM...</div>}
       {status === DevbookStatus.Connected && (
         <div className="controls">
-          <select value={execType} onChange={e => setExecType(e.target.value)}>
+          <select className="type" value={execType} onChange={e => setExecType(e.target.value)}>
             <option value="code">Code</option>
             <option value="cmd">Command</option>
           </select>
