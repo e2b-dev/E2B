@@ -33,7 +33,7 @@ export enum DevbookStatus {
  */
 class Devbook {
   private readonly context: EvaluationContext
-  private readonly executionID: string
+  private executionID: string
   private readonly contextID: string
 
   private _isDestroyed = false
@@ -147,6 +147,8 @@ class Devbook {
   runCmd(command: string) {
     if (this.status === DevbookStatus.Disconnected) return
 
+    this.executionID = generateExecutionID()
+
     this.context.executeCommand({
       templateID: this.opts.env,
       executionID: this.executionID,
@@ -163,6 +165,8 @@ class Devbook {
    */
   runCode(code: string) {
     if (this.status === DevbookStatus.Disconnected) return
+
+    this.executionID = generateExecutionID()
 
     this.context.executeCode({
       templateID: this.opts.env,
