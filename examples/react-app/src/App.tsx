@@ -29,6 +29,7 @@ function App() {
   const [execType, setExecType] = useState('code');
 
   const { stderr, stdout, runCode, runCmd, status } = useDevbook({ debug: true, env: Env.NodeJS });
+  console.log({ stdout, stderr })
 
   const handleEditorChange = useCallback((content: string) => {
     if (execType === 'code') {
