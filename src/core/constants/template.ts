@@ -11,6 +11,7 @@ export enum Env {
   * Runtime environment that supports executing JS code with NodeJS 16 runtime.
   */
   NodeJS = 'nodejs-v16',
+  Supabase = 'supabase',
 }
 
 export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: string) => string, fileExtension: string } } = {
@@ -18,6 +19,14 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: str
     id: 'nodejs-v16',
     fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nodejs-v16:latest',
+    root_dir: '/home/runner',
+    code_cells_dir: '/home/runner/src',
+    toCommand: (filepath: string) => `node "${filepath}"`,
+  },
+  'supabase': {
+    id: 'nodejs-v16',
+    fileExtension: '.js',
+    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/supabase',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner/src',
     toCommand: (filepath: string) => `node "${filepath}"`,
