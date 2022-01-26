@@ -24,7 +24,7 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: str
     toCommand: (filepath: string) => `node "${filepath}"`,
   },
   'supabase': {
-    id: 'nodejs-v16',
+    id: 'supabase',
     fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/supabase',
     root_dir: '/home/runner',
