@@ -9,6 +9,7 @@ import {
   DevbookStatus,
   Env,
 } from 'src/core'
+import { FS } from 'src/core/devbook'
 
 /**
  * Options passed to the {@link useDevbook} hook.
@@ -64,6 +65,7 @@ export interface State {
    * @param command Command to run
    */
   runCmd: (command: string) => void
+  fs?: FS
 }
 
 /**
@@ -126,6 +128,7 @@ function useDevbook({
     runCmd,
     runCode,
     status,
+    fs: devbook?.fs,
   }
 }
 

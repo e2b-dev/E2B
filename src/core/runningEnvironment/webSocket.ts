@@ -2,6 +2,75 @@ import * as rws from 'src/common-ts/RunnerWebSocket'
 import { TemplateConfig } from 'src/common-ts/TemplateConfig'
 import { WebSocketConnection } from 'src/core/webSocketConnection'
 
+
+/**
+ * Request to receive the `RunningEnvironment.DirContent` message in the future
+ * containting the content of the directory at the given path.
+ */
+function listDir(
+  conn: WebSocketConnection, {
+    environmentID,
+    path,
+  }: {
+    environmentID: string,
+    path: string,
+  },
+) {
+  const msg: rws.RunningEnvironment_ListDir = {
+    type: rws.MessageType.RunningEnvironment.ListDir,
+    payload: {
+      environmentID,
+      path,
+    },
+  }
+  conn.send(msg)
+}
+
+/**
+ * Request to create a dir in the environment's filesystem.
+ */
+function createDir(
+  conn: WebSocketConnection, {
+    environmentID,
+    path,
+  }: {
+    environmentID: string,
+    path: string,
+  },
+) {
+  const msg: rws.RunningEnvironment_CreateDir = {
+    type: rws.MessageType.RunningEnvironment.CreateDir,
+    payload: {
+      environmentID,
+      path,
+    },
+  }
+  conn.send(msg)
+}
+
+/**
+ * Request to get a file from the environment's filesystem.
+ */
+function getFile(
+  conn: WebSocketConnection, {
+    environmentID,
+    path,
+  }: {
+    environmentID: string,
+    path: string,
+  },
+) {
+  const msg: rws.RunningEnvironment_GetFile = {
+    type: rws.MessageType.RunningEnvironment.GetFile,
+    payload: {
+      environmentID,
+      path,
+    },
+  }
+  conn.send(msg)
+}
+
+
 function start(
   conn: WebSocketConnection, {
     environmentID,
@@ -94,4 +163,7 @@ export {
   execCmd,
   writeFile,
   deleteFile,
+  getFile,
+  createDir,
+  listDir,
 }

@@ -25,6 +25,7 @@ export interface EvaluationContextOpts {
 }
 
 type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => void
+type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -34,6 +35,7 @@ class EvaluationContext {
   }
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
+  private fileContentSubscribers: FileContentSubscriber[] = []
 
   private envs: RunningEnvironment[] = []
   private readonly unsubscribeConnHandler: () => void
@@ -77,6 +79,88 @@ class EvaluationContext {
     this.fsWriteSubscribers = []
   }
 
+  async getFile({ templateID, path: filepath }: { templateID: Env, path: string }) {
+    this.logger.log('Get file', { templateID, path })
+    const env = this.envs.find(env => env.templateID === templateID)
+    if (!env) {
+      this.logger.error('Environment not found', { templateID, path })
+      return
+    }
+    if (!env.isReady) {
+      this.logger.error('Environment is not ready', { templateID, path })
+      return
+    }
+
+    let resolveFileContent: (content: string) => void
+    const fileContent = new Promise<string>((resolve, reject) => {
+      resolveFileContent = resolve
+      setTimeout(() => {
+        reject('Timeout')
+      }, 10000)
+    })
+
+    const fileContentSubscriber: FileContentSubscriber = (payload) => {
+      if (!payload.path.endsWith(filepath)) return
+      resolveFileContent(payload.content)
+    }
+    this.subscribeFileContent(fileContentSubscriber)
+
+    envWS.getFile(this.opts.conn, {
+      path: filepath,
+      environmentID: env.id,
+    })
+
+    try {
+      const content = await fileContent
+      return content
+    } catch (err: any) {
+      throw new Error(`Error retriving file ${filepath}: ${err.message}`)
+    } finally {
+      this.unsubscribeFileContent(fileContentSubscriber)
+    }
+  }
+
+  async updateFile({ templateID, path: filepath, content }: { templateID: Env, path: string, content: string }) {
+    this.logger.log('Update file', { templateID, filepath })
+    const env = this.envs.find(env => env.templateID === templateID)
+    if (!env) {
+      this.logger.error('Environment not found', { templateID, filepath })
+      return
+    }
+    if (!env.isReady) {
+      this.logger.error('Environment is not ready', { templateID, filepath })
+      return
+    }
+
+    let resolveFileWritten: (value: void) => void
+    const fileWritten = new Promise<void>((resolve, reject) => {
+      resolveFileWritten = resolve
+      setTimeout(() => {
+        reject('Timeout')
+      }, 10000)
+    })
+
+    const fsWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => {
+      if (!payload.path.endsWith(filepath)) return
+      resolveFileWritten()
+    }
+    this.subscribeFSWrite(fsWriteSubscriber)
+
+    envWS.writeFile(this.opts.conn, {
+      environmentID: env.id,
+      path: filepath,
+      content,
+    })
+
+    try {
+      await fileWritten
+    } catch (err: any) {
+      throw new Error(`File ${filepath} not written to VM: ${err.message}`)
+    } finally {
+      this.unsubscribeFSWrite(fsWriteSubscriber)
+    }
+  }
+
   async executeCode({ templateID, executionID, code }: { templateID: Env, executionID: string, code: string }) {
     this.logger.log('Execute code', { templateID, executionID })
 
@@ -94,36 +178,11 @@ class EvaluationContext {
     const basename = `${executionID}${extension}`
     const filepath = path.join('/src', basename)
 
-    // TODO: Make sure that the file is already written when we send the execCmd message.
-    // let resolveFileWritten: (value: void) => void
-    // const fileWritten = new Promise<void>((resolve, reject) => {
-    //   resolveFileWritten = resolve
-    //   setTimeout(() => {
-    //     reject()
-    //   }, 10000)
-    // })
-
-    // const fsWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => {
-    //   console.log('fs >>')
-    //   if (!payload.path.endsWith(filepath)) return
-    //   resolveFileWritten()
-    // }
-    // this.subscribeFSWrite(fsWriteSubscriber)
-
     envWS.writeFile(this.opts.conn, {
       environmentID: env.id,
       path: filepath,
       content: code,
     })
-
-    // try {
-    //   // await fileWritten
-    // } catch (err: any) {
-    //   this.logger.error(`File ${filepath} not written to VM`)
-    //   return
-    // } finally {
-    //   this.unsubscribeFSWrite(fsWriteSubscriber)
-    // }
 
     // Send command to execute file as code
     const vmFilepath = path.join(templates[templateID].root_dir, filepath)
@@ -170,13 +229,22 @@ class EvaluationContext {
     this.opts.onEnvChange?.(env)
   }
 
+  private subscribeFileContent(subscriber: FileContentSubscriber) {
+    this.fileContentSubscribers.push(subscriber)
+  }
+
+  private unsubscribeFileContent(subscriber: FileContentSubscriber) {
+    const index = this.fileContentSubscribers.indexOf(subscriber)
+    if (index > -1) {
+      this.fileContentSubscribers.splice(index, 1);
+    }
+  }
+
   private subscribeFSWrite(subscriber: FSWriteSubscriber) {
-    console.log('len', this.fsWriteSubscribers.length)
     this.fsWriteSubscribers.push(subscriber)
   }
 
   private unsubscribeFSWrite(subscriber: FSWriteSubscriber) {
-    console.log('len', this.fsWriteSubscribers.length)
     const index = this.fsWriteSubscribers.indexOf(subscriber)
     if (index > -1) {
       this.fsWriteSubscribers.splice(index, 1);
@@ -215,6 +283,11 @@ class EvaluationContext {
         this.vmenv_handleFSEventWrite(msg.payload)
         break
       }
+      case rws.MessageType.RunningEnvironment.FileContent: {
+        const msg = message as rws.RunningEnvironment_FileContent
+        this.vmenv_handleFileContent(msg.payload)
+        break
+      }
       default:
         this.logger.warn('Unknown message type', { message })
     }
@@ -237,6 +310,16 @@ class EvaluationContext {
       return
     }
     this.fsWriteSubscribers.forEach(s => s(payload))
+  }
+
+  private vmenv_handleFileContent(payload: rws.RunningEnvironment_FileContent['payload']) {
+    this.logger.log('[vmenv] Handling "FileContent"', { environmentID: payload.environmentID, path: payload.path })
+    const env = this.envs.find(e => e.id === payload.environmentID)
+    if (!env) {
+      this.logger.warn('Environment not found', { payload })
+      return
+    }
+    this.fileContentSubscribers.forEach(s => s(payload))
   }
 
   private vmenv_handleStartAck(payload: rws.RunningEnvironment_StartAck['payload']) {

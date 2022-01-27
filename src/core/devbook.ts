@@ -7,6 +7,11 @@ import { SessionStatus } from './session/sessionManager'
 
 const generateExecutionID = makeIDGenerator(6)
 
+export interface FS {
+  get: (path: string) => Promise<string | undefined>
+  write: (path: string, content: string) => Promise<void>
+}
+
 /**
  * States of a {@link Devbook} connection to a VM.
  */
@@ -35,6 +40,13 @@ class Devbook {
   private readonly context: EvaluationContext
   private executionID: string
   private readonly contextID: string
+
+  get fs(): FS {
+    return {
+      get: this.getFile.bind(this),
+      write: this.writeFile.bind(this),
+    }
+  }
 
   private _isDestroyed = false
   private get isDestroyed() {
@@ -137,6 +149,26 @@ class Devbook {
     })
   }
 
+  async getFile(path: string) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    return this.context.getFile({
+      templateID: this.opts.env,
+      path,
+    })
+
+  }
+
+  async writeFile(path: string, content: string) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    return this.context.updateFile({
+      templateID: this.opts.env,
+      path,
+      content,
+    })
+  }
+
   /**
    * Run `command` in the VM.
    * 
@@ -145,7 +177,7 @@ class Devbook {
    * @param command Command to run
    */
   runCmd(command: string) {
-    if (this.status === DevbookStatus.Disconnected) return
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
 
     this.executionID = generateExecutionID()
 
@@ -164,7 +196,7 @@ class Devbook {
    * @param code Code to run
    */
   runCode(code: string) {
-    if (this.status === DevbookStatus.Disconnected) return
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
 
     this.executionID = generateExecutionID()
 
