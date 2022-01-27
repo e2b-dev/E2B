@@ -80,14 +80,14 @@ class EvaluationContext {
   }
 
   async getFile({ templateID, path: filepath }: { templateID: Env, path: string }) {
-    this.logger.log('Get file', { templateID, path })
+    this.logger.log('Get file', { templateID, filepath })
     const env = this.envs.find(env => env.templateID === templateID)
     if (!env) {
-      this.logger.error('Environment not found', { templateID, path })
+      this.logger.error('Environment not found', { templateID, filepath })
       return
     }
     if (!env.isReady) {
-      this.logger.error('Environment is not ready', { templateID, path })
+      this.logger.error('Environment is not ready', { templateID, filepath })
       return
     }
 
@@ -114,7 +114,7 @@ class EvaluationContext {
       const content = await fileContent
       return content
     } catch (err: any) {
-      throw new Error(`Error retriving file ${filepath}: ${err.message}`)
+      throw new Error(`Error retrieving file ${filepath}: ${err.message}`)
     } finally {
       this.unsubscribeFileContent(fileContentSubscriber)
     }
