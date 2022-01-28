@@ -3,6 +3,8 @@
 
 Devbook is a JS library that allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM.
 
+Check out the [UI Devbook library](https://github.com/devbookhq/ui) that you can use in your documentation.
+
 ## How Devbook works
 Every time a user visits a page where you use Devbook (like your docs), we quickly spin up a private VM just for that user.
 They can experiment and explore your API/SDK right from your docs. Zero setup and overhead.
