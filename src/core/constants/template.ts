@@ -15,7 +15,7 @@ export enum Env {
 }
 
 export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: string) => string, fileExtension: string } } = {
-  'nodejs-v16': {
+  [Env.NodeJS]: {
     id: 'nodejs-v16',
     fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nodejs-v16:latest',
@@ -23,7 +23,7 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: str
     code_cells_dir: '/home/runner/src',
     toCommand: (filepath: string) => `node "${filepath}"`,
   },
-  'supabase': {
+  [Env.Supabase]: {
     id: 'supabase',
     fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/supabase',

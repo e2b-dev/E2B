@@ -36,23 +36,22 @@ function App() {
     runCmd,
     status,
     fs,
-  } = useDevbook({ debug: true, env: Env.NodeJS });
+  } = useDevbook({ debug: true, env: Env.Supabase });
+  useDevbook({ debug: true, env: Env.Supabase });
+  useDevbook({ debug: true, env: Env.Supabase });
   console.log({ stdout, stderr });
 
-  useEffect(() => {
-    async function init() {
-      if (!fs) return
-      if (status !== DevbookStatus.Connected) return
+  async function getFile() {
+    if (!fs) return
+    if (status !== DevbookStatus.Connected) return
 
-      // setInterval(async () => {
+    setInterval(async () => {
       const random = Math.random()
-      await fs.write('/src/indexues.js', random.toString())
-      const content = await fs.get('/src/indexues.js')
+      await fs.write('/src/package.json', random.toString())
+      const content = await fs.get('/src/package.json', 'content')
       console.log('content', content)
-      // }, 2000)
-    }
-    init()
-  }, [fs, status])
+    }, 2000)
+  }
 
   const handleEditorChange = useCallback((content: string) => {
     if (execType === 'code') {
@@ -81,7 +80,7 @@ function App() {
             <option value="code">Code</option>
             <option value="cmd">Command</option>
           </select>
-          <button className="run-btn" onClick={run}>Run</button>
+          <button className="run-btn" onClick={getFile}>Run</button>
         </div>
       )}
 

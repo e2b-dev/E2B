@@ -2,6 +2,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from 'react'
 
 import {
@@ -27,6 +28,8 @@ export interface Opts {
    * If this value is true then this Devbook will print detailed logs.
    */
   debug?: boolean
+
+  port?: number
 }
 
 /**
@@ -65,7 +68,9 @@ export interface State {
    * @param command Command to run
    */
   runCmd: (command: string) => void
-  fs?: FS
+
+  fs: FS
+  url?: string
 }
 
 /**
@@ -77,12 +82,28 @@ export interface State {
 function useDevbook({
   env,
   debug,
+  port,
 }: Opts): State {
   const [devbook, setDevbook] = useState<Devbook>()
 
   const [status, setStatus] = useState<DevbookStatus>(DevbookStatus.Disconnected)
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
+  const [url, setURL] = useState<string>()
+
+  const fs = useMemo<FS>(() => {
+    if (!devbook) {
+      return {
+        async get() {
+          throw new Error('FS is not ready yet')
+        },
+        async write() {
+          throw new Error('FS is not ready yet')
+        },
+      }
+    }
+    return devbook.fs
+  }, [devbook])
 
   const runCmd = useCallback((command: string) => {
     if (!devbook) return
@@ -111,16 +132,22 @@ function useDevbook({
       onStdout(out) {
         setStdout(s => [...s, out])
       },
+      onURLChange(getURL) {
+        if (port) {
+          setURL(getURL(port))
+        }
+      },
     })
 
     setStdout([])
     setStderr([])
+    setURL(undefined)
     setDevbook(devbook)
 
     return () => {
       devbook.destroy()
     }
-  }, [env, debug])
+  }, [env, debug, port])
 
   return {
     stderr,
@@ -128,7 +155,8 @@ function useDevbook({
     runCmd,
     runCode,
     status,
-    fs: devbook?.fs,
+    fs,
+    url: status === DevbookStatus.Connected ? url : undefined,
   }
 }
 

@@ -48,6 +48,14 @@ class Devbook {
     }
   }
 
+  private _sessionID?: string
+  private get sessionID() {
+    return this._sessionID
+  }
+  private set sessionID(value: string | undefined) {
+    this._sessionID = value
+  }
+
   private _isDestroyed = false
   private get isDestroyed() {
     return this._isDestroyed
@@ -110,6 +118,7 @@ class Devbook {
      * This function will be called when the {@link Devbook.status} on this `Devbook` changes.
      */
     onStatusChange?: (status: DevbookStatus) => void
+    onURLChange?: (getURL: (port: number) => string) => void
     /**
      * If this value is true then this `Devbook` will print detailed logs.
      */
@@ -120,18 +129,27 @@ class Devbook {
 
     this.executionID = generateExecutionID()
 
+    const getURL = this.getURL.bind(this)
+    const getTemplateID = () => this.opts.env
     const getExecutionID = () => this.executionID
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
     const setSessionStatus = (value: SessionStatus) => this.sessionStatus = value
+    const setSessionID = (sessionID?: string) => this.sessionID = sessionID
 
     this.context = Runner.obj.createContext({
       debug: opts.debug,
       contextID,
       onEnvChange(env) {
+        if (env.templateID !== getTemplateID()) return
         setIsEnvReady(env.isReady)
+
+        opts.onURLChange?.(getURL)
       },
-      onSessionChange({ status }) {
+      onSessionChange({ status, sessionID }) {
+        setSessionID(sessionID)
         setSessionStatus(status)
+
+        opts.onURLChange?.(getURL)
       },
       onCmdOut(payload) {
         if (payload.executionID !== getExecutionID()) return
@@ -147,6 +165,22 @@ class Devbook {
     this.context.createRunningEnvironment({
       templateID: opts.env,
     })
+  }
+
+  getURL(port: number) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    const sessionID = this.sessionID
+    if (!this.sessionID) {
+      throw new Error(`Cannot find connection to the VM.`)
+    }
+
+    const environment = this.context.getRunningEnvironment({ templateID: this.opts.env })
+    if (!environment) {
+      throw new Error(`Cannot find environment with template "${this.opts.env}"`)
+    }
+
+    return `https://${port}-${environment.id}-${sessionID}.o.usedevbook.com`
   }
 
   async getFile(path: string) {
