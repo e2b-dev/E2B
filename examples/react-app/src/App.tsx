@@ -36,10 +36,11 @@ function App() {
     runCmd,
     status,
     fs,
-  } = useDevbook({ debug: true, env: Env.Supabase });
+    url,
+  } = useDevbook({ debug: true, env: Env.Supabase, port: 3000 });
   useDevbook({ debug: true, env: Env.Supabase });
   useDevbook({ debug: true, env: Env.Supabase });
-  console.log({ stdout, stderr });
+  console.log({ stdout, stderr, url });
 
   async function getFile() {
     if (!fs) return
@@ -48,7 +49,7 @@ function App() {
     setInterval(async () => {
       const random = Math.random()
       await fs.write('/src/package.json', random.toString())
-      const content = await fs.get('/src/package.json', 'content')
+      const content = await fs.get('/src/package.json')
       console.log('content', content)
     }, 2000)
   }

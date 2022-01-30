@@ -1,9 +1,9 @@
-import { TemplateConfig } from 'src/common-ts/TemplateConfig'
+import { TemplateConfig } from '../../common-ts/TemplateConfig'
 import {
   Env,
   templates,
-} from 'src/core/constants'
-import hash from 'src/utils/hash'
+} from '../constants'
+import hash from '../../utils/hash'
 
 function hashTemplateID(templateID: Env) {
   return hash(templateID)

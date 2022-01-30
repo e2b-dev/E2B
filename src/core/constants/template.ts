@@ -1,4 +1,4 @@
-import { TemplateConfig } from 'src/common-ts/TemplateConfig'
+import { TemplateConfig } from '../../common-ts/TemplateConfig'
 
 
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
@@ -9,8 +9,11 @@ import { TemplateConfig } from 'src/common-ts/TemplateConfig'
 export enum Env {
   /**
   * Runtime environment that supports executing JS code with NodeJS 16 runtime.
-  */
+   */
   NodeJS = 'nodejs-v16',
+  /**
+   * Runtime environment for the Supabase documentation.
+   */
   Supabase = 'supabase',
 }
 

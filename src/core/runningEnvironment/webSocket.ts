@@ -1,6 +1,6 @@
-import * as rws from 'src/common-ts/RunnerWebSocket'
-import { TemplateConfig } from 'src/common-ts/TemplateConfig'
-import { WebSocketConnection } from 'src/core/webSocketConnection'
+import * as rws from '../../common-ts/RunnerWebSocket'
+import { TemplateConfig } from '../../common-ts/TemplateConfig'
+import { WebSocketConnection } from '../webSocketConnection'
 
 
 /**

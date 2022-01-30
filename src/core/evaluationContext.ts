@@ -1,14 +1,13 @@
 // This Node builtin is polyfilled with Rollup
 import path from 'path'
 
-import * as rws from 'src/common-ts/RunnerWebSocket'
-import { WebSocketConnection } from 'src/core/webSocketConnection'
-import Logger from 'src/utils/Logger'
+import * as rws from '../common-ts/RunnerWebSocket'
+import { WebSocketConnection } from './webSocketConnection'
+import Logger from '../utils/Logger'
 import {
   Env,
   templates,
-} from 'src/core/constants'
-
+} from './constants'
 import {
   RunningEnvironment,
   ws as envWS,
@@ -77,6 +76,7 @@ class EvaluationContext {
     this.unsubscribeConnHandler()
     this.envs = []
     this.fsWriteSubscribers = []
+    this.fileContentSubscribers = []
   }
 
   async getFile({ templateID, path: filepath }: { templateID: Env, path: string }) {

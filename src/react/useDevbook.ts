@@ -9,8 +9,8 @@ import {
   Devbook,
   DevbookStatus,
   Env,
-} from 'src/core'
-import { FS } from 'src/core/devbook'
+  FS,
+} from '../core'
 
 /**
  * Options passed to the {@link useDevbook} hook.
@@ -28,7 +28,10 @@ export interface Opts {
    * If this value is true then this Devbook will print detailed logs.
    */
   debug?: boolean
-
+  /**
+   * Port number used for composing the {@link State.url} returned from this hook 
+   * that allows connecting to a port on the environment defined by the {@link Opts.env} in the {@link useDevbook} parameters.
+   */
   port?: number
 }
 
@@ -68,8 +71,14 @@ export interface State {
    * @param command Command to run
    */
   runCmd: (command: string) => void
-
+  /**
+   * Use this for accessing and manipulating this Devbook's VM's filesystem.
+   */
   fs: FS
+  /**
+   * URL address that allows you to connect to a port ({@link Opts.port}) 
+   * on the environment defined by the {@link Opts.env} in the {@link useDevbook} parameters.
+   */
   url?: string
 }
 
@@ -147,7 +156,11 @@ function useDevbook({
     return () => {
       devbook.destroy()
     }
-  }, [env, debug, port])
+  }, [
+    env,
+    debug,
+    port,
+  ])
 
   return {
     stderr,

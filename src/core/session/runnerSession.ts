@@ -1,5 +1,5 @@
-import Logger from 'src/utils/Logger'
-import { runner as consts } from 'src/core/constants'
+import Logger from '../../utils/Logger'
+import { runner as consts } from '../constants'
 
 export enum KeepAliveStatus {
   Ok = 'Ok',
