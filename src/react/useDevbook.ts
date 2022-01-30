@@ -169,7 +169,7 @@ function useDevbook({
     runCode,
     status,
     fs,
-    url: status === DevbookStatus.Connected ? url : undefined,
+    url,
   }
 }
 

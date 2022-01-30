@@ -35,24 +35,9 @@ function App() {
     runCode,
     runCmd,
     status,
-    fs,
     url,
   } = useDevbook({ debug: true, env: Env.Supabase, port: 3000 });
-  useDevbook({ debug: true, env: Env.Supabase });
-  useDevbook({ debug: true, env: Env.Supabase });
   console.log({ stdout, stderr, url });
-
-  async function getFile() {
-    if (!fs) return
-    if (status !== DevbookStatus.Connected) return
-
-    setInterval(async () => {
-      const random = Math.random()
-      await fs.write('/src/package.json', random.toString())
-      const content = await fs.get('/src/package.json')
-      console.log('content', content)
-    }, 2000)
-  }
 
   const handleEditorChange = useCallback((content: string) => {
     if (execType === 'code') {
@@ -70,7 +55,6 @@ function App() {
     }
   }, [runCode, runCmd, code, cmd, execType]);
 
-
   return (
     <div className="app">
       {status === DevbookStatus.Disconnected && <div>Status: Disconnected, will start VM</div>}
@@ -81,7 +65,7 @@ function App() {
             <option value="code">Code</option>
             <option value="cmd">Command</option>
           </select>
-          <button className="run-btn" onClick={getFile}>Run</button>
+          <button className="run-btn" onClick={run}>Run</button>
         </div>
       )}
 

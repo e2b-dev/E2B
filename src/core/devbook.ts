@@ -143,7 +143,7 @@ class Devbook {
      * 
      * You can assemble URL for any port by using the `getURL` function from the parameter.
      */
-    onURLChange?: (getURL: (port: number) => string) => void
+    onURLChange?: (getURL: (port: number) => string | undefined) => void
     /**
      * If this value is true then this `Devbook` will print detailed logs.
      */
@@ -191,20 +191,17 @@ class Devbook {
    * Compose the URL that can be used for connecting to a port on the environment defined in this `Devbook`'s constructor.
    * 
    * @param port Number of the port that the URL should be connecting to.
-   * @returns URL address that allows you to connect to a specified port on this `Devbook`'s environment.
+   * @returns URL address that allows you to connect to a specified port on this `Devbook`'s environment 
+   * or `undefined` if this `Devbook` is not yet connected to a VM.
    */
   getURL(port: number) {
-    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+    if (this.status !== DevbookStatus.Connected) return
 
     const sessionID = this.sessionID
-    if (!this.sessionID) {
-      throw new Error(`Cannot find connection to the VM.`)
-    }
+    if (!this.sessionID) return
 
     const environment = this.context.getRunningEnvironment({ templateID: this.opts.env })
-    if (!environment) {
-      throw new Error(`Cannot find environment with template "${this.opts.env}"`)
-    }
+    if (!environment?.isReady) return
 
     return `https://${port}-${environment.id}-${sessionID}.o.usedevbook.com`
   }

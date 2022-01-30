@@ -31,19 +31,32 @@ const code = `
 
 function InteractiveCodeSnippet() {
   // 3. Use the hook
-  const { stdout, stderr, status, runCode } = useDevbook({ env: Env.NodeJS })
+  const { stdout, stderr, status, runCode, url, fs } = useDevbook({ env: Env.NodeJS, port: 3000 })
 
   function handleRun() {
     // 4. Execute the code
     runCode(code)
   }
 
+  async function handleFS() {
+    if (status !== DevbookStatus.Connected) return
+  
+    // 5. Manipulate the filesystem
+    await dbk.fs.write('/index.js', 'console.log("Hello world!")')
+    const content = await dbk.fs.get('/index.js')
+    console.log('Content of the "/index.js" file', content)
+  }
+
   return (
     <div>
       {status === DevbookStatus.Disconnected && <div>Status: Disconnected, will start VM</div>}
       {status === DevbookStatus.Connecting && <div>Status: Starting VM...</div>}
-      {status === DevbookStatus.Connected && (
-        <button onClick={handleRun}>Run</button>
+      {status === DevbookStatus.Connected && 
+        <>
+          <div>URL for the port 3000 on the VM: {url}</div>
+          <button onClick={handleRun}>Run</button>
+          <button onClick={handleFS}>Test FS</button>
+        </>
       )}
       <h3>Output</h3>
       {stdout.map((o, idx) => <span key={`out_${idx}`}>{o}</span>)}
@@ -77,17 +90,26 @@ export default InteractiveCodeSnippet
     onStatusChange(status) {
       console.log('status', { status })
     },
+    onURLChange(getURL) {
+      const url = getURL(3000) // Create a URL that connects to the port 3000
+      console.log('url', { url })
+    },
   })
 
-  // 4. Execute the code
   if (dbk.status === DevbookStatus.Connected) {
+    // 4. Execute the code
     dbk.runCode(code)
+
+    // 5. Manipulate the filesystem
+    await dbk.fs.write('/index.js', 'console.log("Hello world!")')
+    const content = await dbk.fs.get('/index.js')
+    console.log('Content of the "/index.js" file', content)
   }
 ```
 
 ## Supported runtimes
 - NodeJS
-- Looking for more runtimes? Please open an issue
+- Looking for more runtimes? Please open an [issue](https://github.com/DevbookHQ/sdk/issues)
 - *(coming soon)* Custom environments based on containers
 
 ## Usage of Devbook in example apps
