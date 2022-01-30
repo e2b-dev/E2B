@@ -1,14 +1,13 @@
 // This Node builtin is polyfilled with Rollup
 import path from 'path'
 
-import * as rws from 'src/common-ts/RunnerWebSocket'
-import { WebSocketConnection } from 'src/core/webSocketConnection'
-import Logger from 'src/utils/Logger'
+import * as rws from '../common-ts/RunnerWebSocket'
+import { WebSocketConnection } from './webSocketConnection'
+import Logger from '../utils/Logger'
 import {
   Env,
   templates,
-} from 'src/core/constants'
-
+} from './constants'
 import {
   RunningEnvironment,
   ws as envWS,
@@ -20,7 +19,7 @@ export interface EvaluationContextOpts {
   debug?: boolean
   conn: WebSocketConnection
   onCmdOut?: (payload: rws.RunningEnvironment_CmdOut['payload']) => void
-  onSessionChange?: (session: { status: SessionStatus }) => void
+  onSessionChange?: (session: { status: SessionStatus, sessionID?: string }) => void
   onEnvChange?: (env: RunningEnvironment) => void
 }
 
@@ -49,8 +48,8 @@ class EvaluationContext {
       onClose: this.handleConnectionClose.bind(this),
     })
 
-    if (this.opts.conn.isOpen) {
-      this.handleConnectionOpen()
+    if (this.opts.conn.isOpen && this.opts.conn.sessionID) {
+      this.handleConnectionOpen(this.opts.conn.sessionID)
     }
     if (this.opts.conn.isClosed) {
       this.handleConnectionClose()
@@ -77,11 +76,12 @@ class EvaluationContext {
     this.unsubscribeConnHandler()
     this.envs = []
     this.fsWriteSubscribers = []
+    this.fileContentSubscribers = []
   }
 
   async getFile({ templateID, path: filepath }: { templateID: Env, path: string }) {
     this.logger.log('Get file', { templateID, filepath })
-    const env = this.envs.find(env => env.templateID === templateID)
+    const env = this.getRunningEnvironment({ templateID })
     if (!env) {
       this.logger.error('Environment not found', { templateID, filepath })
       return
@@ -114,7 +114,7 @@ class EvaluationContext {
       const content = await fileContent
       return content
     } catch (err: any) {
-      throw new Error(`Error retrieving file ${filepath}: ${err.message}`)
+      throw new Error(`Error retrieving file ${filepath}: ${err}`)
     } finally {
       this.unsubscribeFileContent(fileContentSubscriber)
     }
@@ -122,7 +122,7 @@ class EvaluationContext {
 
   async updateFile({ templateID, path: filepath, content }: { templateID: Env, path: string, content: string }) {
     this.logger.log('Update file', { templateID, filepath })
-    const env = this.envs.find(env => env.templateID === templateID)
+    const env = this.getRunningEnvironment({ templateID })
     if (!env) {
       this.logger.error('Environment not found', { templateID, filepath })
       return
@@ -155,7 +155,7 @@ class EvaluationContext {
     try {
       await fileWritten
     } catch (err: any) {
-      throw new Error(`File ${filepath} not written to VM: ${err.message}`)
+      throw new Error(`File ${filepath} not written to VM: ${err}`)
     } finally {
       this.unsubscribeFSWrite(fsWriteSubscriber)
     }
@@ -164,7 +164,7 @@ class EvaluationContext {
   async executeCode({ templateID, executionID, code }: { templateID: Env, executionID: string, code: string }) {
     this.logger.log('Execute code', { templateID, executionID })
 
-    const env = this.envs.find(env => env.templateID === templateID)
+    const env = this.getRunningEnvironment({ templateID })
     if (!env) {
       this.logger.error('Environment not found', { templateID, executionID })
       return
@@ -197,7 +197,7 @@ class EvaluationContext {
   executeCommand({ templateID, executionID, command }: { templateID: Env, executionID: string, command: string }) {
     this.logger.log('Execute shell command', { templateID, executionID, command })
 
-    const env = this.envs.find(env => env.templateID === templateID)
+    const env = this.getRunningEnvironment({ templateID })
     if (!env) {
       this.logger.error('Environment not found', { templateID, executionID, command })
       return
@@ -214,10 +214,14 @@ class EvaluationContext {
     })
   }
 
+  getRunningEnvironment({ templateID }: { templateID: Env }) {
+    return this.envs.find(e => e.templateID === templateID)
+  }
+
   createRunningEnvironment({ templateID }: { templateID: Env }) {
     this.logger.log('Creating running environment', { templateID })
 
-    const existingEnv = this.envs.find(e => e.templateID === templateID)
+    const existingEnv = this.getRunningEnvironment({ templateID })
     if (existingEnv) return
 
     const env = new RunningEnvironment(this.contextID, templateID)
@@ -251,9 +255,9 @@ class EvaluationContext {
     }
   }
 
-  private handleConnectionOpen() {
+  private handleConnectionOpen(sessionID: string) {
     this.restart()
-    this.opts.onSessionChange?.({ status: SessionStatus.Connected })
+    this.opts.onSessionChange?.({ status: SessionStatus.Connected, sessionID })
   }
 
   private handleConnectionClose() {

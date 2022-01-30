@@ -1,5 +1,4 @@
-import Logger from 'src/utils/Logger'
-
+import Logger from '../utils/Logger'
 import { WebSocketConnection } from './webSocketConnection'
 import SessionManager from './session/sessionManager'
 import EvaluationContext, {

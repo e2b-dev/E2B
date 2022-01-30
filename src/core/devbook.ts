@@ -1,5 +1,4 @@
-import { makeIDGenerator } from 'src/utils/id'
-
+import { makeIDGenerator } from '../utils/id'
 import { Env } from './constants'
 import Runner from './runner'
 import EvaluationContext from './evaluationContext'
@@ -7,8 +6,28 @@ import { SessionStatus } from './session/sessionManager'
 
 const generateExecutionID = makeIDGenerator(6)
 
+/**
+ * Methods for accessing and manipulating this `Devbook`'s VM's filesystem.
+ */
 export interface FS {
+  /**
+   * Retrieve content from a file on a specified `path`.
+   * 
+   * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
+   * 
+   * @param path Path to the file
+   * @return `string` if the file exists or `undefined` if it doesn't.
+   */
   get: (path: string) => Promise<string | undefined>
+  /**
+   * Write `content` to the file on the specified `path`.
+   * This method will create the file and necessary folders is they don't exist.
+   * 
+   * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
+   * 
+   * @param path Path to the file
+   * @param content Content to write into file
+   */
   write: (path: string, content: string) => Promise<void>
 }
 
@@ -38,14 +57,15 @@ export enum DevbookStatus {
  */
 class Devbook {
   private readonly context: EvaluationContext
-  private executionID: string
-  private readonly contextID: string
+  private readonly contextID = 'default'
+  private executionID = generateExecutionID()
 
-  get fs(): FS {
-    return {
-      get: this.getFile.bind(this),
-      write: this.writeFile.bind(this),
-    }
+  private _sessionID?: string
+  private get sessionID() {
+    return this._sessionID
+  }
+  private set sessionID(value: string | undefined) {
+    this._sessionID = value
   }
 
   private _isDestroyed = false
@@ -76,17 +96,25 @@ class Devbook {
   }
 
   private _status = DevbookStatus.Disconnected
-
   /**
    * Current status of this `Devbook`'s connection.
    */
   get status() {
     return this._status
   }
-
   private set status(value: DevbookStatus) {
     this._status = value
     this.opts.onStatusChange?.(value)
+  }
+
+  /**
+   * Use this for accessing and manipulating this `Devbook`'s VM's filesystem.
+   */
+  get fs(): FS {
+    return {
+      get: this.getFile.bind(this),
+      write: this.writeFile.bind(this),
+    }
   }
 
   constructor(private readonly opts: {
@@ -111,27 +139,37 @@ class Devbook {
      */
     onStatusChange?: (status: DevbookStatus) => void
     /**
+     * This function will be called when the URL for accessing this `Devbook`'s environment changes.
+     * 
+     * You can assemble URL for any port by using the `getURL` function from the parameter.
+     */
+    onURLChange?: (getURL: (port: number) => string | undefined) => void
+    /**
      * If this value is true then this `Devbook` will print detailed logs.
      */
     debug?: boolean
   }) {
-    const contextID = 'default'
-    this.contextID = contextID
-
-    this.executionID = generateExecutionID()
-
+    const getURL = this.getURL.bind(this)
+    const getTemplateID = () => this.opts.env
     const getExecutionID = () => this.executionID
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
     const setSessionStatus = (value: SessionStatus) => this.sessionStatus = value
+    const setSessionID = (sessionID?: string) => this.sessionID = sessionID
 
     this.context = Runner.obj.createContext({
       debug: opts.debug,
-      contextID,
+      contextID: this.contextID,
       onEnvChange(env) {
+        if (env.templateID !== getTemplateID()) return
         setIsEnvReady(env.isReady)
+
+        opts.onURLChange?.(getURL)
       },
-      onSessionChange({ status }) {
+      onSessionChange({ status, sessionID }) {
+        setSessionID(sessionID)
         setSessionStatus(status)
+
+        opts.onURLChange?.(getURL)
       },
       onCmdOut(payload) {
         if (payload.executionID !== getExecutionID()) return
@@ -149,24 +187,23 @@ class Devbook {
     })
   }
 
-  async getFile(path: string) {
-    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+  /**
+   * Compose the URL that can be used for connecting to a port on the environment defined in this `Devbook`'s constructor.
+   * 
+   * @param port Number of the port that the URL should be connecting to.
+   * @returns URL address that allows you to connect to a specified port on this `Devbook`'s environment 
+   * or `undefined` if this `Devbook` is not yet connected to a VM.
+   */
+  getURL(port: number) {
+    if (this.status !== DevbookStatus.Connected) return
 
-    return this.context.getFile({
-      templateID: this.opts.env,
-      path,
-    })
+    const sessionID = this.sessionID
+    if (!this.sessionID) return
 
-  }
+    const environment = this.context.getRunningEnvironment({ templateID: this.opts.env })
+    if (!environment?.isReady) return
 
-  async writeFile(path: string, content: string) {
-    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
-    return this.context.updateFile({
-      templateID: this.opts.env,
-      path,
-      content,
-    })
+    return `https://${port}-${environment.id}-${sessionID}.o.usedevbook.com`
   }
 
   /**
@@ -213,6 +250,25 @@ class Devbook {
   destroy() {
     this.context.destroy()
     this.isDestroyed = true
+  }
+
+  private async getFile(path: string) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    return this.context.getFile({
+      templateID: this.opts.env,
+      path,
+    })
+  }
+
+  private async writeFile(path: string, content: string) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    return this.context.updateFile({
+      templateID: this.opts.env,
+      path,
+      content,
+    })
   }
 
   private updateStatus() {

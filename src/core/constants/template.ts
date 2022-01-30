@@ -1,4 +1,4 @@
-import { TemplateConfig } from 'src/common-ts/TemplateConfig'
+import { TemplateConfig } from '../../common-ts/TemplateConfig'
 
 
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
@@ -9,13 +9,16 @@ import { TemplateConfig } from 'src/common-ts/TemplateConfig'
 export enum Env {
   /**
   * Runtime environment that supports executing JS code with NodeJS 16 runtime.
-  */
+   */
   NodeJS = 'nodejs-v16',
+  /**
+   * Runtime environment for the Supabase documentation.
+   */
   Supabase = 'supabase',
 }
 
 export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: string) => string, fileExtension: string } } = {
-  'nodejs-v16': {
+  [Env.NodeJS]: {
     id: 'nodejs-v16',
     fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nodejs-v16:latest',
@@ -23,7 +26,7 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: str
     code_cells_dir: '/home/runner/src',
     toCommand: (filepath: string) => `node "${filepath}"`,
   },
-  'supabase': {
+  [Env.Supabase]: {
     id: 'supabase',
     fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/supabase',

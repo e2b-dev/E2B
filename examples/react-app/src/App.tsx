@@ -35,24 +35,9 @@ function App() {
     runCode,
     runCmd,
     status,
-    fs,
-  } = useDevbook({ debug: true, env: Env.NodeJS });
-  console.log({ stdout, stderr });
-
-  useEffect(() => {
-    async function init() {
-      if (!fs) return
-      if (status !== DevbookStatus.Connected) return
-
-      // setInterval(async () => {
-      const random = Math.random()
-      await fs.write('/src/indexues.js', random.toString())
-      const content = await fs.get('/src/indexues.js')
-      console.log('content', content)
-      // }, 2000)
-    }
-    init()
-  }, [fs, status])
+    url,
+  } = useDevbook({ debug: true, env: Env.Supabase, port: 3000 });
+  console.log({ stdout, stderr, url });
 
   const handleEditorChange = useCallback((content: string) => {
     if (execType === 'code') {
@@ -69,7 +54,6 @@ function App() {
       runCmd(cmd);
     }
   }, [runCode, runCmd, code, cmd, execType]);
-
 
   return (
     <div className="app">

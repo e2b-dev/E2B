@@ -1,13 +1,13 @@
-import Logger from 'src/utils/Logger'
-import stringify from 'src/utils/stringify'
-import wait from 'src/utils/wait'
-import * as rws from 'src/common-ts/RunnerWebSocket'
+import Logger from '../utils/Logger'
+import stringify from '../utils/stringify'
+import wait from '../utils/wait'
+import * as rws from '../common-ts/RunnerWebSocket'
 
 import { runner as consts } from './constants'
 
 interface Handler {
   onMessage: (msg: rws.BaseMessage) => void
-  onOpen: () => void
+  onOpen: (sessionID: string) => void
   onClose: () => void
 }
 
@@ -73,7 +73,7 @@ export class WebSocketConnection {
     }
 
     this.client = new WebSocket(`${this.url}/session/ws/${this.sessionID}`)
-    this.client.onopen = () => this.handleOpen()
+    this.client.onopen = () => this.handleOpen(this.sessionID as string)
     this.client.onmessage = msg => {
       this.logger.log('Received (raw)', { msg })
       this.handleMessage(msg)
@@ -101,9 +101,9 @@ export class WebSocketConnection {
     this.client?.close(1000)
   }
 
-  private handleOpen() {
+  private handleOpen(sessionID: string) {
     this.logger.log('Connection opened', { readyState: this.client?.readyState })
-    this.handlers.forEach(h => h.onOpen())
+    this.handlers.forEach(h => h.onOpen(sessionID))
   }
 
   // Private version of the `send()` method that doesn't check if a client is ready
