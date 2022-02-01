@@ -163,6 +163,9 @@ class EvaluationContext {
 
   async executeCode({ templateID, executionID, code }: { templateID: Env, executionID: string, code: string }) {
     this.logger.log('Execute code', { templateID, executionID })
+    const toCommand = templates[templateID].toCommand
+
+    if (toCommand === undefined) return
 
     const env = this.getRunningEnvironment({ templateID })
     if (!env) {
@@ -186,7 +189,7 @@ class EvaluationContext {
 
     // Send command to execute file as code
     const vmFilepath = path.join(templates[templateID].root_dir, filepath)
-    const command = templates[templateID].toCommand(vmFilepath)
+    const command = toCommand(vmFilepath)
     envWS.execCmd(this.opts.conn, {
       environmentID: env.id,
       executionID,

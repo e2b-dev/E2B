@@ -8,6 +8,10 @@ import { TemplateConfig } from '../../common-ts/TemplateConfig'
  */
 export enum Env {
   /**
+  * Runtime environment that uses NextJS server with hot-reloading.
+   */
+  NextJS = 'nextjs-v11-components',
+  /**
   * Runtime environment that supports executing JS code with NodeJS 16 runtime.
    */
   NodeJS = 'nodejs-v16',
@@ -17,7 +21,7 @@ export enum Env {
   Supabase = 'supabase',
 }
 
-export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: string) => string, fileExtension: string } } = {
+export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: string) => string, fileExtension: string } } = {
   [Env.NodeJS]: {
     id: 'nodejs-v16',
     fileExtension: '.js',
@@ -33,5 +37,12 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand: (code: str
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner/src',
     toCommand: (filepath: string) => `node "${filepath}"`,
+  },
+  [Env.NextJS]: {
+    id: 'nextjs-v11-components',
+    fileExtension: '.tsx',
+    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nextjs-v11-components',
+    root_dir: '/home/runner',
+    code_cells_dir: '/home/runner/src',
   },
 }
