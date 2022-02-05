@@ -8,17 +8,26 @@ import { TemplateConfig } from '../../common-ts/TemplateConfig'
  */
 export enum Env {
   /**
-  * Runtime environment that uses NextJS server with hot-reloading.
+   * Runtime environment that uses NextJS server with hot-reloading.
    */
   NextJS = 'nextjs-v11-components',
   /**
-  * Runtime environment that supports executing JS code with NodeJS 16 runtime.
+   * Runtime environment that supports executing JS code with NodeJS 16 runtime.
    */
   NodeJS = 'nodejs-v16',
   /**
    * Runtime environment for the Supabase documentation.
    */
   Supabase = 'supabase',
+
+  /**
+   * Runtime environment for the Banana Node API.
+   */
+  BananaNode = 'banana-node',
+  /**
+   * Runtime environment for the Banana Python API.
+   */
+  BananaPython = 'banana-python',
 }
 
 export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: string) => string, fileExtension: string } } = {
@@ -44,5 +53,19 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: st
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nextjs-v11-components',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner/src',
+  },
+  [Env.BananaNode]: {
+    id: 'banana-node',
+    fileExtension: '.js',
+    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/banana-node',
+    root_dir: '/home/runner',
+    code_cells_dir: '/home/runner/src',
+  },
+  [Env.BananaPython]: {
+    id: 'banana-python',
+    fileExtension: '.py',
+    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/banana-python',
+    root_dir: '/home/runner',
+    code_cells_dir: '/home/runner',
   },
 }

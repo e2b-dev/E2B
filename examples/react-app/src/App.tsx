@@ -36,7 +36,7 @@ function App() {
     runCmd,
     status,
     url,
-  } = useDevbook({ debug: true, env: Env.Supabase, port: 3000 });
+  } = useDevbook({ debug: true, env: Env.BananaPython, port: 3000 });
   console.log({ stdout, stderr, url });
 
   const handleEditorChange = useCallback((content: string) => {
