@@ -63,7 +63,7 @@ class EvaluationContext {
   restart() {
     this.logger.log('Restart', this.opts.conn.sessionID)
     return this.envs.forEach(env => {
-      env.isReady = false
+      env.restart()
       envWS.start(this.opts.conn, {
         environmentID: env.id,
         template: env.template,
@@ -236,6 +236,36 @@ class EvaluationContext {
     this.opts.onEnvChange?.(env)
   }
 
+  deleteEnvFile(args: { envID: string; path: string }) {
+    this.logger.log('Delete file in env fs', args)
+    envFS.ws.deleteFile(this.opts.conn, {
+      envID: args.envID,
+      path: args.path,
+    })
+  }
+
+  updateFile({ envID, documentEnvID, path, content }: { envID: string, documentEnvID: string, path: string, content: string }) {
+    this.logger.log('Update document or vm file', { documentEnvID, path })
+    const file = this.files.find(f => f.documentEnvID === documentEnvID && f.path === path)
+    if (file) {
+      this.opts.collabHandlers.file.upsert({ id: file.id, path, documentEnvID, content })
+      return
+    }
+    envFS.ws.writeFile(this.opts.conn, {
+      envID,
+      path,
+      content,
+    })
+  }
+
+  listEnvDir(args: { envID: string, path: string }) {
+    this.logger.log('List dir from env fs', args)
+    envFS.ws.listDir(this.opts.conn, {
+      envID: args.envID,
+      path: args.path,
+    })
+  }
+
   private subscribeFileContent(subscriber: FileContentSubscriber) {
     this.fileContentSubscribers.push(subscriber)
   }
@@ -295,6 +325,23 @@ class EvaluationContext {
         this.vmenv_handleFileContent(msg.payload)
         break
       }
+
+      case rws.MessageType.RunningEnvironment.FSEventCreate: {
+        const msg = message as rws.RunningEnvironment_FSEventCreate
+        this.vmenv_handleFSEventCreate(msg.payload)
+        break
+      }
+      case rws.MessageType.RunningEnvironment.FSEventRemove: {
+        const msg = message as rws.RunningEnvironment_FSEventRemove
+        this.vmenv_handleFSEventRemove(msg.payload)
+        break
+      }
+      case rws.MessageType.RunningEnvironment.DirContent: {
+        const msg = message as rws.RunningEnvironment_DirContent
+        this.vmenv_handleDirContent(msg.payload)
+        break
+      }
+
       default:
         this.logger.warn('Unknown message type', { message })
     }
