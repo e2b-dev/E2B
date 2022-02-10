@@ -93,43 +93,17 @@ function useDevbook({
   debug,
   port,
 }: Opts): State {
-  const [devbook, setDevbook] = useState<Devbook>()
-
   const [status, setStatus] = useState<DevbookStatus>(DevbookStatus.Disconnected)
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
   const [url, setURL] = useState<string>()
 
-  const fs = useMemo<FS>(() => {
-    if (!devbook) {
-      return {
-        async get() {
-          throw new Error('FS is not ready yet')
-        },
-        async write() {
-          throw new Error('FS is not ready yet')
-        },
-      }
-    }
-    return devbook.fs
-  }, [devbook])
-
-  const runCmd = useCallback((command: string) => {
-    if (!devbook) return
+  const devbook = useMemo(() => {
     setStdout([])
     setStderr([])
-    devbook.runCmd(command)
-  }, [devbook])
+    setURL(undefined)
 
-  const runCode = useCallback((code: string) => {
-    if (!devbook) return
-    setStdout([])
-    setStderr([])
-    devbook.runCode(code)
-  }, [devbook])
-
-  useEffect(function initializeDevbook() {
-    const devbook = new Devbook({
+    return new Devbook({
       debug,
       env,
       onStatusChange(status) {
@@ -147,20 +121,27 @@ function useDevbook({
         }
       },
     })
-
-    setStdout([])
-    setStderr([])
-    setURL(undefined)
-    setDevbook(devbook)
-
-    return () => {
-      devbook.destroy()
-    }
   }, [
     env,
     debug,
     port,
   ])
+
+  const runCmd = useCallback((command: string) => {
+    setStdout([])
+    setStderr([])
+    devbook.runCmd(command)
+  }, [devbook])
+
+  const runCode = useCallback((code: string) => {
+    setStdout([])
+    setStderr([])
+    devbook.runCode(code)
+  }, [devbook])
+
+  useEffect(function addCleanup() {
+    return () => devbook.destroy()
+  }, [devbook])
 
   return {
     stderr,
@@ -168,7 +149,7 @@ function useDevbook({
     runCmd,
     runCode,
     status,
-    fs,
+    fs: devbook.fs,
     url,
   }
 }

@@ -3,7 +3,7 @@ import { Env } from './constants'
 import Runner from './runner'
 import EvaluationContext from './evaluationContext'
 import { SessionStatus } from './session/sessionManager'
-
+import { Filesystem } from './runningEnvironment/filesystem'
 const generateExecutionID = makeIDGenerator(6)
 
 /**
@@ -29,6 +29,12 @@ export interface FS {
    * @param content Content to write into file
    */
   write: (path: string, content: string) => Promise<void>
+  delete: (path: string) => void
+  listDir: (path: string) => void
+  createDir: (path: string) => void
+  serialize: Filesystem['serialize']
+  addListener: Filesystem['addListener']
+  removeListener: Filesystem['removeListener']
 }
 
 /**
@@ -107,13 +113,24 @@ class Devbook {
     this.opts.onStatusChange?.(value)
   }
 
+  private get env() {
+    return this.context.env
+  }
+
   /**
    * Use this for accessing and manipulating this `Devbook`'s VM's filesystem.
    */
   get fs(): FS {
+    const filesystem = this.env.filesystem
     return {
+      delete: this.deleteFile.bind(this),
+      listDir: this.listDir.bind(this),
+      createDir: this.createDir.bind(this),
       get: this.getFile.bind(this),
       write: this.writeFile.bind(this),
+      addListener: filesystem.addListener.bind(filesystem),
+      removeListener: filesystem.removeListener.bind(filesystem),
+      serialize: filesystem.serialize.bind(filesystem),
     }
   }
 
@@ -158,6 +175,7 @@ class Devbook {
 
     this.context = Runner.obj.createContext({
       debug: opts.debug,
+      templateID: opts.env,
       contextID: this.contextID,
       onEnvChange(env) {
         if (env.templateID !== getTemplateID()) return
@@ -181,10 +199,6 @@ class Devbook {
         }
       },
     })
-
-    this.context.createRunningEnvironment({
-      templateID: opts.env,
-    })
   }
 
   /**
@@ -197,13 +211,10 @@ class Devbook {
   getURL(port: number) {
     if (this.status !== DevbookStatus.Connected) return
 
-    const sessionID = this.sessionID
     if (!this.sessionID) return
+    if (!this.env.isReady) return
 
-    const environment = this.context.getRunningEnvironment({ templateID: this.opts.env })
-    if (!environment?.isReady) return
-
-    return `https://${port}-${environment.id}-${sessionID}.o.usedevbook.com`
+    return `https://${port}-${this.env.id}-${this.sessionID}.o.usedevbook.com`
   }
 
   /**
@@ -219,7 +230,6 @@ class Devbook {
     this.executionID = generateExecutionID()
 
     this.context.executeCommand({
-      templateID: this.opts.env,
       executionID: this.executionID,
       command,
     })
@@ -238,7 +248,6 @@ class Devbook {
     this.executionID = generateExecutionID()
 
     this.context.executeCode({
-      templateID: this.opts.env,
       executionID: this.executionID,
       code,
     })
@@ -252,20 +261,42 @@ class Devbook {
     this.isDestroyed = true
   }
 
-  private async getFile(path: string) {
+  private listDir(path: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
 
-    return this.context.getFile({
-      templateID: this.opts.env,
+    return this.context.listDir({
       path,
     })
   }
 
-  private async writeFile(path: string, content: string) {
+  private createDir(path: string) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    return this.context.createDir({
+      path,
+    })
+  }
+
+  private deleteFile(path: string) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    return this.context.deleteFile({
+      path,
+    })
+  }
+
+  private getFile(path: string) {
+    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
+
+    return this.context.getFile({
+      path,
+    })
+  }
+
+  private writeFile(path: string, content: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
 
     return this.context.updateFile({
-      templateID: this.opts.env,
       path,
       content,
     })

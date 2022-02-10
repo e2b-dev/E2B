@@ -18,6 +18,7 @@ import { OutputSource } from './runningEnvironment/runningEnvironment'
 
 export interface EvaluationContextOpts {
   contextID: string
+  templateID: Env
   debug?: boolean
   conn: WebSocketConnection
   onCmdOut?: (payload: rws.RunningEnvironment_CmdOut['payload']) => void
@@ -26,7 +27,6 @@ export interface EvaluationContextOpts {
 }
 
 type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => void
-type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -37,11 +37,11 @@ class EvaluationContext {
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
 
-  private envs: RunningEnvironment[] = []
+  readonly env: RunningEnvironment
   private readonly unsubscribeConnHandler: () => void
 
   constructor(private readonly opts: EvaluationContextOpts) {
-    this.logger = new Logger('EvaluationContext', opts.debug)
+    this.logger = new Logger(`EvaluationContext [${opts.templateID}]`, opts.debug)
 
     this.unsubscribeConnHandler = this.opts.conn.subscribeHandler({
       onOpen: this.handleConnectionOpen.bind(this),
@@ -55,6 +55,13 @@ class EvaluationContext {
     if (this.opts.conn.isClosed) {
       this.handleConnectionClose()
     }
+
+    this.env = new RunningEnvironment(this.contextID, opts.templateID)
+    envWS.start(this.opts.conn, {
+      environmentID: this.env.id,
+      template: this.env.template,
+    })
+    this.opts.onEnvChange?.(this.env)
   }
 
   /**
@@ -63,36 +70,22 @@ class EvaluationContext {
    */
   restart() {
     this.logger.log('Restart', this.opts.conn.sessionID)
-    return this.envs.forEach(env => {
-      env.restart()
-      envWS.start(this.opts.conn, {
-        environmentID: env.id,
-        template: env.template,
-      })
+    this.env.restart()
+    envWS.start(this.opts.conn, {
+      environmentID: this.env.id,
+      template: this.env.template,
     })
   }
 
   destroy() {
     this.logger.log('Destroy')
     this.unsubscribeConnHandler()
-    this.envs.forEach(e => {
-      e.filesystem.removeAllListeners()
-    })
-    this.envs = []
+    this.env.filesystem.removeAllListeners()
     this.fsWriteSubscribers = []
   }
 
-  async getFile({ templateID, path: filepath }: { templateID: Env, path: string }) {
-    this.logger.log('Get file', { templateID, filepath })
-    const env = this.getRunningEnvironment({ templateID })
-    if (!env) {
-      this.logger.error('Environment not found', { templateID, filepath })
-      return
-    }
-    if (!env.isReady) {
-      this.logger.error('Environment is not ready', { templateID, filepath })
-      return
-    }
+  async getFile({ path: filepath }: { path: string }) {
+    this.logger.log('Get file', { filepath })
 
     let resolveFileContent: (content: string) => void
     const fileContent = new Promise<string>((resolve, reject) => {
@@ -107,11 +100,11 @@ class EvaluationContext {
       resolveFileContent(payload.content)
     }
 
-    env.filesystem.addListener('onFileContent', fileContentSubscriber)
+    this.env.filesystem.addListener('onFileContent', fileContentSubscriber)
 
     envWS.getFile(this.opts.conn, {
+      environmentID: this.env.id,
       path: filepath,
-      environmentID: env.id,
     })
 
     try {
@@ -120,49 +113,23 @@ class EvaluationContext {
     } catch (err: any) {
       throw new Error(`Error retrieving file ${filepath}: ${err}`)
     } finally {
-      env.filesystem.removeListener('onFileContent', fileContentSubscriber)
+      this.env.filesystem.removeListener('onFileContent', fileContentSubscriber)
     }
   }
 
-  async deleteFile({ templateID, path: filepath }: { templateID: Env, path: string }) {
-    this.logger.log('Delete file', { templateID, filepath })
-    const env = this.getRunningEnvironment({ templateID })
-    if (!env) {
-      this.logger.error('Environment not found', { templateID, filepath })
-      return
-    }
-    if (!env.isReady) {
-      this.logger.error('Environment is not ready', { templateID, filepath })
-      return
-    }
+  deleteFile({ path: filepath }: { path: string }) {
+    this.logger.log('Delete file', { filepath })
 
     envWS.deleteFile(this.opts.conn, {
-      environmentID: env.id,
+      environmentID: this.env.id,
       path: filepath,
     })
   }
 
-  // listEnvDir(args: { envID: string, path: string }) {
-  //   this.logger.log('List dir from env fs', args)
-  //   envFS.ws.listDir(this.opts.conn, {
-  //     envID: args.envID,
-  //     path: args.path,
-  //   })
-  // }
+  async updateFile({ path: filepath, content }: { path: string, content: string }) {
+    this.logger.log('Update file', { filepath })
 
-  async updateFile({ templateID, path: filepath, content }: { templateID: Env, path: string, content: string }) {
-    this.logger.log('Update file', { templateID, filepath })
-    const env = this.getRunningEnvironment({ templateID })
-    if (!env) {
-      this.logger.error('Environment not found', { templateID, filepath })
-      return
-    }
-    if (!env.isReady) {
-      this.logger.error('Environment is not ready', { templateID, filepath })
-      return
-    }
-
-    let resolveFileWritten: (value: void) => void
+    let resolveFileWritten: () => void
     const fileWritten = new Promise<void>((resolve, reject) => {
       resolveFileWritten = resolve
       setTimeout(() => {
@@ -177,7 +144,7 @@ class EvaluationContext {
     this.subscribeFSWrite(fsWriteSubscriber)
 
     envWS.writeFile(this.opts.conn, {
-      environmentID: env.id,
+      environmentID: this.env.id,
       path: filepath,
       content,
     })
@@ -191,79 +158,57 @@ class EvaluationContext {
     }
   }
 
-  async executeCode({ templateID, executionID, code }: { templateID: Env, executionID: string, code: string }) {
-    this.logger.log('Execute code', { templateID, executionID })
-    const toCommand = templates[templateID].toCommand
+  createDir({ path: filepath }: { path: string }) {
+    this.logger.log('Create dir', { filepath })
 
-    if (toCommand === undefined) return
+    envWS.createDir(this.opts.conn, {
+      environmentID: this.env.id,
+      path: filepath,
+    })
+  }
 
-    const env = this.getRunningEnvironment({ templateID })
-    if (!env) {
-      this.logger.error('Environment not found', { templateID, executionID })
-      return
-    }
-    if (!env.isReady) {
-      this.logger.error('Environment is not ready', { templateID, executionID })
-      return
-    }
+  listDir({ path: filepath }: { path: string }) {
+    this.logger.log('List dir', { filepath })
 
-    const extension = templates[templateID].fileExtension
+    envWS.listDir(this.opts.conn, {
+      environmentID: this.env.id,
+      path: filepath,
+    })
+  }
+
+  executeCode({ executionID, code }: { executionID: string, code: string }) {
+    this.logger.log('Execute code', { executionID })
+    const template = templates[this.env.templateID]
+
+    if (template.toCommand === undefined) return
+
+    const extension = template.fileExtension
     const basename = `${executionID}${extension}`
     const filepath = path.join('/src', basename)
 
     envWS.writeFile(this.opts.conn, {
-      environmentID: env.id,
+      environmentID: this.env.id,
       path: filepath,
       content: code,
     })
 
     // Send command to execute file as code
-    const vmFilepath = path.join(templates[templateID].root_dir, filepath)
-    const command = toCommand(vmFilepath)
+    const vmFilepath = path.join(template.root_dir, filepath)
+    const command = template.toCommand(vmFilepath)
     envWS.execCmd(this.opts.conn, {
-      environmentID: env.id,
+      environmentID: this.env.id,
       executionID,
       command,
     })
   }
 
-  executeCommand({ templateID, executionID, command }: { templateID: Env, executionID: string, command: string }) {
-    this.logger.log('Execute shell command', { templateID, executionID, command })
-
-    const env = this.getRunningEnvironment({ templateID })
-    if (!env) {
-      this.logger.error('Environment not found', { templateID, executionID, command })
-      return
-    }
-    if (!env.isReady) {
-      this.logger.error('Environment is not ready', { templateID, executionID, command })
-      return
-    }
-
+  executeCommand({ executionID, command }: { executionID: string, command: string }) {
+    this.logger.log('Execute shell command', { executionID, command })
     envWS.execCmd(this.opts.conn, {
-      environmentID: env.id,
+      environmentID: this.env.id,
       executionID,
       command,
     })
-  }
-
-  getRunningEnvironment({ templateID }: { templateID: Env }) {
-    return this.envs.find(e => e.templateID === templateID)
-  }
-
-  createRunningEnvironment({ templateID }: { templateID: Env }) {
-    this.logger.log('Creating running environment', { templateID })
-
-    const existingEnv = this.getRunningEnvironment({ templateID })
-    if (existingEnv) return
-
-    const env = new RunningEnvironment(this.contextID, templateID)
-    this.envs.push(env)
-    envWS.start(this.opts.conn, {
-      environmentID: env.id,
-      template: env.template,
-    })
-    this.opts.onEnvChange?.(env)
   }
 
   private subscribeFSWrite(subscriber: FSWriteSubscriber) {
@@ -346,17 +291,12 @@ class EvaluationContext {
 
   private vmenv_handleFSEventCreate(payload: rws.RunningEnvironment_FSEventCreate['payload']) {
     this.logger.log('[vmenv] Handling "FSEventCreate"', payload)
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
 
     const basename = path.basename(payload.path)
     const dirPath = path.dirname(payload.path)
 
     const type = payload.type === 'Directory' ? 'Dir' : 'File'
-    env.filesystem.addNodeToDir(
+    this.env.filesystem.addNodeToDir(
       dirPath,
       { name: basename, type },
     )
@@ -364,15 +304,10 @@ class EvaluationContext {
 
   private vmenv_handleFSEventRemove(payload: rws.RunningEnvironment_FSEventRemove['payload']) {
     this.logger.log('[vmenv] Handling "FSEventRemove"', { payload })
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
 
     const basename = path.basename(payload.path)
     const dirPath = path.dirname(payload.path)
-    env.filesystem.removeNodeFromDir(
+    this.env.filesystem.removeNodeFromDir(
       dirPath,
       { name: basename },
     )
@@ -380,11 +315,6 @@ class EvaluationContext {
 
   private vmenv_handleDirContent(payload: rws.RunningEnvironment_DirContent['payload']) {
     this.logger.log('[vmenv] Handling "DirContent"', payload)
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
 
     const content: { name: string, type: FSNodeType }[] = []
     for (const item of payload.content) {
@@ -393,10 +323,12 @@ class EvaluationContext {
       content.push({ name: basename, type })
     }
 
-    env.filesystem.setDirsContent([{ dirPath: payload.dirPath, content }])
+    this.env.filesystem.setDirsContent([{ dirPath: payload.dirPath, content }])
   }
 
   private vmenv_handleCmdExit(payload: rws.RunningEnvironment_CmdExit['payload']) {
+    this.logger.log('[vmenv] Handling "CmdExit"', payload)
+
     if (payload.error === undefined) return
     this.opts.onCmdOut?.({
       environmentID: payload.environmentID,
@@ -407,58 +339,39 @@ class EvaluationContext {
 
   private vmenv_handleFSEventWrite(payload: rws.RunningEnvironment_FSEventWrite['payload']) {
     this.logger.log('[vmenv] Handling "FSEventWrite"', payload)
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
+
     this.fsWriteSubscribers.forEach(s => s(payload))
   }
 
   private vmenv_handleFileContent(payload: rws.RunningEnvironment_FileContent['payload']) {
     this.logger.log('[vmenv] Handling "FileContent"', { environmentID: payload.environmentID, path: payload.path })
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
-    env.filesystem.setFileContent(payload)
+
+    this.env.filesystem.setFileContent(payload)
   }
 
   private vmenv_handleStartAck(payload: rws.RunningEnvironment_StartAck['payload']) {
     this.logger.log('[vmenv] Handling "StartAck"', { payload })
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
-    env.isReady = true
-    this.opts.onEnvChange?.(env)
+
+    this.env.isReady = true
+    this.opts.onEnvChange?.(this.env)
   }
 
   private vmenv_handleCmdOut(payload: rws.RunningEnvironment_CmdOut['payload']) {
     this.logger.log('[vmenv] Handling "CmdOut"', payload)
+
     this.opts.onCmdOut?.(payload)
   }
 
   private vmenv_handleStderr(payload: rws.RunningEnvironment_Stderr['payload']) {
     this.logger.log('[vmenv] Handling "Stderr"', payload)
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
-    env.logOutput(payload.message, OutputSource.Stderr)
+
+    this.env.logOutput(payload.message, OutputSource.Stderr)
   }
 
   private vmenv_handleStdout(payload: rws.RunningEnvironment_Stdout['payload']) {
     this.logger.log('[vmenv] Handling "Stdout"', payload)
-    const env = this.envs.find(e => e.id === payload.environmentID)
-    if (!env) {
-      this.logger.warn('Environment not found', { payload })
-      return
-    }
-    env.logOutput(payload.message, OutputSource.Stdout)
+
+    this.env.logOutput(payload.message, OutputSource.Stdout)
   }
 }
 
