@@ -13,6 +13,8 @@ import {
   ws as envWS,
 } from './runningEnvironment'
 import { SessionStatus } from './session/sessionManager'
+import { FSNodeType } from './runningEnvironment/filesystem'
+import { OutputSource } from './runningEnvironment/runningEnvironment'
 
 export interface EvaluationContextOpts {
   contextID: string
@@ -34,7 +36,6 @@ class EvaluationContext {
   }
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
-  private fileContentSubscribers: FileContentSubscriber[] = []
 
   private envs: RunningEnvironment[] = []
   private readonly unsubscribeConnHandler: () => void
@@ -74,9 +75,11 @@ class EvaluationContext {
   destroy() {
     this.logger.log('Destroy')
     this.unsubscribeConnHandler()
+    this.envs.forEach(e => {
+      e.filesystem.removeAllListeners()
+    })
     this.envs = []
     this.fsWriteSubscribers = []
-    this.fileContentSubscribers = []
   }
 
   async getFile({ templateID, path: filepath }: { templateID: Env, path: string }) {
@@ -99,11 +102,12 @@ class EvaluationContext {
       }, 10000)
     })
 
-    const fileContentSubscriber: FileContentSubscriber = (payload) => {
+    const fileContentSubscriber = (payload: { path: string, content: string }) => {
       if (!payload.path.endsWith(filepath)) return
       resolveFileContent(payload.content)
     }
-    this.subscribeFileContent(fileContentSubscriber)
+
+    env.filesystem.addListener('onFileContent', fileContentSubscriber)
 
     envWS.getFile(this.opts.conn, {
       path: filepath,
@@ -116,9 +120,35 @@ class EvaluationContext {
     } catch (err: any) {
       throw new Error(`Error retrieving file ${filepath}: ${err}`)
     } finally {
-      this.unsubscribeFileContent(fileContentSubscriber)
+      env.filesystem.removeListener('onFileContent', fileContentSubscriber)
     }
   }
+
+  async deleteFile({ templateID, path: filepath }: { templateID: Env, path: string }) {
+    this.logger.log('Delete file', { templateID, filepath })
+    const env = this.getRunningEnvironment({ templateID })
+    if (!env) {
+      this.logger.error('Environment not found', { templateID, filepath })
+      return
+    }
+    if (!env.isReady) {
+      this.logger.error('Environment is not ready', { templateID, filepath })
+      return
+    }
+
+    envWS.deleteFile(this.opts.conn, {
+      environmentID: env.id,
+      path: filepath,
+    })
+  }
+
+  // listEnvDir(args: { envID: string, path: string }) {
+  //   this.logger.log('List dir from env fs', args)
+  //   envFS.ws.listDir(this.opts.conn, {
+  //     envID: args.envID,
+  //     path: args.path,
+  //   })
+  // }
 
   async updateFile({ templateID, path: filepath, content }: { templateID: Env, path: string, content: string }) {
     this.logger.log('Update file', { templateID, filepath })
@@ -236,47 +266,6 @@ class EvaluationContext {
     this.opts.onEnvChange?.(env)
   }
 
-  deleteEnvFile(args: { envID: string; path: string }) {
-    this.logger.log('Delete file in env fs', args)
-    envFS.ws.deleteFile(this.opts.conn, {
-      envID: args.envID,
-      path: args.path,
-    })
-  }
-
-  updateFile({ envID, documentEnvID, path, content }: { envID: string, documentEnvID: string, path: string, content: string }) {
-    this.logger.log('Update document or vm file', { documentEnvID, path })
-    const file = this.files.find(f => f.documentEnvID === documentEnvID && f.path === path)
-    if (file) {
-      this.opts.collabHandlers.file.upsert({ id: file.id, path, documentEnvID, content })
-      return
-    }
-    envFS.ws.writeFile(this.opts.conn, {
-      envID,
-      path,
-      content,
-    })
-  }
-
-  listEnvDir(args: { envID: string, path: string }) {
-    this.logger.log('List dir from env fs', args)
-    envFS.ws.listDir(this.opts.conn, {
-      envID: args.envID,
-      path: args.path,
-    })
-  }
-
-  private subscribeFileContent(subscriber: FileContentSubscriber) {
-    this.fileContentSubscribers.push(subscriber)
-  }
-
-  private unsubscribeFileContent(subscriber: FileContentSubscriber) {
-    const index = this.fileContentSubscribers.indexOf(subscriber)
-    if (index > -1) {
-      this.fileContentSubscribers.splice(index, 1);
-    }
-  }
-
   private subscribeFSWrite(subscriber: FSWriteSubscriber) {
     this.fsWriteSubscribers.push(subscriber)
   }
@@ -325,7 +314,6 @@ class EvaluationContext {
         this.vmenv_handleFileContent(msg.payload)
         break
       }
-
       case rws.MessageType.RunningEnvironment.FSEventCreate: {
         const msg = message as rws.RunningEnvironment_FSEventCreate
         this.vmenv_handleFSEventCreate(msg.payload)
@@ -341,10 +329,71 @@ class EvaluationContext {
         this.vmenv_handleDirContent(msg.payload)
         break
       }
-
+      case rws.MessageType.RunningEnvironment.Stderr: {
+        const msg = message as rws.RunningEnvironment_Stderr
+        this.vmenv_handleStderr(msg.payload)
+        break
+      }
+      case rws.MessageType.RunningEnvironment.Stdout: {
+        const msg = message as rws.RunningEnvironment_Stdout
+        this.vmenv_handleStdout(msg.payload)
+        break
+      }
       default:
         this.logger.warn('Unknown message type', { message })
     }
+  }
+
+  private vmenv_handleFSEventCreate(payload: rws.RunningEnvironment_FSEventCreate['payload']) {
+    this.logger.log('[vmenv] Handling "FSEventCreate"', payload)
+    const env = this.envs.find(e => e.id === payload.environmentID)
+    if (!env) {
+      this.logger.warn('Environment not found', { payload })
+      return
+    }
+
+    const basename = path.basename(payload.path)
+    const dirPath = path.dirname(payload.path)
+
+    const type = payload.type === 'Directory' ? 'Dir' : 'File'
+    env.filesystem.addNodeToDir(
+      dirPath,
+      { name: basename, type },
+    )
+  }
+
+  private vmenv_handleFSEventRemove(payload: rws.RunningEnvironment_FSEventRemove['payload']) {
+    this.logger.log('[vmenv] Handling "FSEventRemove"', { payload })
+    const env = this.envs.find(e => e.id === payload.environmentID)
+    if (!env) {
+      this.logger.warn('Environment not found', { payload })
+      return
+    }
+
+    const basename = path.basename(payload.path)
+    const dirPath = path.dirname(payload.path)
+    env.filesystem.removeNodeFromDir(
+      dirPath,
+      { name: basename },
+    )
+  }
+
+  private vmenv_handleDirContent(payload: rws.RunningEnvironment_DirContent['payload']) {
+    this.logger.log('[vmenv] Handling "DirContent"', payload)
+    const env = this.envs.find(e => e.id === payload.environmentID)
+    if (!env) {
+      this.logger.warn('Environment not found', { payload })
+      return
+    }
+
+    const content: { name: string, type: FSNodeType }[] = []
+    for (const item of payload.content) {
+      const basename = path.basename(item.path)
+      const type: FSNodeType = item.type === 'Directory' ? 'Dir' : 'File'
+      content.push({ name: basename, type })
+    }
+
+    env.filesystem.setDirsContent([{ dirPath: payload.dirPath, content }])
   }
 
   private vmenv_handleCmdExit(payload: rws.RunningEnvironment_CmdExit['payload']) {
@@ -373,7 +422,7 @@ class EvaluationContext {
       this.logger.warn('Environment not found', { payload })
       return
     }
-    this.fileContentSubscribers.forEach(s => s(payload))
+    env.filesystem.setFileContent(payload)
   }
 
   private vmenv_handleStartAck(payload: rws.RunningEnvironment_StartAck['payload']) {
@@ -390,6 +439,26 @@ class EvaluationContext {
   private vmenv_handleCmdOut(payload: rws.RunningEnvironment_CmdOut['payload']) {
     this.logger.log('[vmenv] Handling "CmdOut"', payload)
     this.opts.onCmdOut?.(payload)
+  }
+
+  private vmenv_handleStderr(payload: rws.RunningEnvironment_Stderr['payload']) {
+    this.logger.log('[vmenv] Handling "Stderr"', payload)
+    const env = this.envs.find(e => e.id === payload.environmentID)
+    if (!env) {
+      this.logger.warn('Environment not found', { payload })
+      return
+    }
+    env.logOutput(payload.message, OutputSource.Stderr)
+  }
+
+  private vmenv_handleStdout(payload: rws.RunningEnvironment_Stdout['payload']) {
+    this.logger.log('[vmenv] Handling "Stdout"', payload)
+    const env = this.envs.find(e => e.id === payload.environmentID)
+    if (!env) {
+      this.logger.warn('Environment not found', { payload })
+      return
+    }
+    env.logOutput(payload.message, OutputSource.Stdout)
   }
 }
 

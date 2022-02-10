@@ -6,7 +6,6 @@ import {
 import hash from '../../utils/hash'
 import * as envfs from './filesystem'
 
-
 function hashTemplateID(templateID: Env) {
   return hash(templateID)
 }
@@ -47,11 +46,13 @@ class RunningEnvironment {
     ])
   }
 
-  async rootDir() {
-    return this.template.root_dir
+  logOutput(message: string, source: OutputSource) {
+    this.output = [...this.output, { message, source }]
   }
 
-
+  rootDir() {
+    return this.template.root_dir
+  }
 }
 
 export default RunningEnvironment

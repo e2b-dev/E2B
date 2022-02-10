@@ -1,14 +1,7 @@
 import path from 'path'
-import React from 'react'
-import {
-  FileOutlined,
-  FolderOutlined,
-} from '@ant-design/icons'
-
-import { FilesystemNamePrompt } from 'src/components/Filesystem'
 
 import { FSNodeType } from './types'
-import { FilesystemNode } from './filesystemNode'
+import { CreateFilesystemComponent, CreateFilesystemIcon, CreateFilesystemPrompt, FilesystemNode } from './filesystemNode'
 
 /**
  * `FilesystemPrompt` doesn't represent any type of an actual physical filesystem item.
@@ -46,17 +39,21 @@ class FilesystemPrompt extends FilesystemNode {
     this.onBlur = onBlur
   }
 
-  serialize() {
+  serialize(
+    createComponent: CreateFilesystemComponent,
+    createPrompt: CreateFilesystemPrompt,
+    createIcon: CreateFilesystemIcon,
+  ) {
     return {
       type: 'Prompt' as FSNodeType,
       key: this.path,
-      title: React.createElement(FilesystemNamePrompt, {
-        onConfirm: name => this.onConfirm?.(this, name),
+      title: createPrompt({
+        onConfirm: (name: string) => this.onConfirm?.(this, name),
         onBlur: () => this.onBlur?.(this),
       }),
       isLeaf: true,
       selectable: false,
-      icon: this.forNode === 'File' ? React.createElement(FileOutlined) : React.createElement(FolderOutlined),
+      icon: createIcon({ type: this.forNode }),
     }
   }
 }

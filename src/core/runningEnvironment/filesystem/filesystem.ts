@@ -17,9 +17,8 @@ import Logger from 'src/utils/Logger'
 import {
   SerializedFSNode,
   FSNodeType,
-  DirContentEvent,
 } from './types'
-import { FilesystemNode } from './filesystemNode'
+import { CreateFilesystemComponent, CreateFilesystemIcon, CreateFilesystemPrompt, FilesystemNode } from './filesystemNode'
 import { FilesystemRoot } from './filesystemRoot'
 import { FilesystemFile } from './filesystemFile'
 import { FilesystemDir } from './filesystemDir'
@@ -41,6 +40,13 @@ class Filesystem {
   private onDirsChangeLs: OnDirsChangeL[] = []
   private onFileContentLs: OnFileContent[] = []
   private onShowPromptLs: OnShowPrompt[] = []
+
+  removeAllListeners() {
+    this.onNewItemConfirmLs = []
+    this.onDirsChangeLs = []
+    this.onFileContentLs = []
+    this.onShowPromptLs = []
+  }
 
   addListener(event: 'onShowPrompt', l: OnShowPrompt): void
   addListener(event: 'onFileContent', l: OnFileContent): void
@@ -88,7 +94,7 @@ class Filesystem {
     }
   }
 
-  addNodeToDir(dirPath: string, node: { name: string, isShared: boolean, type: FSNodeType }) {
+  addNodeToDir(dirPath: string, node: { name: string, type: FSNodeType }) {
     this.logger.log('Adding node to dir', { dirPath, node })
 
     let dirNode = this.find(dirPath)
@@ -110,7 +116,6 @@ class Filesystem {
     if (node.type === 'Dir') {
       childNode = new FilesystemDir({
         name: node.name,
-        isShared: node.isShared,
         parent: dirNode,
         onAddItem: ({ event, dir, type }) => this.showPrompt({ event, parent: dir, type }),
       })
@@ -118,7 +123,6 @@ class Filesystem {
       childNode = new FilesystemFile({
         name: node.name,
         parent: dirNode,
-        isShared: node.isShared,
       })
     }
 
@@ -167,7 +171,7 @@ class Filesystem {
   setDirsContent(
     dirs: {
       dirPath: string,
-      content: { name: string, isShared: boolean, type: FSNodeType }[],
+      content: { name: string, type: FSNodeType }[],
     }[],
   ) {
     this.logger.log('Set dirs content', dirs)
@@ -203,14 +207,12 @@ class Filesystem {
             childNode = new FilesystemDir({
               name: c.name,
               parent: dirNode,
-              isShared: c.isShared,
               onAddItem: ({ event, dir, type }) => this.showPrompt({ event, parent: dir, type }),
             })
           } else {
             childNode = new FilesystemFile({
               name: c.name,
               parent: dirNode,
-              isShared: c.isShared,
             })
           }
           children.push(childNode)
@@ -296,10 +298,13 @@ class Filesystem {
     this.notifyOnShowPromptLs({ dirPath: prompt.parent.path })
   }
 
-  serialize(): SerializedFSNode[] {
+  serialize(
+    createComponent: CreateFilesystemComponent,
+    createPrompt: CreateFilesystemPrompt,
+    createIcon: CreateFilesystemIcon,
+  ): SerializedFSNode[] {
     this.logger.log('Serialize')
-    //return this.root.serialize().children
-    return [this.root.serialize()]
+    return [this.root.serialize(createComponent, createPrompt, createIcon)]
   }
 
   print(node: FilesystemDir | FilesystemRoot = this.root, indent = this.startingPrintIndent) {
@@ -337,7 +342,6 @@ class Filesystem {
     }
   }
 
-
   /**
    * Creates a directory at the given path.
    * @returns The created directory.
@@ -357,7 +361,6 @@ class Filesystem {
     const dir = new FilesystemDir({
       parent,
       name: args.name,
-      isShared: true, /* TODO: This is hardcoded */
       onAddItem: ({ event, dir, type }) => this.showPrompt({ event, parent: dir, type }),
     })
     parent.children.push(dir)

@@ -1,11 +1,14 @@
-import React, {
+import {
   MouseEvent,
 } from 'react'
 
-import { FilesystemDir as FSDirComponent } from 'src/components/Filesystem'
-
 import { FSNodeType } from './types'
-import { FilesystemNode } from './filesystemNode'
+import {
+  CreateFilesystemComponent,
+  CreateFilesystemIcon,
+  CreateFilesystemPrompt,
+  FilesystemNode,
+} from './filesystemNode'
 import sortChildren from './sortChildren'
 
 export type AddItemHandler = (args: { event: MouseEvent, dir: FilesystemRoot, type: FSNodeType }) => void
@@ -26,19 +29,22 @@ class FilesystemRoot extends FilesystemNode {
     this.addItemHandler = onAddItem
   }
 
-  serialize() {
-    const children = this.children.map(c => c.serialize())
+  serialize(
+    createComponent: CreateFilesystemComponent,
+    createPrompt: CreateFilesystemPrompt,
+    createIcon: CreateFilesystemIcon,
+  ) {
+    const children = this.children.map(c => c.serialize(createComponent, createPrompt, createIcon))
     return {
       type: 'Root' as FSNodeType,
       key: this.path,
-      title: React.createElement(
-        FSDirComponent,
+      title: createComponent(
         {
           name: this.name,
-          onAddFileMouseDown: event => {
+          onAddFileMouseDown: (event) => {
             this.addItemHandler({ event, dir: this, type: 'File' })
           },
-          onAddDirMouseDown: event => {
+          onAddDirMouseDown: (event) => {
             this.addItemHandler({ event, dir: this, type: 'Dir' })
           },
         },

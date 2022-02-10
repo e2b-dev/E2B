@@ -5,7 +5,6 @@ type FSNodeType = 'File' | 'Dir' | 'Prompt' | 'Empty' | 'Root'
 interface FSNodeMetadata {
   type: FSNodeType
   path: string
-  isShared: boolean
   documentFileID?: string
 }
 

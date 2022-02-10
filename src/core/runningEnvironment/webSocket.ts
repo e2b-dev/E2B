@@ -2,7 +2,6 @@ import * as rws from '../../common-ts/RunnerWebSocket'
 import { TemplateConfig } from '../../common-ts/TemplateConfig'
 import { WebSocketConnection } from '../webSocketConnection'
 
-
 /**
  * Request to receive the `RunningEnvironment.DirContent` message in the future
  * containting the content of the directory at the given path.
