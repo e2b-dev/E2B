@@ -42,6 +42,7 @@ class EvaluationContext {
 
   constructor(private readonly opts: EvaluationContextOpts) {
     this.logger = new Logger(`EvaluationContext [${opts.templateID}]`, opts.debug)
+    this.env = new RunningEnvironment(this.contextID, opts.templateID)
 
     this.unsubscribeConnHandler = this.opts.conn.subscribeHandler({
       onOpen: this.handleConnectionOpen.bind(this),
@@ -56,7 +57,6 @@ class EvaluationContext {
       this.handleConnectionClose()
     }
 
-    this.env = new RunningEnvironment(this.contextID, opts.templateID)
     envWS.start(this.opts.conn, {
       environmentID: this.env.id,
       template: this.env.template,
