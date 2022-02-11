@@ -44,10 +44,14 @@ class EvaluationContext {
     this.logger = new Logger(`EvaluationContext [${opts.templateID}]`, opts.debug)
     this.env = new RunningEnvironment(this.contextID, opts.templateID)
 
+    const onOpen = (sessionID: string) => this.handleConnectionOpen(sessionID)
+    const onMessage = (msg: rws.BaseMessage) => this.handleConnectionMessage(msg)
+    const onClose = () => this.handleConnectionClose()
+
     this.unsubscribeConnHandler = this.opts.conn.subscribeHandler({
-      onOpen: this.handleConnectionOpen.bind(this),
-      onMessage: this.handleConnectionMessage.bind(this),
-      onClose: this.handleConnectionClose.bind(this),
+      onOpen,
+      onMessage,
+      onClose,
     })
 
     if (this.opts.conn.isOpen && this.opts.conn.sessionID) {
