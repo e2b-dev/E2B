@@ -44,15 +44,15 @@ export enum DevbookStatus {
   /**
    * Devbook is not connected to a VM.
    */
-  Disconnected,
+  Disconnected = 'Disconnected',
   /**
    * Devbook is trying to start or connect to a VM.
    */
-  Connecting,
+  Connecting = 'Connecting',
   /**
    * Devbook is connected to a VM and ready to run code or a command.
    */
-  Connected,
+  Connected = 'Connected',
 }
 
 /**

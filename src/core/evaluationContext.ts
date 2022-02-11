@@ -27,6 +27,7 @@ export interface EvaluationContextOpts {
 }
 
 type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => void
+type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -36,6 +37,7 @@ class EvaluationContext {
   }
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
+  private fileContentSubscribers: FileContentSubscriber[] = []
 
   readonly env: RunningEnvironment
   private readonly unsubscribeConnHandler: () => void
@@ -84,8 +86,8 @@ class EvaluationContext {
   destroy() {
     this.logger.log('Destroy')
     this.unsubscribeConnHandler()
-    this.env.filesystem.removeAllListeners()
     this.fsWriteSubscribers = []
+    this.fileContentSubscribers = []
   }
 
   async getFile({ path: filepath }: { path: string }) {
@@ -99,12 +101,11 @@ class EvaluationContext {
       }, 10000)
     })
 
-    const fileContentSubscriber = (payload: { path: string, content: string }) => {
+    const fileContentSubscriber: FileContentSubscriber = (payload) => {
       if (!payload.path.endsWith(filepath)) return
       resolveFileContent(payload.content)
     }
-
-    this.env.filesystem.addListener('onFileContent', fileContentSubscriber)
+    this.subscribeFileContent(fileContentSubscriber)
 
     envWS.getFile(this.opts.conn, {
       environmentID: this.env.id,
@@ -117,7 +118,7 @@ class EvaluationContext {
     } catch (err: any) {
       throw new Error(`Error retrieving file ${filepath}: ${err}`)
     } finally {
-      this.env.filesystem.removeListener('onFileContent', fileContentSubscriber)
+      this.unsubscribeFileContent(fileContentSubscriber)
     }
   }
 
@@ -213,6 +214,17 @@ class EvaluationContext {
       executionID,
       command,
     })
+  }
+
+  private subscribeFileContent(subscriber: FileContentSubscriber) {
+    this.fileContentSubscribers.push(subscriber)
+  }
+
+  private unsubscribeFileContent(subscriber: FileContentSubscriber) {
+    const index = this.fileContentSubscribers.indexOf(subscriber)
+    if (index > -1) {
+      this.fileContentSubscribers.splice(index, 1);
+    }
   }
 
   private subscribeFSWrite(subscriber: FSWriteSubscriber) {
@@ -350,7 +362,7 @@ class EvaluationContext {
   private vmenv_handleFileContent(payload: rws.RunningEnvironment_FileContent['payload']) {
     this.logger.log('[vmenv] Handling "FileContent"', { environmentID: payload.environmentID, path: payload.path })
 
-    this.env.filesystem.setFileContent(payload)
+    this.fileContentSubscribers.forEach(s => s(payload))
   }
 
   private vmenv_handleStartAck(payload: rws.RunningEnvironment_StartAck['payload']) {

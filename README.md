@@ -42,10 +42,11 @@ function InteractiveCodeSnippet() {
 
   async function handleFS() {
     if (status !== DevbookStatus.Connected) return
-  
+    if (!fs) return
+    
     // 5. Manipulate the filesystem
-    await dbk.fs.write('/index.js', 'console.log("Hello world!")')
-    const content = await dbk.fs.get('/index.js')
+    await fs.write('/index.js', 'console.log("Hello world!")')
+    const content = await fs.get('/index.js')
     console.log('Content of the "/index.js" file', content)
   }
 
@@ -102,10 +103,12 @@ export default InteractiveCodeSnippet
     // 4. Execute the code
     dbk.runCode(code)
 
-    // 5. Manipulate the filesystem
-    await dbk.fs.write('/index.js', 'console.log("Hello world!")')
-    const content = await dbk.fs.get('/index.js')
-    console.log('Content of the "/index.js" file', content)
+    if (fs) {
+      // 5. Manipulate the filesystem
+      await dbk.fs.write('/index.js', 'console.log("Hello world!")')
+      const content = await dbk.fs.get('/index.js')
+      console.log('Content of the "/index.js" file', content)
+    }
   }
 ```
 

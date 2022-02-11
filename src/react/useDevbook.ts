@@ -2,7 +2,6 @@ import {
   useEffect,
   useState,
   useCallback,
-  useMemo,
 } from 'react'
 
 import {
@@ -74,7 +73,7 @@ export interface State {
   /**
    * Use this for accessing and manipulating this Devbook's VM's filesystem.
    */
-  fs: FS
+  fs?: FS
   /**
    * URL address that allows you to connect to a port ({@link Opts.port}) 
    * on the environment defined by the {@link Opts.env} in the {@link useDevbook} parameters.
@@ -93,17 +92,29 @@ function useDevbook({
   debug,
   port,
 }: Opts): State {
+  const [devbook, setDevbook] = useState<Devbook>()
+
   const [status, setStatus] = useState<DevbookStatus>(DevbookStatus.Disconnected)
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
   const [url, setURL] = useState<string>()
 
-  const devbook = useMemo(() => {
+  const runCmd = useCallback((command: string) => {
+    if (!devbook) return
     setStdout([])
     setStderr([])
-    setURL(undefined)
+    devbook.runCmd(command)
+  }, [devbook])
 
-    return new Devbook({
+  const runCode = useCallback((code: string) => {
+    if (!devbook) return
+    setStdout([])
+    setStderr([])
+    devbook.runCode(code)
+  }, [devbook])
+
+  useEffect(function initializeDevbook() {
+    const devbook = new Devbook({
       debug,
       env,
       onStatusChange(status) {
@@ -121,27 +132,20 @@ function useDevbook({
         }
       },
     })
+
+    setStdout([])
+    setStderr([])
+    setURL(undefined)
+    setDevbook(devbook)
+
+    return () => {
+      devbook.destroy()
+    }
   }, [
     env,
     debug,
     port,
   ])
-
-  const runCmd = useCallback((command: string) => {
-    setStdout([])
-    setStderr([])
-    devbook.runCmd(command)
-  }, [devbook])
-
-  const runCode = useCallback((code: string) => {
-    setStdout([])
-    setStderr([])
-    devbook.runCode(code)
-  }, [devbook])
-
-  useEffect(function addCleanup() {
-    return () => devbook.destroy()
-  }, [devbook])
 
   return {
     stderr,
@@ -149,7 +153,7 @@ function useDevbook({
     runCmd,
     runCode,
     status,
-    fs: devbook.fs,
+    fs: devbook?.fs,
     url,
   }
 }

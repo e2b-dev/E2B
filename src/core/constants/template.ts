@@ -28,6 +28,11 @@ export enum Env {
    * Runtime environment for the Banana Python API.
    */
   BananaPython = 'banana-python',
+
+  /**
+   * Runtime environment for the Buildspace demo.
+   */
+  BuildspaceSolidity = 'buildspace-solidity',
 }
 
 export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: string) => string, fileExtension: string } } = {
@@ -65,6 +70,13 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: st
     id: 'banana-python',
     fileExtension: '.py',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/banana-python',
+    root_dir: '/home/runner',
+    code_cells_dir: '/home/runner',
+  },
+  [Env.BuildspaceSolidity]: {
+    id: 'buildspace-solidiity',
+    fileExtension: '.sol',
+    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/buildspace-solidity',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner',
   },
