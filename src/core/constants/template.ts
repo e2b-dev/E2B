@@ -16,11 +16,6 @@ export enum Env {
    */
   NodeJS = 'nodejs-v16',
   /**
-   * Runtime environment for the Supabase documentation.
-   */
-  Supabase = 'supabase',
-
-  /**
    * Runtime environment for the Banana Node API.
    */
   BananaNode = 'banana-node',
@@ -28,11 +23,20 @@ export enum Env {
    * Runtime environment for the Banana Python API.
    */
   BananaPython = 'banana-python',
+  // /**
+  //  * Runtime environment for the Supabase demo.
+  //  */
+  // Supabase = 'supabase',
+
+  // /**
+  //  * Runtime environment for the Buildspace demo.
+  //  */
+  // BuildspaceSolidity = 'buildspace-solidity',
 
   /**
-   * Runtime environment for the Buildspace demo.
+   * Runtime environment for the Thirdweb demo.
    */
-  BuildspaceSolidity = 'buildspace-solidity',
+  ThirdwebNode = 'thirdweb-node',
 }
 
 export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: string) => string, fileExtension: string } } = {
@@ -40,14 +44,6 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: st
     id: 'nodejs-v16',
     fileExtension: '.js',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/nodejs-v16:latest',
-    root_dir: '/home/runner',
-    code_cells_dir: '/home/runner/src',
-    toCommand: (filepath: string) => `node "${filepath}"`,
-  },
-  [Env.Supabase]: {
-    id: 'supabase',
-    fileExtension: '.js',
-    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/supabase',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner/src',
     toCommand: (filepath: string) => `node "${filepath}"`,
@@ -73,11 +69,27 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: st
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner',
   },
-  [Env.BuildspaceSolidity]: {
-    id: 'buildspace-solidiity',
-    fileExtension: '.sol',
-    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/buildspace-solidity',
+  // [Env.Supabase]: {
+  //   id: 'supabase',
+  //   fileExtension: '.js',
+  //   image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/supabase',
+  //   root_dir: '/home/runner',
+  //   code_cells_dir: '/home/runner/src',
+  //   toCommand: (filepath: string) => `node "${filepath}"`,
+  // },
+  // [Env.BuildspaceSolidity]: {
+  //   id: 'buildspace-solidiity',
+  //   fileExtension: '.sol',
+  //   image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/buildspace-solidity',
+  //   root_dir: '/home/runner',
+  //   code_cells_dir: '/home/runner',
+  // },
+  [Env.ThirdwebNode]: {
+    id: 'thirdweb-node',
+    fileExtension: '.ts',
+    image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/thirdweb-node',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner',
+    toCommand: (filepath: string) => `npx ts-node "${filepath}"`,
   },
 }

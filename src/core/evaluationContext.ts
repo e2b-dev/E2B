@@ -181,21 +181,21 @@ class EvaluationContext {
     })
   }
 
-  executeCode({ executionID, code }: { executionID: string, code: string }) {
-    this.logger.log('Execute code', { executionID })
+  async executeCode({ executionID, code }: { executionID: string, code: string }) {
+    this.logger.log('Execute code tmp', { executionID })
     const template = templates[this.env.templateID]
+
+    console.log('temp')
 
     if (template.toCommand === undefined) return
 
     const extension = template.fileExtension
     const basename = `${executionID}${extension}`
-    const filepath = path.join('/src', basename)
+    const filepath = path.join('/', basename)
 
-    envWS.writeFile(this.opts.conn, {
-      environmentID: this.env.id,
-      path: filepath,
-      content: code,
-    })
+    console.log('Writing file', { filepath })
+
+    await this.updateFile({ path: filepath, content: code })
 
     // Send command to execute file as code
     const vmFilepath = path.join(template.root_dir, filepath)
