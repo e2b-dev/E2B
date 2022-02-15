@@ -181,32 +181,6 @@ class EvaluationContext {
     })
   }
 
-  executeCode({ executionID, code }: { executionID: string, code: string }) {
-    this.logger.log('Execute code', { executionID })
-    const template = templates[this.env.templateID]
-
-    if (template.toCommand === undefined) return
-
-    const extension = template.fileExtension
-    const basename = `${executionID}${extension}`
-    const filepath = path.join('/src', basename)
-
-    envWS.writeFile(this.opts.conn, {
-      environmentID: this.env.id,
-      path: filepath,
-      content: code,
-    })
-
-    // Send command to execute file as code
-    const vmFilepath = path.join(template.root_dir, filepath)
-    const command = template.toCommand(vmFilepath)
-    envWS.execCmd(this.opts.conn, {
-      environmentID: this.env.id,
-      executionID,
-      command,
-    })
-  }
-
   executeCommand({ executionID, command }: { executionID: string, command: string }) {
     this.logger.log('Execute shell command', { executionID, command })
     envWS.execCmd(this.opts.conn, {

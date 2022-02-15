@@ -138,17 +138,17 @@ class Devbook {
     /**
      * Environment that this `Devbook` should use.
      * 
-     * This affects which runtime (NodeJS, etc...) will be available and used in the {@link Devbook.runCode} function.
+     * This affects which runtime (NodeJS, etc...) will be available and used in the {@link Devbook.runCmd} function.
      *
      * `Devbook` instances with different environments are isolated - each has their own filesystem and process namespace.
      */
     env: Env
     /**
-     * This function will be called when this `Devbook` receives new stdout after you called {@link Devbook.runCode} or {@link Devbook.runCode}.
+     * This function will be called when this `Devbook` receives new stdout after you called {@link Devbook.runCmd}.
      */
     onStdout?: (stdout: string) => void
     /**
-     * This function will be called when this `Devbook` receives new stderr after you called {@link Devbook.runCode} or {@link Devbook.runCode}.
+     * This function will be called when this `Devbook` receives new stderr after you called {@link Devbook.runCmd}.
      */
     onStderr?: (stderr: string) => void
     /**
@@ -232,24 +232,6 @@ class Devbook {
     this.context.executeCommand({
       executionID: this.executionID,
       command,
-    })
-  }
-
-  /**
-   * Run `code` in the VM using the runtime you passed to this `Devbook`'s constructor as the `env`({@link Env}) parameter.
-   * 
-   * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
-   * 
-   * @param code Code to run
-   */
-  runCode(code: string) {
-    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
-    this.executionID = generateExecutionID()
-
-    this.context.executeCode({
-      executionID: this.executionID,
-      code,
     })
   }
 
