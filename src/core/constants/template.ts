@@ -86,10 +86,10 @@ export const templates: { [key in Env]: TemplateConfig & { toCommand?: (code: st
   // },
   [Env.ThirdwebNode]: {
     id: 'thirdweb-node',
-    fileExtension: '.ts',
+    fileExtension: '.mjs',
     image: 'us-central1-docker.pkg.dev/devbookhq/devbook-runner-templates/thirdweb-node',
     root_dir: '/home/runner',
     code_cells_dir: '/home/runner',
-    toCommand: (filepath: string) => `npx ts-node "${filepath}"`,
+    toCommand: (filepath: string) => `node --no-warnings "${filepath}"`,
   },
 }
