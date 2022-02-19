@@ -34,20 +34,26 @@ export interface BaseRunningEnvironment extends BaseMessage {
   }
 }
 
-type TemplateSelection = { template: TemplateConfig } | { templateID: string }
-
 /**
  * Environment that a remote Runner should start. If an environment with the
  * specified `environmentID` is already running no new environment will be started.
  */
 export interface RunningEnvironment_Start extends BaseRunningEnvironment {
   type: TRunningEnvironment.Start
-  payload: TemplateSelection & {
+  payload: {
     /**
      * ID of the new environment. Specified by client so it can have
      * the same ID as `DocumentEnvironment` specified in the document.
      */
     environmentID: string
+    /**
+     * Either the `template` or the `templateID` field must be present.
+     */
+    template?: TemplateConfig
+    /**
+     * Either the `template` or the `templateID` field must be present.
+     */
+    templateID?: string
   }
 }
 
@@ -58,7 +64,7 @@ export interface RunningEnvironment_StartAck extends BaseRunningEnvironment {
   type: TRunningEnvironment.StartAck
   payload: {
     environmentID: string
-    template: TemplateConfig
+    template: Pick<TemplateConfig, 'id' | 'image'>
     /**
      * A boolean indicating whether the environment has already existed or a new one was created.
      */
@@ -164,18 +170,6 @@ export interface RunningEnvironment_RemoveFile extends BaseRunningEnvironment {
  */
 export interface RunningEnvironment_FileContent extends BaseRunningEnvironment {
   type: TRunningEnvironment.FileContent
-  payload: {
-    environmentID: string
-    path: string
-    content: string
-  }
-}
-
-/**
- * Sent to remote Runner when a client requests to overwrite content of a file in the environment's filesystem.
- */
-export interface RunningEnvironment_WriteFile extends BaseRunningEnvironment {
-  type: TRunningEnvironment.WriteFile
   payload: {
     environmentID: string
     path: string

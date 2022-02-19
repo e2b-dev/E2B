@@ -7,6 +7,7 @@ export interface BaseCodeCell extends BaseMessage {
   type: TCodeCell.Error,
   payload: {
     environmentID: string
+    codeCellID: string
   }
 }
 
