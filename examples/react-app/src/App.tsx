@@ -6,7 +6,6 @@ import {
 
 import {
   useDevbook,
-  Env,
   DevbookStatus,
 } from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
@@ -37,7 +36,7 @@ function App() {
     status,
     url,
     fs,
-  } = useDevbook({ debug: true, env: Env.NodeJS, port: 3000 });
+  } = useDevbook({ debug: true, env: 'nodejs-v16', port: 3000 });
   console.log({ stdout, stderr, url });
 
   useEffect(function checkFS() {

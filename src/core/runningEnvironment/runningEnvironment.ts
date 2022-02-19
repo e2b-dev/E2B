@@ -1,10 +1,7 @@
 import { TemplateConfig } from '../../common-ts/TemplateConfig'
-import {
-  Env,
-  templates,
-} from '../constants'
 import hash from '../../utils/hash'
 import * as envfs from './filesystem'
+import { Env } from '../devbook'
 
 function hashTemplateID(templateID: Env) {
   return hash(templateID)
@@ -22,7 +19,6 @@ interface OutputEntry {
 
 class RunningEnvironment {
   readonly id: string
-  readonly template: TemplateConfig
 
   output: OutputEntry[] = []
   readonly filesystem = new envfs.Filesystem()
@@ -35,7 +31,6 @@ class RunningEnvironment {
     readonly templateID: Env,
   ) {
     this.id = `${contextID}_${hashTemplateID(templateID)}`
-    this.template = templates[this.templateID]
   }
 
   restart() {
@@ -48,10 +43,6 @@ class RunningEnvironment {
 
   logOutput(message: string, source: OutputSource) {
     this.output = [...this.output, { message, source }]
-  }
-
-  rootDir() {
-    return this.template.root_dir
   }
 }
 

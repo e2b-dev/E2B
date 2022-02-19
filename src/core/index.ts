@@ -1,6 +1,8 @@
-export type { FS } from './devbook'
+export type {
+  FS,
+  Env,
+} from './devbook'
 export {
   default as Devbook,
   DevbookStatus,
 } from './devbook'
-export { Env } from './constants'

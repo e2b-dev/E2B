@@ -5,16 +5,13 @@ import * as rws from '../common-ts/RunnerWebSocket'
 import { WebSocketConnection } from './webSocketConnection'
 import Logger from '../utils/Logger'
 import {
-  Env,
-  templates,
-} from './constants'
-import {
   RunningEnvironment,
   ws as envWS,
 } from './runningEnvironment'
 import { SessionStatus } from './session/sessionManager'
 import { FSNodeType } from './runningEnvironment/filesystem'
 import { OutputSource } from './runningEnvironment/runningEnvironment'
+import { Env } from './devbook'
 
 export interface EvaluationContextOpts {
   contextID: string
@@ -65,7 +62,7 @@ class EvaluationContext {
 
     envWS.start(this.opts.conn, {
       environmentID: this.env.id,
-      template: this.env.template,
+      templateID: this.env.templateID,
     })
     this.opts.onEnvChange?.(this.env)
   }
@@ -79,7 +76,7 @@ class EvaluationContext {
     this.env.restart()
     envWS.start(this.opts.conn, {
       environmentID: this.env.id,
-      template: this.env.template,
+      templateID: this.env.templateID,
     })
   }
 

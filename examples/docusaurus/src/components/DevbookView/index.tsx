@@ -3,7 +3,7 @@ import React, {
   useCallback,
 } from 'react';
 
-import { useDevbook, Env } from '@devbookhq/sdk';
+import { useDevbook } from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
 
 import Editor from './Editor';
@@ -18,7 +18,7 @@ function App({ code: initialCode = '' }: Props) {
   const [sizes, setSizes] = useState([50, 50]);
   const [code, setCode] = useState(initialCode);
 
-  const { stderr, stdout, runCode } = useDevbook({ debug: true, env: Env.NodeJS });
+  const { stderr, stdout, runCode } = useDevbook({ debug: true, env: 'nodejs-v16' });
 
   const handleEditorChange = useCallback((content: string) => {
     setCode(content);
