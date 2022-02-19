@@ -64,7 +64,7 @@ export interface RunningEnvironment_StartAck extends BaseRunningEnvironment {
   type: TRunningEnvironment.StartAck
   payload: {
     environmentID: string
-    template: TemplateConfig
+    template: Pick<TemplateConfig, 'id' | 'image'>
     /**
      * A boolean indicating whether the environment has already existed or a new one was created.
      */
@@ -170,18 +170,6 @@ export interface RunningEnvironment_RemoveFile extends BaseRunningEnvironment {
  */
 export interface RunningEnvironment_FileContent extends BaseRunningEnvironment {
   type: TRunningEnvironment.FileContent
-  payload: {
-    environmentID: string
-    path: string
-    content: string
-  }
-}
-
-/**
- * Sent to remote Runner when a client requests to overwrite content of a file in the environment's filesystem.
- */
-export interface RunningEnvironment_WriteFile extends BaseRunningEnvironment {
-  type: TRunningEnvironment.WriteFile
   payload: {
     environmentID: string
     path: string
