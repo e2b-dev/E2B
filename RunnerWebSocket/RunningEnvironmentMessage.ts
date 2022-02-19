@@ -34,19 +34,20 @@ export interface BaseRunningEnvironment extends BaseMessage {
   }
 }
 
+type TemplateSelection = { template: TemplateConfig } | { templateID: string }
+
 /**
  * Environment that a remote Runner should start. If an environment with the
  * specified `environmentID` is already running no new environment will be started.
  */
 export interface RunningEnvironment_Start extends BaseRunningEnvironment {
   type: TRunningEnvironment.Start
-  payload: {
+  payload: TemplateSelection & {
     /**
      * ID of the new environment. Specified by client so it can have
      * the same ID as `DocumentEnvironment` specified in the document.
      */
     environmentID: string
-    template: TemplateConfig
   }
 }
 
@@ -288,16 +289,16 @@ export interface RunningEnvironment_ListRunningCmds extends BaseRunningEnvironme
  * Received from remote Runner when a command prints to stdout or stderr.
  */
 export interface RunningEnvironment_CmdOut extends BaseRunningEnvironment {
-    type: TRunningEnvironment.CmdOut
-    payload: {
-      environmentID: string
-      /**
-       * A unique ID that Runner received via the `RunningEnvironment_ExecCmd` message.
-       */
-      executionID: string
-      stdout?: string
-      stderr?: string
-    }
+  type: TRunningEnvironment.CmdOut
+  payload: {
+    environmentID: string
+    /**
+     * A unique ID that Runner received via the `RunningEnvironment_ExecCmd` message.
+     */
+    executionID: string
+    stdout?: string
+    stderr?: string
+  }
 }
 
 /**
