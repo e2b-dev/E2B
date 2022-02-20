@@ -9,9 +9,9 @@ const generateExecutionID = makeIDGenerator(6)
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
 // it makes more sense to name it `Env` because it's less confusing for users.
 /**
- * Runtime environments that you can use with the Devbooks' VMs.
+ * Runtime environment to use with the Devbooks' VMs.
  */
-export type Env = string | 'nextjs-v11-components' | 'nodejs-v16'
+export type Env = string
 
 /**
  * Methods for accessing and manipulating this `Devbook`'s VM's filesystem.

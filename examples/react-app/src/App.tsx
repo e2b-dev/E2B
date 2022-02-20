@@ -31,7 +31,6 @@ function App() {
   const {
     stderr,
     stdout,
-    runCode,
     runCmd,
     status,
     url,
@@ -42,6 +41,8 @@ function App() {
   useEffect(function checkFS() {
     (async () => {
       if (status !== DevbookStatus.Connected) return
+      if (!fs) return
+
       await fs.write('/new/path', '00')
       const content = await fs.get('/new/path')
       console.log({ content })
@@ -56,13 +57,17 @@ function App() {
     }
   }, [setCode, execType]);
 
-  const run = useCallback(() => {
+  const run = useCallback(async () => {
+    if (status !== DevbookStatus.Connected) return
     if (execType === 'code') {
-      runCode(code);
+      if (!fs) return
+
+      await fs.write('/index.js', code)
+      runCmd('node "/home/runner/index.js"')
     } else {
       runCmd(cmd);
     }
-  }, [runCode, runCmd, code, cmd, execType]);
+  }, [runCmd, code, cmd, execType, fs, status]);
 
   return (
     <div className="app">
