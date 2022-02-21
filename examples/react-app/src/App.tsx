@@ -35,19 +35,8 @@ function App() {
     status,
     url,
     fs,
-  } = useDevbook({ debug: true, env: 'node-test', port: 3000 });
+  } = useDevbook({ debug: true, env: 'example-env', port: 3000 });
   console.log({ stdout, stderr, url });
-
-  useEffect(function checkFS() {
-    (async () => {
-      if (status !== DevbookStatus.Connected) return
-      if (!fs) return
-
-      await fs.write('/new/path', '00')
-      const content = await fs.get('/new/path')
-      console.log({ content })
-    })()
-  }, [fs, status])
 
   const handleEditorChange = useCallback((content: string) => {
     if (execType === 'code') {
