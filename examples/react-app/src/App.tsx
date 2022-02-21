@@ -35,7 +35,7 @@ function App() {
     status,
     url,
     fs,
-  } = useDevbook({ debug: true, env: 'nodejs-v16', port: 3000 });
+  } = useDevbook({ debug: true, env: 'node-test', port: 3000 });
   console.log({ stdout, stderr, url });
 
   useEffect(function checkFS() {
@@ -62,8 +62,8 @@ function App() {
     if (execType === 'code') {
       if (!fs) return
 
-      await fs.write('/files/index.js', code)
-      runCmd('node "/files/index.js"')
+      await fs.write('/index.js', code)
+      runCmd('node "./index.js"')
     } else {
       runCmd(cmd);
     }

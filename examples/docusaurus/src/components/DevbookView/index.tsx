@@ -28,8 +28,8 @@ function App({ code: initialCode = '' }: Props) {
     if (status !== DevbookStatus.Connected) return
     if (!fs) return
 
-    await fs.write('/files/index.js', code)
-    runCmd('node "/files/index.js"')
+    await fs.write('/index.js', code)
+    runCmd('node "./index.js"')
   }, [runCmd, fs, status]);
 
   return (
