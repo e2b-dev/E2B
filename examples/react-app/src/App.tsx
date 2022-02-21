@@ -62,8 +62,8 @@ function App() {
     if (execType === 'code') {
       if (!fs) return
 
-      await fs.write('/index.js', code)
-      runCmd('node "/home/runner/index.js"')
+      await fs.write('/files/index.js', code)
+      runCmd('node "/files/index.js"')
     } else {
       runCmd(cmd);
     }

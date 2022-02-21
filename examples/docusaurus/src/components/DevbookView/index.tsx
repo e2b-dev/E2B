@@ -3,7 +3,7 @@ import React, {
   useCallback,
 } from 'react';
 
-import { useDevbook } from '@devbookhq/sdk';
+import { useDevbook, DevbookStatus } from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
 
 import Editor from './Editor';
@@ -18,11 +18,19 @@ function App({ code: initialCode = '' }: Props) {
   const [sizes, setSizes] = useState([50, 50]);
   const [code, setCode] = useState(initialCode);
 
-  const { stderr, stdout, runCode } = useDevbook({ debug: true, env: 'nodejs-v16' });
+  const { stderr, stdout, runCmd, status, fs } = useDevbook({ debug: true, env: 'nodejs-v16' });
 
   const handleEditorChange = useCallback((content: string) => {
     setCode(content);
   }, [setCode]);
+
+  const runCode = useCallback(async (code: string) => {
+    if (status !== DevbookStatus.Connected) return
+    if (!fs) return
+
+    await fs.write('/files/index.js', code)
+    runCmd('node "/files/index.js"')
+  }, [runCmd, fs, status]);
 
   return (
     <div className="">
