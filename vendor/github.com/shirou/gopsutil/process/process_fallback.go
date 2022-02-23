@@ -36,6 +36,14 @@ func PidsWithContext(ctx context.Context) ([]int32, error) {
 	return []int32{}, common.ErrNotImplementedError
 }
 
+func Processes() ([]*Process, error) {
+	return nil, common.ErrNotImplementedError
+}
+
+func ProcessesWithContext(ctx context.Context) ([]*Process, error) {
+	return nil, common.ErrNotImplementedError
+}
+
 func NewProcess(pid int32) (*Process, error) {
 	return nil, common.ErrNotImplementedError
 }

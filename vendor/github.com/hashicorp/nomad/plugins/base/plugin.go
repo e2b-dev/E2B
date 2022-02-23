@@ -5,9 +5,9 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/hashicorp/go-msgpack/codec"
 	plugin "github.com/hashicorp/go-plugin"
 	"github.com/hashicorp/nomad/plugins/base/proto"
-	"github.com/ugorji/go/codec"
 	"google.golang.org/grpc"
 )
 
@@ -60,7 +60,15 @@ func (p *PluginBase) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, 
 var MsgpackHandle = func() *codec.MsgpackHandle {
 	h := &codec.MsgpackHandle{}
 	h.RawToString = true
+
+	// maintain binary format from time prior to upgrading latest ugorji
+	h.BasicHandle.TimeNotBuiltin = true
+
 	h.MapType = reflect.TypeOf(map[string]interface{}(nil))
+
+	// only review struct codec tags - ignore `json` flags
+	h.TypeInfos = codec.NewTypeInfos([]string{"codec"})
+
 	return h
 }()
 

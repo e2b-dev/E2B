@@ -3,10 +3,11 @@ package netlink
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"net"
 	"syscall"
-	"unsafe"
 
 	"github.com/vishvananda/netlink/nl"
 	"golang.org/x/sys/unix"
@@ -19,6 +20,35 @@ const (
 	TC_U32_VAROFFSET = nl.TC_U32_VAROFFSET
 	TC_U32_EAT       = nl.TC_U32_EAT
 )
+
+// Sel of the U32 filters that contains multiple TcU32Key. This is the type
+// alias and the frontend representation of nl.TcU32Sel. It is serialized into
+// canonical nl.TcU32Sel with the appropriate endianness.
+type TcU32Sel = nl.TcU32Sel
+
+// TcU32Key contained of Sel in the U32 filters. This is the type alias and the
+// frontend representation of nl.TcU32Key. It is serialized into chanonical
+// nl.TcU32Sel with the appropriate endianness.
+type TcU32Key = nl.TcU32Key
+
+// U32 filters on many packet related properties
+type U32 struct {
+	FilterAttrs
+	ClassId    uint32
+	Divisor    uint32 // Divisor MUST be power of 2.
+	Hash       uint32
+	RedirIndex int
+	Sel        *TcU32Sel
+	Actions    []Action
+}
+
+func (filter *U32) Attrs() *FilterAttrs {
+	return &filter.FilterAttrs
+}
+
+func (filter *U32) Type() string {
+	return "u32"
+}
 
 // Fw filter filters on firewall marks
 // NOTE: this is in filter_linux because it refers to nl.TcPolice which
@@ -123,8 +153,24 @@ func FilterAdd(filter Filter) error {
 // FilterAdd will add a filter to the system.
 // Equivalent to: `tc filter add $filter`
 func (h *Handle) FilterAdd(filter Filter) error {
+	return h.filterModify(filter, unix.NLM_F_CREATE|unix.NLM_F_EXCL)
+}
+
+// FilterReplace will replace a filter.
+// Equivalent to: `tc filter replace $filter`
+func FilterReplace(filter Filter) error {
+	return pkgHandle.FilterReplace(filter)
+}
+
+// FilterReplace will replace a filter.
+// Equivalent to: `tc filter replace $filter`
+func (h *Handle) FilterReplace(filter Filter) error {
+	return h.filterModify(filter, unix.NLM_F_CREATE)
+}
+
+func (h *Handle) filterModify(filter Filter, flags int) error {
 	native = nl.NativeEndian()
-	req := h.newNetlinkRequest(unix.RTM_NEWTFILTER, unix.NLM_F_CREATE|unix.NLM_F_EXCL|unix.NLM_F_ACK)
+	req := h.newNetlinkRequest(unix.RTM_NEWTFILTER, flags|unix.NLM_F_ACK)
 	base := filter.Attrs()
 	msg := &nl.TcMsg{
 		Family:  nl.FAMILY_ALL,
@@ -140,8 +186,7 @@ func (h *Handle) FilterAdd(filter Filter) error {
 
 	switch filter := filter.(type) {
 	case *U32:
-		// Convert TcU32Sel into nl.TcU32Sel as it is without copy.
-		sel := (*nl.TcU32Sel)(unsafe.Pointer(filter.Sel))
+		sel := filter.Sel
 		if sel == nil {
 			// match all
 			sel = &nl.TcU32Sel{
@@ -385,6 +430,63 @@ func EncodeActions(attr *nl.RtAttr, actions []Action) error {
 			}
 			toTcGen(action.Attrs(), &mirred.TcGen)
 			aopts.AddRtAttr(nl.TCA_MIRRED_PARMS, mirred.Serialize())
+		case *TunnelKeyAction:
+			table := attr.AddRtAttr(tabIndex, nil)
+			tabIndex++
+			table.AddRtAttr(nl.TCA_ACT_KIND, nl.ZeroTerminated("tunnel_key"))
+			aopts := table.AddRtAttr(nl.TCA_ACT_OPTIONS, nil)
+			tun := nl.TcTunnelKey{
+				Action: int32(action.Action),
+			}
+			toTcGen(action.Attrs(), &tun.TcGen)
+			aopts.AddRtAttr(nl.TCA_TUNNEL_KEY_PARMS, tun.Serialize())
+			if action.Action == TCA_TUNNEL_KEY_SET {
+				aopts.AddRtAttr(nl.TCA_TUNNEL_KEY_ENC_KEY_ID, htonl(action.KeyID))
+				if v4 := action.SrcAddr.To4(); v4 != nil {
+					aopts.AddRtAttr(nl.TCA_TUNNEL_KEY_ENC_IPV4_SRC, v4[:])
+				} else if v6 := action.SrcAddr.To16(); v6 != nil {
+					aopts.AddRtAttr(nl.TCA_TUNNEL_KEY_ENC_IPV6_SRC, v6[:])
+				} else {
+					return fmt.Errorf("invalid src addr %s for tunnel_key action", action.SrcAddr)
+				}
+				if v4 := action.DstAddr.To4(); v4 != nil {
+					aopts.AddRtAttr(nl.TCA_TUNNEL_KEY_ENC_IPV4_DST, v4[:])
+				} else if v6 := action.DstAddr.To16(); v6 != nil {
+					aopts.AddRtAttr(nl.TCA_TUNNEL_KEY_ENC_IPV6_DST, v6[:])
+				} else {
+					return fmt.Errorf("invalid dst addr %s for tunnel_key action", action.DstAddr)
+				}
+			}
+		case *SkbEditAction:
+			table := attr.AddRtAttr(tabIndex, nil)
+			tabIndex++
+			table.AddRtAttr(nl.TCA_ACT_KIND, nl.ZeroTerminated("skbedit"))
+			aopts := table.AddRtAttr(nl.TCA_ACT_OPTIONS, nil)
+			skbedit := nl.TcSkbEdit{}
+			toTcGen(action.Attrs(), &skbedit.TcGen)
+			aopts.AddRtAttr(nl.TCA_SKBEDIT_PARMS, skbedit.Serialize())
+			if action.QueueMapping != nil {
+				aopts.AddRtAttr(nl.TCA_SKBEDIT_QUEUE_MAPPING, nl.Uint16Attr(*action.QueueMapping))
+			}
+			if action.Priority != nil {
+				aopts.AddRtAttr(nl.TCA_SKBEDIT_PRIORITY, nl.Uint32Attr(*action.Priority))
+			}
+			if action.PType != nil {
+				aopts.AddRtAttr(nl.TCA_SKBEDIT_PTYPE, nl.Uint16Attr(*action.PType))
+			}
+			if action.Mark != nil {
+				aopts.AddRtAttr(nl.TCA_SKBEDIT_MARK, nl.Uint32Attr(*action.Mark))
+			}
+		case *ConnmarkAction:
+			table := attr.AddRtAttr(tabIndex, nil)
+			tabIndex++
+			table.AddRtAttr(nl.TCA_ACT_KIND, nl.ZeroTerminated("connmark"))
+			aopts := table.AddRtAttr(nl.TCA_ACT_OPTIONS, nil)
+			connmark := nl.TcConnmark{
+				Zone: action.Zone,
+			}
+			toTcGen(action.Attrs(), &connmark.TcGen)
+			aopts.AddRtAttr(nl.TCA_CONNMARK_PARMS, connmark.Serialize())
 		case *BpfAction:
 			table := attr.AddRtAttr(tabIndex, nil)
 			tabIndex++
@@ -428,8 +530,14 @@ func parseActions(tables []syscall.NetlinkRouteAttr) ([]Action, error) {
 					action = &MirredAction{}
 				case "bpf":
 					action = &BpfAction{}
+				case "connmark":
+					action = &ConnmarkAction{}
 				case "gact":
 					action = &GenericAction{}
+				case "tunnel_key":
+					action = &TunnelKeyAction{}
+				case "skbedit":
+					action = &SkbEditAction{}
 				default:
 					break nextattr
 				}
@@ -444,10 +552,45 @@ func parseActions(tables []syscall.NetlinkRouteAttr) ([]Action, error) {
 						switch adatum.Attr.Type {
 						case nl.TCA_MIRRED_PARMS:
 							mirred := *nl.DeserializeTcMirred(adatum.Value)
-							toAttrs(&mirred.TcGen, action.Attrs())
 							action.(*MirredAction).ActionAttrs = ActionAttrs{}
+							toAttrs(&mirred.TcGen, action.Attrs())
 							action.(*MirredAction).Ifindex = int(mirred.Ifindex)
 							action.(*MirredAction).MirredAction = MirredAct(mirred.Eaction)
+						}
+					case "tunnel_key":
+						switch adatum.Attr.Type {
+						case nl.TCA_TUNNEL_KEY_PARMS:
+							tun := *nl.DeserializeTunnelKey(adatum.Value)
+							action.(*TunnelKeyAction).ActionAttrs = ActionAttrs{}
+							toAttrs(&tun.TcGen, action.Attrs())
+							action.(*TunnelKeyAction).Action = TunnelKeyAct(tun.Action)
+						case nl.TCA_TUNNEL_KEY_ENC_KEY_ID:
+							action.(*TunnelKeyAction).KeyID = networkOrder.Uint32(adatum.Value[0:4])
+						case nl.TCA_TUNNEL_KEY_ENC_IPV6_SRC:
+						case nl.TCA_TUNNEL_KEY_ENC_IPV4_SRC:
+							action.(*TunnelKeyAction).SrcAddr = net.IP(adatum.Value[:])
+						case nl.TCA_TUNNEL_KEY_ENC_IPV6_DST:
+						case nl.TCA_TUNNEL_KEY_ENC_IPV4_DST:
+							action.(*TunnelKeyAction).DstAddr = net.IP(adatum.Value[:])
+						}
+					case "skbedit":
+						switch adatum.Attr.Type {
+						case nl.TCA_SKBEDIT_PARMS:
+							skbedit := *nl.DeserializeSkbEdit(adatum.Value)
+							action.(*SkbEditAction).ActionAttrs = ActionAttrs{}
+							toAttrs(&skbedit.TcGen, action.Attrs())
+						case nl.TCA_SKBEDIT_MARK:
+							mark := native.Uint32(adatum.Value[0:4])
+							action.(*SkbEditAction).Mark = &mark
+						case nl.TCA_SKBEDIT_PRIORITY:
+							priority := native.Uint32(adatum.Value[0:4])
+							action.(*SkbEditAction).Priority = &priority
+						case nl.TCA_SKBEDIT_PTYPE:
+							ptype := native.Uint16(adatum.Value[0:2])
+							action.(*SkbEditAction).PType = &ptype
+						case nl.TCA_SKBEDIT_QUEUE_MAPPING:
+							mapping := native.Uint16(adatum.Value[0:2])
+							action.(*SkbEditAction).QueueMapping = &mapping
 						}
 					case "bpf":
 						switch adatum.Attr.Type {
@@ -458,6 +601,14 @@ func parseActions(tables []syscall.NetlinkRouteAttr) ([]Action, error) {
 							action.(*BpfAction).Fd = int(native.Uint32(adatum.Value[0:4]))
 						case nl.TCA_ACT_BPF_NAME:
 							action.(*BpfAction).Name = string(adatum.Value[:len(adatum.Value)-1])
+						}
+					case "connmark":
+						switch adatum.Attr.Type {
+						case nl.TCA_CONNMARK_PARMS:
+							connmark := *nl.DeserializeTcConnmark(adatum.Value)
+							action.(*ConnmarkAction).ActionAttrs = ActionAttrs{}
+							toAttrs(&connmark.TcGen, action.Attrs())
+							action.(*ConnmarkAction).Zone = connmark.Zone
 						}
 					case "gact":
 						switch adatum.Attr.Type {
@@ -483,7 +634,7 @@ func parseU32Data(filter Filter, data []syscall.NetlinkRouteAttr) (bool, error) 
 		case nl.TCA_U32_SEL:
 			detailed = true
 			sel := nl.DeserializeTcU32Sel(datum.Value)
-			u32.Sel = (*TcU32Sel)(unsafe.Pointer(sel))
+			u32.Sel = sel
 			if native != networkOrder {
 				// Handle the endianness of attributes
 				u32.Sel.Offmask = native.Uint16(htons(sel.Offmask))
@@ -564,6 +715,10 @@ func parseBpfData(filter Filter, data []syscall.NetlinkRouteAttr) (bool, error) 
 			if (flags & nl.TCA_BPF_FLAG_ACT_DIRECT) != 0 {
 				bpf.DirectAction = true
 			}
+		case nl.TCA_BPF_ID:
+			bpf.Id = int(native.Uint32(datum.Value[0:4]))
+		case nl.TCA_BPF_TAG:
+			bpf.Tag = hex.EncodeToString(datum.Value[:len(datum.Value)-1])
 		}
 	}
 	return detailed, nil

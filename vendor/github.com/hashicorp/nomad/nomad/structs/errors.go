@@ -3,19 +3,21 @@ package structs
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 const (
-	errNoLeader            = "No cluster leader"
-	errNoRegionPath        = "No path to region"
-	errTokenNotFound       = "ACL token not found"
-	errPermissionDenied    = "Permission denied"
-	errNoNodeConn          = "No path to node"
-	errUnknownMethod       = "Unknown rpc method"
-	errUnknownNomadVersion = "Unable to determine Nomad version"
-	errNodeLacksRpc        = "Node does not support RPC; requires 0.8 or later"
-	errMissingAllocID      = "Missing allocation ID"
+	errNoLeader                   = "No cluster leader"
+	errNotReadyForConsistentReads = "Not ready to serve consistent reads"
+	errNoRegionPath               = "No path to region"
+	errTokenNotFound              = "ACL token not found"
+	errPermissionDenied           = "Permission denied"
+	errNoNodeConn                 = "No path to node"
+	errUnknownMethod              = "Unknown rpc method"
+	errUnknownNomadVersion        = "Unable to determine Nomad version"
+	errNodeLacksRpc               = "Node does not support RPC; requires 0.8 or later"
+	errMissingAllocID             = "Missing allocation ID"
 
 	// Prefix based errors that are used to check if the error is of a given
 	// type. These errors should be created with the associated constructor.
@@ -24,18 +26,46 @@ const (
 	ErrUnknownJobPrefix        = "Unknown job"
 	ErrUnknownEvaluationPrefix = "Unknown evaluation"
 	ErrUnknownDeploymentPrefix = "Unknown deployment"
+
+	errRPCCodedErrorPrefix = "RPC Error:: "
+
+	errDeploymentTerminalNoCancel    = "can't cancel terminal deployment"
+	errDeploymentTerminalNoFail      = "can't fail terminal deployment"
+	errDeploymentTerminalNoPause     = "can't pause terminal deployment"
+	errDeploymentTerminalNoPromote   = "can't promote terminal deployment"
+	errDeploymentTerminalNoResume    = "can't resume terminal deployment"
+	errDeploymentTerminalNoUnblock   = "can't unblock terminal deployment"
+	errDeploymentTerminalNoRun       = "can't run terminal deployment"
+	errDeploymentTerminalNoSetHealth = "can't set health of allocations for a terminal deployment"
+	errDeploymentRunningNoUnblock    = "can't unblock running deployment"
 )
 
 var (
-	ErrNoLeader            = errors.New(errNoLeader)
-	ErrNoRegionPath        = errors.New(errNoRegionPath)
-	ErrTokenNotFound       = errors.New(errTokenNotFound)
-	ErrPermissionDenied    = errors.New(errPermissionDenied)
-	ErrNoNodeConn          = errors.New(errNoNodeConn)
-	ErrUnknownMethod       = errors.New(errUnknownMethod)
-	ErrUnknownNomadVersion = errors.New(errUnknownNomadVersion)
-	ErrNodeLacksRpc        = errors.New(errNodeLacksRpc)
-	ErrMissingAllocID      = errors.New(errMissingAllocID)
+	ErrNoLeader                   = errors.New(errNoLeader)
+	ErrNotReadyForConsistentReads = errors.New(errNotReadyForConsistentReads)
+	ErrNoRegionPath               = errors.New(errNoRegionPath)
+	ErrTokenNotFound              = errors.New(errTokenNotFound)
+	ErrPermissionDenied           = errors.New(errPermissionDenied)
+	ErrNoNodeConn                 = errors.New(errNoNodeConn)
+	ErrUnknownMethod              = errors.New(errUnknownMethod)
+	ErrUnknownNomadVersion        = errors.New(errUnknownNomadVersion)
+	ErrNodeLacksRpc               = errors.New(errNodeLacksRpc)
+	ErrMissingAllocID             = errors.New(errMissingAllocID)
+
+	ErrUnknownNode = errors.New(ErrUnknownNodePrefix)
+
+	ErrDeploymentTerminalNoCancel    = errors.New(errDeploymentTerminalNoCancel)
+	ErrDeploymentTerminalNoFail      = errors.New(errDeploymentTerminalNoFail)
+	ErrDeploymentTerminalNoPause     = errors.New(errDeploymentTerminalNoPause)
+	ErrDeploymentTerminalNoPromote   = errors.New(errDeploymentTerminalNoPromote)
+	ErrDeploymentTerminalNoResume    = errors.New(errDeploymentTerminalNoResume)
+	ErrDeploymentTerminalNoUnblock   = errors.New(errDeploymentTerminalNoUnblock)
+	ErrDeploymentTerminalNoRun       = errors.New(errDeploymentTerminalNoRun)
+	ErrDeploymentTerminalNoSetHealth = errors.New(errDeploymentTerminalNoSetHealth)
+	ErrDeploymentRunningNoUnblock    = errors.New(errDeploymentRunningNoUnblock)
+
+	ErrCSIClientRPCIgnorable = errors.New("CSI client error (ignorable)")
+	ErrCSIClientRPCRetryable = errors.New("CSI client error (retryable)")
 )
 
 // IsErrNoLeader returns whether the error is due to there being no leader.
@@ -71,6 +101,10 @@ func IsErrNoNodeConn(err error) bool {
 // being allowed due to lack of permissions.
 func IsErrUnknownMethod(err error) bool {
 	return err != nil && strings.Contains(err.Error(), errUnknownMethod)
+}
+
+func IsErrRPCCoded(err error) bool {
+	return err != nil && strings.HasPrefix(err.Error(), errRPCCodedErrorPrefix)
 }
 
 // NewErrUnknownAllocation returns a new error caused by the allocation being
@@ -141,4 +175,39 @@ func IsErrUnknownNomadVersion(err error) bool {
 // unable to connect to a client node because the client is too old (pre-v0.8).
 func IsErrNodeLacksRpc(err error) bool {
 	return err != nil && strings.Contains(err.Error(), errNodeLacksRpc)
+}
+
+// NewErrRPCCoded wraps an RPC error with a code to be converted to HTTP status
+// code
+func NewErrRPCCoded(code int, msg string) error {
+	return fmt.Errorf("%s%d,%s", errRPCCodedErrorPrefix, code, msg)
+}
+
+// NewErrRPCCoded wraps an RPC error with a code to be converted to HTTP status
+// code
+func NewErrRPCCodedf(code int, format string, args ...interface{}) error {
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Errorf("%s%d,%s", errRPCCodedErrorPrefix, code, msg)
+}
+
+// CodeFromRPCCodedErr returns the code and message of error if it's an RPC error
+// created through NewErrRPCCoded function.  Returns `ok` false if error is not
+// an rpc error
+func CodeFromRPCCodedErr(err error) (code int, msg string, ok bool) {
+	if err == nil || !strings.HasPrefix(err.Error(), errRPCCodedErrorPrefix) {
+		return 0, "", false
+	}
+
+	headerLen := len(errRPCCodedErrorPrefix)
+	parts := strings.SplitN(err.Error()[headerLen:], ",", 2)
+	if len(parts) != 2 {
+		return 0, "", false
+	}
+
+	code, err = strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, "", false
+	}
+
+	return code, parts[1], true
 }

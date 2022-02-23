@@ -51,10 +51,18 @@ type ACL struct {
 	// We use an iradix for the purposes of ordered iteration.
 	wildcardNamespaces *iradix.Tree
 
+	// hostVolumes maps a named host volume to a capabilitySet
+	hostVolumes *iradix.Tree
+
+	// wildcardHostVolumes maps a glob pattern of host volume names to a capabilitySet
+	// We use an iradix for the purposes of ordered iteration.
+	wildcardHostVolumes *iradix.Tree
+
 	agent    string
 	node     string
 	operator string
 	quota    string
+	plugin   string
 }
 
 // maxPrivilege returns the policy which grants the most privilege
@@ -67,6 +75,8 @@ func maxPrivilege(a, b string) string {
 		return PolicyWrite
 	case a == PolicyRead || b == PolicyRead:
 		return PolicyRead
+	case a == PolicyList || b == PolicyList:
+		return PolicyList
 	default:
 		return ""
 	}
@@ -83,6 +93,8 @@ func NewACL(management bool, policies []*Policy) (*ACL, error) {
 	acl := &ACL{}
 	nsTxn := iradix.New().Txn()
 	wnsTxn := iradix.New().Txn()
+	hvTxn := iradix.New().Txn()
+	whvTxn := iradix.New().Txn()
 
 	for _, policy := range policies {
 	NAMESPACES:
@@ -128,6 +140,49 @@ func NewACL(management bool, policies []*Policy) (*ACL, error) {
 			}
 		}
 
+	HOSTVOLUMES:
+		for _, hv := range policy.HostVolumes {
+			// Should the volume be matched using a glob?
+			globDefinition := strings.Contains(hv.Name, "*")
+
+			// Check for existing capabilities
+			var capabilities capabilitySet
+
+			if globDefinition {
+				raw, ok := whvTxn.Get([]byte(hv.Name))
+				if ok {
+					capabilities = raw.(capabilitySet)
+				} else {
+					capabilities = make(capabilitySet)
+					whvTxn.Insert([]byte(hv.Name), capabilities)
+				}
+			} else {
+				raw, ok := hvTxn.Get([]byte(hv.Name))
+				if ok {
+					capabilities = raw.(capabilitySet)
+				} else {
+					capabilities = make(capabilitySet)
+					hvTxn.Insert([]byte(hv.Name), capabilities)
+				}
+			}
+
+			// Deny always takes precedence
+			if capabilities.Check(HostVolumeCapabilityDeny) {
+				continue
+			}
+
+			// Add in all the capabilities
+			for _, cap := range hv.Capabilities {
+				if cap == HostVolumeCapabilityDeny {
+					// Overwrite any existing capabilities
+					capabilities.Clear()
+					capabilities.Set(HostVolumeCapabilityDeny)
+					continue HOSTVOLUMES
+				}
+				capabilities.Set(cap)
+			}
+		}
+
 		// Take the maximum privilege for agent, node, and operator
 		if policy.Agent != nil {
 			acl.agent = maxPrivilege(acl.agent, policy.Agent.Policy)
@@ -141,11 +196,17 @@ func NewACL(management bool, policies []*Policy) (*ACL, error) {
 		if policy.Quota != nil {
 			acl.quota = maxPrivilege(acl.quota, policy.Quota.Policy)
 		}
+		if policy.Plugin != nil {
+			acl.plugin = maxPrivilege(acl.plugin, policy.Plugin.Policy)
+		}
 	}
 
 	// Finalize the namespaces
 	acl.namespaces = nsTxn.Commit()
 	acl.wildcardNamespaces = wnsTxn.Commit()
+	acl.hostVolumes = hvTxn.Commit()
+	acl.wildcardHostVolumes = whvTxn.Commit()
+
 	return acl, nil
 }
 
@@ -162,7 +223,7 @@ func (a *ACL) AllowNamespaceOperation(ns string, op string) bool {
 	}
 
 	// Check for a matching capability set
-	capabilities, ok := a.matchingCapabilitySet(ns)
+	capabilities, ok := a.matchingNamespaceCapabilitySet(ns)
 	if !ok {
 		return false
 	}
@@ -179,7 +240,7 @@ func (a *ACL) AllowNamespace(ns string) bool {
 	}
 
 	// Check for a matching capability set
-	capabilities, ok := a.matchingCapabilitySet(ns)
+	capabilities, ok := a.matchingNamespaceCapabilitySet(ns)
 	if !ok {
 		return false
 	}
@@ -192,12 +253,50 @@ func (a *ACL) AllowNamespace(ns string) bool {
 	return !capabilities.Check(PolicyDeny)
 }
 
-// matchingCapabilitySet looks for a capabilitySet that matches the namespace,
+// AllowHostVolumeOperation checks if a given operation is allowed for a host volume
+func (a *ACL) AllowHostVolumeOperation(hv string, op string) bool {
+	// Hot path management tokens
+	if a.management {
+		return true
+	}
+
+	// Check for a matching capability set
+	capabilities, ok := a.matchingHostVolumeCapabilitySet(hv)
+	if !ok {
+		return false
+	}
+
+	// Check if the capability has been granted
+	return capabilities.Check(op)
+}
+
+// AllowHostVolume checks if any operations are allowed for a HostVolume
+func (a *ACL) AllowHostVolume(ns string) bool {
+	// Hot path management tokens
+	if a.management {
+		return true
+	}
+
+	// Check for a matching capability set
+	capabilities, ok := a.matchingHostVolumeCapabilitySet(ns)
+	if !ok {
+		return false
+	}
+
+	// Check if the capability has been granted
+	if len(capabilities) == 0 {
+		return false
+	}
+
+	return !capabilities.Check(PolicyDeny)
+}
+
+// matchingNamespaceCapabilitySet looks for a capabilitySet that matches the namespace,
 // if no concrete definitions are found, then we return the closest matching
 // glob.
 // The closest matching glob is the one that has the smallest character
 // difference between the namespace and the glob.
-func (a *ACL) matchingCapabilitySet(ns string) (capabilitySet, bool) {
+func (a *ACL) matchingNamespaceCapabilitySet(ns string) (capabilitySet, bool) {
 	// Check for a concrete matching capability set
 	raw, ok := a.namespaces.Get([]byte(ns))
 	if ok {
@@ -205,18 +304,34 @@ func (a *ACL) matchingCapabilitySet(ns string) (capabilitySet, bool) {
 	}
 
 	// We didn't find a concrete match, so lets try and evaluate globs.
-	return a.findClosestMatchingGlob(ns)
+	return a.findClosestMatchingGlob(a.wildcardNamespaces, ns)
+}
+
+// matchingHostVolumeCapabilitySet looks for a capabilitySet that matches the host volume name,
+// if no concrete definitions are found, then we return the closest matching
+// glob.
+// The closest matching glob is the one that has the smallest character
+// difference between the volume name and the glob.
+func (a *ACL) matchingHostVolumeCapabilitySet(name string) (capabilitySet, bool) {
+	// Check for a concrete matching capability set
+	raw, ok := a.hostVolumes.Get([]byte(name))
+	if ok {
+		return raw.(capabilitySet), true
+	}
+
+	// We didn't find a concrete match, so lets try and evaluate globs.
+	return a.findClosestMatchingGlob(a.wildcardHostVolumes, name)
 }
 
 type matchingGlob struct {
-	ns            string
+	name          string
 	difference    int
 	capabilitySet capabilitySet
 }
 
-func (a *ACL) findClosestMatchingGlob(ns string) (capabilitySet, bool) {
+func (a *ACL) findClosestMatchingGlob(radix *iradix.Tree, ns string) (capabilitySet, bool) {
 	// First, find all globs that match.
-	matchingGlobs := a.findAllMatchingWildcards(ns)
+	matchingGlobs := findAllMatchingWildcards(radix, ns)
 
 	// If none match, let's return.
 	if len(matchingGlobs) == 0 {
@@ -238,19 +353,19 @@ func (a *ACL) findClosestMatchingGlob(ns string) (capabilitySet, bool) {
 	return matchingGlobs[0].capabilitySet, true
 }
 
-func (a *ACL) findAllMatchingWildcards(ns string) []matchingGlob {
+func findAllMatchingWildcards(radix *iradix.Tree, name string) []matchingGlob {
 	var matches []matchingGlob
 
-	nsLen := len(ns)
+	nsLen := len(name)
 
-	a.wildcardNamespaces.Root().Walk(func(bk []byte, iv interface{}) bool {
+	radix.Root().Walk(func(bk []byte, iv interface{}) bool {
 		k := string(bk)
 		v := iv.(capabilitySet)
 
-		isMatch := glob.Glob(k, ns)
+		isMatch := glob.Glob(k, name)
 		if isMatch {
 			pair := matchingGlob{
-				ns:            k,
+				name:          k,
 				difference:    nsLen - len(k) + strings.Count(k, glob.GLOB),
 				capabilitySet: v,
 			}
@@ -362,6 +477,38 @@ func (a *ACL) AllowQuotaWrite() bool {
 	case a.management:
 		return true
 	case a.quota == PolicyWrite:
+		return true
+	default:
+		return false
+	}
+}
+
+// AllowPluginRead checks if read operations are allowed for all plugins
+func (a *ACL) AllowPluginRead() bool {
+	switch {
+	// ACL is nil only if ACLs are disabled
+	case a == nil:
+		return true
+	case a.management:
+		return true
+	case a.plugin == PolicyRead:
+		return true
+	default:
+		return false
+	}
+}
+
+// AllowPluginList checks if list operations are allowed for all plugins
+func (a *ACL) AllowPluginList() bool {
+	switch {
+	// ACL is nil only if ACLs are disabled
+	case a == nil:
+		return true
+	case a.management:
+		return true
+	case a.plugin == PolicyList:
+		return true
+	case a.plugin == PolicyRead:
 		return true
 	default:
 		return false
