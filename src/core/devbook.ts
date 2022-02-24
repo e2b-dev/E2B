@@ -250,6 +250,16 @@ class Devbook {
     this.isDestroyed = true
   }
 
+  /** @internal */
+  __internal__start() {
+    Runner.obj.__internal__start()
+  }
+
+  /** @internal */
+  __internal__stop() {
+    Runner.obj.__internal__stop()
+  }
+
   private listDir(path: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
 

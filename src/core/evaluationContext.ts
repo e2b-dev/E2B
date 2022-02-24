@@ -211,7 +211,7 @@ class EvaluationContext {
 
   private handleConnectionOpen(sessionID: string) {
     this.restart()
-    this.opts.onSessionChange?.({ status: SessionStatus.Connected, sessionID })
+    this.opts.onSessionChange?.({ status: SessionStatus.Connecting })
   }
 
   private handleConnectionClose() {
@@ -341,6 +341,7 @@ class EvaluationContext {
 
     this.env.isReady = true
     this.opts.onEnvChange?.(this.env)
+    this.opts.onSessionChange?.({ status: SessionStatus.Connected, sessionID: this.opts.conn.sessionID })
   }
 
   private vmenv_handleCmdOut(payload: rws.RunningEnvironment_CmdOut['payload']) {

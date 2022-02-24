@@ -98,6 +98,9 @@ function useDevbook({
     devbook.runCmd(command)
   }, [devbook])
 
+
+
+
   useEffect(function initializeDevbook() {
     const devbook = new Devbook({
       debug,

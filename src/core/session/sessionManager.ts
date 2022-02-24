@@ -18,6 +18,9 @@ class SessionManager {
   private readonly logger = new Logger('SessionManager')
   private readonly url = `https://${consts.REMOTE_RUNNER_HOSTNAME}`
 
+  private userActivity = Promise.resolve()
+  private startActivity?: () => void
+
   private isGettingSessionActive = false
 
   // Session storage is unique for each tab. We use it so each tab has its own VM = session.
@@ -42,6 +45,20 @@ class SessionManager {
   ) {
     this.logger.log('Initialize')
     this.getSession()
+  }
+
+  stop() {
+    console.log('stopping session')
+    this.startActivity?.()
+    this.userActivity = new Promise((resolve) => {
+      this.startActivity = resolve
+    })
+    this.reset()
+  }
+
+  start() {
+    console.log('starting session')
+    this.startActivity?.()
   }
 
   reset() {
@@ -115,6 +132,7 @@ class SessionManager {
         while (true) {
           if (!this.session) break
           try {
+            await this.userActivity
             await this.session.ping()
             await wait(consts.SESSION_PING_PERIOD)
           } catch (err: any) {

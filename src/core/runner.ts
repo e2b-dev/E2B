@@ -38,6 +38,16 @@ class Runner {
     })
   }
 
+  /** @internal */
+  __internal__start() {
+    this.sessManager.start()
+  }
+
+  /** @internal */
+  __internal__stop() {
+    this.sessManager.stop()
+  }
+
   /* ==== Debug Methods ==== */
   __debug__loadNewSession() {
     this.logger.log('__debug__loadNewSession')
