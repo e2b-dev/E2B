@@ -48,7 +48,6 @@ class SessionManager {
   }
 
   stop() {
-    console.log('stopping session')
     this.startActivity?.()
     this.userActivity = new Promise((resolve) => {
       this.startActivity = resolve
@@ -57,7 +56,6 @@ class SessionManager {
   }
 
   start() {
-    console.log('starting session')
     this.startActivity?.()
   }
 
