@@ -1,18 +1,23 @@
 import {
   useState,
   useCallback,
-  useEffect,
 } from 'react';
 
 import {
   useDevbook,
   DevbookStatus,
+  Config,
 } from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
 
 import './App.css';
 import Editor from './Editor';
 import Output from './Output';
+
+const dbkConfig: Config = {
+  // Example domain. You need to get onboarded by Devbook team and get your own domain.
+  domain: 'acme.usedevbook.com'
+}
 
 const initialCode = `const os = require('os');
 console.log('Hostname:', os.hostname());
@@ -33,10 +38,14 @@ function App() {
     stdout,
     runCmd,
     status,
-    url,
     fs,
-  } = useDevbook({ debug: true, env: 'example-env', port: 3000 });
-  console.log({ stdout, stderr, url });
+  } = useDevbook({
+    // You create custom environments with the Devbook CLI.
+    // https://github.com/devbookhq/devbookctl
+    env: 'example-env-id',
+    config: dbkConfig,
+  });
+  console.log({ stdout, stderr });
 
   const handleEditorChange = useCallback((content: string) => {
     if (execType === 'code') {

@@ -37,7 +37,7 @@ function InteractiveCodeSnippet() {
   async function handleRun() {
     if (status !== DevbookStatus.Connected) return
     if (!fs) return
-    
+
     // 4. Manipulate the filesystem
     await fs.write('/index.js', code)
     // 5. Execute the code
@@ -48,7 +48,7 @@ function InteractiveCodeSnippet() {
     <div>
       {status === DevbookStatus.Disconnected && <div>Status: Disconnected, will start VM</div>}
       {status === DevbookStatus.Connecting && <div>Status: Starting VM...</div>}
-      {status === DevbookStatus.Connected && 
+      {status === DevbookStatus.Connected &&
         <>
           <div>URL for the port 3000 on the VM: {url}</div>
           <button onClick={handleRun}>Run</button>
@@ -110,4 +110,3 @@ export default InteractiveCodeSnippet
 
 ## Usage of Devbook in example apps
 - [React](examples/react-app)
-- [MDX (Docusaurus and other docs themes)](examples/docusaurus)

@@ -29,11 +29,6 @@ export interface Opts {
    */
   debug?: boolean
   /**
-   * Port number used for composing the {@link State.url} returned from this hook
-   * that allows connecting to a port on the environment defined by the {@link Opts.env} in the {@link useDevbook} parameters.
-   */
-  port?: number
-  /**
    * Devbook config required to correctly start your Devbook VMs.
    */
   config: Config
@@ -71,11 +66,6 @@ export interface State {
    * Use this for accessing and manipulating this Devbook's VM's filesystem.
    */
   fs?: FS
-  /**
-   * URL address that allows you to connect to a port ({@link Opts.port})
-   * on the environment defined by the {@link Opts.env} in the {@link useDevbook} parameters.
-   */
-  url?: string
 }
 
 /**
@@ -87,7 +77,6 @@ export interface State {
 function useDevbook({
   env,
   debug,
-  port,
   config,
 }: Opts): State {
   const [devbook, setDevbook] = useState<Devbook>()
@@ -95,7 +84,6 @@ function useDevbook({
   const [status, setStatus] = useState<DevbookStatus>(DevbookStatus.Disconnected)
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
-  const [url, setURL] = useState<string>()
 
   const runCmd = useCallback((command: string) => {
     if (!devbook) return
@@ -117,17 +105,11 @@ function useDevbook({
       onStdout(out) {
         setStdout(s => [...s, out])
       },
-      onURLChange(getURL) {
-        if (port) {
-          setURL(getURL(port))
-        }
-      },
       config,
     })
 
     setStdout([])
     setStderr([])
-    setURL(undefined)
     setDevbook(devbook)
 
     return () => {
@@ -136,7 +118,7 @@ function useDevbook({
   }, [
     env,
     debug,
-    port,
+    config,
   ])
 
   return {
@@ -145,7 +127,6 @@ function useDevbook({
     runCmd,
     status,
     fs: devbook?.fs,
-    url,
   }
 }
 
