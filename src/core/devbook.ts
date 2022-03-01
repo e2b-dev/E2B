@@ -7,14 +7,25 @@ import { Filesystem } from './runningEnvironment/filesystem'
 const generateExecutionID = makeIDGenerator(6)
 
 /**
+ * Devbook config required to correctly start your Devbook VMs.
+ */
+export interface Config {
+  /**
+   * E.g.: acme.usedevbook.com
+   * Note: Don't include protocol!
+   */
+  domain: string,
+}
+
+/**
  * Methods for accessing and manipulating this `Devbook`'s VM's filesystem.
  */
 export interface FS {
   /**
    * Retrieve content from a file on a specified `path`.
-   * 
+   *
    * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
-   * 
+   *
    * @param path Path to the file
    * @return `string` if the file exists or `undefined` if it doesn't.
    */
@@ -22,9 +33,9 @@ export interface FS {
   /**
    * Write `content` to the file on the specified `path`.
    * This method will create the file and necessary folders is they don't exist.
-   * 
+   *
    * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
-   * 
+   *
    * @param path Path to the file
    * @param content Content to write into file
    */
@@ -57,7 +68,7 @@ export enum DevbookStatus {
 
 /**
  * Representation of a connection to a VM that is used for running code and commands.
- * 
+ *
  * You can have multiple `Devbook` class instances connected to the same VM -
  * instances with the same `env`({@link Env}) parameter passed to the constructor will share filesystem and process namespace.
  */
@@ -137,7 +148,7 @@ class Devbook {
   constructor(private readonly opts: {
     /**
      * Environment that this `Devbook` should use.
-     * 
+     *
      * This affects which runtime (NodeJS, etc...) will be available and used in the {@link Devbook.runCode} function.
      *
      * `Devbook` instances with different environments are isolated - each has their own filesystem and process namespace.
@@ -157,7 +168,7 @@ class Devbook {
     onStatusChange?: (status: DevbookStatus) => void
     /**
      * This function will be called when the URL for accessing this `Devbook`'s environment changes.
-     * 
+     *
      * You can assemble URL for any port by using the `getURL` function from the parameter.
      */
     onURLChange?: (getURL: (port: number) => string | undefined) => void
@@ -165,13 +176,22 @@ class Devbook {
      * If this value is true then this `Devbook` will print detailed logs.
      */
     debug?: boolean
+    /**
+     * Devbook config required to correctly start your Devbook VMs.
+     */
+    config: Config,
   }) {
+    // Explicitely check for config to be defined so we can notify the developer with an error.
+    if (!opts.config) throw new Error('Missing Devbook config')
+
     const getURL = this.getURL.bind(this)
     const getTemplateID = () => this.opts.env
     const getExecutionID = () => this.executionID
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
     const setSessionStatus = (value: SessionStatus) => this.sessionStatus = value
     const setSessionID = (sessionID?: string) => this.sessionID = sessionID
+
+    Runner.config = this.opts.config
 
     this.context = Runner.obj.createContext({
       debug: opts.debug,
@@ -203,9 +223,9 @@ class Devbook {
 
   /**
    * Compose the URL that can be used for connecting to a port on the environment defined in this `Devbook`'s constructor.
-   * 
+   *
    * @param port Number of the port that the URL should be connecting to.
-   * @returns URL address that allows you to connect to a specified port on this `Devbook`'s environment 
+   * @returns URL address that allows you to connect to a specified port on this `Devbook`'s environment
    * or `undefined` if this `Devbook` is not yet connected to a VM.
    */
   getURL(port: number) {
@@ -219,9 +239,9 @@ class Devbook {
 
   /**
    * Run `command` in the VM.
-   * 
+   *
    * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
-   * 
+   *
    * @param command Command to run
    */
   runCmd(command: string) {
@@ -237,9 +257,9 @@ class Devbook {
 
   /**
    * Run `code` in the VM using the runtime you passed to this `Devbook`'s constructor as the `env`({@link Env}) parameter.
-   * 
+   *
    * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
-   * 
+   *
    * @param code Code to run
    */
   runCode(code: string) {

@@ -14,9 +14,15 @@ interface GetSessionResponse {
   sessionID: string
 }
 
+export interface Opts {
+  domain: string
+  conn: WebSocketConnection
+}
+
 class SessionManager {
   private readonly logger = new Logger('SessionManager')
-  private readonly url = `https://${consts.REMOTE_RUNNER_HOSTNAME}`
+  private readonly url: string
+  private readonly conn: WebSocketConnection
 
   private isGettingSessionActive = false
 
@@ -37,9 +43,12 @@ class SessionManager {
   session?: RunnerSession
   status = SessionStatus.Disconnected
 
-  constructor(
-    private readonly conn: WebSocketConnection
-  ) {
+  constructor({
+    conn,
+    domain,
+  }: Opts) {
+    this.conn = conn
+    this.url = `https://${domain}`
     this.logger.log('Initialize')
     this.getSession()
   }
@@ -102,7 +111,10 @@ class SessionManager {
         }
 
         // We get here if we succeeded at acquiring a session.
-        this.session = new RunnerSession(sessionResp.sessionID)
+        this.session = new RunnerSession({
+          id: sessionResp.sessionID,
+          url: this.url,
+        })
         this.logger.log(`Acquired session "${this.session.id}"`)
 
         this.cachedSessionID = this.session.id

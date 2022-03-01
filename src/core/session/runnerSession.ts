@@ -12,17 +12,27 @@ export interface KeepAliveResponse {
   sessionID?: string
 }
 
+export interface Opts {
+  id: string,
+  url: string,
+}
+
 /**
  * `RunnerSession` represents an active session.
  */
 class RunnerSession {
+  readonly id: string
+  private readonly url: string
   private logger = new Logger('RunnerSession')
-  private readonly url = `https://${consts.REMOTE_RUNNER_HOSTNAME}`
+  private lastPing = new Date()
 
-  constructor(
-    readonly id: string,
-    private lastPing: Date = new Date()
-  ) { }
+  constructor({
+    id,
+    url,
+  }: Opts) {
+    this.id = id
+    this.url = url
+  }
 
   async ping() {
     this.logger.log(`Pinging session "${this.id}"`)

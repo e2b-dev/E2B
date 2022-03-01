@@ -5,6 +5,10 @@ import * as rws from '../common-ts/RunnerWebSocket'
 
 import { runner as consts } from './constants'
 
+export interface Opts {
+  domain: string
+}
+
 interface Handler {
   onMessage: (msg: rws.BaseMessage) => void
   onOpen: (sessionID: string) => void
@@ -12,7 +16,7 @@ interface Handler {
 }
 
 export class WebSocketConnection {
-  private readonly url = `wss://${consts.REMOTE_RUNNER_HOSTNAME}`
+  private readonly url: string
   sessionID?: string
   private client?: WebSocket
   private logger = new Logger('WebSocketConnection')
@@ -41,6 +45,10 @@ export class WebSocketConnection {
   get isConnecting() {
     if (this.client === undefined) return
     return this.client.readyState === this.client.CONNECTING
+  }
+
+  constructor({ domain }: Opts) {
+    this.url = `wss://${domain}`
   }
 
   subscribeHandler(handler: Handler) {
