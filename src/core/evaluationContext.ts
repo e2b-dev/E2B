@@ -5,16 +5,13 @@ import * as rws from '../common-ts/RunnerWebSocket'
 import { WebSocketConnection } from './webSocketConnection'
 import Logger from '../utils/Logger'
 import {
-  Env,
-  templates,
-} from './constants'
-import {
   RunningEnvironment,
   ws as envWS,
 } from './runningEnvironment'
 import { SessionStatus } from './session/sessionManager'
 import { FSNodeType } from './runningEnvironment/filesystem'
 import { OutputSource } from './runningEnvironment/runningEnvironment'
+import { Env } from './devbook'
 
 export interface EvaluationContextOpts {
   contextID: string
@@ -27,6 +24,7 @@ export interface EvaluationContextOpts {
 }
 
 type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => void
+type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -36,6 +34,7 @@ class EvaluationContext {
   }
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
+  private fileContentSubscribers: FileContentSubscriber[] = []
 
   readonly env: RunningEnvironment
   private readonly unsubscribeConnHandler: () => void
@@ -63,7 +62,7 @@ class EvaluationContext {
 
     envWS.start(this.opts.conn, {
       environmentID: this.env.id,
-      template: this.env.template,
+      templateID: this.env.templateID,
     })
     this.opts.onEnvChange?.(this.env)
   }
@@ -77,15 +76,15 @@ class EvaluationContext {
     this.env.restart()
     envWS.start(this.opts.conn, {
       environmentID: this.env.id,
-      template: this.env.template,
+      templateID: this.env.templateID,
     })
   }
 
   destroy() {
     this.logger.log('Destroy')
     this.unsubscribeConnHandler()
-    this.env.filesystem.removeAllListeners()
     this.fsWriteSubscribers = []
+    this.fileContentSubscribers = []
   }
 
   async getFile({ path: filepath }: { path: string }) {
@@ -99,12 +98,11 @@ class EvaluationContext {
       }, 10000)
     })
 
-    const fileContentSubscriber = (payload: { path: string, content: string }) => {
+    const fileContentSubscriber: FileContentSubscriber = (payload) => {
       if (!payload.path.endsWith(filepath)) return
       resolveFileContent(payload.content)
     }
-
-    this.env.filesystem.addListener('onFileContent', fileContentSubscriber)
+    this.subscribeFileContent(fileContentSubscriber)
 
     envWS.getFile(this.opts.conn, {
       environmentID: this.env.id,
@@ -117,7 +115,7 @@ class EvaluationContext {
     } catch (err: any) {
       throw new Error(`Error retrieving file ${filepath}: ${err}`)
     } finally {
-      this.env.filesystem.removeListener('onFileContent', fileContentSubscriber)
+      this.unsubscribeFileContent(fileContentSubscriber)
     }
   }
 
@@ -180,32 +178,6 @@ class EvaluationContext {
     })
   }
 
-  executeCode({ executionID, code }: { executionID: string, code: string }) {
-    this.logger.log('Execute code', { executionID })
-    const template = templates[this.env.templateID]
-
-    if (template.toCommand === undefined) return
-
-    const extension = template.fileExtension
-    const basename = `${executionID}${extension}`
-    const filepath = path.join('/src', basename)
-
-    envWS.writeFile(this.opts.conn, {
-      environmentID: this.env.id,
-      path: filepath,
-      content: code,
-    })
-
-    // Send command to execute file as code
-    const vmFilepath = path.join(template.root_dir, filepath)
-    const command = template.toCommand(vmFilepath)
-    envWS.execCmd(this.opts.conn, {
-      environmentID: this.env.id,
-      executionID,
-      command,
-    })
-  }
-
   executeCommand({ executionID, command }: { executionID: string, command: string }) {
     this.logger.log('Execute shell command', { executionID, command })
     envWS.execCmd(this.opts.conn, {
@@ -213,6 +185,17 @@ class EvaluationContext {
       executionID,
       command,
     })
+  }
+
+  private subscribeFileContent(subscriber: FileContentSubscriber) {
+    this.fileContentSubscribers.push(subscriber)
+  }
+
+  private unsubscribeFileContent(subscriber: FileContentSubscriber) {
+    const index = this.fileContentSubscribers.indexOf(subscriber)
+    if (index > -1) {
+      this.fileContentSubscribers.splice(index, 1);
+    }
   }
 
   private subscribeFSWrite(subscriber: FSWriteSubscriber) {
@@ -228,7 +211,7 @@ class EvaluationContext {
 
   private handleConnectionOpen(sessionID: string) {
     this.restart()
-    this.opts.onSessionChange?.({ status: SessionStatus.Connected, sessionID })
+    this.opts.onSessionChange?.({ status: SessionStatus.Connecting })
   }
 
   private handleConnectionClose() {
@@ -350,7 +333,7 @@ class EvaluationContext {
   private vmenv_handleFileContent(payload: rws.RunningEnvironment_FileContent['payload']) {
     this.logger.log('[vmenv] Handling "FileContent"', { environmentID: payload.environmentID, path: payload.path })
 
-    this.env.filesystem.setFileContent(payload)
+    this.fileContentSubscribers.forEach(s => s(payload))
   }
 
   private vmenv_handleStartAck(payload: rws.RunningEnvironment_StartAck['payload']) {
@@ -358,6 +341,7 @@ class EvaluationContext {
 
     this.env.isReady = true
     this.opts.onEnvChange?.(this.env)
+    this.opts.onSessionChange?.({ status: SessionStatus.Connected, sessionID: this.opts.conn.sessionID })
   }
 
   private vmenv_handleCmdOut(payload: rws.RunningEnvironment_CmdOut['payload']) {

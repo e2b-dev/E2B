@@ -20,7 +20,7 @@ Let's say you already have a git repository with at least one commit. You can ad
 
 *For example:*
 
-`git subtree add --prefix src/common-ts git@github.com:DevbookHQ/common-ts.git master --squash`
+`git subtree add --prefix runnersrc/common-ts https://github.com/DevbookHQ/common-ts.git master --squash`
 
 This will clone `git@github.com:DevbookHQ/common-ts.git` into the directory `src/common-ts`.
 
@@ -29,7 +29,7 @@ This will clone `git@github.com:DevbookHQ/common-ts.git` into the directory `src
 ## Pull in new subtree commits
 If you want to pull in any new commits to the subtree from the remote, issue the same command as above, replacing `add` for `pull`:
 
-`git subtree pull --prefix src/common-ts git@github.com:DevbookHQ/common-ts.git master --squash`
+`git subtree pull --prefix runner/src/common-ts https://github.com/DevbookHQ/common-ts.git master --squash`
 
 
 ***
@@ -38,7 +38,7 @@ If you make a change to anything in `subtreeDirectory` the commit will be stored
 
 If you now want to update the subtree remote repository with that commit, you must run the same command, excluding `--squash` and replacing `pull` for `push`.
 
-`git subtree push --prefix src/common-ts git@github.com:DevbookHQ/common-ts.git master`
+`git subtree push --prefix runner/src/common-ts https://github.com/DevbookHQ/common-ts.git master`
 
 
 ***

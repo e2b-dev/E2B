@@ -6,7 +6,6 @@ import {
 
 import {
   useDevbook,
-  Env,
   DevbookStatus,
 } from '@devbookhq/sdk';
 import Splitter from '@devbookhq/splitter';
@@ -32,22 +31,12 @@ function App() {
   const {
     stderr,
     stdout,
-    runCode,
     runCmd,
     status,
     url,
     fs,
-  } = useDevbook({ debug: true, env: Env.NodeJS, port: 3000 });
+  } = useDevbook({ debug: true, env: 'example-env', port: 3000 });
   console.log({ stdout, stderr, url });
-
-  useEffect(function checkFS() {
-    (async () => {
-      if (status !== DevbookStatus.Connected) return
-      await fs.write('/new/path', '00')
-      const content = await fs.get('/new/path')
-      console.log({ content })
-    })()
-  }, [fs, status])
 
   const handleEditorChange = useCallback((content: string) => {
     if (execType === 'code') {
@@ -57,13 +46,17 @@ function App() {
     }
   }, [setCode, execType]);
 
-  const run = useCallback(() => {
+  const run = useCallback(async () => {
+    if (status !== DevbookStatus.Connected) return
     if (execType === 'code') {
-      runCode(code);
+      if (!fs) return
+
+      await fs.write('/index.js', code)
+      runCmd('node "./index.js"')
     } else {
       runCmd(cmd);
     }
-  }, [runCode, runCmd, code, cmd, execType]);
+  }, [runCmd, code, cmd, execType, fs, status]);
 
   return (
     <div className="app">

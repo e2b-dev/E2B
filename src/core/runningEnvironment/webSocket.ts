@@ -1,5 +1,6 @@
 import * as rws from '../../common-ts/RunnerWebSocket'
 import { TemplateConfig } from '../../common-ts/TemplateConfig'
+import { Env } from '../devbook'
 import { WebSocketConnection } from '../webSocketConnection'
 
 /**
@@ -73,17 +74,17 @@ function getFile(
 function start(
   conn: WebSocketConnection, {
     environmentID,
-    template,
+    templateID,
   }: {
     environmentID: string,
-    template: TemplateConfig,
+    templateID: Env,
   },
 ) {
   const msg: rws.RunningEnvironment_Start = {
     type: rws.MessageType.RunningEnvironment.Start,
     payload: {
       environmentID,
-      template,
+      templateID,
     },
   }
   conn.send(msg)

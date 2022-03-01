@@ -22,7 +22,6 @@ npm install @devbookhq/sdk
 // 1. Import the hook
 import {
   useDevbook,
-  Env,
   DevbookStatus,
 } from '@devbookhq/sdk'
 
@@ -33,20 +32,16 @@ const code = `
 
 function InteractiveCodeSnippet() {
   // 3. Use the hook
-  const { stdout, stderr, status, runCode, url, fs } = useDevbook({ env: Env.NodeJS, port: 3000 })
+  const { stdout, stderr, status, url, fs, runCmd } = useDevbook({ env: 'nodejs-v16', port: 3000 })
 
-  function handleRun() {
-    // 4. Execute the code
-    runCode(code)
-  }
-
-  async function handleFS() {
+  async function handleRun() {
     if (status !== DevbookStatus.Connected) return
-  
-    // 5. Manipulate the filesystem
-    await dbk.fs.write('/index.js', 'console.log("Hello world!")')
-    const content = await dbk.fs.get('/index.js')
-    console.log('Content of the "/index.js" file', content)
+    if (!fs) return
+    
+    // 4. Manipulate the filesystem
+    await fs.write('/index.js', code)
+    // 5. Execute the code
+    runCmd(`node ./index.js`)
   }
 
   return (
@@ -57,7 +52,6 @@ function InteractiveCodeSnippet() {
         <>
           <div>URL for the port 3000 on the VM: {url}</div>
           <button onClick={handleRun}>Run</button>
-          <button onClick={handleFS}>Test FS</button>
         </>
       )}
       <h3>Output</h3>
@@ -73,7 +67,7 @@ export default InteractiveCodeSnippet
 ### JavaScript/TypeScript
 ```ts
   // 1. Import the class
-  import { Devbook, Env, DevbookStatus } from '@devbookhq/sdk'
+  import { Devbook, DevbookStatus } from '@devbookhq/sdk'
 
   // 2. Define your code
   const code = `
@@ -82,7 +76,7 @@ export default InteractiveCodeSnippet
 
   // 3. Create new Devbook instance
   const dbk = new Devbook({
-    env: Env.NodeJS,
+    env: 'nodejs-v16',
     onStdout(out) {
       console.log('stdout', { err })
     },
@@ -98,14 +92,14 @@ export default InteractiveCodeSnippet
     },
   })
 
-  if (dbk.status === DevbookStatus.Connected) {
-    // 4. Execute the code
-    dbk.runCode(code)
-
-    // 5. Manipulate the filesystem
-    await dbk.fs.write('/index.js', 'console.log("Hello world!")')
+  if (dbk.status === DevbookStatus.Connected && fs) {
+    // 4. Manipulate the filesystem
+    await dbk.fs.write('/index.js', code)
     const content = await dbk.fs.get('/index.js')
     console.log('Content of the "/index.js" file', content)
+
+    // 4. Execute the code
+    dbk.runCmd('node ./index.js')
   }
 ```
 

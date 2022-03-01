@@ -1,10 +1,17 @@
 import { makeIDGenerator } from '../utils/id'
-import { Env } from './constants'
 import Runner from './runner'
 import EvaluationContext from './evaluationContext'
 import { SessionStatus } from './session/sessionManager'
 import { Filesystem } from './runningEnvironment/filesystem'
+
 const generateExecutionID = makeIDGenerator(6)
+
+// Normally, we would name this enum `TemplateID` but since this enum is exposed to users
+// it makes more sense to name it `Env` because it's less confusing for users.
+/**
+ * Runtime environment to use with the Devbooks' VMs.
+ */
+export type Env = string
 
 /**
  * Devbook config required to correctly start your Devbook VMs.
@@ -55,15 +62,15 @@ export enum DevbookStatus {
   /**
    * Devbook is not connected to a VM.
    */
-  Disconnected,
+  Disconnected = 'Disconnected',
   /**
    * Devbook is trying to start or connect to a VM.
    */
-  Connecting,
+  Connecting = 'Connecting',
   /**
    * Devbook is connected to a VM and ready to run code or a command.
    */
-  Connected,
+  Connected = 'Connected',
 }
 
 /**
@@ -149,17 +156,17 @@ class Devbook {
     /**
      * Environment that this `Devbook` should use.
      *
-     * This affects which runtime (NodeJS, etc...) will be available and used in the {@link Devbook.runCode} function.
+     * This affects which runtime (NodeJS, etc...) will be available and used in the {@link Devbook.runCmd} function.
      *
      * `Devbook` instances with different environments are isolated - each has their own filesystem and process namespace.
      */
     env: Env
     /**
-     * This function will be called when this `Devbook` receives new stdout after you called {@link Devbook.runCode} or {@link Devbook.runCode}.
+     * This function will be called when this `Devbook` receives new stdout after you called {@link Devbook.runCmd}.
      */
     onStdout?: (stdout: string) => void
     /**
-     * This function will be called when this `Devbook` receives new stderr after you called {@link Devbook.runCode} or {@link Devbook.runCode}.
+     * This function will be called when this `Devbook` receives new stderr after you called {@link Devbook.runCmd}.
      */
     onStderr?: (stderr: string) => void
     /**
@@ -256,29 +263,21 @@ class Devbook {
   }
 
   /**
-   * Run `code` in the VM using the runtime you passed to this `Devbook`'s constructor as the `env`({@link Env}) parameter.
-   *
-   * This {@link Devboook}'s VM shares filesystem and process namespace with other `Devbook`'s with the same `env`({@link Env}) passed to their constructors.
-   *
-   * @param code Code to run
-   */
-  runCode(code: string) {
-    if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
-    this.executionID = generateExecutionID()
-
-    this.context.executeCode({
-      executionID: this.executionID,
-      code,
-    })
-  }
-
-  /**
    * Disconnect this `Devbook` from the VM.
    */
   destroy() {
     this.context.destroy()
     this.isDestroyed = true
+  }
+
+  /** @internal */
+  __internal__start() {
+    Runner.obj.__internal__start()
+  }
+
+  /** @internal */
+  __internal__stop() {
+    Runner.obj.__internal__stop()
   }
 
   private listDir(path: string) {

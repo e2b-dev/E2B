@@ -24,6 +24,9 @@ class SessionManager {
   private readonly url: string
   private readonly conn: WebSocketConnection
 
+  private userActivity = Promise.resolve()
+  private startActivity?: () => void
+
   private isGettingSessionActive = false
 
   // Session storage is unique for each tab. We use it so each tab has its own VM = session.
@@ -51,6 +54,18 @@ class SessionManager {
     this.url = `https://${domain}`
     this.logger.log('Initialize')
     this.getSession()
+  }
+
+  stop() {
+    this.startActivity?.()
+    this.userActivity = new Promise((resolve) => {
+      this.startActivity = resolve
+    })
+    this.reset()
+  }
+
+  start() {
+    this.startActivity?.()
   }
 
   reset() {
@@ -127,6 +142,7 @@ class SessionManager {
         while (true) {
           if (!this.session) break
           try {
+            await this.userActivity
             await this.session.ping()
             await wait(consts.SESSION_PING_PERIOD)
           } catch (err: any) {

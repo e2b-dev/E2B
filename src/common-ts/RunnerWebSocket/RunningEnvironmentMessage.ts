@@ -46,7 +46,14 @@ export interface RunningEnvironment_Start extends BaseRunningEnvironment {
      * the same ID as `DocumentEnvironment` specified in the document.
      */
     environmentID: string
-    template: TemplateConfig
+    /**
+     * Either the `template` or the `templateID` field must be present.
+     */
+    template?: TemplateConfig
+    /**
+     * Either the `template` or the `templateID` field must be present.
+     */
+    templateID?: string
   }
 }
 
@@ -57,7 +64,7 @@ export interface RunningEnvironment_StartAck extends BaseRunningEnvironment {
   type: TRunningEnvironment.StartAck
   payload: {
     environmentID: string
-    template: TemplateConfig
+    template: Pick<TemplateConfig, 'id' | 'image'>
     /**
      * A boolean indicating whether the environment has already existed or a new one was created.
      */
@@ -171,18 +178,6 @@ export interface RunningEnvironment_FileContent extends BaseRunningEnvironment {
 }
 
 /**
- * Sent to remote Runner when a client requests to overwrite content of a file in the environment's filesystem.
- */
-export interface RunningEnvironment_WriteFile extends BaseRunningEnvironment {
-  type: TRunningEnvironment.WriteFile
-  payload: {
-    environmentID: string
-    path: string
-    content: string
-  }
-}
-
-/**
  * Sent to remote Runner when a client requests the content of a file in the environment's filesystem.
  */
 export interface RunningEnvironment_GetFile extends BaseRunningEnvironment {
@@ -288,16 +283,16 @@ export interface RunningEnvironment_ListRunningCmds extends BaseRunningEnvironme
  * Received from remote Runner when a command prints to stdout or stderr.
  */
 export interface RunningEnvironment_CmdOut extends BaseRunningEnvironment {
-    type: TRunningEnvironment.CmdOut
-    payload: {
-      environmentID: string
-      /**
-       * A unique ID that Runner received via the `RunningEnvironment_ExecCmd` message.
-       */
-      executionID: string
-      stdout?: string
-      stderr?: string
-    }
+  type: TRunningEnvironment.CmdOut
+  payload: {
+    environmentID: string
+    /**
+     * A unique ID that Runner received via the `RunningEnvironment_ExecCmd` message.
+     */
+    executionID: string
+    stdout?: string
+    stderr?: string
+  }
 }
 
 /**
