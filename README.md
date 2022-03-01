@@ -32,7 +32,7 @@ const code = `
 
 function InteractiveCodeSnippet() {
   // 3. Use the hook
-  const { stdout, stderr, status, url, fs, runCmd } = useDevbook({ env: 'nodejs-v16', port: 3000 })
+  const { stdout, stderr, status, fs, runCmd } = useDevbook({ env: 'your-node-env' })
 
   async function handleRun() {
     if (status !== DevbookStatus.Connected) return
@@ -48,12 +48,7 @@ function InteractiveCodeSnippet() {
     <div>
       {status === DevbookStatus.Disconnected && <div>Status: Disconnected, will start VM</div>}
       {status === DevbookStatus.Connecting && <div>Status: Starting VM...</div>}
-      {status === DevbookStatus.Connected &&
-        <>
-          <div>URL for the port 3000 on the VM: {url}</div>
-          <button onClick={handleRun}>Run</button>
-        </>
-      )}
+      {status === DevbookStatus.Connected && <button onClick={handleRun}>Run</button>}
       <h3>Output</h3>
       {stdout.map((o, idx) => <span key={`out_${idx}`}>{o}</span>)}
       {stderr.map((e, idx) => <span key={`err_${idx}`}>{e}</span>)}
@@ -76,7 +71,7 @@ export default InteractiveCodeSnippet
 
   // 3. Create new Devbook instance
   const dbk = new Devbook({
-    env: 'nodejs-v16',
+    env: 'your-node-env',
     onStdout(out) {
       console.log('stdout', { err })
     },
@@ -85,10 +80,6 @@ export default InteractiveCodeSnippet
     },
     onStatusChange(status) {
       console.log('status', { status })
-    },
-    onURLChange(getURL) {
-      const url = getURL(3000) // Create a URL that connects to the port 3000
-      console.log('url', { url })
     },
   })
 
@@ -104,9 +95,7 @@ export default InteractiveCodeSnippet
 ```
 
 ## Supported runtimes
-- NodeJS
-- Looking for more runtimes? Please open an [issue](https://github.com/DevbookHQ/sdk/issues)
-- *(coming soon)* Custom environments based on containers
+We support any environments based on Docker images - check out our [CLI tool](https://github.com/devbookhq/devbookctl) for creating and deploying custom Devbook envs.
 
 ## Usage of Devbook in example apps
 - [React](examples/react-app)
