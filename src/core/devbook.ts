@@ -84,14 +84,6 @@ class Devbook {
   private readonly contextID = 'default'
   private executionID = generateExecutionID()
 
-  private _sessionID?: string
-  private get sessionID() {
-    return this._sessionID
-  }
-  private set sessionID(value: string | undefined) {
-    this._sessionID = value
-  }
-
   private _isDestroyed = false
   private get isDestroyed() {
     return this._isDestroyed
@@ -174,12 +166,6 @@ class Devbook {
      */
     onStatusChange?: (status: DevbookStatus) => void
     /**
-     * This function will be called when the URL for accessing this `Devbook`'s environment changes.
-     *
-     * You can assemble URL for any port by using the `getURL` function from the parameter.
-     */
-    onURLChange?: (getURL: (port: number) => string | undefined) => void
-    /**
      * If this value is true then this `Devbook` will print detailed logs.
      */
     debug?: boolean
@@ -191,12 +177,10 @@ class Devbook {
     // Explicitely check for config to be defined so we can notify the developer with an error.
     if (!opts.config) throw new Error('Missing Devbook config')
 
-    const getURL = this.getURL.bind(this)
     const getTemplateID = () => this.opts.env
     const getExecutionID = () => this.executionID
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
     const setSessionStatus = (value: SessionStatus) => this.sessionStatus = value
-    const setSessionID = (sessionID?: string) => this.sessionID = sessionID
 
     Runner.config = this.opts.config
 
@@ -207,14 +191,9 @@ class Devbook {
       onEnvChange(env) {
         if (env.templateID !== getTemplateID()) return
         setIsEnvReady(env.isReady)
-
-        opts.onURLChange?.(getURL)
       },
-      onSessionChange({ status, sessionID }) {
-        setSessionID(sessionID)
+      onSessionChange({ status }) {
         setSessionStatus(status)
-
-        opts.onURLChange?.(getURL)
       },
       onCmdOut(payload) {
         if (payload.executionID !== getExecutionID()) return
@@ -226,22 +205,6 @@ class Devbook {
         }
       },
     })
-  }
-
-  /**
-   * Compose the URL that can be used for connecting to a port on the environment defined in this `Devbook`'s constructor.
-   *
-   * @param port Number of the port that the URL should be connecting to.
-   * @returns URL address that allows you to connect to a specified port on this `Devbook`'s environment
-   * or `undefined` if this `Devbook` is not yet connected to a VM.
-   */
-  getURL(port: number) {
-    if (this.status !== DevbookStatus.Connected) return
-
-    if (!this.sessionID) return
-    if (!this.env.isReady) return
-
-    return `https://${port}-${this.env.id}-${this.sessionID}.o.usedevbook.com`
   }
 
   /**

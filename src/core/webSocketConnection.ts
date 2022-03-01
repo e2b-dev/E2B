@@ -11,7 +11,7 @@ export interface Opts {
 
 interface Handler {
   onMessage: (msg: rws.BaseMessage) => void
-  onOpen: (sessionID: string) => void
+  onOpen: () => void
   onClose: () => void
 }
 
@@ -81,7 +81,7 @@ export class WebSocketConnection {
     }
 
     this.client = new WebSocket(`${this.url}/session/ws/${this.sessionID}`)
-    this.client.onopen = () => this.handleOpen(this.sessionID as string)
+    this.client.onopen = () => this.handleOpen()
     this.client.onmessage = msg => {
       this.logger.log('Received (raw)', { msg })
       this.handleMessage(msg)
@@ -109,9 +109,9 @@ export class WebSocketConnection {
     this.client?.close(1000)
   }
 
-  private handleOpen(sessionID: string) {
+  private handleOpen() {
     this.logger.log('Connection opened', { readyState: this.client?.readyState })
-    this.handlers.forEach(h => h.onOpen(sessionID))
+    this.handlers.forEach(h => h.onOpen())
   }
 
   // Private version of the `send()` method that doesn't check if a client is ready

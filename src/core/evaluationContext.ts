@@ -19,7 +19,7 @@ export interface EvaluationContextOpts {
   debug?: boolean
   conn: WebSocketConnection
   onCmdOut?: (payload: rws.RunningEnvironment_CmdOut['payload']) => void
-  onSessionChange?: (session: { status: SessionStatus, sessionID?: string }) => void
+  onSessionChange?: (session: { status: SessionStatus }) => void
   onEnvChange?: (env: RunningEnvironment) => void
 }
 
@@ -43,7 +43,7 @@ class EvaluationContext {
     this.logger = new Logger(`EvaluationContext [${opts.templateID}]`, opts.debug)
     this.env = new RunningEnvironment(this.contextID, opts.templateID)
 
-    const onOpen = (sessionID: string) => this.handleConnectionOpen(sessionID)
+    const onOpen = () => this.handleConnectionOpen()
     const onMessage = (msg: rws.BaseMessage) => this.handleConnectionMessage(msg)
     const onClose = () => this.handleConnectionClose()
 
@@ -53,8 +53,8 @@ class EvaluationContext {
       onClose,
     })
 
-    if (this.opts.conn.isOpen && this.opts.conn.sessionID) {
-      this.handleConnectionOpen(this.opts.conn.sessionID)
+    if (this.opts.conn.isOpen) {
+      this.handleConnectionOpen()
     }
     if (this.opts.conn.isClosed) {
       this.handleConnectionClose()
@@ -209,7 +209,7 @@ class EvaluationContext {
     }
   }
 
-  private handleConnectionOpen(sessionID: string) {
+  private handleConnectionOpen() {
     this.restart()
     this.opts.onSessionChange?.({ status: SessionStatus.Connecting })
   }
@@ -341,7 +341,7 @@ class EvaluationContext {
 
     this.env.isReady = true
     this.opts.onEnvChange?.(this.env)
-    this.opts.onSessionChange?.({ status: SessionStatus.Connected, sessionID: this.opts.conn.sessionID })
+    this.opts.onSessionChange?.({ status: SessionStatus.Connected })
   }
 
   private vmenv_handleCmdOut(payload: rws.RunningEnvironment_CmdOut['payload']) {

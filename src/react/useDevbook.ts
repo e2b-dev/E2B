@@ -96,6 +96,7 @@ function useDevbook({
     const devbook = new Devbook({
       debug,
       env,
+      config,
       onStatusChange(status) {
         setStatus(status)
       },
@@ -105,7 +106,6 @@ function useDevbook({
       onStdout(out) {
         setStdout(s => [...s, out])
       },
-      config,
     })
 
     setStdout([])
