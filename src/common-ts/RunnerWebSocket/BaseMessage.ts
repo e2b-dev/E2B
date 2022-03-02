@@ -39,6 +39,8 @@ export enum TRunningEnvironment {
   CmdExit = 'RunningEnvironment.CmdExit',
   RunningCmds = 'RunningEnvironment.RunningCmds',
 
+  // SSH
+  SSHData = 'RunningEnvironment.SSHData',
 
   // Sent to remote Runner.
   RunCode = 'RunningEnvironment.Run',

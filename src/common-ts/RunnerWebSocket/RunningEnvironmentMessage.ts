@@ -29,6 +29,7 @@ export interface BaseRunningEnvironment extends BaseMessage {
   | TRunningEnvironment.CmdExit
   | TRunningEnvironment.RunningCmds
   | TRunningEnvironment.RunCode
+  | TRunningEnvironment.SSHData,
   payload: {
     environmentID: string
   }
@@ -214,6 +215,15 @@ export interface RunningEnvironment_DirContent extends BaseRunningEnvironment {
       path: string
       type: 'File' | 'Directory'
     }[]
+  }
+}
+
+export interface RunningEnvironment_SSHData extends BaseRunningEnvironment {
+  type: TRunningEnvironment.SSHData
+  payload: {
+    environmentID: string
+    sshSessionID: string
+    data: string
   }
 }
 

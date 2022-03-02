@@ -9,6 +9,7 @@ import {
   DevbookStatus,
   Env,
   FS,
+  SSH,
   Config,
 } from '../core'
 
@@ -66,6 +67,7 @@ export interface State {
    * Use this for accessing and manipulating this Devbook's VM's filesystem.
    */
   fs?: FS
+  ssh?: SSH
 }
 
 /**
@@ -127,6 +129,7 @@ function useDevbook({
     runCmd,
     status,
     fs: devbook?.fs,
+    ssh: devbook?.ssh,
   }
 }
 

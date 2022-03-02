@@ -32,6 +32,7 @@ export type {
   RunningEnvironment_CmdExit,
   RunningEnvironment_RunningCmds,
   RunningEnvironment_RunCode,
+  RunningEnvironment_SSHData,
 } from './RunningEnvironmentMessage'
 
 export type {

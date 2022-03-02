@@ -5,6 +5,7 @@ import { SessionStatus } from './session/sessionManager'
 import { Filesystem } from './runningEnvironment/filesystem'
 
 const generateExecutionID = makeIDGenerator(6)
+const generateSSHSessionID = makeIDGenerator(6)
 
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
 // it makes more sense to name it `Env` because it's less confusing for users.
@@ -53,6 +54,13 @@ export interface FS {
   serialize: Filesystem['serialize']
   addListener: Filesystem['addListener']
   removeListener: Filesystem['removeListener']
+}
+
+export interface SSH {
+  createSession: (onData: (data: string) => void) => {
+    sendData: (data: string) => void
+    destroy: () => void
+  }
 }
 
 /**
@@ -127,21 +135,34 @@ class Devbook {
     return this.context.env
   }
 
+  readonly ssh: SSH = {
+    createSession: (onData) => {
+      const sshSessionID = generateSSHSessionID()
+      const unsubscribe = this.context.onSSHData({ sshSessionID, onData })
+
+      return {
+        destroy: () => {
+          unsubscribe()
+        },
+        sendData: (data) => {
+          this.context.sendSSHData({ sshSessionID, data })
+        },
+      }
+    }
+  }
+
   /**
    * Use this for accessing and manipulating this `Devbook`'s VM's filesystem.
    */
-  get fs(): FS {
-    const filesystem = this.env.filesystem
-    return {
-      delete: this.deleteFile.bind(this),
-      listDir: this.listDir.bind(this),
-      createDir: this.createDir.bind(this),
-      get: this.getFile.bind(this),
-      write: this.writeFile.bind(this),
-      addListener: filesystem.addListener.bind(filesystem),
-      removeListener: filesystem.removeListener.bind(filesystem),
-      serialize: filesystem.serialize.bind(filesystem),
-    }
+  readonly fs: FS = {
+    delete: this.deleteFile.bind(this),
+    listDir: this.listDir.bind(this),
+    createDir: this.createDir.bind(this),
+    get: this.getFile.bind(this),
+    write: this.writeFile.bind(this),
+    addListener: this.env.filesystem.addListener.bind(this.env.filesystem),
+    removeListener: this.env.filesystem.removeListener.bind(this.env.filesystem),
+    serialize: this.env.filesystem.serialize.bind(this.env.filesystem),
   }
 
   constructor(private readonly opts: {
@@ -245,39 +266,26 @@ class Devbook {
 
   private listDir(path: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
-    return this.context.listDir({
-      path,
-    })
+    return this.context.listDir({ path })
   }
 
   private createDir(path: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
-    return this.context.createDir({
-      path,
-    })
+    return this.context.createDir({ path })
   }
 
   private deleteFile(path: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
-    return this.context.deleteFile({
-      path,
-    })
+    return this.context.deleteFile({ path })
   }
 
   private getFile(path: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
-    return this.context.getFile({
-      path,
-    })
+    return this.context.getFile({ path })
   }
 
   private writeFile(path: string, content: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
-
     return this.context.updateFile({
       path,
       content,

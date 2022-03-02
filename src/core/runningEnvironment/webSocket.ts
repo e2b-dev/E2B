@@ -1,5 +1,4 @@
 import * as rws from '../../common-ts/RunnerWebSocket'
-import { TemplateConfig } from '../../common-ts/TemplateConfig'
 import { Env } from '../devbook'
 import { WebSocketConnection } from '../webSocketConnection'
 
@@ -158,6 +157,28 @@ function deleteFile(
   conn.send(msg)
 }
 
+function sshData(
+  conn: WebSocketConnection, {
+    environmentID,
+    sshSessionID,
+    data,
+  }: {
+    environmentID: string,
+    sshSessionID: string,
+    data: string,
+  },
+) {
+  const msg: rws.RunningEnvironment_SSHData = {
+    type: rws.MessageType.RunningEnvironment.SSHData,
+    payload: {
+      environmentID,
+      sshSessionID,
+      data,
+    },
+  }
+  conn.send(msg)
+}
+
 export {
   start,
   execCmd,
@@ -166,4 +187,5 @@ export {
   getFile,
   createDir,
   listDir,
+  sshData,
 }

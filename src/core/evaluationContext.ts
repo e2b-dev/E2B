@@ -25,6 +25,7 @@ export interface EvaluationContextOpts {
 
 type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => void
 type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
+type SSHDataSubscriber = (payload: rws.RunningEnvironment_SSHData['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -35,6 +36,7 @@ class EvaluationContext {
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
   private fileContentSubscribers: FileContentSubscriber[] = []
+  private sshDataSubscribers: SSHDataSubscriber[] = []
 
   readonly env: RunningEnvironment
   private readonly unsubscribeConnHandler: () => void
@@ -187,6 +189,35 @@ class EvaluationContext {
     })
   }
 
+  sendSSHData({ sshSessionID, data }: { sshSessionID: string, data: string }) {
+    envWS.sshData(this.opts.conn, {
+      environmentID: this.env.id,
+      sshSessionID,
+      data,
+    })
+  }
+
+  onSSHData({ sshSessionID, onData }: { sshSessionID: string, onData: (data: string) => void }) {
+    const subscriber: SSHDataSubscriber = (payload) => {
+      if (payload.sshSessionID !== sshSessionID) return
+      onData(payload.data)
+    }
+
+    this.subscribeSSHData(subscriber)
+    return () => this.unsubscribeSSHData(subscriber)
+  }
+
+  private subscribeSSHData(subscriber: SSHDataSubscriber) {
+    this.sshDataSubscribers.push(subscriber)
+  }
+
+  private unsubscribeSSHData(subscriber: SSHDataSubscriber) {
+    const index = this.sshDataSubscribers.indexOf(subscriber)
+    if (index > -1) {
+      this.sshDataSubscribers.splice(index, 1);
+    }
+  }
+
   private subscribeFileContent(subscriber: FileContentSubscriber) {
     this.fileContentSubscribers.push(subscriber)
   }
@@ -271,9 +302,19 @@ class EvaluationContext {
         this.vmenv_handleStdout(msg.payload)
         break
       }
+      case rws.MessageType.RunningEnvironment.SSHData: {
+        const msg = message as rws.RunningEnvironment_SSHData
+        this.vmenv_handleSSHData(msg.payload)
+        break
+      }
       default:
         this.logger.warn('Unknown message type', { message })
     }
+  }
+
+  private vmenv_handleSSHData(payload: rws.RunningEnvironment_SSHData['payload']) {
+    this.logger.log('[vmenv] Handling "SSHData"', payload)
+    this.sshDataSubscribers.forEach(s => s(payload))
   }
 
   private vmenv_handleFSEventCreate(payload: rws.RunningEnvironment_FSEventCreate['payload']) {
