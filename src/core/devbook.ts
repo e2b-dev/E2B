@@ -59,6 +59,7 @@ export interface FS {
 export interface Terminal {
   createSession: (onData: (data: string) => void) => {
     sendData: (data: string) => void
+    resize: ({ cols, rows }: { cols: number, rows: number }) => void
     destroy: () => void
   }
 }
