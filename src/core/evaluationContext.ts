@@ -25,7 +25,7 @@ export interface EvaluationContextOpts {
 
 type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => void
 type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
-type SSHDataSubscriber = (payload: rws.RunningEnvironment_SSHData['payload']) => void
+type TerminalDataSubscriber = (payload: rws.RunningEnvironment_TermData['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -36,7 +36,7 @@ class EvaluationContext {
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
   private fileContentSubscribers: FileContentSubscriber[] = []
-  private sshDataSubscribers: SSHDataSubscriber[] = []
+  private sshDataSubscribers: TerminalDataSubscriber[] = []
 
   readonly env: RunningEnvironment
   private readonly unsubscribeConnHandler: () => void
@@ -189,17 +189,26 @@ class EvaluationContext {
     })
   }
 
-  sendSSHData({ sshSessionID, data }: { sshSessionID: string, data: string }) {
-    envWS.sshData(this.opts.conn, {
+  resizeTerminal({ terminalID, cols, rows }: { terminalID: string, cols: number, rows: number }) {
+    envWS.terminalResize(this.opts.conn, {
       environmentID: this.env.id,
-      sshSessionID,
+      terminalID,
+      cols,
+      rows,
+    })
+  }
+
+  sendTerminalData({ terminalID, data }: { terminalID: string, data: string }) {
+    envWS.terminalData(this.opts.conn, {
+      environmentID: this.env.id,
+      terminalID,
       data,
     })
   }
 
-  onSSHData({ sshSessionID, onData }: { sshSessionID: string, onData: (data: string) => void }) {
-    const subscriber: SSHDataSubscriber = (payload) => {
-      if (payload.sshSessionID !== sshSessionID) return
+  onTerminalData({ terminalID, onData }: { terminalID: string, onData: (data: string) => void }) {
+    const subscriber: TerminalDataSubscriber = (payload) => {
+      if (payload.terminalID !== terminalID) return
       onData(payload.data)
     }
 
@@ -207,11 +216,11 @@ class EvaluationContext {
     return () => this.unsubscribeSSHData(subscriber)
   }
 
-  private subscribeSSHData(subscriber: SSHDataSubscriber) {
+  private subscribeSSHData(subscriber: TerminalDataSubscriber) {
     this.sshDataSubscribers.push(subscriber)
   }
 
-  private unsubscribeSSHData(subscriber: SSHDataSubscriber) {
+  private unsubscribeSSHData(subscriber: TerminalDataSubscriber) {
     const index = this.sshDataSubscribers.indexOf(subscriber)
     if (index > -1) {
       this.sshDataSubscribers.splice(index, 1);
@@ -302,9 +311,9 @@ class EvaluationContext {
         this.vmenv_handleStdout(msg.payload)
         break
       }
-      case rws.MessageType.RunningEnvironment.SSHData: {
-        const msg = message as rws.RunningEnvironment_SSHData
-        this.vmenv_handleSSHData(msg.payload)
+      case rws.MessageType.RunningEnvironment.TermData: {
+        const msg = message as rws.RunningEnvironment_TermData
+        this.vmenv_handleTermData(msg.payload)
         break
       }
       default:
@@ -312,7 +321,7 @@ class EvaluationContext {
     }
   }
 
-  private vmenv_handleSSHData(payload: rws.RunningEnvironment_SSHData['payload']) {
+  private vmenv_handleTermData(payload: rws.RunningEnvironment_TermData['payload']) {
     this.logger.log('[vmenv] Handling "SSHData"', payload)
     this.sshDataSubscribers.forEach(s => s(payload))
   }

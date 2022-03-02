@@ -29,7 +29,8 @@ export interface BaseRunningEnvironment extends BaseMessage {
   | TRunningEnvironment.CmdExit
   | TRunningEnvironment.RunningCmds
   | TRunningEnvironment.RunCode
-  | TRunningEnvironment.SSHData,
+  | TRunningEnvironment.TermData
+  | TRunningEnvironment.TermResize,
   payload: {
     environmentID: string
   }
@@ -218,12 +219,22 @@ export interface RunningEnvironment_DirContent extends BaseRunningEnvironment {
   }
 }
 
-export interface RunningEnvironment_SSHData extends BaseRunningEnvironment {
-  type: TRunningEnvironment.SSHData
+export interface RunningEnvironment_TermData extends BaseRunningEnvironment {
+  type: TRunningEnvironment.TermData
   payload: {
     environmentID: string
-    sshSessionID: string
+    terminalID: string
     data: string
+  }
+}
+
+export interface RunningEnvironment_TermResize extends BaseRunningEnvironment {
+  type: TRunningEnvironment.TermResize
+  payload: {
+    environmentID: string
+    terminalID: string
+    cols: number
+    rows: number
   }
 }
 

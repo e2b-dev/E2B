@@ -157,23 +157,48 @@ function deleteFile(
   conn.send(msg)
 }
 
-function sshData(
+function termData(
   conn: WebSocketConnection, {
     environmentID,
-    sshSessionID,
+    terminalID,
     data,
   }: {
     environmentID: string,
-    sshSessionID: string,
+    terminalID: string,
     data: string,
   },
 ) {
-  const msg: rws.RunningEnvironment_SSHData = {
-    type: rws.MessageType.RunningEnvironment.SSHData,
+  const msg: rws.RunningEnvironment_TermData = {
+    type: rws.MessageType.RunningEnvironment.TermData,
     payload: {
       environmentID,
-      sshSessionID,
+      terminalID,
       data,
+    },
+  }
+  conn.send(msg)
+}
+
+function termResize(
+  conn: WebSocketConnection, {
+    environmentID,
+    terminalID,
+    cols,
+    rows,
+  }: {
+    environmentID: string,
+    terminalID: string,
+    cols: number,
+    rows: number,
+  },
+) {
+  const msg: rws.RunningEnvironment_TermResize = {
+    type: rws.MessageType.RunningEnvironment.TermResize,
+    payload: {
+      environmentID,
+      terminalID,
+      cols,
+      rows,
     },
   }
   conn.send(msg)
@@ -187,5 +212,6 @@ export {
   getFile,
   createDir,
   listDir,
-  sshData,
+  termData as terminalData,
+  termResize as terminalResize,
 }

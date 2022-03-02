@@ -2,7 +2,7 @@ export type {
   FS,
   Config,
   Env,
-  SSH,
+  Terminal,
 } from './devbook'
 export {
   default as Devbook,

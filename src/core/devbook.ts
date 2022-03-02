@@ -5,7 +5,7 @@ import { SessionStatus } from './session/sessionManager'
 import { Filesystem } from './runningEnvironment/filesystem'
 
 const generateExecutionID = makeIDGenerator(6)
-const generateSSHSessionID = makeIDGenerator(6)
+const generateTerminalID = makeIDGenerator(6)
 
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
 // it makes more sense to name it `Env` because it's less confusing for users.
@@ -56,7 +56,7 @@ export interface FS {
   removeListener: Filesystem['removeListener']
 }
 
-export interface SSH {
+export interface Terminal {
   createSession: (onData: (data: string) => void) => {
     sendData: (data: string) => void
     destroy: () => void
@@ -135,17 +135,20 @@ class Devbook {
     return this.context.env
   }
 
-  readonly ssh: SSH = {
+  readonly terminal: Terminal = {
     createSession: (onData) => {
-      const sshSessionID = generateSSHSessionID()
-      const unsubscribe = this.context.onSSHData({ sshSessionID, onData })
+      const terminalID = generateTerminalID()
+      const unsubscribe = this.context.onTerminalData({ terminalID, onData })
 
       return {
         destroy: () => {
           unsubscribe()
         },
         sendData: (data) => {
-          this.context.sendSSHData({ sshSessionID, data })
+          this.context.sendTerminalData({ terminalID, data })
+        },
+        resize: ({ cols, rows }: { cols: number, rows: number }) => {
+          this.context.resizeTerminal({ terminalID, cols, rows })
         },
       }
     }

@@ -32,7 +32,8 @@ export type {
   RunningEnvironment_CmdExit,
   RunningEnvironment_RunningCmds,
   RunningEnvironment_RunCode,
-  RunningEnvironment_SSHData,
+  RunningEnvironment_TermData,
+  RunningEnvironment_TermResize,
 } from './RunningEnvironmentMessage'
 
 export type {
