@@ -136,38 +136,12 @@ class Devbook {
     return this.context.env
   }
 
-  readonly terminal: Terminal = {
-    createSession: (onData) => {
-      const terminalID = generateTerminalID()
-      const unsubscribe = this.context.onTerminalData({ terminalID, onData })
-
-      return {
-        destroy: () => {
-          unsubscribe()
-        },
-        sendData: (data) => {
-          this.context.sendTerminalData({ terminalID, data })
-        },
-        resize: ({ cols, rows }: { cols: number, rows: number }) => {
-          this.context.resizeTerminal({ terminalID, cols, rows })
-        },
-      }
-    }
-  }
+  readonly terminal: Terminal
 
   /**
    * Use this for accessing and manipulating this `Devbook`'s VM's filesystem.
    */
-  readonly fs: FS = {
-    delete: this.deleteFile.bind(this),
-    listDir: this.listDir.bind(this),
-    createDir: this.createDir.bind(this),
-    get: this.getFile.bind(this),
-    write: this.writeFile.bind(this),
-    addListener: this.env.filesystem.addListener.bind(this.env.filesystem),
-    removeListener: this.env.filesystem.removeListener.bind(this.env.filesystem),
-    serialize: this.env.filesystem.serialize.bind(this.env.filesystem),
-  }
+  readonly fs: FS
 
   constructor(private readonly opts: {
     /**
@@ -230,6 +204,36 @@ class Devbook {
         }
       },
     })
+
+    this.fs = {
+      delete: this.deleteFile.bind(this),
+      listDir: this.listDir.bind(this),
+      createDir: this.createDir.bind(this),
+      get: this.getFile.bind(this),
+      write: this.writeFile.bind(this),
+      addListener: this.env.filesystem.addListener.bind(this.env.filesystem),
+      removeListener: this.env.filesystem.removeListener.bind(this.env.filesystem),
+      serialize: this.env.filesystem.serialize.bind(this.env.filesystem),
+    }
+
+    this.terminal = {
+      createSession: (onData) => {
+        const terminalID = generateTerminalID()
+        const unsubscribe = this.context.onTerminalData({ terminalID, onData })
+
+        return {
+          destroy: () => {
+            unsubscribe()
+          },
+          sendData: (data) => {
+            this.context.sendTerminalData({ terminalID, data })
+          },
+          resize: ({ cols, rows }: { cols: number, rows: number }) => {
+            this.context.resizeTerminal({ terminalID, cols, rows })
+          },
+        }
+      }
+    }
   }
 
   /**
