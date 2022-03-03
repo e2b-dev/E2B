@@ -36,7 +36,7 @@ class EvaluationContext {
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
   private fileContentSubscribers: FileContentSubscriber[] = []
-  private sshDataSubscribers: TerminalDataSubscriber[] = []
+  private termDataSubscribers: TerminalDataSubscriber[] = []
 
   readonly env: RunningEnvironment
   private readonly unsubscribeConnHandler: () => void
@@ -212,18 +212,18 @@ class EvaluationContext {
       onData(payload.data)
     }
 
-    this.subscribeSSHData(subscriber)
-    return () => this.unsubscribeSSHData(subscriber)
+    this.subscribeTermData(subscriber)
+    return () => this.unsubscribeTermData(subscriber)
   }
 
-  private subscribeSSHData(subscriber: TerminalDataSubscriber) {
-    this.sshDataSubscribers.push(subscriber)
+  private subscribeTermData(subscriber: TerminalDataSubscriber) {
+    this.termDataSubscribers.push(subscriber)
   }
 
-  private unsubscribeSSHData(subscriber: TerminalDataSubscriber) {
-    const index = this.sshDataSubscribers.indexOf(subscriber)
+  private unsubscribeTermData(subscriber: TerminalDataSubscriber) {
+    const index = this.termDataSubscribers.indexOf(subscriber)
     if (index > -1) {
-      this.sshDataSubscribers.splice(index, 1);
+      this.termDataSubscribers.splice(index, 1);
     }
   }
 
@@ -323,7 +323,7 @@ class EvaluationContext {
 
   private vmenv_handleTermData(payload: rws.RunningEnvironment_TermData['payload']) {
     this.logger.log('[vmenv] Handling "SSHData"', payload)
-    this.sshDataSubscribers.forEach(s => s(payload))
+    this.termDataSubscribers.forEach(s => s(payload))
   }
 
   private vmenv_handleFSEventCreate(payload: rws.RunningEnvironment_FSEventCreate['payload']) {
