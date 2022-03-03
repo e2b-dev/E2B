@@ -39,8 +39,9 @@ export enum TRunningEnvironment {
   CmdExit = 'RunningEnvironment.CmdExit',
   RunningCmds = 'RunningEnvironment.RunningCmds',
 
-  // Terminal messages
+  // Sent to remove Runner and received from remote Runner
   TermData = 'RunningEnvironment.TermData',
+  // Sent to remote Runner
   TermResize = 'RunningEnvironment.TermResize',
 
   // Sent to remote Runner.
