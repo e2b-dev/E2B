@@ -49,21 +49,23 @@ func taskConfigFromProto(pb *proto.TaskConfig) *TaskConfig {
 		return &TaskConfig{}
 	}
 	return &TaskConfig{
-		ID:              pb.Id,
-		JobName:         pb.JobName,
-		TaskGroupName:   pb.TaskGroupName,
-		Name:            pb.Name,
-		Env:             pb.Env,
-		DeviceEnv:       pb.DeviceEnv,
-		rawDriverConfig: pb.MsgpackDriverConfig,
-		Resources:       ResourcesFromProto(pb.Resources),
-		Devices:         DevicesFromProto(pb.Devices),
-		Mounts:          MountsFromProto(pb.Mounts),
-		User:            pb.User,
-		AllocDir:        pb.AllocDir,
-		StdoutPath:      pb.StdoutPath,
-		StderrPath:      pb.StderrPath,
-		AllocID:         pb.AllocId,
+		ID:               pb.Id,
+		JobName:          pb.JobName,
+		TaskGroupName:    pb.TaskGroupName,
+		Name:             pb.Name,
+		Env:              pb.Env,
+		DeviceEnv:        pb.DeviceEnv,
+		rawDriverConfig:  pb.MsgpackDriverConfig,
+		Resources:        ResourcesFromProto(pb.Resources),
+		Devices:          DevicesFromProto(pb.Devices),
+		Mounts:           MountsFromProto(pb.Mounts),
+		User:             pb.User,
+		AllocDir:         pb.AllocDir,
+		StdoutPath:       pb.StdoutPath,
+		StderrPath:       pb.StderrPath,
+		AllocID:          pb.AllocId,
+		NetworkIsolation: NetworkIsolationSpecFromProto(pb.NetworkIsolationSpec),
+		DNS:              dnsConfigFromProto(pb.Dns),
 	}
 }
 
@@ -72,21 +74,23 @@ func taskConfigToProto(cfg *TaskConfig) *proto.TaskConfig {
 		return &proto.TaskConfig{}
 	}
 	pb := &proto.TaskConfig{
-		Id:                  cfg.ID,
-		JobName:             cfg.JobName,
-		TaskGroupName:       cfg.TaskGroupName,
-		Name:                cfg.Name,
-		Env:                 cfg.Env,
-		DeviceEnv:           cfg.DeviceEnv,
-		Resources:           ResourcesToProto(cfg.Resources),
-		Devices:             DevicesToProto(cfg.Devices),
-		Mounts:              MountsToProto(cfg.Mounts),
-		User:                cfg.User,
-		AllocDir:            cfg.AllocDir,
-		MsgpackDriverConfig: cfg.rawDriverConfig,
-		StdoutPath:          cfg.StdoutPath,
-		StderrPath:          cfg.StderrPath,
-		AllocId:             cfg.AllocID,
+		Id:                   cfg.ID,
+		JobName:              cfg.JobName,
+		TaskGroupName:        cfg.TaskGroupName,
+		Name:                 cfg.Name,
+		Env:                  cfg.Env,
+		DeviceEnv:            cfg.DeviceEnv,
+		Resources:            ResourcesToProto(cfg.Resources),
+		Devices:              DevicesToProto(cfg.Devices),
+		Mounts:               MountsToProto(cfg.Mounts),
+		User:                 cfg.User,
+		AllocDir:             cfg.AllocDir,
+		MsgpackDriverConfig:  cfg.rawDriverConfig,
+		StdoutPath:           cfg.StdoutPath,
+		StderrPath:           cfg.StderrPath,
+		AllocId:              cfg.AllocID,
+		NetworkIsolationSpec: NetworkIsolationSpecToProto(cfg.NetworkIsolation),
+		Dns:                  dnsConfigToProto(cfg.DNS),
 	}
 	return pb
 }
@@ -143,6 +147,19 @@ func ResourcesFromProto(pb *proto.Resources) *Resources {
 		}
 	}
 
+	if pb.Ports != nil {
+		ports := structs.AllocatedPorts(make([]structs.AllocatedPortMapping, len(pb.Ports)))
+		for i, port := range pb.Ports {
+			ports[i] = structs.AllocatedPortMapping{
+				Label:  port.Label,
+				Value:  int(port.Value),
+				To:     int(port.To),
+				HostIP: port.HostIp,
+			}
+		}
+		r.Ports = &ports
+	}
+
 	return &r
 }
 
@@ -197,6 +214,20 @@ func ResourcesToProto(r *Resources) *proto.Resources {
 			CpusetMems:       r.LinuxResources.CpusetMems,
 			PercentTicks:     r.LinuxResources.PercentTicks,
 		}
+	}
+
+	if r.Ports != nil {
+		ports := make([]*proto.PortMapping, len(*r.Ports))
+		for i, port := range *r.Ports {
+			ports[i] = &proto.PortMapping{
+				Label:  port.Label,
+				Value:  int32(port.Value),
+				To:     int32(port.To),
+				HostIp: port.HostIP,
+			}
+		}
+
+		pb.Ports = ports
 	}
 
 	return &pb
@@ -570,4 +601,80 @@ func memoryUsageMeasuredFieldsFromProto(fields []proto.MemoryUsage_Fields) []str
 	}
 
 	return r
+}
+
+func netIsolationModeToProto(mode NetIsolationMode) proto.NetworkIsolationSpec_NetworkIsolationMode {
+	switch mode {
+	case NetIsolationModeHost:
+		return proto.NetworkIsolationSpec_HOST
+	case NetIsolationModeGroup:
+		return proto.NetworkIsolationSpec_GROUP
+	case NetIsolationModeTask:
+		return proto.NetworkIsolationSpec_TASK
+	case NetIsolationModeNone:
+		return proto.NetworkIsolationSpec_NONE
+	default:
+		return proto.NetworkIsolationSpec_HOST
+	}
+}
+
+func netIsolationModeFromProto(pb proto.NetworkIsolationSpec_NetworkIsolationMode) NetIsolationMode {
+	switch pb {
+	case proto.NetworkIsolationSpec_HOST:
+		return NetIsolationModeHost
+	case proto.NetworkIsolationSpec_GROUP:
+		return NetIsolationModeGroup
+	case proto.NetworkIsolationSpec_TASK:
+		return NetIsolationModeTask
+	case proto.NetworkIsolationSpec_NONE:
+		return NetIsolationModeNone
+	default:
+		return NetIsolationModeHost
+	}
+}
+
+func NetworkIsolationSpecToProto(spec *NetworkIsolationSpec) *proto.NetworkIsolationSpec {
+	if spec == nil {
+		return nil
+	}
+	return &proto.NetworkIsolationSpec{
+		Path:   spec.Path,
+		Labels: spec.Labels,
+		Mode:   netIsolationModeToProto(spec.Mode),
+	}
+}
+
+func NetworkIsolationSpecFromProto(pb *proto.NetworkIsolationSpec) *NetworkIsolationSpec {
+	if pb == nil {
+		return nil
+	}
+	return &NetworkIsolationSpec{
+		Path:   pb.Path,
+		Labels: pb.Labels,
+		Mode:   netIsolationModeFromProto(pb.Mode),
+	}
+}
+
+func dnsConfigToProto(dns *DNSConfig) *proto.DNSConfig {
+	if dns == nil {
+		return nil
+	}
+
+	return &proto.DNSConfig{
+		Servers:  dns.Servers,
+		Searches: dns.Searches,
+		Options:  dns.Options,
+	}
+}
+
+func dnsConfigFromProto(pb *proto.DNSConfig) *DNSConfig {
+	if pb == nil {
+		return nil
+	}
+
+	return &DNSConfig{
+		Servers:  pb.Servers,
+		Searches: pb.Searches,
+		Options:  pb.Options,
+	}
 }

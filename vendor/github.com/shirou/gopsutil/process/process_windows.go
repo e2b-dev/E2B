@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	modpsapi                 = windows.NewLazyDLL("psapi.dll")
+	modpsapi                 = windows.NewLazySystemDLL("psapi.dll")
 	procGetProcessMemoryInfo = modpsapi.NewProc("GetProcessMemoryInfo")
 )
 
@@ -236,12 +236,12 @@ func (p *Process) Parent() (*Process, error) {
 }
 
 func (p *Process) ParentWithContext(ctx context.Context) (*Process, error) {
-	dst, err := GetWin32Proc(p.Pid)
+	ppid, err := p.PpidWithContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get ParentProcessID: %s", err)
 	}
 
-	return NewProcess(int32(dst[0].ParentProcessID))
+	return NewProcess(ppid)
 }
 func (p *Process) Status() (string, error) {
 	return p.StatusWithContext(context.Background())
@@ -270,6 +270,9 @@ func (p *Process) UsernameWithContext(ctx context.Context) (string, error) {
 	}
 	defer token.Close()
 	tokenUser, err := token.GetTokenUser()
+	if err != nil {
+		return "", err
+	}
 
 	user, domain, _, err := tokenUser.User.Sid.LookupAccount("")
 	return domain + "\\" + user, err
@@ -300,7 +303,7 @@ func (p *Process) TerminalWithContext(ctx context.Context) (string, error) {
 	return "", common.ErrNotImplementedError
 }
 
-// Nice returnes priority in Windows
+// Nice returns priority in Windows
 func (p *Process) Nice() (int32, error) {
 	return p.NiceWithContext(context.Background())
 }
@@ -600,21 +603,22 @@ func Processes() ([]*Process, error) {
 }
 
 func ProcessesWithContext(ctx context.Context) ([]*Process, error) {
-	pids, err := Pids()
+	out := []*Process{}
+
+	pids, err := PidsWithContext(ctx)
 	if err != nil {
-		return []*Process{}, fmt.Errorf("could not get Processes %s", err)
+		return out, fmt.Errorf("could not get Processes %s", err)
 	}
 
-	results := []*Process{}
 	for _, pid := range pids {
-		p, err := NewProcess(int32(pid))
+		p, err := NewProcess(pid)
 		if err != nil {
 			continue
 		}
-		results = append(results, p)
+		out = append(out, p)
 	}
 
-	return results, nil
+	return out, nil
 }
 
 func getProcInfo(pid int32) (*SystemProcessInformation, error) {

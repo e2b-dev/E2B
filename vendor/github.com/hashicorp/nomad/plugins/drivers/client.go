@@ -55,6 +55,11 @@ func (d *driverPluginClient) Capabilities() (*Capabilities, error) {
 	if resp.Capabilities != nil {
 		caps.SendSignals = resp.Capabilities.SendSignals
 		caps.Exec = resp.Capabilities.Exec
+		caps.MustInitiateNetwork = resp.Capabilities.MustCreateNetwork
+
+		for _, mode := range resp.Capabilities.NetworkIsolationModes {
+			caps.NetIsolationModes = append(caps.NetIsolationModes, netIsolationModeFromProto(mode))
+		}
 
 		switch resp.Capabilities.FsIsolation {
 		case proto.DriverCapabilities_NONE:
@@ -66,6 +71,8 @@ func (d *driverPluginClient) Capabilities() (*Capabilities, error) {
 		default:
 			caps.FSIsolation = FSIsolationNone
 		}
+
+		caps.MountConfigs = MountConfigSupport(resp.Capabilities.MountConfigs)
 	}
 
 	return caps, nil
@@ -458,4 +465,31 @@ func (d *driverPluginClient) ExecTaskStreamingRaw(ctx context.Context,
 			return err
 		}
 	}
+}
+
+func (d *driverPluginClient) CreateNetwork(allocID string) (*NetworkIsolationSpec, bool, error) {
+	req := &proto.CreateNetworkRequest{
+		AllocId: allocID,
+	}
+
+	resp, err := d.client.CreateNetwork(d.doneCtx, req)
+	if err != nil {
+		return nil, false, grpcutils.HandleGrpcErr(err, d.doneCtx)
+	}
+
+	return NetworkIsolationSpecFromProto(resp.IsolationSpec), resp.Created, nil
+}
+
+func (d *driverPluginClient) DestroyNetwork(allocID string, spec *NetworkIsolationSpec) error {
+	req := &proto.DestroyNetworkRequest{
+		AllocId:       allocID,
+		IsolationSpec: NetworkIsolationSpecToProto(spec),
+	}
+
+	_, err := d.client.DestroyNetwork(d.doneCtx, req)
+	if err != nil {
+		return grpcutils.HandleGrpcErr(err, d.doneCtx)
+	}
+
+	return nil
 }

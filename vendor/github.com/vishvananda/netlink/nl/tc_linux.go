@@ -89,7 +89,10 @@ const (
 	SizeofTcU32Key       = 0x10
 	SizeofTcU32Sel       = 0x10 // without keys
 	SizeofTcGen          = 0x14
+	SizeofTcConnmark     = SizeofTcGen + 0x04
 	SizeofTcMirred       = SizeofTcGen + 0x08
+	SizeofTcTunnelKey    = SizeofTcGen + 0x04
+	SizeofTcSkbEdit      = SizeofTcGen
 	SizeofTcPolice       = 2*SizeofTcRateSpec + 0x20
 )
 
@@ -647,10 +650,46 @@ const (
 	TCA_BPF_FD
 	TCA_BPF_NAME
 	TCA_BPF_FLAGS
-	TCA_BPF_MAX = TCA_BPF_FLAGS
+	TCA_BPF_FLAGS_GEN
+	TCA_BPF_TAG
+	TCA_BPF_ID
+	TCA_BPF_MAX = TCA_BPF_ID
 )
 
 type TcBpf TcGen
+
+const (
+	TCA_ACT_CONNMARK = 14
+)
+
+const (
+	TCA_CONNMARK_UNSPEC = iota
+	TCA_CONNMARK_PARMS
+	TCA_CONNMARK_TM
+	TCA_CONNMARK_MAX = TCA_CONNMARK_TM
+)
+
+// struct tc_connmark {
+//   tc_gen;
+//   __u16 zone;
+// };
+
+type TcConnmark struct {
+	TcGen
+	Zone uint16
+}
+
+func (msg *TcConnmark) Len() int {
+	return SizeofTcConnmark
+}
+
+func DeserializeTcConnmark(b []byte) *TcConnmark {
+	return (*TcConnmark)(unsafe.Pointer(&b[0:SizeofTcConnmark][0]))
+}
+
+func (x *TcConnmark) Serialize() []byte {
+	return (*(*[SizeofTcConnmark]byte)(unsafe.Pointer(x)))[:]
+}
 
 const (
 	TCA_ACT_MIRRED = 8
@@ -685,6 +724,63 @@ func DeserializeTcMirred(b []byte) *TcMirred {
 
 func (x *TcMirred) Serialize() []byte {
 	return (*(*[SizeofTcMirred]byte)(unsafe.Pointer(x)))[:]
+}
+
+const (
+	TCA_TUNNEL_KEY_UNSPEC = iota
+	TCA_TUNNEL_KEY_TM
+	TCA_TUNNEL_KEY_PARMS
+	TCA_TUNNEL_KEY_ENC_IPV4_SRC
+	TCA_TUNNEL_KEY_ENC_IPV4_DST
+	TCA_TUNNEL_KEY_ENC_IPV6_SRC
+	TCA_TUNNEL_KEY_ENC_IPV6_DST
+	TCA_TUNNEL_KEY_ENC_KEY_ID
+	TCA_TUNNEL_KEY_MAX = TCA_TUNNEL_KEY_ENC_KEY_ID
+)
+
+type TcTunnelKey struct {
+	TcGen
+	Action int32
+}
+
+func (x *TcTunnelKey) Len() int {
+	return SizeofTcTunnelKey
+}
+
+func DeserializeTunnelKey(b []byte) *TcTunnelKey {
+	return (*TcTunnelKey)(unsafe.Pointer(&b[0:SizeofTcTunnelKey][0]))
+}
+
+func (x *TcTunnelKey) Serialize() []byte {
+	return (*(*[SizeofTcTunnelKey]byte)(unsafe.Pointer(x)))[:]
+}
+
+const (
+	TCA_SKBEDIT_UNSPEC = iota
+	TCA_SKBEDIT_TM
+	TCA_SKBEDIT_PARMS
+	TCA_SKBEDIT_PRIORITY
+	TCA_SKBEDIT_QUEUE_MAPPING
+	TCA_SKBEDIT_MARK
+	TCA_SKBEDIT_PAD
+	TCA_SKBEDIT_PTYPE
+	TCA_SKBEDIT_MAX = TCA_SKBEDIT_MARK
+)
+
+type TcSkbEdit struct {
+	TcGen
+}
+
+func (x *TcSkbEdit) Len() int {
+	return SizeofTcSkbEdit
+}
+
+func DeserializeSkbEdit(b []byte) *TcSkbEdit {
+	return (*TcSkbEdit)(unsafe.Pointer(&b[0:SizeofTcSkbEdit][0]))
+}
+
+func (x *TcSkbEdit) Serialize() []byte {
+	return (*(*[SizeofTcSkbEdit]byte)(unsafe.Pointer(x)))[:]
 }
 
 // struct tc_police {

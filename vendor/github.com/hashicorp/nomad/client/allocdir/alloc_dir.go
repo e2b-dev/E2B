@@ -60,6 +60,14 @@ var (
 
 	// TaskDirs is the set of directories created in each tasks directory.
 	TaskDirs = map[string]os.FileMode{TmpDirName: os.ModeSticky | 0777}
+
+	// AllocGRPCSocket is the path relative to the task dir root for the
+	// unix socket connected to Consul's gRPC endpoint.
+	AllocGRPCSocket = filepath.Join(SharedAllocName, TmpDirName, "consul_grpc.sock")
+
+	// AllocHTTPSocket is the path relative to the task dir root for the unix
+	// socket connected to Consul's HTTP endpoint.
+	AllocHTTPSocket = filepath.Join(SharedAllocName, TmpDirName, "consul_http.sock")
 )
 
 // AllocDir allows creating, destroying, and accessing an allocation's
@@ -109,12 +117,13 @@ func NewAllocDir(logger hclog.Logger, allocDir string) *AllocDir {
 // Copy an AllocDir and all of its TaskDirs. Returns nil if AllocDir is
 // nil.
 func (d *AllocDir) Copy() *AllocDir {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
 	if d == nil {
 		return nil
 	}
+
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
 	dcopy := &AllocDir{
 		AllocDir:  d.AllocDir,
 		SharedDir: d.SharedDir,
@@ -417,10 +426,11 @@ func detectContentType(fileInfo os.FileInfo, path string) string {
 		// We ignore errors because this is optional information
 		if err == nil {
 			fileBytes := make([]byte, 512)
-			_, err := f.Read(fileBytes)
+			n, err := f.Read(fileBytes)
 			if err == nil {
-				contentType = http.DetectContentType(fileBytes)
+				contentType = http.DetectContentType(fileBytes[:n])
 			}
+			f.Close()
 		}
 	}
 	// Special case json files
