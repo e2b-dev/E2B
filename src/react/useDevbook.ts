@@ -98,7 +98,9 @@ function useDevbook({
     const devbook = new Devbook({
       debug,
       env,
-      config,
+      config: {
+        domain: config.domain,
+      },
       onStatusChange(status) {
         setStatus(status)
       },
@@ -120,7 +122,9 @@ function useDevbook({
   }, [
     env,
     debug,
-    config,
+    // We cannot pass just the config object here 
+    // because this hook would trigger on each rerender in a component using this hook.
+    config.domain,
   ])
 
   return {
