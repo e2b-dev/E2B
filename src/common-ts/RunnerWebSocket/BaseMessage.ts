@@ -43,6 +43,9 @@ export enum TRunningEnvironment {
   TermData = 'RunningEnvironment.TermData',
   // Sent to remote Runner
   TermResize = 'RunningEnvironment.TermResize',
+  TermStart = 'RunningEnvironment.TermStart',
+  // Received from Runner
+  TermStartAck = 'RunningEnvironment.TermStartAck',
 
   // Sent to remote Runner.
   RunCode = 'RunningEnvironment.Run',

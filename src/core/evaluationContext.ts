@@ -4,6 +4,7 @@ import path from 'path'
 import * as rws from '../common-ts/RunnerWebSocket'
 import { WebSocketConnection } from './webSocketConnection'
 import Logger from '../utils/Logger'
+import { makeIDGenerator } from '../utils/id'
 import {
   RunningEnvironment,
   ws as envWS,
@@ -12,6 +13,8 @@ import { SessionStatus } from './session/sessionManager'
 import { FSNodeType } from './runningEnvironment/filesystem'
 import { OutputSource } from './runningEnvironment/runningEnvironment'
 import { Env } from './devbook'
+
+const generateMessageID = makeIDGenerator(6)
 
 export interface EvaluationContextOpts {
   contextID: string
@@ -25,7 +28,8 @@ export interface EvaluationContextOpts {
 
 type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload']) => void
 type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
-type TerminalDataSubscriber = (payload: rws.RunningEnvironment_TermData['payload']) => void
+type TermDataSubscriber = (payload: rws.RunningEnvironment_TermData['payload']) => void
+type TermStartAckSubscriber = (payload: rws.RunningEnvironment_TermStartAck['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -36,7 +40,8 @@ class EvaluationContext {
 
   private fsWriteSubscribers: FSWriteSubscriber[] = []
   private fileContentSubscribers: FileContentSubscriber[] = []
-  private termDataSubscribers: TerminalDataSubscriber[] = []
+  private termDataSubscribers: TermDataSubscriber[] = []
+  private termStartAckSubscribers: TermStartAckSubscriber[] = []
 
   readonly env: RunningEnvironment
   private readonly unsubscribeConnHandler: () => void
@@ -189,8 +194,42 @@ class EvaluationContext {
     })
   }
 
+  async startTerminal({ terminalID }: { terminalID?: string }) {
+    this.logger.log('Start terminal', { terminalID })
+    const messageID = generateMessageID()
+
+    let resolveStartTermAck: (terminalID: string) => void
+    const startTermAck = new Promise<string>((resolve, reject) => {
+      resolveStartTermAck = resolve
+      setTimeout(() => {
+        reject('Timeout')
+      }, 10000)
+    })
+
+    const startTermAckSubscriber = (payload: rws.RunningEnvironment_TermStartAck['payload']) => {
+      if (payload.messageID !== messageID) return
+      resolveStartTermAck(payload.terminalID)
+    }
+    this.subscribeTermStartAck(startTermAckSubscriber)
+
+    envWS.termStart(this.opts.conn, {
+      environmentID: this.env.id,
+      terminalID,
+      messageID,
+    })
+
+    try {
+      return startTermAck
+    } catch (err: any) {
+      throw new Error(`Can't start terminal session: ${err}`)
+    } finally {
+      this.unsubscribeTermStartAck(startTermAckSubscriber)
+    }
+  }
+
   resizeTerminal({ terminalID, cols, rows }: { terminalID: string, cols: number, rows: number }) {
-    envWS.terminalResize(this.opts.conn, {
+    this.logger.log('Resize terminal', { terminalID, cols, rows })
+    envWS.termResize(this.opts.conn, {
       environmentID: this.env.id,
       terminalID,
       cols,
@@ -199,7 +238,8 @@ class EvaluationContext {
   }
 
   sendTerminalData({ terminalID, data }: { terminalID: string, data: string }) {
-    envWS.terminalData(this.opts.conn, {
+    this.logger.log('Send terminal data', { terminalID })
+    envWS.termData(this.opts.conn, {
       environmentID: this.env.id,
       terminalID,
       data,
@@ -207,7 +247,7 @@ class EvaluationContext {
   }
 
   onTerminalData({ terminalID, onData }: { terminalID: string, onData: (data: string) => void }) {
-    const subscriber: TerminalDataSubscriber = (payload) => {
+    const subscriber: TermDataSubscriber = (payload) => {
       if (payload.terminalID !== terminalID) return
       onData(payload.data)
     }
@@ -216,11 +256,22 @@ class EvaluationContext {
     return () => this.unsubscribeTermData(subscriber)
   }
 
-  private subscribeTermData(subscriber: TerminalDataSubscriber) {
+  private subscribeTermStartAck(subscriber: TermStartAckSubscriber) {
+    this.termStartAckSubscribers.push(subscriber)
+  }
+
+  private unsubscribeTermStartAck(subscriber: TermStartAckSubscriber) {
+    const index = this.termStartAckSubscribers.indexOf(subscriber)
+    if (index > -1) {
+      this.termStartAckSubscribers.splice(index, 1);
+    }
+  }
+
+  private subscribeTermData(subscriber: TermDataSubscriber) {
     this.termDataSubscribers.push(subscriber)
   }
 
-  private unsubscribeTermData(subscriber: TerminalDataSubscriber) {
+  private unsubscribeTermData(subscriber: TermDataSubscriber) {
     const index = this.termDataSubscribers.indexOf(subscriber)
     if (index > -1) {
       this.termDataSubscribers.splice(index, 1);
@@ -316,9 +367,19 @@ class EvaluationContext {
         this.vmenv_handleTermData(msg.payload)
         break
       }
+      case rws.MessageType.RunningEnvironment.TermStartAck: {
+        const msg = message as rws.RunningEnvironment_TermStartAck
+        this.vmenv_handleTermStartAck(msg.payload)
+        break
+      }
       default:
         this.logger.warn('Unknown message type', { message })
     }
+  }
+
+  private vmenv_handleTermStartAck(payload: rws.RunningEnvironment_TermStartAck['payload']) {
+    this.logger.log('[vmenv] Handling "TermStartAck"', payload)
+    this.termStartAckSubscribers.forEach(s => s(payload))
   }
 
   private vmenv_handleTermData(payload: rws.RunningEnvironment_TermData['payload']) {

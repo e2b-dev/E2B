@@ -33,6 +33,8 @@ export type {
   RunningEnvironment_RunningCmds,
   RunningEnvironment_RunCode,
   RunningEnvironment_TermData,
+  RunningEnvironment_TermStart,
+  RunningEnvironment_TermStartAck,
   RunningEnvironment_TermResize,
 } from './RunningEnvironmentMessage'
 

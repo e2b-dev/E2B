@@ -5,7 +5,6 @@ import { SessionStatus } from './session/sessionManager'
 import { Filesystem } from './runningEnvironment/filesystem'
 
 const generateExecutionID = makeIDGenerator(6)
-const generateTerminalID = makeIDGenerator(6)
 
 // Normally, we would name this enum `TemplateID` but since this enum is exposed to users
 // it makes more sense to name it `Env` because it's less confusing for users.
@@ -57,11 +56,11 @@ export interface FS {
 }
 
 export interface Terminal {
-  createSession: (onData: (data: string) => void) => {
+  createSession: (onData: (data: string) => void, activeTerminalID?: string) => Promise<{
     sendData: (data: string) => void
     resize: ({ cols, rows }: { cols: number, rows: number }) => void
     destroy: () => void
-  }
+  }>
 }
 
 /**
@@ -217,9 +216,9 @@ class Devbook {
     }
 
     this.terminal = {
-      createSession: (onData) => {
-        const terminalID = generateTerminalID()
-        const unsubscribe = this.context.onTerminalData({ terminalID, onData })
+      createSession: async (onData, activeTerminalID) => {
+        const terminalID = await this.context.startTerminal({ terminalID: activeTerminalID })
+        const unsubscribe = this.context.onTerminalData({ onData, terminalID })
 
         return {
           destroy: () => {

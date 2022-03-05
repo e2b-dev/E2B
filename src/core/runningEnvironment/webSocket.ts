@@ -204,6 +204,28 @@ function termResize(
   conn.send(msg)
 }
 
+function termStart(
+  conn: WebSocketConnection, {
+    environmentID,
+    terminalID,
+    messageID,
+  }: {
+    environmentID: string,
+    terminalID?: string,
+    messageID: string,
+  },
+) {
+  const msg: rws.RunningEnvironment_TermStart = {
+    type: rws.MessageType.RunningEnvironment.TermStart,
+    payload: {
+      environmentID,
+      terminalID,
+      messageID,
+    },
+  }
+  conn.send(msg)
+}
+
 export {
   start,
   execCmd,
@@ -212,6 +234,7 @@ export {
   getFile,
   createDir,
   listDir,
-  termData as terminalData,
-  termResize as terminalResize,
+  termStart,
+  termData,
+  termResize,
 }

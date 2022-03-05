@@ -30,6 +30,8 @@ export interface BaseRunningEnvironment extends BaseMessage {
   | TRunningEnvironment.RunningCmds
   | TRunningEnvironment.RunCode
   | TRunningEnvironment.TermData
+  | TRunningEnvironment.TermStart
+  | TRunningEnvironment.TermStartAck
   | TRunningEnvironment.TermResize,
   payload: {
     environmentID: string
@@ -216,6 +218,24 @@ export interface RunningEnvironment_DirContent extends BaseRunningEnvironment {
       path: string
       type: 'File' | 'Directory'
     }[]
+  }
+}
+
+export interface RunningEnvironment_TermStart extends BaseRunningEnvironment {
+  type: TRunningEnvironment.TermStart
+  payload: {
+    environmentID: string
+    terminalID?: string
+    messageID: string
+  }
+}
+
+export interface RunningEnvironment_TermStartAck extends BaseRunningEnvironment {
+  type: TRunningEnvironment.TermStartAck
+  payload: {
+    environmentID: string
+    terminalID: string
+    messageID: string
   }
 }
 
