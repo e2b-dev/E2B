@@ -383,7 +383,7 @@ class EvaluationContext {
   }
 
   private vmenv_handleTermData(payload: rws.RunningEnvironment_TermData['payload']) {
-    this.logger.log('[vmenv] Handling "SSHData"', payload)
+    this.logger.log('[vmenv] Handling "TermData"', payload)
     this.termDataSubscribers.forEach(s => s(payload))
   }
 
