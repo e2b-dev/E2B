@@ -7,6 +7,7 @@ import { runner as consts } from './constants'
 
 export interface Opts {
   domain: string
+  logging?: boolean
 }
 
 interface Handler {
@@ -19,8 +20,7 @@ export class WebSocketConnection {
   private readonly url: string
   sessionID?: string
   private client?: WebSocket
-  private logger = new Logger('WebSocketConnection')
-
+  private logger: Logger
   private handlers: Handler[] = []
 
   get state() {
@@ -47,8 +47,9 @@ export class WebSocketConnection {
     return this.client.readyState === this.client.CONNECTING
   }
 
-  constructor({ domain }: Opts) {
+  constructor({ domain, logging }: Opts) {
     this.url = `wss://${domain}`
+    this.logger = new Logger('WebSocketConnection', logging)
   }
 
   subscribeHandler(handler: Handler) {

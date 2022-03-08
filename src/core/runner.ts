@@ -9,7 +9,7 @@ import { Config } from './devbook'
 class Runner {
   private logger = new Logger('Runner')
 
-  static config: Config
+  static config: Config & { logging?: boolean }
 
   private static _obj: Runner
   static get obj() {
@@ -17,7 +17,7 @@ class Runner {
     return Runner._obj || (Runner._obj = new Runner())
   }
 
-  private readonly conn = new WebSocketConnection({ domain: Runner.config.domain })
+  private readonly conn = new WebSocketConnection({ domain: Runner.config.domain, logging: Runner.config.logging })
 
   private readonly sessManager = new SessionManager({
     conn: this.conn,

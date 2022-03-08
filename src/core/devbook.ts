@@ -180,7 +180,10 @@ class Devbook {
     const setIsEnvReady = (value: boolean) => this.isEnvReady = value
     const setSessionStatus = (value: SessionStatus) => this.sessionStatus = value
 
-    Runner.config = this.opts.config
+    Runner.config = {
+      ...this.opts.config,
+      logging: opts.debug,
+    }
 
     this.context = Runner.obj.createContext({
       debug: opts.debug,
