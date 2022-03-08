@@ -199,16 +199,21 @@ class EvaluationContext {
     const messageID = generateMessageID()
 
     let resolveStartTermAck: (terminalID: string) => void
+    let resolved = false
     const startTermAck = new Promise<string>((resolve, reject) => {
       resolveStartTermAck = resolve
       setTimeout(() => {
-        reject('Timeout')
+        if (!resolved) {
+          reject('Timeout')
+        }
       }, 10000)
     })
 
     const startTermAckSubscriber = (payload: rws.RunningEnvironment_TermStartAck['payload']) => {
+      console.log('acking?', messageID, payload.messageID)
       if (payload.messageID !== messageID) return
       resolveStartTermAck(payload.terminalID)
+      resolved = true
     }
     this.subscribeTermStartAck(startTermAckSubscriber)
 
@@ -219,7 +224,7 @@ class EvaluationContext {
     })
 
     try {
-      return startTermAck
+      return await startTermAck
     } catch (err: any) {
       throw new Error(`Can't start terminal session: ${err}`)
     } finally {
