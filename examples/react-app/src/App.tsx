@@ -16,7 +16,7 @@ import Output from './Output';
 
 const dbkConfig: Config = {
   // Example domain. You need to get onboarded by Devbook team and get your own domain.
-  domain: 'acme.usedevbook.com'
+  domain: 'banana.usedevbook.com'
 }
 
 const initialCode = `const os = require('os');
@@ -42,8 +42,9 @@ function App() {
   } = useDevbook({
     // You create custom environments with the Devbook CLI.
     // https://github.com/devbookhq/devbookctl
-    env: 'example-env-id',
+    env: 'banana-node',
     config: dbkConfig,
+    debug: true,
   });
   console.log({ stdout, stderr });
 

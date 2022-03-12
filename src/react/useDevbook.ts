@@ -67,6 +67,11 @@ export interface State {
    * Use this for accessing and manipulating this Devbook's VM's filesystem.
    */
   fs?: FS
+  /**
+   * Use this for managing terminal sessions.
+   * 
+   * This object is used internally by the `Terminal` component from Devbook UI package - https://github.com/devbookhq/ui#terminal.
+   */
   terminal?: Terminal
 }
 

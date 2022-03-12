@@ -55,6 +55,11 @@ export interface FS {
   removeListener: Filesystem['removeListener']
 }
 
+/**
+ * Methods for managing terminal sessions.
+ * 
+ * This object is used internally by the `Terminal` component from Devbook UI package - https://github.com/devbookhq/ui#terminal.
+ */
 export interface Terminal {
   createSession: (onData: (data: string) => void, activeTerminalID?: string) => Promise<{
     sendData: (data: string) => void
