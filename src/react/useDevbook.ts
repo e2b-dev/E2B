@@ -62,7 +62,7 @@ export interface State {
    *
    * @param command Command to run
    */
-  runCmd: (command: string) => void
+  runCmd: (command: string) => Promise<void>
   /**
    * Use this for accessing and manipulating this Devbook's VM's filesystem.
    */
@@ -92,7 +92,7 @@ function useDevbook({
   const [stderr, setStderr] = useState<string[]>([])
   const [stdout, setStdout] = useState<string[]>([])
 
-  const runCmd = useCallback((command: string) => {
+  const runCmd = useCallback(async (command: string) => {
     if (!devbook) return
     setStdout([])
     setStderr([])

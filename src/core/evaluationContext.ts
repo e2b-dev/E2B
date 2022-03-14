@@ -30,6 +30,7 @@ type FSWriteSubscriber = (payload: rws.RunningEnvironment_FSEventWrite['payload'
 type FileContentSubscriber = (payload: rws.RunningEnvironment_FileContent['payload']) => void
 type TermDataSubscriber = (payload: rws.RunningEnvironment_TermData['payload']) => void
 type TermStartAckSubscriber = (payload: rws.RunningEnvironment_TermStartAck['payload']) => void
+type CmdExitSubscriber = (payload: rws.RunningEnvironment_CmdExit['payload']) => void
 
 class EvaluationContext {
   private readonly logger: Logger
@@ -38,6 +39,7 @@ class EvaluationContext {
     return this.opts.contextID
   }
 
+  private cmdExitSubscribers: CmdExitSubscriber[] = []
   private fsWriteSubscribers: FSWriteSubscriber[] = []
   private fileContentSubscribers: FileContentSubscriber[] = []
   private termDataSubscribers: TermDataSubscriber[] = []
@@ -185,13 +187,40 @@ class EvaluationContext {
     })
   }
 
-  executeCommand({ executionID, command }: { executionID: string, command: string }) {
+  async executeCommand({ executionID, command }: { executionID: string, command: string }) {
     this.logger.log('Execute shell command', { executionID, command })
+
+    let resolveCmdExit: (executionID: string) => void
+    let resolved = false
+    const cmdExit = new Promise<string>((resolve, reject) => {
+      resolveCmdExit = resolve
+      setTimeout(() => {
+        if (!resolved) {
+          reject('Timeout')
+        }
+      }, 10000)
+    })
+
+    const cmdExitSubscriber = (payload: rws.RunningEnvironment_CmdExit['payload']) => {
+      if (payload.executionID !== executionID) return
+      resolveCmdExit(executionID)
+      resolved = true
+    }
+    this.subscribeCmdExit(cmdExitSubscriber)
+
     envWS.execCmd(this.opts.conn, {
       environmentID: this.env.id,
       executionID,
       command,
     })
+
+    try {
+      await cmdExit
+    } catch (err: any) {
+      throw new Error(`Can't exit cmd: ${err}`)
+    } finally {
+      this.unsubscribeCmdExit(cmdExitSubscriber)
+    }
   }
 
   async startTerminal({ terminalID }: { terminalID?: string }) {
@@ -258,6 +287,17 @@ class EvaluationContext {
 
     this.subscribeTermData(subscriber)
     return () => this.unsubscribeTermData(subscriber)
+  }
+
+  private subscribeCmdExit(subscriber: CmdExitSubscriber) {
+    this.cmdExitSubscribers.push(subscriber)
+  }
+
+  private unsubscribeCmdExit(subscriber: CmdExitSubscriber) {
+    const index = this.cmdExitSubscribers.indexOf(subscriber)
+    if (index > -1) {
+      this.cmdExitSubscribers.splice(index, 1);
+    }
   }
 
   private subscribeTermStartAck(subscriber: TermStartAckSubscriber) {
@@ -430,6 +470,8 @@ class EvaluationContext {
 
   private vmenv_handleCmdExit(payload: rws.RunningEnvironment_CmdExit['payload']) {
     this.logger.log('[vmenv] Handling "CmdExit"', payload)
+
+    this.cmdExitSubscribers.forEach(s => s(payload))
 
     if (payload.error === undefined) return
     this.opts.onCmdOut?.({

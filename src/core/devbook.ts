@@ -257,7 +257,7 @@ class Devbook {
 
     this.executionID = generateExecutionID()
 
-    this.context.executeCommand({
+    return this.context.executeCommand({
       executionID: this.executionID,
       command,
     })
