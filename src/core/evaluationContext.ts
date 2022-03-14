@@ -210,7 +210,6 @@ class EvaluationContext {
     })
 
     const startTermAckSubscriber = (payload: rws.RunningEnvironment_TermStartAck['payload']) => {
-      console.log('acking?', messageID, payload.messageID)
       if (payload.messageID !== messageID) return
       resolveStartTermAck(payload.terminalID)
       resolved = true

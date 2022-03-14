@@ -3,6 +3,7 @@ export type {
   Config,
   Env,
   Terminal,
+  TerminalSession,
 } from './devbook'
 export {
   default as Devbook,

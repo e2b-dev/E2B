@@ -55,17 +55,19 @@ export interface FS {
   removeListener: Filesystem['removeListener']
 }
 
+export interface TerminalSession {
+  sendData: (data: string) => void
+  resize: ({ cols, rows }: { cols: number, rows: number }) => void
+  destroy: () => void
+}
+
 /**
  * Methods for managing terminal sessions.
  * 
  * This object is used internally by the `Terminal` component from Devbook UI package - https://github.com/devbookhq/ui#terminal.
  */
 export interface Terminal {
-  createSession: (onData: (data: string) => void, activeTerminalID?: string) => Promise<{
-    sendData: (data: string) => void
-    resize: ({ cols, rows }: { cols: number, rows: number }) => void
-    destroy: () => void
-  }>
+  createSession: (onData: (data: string) => void, activeTerminalID?: string) => Promise<TerminalSession>
 }
 
 /**
