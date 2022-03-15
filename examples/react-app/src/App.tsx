@@ -62,9 +62,9 @@ function App() {
       if (!fs) return
 
       await fs.write('/index.js', code)
-      runCmd('node "./index.js"')
+      await runCmd('node "./index.js"')
     } else {
-      runCmd(cmd);
+      await runCmd(cmd);
     }
   }, [runCmd, code, cmd, execType, fs, status]);
 

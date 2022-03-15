@@ -41,7 +41,7 @@ function InteractiveCodeSnippet() {
     // 4. Manipulate the filesystem
     await fs.write('/index.js', code)
     // 5. Execute the code
-    runCmd(`node ./index.js`)
+    await runCmd(`node ./index.js`)
   }
 
   return (
@@ -90,7 +90,7 @@ export default InteractiveCodeSnippet
     console.log('Content of the "/index.js" file', content)
 
     // 4. Execute the code
-    dbk.runCmd('node ./index.js')
+    await dbk.runCmd('node ./index.js')
   }
 ```
 
