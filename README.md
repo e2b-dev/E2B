@@ -3,7 +3,7 @@
 
 Devbook is a frontend library that lets users to run any code snippet from your documentation or landing page. Devbook does that by spinning up a private VM for every visitor of a page. You control the VM from your frontend.
 
-Check out the [UI Devbook library](https://github.com/devbookhq/ui) that you can use in your documentation.
+Check out the [UI Devbook library](https://github.com/devbookhq/ui) with ready-to-use UI components like a code editor or terminal.
 
 ## How Devbook works
 Every time a user visits a page where you use Devbook (like your docs), we quickly spin up a private VM just for that user.
