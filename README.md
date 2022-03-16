@@ -1,5 +1,5 @@
 # Devbook SDK
-**Devbook makes your dev docs interactive with just 3 lines of code.**
+**Devbook allows developers to try out your app from the documentation page.**
 
 Devbook is a JS library that allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM.
 
@@ -9,7 +9,7 @@ Check out the [UI Devbook library](https://github.com/devbookhq/ui) that you can
 Every time a user visits a page where you use Devbook (like your docs), we quickly spin up a private VM just for that user.
 They can experiment and explore your API/SDK right from your docs. Zero setup and overhead.
 
-**Check this [Twitter thread](https://twitter.com/mlejva/status/1482767780265050126) with a video to see Devbook in action.**
+**Check out [demos](https://twitter.com/mlejva/status/1503730748930490368) of Devbook.**
 
 ## Installation
 ```sh
@@ -32,7 +32,7 @@ const code = `
 
 function InteractiveCodeSnippet() {
   // 3. Use the hook
-  const { stdout, stderr, status, fs, runCmd } = useDevbook({ env: 'your-node-env' })
+  const { stdout, stderr, status, fs, runCmd } = useDevbook({ env: 'your-node-env', config: { domain: 'shared.usedevbook.com' } })
 
   async function handleRun() {
     if (status !== DevbookStatus.Connected) return
@@ -72,6 +72,9 @@ export default InteractiveCodeSnippet
   // 3. Create new Devbook instance
   const dbk = new Devbook({
     env: 'your-node-env',
+    config: {
+      domain: 'shared.usedevbook.com',
+    },
     onStdout(out) {
       console.log('stdout', { err })
     },
@@ -90,7 +93,7 @@ export default InteractiveCodeSnippet
     console.log('Content of the "/index.js" file', content)
 
     // 4. Execute the code
-    await dbk.runCmd('node ./index.js')
+    await dbk.runCmd('node /index.js')
   }
 ```
 
