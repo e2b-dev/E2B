@@ -32,7 +32,8 @@ const code = `
 
 function InteractiveCodeSnippet() {
   // 3. Use the hook
-  const { stdout, stderr, status, fs, runCmd } = useDevbook({ env: 'your-node-env', config: { domain: 'shared.usedevbook.com' } })
+  // Create custom env via Devbook CLI - https://github.com/devbookhq/devbookctl
+  const { stdout, stderr, status, fs, runCmd } = useDevbook({ env: 'your-env-id', config: { domain: 'shared.usedevbook.com' } })
 
   async function handleRun() {
     if (status !== DevbookStatus.Connected) return
@@ -71,7 +72,7 @@ export default InteractiveCodeSnippet
 
   // 3. Create new Devbook instance
   const dbk = new Devbook({
-    env: 'your-node-env',
+    env: 'your-env-id',
     config: {
       domain: 'shared.usedevbook.com',
     },
