@@ -32,8 +32,8 @@ const code = `
 
 function InteractiveCodeSnippet() {
   // 3. Use the hook
-  // Get your environment ID by creating a new environment via Devbook CLI - https://github.com/devbookhq/devbookctl
-  const { stdout, stderr, status, fs, runCmd } = useDevbook({ env: 'your-env-id', config: { domain: 'shared.usedevbook.com' } })
+  // Get your VM ID by creating a new VM via Devbook CLI - https://github.com/devbookhq/devbookctl
+  const { stdout, stderr, status, fs, runCmd } = useDevbook({ env: 'your-vm-id', config: { domain: 'shared.usedevbook.com' } })
 
   async function handleRun() {
     if (status !== DevbookStatus.Connected) return
@@ -72,8 +72,8 @@ export default InteractiveCodeSnippet
 
   // 3. Create new Devbook instance
   const dbk = new Devbook({
-    // Get your environment ID by creating a new environment via Devbook CLI - https://github.com/devbookhq/devbookctl
-    env: 'your-env-id',
+    // Get your VM ID by creating a new VM via Devbook CLI - https://github.com/devbookhq/devbookctl
+    env: 'your-vm-id',
     config: {
       domain: 'shared.usedevbook.com',
     },
