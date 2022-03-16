@@ -1,7 +1,7 @@
 # Devbook SDK
 **Devbook allows developers to try out your app from the documentation page.**
 
-Devbook is a JS library that allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM.
+Devbook is a frontend library that lets users to run any code snippet from your documentation or landing page. Devbook does that by spinning up a private VM for every visitor of a page. You control the VM from your frontend.
 
 Check out the [UI Devbook library](https://github.com/devbookhq/ui) that you can use in your documentation.
 
