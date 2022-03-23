@@ -3,7 +3,9 @@ import {
   useState,
   useCallback,
 } from 'react'
+import { useIdleTimer } from 'react-idle-timer'
 
+import { SESSION_IDLE_TIME } from '../core/constants/runner'
 import {
   Devbook,
   DevbookStatus,
@@ -130,6 +132,28 @@ function useDevbook({
     // We cannot pass just the config object here 
     // because this hook would trigger on each rerender in a component using this hook.
     config.domain,
+  ])
+
+  // This code is used for shutting down VMs when the user is idle and restarting them when user starts being active again.
+  const idle = useIdleTimer({
+    timeout: SESSION_IDLE_TIME,
+    throttle: 500,
+    onIdle() {
+      devbook?.__internal__stop()
+    },
+    onAction() {
+      devbook?.__internal__start()
+    },
+    startOnMount: false,
+    startManually: true,
+  })
+
+  useEffect(function startIdle() {
+    if (devbook?.status !== DevbookStatus.Connected) return
+    idle.start()
+  }, [
+    devbook,
+    idle,
   ])
 
   return {

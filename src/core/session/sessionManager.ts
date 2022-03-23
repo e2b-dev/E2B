@@ -3,6 +3,7 @@ import Logger from '../../utils/Logger'
 import { runner as consts } from '../constants'
 import { WebSocketConnection } from '../webSocketConnection'
 import RunnerSession from './runnerSession'
+import { SESSION_REQUEST_CAP } from '../constants/runner'
 
 export enum SessionStatus {
   Connected = 'Connected',
@@ -25,7 +26,8 @@ class SessionManager {
   private readonly conn: WebSocketConnection
 
   private userActivity = Promise.resolve()
-  private startActivity?: () => void
+  private rejectActivity?: () => void
+  private resolveActivity?: () => void
 
   private isGettingSessionActive = false
 
@@ -57,15 +59,16 @@ class SessionManager {
   }
 
   stop() {
-    this.startActivity?.()
+    this.resolveActivity?.()
     this.userActivity = new Promise((resolve) => {
-      this.startActivity = resolve
+      this.resolveActivity = resolve
+      this.rejectActivity = resolve
     })
-    this.reset()
   }
 
   start() {
-    this.startActivity?.()
+    this.rejectActivity?.()
+    this.userActivity = Promise.resolve()
   }
 
   reset() {
@@ -86,12 +89,14 @@ class SessionManager {
     if (this.isGettingSessionActive) return
     this.isGettingSessionActive = true
 
+    let sessionRequestsRemaining = SESSION_REQUEST_CAP
+
     // There should be only one `getSession` loop active in the whole app.
     // It keeps acquiring session and keeping the acquired session alive.
 
     // The outer while loop is to keep trying until we get a session.
     // The inner while loop is to keep pinging just acquired session.
-    while (true) {
+    while (sessionRequestsRemaining > 0) {
       this.status = SessionStatus.Connecting
       try {
         const url = this.cachedSessionID
@@ -121,9 +126,12 @@ class SessionManager {
             resp.headers,
             sessionResp,
           )
+          sessionRequestsRemaining -= 1
           await wait(consts.SESSION_RESTART_PERIOD)
           continue
         }
+
+        sessionRequestsRemaining = SESSION_REQUEST_CAP
 
         // We get here if we succeeded at acquiring a session.
         this.session = new RunnerSession({
@@ -157,6 +165,7 @@ class SessionManager {
         this.conn.close()
       } catch (err) {
         this.logger.error(`Failed to acquire Runner session. Will try again in ${consts.SESSION_RESTART_PERIOD / 1000}s`, err)
+        sessionRequestsRemaining -= 1
         await wait(consts.SESSION_RESTART_PERIOD)
       }
     }

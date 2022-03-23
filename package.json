@@ -1,6 +1,6 @@
 {
   "name": "@devbookhq/sdk",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Devbook allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -50,5 +50,8 @@
     "runtime",
     "vm",
     "nodejs"
-  ]
+  ],
+  "dependencies": {
+    "react-idle-timer": "^4.6.4"
+  }
 }
