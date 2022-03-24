@@ -252,12 +252,12 @@ class Devbook {
    *
    * @param command Command to run
    */
-  runCmd(command: string) {
+  async runCmd(command: string) {
     if (this.status !== DevbookStatus.Connected) throw new Error('Not connected to the VM yet.')
 
     this.executionID = generateExecutionID()
 
-    return this.context.executeCommand({
+    await this.context.executeCommand({
       executionID: this.executionID,
       command,
     })

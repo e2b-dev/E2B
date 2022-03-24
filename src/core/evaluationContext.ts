@@ -192,13 +192,8 @@ class EvaluationContext {
 
     let resolveCmdExit: (executionID: string) => void
     let resolved = false
-    const cmdExit = new Promise<string>((resolve, reject) => {
+    const cmdExit = new Promise<string>((resolve) => {
       resolveCmdExit = resolve
-      setTimeout(() => {
-        if (!resolved) {
-          reject('Timeout')
-        }
-      }, 10000)
     })
 
     const cmdExitSubscriber = (payload: rws.RunningEnvironment_CmdExit['payload']) => {
