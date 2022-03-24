@@ -138,7 +138,7 @@ function useDevbook({
 
   // This code is used for shutting down VMs when the user is idle and restarting them when user starts being active again.
   const idle = useIdleTimer({
-    timeout: SESSION_IDLE_TIME ? SESSION_IDLE_TIME : __debug__idleTime,
+    timeout: __debug__idleTime ? __debug__idleTime : SESSION_IDLE_TIME,
     throttle: 500,
     onIdle() {
       devbook?.__internal__stop()
