@@ -1,4 +1,4 @@
-// Copyright 2018-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -18,17 +18,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/containerd/fifo"
 	"github.com/containernetworking/plugins/pkg/ns"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -41,7 +44,21 @@ const (
 
 	// as specified in http://man7.org/linux/man-pages/man8/ip-netns.8.html
 	defaultNetNSDir = "/var/run/netns"
+
+	// env name to make firecracker init timeout configurable
+	firecrackerInitTimeoutEnv = "FIRECRACKER_GO_SDK_INIT_TIMEOUT_SECONDS"
+
+	defaultFirecrackerInitTimeoutSeconds = 3
 )
+
+// SeccompConfig contains seccomp settings for firecracker vmm
+type SeccompConfig struct {
+	// Enabled turns on/off the seccomp filters
+	Enabled bool
+
+	// Filter is a file path that contains user-provided custom filter
+	Filter string
+}
 
 // ErrAlreadyStarted signifies that the Machine has already started and cannot
 // be started again.
@@ -53,6 +70,9 @@ type Config struct {
 	// should be created.
 	SocketPath string
 
+	// LogPath defines the file path where the Firecracker log is located.
+	LogPath string
+
 	// LogFifo defines the file path where the Firecracker log named-pipe should
 	// be located.
 	LogFifo string
@@ -61,6 +81,10 @@ type Config struct {
 	// "Error", "Warning", "Info", and "Debug", and are case-sensitive.
 	LogLevel string
 
+	// MetricsPath defines the file path where the Firecracker metrics
+	// is located.
+	MetricsPath string
+
 	// MetricsFifo defines the file path where the Firecracker metrics
 	// named-pipe should be located.
 	MetricsFifo string
@@ -68,6 +92,11 @@ type Config struct {
 	// KernelImagePath defines the file path where the kernel image is located.
 	// The kernel image must be an uncompressed ELF image.
 	KernelImagePath string
+
+	// InitrdPath defines the file path where initrd image is located.
+	//
+	// This parameter is optional.
+	InitrdPath string
 
 	// KernelArgs defines the command-line arguments that should be passed to
 	// the kernel.
@@ -89,9 +118,6 @@ type Config struct {
 	// the microVM.
 	VsockDevices []VsockDevice
 
-	// Debug enables debug-level logging for the SDK.
-	Debug bool
-
 	// MachineCfg represents the firecracker microVM process configuration
 	MachineCfg models.MachineConfiguration
 
@@ -103,10 +129,27 @@ type Config struct {
 	JailerCfg *JailerConfig
 
 	// (Optional) VMID is a unique identifier for this VM. It's set to a
-	// random uuid if not provided by the user. It's currently used to
-	// set the CNI ContainerID and create a network namespace path if
-	// CNI configuration is provided as part of NetworkInterfaces
+	// random uuid if not provided by the user. It's used to set Firecracker's instance ID.
+	// If CNI configuration is provided as part of NetworkInterfaces,
+	// the VMID is used to set CNI ContainerID and create a network namespace path.
 	VMID string
+
+	// NetNS represents the path to a network namespace handle. If present, the
+	// application will use this to join the associated network namespace
+	NetNS string
+
+	// ForwardSignals is an optional list of signals to catch and forward to
+	// firecracker. If not provided, the default signals will be used.
+	ForwardSignals []os.Signal
+
+	// Seccomp specifies whether seccomp filters should be installed and how
+	// restrictive they should be.
+	Seccomp SeccompConfig
+
+	// MmdsAddress is IPv4 address used by guest applications when issuing requests to MMDS.
+	// It is possible to use a valid IPv4 link-local address (169.254.0.0/16).
+	// If not provided, the default address (169.254.169.254) will be used.
+	MmdsAddress net.IP
 }
 
 // Validate will ensure that the required fields are set and that
@@ -120,16 +163,21 @@ func (cfg *Config) Validate() error {
 		return fmt.Errorf("failed to stat kernel image path, %q: %v", cfg.KernelImagePath, err)
 	}
 
-	rootPath := ""
-	for _, drive := range cfg.Drives {
-		if BoolValue(drive.IsRootDevice) {
-			rootPath = StringValue(drive.PathOnHost)
-			break
+	if cfg.InitrdPath != "" {
+		if _, err := os.Stat(cfg.InitrdPath); err != nil {
+			return fmt.Errorf("failed to stat initrd image path, %q: %v", cfg.InitrdPath, err)
 		}
 	}
 
-	if _, err := os.Stat(rootPath); err != nil {
-		return fmt.Errorf("failed to stat host path, %q: %v", rootPath, err)
+	for _, drive := range cfg.Drives {
+		if BoolValue(drive.IsRootDevice) {
+			rootPath := StringValue(drive.PathOnHost)
+			if _, err := os.Stat(rootPath); err != nil {
+				return fmt.Errorf("failed to stat host drive path, %q: %v", rootPath, err)
+			}
+
+			break
+		}
 	}
 
 	// Check the non-existence of some files:
@@ -144,9 +192,6 @@ func (cfg *Config) Validate() error {
 	if cfg.MachineCfg.MemSizeMib == nil ||
 		Int64Value(cfg.MachineCfg.MemSizeMib) < 1 {
 		return fmt.Errorf("machine needs a nonzero amount of memory")
-	}
-	if cfg.MachineCfg.HtEnabled == nil {
-		return fmt.Errorf("machine needs a setting for ht_enabled")
 	}
 	return nil
 }
@@ -173,8 +218,8 @@ type Machine struct {
 	startOnce sync.Once
 	// exitCh is a channel which gets closed when the VMM exits
 	exitCh chan struct{}
-	// err records any error executing the VMM
-	err error
+	// fatalErr records an error that either stops or prevent starting the VMM
+	fatalErr error
 
 	// callbacks that should be run when the machine is being torn down
 	cleanupOnce  sync.Once
@@ -222,6 +267,8 @@ type RateLimiterSet struct {
 // VsockDevice represents a vsock connection between the host and the guest
 // microVM.
 type VsockDevice struct {
+	// ID defines the vsock's device ID for firecracker.
+	ID string
 	// Path defines the filesystem path of the vsock device on the host.
 	Path string
 	// CID defines the 32-bit Context Identifier for the vsock device.  See
@@ -245,11 +292,37 @@ func (m *Machine) LogLevel() string {
 	return m.Cfg.LogLevel
 }
 
+// seccompArgs constructs the seccomp related command line arguments
+func seccompArgs(cfg *Config) []string {
+	var args []string
+	if !cfg.Seccomp.Enabled {
+		args = append(args, "--no-seccomp")
+	} else if len(cfg.Seccomp.Filter) > 0 {
+		args = append(args, "--seccomp-filter", cfg.Seccomp.Filter)
+	}
+	return args
+}
+
+func configureBuilder(builder VMCommandBuilder, cfg Config) VMCommandBuilder {
+	return builder.
+		WithSocketPath(cfg.SocketPath).
+		AddArgs("--id", cfg.VMID).
+		AddArgs(seccompArgs(&cfg)...)
+}
+
 // NewMachine initializes a new Machine instance and performs validation of the
 // provided Config.
 func NewMachine(ctx context.Context, cfg Config, opts ...Opt) (*Machine, error) {
 	m := &Machine{
 		exitCh: make(chan struct{}),
+	}
+
+	if cfg.VMID == "" {
+		id, err := uuid.NewRandom()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create random ID for VMID")
+		}
+		cfg.VMID = id.String()
 	}
 
 	m.Handlers = defaultHandlers
@@ -261,9 +334,7 @@ func NewMachine(ctx context.Context, cfg Config, opts ...Opt) (*Machine, error) 
 		}
 	} else {
 		m.Handlers.Validation = m.Handlers.Validation.Append(ConfigValidationHandler)
-		m.cmd = defaultFirecrackerVMMCommandBuilder.
-			WithSocketPath(cfg.SocketPath).
-			Build(ctx)
+		m.cmd = configureBuilder(defaultFirecrackerVMMCommandBuilder, cfg).Build(ctx)
 	}
 
 	for _, opt := range opts {
@@ -272,33 +343,39 @@ func NewMachine(ctx context.Context, cfg Config, opts ...Opt) (*Machine, error) 
 
 	if m.logger == nil {
 		logger := log.New()
-		if cfg.Debug {
-			logger.SetLevel(log.DebugLevel)
-		}
 
 		m.logger = log.NewEntry(logger)
 	}
 
 	if m.client == nil {
-		m.client = NewClient(cfg.SocketPath, m.logger, cfg.Debug)
+		m.client = NewClient(cfg.SocketPath, m.logger, false)
 	}
 
-	if cfg.VMID == "" {
-		randomID, err := uuid.NewV4()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create random ID for VMID")
+	if cfg.ForwardSignals == nil {
+		cfg.ForwardSignals = []os.Signal{
+			os.Interrupt,
+			syscall.SIGQUIT,
+			syscall.SIGTERM,
+			syscall.SIGHUP,
+			syscall.SIGABRT,
 		}
-		cfg.VMID = randomID.String()
 	}
 
 	m.machineConfig = cfg.MachineCfg
 	m.Cfg = cfg
 
+	if cfg.NetNS == "" && cfg.NetworkInterfaces.cniInterface() != nil {
+		m.Cfg.NetNS = m.defaultNetNSPath()
+	}
+
 	m.logger.Debug("Called NewMachine()")
 	return m, nil
 }
 
-// Start will iterate through the handler list and call each handler. If an
+// Start actually start a Firecracker microVM.
+// The context must not be cancelled while the microVM is running.
+//
+// It will iterate through the handler list and call each handler. If an
 // error occurred during handler execution, that error will be returned. If the
 // handlers succeed, then this will start the VMM instance.
 // Start may only be called once per Machine.  Subsequent calls will return
@@ -347,28 +424,12 @@ func (m *Machine) Wait(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-m.exitCh:
-		return m.err
+		return m.fatalErr
 	}
-}
-
-func (m *Machine) netNSPath() string {
-	// If the jailer specifies a netns, use that
-	if jailerNetNS := m.Cfg.JailerCfg.netNSPath(); jailerNetNS != "" {
-		return jailerNetNS
-	}
-
-	// If there isn't a jailer netns but there is a network
-	// interface with CNI configuration, use a default netns path
-	if m.Cfg.NetworkInterfaces.cniInterface() != nil {
-		return filepath.Join(defaultNetNSDir, m.Cfg.VMID)
-	}
-
-	// else, just don't use a netns for the VM
-	return ""
 }
 
 func (m *Machine) setupNetwork(ctx context.Context) error {
-	err, cleanupFuncs := m.Cfg.NetworkInterfaces.setupNetwork(ctx, m.Cfg.VMID, m.netNSPath(), m.logger)
+	err, cleanupFuncs := m.Cfg.NetworkInterfaces.setupNetwork(ctx, m.Cfg.VMID, m.Cfg.NetNS, m.logger)
 	m.cleanupFuncs = append(m.cleanupFuncs, cleanupFuncs...)
 	return err
 }
@@ -418,19 +479,22 @@ func (m *Machine) attachDrives(ctx context.Context, drives ...models.Drive) erro
 	return nil
 }
 
+func (m *Machine) defaultNetNSPath() string {
+	return filepath.Join(defaultNetNSDir, m.Cfg.VMID)
+}
+
 // startVMM starts the firecracker vmm process and configures logging.
 func (m *Machine) startVMM(ctx context.Context) error {
 	m.logger.Printf("Called startVMM(), setting up a VMM on %s", m.Cfg.SocketPath)
-
-	hasNetNS := m.netNSPath() != ""
-	jailerProvidedNetNS := m.Cfg.JailerCfg.netNSPath() != ""
 	startCmd := m.cmd.Start
 
+	m.logger.Debugf("Starting %v", m.cmd.Args)
+
 	var err error
-	if hasNetNS && !jailerProvidedNetNS {
+	if m.Cfg.NetNS != "" && m.Cfg.JailerCfg == nil {
 		// If the VM needs to be started in a netns but no jailer netns was configured,
 		// start the vmm child process in the netns directly here.
-		err = ns.WithNetNSPath(m.netNSPath(), func(_ ns.NetNS) error {
+		err = ns.WithNetNSPath(m.Cfg.NetNS, func(_ ns.NetNS) error {
 			return startCmd()
 		})
 	} else {
@@ -441,7 +505,10 @@ func (m *Machine) startVMM(ctx context.Context) error {
 
 	if err != nil {
 		m.logger.Errorf("Failed to start VMM: %s", err)
+
+		m.fatalErr = err
 		close(m.exitCh)
+
 		return err
 	}
 	m.logger.Debugf("VMM started socket path is %s", m.Cfg.SocketPath)
@@ -453,33 +520,23 @@ func (m *Machine) startVMM(ctx context.Context) error {
 			}
 			return nil
 		},
-		func() error {
-			if err := os.Remove(m.Cfg.LogFifo); !os.IsNotExist(err) {
-				return err
-			}
-			return nil
-		},
-		func() error {
-			if err := os.Remove(m.Cfg.MetricsFifo); !os.IsNotExist(err) {
-				return err
-			}
-			return nil
-		},
 	)
 
 	errCh := make(chan error)
 	go func() {
-		if err := m.cmd.Wait(); err != nil {
-			m.logger.Warnf("firecracker exited: %s", err.Error())
+		waitErr := m.cmd.Wait()
+		if waitErr != nil {
+			m.logger.Warnf("firecracker exited: %s", waitErr.Error())
 		} else {
 			m.logger.Printf("firecracker exited: status=0")
 		}
 
-		if err := m.doCleanup(); err != nil {
-			m.logger.Errorf("failed to cleanup after VM exit: %v", err)
+		cleanupErr := m.doCleanup()
+		if cleanupErr != nil {
+			m.logger.Errorf("failed to cleanup after VM exit: %v", cleanupErr)
 		}
 
-		errCh <- err
+		errCh <- multierror.Append(waitErr, cleanupErr).ErrorOrNil()
 
 		// Notify subscribers that there will be no more values.
 		// When err is nil, two reads are performed (waitForSocket and close exitCh goroutine),
@@ -487,39 +544,33 @@ func (m *Machine) startVMM(ctx context.Context) error {
 		close(errCh)
 	}()
 
-	// Set up a signal handler and pass INT, QUIT, and TERM through to firecracker
-	sigchan := make(chan os.Signal)
-	signal.Notify(sigchan, os.Interrupt,
-		syscall.SIGQUIT,
-		syscall.SIGTERM,
-		syscall.SIGHUP,
-		syscall.SIGABRT)
-	m.logger.Debugf("Setting up signal handler")
+	m.setupSignals()
+
+	// Wait for firecracker to initialize:
+	err = m.waitForSocket(time.Duration(m.client.firecrackerInitTimeout)*time.Second, errCh)
+	if err != nil {
+		err = errors.Wrapf(err, "Firecracker did not create API socket %s", m.Cfg.SocketPath)
+		m.fatalErr = err
+		close(m.exitCh)
+
+		return err
+	}
+
+	// This goroutine is used to kill the process by context cancelletion,
+	// but doesn't tell anyone about that.
 	go func() {
-		if sig, ok := <-sigchan; ok {
-			m.logger.Printf("Caught signal %s", sig)
-			m.cmd.Process.Signal(sig)
+		<-ctx.Done()
+		err := m.stopVMM()
+		if err != nil {
+			m.logger.WithError(err).Errorf("failed to stop vm %q", m.Cfg.VMID)
 		}
 	}()
 
-	// Wait for firecracker to initialize:
-	err = m.waitForSocket(3*time.Second, errCh)
-	if err != nil {
-		msg := fmt.Sprintf("Firecracker did not create API socket %s: %s", m.Cfg.SocketPath, err)
-		err = errors.New(msg)
-		close(m.exitCh)
-		return err
-	}
+	// This goroutine is used to tell clients that the process is stopped
+	// (gracefully or not).
 	go func() {
-		select {
-		case <-ctx.Done():
-			m.err = ctx.Err()
-		case err := <-errCh:
-			m.err = err
-		}
-
-		signal.Stop(sigchan)
-		close(sigchan)
+		m.fatalErr = <-errCh
+		m.logger.Debugf("closing the exitCh %v", m.fatalErr)
 		close(m.exitCh)
 	}()
 
@@ -535,7 +586,11 @@ func (m *Machine) StopVMM() error {
 func (m *Machine) stopVMM() error {
 	if m.cmd != nil && m.cmd.Process != nil {
 		m.logger.Debug("stopVMM(): sending sigterm to firecracker")
-		return m.cmd.Process.Signal(syscall.SIGTERM)
+		err := m.cmd.Process.Signal(syscall.SIGTERM)
+		if err != nil && !strings.Contains(err.Error(), "os: process already finished") {
+			return err
+		}
+		return nil
 	}
 	m.logger.Debug("stopVMM(): no firecracker process running, not sending a signal")
 
@@ -543,34 +598,39 @@ func (m *Machine) stopVMM() error {
 	return nil
 }
 
-// createFifos sets up the firecracker logging and metrics FIFOs
-func createFifos(logFifo, metricsFifo string) error {
-	log.Debugf("Creating FIFO %s", logFifo)
-	if err := syscall.Mkfifo(logFifo, 0700); err != nil {
+// createFifo sets up a FIFOs
+func createFifo(path string) error {
+	log.Debugf("Creating FIFO %s", path)
+	if err := syscall.Mkfifo(path, 0700); err != nil {
 		return fmt.Errorf("Failed to create log fifo: %v", err)
-	}
-
-	log.Debugf("Creating metric FIFO %s", metricsFifo)
-	if err := syscall.Mkfifo(metricsFifo, 0700); err != nil {
-		return fmt.Errorf("Failed to create metric fifo: %v", err)
 	}
 	return nil
 }
 
 func (m *Machine) setupLogging(ctx context.Context) error {
-	if len(m.Cfg.LogFifo) == 0 || len(m.Cfg.MetricsFifo) == 0 {
+	path := m.Cfg.LogPath
+	if len(m.Cfg.LogFifo) > 0 {
+		path = m.Cfg.LogFifo
+	}
+
+	if len(path) == 0 {
 		// No logging configured
-		m.logger.Printf("VMM logging and metrics disabled.")
+		m.logger.Printf("VMM logging disabled.")
 		return nil
 	}
 
+	// m.Cfg.LogLevel cannot be nil, but Firecracker allows setting a logger
+	// without its level. Converting "" to nil to support the corner case.
+	level := String(m.Cfg.LogLevel)
+	if StringValue(level) == "" {
+		level = nil
+	}
+
 	l := models.Logger{
-		LogFifo:       String(m.Cfg.LogFifo),
-		Level:         String(m.Cfg.LogLevel),
-		MetricsFifo:   String(m.Cfg.MetricsFifo),
+		LogPath:       String(path),
+		Level:         level,
 		ShowLevel:     Bool(true),
 		ShowLogOrigin: Bool(false),
-		Options:       []string{},
 	}
 
 	_, err := m.client.PutLogger(ctx, &l)
@@ -578,44 +638,80 @@ func (m *Machine) setupLogging(ctx context.Context) error {
 		return err
 	}
 
-	m.logger.Debugf("Configured VMM logging to %s, metrics to %s",
-		m.Cfg.LogFifo,
-		m.Cfg.MetricsFifo,
-	)
-
-	if m.Cfg.FifoLogWriter != nil {
-		if err := captureFifoToFile(m.logger, m.Cfg.LogFifo, m.Cfg.FifoLogWriter); err != nil {
-			return err
-		}
-	}
+	m.logger.Debugf("Configured VMM logging to %s", path)
 
 	return nil
 }
 
-func captureFifoToFile(logger *log.Entry, fifoPath string, fifo io.Writer) error {
-	// create the fifo pipe which will be used
+func (m *Machine) setupMetrics(ctx context.Context) error {
+	path := m.Cfg.MetricsPath
+	if len(m.Cfg.MetricsFifo) > 0 {
+		path = m.Cfg.MetricsFifo
+	}
+
+	if len(path) == 0 {
+		// No logging configured
+		m.logger.Printf("VMM metrics disabled.")
+		return nil
+	}
+
+	_, err := m.client.PutMetrics(ctx, &models.Metrics{
+		MetricsPath: String(path),
+	})
+	if err != nil {
+		return err
+	}
+
+	m.logger.Debugf("Configured VMM metrics to %s", path)
+
+	return nil
+}
+
+func (m *Machine) captureFifoToFile(ctx context.Context, logger *log.Entry, fifoPath string, w io.Writer) error {
+	return m.captureFifoToFileWithChannel(ctx, logger, fifoPath, w, make(chan error, 1))
+}
+
+func (m *Machine) captureFifoToFileWithChannel(ctx context.Context, logger *log.Entry, fifoPath string, w io.Writer, done chan error) error {
+	// open the fifo pipe which will be used
 	// to write its contents to a file.
-	fifoPipe, err := os.OpenFile(fifoPath, os.O_RDONLY, 0600)
+	fifoPipe, err := fifo.OpenFifo(ctx, fifoPath, syscall.O_RDONLY|syscall.O_NONBLOCK, 0600)
 	if err != nil {
 		return fmt.Errorf("Failed to open fifo path at %q: %v", fifoPath, err)
 	}
 
-	if err := syscall.Unlink(fifoPath); err != nil {
-		logger.Warnf("Failed to unlink %s", fifoPath)
-	}
-
 	logger.Debugf("Capturing %q to writer", fifoPath)
 
-	// Uses a go routine to do a non-blocking io.Copy. The fifo
-	// file should be closed when the appication has finished, since
-	// the forked firecracker application will be closed resulting
-	// in the pipe to return an io.EOF
+	// this goroutine is to track the life of the application along with whether
+	// or not the context has been cancelled which is signified by the exitCh. In
+	// the event that the exitCh has been closed, we will close the fifo file.
 	go func() {
-		defer fifoPipe.Close()
-
-		if _, err := io.Copy(fifo, fifoPipe); err != nil {
-			logger.Warnf("io.Copy failed to copy contents of fifo pipe: %v", err)
+		<-m.exitCh
+		if err := fifoPipe.Close(); err != nil {
+			logger.WithError(err).Debug("failed to close fifo")
 		}
+	}()
+
+	// Uses a goroutine to copy the contents of the fifo pipe to the io.Writer.
+	// In the event that the goroutine finishes, which is caused by either the
+	// context being closed or the application being closed, we will close the
+	// pipe and unlink the fifo path.
+	go func() {
+		defer func() {
+			if err := fifoPipe.Close(); err != nil {
+				logger.Warnf("Failed to close fifo pipe: %v", err)
+			}
+
+			if err := syscall.Unlink(fifoPath); err != nil {
+				logger.Warnf("Failed to unlink %s: %v", fifoPath, err)
+			}
+		}()
+
+		if _, err := io.Copy(w, fifoPipe); err != nil {
+			logger.WithError(err).Warn("io.Copy failed to copy contents of fifo pipe")
+			done <- err
+		}
+
+		close(done)
 	}()
 
 	return nil
@@ -637,9 +733,10 @@ func (m *Machine) createMachine(ctx context.Context) error {
 	return err
 }
 
-func (m *Machine) createBootSource(ctx context.Context, imagePath, kernelArgs string) error {
+func (m *Machine) createBootSource(ctx context.Context, imagePath, initrdPath, kernelArgs string) error {
 	bsrc := models.BootSource{
 		KernelImagePath: &imagePath,
+		InitrdPath:      initrdPath,
 		BootArgs:        kernelArgs,
 	}
 
@@ -664,10 +761,9 @@ func (m *Machine) createNetworkInterface(ctx context.Context, iface NetworkInter
 		iface.StaticConfiguration.HostDevName, iface.StaticConfiguration.MacAddress, ifaceID)
 
 	ifaceCfg := models.NetworkInterface{
-		IfaceID:           &ifaceID,
-		GuestMac:          iface.StaticConfiguration.MacAddress,
-		HostDevName:       String(iface.StaticConfiguration.HostDevName),
-		AllowMmdsRequests: iface.AllowMMDS,
+		IfaceID:     &ifaceID,
+		GuestMac:    iface.StaticConfiguration.MacAddress,
+		HostDevName: String(iface.StaticConfiguration.HostDevName),
 	}
 
 	if iface.InRateLimiter != nil {
@@ -731,11 +827,12 @@ func (m *Machine) attachDrive(ctx context.Context, dev models.Drive) error {
 // addVsock adds a vsock to the instance
 func (m *Machine) addVsock(ctx context.Context, dev VsockDevice) error {
 	vsockCfg := models.Vsock{
-		GuestCid: int64(dev.CID),
-		ID:       &dev.Path,
+		GuestCid: Int64(int64(dev.CID)),
+		UdsPath:  &dev.Path,
+		VsockID:  dev.ID,
 	}
 
-	resp, _, err := m.client.PutGuestVsockByID(ctx, dev.Path, &vsockCfg)
+	resp, err := m.client.PutGuestVsock(ctx, &vsockCfg)
 	if err != nil {
 		return err
 	}
@@ -771,6 +868,32 @@ func (m *Machine) sendCtrlAltDel(ctx context.Context) error {
 		m.logger.Errorf("Unable to send CtrlAltDel: %s", err)
 	}
 	return err
+}
+
+func (m *Machine) setMmdsConfig(ctx context.Context, address net.IP, ifaces NetworkInterfaces) error {
+	var mmdsCfg models.MmdsConfig
+	if address != nil {
+		mmdsCfg.IPV4Address = String(address.String())
+	}
+	for id, iface := range ifaces {
+		if iface.AllowMMDS {
+			mmdsCfg.NetworkInterfaces = append(mmdsCfg.NetworkInterfaces, strconv.Itoa(id+1))
+		}
+	}
+	// MMDS is tightly coupled with a network interface, which allows MMDS requests.
+	// When configuring the microVM, if MMDS needs to be activated, a network interface
+	// has to be configured to allow MMDS requests.
+	if len(mmdsCfg.NetworkInterfaces) == 0 {
+		m.logger.Infof("No interfaces are allowed to access MMDS, skipping MMDS config")
+		return nil
+	}
+	if _, err := m.client.PutMmdsConfig(ctx, &mmdsCfg); err != nil {
+		m.logger.Errorf("Setting mmds configuration failed: %s: %v", address, err)
+		return err
+	}
+
+	m.logger.Debug("SetMmdsConfig successful")
+	return nil
 }
 
 // SetMetadata sets the machine's metadata for MDDS
@@ -830,6 +953,23 @@ func (m *Machine) UpdateGuestDrive(ctx context.Context, driveID, pathOnHost stri
 	return nil
 }
 
+func (m *Machine) DescribeInstanceInfo(ctx context.Context) (models.InstanceInfo, error) {
+	var instanceInfo models.InstanceInfo
+	resp, err := m.client.GetInstanceInfo(ctx)
+	if err != nil {
+		m.logger.Errorf("Getting Instance Info: %s", err)
+		return instanceInfo, err
+	}
+
+	instanceInfo = *resp.Payload
+	if err != nil {
+		m.logger.Errorf("Getting Instance info failed parsing payload: %s", err)
+	}
+
+	m.logger.Printf("GetInstanceInfo successful")
+	return instanceInfo, err
+}
+
 // refreshMachineConfiguration synchronizes our cached representation of the machine configuration
 // with that reported by the Firecracker API
 func (m *Machine) refreshMachineConfiguration() error {
@@ -873,4 +1013,157 @@ func (m *Machine) waitForSocket(timeout time.Duration, exitchan chan error) erro
 			return nil
 		}
 	}
+}
+
+// Set up a signal handler to pass through to firecracker
+func (m *Machine) setupSignals() {
+	signals := m.Cfg.ForwardSignals
+
+	if len(signals) == 0 {
+		return
+	}
+
+	m.logger.Debugf("Setting up signal handler: %v", signals)
+	sigchan := make(chan os.Signal, len(signals))
+	signal.Notify(sigchan, signals...)
+
+	go func() {
+	ForLoop:
+		for {
+			select {
+			case sig := <-sigchan:
+				m.logger.Debugf("Caught signal %s", sig)
+				// Some signals kill the process, some of them are not.
+				m.cmd.Process.Signal(sig)
+			case <-m.exitCh:
+				// And if a signal kills the process, we can stop this for loop and remove sigchan.
+				break ForLoop
+			}
+		}
+
+		signal.Stop(sigchan)
+		close(sigchan)
+	}()
+}
+
+// PauseVM pauses the VM
+func (m *Machine) PauseVM(ctx context.Context, opts ...PatchVMOpt) error {
+	vm := &models.VM{
+		State: String(models.VMStatePaused),
+	}
+
+	if _, err := m.client.PatchVM(ctx, vm, opts...); err != nil {
+		m.logger.Errorf("failed to pause the VM: %v", err)
+		return err
+	}
+
+	m.logger.Debug("VM paused successfully")
+	return nil
+}
+
+// ResumeVM resumes the VM
+func (m *Machine) ResumeVM(ctx context.Context, opts ...PatchVMOpt) error {
+	vm := &models.VM{
+		State: String(models.VMStateResumed),
+	}
+
+	if _, err := m.client.PatchVM(ctx, vm, opts...); err != nil {
+		m.logger.Errorf("failed to resume the VM: %v", err)
+		return err
+	}
+
+	m.logger.Debug("VM resumed successfully")
+	return nil
+}
+
+// CreateSnapshot creates a snapshot of the VM
+func (m *Machine) CreateSnapshot(ctx context.Context, memFilePath, snapshotPath string, opts ...CreateSnapshotOpt) error {
+	snapshotParams := &models.SnapshotCreateParams{
+		MemFilePath:  String(memFilePath),
+		SnapshotPath: String(snapshotPath),
+	}
+
+	if _, err := m.client.CreateSnapshot(ctx, snapshotParams, opts...); err != nil {
+		m.logger.Errorf("failed to create a snapshot of the VM: %v", err)
+		return err
+	}
+
+	m.logger.Debug("snapshot created successfully")
+	return nil
+}
+
+// CreateBalloon creates a balloon device if one does not exist
+func (m *Machine) CreateBalloon(ctx context.Context, amountMib int64, deflateOnOom bool, statsPollingIntervals int64, opts ...PutBalloonOpt) error {
+	balloon := models.Balloon{
+		AmountMib:             &amountMib,
+		DeflateOnOom:          &deflateOnOom,
+		StatsPollingIntervals: statsPollingIntervals,
+	}
+	_, err := m.client.PutBalloon(ctx, &balloon, opts...)
+
+	if err != nil {
+		m.logger.Errorf("Create balloon device failed : %s", err)
+		return err
+	}
+
+	m.logger.Debug("Created balloon device successful")
+	return nil
+}
+
+// GetBalloonConfig gets the current balloon device configuration.
+func (m *Machine) GetBalloonConfig(ctx context.Context) (models.Balloon, error) {
+	var balloonConfig models.Balloon
+	resp, err := m.client.DescribeBalloonConfig(ctx)
+	if err != nil {
+		m.logger.Errorf("Getting balloonConfig: %s", err)
+		return balloonConfig, err
+	}
+
+	balloonConfig = *resp.Payload
+	m.logger.Debug("GetBalloonConfig successful")
+	return balloonConfig, err
+}
+
+// UpdateBalloon will update an existing balloon device, before or after machine startup
+func (m *Machine) UpdateBalloon(ctx context.Context, amountMib int64, opts ...PatchBalloonOpt) error {
+	ballonUpdate := models.BalloonUpdate{
+		AmountMib: &amountMib,
+	}
+	_, err := m.client.PatchBalloon(ctx, &ballonUpdate, opts...)
+	if err != nil {
+		m.logger.Errorf("Update balloon device failed : %s", err)
+		return err
+	}
+
+	m.logger.Debug("Update balloon device successful")
+	return nil
+}
+
+// GetBalloonStats gets the latest balloon device statistics, only if enabled pre-boot.
+func (m *Machine) GetBalloonStats(ctx context.Context) (models.BalloonStats, error) {
+	var balloonStats models.BalloonStats
+	resp, err := m.client.DescribeBalloonStats(ctx)
+	if err != nil {
+		m.logger.Errorf("Getting balloonStats: %s", err)
+		return balloonStats, err
+	}
+	balloonStats = *resp.Payload
+	m.logger.Debug("GetBalloonStats successful")
+	return balloonStats, nil
+}
+
+// UpdateBalloon will update a balloon device statistics polling interval.
+// Statistics cannot be turned on/off after boot.
+func (m *Machine) UpdateBalloonStats(ctx context.Context, statsPollingIntervals int64, opts ...PatchBalloonStatsIntervalOpt) error {
+	balloonStatsUpdate := models.BalloonStatsUpdate{
+		StatsPollingIntervals: &statsPollingIntervals,
+	}
+
+	if _, err := m.client.PatchBalloonStatsInterval(ctx, &balloonStatsUpdate, opts...); err != nil {
+		m.logger.Errorf("UpdateBalloonStats failed: %v", err)
+		return err
+	}
+
+	m.logger.Debug("UpdateBalloonStats successful")
+	return nil
 }

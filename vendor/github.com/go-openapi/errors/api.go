@@ -23,7 +23,7 @@ import (
 )
 
 // DefaultHTTPCode is used when the error Code cannot be used as an HTTP code.
-var DefaultHTTPCode = 422
+var DefaultHTTPCode = http.StatusUnprocessableEntity
 
 // Error represents a error interface all swagger framework errors implement
 type Error interface {
@@ -42,6 +42,14 @@ func (a *apiError) Error() string {
 
 func (a *apiError) Code() int32 {
 	return a.code
+}
+
+// MarshalJSON implements the JSON encoding interface
+func (a apiError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"code":    a.code,
+		"message": a.message,
+	})
 }
 
 // New creates a new API error with a code and a message
@@ -81,6 +89,15 @@ func (m *MethodNotAllowedError) Code() int32 {
 	return m.code
 }
 
+// MarshalJSON implements the JSON encoding interface
+func (m MethodNotAllowedError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"code":    m.code,
+		"message": m.message,
+		"allowed": m.Allowed,
+	})
+}
+
 func errorAsJSON(err Error) []byte {
 	b, _ := json.Marshal(struct {
 		Code    int32  `json:"code"`
@@ -115,8 +132,6 @@ func MethodNotAllowed(requested string, allow []string) Error {
 	return &MethodNotAllowedError{code: http.StatusMethodNotAllowed, Allowed: allow, message: msg}
 }
 
-const head = "HEAD"
-
 // ServeError the error handler interface implementation
 func ServeError(rw http.ResponseWriter, r *http.Request, err error) {
 	rw.Header().Set("Content-Type", "application/json")
@@ -133,27 +148,27 @@ func ServeError(rw http.ResponseWriter, r *http.Request, err error) {
 	case *MethodNotAllowedError:
 		rw.Header().Add("Allow", strings.Join(err.(*MethodNotAllowedError).Allowed, ","))
 		rw.WriteHeader(asHTTPCode(int(e.Code())))
-		if r == nil || r.Method != head {
-			rw.Write(errorAsJSON(e))
+		if r == nil || r.Method != http.MethodHead {
+			_, _ = rw.Write(errorAsJSON(e))
 		}
 	case Error:
 		value := reflect.ValueOf(e)
 		if value.Kind() == reflect.Ptr && value.IsNil() {
 			rw.WriteHeader(http.StatusInternalServerError)
-			rw.Write(errorAsJSON(New(http.StatusInternalServerError, "Unknown error")))
+			_, _ = rw.Write(errorAsJSON(New(http.StatusInternalServerError, "Unknown error")))
 			return
 		}
 		rw.WriteHeader(asHTTPCode(int(e.Code())))
-		if r == nil || r.Method != head {
-			rw.Write(errorAsJSON(e))
+		if r == nil || r.Method != http.MethodHead {
+			_, _ = rw.Write(errorAsJSON(e))
 		}
 	case nil:
 		rw.WriteHeader(http.StatusInternalServerError)
-		rw.Write(errorAsJSON(New(http.StatusInternalServerError, "Unknown error")))
+		_, _ = rw.Write(errorAsJSON(New(http.StatusInternalServerError, "Unknown error")))
 	default:
 		rw.WriteHeader(http.StatusInternalServerError)
-		if r == nil || r.Method != head {
-			rw.Write(errorAsJSON(New(http.StatusInternalServerError, err.Error())))
+		if r == nil || r.Method != http.MethodHead {
+			_, _ = rw.Write(errorAsJSON(New(http.StatusInternalServerError, err.Error())))
 		}
 	}
 }

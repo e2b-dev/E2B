@@ -1,7 +1,8 @@
 A basic Go interface to the Firecracker API
 ====
 
-[![Build status](https://badge.buildkite.com/de08ca676829bedbf6de040c2c2ba1a5d2892e220997c2abdd.svg?branch=master)](https://buildkite.com/firecracker-microvm/firecracker-go-sdk)
+[![Build status](https://badge.buildkite.com/de08ca676829bedbf6de040c2c2ba1a5d2892e220997c2abdd.svg?branch=main)](https://buildkite.com/firecracker-microvm/firecracker-go-sdk)
+[![GoDoc](https://godoc.org/github.com/firecracker-microvm/firecracker-go-sdk?status.svg)](https://godoc.org/github.com/firecracker-microvm/firecracker-go-sdk)
 
 This package is a Go library to interact with the Firecracker API. It
 is designed as an abstraction of the OpenAPI-generated client that
@@ -49,9 +50,9 @@ files will be sought from `/etc/cni/conf.d` and CNI plugins will be sought under
 must be specified in a configuration file at this time.
 
 It's currently highly recommended to use CNI configuration that includes
-[tc-redirect-tap](cni/Makefile) as a chained plugin. This will allow you to
-adapt pre-existing CNI plugins/configuration to a tap device usable by a
-Firecracker VM.
+[tc-redirect-tap](https://github.com/awslabs/tc-redirect-tap) as a chained plugin.
+This will allow you to adapt pre-existing CNI plugins/configuration to a tap device
+usable by a Firecracker VM.
 
 #### Example
 
@@ -60,7 +61,7 @@ With the following file at `/etc/cni/conf.d/fcnet.conflist`:
 {
   "name": "fcnet",
   "cniVersion": "0.3.1",
-  "plugins"": [
+  "plugins": [
     {
       "type": "ptp",
       "ipMasq": true,
@@ -71,6 +72,9 @@ With the following file at `/etc/cni/conf.d/fcnet.conflist`:
       }
     },
     {
+      "type": "firewall"
+    },
+    {
       "type": "tc-redirect-tap"
     }
   ]
@@ -79,10 +83,10 @@ With the following file at `/etc/cni/conf.d/fcnet.conflist`:
 
 and the 
 [`ptp`](https://github.com/containernetworking/plugins/tree/master/plugins/main/ptp), 
-[`host-local`](https://github.com/containernetworking/plugins/tree/master/plugins/ipam/host-local) 
-and [`tc-redirect-tap`](cni/Makefile)
-CNI plugin binaries installed under `/opt/cni/bin`, you can specify, in the Go SDK API, 
-a `Machine` with the following `NetworkInterface`:
+[`host-local`](https://github.com/containernetworking/plugins/tree/master/plugins/ipam/host-local),
+[`firewall`](https://github.com/containernetworking/plugins/tree/master/plugins/meta/firewall),
+and `tc-redirect-tap` CNI plugin binaries installed under `/opt/cni/bin`, you can specify,
+in the Go SDK API, a `Machine` with the following `NetworkInterface`:
 ```go
 {
   NetworkInterfaces: []firecracker.NetworkInterface{{
@@ -101,6 +105,12 @@ With the above configuration, when the Firecracker VM is started the SDK will in
 CNI and place the final VM inside the resultant network namespace. The end result being:
 * Outside the network namespace, a single veth endpoint created by the `ptp` plugin will
   exist with a static IP from the `host-local` plugin (i.e. `192.168.127.1`)
+  * Users can obtain the IP address and other static network configuration generated for
+    their machine via CNI by inspecting the network interface's `StaticConfiguration`
+    field, which will be automatically filled out after the machine has been started.
+  * The IP address, for example, can be obtained at
+    `NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr` after a call to the
+    machine object's `Start` method succeeds.
 * Inside the VM's network namespace:
     * The other side of the veth device will exist with name `veth0`, as specified by the
       `IfName` parameter above, and a different IP (i.e. `192.168.127.2`)
@@ -150,10 +160,10 @@ to report problems, discuss roadmap items, or make feature requests.
 If you've discovered an issue that may have security implications to
 users or developers of this software, please do not report it using
 GitHub issues, but instead follow
-[Firecracker's security reporting guidelines](https://github.com/firecracker-microvm/firecracker/blob/master/SECURITY-POLICY.md).
+[Firecracker's security reporting guidelines](https://github.com/firecracker-microvm/firecracker/blob/main/SECURITY.md).
 
 Other discussion: For general discussion, please join us in the
-`#general` channel on the [Firecracker Slack](https://tinyurl.com/firecracker-microvm).
+`#general` channel on the [Firecracker Slack](https://join.slack.com/t/firecracker-microvm/shared_invite/zt-oxbm7tqt-GLlze9zZ7sdRSDY6OnXXHg).
 
 License
 ====

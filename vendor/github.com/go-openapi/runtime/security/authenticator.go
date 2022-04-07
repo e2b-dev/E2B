@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/go-openapi/errors"
+
 	"github.com/go-openapi/runtime"
 )
 
@@ -69,27 +70,84 @@ type ScopedTokenAuthentication func(string, []string) (interface{}, error)
 // ScopedTokenAuthenticationCtx authentication function with context.Context
 type ScopedTokenAuthenticationCtx func(context.Context, string, []string) (context.Context, interface{}, error)
 
+var DefaultRealmName = "API"
+
+type secCtxKey uint8
+
+const (
+	failedBasicAuth secCtxKey = iota
+	oauth2SchemeName
+)
+
+func FailedBasicAuth(r *http.Request) string {
+	return FailedBasicAuthCtx(r.Context())
+}
+
+func FailedBasicAuthCtx(ctx context.Context) string {
+	v, ok := ctx.Value(failedBasicAuth).(string)
+	if !ok {
+		return ""
+	}
+	return v
+}
+
+func OAuth2SchemeName(r *http.Request) string {
+	return OAuth2SchemeNameCtx(r.Context())
+}
+
+func OAuth2SchemeNameCtx(ctx context.Context) string {
+	v, ok := ctx.Value(oauth2SchemeName).(string)
+	if !ok {
+		return ""
+	}
+	return v
+}
+
 // BasicAuth creates a basic auth authenticator with the provided authentication function
 func BasicAuth(authenticate UserPassAuthentication) runtime.Authenticator {
+	return BasicAuthRealm(DefaultRealmName, authenticate)
+}
+
+// BasicAuthRealm creates a basic auth authenticator with the provided authentication function and realm name
+func BasicAuthRealm(realm string, authenticate UserPassAuthentication) runtime.Authenticator {
+	if realm == "" {
+		realm = DefaultRealmName
+	}
+
 	return HttpAuthenticator(func(r *http.Request) (bool, interface{}, error) {
 		if usr, pass, ok := r.BasicAuth(); ok {
 			p, err := authenticate(usr, pass)
+			if err != nil {
+				*r = *r.WithContext(context.WithValue(r.Context(), failedBasicAuth, realm))
+			}
 			return true, p, err
 		}
-
+		*r = *r.WithContext(context.WithValue(r.Context(), failedBasicAuth, realm))
 		return false, nil, nil
 	})
 }
 
 // BasicAuthCtx creates a basic auth authenticator with the provided authentication function with support for context.Context
 func BasicAuthCtx(authenticate UserPassAuthenticationCtx) runtime.Authenticator {
+	return BasicAuthRealmCtx(DefaultRealmName, authenticate)
+}
+
+// BasicAuthRealmCtx creates a basic auth authenticator with the provided authentication function and realm name with support for context.Context
+func BasicAuthRealmCtx(realm string, authenticate UserPassAuthenticationCtx) runtime.Authenticator {
+	if realm == "" {
+		realm = DefaultRealmName
+	}
+
 	return HttpAuthenticator(func(r *http.Request) (bool, interface{}, error) {
 		if usr, pass, ok := r.BasicAuth(); ok {
 			ctx, p, err := authenticate(r.Context(), usr, pass)
+			if err != nil {
+				ctx = context.WithValue(ctx, failedBasicAuth, realm)
+			}
 			*r = *r.WithContext(ctx)
 			return true, p, err
 		}
-
+		*r = *r.WithContext(context.WithValue(r.Context(), failedBasicAuth, realm))
 		return false, nil, nil
 	})
 }
@@ -162,7 +220,7 @@ func BearerAuth(name string, authenticate ScopedTokenAuthentication) runtime.Aut
 	const prefix = "Bearer "
 	return ScopedAuthenticator(func(r *ScopedAuthRequest) (bool, interface{}, error) {
 		var token string
-		hdr := r.Request.Header.Get("Authorization")
+		hdr := r.Request.Header.Get(runtime.HeaderAuthorization)
 		if strings.HasPrefix(hdr, prefix) {
 			token = strings.TrimPrefix(hdr, prefix)
 		}
@@ -180,6 +238,8 @@ func BearerAuth(name string, authenticate ScopedTokenAuthentication) runtime.Aut
 			return false, nil, nil
 		}
 
+		rctx := context.WithValue(r.Request.Context(), oauth2SchemeName, name)
+		*r.Request = *r.Request.WithContext(rctx)
 		p, err := authenticate(token, r.RequiredScopes)
 		return true, p, err
 	})
@@ -190,7 +250,7 @@ func BearerAuthCtx(name string, authenticate ScopedTokenAuthenticationCtx) runti
 	const prefix = "Bearer "
 	return ScopedAuthenticator(func(r *ScopedAuthRequest) (bool, interface{}, error) {
 		var token string
-		hdr := r.Request.Header.Get("Authorization")
+		hdr := r.Request.Header.Get(runtime.HeaderAuthorization)
 		if strings.HasPrefix(hdr, prefix) {
 			token = strings.TrimPrefix(hdr, prefix)
 		}
@@ -208,7 +268,8 @@ func BearerAuthCtx(name string, authenticate ScopedTokenAuthenticationCtx) runti
 			return false, nil, nil
 		}
 
-		ctx, p, err := authenticate(r.Request.Context(), token, r.RequiredScopes)
+		rctx := context.WithValue(r.Request.Context(), oauth2SchemeName, name)
+		ctx, p, err := authenticate(rctx, token, r.RequiredScopes)
 		*r.Request = *r.Request.WithContext(ctx)
 		return true, p, err
 	})

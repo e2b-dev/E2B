@@ -1,4 +1,4 @@
-// Copyright 2018-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -16,6 +16,7 @@ package firecracker
 import (
 	"context"
 	"fmt"
+	"os"
 )
 
 // Handler name constants
@@ -29,9 +30,11 @@ const (
 	CreateNetworkInterfacesHandlerName = "fcinit.CreateNetworkInterfaces"
 	AddVsocksHandlerName               = "fcinit.AddVsocks"
 	SetMetadataHandlerName             = "fcinit.SetMetadata"
+	ConfigMmdsHandlerName              = "fcinit.ConfigMmds"
 	LinkFilesToRootFSHandlerName       = "fcinit.LinkFilesToRootFS"
 	SetupNetworkHandlerName            = "fcinit.SetupNetwork"
 	SetupKernelArgsHandlerName         = "fcinit.SetupKernelArgs"
+	CreateBalloonHandlerName           = "fcint.CreateBalloon"
 
 	ValidateCfgHandlerName        = "validate.Cfg"
 	ValidateJailerCfgHandlerName  = "validate.JailerCfg"
@@ -62,7 +65,7 @@ var JailerConfigValidationHandler = Handler{
 			return nil
 		}
 
-		hasRoot := false
+		hasRoot := m.Cfg.InitrdPath != ""
 		for _, drive := range m.Cfg.Drives {
 			if BoolValue(drive.IsRootDevice) {
 				hasRoot = true
@@ -118,21 +121,46 @@ var StartVMMHandler = Handler{
 	},
 }
 
+func createFifoOrFile(ctx context.Context, m *Machine, fifo, path string) error {
+	if len(fifo) > 0 {
+		if err := createFifo(fifo); err != nil {
+			return err
+		}
+
+		m.cleanupFuncs = append(m.cleanupFuncs,
+			func() error {
+				if err := os.Remove(fifo); !os.IsNotExist(err) {
+					return err
+				}
+				return nil
+			},
+		)
+	} else if len(path) > 0 {
+		file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+		if err != nil {
+			return err
+		}
+		file.Close()
+	}
+	return nil
+}
+
 // CreateLogFilesHandler is a named handler that will create the fifo log files
 var CreateLogFilesHandler = Handler{
 	Name: CreateLogFilesHandlerName,
 	Fn: func(ctx context.Context, m *Machine) error {
-		logFifoPath := m.Cfg.LogFifo
-		metricsFifoPath := m.Cfg.MetricsFifo
-
-		if len(logFifoPath) == 0 || len(metricsFifoPath) == 0 {
-			// logging is disabled
-			return nil
+		if err := createFifoOrFile(ctx, m, m.Cfg.MetricsFifo, m.Cfg.MetricsPath); err != nil {
+			return err
 		}
 
-		if err := createFifos(logFifoPath, metricsFifoPath); err != nil {
-			m.logger.Errorf("Unable to set up logging: %s", err)
+		if err := createFifoOrFile(ctx, m, m.Cfg.LogFifo, m.Cfg.LogPath); err != nil {
 			return err
+		}
+
+		if m.Cfg.FifoLogWriter != nil {
+			if err := m.captureFifoToFile(ctx, m.logger, m.Cfg.LogFifo, m.Cfg.FifoLogWriter); err != nil {
+				m.logger.Warnf("captureFifoToFile() returned %s. Continuing anyway.", err)
+			}
 		}
 
 		m.logger.Debug("Created metrics and logging fifos.")
@@ -147,11 +175,12 @@ var BootstrapLoggingHandler = Handler{
 	Name: BootstrapLoggingHandlerName,
 	Fn: func(ctx context.Context, m *Machine) error {
 		if err := m.setupLogging(ctx); err != nil {
-			m.logger.Warnf("setupLogging() returned %s. Continuing anyway.", err)
-		} else {
-			m.logger.Debugf("setup logging: success")
+			return err
 		}
-
+		if err := m.setupMetrics(ctx); err != nil {
+			return err
+		}
+		m.logger.Debugf("setup logging: success")
 		return nil
 	},
 }
@@ -170,7 +199,7 @@ var CreateMachineHandler = Handler{
 var CreateBootSourceHandler = Handler{
 	Name: CreateBootSourceHandlerName,
 	Fn: func(ctx context.Context, m *Machine) error {
-		return m.createBootSource(ctx, m.Cfg.KernelImagePath, m.Cfg.KernelArgs)
+		return m.createBootSource(ctx, m.Cfg.KernelImagePath, m.Cfg.InitrdPath, m.Cfg.KernelArgs)
 	},
 }
 
@@ -231,6 +260,26 @@ func NewSetMetadataHandler(metadata interface{}) Handler {
 	}
 }
 
+// ConfigMmdsHandler is a named handler that puts the MMDS config into the
+// firecracker process.
+var ConfigMmdsHandler = Handler{
+	Name: ConfigMmdsHandlerName,
+	Fn: func(ctx context.Context, m *Machine) error {
+		return m.setMmdsConfig(ctx, m.Cfg.MmdsAddress, m.Cfg.NetworkInterfaces)
+	},
+}
+
+// NewCreateBalloonHandler is a named handler that put a memory balloon into the
+// firecracker process.
+func NewCreateBalloonHandler(amountMib int64, deflateOnOom bool, StatsPollingIntervals int64) Handler {
+	return Handler{
+		Name: CreateBalloonHandlerName,
+		Fn: func(ctx context.Context, m *Machine) error {
+			return m.CreateBalloon(ctx, amountMib, deflateOnOom, StatsPollingIntervals)
+		},
+	}
+}
+
 var defaultFcInitHandlerList = HandlerList{}.Append(
 	SetupNetworkHandler,
 	SetupKernelArgsHandler,
@@ -242,6 +291,7 @@ var defaultFcInitHandlerList = HandlerList{}.Append(
 	AttachDrivesHandler,
 	CreateNetworkInterfacesHandler,
 	AddVsocksHandler,
+	ConfigMmdsHandler,
 )
 
 var defaultValidationHandlerList = HandlerList{}.Append(

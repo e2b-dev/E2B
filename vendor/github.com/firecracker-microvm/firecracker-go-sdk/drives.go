@@ -1,3 +1,15 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"). You may
+// not use this file except in compliance with the License. A copy of the
+// License is located at
+//
+//	http://aws.amazon.com/apache2.0/
+//
+// or in the "license" file accompanying this file. This file is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+// express or implied. See the License for the specific language governing
+// permissions and limitations under the License.
 package firecracker
 
 import (
@@ -62,4 +74,32 @@ func (b DrivesBuilder) AddDrive(path string, readOnly bool, opts ...DriveOpt) Dr
 // Build will construct an array of drives with the root drive at the very end.
 func (b DrivesBuilder) Build() []models.Drive {
 	return append(b.drives, b.rootDrive)
+}
+
+// WithDriveID sets the ID of the drive
+func WithDriveID(id string) DriveOpt {
+	return func(d *models.Drive) {
+		d.DriveID = String(id)
+	}
+}
+
+// WithReadOnly sets the drive read-only
+func WithReadOnly(flag bool) DriveOpt {
+	return func(d *models.Drive) {
+		d.IsReadOnly = Bool(flag)
+	}
+}
+
+// WithPartuuid sets the unique ID of the boot partition
+func WithPartuuid(uuid string) DriveOpt {
+	return func(d *models.Drive) {
+		d.Partuuid = uuid
+	}
+}
+
+// WithRateLimiter sets the rate limitter of the drive
+func WithRateLimiter(limiter models.RateLimiter) DriveOpt {
+	return func(d *models.Drive) {
+		d.RateLimiter = &limiter
+	}
 }

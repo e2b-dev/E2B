@@ -12,7 +12,7 @@ environment variable.
 
 You need some external resources in order to run the tests, as described below:
 
-1. A firecracker and jailer binary (tested with 0.12.0) must either be
+1. A firecracker and jailer binary (tested with 0.20.0) must either be
    installed as `./testdata/firecracker` or the path must be specified through
    the `FC_TEST_BIN` environment variable. The jailer requires go test to be
    run with sudo and can also be turned off by setting the `DISABLE_ROOT_TESTS`
@@ -32,6 +32,14 @@ You need some external resources in order to run the tests, as described below:
 
 With all of those set up, `make test EXTRAGOARGS=-v` should create a Firecracker
 process and run the Linux kernel in a MicroVM.
+
+There is also a possibility to configure timeouts in firecracker-go-sdk,
+you can set those env's to customize tests flow:
+```
+    FIRECRACKER_GO_SDK_INIT_TIMEOUT_SECONDS
+    FIRECRACKER_GO_SDK_REQUEST_TIMEOUT_MILLISECONDS
+```
+You can set them directly or with a help of buildkite, otherwise default values will be used.
 
 Regenerating the API client
 ---
@@ -53,7 +61,6 @@ Amazon EC2 Bare Metal Instances.
 The instance is pre-configured to have
 
   - firecracker and jailer under /usr/local/bin.
-    Both of them are currently v0.17.0 and built with
-    `cargo build --features vsock --release` to enable vsock support
+    Both of them are currently v0.20.0.
   - vmlinux.bin from
     https://s3.amazonaws.com/spec.ccfc.min/img/hello/kernel/hello-vmlinux.bin

@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	"path"
@@ -29,8 +29,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/go-openapi/runtime"
 )
 
 // NewRequest creates a new swagger http client request
@@ -42,6 +43,7 @@ func newRequest(method, pathPattern string, writer runtime.ClientRequestWriter) 
 		header:      make(http.Header),
 		query:       make(url.Values),
 		timeout:     DefaultTimeout,
+		getBody:     getRequestBuffer,
 	}, nil
 }
 
@@ -67,6 +69,8 @@ type request struct {
 	payload    interface{}
 	timeout    time.Duration
 	buf        *bytes.Buffer
+
+	getBody func(r *request) []byte
 }
 
 var (
@@ -86,6 +90,17 @@ func (r *request) isMultipart(mediaType string) bool {
 func (r *request) BuildHTTP(mediaType, basePath string, producers map[string]runtime.Producer, registry strfmt.Registry) (*http.Request, error) {
 	return r.buildHTTP(mediaType, basePath, producers, registry, nil)
 }
+func escapeQuotes(s string) string {
+	return strings.NewReplacer("\\", "\\\\", `"`, "\\\"").Replace(s)
+}
+
+func logClose(err error, pw *io.PipeWriter) {
+	log.Println(err)
+	closeErr := pw.CloseWithError(err)
+	if closeErr != nil {
+		log.Println(closeErr)
+	}
+}
 
 func (r *request) buildHTTP(mediaType, basePath string, producers map[string]runtime.Producer, registry strfmt.Registry, auth runtime.ClientAuthInfoWriter) (*http.Request, error) {
 	// build the data
@@ -93,60 +108,34 @@ func (r *request) buildHTTP(mediaType, basePath string, producers map[string]run
 		return nil, err
 	}
 
-	if auth != nil {
-		if err := auth.AuthenticateRequest(r, registry); err != nil {
-			return nil, err
-		}
-	}
-
-	// create http request
-	var reinstateSlash bool
-	if r.pathPattern != "" && r.pathPattern != "/" && r.pathPattern[len(r.pathPattern)-1] == '/' {
-		reinstateSlash = true
-	}
-	urlPath := path.Join(basePath, r.pathPattern)
-	for k, v := range r.pathParams {
-		urlPath = strings.Replace(urlPath, "{"+k+"}", url.PathEscape(v), -1)
-	}
-	if reinstateSlash {
-		urlPath = urlPath + "/"
-	}
-
-	var body io.ReadCloser
+	// Our body must be an io.Reader.
+	// When we create the http.Request, if we pass it a
+	// bytes.Buffer then it will wrap it in an io.ReadCloser
+	// and set the content length automatically.
+	var body io.Reader
 	var pr *io.PipeReader
 	var pw *io.PipeWriter
 
 	r.buf = bytes.NewBuffer(nil)
 	if r.payload != nil || len(r.formFields) > 0 || len(r.fileFields) > 0 {
-		body = ioutil.NopCloser(r.buf)
+		body = r.buf
 		if r.isMultipart(mediaType) {
 			pr, pw = io.Pipe()
 			body = pr
 		}
 	}
-	req, err := http.NewRequest(r.method, urlPath, body)
-
-	if err != nil {
-		return nil, err
-	}
-
-	req.URL.RawQuery = r.query.Encode()
-	req.Header = r.header
 
 	// check if this is a form type request
 	if len(r.formFields) > 0 || len(r.fileFields) > 0 {
 		if !r.isMultipart(mediaType) {
-			req.Header.Set(runtime.HeaderContentType, mediaType)
+			r.header.Set(runtime.HeaderContentType, mediaType)
 			formString := r.formFields.Encode()
-			// set content length before writing to the buffer
-			req.ContentLength = int64(len(formString))
-			// write the form values as the body
 			r.buf.WriteString(formString)
-			return req, nil
+			goto DoneChoosingBodySource
 		}
 
 		mp := multipart.NewWriter(pw)
-		req.Header.Set(runtime.HeaderContentType, mangleContentType(mediaType, mp.Boundary()))
+		r.header.Set(runtime.HeaderContentType, mangleContentType(mediaType, mp.Boundary()))
 
 		go func() {
 			defer func() {
@@ -157,8 +146,8 @@ func (r *request) buildHTTP(mediaType, basePath string, producers map[string]run
 			for fn, v := range r.formFields {
 				for _, vi := range v {
 					if err := mp.WriteField(fn, vi); err != nil {
-						pw.CloseWithError(err)
-						log.Println(err)
+						logClose(err, pw)
+						return
 					}
 				}
 			}
@@ -172,20 +161,36 @@ func (r *request) buildHTTP(mediaType, basePath string, producers map[string]run
 			}()
 			for fn, f := range r.fileFields {
 				for _, fi := range f {
-					wrtr, err := mp.CreateFormFile(fn, filepath.Base(fi.Name()))
+					// Need to read the data so that we can detect the content type
+					buf := make([]byte, 512)
+					size, err := fi.Read(buf)
 					if err != nil {
-						pw.CloseWithError(err)
-						log.Println(err)
-					} else if _, err := io.Copy(wrtr, fi); err != nil {
-						pw.CloseWithError(err)
-						log.Println(err)
+						logClose(err, pw)
+						return
+					}
+					fileContentType := http.DetectContentType(buf)
+					newFi := runtime.NamedReader(fi.Name(), io.MultiReader(bytes.NewReader(buf[:size]), fi))
+
+					// Create the MIME headers for the new part
+					h := make(textproto.MIMEHeader)
+					h.Set("Content-Disposition",
+						fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+							escapeQuotes(fn), escapeQuotes(filepath.Base(fi.Name()))))
+					h.Set("Content-Type", fileContentType)
+
+					wrtr, err := mp.CreatePart(h)
+					if err != nil {
+						logClose(err, pw)
+						return
+					}
+					if _, err := io.Copy(wrtr, newFi); err != nil {
+						logClose(err, pw)
 					}
 				}
 			}
-
 		}()
-		return req, nil
 
+		goto DoneChoosingBodySource
 	}
 
 	// if there is payload, use the producer to write the payload, and then
@@ -193,58 +198,144 @@ func (r *request) buildHTTP(mediaType, basePath string, producers map[string]run
 	if r.payload != nil {
 		// TODO: infer most appropriate content type based on the producer used,
 		// and the `consumers` section of the spec/operation
-		req.Header.Set(runtime.HeaderContentType, mediaType)
+		r.header.Set(runtime.HeaderContentType, mediaType)
 		if rdr, ok := r.payload.(io.ReadCloser); ok {
-			req.Body = rdr
-
-			return req, nil
+			body = rdr
+			goto DoneChoosingBodySource
 		}
 
 		if rdr, ok := r.payload.(io.Reader); ok {
-			req.Body = ioutil.NopCloser(rdr)
-
-			return req, nil
+			body = rdr
+			goto DoneChoosingBodySource
 		}
 
-		req.GetBody = func() (io.ReadCloser, error) {
-			var b bytes.Buffer
-			producer := producers[mediaType]
-			if err := producer.Produce(&b, r.payload); err != nil {
-				return nil, err
-			}
-
-			if _, err := r.buf.Write(b.Bytes()); err != nil {
-				return nil, err
-			}
-			return ioutil.NopCloser(&b), nil
-		}
-
-		// set the content length of the request or else a chunked transfer is
-		// declared, and this corrupts outgoing JSON payloads. the content's
-		// length must be set prior to the body being written per the spec at
-		// https://golang.org/pkg/net/http
-		//
-		//     If Body is present, Content-Length is <= 0 and TransferEncoding
-		//     hasn't been set to "identity", Write adds
-		//     "Transfer-Encoding: chunked" to the header. Body is closed
-		//     after it is sent.
-		//
-		// to that end a temporary buffer, b, is created to produce the payload
-		// body, and then its size is used to set the request's content length
-		var b bytes.Buffer
 		producer := producers[mediaType]
-		if err := producer.Produce(&b, r.payload); err != nil {
-			return nil, err
-		}
-		req.ContentLength = int64(b.Len())
-		if _, err := r.buf.Write(b.Bytes()); err != nil {
+		if err := producer.Produce(r.buf, r.payload); err != nil {
 			return nil, err
 		}
 	}
 
-	if runtime.CanHaveBody(req.Method) && req.Body == nil && req.Header.Get(runtime.HeaderContentType) == "" {
-		req.Header.Set(runtime.HeaderContentType, mediaType)
+DoneChoosingBodySource:
+
+	if runtime.CanHaveBody(r.method) && body != nil && r.header.Get(runtime.HeaderContentType) == "" {
+		r.header.Set(runtime.HeaderContentType, mediaType)
 	}
+
+	if auth != nil {
+		// If we're not using r.buf as our http.Request's body,
+		// either the payload is an io.Reader or io.ReadCloser,
+		// or we're doing a multipart form/file.
+		//
+		// In those cases, if the AuthenticateRequest call asks for the body,
+		// we must read it into a buffer and provide that, then use that buffer
+		// as the body of our http.Request.
+		//
+		// This is done in-line with the GetBody() request rather than ahead
+		// of time, because there's no way to know if the AuthenticateRequest
+		// will even ask for the body of the request.
+		//
+		// If for some reason the copy fails, there's no way to return that
+		// error to the GetBody() call, so return it afterwards.
+		//
+		// An error from the copy action is prioritized over any error
+		// from the AuthenticateRequest call, because the mis-read
+		// body may have interfered with the auth.
+		//
+		var copyErr error
+		if buf, ok := body.(*bytes.Buffer); body != nil && (!ok || buf != r.buf) {
+			var copied bool
+			r.getBody = func(r *request) []byte {
+				if copied {
+					return getRequestBuffer(r)
+				}
+
+				defer func() {
+					copied = true
+				}()
+
+				if _, copyErr = io.Copy(r.buf, body); copyErr != nil {
+					return nil
+				}
+
+				if closer, ok := body.(io.ReadCloser); ok {
+					if copyErr = closer.Close(); copyErr != nil {
+						return nil
+					}
+				}
+
+				body = r.buf
+				return getRequestBuffer(r)
+			}
+		}
+
+		authErr := auth.AuthenticateRequest(r, registry)
+
+		if copyErr != nil {
+			return nil, fmt.Errorf("error retrieving the response body: %v", copyErr)
+		}
+
+		if authErr != nil {
+			return nil, authErr
+		}
+	}
+
+	// In case the basePath or the request pathPattern include static query parameters,
+	// parse those out before constructing the final path. The parameters themselves
+	// will be merged with the ones set by the client, with the priority given first to
+	// the ones set by the client, then the path pattern, and lastly the base path.
+	basePathURL, err := url.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+	staticQueryParams := basePathURL.Query()
+
+	pathPatternURL, err := url.Parse(r.pathPattern)
+	if err != nil {
+		return nil, err
+	}
+	for name, values := range pathPatternURL.Query() {
+		if _, present := staticQueryParams[name]; present {
+			staticQueryParams.Del(name)
+		}
+		for _, value := range values {
+			staticQueryParams.Add(name, value)
+		}
+	}
+
+	// create http request
+	var reinstateSlash bool
+	if pathPatternURL.Path != "" && pathPatternURL.Path != "/" && pathPatternURL.Path[len(pathPatternURL.Path)-1] == '/' {
+		reinstateSlash = true
+	}
+
+	urlPath := path.Join(basePathURL.Path, pathPatternURL.Path)
+	for k, v := range r.pathParams {
+		urlPath = strings.Replace(urlPath, "{"+k+"}", url.PathEscape(v), -1)
+	}
+	if reinstateSlash {
+		urlPath = urlPath + "/"
+	}
+
+	req, err := http.NewRequest(r.method, urlPath, body)
+	if err != nil {
+		return nil, err
+	}
+
+	originalParams := r.GetQueryParams()
+
+	// Merge the query parameters extracted from the basePath with the ones set by
+	// the client in this struct. In case of conflict, the client wins.
+	for k, v := range staticQueryParams {
+		_, present := originalParams[k]
+		if !present {
+			if err = r.SetQueryParam(k, v...); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	req.URL.RawQuery = r.query.Encode()
+	req.Header = r.header
 
 	return req, nil
 }
@@ -269,6 +360,10 @@ func (r *request) GetPath() string {
 }
 
 func (r *request) GetBody() []byte {
+	return r.getBody(r)
+}
+
+func getRequestBuffer(r *request) []byte {
 	if r.buf == nil {
 		return nil
 	}
@@ -284,6 +379,11 @@ func (r *request) SetHeaderParam(name string, values ...string) error {
 	}
 	r.header[http.CanonicalHeaderKey(name)] = values
 	return nil
+}
+
+// GetHeaderParams returns the all headers currently set for the request
+func (r *request) GetHeaderParams() http.Header {
+	return r.header
 }
 
 // SetQueryParam adds a query param to the request

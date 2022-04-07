@@ -15,6 +15,8 @@
 package spec
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -46,7 +48,7 @@ type Ref struct {
 // RemoteURI gets the remote uri part of the ref
 func (r *Ref) RemoteURI() string {
 	if r.String() == "" {
-		return r.String()
+		return ""
 	}
 
 	u := *r.GetURL()
@@ -66,10 +68,12 @@ func (r *Ref) IsValidURI(basepaths ...string) bool {
 	}
 
 	if r.HasFullURL {
+		//nolint:noctx,gosec
 		rr, err := http.Get(v)
 		if err != nil {
 			return false
 		}
+		defer rr.Body.Close()
 
 		return rr.StatusCode/100 == 2
 	}
@@ -146,6 +150,28 @@ func (r *Ref) UnmarshalJSON(d []byte) error {
 		return err
 	}
 	return r.fromMap(v)
+}
+
+// GobEncode provides a safe gob encoder for Ref
+func (r Ref) GobEncode() ([]byte, error) {
+	var b bytes.Buffer
+	raw, err := r.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	err = gob.NewEncoder(&b).Encode(raw)
+	return b.Bytes(), err
+}
+
+// GobDecode provides a safe gob decoder for Ref
+func (r *Ref) GobDecode(b []byte) error {
+	var raw []byte
+	buf := bytes.NewBuffer(b)
+	err := gob.NewDecoder(buf).Decode(&raw)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(raw, r)
 }
 
 func (r *Ref) fromMap(v map[string]interface{}) error {

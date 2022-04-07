@@ -23,7 +23,7 @@ reported the issue. Please try to include as much information as you can. Detail
 ## Contributing via Pull Requests
 Contributions via pull requests are much appreciated. Before sending us a pull request, please ensure that:
 
-1. You are working against the latest source on the *master* branch.
+1. You are working against the latest source on the *main* branch.
 2. You check existing open, and recently merged, pull requests to make sure someone else hasn't addressed the problem already.
 3. You open an issue to discuss any significant work - we would hate for your time to be wasted.
 
@@ -56,6 +56,7 @@ If you discover a potential security issue in this project we ask that you notif
 
 ## Licensing
 
-See the [LICENSE](https://github.com/firecracker-microvm/firecracker-go-sdk/blob/master/LICENSE) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
+See the [LICENSE](https://github.com/firecracker-microvm/firecracker-go-sdk/blob/main/LICENSE) file for
+our project's licensing. We will ask you to confirm the licensing of your contribution.
 
 We may ask you to sign a [Contributor License Agreement (CLA)](http://en.wikipedia.org/wiki/Contributor_License_Agreement) for larger changes.

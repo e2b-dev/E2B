@@ -1,4 +1,4 @@
-// Copyright 2018-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -17,39 +17,29 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
 	// defaultJailerPath is the default chroot base directory that the jailer
 	// will use if no other base directory was provided.
-	defaultJailerPath = "/srv/jailer/firecracker"
+	defaultJailerPath = "/srv/jailer"
 	defaultJailerBin  = "jailer"
 
 	rootfsFolderName = "root"
+
+	defaultSocketPath = "/run/firecracker.socket"
 )
 
 var (
 	// ErrMissingJailerConfig will occur when entering jailer logic but the
 	// jailer config had not been specified.
 	ErrMissingJailerConfig = fmt.Errorf("jailer config was not set for use")
-)
-
-// SeccompLevelValue represents a secure computing level type.
-type SeccompLevelValue int
-
-// secure computing levels
-const (
-	// SeccompLevelDisable is the default value.
-	SeccompLevelDisable SeccompLevelValue = iota
-	// SeccompLevelBasic prohibits syscalls not whitelisted by Firecracker.
-	SeccompLevelBasic
-	// SeccompLevelAdvanced adds further checks on some of the parameters of the
-	// allowed syscalls.
-	SeccompLevelAdvanced
 )
 
 // JailerConfig is jailer specific configuration needed to execute the jailer.
@@ -86,22 +76,9 @@ type JailerConfig struct {
 	// default is /srv/jailer
 	ChrootBaseDir string
 
-	// NetNS represents the path to a network namespace handle. If present, the
-	// jailer will use this to join the associated network namespace
-	NetNS string
-
 	//  Daemonize is set to true, call setsid() and redirect STDIN, STDOUT, and
 	//  STDERR to /dev/null
 	Daemonize bool
-
-	// SeccompLevel specifies whether seccomp filters should be installed and how
-	// restrictive they should be. Possible values are:
-	//
-	//	0 : (default): disabled.
-	//	1 : basic filtering. This prohibits syscalls not whitelisted by Firecracker.
-	//	2 : advanced filtering. This adds further checks on some of the
-	//			parameters of the allowed syscalls.
-	SeccompLevel SeccompLevelValue
 
 	// ChrootStrategy will dictate how files are transfered to the root drive.
 	ChrootStrategy HandlersAdapter
@@ -112,13 +89,6 @@ type JailerConfig struct {
 	Stderr io.Writer
 	// Stdin specifies the IO reader for STDIN to use when spawning the jailer.
 	Stdin io.Reader
-}
-
-func (jailerCfg *JailerConfig) netNSPath() string {
-	if jailerCfg == nil {
-		return ""
-	}
-	return jailerCfg.NetNS
 }
 
 // JailerCommandBuilder will build a jailer command. This can be used to
@@ -132,10 +102,10 @@ type JailerCommandBuilder struct {
 	node     int
 
 	// optional params
-	chrootBaseDir string
-	netNS         string
-	daemonize     bool
-	seccompLevel  SeccompLevelValue
+	chrootBaseDir   string
+	netNS           string
+	daemonize       bool
+	firecrackerArgs []string
 
 	stdin  io.Reader
 	stdout io.Writer
@@ -148,6 +118,14 @@ func NewJailerCommandBuilder() JailerCommandBuilder {
 	return JailerCommandBuilder{}.WithBin(defaultJailerBin)
 }
 
+// getNumaCpuset returns the CPU list assigned to a NUMA node
+func getNumaCpuset(node int) string {
+	if cpus, err := ioutil.ReadFile(fmt.Sprintf("/sys/devices/system/node/node%d/cpulist", node)); err == nil {
+		return strings.TrimSuffix(string(cpus), "\n")
+	}
+	return ""
+}
+
 // Args returns the specified set of args to be used
 // in command construction.
 func (b JailerCommandBuilder) Args() []string {
@@ -156,7 +134,11 @@ func (b JailerCommandBuilder) Args() []string {
 	args = append(args, "--uid", strconv.Itoa(b.uid))
 	args = append(args, "--gid", strconv.Itoa(b.gid))
 	args = append(args, "--exec-file", b.execFile)
-	args = append(args, "--node", strconv.Itoa(b.node))
+
+	if cpulist := getNumaCpuset(b.node); len(cpulist) > 0 {
+		args = append(args, "--cgroup", fmt.Sprintf("cpuset.mems=%d", b.node))
+		args = append(args, "--cgroup", fmt.Sprintf("cpuset.cpus=%s", cpulist))
+	}
 
 	if len(b.chrootBaseDir) > 0 {
 		args = append(args, "--chroot-base-dir", b.chrootBaseDir)
@@ -166,10 +148,13 @@ func (b JailerCommandBuilder) Args() []string {
 		args = append(args, "--netns", b.netNS)
 	}
 
-	args = append(args, "--seccomp-level", strconv.Itoa(int(b.seccompLevel)))
-
 	if b.daemonize {
 		args = append(args, "--daemonize")
+	}
+
+	if len(b.firecrackerArgs) > 0 {
+		args = append(args, "--")
+		args = append(args, b.firecrackerArgs...)
 	}
 
 	return args
@@ -240,14 +225,6 @@ func (b JailerCommandBuilder) WithDaemonize(daemonize bool) JailerCommandBuilder
 	return b
 }
 
-// WithSeccompLevel will set the provided level to the builder. This represents
-// the seccomp filters that should be installed and how restrictive they should
-// be.
-func (b JailerCommandBuilder) WithSeccompLevel(level SeccompLevelValue) JailerCommandBuilder {
-	b.seccompLevel = level
-	return b
-}
-
 // Stdout will return the stdout that will be used when creating the
 // firecracker exec.Command
 func (b JailerCommandBuilder) Stdout() io.Writer {
@@ -287,6 +264,13 @@ func (b JailerCommandBuilder) WithStdin(stdin io.Reader) JailerCommandBuilder {
 	return b
 }
 
+// WithFirecrackerArgs will adds these arguments to the end of the argument
+// chain which the jailer will intepret to belonging to Firecracke
+func (b JailerCommandBuilder) WithFirecrackerArgs(args ...string) JailerCommandBuilder {
+	b.firecrackerArgs = args
+	return b
+}
+
 // Build will build a jailer command.
 func (b JailerCommandBuilder) Build(ctx context.Context) *exec.Cmd {
 	cmd := exec.CommandContext(
@@ -315,12 +299,19 @@ func (b JailerCommandBuilder) Build(ctx context.Context) *exec.Cmd {
 func jail(ctx context.Context, m *Machine, cfg *Config) error {
 	jailerWorkspaceDir := ""
 	if len(cfg.JailerCfg.ChrootBaseDir) > 0 {
-		jailerWorkspaceDir = filepath.Join(cfg.JailerCfg.ChrootBaseDir, "firecracker", cfg.JailerCfg.ID, rootfsFolderName)
+		jailerWorkspaceDir = filepath.Join(cfg.JailerCfg.ChrootBaseDir, filepath.Base(cfg.JailerCfg.ExecFile), cfg.JailerCfg.ID, rootfsFolderName)
 	} else {
-		jailerWorkspaceDir = filepath.Join(defaultJailerPath, cfg.JailerCfg.ID, rootfsFolderName)
+		jailerWorkspaceDir = filepath.Join(defaultJailerPath, filepath.Base(cfg.JailerCfg.ExecFile), cfg.JailerCfg.ID, rootfsFolderName)
 	}
 
-	cfg.SocketPath = filepath.Join(jailerWorkspaceDir, "api.socket")
+	var machineSocketPath string
+	if cfg.SocketPath != "" {
+		machineSocketPath = cfg.SocketPath
+	} else {
+		machineSocketPath = defaultSocketPath
+	}
+
+	cfg.SocketPath = filepath.Join(jailerWorkspaceDir, machineSocketPath)
 
 	stdout := cfg.JailerCfg.Stdout
 	if stdout == nil {
@@ -332,6 +323,9 @@ func jail(ctx context.Context, m *Machine, cfg *Config) error {
 		stderr = os.Stderr
 	}
 
+	fcArgs := seccompArgs(cfg)
+	fcArgs = append(fcArgs, "--api-sock", machineSocketPath)
+
 	builder := NewJailerCommandBuilder().
 		WithID(cfg.JailerCfg.ID).
 		WithUID(*cfg.JailerCfg.UID).
@@ -340,7 +334,7 @@ func jail(ctx context.Context, m *Machine, cfg *Config) error {
 		WithExecFile(cfg.JailerCfg.ExecFile).
 		WithChrootBaseDir(cfg.JailerCfg.ChrootBaseDir).
 		WithDaemonize(cfg.JailerCfg.Daemonize).
-		WithSeccompLevel(cfg.JailerCfg.SeccompLevel).
+		WithFirecrackerArgs(fcArgs...).
 		WithStdout(stdout).
 		WithStderr(stderr)
 
@@ -348,8 +342,8 @@ func jail(ctx context.Context, m *Machine, cfg *Config) error {
 		builder = builder.WithBin(jailerBinary)
 	}
 
-	if netNS := cfg.JailerCfg.NetNS; netNS != "" {
-		builder = builder.WithNetNS(netNS)
+	if cfg.NetNS != "" {
+		builder = builder.WithNetNS(cfg.NetNS)
 	}
 
 	if stdin := cfg.JailerCfg.Stdin; stdin != nil {
@@ -365,17 +359,9 @@ func jail(ctx context.Context, m *Machine, cfg *Config) error {
 	return nil
 }
 
-func linkFileToRootFS(cfg *JailerConfig, dst, src string) error {
-	if err := os.Link(src, dst); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // LinkFilesHandler creates a new link files handler that will link files to
 // the rootfs
-func LinkFilesHandler(rootfs, kernelImageFileName string) Handler {
+func LinkFilesHandler(kernelImageFileName string) Handler {
 	return Handler{
 		Name: LinkFilesToRootFSHandlerName,
 		Fn: func(ctx context.Context, m *Machine) error {
@@ -383,13 +369,32 @@ func LinkFilesHandler(rootfs, kernelImageFileName string) Handler {
 				return ErrMissingJailerConfig
 			}
 
+			// assemble the path to the jailed root folder on the host
+			rootfs := filepath.Join(
+				m.Cfg.JailerCfg.ChrootBaseDir,
+				filepath.Base(m.Cfg.JailerCfg.ExecFile),
+				m.Cfg.JailerCfg.ID,
+				rootfsFolderName,
+			)
+
 			// copy kernel image to root fs
-			if err := linkFileToRootFS(
-				m.Cfg.JailerCfg,
-				filepath.Join(rootfs, kernelImageFileName),
+			if err := os.Link(
 				m.Cfg.KernelImagePath,
+				filepath.Join(rootfs, kernelImageFileName),
 			); err != nil {
 				return err
+			}
+
+			initrdFilename := ""
+			if m.Cfg.InitrdPath != "" {
+				initrdFilename = filepath.Base(m.Cfg.InitrdPath)
+				// copy initrd to root fs
+				if err := os.Link(
+					m.Cfg.InitrdPath,
+					filepath.Join(rootfs, initrdFilename),
+				); err != nil {
+					return err
+				}
 			}
 
 			// copy all drives to the root fs
@@ -397,10 +402,9 @@ func LinkFilesHandler(rootfs, kernelImageFileName string) Handler {
 				hostPath := StringValue(drive.PathOnHost)
 				driveFileName := filepath.Base(hostPath)
 
-				if err := linkFileToRootFS(
-					m.Cfg.JailerCfg,
-					filepath.Join(rootfs, driveFileName),
+				if err := os.Link(
 					hostPath,
+					filepath.Join(rootfs, driveFileName),
 				); err != nil {
 					return err
 				}
@@ -409,6 +413,9 @@ func LinkFilesHandler(rootfs, kernelImageFileName string) Handler {
 			}
 
 			m.Cfg.KernelImagePath = kernelImageFileName
+			if m.Cfg.InitrdPath != "" {
+				m.Cfg.InitrdPath = initrdFilename
+			}
 
 			for _, fifoPath := range []*string{&m.Cfg.LogFifo, &m.Cfg.MetricsFifo} {
 				if fifoPath == nil || *fifoPath == "" {
@@ -416,10 +423,9 @@ func LinkFilesHandler(rootfs, kernelImageFileName string) Handler {
 				}
 
 				fileName := filepath.Base(*fifoPath)
-				if err := linkFileToRootFS(
-					m.Cfg.JailerCfg,
-					filepath.Join(rootfs, fileName),
+				if err := os.Link(
 					*fifoPath,
+					filepath.Join(rootfs, fileName),
 				); err != nil {
 					return err
 				}
@@ -445,9 +451,8 @@ type NaiveChrootStrategy struct {
 }
 
 // NewNaiveChrootStrategy returns a new NaivceChrootStrategy
-func NewNaiveChrootStrategy(rootfs, kernelImagePath string) NaiveChrootStrategy {
+func NewNaiveChrootStrategy(kernelImagePath string) NaiveChrootStrategy {
 	return NaiveChrootStrategy{
-		Rootfs:          rootfs,
 		KernelImagePath: kernelImagePath,
 	}
 }
@@ -464,7 +469,7 @@ func (s NaiveChrootStrategy) AdaptHandlers(handlers *Handlers) error {
 
 	handlers.FcInit = handlers.FcInit.AppendAfter(
 		CreateLogFilesHandlerName,
-		LinkFilesHandler(filepath.Join(s.Rootfs, rootfsFolderName), filepath.Base(s.KernelImagePath)),
+		LinkFilesHandler(filepath.Base(s.KernelImagePath)),
 	)
 
 	return nil

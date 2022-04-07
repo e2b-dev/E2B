@@ -1,4 +1,4 @@
-// Copyright 2018-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -33,7 +33,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/current"
+	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/pkg/errors"
 
@@ -53,6 +53,9 @@ type StaticNetworkConf struct {
 	// NetNSPath is the path to the bind-mounted network namespace in which the VM's
 	// tap device was created and thus where the VM should execute.
 	NetNSPath string
+	// VMIfName (optional) is interface name to configure. If left blank, config
+	// is applied to the first (default) interface.
+	VMIfName string
 
 	// VMMacAddr is the mac address that callers should configure their VM to use internally.
 	VMMacAddr string
@@ -117,9 +120,8 @@ func (c StaticNetworkConf) IPBootParam() string {
 	// the "hostname" field actually just configures a hostname value for DHCP requests, thus no need to set it
 	const dhcpHostname = ""
 
-	// TODO(sipsma) we are assuming there is only one network device
-	// Just use the only network device present in the VM
-	const device = ""
+	// If blank, use the only network device present in the VM
+	device := c.VMIfName
 
 	// Don't do any autoconfiguration (i.e. DHCP, BOOTP, RARP)
 	const autoconfiguration = "off"

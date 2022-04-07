@@ -17,6 +17,8 @@ package runtime
 import (
 	"fmt"
 	"io"
+
+	"encoding/json"
 )
 
 // A ClientResponse represents a client response
@@ -25,6 +27,7 @@ type ClientResponse interface {
 	Code() int
 	Message() string
 	GetHeader(string) string
+	GetHeaders(string) []string
 	Body() io.ReadCloser
 }
 
@@ -59,5 +62,45 @@ type APIError struct {
 }
 
 func (a *APIError) Error() string {
-	return fmt.Sprintf("%s (status %d): %+v ", a.OperationName, a.Code, a.Response)
+	resp, _ := json.Marshal(a.Response)
+	return fmt.Sprintf("%s (status %d): %s", a.OperationName, a.Code, resp)
+}
+
+func (a *APIError) String() string {
+	return a.Error()
+}
+
+// IsSuccess returns true when this elapse o k response returns a 2xx status code
+func (o *APIError) IsSuccess() bool {
+	return o.Code/100 == 2
+}
+
+// IsRedirect returns true when this elapse o k response returns a 3xx status code
+func (o *APIError) IsRedirect() bool {
+	return o.Code/100 == 3
+}
+
+// IsClientError returns true when this elapse o k response returns a 4xx status code
+func (o *APIError) IsClientError() bool {
+	return o.Code/100 == 4
+}
+
+// IsServerError returns true when this elapse o k response returns a 5xx status code
+func (o *APIError) IsServerError() bool {
+	return o.Code/100 == 5
+}
+
+// IsCode returns true when this elapse o k response returns a 4xx status code
+func (o *APIError) IsCode(code int) bool {
+	return o.Code == code
+}
+
+// A ClientResponseStatus is a common interface implemented by all responses on the generated code
+// You can use this to treat any client response based on status code
+type ClientResponseStatus interface {
+	IsSuccess() bool
+	IsRedirect() bool
+	IsClientError() bool
+	IsServerError() bool
+	IsCode(int) bool
 }

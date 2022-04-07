@@ -31,10 +31,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/opentracing/opentracing-go"
+
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/logger"
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime/yamlpc"
 )
 
 // TLSClientOptions to configure client authentication with mutual TLS
@@ -66,14 +69,41 @@ type TLSClientOptions struct {
 	// If this field (and CA) is not set, the system certificate pool is used.
 	LoadedCA *x509.Certificate
 
+	// LoadedCAPool specifies a pool of RootCAs to use when validating the server's TLS certificate.
+	// If set, it will be combined with the the other loaded certificates (see LoadedCA and CA).
+	// If neither LoadedCA or CA is set, the provided pool with override the system
+	// certificate pool.
+	// The caller must not use the supplied pool after calling TLSClientAuth.
+	LoadedCAPool *x509.CertPool
+
 	// ServerName specifies the hostname to use when verifying the server certificate.
 	// If this field is set then InsecureSkipVerify will be ignored and treated as
 	// false.
 	ServerName string
 
 	// InsecureSkipVerify controls whether the certificate chain and hostname presented
-	// by the server are validated. If false, any certificate is accepted.
+	// by the server are validated. If true, any certificate is accepted.
 	InsecureSkipVerify bool
+
+	// VerifyPeerCertificate, if not nil, is called after normal
+	// certificate verification. It receives the raw ASN.1 certificates
+	// provided by the peer and also any verified chains that normal processing found.
+	// If it returns a non-nil error, the handshake is aborted and that error results.
+	//
+	// If normal verification fails then the handshake will abort before
+	// considering this callback. If normal verification is disabled by
+	// setting InsecureSkipVerify then this callback will be considered but
+	// the verifiedChains argument will always be nil.
+	VerifyPeerCertificate func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error
+
+	// SessionTicketsDisabled may be set to true to disable session ticket and
+	// PSK (resumption) support. Note that on clients, session ticket support is
+	// also disabled if ClientSessionCache is nil.
+	SessionTicketsDisabled bool
+
+	// ClientSessionCache is a cache of ClientSessionState entries for TLS
+	// session resumption. It is only used by clients.
+	ClientSessionCache tls.ClientSessionCache
 
 	// Prevents callers using unkeyed fields.
 	_ struct{}
@@ -121,11 +151,15 @@ func TLSClientAuth(opts TLSClientOptions) (*tls.Config, error) {
 
 	cfg.InsecureSkipVerify = opts.InsecureSkipVerify
 
+	cfg.VerifyPeerCertificate = opts.VerifyPeerCertificate
+	cfg.SessionTicketsDisabled = opts.SessionTicketsDisabled
+	cfg.ClientSessionCache = opts.ClientSessionCache
+
 	// When no CA certificate is provided, default to the system cert pool
 	// that way when a request is made to a server known by the system trust store,
 	// the name is still verified
 	if opts.LoadedCA != nil {
-		caCertPool := x509.NewCertPool()
+		caCertPool := basePool(opts.LoadedCAPool)
 		caCertPool.AddCert(opts.LoadedCA)
 		cfg.RootCAs = caCertPool
 	} else if opts.CA != "" {
@@ -134,9 +168,11 @@ func TLSClientAuth(opts TLSClientOptions) (*tls.Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("tls client ca: %v", err)
 		}
-		caCertPool := x509.NewCertPool()
+		caCertPool := basePool(opts.LoadedCAPool)
 		caCertPool.AppendCertsFromPEM(caCert)
 		cfg.RootCAs = caCertPool
+	} else if opts.LoadedCAPool != nil {
+		cfg.RootCAs = opts.LoadedCAPool
 	}
 
 	// apply servername overrride
@@ -148,6 +184,13 @@ func TLSClientAuth(opts TLSClientOptions) (*tls.Config, error) {
 	cfg.BuildNameToCertificate()
 
 	return cfg, nil
+}
+
+func basePool(pool *x509.CertPool) *x509.CertPool {
+	if pool == nil {
+		return x509.NewCertPool()
+	}
+	return pool
 }
 
 // TLSTransport creates a http client transport suitable for mutual tls auth
@@ -203,17 +246,21 @@ func New(host, basePath string, schemes []string) *Runtime {
 
 	// TODO: actually infer this stuff from the spec
 	rt.Consumers = map[string]runtime.Consumer{
+		runtime.YAMLMime:    yamlpc.YAMLConsumer(),
 		runtime.JSONMime:    runtime.JSONConsumer(),
 		runtime.XMLMime:     runtime.XMLConsumer(),
 		runtime.TextMime:    runtime.TextConsumer(),
 		runtime.HTMLMime:    runtime.TextConsumer(),
+		runtime.CSVMime:     runtime.CSVConsumer(),
 		runtime.DefaultMime: runtime.ByteStreamConsumer(),
 	}
 	rt.Producers = map[string]runtime.Producer{
+		runtime.YAMLMime:    yamlpc.YAMLProducer(),
 		runtime.JSONMime:    runtime.JSONProducer(),
 		runtime.XMLMime:     runtime.XMLProducer(),
 		runtime.TextMime:    runtime.TextProducer(),
 		runtime.HTMLMime:    runtime.TextProducer(),
+		runtime.CSVMime:     runtime.CSVProducer(),
 		runtime.DefaultMime: runtime.ByteStreamProducer(),
 	}
 	rt.Transport = http.DefaultTransport
@@ -244,6 +291,14 @@ func NewWithClient(host, basePath string, schemes []string, client *http.Client)
 		})
 	}
 	return rt
+}
+
+// WithOpenTracing adds opentracing support to the provided runtime.
+// A new client span is created for each request.
+// If the context of the client operation does not contain an active span, no span is created.
+// The provided opts are applied to each spans - for example to add global tags.
+func (r *Runtime) WithOpenTracing(opts ...opentracing.StartSpanOption) runtime.ClientTransport {
+	return newOpenTracingTransport(r, r.Host, opts)
 }
 
 func (r *Runtime) pickScheme(schemes []string) string {
@@ -320,7 +375,12 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	}
 
 	if auth == nil && r.DefaultAuthentication != nil {
-		auth = r.DefaultAuthentication
+		auth = runtime.ClientAuthInfoWriterFunc(func(req runtime.ClientRequest, reg strfmt.Registry) error {
+			if req.GetHeaderParams().Get(runtime.HeaderAuthorization) != "" {
+				return nil
+			}
+			return r.DefaultAuthentication.AuthenticateRequest(req, reg)
+		})
 	}
 	//if auth != nil {
 	//	if err := auth.AuthenticateRequest(request, r.Formats); err != nil {
@@ -348,6 +408,7 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	}
 	req.URL.Scheme = r.pickScheme(operation.Schemes)
 	req.URL.Host = r.Host
+	req.Host = r.Host
 
 	r.clientOnce.Do(func() {
 		r.client = &http.Client{
@@ -394,17 +455,21 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	}
 	defer res.Body.Close()
 
+	ct := res.Header.Get(runtime.HeaderContentType)
+	if ct == "" { // this should really really never occur
+		ct = r.DefaultMediaType
+	}
+
 	if r.Debug {
-		b, err2 := httputil.DumpResponse(res, true)
+		printBody := true
+		if ct == runtime.DefaultMime {
+			printBody = false // Spare the terminal from a binary blob.
+		}
+		b, err2 := httputil.DumpResponse(res, printBody)
 		if err2 != nil {
 			return nil, err2
 		}
 		r.logger.Debugf("%s\n", string(b))
-	}
-
-	ct := res.Header.Get(runtime.HeaderContentType)
-	if ct == "" { // this should really really never occur
-		ct = r.DefaultMediaType
 	}
 
 	mt, _, err := mime.ParseMediaType(ct)

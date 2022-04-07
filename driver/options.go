@@ -125,7 +125,7 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 		socketPath = getSocketPath()
 	}
 
-	htEnabled := !opts.FcDisableHt
+	//htEnabled := !opts.FcDisableHt
 
 	return firecracker.Config{
 		SocketPath:        socketPath,
@@ -141,10 +141,10 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 		MachineCfg: models.MachineConfiguration{
 			VcpuCount:   firecracker.Int64(opts.FcCPUCount),
 			CPUTemplate: models.CPUTemplate(opts.FcCPUTemplate),
-			HtEnabled:   firecracker.Bool(htEnabled),
+			//HtEnabled:   firecracker.Bool(htEnabled),
 			MemSizeMib:  firecracker.Int64(opts.FcMemSz),
 		},
-		Debug: opts.Debug,
+		//Debug: opts.Debug,
 	}, nil
 }
 
