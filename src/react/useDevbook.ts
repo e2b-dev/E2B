@@ -36,6 +36,7 @@ export interface Opts {
    */
   config: Config
   __debug__idleTime?: number
+  __debug__isMock?: boolean
 }
 
 /**
@@ -89,6 +90,7 @@ function useDevbook({
   debug,
   config,
   __debug__idleTime,
+  __debug__isMock,
 }: Opts): State {
   const [devbook, setDevbook] = useState<Devbook>()
 
@@ -104,6 +106,40 @@ function useDevbook({
   }, [devbook])
 
   useEffect(function initializeDevbook() {
+    if (__debug__isMock) {
+      const mock: any = {
+        runCmd: () => Promise.resolve(),
+        status: DevbookStatus.Connected,
+        fs: {
+          get: () => Promise.resolve(''),
+          write: () => Promise.resolve(),
+          delete: () => Promise.resolve(),
+          listDir: () => Promise.resolve(),
+          createDir: () => Promise.resolve(),
+          serialize: () => ([{
+            type: 'Root',
+            key: '/',
+            title: '/',
+          }]),
+          addListener: () => Promise.resolve(),
+          removeListener: () => Promise.resolve(),
+        },
+        destroy: () => Promise.resolve(),
+        __internal__start: () => Promise.resolve(),
+        __internal__stop: () => Promise.resolve(),
+        terminal: {
+          createSession: () => Promise.resolve({
+            destroy: () => Promise.resolve(),
+            sendData: () => Promise.resolve(),
+            resize: () => Promise.resolve(),
+          })
+        }
+      }
+      setDevbook(mock)
+      setStatus(DevbookStatus.Connected)
+      return
+    }
+
     const devbook = new Devbook({
       debug,
       env,
@@ -134,6 +170,7 @@ function useDevbook({
     // We cannot pass just the config object here 
     // because this hook would trigger on each rerender in a component using this hook.
     config.domain,
+    __debug__isMock,
   ])
 
   // This code is used for shutting down VMs when the user is idle and restarting them when user starts being active again.
