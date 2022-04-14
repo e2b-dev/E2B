@@ -177,7 +177,8 @@ class Devbook {
     /**
      * Devbook config required to correctly start your Devbook VMs.
      */
-    config: Config,
+    config: Config
+    __debug__useLocalStorage?: boolean
   }) {
     // Explicitely check for config to be defined so we can notify the developer with an error.
     if (!opts.config) throw new Error('Missing Devbook config')
@@ -190,6 +191,7 @@ class Devbook {
     Runner.config = {
       ...this.opts.config,
       logging: opts.debug,
+      useLocalStorage: opts.__debug__useLocalStorage,
     }
 
     this.context = Runner.obj.createContext({

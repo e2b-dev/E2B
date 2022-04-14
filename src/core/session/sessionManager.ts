@@ -18,12 +18,14 @@ interface GetSessionResponse {
 export interface Opts {
   domain: string
   conn: WebSocketConnection
+  useLocalStorage?: boolean
 }
 
 class SessionManager {
   private readonly logger = new Logger('SessionManager')
   private readonly url: string
   private readonly conn: WebSocketConnection
+  private readonly useLocalStorage?: boolean
 
   private userActivity = Promise.resolve()
   private rejectActivity?: () => void
@@ -33,15 +35,28 @@ class SessionManager {
 
   // Session storage is unique for each tab. We use it so each tab has its own VM = session.
   private get cachedSessionID() {
-    return sessionStorage.getItem(consts.STORAGE_SESSION_ID_KEY)
+    if (this.useLocalStorage) {
+      return localStorage.getItem(consts.STORAGE_SESSION_ID_KEY)
+    } else {
+      return sessionStorage.getItem(consts.STORAGE_SESSION_ID_KEY)
+    }
   }
   private set cachedSessionID(sessionID: string | null) {
     if (sessionID === null) {
       this.logger.log('Cleared last sessionID')
+      if (this.useLocalStorage) {
+        localStorage.removeItem(consts.STORAGE_SESSION_ID_KEY)
+      } else {
+        sessionStorage.removeItem(consts.STORAGE_SESSION_ID_KEY)
+      }
       sessionStorage.removeItem(consts.STORAGE_SESSION_ID_KEY)
     } else {
       this.logger.log(`Saved sessionID "${sessionID}" as last sessionID`)
-      sessionStorage.setItem(consts.STORAGE_SESSION_ID_KEY, sessionID)
+      if (this.useLocalStorage) {
+        localStorage.setItem(consts.STORAGE_SESSION_ID_KEY, sessionID)
+      } else {
+        sessionStorage.setItem(consts.STORAGE_SESSION_ID_KEY, sessionID)
+      }
     }
   }
 
@@ -51,11 +66,13 @@ class SessionManager {
   constructor({
     conn,
     domain,
+    useLocalStorage,
   }: Opts) {
     this.conn = conn
     this.url = `https://${domain}`
     this.logger.log('Initialize')
     this.getSession()
+    this.useLocalStorage = useLocalStorage
   }
 
   stop() {

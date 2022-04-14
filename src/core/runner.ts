@@ -9,7 +9,7 @@ import { Config } from './devbook'
 class Runner {
   private logger = new Logger('Runner')
 
-  static config: Config & { logging?: boolean }
+  static config: Config & { logging?: boolean, useLocalStorage?: boolean }
 
   private static _obj: Runner
   static get obj() {
@@ -22,6 +22,7 @@ class Runner {
   private readonly sessManager = new SessionManager({
     conn: this.conn,
     domain: Runner.config.domain,
+    useLocalStorage: Runner.config.useLocalStorage,
   })
 
   get session() {

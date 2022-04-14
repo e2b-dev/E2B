@@ -37,6 +37,7 @@ export interface Opts {
   config: Config
   __debug__idleTime?: number
   __debug__isMock?: boolean
+  __debug__useLocalStorage?: boolean
 }
 
 /**
@@ -91,6 +92,7 @@ function useDevbook({
   config,
   __debug__idleTime,
   __debug__isMock,
+  __debug__useLocalStorage,
 }: Opts): State {
   const [devbook, setDevbook] = useState<Devbook>()
 
@@ -143,6 +145,7 @@ function useDevbook({
     const devbook = new Devbook({
       debug,
       env,
+      __debug__useLocalStorage,
       config: {
         domain: config.domain,
       },
@@ -171,6 +174,7 @@ function useDevbook({
     // because this hook would trigger on each rerender in a component using this hook.
     config.domain,
     __debug__isMock,
+    __debug__useLocalStorage,
   ])
 
   // This code is used for shutting down VMs when the user is idle and restarting them when user starts being active again.
