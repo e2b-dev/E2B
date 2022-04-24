@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup the GCloud CLI
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@main
         with:
           version: "345.0.0"
           service_account_key: ${{ secrets.GCE_SA_KEY }}
