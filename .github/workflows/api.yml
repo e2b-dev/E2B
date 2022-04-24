@@ -18,23 +18,24 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - id: Auth
-        uses: 'google-github-actions/auth@v0'
+        uses: "google-github-actions/auth@v0"
         with:
-          createcreate_credentials_file: 'true'
-          workload_identity_provider: 'projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github'
-          service_account: 'github-action@devbookhq.iam.gserviceaccount.com'
+          create_credentials_file: "true"
+          project_id: ${{ secrets.GCE_PROJECT }}
+          workload_identity_provider: "projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github"
+          service_account: "github-action@devbookhq.iam.gserviceaccount.com"
 
       - name: Setup the GCloud CLI
         uses: google-github-actions/setup-gcloud@main
         with:
           version: "345.0.0"
           # service_account_key: ${{ secrets.GCE_SA_KEY }}
-          project_id: ${{ secrets.GCE_PROJECT }}
+          # project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Configure Docker
         run: |-
           gcloud --quiet auth configure-docker
-          
+
       - name: Checkout
         uses: actions/checkout@v2
 
