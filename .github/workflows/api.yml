@@ -31,6 +31,7 @@ jobs:
         run: |-
           gcloud --quiet auth configure-docker
       - name: Build the image
+        working-directory: api
         run: |-
           docker build --tag "gcr.io/$PROJECT_ID/$GCE_IMAGE:$GITHUB_SHA" .
       - name: Push the image to GCR
