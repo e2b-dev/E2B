@@ -6,10 +6,11 @@ on:
       - master
     paths:
       - api/**
+      - .github/workflows/api.yml
 
 env:
   PROJECT_ID: ${{ secrets.GCE_PROJECT }}
-  GCE_IMAGE: devbook-orchestration-api
+  GCE_IMAGE: orchestration-api
 
 jobs:
   build:
