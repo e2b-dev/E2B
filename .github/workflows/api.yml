@@ -12,8 +12,8 @@ env:
   PROJECT_ID: ${{ secrets.GCE_PROJECT }}
   GCE_IMAGE: orchestration-api
 
-permissions:
-  id-token: write
+# permissions:
+#   id-token: write
 
 jobs:
   build:
