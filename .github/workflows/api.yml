@@ -29,11 +29,7 @@ jobs:
           service_account: "github-action@devbookhq.iam.gserviceaccount.com"
 
       - name: Setup the GCloud CLI
-        uses: google-github-actions/setup-gcloud@main
-        with:
-          version: "345.0.0"
-          # service_account_key: ${{ secrets.GCE_SA_KEY }}
-          # project_id: ${{ secrets.GCE_PROJECT }}
+        uses: google-github-actions/setup-gcloud@v0
 
       - name: Configure Docker
         run: |-
