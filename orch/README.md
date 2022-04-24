@@ -1,0 +1,16 @@
+# Orchestrator
+
+## Articles
+- https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md
+- https://jvns.ca/blog/2021/01/20/day-42--writing-a-go-program-to-manage-firecracker-vms/
+- https://github.com/weaveworks/ignite/blob/main/pkg/dmlegacy/snapshot.go#L61-L118
+- https://github.com/cneira/firecracker-task-driver/issues/20
+- https://github.com/firecracker-microvm/firecracker/issues/2027
+- https://github.com/cneira/plugins
+- https://github.com/codebench-dev/worker
+- https://jvns.ca/blog/2021/01/27/day-47--using-device-mapper-to-manage-firecracker-images/
+- https://github.com/firecracker-microvm/firecracker/blob/main/docs/mmds/mmds-user-guide.md
+- https://www.koyeb.com/blog/the-koyeb-serverless-engine-from-kubernetes-to-nomad-firecracker-and-kuma
+- https://stanislas.blog/2021/08/firecracker/
+- https://webapp.io/blog/github-actions-10x-faster-with-firecracker/
+- https://timperrett.com/2017/05/13/nomad-with-envoy-and-consul/
