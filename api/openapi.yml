@@ -1,0 +1,78 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Devbook
+  description: Devbook API
+
+tags:
+  - name: session
+    description: Managing VM sessions
+
+paths:
+  /session:
+    post:
+      tags:
+        - session
+      description: Create a session on the server
+      responses:
+        "200":
+          description: Successfully created a session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /session/{session_id}:
+    delete:
+      tags:
+        - session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Delete session on the server
+      responses:
+        "200":
+          description: Successfully deleted session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Session:
+      required:
+        - session_id
+      properties:
+        session_id:
+          type: string
+          description: Identifier of the session
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message

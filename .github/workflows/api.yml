@@ -1,0 +1,37 @@
+name: Build Orchestration API
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - api/**
+
+env:
+  PROJECT_ID: ${{ secrets.GCE_PROJECT }}
+  GCE_IMAGE: devbook-orchestration-api
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup the GCloud CLI
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: "345.0.0"
+          service_account_key: ${{ secrets.GCE_SA_KEY }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+
+      - name: Configure Docker
+        run: |-
+          gcloud --quiet auth configure-docker
+      - name: Build the image
+        run: |-
+          docker build --tag "gcr.io/$PROJECT_ID/$GCE_IMAGE:$GITHUB_SHA" .
+      - name: Push the image to GCR
+        run: |-
+          docker push "gcr.io/$PROJECT_ID/$GCE_IMAGE:$GITHUB_SHA"
