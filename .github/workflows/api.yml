@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Setup
-        uses: ./.github/workflows/setup.yml
+        uses: ./.github/workflows/setup
 
       - name: Build the image
         working-directory: api
