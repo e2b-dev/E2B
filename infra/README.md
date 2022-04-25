@@ -12,3 +12,4 @@ https://github.com/hashicorp/terraform-google-nomad
 - https://github.com/picatz/terraform-google-nomad (preemptible rolling?)
 - https://github.com/picatz/terraform-google-nomad/issues/39
 - https://github.com/picatz/terraform-google-nomad/issues/13
+- https://stackoverflow.com/questions/64397938/how-to-integrate-terraform-state-into-github-action-workflow
