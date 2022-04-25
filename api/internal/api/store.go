@@ -34,8 +34,6 @@ func sendAPIStoreError(c *gin.Context, code int, message string) {
 }
 
 func (p *APIStore) PostSession(c *gin.Context) {
-	// We now have a pet, let's add it to our "database".
-
 	// We're always asynchronous, so lock unsafe operations below
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
@@ -61,5 +59,5 @@ func (p *APIStore) DeleteSessionSessionId(c *gin.Context, id string) {
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusNoContent, Session{SessionId: id})
 }

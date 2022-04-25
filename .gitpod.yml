@@ -7,7 +7,11 @@ vscode:
     - hashicorp.terraform
 
 tasks:
-  - init: cd api && make build
-  - init: cd orch
-  - init: cd ifra
-  - init: cd env
+  - name: Setup
+    init: |-
+      go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+      go install honnef.co/go/tools/cmd/staticcheck@latest
+
+github:
+  prebuilds:
+    branches: true
