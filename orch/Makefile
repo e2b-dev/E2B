@@ -1,2 +1,2 @@
-push:
+build:
 	packer build .
