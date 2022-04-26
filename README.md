@@ -7,7 +7,7 @@ Codified setup of all services that deploys them on GCP.
 ## [Orchestrator](/orch/)
 Nomad based system for managing services and handling provisioning of VM sessions. It uses Consul and Envoy for networking and monitoring.
 
-## [Environments](/env/)
+## [Environments](/envs/)
 Pipeline for building rootfs and snapshots from provided dockerfiles. The rootfs and snapshots are then used for provisioning VMs with orchestrator.
 
 ## [API](/api/)

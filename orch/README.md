@@ -15,3 +15,6 @@
 - https://webapp.io/blog/github-actions-10x-faster-with-firecracker/
 - https://timperrett.com/2017/05/13/nomad-with-envoy-and-consul/
 - https://firecracker-microvm.slack.com/archives/CG564DPTQ/p1650802849629629
+- https://learn.hashicorp.com/collections/nomad/load-balancing
+- https://discuss.hashicorp.com/t/creating-persistent-sessions-containers-with-nomad/38504/2
+- 

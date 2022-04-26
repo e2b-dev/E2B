@@ -1,4 +1,4 @@
-name: Build Orchestration API
+name: Orchestration Services - API
 
 on:
   push:

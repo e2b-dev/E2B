@@ -11,10 +11,11 @@ type Nomad struct {
 }
 
 const SessionJobID string = "vm-session"
+const NomadAddress string = "0.0.0.0"
 
 func InitNomad() *Nomad {
 	nomadConfig := api.Config{
-		Address: "0.0.0.0",
+		Address: NomadAddress,
 	}
 
 	nomad, err := api.NewClient(&nomadConfig)
