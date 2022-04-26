@@ -18,3 +18,5 @@
 - https://learn.hashicorp.com/collections/nomad/load-balancing
 - https://discuss.hashicorp.com/t/creating-persistent-sessions-containers-with-nomad/38504/2
 - https://learn.hashicorp.com/tutorials/nomad/prometheus-metrics
+- https://github.com/firecracker-microvm/firecracker/blob/main/docs/prod-host-setup.md
+- https://github.com/firecracker-microvm/firecracker/issues/329
