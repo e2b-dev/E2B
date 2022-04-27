@@ -5,12 +5,13 @@ on:
     branches:
       - master
 
-permissions:
-  id-token: write
-  contents: read
+# permissions:
+#   id-token: write
+#   contents: read
 
 jobs:
   changes:
+    name: Check repo changes
     runs-on: ubuntu-20.04
     outputs:
       api: ${{ steps.filter.outputs.api }}
@@ -18,7 +19,11 @@ jobs:
       envs: ${{ steps.filter.outputs.envs }}
       infra: ${{ steps.filter.outputs.infra }}
     steps:
-      - uses: dorny/paths-filter@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Check changes
+        uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
@@ -36,21 +41,25 @@ jobs:
               - '.github/workflows/infra.yml'
 
   api:
+    name: API
     needs: changes
     if: ${{ needs.changes.outputs.api == 'true' }}
     uses: ./.github/workflows/api.yml
 
   orch:
+    name: Orchestrator
     needs: changes
     if: ${{ needs.changes.outputs.orch == 'true' }}
     uses: ./.github/workflows/orch.yml
 
   envs:
+    name: Environments
     needs: changes
     if: ${{ needs.changes.outputs.envs == 'true' }}
     uses: ./.github/workflows/envs.yml
 
   infra:
+    name: Infrastructure
     needs: [changes, api, orch, envs]
     if: ${{ always() && (needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true') }}
     uses: ./.github/workflows/infra.yml
