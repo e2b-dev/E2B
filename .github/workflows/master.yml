@@ -5,9 +5,9 @@ on:
     branches:
       - master
 
-# permissions:
-#   id-token: write
-#   contents: read
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   changes:
