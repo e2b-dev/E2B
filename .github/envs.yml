@@ -1,13 +1,10 @@
-# Estimated time 2m 40s
-name: Orchestration Services - Orchestrator
+name: Orchestration Services - Environments
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - orch/**
-      - .github/workflows/orch.yml
+  workflow_call:
+
+env:
+  PROJECT_ID: ${{ secrets.GCE_PROJECT }}
 
 permissions:
   id-token: write
@@ -27,16 +24,3 @@ jobs:
           create_credentials_file: true
           workload_identity_provider: projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github
           service_account: github-action@devbookhq.iam.gserviceaccount.com
-
-      - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v1
-
-      - name: Initialize Packer plugins
-        working-directory: orch
-        run: |-
-          make init
-
-      - name: Build the image on GCE VM and save it on GCP
-        working-directory: orch
-        run: |-
-          make build

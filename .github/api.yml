@@ -1,21 +1,11 @@
-# Estimated time 1m 49s
 name: Orchestration Services - API
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - api/**
-      - .github/workflows/api.yml
+  workflow_call:
 
 env:
   PROJECT_ID: ${{ secrets.GCE_PROJECT }}
   GCE_IMAGE: orchestration-api
-
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   build:

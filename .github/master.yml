@@ -1,0 +1,56 @@
+name: Orchestration Services
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-20.04
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      orch: ${{ steps.filter.outputs.orch }}
+      envs: ${{ steps.filter.outputs.envs }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'api/**'
+              - '.github/workflows/api.yml'
+            orch:
+              - 'orch/**'
+              - '.github/workflows/orch.yml'
+            envs:
+              - 'envs/**'
+              - '.github/workflows/envs.yml'
+            infra:
+              - 'envs/**'
+              - '.github/workflows/infra.yml'
+
+  api:
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' }}
+    uses: ./.github/workflows/api.yml
+
+  orch:
+    needs: changes
+    if: ${{ needs.changes.outputs.orch == 'true' }}
+    uses: ./.github/workflows/orch.yml
+
+  envs:
+    needs: changes
+    if: ${{ needs.changes.outputs.envs == 'true' }}
+    uses: ./.github/workflows/envs.yml
+
+  infra:
+    needs: [changes, api, orch, envs]
+    if: ${{ always() && (needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true') }}
+    uses: ./.github/workflows/infra.yml
