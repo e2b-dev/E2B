@@ -8,9 +8,6 @@
 #       - infra/**
 #       - .github/workflows/infra.yml
 
-# env:
-#   PROJECT_ID: ${{ secrets.GCE_PROJECT }}
-
 # permissions:
 #   id-token: write
 #   contents: read
@@ -24,23 +21,23 @@
 #         uses: actions/checkout@v3
 
 #       - id: Auth
-#         uses: "google-github-actions/auth@v0"
+#         uses: google-github-actions/auth@v0
 #         with:
 #           create_credentials_file: true
-#           workload_identity_provider: "projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github"
-#           service_account: "github-action@devbookhq.iam.gserviceaccount.com"
+#           workload_identity_provider: projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github
+#           service_account: github-action@devbookhq.iam.gserviceaccount.com
 
 #       - name: Setup Terraform
 #         uses: hashicorp/setup-terraform@v2
 
-#       - name: Init Terraform
-#         run: terraform init
-
-#       - name: Terraform Format
-#         run: terraform fmt -check
+#       - name: Terraform Init
+#         working-directory: infra
+#         run: make init
 
 #       - name: Terraform Plan
-#         run: terraform plan
+#         working-directory: infra
+#         run: make plan
 
 #       - name: Terraform Apply
-#         run: terraform apply -auto-approve
+#         working-directory: infra
+#         run: make deploy

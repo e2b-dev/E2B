@@ -1,11 +1,10 @@
-# ---------------------------------------------------------------------------------------------------------------------
-# THESE TEMPLATES REQUIRE TERRAFORM VERSION 0.12.0 AND ABOVE
-# ---------------------------------------------------------------------------------------------------------------------
-
 terraform {
-  # The modules has been updated with 0.12 syntax, which means the example is no longer
-  # compatible with any versions below 0.12.
-  required_version = ">= 0.12"
+  required_version = ">= 1.1.9"
+
+  backend "gcs" {
+    bucket = "devbook-terraform-state"
+    prefix = "terraform/orchestration/state"
+  }
 }
 
 provider "google-beta" {
@@ -13,11 +12,11 @@ provider "google-beta" {
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# CREATE A REGIONAL MANAGED INSTANCE GROUP TO RUN THE CONSUL SERVERS
+# CREATE A GCE MANAGED INSTANCE GROUP TO RUN SERVERS
 # ---------------------------------------------------------------------------------------------------------------------
 
 # Create the Regional Managed Instance Group where Consul Server will live.
-resource "google_compute_region_instance_group_manager" "consul_server" {
+resource "google_compute_region_instance_group_manager" "server_cluster" {
   project = var.gcp_project_id
   name    = "${var.cluster_name}-ig"
 
@@ -27,7 +26,7 @@ resource "google_compute_region_instance_group_manager" "consul_server" {
   region             = var.gcp_region
 
   version {
-    instance_template = google_compute_instance_template.consul_server.self_link
+    instance_template = google_compute_instance_template.server_cluster.self_link
   }
 
   # Consul Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
@@ -47,7 +46,7 @@ resource "google_compute_region_instance_group_manager" "consul_server" {
   target_size  = var.cluster_size
 
   depends_on = [
-    google_compute_instance_template.consul_server
+    google_compute_instance_template.server_cluster
   ]
 
   lifecycle {
@@ -56,7 +55,7 @@ resource "google_compute_region_instance_group_manager" "consul_server" {
 }
 
 # Create the Instance Template that will be used to populate the Managed Instance Group.
-resource "google_compute_instance_template" "consul_server" {
+resource "google_compute_instance_template" "server_cluster" {
   project = var.gcp_project_id
 
   name_prefix = var.cluster_name

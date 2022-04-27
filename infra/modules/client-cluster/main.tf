@@ -1,10 +1,10 @@
-# ---------------------------------------------------------------------------------------------------------------------
-# This module has been updated with 0.12 syntax, which means the example is no longer
-# compatible with any versions below 0.12.
-# ---------------------------------------------------------------------------------------------------------------------
-
 terraform {
-  required_version = ">= 0.12"
+  required_version = ">= 1.1.9"
+
+  backend "gcs" {
+    bucket = "devbook-terraform-state"
+    prefix = "terraform/orchestration/state"
+  }
 }
 
 provider "google-beta" {
@@ -12,19 +12,19 @@ provider "google-beta" {
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# CREATE A GCE MANAGED INSTANCE GROUP TO RUN NOMAD
+# CREATE A GCE MANAGED INSTANCE GROUP TO RUN CLIENTS
 # ---------------------------------------------------------------------------------------------------------------------
 
 # Create the Managed Instance Group where Nomad will run.
-resource "google_compute_region_instance_group_manager" "nomad" {
+resource "google_compute_region_instance_group_manager" "client_cluster" {
   project = var.gcp_project_id
-  name = "${var.cluster_name}-ig"
+  name    = "${var.cluster_name}-ig"
 
   provider = google-beta
 
   base_instance_name = var.cluster_name
   instance_template  = data.template_file.compute_instance_template_self_link.rendered
-  region               = var.gcp_region
+  region             = var.gcp_region
 
   # Restarting all Nomad servers at the same time will result in data loss and down time. Therefore, the update strategy
   # used to roll out a new GCE Instance Template must be a rolling update. But since Terraform does not yet support
@@ -162,11 +162,11 @@ module "firewall_rules" {
   cluster_tag_name = var.cluster_tag_name
 
   allowed_inbound_cidr_blocks_http = var.allowed_inbound_cidr_blocks_http
-  allowed_inbound_cidr_blocks_rpc = var.allowed_inbound_cidr_blocks_rpc
+  allowed_inbound_cidr_blocks_rpc  = var.allowed_inbound_cidr_blocks_rpc
   allowed_inbound_cidr_blocks_serf = var.allowed_inbound_cidr_blocks_serf
 
   allowed_inbound_tags_http = var.allowed_inbound_tags_http
-  allowed_inbound_tags_rpc = var.allowed_inbound_tags_rpc
+  allowed_inbound_tags_rpc  = var.allowed_inbound_tags_rpc
   allowed_inbound_tags_serf = var.allowed_inbound_tags_serf
 
   http_port = 4646
