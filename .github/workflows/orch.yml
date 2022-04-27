@@ -34,4 +34,4 @@ jobs:
       - name: Build the image on GCE
         working-directory: orch
         run: |-
-          make push
+          make build
