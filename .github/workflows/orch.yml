@@ -36,7 +36,7 @@ jobs:
         run: |-
           make init
 
-      - name: Build the image on GCE
+      - name: Build the image on GCE VM and save it on GCP
         working-directory: orch
         run: |-
           make build
