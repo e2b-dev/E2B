@@ -11,23 +11,23 @@ output "cluster_tag_name" {
 }
 
 output "instance_group_url" {
-  value = google_compute_region_instance_group_manager.consul_server.self_link
+  value = google_compute_region_instance_group_manager.server_cluster.self_link
 }
 
 output "instance_group_name" {
-  value = google_compute_region_instance_group_manager.consul_server.name
+  value = google_compute_region_instance_group_manager.server_cluster.name
 }
 
 output "instance_template_url" {
-  value = google_compute_instance_template.consul_server.self_link
+  value = google_compute_instance_template.server_cluster.self_link
 }
 
 output "instance_template_name" {
-  value = google_compute_instance_template.consul_server.name
+  value = google_compute_instance_template.server_cluster.name
 }
 
 output "instance_template_metadata_fingerprint" {
-  value = google_compute_instance_template.consul_server.metadata_fingerprint
+  value = google_compute_instance_template.server_cluster.metadata_fingerprint
 }
 
 output "firewall_rule_intracluster_url" {

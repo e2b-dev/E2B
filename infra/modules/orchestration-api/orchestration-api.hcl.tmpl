@@ -1,3 +1,7 @@
+variable "image_name" {
+  type = string
+}
+
 job "orchestration-api" {
   # Spread the tasks in this job between us-west-1 and us-east-1.
   datacenters = ["dc1"]
@@ -18,7 +22,7 @@ job "orchestration-api" {
   # placed on the same host.
   group "api-server" {
     # Specify the number of these tasks we want.
-    count = 3
+    count = 1
 
     # Create an individual task (unit of work). This particular
     # task utilizes a Docker container to front a web application.
@@ -29,16 +33,10 @@ job "orchestration-api" {
 
       # Configuration is specific to each driver.
       config {
-        image = "r.cfcr.io/$CF_ACCOUNT/$CF_REPO_NAME:$CF_BRANCH_TAG_NORMALIZED"
-
-        auth {
-          username = "$CF_ACCOUNT"
-          password = "$CFCR_LOGIN_TOKEN"
-          server_address  = "r.cfcr.io"
-        }
+        image = var.image_name
 
         port_map {
-          http = 8080
+          http = 80
         }
       }
 

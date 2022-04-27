@@ -1,12 +1,3 @@
-terraform {
-  required_version = ">= 1.1.9"
-
-  backend "gcs" {
-    bucket = "devbook-terraform-state"
-    prefix = "terraform/orchestration/state"
-  }
-}
-
 provider "google-beta" {
   region = var.gcp_region
 }
@@ -22,14 +13,19 @@ resource "google_compute_region_instance_group_manager" "client_cluster" {
 
   provider = google-beta
 
+  version {
+    name              = "v1"
+    instance_template = data.template_file.compute_instance_template_self_link.rendered
+  }
+
   base_instance_name = var.cluster_name
-  instance_template  = data.template_file.compute_instance_template_self_link.rendered
   region             = var.gcp_region
 
-  # Restarting all Nomad servers at the same time will result in data loss and down time. Therefore, the update strategy
-  # used to roll out a new GCE Instance Template must be a rolling update. But since Terraform does not yet support
-  # ROLLING_UPDATE, such updates must be manually rolled out for now.
-  update_strategy = var.instance_group_update_strategy
+  update_policy {
+    minimal_action  = "REPLACE"
+    type            = "PROACTIVE"
+    max_surge_fixed = 5
+  }
 
   target_pools = var.instance_group_target_pools
   target_size  = var.cluster_size
@@ -40,10 +36,20 @@ resource "google_compute_region_instance_group_manager" "client_cluster" {
   ]
 }
 
+resource "google_compute_disk" "fc-init-data" {
+  name                      = "fc-init-data"
+  type                      = "pd-ssd"
+  zone                      = "us-central1-a"
+  image                     = "fc-init-test-data"
+  physical_block_size_bytes = 16384
+}
+
 # Create the Instance Template that will be used to populate the Managed Instance Group.
 # NOTE: This Compute Instance Template is only created if var.assign_public_ip_addresses is true.
 resource "google_compute_instance_template" "nomad_public" {
   count = var.assign_public_ip_addresses ? 1 : 0
+
+  project = var.gcp_project_id
 
   name_prefix = var.cluster_name
   description = var.cluster_description
@@ -60,6 +66,8 @@ resource "google_compute_instance_template" "nomad_public" {
     var.custom_metadata,
   )
 
+  min_cpu_platform = "Intel Haswell"
+
   scheduling {
     automatic_restart   = true
     on_host_maintenance = "MIGRATE"
@@ -69,9 +77,15 @@ resource "google_compute_instance_template" "nomad_public" {
   disk {
     boot         = true
     auto_delete  = true
-    source_image = var.source_image
+    source_image = data.google_compute_image.source_image.self_link
     disk_size_gb = var.root_volume_disk_size_gb
     disk_type    = var.root_volume_disk_type
+  }
+
+  disk {
+    source      = google_compute_disk.fc-init-data.name
+    device_name = google_compute_disk.fc-init-data.name
+    mode        = "READONLY"
   }
 
   network_interface {
@@ -96,6 +110,7 @@ resource "google_compute_instance_template" "nomad_public" {
   # which this Terraform resource depends will also need this lifecycle statement.
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [attached_disk]
   }
 }
 
@@ -103,6 +118,8 @@ resource "google_compute_instance_template" "nomad_public" {
 # NOTE: This Compute Instance Template is only created if var.assign_public_ip_addresses is false.
 resource "google_compute_instance_template" "nomad_private" {
   count = var.assign_public_ip_addresses ? 0 : 1
+
+  project = var.gcp_project_id
 
   name_prefix = var.cluster_name
   description = var.cluster_description
@@ -119,6 +136,8 @@ resource "google_compute_instance_template" "nomad_private" {
     var.custom_metadata,
   )
 
+  min_cpu_platform = "Intel Haswell"
+
   scheduling {
     automatic_restart   = true
     on_host_maintenance = "MIGRATE"
@@ -128,7 +147,13 @@ resource "google_compute_instance_template" "nomad_private" {
   disk {
     boot         = true
     auto_delete  = true
-    source_image = var.source_image
+    source_image = data.google_compute_image.source_image.self_link
+  }
+
+  disk {
+    source      = google_compute_disk.fc-init-data.name
+    device_name = google_compute_disk.fc-init-data.name
+    mode        = "READONLY"
   }
 
   network_interface {
@@ -148,6 +173,7 @@ resource "google_compute_instance_template" "nomad_private" {
   # which this Terraform resource depends will also need this lifecycle statement.
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [attached_disk]
   }
 }
 
@@ -196,4 +222,9 @@ data "template_file" "compute_instance_template_self_link" {
     ),
     0,
   )
+}
+
+data "google_compute_image" "source_image" {
+  family  = "orch"
+  project = var.image_project_id != null ? var.image_project_id : var.gcp_project_id
 }

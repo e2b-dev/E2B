@@ -1,3 +1,11 @@
+#!/bin/bash
+# This script can be used to install Consul and its dependencies. This script has been tested with the following
+# operating systems:
+#
+# - Ubuntu 18.04
+
+set -e
+
 function install {
   local version="latest"
 

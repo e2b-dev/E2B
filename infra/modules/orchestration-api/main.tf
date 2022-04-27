@@ -3,19 +3,29 @@ provider "nomad" {
   address = "http://localhost:4646"
 }
 
-variable "version" {
-  default = "latest"
+variable "project_id" {
+  type    = string
+  default = "devbookhq"
 }
 
-data "template_file" "job" {
-  template = file("./orchestration-api.hcl.tmpl")
+variable "api_image_name" {
+  type    = string
+  default = "orchestration-api"
+}
 
-  vars {
-    version = var.version
-  }
+data "google_container_registry_image" "api_image" {
+  name    = var.api_image_name
+  project = var.project_id
 }
 
 # Register a job
 resource "nomad_job" "orchestration_api" {
-  jobspec = data.template_file.job.rendered
+  jobspec = file("${path.module}/orchestration-api.hcl.tmpl")
+
+  hcl2 {
+    enabled = true
+    vars = {
+      image_name = data.google_container_registry_image.api_image.image_url
+    }
+  }
 }

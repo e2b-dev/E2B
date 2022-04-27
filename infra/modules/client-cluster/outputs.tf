@@ -7,15 +7,15 @@ output "cluster_tag_name" {
 }
 
 output "instance_group_id" {
-  value = google_compute_region_instance_group_manager.nomad.id
+  value = google_compute_region_instance_group_manager.client_cluster.id
 }
 
 output "instance_group_url" {
-  value = google_compute_region_instance_group_manager.nomad.self_link
+  value = google_compute_region_instance_group_manager.client_cluster.self_link
 }
 
 output "instance_group_name" {
-  value = google_compute_region_instance_group_manager.nomad.name
+  value = google_compute_region_instance_group_manager.client_cluster.name
 }
 
 output "instance_template_url" {

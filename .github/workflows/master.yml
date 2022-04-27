@@ -77,7 +77,7 @@ jobs:
   infra:
     name: Infrastructure
     needs: [changes, api, orch, envs]
-    if: ${{ always() && (needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true') }}
+    if: ${{ needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true' }}
     uses: ./.github/workflows/infra.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}

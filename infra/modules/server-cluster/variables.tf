@@ -6,52 +6,55 @@
 variable "gcp_project_id" {
   description = "The project to deploy the cluster in"
   type        = string
-  default = "devbookhq"
+  default     = "devbookhq"
 }
 
 variable "gcp_region" {
   description = "All GCP resources will be launched in this Region."
   type        = string
-  default = "us-central1"
+  default     = "us-central1"
 }
 
 variable "cluster_name" {
   description = "The name of the Consul cluster (e.g. consul-stage). This variable is used to namespace all resources created by this module."
   type        = string
-  default = "server-prod"
+  default     = "server-prod"
 }
 
 variable "cluster_tag_name" {
   description = "The tag name the Compute Instances will look for to automatically discover each other and form a cluster. TIP: If running more than one Consul Server cluster, each cluster should have its own unique tag name."
   type        = string
-  default = "aegis"
+  default     = "aegis"
 }
 
 variable "machine_type" {
   description = "The machine type of the Compute Instance to run for each node in the cluster (e.g. n1-standard-1)."
   type        = string
-  default = "n1-standard-1"
+  default     = "n1-standard-1"
 }
 
 variable "cluster_size" {
   description = "The number of nodes to have in the Consul cluster. We strongly recommended that you use either 3 or 5."
   type        = number
-  default = 1
+  default     = 1
 }
 
-variable "source_image" {
-  description = "The source image used to create the boot disk for a Consul Server node. Only images based on Ubuntu 18.04 LTS are supported at this time."
+variable "image_family" {
+  description = "The source image family used to create the boot disk for a Vault node. Only images based on Ubuntu 16.04 or 18.04 LTS are supported at this time."
   type        = string
+  default     = "orch"
 }
 
 variable "startup_script" {
   description = "A Startup Script to execute when the server first boots. We recommend passing in a bash script that executes the run-consul script, which should have been installed in the Consul Google Image by the install-consul module."
   type        = string
+  default     = "/opt/init/start-server.sh"
 }
 
 variable "shutdown_script" {
   description = "A Shutdown Script to execute when the server recieves a restart or stop event. We recommend passing in a bash script that executes the `consul leave` command."
   type        = string
+  default     = "/opt/init/stop.sh"
 }
 
 # ---------------------------------------------------------------------------------------------------------------------

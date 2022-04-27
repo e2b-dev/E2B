@@ -28,3 +28,5 @@ Add monotoring and logging (consul, envoy, prometheus?)
 - https://cloud.google.com/compute/docs/disks/regional-persistent-disk#use_multi_instances
 - https://gist.github.com/caleblloyd/4651e713689bfe43c74d
 - Using packer for creating rootfs images instead of docker?
+- https://cloud.google.com/compute/docs/disks/local-ssd#choose_an_interface
+- https://cloud.google.com/compute/docs/disks/mount-ram-disks

@@ -6,6 +6,10 @@
 
 Test run errors of the disk image
 
+Is latest disk image deployed
+
+Nomad address
+
 ### Sprint 2
 
 Deploy proxy that allows to access sessions
@@ -26,3 +30,4 @@ Do rolling updates
 - https://github.com/picatz/terraform-google-nomad/issues/13
 - https://stackoverflow.com/questions/64397938/how-to-integrate-terraform-state-into-github-action-workflow
 - https://www.terraform.io/language/settings/backends/gcs
+- https://todevornot.com/post/618457167027126272/gce-instance-with-persistent-disk-provisioned

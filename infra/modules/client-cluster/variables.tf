@@ -6,53 +6,61 @@
 variable "gcp_project_id" {
   description = "The project to deploy the cluster in"
   type        = string
-  default = "devbookhq"
+  default     = "devbookhq"
 }
 
 variable "gcp_region" {
   description = "All GCP resources will be launched in this Region."
   type        = string
-  default = "us-central1"
+  default     = "us-central1"
 }
 
 variable "cluster_name" {
   description = "The name of the Nomad cluster (e.g. nomad-stage). This variable is used to namespace all resources created by this module."
   type        = string
-  default = "client-prod"
+  default     = "client-prod"
 }
 
 variable "cluster_tag_name" {
   description = "The tag name the Compute Instances will look for to automatically discover each other and form a cluster. TIP: If running more than one Nomad cluster, each cluster should have its own unique tag name."
   type        = string
-  default = "xiphos"
+  default     = "xiphos"
 }
 
 variable "machine_type" {
   description = "The machine type of the Compute Instance to run for each node in the cluster (e.g. n1-standard-1)."
   type        = string
-  default = "n1-standard-1"
+  default     = "n1-standard-1"
 }
 
 variable "cluster_size" {
   description = "The number of nodes to have in the Nomad cluster. We strongly recommended that you use either 3 or 5."
   type        = number
-  default = 1
+  default     = 1
 }
 
-variable "source_image" {
-  description = "The source image used to create the boot disk for a Vault node. Only images based on Ubuntu 16.04 or 18.04 LTS are supported at this time."
+variable "image_family" {
+  description = "The source image family used to create the boot disk for a Vault node. Only images based on Ubuntu 16.04 or 18.04 LTS are supported at this time."
   type        = string
+  default     = "orch"
 }
 
 variable "startup_script" {
   description = "A Startup Script to execute when the server first boots. We recommend passing in a bash script that executes the run-vault script, which should have been installed in the Vault Google Image by the install-vault module."
   type        = string
+  default     = "/opt/init/start-client.sh"
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.
 # ---------------------------------------------------------------------------------------------------------------------
+
+variable "image_project_id" {
+  description = "The name of the GCP Project where the image is located. Useful when using a separate project for custom images. If empty, var.gcp_project_id will be used."
+  type        = string
+  default     = null
+}
 
 variable "instance_group_target_pools" {
   description = "To use a Load Balancer with the Consul cluster, you must populate this value. Specifically, this is the list of Target Pool URLs to which new Compute Instances in the Instance Group created by this module will be added. Note that updating the Target Pools attribute does not affect existing Compute Instances."
@@ -69,7 +77,7 @@ variable "cluster_description" {
 variable "assign_public_ip_addresses" {
   description = "If true, each of the Compute Instances will receive a public IP address and be reachable from the Public Internet (if Firewall rules permit). If false, the Compute Instances will have private IP addresses only. In production, this should be set to false."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "network_name" {

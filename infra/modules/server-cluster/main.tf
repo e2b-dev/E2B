@@ -1,12 +1,3 @@
-terraform {
-  required_version = ">= 1.1.9"
-
-  backend "gcs" {
-    bucket = "devbook-terraform-state"
-    prefix = "terraform/orchestration/state"
-  }
-}
-
 provider "google-beta" {
   region = var.gcp_region
 }
@@ -86,7 +77,7 @@ resource "google_compute_instance_template" "server_cluster" {
   disk {
     boot         = true
     auto_delete  = true
-    source_image = data.google_compute_image.image.self_link
+    source_image = data.google_compute_image.source_image.self_link
     disk_size_gb = var.root_volume_disk_size_gb
     disk_type    = var.root_volume_disk_type
   }
@@ -229,7 +220,7 @@ resource "google_compute_firewall" "allow_inbound_dns" {
 
 # This is a workaround for a provider bug in Terraform v0.11.8. For more information please refer to:
 # https://github.com/terraform-providers/terraform-provider-google/issues/2067.
-data "google_compute_image" "image" {
-  name    = var.source_image
+data "google_compute_image" "source_image" {
+  family  = "orch"
   project = var.image_project_id != null ? var.image_project_id : var.gcp_project_id
 }

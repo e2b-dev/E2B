@@ -67,4 +67,13 @@ build {
     script          = "./modules/firecracker-setup/install-firecracker.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
+
+  provisioner "shell" {
+    inline = ["sudo mkdir -p /opt/init"]
+  }
+
+  provisioner "file" {
+    source = "./modules/init"
+    destination = "/tmp/init/"
+  }
 }
