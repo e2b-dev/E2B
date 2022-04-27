@@ -9,6 +9,10 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  WORKLOAD_IDENTITY_PROVIDER: projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github
+  SERVICE_ACCOUNT_EMAIL: github-action@devbookhq.iam.gserviceaccount.com
+
 jobs:
   changes:
     name: Check repo changes
@@ -49,21 +53,35 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.api == 'true' }}
     uses: ./.github/workflows/api.yml
+    with:
+      workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
+      service_account_email: $SERVICE_ACCOUNT_EMAIL
+      project_id: devbookhq
+      image_name: orchestration-api
 
   orch:
     name: Orchestrator
     needs: changes
     if: ${{ needs.changes.outputs.orch == 'true' }}
     uses: ./.github/workflows/orch.yml
+    with:
+      workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
+      service_account_email: $SERVICE_ACCOUNT_EMAIL
 
   envs:
     name: Environments
     needs: changes
     if: ${{ needs.changes.outputs.envs == 'true' }}
     uses: ./.github/workflows/envs.yml
+    with:
+      workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
+      service_account_email: $SERVICE_ACCOUNT_EMAIL
 
   infra:
     name: Infrastructure
     needs: [changes, api, orch, envs]
     if: ${{ always() && (needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true') }}
     uses: ./.github/workflows/infra.yml
+    with:
+      workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
+      service_account_email: $SERVICE_ACCOUNT_EMAIL
