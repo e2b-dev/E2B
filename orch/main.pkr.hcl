@@ -1,5 +1,11 @@
 packer {
   required_version = ">= 1.8.0"
+  required_plugins {
+    googlecompute = {
+      version = ">= 1.0.11"
+      source  = "github.com/hashicorp/googlecompute"
+    }
+  }
 }
 
 # The "legacy_isotime" function has been provided for backwards compatability, but we recommend switching to the timestamp and formatdate functions.
@@ -10,6 +16,7 @@ source "googlecompute" "ubuntu20-image" {
   source_image_family = "ubuntu-2004-lts"
   ssh_username        = "ubuntu"
   zone                = var.zone
+  disk_size           = 10
 
   # This is used only for building the image and the GCE VM is then deleted
   machine_type        = "n1-standard-2"

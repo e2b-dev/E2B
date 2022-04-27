@@ -3,11 +3,6 @@
 ## TODO
 
 ### Sprint 1
-```
-==> googlecompute.ubuntu20-image: E: Package 'unzip' has no installation candidate
-==> googlecompute.ubuntu20-image: E: Unable to locate package jq
-==> googlecompute.ubuntu20-image: cp: cannot stat '/tmp/supervisord.conf': No such file or directory
-```
 
 Install firecracker plugin
 
@@ -15,7 +10,7 @@ Add CNI plugins
 
 Add network config
 
-Deploy correct image with Terraform - versioning?
+Deploy correct image with Terraform - versioning? (https://www.packer.io/docs/datasources/hcp/hcp-packer-image)
 
 ### Sprint 2
 
@@ -34,6 +29,8 @@ outside world session exposure
 tinit + communication with SDK - is WS best solution? RPC protocol definitons? What are the most primitive building block from which we can build the whole interaction?
 
 authentication of session access
+
+Delete old disk images
 
 Add monotoring and logging (consul, envoy, prometheus?)
 
@@ -65,3 +62,4 @@ Evaluate
 - https://github.com/firecracker-microvm/firecracker/blob/main/docs/prod-host-setup.md
 - https://github.com/firecracker-microvm/firecracker/issues/329
 - https://github.com/gitpod-io/openvscode-server
+- https://www.packer.io/docs/datasources/hcp/hcp-packer-image
