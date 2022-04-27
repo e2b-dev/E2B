@@ -24,8 +24,8 @@
 #         uses: actions/checkout@v3
 
 #       - id: Auth
-#         uses: "google-github-actions/auth@v0"
+#         uses: google-github-actions/auth@v0
 #         with:
 #           create_credentials_file: true
-#           workload_identity_provider: "projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github"
-#           service_account: "github-action@devbookhq.iam.gserviceaccount.com"
+#           workload_identity_provider: projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github
+#           service_account: github-action@devbookhq.iam.gserviceaccount.com
