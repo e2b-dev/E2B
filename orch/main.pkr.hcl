@@ -35,7 +35,15 @@ build {
   }
 
   provisioner "shell" {
-    inline = ["sudo mkdir -p /opt/gruntwork", "git clone --branch v0.1.3 https://github.com/gruntwork-io/bash-commons.git /tmp/bash-commons", "sudo cp -r /tmp/bash-commons/modules/bash-commons/src /opt/gruntwork/bash-commons"]
+    inline = ["sudo apt update", "sudo apt install -y unzip jq"]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo mkdir -p /opt/gruntwork",
+      "git clone --branch v0.1.3 https://github.com/gruntwork-io/bash-commons.git /tmp/bash-commons",
+      "sudo cp -r /tmp/bash-commons/modules/bash-commons/src /opt/gruntwork/bash-commons",
+    ]
   }
 
   provisioner "shell" {
