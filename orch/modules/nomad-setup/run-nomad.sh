@@ -33,7 +33,7 @@ function print_usage {
   echo
   echo "Example:"
   echo
-  echo "  run-nomad --server --config-dir /custom/path/to/nomad/config"
+  echo "  run-nomad.sh --server --config-dir /custom/path/to/nomad/config"
 }
 
 function log {

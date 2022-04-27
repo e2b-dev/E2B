@@ -10,6 +10,10 @@ source "googlecompute" "ubuntu20-image" {
   source_image_family = "ubuntu-2004-lts"
   ssh_username        = "ubuntu"
   zone                = var.zone
+
+  # This is used only for building the image and the GCE VM is then deleted
+  machine_type        = "n1-standard-2"
+  
   # Enable nested virtualization
   image_licenses = ["projects/vm-options/global/licenses/enable-vmx"]
 }
@@ -20,18 +24,32 @@ source "googlecompute" "ubuntu20-image" {
 build {
   sources = ["source.googlecompute.ubuntu20-image"]
 
+  provisioner "file" {
+    source = "./modules/nomad-setup/supervisord.conf"
+    destination = "/tmp/supervisord.conf"
+  }
+
+  provisioner "file" {
+    source = "./modules/"
+    destination = "/tmp"
+  }
+
   provisioner "shell" {
-    script          = "./modules/nomad/install-nomad.sh"
+    inline = ["sudo mkdir -p /opt/gruntwork", "git clone --branch v0.1.3 https://github.com/gruntwork-io/bash-commons.git /tmp/bash-commons", "sudo cp -r /tmp/bash-commons/modules/bash-commons/src /opt/gruntwork/bash-commons"]
+  }
+
+  provisioner "shell" {
+    script          = "./modules/nomad-setup/install-nomad.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.nomad_version}"
   }
 
   provisioner "shell" {
-    script          = "./modules/consul/install-consul.sh"
+    script          = "./modules/consul-setup/install-consul.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
   }
 
   provisioner "shell" {
-    script          = "./modules/firecracker/install-firecracker.sh"
+    script          = "./modules/firecracker-setup/install-firecracker.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 }

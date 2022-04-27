@@ -74,7 +74,7 @@ function print_usage {
   echo
   echo "Example:"
   echo
-  echo "  run-consul --server --cluster-tag-name consul-xyz --config-dir /custom/path/to/consul/config"
+  echo "  run-consul.sh --server --cluster-tag-name consul-xyz --config-dir /custom/path/to/consul/config"
 }
 
 # Get the value at a specific Instance Metadata path.

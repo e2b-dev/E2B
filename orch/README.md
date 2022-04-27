@@ -1,5 +1,49 @@
 # Orchestrator
 
+## TODO
+
+### Sprint 1
+```
+==> googlecompute.ubuntu20-image: E: Package 'unzip' has no installation candidate
+==> googlecompute.ubuntu20-image: E: Unable to locate package jq
+==> googlecompute.ubuntu20-image: cp: cannot stat '/tmp/supervisord.conf': No such file or directory
+```
+
+Install firecracker plugin
+
+Add CNI plugins
+
+Add network config
+
+Deploy correct image with Terraform - versioning?
+
+### Sprint 2
+
+Check if Go and HCL templates interfere
+
+Disable hyperthreading
+
+Revisit system for retrieving session ID and FC addresses - with the original task driver they are written to a file but we can modify that and send this info in the job response
+
+Use FC snapshots in the driver
+
+copy on write/in memory handling - we don't want to store the snapshots after sessions end
+
+outside world session exposure
+
+tinit + communication with SDK - is WS best solution? RPC protocol definitons? What are the most primitive building block from which we can build the whole interaction?
+
+authentication of session access
+
+Add monotoring and logging (consul, envoy, prometheus?)
+
+Evaluate
+- https://github.com/codebench-dev/worker
+- https://www.koyeb.com/blog/the-koyeb-serverless-engine-from-kubernetes-to-nomad-firecracker-and-kuma
+- https://stanislas.blog/2021/08/firecracker/
+- https://webapp.io/blog/github-actions-10x-faster-with-firecracker/
+- https://timperrett.com/2017/05/13/nomad-with-envoy-and-consul/
+
 ## Resources
 - https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md
 - https://jvns.ca/blog/2021/01/20/day-42--writing-a-go-program-to-manage-firecracker-vms/
@@ -20,3 +64,4 @@
 - https://learn.hashicorp.com/tutorials/nomad/prometheus-metrics
 - https://github.com/firecracker-microvm/firecracker/blob/main/docs/prod-host-setup.md
 - https://github.com/firecracker-microvm/firecracker/issues/329
+- https://github.com/gitpod-io/openvscode-server
