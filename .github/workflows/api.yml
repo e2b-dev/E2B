@@ -3,18 +3,17 @@ name: Orchestration Services - API
 on:
   workflow_call:
     inputs:
-      service_account_email:
-        required: true
-        type: string
-      workload_identity_provider:
-        required: true
-        type: string
       project_id:
         required: true
         type: string
       image_name:
         required: true
         type: string
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
 
 jobs:
   build:
@@ -27,8 +26,8 @@ jobs:
       - id: Auth
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account_email }}
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v0

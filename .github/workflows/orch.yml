@@ -2,13 +2,11 @@ name: Orchestration Services - Orchestrator
 
 on:
   workflow_call:
-    inputs:
+    secrets:
       service_account_email:
         required: true
-        type: string  
       workload_identity_provider:
         required: true
-        type: string
 
 jobs:
   build:
@@ -22,8 +20,8 @@ jobs:
         uses: google-github-actions/auth@v0
         with:
           create_credentials_file: true
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account_email }}
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
 
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1

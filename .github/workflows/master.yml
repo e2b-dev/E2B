@@ -54,17 +54,18 @@ jobs:
     if: ${{ needs.changes.outputs.api == 'true' }}
     uses: ./.github/workflows/api.yml
     with:
-      workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ env.SERVICE_ACCOUNT_EMAIL }}
       project_id: devbookhq
       image_name: orchestration-api
+    secrets:
+      workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ env.SERVICE_ACCOUNT_EMAIL }}
 
   orch:
     name: Orchestrator
     needs: changes
     if: ${{ needs.changes.outputs.orch == 'true' }}
     uses: ./.github/workflows/orch.yml
-    with:
+    secrets:
       workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ env.SERVICE_ACCOUNT_EMAIL }}
 
@@ -73,7 +74,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.envs == 'true' }}
     uses: ./.github/workflows/envs.yml
-    with:
+    secrets:
       workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ env.SERVICE_ACCOUNT_EMAIL }}
 
@@ -82,6 +83,6 @@ jobs:
     needs: [changes, api, orch, envs]
     if: ${{ always() && (needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true') }}
     uses: ./.github/workflows/infra.yml
-    with:
+    secrets:
       workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ env.SERVICE_ACCOUNT_EMAIL }}
