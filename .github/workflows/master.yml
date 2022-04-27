@@ -30,15 +30,19 @@ jobs:
             api:
               - 'api/**'
               - '.github/workflows/api.yml'
+              - '.github/workflows/master.yml'
             orch:
               - 'orch/**'
               - '.github/workflows/orch.yml'
+              - '.github/workflows/master.yml'
             envs:
               - 'envs/**'
               - '.github/workflows/envs.yml'
+              - '.github/workflows/master.yml'
             infra:
               - 'envs/**'
               - '.github/workflows/infra.yml'
+              - '.github/workflows/master.yml'
 
   api:
     name: API
