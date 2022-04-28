@@ -36,14 +36,6 @@ resource "google_compute_region_instance_group_manager" "client_cluster" {
   ]
 }
 
-resource "google_compute_disk" "fc-init-data" {
-  name                      = "fc-init-data"
-  type                      = "pd-ssd"
-  zone                      = "us-central1-a"
-  image                     = "fc-init-test-data"
-  physical_block_size_bytes = 16384
-}
-
 # Create the Instance Template that will be used to populate the Managed Instance Group.
 # NOTE: This Compute Instance Template is only created if var.assign_public_ip_addresses is true.
 resource "google_compute_instance_template" "nomad_public" {

@@ -7,12 +7,19 @@ terraform {
   }
 }
 
+module "fc_init_disk" {
+  source = "./modules/fc-init-disk"
+}
+
 module "server_cluster" {
   source = "./modules/server-cluster"
 }
 
 module "client_cluster" {
   source = "./modules/client-cluster"
+  depends_on = [
+    modules.fc_init_disk
+  ]
 }
 
 # module "orchestration_api" {
