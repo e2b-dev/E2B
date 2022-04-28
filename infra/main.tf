@@ -1,39 +1,47 @@
 terraform {
   required_version = ">= 1.1.9"
-
   backend "gcs" {
     bucket = "devbook-terraform-state"
     prefix = "terraform/orchestration/state"
   }
 }
 
-module "fc_init_disk" {
-  source = "./modules/fc-init-disk"
+provider "google-beta" {
+  project = var.gcp_project_id
+  region  = var.gcp_region
+  zone    = var.gcp_zone
 }
+
+provider "google" {
+  project = var.gcp_project_id
+  region  = var.gcp_region
+  zone    = var.gcp_zone
+}
+
+# module "fc_envs_disk" {
+#   source = "./modules/fc-envs-disk"
+# }
 
 module "server_cluster" {
   source = "./modules/server-cluster"
 }
 
-module "client_cluster" {
-  source = "./modules/client-cluster"
-  depends_on = [
-    modules.fc_init_disk
-  ]
+# module "client_cluster" {
+#   source = "./modules/client-cluster"
+
+#   fc_envs_disk_name = module.fc_envs_disk.fc_envs_disk_name
+# }
+
+provider "nomad" {
+  address = module.server_cluster.nomad_address
 }
 
-# module "orchestration_api" {
-#   source = "./modules/orchestration-api"
-#   depends_on = [
-#     module.client_cluster,
-#     module.server_cluster,
-#   ]
-# }
+module "orchestration_api" {
+  source = "./modules/orchestration-api"
+
+  nomad_address = module.server_cluster.nomad_address
+}
 
 # module "firecracker_session" {
 #   source = "./modules/firecracker-session"
-#   depends_on = [
-#     module.client_cluster,
-#     module.server_cluster,
-#   ]
 # }

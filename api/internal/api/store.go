@@ -33,6 +33,14 @@ func sendAPIStoreError(c *gin.Context, code int, message string) {
 	c.JSON(code, apiErr)
 }
 
+func (p *APIStore) Get(c *gin.Context) {
+	// We're always asynchronous, so lock unsafe operations below
+	p.Lock.Lock()
+	defer p.Lock.Unlock()
+
+	c.String(http.StatusOK, "Health check successful")
+}
+
 func (p *APIStore) PostSession(c *gin.Context) {
 	// We're always asynchronous, so lock unsafe operations below
 	p.Lock.Lock()

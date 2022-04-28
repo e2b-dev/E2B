@@ -74,11 +74,11 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  infra:
-    name: Infrastructure
-    needs: [changes, api, orch, envs]
-    if: ${{ needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true' }}
-    uses: ./.github/workflows/infra.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+  # infra:
+  #   name: Infrastructure
+  #   needs: [changes, api, orch, envs]
+  #   if: ${{ needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true' }}
+  #   uses: ./.github/workflows/infra.yml
+  #   secrets:
+  #     workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+  #     service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}

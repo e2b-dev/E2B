@@ -31,3 +31,4 @@ Do rolling updates
 - https://stackoverflow.com/questions/64397938/how-to-integrate-terraform-state-into-github-action-workflow
 - https://www.terraform.io/language/settings/backends/gcs
 - https://todevornot.com/post/618457167027126272/gce-instance-with-persistent-disk-provisioned
+- https://cloud.google.com/load-balancing/docs/l7-internal/int-https-lb-tf-examples

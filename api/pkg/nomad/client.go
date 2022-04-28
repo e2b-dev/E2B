@@ -2,6 +2,7 @@ package nomad
 
 import (
 	"log"
+	"os"
 
 	"github.com/hashicorp/nomad/api"
 )
@@ -10,12 +11,11 @@ type Nomad struct {
 	nomadClient *api.Client
 }
 
-const SessionJobID string = "vm-session"
-const NomadAddress string = "0.0.0.0"
+const SessionJobID string = "firecracker-session"
 
 func InitNomad() *Nomad {
 	nomadConfig := api.Config{
-		Address: NomadAddress,
+		Address: os.Getenv("NOMAD_ADDRESS"),
 	}
 
 	nomad, err := api.NewClient(&nomadConfig)

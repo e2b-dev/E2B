@@ -1,43 +1,43 @@
-provider "google-beta" {
-  region = var.gcp_region
+data "google_compute_network" "default" {
+  name = "default"
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# CREATE A GCE MANAGED INSTANCE GROUP TO RUN SERVERS
-# ---------------------------------------------------------------------------------------------------------------------
+# backend subnet
+resource "google_compute_subnetwork" "backend_subnet" {
+  name          = "orch-server-backend-subnet"
+  provider      = google-beta
+  ip_cidr_range = "10.0.1.0/24"
+  network       = data.google_compute_network.default.id
+}
 
-# Create the Regional Managed Instance Group where Consul Server will live.
-resource "google_compute_region_instance_group_manager" "server_cluster" {
-  project = var.gcp_project_id
-  name    = "${var.cluster_name}-ig"
+
+resource "google_compute_instance_group_manager" "server_cluster" {
+  name               = "${var.cluster_name}-ig"
+  base_instance_name = var.cluster_name
 
   provider = google-beta
 
-  base_instance_name = var.cluster_name
-  region             = var.gcp_region
-
   version {
-    instance_template = google_compute_instance_template.server_cluster.self_link
+    instance_template = google_compute_instance_template.server.self_link
   }
 
-  # Consul Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
+  # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
   # a rolling update.
   update_policy {
-    type                         = var.instance_group_update_policy_type
-    instance_redistribution_type = var.instance_group_update_policy_redistribution_type
-    minimal_action               = var.instance_group_update_policy_minimal_action
-    max_surge_fixed              = var.instance_group_update_policy_max_surge_fixed
-    max_surge_percent            = var.instance_group_update_policy_max_surge_percent
-    max_unavailable_fixed        = var.instance_group_update_policy_max_unavailable_fixed
-    max_unavailable_percent      = var.instance_group_update_policy_max_unavailable_percent
-    min_ready_sec                = var.instance_group_update_policy_min_ready_sec
+    type                    = var.instance_group_update_policy_type
+    minimal_action          = var.instance_group_update_policy_minimal_action
+    max_surge_fixed         = var.instance_group_update_policy_max_surge_fixed
+    max_surge_percent       = var.instance_group_update_policy_max_surge_percent
+    max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
+    max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
+    min_ready_sec           = var.instance_group_update_policy_min_ready_sec
   }
 
   target_pools = var.instance_group_target_pools
   target_size  = var.cluster_size
 
   depends_on = [
-    google_compute_instance_template.server_cluster
+    google_compute_instance_template.server
   ]
 
   lifecycle {
@@ -45,12 +45,12 @@ resource "google_compute_region_instance_group_manager" "server_cluster" {
   }
 }
 
-# Create the Instance Template that will be used to populate the Managed Instance Group.
-resource "google_compute_instance_template" "server_cluster" {
-  project = var.gcp_project_id
+data "google_compute_image" "source_image" {
+  family = "orch"
+}
 
-  name_prefix = var.cluster_name
-  description = var.cluster_description
+resource "google_compute_instance_template" "server" {
+  name_prefix = "${var.cluster_name}-"
 
   instance_description = var.cluster_description
   machine_type         = var.machine_type
@@ -69,23 +69,21 @@ resource "google_compute_instance_template" "server_cluster" {
   )
 
   scheduling {
-    automatic_restart   = true
     on_host_maintenance = "MIGRATE"
-    preemptible         = false
   }
 
   disk {
     boot         = true
-    auto_delete  = true
     source_image = data.google_compute_image.source_image.self_link
     disk_size_gb = var.root_volume_disk_size_gb
     disk_type    = var.root_volume_disk_type
   }
 
   network_interface {
-    network            = var.subnetwork_name != null ? null : var.network_name
-    subnetwork         = var.subnetwork_name != null ? var.subnetwork_name : null
+    network = var.subnetwork_name != null ? null : var.network_name
+    # subnetwork         = var.subnetwork_name != null ? var.subnetwork_name : null
     subnetwork_project = var.network_project_id != null ? var.network_project_id : null
+    subnetwork         = google_compute_subnetwork.backend_subnet.id
 
     # Create access config dynamically. If a public ip is requested, we just need the empty `access_config` block
     # to automatically assign an external IP address.
@@ -116,12 +114,10 @@ resource "google_compute_instance_template" "server_cluster" {
 # CREATE FIREWALL RULES
 # ---------------------------------------------------------------------------------------------------------------------
 
-# Allow Consul-specific traffic within the cluster
+# Allow server-specific traffic within the cluster
 # - This Firewall Rule may be redundant depnding on the settings of your VPC Network, but if your Network is locked down,
 #   this Rule will open up the appropriate ports.
-resource "google_compute_firewall" "allow_intracluster_consul" {
-  project = var.network_project_id != null ? var.network_project_id : var.gcp_project_id
-
+resource "google_compute_firewall" "allow_intracluster_server" {
   name    = "${var.cluster_name}-rule-cluster"
   network = var.network_name
 
@@ -152,15 +148,13 @@ resource "google_compute_firewall" "allow_intracluster_consul" {
   target_tags = [var.cluster_tag_name]
 }
 
-# Specify which traffic is allowed into the Consul Cluster solely for HTTP API requests
+# Specify which traffic is allowed into the server Cluster solely for HTTP API requests
 # - This Firewall Rule may be redundant depnding on the settings of your VPC Network, but if your Network is locked down,
 #   this Rule will open up the appropriate ports.
-# - Note that public access to your Consul Cluster will only be permitted if var.assign_public_ip_addresses is true.
+# - Note that public access to your server Cluster will only be permitted if var.assign_public_ip_addresses is true.
 # - This Firewall Rule is only created if at least one source tag or source CIDR block is specified.
 resource "google_compute_firewall" "allow_inbound_http_api" {
   count = length(var.allowed_inbound_cidr_blocks_dns) + length(var.allowed_inbound_tags_dns) > 0 ? 1 : 0
-
-  project = var.network_project_id != null ? var.network_project_id : var.gcp_project_id
 
   name    = "${var.cluster_name}-rule-external-api-access"
   network = var.network_name
@@ -178,15 +172,13 @@ resource "google_compute_firewall" "allow_inbound_http_api" {
   target_tags   = [var.cluster_tag_name]
 }
 
-# Specify which traffic is allowed into the Consul Cluster solely for DNS requests
+# Specify which traffic is allowed into the server Cluster solely for DNS requests
 # - This Firewall Rule may be redundant depnding on the settings of your VPC Network, but if your Network is locked down,
 #   this Rule will open up the appropriate ports.
-# - Note that public access to your Consul Cluster will only be permitted if var.assign_public_ip_addresses is true.
+# - Note that public access to your server Cluster will only be permitted if var.assign_public_ip_addresses is true.
 # - This Firewall Rule is only created if at least one source tag or source CIDR block is specified.
 resource "google_compute_firewall" "allow_inbound_dns" {
   count = length(var.allowed_inbound_cidr_blocks_dns) + length(var.allowed_inbound_tags_dns) > 0 ? 1 : 0
-
-  project = var.network_project_id != null ? var.network_project_id : var.gcp_project_id
 
   name    = "${var.cluster_name}-rule-external-dns-access"
   network = var.network_name
@@ -212,15 +204,8 @@ resource "google_compute_firewall" "allow_inbound_dns" {
   target_tags   = [var.cluster_tag_name]
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# CONVENIENCE VARIABLES
-# Because we've got some conditional logic in this template, some values will depend on our properties. This section
-# wraps such values in a nicer construct.
-# ---------------------------------------------------------------------------------------------------------------------
-
-# This is a workaround for a provider bug in Terraform v0.11.8. For more information please refer to:
-# https://github.com/terraform-providers/terraform-provider-google/issues/2067.
-data "google_compute_image" "source_image" {
-  family  = "orch"
-  project = var.image_project_id != null ? var.image_project_id : var.gcp_project_id
+module "orch_server_proxy" {
+  source         = "./orch-server-proxy"
+  instance_group = google_compute_instance_group_manager.server_cluster.instance_group
+  backend_subnet = google_compute_subnetwork.backend_subnet.id
 }

@@ -9,6 +9,12 @@ tags:
     description: Managing VM sessions
 
 paths:
+  /:
+    get:
+      description: Health check
+      responses:
+        "200":
+          description: Request was successful
   /session:
     post:
       tags:
@@ -20,14 +26,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
+                $ref: "#/components/schemas/Session"
 
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /session/{session_id}:
     delete:
@@ -46,14 +52,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
+                $ref: "#/components/schemas/Session"
 
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
 components:
   schemas:

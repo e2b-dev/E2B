@@ -7,19 +7,15 @@ output "cluster_tag_name" {
 }
 
 output "instance_group_id" {
-  value = google_compute_region_instance_group_manager.client_cluster.id
+  value = google_compute_instance_group_manager.client_cluster.id
 }
 
 output "instance_group_url" {
-  value = google_compute_region_instance_group_manager.client_cluster.self_link
+  value = google_compute_instance_group_manager.client_cluster.self_link
 }
 
 output "instance_group_name" {
-  value = google_compute_region_instance_group_manager.client_cluster.name
-}
-
-output "instance_template_url" {
-  value = data.template_file.compute_instance_template_self_link.rendered
+  value = google_compute_instance_group_manager.client_cluster.name
 }
 
 output "firewall_rule_allow_inbound_http_url" {

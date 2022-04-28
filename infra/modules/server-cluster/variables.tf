@@ -3,28 +3,16 @@
 # You must provide a value for each of these parameters.
 # ---------------------------------------------------------------------------------------------------------------------
 
-variable "gcp_project_id" {
-  description = "The project to deploy the cluster in"
-  type        = string
-  default     = "devbookhq"
-}
-
-variable "gcp_region" {
-  description = "All GCP resources will be launched in this Region."
-  type        = string
-  default     = "us-central1"
-}
-
 variable "cluster_name" {
-  description = "The name of the Consul cluster (e.g. consul-stage). This variable is used to namespace all resources created by this module."
+  description = "The name of the server cluster (e.g. server-stage). This variable is used to namespace all resources created by this module."
   type        = string
-  default     = "server-prod"
+  default     = "orch-server"
 }
 
 variable "cluster_tag_name" {
-  description = "The tag name the Compute Instances will look for to automatically discover each other and form a cluster. TIP: If running more than one Consul Server cluster, each cluster should have its own unique tag name."
+  description = "The tag name the Compute Instances will look for to automatically discover each other and form a cluster. TIP: If running more than one server Server cluster, each cluster should have its own unique tag name."
   type        = string
-  default     = "aegis"
+  default     = "orch-server"
 }
 
 variable "machine_type" {
@@ -34,7 +22,7 @@ variable "machine_type" {
 }
 
 variable "cluster_size" {
-  description = "The number of nodes to have in the Consul cluster. We strongly recommended that you use either 3 or 5."
+  description = "The number of nodes to have in the server cluster. We strongly recommended that you use either 3 or 5."
   type        = number
   default     = 1
 }
@@ -46,13 +34,13 @@ variable "image_family" {
 }
 
 variable "startup_script" {
-  description = "A Startup Script to execute when the server first boots. We recommend passing in a bash script that executes the run-consul script, which should have been installed in the Consul Google Image by the install-consul module."
+  description = "A Startup Script to execute when the server first boots. We recommend passing in a bash script that executes the run-server script, which should have been installed in the server Google Image by the install-server module."
   type        = string
   default     = "/opt/init/start-server.sh"
 }
 
 variable "shutdown_script" {
-  description = "A Shutdown Script to execute when the server recieves a restart or stop event. We recommend passing in a bash script that executes the `consul leave` command."
+  description = "A Shutdown Script to execute when the server recieves a restart or stop event. We recommend passing in a bash script that executes the `server leave` command."
   type        = string
   default     = "/opt/init/stop.sh"
 }
@@ -61,12 +49,6 @@ variable "shutdown_script" {
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.
 # ---------------------------------------------------------------------------------------------------------------------
-
-variable "image_project_id" {
-  description = "The name of the GCP Project where the image is located. Useful when using a separate project for custom images. If empty, var.gcp_project_id will be used."
-  type        = string
-  default     = null
-}
 
 variable "network_project_id" {
   description = "The name of the GCP Project where the network is located. Useful when using networks shared between projects. If empty, var.gcp_project_id will be used."
@@ -87,13 +69,13 @@ variable "storage_access_scope" {
 }
 
 variable "instance_group_target_pools" {
-  description = "To use a Load Balancer with the Consul cluster, you must populate this value. Specifically, this is the list of Target Pool URLs to which new Compute Instances in the Instance Group created by this module will be added. Note that updating the Target Pools attribute does not affect existing Compute Instances. Note also that use of a Load Balancer with Consul is generally discouraged; client should instead prefer to talk directly to the server where possible."
+  description = "To use a Load Balancer with the server cluster, you must populate this value. Specifically, this is the list of Target Pool URLs to which new Compute Instances in the Instance Group created by this module will be added. Note that updating the Target Pools attribute does not affect existing Compute Instances. Note also that use of a Load Balancer with server is generally discouraged; client should instead prefer to talk directly to the server where possible."
   type        = list(string)
   default     = []
 }
 
 variable "cluster_description" {
-  description = "A description of the Consul cluster; it will be added to the Compute Instance Template."
+  description = "A description of the server cluster; it will be added to the Compute Instance Template."
   type        = string
   default     = null
 }
@@ -129,25 +111,25 @@ variable "service_account_email" {
 }
 
 variable "allowed_inbound_cidr_blocks_http_api" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow API connections to Consul."
+  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow API connections to server."
   type        = list(string)
   default     = []
 }
 
 variable "allowed_inbound_tags_http_api" {
-  description = "A list of tags from which the Compute Instances will allow API connections to Consul."
+  description = "A list of tags from which the Compute Instances will allow API connections to server."
   type        = list(string)
   default     = []
 }
 
 variable "allowed_inbound_cidr_blocks_dns" {
-  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow TCP DNS and UDP DNS connections to Consul."
+  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow TCP DNS and UDP DNS connections to server."
   type        = list(string)
   default     = []
 }
 
 variable "allowed_inbound_tags_dns" {
-  description = "A list of tags from which the Compute Instances will allow TCP DNS and UDP DNS connections to Consul."
+  description = "A list of tags from which the Compute Instances will allow TCP DNS and UDP DNS connections to server."
   type        = list(string)
   default     = []
 }
@@ -156,12 +138,6 @@ variable "allowed_inbound_tags_dns" {
 
 variable "instance_group_update_policy_type" {
   description = "The type of update process. You can specify either PROACTIVE so that the instance group manager proactively executes actions in order to bring instances to their target versions or OPPORTUNISTIC so that no action is proactively executed but the update will be performed as part of other actions (for example, resizes or recreateInstances calls)."
-  type        = string
-  default     = "PROACTIVE"
-}
-
-variable "instance_group_update_policy_redistribution_type" {
-  description = "The instance redistribution policy for regional managed instance groups. Valid values are: 'PROACTIVE' and 'NONE'. If 'PROACTIVE', the group attempts to maintain an even distribution of VM instances across zones in the region. If 'NONE', proactive redistribution is disabled."
   type        = string
   default     = "PROACTIVE"
 }
@@ -205,7 +181,7 @@ variable "instance_group_update_policy_min_ready_sec" {
 # Metadata
 
 variable "metadata_key_name_for_cluster_size" {
-  description = "The key name to be used for the custom metadata attribute that represents the size of the Consul cluster."
+  description = "The key name to be used for the custom metadata attribute that represents the size of the server cluster."
   type        = string
   default     = "cluster-size"
 }
@@ -257,7 +233,7 @@ variable "dns_port" {
 # Disk Settings
 
 variable "root_volume_disk_size_gb" {
-  description = "The size, in GB, of the root disk volume on each Consul node."
+  description = "The size, in GB, of the root disk volume on each server node."
   type        = number
   default     = 30
 }

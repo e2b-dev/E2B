@@ -30,3 +30,5 @@ Add monotoring and logging (consul, envoy, prometheus?)
 - Using packer for creating rootfs images instead of docker?
 - https://cloud.google.com/compute/docs/disks/local-ssd#choose_an_interface
 - https://cloud.google.com/compute/docs/disks/mount-ram-disks
+- https://www.google.com/search?q=btrfs+zfs+ext4&sxsrf=APq-WBubG7Uq1tq97zwnRekapuQAytx05g%3A1651126058214&ei=Ki9qYs_kDL7-7_UPk5Sm2As&oq=btrfs+and+zfs+and+ex&gs_lcp=Cgdnd3Mtd2l6EAMYADIGCAAQFhAeOgcIABBHELADOgUIIRCgAToICCEQFhAdEB5KBAhBGABKBAhGGABQwARY4wtguhNoAXABeACAAXiIAdUEkgEDNi4xmAEAoAEByAEIwAEB&sclient=gws-wiz
+- Using NIX to manage

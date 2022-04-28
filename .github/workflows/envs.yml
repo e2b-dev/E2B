@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: Build
+    name: Update
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

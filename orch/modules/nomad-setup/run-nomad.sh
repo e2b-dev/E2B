@@ -176,6 +176,11 @@ EOF
 client {
   enabled = true
 }
+
+plugin_dir = "./plugin"
+plugin "firecracker-task-driver" {}
+
+
 EOF
 )
   fi

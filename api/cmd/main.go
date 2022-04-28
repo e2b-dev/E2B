@@ -43,7 +43,7 @@ func NewGinServer(apiStore *api.APIStore, port int) *http.Server {
 }
 
 func main() {
-	var port = flag.Int("port", 8080, "Port for test HTTP server")
+	var port = flag.Int("port", 80, "Port for test HTTP server")
 	flag.Parse()
 	// Create an instance of our handler which satisfies the generated interface
 

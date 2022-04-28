@@ -2,6 +2,10 @@ variable "image_name" {
   type = string
 }
 
+variable "nomad_address" {
+  type = string
+}
+
 job "orchestration-api" {
   # Spread the tasks in this job between us-west-1 and us-east-1.
   datacenters = ["dc1"]
@@ -14,7 +18,7 @@ job "orchestration-api" {
   # 30 second intervals.
   update {
     stagger      = "30s"
-    max_parallel = 1
+    max_parallel = 2
   }
 
   # A group defines a series of tasks that should be co-located
@@ -30,6 +34,10 @@ job "orchestration-api" {
       # Specify the driver to be "docker". Nomad supports
       # multiple drivers.
       driver = "docker"
+
+      env {
+        NOMAD_ADDRESS = var.nomad_address
+      }
 
       # Configuration is specific to each driver.
       config {

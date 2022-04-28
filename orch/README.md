@@ -34,6 +34,8 @@ Delete old disk images
 
 Add monotoring and logging (consul, envoy, prometheus?)
 
+Make specific image for clients and for servers
+
 Evaluate
 - https://github.com/codebench-dev/worker
 - https://www.koyeb.com/blog/the-koyeb-serverless-engine-from-kubernetes-to-nomad-firecracker-and-kuma
@@ -63,3 +65,6 @@ Evaluate
 - https://github.com/firecracker-microvm/firecracker/issues/329
 - https://github.com/gitpod-io/openvscode-server
 - https://www.packer.io/docs/datasources/hcp/hcp-packer-image
+- https://kruzenshtern.org/run-a-firecracker-on-nomad/
+- https://kruzenshtern.org/firecracker-network-setup/
+- https://www.youtube.com/watch?v=CYCsa5e2vqg

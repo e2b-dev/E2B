@@ -14,6 +14,9 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
+	// (GET /)
+	Get(c *gin.Context)
+
 	// (POST /session)
 	PostSession(c *gin.Context)
 
@@ -28,6 +31,16 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
+
+// Get operation middleware
+func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.Get(c)
+}
 
 // PostSession operation middleware
 func (siw *ServerInterfaceWrapper) PostSession(c *gin.Context) {
@@ -77,6 +90,8 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 		Handler:            si,
 		HandlerMiddlewares: options.Middlewares,
 	}
+
+	router.GET(options.BaseURL+"/", wrapper.Get)
 
 	router.POST(options.BaseURL+"/session", wrapper.PostSession)
 

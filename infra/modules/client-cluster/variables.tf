@@ -11,28 +11,16 @@ variable "fc_envs_disk_name" {
 # You must provide a value for each of these parameters.
 # ---------------------------------------------------------------------------------------------------------------------
 
-variable "gcp_project_id" {
-  description = "The project to deploy the cluster in"
-  type        = string
-  default     = "devbookhq"
-}
-
-variable "gcp_region" {
-  description = "All GCP resources will be launched in this Region."
-  type        = string
-  default     = "us-central1"
-}
-
 variable "cluster_name" {
   description = "The name of the Nomad cluster (e.g. nomad-stage). This variable is used to namespace all resources created by this module."
   type        = string
-  default     = "client-prod"
+  default     = "orch-client"
 }
 
 variable "cluster_tag_name" {
   description = "The tag name the Compute Instances will look for to automatically discover each other and form a cluster. TIP: If running more than one Nomad cluster, each cluster should have its own unique tag name."
   type        = string
-  default     = "xiphos"
+  default     = "orch-client"
 }
 
 variable "machine_type" {
@@ -59,16 +47,15 @@ variable "startup_script" {
   default     = "/opt/init/start-client.sh"
 }
 
+variable "shutdown_script" {
+  type    = string
+  default = "/opt/init/stop.sh"
+}
+
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.
 # ---------------------------------------------------------------------------------------------------------------------
-
-variable "image_project_id" {
-  description = "The name of the GCP Project where the image is located. Useful when using a separate project for custom images. If empty, var.gcp_project_id will be used."
-  type        = string
-  default     = null
-}
 
 variable "instance_group_target_pools" {
   description = "To use a Load Balancer with the Consul cluster, you must populate this value. Specifically, this is the list of Target Pool URLs to which new Compute Instances in the Instance Group created by this module will be added. Note that updating the Target Pools attribute does not affect existing Compute Instances."
@@ -80,12 +67,6 @@ variable "cluster_description" {
   description = "A description of the Vault cluster; it will be added to the Compute Instance Template."
   type        = string
   default     = null
-}
-
-variable "assign_public_ip_addresses" {
-  description = "If true, each of the Compute Instances will receive a public IP address and be reachable from the Public Internet (if Firewall rules permit). If false, the Compute Instances will have private IP addresses only. In production, this should be set to false."
-  type        = bool
-  default     = true
 }
 
 variable "network_name" {

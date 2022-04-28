@@ -6,13 +6,11 @@
 variable "cluster_name" {
   description = "The name of the Nomad cluster (e.g. nomad-stage). This variable is used to namespace all resources created by this module."
   type        = string
-  default     = "client-prod"
 }
 
 variable "cluster_tag_name" {
   description = "The tag name the Compute Instances will look for to automatically discover each other and form a cluster. TIP: If running more than one Nomad cluster, each cluster should have its own unique tag name."
   type        = string
-  default     = "xiphos"
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
