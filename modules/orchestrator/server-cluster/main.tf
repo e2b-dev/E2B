@@ -18,7 +18,7 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   provider = google-beta
 
   wait_for_instances        = true
-  wait_for_instances_status = "STABLE"
+  wait_for_instances_status = "UPDATED"
 
   version {
     instance_template = google_compute_instance_template.server.self_link

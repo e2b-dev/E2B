@@ -7,9 +7,6 @@ resource "google_compute_instance_group_manager" "client_cluster" {
 
   provider = google-beta
 
-  wait_for_instances        = true
-  wait_for_instances_status = "STABLE"
-
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
   # a rolling update.
   update_policy {
@@ -19,7 +16,6 @@ resource "google_compute_instance_group_manager" "client_cluster" {
     max_surge_percent       = var.instance_group_update_policy_max_surge_percent
     max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
     max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
-    min_ready_sec           = var.instance_group_update_policy_min_ready_sec
   }
 
   base_instance_name = var.cluster_name

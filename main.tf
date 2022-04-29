@@ -26,16 +26,16 @@ module "client_cluster" {
   source = "./modules/orchestrator/client-cluster"
 }
 
-provider "nomad" {
-  address = module.server_cluster.nomad_address
-}
+# provider "nomad" {
+#   address = module.server_cluster.nomad_address
+# }
 
-module "api" {
-  source = "./modules/api"
+# module "api" {
+#   source = "./modules/api"
 
-  nomad_address = module.server_cluster.nomad_address
-}
+#   nomad_address = module.server_cluster.nomad_address
+# }
 
-module "firecracker_sessions" {
-  source = "./modules/firecracker-sessions"
-}
+# module "firecracker_sessions" {
+#   source = "./modules/firecracker-sessions"
+# }

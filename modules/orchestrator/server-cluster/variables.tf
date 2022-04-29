@@ -175,7 +175,7 @@ variable "instance_group_update_policy_max_unavailable_percent" {
 variable "instance_group_update_policy_min_ready_sec" {
   description = "Minimum number of seconds to wait for after a newly created instance becomes available. This value must be between 0-3600."
   type        = number
-  default     = 60
+  default     = 40
 }
 
 # Metadata
