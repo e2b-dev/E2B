@@ -21,5 +21,6 @@ variable "nomad_version" {
 # There is a bug with Nomad's FC task driver for FC v1.0.0 - until it is fixed we can use v0.25.2
 variable "firecracker_version" {
   type    = string
+  description = "Firecracker version must be prefixed with 'v'"
   default = "v0.25.2"
 }

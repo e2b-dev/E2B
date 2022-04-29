@@ -2,10 +2,7 @@
 
 ## 1. Foundation - deployment, orchestration, mesh
 - Fix startup script (Nomad crash)
-- Deploy correct image with Terraform - versioning? (https://www.packer.io/docs/datasources/hcp/hcp-packer-image)
-- Check if Go and HCL templates interfere in the Packer config
-- Fix naming and structure of the repo
-- Check rolling updates
+- Check rolling updates -> nomad state
 - Configure Consul and Envoy
 - Add health checks for Nomad
 - Allow connecting to the running Nomad from Terraform
@@ -13,6 +10,7 @@
 ## 2. Core Services - FC, API, specific networking, lifecycle management
 ### FC
 - Install FC plugin to Nomad
+- Modify FC plugin to work with FC 1.0
 - Modify FC plugin to work with snapshots
 - Add CNI plugins
 - Add network config for FC
@@ -39,7 +37,7 @@
 - React to storage Dockefile upload OR image upload (maybe this is more user friendly because they can debug on their machines with our CLI)
 - Run the provision script in container
 - Create rootfs from the container
-- Build and save kernel
+- Build and save kernel (we might be using 4.16 instead of 5+ because of snapshot start times)
 - Start firecracker with the rootfs and make the snapshot
 - Upload the snapshot to Filestore or persisten disk
 - Mount FC persisten disk or Filestore on start (explore Nomad external volumes)
