@@ -235,7 +235,7 @@ variable "dns_port" {
 variable "root_volume_disk_size_gb" {
   description = "The size, in GB, of the root disk volume on each server node."
   type        = number
-  default     = 30
+  default     = 10
 }
 
 variable "root_volume_disk_type" {
