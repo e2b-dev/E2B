@@ -27,13 +27,10 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
-        working-directory: infra
         run: make init
 
       - name: Terraform Plan
-        working-directory: infra
         run: make plan
 
       - name: Terraform Apply
-        working-directory: infra
         run: make deploy

@@ -37,7 +37,7 @@ jobs:
           gcloud --quiet auth configure-docker
 
       - name: Build the image
-        working-directory: modules/api
+        working-directory: modules/api/api-image
         run: |-
           docker build --tag "gcr.io/${{ inputs.project_id }}/${{ inputs.image_name }}:$GITHUB_SHA" .
 
