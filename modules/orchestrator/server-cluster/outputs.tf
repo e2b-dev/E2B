@@ -65,6 +65,6 @@ output "firewall_rule_inbound_dns_name" {
   )
 }
 
-output "nomad_address" {
-  value = "http://${module.orch_server_proxy.orch_proxy_ip}"
-}
+# output "nomad_address" {
+#   value = "http://${module.orch_server_proxy.orch_proxy_ip}"
+# }

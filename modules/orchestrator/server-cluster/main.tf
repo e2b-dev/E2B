@@ -1,16 +1,3 @@
-data "google_compute_network" "default" {
-  name = "default"
-}
-
-# backend subnet
-resource "google_compute_subnetwork" "backend_subnet" {
-  name          = "orch-server-backend-subnet"
-  provider      = google-beta
-  ip_cidr_range = "10.0.1.0/24"
-  network       = data.google_compute_network.default.id
-}
-
-
 resource "google_compute_instance_group_manager" "server_cluster" {
   name               = "${var.cluster_name}-ig"
   base_instance_name = var.cluster_name
@@ -83,10 +70,9 @@ resource "google_compute_instance_template" "server" {
   }
 
   network_interface {
-    network = var.subnetwork_name != null ? null : var.network_name
-    # subnetwork         = var.subnetwork_name != null ? var.subnetwork_name : null
+    network            = var.subnetwork_name != null ? null : var.network_name
+    subnetwork         = var.subnetwork_name != null ? var.subnetwork_name : null
     subnetwork_project = var.network_project_id != null ? var.network_project_id : null
-    subnetwork         = google_compute_subnetwork.backend_subnet.id
 
     # Create access config dynamically. If a public ip is requested, we just need the empty `access_config` block
     # to automatically assign an external IP address.
@@ -207,8 +193,8 @@ resource "google_compute_firewall" "allow_inbound_dns" {
   target_tags   = [var.cluster_tag_name]
 }
 
-module "orch_server_proxy" {
-  source         = "./orch-server-proxy"
-  instance_group = google_compute_instance_group_manager.server_cluster.instance_group
-  backend_subnet = google_compute_subnetwork.backend_subnet.id
-}
+# module "orch_server_proxy" {
+#   source         = "./orch-server-proxy"
+#   instance_group = google_compute_instance_group_manager.server_cluster.instance_group
+#   backend_subnet = google_compute_subnetwork.backend_subnet.id
+# }

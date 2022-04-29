@@ -6,25 +6,16 @@
 variable "cluster_name" {
   description = "The name of the Nomad cluster (e.g. nomad-stage). This variable is used to namespace all resources created by this module."
   type        = string
-  default     = "orch-client"
-}
-
-variable "cluster_tag_name" {
-  description = "The tag name the Compute Instances will look for to automatically discover each other and form a cluster. TIP: If running more than one Nomad cluster, each cluster should have its own unique tag name."
-  type        = string
-  default     = "orch"
 }
 
 variable "machine_type" {
   description = "The machine type of the Compute Instance to run for each node in the cluster (e.g. n1-standard-1)."
   type        = string
-  default     = "n1-standard-1"
 }
 
 variable "cluster_size" {
   description = "The number of nodes to have in the Nomad cluster. We strongly recommended that you use either 3 or 5."
   type        = number
-  default     = 1
 }
 
 variable "image_family" {
@@ -36,12 +27,14 @@ variable "image_family" {
 variable "startup_script" {
   description = "A Startup Script to execute when the server first boots. We recommend passing in a bash script that executes the run-vault script, which should have been installed in the Vault Google Image by the install-vault module."
   type        = string
-  default     = "/opt/init/start-client.sh"
 }
 
 variable "shutdown_script" {
-  type    = string
-  default = "/opt/init/stop.sh"
+  type = string
+}
+
+variable "cluster_tag_name" {
+  type = string
 }
 
 # ---------------------------------------------------------------------------------------------------------------------

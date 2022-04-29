@@ -31,16 +31,6 @@ source "googlecompute" "orch" {
 build {
   sources = ["source.googlecompute.orch"]
 
-  provisioner "file" {
-    source = "./modules/nomad-setup/supervisord.conf"
-    destination = "/tmp/supervisord.conf"
-  }
-
-  provisioner "file" {
-    source = "./modules/"
-    destination = "/tmp"
-  }
-
   provisioner "shell" {
     inline = ["sudo apt update", "sudo apt install -y unzip jq"]
   }
@@ -51,6 +41,16 @@ build {
       "git clone --branch v0.1.3 https://github.com/gruntwork-io/bash-commons.git /tmp/bash-commons",
       "sudo cp -r /tmp/bash-commons/modules/bash-commons/src /opt/gruntwork/bash-commons",
     ]
+  }
+
+  provisioner "file" {
+    source = "./modules/nomad-setup/supervisord.conf"
+    destination = "/tmp/supervisord.conf"
+  }
+
+  provisioner "file" {
+    source = "./modules/"
+    destination = "/tmp"
   }
 
   provisioner "shell" {
@@ -66,11 +66,6 @@ build {
   provisioner "shell" {
     script          = "./modules/firecracker-setup/install-firecracker.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
-  }
-
-  provisioner "file" {
-    source = "./modules/init"
-    destination = "/opt"
   }
 
   # Add testing FC kernel and rootfs

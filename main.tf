@@ -18,12 +18,8 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
-module "server_cluster" {
-  source = "./modules/orchestrator/server-cluster"
-}
-
-module "client_cluster" {
-  source = "./modules/orchestrator/client-cluster"
+module "orchestrator" {
+  source = "./modules/orchestrator"
 }
 
 # provider "nomad" {
