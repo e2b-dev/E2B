@@ -1,0 +1,46 @@
+name: Orchestration Services - API image
+
+on:
+  workflow_call:
+    inputs:
+      project_id:
+        required: true
+        type: string
+      image_name:
+        required: true
+        type: string
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
+
+jobs:
+  build:
+    name: Build & Push
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - id: Auth
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+
+      - name: Configure Docker
+        run: |-
+          gcloud --quiet auth configure-docker
+
+      - name: Build the image
+        working-directory: modules/api
+        run: |-
+          docker build --tag "gcr.io/${{ inputs.project_id }}/${{ inputs.image_name }}:$GITHUB_SHA" .
+
+      - name: Push the image to GCR
+        run: |-
+          docker push "gcr.io/${{ inputs.project_id }}/${{ inputs.image_name }}:$GITHUB_SHA"

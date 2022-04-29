@@ -1,0 +1,32 @@
+variable "kernel_path" {
+  type = string
+}
+
+variable "rootfs_path" {
+  type = string
+}
+
+variable "firecracker_path" {
+  type = string
+}
+
+job "firecracker-sessions" {
+  datacenters = ["dc1"]
+  type = "batch"
+
+  parameterized {}
+
+  task "start" {
+    driver = "firecracker-task-driver"
+
+    config {
+      KernelImage = var.kernel_path
+      BootDisk    = var.rootfs_path
+      Firecracker = var.firecracker_path
+      BootOptions = "console=ttyS0 noapic reboot=k panic=1 pci=off nomodules rw"
+      Vcpus       = 1
+      Mem         = 512
+      Network     = "default"
+    }
+  }
+}

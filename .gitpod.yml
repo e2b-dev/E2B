@@ -7,10 +7,16 @@ vscode:
     - hashicorp.terraform
 
 tasks:
-  - name: Setup
+  - name: Setup tools
     init: |-
       go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
       go install honnef.co/go/tools/cmd/staticcheck@latest
+  - name: Init Terraform
+    init: |-
+      make init
+  - name: Init Packer
+    init: |-
+      (cd modules/orchestrator/orchestrator-image && make init)
 
 github:
   prebuilds:

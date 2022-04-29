@@ -14,10 +14,9 @@ jobs:
     name: Check repo changes
     runs-on: ubuntu-20.04
     outputs:
-      api: ${{ steps.filter.outputs.api }}
-      orch: ${{ steps.filter.outputs.orch }}
-      envs: ${{ steps.filter.outputs.envs }}
-      infra: ${{ steps.filter.outputs.infra }}
+      api_image: ${{ steps.filter.outputs.api_image }}
+      orchestrator_image: ${{ steps.filter.outputs.orchestrator_image }}
+      terraform: ${{ steps.filter.outputs.terraform }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -27,28 +26,19 @@ jobs:
         id: filter
         with:
           filters: |
-            api:
-              - 'api/**'
-              - '.github/workflows/api.yml'
+            api_image:
+              - 'modules/api/api-image/**'
+              - '.github/workflows/api-image.yml'
               - '.github/workflows/master.yml'
-            orch:
-              - 'orch/**'
-              - '.github/workflows/orch.yml'
+            orchestrator_image:
+              - 'modules/orchestrator/orchestrator-image/**'
+              - '.github/workflows/orchestrator-image.yml'
               - '.github/workflows/master.yml'
-            envs:
-              - 'envs/**'
-              - '.github/workflows/envs.yml'
-              - '.github/workflows/master.yml'
-            infra:
-              - 'envs/**'
-              - '.github/workflows/infra.yml'
-              - '.github/workflows/master.yml'
-
-  api:
-    name: API
+  api_image:
+    name: API Image
     needs: changes
-    if: ${{ needs.changes.outputs.api == 'true' }}
-    uses: ./.github/workflows/api.yml
+    if: ${{ needs.changes.outputs.api_image == 'true' }}
+    uses: ./.github/workflows/api-image.yml
     with:
       project_id: devbookhq
       image_name: orchestration-api
@@ -56,29 +46,20 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  orch:
-    name: Orchestrator
+  orchestrator_image:
+    name: Orchestrator Image
     needs: changes
-    if: ${{ needs.changes.outputs.orch == 'true' }}
-    uses: ./.github/workflows/orch.yml
+    if: ${{ needs.changes.outputs.orchestrator_image == 'true' }}
+    uses: ./.github/workflows/orchestrator-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  envs:
-    name: Environments
-    needs: changes
-    if: ${{ needs.changes.outputs.envs == 'true' }}
-    uses: ./.github/workflows/envs.yml
+  terraform:
+    name: Deploy
+    needs: [changes, api_image, orchestrator_image]
+    if: ${{ always() }}
+    uses: ./.github/workflows/terraform.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
-
-  # infra:
-  #   name: Infrastructure
-  #   needs: [changes, api, orch, envs]
-  #   if: ${{ needs.changes.outputs.api == 'true' || needs.changes.outputs.orch == 'true' || needs.changes.outputs.envs == 'true' || needs.changes.outputs.infra == 'true' }}
-  #   uses: ./.github/workflows/infra.yml
-  #   secrets:
-  #     workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-  #     service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}

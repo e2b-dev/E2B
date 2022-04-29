@@ -1,0 +1,108 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Devbook
+  description: Devbook API
+
+tags:
+  - name: sessions
+    description: Managing VM sessions
+
+paths:
+  /:
+    get:
+      description: Health check
+      responses:
+        "200":
+          description: Request was successful
+  /sessions:
+    get:
+      tags:
+        - sessions
+      description: List all sessions
+      responses:
+        "200":
+          description: Successfully returned all sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/AnyValue"
+
+        "500":
+          description: Error listing sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      tags:
+        - sessions
+      description: Create a session on the server
+
+      responses:
+        "200":
+          description: Successfully created a session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+
+        "500":
+          description: Error creating session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /sessions/{session_id}:
+    delete:
+      tags:
+        - sessions
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Delete a session on the server
+      responses:
+        "200":
+          description: Successfully deleted a session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+
+        "500":
+          description: Error deleting session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    AnyValue: {}
+    Session:
+      required:
+        - session_id
+      properties:
+        session_id:
+          type: string
+          description: Identifier of the session
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message
