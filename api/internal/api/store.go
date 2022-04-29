@@ -41,7 +41,22 @@ func (p *APIStore) Get(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (p *APIStore) PostSession(c *gin.Context) {
+func (p *APIStore) GetSessions(c *gin.Context) {
+	// We're always asynchronous, so lock unsafe operations below
+	p.Lock.Lock()
+	defer p.Lock.Unlock()
+
+	sessions, _, err := p.nomad.GetSessions(nomad.SessionJobID)
+
+	if err != nil {
+		sendAPIStoreError(c, http.StatusInternalServerError, "Error listing sessions")
+		return
+	}
+
+	c.JSON(http.StatusOK, sessions)
+}
+
+func (p *APIStore) PostSessions(c *gin.Context) {
 	// We're always asynchronous, so lock unsafe operations below
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
@@ -49,23 +64,23 @@ func (p *APIStore) PostSession(c *gin.Context) {
 	session, _, err := p.nomad.CreateSession(nomad.SessionJobID)
 
 	if err != nil {
-		sendAPIStoreError(c, http.StatusNotFound, "Error creating session")
+		sendAPIStoreError(c, http.StatusInternalServerError, "Error creating session")
 		return
 	}
 
 	c.JSON(http.StatusCreated, Session{SessionId: session.DispatchedJobID})
 }
 
-func (p *APIStore) DeleteSessionSessionId(c *gin.Context, id string) {
+func (p *APIStore) DeleteSessionsSessionId(c *gin.Context, id string) {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
 	_, _, err := p.nomad.DeleteSession(nomad.SessionJobID)
 
 	if err != nil {
-		sendAPIStoreError(c, http.StatusNotFound, "Error deleting session")
+		sendAPIStoreError(c, http.StatusInternalServerError, "Error deleting session")
 		return
 	}
 
-	c.JSON(http.StatusNoContent, Session{SessionId: id})
+	c.JSON(http.StatusOK, Session{SessionId: id})
 }

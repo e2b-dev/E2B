@@ -11,6 +11,7 @@ type Nomad struct {
 	nomadClient *api.Client
 }
 
+// TODO: Don't hardcode the job ID
 const SessionJobID string = "firecracker-session"
 
 func InitNomad() *Nomad {

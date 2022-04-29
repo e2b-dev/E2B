@@ -17,11 +17,14 @@ type ServerInterface interface {
 	// (GET /)
 	Get(c *gin.Context)
 
-	// (POST /session)
-	PostSession(c *gin.Context)
+	// (GET /sessions)
+	GetSessions(c *gin.Context)
 
-	// (DELETE /session/{session_id})
-	DeleteSessionSessionId(c *gin.Context, sessionId string)
+	// (POST /sessions)
+	PostSessions(c *gin.Context)
+
+	// (DELETE /sessions/{session_id})
+	DeleteSessionsSessionId(c *gin.Context, sessionId string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -42,18 +45,28 @@ func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
 	siw.Handler.Get(c)
 }
 
-// PostSession operation middleware
-func (siw *ServerInterfaceWrapper) PostSession(c *gin.Context) {
+// GetSessions operation middleware
+func (siw *ServerInterfaceWrapper) GetSessions(c *gin.Context) {
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PostSession(c)
+	siw.Handler.GetSessions(c)
 }
 
-// DeleteSessionSessionId operation middleware
-func (siw *ServerInterfaceWrapper) DeleteSessionSessionId(c *gin.Context) {
+// PostSessions operation middleware
+func (siw *ServerInterfaceWrapper) PostSessions(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PostSessions(c)
+}
+
+// DeleteSessionsSessionId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSessionsSessionId(c *gin.Context) {
 
 	var err error
 
@@ -70,7 +83,7 @@ func (siw *ServerInterfaceWrapper) DeleteSessionSessionId(c *gin.Context) {
 		middleware(c)
 	}
 
-	siw.Handler.DeleteSessionSessionId(c, sessionId)
+	siw.Handler.DeleteSessionsSessionId(c, sessionId)
 }
 
 // GinServerOptions provides options for the Gin server.
@@ -93,9 +106,11 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 
 	router.GET(options.BaseURL+"/", wrapper.Get)
 
-	router.POST(options.BaseURL+"/session", wrapper.PostSession)
+	router.GET(options.BaseURL+"/sessions", wrapper.GetSessions)
 
-	router.DELETE(options.BaseURL+"/session/:session_id", wrapper.DeleteSessionSessionId)
+	router.POST(options.BaseURL+"/sessions", wrapper.PostSessions)
+
+	router.DELETE(options.BaseURL+"/sessions/:session_id", wrapper.DeleteSessionsSessionId)
 
 	return router
 }

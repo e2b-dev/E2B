@@ -5,7 +5,7 @@ info:
   description: Devbook API
 
 tags:
-  - name: session
+  - name: sessions
     description: Managing VM sessions
 
 paths:
@@ -15,10 +15,32 @@ paths:
       responses:
         "200":
           description: Request was successful
-  /session:
+  /sessions:
+    get:
+      tags:
+        - sessions
+      description: List all sessions
+      responses:
+        "200":
+          description: Successfully returned all sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Session"
+
+        "500":
+          description: Error listing sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
     post:
       tags:
-        - session
+        - sessions
       description: Create a session on the server
       responses:
         "200":
@@ -28,34 +50,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/Session"
 
-        default:
-          description: unexpected error
+        "500":
+          description: Error creating session
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /session/{session_id}:
+  /sessions/{session_id}:
     delete:
       tags:
-        - session
+        - sessions
       parameters:
         - name: session_id
           in: path
           required: true
           schema:
             type: string
-      description: Delete session on the server
+      description: Delete a session on the server
       responses:
         "200":
-          description: Successfully deleted session
+          description: Successfully deleted a session
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
 
-        default:
-          description: unexpected error
+        "500":
+          description: Error deleting session
           content:
             application/json:
               schema:
