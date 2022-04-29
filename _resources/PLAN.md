@@ -1,15 +1,15 @@
 # Plan
 
 ## 1. Foundation - deployment, orchestration, mesh
-- Fix startup script (Nomad crash)
+- Nomad instances are not connected
+- Configure Consul and Envoy to get the mesh
 - Check rolling updates -> nomad state
-- Configure Consul and Envoy to get the addressable mesh
 - Add health checks for Nomad (maybe we won't need them with consul+envoy)
-- Allow connecting to the running Nomad from Terraform
+- Allow connecting to the running Nomad from Terraform (do we need proxy here?)
 
-## 2. Core Services - FC, API, specific networking, lifecycle management
+## 2. Core Services - FC, API, networking, lifecycle management
 ### FC
-- Install FC plugin to Nomad
+- Add FC plugin to Nomad
 - Add CNI plugins
 - Add network config for FC
 - Modify FC plugin to work with FC 1.0.0
@@ -34,7 +34,7 @@
 - Create rootfs from the container
 - Start firecracker with the rootfs and make the snapshot
 - Upload the snapshot to Filestore or to a persistent disk
-- Mount FC persisten disk or Filestore on start (explore Nomad external volumes)
+- Mount FC persistent disk or Filestore on start (explore Nomad external volumes)
 - Add API endpoint for managing envs
 - Build and save kernel (we might be using 4.16 instead of 5+ because of snapshot start times)
 
@@ -44,7 +44,7 @@
 - Rate limiting
 
 ### SDK
-- Create pure JS connector
+- Create a pure JS connector
 
 ### Monitoring 
 - Add monitoring and logging (consul, envoy, prometheus, grafana)

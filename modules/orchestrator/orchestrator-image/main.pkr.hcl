@@ -8,7 +8,6 @@ packer {
   }
 }
 
-
 source "googlecompute" "orch" {
   image_family        = "orch"
   image_name          = "orch-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
@@ -31,6 +30,16 @@ source "googlecompute" "orch" {
 build {
   sources = ["source.googlecompute.orch"]
 
+  provisioner "file" {
+    source = "./modules/nomad-setup/supervisord.conf"
+    destination = "/tmp/supervisord.conf"
+  }
+
+  provisioner "file" {
+    source = "./modules/"
+    destination = "/tmp"
+  }
+
   provisioner "shell" {
     inline = ["sudo apt update", "sudo apt install -y unzip jq"]
   }
@@ -41,16 +50,6 @@ build {
       "git clone --branch v0.1.3 https://github.com/gruntwork-io/bash-commons.git /tmp/bash-commons",
       "sudo cp -r /tmp/bash-commons/modules/bash-commons/src /opt/gruntwork/bash-commons",
     ]
-  }
-
-  provisioner "file" {
-    source = "./modules/nomad-setup/supervisord.conf"
-    destination = "/tmp/supervisord.conf"
-  }
-
-  provisioner "file" {
-    source = "./modules/"
-    destination = "/tmp"
   }
 
   provisioner "shell" {

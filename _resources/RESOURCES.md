@@ -13,6 +13,7 @@
 - https://www.terraform.io/language/settings/backends/gcs
 - https://todevornot.com/post/618457167027126272/gce-instance-with-persistent-disk-provisioned
 - https://cloud.google.com/load-balancing/docs/l7-internal/int-https-lb-tf-examples
+- https://arafatm.com/tech/hashi-consul-learn#install-consul
 
 ## API
 - https://github.com/deepmap/oapi-codegen

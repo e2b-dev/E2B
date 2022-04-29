@@ -1,13 +1,13 @@
 variable "rootfs_path" {
   description = "Must be an absolute path"
   type        = string
-  default     = "/rootfs.ext4"
+  default     = "/fc-envs/test/rootfs.ext4"
 }
 
 variable "kernel_path" {
   description = "Must be an absolute path"
   type        = string
-  default     = "/vmlinux"
+  default     = "/fc-vm/vmlinux.bin"
 }
 
 variable "firecracker_path" {

@@ -99,7 +99,7 @@ variable "custom_tags" {
 variable "service_account_email" {
   description = "The email of the service account for the instance template. If none is provided the google cloud provider project service account is used."
   type        = string
-  default     = null
+  default     = "github-action@devbookhq.iam.gserviceaccount.com"
 }
 
 variable "allowed_inbound_cidr_blocks_http_api" {
