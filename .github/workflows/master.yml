@@ -35,7 +35,7 @@ jobs:
               - '.github/workflows/orchestrator-image.yml'
               - '.github/workflows/master.yml'
   api_image:
-    name: API Image
+    name: API image
     needs: changes
     if: ${{ needs.changes.outputs.api_image == 'true' }}
     uses: ./.github/workflows/api-image.yml
@@ -47,7 +47,7 @@ jobs:
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   orchestrator_image:
-    name: Orchestrator Image
+    name: Orchestrator image
     needs: changes
     if: ${{ needs.changes.outputs.orchestrator_image == 'true' }}
     uses: ./.github/workflows/orchestrator-image.yml
@@ -56,7 +56,7 @@ jobs:
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   terraform:
-    name: Deploy
+    name: Terraform deploy
     needs: [changes, api_image, orchestrator_image]
     if: ${{ always() }}
     uses: ./.github/workflows/terraform.yml
