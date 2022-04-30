@@ -1,4 +1,4 @@
-name: Orchestration Services - Terraform deploy
+name: Orchestration Services - Terraform
 
 on:
   workflow_call:
@@ -27,10 +27,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
-        run: make init
-
-      - name: Terraform Plan
-        run: make plan
+        run: make init-terraform
 
       - name: Terraform Apply
-        run: make deploy
+        run: make deploy-terraform

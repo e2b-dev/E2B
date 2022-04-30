@@ -26,12 +26,10 @@ jobs:
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1
 
-      - name: Initialize Packer plugins
-        working-directory: modules/orchestrator/orchestrator-image
+      - name: Initialize Packer
         run: |-
-          make init
+          make init-orchestrator-image
 
       - name: Build the image on GCE VM and save it on GCP
-        working-directory: modules/orchestrator/orchestrator-image
         run: |-
-          make build
+          make build-orchestrator-image

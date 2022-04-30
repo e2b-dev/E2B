@@ -18,8 +18,8 @@ source "googlecompute" "orch" {
   disk_size           = 10
 
   # This is used only for building the image and the GCE VM is then deleted
-  machine_type        = "n1-standard-2"
-  
+  machine_type = "n1-standard-2"
+
   # Enable nested virtualization
   image_licenses = ["projects/vm-options/global/licenses/enable-vmx"]
 }
@@ -31,12 +31,12 @@ build {
   sources = ["source.googlecompute.orch"]
 
   provisioner "file" {
-    source = "./modules/nomad-setup/supervisord.conf"
+    source      = "${path.root}/modules/nomad-setup/supervisord.conf"
     destination = "/tmp/supervisord.conf"
   }
 
   provisioner "file" {
-    source = "./modules/"
+    source      = "${path.root}/modules/"
     destination = "/tmp"
   }
 
@@ -53,17 +53,17 @@ build {
   }
 
   provisioner "shell" {
-    script          = "./modules/nomad-setup/install-nomad.sh"
+    script          = "${path.root}/modules/nomad-setup/install-nomad.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.nomad_version}"
   }
 
   provisioner "shell" {
-    script          = "./modules/consul-setup/install-consul.sh"
+    script          = "${path.root}/modules/consul-setup/install-consul.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
   }
 
   provisioner "shell" {
-    script          = "./modules/firecracker-setup/install-firecracker.sh"
+    script          = "${path.root}/modules/firecracker-setup/install-firecracker.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 

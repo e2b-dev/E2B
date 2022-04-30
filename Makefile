@@ -1,17 +1,28 @@
-gcloud-login:
+login-gcloud:
 	gcloud auth application-default login
 	echo "export GOOGLE_APPLICATION_CREDENTIALS=/home/gitpod/.config/gcloud/application_default_credentials.json" >>  ~/.bashrc
 
-# Get Terraform modules definitions
-get:
-	terraform get
+init-terraform:
+	terraform init -input=false
 
-init:
-	terraform init
+plan-terraform:
+	terraform fmt -recursive
+	terraform plan -compact-warnings -detailed-exitcode
 
-plan:
-	terraform fmt -check
-	terraform plan
+deploy-terraform: 
+	terraform apply -auto-approve -input=false -compact-warnings
 
-deploy: 
-	terraform apply -auto-approve
+build-api-image:
+	$(MAKE) -C modules/api/api-image build
+
+generate-api-image:
+	$(MAKE) -C modules/api/api-image generate
+
+init-orchestrator-image:
+	$(MAKE) -C modules/orchestrator/orchestrator-image init
+
+build-orchestrator-image:
+	$(MAKE) -C modules/orchestrator/orchestrator-image build
+
+format-orchestrator-image:
+	$(MAKE) -C modules/orchestrator/orchestrator-image format

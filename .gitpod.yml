@@ -13,10 +13,10 @@ tasks:
       go install honnef.co/go/tools/cmd/staticcheck@latest
   - name: Init Terraform
     init: |-
-      make init
+      make terraform-init
   - name: Init Packer
     init: |-
-      (cd modules/orchestrator/orchestrator-image && make init)
+      make orchestrator-image-init
 
 github:
   prebuilds:
