@@ -41,7 +41,10 @@ build {
   }
 
   provisioner "shell" {
-    inline = ["sudo apt update", "sudo apt install -y unzip jq"]
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y unzip jq",
+    ]
   }
 
   provisioner "shell" {
