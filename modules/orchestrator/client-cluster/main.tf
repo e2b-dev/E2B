@@ -63,6 +63,12 @@ resource "google_compute_instance_template" "client" {
 
   network_interface {
     network = var.network_name
+
+    dynamic "access_config" {
+      for_each = var.assign_public_ip_addresses ? ["public_ip"] : []
+      content {
+      }
+    }
   }
 
   # For a full list of oAuth 2.0 Scopes, see https://developers.google.com/identity/protocols/googlescopes

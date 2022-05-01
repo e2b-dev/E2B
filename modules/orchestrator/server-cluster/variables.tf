@@ -84,12 +84,6 @@ variable "network_name" {
   default     = "default"
 }
 
-variable "subnetwork_name" {
-  description = "The name of the VPC Subnetwork where all resources should be created. Defaults to the default subnetwork for the network and region."
-  type        = string
-  default     = null
-}
-
 variable "custom_tags" {
   description = "A list of tags that will be added to the Compute Instance Template in addition to the tags automatically added by this module."
   type        = list(string)
