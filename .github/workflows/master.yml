@@ -54,11 +54,11 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  terraform:
-    name: Terraform deploy
+  infrastructure:
+    name: Infrastructure
     needs: [changes, api_image, orchestrator_image]
     if: ${{ always() }}
-    uses: ./.github/workflows/terraform.yml
+    uses: ./.github/workflows/infrastructure.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}

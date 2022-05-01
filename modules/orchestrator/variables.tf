@@ -11,7 +11,7 @@ variable "server_cluster_name" {
 
 variable "server_cluster_size" {
   type    = number
-  default = 2
+  default = 3
 }
 
 variable "server_machine_type" {
@@ -26,7 +26,7 @@ variable "client_cluster_name" {
 
 variable "client_cluster_size" {
   type    = number
-  default = 2
+  default = 3
 }
 
 variable "client_machine_type" {

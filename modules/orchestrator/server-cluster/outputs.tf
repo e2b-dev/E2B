@@ -26,45 +26,6 @@ output "instance_template_metadata_fingerprint" {
   value = google_compute_instance_template.server.metadata_fingerprint
 }
 
-output "firewall_rule_intracluster_url" {
-  value = google_compute_firewall.allow_intracluster_server.self_link
+output "server_proxy_ip" {
+  value = module.server_proxy.proxy_ip
 }
-
-output "firewall_rule_intracluster_name" {
-  value = google_compute_firewall.allow_intracluster_server.name
-}
-
-output "firewall_rule_inbound_http_url" {
-  value = element(
-    concat(
-      google_compute_firewall.allow_inbound_http_api.*.self_link,
-      [""],
-    ),
-    0,
-  )
-}
-
-output "firewall_rule_inbound_http_name" {
-  value = element(
-    concat(google_compute_firewall.allow_inbound_http_api.*.name, [""]),
-    0,
-  )
-}
-
-output "firewall_rule_inbound_dns_url" {
-  value = element(
-    concat(google_compute_firewall.allow_inbound_dns.*.self_link, [""]),
-    0,
-  )
-}
-
-output "firewall_rule_inbound_dns_name" {
-  value = element(
-    concat(google_compute_firewall.allow_inbound_dns.*.name, [""]),
-    0,
-  )
-}
-
-# output "nomad_address" {
-#   value = "http://${module.orch_server_proxy.orch_proxy_ip}"
-# }

@@ -45,7 +45,7 @@ variable "cluster_tag_name" {
 variable "assign_public_ip_addresses" {
   description = "If true, each of the Compute Instances will receive a public IP address and be reachable from the Public Internet (if Firewall rules permit). If false, the Compute Instances will have private IP addresses only. In production, this should be set to false."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "instance_group_target_pools" {
@@ -197,5 +197,4 @@ variable "instance_group_update_policy_max_unavailable_percent" {
 variable "instance_group_update_policy_min_ready_sec" {
   description = "Minimum number of seconds to wait for after a newly created instance becomes available. This value must be between 0-3600."
   type        = number
-  default     = 60
 }

@@ -17,7 +17,7 @@ on:
 
 jobs:
   build:
-    name: Build & Push
+    name: Build
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

@@ -2,14 +2,14 @@ login-gcloud:
 	gcloud auth application-default login
 	echo "export GOOGLE_APPLICATION_CREDENTIALS=/home/gitpod/.config/gcloud/application_default_credentials.json" >>  ~/.bashrc
 
-init-terraform:
+init-infrastructure:
 	terraform init -input=false
 
-plan-terraform:
+plan-infrastructure:
 	terraform fmt -recursive
 	terraform plan -compact-warnings -detailed-exitcode
 
-deploy-terraform: 
+deploy-infrastructure: 
 	terraform apply -auto-approve -input=false -compact-warnings
 
 build-api-image:

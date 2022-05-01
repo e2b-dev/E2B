@@ -2,10 +2,10 @@
 
 ## 1. Foundation - deployment, orchestration, mesh
 - Nomad instances are not connected
-- Configure Consul and Envoy to get the mesh
-- Check rolling updates -> nomad state
+- Check rolling updates -> nomad job state
 - Add health checks for Nomad (maybe we won't need them with consul+envoy)
 - Allow connecting to the running Nomad from Terraform (do we need proxy here?)
+- Fix dnsmasq install, check mesh
 
 ## 2. Core Services - FC, API, networking, lifecycle management
 ### FC
@@ -41,7 +41,6 @@
 ### Authentication
 - Authentication for API
 - Authentication for sessions
-- Rate limiting
 
 ### SDK
 - Create a pure JS connector

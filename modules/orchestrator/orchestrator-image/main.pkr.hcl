@@ -66,18 +66,22 @@ build {
   }
 
   provisioner "shell" {
-    script          = "${path.root}/modules/firecracker-setup/install-firecracker.sh"
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
+    script          = "${path.root}/modules/dnsmasq-setup/install-dnsmasq.sh"
+  }
+
+  provisioner "shell" {
+   script          = "${path.root}/modules/firecracker-setup/install-firecracker.sh"
+   execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 
   # Add testing FC kernel and rootfs
   provisioner "shell" {
-    inline = [
-      "sudo mkdir -p /fc-vm",
-      "sudo mkdir -p /fc-envs",
-      "sudo curl https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/kernels/vmlinux.bin -o /fc-vm/vmlinux.bin",
-      "sudo mkdir -p /fc-envs/test",
-      "sudo curl https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/rootfs/bionic.rootfs.ext4 -o /fc-envs/test/rootfs.ext4",
-    ]
+   inline = [
+     "sudo mkdir -p /fc-vm",
+     "sudo mkdir -p /fc-envs",
+     "sudo curl https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/kernels/vmlinux.bin -o /fc-vm/vmlinux.bin",
+     "sudo mkdir -p /fc-envs/test",
+     "sudo curl https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/rootfs/bionic.rootfs.ext4 -o /fc-envs/test/rootfs.ext4",
+   ]
   }
 }

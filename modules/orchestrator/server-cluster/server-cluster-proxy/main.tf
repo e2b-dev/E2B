@@ -22,7 +22,8 @@ resource "google_compute_forwarding_rule" "default" {
   network               = data.google_compute_network.default.id
   subnetwork            = var.backend_subnet
   network_tier          = "PREMIUM"
-  ip_address            = "10.0.1.20"
+  # There should be only 3-5 nomad servers so most ip addresses here should be empty
+  ip_address = "10.128.0.200"
 }
 
 # HTTP target proxy
@@ -55,7 +56,9 @@ resource "google_compute_region_backend_service" "default" {
 resource "google_compute_region_health_check" "default" {
   name = "orch-server-hc"
   http_health_check {
-    port_specification = "USE_SERVING_PORT"
+    port               = 4646
+    request_path       = "/v1/status/leader"
+    port_specification = "USE_FIXED_PORT"
   }
 }
 

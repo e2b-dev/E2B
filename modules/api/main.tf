@@ -5,6 +5,10 @@ data "google_container_registry_image" "api_image" {
 resource "nomad_job" "orchestration_api" {
   jobspec = file("${path.module}/orchestration-api.hcl.tmpl")
 
+  depends_on = [
+    data.google_container_registry_image.api_image
+  ]
+
   hcl2 {
     enabled = true
     vars = {

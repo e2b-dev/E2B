@@ -16,6 +16,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
     max_surge_percent       = var.instance_group_update_policy_max_surge_percent
     max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
     max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
+    min_ready_sec           = var.instance_group_update_policy_min_ready_sec
   }
 
   base_instance_name = var.cluster_name
@@ -90,22 +91,3 @@ resource "google_compute_instance_template" "client" {
 # ---------------------------------------------------------------------------------------------------------------------
 # CREATE FIREWALL RULES
 # ---------------------------------------------------------------------------------------------------------------------
-
-module "firewall_rules" {
-  source = "./client-firewall-rules"
-
-  cluster_name     = var.cluster_name
-  cluster_tag_name = var.cluster_tag_name
-
-  allowed_inbound_cidr_blocks_http = var.allowed_inbound_cidr_blocks_http
-  allowed_inbound_cidr_blocks_rpc  = var.allowed_inbound_cidr_blocks_rpc
-  allowed_inbound_cidr_blocks_serf = var.allowed_inbound_cidr_blocks_serf
-
-  allowed_inbound_tags_http = var.allowed_inbound_tags_http
-  allowed_inbound_tags_rpc  = var.allowed_inbound_tags_rpc
-  allowed_inbound_tags_serf = var.allowed_inbound_tags_serf
-
-  http_port = 4646
-  rpc_port  = 4647
-  serf_port = 4648
-}

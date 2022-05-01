@@ -22,15 +22,15 @@ module "orchestrator" {
   source = "./modules/orchestrator"
 }
 
-# provider "nomad" {
-#   address = module.server_cluster.nomad_address
-# }
+provider "nomad" {
+  address = "http://${module.orchestrator.server_proxy_ip}"
+}
 
-# module "api" {
-#   source = "./modules/api"
+module "api" {
+  source = "./modules/api"
 
-#   nomad_address = module.server_cluster.nomad_address
-# }
+  nomad_address = "http://${module.orchestrator.server_proxy_ip}"
+}
 
 # module "firecracker_sessions" {
 #   source = "./modules/firecracker-sessions"

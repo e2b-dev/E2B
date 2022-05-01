@@ -75,7 +75,7 @@ variable "cluster_description" {
 variable "assign_public_ip_addresses" {
   description = "If true, each of the Compute Instances will receive a public IP address and be reachable from the Public Internet (if Firewall rules permit). If false, the Compute Instances will have private IP addresses only. In production, this should be set to false."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "network_name" {
@@ -93,7 +93,7 @@ variable "custom_tags" {
 variable "service_account_email" {
   description = "The email of the service account for the instance template. If none is provided the google cloud provider project service account is used."
   type        = string
-  default     = "github-action@devbookhq.iam.gserviceaccount.com"
+  default     = null
 }
 
 variable "allowed_inbound_cidr_blocks_http_api" {
@@ -161,7 +161,6 @@ variable "instance_group_update_policy_max_unavailable_percent" {
 variable "instance_group_update_policy_min_ready_sec" {
   description = "Minimum number of seconds to wait for after a newly created instance becomes available. This value must be between 0-3600."
   type        = number
-  default     = 40
 }
 
 # Metadata
@@ -215,6 +214,69 @@ variable "dns_port" {
   type        = number
   default     = 8600
 }
+
+
+
+# Firewall Ports
+
+variable "nomad_http_port" {
+  description = "The port used by Nomad to handle incoming HTPT (API) requests."
+  type        = number
+  default     = 4646
+}
+
+variable "nomad_rpc_port" {
+  description = "The port used by Nomad to handle incoming RPC requests."
+  type        = number
+  default     = 4647
+}
+
+variable "nomad_serf_port" {
+  description = "The port used by Nomad to handle incoming serf requests."
+  type        = number
+  default     = 4648
+}
+
+variable "allowed_inbound_cidr_blocks_http" {
+  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.http_port."
+  type        = list(string)
+  default     = []
+}
+
+variable "allowed_inbound_tags_http" {
+  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.http_port."
+  type        = list(string)
+  default     = []
+}
+
+variable "allowed_inbound_cidr_blocks_rpc" {
+  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.rpc_port."
+  type        = list(string)
+  default     = []
+}
+
+variable "allowed_inbound_tags_rpc" {
+  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.rpc_port."
+  type        = list(string)
+  default     = []
+}
+
+variable "allowed_inbound_cidr_blocks_serf" {
+  description = "A list of CIDR-formatted IP address ranges from which the Compute Instances will allow connections to Nomad on the port specified by var.serf_port."
+  type        = list(string)
+  default     = []
+}
+
+variable "allowed_inbound_tags_serf" {
+  description = "A list of tags from which the Compute Instances will allow connections to Nomad on the port specified by var.serf_port."
+  type        = list(string)
+  default     = []
+}
+
+
+
+
+
 
 # Disk Settings
 

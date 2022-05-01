@@ -14,13 +14,14 @@
 - https://todevornot.com/post/618457167027126272/gce-instance-with-persistent-disk-provisioned
 - https://cloud.google.com/load-balancing/docs/l7-internal/int-https-lb-tf-examples
 - https://arafatm.com/tech/hashi-consul-learn#install-consul
+- https://medium.com/navin-nair/practical-hashicorp-nomad-and-consul-a-little-more-than-hello-world-part-1-991d2a54fd64
 
 ## API
 - https://github.com/deepmap/oapi-codegen
 - https://support.smartbear.com/swaggerhub/docs/tutorials/openapi-3-tutorial.html
 - https://editor.swagger.io/
 
-## Orchestrator disk image
+## Orchestrator
 - https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md
 - https://jvns.ca/blog/2021/01/20/day-42--writing-a-go-program-to-manage-firecracker-vms/
 - https://github.com/weaveworks/ignite/blob/main/pkg/dmlegacy/snapshot.go#L61-L118
@@ -47,8 +48,13 @@
 - https://www.youtube.com/watch?v=CYCsa5e2vqg
 - https://github.com/firecracker-microvm/firecracker-go-sdk
 - https://github.com/hashicorp/nomad/blob/main/website/content/api-docs/volumes.mdx
+- https://www.nomadproject.io/tools/autoscaling/plugins/target/gce-mig
+- https://github.com/hashicorp/consul/issues/6672
+- https://github.com/hashicorp/nomad/issues/2508
+- https://github.com/hashicorp/nomad/issues/7173
+- https://discuss.hashicorp.com/t/consul-server-unable-to-join-consul-cluster/19068/3
 
-## Envs pipeline
+## Envs
 - https://github.com/combust-labs/firebuild#high-level-example
 - https://cloud.google.com/compute/docs/disks/performance
 - https://cloud.google.com/filestore/docs/mounting-fileshares (pretty expensive)
