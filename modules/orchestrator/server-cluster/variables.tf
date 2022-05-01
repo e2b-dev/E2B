@@ -75,7 +75,7 @@ variable "cluster_description" {
 variable "assign_public_ip_addresses" {
   description = "If true, each of the Compute Instances will receive a public IP address and be reachable from the Public Internet (if Firewall rules permit). If false, the Compute Instances will have private IP addresses only. In production, this should be set to false."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "network_name" {
