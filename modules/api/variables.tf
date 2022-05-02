@@ -3,6 +3,6 @@ variable "api_image_name" {
   default = "orchestration-api"
 }
 
-variable "nomad_address" {
+variable "server_proxy_ip" {
   type = string
 }

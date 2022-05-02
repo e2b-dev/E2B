@@ -6,7 +6,7 @@
 - https://medium.com/interleap/automating-terraform-deployment-to-google-cloud-with-github-actions-17516c4fb2e5
 - https://learn.hashicorp.com/tutorials/waypoint/get-started-nomad?in=waypoint/get-started-nomad#setting-up-nomad-with-persistent-volumes
 - https://github.com/hashicorp/terraform-google-nomad
-- https://github.com/picatz/terraform-google-nomad (preemptible rolling?)
+- https://github.com/picatz/terraform-google-nomad (preemptible rolling?, logs, dashboaard, security)
 - https://github.com/picatz/terraform-google-nomad/issues/39
 - https://github.com/picatz/terraform-google-nomad/issues/13
 - https://stackoverflow.com/questions/64397938/how-to-integrate-terraform-state-into-github-action-workflow
@@ -15,6 +15,8 @@
 - https://cloud.google.com/load-balancing/docs/l7-internal/int-https-lb-tf-examples
 - https://arafatm.com/tech/hashi-consul-learn#install-consul
 - https://medium.com/navin-nair/practical-hashicorp-nomad-and-consul-a-little-more-than-hello-world-part-1-991d2a54fd64
+- https://github.com/nairnavin/practical-nomad-consul
+- https://johansiebens.dev/posts/2020/12/monitoring-nomad-with-prometheus-and-thanos/
 
 ## API
 - https://github.com/deepmap/oapi-codegen
@@ -53,6 +55,7 @@
 - https://github.com/hashicorp/nomad/issues/2508
 - https://github.com/hashicorp/nomad/issues/7173
 - https://discuss.hashicorp.com/t/consul-server-unable-to-join-consul-cluster/19068/3
+- Packer multiple builders
 
 ## Envs
 - https://github.com/combust-labs/firebuild#high-level-example

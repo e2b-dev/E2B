@@ -29,10 +29,6 @@ variable "startup_script" {
   type        = string
 }
 
-variable "shutdown_script" {
-  type = string
-}
-
 variable "cluster_tag_name" {
   type = string
 }

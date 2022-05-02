@@ -1,9 +1,4 @@
 #!/bin/bash
-# This script can be used to install Nomad and its dependencies. This script has been tested with the following
-# operating systems:
-#
-# 1. Ubuntu 16.04
-# 2. Ubuntu 18.04
 
 set -e
 
@@ -163,7 +158,7 @@ function install_binaries {
   fi
 
   log_info "Copying Nomad run script to $run_nomad_dest_path"
-  sudo cp "$SCRIPT_DIR/nomad-setup/run-nomad.sh" "$run_nomad_dest_path"
+  sudo cp "$SCRIPT_DIR/setup/run-nomad.sh" "$run_nomad_dest_path"
   sudo chown "$username:$username" "$run_nomad_dest_path"
   sudo chmod a+x "$run_nomad_dest_path"
 }

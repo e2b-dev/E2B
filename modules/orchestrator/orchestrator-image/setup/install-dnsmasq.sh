@@ -1,8 +1,4 @@
 #!/bin/bash
-# Install Dnsmasq and configure it to forward requests for a specific domain to Consul. This script has been tested
-# with the following operating systems:
-#
-# - Ubuntu 18.04
 
 set -e
 

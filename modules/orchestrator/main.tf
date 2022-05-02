@@ -2,8 +2,7 @@ module "server_cluster" {
   source = "./server-cluster"
 
   startup_script                             = data.template_file.startup_script_server.rendered
-  shutdown_script                            = data.template_file.shutdown_script.rendered
-  instance_group_update_policy_min_ready_sec = 10
+  instance_group_update_policy_min_ready_sec = 120
 
   cluster_name     = var.server_cluster_name
   cluster_size     = var.server_cluster_size
@@ -16,8 +15,7 @@ module "client_cluster" {
   source = "./client-cluster"
 
   startup_script                             = data.template_file.startup_script_client.rendered
-  shutdown_script                            = data.template_file.shutdown_script.rendered
-  instance_group_update_policy_min_ready_sec = 10
+  instance_group_update_policy_min_ready_sec = 5
 
   cluster_name     = var.client_cluster_name
   cluster_size     = var.client_cluster_size
@@ -43,10 +41,6 @@ data "template_file" "startup_script_client" {
   }
 }
 
-data "template_file" "shutdown_script" {
-  template = file("${path.module}/scripts/shutdown.sh")
-}
-
 resource "google_compute_firewall" "orchstrator_firewall" {
   name    = "${var.cluster_tag_name}-firewall"
   network = "default"
@@ -55,4 +49,14 @@ resource "google_compute_firewall" "orchstrator_firewall" {
   }
   source_tags = [var.cluster_tag_name]
   target_tags = [var.cluster_tag_name]
+}
+
+provider "nomad" {
+  address = "http://${module.server_cluster.server_proxy_ip}"
+}
+
+module "firecracker-sessions" {
+  source = "./firecracker-sessions"
+
+  gcp_zone = "us-central1-a"
 }

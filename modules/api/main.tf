@@ -2,18 +2,32 @@ data "google_container_registry_image" "api_image" {
   name = var.api_image_name
 }
 
-resource "nomad_job" "orchestration_api" {
-  jobspec = file("${path.module}/orchestration-api.hcl.tmpl")
+resource "google_cloud_run_service" "api_service" {
+  name                       = "orchestration-api"
+  location                   = "us-central1"
+  autogenerate_revision_name = true
 
-  depends_on = [
-    data.google_container_registry_image.api_image
-  ]
-
-  hcl2 {
-    enabled = true
-    vars = {
-      image_name    = data.google_container_registry_image.api_image.image_url
-      nomad_address = var.nomad_address
+  template {
+    spec {
+      containers {
+        image = data.google_container_registry_image.api_image.id
+        env {
+          name  = "NOMAD_ADDRESS"
+          value = var.server_proxy_ip
+        }
+      }
     }
   }
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+}
+
+resource "google_cloud_run_service_iam_member" "run_all_users" {
+  service  = google_cloud_run_service.api_service.name
+  location = google_cloud_run_service.api_service.location
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }

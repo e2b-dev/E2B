@@ -44,10 +44,6 @@ resource "google_compute_instance_template" "client" {
   metadata = merge(
     {
       "${var.metadata_key_name_for_cluster_size}" = var.cluster_size
-
-      # The Terraform Google provider currently doesn't support a `metadata_shutdown_script` argument so we manually
-      # set it here using the instance metadata.
-      "shutdown-script" = var.shutdown_script
     },
     var.custom_metadata,
   )
@@ -67,8 +63,7 @@ resource "google_compute_instance_template" "client" {
 
     dynamic "access_config" {
       for_each = var.assign_public_ip_addresses ? ["public_ip"] : []
-      content {
-      }
+      content {}
     }
   }
 
@@ -77,6 +72,12 @@ resource "google_compute_instance_template" "client" {
     scopes = [
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/compute.readonly",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/monitoring.write",
+      "userinfo-email",
+      "compute-ro",
+      "storage-full",
     ]
   }
 

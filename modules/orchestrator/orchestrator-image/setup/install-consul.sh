@@ -1,8 +1,4 @@
 #!/bin/bash
-# This script can be used to install Consul and its dependencies. This script has been tested with the following
-# operating systems:
-#
-# - Ubuntu 18.04
 
 set -e
 
@@ -144,7 +140,7 @@ function install_binary {
   fi
 
   log_info "Copying Consul run script to $run_consul_dest_path"
-  sudo cp "$SCRIPT_DIR/consul-setup/run-consul.sh" "$run_consul_dest_path"
+  sudo cp "$SCRIPT_DIR/setup/run-consul.sh" "$run_consul_dest_path"
   sudo chown "$username:$username" "$run_consul_dest_path"
   sudo chmod a+x "$run_consul_dest_path"
 }

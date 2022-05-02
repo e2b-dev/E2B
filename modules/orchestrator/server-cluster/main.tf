@@ -2,14 +2,6 @@ data "google_compute_network" "default" {
   name = "default"
 }
 
-# backend subnet
-resource "google_compute_subnetwork" "backend_subnet" {
-  name          = "orch-server-backend-subnet"
-  provider      = google-beta
-  ip_cidr_range = "10.0.1.0/24"
-  network       = data.google_compute_network.default.id
-}
-
 resource "google_compute_instance_group_manager" "server_cluster" {
   name               = "${var.cluster_name}-ig"
   base_instance_name = var.cluster_name
@@ -20,7 +12,12 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   wait_for_instances_status = "UPDATED"
 
   version {
-    instance_template = google_compute_instance_template.server.self_link
+    instance_template = google_compute_instance_template.server.id
+  }
+
+  named_port {
+    name = "http"
+    port = 4646
   }
 
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
@@ -40,7 +37,6 @@ resource "google_compute_instance_group_manager" "server_cluster" {
 
   depends_on = [
     google_compute_instance_template.server,
-    google_compute_subnetwork.backend_subnet,
   ]
 
   lifecycle {
@@ -58,19 +54,11 @@ resource "google_compute_instance_template" "server" {
   instance_description = var.cluster_description
   machine_type         = var.machine_type
 
-  depends_on = [
-    google_compute_subnetwork.backend_subnet,
-  ]
-
   tags                    = concat([var.cluster_tag_name], var.custom_tags)
   metadata_startup_script = var.startup_script
   metadata = merge(
     {
       "${var.metadata_key_name_for_cluster_size}" = var.cluster_size,
-
-      # The Terraform Google provider currently doesn't support a `metadata_shutdown_script` argument so we manually
-      # set it here using the instance metadata.
-      "shutdown-script" = var.shutdown_script
     },
     var.custom_metadata,
   )
@@ -87,22 +75,25 @@ resource "google_compute_instance_template" "server" {
   }
 
   network_interface {
-    network    = var.network_name
-    subnetwork = google_compute_subnetwork.backend_subnet.id
+    network = var.network_name
 
     # Create access config dynamically. If a public ip is requested, we just need the empty `access_config` block
     # to automatically assign an external IP address.
     dynamic "access_config" {
       for_each = var.assign_public_ip_addresses ? ["public_ip"] : []
-      content {
-      }
+      content {}
     }
   }
 
   service_account {
     email = var.service_account_email
     scopes = concat(
-      ["userinfo-email", "compute-ro", var.storage_access_scope],
+      [
+        "userinfo-email",
+        "compute-ro",
+        "storage-full",
+      ],
+
       var.service_account_scopes,
     )
   }
@@ -119,9 +110,76 @@ resource "google_compute_instance_template" "server" {
 # CREATE FIREWALL RULES
 # ---------------------------------------------------------------------------------------------------------------------
 
+# module "server_proxy" {
+#   source         = "./server-cluster-proxy"
+#   instance_group = google_compute_instance_group_manager.server_cluster.instance_group
+#   backend_subnet = google_compute_subnetwork.backend_subnet.id
+# }
 
-module "server_proxy" {
-  source         = "./server-cluster-proxy"
-  instance_group = google_compute_instance_group_manager.server_cluster.instance_group
-  backend_subnet = google_compute_subnetwork.backend_subnet.id
+
+module "gce_lb_http" {
+  source  = "GoogleCloudPlatform/lb-http/google"
+  version = "~> 5.1"
+  name    = "orch-proxy"
+  project = "devbookhq"
+  address = "35.184.231.110"
+  target_tags = [
+    var.cluster_tag_name,
+  ]
+  firewall_networks = [data.google_compute_network.default.name]
+
+  backends = {
+    default = {
+      description                     = null
+      protocol                        = "HTTP"
+      port                            = 80
+      port_name                       = "http"
+      timeout_sec                     = 10
+      connection_draining_timeout_sec = null
+      enable_cdn                      = false
+      security_policy                 = null
+      session_affinity                = null
+      affinity_cookie_ttl_sec         = null
+      custom_request_headers          = null
+      custom_response_headers         = null
+
+      health_check = {
+        check_interval_sec  = null
+        timeout_sec         = null
+        healthy_threshold   = null
+        unhealthy_threshold = null
+        request_path        = "/v1/status/leader"
+        port                = 4646
+        host                = null
+        logging             = null
+      }
+
+      log_config = {
+        enable      = true
+        sample_rate = 1.0
+      }
+
+      groups = [
+        {
+          group                        = google_compute_instance_group_manager.server_cluster.instance_group
+          balancing_mode               = null
+          capacity_scaler              = null
+          description                  = null
+          max_connections              = null
+          max_connections_per_instance = null
+          max_connections_per_endpoint = null
+          max_rate                     = null
+          max_rate_per_instance        = null
+          max_rate_per_endpoint        = null
+          max_utilization              = null
+        },
+      ]
+
+      iap_config = {
+        enable               = false
+        oauth2_client_id     = ""
+        oauth2_client_secret = ""
+      }
+    }
+  }
 }

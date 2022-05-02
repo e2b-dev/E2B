@@ -15,3 +15,7 @@ variable "firecracker_path" {
   type        = string
   default     = "/usr/local/bin/firecracker"
 }
+
+variable "gcp_zone" {
+  type = string
+}

@@ -10,8 +10,12 @@ variable "firecracker_path" {
   type = string
 }
 
+variable "gcp_zone" {
+  type = string
+}
+
 job "firecracker-sessions" {
-  datacenters = ["dc1"]
+  datacenters = [var.gcp_zone]
   type = "batch"
 
   parameterized {}

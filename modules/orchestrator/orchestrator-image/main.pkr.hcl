@@ -24,26 +24,24 @@ source "googlecompute" "orch" {
   image_licenses = ["projects/vm-options/global/licenses/enable-vmx"]
 }
 
-# Avoid mixing go templating calls ( for example ```{{ upper(`string`) }}``` )
-# and HCL2 calls (for example '${ var.string_value_example }' ). They won't be
-# executed together and the outcome will be unknown.
 build {
   sources = ["source.googlecompute.orch"]
 
   provisioner "file" {
-    source      = "${path.root}/modules/nomad-setup/supervisord.conf"
+    source      = "${path.root}/setup/supervisord.conf"
     destination = "/tmp/supervisord.conf"
   }
 
   provisioner "file" {
-    source      = "${path.root}/modules/"
+    source      = "${path.root}/setup"
     destination = "/tmp"
   }
 
   provisioner "shell" {
     inline = [
+      "sudo add-apt-repository ppa:longsleep/golang-backports",
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq",
+      "sudo apt-get install -y unzip jq golang-go build-essential",
     ]
   }
 
@@ -56,23 +54,31 @@ build {
   }
 
   provisioner "shell" {
-    script          = "${path.root}/modules/nomad-setup/install-nomad.sh"
+    script          = "${path.root}/setup/install-consul.sh"
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
+  }
+
+  # provisioner "shell" {
+  #   script          = "${path.root}/setup/install-dnsmasq.sh"
+  # }
+
+  provisioner "shell" {
+    script          = "${path.root}/setup/install-nomad.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.nomad_version}"
   }
 
   provisioner "shell" {
-    script          = "${path.root}/modules/consul-setup/install-consul.sh"
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
-  }
-
-  provisioner "shell" {
-    script          = "${path.root}/modules/dnsmasq-setup/install-dnsmasq.sh"
-  }
-
-  provisioner "shell" {
-   script          = "${path.root}/modules/firecracker-setup/install-firecracker.sh"
+   script          = "${path.root}/setup/install-firecracker.sh"
    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
+
+  provisioner "shell" {
+    script          = "${path.root}/setup/install-fc-driver.sh"
+  }
+
+  # provisioner "shell" {
+  #   script          = "${path.root}/setup/install-cni-plugins.sh"
+  # }
 
   # Add testing FC kernel and rootfs
   provisioner "shell" {

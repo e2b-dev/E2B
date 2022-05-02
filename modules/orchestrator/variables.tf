@@ -11,12 +11,12 @@ variable "server_cluster_name" {
 
 variable "server_cluster_size" {
   type    = number
-  default = 3
+  default = 2
 }
 
 variable "server_machine_type" {
   type    = string
-  default = "n1-standard-1"
+  default = "n1-standard-2"
 }
 
 variable "client_cluster_name" {
@@ -26,10 +26,10 @@ variable "client_cluster_name" {
 
 variable "client_cluster_size" {
   type    = number
-  default = 3
+  default = 2
 }
 
 variable "client_machine_type" {
   type    = string
-  default = "n1-standard-1"
+  default = "n1-standard-2"
 }
