@@ -1,0 +1,21 @@
+{
+  "name": "default",
+  "cniVersion": "0.4.0",
+  "plugins": [
+    {
+      "type": "ptp",
+      "ipMasq": true,
+      "ipam": {
+        "type": "host-local",
+        "subnet": "192.168.127.0/24",
+        "resolvConf": "/etc/resolv.conf"
+      }
+    },
+    {
+      "type": "firewall"
+    },
+    {
+      "type": "tc-redirect-tap"
+    }
+  ]
+}

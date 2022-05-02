@@ -8,8 +8,8 @@ resource "google_compute_instance_group_manager" "server_cluster" {
 
   provider = google-beta
 
-  wait_for_instances        = true
-  wait_for_instances_status = "UPDATED"
+  wait_for_instances = true
+
 
   version {
     instance_template = google_compute_instance_template.server.id
@@ -118,11 +118,12 @@ resource "google_compute_instance_template" "server" {
 
 
 module "gce_lb_http" {
-  source  = "GoogleCloudPlatform/lb-http/google"
-  version = "~> 5.1"
-  name    = "orch-proxy"
-  project = "devbookhq"
-  address = "35.184.231.110"
+  source         = "GoogleCloudPlatform/lb-http/google"
+  version        = "~> 5.1"
+  name           = "orch-proxy"
+  project        = "devbookhq"
+  address        = "34.149.1.201"
+  create_address = false
   target_tags = [
     var.cluster_tag_name,
   ]

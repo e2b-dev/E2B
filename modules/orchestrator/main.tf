@@ -58,5 +58,9 @@ provider "nomad" {
 module "firecracker-sessions" {
   source = "./firecracker-sessions"
 
+  depends_on = [
+    module.server_cluster
+  ]
+
   gcp_zone = "us-central1-a"
 }

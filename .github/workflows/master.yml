@@ -1,64 +1,47 @@
-name: Orchestration Services
+# name: Orchestration Services
 
-on:
-  push:
-    branches:
-      - master
+# on:
+#   push:
+#     branches:
+#       - master
 
-permissions:
-  id-token: write
-  contents: read
+# permissions:
+#   id-token: write
+#   contents: read
 
-jobs:
-  changes:
-    name: Check repo changes
-    runs-on: ubuntu-20.04
-    outputs:
-      api_image: ${{ steps.filter.outputs.api_image }}
-      orchestrator_image: ${{ steps.filter.outputs.orchestrator_image }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+# jobs:
+#   changes:
+#     name: Check repo changes
+#     runs-on: ubuntu-20.04
+#     outputs:
+#       orchestrator_image: ${{ steps.filter.outputs.orchestrator_image }}
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v3
 
-      - name: Check changes
-        uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            api_image:
-              - 'modules/api/api-image/**'
-              - '.github/workflows/api-image.yml'
-              - '.github/workflows/master.yml'
-            orchestrator_image:
-              - 'modules/orchestrator/orchestrator-image/**'
-              - '.github/workflows/orchestrator-image.yml'
-              - '.github/workflows/master.yml'
-  api_image:
-    name: API image
-    needs: changes
-    if: ${{ needs.changes.outputs.api_image == 'true' }}
-    uses: ./.github/workflows/api-image.yml
-    with:
-      project_id: devbookhq
-      image_name: orchestration-api
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+#       - name: Check changes
+#         uses: dorny/paths-filter@v2
+#         id: filter
+#         with:
+#           filters: |
+#             orchestrator_image:
+#               - 'modules/orchestrator/orchestrator-image/**'
+#               - '.github/workflows/orchestrator-image.yml'
+#               - '.github/workflows/master.yml'
+#   orchestrator_image:
+#     name: Orchestrator image
+#     needs: changes
+#     if: ${{ needs.changes.outputs.orchestrator_image == 'true' }}
+#     uses: ./.github/workflows/orchestrator-image.yml
+#     secrets:
+#       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+#       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  orchestrator_image:
-    name: Orchestrator image
-    needs: changes
-    if: ${{ needs.changes.outputs.orchestrator_image == 'true' }}
-    uses: ./.github/workflows/orchestrator-image.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
-
-  infrastructure:
-    name: Infrastructure
-    needs: [changes, api_image, orchestrator_image]
-    if: ${{ always() }}
-    uses: ./.github/workflows/infrastructure.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+#   infrastructure:
+#     name: Infrastructure
+#     needs: [changes, api_image, orchestrator_image]
+#     if: ${{ always() }}
+#     uses: ./.github/workflows/infrastructure.yml
+#     secrets:
+#       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+#       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}

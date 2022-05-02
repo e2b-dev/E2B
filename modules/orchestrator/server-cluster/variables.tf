@@ -133,7 +133,7 @@ variable "instance_group_update_policy_minimal_action" {
 variable "instance_group_update_policy_max_surge_fixed" {
   description = "The maximum number of instances that can be created above the specified targetSize during the update process. Conflicts with var.instance_group_update_policy_max_surge_percent. See https://www.terraform.io/docs/providers/google/r/compute_region_instance_group_manager.html#max_surge_fixed for more information."
   type        = number
-  default     = 3
+  default     = 6
 }
 
 variable "instance_group_update_policy_max_surge_percent" {
@@ -145,7 +145,7 @@ variable "instance_group_update_policy_max_surge_percent" {
 variable "instance_group_update_policy_max_unavailable_fixed" {
   description = "The maximum number of instances that can be unavailable during the update process. Conflicts with var.instance_group_update_policy_max_unavailable_percent. It has to be either 0 or at least equal to the number of zones. If fixed values are used, at least one of var.instance_group_update_policy_max_unavailable_fixed or var.instance_group_update_policy_max_surge_fixed must be greater than 0."
   type        = number
-  default     = 0
+  default     = 3
 }
 
 variable "instance_group_update_policy_max_unavailable_percent" {
@@ -268,10 +268,6 @@ variable "allowed_inbound_tags_serf" {
   type        = list(string)
   default     = []
 }
-
-
-
-
 
 
 # Disk Settings

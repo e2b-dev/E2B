@@ -21,9 +21,3 @@ provider "google" {
 module "orchestrator" {
   source = "./modules/orchestrator"
 }
-
-# module "api" {
-#   source = "./modules/api"
-
-#   server_proxy_ip = module.orchestrator.server_proxy_ip
-# }

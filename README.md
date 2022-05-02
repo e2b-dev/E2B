@@ -11,3 +11,8 @@ sudo nomad agent -dev -bind 0.0.0.0 -log-level INFO
 ```
 
 to start temporary Nomad on any server and tear it all down with `terraform apply -destroy`.
+
+
+## Deployment
+
+Orchestration API is currently deployed via Cloud Build and Cloud Run.
