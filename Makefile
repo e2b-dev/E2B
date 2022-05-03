@@ -27,3 +27,8 @@ build-orchestrator-image:
 format-orchestrator-image:
 	$(MAKE) -C modules/orchestrator/orchestrator-image format
 
+init-firecracker-task-driver:
+	$(MAKE) -C modules/orchestrator/firecracker-task-driver init
+
+build-firecracker-task-driver:
+	$(MAKE) -C modules/orchestrator/firecracker-task-driver build

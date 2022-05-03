@@ -1,15 +1,8 @@
-data "google_compute_network" "default" {
-  name = "default"
-}
-
 resource "google_compute_instance_group_manager" "server_cluster" {
   name               = "${var.cluster_name}-ig"
   base_instance_name = var.cluster_name
 
   provider = google-beta
-
-  wait_for_instances = true
-
 
   version {
     instance_template = google_compute_instance_template.server.id
@@ -40,12 +33,16 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   ]
 
   lifecycle {
-    create_before_destroy = true
+    # DEV ONLY - IGNORE CHANGES TO THE IMAGE
+    ignore_changes = [
+      version,
+    ]
+    create_before_destroy = false
   }
 }
 
 data "google_compute_image" "source_image" {
-  family = "orch"
+  family = var.image_family
 }
 
 resource "google_compute_instance_template" "server" {
@@ -102,6 +99,10 @@ resource "google_compute_instance_template" "server" {
   # we need to create a new instance template before we can destroy the old one. Note that any Terraform resource on
   # which this Terraform resource depends will also need this lifecycle statement.
   lifecycle {
+    # DEV ONLY - IGNORE CHANGES TO THE IMAGE
+    ignore_changes = [
+      disk,
+    ]
     create_before_destroy = true
   }
 }
@@ -109,13 +110,6 @@ resource "google_compute_instance_template" "server" {
 # ---------------------------------------------------------------------------------------------------------------------
 # CREATE FIREWALL RULES
 # ---------------------------------------------------------------------------------------------------------------------
-
-# module "server_proxy" {
-#   source         = "./server-cluster-proxy"
-#   instance_group = google_compute_instance_group_manager.server_cluster.instance_group
-#   backend_subnet = google_compute_subnetwork.backend_subnet.id
-# }
-
 
 module "gce_lb_http" {
   source         = "GoogleCloudPlatform/lb-http/google"
@@ -127,7 +121,7 @@ module "gce_lb_http" {
   target_tags = [
     var.cluster_tag_name,
   ]
-  firewall_networks = [data.google_compute_network.default.name]
+  firewall_networks = [var.network_name]
 
   backends = {
     default = {

@@ -2,6 +2,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   name = "${var.cluster_name}-ig"
 
   version {
+    name              = google_compute_instance_template.client.id
     instance_template = google_compute_instance_template.client.id
   }
 
@@ -29,7 +30,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
 }
 
 data "google_compute_image" "source_image" {
-  family = "orch"
+  family = var.image_family
 }
 
 resource "google_compute_instance_template" "client" {
@@ -56,6 +57,7 @@ resource "google_compute_instance_template" "client" {
     boot         = true
     source_image = data.google_compute_image.source_image.id
     disk_size_gb = var.root_volume_disk_size_gb
+    disk_type    = var.root_volume_disk_type
   }
 
   network_interface {

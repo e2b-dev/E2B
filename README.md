@@ -12,6 +12,8 @@ sudo nomad agent -dev -bind 0.0.0.0 -log-level INFO
 
 to start temporary Nomad on any server and tear it all down with `terraform apply -destroy`.
 
+If the Nomad is running but it has no leader, delete Load balancer and Instance group then destroy the infrastructure.
+
 ### Subtrees
 FC task driver is a submodule made from https://github.com/devbookhq/firecracker-task-driver repository.
 

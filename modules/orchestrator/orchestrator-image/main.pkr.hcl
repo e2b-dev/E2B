@@ -15,17 +15,20 @@ source "googlecompute" "orch" {
   source_image_family = "ubuntu-2004-lts"
   ssh_username        = "ubuntu"
   zone                = var.gcp_zone
-  disk_size           = 10
+  disk_size           = 20
+  disk_type           = "pd-ssd"
 
   # This is used only for building the image and the GCE VM is then deleted
-  machine_type = "n1-standard-2"
+  machine_type = "n1-standard-4"
 
   # Enable nested virtualization
   image_licenses = ["projects/vm-options/global/licenses/enable-vmx"]
 }
 
 build {
-  sources = ["source.googlecompute.orch"]
+  sources = [
+    "source.googlecompute.orch",
+  ]
 
   provisioner "file" {
     source      = "${path.root}/setup/supervisord.conf"
@@ -58,9 +61,9 @@ build {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
   }
 
-  # provisioner "shell" {
-  #   script          = "${path.root}/setup/install-dnsmasq.sh"
-  # }
+  provisioner "shell" {
+    script          = "${path.root}/setup/install-dnsmasq.sh"
+  }
 
   provisioner "shell" {
     script          = "${path.root}/setup/install-nomad.sh"
@@ -68,8 +71,8 @@ build {
   }
 
   provisioner "shell" {
-   script          = "${path.root}/setup/install-firecracker.sh"
-   execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
+    script          = "${path.root}/setup/install-firecracker.sh"
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 
   provisioner "file" {
@@ -93,12 +96,12 @@ build {
 
   # Add testing FC kernel and rootfs
   provisioner "shell" {
-   inline = [
-     "sudo mkdir -p /fc-vm",
-     "sudo mkdir -p /fc-envs",
-     "sudo curl https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/kernels/vmlinux.bin -o /fc-vm/vmlinux.bin",
-     "sudo mkdir -p /fc-envs/test",
-     "sudo curl https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/rootfs/bionic.rootfs.ext4 -o /fc-envs/test/rootfs.ext4",
-   ]
+    inline = [
+      "sudo mkdir -p /fc-vm",
+      "sudo curl https://storage.googleapis.com/devbook-snapshot/vmlinux.bin -o /fc-vm/vmlinux.bin",
+      "sudo curl https://storage.googleapis.com/devbook-snapshot/mem_file -o /fc-vm/mem_file",
+      "sudo curl https://storage.googleapis.com/devbook-snapshot/rootfs.ext4 -o /fc-vm/rootfs.ext4",
+      "sudo curl https://storage.googleapis.com/devbook-snapshot/snapshot_file -o /fc-vm/snapshot_file",
+    ]
   }
 }

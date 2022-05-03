@@ -67,8 +67,10 @@ var (
 		"Cputype":     hclspec.NewAttr("Cputype", "string", false),
 		"Mem":         hclspec.NewAttr("Mem", "number", false),
 		"Firecracker": hclspec.NewAttr("Firecracker", "string", false),
+		"Memfile": hclspec.NewAttr("Memfile", "string", false),
+		"Snapshot": hclspec.NewAttr("Snapshot", "string", false),
 		"Log":         hclspec.NewAttr("Log", "string", false),
-		"DisableHt":   hclspec.NewAttr("DisableHt", "bool", false),
+		// "DisableHt":   hclspec.NewAttr("DisableHt", "bool", false),
 		"Nic": hclspec.NewBlock("Nic", false, hclspec.NewObject(map[string]*hclspec.Spec{
 			"Ip":          hclspec.NewAttr("Ip", "string", true),
 			"Gateway":     hclspec.NewAttr("Gateway", "string", true),

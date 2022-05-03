@@ -21,7 +21,6 @@ variable "cluster_size" {
 variable "image_family" {
   description = "The source image family used to create the boot disk for a Vault node. Only images based on Ubuntu 16.04 or 18.04 LTS are supported at this time."
   type        = string
-  default     = "orch"
 }
 
 variable "startup_script" {
@@ -77,7 +76,6 @@ variable "assign_public_ip_addresses" {
 variable "network_name" {
   description = "The name of the VPC Network where all resources should be created."
   type        = string
-  default     = "default"
 }
 
 variable "custom_tags" {
@@ -275,11 +273,11 @@ variable "allowed_inbound_tags_serf" {
 variable "root_volume_disk_size_gb" {
   description = "The size, in GB, of the root disk volume on each server node."
   type        = number
-  default     = 10
+  default     = 100
 }
 
 variable "root_volume_disk_type" {
   description = "The GCE disk type. Can be either pd-ssd, local-ssd, or pd-standard"
   type        = string
-  default     = "pd-standard"
+  default     = "pd-ssd"
 }

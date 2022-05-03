@@ -27,5 +27,5 @@ variable "envoy_version" {
 variable "firecracker_version" {
   type        = string
   description = "Firecracker version must be prefixed with 'v'"
-  default     = "v0.25.2"
+  default     = "v1.0.0"
 }

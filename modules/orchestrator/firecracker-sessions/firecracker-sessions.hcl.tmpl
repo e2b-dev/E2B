@@ -23,6 +23,12 @@ job "firecracker-sessions" {
   task "start" {
     driver = "firecracker-task-driver"
 
+    resources {
+      memory_max = 1024
+      memory = 512
+      cpu = 500
+    }
+
     config {
       KernelImage = var.kernel_path
       BootDisk    = var.rootfs_path
