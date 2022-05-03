@@ -44,7 +44,7 @@ build {
       "sudo apt-get install -y unzip jq golang-go build-essential",
     ]
   }
-
+  
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /opt/gruntwork",
@@ -72,8 +72,19 @@ build {
    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 
+  provisioner "file" {
+    source      = "${path.root}/../firecracker-task-driver"
+    destination = "/tmp"
+  }
+
   provisioner "shell" {
-    script          = "${path.root}/setup/install-fc-driver.sh"
+    inline = [
+      "cd /tmp/firecracker-task-driver",
+      "make init",
+      "make build",
+      "sudo mkdir -p /opt/nomad/plugins",
+      "sudo cp /tmp/firecracker-task-driver/bin/firecracker-task-driver /opt/nomad/plugins/firecracker-task-driver",
+    ]
   }
 
   provisioner "shell" {
