@@ -17,6 +17,7 @@
 - https://medium.com/navin-nair/practical-hashicorp-nomad-and-consul-a-little-more-than-hello-world-part-1-991d2a54fd64
 - https://github.com/nairnavin/practical-nomad-consul
 - https://johansiebens.dev/posts/2020/12/monitoring-nomad-with-prometheus-and-thanos/
+- https://github.com/firecracker-microvm/firecracker/issues/1179
 
 ## API
 - https://github.com/deepmap/oapi-codegen
