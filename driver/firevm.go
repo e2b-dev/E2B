@@ -23,6 +23,10 @@ import (
 
 	"github.com/containerd/console"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
+	client "github.com/firecracker-microvm/firecracker-go-sdk/client"
+	"github.com/firecracker-microvm/firecracker-go-sdk/client/models"
+	"github.com/firecracker-microvm/firecracker-go-sdk/client/operations"
+	"github.com/go-openapi/strfmt"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	log "github.com/sirupsen/logrus"
@@ -108,6 +112,31 @@ type Instance_info struct {
 	Vnic    string
 }
 
+func newFirecrackerClient(socketPath string) *client.Firecracker {
+	httpClient := client.NewHTTPClient(strfmt.NewFormats())
+
+	transport := firecracker.NewUnixSocketTransport(socketPath, nil, false)
+	httpClient.SetTransport(transport)
+
+	return httpClient
+}
+
+func loadSnapshot(ctx context.Context, cfg *firecracker.Config, snapshotPath string, memFilePath string) (*operations.LoadSnapshotNoContent, error) {
+	httpClient := newFirecrackerClient(cfg.SocketPath)
+
+	snapshotConfig := operations.LoadSnapshotParams{
+		Context: ctx,
+		Body: &models.SnapshotLoadParams{
+			ResumeVM:            true,
+			EnableDiffSnapshots: false,
+			MemFilePath:         &memFilePath,
+			SnapshotPath:        &snapshotPath,
+		},
+	}
+
+	return httpClient.Operations.LoadSnapshot(&snapshotConfig)
+}
+
 func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfig, taskConfig TaskConfig) (*vminfo, error) {
 	opts, _ := taskConfig2FirecrackerOpts(taskConfig, cfg)
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
@@ -115,8 +144,6 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		log.Errorf("Error: %s", err)
 		return nil, err
 	}
-
-
 
 	d.logger.Info("Starting firecracker", "driver_initialize_container", hclog.Fmt("%v+", opts))
 	logger := log.New()
@@ -164,8 +191,6 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Could not create serial console  %v+", err)
 	}
 
-
-	
 	cmd := firecracker.VMCommandBuilder{}.
 		WithBin(firecrackerBinary).
 		WithSocketPath(fcCfg.SocketPath).
@@ -176,13 +201,59 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
 
-	m, err := firecracker.NewMachine(vmmCtx, fcCfg, machineOpts...)
+	bareFcConfig := firecracker.Config{
+		DisableValidation: true,
+		MmdsAddress:       fcCfg.MmdsAddress,
+		Seccomp:           fcCfg.Seccomp,
+		ForwardSignals:    fcCfg.ForwardSignals,
+		NetNS:             fcCfg.NetNS,
+		VMID:              fcCfg.VMID,
+		JailerCfg:         fcCfg.JailerCfg,
+		MachineCfg:        fcCfg.MachineCfg,
+		VsockDevices:      fcCfg.VsockDevices,
+		FifoLogWriter:     fcCfg.FifoLogWriter,
+		NetworkInterfaces: fcCfg.NetworkInterfaces,
+		Drives:            fcCfg.Drives,
+		KernelArgs:        fcCfg.KernelArgs,
+		InitrdPath:        fcCfg.InitrdPath,
+		KernelImagePath:   fcCfg.KernelImagePath,
+		MetricsFifo:       fcCfg.MetricsFifo,
+		MetricsPath:       fcCfg.MetricsPath,
+		LogLevel:          fcCfg.LogLevel,
+		LogFifo:           fcCfg.LogFifo,
+		LogPath:           fcCfg.LogPath,
+		SocketPath:        fcCfg.SocketPath,
+	}
+
+	m, err := firecracker.NewMachine(vmmCtx, bareFcConfig, machineOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("Failed creating machine: %v", err)
 	}
 
+	m.Handlers.FcInit.Clear()
+	m.Handlers.FcInit.Append(
+		firecracker.SetupNetworkHandler,
+		firecracker.SetupKernelArgsHandler,
+		firecracker.StartVMMHandler,
+		firecracker.CreateLogFilesHandler,
+		firecracker.BootstrapLoggingHandler,
+		firecracker.CreateMachineHandler,
+		firecracker.CreateBootSourceHandler,
+		firecracker.AttachDrivesHandler,
+		firecracker.CreateNetworkInterfacesHandler,
+		firecracker.AddVsocksHandler,
+		firecracker.ConfigMmdsHandler,
+	)
+
+	// m.Start(vmmCtx)
+
 	if err := m.Start(vmmCtx); err != nil {
 		return nil, fmt.Errorf("Failed to start machine: %v", err)
+	}
+
+	// LOAD SNAPSHOT
+	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
+		return nil, fmt.Errorf("Failed to load snapshot: %v", err)
 	}
 
 	if opts.validMetadata != nil {
