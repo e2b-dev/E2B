@@ -10,6 +10,7 @@ require (
 	github.com/go-openapi/analysis v0.21.3 // indirect
 	github.com/go-openapi/runtime v0.24.0 // indirect
 	github.com/go-openapi/spec v0.20.6 // indirect
+	github.com/go-openapi/strfmt v0.21.2
 	github.com/hashicorp/go-hclog v0.14.1
 	github.com/hashicorp/nomad v1.0.14
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

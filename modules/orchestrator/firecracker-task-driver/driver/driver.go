@@ -67,8 +67,8 @@ var (
 		"Cputype":     hclspec.NewAttr("Cputype", "string", false),
 		"Mem":         hclspec.NewAttr("Mem", "number", false),
 		"Firecracker": hclspec.NewAttr("Firecracker", "string", false),
-		"Memfile": hclspec.NewAttr("Memfile", "string", false),
-		"Snapshot": hclspec.NewAttr("Snapshot", "string", false),
+		"MemFile":     hclspec.NewAttr("MemFile", "string", false),
+		"Snapshot":    hclspec.NewAttr("Snapshot", "string", false),
 		"Log":         hclspec.NewAttr("Log", "string", false),
 		// "DisableHt":   hclspec.NewAttr("DisableHt", "bool", false),
 		"Nic": hclspec.NewBlock("Nic", false, hclspec.NewObject(map[string]*hclspec.Spec{
@@ -133,6 +133,8 @@ type TaskConfig struct {
 	Network     string   `codec:"Network"`
 	Nic         Nic      `codec:"Nic"`
 	Vcpus       uint64   `codec:"Vcpus"`
+	MemFile     string   `codec:"MemFile"`
+	Snapshot    string   `codec:"Snapshot"`
 	Cputype     string   `codec:"Cputype"`
 	Mem         uint64   `codec:"Mem"`
 	Firecracker string   `codec:"Firecracker"`
@@ -257,7 +259,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 	m, err := d.initializeContainer(context.Background(), handle.Config, driverConfig)
 	if err != nil {
 		d.logger.Info("Error RecoverTask k", "driver_cfg", hclog.Fmt("%+v", err))
-		return fmt.Errorf("task with ID %q failed", handle.Config.ID)
+		return fmt.Errorf("task with ID %q failed: %q", handle.Config.ID, err.Error())
 	}
 
 	h := &taskHandle{
@@ -279,7 +281,6 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-
 	if _, ok := d.tasks.Get(cfg.ID); ok {
 		return nil, nil, fmt.Errorf("task with ID %q already started", cfg.ID)
 	}
@@ -296,7 +297,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	m, err := d.initializeContainer(context.Background(), cfg, driverConfig)
 	if err != nil {
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
-		return nil, nil, fmt.Errorf("task with ID %q failed", cfg.ID)
+		return nil, nil, fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
 	}
 
 	h := &taskHandle{

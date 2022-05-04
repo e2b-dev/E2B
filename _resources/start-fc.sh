@@ -32,13 +32,13 @@ ip link set dev "$TAP_DEV" up
 cat <<EOF > vmconfig.json
 {
   "boot-source": {
-    "kernel_image_path": "/fc/vmlinux",
+    "kernel_image_path": "/fc-vm/vmlinux.bin",
     "boot_args": "$KERNEL_BOOT_ARGS"
   },
   "drives":[
    {
       "drive_id": "rootfs",
-      "path_on_host": "rootfs-new.ext4",
+      "path_on_host": "/fc-vm/rootfs.ext4",
       "is_root_device": true,
       "is_read_only": false
     }

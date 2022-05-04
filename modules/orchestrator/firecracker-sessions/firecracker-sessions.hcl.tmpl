@@ -6,6 +6,14 @@ variable "rootfs_path" {
   type = string
 }
 
+variable "memfile_path" {
+  type = string
+}
+
+variable "snapshot_path" {
+  type = string
+}
+
 variable "firecracker_path" {
   type = string
 }
@@ -33,6 +41,8 @@ job "firecracker-sessions" {
       KernelImage = var.kernel_path
       BootDisk    = var.rootfs_path
       Firecracker = var.firecracker_path
+      MemFile     = var.memfile_path
+      Snapshot    = var.snapshot_path
       BootOptions = "console=ttyS0 noapic reboot=k panic=1 pci=off nomodules rw"
       Vcpus       = 1
       Mem         = 512

@@ -273,11 +273,15 @@ variable "allowed_inbound_tags_serf" {
 variable "root_volume_disk_size_gb" {
   description = "The size, in GB, of the root disk volume on each server node."
   type        = number
-  default     = 100
+  default     = 30
 }
 
 variable "root_volume_disk_type" {
   description = "The GCE disk type. Can be either pd-ssd, local-ssd, or pd-standard"
   type        = string
   default     = "pd-ssd"
+}
+
+variable "gcp_project_id" {
+  type = string
 }

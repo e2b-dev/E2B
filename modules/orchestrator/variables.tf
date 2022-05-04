@@ -16,7 +16,7 @@ variable "server_cluster_name" {
 
 variable "server_cluster_size" {
   type    = number
-  default = 2
+  default = 1
 }
 
 variable "server_machine_type" {
@@ -26,7 +26,7 @@ variable "server_machine_type" {
 
 variable "client_image_family" {
   type    = string
-  default = "orch"
+  default = "orch-dev"
 }
 
 variable "client_cluster_name" {
@@ -36,7 +36,7 @@ variable "client_cluster_name" {
 
 variable "client_cluster_size" {
   type    = number
-  default = 2
+  default = 1
 }
 
 variable "client_machine_type" {
@@ -44,10 +44,12 @@ variable "client_machine_type" {
   default = "n1-standard-4"
 }
 
-
 variable "gcp_zone" {
-  type    = string
-  default = "us-central1-a"
+  type = string
+}
+
+variable "gcp_project_id" {
+  type = string
 }
 
 variable "network_name" {

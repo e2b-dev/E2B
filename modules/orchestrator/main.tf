@@ -11,7 +11,8 @@ module "server_cluster" {
   machine_type = var.server_machine_type
   image_family = var.server_image_family
 
-  network_name = var.network_name
+  gcp_project_id = var.gcp_project_id
+  network_name   = var.network_name
 }
 
 module "client_cluster" {
@@ -47,13 +48,24 @@ data "template_file" "startup_script_client" {
   }
 }
 
-resource "google_compute_firewall" "orchstrator_firewall" {
-  name    = "${var.cluster_tag_name}-firewall"
+resource "google_compute_firewall" "orchstrator_firewall_ingress" {
+  name    = "${var.cluster_tag_name}-firewall-ingress"
   network = var.network_name
   allow {
     protocol = "all"
   }
+  direction   = "INGRESS"
   source_tags = [var.cluster_tag_name]
+  target_tags = [var.cluster_tag_name]
+}
+
+resource "google_compute_firewall" "orchstrator_firewall_egress" {
+  name    = "${var.cluster_tag_name}-firewall-egress"
+  network = var.network_name
+  allow {
+    protocol = "all"
+  }
+  direction   = "EGRESS"
   target_tags = [var.cluster_tag_name]
 }
 

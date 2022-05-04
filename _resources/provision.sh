@@ -14,3 +14,6 @@ rc-update add sysfs boot
 passwd -d root
 
 /bin/ash
+
+# ERROR The ssh daemon is stuck on initializing!
+/etc/init.d/sshd start

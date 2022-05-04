@@ -18,6 +18,7 @@
 - https://github.com/nairnavin/practical-nomad-consul
 - https://johansiebens.dev/posts/2020/12/monitoring-nomad-with-prometheus-and-thanos/
 - https://github.com/firecracker-microvm/firecracker/issues/1179
+- https://opensource.com/article/19/3/rust-virtual-machine
 
 ## API
 - https://github.com/deepmap/oapi-codegen

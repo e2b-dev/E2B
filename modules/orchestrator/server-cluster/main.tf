@@ -88,9 +88,7 @@ resource "google_compute_instance_template" "server" {
       [
         "userinfo-email",
         "compute-ro",
-        "storage-full",
       ],
-
       var.service_account_scopes,
     )
   }
@@ -115,7 +113,7 @@ module "gce_lb_http" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
   name           = "orch-proxy"
-  project        = "devbookhq"
+  project        = var.gcp_project_id
   address        = "34.149.1.201"
   create_address = false
   target_tags = [
@@ -143,7 +141,7 @@ module "gce_lb_http" {
         timeout_sec         = null
         healthy_threshold   = null
         unhealthy_threshold = null
-        request_path        = "/v1/status/leader"
+        request_path        = "/v1/jobs"
         port                = 4646
         host                = null
         logging             = null

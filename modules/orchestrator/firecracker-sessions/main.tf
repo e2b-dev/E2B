@@ -7,6 +7,8 @@ resource "nomad_job" "firecracker_sessions" {
     vars = {
       rootfs_path      = var.rootfs_path
       kernel_path      = var.kernel_path
+      memfile_path     = var.memfile_path
+      snapshot_path    = var.snapshot_path
       firecracker_path = var.firecracker_path
       gcp_zone         = var.gcp_zone
     }

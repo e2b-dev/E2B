@@ -1,0 +1,2 @@
+PasswordAuthentication no  # Do not allow password authentication.
+PermitRootLogin yes

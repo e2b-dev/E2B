@@ -72,14 +72,8 @@ resource "google_compute_instance_template" "client" {
   # For a full list of oAuth 2.0 Scopes, see https://developers.google.com/identity/protocols/googlescopes
   service_account {
     scopes = [
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/compute.readonly",
-      "https://www.googleapis.com/auth/logging.write",
-      "https://www.googleapis.com/auth/devstorage.read_only",
-      "https://www.googleapis.com/auth/monitoring.write",
       "userinfo-email",
       "compute-ro",
-      "storage-full",
     ]
   }
 

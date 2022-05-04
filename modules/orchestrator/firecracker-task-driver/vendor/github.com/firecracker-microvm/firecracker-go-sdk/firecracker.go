@@ -35,7 +35,6 @@ const (
 
 // newFirecrackerClient creates a FirecrackerClient
 func newFirecrackerClient(socketPath string, logger *logrus.Entry, debug bool) *client.Firecracker {
-
 	httpClient := client.NewHTTPClient(strfmt.NewFormats())
 
 	transport := NewUnixSocketTransport(socketPath, logger, debug)
@@ -275,7 +274,7 @@ type CreateSyncActionOpt func(*ops.CreateSyncActionParams)
 func (f *Client) CreateSyncAction(ctx context.Context, info *models.InstanceActionInfo, opts ...CreateSyncActionOpt) (*ops.CreateSyncActionNoContent, error) {
 	params := ops.NewCreateSyncActionParams()
 	params.SetContext(ctx)
-	params.SetInfo(info)
+	// params.SetInfo(info)
 	for _, opt := range opts {
 		opt(params)
 	}
