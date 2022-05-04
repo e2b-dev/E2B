@@ -116,6 +116,8 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, err
 	}
 
+
+
 	d.logger.Info("Starting firecracker", "driver_initialize_container", hclog.Fmt("%v+", opts))
 	logger := log.New()
 
@@ -162,6 +164,8 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Could not create serial console  %v+", err)
 	}
 
+
+	
 	cmd := firecracker.VMCommandBuilder{}.
 		WithBin(firecrackerBinary).
 		WithSocketPath(fcCfg.SocketPath).

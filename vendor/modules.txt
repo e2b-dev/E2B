@@ -1,9 +1,5 @@
 # github.com/LK4D4/joincontext v0.0.0-20171026170139-1724345da6d5
 github.com/LK4D4/joincontext
-# github.com/PuerkitoBio/purell v1.1.1
-github.com/PuerkitoBio/purell
-# github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
-github.com/PuerkitoBio/urlesc
 # github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 github.com/StackExchange/wmi
 # github.com/armon/go-metrics v0.3.4
@@ -17,7 +13,8 @@ github.com/container-storage-interface/spec/lib/go/csi
 github.com/containerd/console
 # github.com/containerd/fifo v1.0.0
 github.com/containerd/fifo
-# github.com/containernetworking/cni v1.0.1
+# github.com/containernetworking/cni v1.1.0
+## explicit
 github.com/containernetworking/cni/libcni
 github.com/containernetworking/cni/pkg/invoke
 github.com/containernetworking/cni/pkg/types
@@ -28,7 +25,8 @@ github.com/containernetworking/cni/pkg/types/create
 github.com/containernetworking/cni/pkg/types/internal
 github.com/containernetworking/cni/pkg/utils
 github.com/containernetworking/cni/pkg/version
-# github.com/containernetworking/plugins v1.0.1
+# github.com/containernetworking/plugins v1.1.1
+## explicit
 github.com/containernetworking/plugins/pkg/ns
 # github.com/docker/docker v17.12.0-ce-rc1.0.20200330121334-7f8b4b621b5d+incompatible
 github.com/docker/docker/pkg/mount
@@ -45,7 +43,8 @@ github.com/firecracker-microvm/firecracker-go-sdk/cni/vmconf
 # github.com/go-ole/go-ole v1.2.4
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
-# github.com/go-openapi/analysis v0.21.2
+# github.com/go-openapi/analysis v0.21.3
+## explicit
 github.com/go-openapi/analysis
 github.com/go-openapi/analysis/internal/debug
 github.com/go-openapi/analysis/internal/flatten/normalize
@@ -57,11 +56,13 @@ github.com/go-openapi/analysis/internal/flatten/sortref
 github.com/go-openapi/errors
 # github.com/go-openapi/jsonpointer v0.19.5
 github.com/go-openapi/jsonpointer
-# github.com/go-openapi/jsonreference v0.19.6
+# github.com/go-openapi/jsonreference v0.20.0
 github.com/go-openapi/jsonreference
+github.com/go-openapi/jsonreference/internal
 # github.com/go-openapi/loads v0.21.1
 github.com/go-openapi/loads
-# github.com/go-openapi/runtime v0.23.3
+# github.com/go-openapi/runtime v0.24.0
+## explicit
 github.com/go-openapi/runtime
 github.com/go-openapi/runtime/client
 github.com/go-openapi/runtime/logger
@@ -71,7 +72,8 @@ github.com/go-openapi/runtime/middleware/header
 github.com/go-openapi/runtime/middleware/untyped
 github.com/go-openapi/runtime/security
 github.com/go-openapi/runtime/yamlpc
-# github.com/go-openapi/spec v0.20.4
+# github.com/go-openapi/spec v0.20.6
+## explicit
 github.com/go-openapi/spec
 # github.com/go-openapi/strfmt v0.21.2
 github.com/go-openapi/strfmt
@@ -196,7 +198,8 @@ github.com/mitchellh/go-homedir
 github.com/mitchellh/go-testing-interface
 # github.com/mitchellh/hashstructure v1.0.0
 github.com/mitchellh/hashstructure
-# github.com/mitchellh/mapstructure v1.4.3
+# github.com/mitchellh/mapstructure v1.5.0
+## explicit
 github.com/mitchellh/mapstructure
 # github.com/mitchellh/reflectwalk v1.0.1
 github.com/mitchellh/reflectwalk
@@ -238,11 +241,12 @@ github.com/sirupsen/logrus
 github.com/tklauser/go-sysconf
 # github.com/tklauser/numcpus v0.2.2
 github.com/tklauser/numcpus
-# github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
+# github.com/vishvananda/netlink v1.2.0-beta
 ## explicit
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
-# github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f
+# github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
+## explicit
 github.com/vishvananda/netns
 # github.com/vmihailenco/msgpack/v4 v4.3.12
 github.com/vmihailenco/msgpack/v4
@@ -256,7 +260,8 @@ github.com/zclconf/go-cty/cty
 github.com/zclconf/go-cty/cty/convert
 github.com/zclconf/go-cty/cty/msgpack
 github.com/zclconf/go-cty/cty/set
-# go.mongodb.org/mongo-driver v1.8.3
+# go.mongodb.org/mongo-driver v1.9.1
+## explicit
 go.mongodb.org/mongo-driver/bson
 go.mongodb.org/mongo-driver/bson/bsoncodec
 go.mongodb.org/mongo-driver/bson/bsonoptions
@@ -266,7 +271,8 @@ go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
 # golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 golang.org/x/crypto/blake2b
-# golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+# golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
+## explicit
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -274,7 +280,8 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/sys v0.0.0-20220204135822-1c1b9b1eba6a
+# golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
+## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -284,7 +291,6 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-golang.org/x/text/width
 # google.golang.org/appengine v1.6.5
 google.golang.org/appengine
 google.golang.org/appengine/datastore

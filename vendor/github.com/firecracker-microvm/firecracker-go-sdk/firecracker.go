@@ -35,6 +35,7 @@ const (
 
 // newFirecrackerClient creates a FirecrackerClient
 func newFirecrackerClient(socketPath string, logger *logrus.Entry, debug bool) *client.Firecracker {
+
 	httpClient := client.NewHTTPClient(strfmt.NewFormats())
 
 	transport := NewUnixSocketTransport(socketPath, logger, debug)
