@@ -201,58 +201,64 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
 
-	bareFcConfig := firecracker.Config{
+	prebootFcConfig := firecracker.Config{
 		DisableValidation: true,
 		MmdsAddress:       fcCfg.MmdsAddress,
 		Seccomp:           fcCfg.Seccomp,
 		ForwardSignals:    fcCfg.ForwardSignals,
-		NetNS:             fcCfg.NetNS,
-		VMID:              fcCfg.VMID,
-		JailerCfg:         fcCfg.JailerCfg,
-		MachineCfg:        fcCfg.MachineCfg,
-		VsockDevices:      fcCfg.VsockDevices,
-		FifoLogWriter:     fcCfg.FifoLogWriter,
-		NetworkInterfaces: fcCfg.NetworkInterfaces,
-		Drives:            fcCfg.Drives,
-		KernelArgs:        fcCfg.KernelArgs,
-		InitrdPath:        fcCfg.InitrdPath,
-		KernelImagePath:   fcCfg.KernelImagePath,
-		MetricsFifo:       fcCfg.MetricsFifo,
-		MetricsPath:       fcCfg.MetricsPath,
-		LogLevel:          fcCfg.LogLevel,
-		LogFifo:           fcCfg.LogFifo,
-		LogPath:           fcCfg.LogPath,
-		SocketPath:        fcCfg.SocketPath,
+		// NetNS:             fcCfg.NetNS,
+		VMID:          fcCfg.VMID,
+		JailerCfg:     fcCfg.JailerCfg,
+		MachineCfg:    fcCfg.MachineCfg,
+		VsockDevices:  fcCfg.VsockDevices,
+		FifoLogWriter: fcCfg.FifoLogWriter,
+		// NetworkInterfaces: fcCfg.NetworkInterfaces,
+		Drives:          fcCfg.Drives,
+		KernelArgs:      fcCfg.KernelArgs,
+		InitrdPath:      fcCfg.InitrdPath,
+		KernelImagePath: fcCfg.KernelImagePath,
+		MetricsFifo:     fcCfg.MetricsFifo,
+		MetricsPath:     fcCfg.MetricsPath,
+		LogLevel:        fcCfg.LogLevel,
+		LogFifo:         fcCfg.LogFifo,
+		LogPath:         fcCfg.LogPath,
+		SocketPath:      fcCfg.SocketPath,
 	}
 
-	m, err := firecracker.NewMachine(vmmCtx, bareFcConfig, machineOpts...)
+	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, machineOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("Failed creating machine: %v", err)
 	}
+	m.Handlers.Validation = m.Handlers.Validation.Clear()
+	m.Handlers.FcInit =
+		m.Handlers.FcInit.Clear().
+			Append(
+				firecracker.SetupNetworkHandler,
+				// firecracker.SetupKernelArgsHandler,
+				firecracker.StartVMMHandler,
+				firecracker.CreateLogFilesHandler,
+				firecracker.BootstrapLoggingHandler,
+				// firecracker.CreateMachineHandler,
+				// firecracker.CreateBootSourceHandler,
+				// firecracker.AttachDrivesHandler,
+				firecracker.CreateNetworkInterfacesHandler,
+				firecracker.AddVsocksHandler,
+				firecracker.ConfigMmdsHandler,
+			)
 
-	m.Handlers.FcInit.Clear()
-	m.Handlers.FcInit.Append(
-		firecracker.SetupNetworkHandler,
-		firecracker.SetupKernelArgsHandler,
-		firecracker.StartVMMHandler,
-		firecracker.CreateLogFilesHandler,
-		firecracker.BootstrapLoggingHandler,
-		firecracker.CreateMachineHandler,
-		firecracker.CreateBootSourceHandler,
-		firecracker.AttachDrivesHandler,
-		firecracker.CreateNetworkInterfacesHandler,
-		firecracker.AddVsocksHandler,
-		firecracker.ConfigMmdsHandler,
-	)
-
-	// m.Start(vmmCtx)
-
-	if err := m.Start(vmmCtx); err != nil {
-		return nil, fmt.Errorf("Failed to start machine: %v", err)
+	err = m.Handlers.Run(ctx, m)
+	if err != nil {
+		// HACK - We are using this to shutdown and cleanup the VM resources for now
+		m.Start(vmmCtx)
+		m.StopVMM()
+		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
 
-	// LOAD SNAPSHOT
+	// // LOAD SNAPSHOT
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
+		// HACK - We are using this to shutdown and cleanup the VM resources for now
+		m.Start(vmmCtx)
+		m.StopVMM()
 		return nil, fmt.Errorf("Failed to load snapshot: %v", err)
 	}
 
@@ -264,15 +270,17 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	if errpid != nil {
 		return nil, fmt.Errorf("Failed getting pid for machine: %v", errpid)
 	}
+
 	var ip string
 	var vnic string
-	if len(opts.FcNetworkName) > 0 {
-		ip = fcCfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.String()
-		vnic = fcCfg.NetworkInterfaces[0].CNIConfiguration.IfName + "vm"
-	} else {
-		ip = "No network chosen"
-		vnic = ip
-	}
+	// if len(opts.FcNetworkName) > 0 {
+	// 	ip = fcCfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.String()
+	// 	vnic = fcCfg.NetworkInterfaces[0].CNIConfiguration.IfName + "vm"
+	// } else {
+	// 	ip = "No network chosen"
+	// 	vnic = ip
+	// }
+
 	info := Instance_info{Serial: ftty, AllocId: cfg.AllocID,
 		Ip:  ip,
 		Pid: strconv.Itoa(pid), Vnic: vnic}

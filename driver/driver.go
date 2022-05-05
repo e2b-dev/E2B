@@ -58,14 +58,14 @@ var (
 	// taskConfigSpec is the hcl specification for the driver config section of
 	// a task within a job. It is returned in the TaskConfigSchema RPC
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"KernelImage": hclspec.NewAttr("KernelImage", "string", false),
-		"BootOptions": hclspec.NewAttr("BootOptions", "string", false),
-		"BootDisk":    hclspec.NewAttr("BootDisk", "string", false),
-		"Disks":       hclspec.NewAttr("Disks", "list(string)", false),
-		"Network":     hclspec.NewAttr("Network", "string", false),
-		"Vcpus":       hclspec.NewAttr("Vcpus", "number", false),
-		"Cputype":     hclspec.NewAttr("Cputype", "string", false),
-		"Mem":         hclspec.NewAttr("Mem", "number", false),
+		// "KernelImage": hclspec.NewAttr("KernelImage", "string", false),
+		// "BootOptions": hclspec.NewAttr("BootOptions", "string", false),
+		// "BootDisk":    hclspec.NewAttr("BootDisk", "string", false),
+		// "Disks":       hclspec.NewAttr("Disks", "list(string)", false),
+		"Network": hclspec.NewAttr("Network", "string", false),
+		"Vcpus":   hclspec.NewAttr("Vcpus", "number", false),
+		// "Cputype":     hclspec.NewAttr("Cputype", "string", false),
+		// "Mem":         hclspec.NewAttr("Mem", "number", false),
 		"Firecracker": hclspec.NewAttr("Firecracker", "string", false),
 		"MemFile":     hclspec.NewAttr("MemFile", "string", false),
 		"Snapshot":    hclspec.NewAttr("Snapshot", "string", false),

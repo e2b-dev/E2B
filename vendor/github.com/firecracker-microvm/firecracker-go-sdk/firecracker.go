@@ -274,7 +274,7 @@ type CreateSyncActionOpt func(*ops.CreateSyncActionParams)
 func (f *Client) CreateSyncAction(ctx context.Context, info *models.InstanceActionInfo, opts ...CreateSyncActionOpt) (*ops.CreateSyncActionNoContent, error) {
 	params := ops.NewCreateSyncActionParams()
 	params.SetContext(ctx)
-	// params.SetInfo(info)
+	params.SetInfo(info)
 	for _, opt := range opts {
 		opt(params)
 	}
