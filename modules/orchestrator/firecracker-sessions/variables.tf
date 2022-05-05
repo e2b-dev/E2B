@@ -1,15 +1,3 @@
-variable "rootfs_path" {
-  description = "Must be an absolute path"
-  type        = string
-  default     = "/fc-vm/rootfs.ext4"
-}
-
-variable "kernel_path" {
-  description = "Must be an absolute path"
-  type        = string
-  default     = "/fc-vm/vmlinux.bin"
-}
-
 variable "memfile_path" {
   description = "Must be an absolute path"
   type        = string

@@ -166,6 +166,7 @@ server {
   enabled = true
   bootstrap_expect = $num_servers
 }
+
 EOF
 )
   fi
@@ -176,7 +177,7 @@ EOF
 client {
   enabled = true
 }
-
+leave_on_terminate = true
 EOF
 )
   fi

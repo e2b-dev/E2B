@@ -43,7 +43,7 @@ source "googlecompute" "orch_dev" {
 }
 
 build {
-  sources = ["source.googlecompute.orch_dev"]
+  # sources = ["source.googlecompute.orch_dev"]
 
   provisioner "file" {
     source      = "${path.root}/../firecracker-task-driver"
@@ -63,7 +63,7 @@ build {
 
 build {
   # DEV ONLY - WE ARE NOT BUILDING THE WHOLE IMAGE BECAUSE IT TOOK TOO LONG FOR TASK DRIVER DEVELOPMENT
-  # sources = ["source.googlecompute.orch"]
+  sources = ["source.googlecompute.orch"]
 
   provisioner "file" {
     source      = "${path.root}/setup/supervisord.conf"
@@ -79,7 +79,9 @@ build {
     inline = [
       "sudo add-apt-repository ppa:longsleep/golang-backports",
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq golang-go build-essential",
+      "sudo apt-get install -y unzip jq golang-go build-essential docker.io",
+      "sudo systemctl start docker",
+      "sudo usermod -aG docker $USER",
     ]
   }
   
@@ -105,9 +107,13 @@ build {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.nomad_version}"
   }
 
+  # provisioner "shell" {
+  #   script          = "${path.root}/setup/install-firecracker.sh"
+  #   execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
+  # }
+
   provisioner "shell" {
-    script          = "${path.root}/setup/install-firecracker.sh"
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
+    script          = "${path.root}/setup/install-fc-and-jailer.sh"
   }
 
   provisioner "file" {

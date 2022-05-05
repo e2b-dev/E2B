@@ -28,7 +28,7 @@
 ## Orchestrator
 - https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md
 - https://jvns.ca/blog/2021/01/20/day-42--writing-a-go-program-to-manage-firecracker-vms/
-- https://github.com/weaveworks/ignite/blob/main/pkg/dmlegacy/snapshot.go#L61-L118
+- https://github.com/weaveworks/ignite/blob/main/pkg/dmlegacy/snapshot.go#L61-L118 (LEGACY)
 - https://github.com/cneira/firecracker-task-driver/issues/20
 - https://github.com/firecracker-microvm/firecracker/issues/2027
 - https://github.com/cneira/plugins
@@ -58,6 +58,20 @@
 - https://github.com/hashicorp/nomad/issues/7173
 - https://discuss.hashicorp.com/t/consul-server-unable-to-join-consul-cluster/19068/3
 - Packer multiple builders
+- https://github.com/superfly/init-snapshot
+- https://blog.oddbit.com/post/2018-01-25-fun-with-devicemapper-snapshot/
+- https://github.com/firecracker-microvm/firecracker-containerd/blob/main/docs/snapshotter.md
+- losetup
+- dmsetup
+- tmpfs
+- https://github.com/weaveworks/ignite/tree/main/pkg/dm
+- https://www.kernel.org/doc/Documentation/device-mapper/snapshot.txt
+- https://wiki.gentoo.org/wiki/Device-mapper
+- https://github.com/firecracker-microvm/firecracker-containerd/issues/75
+- https://github.com/firecracker-microvm/firecracker-containerd/pull/153
+- https://jvns.ca/blog/2019/11/18/how-containers-work--overlayfs/
+- https://gruchalski.com/posts/2021-02-17-bridging-the-firecracker-network-gap/
+- https://gruchalski.com/posts/2021-02-07-vault-on-firecracker-with-cni-plugins-and-nomad/
 
 ## Envs
 - https://github.com/combust-labs/firebuild#high-level-example

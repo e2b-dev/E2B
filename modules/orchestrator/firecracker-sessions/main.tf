@@ -5,8 +5,6 @@ resource "nomad_job" "firecracker_sessions" {
     enabled  = true
     allow_fs = true
     vars = {
-      rootfs_path      = var.rootfs_path
-      kernel_path      = var.kernel_path
       memfile_path     = var.memfile_path
       snapshot_path    = var.snapshot_path
       firecracker_path = var.firecracker_path
