@@ -76,6 +76,9 @@
 - https://github.com/firecracker-microvm/firecracker-containerd/pull/153
 - https://jvns.ca/blog/2019/11/18/how-containers-work--overlayfs/
 - https://gruchalski.com/posts/2021-02-16-live-resize-firecracker-vmm-drive/
+- https://github.com/firecracker-microvm/firecracker/pull/2743
+- https://github.com/firecracker-microvm/firecracker/blob/34955a935c59c19361e0652b43e5bb77bca92da7/docs/overlay-filesystem.md
+- https://github.com/firecracker-microvm/firecracker-containerd/blob/main/tools/image-builder/files_debootstrap/sbin/overlay-init#L39
 
 ## Networking
 - https://gruchalski.com/posts/2021-02-17-bridging-the-firecracker-network-gap/
