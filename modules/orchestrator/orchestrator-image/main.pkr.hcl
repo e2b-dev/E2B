@@ -79,11 +79,19 @@ build {
     inline = [
       "sudo add-apt-repository ppa:longsleep/golang-backports",
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq golang-go build-essential docker.io",
-      "sudo systemctl start docker",
-      "sudo usermod -aG docker $USER",
+      "sudo apt-get install -y unzip jq golang-go build-essential",
     ]
   }
+  
+  # Install Docker
+  # provisioner "shell" {
+  #   inline = [
+  #     "sudo apt-get update",
+  #     "sudo apt-get install -y docker.io",
+  #     "sudo systemctl start docker",
+  #     "sudo usermod -aG docker $USER",
+  #   ]
+  # }
   
   provisioner "shell" {
     inline = [
@@ -107,14 +115,14 @@ build {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.nomad_version}"
   }
 
-  # provisioner "shell" {
-  #   script          = "${path.root}/setup/install-firecracker.sh"
-  #   execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
-  # }
-
   provisioner "shell" {
-    script          = "${path.root}/setup/install-fc-and-jailer.sh"
+    script          = "${path.root}/setup/install-firecracker.sh"
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
+
+  # provisioner "shell" {
+  #   script          = "${path.root}/setup/install-fc-and-jailer.sh"
+  # }
 
   provisioner "file" {
     source      = "${path.root}/../firecracker-task-driver"
