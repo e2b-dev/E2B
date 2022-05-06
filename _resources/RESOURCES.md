@@ -19,6 +19,7 @@
 - https://johansiebens.dev/posts/2020/12/monitoring-nomad-with-prometheus-and-thanos/
 - https://github.com/firecracker-microvm/firecracker/issues/1179
 - https://opensource.com/article/19/3/rust-virtual-machine
+- https://hechao.li/tags/
 
 ## API
 - https://github.com/deepmap/oapi-codegen
@@ -61,6 +62,10 @@
 - https://github.com/superfly/init-snapshot
 - https://blog.oddbit.com/post/2018-01-25-fun-with-devicemapper-snapshot/
 - https://github.com/firecracker-microvm/firecracker-containerd/blob/main/docs/snapshotter.md
+- https://gruchalski.com/posts/2021-02-19-the-jailer/
+- https://gruchalski.com/posts/2021-04-14-launching-consul-cluster-with-firebuild/
+
+## Filesystem
 - losetup
 - dmsetup
 - tmpfs
@@ -70,8 +75,40 @@
 - https://github.com/firecracker-microvm/firecracker-containerd/issues/75
 - https://github.com/firecracker-microvm/firecracker-containerd/pull/153
 - https://jvns.ca/blog/2019/11/18/how-containers-work--overlayfs/
+- https://gruchalski.com/posts/2021-02-16-live-resize-firecracker-vmm-drive/
+
+## Networking
 - https://gruchalski.com/posts/2021-02-17-bridging-the-firecracker-network-gap/
 - https://gruchalski.com/posts/2021-02-07-vault-on-firecracker-with-cni-plugins-and-nomad/
+- https://gruchalski.com/posts/2021-02-18-its-all-about-the-iface-name/
+- https://www.cni.dev/docs/
+- virtual network device
+- virtual networking
+- bridge
+- vlan
+- subnetworks
+- veth, veth pairs
+- tap
+- tun
+- dns
+- cgroups
+- network namespaces
+- network layers 1-7
+- IP4, IP6
+- http overview
+- https://hechao.li/2017/11/23/vxlan/
+- https://hechao.li/2020/06/09/Mini-Container-Series-Part-0-Not-a-Real-Container/
+- https://hechao.li/2017/12/13/linux-bridge-part1/
+- https://hechao.li/2018/01/31/linux-bridge-part2/
+- https://hechao.li/2018/08/08/The-Spanning-Tree-Protocol/
+- https://hechao.li/2018/05/21/Tun-Tap-Interface/
+- https://hechao.li/2018/06/08/TAP-Interface-Lab/
+- https://hechao.li/2018/06/25/Rate-Limiter-Part1/
+- https://hechao.li/2018/06/27/Rate-Limiter-Part2/
+- https://www.oreilly.com/library/view/network-warrior-2nd/9781449307974/ch04.html
+- https://networkdirection.net/articles/network-theory/taggeduntaggedandnativevlans/
+- https://fly.io/blog/bpf-xdp-packet-filters-and-udp/ 
+- https://www.practicalnetworking.net/series/packet-traveling/osi-model/#:~:text=The%20Physical%20layer%20of%20the,Ethernet%20cable%20or%20Serial%20Cable.
 
 ## Envs
 - https://github.com/combust-labs/firebuild#high-level-example
@@ -86,3 +123,18 @@
 - https://www.google.com/search?q=btrfs+zfs+ext4&sxsrf=APq-WBubG7Uq1tq97zwnRekapuQAytx05g%3A1651126058214&ei=Ki9qYs_kDL7-7_UPk5Sm2As&oq=btrfs+and+zfs+and+ex&gs_lcp=Cgdnd3Mtd2l6EAMYADIGCAAQFhAeOgcIABBHELADOgUIIRCgAToICCEQFhAdEB5KBAhBGABKBAhGGABQwARY4wtguhNoAXABeACAAXiIAdUEkgEDNi4xmAEAoAEByAEIwAEB&sclient=gws-wiz
 - https://jvns.ca/blog/2021/01/23/firecracker--start-a-vm-in-less-than-a-second/
 - NIX
+- https://gruchalski.com/posts/2021-03-23-introducing-firebuild/
+- https://gruchalski.com/posts/2021-02-14-firecracker-vmm-with-additional-disks/
+- https://gruchalski.com/posts/2021-03-03-thoughts-on-creating-vmms-from-docker-images/
+- https://gruchalski.com/posts/2021-03-28-firebuild-rootfs-grpc-with-mtls/
+- The rootfs path on the machine where we made the snapshot must be the same as the path when we are restoring the snapshot
+- https://gruchalski.com/posts/2021-03-22-firebuild-prerequisites/
+- Files and scripts
+  - `_resorces/create.sh`
+  - `_resorces/load.sh`
+  - `_resorces/provision.sh`
+  - `_resorces/resume.sh`
+  - `_resorces/snapshot.sh`
+  - `_resorces/start-fc.sh`
+  - `_resorces/stop.sh`
+  - `_resorces/Dockerfile`
