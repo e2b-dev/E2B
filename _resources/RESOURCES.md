@@ -112,6 +112,9 @@
 - https://networkdirection.net/articles/network-theory/taggeduntaggedandnativevlans/
 - https://fly.io/blog/bpf-xdp-packet-filters-and-udp/ 
 - https://www.practicalnetworking.net/series/packet-traveling/osi-model/#:~:text=The%20Physical%20layer%20of%20the,Ethernet%20cable%20or%20Serial%20Cable.
+- https://traefik.io/
+- https://learn.hashicorp.com/tutorials/nomad/load-balancing-traefik
+- https://traefik.io/resources/plugin-to-traefik-create-and-publish-your-own-middleware-3/
 
 ## Envs
 - https://github.com/combust-labs/firebuild#high-level-example
