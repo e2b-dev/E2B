@@ -201,6 +201,12 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
 
+	// CREATE NAMESPACE AND TAP
+	// WE WILL LET THE CNI HANDLE VETH, BRIDGE AND (?) DNs LATER
+	// WE ALSO NEED TO CHECK:
+	// - CNI CLEANUP - IT MAY BE DELETING THE WHOLE SETUP PER EACH VM
+	// - NAMESPACE CLEANUP - WE NEED TO DELETE THIS WHEN WE FAIL OR WHEN THE TASKS ENDS
+
 	prebootFcConfig := firecracker.Config{
 		DisableValidation: true,
 		MmdsAddress:       fcCfg.MmdsAddress,
@@ -212,7 +218,12 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		MachineCfg:    fcCfg.MachineCfg,
 		VsockDevices:  fcCfg.VsockDevices,
 		FifoLogWriter: fcCfg.FifoLogWriter,
-		// NetworkInterfaces: fcCfg.NetworkInterfaces,
+		NetworkInterfaces: []firecracker.NetworkInterface{{
+			CNIConfiguration: &firecracker.CNIConfiguration{
+				NetworkName: "default",
+				IfName:      "eth0",
+			},
+		}},
 		Drives:          fcCfg.Drives,
 		KernelArgs:      fcCfg.KernelArgs,
 		InitrdPath:      fcCfg.InitrdPath,
@@ -234,31 +245,54 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		m.Handlers.FcInit.Clear().
 			Append(
 				firecracker.SetupNetworkHandler,
-				// firecracker.SetupKernelArgsHandler,
+				// // firecracker.SetupKernelArgsHandler,
 				firecracker.StartVMMHandler,
 				firecracker.CreateLogFilesHandler,
 				firecracker.BootstrapLoggingHandler,
-				// firecracker.CreateMachineHandler,
-				// firecracker.CreateBootSourceHandler,
-				// firecracker.AttachDrivesHandler,
-				firecracker.CreateNetworkInterfacesHandler,
+				// // firecracker.CreateMachineHandler,
+				// // firecracker.CreateBootSourceHandler,
+				// // firecracker.AttachDrivesHandler,
+				// firecracker.CreateNetworkInterfacesHandler,
 				firecracker.AddVsocksHandler,
 				firecracker.ConfigMmdsHandler,
 			)
 
+	// We need to start the VM actually in the namespace!
+
+	// config := water.Config{
+	// 	DeviceType: water.TAP,
+	// }
+
+	// config.Name = "tp-" + cfg.ID
+
+	// _, err = water.New(config)
+
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Cannot create tap device", err.Error())
+	// }
+	// _, err = tuntap.Open(config.Name, tuntap.DevTap, false)
+
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Cannot open tap device", err.Error())
+	// }
+
+	// // Do something with the network namespace
+	// ifaces, _ := net.Interfaces()
+
+	// fmt.Printf("Interfaces: %v\n", ifaces)
+
+	// // Switch back to the original namespace
+	// defer netns.Set(origns)
+
 	err = m.Handlers.Run(ctx, m)
 	if err != nil {
 		// HACK - We are using this to shutdown and cleanup the VM resources for now
-		m.Start(vmmCtx)
-		m.StopVMM()
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
 
 	// // LOAD SNAPSHOT
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
 		// HACK - We are using this to shutdown and cleanup the VM resources for now
-		m.Start(vmmCtx)
-		m.StopVMM()
 		return nil, fmt.Errorf("Failed to load snapshot: %v", err)
 	}
 

@@ -115,6 +115,7 @@
 - https://traefik.io/
 - https://learn.hashicorp.com/tutorials/nomad/load-balancing-traefik
 - https://traefik.io/resources/plugin-to-traefik-create-and-publish-your-own-middleware-3/
+- https://github.com/weaveworks/ignite/blob/main/pkg/network/cni/cni.go
 
 ## Envs
 - https://github.com/combust-labs/firebuild#high-level-example

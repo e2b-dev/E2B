@@ -84,14 +84,14 @@ build {
   }
   
   # Install Docker
-  # provisioner "shell" {
-  #   inline = [
-  #     "sudo apt-get update",
-  #     "sudo apt-get install -y docker.io",
-  #     "sudo systemctl start docker",
-  #     "sudo usermod -aG docker $USER",
-  #   ]
-  # }
+  provisioner "shell" {
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y docker.io",
+      "sudo systemctl start docker",
+      "sudo usermod -aG docker $USER",
+    ]
+  }
   
   provisioner "shell" {
     inline = [

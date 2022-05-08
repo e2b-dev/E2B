@@ -20,19 +20,31 @@ job "firecracker-sessions" {
 
   parameterized {}
 
-  task "start" {
-    driver = "firecracker-task-driver"
-
-    resources {
-      memory_max = 1024
-      memory = 512
-      cpu = 500
+  group "session" {
+    reschedule {
+      attempts  = 0
+      unlimited = false
     }
 
-    config {
-      Firecracker = var.firecracker_path
-      MemFile     = var.memfile_path
-      Snapshot    = var.snapshot_path
+    restart {
+      attempts = 0
+      mode = "fail"
+    }
+
+    task "start" {
+      driver = "firecracker-task-driver"
+
+      resources {
+        memory_max = 1024
+        memory = 512
+        cpu = 500
+      }
+
+      config {
+        Firecracker = var.firecracker_path
+        MemFile     = var.memfile_path
+        Snapshot    = var.snapshot_path
+      }
     }
   }
 }

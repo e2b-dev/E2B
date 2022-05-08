@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
+
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	models "github.com/firecracker-microvm/firecracker-go-sdk/client/models"
 	"github.com/pkg/errors"
@@ -55,7 +57,6 @@ func RandomVethName() (string, error) {
 	// NetworkManager (recent versions) will ignore veth devices that start with "veth"
 	return fmt.Sprintf("veth%x", entropy), nil
 }
-
 
 type options struct {
 	FcBinary           string   `long:"firecracker-binary" description:"Path to firecracker binary"`
@@ -118,6 +119,8 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 		return firecracker.Config{}, err
 	}
 
+	VMID := getVMID()
+
 	var socketPath string
 	if opts.FcSocketPath != "" {
 		socketPath = opts.FcSocketPath
@@ -133,6 +136,7 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 		LogLevel:          opts.FcLogLevel,
 		MetricsFifo:       opts.FcMetricsFifo,
 		FifoLogWriter:     fifo,
+		VMID:              VMID,
 		KernelImagePath:   opts.FcKernelImage,
 		KernelArgs:        opts.FcKernelCmdLine,
 		Drives:            blockDevices,
@@ -142,7 +146,7 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 			VcpuCount:   firecracker.Int64(opts.FcCPUCount),
 			CPUTemplate: models.CPUTemplate(opts.FcCPUTemplate),
 			//HtEnabled:   firecracker.Bool(htEnabled),
-			MemSizeMib:  firecracker.Int64(opts.FcMemSz),
+			MemSizeMib: firecracker.Int64(opts.FcMemSz),
 		},
 		//Debug: opts.Debug,
 	}, nil
@@ -164,7 +168,7 @@ func (opts *options) getNetwork(AllocId string) ([]firecracker.NetworkInterface,
 		nic := firecracker.NetworkInterface{
 			CNIConfiguration: &firecracker.CNIConfiguration{
 				NetworkName: opts.FcNetworkName,
-				IfName:  veth,
+				IfName:      veth,
 			},
 		}
 		NICs = append(NICs, nic)
@@ -397,4 +401,9 @@ func checkExistsAndDir(path string) bool {
 		return info.IsDir()
 	}
 	return false
+}
+
+func getVMID() string {
+	id, _ := uuid.NewRandom()
+	return id.String()
 }
