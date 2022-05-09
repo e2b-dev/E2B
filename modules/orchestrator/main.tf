@@ -84,3 +84,18 @@ module "firecracker-sessions" {
 
   gcp_zone = var.gcp_zone
 }
+
+module "firecracker-envs" {
+  source = "./firecracker-envs"
+
+  depends_on = [
+    module.server_cluster
+  ]
+
+  gcp_zone = var.gcp_zone
+  out_dir = var.firecracker_envs.mnt_dir_path
+  out_files_basenames = {
+    rootfs  = var.firecracker_envs.rootfs
+    snap    = var.firecracker_envs.snap
+  }
+}

@@ -1,5 +1,5 @@
 resource "nomad_job" "firecracker_sessions" {
-  jobspec = file("${path.module}/firecracker-sessions.hcl.tmpl")
+  jobspec = file("${path.module}/firecracker-sessions.hcl")
 
   hcl2 {
     enabled  = true

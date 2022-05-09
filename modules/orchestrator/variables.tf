@@ -56,3 +56,38 @@ variable "network_name" {
   type    = string
   default = "default"
 }
+
+variable "firecracker_envs" {
+  # rootfs:
+  # - /mnt/fc-envs/:some_env_id/rootfs
+  # snapshot:
+  # - /mnt/fc-envs/:some_env_id/snap
+  # - /mnt/fc-envs/:some_env_id/mem
+
+  type = object({
+    # Specifies an absolute path to a mounted persistent disk with FC env files.
+    mnt_dir_path = string
+
+    rootfs = object({
+      basename = string
+    })
+
+    snap = object({
+      snapfile_basename = string
+      memfile_basename  = string
+    })
+  })
+
+  default = {
+    mnt_dir_path = "/mnt/fc-envs"
+
+    rootfs = {
+      basename = "rootfile"
+    }
+
+    snap = {
+      snapfile_basename = "snap"
+      memfile_basename  = "mem"
+    }
+  }
+}
