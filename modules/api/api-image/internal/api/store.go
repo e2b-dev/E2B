@@ -34,18 +34,10 @@ func sendAPIStoreError(c *gin.Context, code int, message string) {
 }
 
 func (p *APIStore) Get(c *gin.Context) {
-	// We're always asynchronous, so lock unsafe operations below
-	p.Lock.Lock()
-	defer p.Lock.Unlock()
-
 	c.String(http.StatusOK, "Health check successful")
 }
 
 func (p *APIStore) GetSessions(c *gin.Context) {
-	// We're always asynchronous, so lock unsafe operations below
-	p.Lock.Lock()
-	defer p.Lock.Unlock()
-
 	sessions, _, err := p.nomad.GetSessions(nomad.SessionJobID)
 
 	if err != nil {
@@ -57,10 +49,6 @@ func (p *APIStore) GetSessions(c *gin.Context) {
 }
 
 func (p *APIStore) PostSessions(c *gin.Context) {
-	// We're always asynchronous, so lock unsafe operations below
-	p.Lock.Lock()
-	defer p.Lock.Unlock()
-
 	session, _, err := p.nomad.CreateSession(nomad.SessionJobID)
 
 	if err != nil {
@@ -72,9 +60,6 @@ func (p *APIStore) PostSessions(c *gin.Context) {
 }
 
 func (p *APIStore) DeleteSessionsSessionId(c *gin.Context, id string) {
-	p.Lock.Lock()
-	defer p.Lock.Unlock()
-
 	_, _, err := p.nomad.DeleteSession(nomad.SessionJobID)
 
 	if err != nil {
