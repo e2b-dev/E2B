@@ -83,10 +83,6 @@ build {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 
-  # provisioner "shell" {
-  #   script          = "${path.root}/setup/install-fc-and-jailer.sh"
-  # }
-
   provisioner "file" {
     source      = "${path.root}/../firecracker-task-driver"
     destination = "/tmp"

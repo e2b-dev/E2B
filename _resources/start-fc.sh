@@ -5,7 +5,7 @@ set -eu
 # [ -e bionic.rootfs.ext4 ] || wget https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/rootfs/bionic.rootfs.ext4
 # [ -e hello-id_rsa ] || wget -O hello-id_rsa https://raw.githubusercontent.com/firecracker-microvm/firecracker-demo/ec271b1e5ffc55bd0bf0632d5260e96ed54b5c0c/xenial.rootfs.id_rsa
 
-TAP_DEV="fc-88-tap0"
+TAP_DEV="tap0"
 
 # set up the kernel boot args
 MASK_LONG="255.255.255.252"
@@ -32,13 +32,13 @@ ip link set dev "$TAP_DEV" up
 cat <<EOF > vmconfig.json
 {
   "boot-source": {
-    "kernel_image_path": "/fc-vm/vmlinux.bin",
+    "kernel_image_path": "/fc-vm/hello-vmlinux.bin",
     "boot_args": "$KERNEL_BOOT_ARGS"
   },
   "drives":[
    {
       "drive_id": "rootfs",
-      "path_on_host": "/fc-vm/rootfs.ext4",
+      "path_on_host": "/fc-vm/hello-rootfs.ext4",
       "is_root_device": true,
       "is_read_only": false
     }

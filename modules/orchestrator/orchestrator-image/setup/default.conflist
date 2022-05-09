@@ -3,12 +3,17 @@
   "cniVersion": "0.4.0",
   "plugins": [
     {
-      "type": "ptp",
+      "cniVersion": "0.4.0",
+      "name": "fc-net",
+      "type": "bridge",
+      "bridge": "fc-bridge",
+      "isDefaultGateway": true,
+      "forceAddress": false,
       "ipMasq": true,
+      "hairpinMode": true,
       "ipam": {
         "type": "host-local",
-        "subnet": "192.168.127.0/24",
-        "resolvConf": "/etc/resolv.conf"
+        "subnet": "10.10.0.0/16"
       }
     },
     {
