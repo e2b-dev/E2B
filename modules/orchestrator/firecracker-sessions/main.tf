@@ -3,7 +3,6 @@ resource "nomad_job" "firecracker_sessions" {
 
   hcl2 {
     enabled  = true
-    allow_fs = true
     vars = {
       memfile_path     = var.memfile_path
       snapshot_path    = var.snapshot_path

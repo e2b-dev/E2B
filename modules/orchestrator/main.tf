@@ -1,3 +1,5 @@
+# Server cluster instances are not currently automatically updated when you create a new
+# orchestrator image with Packer.
 module "server_cluster" {
   source = "./server-cluster"
 

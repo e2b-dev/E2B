@@ -25,44 +25,7 @@ source "googlecompute" "orch" {
   image_licenses = ["projects/vm-options/global/licenses/enable-vmx"]
 }
 
-source "googlecompute" "orch_dev" {
-  image_family        = "orch-dev"
-  image_name          = "orch-dev-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
-  project_id          = var.gcp_project_id
-  source_image_family = "orch"
-  ssh_username        = "ubuntu"
-  zone                = var.gcp_zone
-  disk_size           = 20
-  disk_type           = "pd-ssd"
-
-  # This is used only for building the image and the GCE VM is then deleted
-  machine_type = "n1-standard-2"
-
-  # Enable nested virtualization
-  image_licenses = ["projects/vm-options/global/licenses/enable-vmx"]
-}
-
 build {
-  # sources = ["source.googlecompute.orch_dev"]
-
-  provisioner "file" {
-    source      = "${path.root}/../firecracker-task-driver"
-    destination = "/tmp"
-  }
-
-  provisioner "shell" {
-    inline = [
-      "cd /tmp/firecracker-task-driver",
-      "make init",
-      "GOOS=linux go build -a -o bin/ .",
-      "sudo mkdir -p /opt/nomad/plugins",
-      "sudo cp /tmp/firecracker-task-driver/bin/firecracker-task-driver /opt/nomad/plugins/firecracker-task-driver",
-    ]
-  }
-}
-
-build {
-  # DEV ONLY - WE ARE NOT BUILDING THE WHOLE IMAGE BECAUSE IT TOOK TOO LONG FOR TASK DRIVER DEVELOPMENT
   sources = ["source.googlecompute.orch"]
 
   provisioner "file" {

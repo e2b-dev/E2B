@@ -26,7 +26,7 @@ variable "server_machine_type" {
 
 variable "client_image_family" {
   type    = string
-  default = "orch-dev"
+  default = "orch"
 }
 
 variable "client_cluster_name" {
