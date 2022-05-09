@@ -318,6 +318,8 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	// 	return nil, fmt.Errorf("Error running command add route %v", err)
 	// }
 
+	// TODO: STOP NOMAD JOB check if it cleans up all CNI -> it would destroy the bridge
+
 	var ip string
 	var vnic string
 	// if len(opts.FcNetworkName) > 0 {

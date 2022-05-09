@@ -4,6 +4,8 @@ Backend services for handling VM sessions, environments' pipeline, and the API f
 
 
 ## Development
+Nomad dashboard - http://34.149.1.201/ui
+
 ### GCE Terraform troubleshooting
 If you get stuck with a non-working Nomad on all VMs and therefore you are not able to change the infrastructure because the Nomad jobs that are supposedly running there cannot be reached use the:
 ```
