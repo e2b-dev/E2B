@@ -194,21 +194,27 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	ns := fcCfg.VMID
 	tap := "tap0"
+	tapIP := "169.254.0.22/30"
 
 	err = exec.Command("ip", "netns", "add", ns).Run()
 	if err != nil {
 		return nil, fmt.Errorf("Error running command netns add %v", err)
 	}
 
-	// err = exec.Command("ip", "netns", "exec", ns, "ip", "tuntap", "add", "name", tap, "mode", "tap").Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command tuntap add %v", err)
-	// }
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "tuntap", "add", "name", tap, "mode", "tap").Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command tuntap add %v", err)
+	}
 
-	// err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", tap, "up").Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command tap up %v", err)
-	// }
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", tap, "up").Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command tap up %v", err)
+	}
+
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "addr", "add", tapIP, "dev", tap).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command ip add %v", err)
+	}
 
 	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", "lo", "up").Run()
 	if err != nil {
@@ -282,12 +288,6 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
 
-	tapIP := "169.254.0.22/30"
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "addr", "add", tapIP, "dev", tap).Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command ip add %v", err)
-	}
-
 	// LOAD SNAPSHOT
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
 		m.StopVMM()
@@ -304,25 +304,25 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	}
 
 	// vmIP is set in the snapshot
-	// vmIP := "169.254.0.21/30"
+	vmIP := "169.254.0.21/30"
 
-	// eth0IP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.IP.To4().String()
-	// bridgeIP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.Gateway.To4().String()
+	eth0IP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.IP.To4().String()
+	bridgeIP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.Gateway.To4().String()
 
-	// err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "eth0", "-s", vmIP, "-j", "SNAT", "--to", ip).Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command add postrouting %v", err)
-	// }
+	err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "eth0", "-s", vmIP, "-j", "SNAT", "--to", eth0IP).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command add postrouting %v", err)
+	}
 
-	// err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "PREROUTING", "-i", "eth0", "-d", ip, "-j", "DNAT", "-to", vmIP).Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command add prerouting %v", err)
-	// }
+	err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "PREROUTING", "-i", "eth0", "-d", eth0IP, "-j", "DNAT", "-to", vmIP).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command add prerouting %v", err)
+	}
 
-	// err = exec.Command("ip", "route", "add", vmIP, "via", "").Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command add route %v", err)
-	// }
+	err = exec.Command("ip", "route", "add", vmIP, "via", bridgeIP).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command add route %v", err)
+	}
 
 	// TODO: STOP NOMAD JOB check if it cleans up all CNI -> it would destroy the bridge
 
