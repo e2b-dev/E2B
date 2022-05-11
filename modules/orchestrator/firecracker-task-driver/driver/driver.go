@@ -238,46 +238,48 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 }
 
 func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
-	if handle == nil {
-		return fmt.Errorf("error: handle cannot be nil")
-	}
+	return fmt.Errorf("error: Task recovery disabled")
 
-	if _, ok := d.tasks.Get(handle.Config.ID); ok {
-		return nil
-	}
+	// if handle == nil {
+	// 	return fmt.Errorf("error: handle cannot be nil")
+	// }
 
-	var driverConfig TaskConfig
-	if err := handle.Config.DecodeDriverConfig(&driverConfig); err != nil {
-		return fmt.Errorf("failed to decode driver config: %v", err)
-	}
+	// if _, ok := d.tasks.Get(handle.Config.ID); ok {
+	// 	return nil
+	// }
 
-	var taskState TaskState
-	if err := handle.GetDriverState(&taskState); err != nil {
-		return fmt.Errorf("failed to decode task state from handle: %v", err)
-	}
+	// var driverConfig TaskConfig
+	// if err := handle.Config.DecodeDriverConfig(&driverConfig); err != nil {
+	// 	return fmt.Errorf("failed to decode driver config: %v", err)
+	// }
 
-	m, err := d.initializeContainer(context.Background(), handle.Config, driverConfig)
-	if err != nil {
-		d.logger.Info("Error RecoverTask k", "driver_cfg", hclog.Fmt("%+v", err))
-		return fmt.Errorf("task with ID %q failed: %q", handle.Config.ID, err.Error())
-	}
+	// var taskState TaskState
+	// if err := handle.GetDriverState(&taskState); err != nil {
+	// 	return fmt.Errorf("failed to decode task state from handle: %v", err)
+	// }
 
-	h := &taskHandle{
-		taskConfig:      taskState.TaskConfig,
-		State:           drivers.TaskStateRunning,
-		startedAt:       taskState.StartedAt,
-		exitResult:      &drivers.ExitResult{},
-		MachineInstance: m.Machine,
-		Info:            m.Info,
-		logger:          d.logger,
-		cpuStatsSys:     stats.NewCpuStats(),
-		cpuStatsUser:    stats.NewCpuStats(),
-		cpuStatsTotal:   stats.NewCpuStats(),
-	}
+	// m, err := d.initializeContainer(context.Background(), handle.Config, driverConfig)
+	// if err != nil {
+	// 	d.logger.Info("Error RecoverTask k", "driver_cfg", hclog.Fmt("%+v", err))
+	// 	return fmt.Errorf("task with ID %q failed: %q", handle.Config.ID, err.Error())
+	// }
 
-	d.tasks.Set(taskState.TaskConfig.ID, h)
-	go h.run()
-	return nil
+	// h := &taskHandle{
+	// 	taskConfig:      taskState.TaskConfig,
+	// 	State:           drivers.TaskStateRunning,
+	// 	startedAt:       taskState.StartedAt,
+	// 	exitResult:      &drivers.ExitResult{},
+	// 	MachineInstance: m.Machine,
+	// 	Info:            m.Info,
+	// 	logger:          d.logger,
+	// 	cpuStatsSys:     stats.NewCpuStats(),
+	// 	cpuStatsUser:    stats.NewCpuStats(),
+	// 	cpuStatsTotal:   stats.NewCpuStats(),
+	// }
+
+	// d.tasks.Set(taskState.TaskConfig.ID, h)
+	// go h.run()
+	// return nil
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
