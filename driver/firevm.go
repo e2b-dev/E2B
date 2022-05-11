@@ -193,25 +193,24 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	}
 
 	ns := fcCfg.VMID
-	tap := "fc-88-tap0"
-	// tap := "tap0"
+	tap := "tap0"
 
 	err = exec.Command("ip", "netns", "add", ns).Run()
 	if err != nil {
 		return nil, fmt.Errorf("Error running command netns add %v", err)
 	}
 
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "tuntap", "add", "name", tap, "mode", "tap").Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command tuntap add %v", err)
-	}
+	// err = exec.Command("ip", "netns", "exec", ns, "ip", "tuntap", "add", "name", tap, "mode", "tap").Run()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Error running command tuntap add %v", err)
+	// }
 
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "addr", "add", "169.254.0.22/30", "dev", tap).Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command ip add %v", err)
-	}
+	// err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", tap, "up").Run()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Error running command tap up %v", err)
+	// }
 
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", tap, "up").Run()
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", "lo", "up").Run()
 	if err != nil {
 		return nil, fmt.Errorf("Error running command tap up %v", err)
 	}
@@ -277,9 +276,16 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	// if err := m.Start(vmmCtx); err != nil {
 	// 	return nil, fmt.Errorf("Failed to start machine: %v", err)
 	// }
+
 	err = m.Handlers.Run(ctx, m)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
+	}
+
+	tapIP := "169.254.0.22/30"
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "addr", "add", tapIP, "dev", tap).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command ip add %v", err)
 	}
 
 	// LOAD SNAPSHOT
