@@ -6,12 +6,10 @@
       "name": "fc-sesions",
       "type": "bridge",
       "bridge": "fc-bridge",
-      "isGateway": true,
       "isDefaultGateway": true,
       "forceAddress": false,
       "ipMasq": true,
       "hairpinMode": true,
-      "enableddad": true,
       "ipam": {
         "type": "host-local",
         "subnet": "10.10.0.0/16"
