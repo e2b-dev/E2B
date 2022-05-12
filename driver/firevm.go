@@ -266,7 +266,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	m.Handlers.FcInit =
 		m.Handlers.FcInit.Clear().
 			Append(
-				firecracker.SetupNetworkHandler,
+				// firecracker.SetupNetworkHandler,
 				// // firecracker.SetupKernelArgsHandler,
 				firecracker.StartVMMHandler,
 				// firecracker.CreateLogFilesHandler,
@@ -304,25 +304,25 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	}
 
 	// vmIP is set in the snapshot
-	vmIP := "169.254.0.21/30"
+	// vmIP := "169.254.0.21/30"
 
-	eth0IP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.IP.To4().String()
-	bridgeIP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.Gateway.To4().String()
+	// eth0IP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.IP.To4().String()
+	// bridgeIP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.Gateway.To4().String()
 
-	err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "eth0", "-s", vmIP, "-j", "SNAT", "--to", eth0IP).Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command add postrouting %v", err)
-	}
+	// err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "eth0", "-s", vmIP, "-j", "SNAT", "--to", eth0IP).Run()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Error running command add postrouting %v", err)
+	// }
 
-	err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "PREROUTING", "-i", "eth0", "-d", eth0IP, "-j", "DNAT", "-to", vmIP).Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command add prerouting %v", err)
-	}
+	// err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "PREROUTING", "-i", "eth0", "-d", eth0IP, "-j", "DNAT", "-to", vmIP).Run()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Error running command add prerouting %v", err)
+	// }
 
-	err = exec.Command("ip", "route", "add", vmIP, "via", bridgeIP).Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command add route %v", err)
-	}
+	// err = exec.Command("ip", "route", "add", vmIP, "via", bridgeIP).Run()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Error running command add route %v", err)
+	// }
 
 	// TODO: STOP NOMAD JOB check if it cleans up all CNI -> it would destroy the bridge
 
