@@ -64,6 +64,7 @@
 - https://github.com/firecracker-microvm/firecracker-containerd/blob/main/docs/snapshotter.md
 - https://gruchalski.com/posts/2021-02-19-the-jailer/
 - https://gruchalski.com/posts/2021-04-14-launching-consul-cluster-with-firebuild/
+- https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it
 
 ## Filesystem
 - losetup
@@ -116,6 +117,7 @@
 - https://learn.hashicorp.com/tutorials/nomad/load-balancing-traefik
 - https://traefik.io/resources/plugin-to-traefik-create-and-publish-your-own-middleware-3/
 - https://github.com/weaveworks/ignite/blob/main/pkg/network/cni/cni.go
+- https://access.redhat.com/sites/default/files/attachments/rh_ip_command_cheatsheet_1214_jcs_print.pdf
 
 ## Envs
 - https://github.com/combust-labs/firebuild#high-level-example

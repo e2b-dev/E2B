@@ -42,7 +42,7 @@ build {
     inline = [
       "sudo add-apt-repository ppa:longsleep/golang-backports",
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq golang-go build-essential",
+      "sudo apt-get install -y unzip jq golang-go build-essential net-tools",
     ]
   }
   
@@ -82,10 +82,6 @@ build {
     script          = "${path.root}/setup/install-firecracker.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
-
-  # provisioner "shell" {
-  #   script          = "${path.root}/setup/install-fc-and-jailer.sh"
-  # }
 
   provisioner "file" {
     source      = "${path.root}/../firecracker-task-driver"

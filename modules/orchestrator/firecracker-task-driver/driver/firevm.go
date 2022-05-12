@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -191,30 +192,51 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Could not create serial console  %v+", err)
 	}
 
-	cmd := firecracker.VMCommandBuilder{}.
-		WithBin(firecrackerBinary).
-		WithSocketPath(fcCfg.SocketPath).
-		WithStdin(tty).
-		WithStdout(tty).
-		WithStderr(nil).
-		Build(ctx)
+	ns := fcCfg.VMID
+	tap := "tap0"
+	tapIP := "169.254.0.22/30"
+
+	err = exec.Command("ip", "netns", "add", ns).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command netns add %v", err)
+	}
+
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "tuntap", "add", "name", tap, "mode", "tap").Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command tuntap add %v", err)
+	}
+
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", tap, "up").Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command tap up %v", err)
+	}
+
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "addr", "add", tapIP, "dev", tap).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command ip add %v", err)
+	}
+
+	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", "lo", "up").Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command tap up %v", err)
+	}
+
+	cmd := exec.CommandContext(ctx, "ip", "netns", "exec", ns, "firecracker", "--api-sock", fcCfg.SocketPath)
+
+	cmd.Stdin = tty
+	cmd.Stdout = tty
+	cmd.Stderr = nil
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
-
-	// CREATE NAMESPACE AND TAP
-	// WE WILL LET THE CNI HANDLE VETH, BRIDGE AND (?) DNs LATER
-	// WE ALSO NEED TO CHECK:
-	// - CNI CLEANUP - IT MAY BE DELETING THE WHOLE SETUP PER EACH VM
-	// - NAMESPACE CLEANUP - WE NEED TO DELETE THIS WHEN WE FAIL OR WHEN THE TASKS ENDS
 
 	prebootFcConfig := firecracker.Config{
 		DisableValidation: true,
 		MmdsAddress:       fcCfg.MmdsAddress,
 		Seccomp:           fcCfg.Seccomp,
 		ForwardSignals:    fcCfg.ForwardSignals,
-		// NetNS:             fcCfg.NetNS,
-		VMID:          fcCfg.VMID,
-		JailerCfg:     fcCfg.JailerCfg,
+		// NetNS:             ns,
+		VMID: fcCfg.VMID,
+		// JailerCfg:         &firecracker.JailerConfig{},
 		MachineCfg:    fcCfg.MachineCfg,
 		VsockDevices:  fcCfg.VsockDevices,
 		FifoLogWriter: fcCfg.FifoLogWriter,
@@ -247,52 +269,28 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 				firecracker.SetupNetworkHandler,
 				// // firecracker.SetupKernelArgsHandler,
 				firecracker.StartVMMHandler,
-				firecracker.CreateLogFilesHandler,
-				firecracker.BootstrapLoggingHandler,
+				// firecracker.CreateLogFilesHandler,
+				// firecracker.BootstrapLoggingHandler,
 				// // firecracker.CreateMachineHandler,
 				// // firecracker.CreateBootSourceHandler,
 				// // firecracker.AttachDrivesHandler,
-				// firecracker.CreateNetworkInterfacesHandler,
-				firecracker.AddVsocksHandler,
-				firecracker.ConfigMmdsHandler,
+				// // firecracker.CreateNetworkInterfacesHandler,
+				// firecracker.AddVsocksHandler,
+				// firecracker.ConfigMmdsHandler,
 			)
 
-	// We need to start the VM actually in the namespace!
-
-	// config := water.Config{
-	// 	DeviceType: water.TAP,
+	// if err := m.Start(vmmCtx); err != nil {
+	// 	return nil, fmt.Errorf("Failed to start machine: %v", err)
 	// }
-
-	// config.Name = "tp-" + cfg.ID
-
-	// _, err = water.New(config)
-
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Cannot create tap device", err.Error())
-	// }
-	// _, err = tuntap.Open(config.Name, tuntap.DevTap, false)
-
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Cannot open tap device", err.Error())
-	// }
-
-	// // Do something with the network namespace
-	// ifaces, _ := net.Interfaces()
-
-	// fmt.Printf("Interfaces: %v\n", ifaces)
-
-	// // Switch back to the original namespace
-	// defer netns.Set(origns)
 
 	err = m.Handlers.Run(ctx, m)
 	if err != nil {
-		// HACK - We are using this to shutdown and cleanup the VM resources for now
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
 
-	// // LOAD SNAPSHOT
+	// LOAD SNAPSHOT
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
-		// HACK - We are using this to shutdown and cleanup the VM resources for now
+		m.StopVMM()
 		return nil, fmt.Errorf("Failed to load snapshot: %v", err)
 	}
 
@@ -304,6 +302,29 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	if errpid != nil {
 		return nil, fmt.Errorf("Failed getting pid for machine: %v", errpid)
 	}
+
+	// vmIP is set in the snapshot
+	vmIP := "169.254.0.21/30"
+
+	eth0IP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.IP.To4().String()
+	bridgeIP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.Gateway.To4().String()
+
+	err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "eth0", "-s", vmIP, "-j", "SNAT", "--to", eth0IP).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command add postrouting %v", err)
+	}
+
+	err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "PREROUTING", "-i", "eth0", "-d", eth0IP, "-j", "DNAT", "-to", vmIP).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command add prerouting %v", err)
+	}
+
+	err = exec.Command("ip", "route", "add", vmIP, "via", bridgeIP).Run()
+	if err != nil {
+		return nil, fmt.Errorf("Error running command add route %v", err)
+	}
+
+	// TODO: STOP NOMAD JOB check if it cleans up all CNI -> it would destroy the bridge
 
 	var ip string
 	var vnic string

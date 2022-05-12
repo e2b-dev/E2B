@@ -1,4 +1,4 @@
-curl --unix-socket /tmp/firecracker.socket -i \
+curl --unix-socket /tmp/firecracker.sock -i \
     -X PUT 'http://localhost/snapshot/load' \
     -H  'Accept: application/json' \
     -H  'Content-Type: application/json' \

@@ -32,6 +32,7 @@ function install {
   | tar -xz
 
   sudo mv release-${selected}-$(uname -m)/firecracker-${selected}-$(uname -m) /usr/local/bin/firecracker
+  sudo mv release-${selected}-$(uname -m)/jailer-${selected}-$(uname -m) /usr/local/bin/jailer
 }
 
 install "$@"
