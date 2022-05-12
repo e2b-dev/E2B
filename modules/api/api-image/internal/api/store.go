@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"sync"
+  "fmt"
 
 	"api/pkg/nomad"
 
@@ -81,6 +82,25 @@ func (p *APIStore) DeleteSessionsSessionId(c *gin.Context, id string) {
 		sendAPIStoreError(c, http.StatusInternalServerError, "Error deleting session")
 		return
 	}
+
+	c.JSON(http.StatusOK, Session{SessionId: id})
+}
+
+func (p *APIStore) PostEnvironment(c *gin.Context) {
+  // TODO: Check for API token
+
+  var env Environment
+  if err := c.Bind(&env); err != nil {
+    sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+    return
+  }
+
+  // TODO: Download the base Dockerfile based on a runtime field in `env`.
+
+  // TODO: Add deps to the Dockerfile.
+  //dockerfile := ""
+  //env, _, err := p.nomad.CreateEnvironment(env.CodeSnippetId, dockerfile)
+
 
 	c.JSON(http.StatusOK, Session{SessionId: id})
 }

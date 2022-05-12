@@ -19,8 +19,26 @@ job "firecracker-envs" {
   datacenters = [var.gcp_zone]
   type = "batch"
 
-  group "env" {
-    task "create" {
+  parameterized {
+    meta_required = ["CODE_SNIPPET_ID", "DOCKERFILE"]
+  }
+
+  group "fc-env" {
+    task ""
+    task "make-rootfs" {
+      env {
+        OUTDIR = var.outdir
+      }
+
+      driver = "exec"
+
+      artifact {
+        source = ""
+        destination = "/local"
+      }
+    }
+
+    task "make-snap" {
       driver = "exec"
 
       env {
@@ -37,7 +55,7 @@ job "firecracker-envs" {
 
       config {
         command = "mkfcenv"
-        args    = [var.]
+        args = [NOMAD_META_CODE_SNIPPET_ID, NOMAD_META_DOCKERFILE]
       }
     }
   }

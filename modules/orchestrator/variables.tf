@@ -59,10 +59,10 @@ variable "network_name" {
 
 variable "firecracker_envs" {
   # rootfs:
-  # - /mnt/fc-envs/:some_env_id/rootfs
+  # - /mnt/fc-envs/:id/rootfs
   # snapshot:
-  # - /mnt/fc-envs/:some_env_id/snap
-  # - /mnt/fc-envs/:some_env_id/mem
+  # - /mnt/fc-envs/:id/snap
+  # - /mnt/fc-envs/:id/mem
 
   type = object({
     # Specifies an absolute path to a mounted persistent disk with FC env files.

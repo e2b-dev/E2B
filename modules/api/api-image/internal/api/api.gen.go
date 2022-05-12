@@ -17,6 +17,9 @@ type ServerInterface interface {
 	// (GET /)
 	Get(c *gin.Context)
 
+	// (POST /env)
+	PostEnv(c *gin.Context)
+
 	// (GET /sessions)
 	GetSessions(c *gin.Context)
 
@@ -38,6 +41,8 @@ type MiddlewareFunc func(c *gin.Context)
 // Get operation middleware
 func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
 
+	c.Set(ApiKeyAuthScopes, []string{""})
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
@@ -45,8 +50,22 @@ func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
 	siw.Handler.Get(c)
 }
 
+// PostEnv operation middleware
+func (siw *ServerInterfaceWrapper) PostEnv(c *gin.Context) {
+
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PostEnv(c)
+}
+
 // GetSessions operation middleware
 func (siw *ServerInterfaceWrapper) GetSessions(c *gin.Context) {
+
+	c.Set(ApiKeyAuthScopes, []string{""})
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -57,6 +76,8 @@ func (siw *ServerInterfaceWrapper) GetSessions(c *gin.Context) {
 
 // PostSessions operation middleware
 func (siw *ServerInterfaceWrapper) PostSessions(c *gin.Context) {
+
+	c.Set(ApiKeyAuthScopes, []string{""})
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -78,6 +99,8 @@ func (siw *ServerInterfaceWrapper) DeleteSessionsSessionId(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter session_id: %s", err)})
 		return
 	}
+
+	c.Set(ApiKeyAuthScopes, []string{""})
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -105,6 +128,8 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 	}
 
 	router.GET(options.BaseURL+"/", wrapper.Get)
+
+	router.POST(options.BaseURL+"/env", wrapper.PostEnv)
 
 	router.GET(options.BaseURL+"/sessions", wrapper.GetSessions)
 

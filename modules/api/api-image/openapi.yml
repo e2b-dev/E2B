@@ -7,6 +7,56 @@ info:
 tags:
   - name: sessions
     description: Managing VM sessions
+  - name: env
+    description: Environment for VM
+
+
+components:
+  securitySchemes:
+    ApiKeyAuth: # Arbitrary name for the security scheme
+      type: apiKey
+      in: query # Can be "header", "query" or "cookie"
+      name: API_KEY # Name of the header, query parameter or cookie
+  schemas:
+    AnyValue: {}
+    Environment:
+      required:
+        - code_snippet_id
+        - runtime
+        - deps
+      properties:
+        code_snippet_id:
+          type: string
+          description: Identifier of a code snippet which which is the environment associated
+        runtime:
+          type: string
+          enum: [nodejs]
+        deps: # ["dep1", "dep2"]
+          type: array
+          items:
+            type: string
+    Session:
+      required:
+        - session_id
+      properties:
+        session_id:
+          type: string
+          description: Identifier of the session
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error
+
+security:
+  - ApiKeyAuth: [] # Use the same name as under securitySchemes
 
 paths:
   /:
@@ -57,7 +107,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
   /sessions/{session_id}:
     delete:
       tags:
@@ -83,26 +132,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /env:
+    post:
+      tags:
+        - env
 
-components:
-  schemas:
-    AnyValue: {}
-    Session:
-      required:
-        - session_id
-      properties:
-        session_id:
-          type: string
-          description: Identifier of the session
-    Error:
-      required:
-        - code
-        - message
-      properties:
-        code:
-          type: integer
-          format: int32
-          description: Error code
-        message:
-          type: string
-          description: Error message
+      responses:
+        200:
+          description: Successfully created an environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"

@@ -6,7 +6,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.10.1
 	github.com/getkin/kin-openapi v0.94.0
 	github.com/gin-gonic/gin v1.7.7
-	github.com/hashicorp/nomad/api v0.0.0-20220422225727-e4d6d5103562
+	github.com/hashicorp/nomad/api v0.0.0-20220506174431-b5665129cd1f
 )
 
 require (
