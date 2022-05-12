@@ -20,12 +20,12 @@ FC_MAC="02:FC:00:00:00:05"
 KERNEL_BOOT_ARGS="console=ttyS0 ip=${FC_IP}::${TAP_IP}:${MASK_LONG}::eth0:off ipv6.disable=1 i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkb d8250.nr_uarts=0 noapic reboot=k panic=1 pci=off nomodules random.trust_cpu=on systemd.unified_cgroup_hierarchy=0"
 
 # set up a tap network interface for the Firecracker VM to user
-ip link del "$TAP_DEV" 2> /dev/null || true
-ip tuntap add dev "$TAP_DEV" mode tap
-sysctl -w net.ipv4.conf.${TAP_DEV}.proxy_arp=1 > /dev/null
-sysctl -w net.ipv6.conf.${TAP_DEV}.disable_ipv6=1 > /dev/null
-ip addr add "${TAP_IP}${MASK_SHORT}" dev "$TAP_DEV"
-ip link set dev "$TAP_DEV" up
+ip -n ns1 link del "$TAP_DEV" 2> /dev/null || true
+ip -n ns1 tuntap add dev "$TAP_DEV" mode tap
+# sysctl -w net.ipv4.conf.${TAP_DEV}.proxy_arp=1 > /dev/null
+# sysctl -w net.ipv6.conf.${TAP_DEV}.disable_ipv6=1 > /dev/null
+ip -n ns1 addr add "${TAP_IP}${MASK_SHORT}" dev "$TAP_DEV"
+ip -n ns1 link set dev "$TAP_DEV" up
 
 # make a configuration file
 cat <<EOF > vmconfig.json
@@ -56,4 +56,4 @@ cat <<EOF > vmconfig.json
 }
 EOF
 # start firecracker
-firecracker --api-sock /tmp/firecracker.socket --config-file vmconfig.json
+ip netns exec ns1 firecracker --api-sock /tmp/firecracker.socket --config-file vmconfig.json

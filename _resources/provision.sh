@@ -13,7 +13,11 @@ rc-update add sysfs boot
 
 passwd -d root
 
-/bin/ash
+echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 
 # ERROR The ssh daemon is stuck on initializing!
-/etc/init.d/sshd start
+# /etc/init.d/sshd start
+
+# Delete itself once done.
+rm -- "$0"
