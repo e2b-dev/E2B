@@ -31,7 +31,7 @@ job "firecracker-sessions" {
       driver = "firecracker-task-driver"
 
       env {
-        NOMAD_NODE_NAME = "${node.unique.name}"
+        NOMAD_NODE_ID = "${node.unique.id}"
       }
 
       resources {

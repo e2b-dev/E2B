@@ -289,7 +289,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	}
 
 	// CLIENTS NAME FOR WRITING TO KV
-	// nodeName 	:=        cfg.Env["NOMAD_NODE_NAME"]
+	// nodeName 	:=        cfg.Env["NOMAD_NODE_ID"]
 
 	// LOAD SNAPSHOT
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
