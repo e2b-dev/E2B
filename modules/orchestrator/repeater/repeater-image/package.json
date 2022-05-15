@@ -1,0 +1,28 @@
+{
+  "name": "repeater",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "./scripts/build.js",
+    "start:dev": "export PORT=3001; export NODE_ENV=dev; npm run build && node ./lib/index.js",
+    "apply-postgres-schema": "export POSTGRES_URL=`./scripts/getPostgresURL.js`; prisma migrate dev --name mig",
+    "dev": "nodemon -q",
+    "fix": "npx eslint **/src/**/*.ts --fix",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^4.17.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/node": "^17.0.8",
+    "@typescript-eslint/eslint-plugin": "^5.9.0",
+    "@typescript-eslint/parser": "^5.9.0",
+    "esbuild": "^0.14.10",
+    "eslint": "^8.6.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-import-resolver-typescript": "^2.5.0",
+    "eslint-plugin-import": "^2.25.4",
+    "nodemon": "^2.0.15"
+  }
+}

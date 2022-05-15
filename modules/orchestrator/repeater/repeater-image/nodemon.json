@@ -1,0 +1,8 @@
+{
+  "watch": [
+    "src"
+  ],
+  "ext": ".ts,.graphql",
+  "ignore": [],
+  "exec": "npm run start:dev"
+}

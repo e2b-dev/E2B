@@ -76,13 +76,13 @@ provider "nomad" {
   address = "http://${module.server_cluster.server_proxy_ip}"
 }
 
-module "repeater" {
-  source = "./repeater-service"
+# module "repeater" {
+#   source = "./repeater-service"
 
-  depends_on = [
-    module.client_cluster
-  ]
-}
+#   depends_on = [
+#     module.client_cluster
+#   ]
+# }
 
 module "firecracker_sessions" {
   source = "./firecracker-sessions"
