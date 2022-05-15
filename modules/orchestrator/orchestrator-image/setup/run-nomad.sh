@@ -176,10 +176,6 @@ EOF
     client_config=$(cat <<EOF
 client {
   enabled = true
-
-  options   = {
-    "docker.auth.helper"     = "gcloud"
-  }
 }
 leave_on_terminate = true
 EOF
