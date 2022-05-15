@@ -70,11 +70,6 @@ build {
   }
 
   provisioner "shell" {
-    script          = "${path.root}/setup/install-envoy.sh"
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.envoy_version}"
-  }
-
-  provisioner "shell" {
     script          = "${path.root}/setup/install-dnsmasq.sh"
   }
 
