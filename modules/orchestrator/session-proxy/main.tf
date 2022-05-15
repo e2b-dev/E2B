@@ -5,7 +5,7 @@ resource "nomad_job" "session_proxy" {
     enabled = true
     vars = {
       gcp_zone = var.gcp_zone
+      client_cluster_size = var.client_cluster_size
     }
   }
 }
-

@@ -2,8 +2,19 @@ variable "gcp_zone" {
   type = string
 }
 
+variable "client_cluster_size" {
+  type = number
+}
+
 job "session-proxy" {
   datacenters = [var.gcp_zone]
+
+  count = var.client_cluster_size
+
+  constraint {
+    operator  = "distinct_hosts"
+    value     = "true"
+  }
 
   group "session-proxy" {
     network {

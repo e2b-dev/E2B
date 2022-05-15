@@ -30,6 +30,7 @@ module "client_cluster" {
   machine_type = var.client_machine_type
   image_family = var.client_image_family
 
+  gcp_project_id = var.gcp_project_id
   network_name = var.network_name
 }
 
@@ -75,6 +76,14 @@ provider "nomad" {
   address = "http://${module.server_cluster.server_proxy_ip}"
 }
 
+module "repeater" {
+  source = "./repeater-service"
+
+  depends_on = [
+    module.client_cluster
+  ]
+}
+
 module "firecracker_sessions" {
   source = "./firecracker-sessions"
 
@@ -100,11 +109,23 @@ module "firecracker_envs" {
   }
 }
 
+module "client_proxy" {
+  source = "./client-proxy"
+
+  depends_on = [
+    module.server_cluster
+  ]
+
+  gcp_zone = var.gcp_zone
+}
+
 module "session_proxy" {
   source = "./session-proxy"
 
   depends_on = [
     module.server_cluster
   ]
+
+  client_cluster_size = var.client_cluster_size
   gcp_zone = var.gcp_zone
 }
