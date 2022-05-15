@@ -15,16 +15,11 @@ variable "consul_version" {
 
 variable "nomad_version" {
   type    = string
-  default = "1.2.6"
-}
-
-variable "envoy_version" {
-  type    = string
-  default = "1.18.3"
+  default = "1.3.0"
 }
 
 variable "firecracker_version" {
   type        = string
   description = "Firecracker version must be prefixed with 'v'"
-  default     = "v1.0.0"
+  default     = "v1.1.0"
 }
