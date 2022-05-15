@@ -44,24 +44,27 @@ job "session-proxy" {
       }
 
       template {
-        data = <<EOF
-map $host $dbk_session_id {
-  default   "";
-  "~^(?<sessid>\w+)_\w+\.ondevbook\.com$" $sessid;
-}
-
-server {
-  proxy_set_header Host $host;
-  proxy_set_header X-Real-IP $remote_addr;
-
-  location / {
-    proxy_pass $scheme://$dbk_sess_id$request_uri;
-  }
-}
-EOF
+        left_delimiter  = "[["
+        right_delimiter = "]]"
         destination   = "local/load-balancer.conf"
         change_mode   = "signal"
         change_signal = "SIGHUP"
+# "~^(?<sessid>\w+)_\w+\.ondevbook\.com$" $sessid;
+        data = <<EOF
+map [["$host"]] [["$dbk_session_id"]] {
+  default   [["\"\""]];
+  [["\"\~\^\(\?\<sessid\>\\w\+\)\_\\w+\\.ondevbook\\.com\$\\" \$sessid"]];
+}
+
+server {
+  proxy_set_header Host [["$host"]];
+  proxy_set_header X-Real-IP [["$remote_addr"]];
+
+  location / {
+    proxy_pass [["$scheme://$dbk_session_id$request_uri"]];
+  }
+}
+EOF
       }
     }
   }
