@@ -75,7 +75,7 @@ provider "nomad" {
   address = "http://${module.server_cluster.server_proxy_ip}"
 }
 
-module "firecracker-sessions" {
+module "firecracker_sessions" {
   source = "./firecracker-sessions"
 
   depends_on = [
@@ -85,7 +85,7 @@ module "firecracker-sessions" {
   gcp_zone = var.gcp_zone
 }
 
-module "firecracker-envs" {
+module "firecracker_envs" {
   source = "./firecracker-envs"
 
   depends_on = [
@@ -98,4 +98,13 @@ module "firecracker-envs" {
     rootfs  = var.firecracker_envs.rootfs
     snap    = var.firecracker_envs.snap
   }
+}
+
+module "session_proxy" {
+  source = "./session-proxy"
+
+  depends_on = [
+    module.server_cluster
+  ]
+  gcp_zone = var.gcp_zone
 }

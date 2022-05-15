@@ -1,7 +1,6 @@
 variable "gcp_zone" {
   type = string
 }
-
 variable "out_dir" {
   type = string
 }
