@@ -94,20 +94,20 @@ module "firecracker_sessions" {
   gcp_zone = var.gcp_zone
 }
 
-module "firecracker_envs" {
-  source = "./firecracker-envs"
+# module "firecracker_envs" {
+#   source = "./firecracker-envs"
 
-  depends_on = [
-    module.server_cluster
-  ]
+#   depends_on = [
+#     module.server_cluster
+#   ]
 
-  gcp_zone = var.gcp_zone
-  out_dir = var.firecracker_envs.mnt_dir_path
-  out_files_basenames = {
-    rootfs  = var.firecracker_envs.rootfs
-    snap    = var.firecracker_envs.snap
-  }
-}
+#   gcp_zone = var.gcp_zone
+#   out_dir = var.firecracker_envs.mnt_dir_path
+#   out_files_basenames = {
+#     rootfs  = var.firecracker_envs.rootfs
+#     snap    = var.firecracker_envs.snap
+#   }
+# }
 
 module "client_proxy" {
   source = "./client-proxy"
