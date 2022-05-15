@@ -2,6 +2,16 @@ variable "gcp_zone" {
   type = string
 }
 
+variable "client_cluster_size" {
+  type = number
+  default = 0
+}
+
+variable "session_proxy_job_index" {
+  type = number
+  default = 0
+}
+
 job "client-proxy" {
   datacenters = [var.gcp_zone]
 
@@ -18,6 +28,11 @@ job "client-proxy" {
     service {
       name = "client-proxy"
       port = "session"
+      meta {
+        # We force recalculation of the template by redeploying the job when we change the cluster size
+        SessionProxyJobIndex = var.session_proxy_job_index
+        ClientClusterSize = var.client_cluster_size
+      }
     }
 
     task "nginx" {
@@ -25,8 +40,7 @@ job "client-proxy" {
 
       config {
         image = "nginx"
-
-        ports = ["session", "health"]
+        ports = ["health", "session"]
 
         volumes = [
           "local:/etc/nginx/conf.d",
@@ -40,26 +54,23 @@ job "client-proxy" {
         change_mode   = "signal"
         change_signal = "SIGHUP"
         data            = <<EOF
-[[ range services ]]
-  [[ if .Name eq "session-proxy" ]]
-    server {
-      listen 3002;
-      server_name *_[[ .Meta.Client ]].ondevbook.com;
-      proxy_set_header Host [["$host"]];
-      proxy_set_header X-Real-IP [["$remote_addr"]];
-      location / {
-        proxy_pass [["$scheme://"]][[ .Address ]]:[[ .Port ]][["$request_uri"]];
-      }
-    }
-  [[ end ]]
+[[ range service "session-proxy" ]]
+server {
+  listen 3002;
+  server_name ~^\w+_[[ index .ServiceMeta "Client" ]]\.ondevbook\.com$;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  location / {
+    proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;
+  }
+}
 [[ end ]]
-
 server {
   listen 3001;
-  location /health {
+  location /__health {
     access_log off;
-    [["add_header \'Content-Type' \'text/plain\'"]];
-    [["return 200 \"healthy\\n\""]];
+    return 200 '{"status":"UP"}';
+    add_header 'Content-Type' 'application/json';
   }
 }
 EOF

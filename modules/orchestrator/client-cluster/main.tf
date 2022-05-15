@@ -99,9 +99,14 @@ resource "google_compute_instance_template" "client" {
 # CREATE FIREWALL RULES
 # ---------------------------------------------------------------------------------------------------------------------
 
-
+# This cert is for proxying throught Cloudflare only
 data "google_compute_ssl_certificate" "session_certificate" {
   name = "sessions"
+}
+
+# This should be SSL cert for usage withotu Cloudflare
+data "google_compute_ssl_certificate" "ondevbook_certificate" {
+  name = "ondevbook"
 }
 
 module "gce_lb_http" {
@@ -110,7 +115,10 @@ module "gce_lb_http" {
   name           = "orch-external-session"
   project        = var.gcp_project_id
   address        = "34.120.40.50"
-  ssl_certificates    = [data.google_compute_ssl_certificate.session_certificate.self_link]
+  ssl_certificates    = [
+    data.google_compute_ssl_certificate.session_certificate.self_link,
+    data.google_compute_ssl_certificate.ondevbook_certificate.self_link,
+  ]
   create_address = false
   use_ssl_certificates = true
   ssl = true

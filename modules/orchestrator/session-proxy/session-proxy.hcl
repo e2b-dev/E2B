@@ -19,7 +19,7 @@ job "session-proxy" {
 
     network {
       port "http" {
-        static = 8080
+        static = 3003
       }
     }
 
@@ -27,7 +27,7 @@ job "session-proxy" {
       name = "session-proxy"
       port = "http"
       meta {
-        Client = "${node.unique.name}"
+        Client = "${node.unique.id}"
       }
     }
 
@@ -49,19 +49,17 @@ job "session-proxy" {
         destination   = "local/load-balancer.conf"
         change_mode   = "signal"
         change_signal = "SIGHUP"
-# "~^(?<sessid>\w+)_\w+\.ondevbook\.com$" $sessid;
         data = <<EOF
-map [["$host"]] [["$dbk_session_id"]] {
-  default   [["\"\""]];
-  [["\"\~\^\(\?\<sessid\>\\w\+\)\_\\w+\\.ondevbook\\.com\$\\" \$sessid"]];
+map $host $dbk_session_id {
+  ~^(?<sessid>\w+)_\w+\.ondevbook\.com$ $sessid;
 }
 
 server {
-  proxy_set_header Host [["$host"]];
-  proxy_set_header X-Real-IP [["$remote_addr"]];
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
 
   location / {
-    proxy_pass [["$scheme://$dbk_session_id$request_uri"]];
+    proxy_pass $scheme://$dbk_session_id$request_uri;
   }
 }
 EOF

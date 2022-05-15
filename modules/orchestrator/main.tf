@@ -109,21 +109,23 @@ module "firecracker_sessions" {
 #   }
 # }
 
-module "client_proxy" {
-  source = "./client-proxy"
-
-  depends_on = [
-    module.server_cluster
-  ]
-
-  gcp_zone = var.gcp_zone
-}
-
 module "session_proxy" {
   source = "./session-proxy"
 
   depends_on = [
     module.server_cluster
+  ]
+
+  client_cluster_size = var.client_cluster_size
+  gcp_zone = var.gcp_zone
+}
+
+module "client_proxy" {
+  source = "./client-proxy"
+
+  depends_on = [
+    module.server_cluster,
+    module.session_proxy,
   ]
 
   client_cluster_size = var.client_cluster_size
