@@ -98,10 +98,6 @@ build {
     ]
   }
 
-  provisioner "shell" {
-    script          = "${path.root}/setup/install-cni-plugins.sh"
-  }
-
   # Add testing FC kernel and rootfs
   provisioner "shell" {
     inline = [
