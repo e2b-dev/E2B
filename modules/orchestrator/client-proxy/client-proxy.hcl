@@ -42,11 +42,20 @@ upstream backend {
 }
 
 server {
-   listen 8080;
+  listen 3001;
 
-   location / {
-      proxy_pass http://backend;
-   }
+  location /__health {
+      access_log off;
+      add_header 'Content-Type' 'text/plain';
+      return 200 "healthy\n";
+  }
+
+  location / {
+    proxy_pass http://backend;
+  }
+
+
+
 }
 EOF
 
