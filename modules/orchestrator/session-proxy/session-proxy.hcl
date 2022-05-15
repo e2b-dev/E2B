@@ -47,7 +47,7 @@ job "session-proxy" {
       data = <<EOF
 map $host $dbk_session_id {
   default   "";
-  "~^(?<sessid>\w+)-\w+\.ondevbook\.com$" $sessid;
+  "~^(?<sessid>\w+)_\w+\.ondevbook\.com$" $sessid;
 }
 
 server {
