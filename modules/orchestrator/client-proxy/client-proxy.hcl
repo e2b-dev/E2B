@@ -48,7 +48,7 @@ job "client-proxy" {
       proxy_set_header Host [["$host"]];
       proxy_set_header X-Real-IP [["$remote_addr"]];
       location / {
-        proxy_pass http://[[ .Address ]]:[[ .Port ]][["$request_uri"]];
+        proxy_pass [["$scheme"]][[ .Address ]]:[[ .Port ]][["$request_uri"]];
       }
     }
   [[ end ]]
