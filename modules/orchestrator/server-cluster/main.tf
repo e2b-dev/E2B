@@ -112,7 +112,7 @@ resource "google_compute_instance_template" "server" {
 module "gce_lb_http" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
-  name           = "orch-proxy"
+  name           = "orch-server-proxy"
   project        = var.gcp_project_id
   address        = "34.149.1.201"
   create_address = false

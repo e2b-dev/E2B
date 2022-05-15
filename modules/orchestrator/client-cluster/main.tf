@@ -8,6 +8,11 @@ resource "google_compute_instance_group_manager" "client_cluster" {
 
   provider = google-beta
 
+  named_port {
+    name = "sessions"
+    port = 3001
+  }
+
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
   # a rolling update.
   update_policy {
@@ -89,3 +94,79 @@ resource "google_compute_instance_template" "client" {
 # ---------------------------------------------------------------------------------------------------------------------
 # CREATE FIREWALL RULES
 # ---------------------------------------------------------------------------------------------------------------------
+
+
+data "google_compute_ssl_certificate" "session_certificate" {
+  name = "sessions"
+}
+
+module "gce_lb_http" {
+  source         = "GoogleCloudPlatform/lb-http/google"
+  version        = "~> 5.1"
+  name           = "orch-client-proxy"
+  project        = var.gcp_project_id
+  address        = "34.120.40.50"
+  ssl_certificates    = [data.google_compute_ssl_certificate.session_certificate.self_link]
+  create_address = false
+  use_ssl_certificates = true
+  ssl = true
+  target_tags = [
+    var.cluster_tag_name,
+  ]
+  firewall_networks = [var.network_name]
+
+  backends = {
+    default = {
+      description                     = null
+      protocol                        = "HTTP"
+      port                            = 3001
+      port_name                       = "sessions"
+      timeout_sec                     = 10
+      connection_draining_timeout_sec = null
+      enable_cdn                      = false
+      security_policy                 = null
+      session_affinity                = null
+      affinity_cookie_ttl_sec         = null
+      custom_request_headers          = null
+      custom_response_headers         = null
+
+      health_check = {
+        check_interval_sec  = null
+        timeout_sec         = null
+        healthy_threshold   = null
+        unhealthy_threshold = null
+        request_path        = "/__health"
+        port                = 3001
+        host                = null
+        logging             = null
+      }
+
+      log_config = {
+        enable      = true
+        sample_rate = 1.0
+      }
+
+      groups = [
+        {
+          group                        = google_compute_instance_group_manager.client_cluster.instance_group
+          balancing_mode               = null
+          capacity_scaler              = null
+          description                  = null
+          max_connections              = null
+          max_connections_per_instance = null
+          max_connections_per_endpoint = null
+          max_rate                     = null
+          max_rate_per_instance        = null
+          max_rate_per_endpoint        = null
+          max_utilization              = null
+        },
+      ]
+
+      iap_config = {
+        enable               = false
+        oauth2_client_id     = ""
+        oauth2_client_secret = ""
+      }
+    }
+  }
+}
