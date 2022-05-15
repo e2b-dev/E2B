@@ -26,7 +26,7 @@ job "session-proxy" {
     service {
       name = "session-proxy"
       port = "http"
-      meta = {
+      meta {
         Client = "${node.unique.name}"
       }
     }
