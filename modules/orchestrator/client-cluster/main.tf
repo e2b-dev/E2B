@@ -9,8 +9,13 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   provider = google-beta
 
   named_port {
-    name = "sessions"
+    name = "health"
     port = 3001
+  }
+
+  named_port {
+    name = "session"
+    port = 3002
   }
 
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
@@ -118,8 +123,8 @@ module "gce_lb_http" {
     default = {
       description                     = null
       protocol                        = "HTTP"
-      port                            = 3001
-      port_name                       = "sessions"
+      port                            = 3002
+      port_name                       = "session"
       timeout_sec                     = 10
       connection_draining_timeout_sec = null
       enable_cdn                      = false
@@ -134,7 +139,7 @@ module "gce_lb_http" {
         timeout_sec         = null
         healthy_threshold   = null
         unhealthy_threshold = null
-        request_path        = "/__health"
+        request_path        = "/health"
         port                = 3001
         host                = null
         logging             = null

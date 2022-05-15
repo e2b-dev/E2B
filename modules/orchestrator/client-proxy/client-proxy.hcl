@@ -6,9 +6,10 @@ job "client-proxy" {
   datacenters = [var.gcp_zone]
 
   group "client-proxy" {
-    count = 1
-
     network {
+      port "health" {
+        static = 3001
+      }
       port "session" {
         static = 3001
       }
@@ -25,7 +26,7 @@ job "client-proxy" {
       config {
         image = "nginx"
 
-        ports = ["session"]
+        ports = ["session", "health"]
 
         volumes = [
           "local:/etc/nginx/conf.d",
@@ -46,7 +47,6 @@ job "client-proxy" {
       server_name *_[[ .Meta.Client ]].ondevbook.com;
       proxy_set_header Host [["$host"]];
       proxy_set_header X-Real-IP [["$remote_addr"]];
-
       location / {
         proxy_pass http://[[ .Address ]]:[[ .Port ]][["$request_uri"]];
       }
@@ -56,7 +56,6 @@ job "client-proxy" {
 
 server {
   listen 3001;
-
   location /health {
     access_log off;
     add_header 'Content-Type' 'text/plain';
