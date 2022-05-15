@@ -85,21 +85,6 @@
 - https://gruchalski.com/posts/2021-02-17-bridging-the-firecracker-network-gap/
 - https://gruchalski.com/posts/2021-02-07-vault-on-firecracker-with-cni-plugins-and-nomad/
 - https://gruchalski.com/posts/2021-02-18-its-all-about-the-iface-name/
-- https://www.cni.dev/docs/
-- virtual network device
-- virtual networking
-- bridge
-- vlan
-- subnetworks
-- veth, veth pairs
-- tap
-- tun
-- dns
-- cgroups
-- network namespaces
-- network layers 1-7
-- IP4, IP6
-- http overview
 - https://hechao.li/2017/11/23/vxlan/
 - https://hechao.li/2020/06/09/Mini-Container-Series-Part-0-Not-a-Real-Container/
 - https://hechao.li/2017/12/13/linux-bridge-part1/
@@ -118,6 +103,18 @@
 - https://traefik.io/resources/plugin-to-traefik-create-and-publish-your-own-middleware-3/
 - https://github.com/weaveworks/ignite/blob/main/pkg/network/cni/cni.go
 - https://access.redhat.com/sites/default/files/attachments/rh_ip_command_cheatsheet_1214_jcs_print.pdf
+- https://github.com/firecracker-microvm/firecracker-go-sdk#network-configuration
+- https://github.com/firecracker-microvm/firecracker/blob/main/docs/network-setup.md
+- https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/network-for-clones.md
+- https://gist.github.com/mcastelino/7d85f4164ffdaf48242f9281bb1d0f9b
+
+## DNS, routing
+- https://discuss.hashicorp.com/t/dynamic-tagging-or-naming-of-services/36584/2
+- https://www.consul.io/docs/connect/config-entries/service-router
+- https://www.nomadproject.io/docs/job-specification/service
+- https://serverfault.com/questions/897244/how-to-configure-dynamic-routing-of-grpc-requests-with-envoy-nomad-and-consul
+- https://stackoverflow.com/questions/71025605/nomad-consul-traefik-https
+- https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/dynamic_forward_proxy_filter
 
 ## Envs
 - https://github.com/combust-labs/firebuild#high-level-example
@@ -147,3 +144,4 @@
   - `_resorces/start-fc.sh`
   - `_resorces/stop.sh`
   - `_resorces/Dockerfile`
+- https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it

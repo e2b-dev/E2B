@@ -74,6 +74,7 @@ resource "google_compute_instance_template" "client" {
     scopes = [
       "userinfo-email",
       "compute-ro",
+      "storage-full"
     ]
   }
 

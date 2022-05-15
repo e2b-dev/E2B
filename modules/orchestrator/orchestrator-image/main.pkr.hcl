@@ -42,7 +42,7 @@ build {
     inline = [
       "sudo add-apt-repository ppa:longsleep/golang-backports",
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq golang-go build-essential net-tools",
+      "sudo apt-get install -y unzip jq golang-go build-essential net-tools qemu-utils",
     ]
   }
   
@@ -67,6 +67,11 @@ build {
   provisioner "shell" {
     script          = "${path.root}/setup/install-consul.sh"
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
+  }
+
+  provisioner "shell" {
+    script          = "${path.root}/setup/install-envoy.sh"
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.envoy_version}"
   }
 
   provisioner "shell" {
