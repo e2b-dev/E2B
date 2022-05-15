@@ -24,9 +24,11 @@ job "session-proxy" {
     }
 
     service {
-      tags = ["${node.unique.name}"]
       name = "session-proxy"
       port = "http"
+      meta = {
+        Client = "${node.unique.name}"
+      }
     }
 
     task "session-proxy" {
@@ -53,7 +55,7 @@ server {
   proxy_set_header X-Real-IP $remote_addr;
 
   location / {
-    proxy_pass $scheme://$dbk_sess_id$request_uri permanent;
+    proxy_pass $scheme://$dbk_sess_id$request_uri;
   }
 }
 EOF
