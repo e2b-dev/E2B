@@ -11,7 +11,7 @@ job "client-proxy" {
         static = 3001
       }
       port "session" {
-        static = 3001
+        static = 3002
       }
     }
 
