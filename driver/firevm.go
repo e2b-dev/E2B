@@ -288,6 +288,9 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
 
+	// CLIENTS NAME FOR WRITING TO KV
+	// nodeName 	:=        cfg.Env["NOMAD_NODE_NAME"]
+
 	// LOAD SNAPSHOT
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
 		m.StopVMM()
