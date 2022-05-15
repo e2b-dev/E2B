@@ -45,18 +45,17 @@ job "session-proxy" {
 
     template {
       data = <<EOF
+map $host $dbk_session_id {
+  default   "";
+  "~^(?<sessid>\w+)-\w+\.ondevbook\.com$" $sessid;
+}
+
 server {
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
 
-  # $http_custom_header --> Custom-Header
-  # Expected HTTP headers
-  # DBK-Session-ID: <session-id>
-  # DBK-Port: <port>
-
   location / {
-    # proxy_pass $scheme://$subdomain$request_uri permanent;
-    proxy_pass $scheme://$http_dbk_session_id$request_uri permanent;
+    proxy_pass $scheme://$dbk_sess_id$request_uri permanent;
   }
 }
 EOF
