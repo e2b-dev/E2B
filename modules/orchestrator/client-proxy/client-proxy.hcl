@@ -58,8 +58,8 @@ server {
   listen 3001;
   location /health {
     access_log off;
-    add_header 'Content-Type' 'text/plain';
-    return 200 "healthy\n";
+    [["add_header \'Content-Type' \'text/plain\'"]];
+    [["return 200 \"healthy\\n\""]];
   }
 }
 EOF
