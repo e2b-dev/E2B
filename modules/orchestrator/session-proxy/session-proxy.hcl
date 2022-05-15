@@ -9,14 +9,14 @@ variable "client_cluster_size" {
 job "session-proxy" {
   datacenters = [var.gcp_zone]
 
-  count = var.client_cluster_size
-
   constraint {
     operator  = "distinct_hosts"
     value     = "true"
   }
 
   group "session-proxy" {
+    count = var.client_cluster_size
+
     network {
       port "http" {
         static = 8080
@@ -24,7 +24,7 @@ job "session-proxy" {
     }
 
     service {
-      tags = [${node.unique.name}]
+      tags = ["${node.unique.name}"]
       name = "session-proxy"
       port = "http"
     }
@@ -36,15 +36,13 @@ job "session-proxy" {
         image = "nginx"
         network_mode = "host"
         ports = ["http"]
+        volumes = [
+          "local:/etc/nginx/conf.d",
+        ]
       }
 
-    volumes = [
-        "local:/etc/nginx/conf.d",
-      ]
-    }
-
-    template {
-      data = <<EOF
+      template {
+        data = <<EOF
 map $host $dbk_session_id {
   default   "";
   "~^(?<sessid>\w+)_\w+\.ondevbook\.com$" $sessid;
@@ -59,9 +57,10 @@ server {
   }
 }
 EOF
-      destination   = "local/load-balancer.conf"
-      change_mode   = "signal"
-      change_signal = "SIGHUP"
+        destination   = "local/load-balancer.conf"
+        change_mode   = "signal"
+        change_signal = "SIGHUP"
+      }
     }
   }
 }
