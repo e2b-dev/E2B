@@ -31,7 +31,7 @@ variable "client_image_family" {
 
 variable "client_cluster_name" {
   type    = string
-  default = "cl"
+  default = "orch-client"
 }
 
 variable "client_cluster_size" {

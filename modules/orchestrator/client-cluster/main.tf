@@ -44,7 +44,7 @@ data "google_compute_image" "source_image" {
 }
 
 resource "google_compute_instance_template" "client" {
-  name_prefix = "${var.cluster_name}"
+  name_prefix = "${var.cluster_name}-"
 
   instance_description = var.cluster_description
   machine_type         = var.machine_type
