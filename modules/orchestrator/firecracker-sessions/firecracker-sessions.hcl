@@ -6,10 +6,6 @@ variable "snapshot_path" {
   type = string
 }
 
-variable "firecracker_path" {
-  type = string
-}
-
 variable "gcp_zone" {
   type = string
 }
@@ -34,6 +30,10 @@ job "firecracker-sessions" {
     task "start" {
       driver = "firecracker-task-driver"
 
+      env {
+        NOMAD_NODE_NAME = "${node.unique.name}"
+      }
+
       resources {
         memory_max = 1024
         memory = 512
@@ -41,7 +41,6 @@ job "firecracker-sessions" {
       }
 
       config {
-        Firecracker = var.firecracker_path
         MemFile     = var.memfile_path
         Snapshot    = var.snapshot_path
       }

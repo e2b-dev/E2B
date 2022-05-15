@@ -10,12 +10,6 @@ variable "snapshot_path" {
   default     = "/fc-vm/snapshot_file"
 }
 
-variable "firecracker_path" {
-  description = "Must be an absolute path"
-  type        = string
-  default     = "/usr/local/bin/firecracker"
-}
-
 variable "gcp_zone" {
   type = string
 }

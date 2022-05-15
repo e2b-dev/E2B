@@ -39,7 +39,7 @@ data "google_compute_image" "source_image" {
 }
 
 resource "google_compute_instance_template" "client" {
-  name_prefix = "${var.cluster_name}-"
+  name_prefix = "${var.cluster_name}"
 
   instance_description = var.cluster_description
   machine_type         = var.machine_type
@@ -103,7 +103,7 @@ data "google_compute_ssl_certificate" "session_certificate" {
 module "gce_lb_http" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
-  name           = "orch-client-proxy"
+  name           = "orch-external-session"
   project        = var.gcp_project_id
   address        = "34.120.40.50"
   ssl_certificates    = [data.google_compute_ssl_certificate.session_certificate.self_link]
