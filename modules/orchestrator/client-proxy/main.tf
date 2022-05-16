@@ -10,7 +10,7 @@ resource "nomad_job" "client_proxy" {
     vars = {
       gcp_zone = var.gcp_zone
       client_cluster_size = var.client_cluster_size
-      session_proxy_job_index = data.nomad_job.session_proxy.modify_index
+      #session_proxy_job_index = data.nomad_job.session_proxy.modify_index
     }
   }
 }

@@ -61,7 +61,7 @@ server {
   proxy_set_header X-Real-IP $remote_addr;
 
   location / {
-    if ($dbk_session_id == "") {
+    if ($dbk_session_id = "") {
       return 400 'Missing session ID';
     }
     proxy_pass $scheme://$dbk_session_id$request_uri;
