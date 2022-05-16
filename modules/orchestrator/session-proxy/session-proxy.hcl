@@ -51,14 +51,19 @@ job "session-proxy" {
         change_signal = "SIGHUP"
         data = <<EOF
 map $host $dbk_session_id {
-  ~^(?<sessid>\w+)_\w+\.ondevbook\.com$ $sessid;
+  default         "";
+  "~^(?<s>\w+)_"  $s;
 }
 
 server {
+  listen 3003;
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
 
   location / {
+    if ($dbk_session_id == "") {
+      return 400 'Missing session ID';
+    }
     proxy_pass $scheme://$dbk_session_id$request_uri;
   }
 }

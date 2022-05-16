@@ -54,10 +54,15 @@ job "client-proxy" {
         change_mode   = "signal"
         change_signal = "SIGHUP"
         data            = <<EOF
+server {
+  listen 3002 default_server;
+  server_name _;
+  return 400;
+}
 [[ range service "session-proxy" ]]
 server {
   listen 3002;
-  server_name ~^\w+_[[ index .ServiceMeta "Client" ]]\.ondevbook\.com$;
+  server_name "~^(.+)_[[ index .ServiceMeta "Client" ]]\.ondevbook\.com$;
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
   location / {
