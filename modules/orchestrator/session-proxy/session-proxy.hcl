@@ -64,7 +64,7 @@ job "session-proxy" {
         data = <<EOF
 map $host $dbk_session_id {
   default         "";
-  "~^(?<s>\w+)_"  $s;
+  "~^(?<s>\w+)-"  $s;
 }
 
 server {
