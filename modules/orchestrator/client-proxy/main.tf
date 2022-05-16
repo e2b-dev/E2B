@@ -4,6 +4,7 @@ resource "nomad_job" "client_proxy" {
   hcl2 {
     enabled = true
     vars = {
+      gcp_zone = var.gcp_zone
       client_proxy_port_number = var.client_proxy_port.port
       client_proxy_port_name = var.client_proxy_port.name
       client_proxy_health_port_number = var.client_proxy_health_port.port

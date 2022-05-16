@@ -30,7 +30,7 @@ job "session-proxy" {
     count = var.client_cluster_size
 
     network {
-      port "${var.session_proxy_port_name}" {
+      port "session" {
         static = var.session_proxy_port_number
       }
     }

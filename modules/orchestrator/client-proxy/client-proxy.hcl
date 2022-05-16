@@ -31,10 +31,10 @@ job "client-proxy" {
 
   group "client-proxy" {
     network {
-      port "${var.client_proxy_health_port_name}" {
+      port "health" {
         static = var.client_proxy_health_port_number
       }
-      port "${var.client_proxy_port_name}" {
+      port "session" {
         static = var.client_proxy_port_number
       }
     }
