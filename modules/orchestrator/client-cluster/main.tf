@@ -133,7 +133,7 @@ module "gce_lb_http" {
       protocol                        = "HTTP"
       port                            = var.client_proxy_port.port
       port_name                       = var.client_proxy_port.name
-      timeout_sec                     = 10
+      timeout_sec                     = 86400
       connection_draining_timeout_sec = null
       enable_cdn                      = false
       security_policy                 = null
