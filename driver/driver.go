@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"time"
 
+	consul "github.com/hashicorp/consul/api"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
@@ -32,6 +33,7 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	pstructs "github.com/hashicorp/nomad/plugins/shared/structs"
+	"github.com/txn2/txeh"
 )
 
 const (
@@ -58,25 +60,9 @@ var (
 	// taskConfigSpec is the hcl specification for the driver config section of
 	// a task within a job. It is returned in the TaskConfigSchema RPC
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		// "KernelImage": hclspec.NewAttr("KernelImage", "string", false),
-		// "BootOptions": hclspec.NewAttr("BootOptions", "string", false),
-		// "BootDisk":    hclspec.NewAttr("BootDisk", "string", false),
-		// "Disks":       hclspec.NewAttr("Disks", "list(string)", false),
-		"Network": hclspec.NewAttr("Network", "string", false),
-		"Vcpus":   hclspec.NewAttr("Vcpus", "number", false),
-		// "Cputype":     hclspec.NewAttr("Cputype", "string", false),
-		// "Mem":         hclspec.NewAttr("Mem", "number", false),
-		"Firecracker": hclspec.NewAttr("Firecracker", "string", false),
-		"MemFile":     hclspec.NewAttr("MemFile", "string", false),
-		"Snapshot":    hclspec.NewAttr("Snapshot", "string", false),
-		"Log":         hclspec.NewAttr("Log", "string", false),
-		// "DisableHt":   hclspec.NewAttr("DisableHt", "bool", false),
-		"Nic": hclspec.NewBlock("Nic", false, hclspec.NewObject(map[string]*hclspec.Spec{
-			"Ip":          hclspec.NewAttr("Ip", "string", true),
-			"Gateway":     hclspec.NewAttr("Gateway", "string", true),
-			"Interface":   hclspec.NewAttr("Interface", "string", true),
-			"Nameservers": hclspec.NewAttr("Nameservers", "list(string)", true),
-		})),
+		"MemFile":   hclspec.NewAttr("MemFile", "string", false),
+		"Snapshot":  hclspec.NewAttr("Snapshot", "string", false),
+		"SessionID": hclspec.NewAttr("MemFile", "string", false),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -112,34 +98,21 @@ type Driver struct {
 
 	// logger will log to the Nomad agent
 	logger hclog.Logger
+
+	// Consul client for access to KV
+	consulClient consul.Client
+
+	hostsClient *txeh.Hosts
 }
 
 // Config is the driver configuration set by the SetConfig RPC call
-type Config struct {
-}
-type Nic struct {
-	Ip          string // CIDR
-	Gateway     string
-	Interface   string
-	Nameservers []string
-}
+type Config struct{}
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
-	KernelImage string   `codec:"KernelImage"`
-	BootOptions string   `codec:"BootOptions"`
-	BootDisk    string   `codec:"BootDisk"`
-	Disks       []string `codec:"Disks"`
-	Network     string   `codec:"Network"`
-	Nic         Nic      `codec:"Nic"`
-	Vcpus       uint64   `codec:"Vcpus"`
-	MemFile     string   `codec:"MemFile"`
-	Snapshot    string   `codec:"Snapshot"`
-	Cputype     string   `codec:"Cputype"`
-	Mem         uint64   `codec:"Mem"`
-	Firecracker string   `codec:"Firecracker"`
-	Log         string   `code:"Log"`
-	DisableHt   bool     `code:"DisableHt"`
+	MemFile   string `codec:"MemFile"`
+	Snapshot  string `codec:"Snapshot"`
+	SessionID string `codec:"SessionID"`
 }
 
 // TaskState is the state which is encoded in the handle returned in
@@ -154,6 +127,17 @@ type TaskState struct {
 func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 	ctx, cancel := context.WithCancel(context.Background())
 	logger = logger.Named(pluginName)
+
+	consulClient, err := consul.NewClient(consul.DefaultConfigWithLogger(logger))
+	if err != nil {
+		panic(fmt.Errorf("Failed to initialize Consul client: %v", err))
+	}
+
+	hostsClient, err := txeh.NewHostsDefault()
+	if err != nil {
+		panic(fmt.Errorf("Failed to initialize etc hosts handler: %v", err))
+	}
+
 	return &Driver{
 		eventer:        eventer.NewEventer(ctx, logger),
 		config:         &Config{},
@@ -161,6 +145,8 @@ func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 		ctx:            ctx,
 		signalShutdown: cancel,
 		logger:         logger,
+		consulClient:   *consulClient,
+		hostsClient:    hostsClient,
 	}
 }
 
@@ -296,9 +282,17 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	m, err := d.initializeContainer(context.Background(), cfg, driverConfig)
+	ctx := context.Background()
+	ipSlot, err := CreateNetworking(ctx, d.consulClient, cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger, d.hostsClient)
+	if err != nil {
+		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
+		return nil, nil, fmt.Errorf("Failed to create networking: %v", err)
+	}
+
+	m, err := d.initializeContainer(ctx, cfg, driverConfig, ipSlot)
 	if err != nil {
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
+		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
 		return nil, nil, fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
 	}
 
@@ -307,8 +301,11 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		State:           drivers.TaskStateRunning,
 		startedAt:       time.Now().Round(time.Millisecond),
 		MachineInstance: m.Machine,
+		Slot:            ipSlot,
 		Info:            m.Info,
 		logger:          d.logger,
+		consulClient:    d.consulClient,
+		hostsClient:     d.hostsClient,
 		cpuStatsSys:     stats.NewCpuStats(),
 		cpuStatsUser:    stats.NewCpuStats(),
 		cpuStatsTotal:   stats.NewCpuStats(),
@@ -322,6 +319,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	if err := handle.SetDriverState(&driverState); err != nil {
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
+		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
 		return nil, nil, fmt.Errorf("failed to set driver state: %v", err)
 	}
 

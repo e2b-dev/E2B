@@ -23,10 +23,12 @@ import (
 	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
+	consul "github.com/hashicorp/consul/api"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/shirou/gopsutil/process"
+	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 )
 
@@ -36,7 +38,9 @@ var (
 )
 
 type taskHandle struct {
-	logger hclog.Logger
+	logger       hclog.Logger
+	consulClient consul.Client
+	hostsClient  *txeh.Hosts
 
 	// stateLock syncs access to all fields below
 	stateLock sync.RWMutex
@@ -44,6 +48,7 @@ type taskHandle struct {
 	taskConfig      *drivers.TaskConfig
 	State           drivers.TaskState
 	MachineInstance *firecracker.Machine
+	Slot            *IPSlot
 	Info            Instance_info
 	startedAt       time.Time
 	completedAt     time.Time
@@ -217,15 +222,14 @@ func (h *taskHandle) Signal(sig string) error {
 	return nil
 }
 
-// shutdown shuts down the container, with `timeout` grace period
-// before shutdown vm
+// shutdown shuts down the container
 func (h *taskHandle) shutdown(timeout time.Duration) error {
 	vnic, _ := netlink.LinkByName(h.Info.Vnic)
 	err := netlink.LinkDel(vnic)
 	if err != nil {
-			h.logger.Error("unable to remove veth ", h.Info.Vnic, " from ", h.taskConfig.ID)
+		h.logger.Error("unable to remove veth ", h.Info.Vnic, " from ", h.taskConfig.ID)
 	}
-	time.Sleep(timeout)
 	h.MachineInstance.StopVMM()
+	h.Slot.RemoveNetworking(h.consulClient, h.logger, h.hostsClient)
 	return nil
 }

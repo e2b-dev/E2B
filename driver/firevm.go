@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -43,62 +42,6 @@ const (
 	containerMonitorIntv = 2 * time.Second
 	defaultbootoptions   = " console=ttyS0 reboot=k panic=1 pci=off nomodules"
 )
-
-func taskConfig2FirecrackerOpts(taskConfig TaskConfig, cfg *drivers.TaskConfig) (*options, error) {
-	opts := newOptions()
-
-	if len(taskConfig.KernelImage) > 0 {
-		opts.FcKernelImage = taskConfig.KernelImage
-	} else {
-		opts.FcKernelImage = filepath.Join(cfg.AllocDir, cfg.Name) + "/vmlinux"
-	}
-
-	if len(taskConfig.BootDisk) > 0 {
-		opts.FcRootDrivePath = taskConfig.BootDisk
-	} else {
-		opts.FcRootDrivePath = filepath.Join(cfg.AllocDir, cfg.Name) + "/rootfs.ext4"
-	}
-
-	if len(taskConfig.Disks) > 0 {
-		opts.FcAdditionalDrives = taskConfig.Disks
-	}
-
-	if len(taskConfig.BootOptions) > 0 {
-		opts.FcKernelCmdLine = taskConfig.BootOptions + defaultbootoptions
-	} else {
-		opts.FcKernelCmdLine = defaultbootoptions
-	}
-
-	if len(taskConfig.Nic.Ip) > 0 {
-		opts.FcNicConfig = taskConfig.Nic
-	}
-	if len(taskConfig.Network) > 0 {
-		opts.FcNetworkName = taskConfig.Network
-	}
-
-	if len(taskConfig.Log) > 0 {
-		opts.FcFifoLogFile = taskConfig.Log
-		opts.Debug = true
-		opts.FcLogLevel = "Debug"
-	}
-
-	if cfg.Resources.NomadResources.Cpu.CpuShares > 100 {
-		opts.FcCPUCount = cfg.Resources.NomadResources.Cpu.CpuShares / 100
-	} else {
-		opts.FcCPUCount = 1
-	}
-	opts.FcCPUTemplate = taskConfig.Cputype
-	opts.FcDisableHt = taskConfig.DisableHt
-
-	if cfg.Resources.NomadResources.Memory.MemoryMB > 0 {
-		opts.FcMemSz = cfg.Resources.NomadResources.Memory.MemoryMB
-	} else {
-		opts.FcMemSz = 300
-	}
-	opts.FcBinary = taskConfig.Firecracker
-
-	return opts, nil
-}
 
 type vminfo struct {
 	Machine *firecracker.Machine
@@ -125,6 +68,7 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 func loadSnapshot(ctx context.Context, cfg *firecracker.Config, snapshotPath string, memFilePath string) (*operations.LoadSnapshotNoContent, error) {
 	httpClient := newFirecrackerClient(cfg.SocketPath)
 
+	// TODO: Use new API (mem_backend)
 	snapshotConfig := operations.LoadSnapshotParams{
 		Context: ctx,
 		Body: &models.SnapshotLoadParams{
@@ -138,8 +82,8 @@ func loadSnapshot(ctx context.Context, cfg *firecracker.Config, snapshotPath str
 	return httpClient.Operations.LoadSnapshot(&snapshotConfig)
 }
 
-func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfig, taskConfig TaskConfig) (*vminfo, error) {
-	opts, _ := taskConfig2FirecrackerOpts(taskConfig, cfg)
+func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfig, taskConfig TaskConfig, slot *IPSlot) (*vminfo, error) {
+	opts := newOptions()
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
 		log.Errorf("Error: %s", err)
@@ -161,15 +105,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		firecracker.WithLogger(log.NewEntry(logger)),
 	}
 
-	fcenv := os.Getenv("FIRECRACKER_BIN")
-	var firecrackerBinary string
-	if len(opts.FcBinary) > 0 {
-		firecrackerBinary = opts.FcBinary
-	} else if len(fcenv) > 0 {
-		firecrackerBinary = fcenv
-	} else {
-		firecrackerBinary = "/usr/local/bin/firecracker"
-	}
+	firecrackerBinary := "/usr/bin/firecracker"
 
 	finfo, err := os.Stat(firecrackerBinary)
 	if os.IsNotExist(err) {
@@ -192,36 +128,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Could not create serial console  %v+", err)
 	}
 
-	ns := fcCfg.VMID
-	tap := "tap0"
-	tapIP := "169.254.0.22/30"
-
-	err = exec.Command("ip", "netns", "add", ns).Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command netns add %v", err)
-	}
-
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "tuntap", "add", "name", tap, "mode", "tap").Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command tuntap add %v", err)
-	}
-
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", tap, "up").Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command tap up %v", err)
-	}
-
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "addr", "add", tapIP, "dev", tap).Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command ip add %v", err)
-	}
-
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", "lo", "up").Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running command tap up %v", err)
-	}
-
-	cmd := exec.CommandContext(ctx, "ip", "netns", "exec", ns, "firecracker", "--api-sock", fcCfg.SocketPath)
+	cmd := exec.CommandContext(ctx, "ip", "netns", "exec", slot.NamespaceID(), "firecracker", "--api-sock", fcCfg.SocketPath)
 
 	cmd.Stdin = tty
 	cmd.Stdout = tty
@@ -266,32 +173,14 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	m.Handlers.FcInit =
 		m.Handlers.FcInit.Clear().
 			Append(
-				// firecracker.SetupNetworkHandler,
-				// // firecracker.SetupKernelArgsHandler,
 				firecracker.StartVMMHandler,
-				// firecracker.CreateLogFilesHandler,
-				// firecracker.BootstrapLoggingHandler,
-				// // firecracker.CreateMachineHandler,
-				// // firecracker.CreateBootSourceHandler,
-				// // firecracker.AttachDrivesHandler,
-				// // firecracker.CreateNetworkInterfacesHandler,
-				// firecracker.AddVsocksHandler,
-				// firecracker.ConfigMmdsHandler,
 			)
-
-	// if err := m.Start(vmmCtx); err != nil {
-	// 	return nil, fmt.Errorf("Failed to start machine: %v", err)
-	// }
 
 	err = m.Handlers.Run(ctx, m)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
 
-	// CLIENTS NAME FOR WRITING TO KV
-	// nodeName 	:=        cfg.Env["NOMAD_NODE_ID"]
-
-	// LOAD SNAPSHOT
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.Snapshot, taskConfig.MemFile); err != nil {
 		m.StopVMM()
 		return nil, fmt.Errorf("Failed to load snapshot: %v", err)
@@ -306,44 +195,8 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Failed getting pid for machine: %v", errpid)
 	}
 
-	// vmIP is set in the snapshot
-	// vmIP := "169.254.0.21/30"
-
-	// eth0IP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.IP.To4().String()
-	// bridgeIP := m.Cfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.Gateway.To4().String()
-
-	// err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "eth0", "-s", vmIP, "-j", "SNAT", "--to", eth0IP).Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command add postrouting %v", err)
-	// }
-
-	// err = exec.Command("ip", "netns", "exec", ns, "iptables", "-t", "nat", "-A", "PREROUTING", "-i", "eth0", "-d", eth0IP, "-j", "DNAT", "-to", vmIP).Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command add prerouting %v", err)
-	// }
-
-	// err = exec.Command("ip", "route", "add", vmIP, "via", bridgeIP).Run()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command add route %v", err)
-	// }
-
-	err = exec.Command("sudo", "bash", "-c", "echo \"192.168.1.3 sid1\" >> /etc/hosts").Run()
-	// err = exec.Command("echo", "\"192.168.1.3 sid\"", ">>", "/etc/hosts").Run()
-	if err != nil {
-		return nil, fmt.Errorf("Error running add to etc hosts %v", err)
-	}
-
-	// TODO: STOP NOMAD JOB check if it cleans up all CNI -> it would destroy the bridge
-
 	var ip string
 	var vnic string
-	// if len(opts.FcNetworkName) > 0 {
-	// 	ip = fcCfg.NetworkInterfaces[0].StaticConfiguration.IPConfiguration.IPAddr.String()
-	// 	vnic = fcCfg.NetworkInterfaces[0].CNIConfiguration.IfName + "vm"
-	// } else {
-	// 	ip = "No network chosen"
-	// 	vnic = ip
-	// }
 
 	info := Instance_info{Serial: ftty, AllocId: cfg.AllocID,
 		Ip:  ip,
