@@ -95,9 +95,7 @@ resource "google_compute_instance_template" "client" {
   }
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# CREATE FIREWALL RULES
-# ---------------------------------------------------------------------------------------------------------------------
+# LOAD BALANCERS
 
 # This cert is for proxying throught Cloudflare only
 data "google_compute_ssl_certificate" "session_certificate" {

@@ -31,8 +31,8 @@ function install {
   curl -L ${release_url}/download/${selected}/firecracker-${selected}-${arch}.tgz \
   | tar -xz
 
-  sudo mv release-${selected}-$(uname -m)/firecracker-${selected}-$(uname -m) /usr/local/bin/firecracker
-  sudo mv release-${selected}-$(uname -m)/jailer-${selected}-$(uname -m) /usr/local/bin/jailer
+  sudo mv release-${selected}-$(uname -m)/firecracker-${selected}-$(uname -m) /usr/bin/firecracker
+  sudo mv release-${selected}-$(uname -m)/jailer-${selected}-$(uname -m) /usr/bin/jailer
 }
 
 install "$@"

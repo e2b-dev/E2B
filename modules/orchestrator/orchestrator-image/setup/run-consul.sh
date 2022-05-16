@@ -245,6 +245,9 @@ EOF
   local default_config_json
   default_config_json=$(cat <<EOF
 {
+  "connect": {
+    "enabled": true
+  },
   "advertise_addr": "$instance_ip_address",
   "bind_addr": "$instance_ip_address",
   $bootstrap_expect

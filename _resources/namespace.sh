@@ -45,5 +45,5 @@ iptables -A FORWARD -i ens4 -o ${VETH} -j ACCEPT
 iptables -t nat -A POSTROUTING -s ${FC_HOST_IP}/32 -o ens4 -j MASQUERADE
 
 
-# mkdir -p "/etc/netns/$NS"
-# ln -s /run/systemd/resolve/resolv.conf /etc/netns/"$NS"/resolv.conf
+mkdir -p "/etc/netns/$NS"
+ln -s /run/systemd/resolve/resolv.conf /etc/netns/"$NS"/resolv.conf
