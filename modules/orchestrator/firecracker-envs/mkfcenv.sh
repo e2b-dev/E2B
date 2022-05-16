@@ -13,21 +13,9 @@
 # MEMFILE_BASENAME
 
 # This script produces 3 files that together creates a Firecracker environment:
-# - root: rootfs file
+# - rootfs: rootfs file
 # - snap: snapshot file
 # - mem: memory file
-
-# Build container
-
-# Create rootfs
-
-# Start Firecracker
-
-# Stop Firecracker
-
-# Create snapshot
-
-# Cleanup Docker
 
 DOCKERFILE="$1"
 
