@@ -63,13 +63,13 @@ job "client-proxy" {
         change_signal = "SIGHUP"
         data            = <<EOF
 server {
-  listen [[ var.client_proxy_port_number ]] default_server;
+  listen 3002 default_server;
   server_name _;
   return 400 'Unexpected request host format';
 }
-[[ range service var.session_proxy_service_name ]]
+[[ range service "session-proxy" ]]
 server {
-  listen [[ var.client_proxy_port_number ]];
+  listen 3002;
   server_name ~^(.+)_[[ index .ServiceMeta "Client" ]]\.ondevbook\.com$;
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
@@ -79,8 +79,8 @@ server {
 }
 [[ end ]]
 server {
-  listen [[ var.client_proxy_health_port_number ]];
-  location [[ client_proxy_health_port_path ]] {
+  listen 3001;
+  location /health {
     access_log off;
     add_header 'Content-Type' 'application/json';
     return 200 '{"status":"UP"}';

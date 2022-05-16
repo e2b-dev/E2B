@@ -68,7 +68,7 @@ map $host $dbk_session_id {
 }
 
 server {
-  listen [[ var.session_proxy_port_number ]];
+  listen 3003;
   # The IP addresses of sessions are saved in the /etc/hosts like so:
   # <session-id> <ip-address>
   #
