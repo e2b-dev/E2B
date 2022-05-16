@@ -35,13 +35,12 @@ job "client-proxy" {
       }
     }
 
-    task "nginx" {
+    task "client-proxy" {
       driver = "docker"
 
       config {
         image = "nginx"
         ports = ["health", "session"]
-
         volumes = [
           "local:/etc/nginx/conf.d",
         ]
@@ -57,7 +56,7 @@ job "client-proxy" {
 server {
   listen 3002 default_server;
   server_name _;
-  return 400;
+  return 400 'Unexpected request host format';
 }
 [[ range service "session-proxy" ]]
 server {
