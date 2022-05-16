@@ -168,7 +168,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	} else if len(fcenv) > 0 {
 		firecrackerBinary = fcenv
 	} else {
-		firecrackerBinary = "/usr/bin/firecracker"
+		firecrackerBinary = "/usr/local/bin/firecracker"
 	}
 
 	finfo, err := os.Stat(firecrackerBinary)
@@ -327,7 +327,8 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	// 	return nil, fmt.Errorf("Error running command add route %v", err)
 	// }
 
-	err = exec.Command("echo", "/etc/hosts", ">>", "192.168.1.3 sid").Run()
+	err = exec.Command("sudo", "bash", "-c", "echo \"192.168.1.3 sid1\" >> /etc/hosts").Run()
+	// err = exec.Command("echo", "\"192.168.1.3 sid\"", ">>", "/etc/hosts").Run()
 	if err != nil {
 		return nil, fmt.Errorf("Error running add to etc hosts %v", err)
 	}
