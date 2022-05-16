@@ -72,6 +72,7 @@ server {
   # The IP addresses of sessions are saved in the /etc/hosts like so:
   # <session-id> <ip-address>
   #
+  # By default, nginx won't use /etc/hosts for the name resolution.
   # We use the systemd nameserver to resolve against /etc/hosts.
   # See https://stackoverflow.com/questions/29980884/proxy-pass-does-not-resolve-dns-using-etc-hosts
   resolver 127.0.0.53;
