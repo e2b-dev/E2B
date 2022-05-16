@@ -62,7 +62,7 @@ server {
 [[ range service "session-proxy" ]]
 server {
   listen 3002;
-  server_name "~^(.+)_[[ index .ServiceMeta "Client" ]]\.ondevbook\.com$;
+  server_name ~^(.+)_[[ index .ServiceMeta "Client" ]]\.ondevbook\.com$;
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
   location / {
@@ -72,10 +72,10 @@ server {
 [[ end ]]
 server {
   listen 3001;
-  location /__health {
+  location /health {
     access_log off;
-    return 200 '{"status":"UP"}';
     add_header 'Content-Type' 'application/json';
+    return 200 '{"status":"UP"}';
   }
 }
 EOF
