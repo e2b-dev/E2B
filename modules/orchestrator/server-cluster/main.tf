@@ -9,8 +9,13 @@ resource "google_compute_instance_group_manager" "server_cluster" {
   }
 
   named_port {
-    name = "http"
+    name = "nomad"
     port = 4646
+  }
+
+  named_port {
+    name = "consul"
+    port = 8500
   }
 
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
@@ -34,9 +39,9 @@ resource "google_compute_instance_group_manager" "server_cluster" {
 
   lifecycle {
     # DEV ONLY - IGNORE CHANGES TO THE IMAGE
-    ignore_changes = [
-      version,
-    ]
+    # ignore_changes = [
+    #   version,
+    # ]
     create_before_destroy = false
   }
 }
@@ -98,21 +103,19 @@ resource "google_compute_instance_template" "server" {
   # which this Terraform resource depends will also need this lifecycle statement.
   lifecycle {
     # DEV ONLY - IGNORE CHANGES TO THE IMAGE
-    ignore_changes = [
-      disk,
-    ]
+    # ignore_changes = [
+    #   disk,
+    # ]
     create_before_destroy = true
   }
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# CREATE FIREWALL RULES
-# ---------------------------------------------------------------------------------------------------------------------
+# LOAD BALANCERS
 
-module "gce_lb_http" {
+module "gce_lb_http_nomad" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
-  name           = "orch-external-dashboard"
+  name           = "orch-external-nomad-dashboard"
   project        = var.gcp_project_id
   address        = "34.149.1.201"
   create_address = false
@@ -126,7 +129,7 @@ module "gce_lb_http" {
       description                     = null
       protocol                        = "HTTP"
       port                            = 80
-      port_name                       = "http"
+      port_name                       = "nomad"
       timeout_sec                     = 10
       connection_draining_timeout_sec = null
       enable_cdn                      = false
@@ -143,6 +146,74 @@ module "gce_lb_http" {
         unhealthy_threshold = null
         request_path        = "/v1/jobs"
         port                = 4646
+        host                = null
+        logging             = null
+      }
+
+      log_config = {
+        enable      = true
+        sample_rate = 1.0
+      }
+
+      groups = [
+        {
+          group                        = google_compute_instance_group_manager.server_cluster.instance_group
+          balancing_mode               = null
+          capacity_scaler              = null
+          description                  = null
+          max_connections              = null
+          max_connections_per_instance = null
+          max_connections_per_endpoint = null
+          max_rate                     = null
+          max_rate_per_instance        = null
+          max_rate_per_endpoint        = null
+          max_utilization              = null
+        },
+      ]
+
+      iap_config = {
+        enable               = false
+        oauth2_client_id     = ""
+        oauth2_client_secret = ""
+      }
+    }
+  }
+}
+
+module "gce_lb_http_consul" {
+  source         = "GoogleCloudPlatform/lb-http/google"
+  version        = "~> 5.1"
+  name           = "orch-external-consul-dashboard"
+  project        = var.gcp_project_id
+  address        = "35.244.214.226"
+  create_address = false
+  target_tags = [
+    var.cluster_tag_name,
+  ]
+  firewall_networks = [var.network_name]
+
+  backends = {
+    default = {
+      description                     = null
+      protocol                        = "HTTP"
+      port                            = 80
+      port_name                       = "consul"
+      timeout_sec                     = 10
+      connection_draining_timeout_sec = null
+      enable_cdn                      = false
+      security_policy                 = null
+      session_affinity                = null
+      affinity_cookie_ttl_sec         = null
+      custom_request_headers          = null
+      custom_response_headers         = null
+
+      health_check = {
+        check_interval_sec  = null
+        timeout_sec         = null
+        healthy_threshold   = null
+        unhealthy_threshold = null
+        request_path        = "/v1/catalog/services"
+        port                = 8500
         host                = null
         logging             = null
       }
