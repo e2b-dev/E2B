@@ -18,5 +18,8 @@ rc-update add sysfs boot
 # Remove password for root.
 passwd -d root
 
+# Add DNS
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
 # Delete itself once done.
 rm -- "$0"
