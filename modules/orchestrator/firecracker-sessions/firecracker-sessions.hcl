@@ -14,7 +14,10 @@ job "firecracker-sessions" {
   datacenters = [var.gcp_zone]
   type = "batch"
 
-  parameterized {}
+  parameterized {
+    payload       = "forbidden"
+    meta_required = ["SESSION_ID"]
+  }
 
   group "session" {
     reschedule {
@@ -43,6 +46,7 @@ job "firecracker-sessions" {
       config {
         MemFile     = var.memfile_path
         Snapshot    = var.snapshot_path
+        SessionID   = "${NOMAD_META_SESSION_ID}"
       }
     }
   }
