@@ -69,6 +69,12 @@ map $host $dbk_session_id {
   "~^(?<s>\w+)-"  $s;
 }
 
+map $http_upgrade $conn_upgrade {
+  default     "";
+  "websocket" "Upgrade";
+}
+
+
 server {
   listen 3003;
   # The IP addresses of sessions are saved in the /etc/hosts like so:
@@ -81,11 +87,14 @@ server {
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
 
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "Upgrade";
+
   location / {
     if ($dbk_session_id = "") {
       return 400 'Missing session ID';
     }
-    proxy_pass $scheme://$dbk_session_id$request_uri;
+    proxy_pass $scheme://$dbk_session_id:8080$request_uri;
   }
 }
 EOF

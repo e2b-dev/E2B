@@ -64,10 +64,15 @@ job "client-proxy" {
         change_mode   = "signal"
         change_signal = "SIGHUP"
         data            = <<EOF
+map $http_upgrade $conn_upgrade {
+  default     "";
+  "websocket" "Upgrade";
+}
+
 server {
   listen 3002 default_server;
   server_name _;
-  return 400 'Unexpected request host format';
+  return 400 "Unknown session";
 }
 [[ range service "session-proxy" ]]
 server {
@@ -75,6 +80,10 @@ server {
   server_name ~^(.+)-[[ index .ServiceMeta "Client" | sprig_substr 0 8 ]]\.ondevbook\.com$;
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
+
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $conn_upgrade;
+
   location / {
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;
   }
