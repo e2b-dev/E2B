@@ -2,14 +2,28 @@ variable "gcp_zone" {
   type = string
 }
 
-variable "client_cluster_size" {
-  type = number
-  default = 0
+variable "client_proxy_health_port_name" {
+  type = string
 }
 
-variable "session_proxy_job_index" {
+variable "client_proxy_health_port_number" {
   type = number
-  default = 0
+}
+
+variable "client_proxy_health_port_path" {
+  type = string
+}
+
+variable "client_proxy_port_name" {
+  type = string
+}
+
+variable "client_proxy_port_number" {
+  type = number
+}
+
+variable "session_proxy_service_name" {
+  type  = string
 }
 
 job "client-proxy" {
@@ -17,22 +31,17 @@ job "client-proxy" {
 
   group "client-proxy" {
     network {
-      port "health" {
-        static = 3001
+      port "${var.client_proxy_health_port_name}" {
+        static = var.client_proxy_health_port_number
       }
-      port "session" {
-        static = 3002
+      port "${var.client_proxy_port_name}" {
+        static = var.client_proxy_port_number
       }
     }
 
     service {
       name = "client-proxy"
-      port = "session"
-      meta {
-        # We force recalculation of the template by redeploying the job when we change the cluster size
-        SessionProxyJobIndex = var.session_proxy_job_index
-        ClientClusterSize = var.client_cluster_size
-      }
+      port = var.client_proxy_port_name
     }
 
     task "client-proxy" {
@@ -40,7 +49,7 @@ job "client-proxy" {
 
       config {
         image = "nginx"
-        ports = ["health", "session"]
+        ports = [var.client_proxy_health_port_name, var.client_proxy_port_name]
         volumes = [
           "local:/etc/nginx/conf.d",
         ]
@@ -54,13 +63,13 @@ job "client-proxy" {
         change_signal = "SIGHUP"
         data            = <<EOF
 server {
-  listen 3002 default_server;
+  listen [[ var.client_proxy_port_number ]] default_server;
   server_name _;
   return 400 'Unexpected request host format';
 }
-[[ range service "session-proxy" ]]
+[[ range service var.session_proxy_service_name ]]
 server {
-  listen 3002;
+  listen [[ var.client_proxy_port_number ]];
   server_name ~^(.+)_[[ index .ServiceMeta "Client" ]]\.ondevbook\.com$;
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
@@ -70,8 +79,8 @@ server {
 }
 [[ end ]]
 server {
-  listen 3001;
-  location /health {
+  listen [[ var.client_proxy_health_port_number ]];
+  location [[ client_proxy_health_port_path ]] {
     access_log off;
     add_header 'Content-Type' 'application/json';
     return 200 '{"status":"UP"}';

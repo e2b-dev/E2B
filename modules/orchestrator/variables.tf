@@ -24,6 +24,46 @@ variable "server_machine_type" {
   default = "n1-standard-4"
 }
 
+variable "client_proxy_health_port" {
+  type    = object({
+    name = string
+    port = number
+    path = string
+  })
+  default = {
+    name = "health"
+    port = 3001
+    path = "/health"
+  }
+}
+
+variable "client_proxy_port" {
+  type    = object({
+    name = string
+    port = number
+  })
+  default = {
+    name = "session"
+    port = 3002
+  }
+}
+
+variable "session_proxy_service_name" {
+  type    = string
+  default = "session-proxy"
+}
+
+variable "session_proxy_port" {
+  type    = object({
+    name = string
+    port = number
+  })
+  default = {
+    name = "session"
+    port = 3003
+  }
+}
+
 variable "client_image_family" {
   type    = string
   default = "orch"

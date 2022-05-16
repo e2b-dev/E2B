@@ -9,13 +9,13 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   provider = google-beta
 
   named_port {
-    name = "health"
-    port = 3001
+    name = var.client_proxy_health_port.name
+    port = var.client_proxy_health_port.port
   }
 
   named_port {
-    name = "session"
-    port = 3002
+    name = var.client_proxy_port.name
+    port = var.client_proxy_port.port
   }
 
   # Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
@@ -131,8 +131,8 @@ module "gce_lb_http" {
     default = {
       description                     = null
       protocol                        = "HTTP"
-      port                            = 3002
-      port_name                       = "session"
+      port                            = var.client_proxy_port.port
+      port_name                       = var.client_proxy_port.name
       timeout_sec                     = 10
       connection_draining_timeout_sec = null
       enable_cdn                      = false
@@ -147,8 +147,8 @@ module "gce_lb_http" {
         timeout_sec         = null
         healthy_threshold   = null
         unhealthy_threshold = null
-        request_path        = "/health"
-        port                = 3001
+        request_path        = var.client_proxy_health_port.path
+        port                = var.client_proxy_health_port.port
         host                = null
         logging             = null
       }

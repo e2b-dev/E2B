@@ -196,3 +196,18 @@ variable "instance_group_update_policy_min_ready_sec" {
 variable "gcp_project_id" {
   type = string
 }
+
+variable "client_proxy_health_port" {
+  type    = object({
+    name = string
+    port = number
+    path = string
+  })
+}
+
+variable "client_proxy_port" {
+  type    = object({
+    name = string
+    port = number
+  })
+}

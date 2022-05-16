@@ -6,6 +6,18 @@ variable "client_cluster_size" {
   type = number
 }
 
+variable "session_proxy_port_number" {
+  type = number
+}
+
+variable "session_proxy_port_name" {
+  type  = string
+}
+
+variable "session_proxy_service_name" {
+  type  = string
+}
+
 job "session-proxy" {
   datacenters = [var.gcp_zone]
 
@@ -18,14 +30,14 @@ job "session-proxy" {
     count = var.client_cluster_size
 
     network {
-      port "http" {
-        static = 3003
+      port "${var.session_proxy_port_name}" {
+        static = var.session_proxy_port_number
       }
     }
 
     service {
-      name = "session-proxy"
-      port = "http"
+      name = var.session_proxy_service_name
+      port = var.session_proxy_port_name
       meta {
         Client = "${node.unique.id}"
       }
@@ -37,7 +49,7 @@ job "session-proxy" {
       config {
         image = "nginx"
         network_mode = "host"
-        ports = ["http"]
+        ports = [var.session_proxy_port_name]
         volumes = [
           "local:/etc/nginx/conf.d",
         ]
@@ -56,7 +68,7 @@ map $host $dbk_session_id {
 }
 
 server {
-  listen 3003;
+  listen [[ var.session_proxy_port_number ]];
   # The IP addresses of sessions are saved in the /etc/hosts like so:
   # <session-id> <ip-address>
   #

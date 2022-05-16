@@ -32,6 +32,9 @@ module "client_cluster" {
 
   gcp_project_id = var.gcp_project_id
   network_name = var.network_name
+
+  client_proxy_port = var.client_proxy_port
+  client_proxy_health_port = var.client_proxy_health_port
 }
 
 data "template_file" "startup_script_server" {
@@ -118,6 +121,9 @@ module "session_proxy" {
 
   client_cluster_size = var.client_cluster_size
   gcp_zone = var.gcp_zone
+  session_proxy_service_name = var.session_proxy_service_name
+
+  session_proxy_port = var.session_proxy_port
 }
 
 module "client_proxy" {
@@ -127,7 +133,9 @@ module "client_proxy" {
     module.server_cluster,
     module.session_proxy,
   ]
-
-  client_cluster_size = var.client_cluster_size
   gcp_zone = var.gcp_zone
+  session_proxy_service_name = var.session_proxy_service_name
+
+  client_proxy_port = var.client_proxy_port
+  client_proxy_health_port = var.client_proxy_health_port
 }
