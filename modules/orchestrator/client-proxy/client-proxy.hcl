@@ -29,6 +29,8 @@ variable "session_proxy_service_name" {
 job "client-proxy" {
   datacenters = [var.gcp_zone]
 
+  priority = 100
+
   group "client-proxy" {
     network {
       port "health" {

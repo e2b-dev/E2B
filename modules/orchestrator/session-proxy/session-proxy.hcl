@@ -21,6 +21,8 @@ variable "session_proxy_service_name" {
 job "session-proxy" {
   datacenters = [var.gcp_zone]
 
+  priority = 100
+
   constraint {
     operator  = "distinct_hosts"
     value     = "true"
