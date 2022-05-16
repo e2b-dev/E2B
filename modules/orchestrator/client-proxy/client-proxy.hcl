@@ -72,7 +72,7 @@ map $http_upgrade $conn_upgrade {
 server {
   listen 3002 default_server;
   server_name _;
-  return 400 "Unknown session";
+  return 400 "Unsupported domain";
 }
 [[ range service "session-proxy" ]]
 server {

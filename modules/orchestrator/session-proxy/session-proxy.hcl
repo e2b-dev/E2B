@@ -64,9 +64,14 @@ job "session-proxy" {
         change_mode   = "signal"
         change_signal = "SIGHUP"
         data = <<EOF
+map $host $dbk_port {
+  default         "";
+  "~^(?<p>\d+)-"  ":$p";
+}
+
 map $host $dbk_session_id {
   default         "";
-  "~^(?<s>\w+)-"  $s;
+  "~-(?<s>\w+)-"  $s;
 }
 
 map $http_upgrade $conn_upgrade {
@@ -92,9 +97,9 @@ server {
 
   location / {
     if ($dbk_session_id = "") {
-      return 400 'Missing session ID';
+      return 400 "Unsupported domain";
     }
-    proxy_pass $scheme://$dbk_session_id:8080$request_uri;
+    proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
   }
 }
 EOF
