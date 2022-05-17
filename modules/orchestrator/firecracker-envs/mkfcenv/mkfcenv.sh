@@ -17,12 +17,12 @@
 # - snap: snapshot file
 # - mem: memory file
 
-DOCKERFILE="$1"
+WORKINGDIR="$1"
 
 set -euo pipefail
 
-if [ -z "$DOCKERFILE" ]; then
-  echo "ERROR: Expected Dockerfile as the first argument"
+if [ -z "$WORKINGDIR" ]; then
+  echo "ERROR: Expected working dir as the first argument"
   exit 1
 fi
 
@@ -50,7 +50,7 @@ function mkrootfs() {
   local mountdir=mnt
   local free=50000000 # 50MB in B
 
-  echo -e "$DOCKERFILE" | docker build -t $tag -f - .
+  docker build -t $tag -f $WORKINGDIR/Dockerfile $WORKINGDIR
   local container_id=$(docker run -dt $tag /bin/ash)
   docker exec $container_id /provision.sh
   local container_size=$(docker image inspect $tag:latest --format='{{.Size}}')
@@ -68,7 +68,7 @@ function mkrootfs() {
   umount $mountdir
   rm -rf $mountdir
 
-  docker kill $contaier_id && docker rm $container_id && docker rmi $tag
+  docker kill $container_id && docker rm $container_id && docker rmi $tag
   echo "ROOTFS DONE"
 }
 
@@ -141,11 +141,10 @@ function snapfc() {
       -H  'Content-Type: application/json' \
       -d '{
               "snapshot_type": "Full",
-              "snapshot_path": "/home/vasekmlejnsky/snapfile",
-              "mem_file_path": "/home/vasekmlejnsky/memfile"
+              "snapshot_path": "./snapfile",
+              "mem_file_path": "./memfile"
       }'
 }
-
 
 mkrootfs
 mkns
@@ -155,3 +154,5 @@ pausefc
 snapfc
 kill $FC_PID
 delns
+
+echo "===> Done"

@@ -202,6 +202,12 @@ $server_config
 plugin_dir = "/opt/nomad/plugins"
 plugin "firecracker-task-driver" {}
 
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
+
 consul {
   address = "127.0.0.1:8500"
 }

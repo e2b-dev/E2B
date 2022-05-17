@@ -9,7 +9,7 @@ plan-infrastructure:
 	terraform fmt -recursive
 	terraform plan -compact-warnings -detailed-exitcode
 
-deploy-infrastructure: 
+deploy-infrastructure:
 	terraform apply -auto-approve -input=false -compact-warnings
 
 build-api-image:
@@ -32,3 +32,6 @@ init-firecracker-task-driver:
 
 build-firecracker-task-driver:
 	$(MAKE) -C modules/orchestrator/firecracker-task-driver build
+
+publish-mkfcenv-scripts:
+	$(MAKE) -C modules/orchestrator/firecracker-envs publish-mkfcenv
