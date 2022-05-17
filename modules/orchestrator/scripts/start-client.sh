@@ -11,3 +11,19 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 # These variables are passed in via Terraform template interplation
 /opt/consul/bin/run-consul.sh --client --cluster-tag-name "${cluster_tag_name}" & /opt/nomad/bin/run-nomad.sh --client
+
+
+# --- Mount the persistent disk with Firecracker environments.
+# See https://cloud.google.com/compute/docs/disks/add-persistent-disk#create_disk
+disk_name="sdb"
+mount_dir="fc-envs"
+
+mkdir -p /mnt/disks/$mount_dir
+mount -o discard,defaults /dev/$disk_name /mnt/disks/fc-envs
+chmod a+w /mnt/disks/$mount_dir
+
+# Add automatic mounting on VM restart.
+cp /etc/fstab /etc/fstab.backup
+UUID=$(blkid /dev/sdb | tr ' ' '\n' | grep UUID)
+
+echo "$UUID /mnt/disks/$mount_dir ext4 discard,defaults,nofail 0 2" >> /etc/fstab
