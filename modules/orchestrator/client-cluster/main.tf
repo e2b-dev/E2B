@@ -28,7 +28,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
     max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
     max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
     min_ready_sec           = var.instance_group_update_policy_min_ready_sec
-    replacement_method      = "RECREATE"
+    replacement_method      = "SUBSTITUTE"
   }
 
   base_instance_name = var.cluster_name

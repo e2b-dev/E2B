@@ -29,7 +29,6 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/shirou/gopsutil/process"
 	"github.com/txn2/txeh"
-	"github.com/vishvananda/netlink"
 )
 
 var (
@@ -224,12 +223,10 @@ func (h *taskHandle) Signal(sig string) error {
 
 // shutdown shuts down the container
 func (h *taskHandle) shutdown(timeout time.Duration) error {
-	vnic, _ := netlink.LinkByName(h.Info.Vnic)
-	err := netlink.LinkDel(vnic)
+	err := h.Slot.RemoveNetworking(h.consulClient, h.logger, h.hostsClient)
 	if err != nil {
-		h.logger.Error("unable to remove veth ", h.Info.Vnic, " from ", h.taskConfig.ID)
+		h.logger.Error("unable to remove networking %v", err)
 	}
 	h.MachineInstance.StopVMM()
-	h.Slot.RemoveNetworking(h.consulClient, h.logger, h.hostsClient)
 	return nil
 }
