@@ -32,6 +32,8 @@ if [ -z "$CODE_SNIPPET_ID" ]; then
   exit 1
 fi
 
+mkdir $CODE_SNIPPET_ID
+
 MASK_LONG="255.255.255.252"
 
 FC_MAC="02:FC:00:00:00:05"
@@ -45,9 +47,9 @@ TAP_NAME="tap0"
 ID=$RANDOM
 NS_NAME="fc-env-$ID"
 FC_SOCK="/tmp/fc-$ID.socket"
-FC_ROOTFS="rootfs.ext4"
-FC_SNAPFILE="snapfile"
-FC_MEMFILE="memfile"
+FC_ROOTFS="$CODE_SNIPPET_ID/rootfs.ext4"
+FC_SNAPFILE="$CODE_SNIPPET_ID/snapfile"
+FC_MEMFILE="$CODE_SNIPPET_ID/memfile"
 
 FC_PID=""
 
@@ -76,7 +78,9 @@ function mkrootfs() {
   umount $mountdir
   rm -rf $mountdir
 
-  docker kill $container_id && docker rm $container_id && docker rmi $tag
+  docker kill $container_id && \
+    docker rm -f $container_id && \
+    docker rmi -f $tag
   echo "===> ROOTFS DONE"
 }
 
@@ -143,15 +147,23 @@ function pausefc() {
 }
 
 function snapfc() {
+#  read -r -d '' data << EOF
+#{
+#  "snapshot_type": "Full",
+#  "snapshot_path": "$FC_SNAPFILE",
+#  "mem_file_path": "$FC_MEMFILE"
+#}
+#EOF
+#  echo $data
   curl --unix-socket $FC_SOCK -i \
       -X PUT 'http://localhost/snapshot/create' \
       -H  'Accept: application/json' \
       -H  'Content-Type: application/json' \
-      -d '{
-              "snapshot_type": "Full",
-              "snapshot_path": "./snapfile",
-              "mem_file_path": "./memfile"
-      }'
+      -d "{
+            \"snapshot_type\": \"Full\",
+            \"snapshot_path\": \"$FC_SNAPFILE\",
+            \"mem_file_path\": \"$FC_MEMFILE\"
+          }"
 }
 
 mkrootfs
