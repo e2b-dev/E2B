@@ -62,7 +62,7 @@ var (
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 		"MemFile":   hclspec.NewAttr("MemFile", "string", false),
 		"Snapshot":  hclspec.NewAttr("Snapshot", "string", false),
-		"SessionID": hclspec.NewAttr("MemFile", "string", false),
+		"SessionID": hclspec.NewAttr("SessionID", "string", false),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -225,50 +225,10 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 
 func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 	return fmt.Errorf("error: Task recovery disabled")
-
-	// if handle == nil {
-	// 	return fmt.Errorf("error: handle cannot be nil")
-	// }
-
-	// if _, ok := d.tasks.Get(handle.Config.ID); ok {
-	// 	return nil
-	// }
-
-	// var driverConfig TaskConfig
-	// if err := handle.Config.DecodeDriverConfig(&driverConfig); err != nil {
-	// 	return fmt.Errorf("failed to decode driver config: %v", err)
-	// }
-
-	// var taskState TaskState
-	// if err := handle.GetDriverState(&taskState); err != nil {
-	// 	return fmt.Errorf("failed to decode task state from handle: %v", err)
-	// }
-
-	// m, err := d.initializeContainer(context.Background(), handle.Config, driverConfig)
-	// if err != nil {
-	// 	d.logger.Info("Error RecoverTask k", "driver_cfg", hclog.Fmt("%+v", err))
-	// 	return fmt.Errorf("task with ID %q failed: %q", handle.Config.ID, err.Error())
-	// }
-
-	// h := &taskHandle{
-	// 	taskConfig:      taskState.TaskConfig,
-	// 	State:           drivers.TaskStateRunning,
-	// 	startedAt:       taskState.StartedAt,
-	// 	exitResult:      &drivers.ExitResult{},
-	// 	MachineInstance: m.Machine,
-	// 	Info:            m.Info,
-	// 	logger:          d.logger,
-	// 	cpuStatsSys:     stats.NewCpuStats(),
-	// 	cpuStatsUser:    stats.NewCpuStats(),
-	// 	cpuStatsTotal:   stats.NewCpuStats(),
-	// }
-
-	// d.tasks.Set(taskState.TaskConfig.ID, h)
-	// go h.run()
-	// return nil
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
+	
 	if _, ok := d.tasks.Get(cfg.ID); ok {
 		return nil, nil, fmt.Errorf("task with ID %q already started", cfg.ID)
 	}
@@ -285,7 +245,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	ctx := context.Background()
 	ipSlot, err := CreateNetworking(ctx, d.consulClient, cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger, d.hostsClient)
 	if err != nil {
-		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
+		// ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
 		return nil, nil, fmt.Errorf("Failed to create networking: %v", err)
 	}
 

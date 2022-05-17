@@ -43,6 +43,10 @@ func (ips *IPSlot) HostSnapshotIP() string {
 	return fmt.Sprintf("192.168.%d.3", ips.SlotIdx)
 }
 
+func (ips *IPSlot) NamespaceSnapshotIP() string {
+	return "169.254.0.21"
+}
+
 func (ips *IPSlot) NamespaceID() string {
 	return fmt.Sprintf("ns-%s", ips.SessionID)
 }
@@ -51,8 +55,12 @@ func (ips *IPSlot) TapName() string {
 	return "tap0"
 }
 
-func (ips *IPSlot) TapCIDR() string {
-	return "169.254.0.22/30"
+func (ips *IPSlot) TapIP() string {
+	return "169.254.0.22"
+}
+
+func (ips *IPSlot) TapMask() string {
+	return "/30"
 }
 
 func getIPSlot(consulClient consul.Client, nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
@@ -60,12 +68,15 @@ func getIPSlot(consulClient consul.Client, nodeID string, sessionID string, logg
 
 	var slot *IPSlot
 
-	nodeShortID := nodeID[8:]
+	nodeShortID := nodeID[:8]
 
 	for {
 		for slotIdx := 0; slotIdx <= IPSlots; slotIdx++ {
 			key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
 			pair, _, err := kv.Get(key, &consul.QueryOptions{})
+
+			// return nil, fmt.Errorf("<<stop>>, %s", pair.Key)
+			
 			if err != nil {
 				return nil, fmt.Errorf("Failed to read Consul KV: %v", err)
 			}
@@ -82,7 +93,7 @@ func getIPSlot(consulClient consul.Client, nodeID string, sessionID string, logg
 
 			if err != nil {
 				return nil, fmt.Errorf("Failed to write to Consul KV: %v", err)
-			}	
+			}
 
 			if status {
 				slot = &IPSlot{
