@@ -32,7 +32,7 @@ if [ -z "$CODE_SNIPPET_ID" ]; then
   exit 1
 fi
 
-mkdir $CODE_SNIPPET_ID
+mkdir -p "/mnt/disks/fc-envs/$CODE_SNIPPET_ID"
 
 MASK_LONG="255.255.255.252"
 
@@ -47,9 +47,9 @@ TAP_NAME="tap0"
 ID=$RANDOM
 NS_NAME="fc-env-$ID"
 FC_SOCK="/tmp/fc-$ID.socket"
-FC_ROOTFS="$CODE_SNIPPET_ID/rootfs.ext4"
-FC_SNAPFILE="$CODE_SNIPPET_ID/snapfile"
-FC_MEMFILE="$CODE_SNIPPET_ID/memfile"
+FC_ROOTFS="/mnt/disks/fc-envs/$CODE_SNIPPET_ID/rootfs.ext4"
+FC_SNAPFILE="/mnt/disks/fc-envs/$CODE_SNIPPET_ID/snapfile"
+FC_MEMFILE="/mnt/disks/fc-envs/$CODE_SNIPPET_ID/memfile"
 
 FC_PID=""
 
