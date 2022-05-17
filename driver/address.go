@@ -8,7 +8,8 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
-const IPSlots = 255
+// We are using a more debuggable IP address allocation for now
+const IPSlotRange = 255
 
 type IPSlot struct {
 	SlotIdx     int
@@ -24,23 +25,39 @@ func (ips *IPSlot) VpeerName() string {
 }
 
 func (ips *IPSlot) VpeerIP() string {
-	return fmt.Sprintf("10.0.%d.1", ips.SlotIdx)
-}
-
-func (ips *IPSlot) VethIP() string {
 	return fmt.Sprintf("10.0.%d.2", ips.SlotIdx)
 }
 
-func (ips *IPSlot) VMask() string {
-	return "/24"
+func (ips *IPSlot) VethIP() string {
+	return fmt.Sprintf("10.0.%d.1", ips.SlotIdx)
+}
+
+func (ips *IPSlot) VMask() int {
+	return 24
 }
 
 func (ips *IPSlot) VethName() string {
 	return fmt.Sprintf("veth-%d", ips.SlotIdx)
 }
 
+func (ips *IPSlot) VethCIDR() string {
+	return fmt.Sprintf("%s/%d", ips.VethIP(), ips.VMask())
+}
+
+func (ips *IPSlot) VpeerCIDR() string {
+	return fmt.Sprintf("%s/%d", ips.VpeerIP(), ips.VMask())
+}
+
+func (ips *IPSlot) HostSnapshotCIDR() string {
+	return fmt.Sprintf("%s/%d", ips.HostSnapshotIP(), ips.HostSnapshotMask())
+}
+
+func (ips *IPSlot) HostSnapshotMask() int {
+	return 32
+}
+
 func (ips *IPSlot) HostSnapshotIP() string {
-	return fmt.Sprintf("192.168.%d.3", ips.SlotIdx)
+	return fmt.Sprintf("192.168.%d.1", ips.SlotIdx)
 }
 
 func (ips *IPSlot) NamespaceSnapshotIP() string {
@@ -48,7 +65,7 @@ func (ips *IPSlot) NamespaceSnapshotIP() string {
 }
 
 func (ips *IPSlot) NamespaceID() string {
-	return fmt.Sprintf("ns-%s", ips.SessionID)
+	return fmt.Sprintf("ns-%d", ips.SlotIdx)
 }
 
 func (ips *IPSlot) TapName() string {
@@ -59,8 +76,12 @@ func (ips *IPSlot) TapIP() string {
 	return "169.254.0.22"
 }
 
-func (ips *IPSlot) TapMask() string {
-	return "/30"
+func (ips *IPSlot) TapMask() int {
+	return 30
+}
+
+func (ips *IPSlot) TapCIDR() string {
+	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
 func getIPSlot(consulClient consul.Client, nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
@@ -71,28 +92,16 @@ func getIPSlot(consulClient consul.Client, nodeID string, sessionID string, logg
 	nodeShortID := nodeID[:8]
 
 	for {
-		for slotIdx := 0; slotIdx <= IPSlots; slotIdx++ {
+		for slotIdx := 0; slotIdx <= IPSlotRange; slotIdx++ {
 			key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
-			pair, _, err := kv.Get(key, &consul.QueryOptions{})
-
-			// return nil, fmt.Errorf("<<stop>>, %s", pair.Key)
-			
-			if err != nil {
-				return nil, fmt.Errorf("Failed to read Consul KV: %v", err)
-			}
-
-			if len(pair.Value) != 0 {
-				continue
-			}
-
 			status, _, err := kv.CAS(&consul.KVPair{
 				Key:         key,
-				ModifyIndex: pair.ModifyIndex,
+				ModifyIndex: 0,
 				Value:       []byte(sessionID),
 			}, &consul.WriteOptions{})
 
 			if err != nil {
-				return nil, fmt.Errorf("Failed to write to Consul KV: %v", err)
+				return nil, fmt.Errorf("failed to write to Consul KV: %v", err)
 			}
 
 			if status {
@@ -121,10 +130,10 @@ func (slot *IPSlot) releaseIPSlot(consulClient consul.Client, logger hclog.Logge
 
 	pair, _, err := kv.Get(slot.KVKey, &consul.QueryOptions{})
 	if err != nil {
-		return fmt.Errorf("Failed to release IPSlot: Failed to read Consul KV: %v", err)
+		return fmt.Errorf("failed to release IPSlot: Failed to read Consul KV: %v", err)
 	}
 
-	if len(pair.Value) == 0 {
+	if pair == nil {
 		msg := fmt.Sprintf("IP slot %d for session %s was already released", slot.SlotIdx, slot.SessionID)
 		logger.Warn(msg)
 		return nil
@@ -136,13 +145,13 @@ func (slot *IPSlot) releaseIPSlot(consulClient consul.Client, logger hclog.Logge
 		return nil
 	}
 
-	status, _, err := kv.CAS(&consul.KVPair{
+	status, _, err := kv.DeleteCAS(&consul.KVPair{
 		Key:         slot.KVKey,
 		ModifyIndex: pair.ModifyIndex,
 	}, &consul.WriteOptions{})
 
 	if err != nil {
-		return fmt.Errorf("Failed to release IPSlot: Failed to delete slot from Consul KV: %v", err)
+		return fmt.Errorf("failed to release IPSlot: Failed to delete slot from Consul KV: %v", err)
 	}
 
 	if !status {

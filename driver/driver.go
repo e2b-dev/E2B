@@ -128,7 +128,7 @@ func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 	ctx, cancel := context.WithCancel(context.Background())
 	logger = logger.Named(pluginName)
 
-	consulClient, err := consul.NewClient(consul.DefaultConfigWithLogger(logger))
+	consulClient, err := consul.NewClient(consul.DefaultConfig())
 	if err != nil {
 		panic(fmt.Errorf("Failed to initialize Consul client: %v", err))
 	}
@@ -228,7 +228,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-	
+
 	if _, ok := d.tasks.Get(cfg.ID); ok {
 		return nil, nil, fmt.Errorf("task with ID %q already started", cfg.ID)
 	}
@@ -245,7 +245,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	ctx := context.Background()
 	ipSlot, err := CreateNetworking(ctx, d.consulClient, cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger, d.hostsClient)
 	if err != nil {
-		// ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
+		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
 		return nil, nil, fmt.Errorf("Failed to create networking: %v", err)
 	}
 
