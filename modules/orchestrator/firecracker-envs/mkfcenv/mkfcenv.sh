@@ -18,11 +18,17 @@
 # - mem: memory file
 
 WORKINGDIR="$1"
+CODE_SNIPPET_ID="$2"
 
 set -euo pipefail
 
 if [ -z "$WORKINGDIR" ]; then
   echo "ERROR: Expected working dir as the first argument"
+  exit 1
+fi
+
+if [ -z "$CODE_SNIPPET_ID" ]; then
+  echo "ERROR: Expected code snippet ID as the second argument"
   exit 1
 fi
 
@@ -40,11 +46,13 @@ ID=$RANDOM
 NS_NAME="fc-env-$ID"
 FC_SOCK="/tmp/fc-$ID.socket"
 FC_ROOTFS="rootfs.ext4"
+FC_SNAPFILE="snapfile"
+FC_MEMFILE="memfile"
 
 FC_PID=""
 
 function mkrootfs() {
-  echo "ROOTFS..."
+  echo "===> MAKING ROOTFS..."
   local tag=rootfs
 
   local mountdir=mnt
@@ -56,7 +64,7 @@ function mkrootfs() {
   local container_size=$(docker image inspect $tag:latest --format='{{.Size}}')
   local rootfs_size=$(($container_size+$free))
 
-  echo Rootfs size: ${rootfs_size}B
+  echo "===> Rootfs size: ${rootfs_size}B"
 
   mkdir $mountdir
   qemu-img create -f raw $FC_ROOTFS ${rootfs_size}B
@@ -69,7 +77,7 @@ function mkrootfs() {
   rm -rf $mountdir
 
   docker kill $container_id && docker rm $container_id && docker rmi $tag
-  echo "ROOTFS DONE"
+  echo "===> ROOTFS DONE"
 }
 
 function mkns() {
@@ -78,7 +86,7 @@ function mkns() {
   ip netns exec $NS_NAME ip link set $TAP_NAME up
   ip netns exec $NS_NAME ip addr add $TAP_ADDR$TAP_MASK dev $TAP_NAME
 
-  echo Namespace for Firecracker: $NS_NAME
+  echo "===> Namespace for Firecracker: $NS_NAME"
 }
 
 function delns() {
@@ -155,4 +163,11 @@ snapfc
 kill $FC_PID
 delns
 
-echo "===> Done"
+echo "==== Output ========================================="
+echo "| Code snippet ID:  $CODE_SNIPPET_ID"
+echo "| Rootfs:           $FC_ROOTFS"
+echo "| Snapfile:         $FC_SNAPFILE"
+echo "| Memfile:          $FC_MEMFILE"
+echo "====================================================="
+echo
+echo "===> Env Done"

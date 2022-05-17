@@ -7,11 +7,12 @@ job "firecracker-envs" {
   type = "batch"
 
   parameterized {
+    meta_required = ["CODE_SNIPPET_ID"]
     # Payload expects the contents of a Dockerfile.
     payload = "required"
   }
 
-  group "env" {
+  group "build-env" {
     reschedule {
       attempts  = 0
       unlimited = false
@@ -37,7 +38,7 @@ job "firecracker-envs" {
 
       config {
         command = "local/mkfcenv/mkfcenv.sh"
-        args = ["local/mkfcenv"]
+        args = ["local/mkfcenv", "${NOMAD_META_CODE_SNIPPET_ID}"]
       }
     }
   }
