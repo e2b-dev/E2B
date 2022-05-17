@@ -28,6 +28,7 @@ resource "google_compute_instance_group_manager" "client_cluster" {
     max_unavailable_fixed   = var.instance_group_update_policy_max_unavailable_fixed
     max_unavailable_percent = var.instance_group_update_policy_max_unavailable_percent
     min_ready_sec           = var.instance_group_update_policy_min_ready_sec
+    replacement_method      = "RECREATE"
   }
 
   base_instance_name = var.cluster_name
@@ -70,6 +71,14 @@ resource "google_compute_instance_template" "client" {
     disk_type    = var.root_volume_disk_type
   }
 
+  disk {
+    source      = "orch-firecracker-envs"
+    auto_delete = false
+    boot        = false
+    device_name = "envs"
+    mode        = "READ_WRITE"
+  }
+
   network_interface {
     network = var.network_name
 
@@ -83,7 +92,8 @@ resource "google_compute_instance_template" "client" {
   service_account {
     scopes = [
       "userinfo-email",
-      "compute-ro"
+      "compute-ro",
+      "storage-ro"
     ]
   }
 
@@ -108,18 +118,18 @@ data "google_compute_ssl_certificate" "ondevbook_certificate" {
 }
 
 module "gce_lb_http" {
-  source         = "GoogleCloudPlatform/lb-http/google"
-  version        = "~> 5.1"
-  name           = "orch-external-session"
-  project        = var.gcp_project_id
-  address        = "34.120.40.50"
-  ssl_certificates    = [
+  source  = "GoogleCloudPlatform/lb-http/google"
+  version = "~> 5.1"
+  name    = "orch-external-session"
+  project = var.gcp_project_id
+  address = "34.120.40.50"
+  ssl_certificates = [
     data.google_compute_ssl_certificate.session_certificate.self_link,
     data.google_compute_ssl_certificate.ondevbook_certificate.self_link,
   ]
-  create_address = false
+  create_address       = false
   use_ssl_certificates = true
-  ssl = true
+  ssl                  = true
   target_tags = [
     var.cluster_tag_name,
   ]

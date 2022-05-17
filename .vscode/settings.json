@@ -20,4 +20,7 @@
   "editor.quickSuggestions": {
     "strings": true
   },
+  "[terraform]": {
+    "editor.tabSize": 2
+  }
 }

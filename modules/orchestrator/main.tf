@@ -21,7 +21,7 @@ module "client_cluster" {
   source = "./client-cluster"
 
   startup_script                             = data.template_file.startup_script_client.rendered
-  instance_group_update_policy_min_ready_sec = 0
+  instance_group_update_policy_min_ready_sec = 5
 
   cluster_name     = var.client_cluster_name
   cluster_size     = var.client_cluster_size
