@@ -3,133 +3,220 @@ package firevm
 import (
 	"context"
 	"fmt"
-	"os/exec"
+	"net"
+	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/vishvananda/netlink"
-	"github.com/vishvananda/netns"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-hclog"
 	"github.com/txn2/txeh"
+	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 )
 
+const hostDefaultGateway = "ens4"
+
 func CreateNetworking(ctx context.Context, consulClient consul.Client, nodeID string, sessionID string, logger hclog.Logger, hosts *txeh.Hosts) (*IPSlot, error) {
+	// 1. Get slot
 	ipSlot, err := getIPSlot(consulClient, nodeID, sessionID, logger)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get IP slot: %v", err)
 	}
 
-  // runtime.LockOSThread()
-  //   defer runtime.UnlockOSThread()
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
-	
-	origin, err := netns.Get()
-	defer origin.Close()
+	hostNS, err := netns.Get()
+	defer hostNS.Close()
+	if err != nil {
+		return nil, fmt.Errorf("Cannot get current namespace %v", err)
+	}
 
-	ns := ipSlot.NamespaceID()
-	tap := ipSlot.TapName()
-	tapCIDR := ipSlot.TapCIDR()
+	// 2. Create NS
+	// Execute commands in the selected network namespace and then change back to the default namespace
+	ns, err := netns.NewNamed(ipSlot.NamespaceID())
+	defer ns.Close()
+	if err != nil {
+		return nil, fmt.Errorf("Cannot create new namespace %v", err)
+	}
 
-	// err = exec.Command("ip", "netns", "add", ns).Run()
+	// 3. Create Tap device
+	tapAttrs := netlink.NewLinkAttrs()
+	tapAttrs.Name = ipSlot.TapName()
+	// We may not need to define NS here if the whole thread is in a specific NS we created before
+	tapAttrs.Namespace = ns
+	tap := &netlink.Tuntap{
+		Mode:      netlink.TUNTAP_MODE_TAP,
+		LinkAttrs: tapAttrs,
+	}
+	err = netlink.LinkAdd(tap)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating tap device %v", err)
+	}
+
+	err = netlink.LinkSetUp(tap)
+	if err != nil {
+		return nil, fmt.Errorf("Error setting tap device up %v", err)
+	}
+
+	err = netlink.AddrAdd(tap, &netlink.Addr{
+		IPNet: &net.IPNet{
+			IP:   net.IP(ipSlot.TapIP()),
+			Mask: net.IPMask(ipSlot.TapMask()),
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Error setting address of the tap device %v", err)
+	}
+
+	// 4. Set lo device up - not sure if this is necessary
+	// lo := &netlink.
+	// netlink.LinkSetUp()
+	// err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", "lo", "up").Run()
 	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running command netns add %v", err)
+	// 	return nil, fmt.Errorf("Error running command tap up %v", err)
 	// }
-	newns, _ := netns.NewNamed(ns)
-	defer newns.Close()
-	
 
-	netlink
-	// TODO: Execute commands in the selected network namespace and then change back to the default namespace
-
-
-
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "tuntap", "add", "name", tap, "mode", "tap").Run()
+	// 5. Add veth connection
+	vethAttrs := netlink.NewLinkAttrs()
+	vethAttrs.Name = ipSlot.VethName()
+	vethAttrs.Namespace = hostNS
+	veth := &netlink.Veth{
+		LinkAttrs:     vethAttrs,
+		PeerNamespace: ns,
+		PeerName:      ipSlot.VpeerName(),
+	}
+	err = netlink.LinkAdd(veth)
 	if err != nil {
-		return nil, fmt.Errorf("Error running command tuntap add %v", err)
+		return nil, fmt.Errorf("Error creating veth device %v", err)
 	}
 
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", tap, "up").Run()
+	err = netlink.LinkSetUp(veth)
 	if err != nil {
-		return nil, fmt.Errorf("Error running command tap up %v", err)
+		return nil, fmt.Errorf("Error setting veth device up %v", err)
 	}
 
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "addr", "add", tapCIDR, "dev", tap).Run()
+	err = netlink.AddrAdd(veth, &netlink.Addr{
+		IPNet: &net.IPNet{
+			IP:   net.IP(ipSlot.VethIP()),
+			Mask: net.IPMask(ipSlot.VMask()),
+		},
+	})
 	if err != nil {
-		return nil, fmt.Errorf("Error running command ip add %v", err)
+		return nil, fmt.Errorf("Error adding veth device address %v", err)
 	}
 
-	err = exec.Command("ip", "netns", "exec", ns, "ip", "link", "set", "lo", "up").Run()
+	vpeer, err := netlink.LinkByName(ipSlot.VpeerName())
 	if err != nil {
-		return nil, fmt.Errorf("Error running command tap up %v", err)
+		return nil, fmt.Errorf("Error finding vpeer %v", err)
 	}
 
+	err = netlink.LinkSetUp(vpeer)
+	if err != nil {
+		return nil, fmt.Errorf("Error setting vpeer device up %v", err)
+	}
 
-	// # Change
-	// # NS="6c258a8a-9304-4e82-a80b-aa2c0033abb0"
-	// NS=ns$1
-	// # VETH="veth4"
-	// VETH=veth$1
-	// # VETH_ADDR="10.0.3.1"
-	// VETH_ADDR="10.0.$1.1"
-	// # VPEER_ADDR="10.0.3.2"
-	// VPEER_ADDR="10.0.$1.2"
+	err = netlink.AddrAdd(veth, &netlink.Addr{
+		IPNet: &net.IPNet{
+			IP:   net.IP(ipSlot.VpeerIP()),
+			Mask: net.IPMask(ipSlot.VMask()),
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Error adding vpeer device address %v", err)
+	}
 
-	// # FC_HOST_IP="192.168.3.3"
-	// FC_HOST_IP="192.168.$1.3"
-	// #
-
-	// MASK="/24"
-	// VPEER="eth0"
-	// FC_SNASPHOT_IP="169.254.0.21"
-
-	// ip -n ${NS} link set lo up
-
-	// ip -n ${NS} link add ${VETH} type veth peer name ${VPEER}
-	// ip -n ${NS} addr add ${VPEER_ADDR}${MASK} dev ${VPEER}
-	// ip -n ${NS} link set ${VPEER} up
-
-	// ip -n ${NS} link set ${VETH} netns 1
-	// ip link set ${VETH} up
-	// ip addr add ${VETH_ADDR}${MASK} dev ${VETH}
-
-	// ip -n ${NS} route add default via ${VETH_ADDR}
-
+	// 6. Add NS default route
+	err = netlink.RouteAdd(&netlink.Route{
+		Scope: netlink.SCOPE_UNIVERSE,
+		Gw:    net.ParseIP(ipSlot.VethIP()),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Error adding default NS route %v", err)
+	}
 
 	tables, err := iptables.New()
+	if err != nil {
+		return nil, fmt.Errorf("Error initializing iptables %v", err)
+	}
 
-	tables.Append("nat", "POSTROUTING",)
-	
+	// 7. Add NAT routing rules to NS
+	tables.Append("nat", "POSTROUTING", "-o", ipSlot.VpeerName(), "-s", ipSlot.NamespaceSnapshotIP(), "-j", "SNAT", "--to", ipSlot.HostSnapshotIP())
+	tables.Append("nat", "PREROUTING", "-i", ipSlot.VpeerName(), "-d", ipSlot.HostSnapshotIP(), "-j", "DNAT", "--to", ipSlot.NamespaceSnapshotIP())
 
-	// ip netns exec ${NS} iptables -t nat -A POSTROUTING -o ${VPEER} -s ${FC_SNASPHOT_IP} -j SNAT --to ${FC_HOST_IP}
-	// ip netns exec ${NS} iptables -t nat -A PREROUTING -i ${VPEER} -d ${FC_HOST_IP} -j DNAT --to ${FC_SNASPHOT_IP}
-	// ip route add ${FC_HOST_IP} via ${VPEER_ADDR}
+	// Go back to original namespace
+	netns.Set(ns)
 
-	// iptables -A FORWARD -i ${VETH} -o ens4 -j ACCEPT
-	// iptables -A FORWARD -i ens4 -o ${VETH} -j ACCEPT
-	// iptables -t nat -A POSTROUTING -s ${FC_HOST_IP}/32 -o ens4 -j MASQUERADE
+	err = netlink.RouteAdd(&netlink.Route{
+		Gw: net.ParseIP(ipSlot.VethIP()),
+		Dst: &net.IPNet{
+			IP: net.IP(ipSlot.HostSnapshotIP()),
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Error adding route from host to FC %v", err)
+	}
 
+	// 8. Add host forwarding rules
+	tables.Append("filter", "FORWARD", "-i", ipSlot.VethName(), "-o", hostDefaultGateway, "-j", "ACCEPT")
+	tables.Append("filter", "FORWARD", "-i", hostDefaultGateway, "-o", ipSlot.VethName(), "-j", "ACCEPT")
+
+	tables.Append("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotIP()+"/32", "-o", hostDefaultGateway, "-j", "MASQUERADE")
+
+	// 9. Add namespace to etc netns and resolv
+	// TODO: Is this needed?
 	// mkdir -p "/etc/netns/$NS"
 	// ln -s /run/systemd/resolve/resolv.conf /etc/netns/"$NS"/resolv.conf
 
+	// 10. Add entry to etc hosts
 	hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.SessionID)
 	err = hosts.Save()
 	if err != nil {
 		return nil, fmt.Errorf("Error adding session to etc hosts %v", err)
 	}
 
-	netns.Set(origin)
-	
 	return ipSlot, nil
 }
 
-func (ips *IPSlot) RemoveNetworking(consulClient consul.Client, logger hclog.Logger, hosts *txeh.Hosts) {
-	// Support cleanup of partial setup
+func (ipSlot *IPSlot) RemoveNetworking(consulClient consul.Client, logger hclog.Logger, hosts *txeh.Hosts) {
+	return
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
-	hosts.RemoveAddress(ips.SessionID)
+	hosts.RemoveAddress(ipSlot.SessionID)
 	err := hosts.Save()
 	if err != nil {
 		logger.Error("Error adding session to etc hosts %v", err)
 	}
 
-	ips.releaseIPSlot(consulClient, logger)
+	// 9. not implemented
+
+	tables, err := iptables.New()
+	if err != nil {
+		logger.Error("Error initializing iptables %v", err)
+	}
+
+	tables.Delete("filter", "FORWARD", "-i", ipSlot.VethName(), "-o", hostDefaultGateway, "-j", "ACCEPT")
+	tables.Delete("filter", "FORWARD", "-i", hostDefaultGateway, "-o", ipSlot.VethName(), "-j", "ACCEPT")
+
+	tables.Delete("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotIP()+"/32", "-o", hostDefaultGateway, "-j", "MASQUERADE")
+
+	err = netlink.RouteDel(&netlink.Route{
+		Gw: net.ParseIP(ipSlot.VethIP()),
+		Dst: &net.IPNet{
+			IP: net.IP(ipSlot.HostSnapshotIP()),
+		},
+	})
+	if err != nil {
+		logger.Error("Error adding route from host to FC %v", err)
+	}
+
+	err = netns.DeleteNamed(ipSlot.NamespaceID())
+	if err != nil {
+		logger.Error("Error deleting namespace %v", err)
+	}
+
+	// Maybe remove veth that is in Host NS
+
+	ipSlot.releaseIPSlot(consulClient, logger)
 }
