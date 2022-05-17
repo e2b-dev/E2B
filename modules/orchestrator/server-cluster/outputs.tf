@@ -27,5 +27,5 @@ output "instance_template_metadata_fingerprint" {
 }
 
 output "server_proxy_ip" {
-  value = module.gce_lb_http.external_ip
+  value = module.gce_lb_http_nomad.external_ip
 }

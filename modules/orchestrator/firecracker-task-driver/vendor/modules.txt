@@ -28,6 +28,9 @@ github.com/containernetworking/cni/pkg/version
 # github.com/containernetworking/plugins v1.1.1
 ## explicit
 github.com/containernetworking/plugins/pkg/ns
+# github.com/coreos/go-iptables v0.6.0
+## explicit
+github.com/coreos/go-iptables/iptables
 # github.com/docker/docker v17.12.0-ce-rc1.0.20200330121334-7f8b4b621b5d+incompatible
 github.com/docker/docker/pkg/mount
 # github.com/fatih/color v1.9.0
@@ -99,7 +102,8 @@ github.com/google/uuid
 github.com/grpc-ecosystem/go-grpc-middleware/retry
 github.com/grpc-ecosystem/go-grpc-middleware/util/backoffutils
 github.com/grpc-ecosystem/go-grpc-middleware/util/metautils
-# github.com/hashicorp/consul/api v1.8.1
+# github.com/hashicorp/consul/api v1.12.0
+## explicit
 github.com/hashicorp/consul/api
 # github.com/hashicorp/cronexpr v1.1.1
 github.com/hashicorp/cronexpr
@@ -175,7 +179,7 @@ github.com/hashicorp/nomad/plugins/shared/structs
 github.com/hashicorp/nomad/plugins/shared/structs/proto
 # github.com/hashicorp/raft v1.1.3-0.20200211192230-365023de17e6
 github.com/hashicorp/raft
-# github.com/hashicorp/serf v0.9.5
+# github.com/hashicorp/serf v0.9.6
 github.com/hashicorp/serf/coordinate
 # github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d
 github.com/hashicorp/yamux
@@ -251,6 +255,9 @@ github.com/sirupsen/logrus
 github.com/tklauser/go-sysconf
 # github.com/tklauser/numcpus v0.2.2
 github.com/tklauser/numcpus
+# github.com/txn2/txeh v1.3.0
+## explicit
+github.com/txn2/txeh
 # github.com/vishvananda/netlink v1.2.0-beta
 ## explicit
 github.com/vishvananda/netlink
