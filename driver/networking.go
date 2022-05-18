@@ -1,13 +1,13 @@
 package firevm
 
 import (
-	"context"
 	"fmt"
 	"net"
+	"os"
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	consul "github.com/hashicorp/consul/api"
+	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/hashicorp/go-hclog"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
@@ -17,9 +17,9 @@ import (
 const hostDefaultGateway = "ens4"
 const loNS = "lo"
 
-func CreateNetworking(ctx context.Context, consulClient consul.Client, nodeID string, sessionID string, logger hclog.Logger, hosts *txeh.Hosts) (*IPSlot, error) {
+func CreateNetworking(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
 	// Get slot from Consul KV
-	ipSlot, err := getIPSlot(consulClient, nodeID, sessionID, logger)
+	ipSlot, err := getIPSlot(nodeID, sessionID, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get IP slot: %v", err)
 	}
@@ -33,7 +33,10 @@ func CreateNetworking(ctx context.Context, consulClient consul.Client, nodeID st
 	if err != nil {
 		return nil, fmt.Errorf("cannot get current (host) namespace %v", err)
 	}
-	defer hostNS.Close()
+	defer func() {
+		netns.Set(hostNS)
+		defer hostNS.Close()
+	}()
 
 	// Create NS for the session
 	ns, err := netns.NewNamed(ipSlot.NamespaceID())
@@ -205,6 +208,11 @@ func CreateNetworking(ctx context.Context, consulClient consul.Client, nodeID st
 	// mkdir -p "/etc/netns/$NS"
 	// ln -s /run/systemd/resolve/resolv.conf /etc/netns/"$NS"/resolv.conf
 
+	hosts, err := txeh.NewHostsDefault()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize etc hosts handler: %v", err)
+	}
+
 	// Add entry to etc hosts
 	hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.SessionID)
 	err = hosts.Save()
@@ -215,12 +223,14 @@ func CreateNetworking(ctx context.Context, consulClient consul.Client, nodeID st
 	return ipSlot, nil
 }
 
-func (ipSlot *IPSlot) RemoveNetworking(consulClient consul.Client, logger hclog.Logger, hosts *txeh.Hosts) error {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+func (ipSlot *IPSlot) RemoveNetworking(logger hclog.Logger, m *firecracker.Machine) error {
+	hosts, err := txeh.NewHostsDefault()
+	if err != nil {
+		logger.Error("Failed to initialize etc hosts handler: %v", err)
+	}
 
 	hosts.RemoveAddress(ipSlot.HostSnapshotIP())
-	err := hosts.Save()
+	err = hosts.Save()
 	if err != nil {
 		logger.Error("error adding session to etc hosts %v", err)
 	}
@@ -256,7 +266,13 @@ func (ipSlot *IPSlot) RemoveNetworking(consulClient consul.Client, logger hclog.
 		logger.Error("error deleting namespace %v", err)
 	}
 
-	err = ipSlot.releaseIPSlot(consulClient, logger)
+	if m != nil {
+		if err := os.Remove(m.Cfg.SocketPath); !os.IsNotExist(err) {
+			logger.Error("error deleting socket %v", err)
+		}
+	}
+
+	err = ipSlot.releaseIPSlot(logger)
 	if err != nil {
 		return fmt.Errorf("error releasing slot %v", err)
 	}

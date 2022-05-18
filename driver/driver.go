@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"time"
 
-	consul "github.com/hashicorp/consul/api"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
@@ -33,7 +32,6 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	pstructs "github.com/hashicorp/nomad/plugins/shared/structs"
-	"github.com/txn2/txeh"
 )
 
 const (
@@ -60,9 +58,26 @@ var (
 	// taskConfigSpec is the hcl specification for the driver config section of
 	// a task within a job. It is returned in the TaskConfigSchema RPC
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"MemFile":   hclspec.NewAttr("MemFile", "string", false),
-		"Snapshot":  hclspec.NewAttr("Snapshot", "string", false),
-		"SessionID": hclspec.NewAttr("SessionID", "string", false),
+		"MemFile":     hclspec.NewAttr("MemFile", "string", false),
+		"Snapshot":    hclspec.NewAttr("Snapshot", "string", false),
+		"SessionID":   hclspec.NewAttr("SessionID", "string", false),
+		"KernelImage": hclspec.NewAttr("KernelImage", "string", false),
+		"BootOptions": hclspec.NewAttr("BootOptions", "string", false),
+		"BootDisk":    hclspec.NewAttr("BootDisk", "string", false),
+		"Disks":       hclspec.NewAttr("Disks", "list(string)", false),
+		"Network":     hclspec.NewAttr("Network", "string", false),
+		"Vcpus":       hclspec.NewAttr("Vcpus", "number", false),
+		"Cputype":     hclspec.NewAttr("Cputype", "string", false),
+		"Mem":         hclspec.NewAttr("Mem", "number", false),
+		"Firecracker": hclspec.NewAttr("Firecracker", "string", false),
+		"Log":         hclspec.NewAttr("Log", "string", false),
+		"DisableHt":   hclspec.NewAttr("DisableHt", "bool", false),
+		"Nic": hclspec.NewBlock("Nic", false, hclspec.NewObject(map[string]*hclspec.Spec{
+			"Ip":          hclspec.NewAttr("Ip", "string", true),
+			"Gateway":     hclspec.NewAttr("Gateway", "string", true),
+			"Interface":   hclspec.NewAttr("Interface", "string", true),
+			"Nameservers": hclspec.NewAttr("Nameservers", "list(string)", true),
+		})),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -98,21 +113,35 @@ type Driver struct {
 
 	// logger will log to the Nomad agent
 	logger hclog.Logger
-
-	// Consul client for access to KV
-	consulClient consul.Client
-
-	hostsClient *txeh.Hosts
 }
 
 // Config is the driver configuration set by the SetConfig RPC call
-type Config struct{}
+type Config struct {
+}
+type Nic struct {
+	Ip          string // CIDR
+	Gateway     string
+	Interface   string
+	Nameservers []string
+}
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
-	MemFile   string `codec:"MemFile"`
-	Snapshot  string `codec:"Snapshot"`
-	SessionID string `codec:"SessionID"`
+	MemFile     string   `codec:"MemFile"`
+	Snapshot    string   `codec:"Snapshot"`
+	SessionID   string   `codec:"SessionID"`
+	KernelImage string   `codec:"KernelImage"`
+	BootOptions string   `codec:"BootOptions"`
+	BootDisk    string   `codec:"BootDisk"`
+	Disks       []string `codec:"Disks"`
+	Network     string   `codec:"Network"`
+	Nic         Nic      `codec:"Nic"`
+	Vcpus       uint64   `codec:"Vcpus"`
+	Cputype     string   `codec:"Cputype"`
+	Mem         uint64   `codec:"Mem"`
+	Firecracker string   `codec:"Firecracker"`
+	Log         string   `code:"Log"`
+	DisableHt   bool     `code:"DisableHt"`
 }
 
 // TaskState is the state which is encoded in the handle returned in
@@ -128,16 +157,6 @@ func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 	ctx, cancel := context.WithCancel(context.Background())
 	logger = logger.Named(pluginName)
 
-	consulClient, err := consul.NewClient(consul.DefaultConfig())
-	if err != nil {
-		panic(fmt.Errorf("Failed to initialize Consul client: %v", err))
-	}
-
-	hostsClient, err := txeh.NewHostsDefault()
-	if err != nil {
-		panic(fmt.Errorf("Failed to initialize etc hosts handler: %v", err))
-	}
-
 	return &Driver{
 		eventer:        eventer.NewEventer(ctx, logger),
 		config:         &Config{},
@@ -145,8 +164,6 @@ func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 		ctx:            ctx,
 		signalShutdown: cancel,
 		logger:         logger,
-		consulClient:   *consulClient,
-		hostsClient:    hostsClient,
 	}
 }
 
@@ -224,11 +241,55 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 }
 
 func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
-	return fmt.Errorf("error: Task recovery disabled")
+	if handle == nil {
+		return fmt.Errorf("error: handle cannot be nil")
+	}
+
+	oldHandle, ok := d.tasks.Get(handle.Config.ID)
+
+	if ok {
+		return nil
+	}
+
+	if oldHandle != nil {
+		oldHandle.shutdown()
+	}
+
+	var driverConfig TaskConfig
+	if err := handle.Config.DecodeDriverConfig(&driverConfig); err != nil {
+		return fmt.Errorf("failed to decode driver config: %v", err)
+	}
+
+	var taskState TaskState
+	if err := handle.GetDriverState(&taskState); err != nil {
+		return fmt.Errorf("failed to decode task state from handle: %v", err)
+	}
+
+	// m, err := d.initializeContainer(context.Background(), handle.Config, driverConfig)
+	// if err != nil {
+	// 	d.logger.Info("Error RecoverTask k", "driver_cfg", hclog.Fmt("%+v", err))
+	// 	return fmt.Errorf("task with ID %q failed", handle.Config.ID)
+	// }
+
+	h := &taskHandle{
+		taskConfig: taskState.TaskConfig,
+		State:      drivers.TaskStateExited,
+		startedAt:  taskState.StartedAt,
+		exitResult: &drivers.ExitResult{},
+		// MachineInstance: m.Machine,
+		// Info:            m.Info,
+		// logger:          d.logger,
+		cpuStatsSys:   stats.NewCpuStats(),
+		cpuStatsUser:  stats.NewCpuStats(),
+		cpuStatsTotal: stats.NewCpuStats(),
+	}
+
+	d.tasks.Set(taskState.TaskConfig.ID, h)
+	go h.run()
+	return nil
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-
 	if _, ok := d.tasks.Get(cfg.ID); ok {
 		return nil, nil, fmt.Errorf("task with ID %q already started", cfg.ID)
 	}
@@ -242,17 +303,22 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	ctx := context.Background()
-	ipSlot, err := CreateNetworking(ctx, d.consulClient, cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger, d.hostsClient)
+	ipSlot, err := CreateNetworking(cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger)
+
+	defer func() {
+		if err != nil {
+			ipSlot.RemoveNetworking(d.logger, nil)
+			d.logger.Error("Cleaning up after unsuccessful start: %v", err)
+		}
+	}()
+
 	if err != nil {
-		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
-		return nil, nil, fmt.Errorf("Failed to create networking: %v", err)
+		return nil, nil, fmt.Errorf("failed to create networking: %v", err)
 	}
 
-	m, err := d.initializeContainer(ctx, cfg, driverConfig, ipSlot)
+	m, err := d.initializeContainer(context.Background(), cfg, driverConfig, ipSlot)
 	if err != nil {
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
-		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
 		return nil, nil, fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
 	}
 
@@ -264,8 +330,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		Slot:            ipSlot,
 		Info:            m.Info,
 		logger:          d.logger,
-		consulClient:    d.consulClient,
-		hostsClient:     d.hostsClient,
 		cpuStatsSys:     stats.NewCpuStats(),
 		cpuStatsUser:    stats.NewCpuStats(),
 		cpuStatsTotal:   stats.NewCpuStats(),
@@ -277,9 +341,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		StartedAt:     h.startedAt,
 	}
 
-	if err := handle.SetDriverState(&driverState); err != nil {
+	if err = handle.SetDriverState(&driverState); err != nil {
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
-		ipSlot.RemoveNetworking(d.consulClient, d.logger, d.hostsClient)
 		return nil, nil, fmt.Errorf("failed to set driver state: %v", err)
 	}
 
@@ -305,32 +368,57 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
 
-	// Going with simplest approach of polling for handler to mark exit.
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
 	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-d.ctx.Done():
-			return
-		case <-ticker.C:
-			s := handle.TaskStatus()
-			if s.State == drivers.TaskStateExited {
-				ch <- handle.exitResult
-			}
-		}
+		time.Sleep(5 * time.Second)
+
+		handle.stateLock.Lock()
+		handle.State = drivers.TaskStateExited
+		handle.exitResult.ExitCode = 100
+		handle.exitResult.Signal = 0
+		handle.completedAt = time.Now()
+		handle.stateLock.Unlock()
+
+		// s := handle.TaskStatus()
+		// if s.State == drivers.TaskStateExited {
+		ch <- handle.exitResult
+		return
+		// }
 	}
+
+	// // Going with simplest approach of polling for handler to mark exit.
+	// ticker := time.NewTicker(5 * time.Second)
+	// defer ticker.Stop()
+
+	// for {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		return
+	// 	case <-d.ctx.Done():
+	// 		return
+	// 	case <-ticker.C:
+	// 		s := handle.TaskStatus()
+	// 		if s.State == drivers.TaskStateExited {
+	// 			ch <- handle.exitResult
+	// 		}
+	// 	}
+	// }
 }
 
 func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) error {
-	handle, ok := d.tasks.Get(taskID)
+	h, ok := d.tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
 	}
 
-	if err := handle.shutdown(timeout); err != nil {
+	h.stateLock.Lock()
+	h.State = drivers.TaskStateExited
+	h.exitResult.ExitCode = 127
+	h.exitResult.Signal = 0
+	h.completedAt = time.Now()
+	h.stateLock.Unlock()
+
+	return fmt.Errorf("<< STOP >>")
+	if err := h.shutdown(); err != nil {
 		return fmt.Errorf("executor Shutdown failed: %v", err)
 	}
 
@@ -338,24 +426,7 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 }
 
 func (d *Driver) DestroyTask(taskID string, force bool) error {
-	handle, ok := d.tasks.Get(taskID)
-	if !ok {
-		return drivers.ErrTaskNotFound
-	}
-
-	if handle.IsRunning() && !force {
-		return fmt.Errorf("cannot destroy running task")
-	}
-
-	if handle.IsRunning() {
-		// grace period is chosen arbitrary here
-		if err := handle.shutdown(1 * time.Minute); err != nil {
-			handle.logger.Error("failed to destroy executor", "err", err)
-		}
-	}
-
-	d.tasks.Delete(taskID)
-	return nil
+	return d.StopTask(taskID, 0, "")
 }
 
 func (d *Driver) InspectTask(taskID string) (*drivers.TaskStatus, error) {
@@ -385,16 +456,10 @@ func (d *Driver) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, err
 	return d.eventer.TaskEvents(ctx)
 }
 
-func (d *Driver) SignalTask(taskID string, signal string) error {
-	handle, ok := d.tasks.Get(taskID)
-
-	if !ok {
-		return drivers.ErrTaskNotFound
-	}
-
-	return handle.Signal(signal)
-}
-
 func (d *Driver) ExecTask(taskID string, cmd []string, timeout time.Duration) (*drivers.ExecTaskResult, error) {
 	return nil, fmt.Errorf("Firecracker-task-driver does not support exec")
+}
+
+func (d *Driver) SignalTask(taskID string, signal string) error {
+	return fmt.Errorf("Firecracker-task-driver does not support signal")
 }

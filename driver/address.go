@@ -84,7 +84,12 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func getIPSlot(consulClient consul.Client, nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
+func getIPSlot(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
+	consulClient, err := consul.NewClient(consul.DefaultConfig())
+	if err != nil {
+		panic(fmt.Errorf("Failed to initialize Consul client: %v", err))
+	}
+
 	kv := consulClient.KV()
 
 	var slot *IPSlot
@@ -125,7 +130,12 @@ func getIPSlot(consulClient consul.Client, nodeID string, sessionID string, logg
 	return slot, nil
 }
 
-func (slot *IPSlot) releaseIPSlot(consulClient consul.Client, logger hclog.Logger) error {
+func (slot *IPSlot) releaseIPSlot(logger hclog.Logger) error {
+	consulClient, err := consul.NewClient(consul.DefaultConfig())
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize Consul client: %v", err))
+	}
+
 	kv := consulClient.KV()
 
 	pair, _, err := kv.Get(slot.KVKey, &consul.QueryOptions{})
