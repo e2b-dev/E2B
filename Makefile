@@ -34,4 +34,4 @@ build-firecracker-task-driver:
 	$(MAKE) -C modules/orchestrator/firecracker-task-driver build
 
 publish-mkfcenv-scripts:
-	$(MAKE) -C modules/orchestrator/firecracker-envs publish-mkfcenv
+	$(MAKE) -C modules/api/api-image publish-mkfcenv
