@@ -23,12 +23,10 @@ import (
 	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
-	consul "github.com/hashicorp/consul/api"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/shirou/gopsutil/process"
-	"github.com/txn2/txeh"
 )
 
 var (
@@ -37,10 +35,7 @@ var (
 )
 
 type taskHandle struct {
-	logger       hclog.Logger
-	consulClient consul.Client
-	hostsClient  *txeh.Hosts
-
+	logger hclog.Logger
 	// stateLock syncs access to all fields below
 	stateLock sync.RWMutex
 
@@ -70,20 +65,14 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 		CompletedAt: h.completedAt,
 		ExitResult:  h.exitResult,
 		DriverAttributes: map[string]string{
-			"Ip":     h.Info.Ip,
-			"Serial": h.Info.Serial,
-			"Pid":    h.Info.Pid,
+			"Pid": h.Info.Pid,
 		},
 	}
 }
 
-func (h *taskHandle) IsRunning() bool {
-	h.stateLock.RLock()
-	defer h.stateLock.RUnlock()
-	return h.State == drivers.TaskStateRunning
-}
-
 func (h *taskHandle) run() {
+	defer h.Slot.RemoveNetworking(h.logger, h.MachineInstance)
+
 	h.stateLock.Lock()
 	if h.exitResult == nil {
 		h.exitResult = &drivers.ExitResult{}
@@ -119,6 +108,7 @@ func (h *taskHandle) run() {
 			break
 		}
 	}
+
 	h.stateLock.Lock()
 	defer h.stateLock.Unlock()
 
@@ -196,37 +186,8 @@ func keysToVal(line string) (string, uint64, error) {
 	return key, val, err
 }
 
-func (h *taskHandle) Signal(sig string) error {
-
-	pid, errpid := strconv.Atoi(h.Info.Pid)
-	if errpid != nil {
-		return fmt.Errorf("ERROR Firecracker-task-driver Could not parse pid=%s", h.Info.Pid)
-	}
-	p, err := os.FindProcess(pid)
-	if err != nil {
-		return fmt.Errorf("ERROR Firecracker-task-driver Could not find process to send signal")
-	}
-
-	switch sig {
-
-	case "SIGTERM":
-		p.Signal(syscall.SIGTERM)
-	case "SIGHUP":
-		p.Signal(syscall.SIGHUP)
-	case "SIGABRT":
-		p.Signal(syscall.SIGABRT)
-	default:
-		return fmt.Errorf("Firecracker-task-driver SIGNAL NOT SUPPORTED")
-	}
-	return nil
-}
-
-// shutdown shuts down the container
-func (h *taskHandle) shutdown(timeout time.Duration) error {
-	err := h.Slot.RemoveNetworking(h.consulClient, h.logger, h.hostsClient)
-	if err != nil {
-		h.logger.Error("unable to remove networking %v", err)
-	}
+func (h *taskHandle) shutdown() error {
 	h.MachineInstance.StopVMM()
+	h.Slot.RemoveNetworking(h.logger, h.MachineInstance)
 	return nil
 }

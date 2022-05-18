@@ -17,12 +17,11 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/google/uuid"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	models "github.com/firecracker-microvm/firecracker-go-sdk/client/models"
@@ -58,15 +57,27 @@ func RandomVethName() (string, error) {
 }
 
 type options struct {
-	FcVsockDevices []string `long:"vsock-device" description:"Vsock interface, specified as PATH:CID. Multiple OK"`
-	FcLogFifo      string   `long:"vmm-log-fifo" description:"FIFO for firecracker logs"`
-	FcLogLevel     string   `long:"log-level" description:"vmm log level" default:"Debug"`
-	FcMetricsFifo  string   `long:"metrics-fifo" description:"FIFO for firecracker metrics"`
-	FcMetadata     string   `long:"metadata" description:"Firecracker Metadata for MMDS (json)"`
-	FcFifoLogFile  string   `long:"firecracker-log" short:"l" description:"pipes the fifo contents to the specified file"`
-	FcSocketPath   string   `long:"socket-path" short:"s" description:"path to use for firecracker socket, defaults to a unique file in in the first existing directory from {$HOME, $TMPDIR, or /tmp}"`
-	Debug          bool     `long:"debug" short:"d" description:"Enable debug output"`
-	Version        bool     `long:"version" description:"Outputs the version of the application"`
+	FcBinary           string   `long:"firecracker-binary" description:"Path to firecracker binary"`
+	FcKernelImage      string   `long:"kernel" description:"Path to the kernel image" default:"./vmlinux"`
+	FcKernelCmdLine    string   `long:"kernel-opts" description:"Kernel commandline" default:"ro console=ttyS0 noapic reboot=k panic=1 pci=off nomodules"`
+	FcRootDrivePath    string   `long:"root-drive" description:"Path to root disk image"`
+	FcRootPartUUID     string   `long:"root-partition" description:"Root partition UUID"`
+	FcAdditionalDrives []string `long:"add-drive" description:"Path to additional drive, suffixed with :ro or :rw, can be specified multiple times"`
+	FcNetworkName      string   `long:"Network-name" description:"Network name configured by CNI"`
+	FcNicConfig        Nic      `long:"Nic-config" description:"Nic configuration from tap device"`
+	FcVsockDevices     []string `long:"vsock-device" description:"Vsock interface, specified as PATH:CID. Multiple OK"`
+	FcLogFifo          string   `long:"vmm-log-fifo" description:"FIFO for firecracker logs"`
+	FcLogLevel         string   `long:"log-level" description:"vmm log level" default:"Debug"`
+	FcMetricsFifo      string   `long:"metrics-fifo" description:"FIFO for firecracker metrics"`
+	FcDisableHt        bool     `long:"disable-hyperthreading" short:"t" description:"Disable CPU Hyperthreading"`
+	FcCPUCount         int64    `long:"ncpus" short:"c" description:"Number of CPUs" default:"1"`
+	FcCPUTemplate      string   `long:"cpu-template" description:"Firecracker CPU Template (C3 or T2)"`
+	FcMemSz            int64    `long:"memory" short:"m" description:"VM memory, in MiB" default:"512"`
+	FcMetadata         string   `long:"metadata" description:"Firecracker Metadata for MMDS (json)"`
+	FcFifoLogFile      string   `long:"firecracker-log" short:"l" description:"pipes the fifo contents to the specified file"`
+	FcSocketPath       string   `long:"socket-path" short:"s" description:"path to use for firecracker socket, defaults to a unique file in in the first existing directory from {$HOME, $TMPDIR, or /tmp}"`
+	Debug              bool     `long:"debug" short:"d" description:"Enable debug output"`
+	Version            bool     `long:"version" description:"Outputs the version of the application"`
 
 	closers       []func() error
 	validMetadata interface{}
@@ -83,6 +94,16 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 				errors.Wrap(err, errInvalidMetadata.Error())
 		}
 	}
+	//setup NICs
+	NICs, err := opts.getNetwork(AllocId)
+	if err != nil {
+		return firecracker.Config{}, err
+	}
+	// BlockDevices
+	blockDevices, err := opts.getBlockDevices()
+	if err != nil {
+		return firecracker.Config{}, err
+	}
 
 	// vsocks
 	vsocks, err := parseVsocks(opts.FcVsockDevices)
@@ -96,8 +117,6 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 		return firecracker.Config{}, err
 	}
 
-	VMID := getVMID()
-
 	var socketPath string
 	if opts.FcSocketPath != "" {
 		socketPath = opts.FcSocketPath
@@ -105,15 +124,94 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 		socketPath = getSocketPath()
 	}
 
+	//  htEnabled := !opts.FcDisableHt
+
 	return firecracker.Config{
-		SocketPath:    socketPath,
-		LogFifo:       opts.FcLogFifo,
-		LogLevel:      opts.FcLogLevel,
-		MetricsFifo:   opts.FcMetricsFifo,
-		FifoLogWriter: fifo,
-		VMID:          VMID,
-		VsockDevices:  vsocks,
+		SocketPath:        socketPath,
+		LogFifo:           opts.FcLogFifo,
+		LogLevel:          opts.FcLogLevel,
+		MetricsFifo:       opts.FcMetricsFifo,
+		FifoLogWriter:     fifo,
+		KernelImagePath:   opts.FcKernelImage,
+		KernelArgs:        opts.FcKernelCmdLine,
+		Drives:            blockDevices,
+		NetworkInterfaces: NICs,
+		VsockDevices:      vsocks,
+		MachineCfg: models.MachineConfiguration{
+			VcpuCount:   firecracker.Int64(opts.FcCPUCount),
+			CPUTemplate: models.CPUTemplate(opts.FcCPUTemplate),
+			//  HtEnabled:   firecracker.Bool(htEnabled),
+			MemSizeMib: firecracker.Int64(opts.FcMemSz),
+		},
+		//  Debug: opts.Debug,
 	}, nil
+}
+
+func (opts *options) getNetwork(AllocId string) ([]firecracker.NetworkInterface, error) {
+	var NICs []firecracker.NetworkInterface
+
+	if len(opts.FcNetworkName) > 0 && len(opts.FcNicConfig.Ip) > 0 {
+		return nil, errConflictingNetworkOpts
+	}
+
+	if len(opts.FcNetworkName) > 0 {
+		veth, err := RandomVethName()
+		if err != nil {
+			return nil, err
+		}
+
+		nic := firecracker.NetworkInterface{
+			CNIConfiguration: &firecracker.CNIConfiguration{
+				NetworkName: opts.FcNetworkName,
+				IfName:      veth,
+			},
+		}
+		NICs = append(NICs, nic)
+	}
+
+	if len(opts.FcNicConfig.Ip) > 0 {
+		_, Net, err := net.ParseCIDR(opts.FcNicConfig.Ip)
+		if err != nil {
+			return nil, fmt.Errorf("Fail to parse CIDR address: %v", err)
+		}
+		mockMacAddrString, err := genmacaddr()
+		if err != nil {
+			return nil, err
+		}
+		nic := firecracker.NetworkInterface{
+			StaticConfiguration: &firecracker.StaticNetworkConfiguration{
+				MacAddress:  mockMacAddrString,
+				HostDevName: opts.FcNicConfig.Interface,
+				IPConfiguration: &firecracker.IPConfiguration{
+					IPAddr: net.IPNet{
+						IP:   Net.IP,
+						Mask: Net.Mask,
+					},
+					Gateway:     net.ParseIP(opts.FcNicConfig.Gateway),
+					Nameservers: opts.FcNicConfig.Nameservers,
+				},
+			},
+		}
+		NICs = append(NICs, nic)
+	}
+	return NICs, nil
+}
+
+// constructs a list of drives from the options config
+func (opts *options) getBlockDevices() ([]models.Drive, error) {
+	blockDevices, err := parseBlockDevices(opts.FcAdditionalDrives)
+	if err != nil {
+		return nil, err
+	}
+	rootDrive := models.Drive{
+		DriveID:      firecracker.String("1"),
+		PathOnHost:   &opts.FcRootDrivePath,
+		IsRootDevice: firecracker.Bool(true),
+		IsReadOnly:   firecracker.Bool(false),
+		Partuuid:     opts.FcRootPartUUID,
+	}
+	blockDevices = append(blockDevices, rootDrive)
+	return blockDevices, nil
 }
 
 // handleFifos will see if any fifos need to be generated and if a fifo log
@@ -298,9 +396,4 @@ func checkExistsAndDir(path string) bool {
 		return info.IsDir()
 	}
 	return false
-}
-
-func getVMID() string {
-	id, _ := uuid.NewRandom()
-	return id.String()
 }

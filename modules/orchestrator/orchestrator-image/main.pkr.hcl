@@ -8,14 +8,16 @@ packer {
   }
 }
 
+# TODO: Separate server and client images
 source "googlecompute" "orch" {
   image_family        = "orch"
-  image_name          = "orch-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
+  # We are overwriting the image instead of creating timestamped images every time we build it
+  image_name          = "orch-image"
   project_id          = var.gcp_project_id
   source_image_family = "ubuntu-2004-lts"
   ssh_username        = "ubuntu"
   zone                = var.gcp_zone
-  disk_size           = 20
+  disk_size           = 10
   disk_type           = "pd-ssd"
 
   # This is used only for building the image and the GCE VM is then deleted
@@ -38,6 +40,7 @@ build {
     destination = "/tmp"
   }
 
+  # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
       "sudo add-apt-repository ppa:longsleep/golang-backports",
@@ -56,6 +59,7 @@ build {
     ]
   }
   
+  # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /opt/gruntwork",
@@ -69,6 +73,7 @@ build {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.consul_version}"
   }
 
+  # TODO: Remove unused deps - is Consul already using dnsmasq?
   provisioner "shell" {
     script          = "${path.root}/setup/install-dnsmasq.sh"
   }
@@ -98,7 +103,7 @@ build {
     ]
   }
 
-  # Add testing FC kernel and rootfs
+  # TODO: Remove testing snapshots and bucket after we have envs pipeline ready
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /fc-vm",

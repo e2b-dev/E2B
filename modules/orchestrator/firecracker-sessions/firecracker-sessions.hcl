@@ -14,6 +14,8 @@ job "firecracker-sessions" {
   datacenters = [var.gcp_zone]
   type = "batch"
 
+  priority = 40
+
   parameterized {
     payload       = "forbidden"
     meta_required = ["SESSION_ID"]
@@ -38,9 +40,9 @@ job "firecracker-sessions" {
       }
 
       resources {
-        memory_max = 1024
-        memory = 512
-        cpu = 500
+        memory_max = 512
+        memory = 256
+        cpu = 200
       }
 
       config {
