@@ -1,4 +1,4 @@
-job "test-envs/{{ .CodeSnippetID }}" {
+job "test-envs/{{ .CodeSnippetID }}/{{ .Rand }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 

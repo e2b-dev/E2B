@@ -7,6 +7,8 @@ import (
   //"os"
   "strings"
   "text/template"
+  "time"
+  "math/rand"
   "github.com/hashicorp/nomad/api"
 )
 
@@ -14,10 +16,19 @@ const (
   templatesDir = "templates"
 )
 
+var alphabet = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+func genRandom(length int) string {
+  rand.Seed(time.Now().UnixNano())
+  b := make([]rune, length)
+  for i := range b {
+      b[i] = alphabet[rand.Intn(len(alphabet))]
+  }
+  return string(b)
+}
+
 func escapeNewLines(input string) string {
-  str := strings.Replace(input, "\n", "\\\\n", -1)
-  fmt.Println(str)
-  return str
+  // HCL doesn't allow newlines in strings. We have to escape them.
+  return strings.Replace(input, "\n", "\\\\n", -1)
 }
 
 //func (n *Nomad) CreateEnvironment(codeSnippetID, dockerfile string) (*api.JobDispatchResponse, *api.WriteMeta, error) {
@@ -36,11 +47,14 @@ func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string) (string, error) 
     return "", fmt.Errorf("Failed to `dockerfileTemp.Execute()`: %s", err)
   }
 
+  rand := genRandom(6)
   jobVars := struct{
     CodeSnippetID string
+    Rand          string
     Dockerfile    string
   }{
     CodeSnippetID:  codeSnippetID,
+    Rand:           rand,
     Dockerfile:     dockerfile.String(),
   }
 
@@ -54,18 +68,12 @@ func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string) (string, error) 
     return "", fmt.Errorf("Failed to parse template file '%s': %s", tname, err)
   }
 
-  fmt.Println(envsJobTemp)
   envsJobTemp = template.Must(envsJobTemp, err)
 
   var jobDef bytes.Buffer
   if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
     return "", fmt.Errorf("Failed to `envsJobTemp.Execute()`: %s", err)
   }
-  fmt.Println(jobDef.String())
-
-
-
-
 
   job, err := n.nomadClient.Jobs().ParseHCL(jobDef.String(), false)
   if err != nil {
