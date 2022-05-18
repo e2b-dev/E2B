@@ -56,8 +56,6 @@ github.com/hashicorp/go-cleanhttp v0.5.2 h1:035FKYIWjmULyFRBKPs8TBQoi0x6d9G4xc9n
 github.com/hashicorp/go-cleanhttp v0.5.2/go.mod h1:kO/YDlP8L1346E6Sodw+PrpBSV4/SoxCXGY6BqNFT48=
 github.com/hashicorp/go-rootcerts v1.0.2 h1:jzhAVGtqPKbwpyCPELlgNWhE1znq+qwJtW5Oi2viEzc=
 github.com/hashicorp/go-rootcerts v1.0.2/go.mod h1:pqUvnprVnM5bf7AOirdbb01K4ccR319Vf4pU3K5EGc8=
-github.com/hashicorp/nomad/api v0.0.0-20220422225727-e4d6d5103562 h1:k9hLaVHFbqGntqbgZQ0JJgbgWkjg1Pwpu09Z3vwtsUM=
-github.com/hashicorp/nomad/api v0.0.0-20220422225727-e4d6d5103562/go.mod h1:b/AoT79m3PEpb6tKCFKva/M+q1rKJNUk5mdu1S8DymM=
 github.com/hashicorp/nomad/api v0.0.0-20220506174431-b5665129cd1f h1:jSBbBJcPca465gK6XfwdXRQnFCd63e0oJmqllZTsawI=
 github.com/hashicorp/nomad/api v0.0.0-20220506174431-b5665129cd1f/go.mod h1:b/AoT79m3PEpb6tKCFKva/M+q1rKJNUk5mdu1S8DymM=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=

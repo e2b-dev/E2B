@@ -5,7 +5,8 @@ import (
 	"sync"
   "fmt"
 
-	"api/pkg/nomad"
+	//"api/pkg/nomad"
+  "github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
 
 	"github.com/gin-gonic/gin"
 )
@@ -71,7 +72,7 @@ func (p *APIStore) DeleteSessionsSessionId(c *gin.Context, id string) {
 	c.JSON(http.StatusOK, Session{SessionId: id})
 }
 
-func (p *APIStore) PostEnvironment(c *gin.Context) {
+func (p *APIStore) PostEnv(c *gin.Context) {
   // TODO: Check for API token
 
   var env Environment
@@ -85,7 +86,9 @@ func (p *APIStore) PostEnvironment(c *gin.Context) {
   // TODO: Add deps to the Dockerfile.
   //dockerfile := ""
   //env, _, err := p.nomad.CreateEnvironment(env.CodeSnippetId, dockerfile)
+  p.nomad.CreateEnvironment(env.CodeSnippetId, string(env.Runtime))
 
 
-	c.JSON(http.StatusOK, Session{SessionId: id})
+	//c.JSON(http.StatusOK, Session{SessionId: id})
+	c.JSON(http.StatusOK, Session{SessionId: "dummy"})
 }

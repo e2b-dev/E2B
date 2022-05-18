@@ -12,11 +12,11 @@ tags:
 
 
 components:
-  securitySchemes:
-    ApiKeyAuth: # Arbitrary name for the security scheme
-      type: apiKey
-      in: query # Can be "header", "query" or "cookie"
-      name: API_KEY # Name of the header, query parameter or cookie
+  #securitySchemes:
+  #  ApiKeyAuth: # Arbitrary name for the security scheme
+  #    type: apiKey
+  #    in: query # Can be "header", "query" or "cookie"
+  #    name: API_KEY # Name of the header, query parameter or cookie
   schemas:
     AnyValue: {}
     Environment:
@@ -55,8 +55,8 @@ components:
           type: string
           description: Error
 
-security:
-  - ApiKeyAuth: [] # Use the same name as under securitySchemes
+#security:
+  #- ApiKeyAuth: [] # Use the same name as under securitySchemes
 
 paths:
   /:
@@ -136,7 +136,6 @@ paths:
     post:
       tags:
         - env
-
       responses:
         200:
           description: Successfully created an environment

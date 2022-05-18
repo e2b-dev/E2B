@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"os"
 
-	"api/internal/api"
-	"api/pkg/nomad"
+  "github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
+  "github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
+
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"

@@ -1,4 +1,4 @@
-module api
+module github.com/devbookhq/orchestration-services/modules/api/api-image
 
 go 1.18
 
