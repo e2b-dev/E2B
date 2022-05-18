@@ -1,24 +1,13 @@
 #! /usr/bin/bash
 
-
-# Args:
-#  $1: Path to Firecracker
-#  $2: Code snippet ID.
-#  $3: Dockerfile as a string.
-
-# Expected environment variables:
-# OUTDIR
-# ROOTFILE_BASENAME
-# SNAPFILE_BASENAME
-# MEMFILE_BASENAME
-
 # This script produces 3 files that together creates a Firecracker environment:
 # - rootfs: rootfs file
 # - snap: snapshot file
 # - mem: memory file
 
 WORKINGDIR="$1"
-CODE_SNIPPET_ID="$2"
+DOCKERFILE="$2"
+CODE_SNIPPET_ID="$3"
 
 set -euo pipefail
 
@@ -27,8 +16,13 @@ if [ -z "$WORKINGDIR" ]; then
   exit 1
 fi
 
+if [ -z "$DOCKERFILE" ]; then
+  echo "ERROR: Expected Dockerfile as the second argument"
+  exit 1
+fi
+
 if [ -z "$CODE_SNIPPET_ID" ]; then
-  echo "ERROR: Expected code snippet ID as the second argument"
+  echo "ERROR: Expected code snippet ID as the third argument"
   exit 1
 fi
 
@@ -60,7 +54,7 @@ function mkrootfs() {
   local mountdir=mnt
   local free=50000000 # 50MB in B
 
-  docker build -t $tag -f $WORKINGDIR/Dockerfile $WORKINGDIR
+  echo -e "$DOCKERFILE" | docker build -t $tag -f - $WORKINGDIR
   local container_id=$(docker run -dt $tag /bin/ash)
   docker exec $container_id /provision.sh
   local container_size=$(docker image inspect $tag:latest --format='{{.Size}}')

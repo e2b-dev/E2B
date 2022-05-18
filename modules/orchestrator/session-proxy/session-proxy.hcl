@@ -23,6 +23,10 @@ job "session-proxy" {
 
   priority = 100
 
+  meta {
+    label1 = "job"
+  }
+
   constraint {
     operator  = "distinct_hosts"
     value     = "true"
@@ -30,6 +34,10 @@ job "session-proxy" {
 
   group "session-proxy" {
     count = var.client_cluster_size
+
+    meta {
+      label1 = "group"
+    }
 
     network {
       port "session" {
@@ -47,6 +55,10 @@ job "session-proxy" {
 
     task "session-proxy" {
       driver = "docker"
+
+      meta {
+        label1 = "task"
+      }
 
       config {
         image = "nginx"

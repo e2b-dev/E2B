@@ -5,8 +5,9 @@
 
 set -euo pipefail
 
-tar czf mkenv.tar.gz mkfcenv
+tar czf mkfcenv.tar.gz mkfcenv
 
-gsutil -h "Cache-Control:no-cache, max-age=0" cp mkenv.tar.gz gs://devbook-environment-pipeline
+gsutil -h "Cache-Control:no-cache, max-age=0" \
+  cp mkfcenv.tar.gz gs://devbook-environment-pipeline
 
-rm mkenv.tar.gz
+rm mkfcenv.tar.gz

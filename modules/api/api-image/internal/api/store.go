@@ -5,9 +5,7 @@ import (
 	"sync"
   "fmt"
 
-	//"api/pkg/nomad"
   "github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -82,13 +80,12 @@ func (p *APIStore) PostEnv(c *gin.Context) {
   }
 
   // TODO: Download the base Dockerfile based on a runtime field in `env`.
-
   // TODO: Add deps to the Dockerfile.
-  //dockerfile := ""
-  //env, _, err := p.nomad.CreateEnvironment(env.CodeSnippetId, dockerfile)
-  p.nomad.CreateEnvironment(env.CodeSnippetId, string(env.Runtime))
+  evalID, err := p.nomad.RegisterFCEnvJob(env.CodeSnippetId, string(env.Runtime))
+  if err != nil {
+    c.JSON(http.StatusInternalServerError, struct{Error string}{err.Error()})
+    return
+  }
 
-
-	//c.JSON(http.StatusOK, Session{SessionId: id})
-	c.JSON(http.StatusOK, Session{SessionId: "dummy"})
+  c.JSON(http.StatusOK, struct{EvalID string}{evalID})
 }
