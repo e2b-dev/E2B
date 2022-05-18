@@ -32,7 +32,7 @@ func escapeNewLines(input string) string {
 }
 
 //func (n *Nomad) CreateEnvironment(codeSnippetID, dockerfile string) (*api.JobDispatchResponse, *api.WriteMeta, error) {
-func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string) (string, error) {
+func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string, deps []string) (string, error) {
   dockerfileName := fmt.Sprintf("%s.Dockerfile", runtime)
   tname := path.Join(templatesDir, "runtimes", dockerfileName)
   dockerfileTemp, err := template.ParseFiles(tname)
@@ -42,20 +42,14 @@ func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string) (string, error) 
 
   dockerfileTemp = template.Must(dockerfileTemp, err)
 
-  var dockerfile bytes.Buffer
-  if err := dockerfileTemp.Execute(&dockerfile, struct{}{}); err != nil {
-    return "", fmt.Errorf("Failed to `dockerfileTemp.Execute()`: %s", err)
-  }
-
-  rand := genRandom(6)
-  jobVars := struct{
-    CodeSnippetID string
-    Rand          string
-    Dockerfile    string
+  dockerfileVars := struct{
+    Deps []string
   }{
-    CodeSnippetID:  codeSnippetID,
-    Rand:           rand,
-    Dockerfile:     dockerfile.String(),
+    Deps: deps,
+  }
+  var dockerfile bytes.Buffer
+  if err := dockerfileTemp.Execute(&dockerfile, dockerfileVars); err != nil {
+    return "", fmt.Errorf("Failed to `dockerfileTemp.Execute()`: %s", err)
   }
 
   tname = path.Join(templatesDir, "firecracker-envs.hcl")
@@ -70,6 +64,16 @@ func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string) (string, error) 
 
   envsJobTemp = template.Must(envsJobTemp, err)
 
+  rand := genRandom(6)
+  jobVars := struct{
+    CodeSnippetID string
+    Rand          string
+    Dockerfile    string
+  }{
+    CodeSnippetID:  codeSnippetID,
+    Rand:           rand,
+    Dockerfile:     dockerfile.String(),
+  }
   var jobDef bytes.Buffer
   if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
     return "", fmt.Errorf("Failed to `envsJobTemp.Execute()`: %s", err)

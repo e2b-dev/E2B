@@ -1,4 +1,4 @@
-job "test-envs/{{ .CodeSnippetID }}/{{ .Rand }}" {
+job "firecracker-envs/{{ .CodeSnippetID }}/{{ .Rand }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
