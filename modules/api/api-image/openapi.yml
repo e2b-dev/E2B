@@ -10,7 +10,6 @@ tags:
   - name: env
     description: Environment for VM
 
-
 components:
   #securitySchemes:
   #  ApiKeyAuth: # Arbitrary name for the security scheme
@@ -38,10 +37,14 @@ components:
     Session:
       required:
         - session_id
+        - client_id
       properties:
         session_id:
           type: string
           description: Identifier of the session
+        client_id:
+          type: string
+          description: Identifier of the client
     Error:
       required:
         - code
@@ -56,7 +59,7 @@ components:
           description: Error
 
 #security:
-  #- ApiKeyAuth: [] # Use the same name as under securitySchemes
+#- ApiKeyAuth: [] # Use the same name as under securitySchemes
 
 paths:
   /:

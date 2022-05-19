@@ -33,6 +33,9 @@ type Error struct {
 
 // Session defines model for Session.
 type Session struct {
+	// Identifier of the client
+	ClientId string `json:"client_id"`
+
 	// Identifier of the session
 	SessionId string `json:"session_id"`
 }
