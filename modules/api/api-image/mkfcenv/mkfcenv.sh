@@ -5,56 +5,74 @@
 # - snap: snapshot file
 # - mem: memory file
 
-WORKINGDIR="$1"
-DOCKERFILE="$2"
-CODE_SNIPPET_ID="$3"
+RUN_UUID="$1"
+SCRIPTDIR="$2"
+DOCKERFILE="$3"
+CODE_SNIPPET_ID="$4"
 
 set -euo pipefail
 
-if [ -z "$WORKINGDIR" ]; then
-  echo "ERROR: Expected working dir as the first argument"
+if [ -z "$RUN_UUID" ]; then
+  echo "ERROR: Expected run UUID as the first argument"
+  exit 1
+fi
+
+if [ -z "$SCRIPTDIR" ]; then
+  echo "ERROR: Expected working dir as the second argument"
   exit 1
 fi
 
 if [ -z "$DOCKERFILE" ]; then
-  echo "ERROR: Expected Dockerfile as the second argument"
+  echo "ERROR: Expected Dockerfile as the third argument"
   exit 1
 fi
 
 if [ -z "$CODE_SNIPPET_ID" ]; then
-  echo "ERROR: Expected code snippet ID as the third argument"
+  echo "ERROR: Expected code snippet ID as the fourth argument"
   exit 1
 fi
 
-mkdir -p "/mnt/disks/fc-envs/$CODE_SNIPPET_ID"
+# This disk must be mounted when we run the script.
+FC_ENVS_DISK="/mnt/disks/fc-envs"
 
 MASK_LONG="255.255.255.252"
-
 FC_MAC="02:FC:00:00:00:05"
 FC_ADDR="169.254.0.21"
 FC_MASK="/30"
+FC_SOCK="/tmp/fc-sock-$RUN_UUID.sock"
 
 TAP_ADDR="169.254.0.22"
 TAP_MASK="/30"
 TAP_NAME="tap0"
 
-ID=$RANDOM
-NS_NAME="fc-env-$ID"
-FC_SOCK="/tmp/fc-$ID.socket"
-FC_ROOTFS="/mnt/disks/fc-envs/$CODE_SNIPPET_ID/rootfs.ext4"
-FC_SNAPFILE="/mnt/disks/fc-envs/$CODE_SNIPPET_ID/snapfile"
-FC_MEMFILE="/mnt/disks/fc-envs/$CODE_SNIPPET_ID/memfile"
+NS_NAME="fc-env-$RUN_UUID"
+
+BUILD_DIR="$FC_ENVS_DISK/$CODE_SNIPPET_ID/builds/$RUN_UUID"
+BUILD_MNT_DIR="$BUILD_DIR/mnt"
+BUILD_FC_ROOTFS="$BUILD_DIR/rootfs.ext4"
+BUILD_FC_SNAPFILE="$BUILD_DIR/snapfile"
+BUILD_FC_MEMFILE="$BUILD_DIR/memfile"
+
+FINAL_DIR="$FC_ENVS_DISK/$CODE_SNIPPET_ID"
+FINAL_FC_ROOTFS="$FINAL_DIR/rootfs.ext4"
+FINAL_FC_SNAPFILE="$FINAL_DIR/snapfile"
+FINAL_FC_MEMFILE="$FINAL_DIR/memfile"
 
 FC_PID=""
 
-function mkrootfs() {
-  echo "===> MAKING ROOTFS..."
-  local tag=rootfs
+function mkdirs() {
+  mkdir -p $BUILD_DIR
+  mkdir -p $BUILD_MNT_DIR
+  # `$FINAL_DIR` is now already created because we created the `$BUILD_DIR` or from the previous runs.
+}
 
-  local mountdir=mnt
+function mkrootfs() {
+  echo "===> Making rootfs..."
+
+  local tag=rootfs
   local free=50000000 # 50MB in B
 
-  echo -e "$DOCKERFILE" | docker build -t $tag -f - $WORKINGDIR
+  echo -e "$DOCKERFILE" | docker build -t $tag -f - $SCRIPTDIR
   local container_id=$(docker run -dt $tag /bin/ash)
   docker exec $container_id /provision.sh
   local container_size=$(docker image inspect $tag:latest --format='{{.Size}}')
@@ -62,29 +80,31 @@ function mkrootfs() {
 
   echo "===> Rootfs size: ${rootfs_size}B"
 
-  mkdir $mountdir
-  qemu-img create -f raw $FC_ROOTFS ${rootfs_size}B
-  mkfs.ext4 $FC_ROOTFS
-  mount $FC_ROOTFS $mountdir
-  docker cp $container_id:/ $mountdir
+  qemu-img create -f raw $BUILD_FC_ROOTFS ${rootfs_size}B
+  mkfs.ext4 $BUILD_FC_ROOTFS
+  mount $BUILD_FC_ROOTFS $BUILD_MNT_DIR
+  docker cp $container_id:/ $BUILD_MNT_DIR
 
   # -- Cleanup --
-  umount $mountdir
-  rm -rf $mountdir
+  umount $BUILD_MNT_DIR
+  rm -rf $BUILD_MNT_DIR
 
   docker kill $container_id && \
-    docker rm -f $container_id && \
-    docker rmi -f $tag
-  echo "===> ROOTFS DONE"
+  docker rm -f $container_id && \
+  docker rmi -f $tag
+
+  echo "===> rootfs done"
 }
 
 function mkns() {
+  echo "===> Setting up namespace '$NS_NAME'..."
+
   ip netns add $NS_NAME
   ip netns exec $NS_NAME ip tuntap add name $TAP_NAME mode tap
   ip netns exec $NS_NAME ip link set $TAP_NAME up
   ip netns exec $NS_NAME ip addr add $TAP_ADDR$TAP_MASK dev $TAP_NAME
 
-  echo "===> Namespace for Firecracker: $NS_NAME"
+  echo "===> Namespace '$NS_NAME' prepared"
 }
 
 function delns() {
@@ -105,7 +125,7 @@ function startfc() {
   "drives":[
    {
       "drive_id": "rootfs",
-      "path_on_host": "$FC_ROOTFS",
+      "path_on_host": "$BUILD_FC_ROOTFS",
       "is_root_device": true,
       "is_read_only": false
     }
@@ -141,25 +161,28 @@ function pausefc() {
 }
 
 function snapfc() {
-#  read -r -d '' data << EOF
-#{
-#  "snapshot_type": "Full",
-#  "snapshot_path": "$FC_SNAPFILE",
-#  "mem_file_path": "$FC_MEMFILE"
-#}
-#EOF
-#  echo $data
   curl --unix-socket $FC_SOCK -i \
       -X PUT 'http://localhost/snapshot/create' \
       -H  'Accept: application/json' \
       -H  'Content-Type: application/json' \
       -d "{
             \"snapshot_type\": \"Full\",
-            \"snapshot_path\": \"$FC_SNAPFILE\",
-            \"mem_file_path\": \"$FC_MEMFILE\"
+            \"snapshot_path\": \"$BUILD_FC_SNAPFILE\",
+            \"mem_file_path\": \"$BUILD_FC_MEMFILE\"
           }"
 }
 
+function mv_env_files() {
+  mv $BUILD_FC_ROOTFS $FINAL_FC_ROOTFS
+  mv $BUILD_FC_SNAPFILE $FINAL_FC_SNAPFILE
+  mv $BUILD_FC_MEMFILE $FINAL_FC_MEMFILE
+}
+
+function del_build_dir() {
+  rm -rf $BUILD_DIR
+}
+
+mkdirs
 mkrootfs
 mkns
 startfc
@@ -168,12 +191,14 @@ pausefc
 snapfc
 kill $FC_PID
 delns
+mv_env_files
+del_build_dir
 
-echo "==== Output ========================================="
+echo "==== Output ==========================================================================================="
 echo "| Code snippet ID:  $CODE_SNIPPET_ID"
-echo "| Rootfs:           $FC_ROOTFS"
-echo "| Snapfile:         $FC_SNAPFILE"
-echo "| Memfile:          $FC_MEMFILE"
-echo "====================================================="
+echo "| Rootfs:           $FINAL_FC_ROOTFS"
+echo "| Snapfile:         $FINAL_FC_SNAPFILE"
+echo "| Memfile:          $FINAL_FC_MEMFILE"
+echo "======================================================================================================="
 echo
 echo "===> Env Done"

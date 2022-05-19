@@ -1,6 +1,12 @@
-job "firecracker-envs/{{ .CodeSnippetID }}/{{ .Rand }}" {
+job "firecracker-envs/{{ .CodeSnippetID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
+
+  meta {
+    # This makes sure the job always runs even though nothing has changed in the job spec file.
+    # See section "Always Deploy a New Job Version" in https://storiesfromtheherd.com/nomad-tips-and-tricks-766878dfebf4
+    run_uuid = "${uuidv4()}"
+  }
 
   group "build-env" {
     reschedule {
@@ -14,6 +20,10 @@ job "firecracker-envs/{{ .CodeSnippetID }}/{{ .Rand }}" {
     }
 
     task "build-env" {
+      resources {
+        memory  = 300
+        cores   = 1
+      }
       driver = "raw_exec"
 
       artifact {
@@ -23,7 +33,7 @@ job "firecracker-envs/{{ .CodeSnippetID }}/{{ .Rand }}" {
 
       config {
         command = "local/mkfcenv/mkfcenv.sh"
-        args = ["local/mkfcenv", "{{ escapeNewLines .Dockerfile }}", "{{ .CodeSnippetID }}"]
+        args = ["${NOMAD_META_RUN_UUID}", "local/mkfcenv", "{{ escapeNewLines .Dockerfile }}", "{{ .CodeSnippetID }}"]
       }
     }
   }
