@@ -83,7 +83,7 @@ var (
 	// capabilities is returned by the Capabilities RPC and indicates what
 	// optional features this driver supports
 	capabilities = &drivers.Capabilities{
-		SendSignals: false,
+		SendSignals: true,
 		Exec:        false,
 		FSIsolation: drivers.FSIsolationImage,
 	}
@@ -255,38 +255,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 		oldHandle.shutdown()
 	}
 
-	var driverConfig TaskConfig
-	if err := handle.Config.DecodeDriverConfig(&driverConfig); err != nil {
-		return fmt.Errorf("failed to decode driver config: %v", err)
-	}
-
-	var taskState TaskState
-	if err := handle.GetDriverState(&taskState); err != nil {
-		return fmt.Errorf("failed to decode task state from handle: %v", err)
-	}
-
-	// m, err := d.initializeContainer(context.Background(), handle.Config, driverConfig)
-	// if err != nil {
-	// 	d.logger.Info("Error RecoverTask k", "driver_cfg", hclog.Fmt("%+v", err))
-	// 	return fmt.Errorf("task with ID %q failed", handle.Config.ID)
-	// }
-
-	h := &taskHandle{
-		taskConfig: taskState.TaskConfig,
-		State:      drivers.TaskStateExited,
-		startedAt:  taskState.StartedAt,
-		exitResult: &drivers.ExitResult{},
-		// MachineInstance: m.Machine,
-		// Info:            m.Info,
-		// logger:          d.logger,
-		cpuStatsSys:   stats.NewCpuStats(),
-		cpuStatsUser:  stats.NewCpuStats(),
-		cpuStatsTotal: stats.NewCpuStats(),
-	}
-
-	d.tasks.Set(taskState.TaskConfig.ID, h)
-	go h.run()
-	return nil
+	return fmt.Errorf("cannot recover task")
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
@@ -307,17 +276,19 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			ipSlot.RemoveNetworking(d.logger, nil)
+			ipSlot.RemoveNetworking(d.logger)
 			d.logger.Error("Cleaning up after unsuccessful start: %v", err)
 		}
 	}()
 
 	if err != nil {
+		ipSlot.RemoveNetworking(d.logger)
 		return nil, nil, fmt.Errorf("failed to create networking: %v", err)
 	}
 
 	m, err := d.initializeContainer(context.Background(), cfg, driverConfig, ipSlot)
 	if err != nil {
+		ipSlot.RemoveNetworking(d.logger)
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
 		return nil, nil, fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
 	}
@@ -342,6 +313,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	if err = handle.SetDriverState(&driverState); err != nil {
+		ipSlot.RemoveNetworking(d.logger)
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
 		return nil, nil, fmt.Errorf("failed to set driver state: %v", err)
 	}
@@ -368,40 +340,23 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
 
-	for {
-		time.Sleep(5 * time.Second)
-
-		handle.stateLock.Lock()
-		handle.State = drivers.TaskStateExited
-		handle.exitResult.ExitCode = 100
-		handle.exitResult.Signal = 0
-		handle.completedAt = time.Now()
-		handle.stateLock.Unlock()
-
-		// s := handle.TaskStatus()
-		// if s.State == drivers.TaskStateExited {
-		ch <- handle.exitResult
-		return
-		// }
-	}
-
 	// // Going with simplest approach of polling for handler to mark exit.
-	// ticker := time.NewTicker(5 * time.Second)
-	// defer ticker.Stop()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
 
-	// for {
-	// 	select {
-	// 	case <-ctx.Done():
-	// 		return
-	// 	case <-d.ctx.Done():
-	// 		return
-	// 	case <-ticker.C:
-	// 		s := handle.TaskStatus()
-	// 		if s.State == drivers.TaskStateExited {
-	// 			ch <- handle.exitResult
-	// 		}
-	// 	}
-	// }
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-d.ctx.Done():
+			return
+		case <-ticker.C:
+			s := handle.TaskStatus()
+			if s.State == drivers.TaskStateExited {
+				ch <- handle.exitResult
+			}
+		}
+	}
 }
 
 func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) error {
@@ -410,14 +365,6 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 		return drivers.ErrTaskNotFound
 	}
 
-	h.stateLock.Lock()
-	h.State = drivers.TaskStateExited
-	h.exitResult.ExitCode = 127
-	h.exitResult.Signal = 0
-	h.completedAt = time.Now()
-	h.stateLock.Unlock()
-
-	return fmt.Errorf("<< STOP >>")
 	if err := h.shutdown(); err != nil {
 		return fmt.Errorf("executor Shutdown failed: %v", err)
 	}
@@ -461,5 +408,6 @@ func (d *Driver) ExecTask(taskID string, cmd []string, timeout time.Duration) (*
 }
 
 func (d *Driver) SignalTask(taskID string, signal string) error {
-	return fmt.Errorf("Firecracker-task-driver does not support signal")
+	return d.StopTask(taskID, 0, "")
+	// return fmt.Errorf("Firecracker-task-driver does not support signal")
 }

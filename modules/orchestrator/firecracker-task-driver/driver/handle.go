@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
-	"sync"
+
+	// "sync"
 	"syscall"
 	"time"
 
@@ -36,8 +36,10 @@ var (
 
 type taskHandle struct {
 	logger hclog.Logger
+	// TODO: The mutext here causes deadlock when we are stopping tasks
+	// For now we are not using it - the relevant data will be still valid (FC running/exit).
 	// stateLock syncs access to all fields below
-	stateLock sync.RWMutex
+	// stateLock sync.RWMutex
 
 	taskConfig      *drivers.TaskConfig
 	State           drivers.TaskState
@@ -54,8 +56,8 @@ type taskHandle struct {
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
-	h.stateLock.RLock()
-	defer h.stateLock.RUnlock()
+	// h.stateLock.RLock()
+	// defer h.stateLock.RUnlock()
 
 	return &drivers.TaskStatus{
 		ID:          h.taskConfig.ID,
@@ -71,34 +73,43 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 }
 
 func (h *taskHandle) run() {
-	defer h.Slot.RemoveNetworking(h.logger, h.MachineInstance)
+	go func() {
+		time.Sleep(60 * time.Second)
 
-	h.stateLock.Lock()
-	if h.exitResult == nil {
-		h.exitResult = &drivers.ExitResult{}
-	}
-	/* TODO:
-	 *  To really check the status by querying the firecracker's API, you need to call DescribeInstance
-	 *  which is not implemented in firecracker-go-sdk
-	 *  https://github.com/firecracker-microvm/firecracker-go-sdk/issues/115
-	 */
-	h.stateLock.Unlock()
+		// h.stateLock.Lock()
+		h.exitResult.ExitCode = 120
+		h.exitResult.Signal = 0
+		h.completedAt = time.Now()
+		h.State = drivers.TaskStateExited
+		// h.stateLock.Unlock()
+	}()
+
+	// h.stateLock.Lock()
+	// if h.exitResult == nil {
+	// 	h.exitResult = &drivers.ExitResult{}
+	// }
+	// /* TODO:
+	//  *  To really check the status by querying the firecracker's API, you need to call DescribeInstance
+	//  *  which is not implemented in firecracker-go-sdk
+	//  *  https://github.com/firecracker-microvm/firecracker-go-sdk/issues/115
+	//  */
+	// h.stateLock.Unlock()
 
 	pid, err := strconv.Atoi(h.Info.Pid)
 	if err != nil {
 		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.Info.Pid))
-		h.stateLock.Lock()
-		h.State = drivers.TaskStateExited
+		// h.stateLock.Lock()
+		h.exitResult = &drivers.ExitResult{}
 		h.exitResult.ExitCode = 127
 		h.exitResult.Signal = 0
 		h.completedAt = time.Now()
-		h.stateLock.Unlock()
+		h.State = drivers.TaskStateExited
+		// h.stateLock.Unlock()
 		return
 	}
 
 	for {
 		time.Sleep(containerMonitorIntv)
-
 		process, err := os.FindProcess(int(pid))
 		if err != nil {
 			break
@@ -109,13 +120,15 @@ func (h *taskHandle) run() {
 		}
 	}
 
-	h.stateLock.Lock()
-	defer h.stateLock.Unlock()
+	// h.stateLock.Lock()
+	// defer h.stateLock.Unlock()
 
-	h.State = drivers.TaskStateExited
+	h.Slot.RemoveNetworking(h.logger)
+	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0
 	h.completedAt = time.Now()
+	h.State = drivers.TaskStateExited
 }
 
 func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
@@ -131,7 +144,7 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 			timer.Reset(interval)
 		}
 
-		h.stateLock.Lock()
+		// h.stateLock.Lock()
 		t := time.Now()
 
 		pid, err := strconv.Atoi(h.Info.Pid)
@@ -161,7 +174,7 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 			// calculate cpu usage percent
 			cs.Percent = h.cpuStatsTotal.Percent(cpuStats.Total() * float64(time.Second))
 		}
-		h.stateLock.Unlock()
+		// h.stateLock.Unlock()
 
 		// update uasge
 		usage := drivers.TaskResourceUsage{
@@ -176,18 +189,8 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 	}
 }
 
-func keysToVal(line string) (string, uint64, error) {
-	tokens := strings.Split(line, " ")
-	if len(tokens) != 2 {
-		return "", 0, fmt.Errorf("line isn't a k/v pair")
-	}
-	key := tokens[0]
-	val, err := strconv.ParseUint(tokens[1], 10, 64)
-	return key, val, err
-}
-
 func (h *taskHandle) shutdown() error {
 	h.MachineInstance.StopVMM()
-	h.Slot.RemoveNetworking(h.logger, h.MachineInstance)
+
 	return nil
 }
