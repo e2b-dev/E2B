@@ -3,11 +3,9 @@ package firevm
 import (
 	"fmt"
 	"net"
-	"os"
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/hashicorp/go-hclog"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
@@ -35,7 +33,7 @@ func CreateNetworking(nodeID string, sessionID string, logger hclog.Logger) (*IP
 	}
 	defer func() {
 		netns.Set(hostNS)
-		defer hostNS.Close()
+		hostNS.Close()
 	}()
 
 	// Create NS for the session
@@ -92,7 +90,7 @@ func CreateNetworking(nodeID string, sessionID string, logger hclog.Logger) (*IP
 
 	vethInHost, err := netlink.LinkByName(ipSlot.VethName())
 	if err != nil {
-		return nil, fmt.Errorf("error finding vpeer %v", err)
+		return nil, fmt.Errorf("error finding veth %v", err)
 	}
 
 	err = netlink.LinkSetUp(vethInHost)
@@ -223,7 +221,7 @@ func CreateNetworking(nodeID string, sessionID string, logger hclog.Logger) (*IP
 	return ipSlot, nil
 }
 
-func (ipSlot *IPSlot) RemoveNetworking(logger hclog.Logger, m *firecracker.Machine) error {
+func (ipSlot *IPSlot) RemoveNetworking(logger hclog.Logger) error {
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
 		logger.Error("Failed to initialize etc hosts handler: %v", err)
@@ -264,12 +262,6 @@ func (ipSlot *IPSlot) RemoveNetworking(logger hclog.Logger, m *firecracker.Machi
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
 		logger.Error("error deleting namespace %v", err)
-	}
-
-	if m != nil {
-		if err := os.Remove(m.Cfg.SocketPath); !os.IsNotExist(err) {
-			logger.Error("error deleting socket %v", err)
-		}
 	}
 
 	err = ipSlot.releaseIPSlot(logger)
