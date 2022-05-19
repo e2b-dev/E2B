@@ -73,17 +73,6 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 }
 
 func (h *taskHandle) run() {
-	go func() {
-		time.Sleep(60 * time.Second)
-
-		// h.stateLock.Lock()
-		h.exitResult.ExitCode = 120
-		h.exitResult.Signal = 0
-		h.completedAt = time.Now()
-		h.State = drivers.TaskStateExited
-		// h.stateLock.Unlock()
-	}()
-
 	// h.stateLock.Lock()
 	// if h.exitResult == nil {
 	// 	h.exitResult = &drivers.ExitResult{}
@@ -110,6 +99,7 @@ func (h *taskHandle) run() {
 
 	for {
 		time.Sleep(containerMonitorIntv)
+
 		process, err := os.FindProcess(int(pid))
 		if err != nil {
 			break
