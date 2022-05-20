@@ -2,6 +2,10 @@ tasks:
   - name: Setup
     init: npm i
 
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+
 github:
   prebuilds:
     branches: true
