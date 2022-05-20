@@ -7,16 +7,15 @@ import (
 	"net/http"
 	"os"
 
-  "github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
-  "github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
-
+	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/handlers"
+	"github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func NewGinServer(apiStore *api.APIStore, port int) *http.Server {
-	swagger, err := api.GetSwagger()
+func NewGinServer(apiStore *APIStore, port int) *http.Server {
+	swagger, err := handlers.GetSwagger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
 		os.Exit(1)
@@ -34,7 +33,7 @@ func NewGinServer(apiStore *api.APIStore, port int) *http.Server {
 	r.Use(middleware.OapiRequestValidator(swagger))
 
 	// We now register our store above as the handler for the interface
-	r = api.RegisterHandlers(r, apiStore)
+	r = handlers.RegisterHandlers(r, apiStore)
 
 	s := &http.Server{
 		Handler: r,
@@ -49,7 +48,7 @@ func main() {
 	// Create an instance of our handler which satisfies the generated interface
 
 	nomad := nomad.InitNomad()
-	apiStore := api.NewAPIStore(nomad)
+	apiStore := NewAPIStore(nomad)
 
 	s := NewGinServer(apiStore, *port)
 	// And we serve HTTP until the world ends.

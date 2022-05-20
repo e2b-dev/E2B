@@ -7,22 +7,47 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/handlers"
 	nomadAPI "github.com/hashicorp/nomad/api"
 )
 
-const SessionsJobName = "firecracker-sessions"
-const SessionsJobFile = SessionsJobName + ".hcl"
+const (
+	SessionsJobName         = "firecracker-sessions"
+	SessionsJobFile         = SessionsJobName + ".hcl"
+	AllocationCheckTimeout  = time.Second * 60
+	AllocationCheckInterval = time.Millisecond * 100
+)
 
-type SessionInfo struct {
-	ClientID  string
-	SessionID string
+func (n *Nomad) GetSessions() ([]*handlers.Session, error) {
+	sessionPrefix := SessionsJobName + "/"
+
+	sessionsJobs, _, err := n.nomadClient.Jobs().PrefixList(sessionPrefix)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to retrieve all sessions %s", err)
+	}
+
+	sessions := []*handlers.Session{}
+
+	for _, job := range sessionsJobs {
+		if job.Status == "running" {
+			allocations, _, err := n.nomadClient.Jobs().Allocations(job.ID, false, &nomadAPI.QueryOptions{})
+			if err != nil {
+				return nil, fmt.Errorf("Failed to retrieve job allocations %s: %v", job.ID, err)
+			}
+			for _, alloc := range allocations {
+				sessions = append(sessions, &handlers.Session{
+					ClientId:  alloc.NodeID[len(sessionPrefix):],
+					SessionId: job.ID,
+				})
+			}
+		}
+	}
+
+	return sessions, nil
 }
 
-func (n *Nomad) GetSessions() ([]*nomadAPI.JobListStub, *nomadAPI.QueryMeta, error) {
-	return n.nomadClient.Jobs().PrefixList(SessionsJobName)
-}
+func (n *Nomad) CreateSession(form *handlers.SessionForm) (*handlers.Session, error) {
 
-func (n *Nomad) CreateSession(codeSnippetID string) (*SessionInfo, error) {
 	tname := path.Join(templatesDir, SessionsJobFile)
 	sessionsJobTemp, err := template.New(SessionsJobFile).Funcs(
 		template.FuncMap{
@@ -40,7 +65,7 @@ func (n *Nomad) CreateSession(codeSnippetID string) (*SessionInfo, error) {
 		CodeSnippetID string
 		SessionID     string
 	}{
-		CodeSnippetID: codeSnippetID,
+		CodeSnippetID: form.CodeSnippetId,
 		SessionID:     sessionID,
 	}
 	var jobDef bytes.Buffer
@@ -58,11 +83,8 @@ func (n *Nomad) CreateSession(codeSnippetID string) (*SessionInfo, error) {
 		return nil, fmt.Errorf("Failed to register 'firecracker-sessions/%s' job: %s", jobVars.SessionID, err)
 	}
 
-	ticker := time.NewTicker(time.Millisecond * 100)
-
-	timeout := time.Second * 120
-
-	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(AllocationCheckInterval)
+	timer := time.NewTimer(AllocationCheckTimeout)
 
 	go func() {
 		<-timer.C
@@ -76,21 +98,21 @@ func (n *Nomad) CreateSession(codeSnippetID string) (*SessionInfo, error) {
 		}
 
 		for _, alloc := range allocs {
-			session := &SessionInfo{
-				ClientID:  alloc.NodeID[:8],
-				SessionID: sessionID,
+			session := &handlers.Session{
+				ClientId:  alloc.NodeID[:8],
+				SessionId: sessionID,
 			}
 			return session, nil
 		}
 	}
 
-	return nil, fmt.Errorf("Cannot retrieve allocations for 'firecracker-sessions/%s' job: Timeout - %s", jobVars.SessionID, timeout.String())
+	return nil, fmt.Errorf("Cannot retrieve allocations for 'firecracker-sessions/%s' job: Timeout - %s", jobVars.SessionID, AllocationCheckTimeout.String())
 }
 
-func (n *Nomad) DeleteSession(sessionID string) (bool, error) {
+func (n *Nomad) DeleteSession(sessionID string) error {
 	_, _, err := n.nomadClient.Jobs().Deregister(SessionsJobName+"/"+sessionID, false, &nomadAPI.WriteOptions{})
 	if err != nil {
-		return false, fmt.Errorf("Cannot delete job 'firecracker-sessions/%s' job: %s", sessionID, err)
+		return fmt.Errorf("Cannot delete job 'firecracker-sessions/%s' job: %s", sessionID, err)
 	}
-	return true, nil
+	return nil
 }

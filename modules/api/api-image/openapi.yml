@@ -34,6 +34,13 @@ components:
           type: array
           items:
             type: string
+    SessionForm:
+      required:
+        - code_snippet_id
+      properties:
+        code_snippet_id:
+          type: string
+          description: Identifier of a code snippet which which is the environment associated
     Session:
       required:
         - session_id
@@ -66,7 +73,7 @@ paths:
     get:
       description: Health check
       responses:
-        "200":
+        200:
           description: Request was successful
   /sessions:
     get:
@@ -74,7 +81,7 @@ paths:
         - sessions
       description: List all sessions
       responses:
-        "200":
+        200:
           description: Successfully returned all sessions
           content:
             application/json:
@@ -83,8 +90,7 @@ paths:
                 items:
                   allOf:
                     - $ref: "#/components/schemas/AnyValue"
-
-        "500":
+        500:
           description: Error listing sessions
           content:
             application/json:
@@ -95,21 +101,26 @@ paths:
       tags:
         - sessions
       description: Create a session on the server
-
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionForm"
       responses:
-        "200":
+        200:
           description: Successfully created a session
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
-
-        "500":
+        500:
           description: Error creating session
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
   /sessions/{session_id}:
     delete:
       tags:
@@ -122,19 +133,44 @@ paths:
             type: string
       description: Delete a session on the server
       responses:
-        "200":
-          description: Successfully deleted a session
+        200:
+          description: Successfully deleted the session
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: "#/components/schemas/Session"
-
-        "500":
+                type: string
+        500:
           description: Error deleting session
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+  /sessions/{session_id}/refresh:
+    put:
+      tags:
+        - sessions
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Refresh the session extending its time to live
+      responses:
+        200:
+          description: Successfully refreshed the session
+          content:
+            text/plain:
+              schema:
+                type: string
+        500:
+          description: Error refreshing the session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /env:
     post:
       tags:
