@@ -1,4 +1,4 @@
-job "firecracker-envs/{{ .SessionID }}" {
+job "firecracker-sessions/{{ .SessionID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
