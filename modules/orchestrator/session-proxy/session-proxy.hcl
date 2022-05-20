@@ -55,11 +55,6 @@ job "session-proxy" {
 
     task "session-proxy" {
       driver = "docker"
-
-      meta {
-        label1 = "task"
-      }
-
       config {
         image = "nginx"
         network_mode = "host"
