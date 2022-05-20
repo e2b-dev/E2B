@@ -32,9 +32,7 @@ yarn-error.log*
 .yarn-integrity
 
 # generate output
-lib
+dist
 
 # compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
-
-example/node_modules

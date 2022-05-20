@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "lib",
+    "outDir": "dist",
     "target": "es6",
     "lib": [
       "dom",
@@ -19,15 +19,13 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "declaration": true,
-    "jsx": "react-jsx"
   },
   "include": [
     "src"
   ],
   "exclude": [
     "node_modules",
-    "lib",
-    "examples",
+    "dist",
     "rollup.config.js",
   ]
 }
