@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/handlers"
 	"github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
@@ -43,6 +45,8 @@ func NewGinServer(apiStore *APIStore, port int) *http.Server {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	var port = flag.Int("port", 80, "Port for test HTTP server")
 	flag.Parse()
 	// Create an instance of our handler which satisfies the generated interface

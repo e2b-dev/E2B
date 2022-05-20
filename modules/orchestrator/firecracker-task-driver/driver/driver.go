@@ -58,27 +58,8 @@ var (
 	// taskConfigSpec is the hcl specification for the driver config section of
 	// a task within a job. It is returned in the TaskConfigSchema RPC
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"MemFile":       hclspec.NewAttr("MemFile", "string", false),
-		"Snapshot":      hclspec.NewAttr("Snapshot", "string", false),
 		"SessionID":     hclspec.NewAttr("SessionID", "string", false),
 		"CodeSnippetID": hclspec.NewAttr("CodeSnippetID", "string", false),
-		"KernelImage":   hclspec.NewAttr("KernelImage", "string", false),
-		"BootOptions":   hclspec.NewAttr("BootOptions", "string", false),
-		"BootDisk":      hclspec.NewAttr("BootDisk", "string", false),
-		"Disks":         hclspec.NewAttr("Disks", "list(string)", false),
-		"Network":       hclspec.NewAttr("Network", "string", false),
-		"Vcpus":         hclspec.NewAttr("Vcpus", "number", false),
-		"Cputype":       hclspec.NewAttr("Cputype", "string", false),
-		"Mem":           hclspec.NewAttr("Mem", "number", false),
-		"Firecracker":   hclspec.NewAttr("Firecracker", "string", false),
-		"Log":           hclspec.NewAttr("Log", "string", false),
-		"DisableHt":     hclspec.NewAttr("DisableHt", "bool", false),
-		"Nic": hclspec.NewBlock("Nic", false, hclspec.NewObject(map[string]*hclspec.Spec{
-			"Ip":          hclspec.NewAttr("Ip", "string", true),
-			"Gateway":     hclspec.NewAttr("Gateway", "string", true),
-			"Interface":   hclspec.NewAttr("Interface", "string", true),
-			"Nameservers": hclspec.NewAttr("Nameservers", "list(string)", true),
-		})),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -128,22 +109,8 @@ type Nic struct {
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
-	MemFile       string   `codec:"MemFile"`
-	Snapshot      string   `codec:"Snapshot"`
 	SessionID     string   `codec:"SessionID"`
 	CodeSnippetID string   `codec:"CodeSnippetID"`
-	KernelImage   string   `codec:"KernelImage"`
-	BootOptions   string   `codec:"BootOptions"`
-	BootDisk      string   `codec:"BootDisk"`
-	Disks         []string `codec:"Disks"`
-	Network       string   `codec:"Network"`
-	Nic           Nic      `codec:"Nic"`
-	Vcpus         uint64   `codec:"Vcpus"`
-	Cputype       string   `codec:"Cputype"`
-	Mem           uint64   `codec:"Mem"`
-	Firecracker   string   `codec:"Firecracker"`
-	Log           string   `code:"Log"`
-	DisableHt     bool     `code:"DisableHt"`
 }
 
 // TaskState is the state which is encoded in the handle returned in

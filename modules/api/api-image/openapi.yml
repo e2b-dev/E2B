@@ -52,6 +52,14 @@ components:
         client_id:
           type: string
           description: Identifier of the client
+    Status:
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: Status of the operation
+
     Error:
       required:
         - code
@@ -108,12 +116,18 @@ paths:
             schema:
               $ref: "#/components/schemas/SessionForm"
       responses:
-        200:
+        201:
           description: Successfully created a session
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
+        400:
+          description: Bad request body format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           description: Error creating session
           content:
@@ -133,14 +147,10 @@ paths:
             type: string
       description: Delete a session on the server
       responses:
-        200:
+        204:
           description: Successfully deleted the session
-          content:
-            text/plain:
-              schema:
-                type: string
         500:
-          description: Error deleting session
+          description: Error deleting the session
           content:
             application/json:
               schema:
@@ -158,12 +168,8 @@ paths:
             type: string
       description: Refresh the session extending its time to live
       responses:
-        200:
+        204:
           description: Successfully refreshed the session
-          content:
-            text/plain:
-              schema:
-                type: string
         500:
           description: Error refreshing the session
           content:

@@ -12,6 +12,7 @@ func (p *APIStore) GetSessions(c *gin.Context) {
 	sessions, err := p.nomad.GetSessions()
 
 	if err != nil {
+		fmt.Printf("Error in listing sessions: %v", err)
 		sendAPIStoreError(c, http.StatusInternalServerError, "Error listing sessions")
 		return
 	}
@@ -29,6 +30,7 @@ func (p *APIStore) PostSessions(c *gin.Context) {
 	session, err := p.nomad.CreateSession(&newSession)
 
 	if err != nil {
+		fmt.Printf("Error in creating: %v", err)
 		sendAPIStoreError(c, http.StatusInternalServerError, "Error creating session")
 		return
 	}
@@ -42,22 +44,22 @@ func (p *APIStore) DeleteSessionsSessionId(c *gin.Context, id string) {
 	err := p.nomad.DeleteSession(id)
 
 	if err != nil {
+		fmt.Printf("Error deleting session: %v", err)
 		sendAPIStoreError(c, http.StatusInternalServerError, "Error deleting session")
 		return
 	}
 
-	c.String(http.StatusOK, "Session delete successful")
+	c.Status(http.StatusNoContent)
 }
 
 func (p *APIStore) PutSessionsSessionIdRefresh(c *gin.Context, id string) {
-	err := p.nomad.DeleteSession(id)
-
+	err := p.sessionsCache.Refresh(id)
 	if err != nil {
-		sendAPIStoreError(c, http.StatusInternalServerError, "Error deleting session")
+		fmt.Printf("Error in refreshing session: %v", err)
+		msg := fmt.Sprintf("Error refreshing session - session '%s' was not found", id)
+		sendAPIStoreError(c, http.StatusNotFound, msg)
 		return
 	}
 
-	p.sessionsCache.Refresh(id)
-
-	c.String(http.StatusOK, "Session re successful")
+	c.Status(http.StatusNoContent)
 }

@@ -1,4 +1,4 @@
-job "firecracker-sessions/{{ .SessionID }}" {
+job "{{ .SessionJobName }}/{{ .SessionID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
@@ -15,7 +15,7 @@ job "firecracker-sessions/{{ .SessionID }}" {
       mode = "fail"
     }
 
-    task "start" {
+    task {{ .FCTaskName }} {
       driver = "firecracker-task-driver"
 
       env {

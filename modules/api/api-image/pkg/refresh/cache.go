@@ -32,7 +32,8 @@ func (r *SessionCache) Refresh(sessionID string) error {
 	return nil
 }
 
-// We will need to use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
+// We will need to either use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
+// We are retrieving the tasks from Nomad now
 func NewSessionCache(handleDeleteSession func(sessionID string) error, initialSessions []*handlers.Session) *SessionCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, bool](SessionExpiration),
