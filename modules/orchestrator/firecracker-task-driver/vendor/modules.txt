@@ -10,7 +10,6 @@ github.com/asaskevich/govalidator
 github.com/container-storage-interface/spec/lib/go/csi
 # github.com/containerd/console v1.0.2
 ## explicit
-github.com/containerd/console
 # github.com/containerd/fifo v1.0.0
 github.com/containerd/fifo
 # github.com/containernetworking/cni v1.1.0
