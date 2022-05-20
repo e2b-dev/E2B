@@ -12,7 +12,6 @@ tags:
   - name: envevals
     description: Status of the job building the environment
 
-
 components:
   #securitySchemes:
   #  ApiKeyAuth: # Arbitrary name for the security scheme
@@ -20,7 +19,6 @@ components:
   #    in: query # Can be 'header', 'query' or 'cookie'
   #    name: API_KEY # Name of the header, query parameter or cookie
   schemas:
-    AnyValue: {}
     NewEnvironment:
       type: object
       required:
@@ -39,7 +37,7 @@ components:
             type: string
     Environment:
       allOf:
-        - $ref: '#/components/schemas/NewEnvironment'
+        - $ref: "#/components/schemas/NewEnvironment"
         - type: object
           required:
             - id
@@ -80,13 +78,25 @@ components:
       #      - codeSnippetID
       #      - r
 
+    NewSession:
+      required:
+        - codeSnippetID
+      properties:
+        codeSnippetID:
+          type: string
+          description: Identifier of a code snippet which which is the environment associated
     Session:
       required:
-        - session_id
+        - sessionID
+        - clientID
       properties:
-        session_id:
+        sessionID:
           type: string
           description: Identifier of the session
+        clientID:
+          type: string
+          description: Identifier of the client
+
     Error:
       required:
         - code
@@ -101,14 +111,14 @@ components:
           description: Error
 
 #security:
-  #- ApiKeyAuth: [] # Use the same name as under securitySchemes
+#- ApiKeyAuth: [] # Use the same name as under securitySchemes
 
 paths:
   /:
     get:
       description: Health check
       responses:
-        '200':
+        200:
           description: Request was successful
   /sessions:
     get:
@@ -116,7 +126,7 @@ paths:
         - sessions
       description: List all sessions
       responses:
-        '200':
+        200:
           description: Successfully returned all sessions
           content:
             application/json:
@@ -124,59 +134,85 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: '#/components/schemas/AnyValue'
-
-        '500':
+                    - $ref: "#/components/schemas/Session"
+        500:
           description: Error listing sessions
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
     post:
       tags:
         - sessions
       description: Create a session on the server
-
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSession"
       responses:
-        '200':
+        201:
           description: Successfully created a session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
-
-        '500':
+                $ref: "#/components/schemas/Session"
+        400:
+          description: Bad request body format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
           description: Error creating session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-  /sessions/{session_id}:
+                $ref: "#/components/schemas/Error"
+
+  /sessions/{sessionID}:
     delete:
       tags:
         - sessions
       parameters:
-        - name: session_id
+        - name: sessionID
           in: path
           required: true
           schema:
             type: string
       description: Delete a session on the server
       responses:
-        '200':
-          description: Successfully deleted a session
+        204:
+          description: Successfully deleted the session
+        500:
+          description: Error deleting the session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
+                $ref: "#/components/schemas/Error"
 
-        '500':
-          description: Error deleting session
+  /sessions/{sessionID}/refresh:
+    put:
+      tags:
+        - sessions
+      parameters:
+        - name: sessionID
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Refresh the session extending its time to live
+      responses:
+        204:
+          description: Successfully refreshed the session
+        500:
+          description: Error refreshing the session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /envs:
     post:
@@ -188,7 +224,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NewEnvironment'
+                $ref: "#/components/schemas/NewEnvironment"
   /envs/{codeSnippetID}:
     get:
       tags:
@@ -204,7 +240,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Environment'
+                $ref: "#/components/schemas/Environment"
   /envs/{codeSnippetID}/status:
     post:
       tags:
@@ -220,5 +256,4 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EnvironmentStatus'
-
+              $ref: "#/components/schemas/EnvironmentStatus"

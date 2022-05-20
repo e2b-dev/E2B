@@ -8,3 +8,7 @@ build:
 
 publish-mkfcenv:
 	./publish-mkfcenv.sh
+
+run:
+	GOOS=linux go build -a -o bin/api ./cmd
+	NOMAD_ADDRESS=http://34.149.1.201 ./bin/api --port 3000

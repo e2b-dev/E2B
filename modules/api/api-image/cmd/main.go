@@ -4,18 +4,19 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
-  "github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
-  "github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
-
+	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
+	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/handlers"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func NewGinServer(apiStore *api.APIStore, port int) *http.Server {
+func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
@@ -44,12 +45,13 @@ func NewGinServer(apiStore *api.APIStore, port int) *http.Server {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	var port = flag.Int("port", 80, "Port for test HTTP server")
 	flag.Parse()
 	// Create an instance of our handler which satisfies the generated interface
 
-	nomad := nomad.InitNomad()
-	apiStore := api.NewAPIStore(nomad)
+	apiStore := handlers.NewAPIStore()
 
 	s := NewGinServer(apiStore, *port)
 	// And we serve HTTP until the world ends.

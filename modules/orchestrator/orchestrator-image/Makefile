@@ -2,7 +2,7 @@ init:
 	packer init -upgrade .
 
 build:
-	packer build -force .
+	packer build .
 
 format:
 	packer fmt .

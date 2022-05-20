@@ -4,7 +4,6 @@ image:
 vscode:
   extensions:
     - 42Crunch.vscode-openapi
-    - hashicorp.terraform
 
 tasks:
   - name: Setup tools
