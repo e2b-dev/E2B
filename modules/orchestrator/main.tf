@@ -31,9 +31,9 @@ module "client_cluster" {
   image_family = var.client_image_family
 
   gcp_project_id = var.gcp_project_id
-  network_name = var.network_name
+  network_name   = var.network_name
 
-  client_proxy_port = var.client_proxy_port
+  client_proxy_port        = var.client_proxy_port
   client_proxy_health_port = var.client_proxy_health_port
 }
 
@@ -60,9 +60,9 @@ resource "google_compute_firewall" "orchstrator_firewall_ingress" {
   allow {
     protocol = "all"
   }
-  direction   = "INGRESS"
+  direction = "INGRESS"
   # source_tags = [var.cluster_tag_name]
-  target_tags = [var.cluster_tag_name]
+  target_tags   = [var.cluster_tag_name]
   source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
 }
 
@@ -80,16 +80,6 @@ provider "nomad" {
   address = "http://${module.server_cluster.server_proxy_ip}"
 }
 
-module "firecracker_sessions" {
-  source = "./firecracker-sessions"
-
-  depends_on = [
-    module.server_cluster
-  ]
-
-  gcp_zone = var.gcp_zone
-}
-
 module "session_proxy" {
   source = "./session-proxy"
 
@@ -97,8 +87,8 @@ module "session_proxy" {
     module.server_cluster
   ]
 
-  client_cluster_size = var.client_cluster_size
-  gcp_zone = var.gcp_zone
+  client_cluster_size        = var.client_cluster_size
+  gcp_zone                   = var.gcp_zone
   session_proxy_service_name = var.session_proxy_service_name
 
   session_proxy_port = var.session_proxy_port
@@ -111,9 +101,9 @@ module "client_proxy" {
     module.server_cluster,
     module.session_proxy,
   ]
-  gcp_zone = var.gcp_zone
+  gcp_zone                   = var.gcp_zone
   session_proxy_service_name = var.session_proxy_service_name
 
-  client_proxy_port = var.client_proxy_port
+  client_proxy_port        = var.client_proxy_port
   client_proxy_health_port = var.client_proxy_health_port
 }

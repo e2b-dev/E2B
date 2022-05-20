@@ -23,11 +23,8 @@ const (
 
 // Defines values for NewEnvironmentRuntime.
 const (
-	NewEnvironmentRuntimeNodejs NewEnvironmentRuntime = "nodejs"
+	NewEnvironmentRuntimeNodejs NewEnvironmentRuntime = "Nodejs"
 )
-
-// AnyValue defines model for AnyValue.
-type AnyValue interface{}
 
 // Environment defines model for Environment.
 type Environment struct {
@@ -63,14 +60,29 @@ type NewEnvironment struct {
 // NewEnvironmentRuntime defines model for NewEnvironment.Runtime.
 type NewEnvironmentRuntime string
 
+// NewSession defines model for NewSession.
+type NewSession struct {
+	// Identifier of a code snippet which which is the environment associated
+	CodeSnippetID string `json:"codeSnippetID"`
+}
+
 // Session defines model for Session.
 type Session struct {
+	// Identifier of the client
+	ClientID string `json:"clientID"`
+
 	// Identifier of the session
-	SessionId string `json:"session_id"`
+	SessionID string `json:"sessionID"`
 }
 
 // PostEnvsCodeSnippetIDStatusJSONBody defines parameters for PostEnvsCodeSnippetIDStatus.
 type PostEnvsCodeSnippetIDStatusJSONBody EnvironmentStatus
 
+// PostSessionsJSONBody defines parameters for PostSessions.
+type PostSessionsJSONBody NewSession
+
 // PostEnvsCodeSnippetIDStatusJSONRequestBody defines body for PostEnvsCodeSnippetIDStatus for application/json ContentType.
 type PostEnvsCodeSnippetIDStatusJSONRequestBody PostEnvsCodeSnippetIDStatusJSONBody
+
+// PostSessionsJSONRequestBody defines body for PostSessions for application/json ContentType.
+type PostSessionsJSONRequestBody PostSessionsJSONBody
