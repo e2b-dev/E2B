@@ -9,6 +9,7 @@ RUN_UUID="$1"
 SCRIPTDIR="$2"
 DOCKERFILE="$3"
 CODE_SNIPPET_ID="$4"
+ALLOC_DIR="$5"
 
 set -euo pipefail
 
@@ -29,6 +30,11 @@ fi
 
 if [ -z "$CODE_SNIPPET_ID" ]; then
   echo "ERROR: Expected code snippet ID as the fourth argument"
+  exit 1
+fi
+
+if [ -z "$ALLOC_DIR" ]; then
+  echo "ERROR: Expected alloc dir as the fifth argument"
   exit 1
 fi
 
@@ -193,6 +199,8 @@ kill $FC_PID
 delns
 mv_env_files
 del_build_dir
+
+touch ${ALLOC_DIR}/main-finished
 
 echo "==== Output ==========================================================================================="
 echo "| Code snippet ID:  $CODE_SNIPPET_ID"

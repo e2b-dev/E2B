@@ -33,8 +33,29 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
 
       config {
         command = "local/mkfcenv/mkfcenv.sh"
-        args = ["${NOMAD_META_RUN_UUID}", "local/mkfcenv", "{{ escapeNewLines .Dockerfile }}", "{{ .CodeSnippetID }}"]
+        args = [
+          "${NOMAD_META_RUN_UUID}",
+          "local/mkfcenv",
+          "{{ escapeNewLines .Dockerfile }}",
+          "{{ .CodeSnippetID }}",
+          "${NOMAD_ALLOC_DIR}",
+          # TODO: Add user's API key
+        ]
       }
+      #config {
+      #  network_mode = "host"
+      #  volumes = [
+      #    "/usr/bin:/host"
+      #    "/mnt/disks/fc-envs:/mnt/disks/fc-envs",
+      #  ]
+      #}
+    }
+
+    task "cleanup" {
+      lifecycle {
+        hook = "poststop"
+      }
+      driver = "raw_exec"
     }
   }
 }

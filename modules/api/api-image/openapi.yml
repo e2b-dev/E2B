@@ -7,34 +7,76 @@ info:
 tags:
   - name: sessions
     description: Managing VM sessions
-  - name: env
+  - name: envs
     description: Environment for VM
+  - name: envevals
+    description: Status of the job building the environment
 
 
 components:
   #securitySchemes:
   #  ApiKeyAuth: # Arbitrary name for the security scheme
   #    type: apiKey
-  #    in: query # Can be "header", "query" or "cookie"
+  #    in: query # Can be 'header', 'query' or 'cookie'
   #    name: API_KEY # Name of the header, query parameter or cookie
   schemas:
     AnyValue: {}
-    Environment:
+    NewEnvironment:
+      type: object
       required:
-        - code_snippet_id
+        - codeSnippetID
         - runtime
         - deps
       properties:
-        code_snippet_id:
+        codeSnippetID:
           type: string
-          description: Identifier of a code snippet which which is the environment associated
         runtime:
           type: string
           enum: [nodejs]
-        deps: # ["dep1", "dep2"]
+        deps:
           type: array
           items:
             type: string
+    Environment:
+      allOf:
+        - $ref: '#/components/schemas/NewEnvironment'
+        - type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              enum: [building, failed, done]
+    EnvironmentStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [building, failed, done]
+
+      #NewEnvironment:
+      #  required:
+      #    - codeSnippetID
+      #    - runtime
+      #    - deps
+      #  properties:
+      #    codeSnippetID:
+      #      type: string
+      #      description: Identifier of a code snippet which which is the environment associated
+      #    runtime:
+      #      type: string
+      #      enum: [nodejs]
+      #    deps: # ['dep1', 'dep2']
+      #      type: array
+      #      items:
+      #        type: string
+      #  Environment:
+      #    required:
+      #      - codeSnippetID
+      #      - r
+
     Session:
       required:
         - session_id
@@ -63,7 +105,7 @@ paths:
     get:
       description: Health check
       responses:
-        "200":
+        '200':
           description: Request was successful
   /sessions:
     get:
@@ -71,7 +113,7 @@ paths:
         - sessions
       description: List all sessions
       responses:
-        "200":
+        '200':
           description: Successfully returned all sessions
           content:
             application/json:
@@ -79,14 +121,14 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: "#/components/schemas/AnyValue"
+                    - $ref: '#/components/schemas/AnyValue'
 
-        "500":
+        '500':
           description: Error listing sessions
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
 
     post:
       tags:
@@ -94,19 +136,19 @@ paths:
       description: Create a session on the server
 
       responses:
-        "200":
+        '200':
           description: Successfully created a session
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Session"
+                $ref: '#/components/schemas/Session'
 
-        "500":
+        '500':
           description: Error creating session
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
   /sessions/{session_id}:
     delete:
       tags:
@@ -119,27 +161,61 @@ paths:
             type: string
       description: Delete a session on the server
       responses:
-        "200":
+        '200':
           description: Successfully deleted a session
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Session"
+                $ref: '#/components/schemas/Session'
 
-        "500":
+        '500':
           description: Error deleting session
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-  /env:
+                $ref: '#/components/schemas/Error'
+
+  /envs:
     post:
       tags:
-        - env
+        - envs
       responses:
         200:
           description: Successfully created an environment
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Environment"
+                $ref: '#/components/schemas/NewEnvironment'
+  /envs/{envID}:
+    get:
+      tags:
+        - envs
+      parameters:
+        - name: envID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Environment'
+  /envs/{envID}/status:
+    post:
+      tags:
+        - envs
+      parameters:
+        - name: envID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentStatus'
+

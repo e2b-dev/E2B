@@ -17,8 +17,14 @@ type ServerInterface interface {
 	// (GET /)
 	Get(c *gin.Context)
 
-	// (POST /env)
-	PostEnv(c *gin.Context)
+	// (POST /envs)
+	PostEnvs(c *gin.Context)
+
+	// (GET /envs/{envID})
+	GetEnvsEnvID(c *gin.Context, envID string)
+
+	// (POST /envs/{envID}/status)
+	PostEnvsEnvIDStatus(c *gin.Context, envID string)
 
 	// (GET /sessions)
 	GetSessions(c *gin.Context)
@@ -48,14 +54,56 @@ func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
 	siw.Handler.Get(c)
 }
 
-// PostEnv operation middleware
-func (siw *ServerInterfaceWrapper) PostEnv(c *gin.Context) {
+// PostEnvs operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PostEnv(c)
+	siw.Handler.PostEnvs(c)
+}
+
+// GetEnvsEnvID operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "envID" -------------
+	var envID string
+
+	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter envID: %s", err)})
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.GetEnvsEnvID(c, envID)
+}
+
+// PostEnvsEnvIDStatus operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvsEnvIDStatus(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "envID" -------------
+	var envID string
+
+	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter envID: %s", err)})
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PostEnvsEnvIDStatus(c, envID)
 }
 
 // GetSessions operation middleware
@@ -119,7 +167,11 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 
 	router.GET(options.BaseURL+"/", wrapper.Get)
 
-	router.POST(options.BaseURL+"/env", wrapper.PostEnv)
+	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
+
+	router.GET(options.BaseURL+"/envs/:envID", wrapper.GetEnvsEnvID)
+
+	router.POST(options.BaseURL+"/envs/:envID/status", wrapper.PostEnvsEnvIDStatus)
 
 	router.GET(options.BaseURL+"/sessions", wrapper.GetSessions)
 
