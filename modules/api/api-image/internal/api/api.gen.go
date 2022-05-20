@@ -17,8 +17,8 @@ type ServerInterface interface {
 	// (GET /)
 	Get(c *gin.Context)
 
-	// (POST /env)
-	PostEnv(c *gin.Context)
+	// (POST /envs)
+	PostEnvs(c *gin.Context)
 
 	// (GET /envs/{codeSnippetID})
 	GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
@@ -57,14 +57,14 @@ func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
 	siw.Handler.Get(c)
 }
 
-// PostEnv operation middleware
-func (siw *ServerInterfaceWrapper) PostEnv(c *gin.Context) {
+// PostEnvs operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PostEnv(c)
+	siw.Handler.PostEnvs(c)
 }
 
 // GetEnvsCodeSnippetID operation middleware
@@ -191,7 +191,7 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 
 	router.GET(options.BaseURL+"/", wrapper.Get)
 
-	router.POST(options.BaseURL+"/env", wrapper.PostEnv)
+	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
 
 	router.GET(options.BaseURL+"/envs/:codeSnippetID", wrapper.GetEnvsCodeSnippetID)
 

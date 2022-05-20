@@ -214,7 +214,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /env:
+  /envs:
     post:
       tags:
         - envs

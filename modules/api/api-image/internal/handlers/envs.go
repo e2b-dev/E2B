@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (p *APIStore) PostEnv(c *gin.Context) {
+func (p *APIStore) PostEnvs(c *gin.Context) {
 	// TODO: Check for API token
 
 	var env api.Environment
