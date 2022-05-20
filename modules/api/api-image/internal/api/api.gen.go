@@ -20,11 +20,11 @@ type ServerInterface interface {
 	// (POST /envs)
 	PostEnvs(c *gin.Context)
 
-	// (GET /envs/{envID})
-	GetEnvsEnvID(c *gin.Context, envID string)
+	// (GET /envs/{codeSnippetID})
+	GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
 
-	// (POST /envs/{envID}/status)
-	PostEnvsEnvIDStatus(c *gin.Context, envID string)
+	// (POST /envs/{codeSnippetID}/status)
+	PostEnvsCodeSnippetIDStatus(c *gin.Context, codeSnippetID string)
 
 	// (GET /sessions)
 	GetSessions(c *gin.Context)
@@ -64,17 +64,17 @@ func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 	siw.Handler.PostEnvs(c)
 }
 
-// GetEnvsEnvID operation middleware
-func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
+// GetEnvsCodeSnippetID operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvsCodeSnippetID(c *gin.Context) {
 
 	var err error
 
-	// ------------- Path parameter "envID" -------------
-	var envID string
+	// ------------- Path parameter "codeSnippetID" -------------
+	var codeSnippetID string
 
-	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
+	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter envID: %s", err)})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
 		return
 	}
 
@@ -82,20 +82,20 @@ func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
 		middleware(c)
 	}
 
-	siw.Handler.GetEnvsEnvID(c, envID)
+	siw.Handler.GetEnvsCodeSnippetID(c, codeSnippetID)
 }
 
-// PostEnvsEnvIDStatus operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvsEnvIDStatus(c *gin.Context) {
+// PostEnvsCodeSnippetIDStatus operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetIDStatus(c *gin.Context) {
 
 	var err error
 
-	// ------------- Path parameter "envID" -------------
-	var envID string
+	// ------------- Path parameter "codeSnippetID" -------------
+	var codeSnippetID string
 
-	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
+	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter envID: %s", err)})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
 		return
 	}
 
@@ -103,7 +103,7 @@ func (siw *ServerInterfaceWrapper) PostEnvsEnvIDStatus(c *gin.Context) {
 		middleware(c)
 	}
 
-	siw.Handler.PostEnvsEnvIDStatus(c, envID)
+	siw.Handler.PostEnvsCodeSnippetIDStatus(c, codeSnippetID)
 }
 
 // GetSessions operation middleware
@@ -169,9 +169,9 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 
 	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
 
-	router.GET(options.BaseURL+"/envs/:envID", wrapper.GetEnvsEnvID)
+	router.GET(options.BaseURL+"/envs/:codeSnippetID", wrapper.GetEnvsCodeSnippetID)
 
-	router.POST(options.BaseURL+"/envs/:envID/status", wrapper.PostEnvsEnvIDStatus)
+	router.POST(options.BaseURL+"/envs/:codeSnippetID/status", wrapper.PostEnvsCodeSnippetIDStatus)
 
 	router.GET(options.BaseURL+"/sessions", wrapper.GetSessions)
 

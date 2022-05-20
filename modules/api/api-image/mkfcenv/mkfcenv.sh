@@ -11,6 +11,9 @@ DOCKERFILE="$3"
 CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 
+API_URL="https://orchestration-api-7d2cl2hooq-uc.a.run.app"
+ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
+
 set -euo pipefail
 
 if [ -z "$RUN_UUID" ]; then
@@ -187,6 +190,13 @@ function mv_env_files() {
 function del_build_dir() {
   rm -rf $BUILD_DIR
 }
+
+# TODO: Change state of an environment for the code snippet to building.
+curl $ENVS_ENDPOINT \
+  -X POST \
+  -d '{
+    "state": "Building"
+  }'
 
 mkdirs
 mkrootfs

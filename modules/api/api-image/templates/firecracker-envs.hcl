@@ -51,11 +51,58 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
       #}
     }
 
-    task "cleanup" {
+    task "poststop" {
       lifecycle {
         hook = "poststop"
       }
-      driver = "raw_exec"
+
+      driver = "docker"
+
+      config {
+        image = "alpine/curl:3.14"
+        command = ["/bin/ash"]
+        args = [
+          "-c",
+          # TODO: Add user's API key
+          "local/poststop.sh {{ .CodeSnippetID }}",
+        ]
+      }
+
+      template {
+        data = <<EOT
+#!/bin/ash
+
+CODE_SNIPPET_ID="$1"
+
+set -euo pipefail
+
+if [ -z "$CODE_SNIPPET_ID" ]; then
+  echo "ERROR: Expected code snippet ID as the first argument"
+  exit 1
+fi
+
+API_URL="https://orchestration-api-7d2cl2hooq-uc.a.run.app"
+ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
+
+# Main didn't finish successfully.
+if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
+  # TODO: Set env status
+  curl $ENVS_ENDPOINT \
+    -X POST \
+    -d '{
+      "state": "Failed"
+    }'
+  exit 2
+fi
+
+# Main finished successfully.
+curl $ENVS_ENDPOINT \
+  -X POST \
+  -d '{
+    "state": "Done"
+  }'
+EOT
+      }
     }
   }
 }

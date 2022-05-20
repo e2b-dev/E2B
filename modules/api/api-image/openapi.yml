@@ -32,7 +32,7 @@ components:
           type: string
         runtime:
           type: string
-          enum: [nodejs]
+          enum: [Nodejs]
         deps:
           type: array
           items:
@@ -42,11 +42,14 @@ components:
         - $ref: '#/components/schemas/NewEnvironment'
         - type: object
           required:
+            - id
             - status
           properties:
+            id:
+              type: string
             status:
               type: string
-              enum: [building, failed, done]
+              enum: [Building, Failed, Done]
     EnvironmentStatus:
       type: object
       required:
@@ -54,7 +57,7 @@ components:
       properties:
         status:
           type: string
-          enum: [building, failed, done]
+          enum: [Building, Failed, Done]
 
       #NewEnvironment:
       #  required:
@@ -186,12 +189,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NewEnvironment'
-  /envs/{envID}:
+  /envs/{codeSnippetID}:
     get:
       tags:
         - envs
       parameters:
-        - name: envID
+        - name: codeSnippetID
           in: path
           required: true
           schema:
@@ -202,12 +205,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Environment'
-  /envs/{envID}/status:
+  /envs/{codeSnippetID}/status:
     post:
       tags:
         - envs
       parameters:
-        - name: envID
+        - name: codeSnippetID
           in: path
           required: true
           schema:

@@ -5,20 +5,20 @@ package api
 
 // Defines values for EnvironmentStatus.
 const (
-	EnvironmentStatusBuilding EnvironmentStatus = "building"
+	EnvironmentStatusBuilding EnvironmentStatus = "Building"
 
-	EnvironmentStatusDone EnvironmentStatus = "done"
+	EnvironmentStatusDone EnvironmentStatus = "Done"
 
-	EnvironmentStatusFailed EnvironmentStatus = "failed"
+	EnvironmentStatusFailed EnvironmentStatus = "Failed"
 )
 
 // Defines values for EnvironmentStatusStatus.
 const (
-	EnvironmentStatusStatusBuilding EnvironmentStatusStatus = "building"
+	EnvironmentStatusStatusBuilding EnvironmentStatusStatus = "Building"
 
-	EnvironmentStatusStatusDone EnvironmentStatusStatus = "done"
+	EnvironmentStatusStatusDone EnvironmentStatusStatus = "Done"
 
-	EnvironmentStatusStatusFailed EnvironmentStatusStatus = "failed"
+	EnvironmentStatusStatusFailed EnvironmentStatusStatus = "Failed"
 )
 
 // Defines values for NewEnvironmentRuntime.
@@ -34,6 +34,7 @@ type Environment struct {
 	// Embedded struct due to allOf(#/components/schemas/NewEnvironment)
 	NewEnvironment `yaml:",inline"`
 	// Embedded fields due to inline allOf schema
+	Id     string            `json:"id"`
 	Status EnvironmentStatus `json:"status"`
 }
 
@@ -68,8 +69,8 @@ type Session struct {
 	SessionId string `json:"session_id"`
 }
 
-// PostEnvsEnvIDStatusJSONBody defines parameters for PostEnvsEnvIDStatus.
-type PostEnvsEnvIDStatusJSONBody EnvironmentStatus
+// PostEnvsCodeSnippetIDStatusJSONBody defines parameters for PostEnvsCodeSnippetIDStatus.
+type PostEnvsCodeSnippetIDStatusJSONBody EnvironmentStatus
 
-// PostEnvsEnvIDStatusJSONRequestBody defines body for PostEnvsEnvIDStatus for application/json ContentType.
-type PostEnvsEnvIDStatusJSONRequestBody PostEnvsEnvIDStatusJSONBody
+// PostEnvsCodeSnippetIDStatusJSONRequestBody defines body for PostEnvsCodeSnippetIDStatus for application/json ContentType.
+type PostEnvsCodeSnippetIDStatusJSONRequestBody PostEnvsCodeSnippetIDStatusJSONBody
