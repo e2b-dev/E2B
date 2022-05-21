@@ -10,16 +10,6 @@ import (
 	"github.com/hashicorp/nomad/api"
 )
 
-const (
-  templatesDir = "templates"
-)
-
-func escapeNewLines(input string) string {
-  // HCL doesn't allow newlines in strings. We have to escape them.
-  return strings.Replace(input, "\n", "\\\\n", -1)
-}
-
-
 //func (n *Nomad) CreateEnvironment(codeSnippetID, dockerfile string) (*api.JobDispatchResponse, *api.WriteMeta, error) {
 func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string, deps []string) (string, error) {
 	dockerfileName := fmt.Sprintf("%s.Dockerfile", runtime)
