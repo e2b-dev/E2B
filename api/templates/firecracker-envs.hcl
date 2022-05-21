@@ -42,13 +42,6 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
           # TODO: Add user's API key
         ]
       }
-      #config {
-      #  network_mode = "host"
-      #  volumes = [
-      #    "/usr/bin:/host"
-      #    "/mnt/disks/fc-envs:/mnt/disks/fc-envs",
-      #  ]
-      #}
     }
 
     task "poststop" {
