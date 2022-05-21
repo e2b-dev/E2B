@@ -24,15 +24,15 @@ FC task driver is a submodule made from https://github.com/devbookhq/firecracker
 
 The subtree commands you need for controling this repo are:
 ```bash
-git subtree add --prefix modules/orchestrator/firecracker-task-driver https://github.com/devbookhq/firecracker-task-driver.git master
+git subtree add --prefix modules/cluster/disk-image/firecracker-task-driver https://github.com/devbookhq/firecracker-task-driver.git master
 ```
 
 ```bash
-git subtree pull --prefix modules/orchestrator/firecracker-task-driver https://github.com/devbookhq/firecracker-task-driver.git master
+git subtree pull --prefix modules/cluster/disk-image/firecracker-task-driver https://github.com/devbookhq/firecracker-task-driver.git master
 ```
 
 ```bash
-git subtree push --prefix modules/orchestrator/firecracker-task-driver https://github.com/devbookhq/firecracker-task-driver.git master
+git subtree push --prefix modules/cluster/disk-image/firecracker-task-driver https://github.com/devbookhq/firecracker-task-driver.git master
 ```
 
 #### shared
