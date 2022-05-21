@@ -1,6 +1,0 @@
-bin
-README.md
-.gitignore
-.dockerignore
-Dockerfile
-openapi.yml
