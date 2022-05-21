@@ -1,6 +1,7 @@
 login-gcloud:
 	gcloud auth application-default login
 	echo "export GOOGLE_APPLICATION_CREDENTIALS=/home/gitpod/.config/gcloud/application_default_credentials.json" >>  ~/.bashrc
+	# gcloud auth login
 
 init-infrastructure:
 	terraform init -input=false
@@ -13,25 +14,19 @@ deploy-infrastructure:
 	terraform apply -auto-approve -input=false -compact-warnings
 
 build-api-image:
-	$(MAKE) -C modules/api/api-image build
+	$(MAKE) -C api build
 
 generate-api-image:
-	$(MAKE) -C modules/api/api-image generate
+	$(MAKE) -C api generate
 
-init-orchestrator-image:
-	$(MAKE) -C modules/orchestrator/orchestrator-image init
+init-cluster-image:
+	$(MAKE) -C cluster/disk-image init
 
-build-orchestrator-image:
-	$(MAKE) -C modules/orchestrator/orchestrator-image build
+build-cluster-image:
+	$(MAKE) -C cluster/disk-image build
 
-format-orchestrator-image:
-	$(MAKE) -C modules/orchestrator/orchestrator-image format
-
-init-firecracker-task-driver:
-	$(MAKE) -C modules/orchestrator/firecracker-task-driver init
-
-build-firecracker-task-driver:
-	$(MAKE) -C modules/orchestrator/firecracker-task-driver build
+format-cluster-image:
+	$(MAKE) -C cluster/disk-image format
 
 publish-mkfcenv-scripts:
-	$(MAKE) -C modules/api/api-image publish-mkfcenv
+	$(MAKE) -C api publish-mkfcenv

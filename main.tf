@@ -4,7 +4,15 @@ terraform {
     bucket = "devbook-terraform-state"
     prefix = "terraform/orchestration/state"
   }
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "2.16.0"
+    }
+  }
 }
+
+provider "docker" {}
 
 provider "google-beta" {
   project = var.gcp_project_id
@@ -18,9 +26,64 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
-module "orchestrator" {
-  source = "./modules/orchestrator"
+module "cluster" {
+  source = "./cluster"
 
   gcp_project_id = var.gcp_project_id
-  gcp_zone       = var.gcp_zone
+
+  server_cluster_size = var.server_cluster_size
+  client_cluster_size = var.client_cluster_size
+
+  server_machine_type = var.server_machine_type
+  client_machine_type = var.client_machine_type
+
+  session_proxy_service_name = var.session_proxy_service_name
+
+  session_proxy_port       = var.session_proxy_port
+  client_proxy_health_port = var.client_proxy_health_port
+  client_proxy_port        = var.client_proxy_port
+  api_port                 = var.api_port
+}
+
+provider "nomad" {
+  address = "http://${module.cluster.server_proxy_ip}"
+}
+
+module "session_proxy" {
+  source = "./session-proxy"
+
+  depends_on = [
+    module.cluster,
+  ]
+
+  client_cluster_size        = var.client_cluster_size
+  gcp_zone                   = var.gcp_zone
+  session_proxy_service_name = var.session_proxy_service_name
+
+  session_proxy_port = var.session_proxy_port
+}
+
+module "client_proxy" {
+  source = "./client-proxy"
+
+  depends_on = [
+    module.cluster,
+    module.session_proxy,
+  ]
+  gcp_zone                   = var.gcp_zone
+  session_proxy_service_name = var.session_proxy_service_name
+
+  client_proxy_port        = var.client_proxy_port
+  client_proxy_health_port = var.client_proxy_health_port
+}
+
+module "api" {
+  source = "./api"
+
+  depends_on = [
+    module.cluster,
+  ]
+  gcp_zone = var.gcp_zone
+
+  api_port = var.api_port
 }
