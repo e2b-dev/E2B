@@ -21,6 +21,7 @@ resource "nomad_job" "api" {
       gcp_zone        = var.gcp_zone
       api_port_number = var.api_port.port
       api_port_name   = var.api_port.name
+      nomad_address   = var.nomad_address
       image_name      = data.docker_image.latest.repo_digest
     }
   }

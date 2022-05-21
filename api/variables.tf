@@ -2,6 +2,10 @@ variable "gcp_zone" {
   type = string
 }
 
+variable "nomad_address" {
+  type = string
+}
+
 variable "api_port" {
   type = object({
     name        = string

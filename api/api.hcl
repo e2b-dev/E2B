@@ -14,6 +14,10 @@ variable "api_port_number" {
   type = number
 }
 
+variable "nomad_address" {
+  type = string
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -33,6 +37,11 @@ job "orchestration-api" {
 
     task "start" {
       driver = "docker"
+
+      env {
+        NOMAD_ADDRESS = var.nomad_address
+      }
+
       config {
         image = var.image_name
         ports = [var.api_port_name]

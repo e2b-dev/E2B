@@ -13,7 +13,8 @@ type Nomad struct {
 
 func InitNomad() *Nomad {
 	nomadConfig := api.Config{
-		Address: os.Getenv("NOMAD_ADDRESS"),
+		// Address: "127.0.0.1:4646",
+		Address: "http://" + os.Getenv("NOMAD_ADDRESS"),
 	}
 
 	nomad, err := api.NewClient(&nomadConfig)
