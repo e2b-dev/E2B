@@ -86,7 +86,6 @@ map $http_upgrade $conn_upgrade {
   "websocket" "Upgrade";
 }
 
-
 server {
   listen 3003;
   # The IP addresses of sessions are saved in the /etc/hosts like so:
@@ -104,7 +103,7 @@ server {
 
   location / {
     if ($dbk_session_id = "") {
-      return 400 "Unsupported domain";
+      return 400 "Unsupported session domain";
     }
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
   }
