@@ -76,7 +76,7 @@ if [ -z "$CODE_SNIPPET_ID" ]; then
 fi
 
 API_URL="https://ondevbook.com"
-ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
+ENVS_ENDPOINT="${API_URL}/envs/status"
 
 # Main didn't finish successfully.
 if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
@@ -86,7 +86,8 @@ if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
     -H "Content-Type: application/json" \
     -X POST \
     -d '{
-      "status": "Failed"
+      "codeSnippetID": "$CODE_SNIPPET_ID"
+      "state": "Failed"
     }'
 
   # Print to stderr.
@@ -101,7 +102,8 @@ response=$(curl $ENVS_ENDPOINT \
   -H "Content-Type: application/json" \
   -X POST \
   -d '{
-    "status": "Done"
+    "codeSnippetID": "$CODE_SNIPPET_ID"
+    "state": "Done"
   }')
 echo "Response: $response"
 EOT

@@ -20,11 +20,11 @@ type ServerInterface interface {
 	// (POST /envs)
 	PostEnvs(c *gin.Context)
 
+	// (POST /envs/state)
+	PostEnvsState(c *gin.Context)
+
 	// (GET /envs/{codeSnippetID})
 	GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
-
-	// (POST /envs/{codeSnippetID}/status)
-	PostEnvsCodeSnippetIDStatus(c *gin.Context, codeSnippetID string)
 
 	// (GET /sessions)
 	GetSessions(c *gin.Context)
@@ -67,6 +67,16 @@ func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 	siw.Handler.PostEnvs(c)
 }
 
+// PostEnvsState operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvsState(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PostEnvsState(c)
+}
+
 // GetEnvsCodeSnippetID operation middleware
 func (siw *ServerInterfaceWrapper) GetEnvsCodeSnippetID(c *gin.Context) {
 
@@ -86,27 +96,6 @@ func (siw *ServerInterfaceWrapper) GetEnvsCodeSnippetID(c *gin.Context) {
 	}
 
 	siw.Handler.GetEnvsCodeSnippetID(c, codeSnippetID)
-}
-
-// PostEnvsCodeSnippetIDStatus operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetIDStatus(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "codeSnippetID" -------------
-	var codeSnippetID string
-
-	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
-		return
-	}
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-	}
-
-	siw.Handler.PostEnvsCodeSnippetIDStatus(c, codeSnippetID)
 }
 
 // GetSessions operation middleware
@@ -193,9 +182,9 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 
 	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
 
-	router.GET(options.BaseURL+"/envs/:codeSnippetID", wrapper.GetEnvsCodeSnippetID)
+	router.POST(options.BaseURL+"/envs/state", wrapper.PostEnvsState)
 
-	router.POST(options.BaseURL+"/envs/:codeSnippetID/status", wrapper.PostEnvsCodeSnippetIDStatus)
+	router.GET(options.BaseURL+"/envs/:codeSnippetID", wrapper.GetEnvsCodeSnippetID)
 
 	router.GET(options.BaseURL+"/sessions", wrapper.GetSessions)
 
