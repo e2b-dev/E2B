@@ -21,9 +21,9 @@ const (
 	EnvironmentStatusStatusFailed EnvironmentStatusStatus = "Failed"
 )
 
-// Defines values for NewEnvironmentRuntime.
+// Defines values for NewEnvironmentTemplate.
 const (
-	NewEnvironmentRuntimeNodejs NewEnvironmentRuntime = "Nodejs"
+	NewEnvironmentTemplateNodejs NewEnvironmentTemplate = "Nodejs"
 )
 
 // Environment defines model for Environment.
@@ -52,13 +52,13 @@ type Error struct {
 
 // NewEnvironment defines model for NewEnvironment.
 type NewEnvironment struct {
-	CodeSnippetID string                `json:"codeSnippetID"`
-	Deps          []string              `json:"deps"`
-	Runtime       NewEnvironmentRuntime `json:"runtime"`
+	CodeSnippetID string                 `json:"codeSnippetID"`
+	Deps          []string               `json:"deps"`
+	Template      NewEnvironmentTemplate `json:"template"`
 }
 
-// NewEnvironmentRuntime defines model for NewEnvironment.Runtime.
-type NewEnvironmentRuntime string
+// NewEnvironmentTemplate defines model for NewEnvironment.Template.
+type NewEnvironmentTemplate string
 
 // NewSession defines model for NewSession.
 type NewSession struct {

@@ -3,7 +3,7 @@ package nomad
 import "strings"
 
 const (
-	templatesDir = "templates"
+	templatesDir = "go-templates"
 )
 
 func escapeNewLines(input string) string {

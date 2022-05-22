@@ -17,9 +17,9 @@ func (p *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	// TODO: Download the base Dockerfile based on a runtime field in `env`.
+	// TODO: Download the base Dockerfile based on a template field in `env`.
 	// TODO: Add deps to the Dockerfile.
-	evalID, err := p.nomad.RegisterFCEnvJob(env.CodeSnippetID, string(env.Runtime), env.Deps)
+	evalID, err := p.nomad.RegisterFCEnvJob(env.CodeSnippetID, string(env.Template), env.Deps)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, struct{ Error string }{err.Error()})
 		return

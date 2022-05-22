@@ -10,9 +10,9 @@ import (
 )
 
 //func (n *Nomad) CreateEnvironment(codeSnippetID, dockerfile string) (*api.JobDispatchResponse, *api.WriteMeta, error) {
-func (n *Nomad) RegisterFCEnvJob(codeSnippetID, runtime string, deps []string) (string, error) {
-	dockerfileName := fmt.Sprintf("%s.Dockerfile", runtime)
-	tname := path.Join(templatesDir, "runtimes", dockerfileName)
+func (n *Nomad) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps []string) (string, error) {
+	dockerfileName := fmt.Sprintf("%s.Dockerfile", envTemplate)
+	tname := path.Join(templatesDir, "env-templates", dockerfileName)
 	dockerfileTemp, err := template.ParseFiles(tname)
 	if err != nil {
 		return "", fmt.Errorf("Failed to parse template file '%s': %s", tname, err)
