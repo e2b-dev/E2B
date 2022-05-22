@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -58,11 +59,11 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
-func loadSnapshot(ctx context.Context, cfg *firecracker.Config, codeSnippetID string) (*operations.LoadSnapshotNoContent, error) {
+func loadSnapshot(ctx context.Context, cfg *firecracker.Config, codeSnippetID string, fcEnvsDisk string) (*operations.LoadSnapshotNoContent, error) {
 	httpClient := newFirecrackerClient(cfg.SocketPath)
 
-	memFilePath := codeSnippetID + "/mem_file"
-	snapshotFilePath := codeSnippetID + "/snapshot_file"
+	memFilePath := filepath.Join(fcEnvsDisk, codeSnippetID, "memfile")
+	snapshotFilePath := filepath.Join(fcEnvsDisk, codeSnippetID, "snapfile")
 
 	// TODO: Use new API (mem_backend)
 	snapshotConfig := operations.LoadSnapshotParams{
@@ -78,7 +79,7 @@ func loadSnapshot(ctx context.Context, cfg *firecracker.Config, codeSnippetID st
 	return httpClient.Operations.LoadSnapshot(&snapshotConfig)
 }
 
-func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfig, taskConfig TaskConfig, slot *IPSlot) (*vminfo, error) {
+func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfig, taskConfig TaskConfig, slot *IPSlot, fcEnvsDisk string) (*vminfo, error) {
 	opts := newOptions()
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
@@ -151,7 +152,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
 
-	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.CodeSnippetID); err != nil {
+	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.CodeSnippetID, fcEnvsDisk); err != nil {
 		m.StopVMM()
 		return nil, fmt.Errorf("Failed to load snapshot: %v", err)
 	}

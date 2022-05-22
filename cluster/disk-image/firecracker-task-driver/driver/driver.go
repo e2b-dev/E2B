@@ -109,8 +109,8 @@ type Nic struct {
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
-	SessionID     string   `codec:"SessionID"`
-	CodeSnippetID string   `codec:"CodeSnippetID"`
+	SessionID     string `codec:"SessionID"`
+	CodeSnippetID string `codec:"CodeSnippetID"`
 }
 
 // TaskState is the state which is encoded in the handle returned in
@@ -255,7 +255,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		return nil, nil, fmt.Errorf("failed to create networking: %v", err)
 	}
 
-	m, err := d.initializeContainer(context.Background(), cfg, driverConfig, ipSlot)
+	m, err := d.initializeContainer(context.Background(), cfg, driverConfig, ipSlot, cfg.Env["FC_ENVS_DISK"])
 	if err != nil {
 		ipSlot.RemoveNetworking(d.logger)
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
