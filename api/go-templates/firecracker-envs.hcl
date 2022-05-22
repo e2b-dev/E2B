@@ -53,11 +53,11 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
 
       config {
         image = "alpine/curl:3.14"
-        command = ["/bin/ash"]
+        command = "/bin/ash"
         args = [
           "-c",
           # TODO: Add user's API key
-          "local/poststop.sh {{ .CodeSnippetID }}",
+          "chmod +x local/poststop.sh && local/poststop.sh {{ .CodeSnippetID }}",
         ]
       }
 
@@ -79,22 +79,32 @@ ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
 
 # Main didn't finish successfully.
 if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
+  echo "No 'main-done' file"
   # TODO: Set env status
   curl $ENVS_ENDPOINT \
+    -H "Content-Type: application/json" \
     -X POST \
     -d '{
-      "state": "Failed"
+      "status": "Failed"
     }'
+
+  # Print to stderr.
+  >&2 echo "Main task didn't finish successfully"
   exit 2
 fi
 
 # Main finished successfully.
-curl $ENVS_ENDPOINT \
+echo "Main finished successfully"
+
+response=$(curl $ENVS_ENDPOINT \
+  -H "Content-Type: application/json" \
   -X POST \
   -d '{
-    "state": "Done"
-  }'
+    "status": "Done"
+  }')
+echo "Response: $response"
 EOT
+        destination = "local/poststop.sh"
       }
     }
   }

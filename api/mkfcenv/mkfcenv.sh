@@ -11,7 +11,7 @@ DOCKERFILE="$3"
 CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 
-API_URL="https://orchestration-api-7d2cl2hooq-uc.a.run.app"
+API_URL="https://ondevbook.com"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
 
 set -euo pipefail
@@ -40,6 +40,14 @@ if [ -z "$ALLOC_DIR" ]; then
   echo "ERROR: Expected alloc dir as the fifth argument"
   exit 1
 fi
+
+echo "==== Args ==========================================================================================="
+echo "| RUN_UUID:           $RUN_UUID"
+echo "| SCRIPTDIR:          $SCRIPTDIR"
+echo "| CODE_SNIPPET_ID:    $CODE_SNIPPET_ID"
+echo "| ALLOC_DIR:          $ALLOC_DIR"
+echo "======================================================================================================="
+echo
 
 # This disk must be mounted when we run the script.
 FC_ENVS_DISK="/mnt/disks/fc-envs"
@@ -210,7 +218,7 @@ delns
 mv_env_files
 del_build_dir
 
-touch ${ALLOC_DIR}/main-finished
+touch ${ALLOC_DIR}/main-done
 
 echo "==== Output ==========================================================================================="
 echo "| Code snippet ID:  $CODE_SNIPPET_ID"
