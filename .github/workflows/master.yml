@@ -14,7 +14,8 @@
 #     name: Check repo changes
 #     runs-on: ubuntu-20.04
 #     outputs:
-#       orchestrator_image: ${{ steps.filter.outputs.orchestrator_image }}
+#       cluster_disk_image: ${{ steps.filter.outputs.cluster_disk_image }}
+#       api_image: ${{ steps.filter.outputs.api_image }}
 #     steps:
 #       - name: Checkout
 #         uses: actions/checkout@v3
@@ -24,24 +25,37 @@
 #         id: filter
 #         with:
 #           filters: |
-#             orchestrator_image:
-#               - 'modules/orchestrator/orchestrator-image/**'
-#               - '.github/workflows/orchestrator-image.yml'
+#             cluster_disk_image:
+#               - 'cluster/disk-image/**'
+#               - '.github/workflows/cluster-disk-image.yml'
 #               - '.github/workflows/master.yml'
-#   orchestrator_image:
-#     name: Orchestrator image
+#             api_image:
+#               - 'api/**'
+#               - '.github/workflows/api-image.yml'
+#               - '.github/workflows/master.yml'
+#   cluster_disk_image:
+#     name: Cluster disk image
 #     needs: changes
-#     if: ${{ needs.changes.outputs.orchestrator_image == 'true' }}
-#     uses: ./.github/workflows/orchestrator-image.yml
+#     if: ${{ needs.changes.outputs.cluster_disk_image == 'true' }}
+#     uses: ./.github/workflows/cluster-disk-image.yml
 #     secrets:
 #       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
 #       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-#   infrastructure:
-#     name: Infrastructure
-#     needs: [changes, api_image, orchestrator_image]
+#   api_image:
+#     name: API image
+#     needs: changes
+#     if: ${{ needs.changes.outputs.api_image == 'true' }}
+#     uses: ./.github/workflows/api-image.yml
+#     secrets:
+#       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+#       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+#   terraform:
+#     name: Terraform
+#     needs: [changes, api_image, cluster_disk_image]
 #     if: ${{ always() }}
-#     uses: ./.github/workflows/infrastructure.yml
+#     uses: ./.github/workflows/terraform.yml
 #     secrets:
 #       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
 #       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
