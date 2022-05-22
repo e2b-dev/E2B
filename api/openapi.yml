@@ -48,12 +48,12 @@ components:
       type: object
       required:
         - codeSnippetID
-        - runtime
+        - template
         - deps
       properties:
         codeSnippetID:
           type: string
-        runtime:
+        template:
           type: string
           enum: [Nodejs]
         deps:
@@ -85,13 +85,13 @@ components:
       #NewEnvironment:
       #  required:
       #    - codeSnippetID
-      #    - runtime
+      #    - template
       #    - deps
       #  properties:
       #    codeSnippetID:
       #      type: string
       #      description: Identifier of a code snippet which which is the environment associated
-      #    runtime:
+      #    template:
       #      type: string
       #      enum: [nodejs]
       #    deps: # ['dep1', 'dep2']
