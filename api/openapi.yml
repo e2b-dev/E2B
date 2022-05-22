@@ -34,8 +34,6 @@ tags:
     description: Managing VM sessions
   - name: envs
     description: Environment for VM
-  - name: envevals
-    description: Status of the job building the environment
 
 components:
   #securitySchemes:
@@ -66,19 +64,22 @@ components:
         - type: object
           required:
             - id
-            - status
+            - state
           properties:
             id:
               type: string
-            status:
+            state:
               type: string
               enum: [Building, Failed, Done]
-    EnvironmentStatus:
+    EnvironmentStateUpdate:
       type: object
       required:
-        - status
+        - codeSnippetID
+        - state
       properties:
-        status:
+        codeSnippetID:
+          type: string
+        state:
           type: string
           enum: [Building, Failed, Done]
 
@@ -250,6 +251,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NewEnvironment"
+  # TODO: This endpoint might not be needed.
   /envs/{codeSnippetID}:
     get:
       tags:
@@ -266,19 +268,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Environment"
-  /envs/{codeSnippetID}/status:
+  /envs/state:
     post:
       tags:
         - envs
-      parameters:
-        - name: codeSnippetID
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EnvironmentStatus"
+              $ref: "#/components/schemas/EnvironmentStateUpdate"
