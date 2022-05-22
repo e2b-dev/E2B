@@ -21,6 +21,7 @@
     "prepublishOnly": "rollup -c",
     "build": "rollup -c",
     "watch": "rollup -c -w",
+    "test": "node test/index.mjs",
     "generate": "openapi-typescript shared/api/openapi.yml --immutable-types --output src/api/schema.gen.d.ts"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "typescript"
   ],
   "dependencies": {
+    "cross-fetch": "^3.1.5",
     "openapi-typescript-fetch": "^1.1.3",
     "rpc-websockets": "^7.4.18"
   }

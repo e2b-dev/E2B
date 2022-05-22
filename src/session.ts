@@ -1,10 +1,9 @@
 import WebSocket from 'rpc-websockets'
 
-import api, { components } from './api'
+import api, { components, getSessionURL } from './api'
 import wait from './utils/wait'
 import {
   SESSION_REFRESH_PERIOD,
-  SESSION_DOMAIN,
   WS_PORT,
 } from './constants'
 
@@ -41,19 +40,37 @@ class Session {
     this.session = res.data
     this.refresh(this.session.sessionID)
 
-    const sessionURL = `wss://${WS_PORT}-${this.session.sessionID}-${this.session.clientID}.${SESSION_DOMAIN}`
+    const sessionURL = `wss://${getSessionURL(this.session, WS_PORT)}`
     this.ws = new WebSocket.Client(sessionURL)
 
     let resolveWaitForOpen: undefined | (() => void)
-    let rejectWaitForOpen: undefined | (() => void)
+    let rejectWaitForOpen: undefined | ((reason: string) => void)
     const waitForOpen = new Promise<void>((resolve, reject) => {
       resolveWaitForOpen = resolve
       rejectWaitForOpen = reject
     })
 
-    const handleClose = () => this.disconnect()
-    const handleError = () => rejectWaitForOpen?.()
-    const handleOpen = () => resolveWaitForOpen?.()
+    // eslint-disable-next-line prefer-const
+    let unsubscribe: undefined | (() => void)
+
+    const handleClose = () => {
+      unsubscribe?.()
+      this.disconnect()
+    }
+    const handleError = () => {
+      unsubscribe?.()
+      rejectWaitForOpen?.('WS connection to session failed')
+    }
+    const handleOpen = () => {
+      unsubscribe?.()
+      resolveWaitForOpen?.()
+    }
+
+    unsubscribe = () => {
+      this.ws?.off('close', handleClose)
+      this.ws?.off('error', handleError)
+      this.ws?.off('open', handleOpen)
+    }
 
     this.ws.once('close', handleClose)
     this.ws.once('error', handleError)
