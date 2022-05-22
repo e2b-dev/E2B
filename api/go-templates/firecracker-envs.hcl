@@ -85,10 +85,10 @@ if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
   curl $ENVS_ENDPOINT \
     -H "Content-Type: application/json" \
     -X POST \
-    -d '{
-      "codeSnippetID": "$CODE_SNIPPET_ID"
-      "state": "Failed"
-    }'
+    -d "{
+      \"codeSnippetID\": \"$CODE_SNIPPET_ID\",
+      \"state\": \"Failed\"
+    }"
 
   # Print to stderr.
   >&2 echo "Main task didn't finish successfully"
@@ -101,10 +101,10 @@ echo "Main finished successfully"
 response=$(curl $ENVS_ENDPOINT \
   -H "Content-Type: application/json" \
   -X POST \
-  -d '{
-    "codeSnippetID": "$CODE_SNIPPET_ID"
-    "state": "Done"
-  }')
+  -d "{
+    \"codeSnippetID\": \"$CODE_SNIPPET_ID\",
+    \"state\": \"Done\"
+  }")
 echo "Response: $response"
 EOT
         destination = "local/poststop.sh"

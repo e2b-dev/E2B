@@ -12,9 +12,6 @@ CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 FC_ENVS_DISK="$6"
 
-API_URL="https://ondevbook.com"
-ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
-
 set -euo pipefail
 
 if [ -z "$RUN_UUID" ]; then
@@ -47,6 +44,9 @@ if [ -z "$FC_ENVS_DISK" ]; then
   echo "ERROR: Expected fc envs disk as the sixth argument"
   exit 1
 fi
+
+API_URL="https://ondevbook.com"
+ENVS_ENDPOINT="${API_URL}/envs/state"
 
 echo "==== Args ==========================================================================================="
 echo "| RUN_UUID:           $RUN_UUID"
@@ -207,9 +207,10 @@ function del_build_dir() {
 # TODO: Change state of an environment for the code snippet to building.
 curl $ENVS_ENDPOINT \
   -X POST \
-  -d '{
-    "state": "Building"
-  }'
+  -d "{
+    \"codeSnippetID\": \"$CODE_SNIPPET_ID\",
+    \"state\": \"Building\"
+  }"
 
 mkdirs
 mkrootfs
