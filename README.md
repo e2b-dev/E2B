@@ -73,4 +73,3 @@ git subtree push --prefix shared https://github.com/devbookhq/shared.git master
 ### Automation
 - Separate cluster server and client images
 - Stop timestamping cluster disk images
-- Remove Cloud Run

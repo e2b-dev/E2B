@@ -17,32 +17,23 @@ const (
 	sessionsJobName          = "firecracker-sessions"
 	sessionsJobNameWithSlash = sessionsJobName + "/"
 	sessionsJobFile          = sessionsJobName + ".hcl"
+	jobRegisterTimeout       = time.Second * 15
 	allocationCheckTimeout   = time.Second * 10
 	allocationCheckInterval  = time.Millisecond * 80
 	fcTaskName               = "start"
 	sessionIDPrefix          = "s"
-	sessionIDTotalLength     = 8
+	sessionIDRandomLength    = 7
 	shortNodeIDLength        = 8
 	nomadTaskRunningState    = "running"
 	nomadTaskFailedState     = "dead"
 )
 
-type APIError struct {
-	Msg       string
-	ClientMsg string
-	Code      int
-}
-
-func (err *APIError) Error() string {
-	return err.Msg
-}
-
-func (n *Nomad) GetSessions() ([]*api.Session, *APIError) {
-	allocations, _, err := n.nomadClient.Allocations().List(&nomadAPI.QueryOptions{
+func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
+	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
 		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", sessionsJobNameWithSlash, fcTaskName, nomadTaskRunningState),
 	})
 	if err != nil {
-		return nil, &APIError{
+		return nil, &api.APIError{
 			Msg:       fmt.Sprintf("Failed to retrieve allocations from Nomad %+v", err),
 			ClientMsg: "Cannot retrieve sessions right now",
 			Code:      http.StatusInternalServerError,
@@ -61,7 +52,7 @@ func (n *Nomad) GetSessions() ([]*api.Session, *APIError) {
 	return sessions, nil
 }
 
-func (n *Nomad) CreateSession(newSession *api.NewSession) (*api.Session, *APIError) {
+func (n *NomadClient) CreateSession(newSession *api.NewSession) (*api.Session, *api.APIError) {
 	tname := path.Join(templatesDir, sessionsJobFile)
 	sessionsJobTemp, err := template.New(sessionsJobFile).Funcs(
 		template.FuncMap{
@@ -69,7 +60,7 @@ func (n *Nomad) CreateSession(newSession *api.NewSession) (*api.Session, *APIErr
 		},
 	).ParseFiles(tname)
 	if err != nil {
-		return nil, &APIError{
+		return nil, &api.APIError{
 			Msg:       fmt.Sprintf("Failed to parse template file '%s': %s", tname, err),
 			ClientMsg: "Cannot create a session right now",
 			Code:      http.StatusInternalServerError,
@@ -78,46 +69,67 @@ func (n *Nomad) CreateSession(newSession *api.NewSession) (*api.Session, *APIErr
 
 	sessionsJobTemp = template.Must(sessionsJobTemp, err)
 
-	sessionID := sessionIDPrefix + genRandom(sessionIDTotalLength-1)
-	jobVars := struct {
-		CodeSnippetID  string
-		SessionID      string
-		FCTaskName     string
-		SessionJobName string
-	}{
-		CodeSnippetID:  newSession.CodeSnippetID,
-		SessionID:      sessionID,
-		FCTaskName:     fcTaskName,
-		SessionJobName: sessionsJobName,
-	}
-	var jobDef bytes.Buffer
-	if err := sessionsJobTemp.Execute(&jobDef, jobVars); err != nil {
-		return nil, &APIError{
-			Msg:       fmt.Sprintf("Failed to `sessionsJobTemp.Execute()`: %+v", err),
-			ClientMsg: "Cannot create a session right now",
-			Code:      http.StatusInternalServerError,
+	var sessionID string
+	var evalID string
+
+	timeout := time.After(jobRegisterTimeout)
+
+jobRegister:
+	for {
+		select {
+		case <-timeout:
+			return nil, &api.APIError{
+				Msg:       "Failed to find empty sessionID",
+				ClientMsg: "Cannot create a session right now",
+				Code:      http.StatusInternalServerError,
+			}
+		default:
+			sessionID = sessionIDPrefix + genRandom(sessionIDRandomLength)
+
+			fmt.Printf("session %s\n\n", sessionID)
+
+			var jobDef bytes.Buffer
+			jobVars := struct {
+				CodeSnippetID  string
+				SessionID      string
+				FCTaskName     string
+				SessionJobName string
+			}{
+				CodeSnippetID:  newSession.CodeSnippetID,
+				SessionID:      sessionID,
+				FCTaskName:     fcTaskName,
+				SessionJobName: sessionsJobName,
+			}
+
+			err = sessionsJobTemp.Execute(&jobDef, jobVars)
+			if err != nil {
+				return nil, &api.APIError{
+					Msg:       fmt.Sprintf("Failed to `sessionsJobTemp.Execute()`: %+v", err),
+					ClientMsg: "Cannot create a session right now",
+					Code:      http.StatusInternalServerError,
+				}
+			}
+
+			job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
+			if err != nil {
+				return nil, &api.APIError{
+					Msg:       fmt.Sprintf("Failed to parse the `%s` HCL job file: %+v", sessionsJobFile, err),
+					ClientMsg: "Cannot create a session right now",
+					Code:      http.StatusInternalServerError,
+				}
+			}
+
+			res, _, err := n.client.Jobs().EnforceRegister(job, 0, &nomadAPI.WriteOptions{})
+			if err != nil {
+				fmt.Printf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err)
+				continue
+			}
+			evalID = res.EvalID
+			break jobRegister
 		}
 	}
 
-	job, err := n.nomadClient.Jobs().ParseHCL(jobDef.String(), false)
-	if err != nil {
-		return nil, &APIError{
-			Msg:       fmt.Sprintf("Failed to parse the `%s` HCL job file: %+v", sessionsJobFile, err),
-			ClientMsg: "Cannot create a session right now",
-			Code:      http.StatusInternalServerError,
-		}
-	}
-
-	res, _, err := n.nomadClient.Jobs().Register(job, &nomadAPI.WriteOptions{})
-	if err != nil {
-		return nil, &APIError{
-			Msg:       fmt.Sprintf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err),
-			ClientMsg: "Cannot create a session right now",
-			Code:      http.StatusInternalServerError,
-		}
-	}
-
-	timeout := time.After(allocationCheckTimeout)
+	timeout = time.After(allocationCheckTimeout)
 
 allocationCheck:
 	for {
@@ -125,10 +137,10 @@ allocationCheck:
 		case <-timeout:
 			break allocationCheck
 		default:
-			allocs, _, err := n.nomadClient.Evaluations().Allocations(res.EvalID, &nomadAPI.QueryOptions{})
+			allocs, _, err := n.client.Evaluations().Allocations(evalID, &nomadAPI.QueryOptions{})
 			if err != nil {
-				return nil, &APIError{
-					Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err),
+				return nil, &api.APIError{
+					Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 					ClientMsg: "Cannot create a session right now",
 					Code:      http.StatusInternalServerError,
 				}
@@ -141,8 +153,8 @@ allocationCheck:
 
 				if alloc.TaskStates[fcTaskName].State == nomadTaskFailedState {
 					msgStruct, _ := json.Marshal(newSession)
-					return nil, &APIError{
-						Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err),
+					return nil, &api.APIError{
+						Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 						ClientMsg: fmt.Sprintf("Session couldn't be started: the problem may be in the request's payload - is the 'codeSnippetID' valid?: %+v", string(msgStruct)),
 						Code:      http.StatusBadRequest,
 					}
@@ -150,10 +162,12 @@ allocationCheck:
 				fmt.Printf(alloc.TaskStates[fcTaskName].State)
 
 				if alloc.TaskStates[fcTaskName].State == nomadTaskRunningState {
-					return &api.Session{
+					session := &api.Session{
 						ClientID:  alloc.NodeID[:shortNodeIDLength],
 						SessionID: sessionID,
-					}, nil
+					}
+
+					return session, nil
 				}
 				continue
 			}
@@ -161,20 +175,20 @@ allocationCheck:
 		time.Sleep(allocationCheckInterval)
 	}
 
-	return nil, &APIError{
-		Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, jobVars.SessionID, allocationCheckTimeout.String()),
+	return nil, &api.APIError{
+		Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, sessionID, allocationCheckTimeout.String()),
 		ClientMsg: "Cannot create a session right now - timeout",
 		Code:      http.StatusInternalServerError,
 	}
 }
 
-func (n *Nomad) DeleteSession(sessionID string) *APIError {
-	_, _, err := n.nomadClient.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, false, &nomadAPI.WriteOptions{})
+func (n *NomadClient) DeleteSession(sessionID string) *api.APIError {
+	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, true, &nomadAPI.WriteOptions{})
 	if err != nil {
-		return &APIError{
+		return &api.APIError{
 			Msg:       fmt.Sprintf("Cannot delete job '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 			ClientMsg: "Cannot delete the session right now",
-			Code:      500,
+			Code:      http.StatusInternalServerError,
 		}
 	}
 	return nil

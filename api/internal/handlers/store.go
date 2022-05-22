@@ -8,32 +8,31 @@ import (
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
-	"github.com/devbookhq/orchestration-services/api/pkg/refresh"
 	"github.com/gin-gonic/gin"
 )
 
 type APIStore struct {
-	sessionsCache *refresh.SessionCache
-	nomad         *nomad.Nomad
+	sessionsCache *nomad.SessionCache
+	nomadClient   *nomad.NomadClient
 	NextId        int64
 	Lock          sync.Mutex
 }
 
 func NewAPIStore() *APIStore {
-	nomad := nomad.InitNomad()
+	nomadClient := nomad.InitNomadClient()
 
 	var initialSessions []*api.Session
 
-	initialSessions, err := nomad.GetSessions()
+	initialSessions, err := nomadClient.GetSessions()
 	if err != nil {
 		initialSessions = []*api.Session{}
 		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
 	}
 
-	cache := refresh.NewSessionCache(nomad.DeleteSession, initialSessions)
+	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
 
 	return &APIStore{
-		nomad:         nomad,
+		nomadClient:   nomadClient,
 		NextId:        1000,
 		sessionsCache: cache,
 	}
@@ -51,6 +50,6 @@ func sendAPIStoreError(c *gin.Context, code int, message string) {
 	c.JSON(code, apiErr)
 }
 
-func (p *APIStore) Get(c *gin.Context) {
+func (a *APIStore) Get(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }

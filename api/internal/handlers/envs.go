@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (p *APIStore) PostEnvs(c *gin.Context) {
+func (a *APIStore) PostEnvs(c *gin.Context) {
 	// TODO: Check for API token
 
 	var env api.Environment
@@ -19,7 +19,7 @@ func (p *APIStore) PostEnvs(c *gin.Context) {
 
 	// TODO: Download the base Dockerfile based on a template field in `env`.
 	// TODO: Add deps to the Dockerfile.
-	evalID, err := p.nomad.RegisterFCEnvJob(env.CodeSnippetID, string(env.Template), env.Deps)
+	evalID, err := a.nomadClient.RegisterFCEnvJob(env.CodeSnippetID, string(env.Template), env.Deps)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, struct{ Error string }{err.Error()})
 		return
@@ -28,10 +28,10 @@ func (p *APIStore) PostEnvs(c *gin.Context) {
 	c.JSON(http.StatusOK, struct{ EvalID string }{evalID})
 }
 
-func (p *APIStore) GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
+func (a *APIStore) GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
 
 }
 
-func (p *APIStore) PostEnvsCodeSnippetIDStatus(c *gin.Context, codeSnippetID string) {
+func (a *APIStore) PostEnvsCodeSnippetIDStatus(c *gin.Context, codeSnippetID string) {
 
 }

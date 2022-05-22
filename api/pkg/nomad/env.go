@@ -10,7 +10,7 @@ import (
 )
 
 //func (n *Nomad) CreateEnvironment(codeSnippetID, dockerfile string) (*api.JobDispatchResponse, *api.WriteMeta, error) {
-func (n *Nomad) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps []string) (string, error) {
+func (n *NomadClient) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps []string) (string, error) {
 	dockerfileName := fmt.Sprintf("%s.Dockerfile", envTemplate)
 	tname := path.Join(templatesDir, "env-templates", dockerfileName)
 	dockerfileTemp, err := template.ParseFiles(tname)
@@ -54,12 +54,12 @@ func (n *Nomad) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps []strin
 		return "", fmt.Errorf("Failed to `envsJobTemp.Execute()`: %s", err)
 	}
 
-	job, err := n.nomadClient.Jobs().ParseHCL(jobDef.String(), false)
+	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		return "", fmt.Errorf("Failed to parse the `firecracker-envs` HCL job file: %s", err)
 	}
 
-	res, _, err := n.nomadClient.Jobs().Register(job, &api.WriteOptions{})
+	res, _, err := n.client.Jobs().Register(job, &api.WriteOptions{})
 	if err != nil {
 		return "", fmt.Errorf("Failed to register 'firecracker-envs/%s' job: %s", jobVars.CodeSnippetID, err)
 	}

@@ -21,5 +21,7 @@ passwd -d root
 # Add DNS
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
+# TODO: Start dbkd and add it to openrc version of systemd os it is always running
+
 # Delete itself once done.
 rm -- "$0"

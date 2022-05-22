@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (p *APIStore) GetSessions(c *gin.Context) {
-	sessions, err := p.nomad.GetSessions()
+func (a *APIStore) GetSessions(c *gin.Context) {
+	sessions, err := a.nomadClient.GetSessions()
 
 	if err != nil {
 		fmt.Printf("Error when listing sessions: %v\n", err)
@@ -20,14 +20,14 @@ func (p *APIStore) GetSessions(c *gin.Context) {
 	c.JSON(http.StatusOK, sessions)
 }
 
-func (p *APIStore) PostSessions(c *gin.Context) {
+func (a *APIStore) PostSessions(c *gin.Context) {
 	var newSession api.NewSession
 	if err := c.Bind(&newSession); err != nil {
 		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
 	}
 
-	session, err := p.nomad.CreateSession(&newSession)
+	session, err := a.nomadClient.CreateSession(&newSession)
 
 	if err != nil {
 		fmt.Printf("Error when creating: %v\n", err)
@@ -35,13 +35,21 @@ func (p *APIStore) PostSessions(c *gin.Context) {
 		return
 	}
 
-	p.sessionsCache.Register(session)
+	if err := a.sessionsCache.Add(session); err != nil {
+		fmt.Printf("Error when adding session to cache: %v\n", err)
+
+		err = a.nomadClient.DeleteSession(session.SessionID)
+		fmt.Printf("Error when cleaning up session: %v\n", err)
+
+		sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a session right now")
+		return
+	}
 
 	c.JSON(http.StatusCreated, &session)
 }
 
-func (p *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
-	err := p.nomad.DeleteSession(sessionID)
+func (a *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
+	err := a.nomadClient.DeleteSession(sessionID)
 
 	if err != nil {
 		fmt.Printf("Error when deleting session: %v\n", err)
@@ -52,8 +60,8 @@ func (p *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
 	c.Status(http.StatusNoContent)
 }
 
-func (p *APIStore) PutSessionsSessionIDRefresh(c *gin.Context, sessionID string) {
-	err := p.sessionsCache.Refresh(sessionID)
+func (a *APIStore) PutSessionsSessionIDRefresh(c *gin.Context, sessionID string) {
+	err := a.sessionsCache.Refresh(sessionID)
 	if err != nil {
 		fmt.Printf("Error when refreshing session: %v\n", err)
 		msg := fmt.Sprintf("Error refreshing session - session '%s' was not found", sessionID)
