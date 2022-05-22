@@ -4,6 +4,31 @@ info:
   title: Devbook
   description: Devbook API
 
+servers:
+  - url: https://ondevbook.com/
+    description: API endpoint
+  - url: https://{sessionID}-{clientID}.ondevbook.com/
+    description: Session endpoint without specified port
+    variables:
+      sessionID:
+        description: ID of the session
+        default: _sessionID
+      clientID:
+        description: ID of the client
+        default: _clientID
+  - url: https://{port}-{sessionID}-{clientID}.ondevbook.com/
+    description: Session endpoint with specificed port
+    variables:
+      sessionID:
+        description: ID of the session
+        default: _sessionID
+      clientID:
+        description: ID of the client
+        default: _clientID
+      port:
+        description: Port to connect to
+        default: "8080"
+
 tags:
   - name: sessions
     description: Managing VM sessions
