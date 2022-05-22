@@ -85,6 +85,6 @@ module "api" {
   ]
   gcp_zone = var.gcp_zone
 
-  nomad_address = module.cluster.server_proxy_ip
+  nomad_address = "http://${module.cluster.server_proxy_ip}"
   api_port      = var.api_port
 }

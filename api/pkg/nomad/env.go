@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"path"
-  "strings"
 	"text/template"
 
 	"github.com/hashicorp/nomad/api"

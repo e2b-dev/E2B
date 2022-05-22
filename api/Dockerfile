@@ -21,4 +21,4 @@ RUN chmod +x api
 # Set Gin server to the production mode
 # ENV GIN_MODE=release
 
-CMD [ "./api", "--port", "50001"]
+ENTRYPOINT [ "./api"]

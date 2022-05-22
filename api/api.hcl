@@ -45,6 +45,9 @@ job "orchestration-api" {
       config {
         image = var.image_name
         ports = [var.api_port_name]
+        args = [
+          "--port", "${var.api_port_number}",
+        ]
       }
     }
   }
