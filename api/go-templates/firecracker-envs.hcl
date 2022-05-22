@@ -74,7 +74,7 @@ if [ -z "$CODE_SNIPPET_ID" ]; then
   exit 1
 fi
 
-API_URL="https://orchestration-api-7d2cl2hooq-uc.a.run.app"
+API_URL="https://ondevbook.com"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
 
 # Main didn't finish successfully.
