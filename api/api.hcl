@@ -18,6 +18,14 @@ variable "nomad_address" {
   type = string
 }
 
+variable "supabase_url" {
+  type = string
+}
+
+variable "supabase_key" {
+  type = string
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -40,6 +48,8 @@ job "orchestration-api" {
 
       env {
         NOMAD_ADDRESS = var.nomad_address
+        SUPABASE_URL = var.supabase_url
+        SUPABASE_KEY = var.supabase_key
       }
 
       config {

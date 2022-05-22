@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/gin-gonic/gin"
@@ -33,5 +34,5 @@ func (a *APIStore) GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
 }
 
 func (a *APIStore) PostEnvsCodeSnippetIDStatus(c *gin.Context, codeSnippetID string) {
-
+	fmt.Printf(os.Getenv("SUPABASE_KEY"), os.Getenv("SUPABASE_URL"))
 }
