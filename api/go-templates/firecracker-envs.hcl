@@ -39,6 +39,7 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
           "{{ escapeNewLines .Dockerfile }}",
           "{{ .CodeSnippetID }}",
           "${NOMAD_ALLOC_DIR}",
+          "{{ .FCEnvsDisk }}",
           # TODO: Add user's API key
         ]
       }

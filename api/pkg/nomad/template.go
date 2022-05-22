@@ -4,6 +4,7 @@ import "strings"
 
 const (
 	templatesDir = "go-templates"
+	fcEnvsDisk   = "/mnt/disks/fc-envs"
 )
 
 func escapeNewLines(input string) string {

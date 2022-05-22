@@ -20,6 +20,7 @@ job "{{ .SessionJobName }}/{{ .SessionID }}" {
 
       env {
         NOMAD_NODE_ID = "${node.unique.id}"
+        FC_ENVS_DISK = "{{ .FCEnvsDisk }}"
       }
 
       resources {

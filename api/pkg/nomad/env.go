@@ -45,9 +45,11 @@ func (n *NomadClient) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps [
 	jobVars := struct {
 		CodeSnippetID string
 		Dockerfile    string
+		FCEnvsDisk    string
 	}{
 		CodeSnippetID: codeSnippetID,
 		Dockerfile:    dockerfile.String(),
+		FCEnvsDisk:    fcEnvsDisk,
 	}
 	var jobDef bytes.Buffer
 	if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {

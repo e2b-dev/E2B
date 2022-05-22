@@ -92,11 +92,13 @@ jobRegister:
 				SessionID      string
 				FCTaskName     string
 				SessionJobName string
+				FCEnvsDisk     string
 			}{
 				CodeSnippetID:  newSession.CodeSnippetID,
 				SessionID:      sessionID,
 				FCTaskName:     fcTaskName,
 				SessionJobName: sessionsJobName,
+				FCEnvsDisk:     fcEnvsDisk,
 			}
 
 			err = sessionsJobTemp.Execute(&jobDef, jobVars)

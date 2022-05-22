@@ -10,6 +10,7 @@ SCRIPTDIR="$2"
 DOCKERFILE="$3"
 CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
+FC_ENVS_DISK="$6"
 
 API_URL="https://ondevbook.com"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
@@ -41,16 +42,20 @@ if [ -z "$ALLOC_DIR" ]; then
   exit 1
 fi
 
+# This disk must be mounted when we run the script.
+if [ -z "$FC_ENVS_DISK" ]; then
+  echo "ERROR: Expected fc envs disk as the sixth argument"
+  exit 1
+fi
+
 echo "==== Args ==========================================================================================="
 echo "| RUN_UUID:           $RUN_UUID"
 echo "| SCRIPTDIR:          $SCRIPTDIR"
 echo "| CODE_SNIPPET_ID:    $CODE_SNIPPET_ID"
 echo "| ALLOC_DIR:          $ALLOC_DIR"
+echo "| FC_ENVS_DISK:       $FC_ENVS_DISK"
 echo "======================================================================================================="
 echo
-
-# This disk must be mounted when we run the script.
-FC_ENVS_DISK="/mnt/disks/fc-envs"
 
 MASK_LONG="255.255.255.252"
 FC_MAC="02:FC:00:00:00:05"
