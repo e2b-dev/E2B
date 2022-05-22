@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
+	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,8 +12,8 @@ func (p *APIStore) GetSessions(c *gin.Context) {
 	sessions, err := p.nomad.GetSessions()
 
 	if err != nil {
-		fmt.Printf("Error in listing sessions: %v", err)
-		sendAPIStoreError(c, http.StatusInternalServerError, "Error listing sessions")
+		fmt.Printf("Error when listing sessions: %v\n", err)
+		sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
 
@@ -30,8 +30,8 @@ func (p *APIStore) PostSessions(c *gin.Context) {
 	session, err := p.nomad.CreateSession(&newSession)
 
 	if err != nil {
-		fmt.Printf("Error in creating: %v", err)
-		sendAPIStoreError(c, http.StatusInternalServerError, "Error creating session")
+		fmt.Printf("Error when creating: %v\n", err)
+		sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
 
@@ -44,8 +44,8 @@ func (p *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
 	err := p.nomad.DeleteSession(sessionID)
 
 	if err != nil {
-		fmt.Printf("Error deleting session: %v", err)
-		sendAPIStoreError(c, http.StatusInternalServerError, "Error deleting session")
+		fmt.Printf("Error when deleting session: %v\n", err)
+		sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
 
@@ -55,7 +55,7 @@ func (p *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
 func (p *APIStore) PutSessionsSessionIDRefresh(c *gin.Context, sessionID string) {
 	err := p.sessionsCache.Refresh(sessionID)
 	if err != nil {
-		fmt.Printf("Error in refreshing session: %v", err)
+		fmt.Printf("Error when refreshing session: %v\n", err)
 		msg := fmt.Sprintf("Error refreshing session - session '%s' was not found", sessionID)
 		sendAPIStoreError(c, http.StatusNotFound, msg)
 		return

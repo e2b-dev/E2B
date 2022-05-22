@@ -6,12 +6,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
+	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
 	"github.com/jellydator/ttlcache/v3"
 )
 
 const (
-	SessionExpiration = time.Second * 180
+	SessionExpiration = time.Second * 20
 )
 
 type SessionCache struct {
@@ -34,7 +35,7 @@ func (r *SessionCache) Refresh(sessionID string) error {
 
 // We will need to either use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now
-func NewSessionCache(handleDeleteSession func(sessionID string) error, initialSessions []*api.Session) *SessionCache {
+func NewSessionCache(handleDeleteSession func(sessionID string) *nomad.APIError, initialSessions []*api.Session) *SessionCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, bool](SessionExpiration),
 	)
@@ -43,7 +44,7 @@ func NewSessionCache(handleDeleteSession func(sessionID string) error, initialSe
 		if er == ttlcache.EvictionReasonExpired {
 			err := handleDeleteSession(i.Key())
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error deleting session after expiration\n: %s", err)
+				fmt.Fprintf(os.Stderr, "Error deleting session after expiration (%s)\n: %s", SessionExpiration.String(), err.Error())
 			}
 		}
 	})

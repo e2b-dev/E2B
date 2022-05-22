@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/handlers"
+	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/orchestration-services/api/internal/handlers"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"

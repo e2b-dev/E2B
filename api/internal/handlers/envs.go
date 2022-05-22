@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
+	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,4 +1,4 @@
-module github.com/devbookhq/orchestration-services/modules/api/api-image
+module github.com/devbookhq/orchestration-services/api
 
 go 1.18
 
@@ -7,6 +7,7 @@ require (
 	github.com/getkin/kin-openapi v0.94.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/hashicorp/nomad/api v0.0.0-20220506174431-b5665129cd1f
+	github.com/jellydator/ttlcache/v3 v3.0.0
 )
 
 require (
@@ -24,7 +25,6 @@ require (
 	github.com/hashicorp/cronexpr v1.1.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
-	github.com/jellydator/ttlcache/v3 v3.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

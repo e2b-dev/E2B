@@ -6,9 +6,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/internal/api"
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/nomad"
-	"github.com/devbookhq/orchestration-services/modules/api/api-image/pkg/refresh"
+	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
+	"github.com/devbookhq/orchestration-services/api/pkg/refresh"
 	"github.com/gin-gonic/gin"
 )
 
