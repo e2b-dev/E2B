@@ -11,7 +11,7 @@ DOCKERFILE="$3"
 CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 
-API_URL="https://orchestration-api-7d2cl2hooq-uc.a.run.app"
+API_URL="https://ondevbook.com"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/status"
 
 set -euo pipefail
