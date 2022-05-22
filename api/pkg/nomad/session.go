@@ -17,7 +17,7 @@ const (
 	sessionsJobName          = "firecracker-sessions"
 	sessionsJobNameWithSlash = sessionsJobName + "/"
 	sessionsJobFile          = sessionsJobName + ".hcl"
-	jobRegisterTimeout       = time.Second * 15
+	jobRegisterTimeout       = time.Second * 10
 	allocationCheckTimeout   = time.Second * 10
 	allocationCheckInterval  = time.Millisecond * 80
 	fcTaskName               = "start"
@@ -85,8 +85,6 @@ jobRegister:
 			}
 		default:
 			sessionID = sessionIDPrefix + genRandom(sessionIDRandomLength)
-
-			fmt.Printf("session %s\n\n", sessionID)
 
 			var jobDef bytes.Buffer
 			jobVars := struct {
@@ -183,7 +181,7 @@ allocationCheck:
 }
 
 func (n *NomadClient) DeleteSession(sessionID string) *api.APIError {
-	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, true, &nomadAPI.WriteOptions{})
+	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, false, &nomadAPI.WriteOptions{})
 	if err != nil {
 		return &api.APIError{
 			Msg:       fmt.Sprintf("Cannot delete job '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
