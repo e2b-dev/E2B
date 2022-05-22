@@ -51,11 +51,11 @@ git subtree pull --prefix shared https://github.com/devbookhq/shared.git master
 git subtree push --prefix shared https://github.com/devbookhq/shared.git master
 ```
 
-## Resources
+## Issues
 ### Clock drift
 - https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it
 
-### Fs overlay
+### FS overlay
 - https://www.kernel.org/doc/Documentation/device-mapper/snapshot.txt
 - https://github.com/firecracker-microvm/firecracker-containerd/issues/75
 - https://github.com/firecracker-microvm/firecracker-containerd/pull/153
@@ -64,3 +64,11 @@ git subtree push --prefix shared https://github.com/devbookhq/shared.git master
 - https://github.com/firecracker-microvm/firecracker/pull/2743
 - https://github.com/firecracker-microvm/firecracker/blob/34955a935c59c19361e0652b43e5bb77bca92da7/docs/overlay-filesystem.md
 - https://github.com/firecracker-microvm/firecracker-containerd/blob/main/tools/image-builder/files_debootstrap/sbin/overlay-init#L39
+
+### Security
+- Restrict firewalls
+- Add ACL to the Nomad/Consul
+- Remove public IPs from the cluster instances
+
+### Automation
+- Separate cluster server and client images
