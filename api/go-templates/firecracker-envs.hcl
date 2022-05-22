@@ -76,7 +76,7 @@ if [ -z "$CODE_SNIPPET_ID" ]; then
 fi
 
 API_URL="https://ondevbook.com"
-ENVS_ENDPOINT="${API_URL}/envs/status"
+ENVS_ENDPOINT="${API_URL}/envs/state"
 
 # Main didn't finish successfully.
 if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
