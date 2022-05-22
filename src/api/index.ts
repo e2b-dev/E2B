@@ -1,12 +1,15 @@
 import { Fetcher } from 'openapi-typescript-fetch'
 
-import { API_URL } from 'src/constants'
-import type { paths, components } from './schema.gen'
+import { SESSION_DOMAIN } from 'src/constants'
+import type {
+  paths,
+  components,
+} from './schema.gen'
 
 const client = Fetcher.for<paths>()
 
 client.configure({
-  baseUrl: API_URL,
+  baseUrl: `https://${SESSION_DOMAIN}`,
 })
 
 export default client
