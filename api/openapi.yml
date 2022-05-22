@@ -185,7 +185,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Session"
         400:
-          description: Bad request body format
+          description: Bad request
           content:
             application/json:
               schema:
