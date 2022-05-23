@@ -69,6 +69,7 @@ git subtree push --prefix shared https://github.com/devbookhq/shared.git master
 - Restrict firewalls
 - Add ACL to the Nomad/Consul
 - Remove public IPs from the cluster instances
+- What does `reboot` inside a FC session do?
 
 ### Automation
 - Separate cluster server and client images
