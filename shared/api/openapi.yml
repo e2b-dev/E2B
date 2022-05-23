@@ -42,6 +42,13 @@ components:
   #    in: query # Can be 'header', 'query' or 'cookie'
   #    name: API_KEY # Name of the header, query parameter or cookie
   schemas:
+    DeleteEnvironment:
+      type: object
+      required:
+        - codeSnippetID
+      properties:
+        codeSnippetID:
+          type: string
     NewEnvironment:
       type: object
       required:
@@ -241,6 +248,15 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /envs:
+    delete:
+      tags:
+        - envs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteEnvironment"
     post:
       tags:
         - envs

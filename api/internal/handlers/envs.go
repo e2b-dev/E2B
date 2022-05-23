@@ -21,8 +21,42 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	// TODO: Download the base Dockerfile based on a template field in `env`.
 	// TODO: Add deps to the Dockerfile.
-	_, err := a.nomadClient.RegisterFCEnvJob(env.CodeSnippetID, string(env.Template), env.Deps)
+	err := a.nomadClient.RegisterFCEnvJob(env.CodeSnippetID, string(env.Template), env.Deps)
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, struct{ Error string }{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, struct{}{})
+}
+
+func (a *APIStore) DeleteEnvs(c *gin.Context) {
+  // TODO: Delete env from DB
+  // TODO: Start a nomad job to cleanup files
+  var body api.DeleteEnvironment
+	if err := c.Bind(&body); err != nil {
+		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+		return
+	}
+
+  err := a.supabase.DB.
+    From("envs").
+    Delete().
+    Eq("code_snippet_id", body.CodeSnippetID).
+    Execute(nil)
+  if err != nil {
+    fmt.Printf("error: %v\n", err)
+		sendAPIStoreError(
+      c,
+      http.StatusBadRequest,
+      fmt.Sprintf("Failed to delete env for code snippet '%s': %s", body.CodeSnippetID, err),
+    )
+		return
+  }
+
+	err = a.nomadClient.RegisterFCEnvDeleterJob(body.CodeSnippetID)
+	if err != nil {
+    fmt.Printf("error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, struct{ Error string }{err.Error()})
 		return
 	}
@@ -58,7 +92,7 @@ func (a *APIStore) PostEnvsState(c *gin.Context) {
 		sendAPIStoreError(
       c,
       http.StatusBadRequest,
-      fmt.Sprintf("Failed to update code snippet '%s' state field: %s", envStateUpdate.CodeSnippetID, err),
+      fmt.Sprintf("Failed to update env for code snippet '%s': %s", envStateUpdate.CodeSnippetID, err),
     )
 		return
   }

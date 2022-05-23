@@ -7,7 +7,6 @@ import (
   postgrest "github.com/nedpals/postgrest-go/pkg"
 )
 
-
 type Client struct {
   DB *postgrest.Client
 }

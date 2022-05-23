@@ -26,6 +26,11 @@ const (
 	NewEnvironmentTemplateNodejs NewEnvironmentTemplate = "Nodejs"
 )
 
+// DeleteEnvironment defines model for DeleteEnvironment.
+type DeleteEnvironment struct {
+	CodeSnippetID string `json:"codeSnippetID"`
+}
+
 // Environment defines model for Environment.
 type Environment struct {
 	// Embedded struct due to allOf(#/components/schemas/NewEnvironment)
@@ -81,11 +86,17 @@ type Session struct {
 	SessionID string `json:"sessionID"`
 }
 
+// DeleteEnvsJSONBody defines parameters for DeleteEnvs.
+type DeleteEnvsJSONBody DeleteEnvironment
+
 // PostEnvsStateJSONBody defines parameters for PostEnvsState.
 type PostEnvsStateJSONBody EnvironmentStateUpdate
 
 // PostSessionsJSONBody defines parameters for PostSessions.
 type PostSessionsJSONBody NewSession
+
+// DeleteEnvsJSONRequestBody defines body for DeleteEnvs for application/json ContentType.
+type DeleteEnvsJSONRequestBody DeleteEnvsJSONBody
 
 // PostEnvsStateJSONRequestBody defines body for PostEnvsState for application/json ContentType.
 type PostEnvsStateJSONRequestBody PostEnvsStateJSONBody

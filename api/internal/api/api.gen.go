@@ -17,6 +17,9 @@ type ServerInterface interface {
 	// (GET /)
 	Get(c *gin.Context)
 
+	// (DELETE /envs)
+	DeleteEnvs(c *gin.Context)
+
 	// (POST /envs)
 	PostEnvs(c *gin.Context)
 
@@ -55,6 +58,16 @@ func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
 	}
 
 	siw.Handler.Get(c)
+}
+
+// DeleteEnvs operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEnvs(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.DeleteEnvs(c)
 }
 
 // PostEnvs operation middleware
@@ -179,6 +192,8 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 	}
 
 	router.GET(options.BaseURL+"/", wrapper.Get)
+
+	router.DELETE(options.BaseURL+"/envs", wrapper.DeleteEnvs)
 
 	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
 

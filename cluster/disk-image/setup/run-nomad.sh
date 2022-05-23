@@ -176,6 +176,10 @@ EOF
     client_config=$(cat <<EOF
 client {
   enabled = true
+  host_volume "fc-envs" {
+    path = "/mnt/disks/fc-envs"
+    read_only = false
+  }
 }
 leave_on_terminate = true
 EOF
@@ -205,6 +209,14 @@ plugin "firecracker-task-driver" {}
 plugin "raw_exec" {
   config {
     enabled = true
+  }
+}
+
+plugin "docker" {
+  config {
+    volumes {
+      enabled = true
+    }
   }
 }
 
