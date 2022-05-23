@@ -91,7 +91,7 @@ function mkdirs() {
 }
 
 function mkbuildidfile() {
-  echo $RUN_UUID > $BUILD_BUILD_ID_FILE
+  echo -n "${RUN_UUID}" > ${BUILD_BUILD_ID_FILE}
 }
 
 function mkrootfs() {
