@@ -31,8 +31,9 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 }
 
 func (a *APIStore) DeleteEnvs(c *gin.Context) {
-  // TODO: Delete env from DB
-  // TODO: Start a nomad job to cleanup files
+	// TODO: Check for API token
+  // First we delete an env from DB and then we start a Nomad to cleanup files.
+
   var body api.DeleteEnvironment
 	if err := c.Bind(&body); err != nil {
 		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
