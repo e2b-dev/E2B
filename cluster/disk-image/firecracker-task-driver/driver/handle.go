@@ -113,7 +113,7 @@ func (h *taskHandle) run() {
 	// h.stateLock.Lock()
 	// defer h.stateLock.Unlock()
 
-	h.Slot.RemoveNetworking(h.logger)
+	h.Slot.RemoveNamespace(h.logger)
 	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0

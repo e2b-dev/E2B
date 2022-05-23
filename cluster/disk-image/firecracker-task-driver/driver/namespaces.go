@@ -3,6 +3,7 @@ package firevm
 import (
 	"fmt"
 	"net"
+	"os"
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
@@ -15,7 +16,7 @@ import (
 const hostDefaultGateway = "ens4"
 const loNS = "lo"
 
-func CreateNetworking(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
+func CreateNamespace(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
 	// Get slot from Consul KV
 	ipSlot, err := getIPSlot(nodeID, sessionID, logger)
 	if err != nil {
@@ -221,7 +222,7 @@ func CreateNetworking(nodeID string, sessionID string, logger hclog.Logger) (*IP
 	return ipSlot, nil
 }
 
-func (ipSlot *IPSlot) RemoveNetworking(logger hclog.Logger) error {
+func (ipSlot *IPSlot) RemoveNamespace(logger hclog.Logger) error {
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
 		logger.Error("Failed to initialize etc hosts handler: %v", err)
@@ -262,6 +263,11 @@ func (ipSlot *IPSlot) RemoveNetworking(logger hclog.Logger) error {
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
 		logger.Error("error deleting namespace %v", err)
+	}
+
+	err = os.RemoveAll(ipSlot.SessionTmp())
+	if err != nil {
+		logger.Error("error deleting session tmp files (overlay, workdir) %v", err)
 	}
 
 	err = ipSlot.releaseIPSlot(logger)

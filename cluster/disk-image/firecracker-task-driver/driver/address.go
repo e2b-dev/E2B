@@ -2,6 +2,7 @@ package firevm
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	consul "github.com/hashicorp/consul/api"
@@ -82,6 +83,18 @@ func (ips *IPSlot) TapMask() int {
 
 func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
+}
+
+func (ips *IPSlot) SessionTmp() string {
+	return filepath.Join("/tmp", fmt.Sprintf("fc-%s", ips.SessionID))
+}
+
+func (ips *IPSlot) SessionTmpOverlay() string {
+	return filepath.Join(ips.SessionTmp(), "overlay")
+}
+
+func (ips *IPSlot) SessionTmpWorkdir() string {
+	return filepath.Join(ips.SessionTmp(), "workdir")
 }
 
 func getIPSlot(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {

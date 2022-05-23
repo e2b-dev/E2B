@@ -16,9 +16,6 @@ package firevm
 import "errors"
 
 var (
-	// Error parsing nic config
-	errInvalidNicConfig = errors.New("NIC config wasn't of the form DEVICE/MACADDR")
-
 	// error parsing blockdevices
 	errInvalidDriveSpecificationNoSuffix = errors.New("invalid drive specification. Must have :rw or :ro suffix")
 	errInvalidDriveSpecificationNoPath   = errors.New("invalid drive specification. Must have path")
