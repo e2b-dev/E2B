@@ -147,7 +147,7 @@ components:
 #- ApiKeyAuth: [] # Use the same name as under securitySchemes
 
 paths:
-  /:
+  /health:
     get:
       description: Health check
       responses:

@@ -84,6 +84,6 @@ variable "api_port" {
   default = {
     name        = "api"
     port        = 50001
-    health_path = "/"
+    health_path = "/health"
   }
 }

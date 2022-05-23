@@ -29,6 +29,9 @@ type ServerInterface interface {
 	// (GET /envs/{codeSnippetID})
 	GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
 
+	// (GET /health)
+	GetHealth(c *gin.Context)
+
 	// (GET /sessions)
 	GetSessions(c *gin.Context)
 
@@ -109,6 +112,16 @@ func (siw *ServerInterfaceWrapper) GetEnvsCodeSnippetID(c *gin.Context) {
 	}
 
 	siw.Handler.GetEnvsCodeSnippetID(c, codeSnippetID)
+}
+
+// GetHealth operation middleware
+func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.GetHealth(c)
 }
 
 // GetSessions operation middleware
@@ -200,6 +213,8 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 	router.POST(options.BaseURL+"/envs/state", wrapper.PostEnvsState)
 
 	router.GET(options.BaseURL+"/envs/:codeSnippetID", wrapper.GetEnvsCodeSnippetID)
+
+	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
 
 	router.GET(options.BaseURL+"/sessions", wrapper.GetSessions)
 

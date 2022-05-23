@@ -15,21 +15,21 @@ import (
 type APIStore struct {
 	sessionsCache *nomad.SessionCache
 	nomadClient   *nomad.NomadClient
-  supabase      *supabase.Client
+	supabase      *supabase.Client
 	NextId        int64
 	Lock          sync.Mutex
 }
 
 func NewAPIStore() *APIStore {
 	nomadClient := nomad.InitNomadClient()
-  supabaseClient, err := supabase.NewClient()
-  if err != nil {
-    panic(err)
-  }
+	supabaseClient, err := supabase.NewClient()
+	if err != nil {
+		panic(err)
+	}
 
 	var initialSessions []*api.Session
-	initialSessions, err = nomadClient.GetSessions()
-	if err != nil {
+	initialSessions, sessionErr := nomadClient.GetSessions()
+	if sessionErr != nil {
 		initialSessions = []*api.Session{}
 		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
 	}
@@ -38,7 +38,7 @@ func NewAPIStore() *APIStore {
 
 	return &APIStore{
 		nomadClient:   nomadClient,
-    supabase:      supabaseClient,
+		supabase:      supabaseClient,
 		NextId:        1000,
 		sessionsCache: cache,
 	}
@@ -56,6 +56,6 @@ func sendAPIStoreError(c *gin.Context, code int, message string) {
 	c.JSON(code, apiErr)
 }
 
-func (a *APIStore) Get(c *gin.Context) {
+func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
