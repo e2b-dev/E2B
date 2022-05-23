@@ -54,6 +54,7 @@ func (a *APIStore) PostEnvsState(c *gin.Context) {
     if e, ok := err.(*json.SyntaxError); ok {
       fmt.Printf("syntax error at byte offset %d", e.Offset)
     }
+    fmt.Printf("error: %v\n", err)
 		sendAPIStoreError(
       c,
       http.StatusBadRequest,

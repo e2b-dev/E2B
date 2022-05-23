@@ -19,6 +19,5 @@ COPY go-templates go-templates
 RUN chmod +x api
 
 # Set Gin server to the production mode
-# ENV GIN_MODE=release
-
+ENV GIN_MODE=release
 ENTRYPOINT [ "./api"]

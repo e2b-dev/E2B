@@ -206,6 +206,7 @@ function del_build_dir() {
 
 # TODO: Change state of an environment for the code snippet to building.
 curl $ENVS_ENDPOINT \
+  -H "Content-Type: application/json" \
   -X POST \
   -d "{
     \"codeSnippetID\": \"$CODE_SNIPPET_ID\",
