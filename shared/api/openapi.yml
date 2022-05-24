@@ -34,8 +34,6 @@ tags:
     description: Managing VM sessions
   - name: envs
     description: Environment for VM
-  - name: envevals
-    description: Status of the job building the environment
 
 components:
   #securitySchemes:
@@ -44,16 +42,23 @@ components:
   #    in: query # Can be 'header', 'query' or 'cookie'
   #    name: API_KEY # Name of the header, query parameter or cookie
   schemas:
+    DeleteEnvironment:
+      type: object
+      required:
+        - codeSnippetID
+      properties:
+        codeSnippetID:
+          type: string
     NewEnvironment:
       type: object
       required:
         - codeSnippetID
-        - runtime
+        - template
         - deps
       properties:
         codeSnippetID:
           type: string
-        runtime:
+        template:
           type: string
           enum: [Nodejs]
         deps:
@@ -66,32 +71,35 @@ components:
         - type: object
           required:
             - id
-            - status
+            - state
           properties:
             id:
               type: string
-            status:
+            state:
               type: string
               enum: [Building, Failed, Done]
-    EnvironmentStatus:
+    EnvironmentStateUpdate:
       type: object
       required:
-        - status
+        - codeSnippetID
+        - state
       properties:
-        status:
+        codeSnippetID:
+          type: string
+        state:
           type: string
           enum: [Building, Failed, Done]
 
       #NewEnvironment:
       #  required:
       #    - codeSnippetID
-      #    - runtime
+      #    - template
       #    - deps
       #  properties:
       #    codeSnippetID:
       #      type: string
       #      description: Identifier of a code snippet which which is the environment associated
-      #    runtime:
+      #    template:
       #      type: string
       #      enum: [nodejs]
       #    deps: # ['dep1', 'dep2']
@@ -139,7 +147,7 @@ components:
 #- ApiKeyAuth: [] # Use the same name as under securitySchemes
 
 paths:
-  /:
+  /health:
     get:
       description: Health check
       responses:
@@ -185,7 +193,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Session"
         400:
-          description: Bad request body format
+          description: Bad request
           content:
             application/json:
               schema:
@@ -240,6 +248,15 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /envs:
+    delete:
+      tags:
+        - envs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteEnvironment"
     post:
       tags:
         - envs
@@ -250,6 +267,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NewEnvironment"
+  # TODO: This endpoint might not be needed.
   /envs/{codeSnippetID}:
     get:
       tags:
@@ -266,19 +284,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Environment"
-  /envs/{codeSnippetID}/status:
+  /envs/state:
     post:
       tags:
         - envs
-      parameters:
-        - name: codeSnippetID
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EnvironmentStatus"
+              $ref: "#/components/schemas/EnvironmentStateUpdate"
