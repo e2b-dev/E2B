@@ -14,9 +14,6 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (GET /)
-	Get(c *gin.Context)
-
 	// (DELETE /envs)
 	DeleteEnvs(c *gin.Context)
 
@@ -52,16 +49,6 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
-
-// Get operation middleware
-func (siw *ServerInterfaceWrapper) Get(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-	}
-
-	siw.Handler.Get(c)
-}
 
 // DeleteEnvs operation middleware
 func (siw *ServerInterfaceWrapper) DeleteEnvs(c *gin.Context) {
@@ -203,8 +190,6 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 		Handler:            si,
 		HandlerMiddlewares: options.Middlewares,
 	}
-
-	router.GET(options.BaseURL+"/", wrapper.Get)
 
 	router.DELETE(options.BaseURL+"/envs", wrapper.DeleteEnvs)
 

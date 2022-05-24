@@ -42,9 +42,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	handle(ws)
 }
 
-//func wsping(ws *websocket.Conn, deadline time.Duration) error {
-//	return ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(deadline*time.Second))
-//}
+func wsping(ws *websocket.Conn, deadline time.Duration) error {
+	return ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(deadline*time.Second))
+}
 
 func wsclose(ws *websocket.Conn, deadline time.Duration) error {
 	return ws.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(deadline*time.Second))
@@ -61,20 +61,22 @@ func handle(ws *websocket.Conn) {
 	ws.SetReadLimit(internal.MaxMessageSize)
 	ws.SetReadDeadline(time.Now().Add(internal.PongWait))
 	ws.SetPongHandler(func(string) error {
+    log.Println("Pong handler")
 		ws.SetReadDeadline(time.Now().Add(internal.PongWait))
 		return nil
 	})
 
-	//go func() {
-	//	ticker := time.Tick(internal.PongWait / 2)
-	//	for range ticker {
-	//		if err := wsping(ws, internal.PongWait); err != nil {
-	//			log.Println("Ping failed:", err)
-	//			break
-	//		}
-	//	}
-	//	wsclose(ws, 1)
-	//}()
+	go func() {
+		ticker := time.Tick(internal.PongWait / 2)
+		for range ticker {
+      log.Println("Will ping")
+			if err := wsping(ws, internal.PongWait); err != nil {
+				log.Println("Ping failed:", err)
+				break
+			}
+		}
+		wsclose(ws, 1)
+	}()
 
 	rwc := &internal.ReadWriteCloser{WS: ws}
 	s := rpc.NewServer()
