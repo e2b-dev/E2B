@@ -97,6 +97,10 @@ func (ips *IPSlot) SessionTmpWorkdir() string {
 	return filepath.Join(ips.SessionTmp(), "workdir")
 }
 
+func (ips *IPSlot) NetNSPath() string {
+	return "/var/run/netns/" + ips.NamespaceID()
+}
+
 func getIPSlot(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
 	consulClient, err := consul.NewClient(consul.DefaultConfig())
 	if err != nil {

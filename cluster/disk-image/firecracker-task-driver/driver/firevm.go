@@ -114,7 +114,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	buildDirPath := filepath.Join(codeSnippetEnvPath, "builds", buildID)
 	os.MkdirAll(buildDirPath, 0777)
 
-	fcCmd := fmt.Sprintf("firecracker --api-sock %s ", fcCfg.SocketPath)
+	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s ", fcCfg.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 	mountOverlayCmd := fmt.Sprintf(
 		"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s; ",
@@ -124,7 +124,8 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		buildDirPath,
 	)
 
-	cmd := exec.CommandContext(ctx, "unshare", "-m", "sh", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
+	//TODO: Run cleanup handlers on error after this command starts and succeeds -> the ns/slot cleanup is also not right here
+	cmd := exec.CommandContext(ctx, "unshare", "--fork", "--kill-child", "-m", "sh", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
 	cmd.Stderr = nil
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
@@ -134,7 +135,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		MmdsAddress:       fcCfg.MmdsAddress,
 		Seccomp:           fcCfg.Seccomp,
 		ForwardSignals:    fcCfg.ForwardSignals,
-		NetNS:             "/var/run/netns/" + slot.NamespaceID(),
+		NetNS:             slot.NetNSPath(),
 		VMID:              fcCfg.VMID,
 		// JailerCfg:         &firecracker.JailerConfig{},
 		MachineCfg:    fcCfg.MachineCfg,
@@ -173,6 +174,9 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	if err != nil {
 		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
 	}
+
+	//TODO: Run cleanup handlers on error
+	// return nil, fmt.Errorf("<<STOP>> %s", cmd.String())
 
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.CodeSnippetID, fcEnvsDisk); err != nil {
 		m.StopVMM()
