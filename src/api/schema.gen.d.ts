@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-  readonly "/": {
+  readonly "/health": {
     /** Health check */
     readonly get: {
       readonly responses: {
@@ -40,7 +40,7 @@ export interface paths {
             readonly "application/json": components["schemas"]["Session"];
           };
         };
-        /** Bad request body format */
+        /** Bad request */
         readonly 400: {
           readonly content: {
             readonly "application/json": components["schemas"]["Error"];
@@ -111,6 +111,13 @@ export interface paths {
         };
       };
     };
+    readonly delete: {
+      readonly requestBody: {
+        readonly content: {
+          readonly "application/json": components["schemas"]["DeleteEnvironment"];
+        };
+      };
+    };
   };
   readonly "/envs/{codeSnippetID}": {
     readonly get: {
@@ -128,16 +135,11 @@ export interface paths {
       };
     };
   };
-  readonly "/envs/{codeSnippetID}/status": {
+  readonly "/envs/state": {
     readonly post: {
-      readonly parameters: {
-        readonly path: {
-          readonly codeSnippetID: string;
-        };
-      };
       readonly requestBody: {
         readonly content: {
-          readonly "application/json": components["schemas"]["EnvironmentStatus"];
+          readonly "application/json": components["schemas"]["EnvironmentStateUpdate"];
         };
       };
     };
@@ -146,20 +148,24 @@ export interface paths {
 
 export interface components {
   readonly schemas: {
+    readonly DeleteEnvironment: {
+      readonly codeSnippetID: string;
+    };
     readonly NewEnvironment: {
       readonly codeSnippetID: string;
       /** @enum {string} */
-      readonly runtime: "Nodejs";
+      readonly template: "Nodejs";
       readonly deps: readonly string[];
     };
     readonly Environment: components["schemas"]["NewEnvironment"] & {
       readonly id: string;
       /** @enum {string} */
-      readonly status: "Building" | "Failed" | "Done";
+      readonly state: "Building" | "Failed" | "Done";
     };
-    readonly EnvironmentStatus: {
+    readonly EnvironmentStateUpdate: {
+      readonly codeSnippetID: string;
       /** @enum {string} */
-      readonly status: "Building" | "Failed" | "Done";
+      readonly state: "Building" | "Failed" | "Done";
     };
     readonly NewSession: {
       /** @description Identifier of a code snippet which which is the environment associated */
