@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-  "github.com/devbookhq/orchestration-services/devbookd/internal/common"
+  "github.com/devbookhq/orchestration-services/devbookd/internal"
 )
 
 func main() {
@@ -20,8 +20,8 @@ func main() {
 }
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  common.MaxMessageSize,
-	WriteBufferSize: common.MaxMessageSize,
+	ReadBufferSize:  internal.MaxMessageSize,
+	WriteBufferSize: internal.MaxMessageSize,
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -58,17 +58,17 @@ func handle(ws *websocket.Conn) {
 		ws.Close()
 	}()
 
-	ws.SetReadLimit(common.MaxMessageSize)
-	ws.SetReadDeadline(time.Now().Add(common.PongWait))
+	ws.SetReadLimit(internal.MaxMessageSize)
+	ws.SetReadDeadline(time.Now().Add(internal.PongWait))
 	ws.SetPongHandler(func(string) error {
-		ws.SetReadDeadline(time.Now().Add(common.PongWait))
+		ws.SetReadDeadline(time.Now().Add(internal.PongWait))
 		return nil
 	})
 
 	//go func() {
-	//	ticker := time.Tick(common.PongWait / 2)
+	//	ticker := time.Tick(internal.PongWait / 2)
 	//	for range ticker {
-	//		if err := wsping(ws, common.PongWait); err != nil {
+	//		if err := wsping(ws, internal.PongWait); err != nil {
 	//			log.Println("Ping failed:", err)
 	//			break
 	//		}
@@ -76,7 +76,7 @@ func handle(ws *websocket.Conn) {
 	//	wsclose(ws, 1)
 	//}()
 
-	rwc := &common.ReadWriteCloser{WS: ws}
+	rwc := &internal.ReadWriteCloser{WS: ws}
 	s := rpc.NewServer()
 	comm := &Comm{}
 	s.Register(comm)
