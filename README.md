@@ -20,7 +20,7 @@ If the Nomad is running but it has no leader, delete Load balancer and Instance 
 
 ### Subtrees
 #### firecracker-task-driver
-FC task driver is a submodule made from https://github.com/devbookhq/firecracker-task-driver repository.
+FC task driver is a subtree made from https://github.com/devbookhq/firecracker-task-driver repository.
 
 The subtree commands you need for controling this repo are:
 ```bash
@@ -36,7 +36,7 @@ git subtree push --prefix cluster/disk-image/firecracker-task-driver https://git
 ```
 
 #### shared
-FC task driver is a submodule made from https://github.com/devbookhq/shared repository.
+FC task driver is a subtree made from https://github.com/devbookhq/shared repository.
 
 The subtree commands you need for controling this repo are:
 ```bash
