@@ -241,23 +241,23 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	ipSlot, err := CreateNetworking(cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger)
+	ipSlot, err := CreateNamespace(cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger)
 
 	defer func() {
 		if err != nil {
-			ipSlot.RemoveNetworking(d.logger)
+			ipSlot.RemoveNamespace(d.logger)
 			d.logger.Error("Cleaning up after unsuccessful start: %v", err)
 		}
 	}()
 
 	if err != nil {
-		ipSlot.RemoveNetworking(d.logger)
+		ipSlot.RemoveNamespace(d.logger)
 		return nil, nil, fmt.Errorf("failed to create networking: %v", err)
 	}
 
 	m, err := d.initializeContainer(context.Background(), cfg, driverConfig, ipSlot, cfg.Env["FC_ENVS_DISK"])
 	if err != nil {
-		ipSlot.RemoveNetworking(d.logger)
+		ipSlot.RemoveNamespace(d.logger)
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
 		return nil, nil, fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
 	}
@@ -282,7 +282,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	if err = handle.SetDriverState(&driverState); err != nil {
-		ipSlot.RemoveNetworking(d.logger)
+		ipSlot.RemoveNamespace(d.logger)
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
 		return nil, nil, fmt.Errorf("failed to set driver state: %v", err)
 	}

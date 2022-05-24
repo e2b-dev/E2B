@@ -15,6 +15,7 @@ package firevm
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -31,10 +32,6 @@ import (
 )
 
 const (
-	// executableMask is the mask needed to check whether or not a file's
-	// permissions are executable.
-	executableMask = 0111
-
 	// containerMonitorIntv is the interval at which the driver checks if the
 	// firecracker micro-vm is still running
 	containerMonitorIntv = 2 * time.Second
@@ -102,7 +99,32 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		firecracker.WithLogger(log.NewEntry(logger)),
 	}
 
-	cmd := exec.CommandContext(ctx, "ip", "netns", "exec", slot.NamespaceID(), "firecracker", "--api-sock", fcCfg.SocketPath)
+	buildIDPath := filepath.Join(fcEnvsDisk, taskConfig.CodeSnippetID, "build_id")
+	data, err := os.ReadFile(buildIDPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
+	}
+	buildID := string(data)
+
+	os.MkdirAll(slot.SessionTmpOverlay(), 0777)
+	os.MkdirAll(slot.SessionTmpWorkdir(), 0777)
+
+	codeSnippetEnvPath := filepath.Join(fcEnvsDisk, taskConfig.CodeSnippetID)
+
+	buildDirPath := filepath.Join(codeSnippetEnvPath, "builds", buildID)
+	os.MkdirAll(buildDirPath, 0777)
+
+	fcCmd := fmt.Sprintf("firecracker --api-sock %s ", fcCfg.SocketPath)
+	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
+	mountOverlayCmd := fmt.Sprintf(
+		"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s; ",
+		codeSnippetEnvPath,
+		slot.SessionTmpOverlay(),
+		slot.SessionTmpWorkdir(),
+		buildDirPath,
+	)
+
+	cmd := exec.CommandContext(ctx, "unshare", "-m", "sh", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
 	cmd.Stderr = nil
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))

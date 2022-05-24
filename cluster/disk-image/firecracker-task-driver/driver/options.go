@@ -326,14 +326,6 @@ func parseBlockDevices(entries []string) ([]models.Drive, error) {
 	return devices, nil
 }
 
-// Given a string of the form DEVICE/MACADDR, return the device name and the mac address, or an error
-func parseNicConfig(cfg string) (string, string, error) {
-	fields := strings.Split(cfg, "/")
-	if len(fields) != 2 || len(fields[0]) == 0 || len(fields[1]) == 0 {
-		return "", "", errInvalidNicConfig
-	}
-	return fields[0], fields[1], nil
-}
 
 // Given a list of string representations of vsock devices,
 // return a corresponding slice of machine.VsockDevice objects
