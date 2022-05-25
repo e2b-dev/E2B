@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -143,7 +144,7 @@ func (cs *CodeSnippet) Stop() string {
     return "stopped"
   }
 
-  if err := cs.cmd.Process.Kill(); err != nil {
+  if err := cs.cmd.Process.Signal(syscall.SIGTERM); err != nil {
     log.Println(err)
     cs.notifyStderr(err.Error())
   }
