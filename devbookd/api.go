@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -27,6 +28,8 @@ func createSubscription(ctx context.Context) (*rpc.Notifier, *rpc.Subscription, 
 
 type CodeSnippet struct {
   cmd *exec.Cmd
+  mu  sync.Mutex
+  running bool
 
   stdoutNotifier     *rpc.Notifier
   stdoutSubscriberID rpc.ID
@@ -36,6 +39,17 @@ type CodeSnippet struct {
 
   stateNotifier     *rpc.Notifier
   stateSubscriberID rpc.ID
+}
+
+func (cs *CodeSnippet) setRunning(b bool) {
+  cs.running = b
+  var state string
+  if b {
+    state = "running"
+  } else {
+    state = "stopped"
+  }
+  cs.notifyState(state)
 }
 
 func (cs *CodeSnippet) notifyStdout(s string) {
@@ -50,8 +64,10 @@ func (cs *CodeSnippet) notifyStderr(s string) {
   }
 }
 
-func (cs *CodeSnippet) notifyState() {
-  // TODO
+func (cs *CodeSnippet) notifyState(state string) {
+  if err := cs.stateNotifier.Notify(cs.stateSubscriberID, state); err != nil {
+    log.Println(err)
+  }
 }
 
 func (cs *CodeSnippet) scanStdout(pipe io.ReadCloser) {
@@ -72,7 +88,13 @@ func (cs *CodeSnippet) scanStderr(pipe io.ReadCloser) {
 	}
 }
 
-func (cs *CodeSnippet) Run(code string) string {
+func (cs *CodeSnippet) runCmd(code string) {
+  defer func() {
+    cs.mu.Lock()
+    cs.setRunning(false)
+    cs.mu.Unlock()
+  }()
+
   err := os.WriteFile("./test/index.js", []byte(code), 0644)
   if err != nil {
     panic(err)
@@ -95,19 +117,40 @@ func (cs *CodeSnippet) Run(code string) string {
   go cs.scanStdout(stdout)
   go cs.scanStderr(stderr)
 
-  if err := cs.cmd.Start(); err != nil {
+  if err := cs.cmd.Run(); err != nil {
     log.Println(err)
     cs.notifyStderr(err.Error())
   }
-  if err := cs.cmd.Wait(); err != nil {
-    log.Println(err)
-    cs.notifyStderr(err.Error())
-  }
+}
 
+func (cs *CodeSnippet) Run(code string) string {
+  cs.mu.Lock()
+  if cs.running {
+    cs.mu.Unlock()
+    return "running"
+  }
+  cs.setRunning(true)
+  cs.mu.Unlock()
+
+  go cs.runCmd(code)
   return "running"
 }
 
 func (cs *CodeSnippet) Stop() string {
+  cs.mu.Lock()
+  if !cs.running {
+    cs.mu.Unlock()
+    return "stopped"
+  }
+
+  if err := cs.cmd.Process.Kill(); err != nil {
+    log.Println(err)
+    cs.notifyStderr(err.Error())
+  }
+
+  cs.setRunning(false)
+  cs.mu.Unlock()
+
   return "stopped"
 }
 
