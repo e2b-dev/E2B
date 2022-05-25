@@ -72,6 +72,8 @@ func (n *NomadClient) CreateSession(newSession *api.NewSession) (*api.Session, *
 	var sessionID string
 	var evalID string
 
+	var job *nomadAPI.Job
+
 	timeout := time.After(jobRegisterTimeout)
 
 jobRegister:
@@ -110,7 +112,7 @@ jobRegister:
 				}
 			}
 
-			job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
+			job, err = n.client.Jobs().ParseHCL(jobDef.String(), false)
 			if err != nil {
 				return nil, &api.APIError{
 					Msg:       fmt.Sprintf("Failed to parse the `%s` HCL job file: %+v", sessionsJobFile, err),
@@ -130,20 +132,27 @@ jobRegister:
 	}
 
 	timeout = time.After(allocationCheckTimeout)
+	var allocErr *api.APIError
 
 allocationCheck:
 	for {
 		select {
 		case <-timeout:
+			allocErr = &api.APIError{
+				Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, sessionID, allocationCheckTimeout.String()),
+				ClientMsg: "Cannot create a session right now - timeout",
+				Code:      http.StatusInternalServerError,
+			}
 			break allocationCheck
 		default:
 			allocs, _, err := n.client.Evaluations().Allocations(evalID, &nomadAPI.QueryOptions{})
 			if err != nil {
-				return nil, &api.APIError{
+				allocErr = &api.APIError{
 					Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 					ClientMsg: "Cannot create a session right now",
 					Code:      http.StatusInternalServerError,
 				}
+				break allocationCheck
 			}
 
 			for _, alloc := range allocs {
@@ -153,11 +162,12 @@ allocationCheck:
 
 				if alloc.TaskStates[fcTaskName].State == nomadTaskFailedState {
 					msgStruct, _ := json.Marshal(newSession)
-					return nil, &api.APIError{
+					allocErr = &api.APIError{
 						Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 						ClientMsg: fmt.Sprintf("Session couldn't be started: the problem may be in the request's payload - is the 'codeSnippetID' valid?: %+v", string(msgStruct)),
 						Code:      http.StatusBadRequest,
 					}
+					break allocationCheck
 				}
 				fmt.Printf(alloc.TaskStates[fcTaskName].State)
 
@@ -175,11 +185,12 @@ allocationCheck:
 		time.Sleep(allocationCheckInterval)
 	}
 
-	return nil, &api.APIError{
-		Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, sessionID, allocationCheckTimeout.String()),
-		ClientMsg: "Cannot create a session right now - timeout",
-		Code:      http.StatusInternalServerError,
+	_, _, err = n.client.Jobs().Deregister(*job.ID, false, &nomadAPI.WriteOptions{})
+	if err != nil {
+		fmt.Printf("Failed to deregister '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err)
 	}
+
+	return nil, allocErr
 }
 
 func (n *NomadClient) DeleteSession(sessionID string) *api.APIError {
