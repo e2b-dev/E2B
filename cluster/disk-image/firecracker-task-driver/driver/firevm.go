@@ -115,7 +115,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	os.MkdirAll(buildDirPath, 0777)
 
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s ", fcCfg.SocketPath)
-	// inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
+	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 	mountOverlayCmd := fmt.Sprintf(
 		"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s; ",
 		codeSnippetEnvPath,
@@ -125,9 +125,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	)
 
 	//TODO: Run cleanup handlers on error after this command starts and succeeds -> the ns/slot cleanup is also not right here
-	cmd := exec.CommandContext(ctx, "unshare", "--net="+slot.NetNSPath(), "-m", "sh", "-c", mountOverlayCmd+fcCmd)
-	// cmd := exec.CommandContext(ctx, "unshare", "--net="+slot.NetNSPath(), "-p", "--fork", "--kill-child", "-m", "sh", "-c", mountOverlayCmd+fcCmd)
-	// cmd := exec.CommandContext(ctx, "unshare", "--fork", "--kill-child", "-m", "sh", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
+	cmd := exec.CommandContext(ctx, "unshare", "--fork", "--kill-child", "-m", "sh", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
 	cmd.Stderr = nil
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
