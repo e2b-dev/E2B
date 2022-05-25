@@ -84,7 +84,7 @@ jobRegister:
 				Code:      http.StatusInternalServerError,
 			}
 		default:
-			sessionID = sessionIDPrefix + genRandom(sessionIDRandomLength)
+			sessionID = sessionIDPrefix + genRandomSession(sessionIDRandomLength)
 
 			var jobDef bytes.Buffer
 			jobVars := struct {

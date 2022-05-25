@@ -4,12 +4,12 @@ import (
 	"math/rand"
 )
 
-var alphabet = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+var sessionAlphabet = []rune("abcdefghijklmnopqrstuvwxyz1234567890")
 
-func genRandom(length int) string {
+func genRandomSession(length int) string {
 	b := make([]rune, length)
 	for i := range b {
-		b[i] = alphabet[rand.Intn(len(alphabet))]
+		b[i] = sessionAlphabet[rand.Intn(len(sessionAlphabet))]
 	}
 	return string(b)
 }
