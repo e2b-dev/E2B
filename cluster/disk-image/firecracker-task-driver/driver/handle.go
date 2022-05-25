@@ -86,6 +86,7 @@ func (h *taskHandle) run() {
 
 	pid, err := strconv.Atoi(h.Info.Pid)
 	if err != nil {
+		h.Slot.RemoveNamespace(h.logger)
 		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.Info.Pid))
 		// h.stateLock.Lock()
 		h.exitResult = &drivers.ExitResult{}

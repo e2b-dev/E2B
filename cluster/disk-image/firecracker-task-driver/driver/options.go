@@ -39,7 +39,7 @@ func genmacaddr() (string, error) {
 	buf := make([]byte, 6)
 	_, err := rand.Read(buf)
 	if err != nil {
-		return "", fmt.Errorf("Fail to generate mac address: %v", err)
+		return "", fmt.Errorf("failed to generate mac address: %v", err)
 	}
 	buf[0] |= 2
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
@@ -172,7 +172,7 @@ func (opts *options) getNetwork(AllocId string) ([]firecracker.NetworkInterface,
 	if len(opts.FcNicConfig.Ip) > 0 {
 		_, Net, err := net.ParseCIDR(opts.FcNicConfig.Ip)
 		if err != nil {
-			return nil, fmt.Errorf("Fail to parse CIDR address: %v", err)
+			return nil, fmt.Errorf("failed to parse CIDR address: %v", err)
 		}
 		mockMacAddrString, err := genmacaddr()
 		if err != nil {
@@ -259,7 +259,7 @@ func (opts *options) handleFifos() (io.Writer, error) {
 	if generateFifoFilename || generateMetricFifoFilename {
 		dir, err := ioutil.TempDir(os.TempDir(), "fcfifo")
 		if err != nil {
-			return fifo, fmt.Errorf("Fail to create temporary directory: %v", err)
+			return fifo, fmt.Errorf("failed to create temporary directory: %v", err)
 		}
 		opts.addCloser(func() error {
 			return os.RemoveAll(dir)

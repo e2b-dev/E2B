@@ -102,7 +102,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	buildIDPath := filepath.Join(fcEnvsDisk, taskConfig.CodeSnippetID, "build_id")
 	data, err := os.ReadFile(buildIDPath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
+		return nil, fmt.Errorf("failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
 	}
 	buildID := string(data)
 
@@ -117,15 +117,14 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s ", fcCfg.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 	mountOverlayCmd := fmt.Sprintf(
-		"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s; ",
+		"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s && ",
 		codeSnippetEnvPath,
 		slot.SessionTmpOverlay(),
 		slot.SessionTmpWorkdir(),
 		buildDirPath,
 	)
 
-	//TODO: Run cleanup handlers on error after this command starts and succeeds -> the ns/slot cleanup is also not right here
-	cmd := exec.CommandContext(ctx, "unshare", "--fork", "--kill-child", "-m", "sh", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
+	cmd := exec.CommandContext(ctx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
 	cmd.Stderr = nil
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
@@ -135,8 +134,8 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 		MmdsAddress:       fcCfg.MmdsAddress,
 		Seccomp:           fcCfg.Seccomp,
 		ForwardSignals:    fcCfg.ForwardSignals,
-		NetNS:             slot.NetNSPath(),
-		VMID:              fcCfg.VMID,
+		// NetNS:             slot.NetNSPath(),
+		VMID: fcCfg.VMID,
 		// JailerCfg:         &firecracker.JailerConfig{},
 		MachineCfg:    fcCfg.MachineCfg,
 		VsockDevices:  fcCfg.VsockDevices,
@@ -161,7 +160,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, machineOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("Failed creating machine: %v", err)
+		return nil, fmt.Errorf("failed creating machine: %v", err)
 	}
 	m.Handlers.Validation = m.Handlers.Validation.Clear()
 	m.Handlers.FcInit =
@@ -172,16 +171,22 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	err = m.Handlers.Run(ctx, m)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to start preboot FC: %v", err)
+		return nil, fmt.Errorf("failed to start preboot FC: %v", err)
 	}
-
-	//TODO: Run cleanup handlers on error
-	// return nil, fmt.Errorf("<<STOP>> %s", cmd.String())
 
 	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.CodeSnippetID, fcEnvsDisk); err != nil {
 		m.StopVMM()
-		return nil, fmt.Errorf("Failed to load snapshot: %v", err)
+		return nil, fmt.Errorf("failed to load snapshot: %v", err)
 	}
+
+	defer func() {
+		if err != nil {
+			stopErr := m.StopVMM()
+			if stopErr != nil {
+				logger.Error(fmt.Sprintf("Failed stopping machine after error: %+v", stopErr))
+			}
+		}
+	}()
 
 	if opts.validMetadata != nil {
 		m.SetMetadata(vmmCtx, opts.validMetadata)
@@ -189,7 +194,7 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	pid, errpid := m.PID()
 	if errpid != nil {
-		return nil, fmt.Errorf("Failed getting pid for machine: %v", errpid)
+		return nil, fmt.Errorf("failed getting pid for machine: %v", errpid)
 	}
 
 	info := Instance_info{

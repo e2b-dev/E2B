@@ -263,13 +263,13 @@ func (ipSlot *IPSlot) RemoveNamespace(logger hclog.Logger) error {
 	err = os.RemoveAll(ipSlot.SessionTmp())
 	if err != nil {
 		logger.Error("error deleting session tmp files (overlay, workdir) %v", err)
-		return fmt.Errorf("error deleting session tmp files (overlay, workdir) %v", err)
+		// return fmt.Errorf("error deleting session tmp files (overlay, workdir) %v", err)
 	}
 
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
 		logger.Error("error deleting namespace %v", err)
-		return fmt.Errorf("error deleting namespace %v", err)
+		// return fmt.Errorf("error deleting namespace %v", err)
 	}
 
 	err = ipSlot.releaseIPSlot(logger)

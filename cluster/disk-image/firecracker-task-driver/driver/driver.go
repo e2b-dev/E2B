@@ -283,6 +283,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	if err = handle.SetDriverState(&driverState); err != nil {
 		ipSlot.RemoveNamespace(d.logger)
+		m.Machine.StopVMM()
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
 		return nil, nil, fmt.Errorf("failed to set driver state: %v", err)
 	}
@@ -373,7 +374,7 @@ func (d *Driver) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, err
 }
 
 func (d *Driver) ExecTask(taskID string, cmd []string, timeout time.Duration) (*drivers.ExecTaskResult, error) {
-	return nil, fmt.Errorf("Firecracker-task-driver does not support exec")
+	return nil, fmt.Errorf("firecracker-task-driver does not support exec")
 }
 
 func (d *Driver) SignalTask(taskID string, signal string) error {
