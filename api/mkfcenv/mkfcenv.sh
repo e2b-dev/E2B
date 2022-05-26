@@ -211,7 +211,6 @@ function del_build_dir() {
   rm -rf $BUILD_DIR
 }
 
-# TODO: Change state of an environment for the code snippet to building.
 curl $ENVS_ENDPOINT \
   -H "Content-Type: application/json" \
   -X POST \

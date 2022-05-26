@@ -1,10 +1,10 @@
 FROM alpine:3.14
 
-COPY provision.sh provision.sh
-RUN chmod +x provision.sh
-
 RUN apk add --update util-linux openrc openssh
 RUN apk add nodejs npm
+
+COPY provision.sh provision.sh
+RUN chmod +x provision.sh
 
 WORKDIR code
 RUN npm init -y
