@@ -1,4 +1,7 @@
-import WebSocket from 'rpc-websockets'
+import {
+  RpcWebSocketClient,
+  IRpcNotification,
+} from 'rpc-websocket-client';
 
 import api, { components, getSessionURL } from './api'
 import wait from './utils/wait'
@@ -12,8 +15,12 @@ const refreshSession = api.path('/sessions/{sessionID}/refresh').method('put').c
 
 class Session {
   private session?: components['schemas']['Session']
-  private ws?: WebSocket.Client
+  //private ws?: WebSocket.Client
+  private rpc = new RpcWebSocketClient()
   private isRunning = false
+
+  // TODO: Type
+  private subscribers: any = {}
 
   constructor(
     private readonly codeSnippetID: string,
@@ -28,6 +35,33 @@ class Session {
     }
   }
 
+  //call(method: string, params: any[]) {
+  //  return this.rpc.call(method, params)
+  //}
+
+  async subscribe(event: string, cb: () => void) {
+    const subID: string | undefined = await this.rpc.call('codeSnippet_subscriber', [event])
+    if (subID) {
+      // TODO: Save cb for subscription ID
+
+    }
+  }
+
+  unsubscribe(subscriptionID: string) {
+  }
+
+
+
+
+  // Stops the running process that's executing code.
+  stop() {
+  }
+
+  // Starts executing the code.
+  run() {
+  }
+
+
   async connect() {
     if (this.isRunning || !!this.session) {
       return
@@ -36,12 +70,17 @@ class Session {
     }
 
     const res = await getSession({ codeSnippetID: this.codeSnippetID })
-
     this.session = res.data
     this.refresh(this.session.sessionID)
 
-    const sessionURL = `wss://${getSessionURL(this.session, WS_PORT)}`
+    //const sessionURL = `wss://${getSessionURL(this.session, WS_PORT)}`
+    const sessionURL = 'ws://localhost:8010/ws'
+    this.rpc.connect(sessionURL)
+
     this.ws = new WebSocket.Client(sessionURL)
+    this.ws.on('update', function(...args: any) {
+      console.log({args})
+    })
 
     let resolveWaitForOpen: undefined | (() => void)
     let rejectWaitForOpen: undefined | ((reason: string) => void)
