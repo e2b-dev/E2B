@@ -33,6 +33,3 @@ build-cluster-image:
 
 format-cluster-image:
 	$(MAKE) -C cluster/disk-image format
-
-publish-mkfcenv-scripts:
-	$(MAKE) -C api publish-mkfcenv

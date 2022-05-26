@@ -27,15 +27,15 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
       driver = "raw_exec"
 
       artifact {
-        source = "https://storage.googleapis.com/devbook-environment-pipeline/mkfcenv.tar.gz"
+        source = "https://storage.googleapis.com/devbook-environment-pipeline/env.tar.gz"
         destination = "local"
       }
 
       config {
-        command = "local/mkfcenv/mkfcenv.sh"
+        command = "local/env/build-env.sh"
         args = [
           "${NOMAD_META_RUN_UUID}",
-          "local/mkfcenv",
+          "local/env",
           "{{ escapeNewLines .Dockerfile }}",
           "{{ .CodeSnippetID }}",
           "${NOMAD_ALLOC_DIR}",

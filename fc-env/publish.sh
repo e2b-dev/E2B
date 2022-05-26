@@ -5,9 +5,16 @@
 
 set -euo pipefail
 
-tar czf mkfcenv.tar.gz mkfcenv
+mkdir env
+
+mv devbookd/bin/devbookd env
+cp ./build-env.sh ./env/
+cp ./provision-env.sh ./env/
+
+tar czf env.tar.gz env
 
 gsutil -h "Cache-Control:no-cache, max-age=0" \
-  cp mkfcenv.tar.gz gs://devbook-environment-pipeline
+  cp env.tar.gz gs://devbook-environment-pipeline
 
-rm mkfcenv.tar.gz
+rm env.tar.gz
+rm -rf env

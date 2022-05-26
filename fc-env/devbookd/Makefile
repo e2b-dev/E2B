@@ -3,7 +3,3 @@ build:
 
 build-macos:
 	go build -o bin/devbookd-macos .
-
-publish-devbookd:
-	make build
-	./publish-devbookd.sh
