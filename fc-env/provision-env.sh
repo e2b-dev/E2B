@@ -15,6 +15,8 @@ rc-update add devfs boot
 rc-update add procfs boot
 rc-update add sysfs boot
 rc-update add sshd
+rc-update add devbookd
+
 echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config

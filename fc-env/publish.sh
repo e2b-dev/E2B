@@ -8,6 +8,7 @@ set -euo pipefail
 mkdir env
 
 mv devbookd/bin/devbookd env
+cp ./devbookd-init ./env/
 cp ./build-env.sh ./env/
 cp ./provision-env.sh ./env/
 

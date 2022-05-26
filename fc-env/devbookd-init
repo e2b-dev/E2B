@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+name=${RC_SVCNAME}
+supervisor="supervise-daemon"
+command="/usr/bin/devbookd"
+pidfile="/run/devbookd.pid"
+
+depend() {
+  need net
+  need localmount
+}
+
+reload() {
+  ebegin "Reloading devbook-daemon"
+  ${supervisor} ${RC_SVCNAME} --signal HUP --pidfile "${pidfile}"
+  eend $?
+}
