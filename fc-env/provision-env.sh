@@ -1,5 +1,7 @@
 #! /bin/ash
 
+# This script is supposed to be executed in a running container. The container is then extracted to a rootfs image for the Firecracker VM.
+
 set -euo pipefail
 
 # Set up a login terminal on the serial console (ttyS0):
@@ -24,10 +26,8 @@ echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
 # Remove password for root.
 passwd -d root
 
-# Add DNS
+# Add DNS.
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
-
-# TODO: Start dbkd and add it to openrc version of systemd os it is always running
 
 # Delete itself once done.
 rm -- "$0"

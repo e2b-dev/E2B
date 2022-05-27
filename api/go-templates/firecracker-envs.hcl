@@ -36,7 +36,7 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
         args = [
           "${NOMAD_META_RUN_UUID}",
           "local/env",
-          "{{ escapeNewLines .Dockerfile }}",
+          "{{ escapeHCL .Dockerfile }}",
           "{{ .CodeSnippetID }}",
           "${NOMAD_ALLOC_DIR}",
           "{{ .FCEnvsDisk }}",

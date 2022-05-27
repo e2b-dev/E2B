@@ -3,10 +3,23 @@ package nomad
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"path"
 	"text/template"
 
 	"github.com/hashicorp/nomad/api"
+)
+
+const (
+  baseDockerfile = `
+FROM alpine:3.14
+
+RUN apk add --update util-linux openrc openssh
+
+COPY devbookd /usr/bin/devbookd
+COPY devbookd-init /etc/init.d/devbookd
+COPY provision-env.sh provision-env.sh
+RUN chmod +x provision-env.sh`
 )
 
 func (n *NomadClient) RegisterFCEnvDeleterJob(codeSnippetID string) error {
@@ -53,19 +66,24 @@ func (n *NomadClient) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps [
 	dockerfileTemp = template.Must(dockerfileTemp, err)
 
 	dockerfileVars := struct {
-		Deps []string
+		Deps            []string
+    BaseDockerfile  string
 	}{
-		Deps: deps,
+		Deps:           deps,
+    BaseDockerfile: baseDockerfile,
 	}
 	var dockerfile bytes.Buffer
 	if err := dockerfileTemp.Execute(&dockerfile, dockerfileVars); err != nil {
 		return fmt.Errorf("Failed to `dockerfileTemp.Execute()`: %s", err)
 	}
+  log.Println("=======")
+  fmt.Print(dockerfile.String())
+  log.Println("=======")
 
 	tname = path.Join(templatesDir, "firecracker-envs.hcl")
 	envsJobTemp, err := template.New("firecracker-envs.hcl").Funcs(
 		template.FuncMap{
-			"escapeNewLines": escapeNewLines,
+			"escapeHCL": escapeHCL,
 		},
 	).ParseFiles(tname)
 	if err != nil {
@@ -88,6 +106,11 @@ func (n *NomadClient) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps [
 		return fmt.Errorf("Failed to `envsJobTemp.Execute()`: %s", err)
 	}
 
+  log.Println("=======")
+  log.Println("=======")
+  log.Println("=======")
+  fmt.Print(jobDef.String())
+  log.Println("=======")
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		return fmt.Errorf("Failed to parse the `firecracker-envs` HCL job file: %s", err)

@@ -1,7 +1,7 @@
-#!/bin/bash
+#! /bin/bash
 
-# This script zips the `mkfcenv` directory and uploads it to a GCS bucket.
-# The `firecracker-envs` Nomad job then downloads the zipped directory from the bucket every time it runs and is making a new environment.
+# This script creates and uploads the `env` directory to a GCS bucket.
+# The `firecracker-envs` Nomad job then downloads the zipped directory from the bucket every time it runs.
 
 set -euo pipefail
 

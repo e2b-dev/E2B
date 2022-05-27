@@ -54,11 +54,7 @@ func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 
 func (n *NomadClient) CreateSession(newSession *api.NewSession) (*api.Session, *api.APIError) {
 	tname := path.Join(templatesDir, sessionsJobFile)
-	sessionsJobTemp, err := template.New(sessionsJobFile).Funcs(
-		template.FuncMap{
-			"escapeNewLines": escapeNewLines,
-		},
-	).ParseFiles(tname)
+	sessionsJobTemp, err := template.ParseFiles(tname)
 	if err != nil {
 		return nil, &api.APIError{
 			Msg:       fmt.Sprintf("Failed to parse template file '%s': %s", tname, err),
