@@ -240,8 +240,8 @@ paths:
       responses:
         204:
           description: Successfully refreshed the session
-        500:
-          description: Error refreshing the session
+        404:
+          description: Error refreshing session - session not found
           content:
             application/json:
               schema:
