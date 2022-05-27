@@ -3,7 +3,6 @@ package nomad
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"path"
 	"text/template"
 
@@ -76,9 +75,6 @@ func (n *NomadClient) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps [
 	if err := dockerfileTemp.Execute(&dockerfile, dockerfileVars); err != nil {
 		return fmt.Errorf("Failed to `dockerfileTemp.Execute()`: %s", err)
 	}
-  log.Println("=======")
-  fmt.Print(dockerfile.String())
-  log.Println("=======")
 
 	tname = path.Join(templatesDir, "firecracker-envs.hcl")
 	envsJobTemp, err := template.New("firecracker-envs.hcl").Funcs(
@@ -106,11 +102,6 @@ func (n *NomadClient) RegisterFCEnvJob(codeSnippetID, envTemplate string, deps [
 		return fmt.Errorf("Failed to `envsJobTemp.Execute()`: %s", err)
 	}
 
-  log.Println("=======")
-  log.Println("=======")
-  log.Println("=======")
-  fmt.Print(jobDef.String())
-  log.Println("=======")
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		return fmt.Errorf("Failed to parse the `firecracker-envs` HCL job file: %s", err)

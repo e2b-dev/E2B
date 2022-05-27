@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"sync"
@@ -55,19 +54,28 @@ func (cs *CodeSnippet) setRunning(b bool) {
 
 func (cs *CodeSnippet) notifyStdout(s string) {
 	if err := cs.stdoutNotifier.Notify(cs.stdoutSubscriberID, s); err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to send stdout notification",
+      "subscriberID", cs.stdoutSubscriberID,
+      "error", err,
+    )
 	}
 }
 
 func (cs *CodeSnippet) notifyStderr(s string) {
 	if err := cs.stderrNotifier.Notify(cs.stderrSubscriberID, s); err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to send stderr notification",
+      "subscriberID", cs.stderrSubscriberID,
+      "error", err,
+    )
 	}
 }
 
 func (cs *CodeSnippet) notifyState(state string) {
 	if err := cs.stateNotifier.Notify(cs.stateSubscriberID, state); err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to send state notification",
+      "subscriberID", cs.stateSubscriberID,
+      "error", err,
+    )
 	}
 }
 
@@ -97,7 +105,10 @@ func (cs *CodeSnippet) runCmd(code string) {
 	}()
 
   if err := os.WriteFile(entrypointFullPath, []byte(code), 0755); err != nil {
-		panic(err)
+    slogger.Errorw("Failed to write to the entrypoint file",
+      "entrypointFullPath", entrypointFullPath,
+      "error", err,
+    )
 	}
 
 	cs.cmd = exec.Command(runCmd, parsedRunArgs...)
@@ -105,12 +116,18 @@ func (cs *CodeSnippet) runCmd(code string) {
 
 	stdout, err := cs.cmd.StdoutPipe()
 	if err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to set up stdout pipe for the run command",
+      "cmd", cs.cmd,
+      "error", err,
+    )
 		cs.notifyStderr(err.Error())
 	}
 	stderr, err := cs.cmd.StderrPipe()
 	if err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to set up stderr pipe for the run command",
+      "cmd", cs.cmd,
+      "error", err,
+    )
 		cs.notifyStderr(err.Error())
 	}
 
@@ -118,7 +135,10 @@ func (cs *CodeSnippet) runCmd(code string) {
 	go cs.scanStderr(stderr)
 
 	if err := cs.cmd.Run(); err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to run the run command",
+      "cmd", cs.cmd,
+      "error", err,
+    )
 		cs.notifyStderr(err.Error())
 	}
 }
@@ -143,8 +163,13 @@ func (cs *CodeSnippet) Stop() string {
 		return "stopped"
 	}
 
-	if err := cs.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		log.Println(err)
+  sig := syscall.SIGTERM
+	if err := cs.cmd.Process.Signal(sig); err != nil {
+    slogger.Errorw("Error while sending a signal to the run command",
+      "cmd", cs.cmd,
+      "signal", sig,
+      "error", err,
+    )
 		cs.notifyStderr(err.Error())
 	}
 
@@ -156,10 +181,13 @@ func (cs *CodeSnippet) Stop() string {
 
 // Subscription
 func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
-	log.Println("State subscription")
+  slogger.Info("New state subscription")
 	notifier, subscription, err := createSubscription(ctx)
 	if err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to create a state subscription from context",
+      "ctx", ctx,
+      "error", err,
+    )
 		return nil, err
 	}
 	cs.stateNotifier = notifier
@@ -169,10 +197,13 @@ func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
 
 // Subscription
 func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
-	log.Println("Stdout subscription")
+  slogger.Info("New stdout subscription")
 	notifier, subscription, err := createSubscription(ctx)
 	if err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to create a stdout subscription from context",
+      "ctx", ctx,
+      "error", err,
+    )
 		return nil, err
 	}
 	cs.stdoutNotifier = notifier
@@ -182,10 +213,13 @@ func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 
 // Subscription
 func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
-	log.Println("Stderr subscription")
+  slogger.Info("New stderr subscription")
 	notifier, subscription, err := createSubscription(ctx)
 	if err != nil {
-		log.Println(err)
+    slogger.Errorw("Failed to create a stderr subscription from context",
+      "ctx", ctx,
+      "error", err,
+    )
 		return nil, err
 	}
 	cs.stderrNotifier = notifier

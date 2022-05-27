@@ -2,8 +2,7 @@ package main
 
 import (
 	"bufio"
-	"fmt"
-	"log"
+	"encoding/json"
 	"net/http"
 	"os"
 	"path"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
 const (
@@ -18,7 +18,10 @@ const (
 )
 
 var (
+  slogger *zap.SugaredLogger
+
 	wsHandler          http.Handler
+
 	runCmd             string
 	runArgs            string
 	parsedRunArgs      []string
@@ -28,34 +31,42 @@ var (
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
-	log.Println("Client connected")
+	slogger.Debug("Client connected")
 	// TODO: Separate new connection?
 	wsHandler.ServeHTTP(w, r)
 }
 
 func loadDBKEnvs() {
+  slogger.Infow("Loading envs from the .dbkenv file", "envFilePath", envFilePath)
+
   file, err := os.Open(envFilePath)
   if err != nil {
-    panic(err)
+    slogger.Errorw("Failed to open dbkenv file",
+      "envFilePath", envFilePath,
+      "error", err,
+    )
   }
   defer file.Close()
 
   scanner := bufio.NewScanner(file)
   // Optionally, resize scanner's capacity for lines over 64K, see next example.
-  log.Println("=== Content of .dbkenv ======================")
   for scanner.Scan() {
     // Expects vars in the format "VAR_NAME=VALUE"
     // ["VAR_NAME", "VALUE"]
     envVar := scanner.Text()
-    log.Println(envVar)
 
     name, value, found := strings.Cut(envVar, "=")
-    log.Printf("\tName: %s\n", name)
-    log.Printf("\tValue: %s\n", value)
 
     if !found {
-      panic(fmt.Errorf("Invalid DBK env var format: %s", envVar))
+      slogger.Errorw("Invalid env format in the .dbkenv file",
+        "line", envVar,
+      )
     }
+
+    slogger.Infow("Devbook env var",
+      "name", name,
+      "value", value,
+    )
 
     if name == "RUN_CMD" {
       runCmd = value
@@ -69,14 +80,45 @@ func loadDBKEnvs() {
 
     // TODO: Check if all required vars are set.
   }
-  log.Println("=============================================")
 
   if err := scanner.Err(); err != nil {
-    panic(err)
+    slogger.Errorw("Error from scanner for .dbkenv file",
+      "error", err,
+    )
   }
 }
 
+func initLogger() {
+  rawJSON := []byte(`{
+	  "level": "debug",
+	  "encoding": "json",
+	  "outputPaths": ["stdout", "/var/log/devbookd.log"],
+	  "errorOutputPaths": ["stderr", "/var/log/devbookd.err"],
+	  "encoderConfig": {
+	    "messageKey": "message",
+	    "levelKey": "level",
+	    "levelEncoder": "lowercase"
+	  }
+	}`)
+
+	var cfg zap.Config
+	if err := json.Unmarshal(rawJSON, &cfg); err != nil {
+		panic(err)
+	}
+	l, err := cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+  slogger = l.Sugar()
+}
+
 func main() {
+  initLogger()
+	defer slogger.Sync()
+	slogger.Info("Logger construction succeeded")
+
+  loadDBKEnvs()
+
 	parsedRunArgs = strings.Fields(runArgs)
 	entrypointFullPath = path.Join(workdir, entrypoint)
 
@@ -84,14 +126,15 @@ func main() {
 	server := rpc.NewServer()
 	codeSnippet := new(CodeSnippet)
 	if err := server.RegisterName("codeSnippet", codeSnippet); err != nil {
-		panic(err)
+    slogger.Errorw("Failed to register code snippet service", "error", err)
 	}
 
 	wsHandler = server.WebsocketHandler([]string{"*"})
 	//router.Handle("/ws", wshandler)
 	router.HandleFunc("/ws", serveWs)
-	err := http.ListenAndServe(":8010", router)
-	if err != nil {
-		panic(err)
-	}
+
+  slogger.Info("Starting server on the port :8010")
+	if err := http.ListenAndServe(":8010", router); err != nil {
+    slogger.Errorw("Failed to start the server", "error", err)
+  }
 }
