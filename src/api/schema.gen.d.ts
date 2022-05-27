@@ -91,8 +91,8 @@ export interface paths {
       readonly responses: {
         /** Successfully refreshed the session */
         readonly 204: never;
-        /** Error refreshing the session */
-        readonly 500: {
+        /** Error refreshing session - session not found */
+        readonly 404: {
           readonly content: {
             readonly "application/json": components["schemas"]["Error"];
           };
