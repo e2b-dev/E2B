@@ -55,21 +55,10 @@ git subtree push --prefix shared https://github.com/devbookhq/shared.git master
 ### Clock drift
 - https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it
 
-### FS overlay
-- https://jvns.ca/blog/2019/11/18/how-containers-work--overlayfs/
-- https://github.com/firecracker-microvm/firecracker/blob/34955a935c59c19361e0652b43e5bb77bca92da7/docs/overlay-filesystem.md
-- https://github.com/firecracker-microvm/firecracker-containerd/tree/main/tools/image-builder
-- https://github.com/firecracker-microvm/firecracker-containerd/blob/main/tools/image-builder/files_debootstrap/sbin/overlay-init#L39
-- https://wiki.gentoo.org/wiki/Device-mapper
-- https://www.kernel.org/doc/Documentation/device-mapper/snapshot.txt
-- https://github.com/firecracker-microvm/firecracker-containerd/issues/75
-- https://github.com/weaveworks/ignite/blob/main/pkg/dmlegacy/snapshot.go#L61-L118
-
 ### Security
 - Restrict firewalls
 - Add ACL to the Nomad/Consul
 - Remove public IPs from the cluster instances
-- What does `reboot` inside a FC session do?
 
 ### Automation
 - Separate cluster server and client images
