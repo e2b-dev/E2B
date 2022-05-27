@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-contrib/cors"
+
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/devbookhq/orchestration-services/api/internal/handlers"
 
@@ -29,6 +31,9 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 
 	// This is how you set up a basic gin router
 	r := gin.Default()
+
+	// Allow all origins
+	r.Use(cors.Default())
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
