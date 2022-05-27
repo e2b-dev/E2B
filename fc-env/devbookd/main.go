@@ -36,6 +36,17 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	wsHandler.ServeHTTP(w, r)
 }
 
+func errLogUndefinedEnvVar(name, value string) {
+  if value == "" {
+    slogger.Error(
+      "The Devbook env var '%s' is empty. Make sure to add the %s var to %s",
+      name,
+      name,
+      envFilePath,
+    )
+  }
+}
+
 func loadDBKEnvs() {
   slogger.Infow("Loading envs from the .dbkenv file", "envFilePath", envFilePath)
 
@@ -69,16 +80,18 @@ func loadDBKEnvs() {
     )
 
     if name == "RUN_CMD" {
+      errLogUndefinedEnvVar("RUN_CMD", value)
       runCmd = value
     } else if name == "RUN_ARGS" {
+      errLogUndefinedEnvVar("RUN_ARGS", value)
       runArgs = value
     } else if name == "WORKDIR" {
+      errLogUndefinedEnvVar("WORKDIR", value)
       workdir = value
     } else if name == "ENTRYPOINT" {
+      errLogUndefinedEnvVar("ENTRYPOINT", value)
       entrypoint = value
     }
-
-    // TODO: Check if all required vars are set.
   }
 
   if err := scanner.Err(); err != nil {
