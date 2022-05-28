@@ -71,7 +71,7 @@ class Session {
     const id = await this.rpc.call('codeSnippet_subscribe', [event])
 
     if (typeof id !== 'string') {
-      throw new Error(`Cannot subscribe to event ${event}`)
+      throw new Error(`Cannot subscribe to event ${event}. Ecpected response to be a subscription ID, instead got ${JSON.stringify(id)}`)
     }
 
     this.subscribers.push({
