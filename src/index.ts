@@ -8,4 +8,5 @@ export type {
   SubscriptionHandlerType,
   CodeSnippetState,
   Subscriber,
+  SessionHandlers,
 } from './session'
