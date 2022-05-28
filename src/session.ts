@@ -110,7 +110,7 @@ class Session {
   disconnect() {
     if (this.isActive) {
       this.isActive = false
-      this.rpc.ws.close()
+      this.rpc.ws?.close()
       this.handlers?.onClose?.()
       this.logger.log('Disconected from the session')
     }
