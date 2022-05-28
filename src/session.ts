@@ -66,8 +66,9 @@ class Session {
   constructor(
     private readonly codeSnippetID: string,
     private readonly handlers?: SessionHandlers,
+    debug?: boolean
   ) {
-    this.logger = new Logger('Session', process.env.DEBUG === '1')
+    this.logger = new Logger('Session', debug)
     this.logger.log(`Session for code snippet "${codeSnippetID}" initialized`)
   }
 
@@ -150,9 +151,8 @@ class Session {
     await this.rpc.connect(sessionURL)
     this.logger.log('Connected to session:', this.session)
 
-
-    this.rpc.onClose(async () => {
-      this.logger.log('Closing WS connection to session:', this.session)
+    this.rpc.onClose(async (e) => {
+      this.logger.log('Closing WS connection to session:', this.session, e)
       if (this.isActive) {
         await wait(WS_RECONNECT_INTERVAL)
         this.logger.log('Reconnecting to session:', this.session)
@@ -193,13 +193,15 @@ class Session {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isActive) {
-          throw new Error('Cannot refresh session - it was closed')
+          this.logger.log('Cannot refresh session - it was closed')
+          return
         }
 
+        await wait(SESSION_REFRESH_PERIOD)
+
         try {
-          await refreshSession({ sessionID })
           this.logger.log(`Refreshed session "${sessionID}"`)
-          await wait(SESSION_REFRESH_PERIOD)
+          await refreshSession({ sessionID })
         } catch (e) {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()

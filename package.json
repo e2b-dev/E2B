@@ -21,7 +21,7 @@
     "prepublishOnly": "rollup -c",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "run": "DEBUG=1 node examples/index.mjs",
+    "run": "node examples/index.mjs",
     "generate": "openapi-typescript shared/api/openapi.yml --immutable-types --output src/api/schema.gen.d.ts"
   },
   "devDependencies": {

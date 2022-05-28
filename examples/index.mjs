@@ -11,14 +11,14 @@ async function main() {
     onStdout(stdout) {
       console.log(stdout)
     },
-  })
+  },
+    true,
+  )
 
   try {
     await session.connect()
 
     await session.run('console.log("----------")')
-
-    console.log('running code')
 
   } catch (e) {
     console.error(e)

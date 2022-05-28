@@ -35,8 +35,6 @@ main()
 
 ## Development
 
-Set the env var `DEBUG=1` to enable detailed logs from the SDK.
-
 ### Subtrees
 
 #### shared
