@@ -78,11 +78,14 @@ server {
 server {
   listen 3002;
   server_name ~^(.+)-[[ index .ServiceMeta "Client" | sprig_substr 0 8 ]]\.ondevbook\.com$;
+  
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
 
   proxy_set_header Upgrade $http_upgrade;
   proxy_set_header Connection $conn_upgrade;
+
+  proxy_read_timeout 7d;
 
   location / {
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;

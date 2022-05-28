@@ -95,11 +95,14 @@ server {
   # We use the systemd nameserver to resolve against /etc/hosts.
   # See https://stackoverflow.com/questions/29980884/proxy-pass-does-not-resolve-dns-using-etc-hosts
   resolver 127.0.0.53;
+
   proxy_set_header Host $host;
   proxy_set_header X-Real-IP $remote_addr;
 
   proxy_set_header Upgrade $http_upgrade;
   proxy_set_header Connection "Upgrade";
+
+  proxy_read_timeout 7d;
 
   location / {
     if ($dbk_session_id = "") {
