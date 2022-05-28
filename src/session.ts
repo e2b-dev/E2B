@@ -9,10 +9,10 @@ import api, {
 } from './api'
 import wait from './utils/wait'
 import {
-  SESSION_DOMAIN,
   SESSION_REFRESH_PERIOD,
   WS_PORT,
   WS_RECONNECT_INTERVAL,
+  WS_ROUTE,
 } from './constants'
 import Logger from './utils/logger'
 
@@ -37,6 +37,15 @@ export interface Subscriber {
   handler: SubscriptionHandler
 }
 
+export type CloseHandler = () => void
+
+export interface SessionHandlers {
+  onStateChange?: StateHandler
+  onStderr?: StderrHandler
+  onStdout?: StdoutHandler
+  onClose?: CloseHandler
+}
+
 const getSession = api.path('/sessions').method('post').create()
 const refreshSession = api.path('/sessions/{sessionID}/refresh').method('put').create()
 
@@ -56,18 +65,23 @@ class Session {
 
   constructor(
     private readonly codeSnippetID: string,
-    private readonly onDisconnect?: () => void,
+    private readonly handlers?: SessionHandlers,
   ) {
-    this.logger = new Logger('Session', true)
+    this.logger = new Logger('Session', process.env.DEBUG === '1')
     this.logger.log(`Session for code snippet "${codeSnippetID}" initialized`)
   }
 
-  unsubscribe(event: SubscriptionEvent, handler: SubscriptionHandler) {
+  private async unsubscribe(event: SubscriptionEvent, handler: SubscriptionHandler) {
+    const subscription = this.subscribers.find(s => s.handler === handler && s.event === event)
+    if (!subscription) return
+
+    await this.rpc.call('codeSnippet_unsubscribe', [subscription?.id])
+
     this.subscribers = this.subscribers.filter(s => s.handler !== handler || s.event !== event)
     this.logger.log(`Unsubscribed from event "${event}"`)
   }
 
-  async subscribe<E extends SubscriptionEvent>(event: E, handler: SubscriptionHandlerType[E]) {
+  private async subscribe<E extends SubscriptionEvent>(event: E, handler: SubscriptionHandlerType[E]) {
     const id = await this.rpc.call('codeSnippet_subscribe', [event])
 
     if (typeof id !== 'string') {
@@ -96,10 +110,7 @@ class Session {
     if (this.isActive) {
       this.isActive = false
       this.rpc.ws.close()
-      this.onDisconnect?.()
-      this.rpc.onCloseHandlers = []
-      this.rpc.onErrorHandlers = []
-      this.subscribers = []
+      this.handlers?.onClose?.()
       this.logger.log('Disconected from the session')
     }
   }
@@ -111,33 +122,62 @@ class Session {
       this.isActive = true
     }
 
-    const res = await getSession({ codeSnippetID: this.codeSnippetID })
-    this.session = res.data
-    this.logger.log('Aquired session:', this.session)
+    try {
+      const res = await getSession({ codeSnippetID: this.codeSnippetID })
+      this.session = res.data
+      this.logger.log('Aquired session:', this.session)
+
+    } catch (e) {
+      if (e instanceof getSession.Error) {
+        const error = e.getActualType()
+        if (error.status === 400) {
+          throw new Error(`Error creating session - bad request: ${error}`)
+        }
+        if (error.status === 500) {
+          throw new Error(`Error creating session - server error: ${error}`)
+        }
+        throw e
+      }
+    }
+
+    if (!this.session) return
 
     this.refresh(this.session.sessionID)
 
-    // const sessionURL = `wss://${getSessionURL(this.session, WS_PORT)}`
-    const sessionURL = 'wss://8010-devbookhq-sdk-04nne8d6978.ws-eu46.gitpod.io/ws'
-    // const sessionURL = 'wss://8010-devbookhq-orchestration-axk7sf5j4y4.ws-eu46.gitpod.io:8010/ws'
-
-    this.rpc.onNotification.push(this.handleNotification.bind(this))
-
-    this.rpc.onClose(async () => {
-      if (this.isActive) {
-        await wait(WS_RECONNECT_INTERVAL)
-        this.logger.log('Reconnecting to session:', this.session)
-        await this.rpc.connect(sessionURL)
-      }
-    })
-
-    this.rpc.onError((err) => {
-      this.logger.error('WS error:', err)
-    })
+    const sessionURL = `wss://${getSessionURL(this.session, WS_PORT)}${WS_ROUTE}`
 
     this.logger.log('Connection to session:', this.session)
     await this.rpc.connect(sessionURL)
     this.logger.log('Connected to session:', this.session)
+
+
+    this.rpc.onClose(async () => {
+      this.logger.log('Closing WS connection to session:', this.session)
+      if (this.isActive) {
+        await wait(WS_RECONNECT_INTERVAL)
+        this.logger.log('Reconnecting to session:', this.session)
+        try {
+          await this.rpc.connect(sessionURL)
+          this.logger.log('Reconnected to session:', this.session)
+        } catch (e) {
+          this.logger.error('Failed reconnecting to session:', this.session)
+        }
+      }
+    })
+
+    this.rpc.onError((e) => {
+      this.logger.error('Error in WS session:', this.session, e)
+    })
+
+    await Promise.all([
+      this.handlers?.onStateChange ? this.subscribe('state', this.handlers.onStateChange) : Promise.resolve(),
+      this.handlers?.onStderr ? this.subscribe('stderr', this.handlers.onStderr) : Promise.resolve(),
+      this.handlers?.onStdout ? this.subscribe('stdout', this.handlers.onStdout) : Promise.resolve(),
+    ])
+
+    this.rpc.onNotification.push(this.handleNotification.bind(this))
+
+    this.logger.log('Connected handlers for session:', this.session)
   }
 
   private handleNotification(data: IRpcNotification) {
@@ -148,29 +188,32 @@ class Session {
 
   private async refresh(sessionID: string) {
     this.logger.log(`Started refreshing session "${sessionID}"`)
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      if (!this.isActive) {
-        throw new Error('Cannot refresh session - it was closed')
-      }
 
-      try {
-        await refreshSession({ sessionID })
-        this.logger.log(`Refreshed session "${sessionID}"`)
-        await wait(SESSION_REFRESH_PERIOD)
-      } catch (e) {
-        if (e instanceof refreshSession.Error) {
-          const error = e.getActualType()
-          if (error.status === 404) {
-            throw new Error('Error refreshing session', e)
-          }
-          throw new Error('Unknown server error', e)
+    try {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if (!this.isActive) {
+          throw new Error('Cannot refresh session - it was closed')
         }
-        this.logger.log(`Refreshing session "${sessionID}" failed:`, e)
-      } finally {
-        this.logger.log(`Stopped refreshing session "${sessionID}"`)
-        this.disconnect()
+
+        try {
+          await refreshSession({ sessionID })
+          this.logger.log(`Refreshed session "${sessionID}"`)
+          await wait(SESSION_REFRESH_PERIOD)
+        } catch (e) {
+          if (e instanceof refreshSession.Error) {
+            const error = e.getActualType()
+            if (error.status === 404) {
+              this.logger.error(`Error refreshing session ${error}`)
+              return
+            }
+            this.logger.error(`Refreshing session "${sessionID}" failed: ${error.status}`)
+          }
+        }
       }
+    } finally {
+      this.logger.log(`Stopped refreshing session "${sessionID}"`)
+      this.disconnect()
     }
   }
 }

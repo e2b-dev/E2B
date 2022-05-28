@@ -1,3 +1,0 @@
-console.lo
-  g()
-
