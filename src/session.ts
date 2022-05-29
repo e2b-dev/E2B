@@ -98,11 +98,19 @@ class Session {
   }
 
   async run(code: string) {
+    if (!this.isActive || !this.session) {
+      throw new Error('Session is not active')
+    }
+
     await this.rpc.call('codeSnippet_run', [code])
     this.logger.log('Started running code', code)
   }
 
   async stop() {
+    if (!this.isActive || !this.session) {
+      throw new Error('Session is not active')
+    }
+
     await this.rpc.call('codeSnippet_stop')
     this.logger.log('Stopped running code')
   }
@@ -118,7 +126,7 @@ class Session {
 
   async connect() {
     if (this.isActive || !!this.session) {
-      throw new Error('Session.connect was already called')
+      throw new Error('Session connect was already called')
     } else {
       this.isActive = true
     }
