@@ -5,10 +5,10 @@ import {
 
 import api, {
   components,
-  getSessionURL,
 } from './api'
 import wait from './utils/wait'
 import {
+  SESSION_DOMAIN,
   SESSION_REFRESH_PERIOD,
   WS_PORT,
   WS_RECONNECT_INTERVAL,
@@ -97,6 +97,19 @@ class Session {
     this.logger.log(`Subscribed to event "${event}" with id "${id}"`)
   }
 
+  getURL(port?: number) {
+    if (!this.isActive || !this.session) {
+      throw new Error('Session is not active')
+    }
+
+    const url = `${this.session.sessionID}-${this.session.clientID}.${SESSION_DOMAIN}`
+    if (port) {
+      return `${port}-${url}`
+    } else {
+      return url
+    }
+  }
+
   async run(code: string) {
     if (!this.isActive || !this.session) {
       throw new Error('Session is not active')
@@ -136,24 +149,21 @@ class Session {
       this.session = res.data
       this.logger.log('Aquired session:', this.session)
 
+      this.refresh(this.session.sessionID)
     } catch (e) {
       if (e instanceof getSession.Error) {
         const error = e.getActualType()
         if (error.status === 400) {
-          throw new Error(`Error creating session - bad request: ${error}`)
+          throw new Error(`Error creating session - (${error.status}) bad request: ${error.data}`)
         }
         if (error.status === 500) {
-          throw new Error(`Error creating session - server error: ${error}`)
+          throw new Error(`Error creating session - (${error.status}) server error: ${error.data}`)
         }
         throw e
       }
     }
 
-    if (!this.session) return
-
-    this.refresh(this.session.sessionID)
-
-    const sessionURL = `wss://${getSessionURL(this.session, WS_PORT)}${WS_ROUTE}`
+    const sessionURL = `wss://${this.getURL(WS_PORT)}${WS_ROUTE}`
 
     this.logger.log('Connection to session:', this.session)
     await this.rpc.connect(sessionURL)
@@ -214,10 +224,10 @@ class Session {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
-              this.logger.error(`Error refreshing session ${error}`)
+              this.logger.error(`Error refreshing session - (${error.status}): ${error.data}`)
               return
             }
-            this.logger.error(`Refreshing session "${sessionID}" failed: ${error.status}`)
+            this.logger.error(`Refreshing session "${sessionID}" failed - (${error.status})`)
           }
         }
       }
