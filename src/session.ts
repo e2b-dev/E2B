@@ -154,10 +154,10 @@ class Session {
       if (e instanceof getSession.Error) {
         const error = e.getActualType()
         if (error.status === 400) {
-          throw new Error(`Error creating session - (${error.status}) bad request: ${error.data}`)
+          throw new Error(`Error creating session - (${error.status}) bad request: ${error.data.message}`)
         }
         if (error.status === 500) {
-          throw new Error(`Error creating session - (${error.status}) server error: ${error.data}`)
+          throw new Error(`Error creating session - (${error.status}) server error: ${error.data.message}`)
         }
         throw e
       }
@@ -224,7 +224,7 @@ class Session {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
-              this.logger.error(`Error refreshing session - (${error.status}): ${error.data}`)
+              this.logger.error(`Error refreshing session - (${error.status}): ${error.data.message}`)
               return
             }
             this.logger.error(`Refreshing session "${sessionID}" failed - (${error.status})`)
