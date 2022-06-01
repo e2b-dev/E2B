@@ -19,7 +19,7 @@ const (
 	sessionsJobFile          = sessionsJobName + ".hcl"
 	jobRegisterTimeout       = time.Second * 10
 	allocationCheckTimeout   = time.Second * 10
-	allocationCheckInterval  = time.Millisecond * 80
+	allocationCheckInterval  = time.Millisecond * 30
 	fcTaskName               = "start"
 	sessionIDPrefix          = "s"
 	sessionIDRandomLength    = 7
