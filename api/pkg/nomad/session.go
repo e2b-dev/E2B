@@ -19,7 +19,7 @@ const (
 	sessionsJobFile          = sessionsJobName + ".hcl"
 	jobRegisterTimeout       = time.Second * 10
 	allocationCheckTimeout   = time.Second * 10
-	allocationCheckInterval  = time.Millisecond * 30
+	allocationCheckInterval  = time.Millisecond * 75
 	fcTaskName               = "start"
 	sessionIDPrefix          = "s"
 	sessionIDRandomLength    = 7
@@ -181,7 +181,7 @@ allocationCheck:
 		time.Sleep(allocationCheckInterval)
 	}
 
-	_, _, err = n.client.Jobs().Deregister(*job.ID, false, &nomadAPI.WriteOptions{})
+	_, _, err = n.client.Jobs().Deregister(*job.ID, true, &nomadAPI.WriteOptions{})
 	if err != nil {
 		fmt.Printf("Failed to deregister '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err)
 	}
@@ -190,7 +190,7 @@ allocationCheck:
 }
 
 func (n *NomadClient) DeleteSession(sessionID string) *api.APIError {
-	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, false, &nomadAPI.WriteOptions{})
+	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, true, &nomadAPI.WriteOptions{})
 	if err != nil {
 		return &api.APIError{
 			Msg:       fmt.Sprintf("Cannot delete job '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
