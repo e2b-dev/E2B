@@ -115,6 +115,10 @@ components:
       required:
         - codeSnippetID
       properties:
+        saveFSChanges:
+          type: boolean
+          default: false
+          description: Option determining if the changes to the filesystem should be saved
         codeSnippetID:
           type: string
           description: Identifier of a code snippet which which is the environment associated
