@@ -5,101 +5,82 @@ import {
 
 import api, {
   components,
-} from './api'
-import wait from './utils/wait'
+} from '../api'
+import wait from '../utils/wait'
 import {
   SESSION_DOMAIN,
   SESSION_REFRESH_PERIOD,
   WS_PORT,
   WS_RECONNECT_INTERVAL,
   WS_ROUTE,
-} from './constants'
-import Logger from './utils/logger'
+} from '../constants'
+import Logger from '../utils/logger'
 
-export type CodeSnippetState = 'running' | 'stopped'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SubscriptionHandler = (result: any) => void
 
-export type StateHandler = (state: CodeSnippetState) => void
-export type StderrHandler = (stderr: string) => void
-export type StdoutHandler = (stdout: string) => void
-
-export type SubscriptionEvent = 'state' | 'stderr' | 'stdout'
-export type SubscriptionHandler = StateHandler | StderrHandler | StdoutHandler
-
-export type SubscriptionHandlerType = {
-  'state': StateHandler
-  'stderr': StderrHandler
-  'stdout': StdoutHandler
-}
-
-export interface Subscriber {
+interface Subscriber {
   id: string
-  event: SubscriptionEvent
   handler: SubscriptionHandler
 }
 
 export type CloseHandler = () => void
 
-export interface SessionHandlers {
-  onStateChange?: StateHandler
-  onStderr?: StderrHandler
-  onStdout?: StdoutHandler
+export interface SessionConnectionOpts {
+  id: string
   onClose?: CloseHandler
+  debug?: boolean
+  saveFSChanges?: boolean
 }
 
 const getSession = api.path('/sessions').method('post').create()
 const refreshSession = api.path('/sessions/{sessionID}/refresh').method('put').create()
 
-class Session {
-  private session?: components['schemas']['Session']
+class SessionConnection {
+  protected readonly logger: Logger
+  protected session?: components['schemas']['Session']
+  protected isOpen = false
+
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
-  private _isActive = false
-  private readonly logger: Logger
 
-  get isActive() {
-    return this._isActive
-  }
-  private set isActive(value: boolean) {
-    this._isActive = value
+  constructor(private readonly opts: SessionConnectionOpts) {
+    this.logger = new Logger('Session', opts.debug)
+    this.logger.log(`Session for code snippet "${opts.id}" initialized`)
   }
 
-  constructor(
-    private readonly codeSnippetID: string,
-    private readonly handlers?: SessionHandlers,
-    private readonly saveFSChanges?: boolean,
-    debug?: boolean
-  ) {
-    this.logger = new Logger('Session', debug)
-    this.logger.log(`Session for code snippet "${codeSnippetID}" initialized`)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected async call(method: string, params?: any) {
+    return this.rpc.call(method, [params])
   }
 
-  private async unsubscribe(event: SubscriptionEvent, handler: SubscriptionHandler) {
-    const subscription = this.subscribers.find(s => s.handler === handler && s.event === event)
+  protected async unsubscribe(method: string, handler: SubscriptionHandler) {
+    const subscription = this.subscribers.find(s => s.handler === handler)
     if (!subscription) return
 
-    await this.rpc.call('codeSnippet_unsubscribe', [subscription?.id])
+    await this.call(`${method}_unsubscribe`, [subscription?.id])
 
-    this.subscribers = this.subscribers.filter(s => s.handler !== handler || s.event !== event)
-    this.logger.log(`Unsubscribed from event "${event}"`)
+    this.subscribers = this.subscribers.filter(s => s.handler !== handler)
+    this.logger.log(`Unsubscribed from method "${method}"`)
   }
 
-  private async subscribe<E extends SubscriptionEvent>(event: E, handler: SubscriptionHandlerType[E]) {
-    const id = await this.rpc.call('codeSnippet_subscribe', [event])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected async subscribe(method: string, handler: SubscriptionHandler, params?: any) {
+    const id = await this.call(`${method}_subscribe`, [params])
 
     if (typeof id !== 'string') {
-      throw new Error(`Cannot subscribe to event ${event}. Ecpected response to be a subscription ID, instead got ${JSON.stringify(id)}`)
+      throw new Error(`Cannot subscribe to method ${method}. Ecpected response to be a subscription ID, instead got ${JSON.stringify(id)}`)
     }
 
     this.subscribers.push({
       id,
-      event,
       handler,
     })
-    this.logger.log(`Subscribed to event "${event}" with id "${id}"`)
+    this.logger.log(`Subscribed to method "${method}" with id "${id}"`)
   }
 
   getHostname(port?: number) {
-    if (!this.isActive || !this.session) {
+    if (!this.isOpen || !this.session) {
       throw new Error('Session is not active')
     }
 
@@ -111,44 +92,26 @@ class Session {
     }
   }
 
-  async run(code: string) {
-    if (!this.isActive || !this.session) {
-      throw new Error('Session is not active')
-    }
-
-    await this.rpc.call('codeSnippet_run', [code])
-    this.logger.log('Started running code', code)
-  }
-
-  async stop() {
-    if (!this.isActive || !this.session) {
-      throw new Error('Session is not active')
-    }
-
-    await this.rpc.call('codeSnippet_stop')
-    this.logger.log('Stopped running code')
-  }
-
-  disconnect() {
-    if (this.isActive) {
-      this.isActive = false
+  close() {
+    if (this.isOpen) {
+      this.isOpen = false
       this.rpc.ws?.close()
-      this.handlers?.onClose?.()
+      this.opts?.onClose?.()
       this.logger.log('Disconected from the session')
     }
   }
 
-  async connect() {
-    if (this.isActive || !!this.session) {
+  async open() {
+    if (this.isOpen || !!this.session) {
       throw new Error('Session connect was already called')
     } else {
-      this.isActive = true
+      this.isOpen = true
     }
 
     try {
       const res = await getSession({
-        codeSnippetID: this.codeSnippetID,
-        saveFSChanges: this.saveFSChanges,
+        codeSnippetID: this.opts.id,
+        saveFSChanges: this.opts.saveFSChanges,
       })
       this.session = res.data
       this.logger.log('Aquired session:', this.session)
@@ -167,6 +130,10 @@ class Session {
       }
     }
 
+    if (!this.session) {
+      throw new Error('Session is not defined')
+    }
+
     const sessionURL = `wss://${this.getHostname(WS_PORT)}${WS_ROUTE}`
 
     this.logger.log('Connection to session:', this.session)
@@ -175,7 +142,7 @@ class Session {
 
     this.rpc.onClose(async (e) => {
       this.logger.log('Closing WS connection to session:', this.session, e)
-      if (this.isActive) {
+      if (this.isOpen) {
         await wait(WS_RECONNECT_INTERVAL)
         this.logger.log('Reconnecting to session:', this.session)
         try {
@@ -191,15 +158,7 @@ class Session {
       this.logger.error('Error in WS session:', this.session, e)
     })
 
-    await Promise.all([
-      this.handlers?.onStateChange ? this.subscribe('state', this.handlers.onStateChange) : Promise.resolve(),
-      this.handlers?.onStderr ? this.subscribe('stderr', this.handlers.onStderr) : Promise.resolve(),
-      this.handlers?.onStdout ? this.subscribe('stdout', this.handlers.onStdout) : Promise.resolve(),
-    ])
-
     this.rpc.onNotification.push(this.handleNotification.bind(this))
-
-    this.logger.log('Connected handlers for session:', this.session)
   }
 
   private handleNotification(data: IRpcNotification) {
@@ -214,7 +173,7 @@ class Session {
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        if (!this.isActive) {
+        if (!this.isOpen) {
           this.logger.log('Cannot refresh session - it was closed')
           return
         }
@@ -237,9 +196,9 @@ class Session {
       }
     } finally {
       this.logger.log(`Stopped refreshing session "${sessionID}"`)
-      this.disconnect()
+      this.close()
     }
   }
 }
 
-export default Session
+export default SessionConnection

@@ -1,12 +1,18 @@
 export { default as Session } from './session'
 export type {
-  StateHandler,
-  StderrHandler,
-  StdoutHandler,
-  SubscriptionEvent,
-  SubscriptionHandler,
-  SubscriptionHandlerType,
-  CodeSnippetState,
-  Subscriber,
-  SessionHandlers,
+  SessionOpts,
 } from './session'
+export type {
+  CodeSnippet,
+  CodeSnippetState,
+  CodeSnippetStateHandler,
+  CodeSnippetStderrHandler,
+  CodeSnippetStdoutHandler,
+  CodeSnippetSubscriptionEvent,
+  CodeSnippetSubscriptionHandler,
+  CodeSnippetSubscriptionHandlerType,
+} from './session/codeSnippet'
+export type {
+  Terminal,
+  TerminalSession,
+} from './session/terminal'
