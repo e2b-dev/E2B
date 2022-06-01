@@ -168,6 +168,8 @@ export interface components {
       readonly state: "Building" | "Failed" | "Done";
     };
     readonly NewSession: {
+      /** @description Option determining if the changes to the filesystem should be saved */
+      readonly saveFSChanges?: boolean;
       /** @description Identifier of a code snippet which which is the environment associated */
       readonly codeSnippetID: string;
     };

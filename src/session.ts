@@ -66,6 +66,7 @@ class Session {
   constructor(
     private readonly codeSnippetID: string,
     private readonly handlers?: SessionHandlers,
+    private readonly saveFSChanges?: boolean,
     debug?: boolean
   ) {
     this.logger = new Logger('Session', debug)
@@ -145,7 +146,10 @@ class Session {
     }
 
     try {
-      const res = await getSession({ codeSnippetID: this.codeSnippetID })
+      const res = await getSession({
+        codeSnippetID: this.codeSnippetID,
+        saveFSChanges: this.saveFSChanges,
+      })
       this.session = res.data
       this.logger.log('Aquired session:', this.session)
 
