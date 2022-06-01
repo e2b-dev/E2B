@@ -97,16 +97,16 @@ class Session {
     this.logger.log(`Subscribed to event "${event}" with id "${id}"`)
   }
 
-  getURL(port?: number) {
+  getHostname(port?: number) {
     if (!this.isActive || !this.session) {
       throw new Error('Session is not active')
     }
 
-    const url = `${this.session.sessionID}-${this.session.clientID}.${SESSION_DOMAIN}`
+    const hostname = `${this.session.sessionID}-${this.session.clientID}.${SESSION_DOMAIN}`
     if (port) {
-      return `${port}-${url}`
+      return `${port}-${hostname}`
     } else {
-      return url
+      return hostname
     }
   }
 
@@ -163,7 +163,7 @@ class Session {
       }
     }
 
-    const sessionURL = `wss://${this.getURL(WS_PORT)}${WS_ROUTE}`
+    const sessionURL = `wss://${this.getHostname(WS_PORT)}${WS_ROUTE}`
 
     this.logger.log('Connection to session:', this.session)
     await this.rpc.connect(sessionURL)
