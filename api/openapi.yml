@@ -1,0 +1,300 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Devbook
+  description: Devbook API
+
+servers:
+  - url: https://ondevbook.com/
+    description: API endpoint
+  - url: https://{sessionID}-{clientID}.ondevbook.com/
+    description: Session endpoint without specified port
+    variables:
+      sessionID:
+        description: ID of the session
+        default: _sessionID
+      clientID:
+        description: ID of the client
+        default: _clientID
+  - url: https://{port}-{sessionID}-{clientID}.ondevbook.com/
+    description: Session endpoint with specificed port
+    variables:
+      sessionID:
+        description: ID of the session
+        default: _sessionID
+      clientID:
+        description: ID of the client
+        default: _clientID
+      port:
+        description: Port to connect to
+        default: "8080"
+
+tags:
+  - name: sessions
+    description: Managing VM sessions
+  - name: envs
+    description: Environment for VM
+
+components:
+  #securitySchemes:
+  #  ApiKeyAuth: # Arbitrary name for the security scheme
+  #    type: apiKey
+  #    in: query # Can be 'header', 'query' or 'cookie'
+  #    name: API_KEY # Name of the header, query parameter or cookie
+  schemas:
+    DeleteEnvironment:
+      type: object
+      required:
+        - codeSnippetID
+      properties:
+        codeSnippetID:
+          type: string
+    NewEnvironment:
+      type: object
+      required:
+        - codeSnippetID
+        - template
+        - deps
+      properties:
+        codeSnippetID:
+          type: string
+        template:
+          type: string
+          enum: [Nodejs]
+        deps:
+          type: array
+          items:
+            type: string
+    Environment:
+      allOf:
+        - $ref: "#/components/schemas/NewEnvironment"
+        - type: object
+          required:
+            - id
+            - state
+          properties:
+            id:
+              type: string
+            state:
+              type: string
+              enum: [Building, Failed, Done]
+    EnvironmentStateUpdate:
+      type: object
+      required:
+        - codeSnippetID
+        - state
+      properties:
+        codeSnippetID:
+          type: string
+        state:
+          type: string
+          enum: [Building, Failed, Done]
+
+      #NewEnvironment:
+      #  required:
+      #    - codeSnippetID
+      #    - template
+      #    - deps
+      #  properties:
+      #    codeSnippetID:
+      #      type: string
+      #      description: Identifier of a code snippet which which is the environment associated
+      #    template:
+      #      type: string
+      #      enum: [nodejs]
+      #    deps: # ['dep1', 'dep2']
+      #      type: array
+      #      items:
+      #        type: string
+      #  Environment:
+      #    required:
+      #      - codeSnippetID
+      #      - r
+
+    NewSession:
+      required:
+        - codeSnippetID
+      properties:
+        saveFSChanges:
+          type: boolean
+          default: false
+          description: Option determining if the changes to the filesystem should be saved
+        codeSnippetID:
+          type: string
+          description: Identifier of a code snippet which which is the environment associated
+    Session:
+      required:
+        - sessionID
+        - clientID
+      properties:
+        sessionID:
+          type: string
+          description: Identifier of the session
+        clientID:
+          type: string
+          description: Identifier of the client
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error
+
+#security:
+#- ApiKeyAuth: [] # Use the same name as under securitySchemes
+
+paths:
+  /health:
+    get:
+      description: Health check
+      responses:
+        200:
+          description: Request was successful
+  /sessions:
+    get:
+      tags:
+        - sessions
+      description: List all sessions
+      responses:
+        200:
+          description: Successfully returned all sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Session"
+        500:
+          description: Error listing sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      tags:
+        - sessions
+      description: Create a session on the server
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSession"
+      responses:
+        201:
+          description: Successfully created a session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Error creating session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /sessions/{sessionID}:
+    delete:
+      tags:
+        - sessions
+      parameters:
+        - name: sessionID
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Delete a session on the server
+      responses:
+        204:
+          description: Successfully deleted the session
+        500:
+          description: Error deleting the session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /sessions/{sessionID}/refresh:
+    put:
+      tags:
+        - sessions
+      parameters:
+        - name: sessionID
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Refresh the session extending its time to live
+      responses:
+        204:
+          description: Successfully refreshed the session
+        404:
+          description: Error refreshing session - session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /envs:
+    delete:
+      tags:
+        - envs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteEnvironment"
+    post:
+      tags:
+        - envs
+      responses:
+        200:
+          description: Successfully created an environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewEnvironment"
+  # TODO: This endpoint might not be needed.
+  /envs/{codeSnippetID}:
+    get:
+      tags:
+        - envs
+      parameters:
+        - name: codeSnippetID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+  /envs/state:
+    post:
+      tags:
+        - envs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentStateUpdate"
