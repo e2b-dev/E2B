@@ -182,6 +182,7 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 
 func (h *taskHandle) shutdown() error {
 	h.MachineInstance.StopVMM()
+	h.Slot.RemoveNamespace(h.logger)
 
 	return nil
 }
