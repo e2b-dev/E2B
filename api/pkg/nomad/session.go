@@ -91,12 +91,14 @@ jobRegister:
 				FCTaskName     string
 				SessionJobName string
 				FCEnvsDisk     string
+				SaveFSChanges  bool
 			}{
 				CodeSnippetID:  newSession.CodeSnippetID,
 				SessionID:      sessionID,
 				FCTaskName:     fcTaskName,
 				SessionJobName: sessionsJobName,
 				FCEnvsDisk:     fcEnvsDisk,
+				SaveFSChanges: *newSession.SaveFSChanges,
 			}
 
 			err = sessionsJobTemp.Execute(&jobDef, jobVars)

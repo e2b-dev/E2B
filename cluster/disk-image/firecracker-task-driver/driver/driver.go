@@ -60,6 +60,7 @@ var (
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 		"SessionID":     hclspec.NewAttr("SessionID", "string", false),
 		"CodeSnippetID": hclspec.NewAttr("CodeSnippetID", "string", false),
+		"SaveFSChanges": hclspec.NewAttr("SaveFSChanges", "bool", false),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -110,6 +111,7 @@ type Nic struct {
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
 	SessionID     string `codec:"SessionID"`
+	SaveFSChanges bool   `codec:"SaveFSChanges"`
 	CodeSnippetID string `codec:"CodeSnippetID"`
 }
 
@@ -255,7 +257,14 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		return nil, nil, fmt.Errorf("failed to create networking: %v", err)
 	}
 
-	m, err := d.initializeContainer(context.Background(), cfg, driverConfig, ipSlot, cfg.Env["FC_ENVS_DISK"])
+	m, err := d.initializeContainer(
+		context.Background(),
+		cfg,
+		driverConfig,
+		ipSlot,
+		cfg.Env["FC_ENVS_DISK"],
+		driverConfig.SaveFSChanges,
+	)
 	if err != nil {
 		ipSlot.RemoveNamespace(d.logger)
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
