@@ -36,7 +36,7 @@ export interface SessionConnectionOpts {
 const getSession = api.path('/sessions').method('post').create()
 const refreshSession = api.path('/sessions/{sessionID}/refresh').method('put').create()
 
-class SessionConnection {
+abstract class SessionConnection {
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
   protected isOpen = false
@@ -50,8 +50,8 @@ class SessionConnection {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async call(method: string, params?: any) {
-    return this.rpc.call(method, [params])
+  protected async call(method: string, params?: any[]) {
+    return this.rpc.call(method, params)
   }
 
   protected async unsubscribe(method: string, handler: SubscriptionHandler) {

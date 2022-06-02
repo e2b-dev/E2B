@@ -3,7 +3,7 @@ export type {
   SessionOpts,
 } from './session'
 export type {
-  CodeSnippet,
+  CodeSnippetManager,
   CodeSnippetState,
   CodeSnippetStateHandler,
   CodeSnippetStderrHandler,
@@ -13,6 +13,6 @@ export type {
   CodeSnippetSubscriptionHandlerType,
 } from './session/codeSnippet'
 export type {
-  Terminal,
+  TerminalManager,
   TerminalSession,
 } from './session/terminal'

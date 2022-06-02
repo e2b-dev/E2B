@@ -20,7 +20,7 @@ async function main() {
 
   try {
     await session.open()
-    await session.codeSnippet.run(String.raw`
+    await session.codeSnippet().run(String.raw`
     const fs = require('fs')
 
     setInterval(() => {

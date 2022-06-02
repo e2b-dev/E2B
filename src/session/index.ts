@@ -1,12 +1,14 @@
 import {
-  CodeSnippet,
+  CodeSnippetManager,
   CodeSnippetStateHandler,
   CodeSnippetStderrHandler,
   CodeSnippetStdoutHandler,
   codeSnippetSubscriptionMethod,
 } from './codeSnippet'
-import { Terminal, terminalSubscriptionMethod } from './terminal'
-import SessionConnection, { SessionConnectionOpts } from './sessionConnection'
+import { TerminalManager, terminalSubscriptionMethod } from './terminal'
+import SessionConnection, {
+  SessionConnectionOpts,
+} from './sessionConnection'
 
 export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
@@ -21,19 +23,13 @@ export interface SessionOpts extends SessionConnectionOpts {
 class Session extends SessionConnection {
   private readonly codeSnippetOpts?: CodeSnippetOpts
 
-  private _codeSnippet?: CodeSnippet
-  private set codeSnippet(value: CodeSnippet | undefined) {
-    this._codeSnippet = value
-  }
-  get codeSnippet() {
+  private _codeSnippet?: CodeSnippetManager
+  codeSnippet() {
     return this._codeSnippet
   }
 
-  private _terminal?: Terminal
-  private set terminal(value: Terminal | undefined) {
-    this._terminal = value
-  }
-  get terminal() {
+  private _terminal?: TerminalManager
+  terminal() {
     return this._terminal
   }
 
@@ -46,7 +42,7 @@ class Session extends SessionConnection {
     await super.open()
 
     // Init CodeSnippet handler
-    this.codeSnippet = {
+    this._codeSnippet = {
       run: async (code: string) => {
         if (!this.isOpen || !this.session) {
           throw new Error('Session is not active')
@@ -78,7 +74,7 @@ class Session extends SessionConnection {
     ])
 
     // Init Terminal handler
-    this.terminal = {
+    this._terminal = {
       createSession: async (onData, activeTerminalID) => {
         const terminalID = await this.call(`${terminalSubscriptionMethod}_start`, activeTerminalID ? [activeTerminalID] : [])
         if (typeof terminalID !== 'string') {

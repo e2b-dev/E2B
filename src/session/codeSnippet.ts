@@ -18,7 +18,7 @@ export type CodeSnippetSubscriptionHandlerType = {
   'stdout': CodeSnippetStdoutHandler
 }
 
-export interface CodeSnippet {
-  run: (code: string) => Promise<void>
-  stop: () => Promise<void>
+export interface CodeSnippetManager {
+  readonly run: (code: string) => Promise<void>
+  readonly stop: () => Promise<void>
 }
