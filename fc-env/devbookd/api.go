@@ -143,6 +143,10 @@ func (cs *CodeSnippet) runCmd(code string) {
 }
 
 func (cs *CodeSnippet) Run(code string) string {
+  slogger.Infow("Run code",
+    "code", code,
+  )
+
 	cs.mu.Lock()
 	if cs.running {
 		cs.mu.Unlock()
@@ -156,6 +160,8 @@ func (cs *CodeSnippet) Run(code string) string {
 }
 
 func (cs *CodeSnippet) Stop() string {
+  slogger.Info("Stop code")
+
 	cs.mu.Lock()
 	if !cs.running {
 		cs.mu.Unlock()
