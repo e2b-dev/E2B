@@ -36,6 +36,8 @@ func NewAPIStore() *APIStore {
 
 	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
 
+	cache.KeepInSync(nomadClient)
+
 	return &APIStore{
 		nomadClient:   nomadClient,
 		supabase:      supabaseClient,

@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	SessionExpiration = time.Second * 15
+	sessionExpiration = time.Second * 15
+	cacheSyncTime     = time.Second * 10
 )
 
 type SessionCache struct {
@@ -21,7 +22,7 @@ type SessionCache struct {
 // Add the session to the cache and start expiration timer
 func (c *SessionCache) Add(session *api.Session) error {
 	if c.Exists(session.SessionID) {
-		return fmt.Errorf("Session \"%s\" already exists", session.SessionID)
+		return fmt.Errorf("session \"%s\" already exists", session.SessionID)
 	}
 
 	c.cache.Set(session.SessionID, session, ttlcache.DefaultTTL)
@@ -33,7 +34,7 @@ func (c *SessionCache) Refresh(sessionID string) error {
 	item := c.cache.Get(sessionID)
 
 	if item == nil {
-		return fmt.Errorf("Session \"%s\" doesn't exist", sessionID)
+		return fmt.Errorf("session \"%s\" doesn't exist", sessionID)
 	}
 
 	return nil
@@ -52,27 +53,50 @@ func (c *SessionCache) FindEditSession(codeSnippetID string) (*api.Session, erro
 			continue
 		}
 
-		if item.Value().EditEnabled == true && item.Value().CodeSnippetID == codeSnippetID {
+		if item.Value().EditEnabled && item.Value().CodeSnippetID == codeSnippetID {
 			c.Refresh(item.Key())
 			return item.Value(), nil
 		}
 	}
 
-	return nil, fmt.Errorf("Error edit session for code snippet '%s' not found", codeSnippetID)
+	return nil, fmt.Errorf("error edit session for code snippet '%s' not found", codeSnippetID)
+}
+
+func (c *SessionCache) Sync(sessions []*api.Session) {
+	sessionsMap := make(map[string]*api.Session)
+	for _, session := range sessions {
+		sessionsMap[session.SessionID] = session
+	}
+
+	for _, cacheSession := range c.cache.Items() {
+		if cacheSession == nil {
+			continue
+		}
+
+		if cacheSession.Value() == nil {
+			c.cache.Delete(cacheSession.Key())
+			continue
+		}
+
+		if sessionsMap[cacheSession.Key()] == nil {
+			c.cache.Delete(cacheSession.Key())
+			continue
+		}
+	}
 }
 
 // We will need to either use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now
 func NewSessionCache(handleDeleteSession func(sessionID string) *api.APIError, initialSessions []*api.Session) *SessionCache {
 	cache := ttlcache.New(
-		ttlcache.WithTTL[string, *api.Session](SessionExpiration),
+		ttlcache.WithTTL[string, *api.Session](sessionExpiration),
 	)
 
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, *api.Session]) {
-		if er == ttlcache.EvictionReasonExpired {
+		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := handleDeleteSession(i.Key())
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error deleting session after expiration (%s)\n: %s", SessionExpiration.String(), err.Error())
+				fmt.Fprintf(os.Stderr, "Error deleting session (%v)\n: %s", er, err.Error())
 			}
 		}
 	})
@@ -88,4 +112,20 @@ func NewSessionCache(handleDeleteSession func(sessionID string) *api.APIError, i
 	go cache.Start()
 
 	return sessionCache
+}
+
+// Sync the cache with the actual sessions in Nomad to handle sessions that died.
+func (c *SessionCache) KeepInSync(client *NomadClient) {
+	ticker := time.NewTicker(cacheSyncTime)
+
+	go func() {
+		for range ticker.C {
+			activeSessions, err := client.GetSessions()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
+			} else {
+				c.Sync(activeSessions)
+			}
+		}
+	}()
 }
