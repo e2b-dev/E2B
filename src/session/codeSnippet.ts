@@ -1,8 +1,12 @@
 export const codeSnippetSubscriptionMethod = 'codeSnippet'
 
-export type CodeSnippetState = 'running' | 'stopped'
+export enum CodeSnippetExecState {
+  Running = 'Running',
+  Stopped = 'Stopped',
+  Loading = 'Loading',
+}
 
-export type CodeSnippetStateHandler = (state: CodeSnippetState) => void
+export type CodeSnippetStateHandler = (state: CodeSnippetExecState) => void
 export type CodeSnippetStderrHandler = (stderr: string) => void
 export type CodeSnippetStdoutHandler = (stdout: string) => void
 

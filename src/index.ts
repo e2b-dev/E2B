@@ -4,7 +4,7 @@ export type {
 } from './session'
 export type {
   CodeSnippetManager,
-  CodeSnippetState,
+  CodeSnippetExecState,
   CodeSnippetStateHandler,
   CodeSnippetStderrHandler,
   CodeSnippetStdoutHandler,
