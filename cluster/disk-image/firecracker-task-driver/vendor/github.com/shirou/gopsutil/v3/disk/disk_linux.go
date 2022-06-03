@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 package disk
@@ -6,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -20,6 +22,7 @@ import (
 const (
 	sectorSize = 512
 )
+
 const (
 	// man statfs
 	ADFS_SUPER_MAGIC      = 0xadf5
@@ -221,15 +224,16 @@ var fsTypeMap = map[int64]string{
 func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, error) {
 	useMounts := false
 
-	filename := common.HostProc("self/mountinfo")
+	filename := common.HostProc("1/mountinfo")
 	lines, err := common.ReadLines(filename)
 	if err != nil {
-		if err != err.(*os.PathError) {
+		var pathErr *os.PathError
+		if !errors.As(err, &pathErr) {
 			return nil, err
 		}
-		// if kernel does not support self/mountinfo, fallback to self/mounts (<2.6.26)
+		// if kernel does not support 1/mountinfo, fallback to 1/mounts (<2.6.26)
 		useMounts = true
-		filename = common.HostProc("self/mounts")
+		filename = common.HostProc("1/mounts")
 		lines, err = common.ReadLines(filename)
 		if err != nil {
 			return nil, err
@@ -261,7 +265,7 @@ func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, erro
 				}
 			}
 		} else {
-			// a line of self/mountinfo has the following structure:
+			// a line of 1/mountinfo has the following structure:
 			// 36  35  98:0 /mnt1 /mnt2 rw,noatime master:1 - ext3 /dev/root rw,errors=continue
 			// (1) (2) (3)   (4)   (5)      (6)      (7)   (8) (9)   (10)         (11)
 
@@ -349,7 +353,7 @@ func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOC
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[string]IOCountersStat, 0)
+	ret := make(map[string]IOCountersStat)
 	empty := IOCountersStat{}
 
 	// use only basename such as "/dev/sda1" to "sda1"
@@ -482,9 +486,8 @@ func LabelWithContext(ctx context.Context, name string) (string, error) {
 	dmname, err := ioutil.ReadFile(dmname_filename)
 	if err != nil {
 		return "", err
-	} else {
-		return strings.TrimSpace(string(dmname)), nil
 	}
+	return strings.TrimSpace(string(dmname)), nil
 }
 
 func getFsType(stat unix.Statfs_t) string {

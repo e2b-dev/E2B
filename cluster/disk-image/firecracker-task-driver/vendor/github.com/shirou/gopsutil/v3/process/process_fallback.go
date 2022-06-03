@@ -1,4 +1,5 @@
-// +build !darwin,!linux,!freebsd,!openbsd,!windows
+//go:build !darwin && !linux && !freebsd && !openbsd && !windows && !solaris && !plan9
+// +build !darwin,!linux,!freebsd,!openbsd,!windows,!solaris,!plan9
 
 package process
 
@@ -10,6 +11,8 @@ import (
 	"github.com/shirou/gopsutil/v3/internal/common"
 	"github.com/shirou/gopsutil/v3/net"
 )
+
+type Signal = syscall.Signal
 
 type MemoryMapsStat struct {
 	Path         string `json:"path"`
@@ -25,8 +28,7 @@ type MemoryMapsStat struct {
 	Swap         uint64 `json:"swap"`
 }
 
-type MemoryInfoExStat struct {
-}
+type MemoryInfoExStat struct{}
 
 func pidsWithContext(ctx context.Context) ([]int32, error) {
 	return nil, common.ErrNotImplementedError
@@ -176,7 +178,7 @@ func (p *Process) MemoryMapsWithContext(ctx context.Context, grouped bool) (*[]M
 	return nil, common.ErrNotImplementedError
 }
 
-func (p *Process) SendSignalWithContext(ctx context.Context, sig syscall.Signal) error {
+func (p *Process) SendSignalWithContext(ctx context.Context, sig Signal) error {
 	return common.ErrNotImplementedError
 }
 
@@ -198,4 +200,8 @@ func (p *Process) KillWithContext(ctx context.Context) error {
 
 func (p *Process) UsernameWithContext(ctx context.Context) (string, error) {
 	return "", common.ErrNotImplementedError
+}
+
+func (p *Process) EnvironWithContext(ctx context.Context) ([]string, error) {
+	return nil, common.ErrNotImplementedError
 }

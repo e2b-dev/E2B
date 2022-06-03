@@ -23,6 +23,7 @@ const (
 	TopicNode       Topic = "Node"
 	TopicACLPolicy  Topic = "ACLPolicy"
 	TopicACLToken   Topic = "ACLToken"
+	TopicService    Topic = "Service"
 	TopicAll        Topic = "*"
 
 	TypeNodeRegistration              = "NodeRegistration"
@@ -45,11 +46,13 @@ const (
 	TypeACLTokenUpserted              = "ACLTokenUpserted"
 	TypeACLPolicyDeleted              = "ACLPolicyDeleted"
 	TypeACLPolicyUpserted             = "ACLPolicyUpserted"
+	TypeServiceRegistration           = "ServiceRegistration"
+	TypeServiceDeregistration         = "ServiceDeregistration"
 )
 
 // Event represents a change in Nomads state.
 type Event struct {
-	// Topic represeents the primary object for the event
+	// Topic represents the primary object for the event
 	Topic Topic
 
 	// Type is a short string representing the reason for the event
@@ -121,6 +124,12 @@ type NodeStreamEvent struct {
 type ACLTokenEvent struct {
 	ACLToken *ACLToken
 	secretID string
+}
+
+// ServiceRegistrationStreamEvent holds a newly updated or deleted service
+// registration.
+type ServiceRegistrationStreamEvent struct {
+	Service *ServiceRegistration
 }
 
 // NewACLTokenEvent takes a token and creates a new ACLTokenEvent.  It creates

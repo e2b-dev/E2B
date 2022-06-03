@@ -55,6 +55,7 @@ type devstat struct {
 	Sequence1     uint32
 	Pad_cgo_2     [4]byte
 }
+
 type bintime struct {
 	Sec  int64
 	Frac uint64

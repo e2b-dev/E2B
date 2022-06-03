@@ -32,10 +32,12 @@ type utmp struct {
 	Addr_v6           [4]int32
 	X__glibc_reserved [20]uint8
 }
+
 type exit_status struct {
 	Termination int16
 	Exit        int16
 }
+
 type timeval struct {
 	Sec  int64
 	Usec int64

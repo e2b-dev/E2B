@@ -1,5 +1,5 @@
-// +build darwin
-// +build cgo
+//go:build darwin && cgo
+// +build darwin,cgo
 
 package host
 
@@ -34,13 +34,13 @@ func SensorsTemperaturesWithContext(ctx context.Context) ([]TemperatureStat, err
 	}
 	var temperatures []TemperatureStat
 
-	C.open_smc()
-	defer C.close_smc()
+	C.gopsutil_v3_open_smc()
+	defer C.gopsutil_v3_close_smc()
 
 	for _, key := range temperatureKeys {
 		temperatures = append(temperatures, TemperatureStat{
 			SensorKey:   key,
-			Temperature: float64(C.get_temperature(C.CString(key))),
+			Temperature: float64(C.gopsutil_v3_get_temperature(C.CString(key))),
 		})
 	}
 	return temperatures, nil

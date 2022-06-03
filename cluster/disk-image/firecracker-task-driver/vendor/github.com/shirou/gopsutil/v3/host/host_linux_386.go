@@ -35,10 +35,12 @@ type utmp struct {
 	Addr_v6   [4]int32
 	X__unused [20]int8
 }
+
 type exit_status struct {
 	Termination int16
 	Exit        int16
 }
+
 type UtTv struct {
 	Sec  int32
 	Usec int32

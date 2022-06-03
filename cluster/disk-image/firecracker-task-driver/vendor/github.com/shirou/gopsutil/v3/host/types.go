@@ -15,9 +15,8 @@ func (w *Warnings) Add(err error) {
 func (w *Warnings) Reference() error {
 	if len(w.List) > 0 {
 		return w
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (w *Warnings) Error() string {

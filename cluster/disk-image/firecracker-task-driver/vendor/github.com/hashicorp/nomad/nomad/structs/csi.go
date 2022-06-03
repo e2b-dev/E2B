@@ -1,6 +1,7 @@
 package structs
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -79,6 +80,13 @@ func (t *TaskCSIPluginConfig) Copy() *TaskCSIPluginConfig {
 	return nt
 }
 
+// CSIVolumeCapability is the requested attachment and access mode for a
+// volume
+type CSIVolumeCapability struct {
+	AttachmentMode CSIVolumeAttachmentMode
+	AccessMode     CSIVolumeAccessMode
+}
+
 // CSIVolumeAttachmentMode chooses the type of storage api that will be used to
 // interact with the device.
 type CSIVolumeAttachmentMode string
@@ -126,7 +134,7 @@ func ValidCSIVolumeAccessMode(accessMode CSIVolumeAccessMode) bool {
 	}
 }
 
-// ValidCSIVolumeAccessMode checks for a writable access mode
+// ValidCSIVolumeWriteAccessMode checks for a writable access mode.
 func ValidCSIVolumeWriteAccessMode(accessMode CSIVolumeAccessMode) bool {
 	switch accessMode {
 	case CSIVolumeAccessModeSingleNodeWriter,
@@ -173,22 +181,38 @@ func (o *CSIMountOptions) Merge(p *CSIMountOptions) {
 	}
 }
 
+func (o *CSIMountOptions) Equal(p *CSIMountOptions) bool {
+	if o == nil && p == nil {
+		return true
+	}
+	if o == nil || p == nil {
+		return false
+	}
+
+	if o.FSType != p.FSType {
+		return false
+	}
+
+	return helper.CompareSliceSetString(
+		o.MountFlags, p.MountFlags)
+}
+
 // CSIMountOptions implements the Stringer and GoStringer interfaces to prevent
 // accidental leakage of sensitive mount flags via logs.
 var _ fmt.Stringer = &CSIMountOptions{}
 var _ fmt.GoStringer = &CSIMountOptions{}
 
-func (v *CSIMountOptions) String() string {
+func (o *CSIMountOptions) String() string {
 	mountFlagsString := "nil"
-	if len(v.MountFlags) != 0 {
+	if len(o.MountFlags) != 0 {
 		mountFlagsString = "[REDACTED]"
 	}
 
-	return fmt.Sprintf("csi.CSIOptions(FSType: %s, MountFlags: %s)", v.FSType, mountFlagsString)
+	return fmt.Sprintf("csi.CSIOptions(FSType: %s, MountFlags: %s)", o.FSType, mountFlagsString)
 }
 
-func (v *CSIMountOptions) GoString() string {
-	return v.String()
+func (o *CSIMountOptions) GoString() string {
+	return o.String()
 }
 
 // CSISecrets contain optional additional configuration that can be used
@@ -217,6 +241,8 @@ type CSIVolumeClaim struct {
 	NodeID         string
 	ExternalNodeID string
 	Mode           CSIVolumeClaimMode
+	AccessMode     CSIVolumeAccessMode
+	AttachmentMode CSIVolumeAttachmentMode
 	State          CSIVolumeClaimState
 }
 
@@ -237,23 +263,43 @@ type CSIVolume struct {
 	// Name is a display name for the volume, not required to be unique
 	Name string
 	// ExternalID identifies the volume for the CSI interface, may be URL unsafe
-	ExternalID     string
-	Namespace      string
-	Topologies     []*CSITopology
-	AccessMode     CSIVolumeAccessMode
-	AttachmentMode CSIVolumeAttachmentMode
+	ExternalID string
+	Namespace  string
+
+	// RequestedTopologies are the topologies submitted as options to
+	// the storage provider at the time the volume was created. After
+	// volumes are created, this field is ignored.
+	RequestedTopologies *CSITopologyRequest
+
+	// Topologies are the topologies returned by the storage provider,
+	// based on the RequestedTopologies and what the storage provider
+	// could support. This value cannot be set by the user.
+	Topologies []*CSITopology
+
+	AccessMode     CSIVolumeAccessMode     // *current* access mode
+	AttachmentMode CSIVolumeAttachmentMode // *current* attachment mode
 	MountOptions   *CSIMountOptions
-	Secrets        CSISecrets
-	Parameters     map[string]string
-	Context        map[string]string
+
+	Secrets    CSISecrets
+	Parameters map[string]string
+	Context    map[string]string
+	Capacity   int64 // bytes
+
+	// These values are used only on volume creation but we record them
+	// so that we can diff the volume later
+	RequestedCapacityMin  int64 // bytes
+	RequestedCapacityMax  int64 // bytes
+	RequestedCapabilities []*CSIVolumeCapability
+	CloneID               string
+	SnapshotID            string
 
 	// Allocations, tracking claim status
 	ReadAllocs  map[string]*Allocation // AllocID -> Allocation
 	WriteAllocs map[string]*Allocation // AllocID -> Allocation
 
-	ReadClaims  map[string]*CSIVolumeClaim // AllocID -> claim
-	WriteClaims map[string]*CSIVolumeClaim // AllocID -> claim
-	PastClaims  map[string]*CSIVolumeClaim // AllocID -> claim
+	ReadClaims  map[string]*CSIVolumeClaim `json:"-"` // AllocID -> claim
+	WriteClaims map[string]*CSIVolumeClaim `json:"-"` // AllocID -> claim
+	PastClaims  map[string]*CSIVolumeClaim `json:"-"` // AllocID -> claim
 
 	// Schedulable is true if all the denormalized plugin health fields are true, and the
 	// volume has not been marked for garbage collection
@@ -270,6 +316,32 @@ type CSIVolume struct {
 
 	CreateIndex uint64
 	ModifyIndex uint64
+}
+
+// GetID implements the IDGetter interface, required for pagination.
+func (v *CSIVolume) GetID() string {
+	if v == nil {
+		return ""
+	}
+	return v.ID
+}
+
+// GetNamespace implements the NamespaceGetter interface, required for
+// pagination.
+func (v *CSIVolume) GetNamespace() string {
+	if v == nil {
+		return ""
+	}
+	return v.Namespace
+}
+
+// GetCreateIndex implements the CreateIndexGetter interface, required for
+// pagination.
+func (v *CSIVolume) GetCreateIndex() uint64 {
+	if v == nil {
+		return 0
+	}
+	return v.CreateIndex
 }
 
 // CSIVolListStub is partial representation of a CSI Volume for inclusion in lists
@@ -352,6 +424,9 @@ func (v *CSIVolume) Stub() *CSIVolListStub {
 	return &stub
 }
 
+// ReadSchedulable determines if the volume is potentially schedulable
+// for reads, considering only the volume capabilities and plugin
+// health
 func (v *CSIVolume) ReadSchedulable() bool {
 	if !v.Schedulable {
 		return false
@@ -360,23 +435,57 @@ func (v *CSIVolume) ReadSchedulable() bool {
 	return v.ResourceExhausted == time.Time{}
 }
 
-// WriteSchedulable determines if the volume is schedulable for writes, considering only
-// volume health
+// WriteSchedulable determines if the volume is potentially
+// schedulable for writes, considering only volume capabilities and
+// plugin health
 func (v *CSIVolume) WriteSchedulable() bool {
 	if !v.Schedulable {
 		return false
 	}
 
 	switch v.AccessMode {
-	case CSIVolumeAccessModeSingleNodeWriter, CSIVolumeAccessModeMultiNodeSingleWriter, CSIVolumeAccessModeMultiNodeMultiWriter:
+	case CSIVolumeAccessModeSingleNodeWriter,
+		CSIVolumeAccessModeMultiNodeSingleWriter,
+		CSIVolumeAccessModeMultiNodeMultiWriter:
 		return v.ResourceExhausted == time.Time{}
+
+	case CSIVolumeAccessModeUnknown:
+		// this volume was created but not currently claimed, so we check what
+		// it's capable of, not what it's been previously assigned
+		for _, cap := range v.RequestedCapabilities {
+			switch cap.AccessMode {
+			case CSIVolumeAccessModeSingleNodeWriter,
+				CSIVolumeAccessModeMultiNodeSingleWriter,
+				CSIVolumeAccessModeMultiNodeMultiWriter:
+				return v.ResourceExhausted == time.Time{}
+			}
+		}
+	}
+	return false
+}
+
+// HasFreeReadClaims determines if there are any free read claims available
+func (v *CSIVolume) HasFreeReadClaims() bool {
+	switch v.AccessMode {
+	case CSIVolumeAccessModeSingleNodeReader:
+		return len(v.ReadClaims) == 0
+	case CSIVolumeAccessModeSingleNodeWriter:
+		return len(v.ReadClaims) == 0 && len(v.WriteClaims) == 0
+	case CSIVolumeAccessModeUnknown:
+		// This volume was created but not yet claimed, so its
+		// capabilities have been checked in ReadSchedulable
+		return true
 	default:
-		return false
+		// For multi-node AccessModes, the CSI spec doesn't allow for
+		// setting a max number of readers we track node resource
+		// exhaustion through v.ResourceExhausted which is checked in
+		// ReadSchedulable
+		return true
 	}
 }
 
-// WriteFreeClaims determines if there are any free write claims available
-func (v *CSIVolume) WriteFreeClaims() bool {
+// HasFreeWriteClaims determines if there are any free write claims available
+func (v *CSIVolume) HasFreeWriteClaims() bool {
 	switch v.AccessMode {
 	case CSIVolumeAccessModeSingleNodeWriter, CSIVolumeAccessModeMultiNodeSingleWriter:
 		return len(v.WriteClaims) == 0
@@ -385,7 +494,12 @@ func (v *CSIVolume) WriteFreeClaims() bool {
 		// we track node resource exhaustion through v.ResourceExhausted
 		// which is checked in WriteSchedulable
 		return true
+	case CSIVolumeAccessModeUnknown:
+		// This volume was created but not yet claimed, so its
+		// capabilities have been checked in WriteSchedulable
+		return true
 	default:
+		// Reader modes never have free write claims
 		return false
 	}
 }
@@ -443,21 +557,38 @@ func (v *CSIVolume) Copy() *CSIVolume {
 
 // Claim updates the allocations and changes the volume state
 func (v *CSIVolume) Claim(claim *CSIVolumeClaim, alloc *Allocation) error {
+	// COMPAT: volumes registered prior to 1.1.0 will be missing caps for the
+	// volume on any claim. Correct this when we make the first change to a
+	// claim by setting its currently claimed capability as the only requested
+	// capability
+	if len(v.RequestedCapabilities) == 0 && v.AccessMode != "" && v.AttachmentMode != "" {
+		v.RequestedCapabilities = []*CSIVolumeCapability{
+			{
+				AccessMode:     v.AccessMode,
+				AttachmentMode: v.AttachmentMode,
+			},
+		}
+	}
+	if v.AttachmentMode != CSIVolumeAttachmentModeUnknown &&
+		claim.AttachmentMode != CSIVolumeAttachmentModeUnknown &&
+		v.AttachmentMode != claim.AttachmentMode {
+		return fmt.Errorf("cannot change attachment mode of claimed volume")
+	}
 
 	if claim.State == CSIVolumeClaimStateTaken {
 		switch claim.Mode {
 		case CSIVolumeClaimRead:
-			return v.ClaimRead(claim, alloc)
+			return v.claimRead(claim, alloc)
 		case CSIVolumeClaimWrite:
-			return v.ClaimWrite(claim, alloc)
+			return v.claimWrite(claim, alloc)
 		}
 	}
 	// either GC or a Unpublish checkpoint
-	return v.ClaimRelease(claim)
+	return v.claimRelease(claim)
 }
 
-// ClaimRead marks an allocation as using a volume read-only
-func (v *CSIVolume) ClaimRead(claim *CSIVolumeClaim, alloc *Allocation) error {
+// claimRead marks an allocation as using a volume read-only
+func (v *CSIVolume) claimRead(claim *CSIVolumeClaim, alloc *Allocation) error {
 	if _, ok := v.ReadAllocs[claim.AllocationID]; ok {
 		return nil
 	}
@@ -466,7 +597,11 @@ func (v *CSIVolume) ClaimRead(claim *CSIVolumeClaim, alloc *Allocation) error {
 	}
 
 	if !v.ReadSchedulable() {
-		return fmt.Errorf("unschedulable")
+		return ErrCSIVolumeUnschedulable
+	}
+
+	if !v.HasFreeReadClaims() {
+		return ErrCSIVolumeMaxClaims
 	}
 
 	// Allocations are copy on write, so we want to keep the id but don't need the
@@ -478,11 +613,12 @@ func (v *CSIVolume) ClaimRead(claim *CSIVolumeClaim, alloc *Allocation) error {
 	delete(v.WriteClaims, claim.AllocationID)
 	delete(v.PastClaims, claim.AllocationID)
 
+	v.setModesFromClaim(claim)
 	return nil
 }
 
-// ClaimWrite marks an allocation as using a volume as a writer
-func (v *CSIVolume) ClaimWrite(claim *CSIVolumeClaim, alloc *Allocation) error {
+// claimWrite marks an allocation as using a volume as a writer
+func (v *CSIVolume) claimWrite(claim *CSIVolumeClaim, alloc *Allocation) error {
 	if _, ok := v.WriteAllocs[claim.AllocationID]; ok {
 		return nil
 	}
@@ -491,16 +627,11 @@ func (v *CSIVolume) ClaimWrite(claim *CSIVolumeClaim, alloc *Allocation) error {
 	}
 
 	if !v.WriteSchedulable() {
-		return fmt.Errorf("unschedulable")
+		return ErrCSIVolumeUnschedulable
 	}
 
-	if !v.WriteFreeClaims() {
-		// Check the blocking allocations to see if they belong to this job
-		for _, a := range v.WriteAllocs {
-			if a != nil && (a.Namespace != alloc.Namespace || a.JobID != alloc.JobID) {
-				return fmt.Errorf("volume max claim reached")
-			}
-		}
+	if !v.HasFreeWriteClaims() {
+		return ErrCSIVolumeMaxClaims
 	}
 
 	// Allocations are copy on write, so we want to keep the id but don't need the
@@ -512,25 +643,46 @@ func (v *CSIVolume) ClaimWrite(claim *CSIVolumeClaim, alloc *Allocation) error {
 	delete(v.ReadClaims, alloc.ID)
 	delete(v.PastClaims, alloc.ID)
 
+	v.setModesFromClaim(claim)
 	return nil
 }
 
-// ClaimRelease is called when the allocation has terminated and
+// setModesFromClaim sets the volume AttachmentMode and AccessMode based on
+// the first claim we make.  Originally the volume AccessMode and
+// AttachmentMode were set during registration, but this is incorrect once we
+// started creating volumes ourselves. But we still want these values for CLI
+// and UI status.
+func (v *CSIVolume) setModesFromClaim(claim *CSIVolumeClaim) {
+	if v.AttachmentMode == CSIVolumeAttachmentModeUnknown {
+		v.AttachmentMode = claim.AttachmentMode
+	}
+	if v.AccessMode == CSIVolumeAccessModeUnknown {
+		v.AccessMode = claim.AccessMode
+	}
+}
+
+// claimRelease is called when the allocation has terminated and
 // already stopped using the volume
-func (v *CSIVolume) ClaimRelease(claim *CSIVolumeClaim) error {
+func (v *CSIVolume) claimRelease(claim *CSIVolumeClaim) error {
 	if claim.State == CSIVolumeClaimStateReadyToFree {
 		delete(v.ReadAllocs, claim.AllocationID)
 		delete(v.WriteAllocs, claim.AllocationID)
 		delete(v.ReadClaims, claim.AllocationID)
 		delete(v.WriteClaims, claim.AllocationID)
 		delete(v.PastClaims, claim.AllocationID)
+
+		// remove AccessMode/AttachmentMode if this is the last claim
+		if len(v.ReadClaims) == 0 && len(v.WriteClaims) == 0 && len(v.PastClaims) == 0 {
+			v.AccessMode = CSIVolumeAccessModeUnknown
+			v.AttachmentMode = CSIVolumeAttachmentModeUnknown
+		}
 	} else {
 		v.PastClaims[claim.AllocationID] = claim
 	}
 	return nil
 }
 
-// Equality by value
+// Equal checks equality by value.
 func (v *CSIVolume) Equal(o *CSIVolume) bool {
 	if v == nil || o == nil {
 		return v == o
@@ -574,40 +726,125 @@ func (v *CSIVolume) Validate() error {
 	if v.Namespace == "" {
 		errs = append(errs, "missing namespace")
 	}
-	if v.AccessMode == "" {
-		errs = append(errs, "missing access mode")
+	if v.SnapshotID != "" && v.CloneID != "" {
+		errs = append(errs, "only one of snapshot_id and clone_id is allowed")
 	}
-	if v.AttachmentMode == "" {
-		errs = append(errs, "missing attachment mode")
+	if len(v.RequestedCapabilities) == 0 {
+		errs = append(errs, "must include at least one capability block")
 	}
-	if v.AttachmentMode == CSIVolumeAttachmentModeBlockDevice {
-		if v.MountOptions != nil {
-			if v.MountOptions.FSType != "" {
-				errs = append(errs, "mount options not allowed for block-device")
+	if v.RequestedTopologies != nil {
+		for _, t := range v.RequestedTopologies.Required {
+			if t != nil && len(t.Segments) == 0 {
+				errs = append(errs, "required topology is missing segments field")
 			}
-			if v.MountOptions.MountFlags != nil && len(v.MountOptions.MountFlags) != 0 {
-				errs = append(errs, "mount options not allowed for block-device")
+		}
+		for _, t := range v.RequestedTopologies.Preferred {
+			if t != nil && len(t.Segments) == 0 {
+				errs = append(errs, "preferred topology is missing segments field")
 			}
 		}
 	}
-
-	// TODO: Volume Topologies are optional - We should check to see if the plugin
-	//       the volume is being registered with requires them.
-	// var ok bool
-	// for _, t := range v.Topologies {
-	// 	if t != nil && len(t.Segments) > 0 {
-	// 		ok = true
-	// 		break
-	// 	}
-	// }
-	// if !ok {
-	// 	errs = append(errs, "missing topology")
-	// }
-
 	if len(errs) > 0 {
 		return fmt.Errorf("validation: %s", strings.Join(errs, ", "))
 	}
 	return nil
+}
+
+// Merge updates the mutable fields of a volume with those from
+// another volume. CSIVolume has many user-defined fields which are
+// immutable once set, and many fields that are not
+// user-settable. Merge will return an error if we try to mutate the
+// user-defined immutable fields after they're set, but silently
+// ignore fields that are controlled by Nomad.
+func (v *CSIVolume) Merge(other *CSIVolume) error {
+	if other == nil {
+		return nil
+	}
+
+	var errs *multierror.Error
+
+	if v.Name != other.Name && other.Name != "" {
+		errs = multierror.Append(errs, errors.New("volume name cannot be updated"))
+	}
+	if v.ExternalID != other.ExternalID && other.ExternalID != "" {
+		errs = multierror.Append(errs, errors.New(
+			"volume external ID cannot be updated"))
+	}
+	if v.PluginID != other.PluginID {
+		errs = multierror.Append(errs, errors.New(
+			"volume plugin ID cannot be updated"))
+	}
+	if v.CloneID != other.CloneID && other.CloneID != "" {
+		errs = multierror.Append(errs, errors.New(
+			"volume clone ID cannot be updated"))
+	}
+	if v.SnapshotID != other.SnapshotID && other.SnapshotID != "" {
+		errs = multierror.Append(errs, errors.New(
+			"volume snapshot ID cannot be updated"))
+	}
+
+	// must be compatible with capacity range
+	// TODO: when ExpandVolume is implemented we'll need to update
+	// this logic https://github.com/hashicorp/nomad/issues/10324
+	if v.Capacity != 0 {
+		if other.RequestedCapacityMax < v.Capacity ||
+			other.RequestedCapacityMin > v.Capacity {
+			errs = multierror.Append(errs, errors.New(
+				"volume requested capacity update was not compatible with existing capacity"))
+		} else {
+			v.RequestedCapacityMin = other.RequestedCapacityMin
+			v.RequestedCapacityMax = other.RequestedCapacityMax
+		}
+	}
+
+	// must be compatible with volume_capabilities
+	if v.AccessMode != CSIVolumeAccessModeUnknown ||
+		v.AttachmentMode != CSIVolumeAttachmentModeUnknown {
+		var ok bool
+		for _, cap := range other.RequestedCapabilities {
+			if cap.AccessMode == v.AccessMode &&
+				cap.AttachmentMode == v.AttachmentMode {
+				ok = true
+				break
+			}
+		}
+		if ok {
+			v.RequestedCapabilities = other.RequestedCapabilities
+		} else {
+			errs = multierror.Append(errs, errors.New(
+				"volume requested capabilities update was not compatible with existing capability in use"))
+		}
+	} else {
+		v.RequestedCapabilities = other.RequestedCapabilities
+	}
+
+	// topologies are immutable, so topology request changes must be
+	// compatible with the existing topology, if any
+	if len(v.Topologies) > 0 {
+		if !v.RequestedTopologies.Equal(other.RequestedTopologies) {
+			errs = multierror.Append(errs, errors.New(
+				"volume topology request update was not compatible with existing topology"))
+		}
+	}
+
+	// MountOptions can be updated so long as the volume isn't in use,
+	// but the caller will reject updating an in-use volume
+	v.MountOptions = other.MountOptions
+
+	// Secrets can be updated freely
+	v.Secrets = other.Secrets
+
+	// must be compatible with parameters set by from CreateVolumeResponse
+
+	if len(other.Parameters) != 0 && !helper.CompareMapStringString(v.Parameters, other.Parameters) {
+		errs = multierror.Append(errs, errors.New(
+			"volume parameters cannot be updated"))
+	}
+
+	// Context is mutable and will be used during controller
+	// validation
+	v.Context = other.Context
+	return errs.ErrorOrNil()
 }
 
 // Request and response wrappers
@@ -627,6 +864,26 @@ type CSIVolumeDeregisterRequest struct {
 }
 
 type CSIVolumeDeregisterResponse struct {
+	QueryMeta
+}
+
+type CSIVolumeCreateRequest struct {
+	Volumes []*CSIVolume
+	WriteRequest
+}
+
+type CSIVolumeCreateResponse struct {
+	Volumes []*CSIVolume
+	QueryMeta
+}
+
+type CSIVolumeDeleteRequest struct {
+	VolumeIDs []string
+	Secrets   CSISecrets
+	WriteRequest
+}
+
+type CSIVolumeDeleteResponse struct {
 	QueryMeta
 }
 
@@ -652,6 +909,8 @@ type CSIVolumeClaimRequest struct {
 	NodeID         string
 	ExternalNodeID string
 	Claim          CSIVolumeClaimMode
+	AccessMode     CSIVolumeAccessMode
+	AttachmentMode CSIVolumeAttachmentMode
 	State          CSIVolumeClaimState
 	WriteRequest
 }
@@ -662,6 +921,8 @@ func (req *CSIVolumeClaimRequest) ToClaim() *CSIVolumeClaim {
 		NodeID:         req.NodeID,
 		ExternalNodeID: req.ExternalNodeID,
 		Mode:           req.Claim,
+		AccessMode:     req.AccessMode,
+		AttachmentMode: req.AttachmentMode,
 		State:          req.State,
 	}
 }
@@ -700,6 +961,35 @@ type CSIVolumeListResponse struct {
 	QueryMeta
 }
 
+// CSIVolumeExternalListRequest is a request to a controller plugin to list
+// all the volumes known to the the storage provider. This request is
+// paginated by the plugin and accepts the QueryOptions.PerPage and
+// QueryOptions.NextToken fields
+type CSIVolumeExternalListRequest struct {
+	PluginID string
+	QueryOptions
+}
+
+type CSIVolumeExternalListResponse struct {
+	Volumes   []*CSIVolumeExternalStub
+	NextToken string
+	QueryMeta
+}
+
+// CSIVolumeExternalStub is the storage provider's view of a volume, as
+// returned from the controller plugin; all IDs are for external resources
+type CSIVolumeExternalStub struct {
+	ExternalID    string
+	CapacityBytes int64
+	VolumeContext map[string]string
+	CloneID       string
+	SnapshotID    string
+
+	PublishedExternalNodeIDs []string
+	IsAbnormal               bool
+	Status                   string
+}
+
 type CSIVolumeGetRequest struct {
 	ID string
 	QueryOptions
@@ -717,6 +1007,61 @@ type CSIVolumeUnpublishRequest struct {
 }
 
 type CSIVolumeUnpublishResponse struct {
+	QueryMeta
+}
+
+// CSISnapshot is the storage provider's view of a volume snapshot
+type CSISnapshot struct {
+	// These fields map to those returned by the storage provider plugin
+	ID                     string // storage provider's ID
+	ExternalSourceVolumeID string // storage provider's ID for volume
+	SizeBytes              int64
+	CreateTime             int64
+	IsReady                bool
+
+	// These fields are controlled by Nomad
+	SourceVolumeID string
+	PluginID       string
+
+	// These field are only used during snapshot creation and will not be
+	// populated when the snapshot is returned
+	Name       string
+	Secrets    CSISecrets
+	Parameters map[string]string
+}
+
+type CSISnapshotCreateRequest struct {
+	Snapshots []*CSISnapshot
+	WriteRequest
+}
+
+type CSISnapshotCreateResponse struct {
+	Snapshots []*CSISnapshot
+	QueryMeta
+}
+
+type CSISnapshotDeleteRequest struct {
+	Snapshots []*CSISnapshot
+	WriteRequest
+}
+
+type CSISnapshotDeleteResponse struct {
+	QueryMeta
+}
+
+// CSISnapshotListRequest is a request to a controller plugin to list all the
+// snapshot known to the the storage provider. This request is paginated by
+// the plugin and accepts the QueryOptions.PerPage and QueryOptions.NextToken
+// fields
+type CSISnapshotListRequest struct {
+	PluginID string
+	Secrets  CSISecrets
+	QueryOptions
+}
+
+type CSISnapshotListResponse struct {
+	Snapshots []*CSISnapshot
+	NextToken string
 	QueryMeta
 }
 
@@ -792,14 +1137,143 @@ func (p *CSIPlugin) Copy() *CSIPlugin {
 	return out
 }
 
+type CSIControllerCapability byte
+
+const (
+	// CSIControllerSupportsCreateDelete indicates plugin support for
+	// CREATE_DELETE_VOLUME
+	CSIControllerSupportsCreateDelete CSIControllerCapability = 0
+
+	// CSIControllerSupportsAttachDetach is true when the controller
+	// implements the methods required to attach and detach volumes. If this
+	// is false Nomad should skip the controller attachment flow.
+	CSIControllerSupportsAttachDetach CSIControllerCapability = 1
+
+	// CSIControllerSupportsListVolumes is true when the controller implements
+	// the ListVolumes RPC. NOTE: This does not guarantee that attached nodes
+	// will be returned unless SupportsListVolumesAttachedNodes is also true.
+	CSIControllerSupportsListVolumes CSIControllerCapability = 2
+
+	// CSIControllerSupportsGetCapacity indicates plugin support for
+	// GET_CAPACITY
+	CSIControllerSupportsGetCapacity CSIControllerCapability = 3
+
+	// CSIControllerSupportsCreateDeleteSnapshot indicates plugin support for
+	// CREATE_DELETE_SNAPSHOT
+	CSIControllerSupportsCreateDeleteSnapshot CSIControllerCapability = 4
+
+	// CSIControllerSupportsListSnapshots indicates plugin support for
+	// LIST_SNAPSHOTS
+	CSIControllerSupportsListSnapshots CSIControllerCapability = 5
+
+	// CSIControllerSupportsClone indicates plugin support for CLONE_VOLUME
+	CSIControllerSupportsClone CSIControllerCapability = 6
+
+	// CSIControllerSupportsReadOnlyAttach is set to true when the controller
+	// returns the ATTACH_READONLY capability.
+	CSIControllerSupportsReadOnlyAttach CSIControllerCapability = 7
+
+	// CSIControllerSupportsExpand indicates plugin support for EXPAND_VOLUME
+	CSIControllerSupportsExpand CSIControllerCapability = 8
+
+	// CSIControllerSupportsListVolumesAttachedNodes indicates whether the
+	// plugin will return attached nodes data when making ListVolume RPCs
+	// (plugin support for LIST_VOLUMES_PUBLISHED_NODES)
+	CSIControllerSupportsListVolumesAttachedNodes CSIControllerCapability = 9
+
+	// CSIControllerSupportsCondition indicates plugin support for
+	// VOLUME_CONDITION
+	CSIControllerSupportsCondition CSIControllerCapability = 10
+
+	// CSIControllerSupportsGet indicates plugin support for GET_VOLUME
+	CSIControllerSupportsGet CSIControllerCapability = 11
+)
+
+type CSINodeCapability byte
+
+const (
+
+	// CSINodeSupportsStageVolume indicates whether the client should
+	// Stage/Unstage volumes on this node.
+	CSINodeSupportsStageVolume CSINodeCapability = 0
+
+	// CSINodeSupportsStats indicates plugin support for GET_VOLUME_STATS
+	CSINodeSupportsStats CSINodeCapability = 1
+
+	// CSINodeSupportsExpand indicates plugin support for EXPAND_VOLUME
+	CSINodeSupportsExpand CSINodeCapability = 2
+
+	// CSINodeSupportsCondition indicates plugin support for VOLUME_CONDITION
+	CSINodeSupportsCondition CSINodeCapability = 3
+)
+
+func (p *CSIPlugin) HasControllerCapability(cap CSIControllerCapability) bool {
+	if len(p.Controllers) < 1 {
+		return false
+	}
+	// we're picking the first controller because they should be uniform
+	// across the same version of the plugin
+	for _, c := range p.Controllers {
+		switch cap {
+		case CSIControllerSupportsCreateDelete:
+			return c.ControllerInfo.SupportsCreateDelete
+		case CSIControllerSupportsAttachDetach:
+			return c.ControllerInfo.SupportsAttachDetach
+		case CSIControllerSupportsListVolumes:
+			return c.ControllerInfo.SupportsListVolumes
+		case CSIControllerSupportsGetCapacity:
+			return c.ControllerInfo.SupportsGetCapacity
+		case CSIControllerSupportsCreateDeleteSnapshot:
+			return c.ControllerInfo.SupportsCreateDeleteSnapshot
+		case CSIControllerSupportsListSnapshots:
+			return c.ControllerInfo.SupportsListSnapshots
+		case CSIControllerSupportsClone:
+			return c.ControllerInfo.SupportsClone
+		case CSIControllerSupportsReadOnlyAttach:
+			return c.ControllerInfo.SupportsReadOnlyAttach
+		case CSIControllerSupportsExpand:
+			return c.ControllerInfo.SupportsExpand
+		case CSIControllerSupportsListVolumesAttachedNodes:
+			return c.ControllerInfo.SupportsListVolumesAttachedNodes
+		case CSIControllerSupportsCondition:
+			return c.ControllerInfo.SupportsCondition
+		case CSIControllerSupportsGet:
+			return c.ControllerInfo.SupportsGet
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+func (p *CSIPlugin) HasNodeCapability(cap CSINodeCapability) bool {
+	if len(p.Nodes) < 1 {
+		return false
+	}
+	// we're picking the first node because they should be uniform
+	// across the same version of the plugin
+	for _, c := range p.Nodes {
+		switch cap {
+		case CSINodeSupportsStageVolume:
+			return c.NodeInfo.RequiresNodeStageVolume
+		case CSINodeSupportsStats:
+			return c.NodeInfo.SupportsStats
+		case CSINodeSupportsExpand:
+			return c.NodeInfo.SupportsExpand
+		case CSINodeSupportsCondition:
+			return c.NodeInfo.SupportsCondition
+		default:
+			return false
+		}
+	}
+	return false
+}
+
 // AddPlugin adds a single plugin running on the node. Called from state.NodeUpdate in a
 // transaction
 func (p *CSIPlugin) AddPlugin(nodeID string, info *CSIInfo) error {
 	if info.ControllerInfo != nil {
-		p.ControllerRequired = info.RequiresControllerPlugin &&
-			(info.ControllerInfo.SupportsAttachDetach ||
-				info.ControllerInfo.SupportsReadOnlyAttach)
-
+		p.ControllerRequired = info.RequiresControllerPlugin
 		prev, ok := p.Controllers[nodeID]
 		if ok {
 			if prev == nil {

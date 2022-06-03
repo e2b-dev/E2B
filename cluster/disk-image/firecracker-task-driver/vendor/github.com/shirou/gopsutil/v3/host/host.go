@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"runtime"
 	"time"
@@ -70,47 +71,47 @@ func InfoWithContext(ctx context.Context) (*InfoStat, error) {
 	}
 
 	ret.Hostname, err = os.Hostname()
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.Platform, ret.PlatformFamily, ret.PlatformVersion, err = PlatformInformationWithContext(ctx)
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.KernelVersion, err = KernelVersionWithContext(ctx)
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.KernelArch, err = KernelArch()
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.VirtualizationSystem, ret.VirtualizationRole, err = VirtualizationWithContext(ctx)
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.BootTime, err = BootTimeWithContext(ctx)
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.Uptime, err = UptimeWithContext(ctx)
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.Procs, err = numProcs(ctx)
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 
 	ret.HostID, err = HostIDWithContext(ctx)
-	if err != nil && err != common.ErrNotImplementedError {
+	if err != nil && !errors.Is(err, common.ErrNotImplementedError) {
 		return nil, err
 	}
 

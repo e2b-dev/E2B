@@ -1,3 +1,4 @@
+//go:build solaris
 // +build solaris
 
 package disk
@@ -23,20 +24,18 @@ const (
 	_MNTTAB = "/etc/mnttab"
 )
 
-var (
-	// A blacklist of read-only virtual filesystems.  Writable filesystems are of
-	// operational concern and must not be included in this list.
-	fsTypeBlacklist = map[string]struct{}{
-		"ctfs":   struct{}{},
-		"dev":    struct{}{},
-		"fd":     struct{}{},
-		"lofs":   struct{}{},
-		"lxproc": struct{}{},
-		"mntfs":  struct{}{},
-		"objfs":  struct{}{},
-		"proc":   struct{}{},
-	}
-)
+// A blacklist of read-only virtual filesystems.  Writable filesystems are of
+// operational concern and must not be included in this list.
+var fsTypeBlacklist = map[string]struct{}{
+	"ctfs":   {},
+	"dev":    {},
+	"fd":     {},
+	"lofs":   {},
+	"lxproc": {},
+	"mntfs":  {},
+	"objfs":  {},
+	"proc":   {},
+}
 
 func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, error) {
 	ret := make([]PartitionStat, 0, _DEFAULT_NUM_MOUNTS)
@@ -113,6 +112,7 @@ func UsageWithContext(ctx context.Context, path string) (*UsageStat, error) {
 
 	return usageStat, nil
 }
+
 func SerialNumberWithContext(ctx context.Context, name string) (string, error) {
 	return "", common.ErrNotImplementedError
 }

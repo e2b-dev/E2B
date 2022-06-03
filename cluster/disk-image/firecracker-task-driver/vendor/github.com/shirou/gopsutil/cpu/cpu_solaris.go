@@ -6,28 +6,31 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/shirou/gopsutil/internal/common"
+	"github.com/tklauser/go-sysconf"
 )
 
 var ClocksPerSec = float64(128)
 
 func init() {
-	getconf, err := exec.LookPath("/usr/bin/getconf")
-	if err != nil {
-		return
-	}
-	out, err := invoke.Command(getconf, "CLK_TCK")
+	clkTck, err := sysconf.Sysconf(sysconf.SC_CLK_TCK)
 	// ignore errors
 	if err == nil {
-		i, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
-		if err == nil {
-			ClocksPerSec = float64(i)
-		}
+		ClocksPerSec = float64(clkTck)
 	}
+}
+
+//sum all values in a float64 map with float64 keys
+func msum(x map[float64]float64) float64 {
+	total := 0.0
+	for _, y := range x {
+		total += y
+	}
+	return total
 }
 
 func Times(percpu bool) ([]TimesStat, error) {
@@ -35,7 +38,83 @@ func Times(percpu bool) ([]TimesStat, error) {
 }
 
 func TimesWithContext(ctx context.Context, percpu bool) ([]TimesStat, error) {
-	return []TimesStat{}, common.ErrNotImplementedError
+	kstatSys, err := exec.LookPath("kstat")
+	if err != nil {
+		return nil, fmt.Errorf("cannot find kstat: %s", err)
+	}
+	cpu := make(map[float64]float64)
+	idle := make(map[float64]float64)
+	user := make(map[float64]float64)
+	kern := make(map[float64]float64)
+	iowt := make(map[float64]float64)
+	//swap := make(map[float64]float64)
+	kstatSysOut, err := invoke.CommandWithContext(ctx, kstatSys, "-p", "cpu_stat:*:*:/^idle$|^user$|^kernel$|^iowait$|^swap$/")
+	if err != nil {
+		return nil, fmt.Errorf("cannot execute kstat: %s", err)
+	}
+	re := regexp.MustCompile(`[:\s]+`)
+	for _, line := range strings.Split(string(kstatSysOut), "\n") {
+		fields := re.Split(line, -1)
+		if fields[0] != "cpu_stat" {
+			continue
+		}
+		cpuNumber, err := strconv.ParseFloat(fields[1], 64)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse cpu number: %s", err)
+		}
+		cpu[cpuNumber] = cpuNumber
+		switch fields[3] {
+		case "idle":
+			idle[cpuNumber], err = strconv.ParseFloat(fields[4], 64)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse idle: %s", err)
+			}
+		case "user":
+			user[cpuNumber], err = strconv.ParseFloat(fields[4], 64)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse user: %s", err)
+			}
+		case "kernel":
+			kern[cpuNumber], err = strconv.ParseFloat(fields[4], 64)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse kernel: %s", err)
+			}
+		case "iowait":
+			iowt[cpuNumber], err = strconv.ParseFloat(fields[4], 64)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse iowait: %s", err)
+			}
+			//not sure how this translates, don't report, add to kernel, something else?
+			/*case "swap":
+			swap[cpuNumber], err = strconv.ParseFloat(fields[4], 64)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse swap: %s", err)
+			} */
+		}
+	}
+	ret := make([]TimesStat, 0, len(cpu))
+	if percpu {
+		for _, c := range cpu {
+			ct := &TimesStat{
+				CPU:    fmt.Sprintf("cpu%d", int(cpu[c])),
+				Idle:   idle[c] / ClocksPerSec,
+				User:   user[c] / ClocksPerSec,
+				System: kern[c] / ClocksPerSec,
+				Iowait: iowt[c] / ClocksPerSec,
+			}
+			ret = append(ret, *ct)
+		}
+	} else {
+		ct := &TimesStat{
+			CPU:    "cpu-total",
+			Idle:   msum(idle) / ClocksPerSec,
+			User:   msum(user) / ClocksPerSec,
+			System: msum(kern) / ClocksPerSec,
+			Iowait: msum(iowt) / ClocksPerSec,
+		}
+		ret = append(ret, *ct)
+	}
+	return ret, nil
 }
 
 func Info() ([]InfoStat, error) {
@@ -43,7 +122,7 @@ func Info() ([]InfoStat, error) {
 }
 
 func InfoWithContext(ctx context.Context) ([]InfoStat, error) {
-	psrInfo, err := exec.LookPath("/usr/sbin/psrinfo")
+	psrInfo, err := exec.LookPath("psrinfo")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find psrinfo: %s", err)
 	}
@@ -52,7 +131,7 @@ func InfoWithContext(ctx context.Context) ([]InfoStat, error) {
 		return nil, fmt.Errorf("cannot execute psrinfo: %s", err)
 	}
 
-	isaInfo, err := exec.LookPath("/usr/bin/isainfo")
+	isaInfo, err := exec.LookPath("isainfo")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find isainfo: %s", err)
 	}
@@ -100,7 +179,7 @@ func parseISAInfo(cmdOutput string) ([]string, error) {
 	return flags, nil
 }
 
-var psrInfoMatch = regexp.MustCompile(`The physical processor has (?:([\d]+) virtual processor \(([\d]+)\)|([\d]+) cores and ([\d]+) virtual processors[^\n]+)\n(?:\s+ The core has.+\n)*\s+.+ \((\w+) ([\S]+) family (.+) model (.+) step (.+) clock (.+) MHz\)\n[\s]*(.*)`)
+var psrInfoMatch = regexp.MustCompile(`The physical processor has (?:([\d]+) virtual processors? \(([\d-]+)\)|([\d]+) cores and ([\d]+) virtual processors[^\n]+)\n(?:\s+ The core has.+\n)*\s+.+ \((\w+) ([\S]+) family (.+) model (.+) step (.+) clock (.+) MHz\)\n[\s]*(.*)`)
 
 const (
 	psrNumCoresOffset   = 1
@@ -195,4 +274,8 @@ func parseProcessorInfo(cmdOutput string) ([]InfoStat, error) {
 		}
 	}
 	return result, nil
+}
+
+func CountsWithContext(ctx context.Context, logical bool) (int, error) {
+	return runtime.NumCPU(), nil
 }

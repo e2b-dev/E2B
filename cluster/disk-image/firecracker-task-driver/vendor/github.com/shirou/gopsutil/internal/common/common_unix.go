@@ -23,7 +23,7 @@ func CallLsofWithContext(ctx context.Context, invoke Invoker, pid int32, args ..
 	}
 	out, err := invoke.CommandWithContext(ctx, lsof, cmd...)
 	if err != nil {
-		// if no pid found, lsof returnes code 1.
+		// if no pid found, lsof returns code 1.
 		if err.Error() == "exit status 1" && len(out) == 0 {
 			return []string{}, nil
 		}
@@ -41,8 +41,7 @@ func CallLsofWithContext(ctx context.Context, invoke Invoker, pid int32, args ..
 }
 
 func CallPgrepWithContext(ctx context.Context, invoke Invoker, pid int32) ([]int32, error) {
-	var cmd []string
-	cmd = []string{"-P", strconv.Itoa(int(pid))}
+	cmd := []string{"-P", strconv.Itoa(int(pid))}
 	pgrep, err := exec.LookPath("pgrep")
 	if err != nil {
 		return []int32{}, err

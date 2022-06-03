@@ -14,6 +14,7 @@ type Utmpx struct {
 	Host      [256]int8
 	Pad       [16]uint32
 }
+
 type Timeval struct {
 	Sec int32
 }

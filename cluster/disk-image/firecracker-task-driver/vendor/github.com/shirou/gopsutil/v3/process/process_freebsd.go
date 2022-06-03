@@ -1,3 +1,4 @@
+//go:build freebsd
 // +build freebsd
 
 package process
@@ -62,6 +63,10 @@ func (p *Process) NameWithContext(ctx context.Context) (string, error) {
 	}
 
 	return name, nil
+}
+
+func (p *Process) CwdWithContext(ctx context.Context) (string, error) {
+	return "", common.ErrNotImplementedError
 }
 
 func (p *Process) ExeWithContext(ctx context.Context) (string, error) {

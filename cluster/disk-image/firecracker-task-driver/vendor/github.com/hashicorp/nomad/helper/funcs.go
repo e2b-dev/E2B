@@ -68,7 +68,7 @@ func HashUUID(input string) (output string, hashed bool) {
 	return output, true
 }
 
-// boolToPtr returns the pointer to a boolean
+// BoolToPtr returns the pointer to a boolean.
 func BoolToPtr(b bool) *bool {
 	return &b
 }
@@ -83,7 +83,12 @@ func Int8ToPtr(i int8) *int8 {
 	return &i
 }
 
-// Int64ToPtr returns the pointer to an int
+// Int32ToPtr returns the pointer to an int32
+func Int32ToPtr(i int32) *int32 {
+	return &i
+}
+
+// Int64ToPtr returns the pointer to an int64
 func Int64ToPtr(i int64) *int64 {
 	return &i
 }
@@ -164,6 +169,14 @@ func SliceStringToSet(s []string) map[string]struct{} {
 		m[k] = struct{}{}
 	}
 	return m
+}
+
+func SetToSliceString(set map[string]struct{}) []string {
+	flattened := make([]string, 0, len(set))
+	for x := range set {
+		flattened = append(flattened, x)
+	}
+	return flattened
 }
 
 // SliceStringIsSubset returns whether the smaller set of strings is a subset of
@@ -298,7 +311,8 @@ func CompareMapStringString(a, b map[string]string) bool {
 	return true
 }
 
-// Helpers for copying generic structures.
+// Below is helpers for copying generic structures.
+
 func CopyMapStringString(m map[string]string) map[string]string {
 	l := len(m)
 	if l == 0 {
@@ -336,6 +350,29 @@ func CopyMapStringInterface(m map[string]interface{}) map[string]interface{} {
 		c[k] = v
 	}
 	return c
+}
+
+// MergeMapStringString will merge two maps into one. If a duplicate key exists
+// the value in the second map will replace the value in the first map. If both
+// maps are empty or nil this returns an empty map.
+func MergeMapStringString(m map[string]string, n map[string]string) map[string]string {
+	if len(m) == 0 && len(n) == 0 {
+		return map[string]string{}
+	}
+	if len(m) == 0 {
+		return n
+	}
+	if len(n) == 0 {
+		return m
+	}
+
+	result := CopyMapStringString(m)
+
+	for k, v := range n {
+		result[k] = v
+	}
+
+	return result
 }
 
 func CopyMapStringInt(m map[string]int) map[string]int {
@@ -570,4 +607,31 @@ func PathEscapesSandbox(sandboxDir, path string) bool {
 		return true
 	}
 	return false
+}
+
+// StopFunc is used to stop a time.Timer created with NewSafeTimer
+type StopFunc func()
+
+// NewSafeTimer creates a time.Timer but does not panic if duration is <= 0.
+//
+// Using a time.Timer is recommended instead of time.After when it is necessary
+// to avoid leaking goroutines (e.g. in a select inside a loop).
+//
+// Returns the time.Timer and also a StopFunc, forcing the caller to deal
+// with stopping the time.Timer to avoid leaking a goroutine.
+func NewSafeTimer(duration time.Duration) (*time.Timer, StopFunc) {
+	if duration <= 0 {
+		// Avoid panic by using the smallest positive value. This is close enough
+		// to the behavior of time.After(0), which this helper is intended to
+		// replace.
+		// https://go.dev/play/p/EIkm9MsPbHY
+		duration = 1
+	}
+
+	t := time.NewTimer(duration)
+	cancel := func() {
+		t.Stop()
+	}
+
+	return t, cancel
 }

@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package process
@@ -14,6 +15,7 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/internal/common"
 	"github.com/shirou/gopsutil/v3/net"
+	"github.com/tklauser/go-sysconf"
 	"golang.org/x/sys/unix"
 )
 
@@ -27,9 +29,15 @@ const (
 	KernProcPathname = 12 // path to executable
 )
 
-const (
-	clockTicks = 100 // C.sysconf(C._SC_CLK_TCK)
-)
+var clockTicks = 100 // default value
+
+func init() {
+	clkTck, err := sysconf.Sysconf(sysconf.SC_CLK_TCK)
+	// ignore errors
+	if err == nil {
+		clockTicks = int(clkTck)
+	}
+}
 
 type _Ctype_struct___0 struct {
 	Pad uint64
@@ -38,7 +46,7 @@ type _Ctype_struct___0 struct {
 func pidsWithContext(ctx context.Context) ([]int32, error) {
 	var ret []int32
 
-	pids, err := callPsWithContext(ctx, "pid", 0, false)
+	pids, err := callPsWithContext(ctx, "pid", 0, false, false)
 	if err != nil {
 		return ret, err
 	}
@@ -55,7 +63,7 @@ func pidsWithContext(ctx context.Context) ([]int32, error) {
 }
 
 func (p *Process) PpidWithContext(ctx context.Context) (int32, error) {
-	r, err := callPsWithContext(ctx, "ppid", p.Pid, false)
+	r, err := callPsWithContext(ctx, "ppid", p.Pid, false, false)
 	if err != nil {
 		return 0, err
 	}
@@ -76,16 +84,16 @@ func (p *Process) NameWithContext(ctx context.Context) (string, error) {
 	name := common.IntToString(k.Proc.P_comm[:])
 
 	if len(name) >= 15 {
-		cmdlineSlice, err := p.CmdlineSliceWithContext(ctx)
+		cmdName, err := p.cmdNameWithContext(ctx)
 		if err != nil {
 			return "", err
 		}
-		if len(cmdlineSlice) > 0 {
-			extendedName := filepath.Base(cmdlineSlice[0])
+		if len(cmdName) > 0 {
+			extendedName := filepath.Base(cmdName[0])
 			if strings.HasPrefix(extendedName, p.name) {
 				name = extendedName
 			} else {
-				name = cmdlineSlice[0]
+				name = cmdName[0]
 			}
 		}
 	}
@@ -93,21 +101,9 @@ func (p *Process) NameWithContext(ctx context.Context) (string, error) {
 	return name, nil
 }
 
-func (p *Process) CmdlineWithContext(ctx context.Context) (string, error) {
-	r, err := callPsWithContext(ctx, "command", p.Pid, false)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join(r[0], " "), err
-}
-
-// CmdlineSliceWithContext returns the command line arguments of the process as a slice with each
-// element being an argument. Because of current deficiencies in the way that the command
-// line arguments are found, single arguments that have spaces in the will actually be
-// reported as two separate items. In order to do something better CGO would be needed
-// to use the native darwin functions.
-func (p *Process) CmdlineSliceWithContext(ctx context.Context) ([]string, error) {
-	r, err := callPsWithContext(ctx, "command", p.Pid, false)
+// cmdNameWithContext returns the command name (including spaces) without any arguments
+func (p *Process) cmdNameWithContext(ctx context.Context) ([]string, error) {
+	r, err := callPsWithContext(ctx, "command", p.Pid, false, true)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +111,7 @@ func (p *Process) CmdlineSliceWithContext(ctx context.Context) ([]string, error)
 }
 
 func (p *Process) createTimeWithContext(ctx context.Context) (int64, error) {
-	r, err := callPsWithContext(ctx, "etime", p.Pid, false)
+	r, err := callPsWithContext(ctx, "etime", p.Pid, false, false)
 	if err != nil {
 		return 0, err
 	}
@@ -130,7 +126,7 @@ func (p *Process) createTimeWithContext(ctx context.Context) (int64, error) {
 		elapsedDurations = append(elapsedDurations, time.Duration(p))
 	}
 
-	var elapsed = time.Duration(elapsedDurations[0]) * time.Second
+	elapsed := time.Duration(elapsedDurations[0]) * time.Second
 	if len(elapsedDurations) > 1 {
 		elapsed += time.Duration(elapsedDurations[1]) * time.Minute
 	}
@@ -163,7 +159,7 @@ func (p *Process) ParentWithContext(ctx context.Context) (*Process, error) {
 }
 
 func (p *Process) StatusWithContext(ctx context.Context) ([]string, error) {
-	r, err := callPsWithContext(ctx, "state", p.Pid, false)
+	r, err := callPsWithContext(ctx, "state", p.Pid, false, false)
 	if err != nil {
 		return []string{""}, err
 	}
@@ -255,7 +251,7 @@ func (p *Process) IOCountersWithContext(ctx context.Context) (*IOCountersStat, e
 }
 
 func (p *Process) NumThreadsWithContext(ctx context.Context) (int32, error) {
-	r, err := callPsWithContext(ctx, "utime,stime", p.Pid, true)
+	r, err := callPsWithContext(ctx, "utime,stime", p.Pid, true, false)
 	if err != nil {
 		return 0, err
 	}
@@ -305,12 +301,11 @@ func convertCPUTimes(s string) (ret float64, err error) {
 	t += h * clockTicks
 	h, err = strconv.Atoi(_t[1])
 	t += h
-	return float64(t) / clockTicks, nil
+	return float64(t) / float64(clockTicks), nil
 }
 
 func (p *Process) TimesWithContext(ctx context.Context) (*cpu.TimesStat, error) {
-	r, err := callPsWithContext(ctx, "utime,stime", p.Pid, false)
-
+	r, err := callPsWithContext(ctx, "utime,stime", p.Pid, false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +328,7 @@ func (p *Process) TimesWithContext(ctx context.Context) (*cpu.TimesStat, error) 
 }
 
 func (p *Process) MemoryInfoWithContext(ctx context.Context) (*MemoryInfoStat, error) {
-	r, err := callPsWithContext(ctx, "rss,vsize,pagein", p.Pid, false)
+	r, err := callPsWithContext(ctx, "rss,vsize,pagein", p.Pid, false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -421,7 +416,7 @@ func (p *Process) getKProc() (*KinfoProc, error) {
 // Return value deletes Header line(you must not input wrong arg).
 // And splited by Space. Caller have responsibility to manage.
 // If passed arg pid is 0, get information from all process.
-func callPsWithContext(ctx context.Context, arg string, pid int32, threadOption bool) ([][]string, error) {
+func callPsWithContext(ctx context.Context, arg string, pid int32, threadOption bool, nameOption bool) ([][]string, error) {
 	bin, err := exec.LookPath("ps")
 	if err != nil {
 		return [][]string{}, err
@@ -435,6 +430,9 @@ func callPsWithContext(ctx context.Context, arg string, pid int32, threadOption 
 	} else {
 		cmd = []string{"-x", "-o", arg, "-p", strconv.Itoa(int(pid))}
 	}
+	if nameOption {
+		cmd = append(cmd, "-c")
+	}
 	out, err := invoke.CommandWithContext(ctx, bin, cmd...)
 	if err != nil {
 		return [][]string{}, err
@@ -444,11 +442,15 @@ func callPsWithContext(ctx context.Context, arg string, pid int32, threadOption 
 	var ret [][]string
 	for _, l := range lines[1:] {
 		var lr []string
-		for _, r := range strings.Split(l, " ") {
-			if r == "" {
-				continue
+		if nameOption {
+			lr = append(lr, l)
+		} else {
+			for _, r := range strings.Split(l, " ") {
+				if r == "" {
+					continue
+				}
+				lr = append(lr, strings.TrimSpace(r))
 			}
-			lr = append(lr, strings.TrimSpace(r))
 		}
 		if len(lr) != 0 {
 			ret = append(ret, lr)

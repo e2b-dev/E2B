@@ -13,10 +13,10 @@ const (
 	// Nonvoter is a server that receives log entries but is not considered for
 	// elections or commitment purposes.
 	Nonvoter
-	// Staging is a server that acts like a nonvoter with one exception: once a
-	// staging server receives enough log entries to be sufficiently caught up to
-	// the leader's log, the leader will invoke a  membership change to change
-	// the Staging server to a Voter.
+	// Staging is a server that acts like a Nonvoter. A configuration change
+	// with a ConfigurationChangeCommand of Promote can change a Staging server
+	// into a Voter.
+	// Deprecated: use Nonvoter instead.
 	Staging
 )
 
@@ -87,23 +87,27 @@ func (c *Configuration) Clone() (copy Configuration) {
 type ConfigurationChangeCommand uint8
 
 const (
-	// AddStaging makes a server Staging unless its Voter.
-	AddStaging ConfigurationChangeCommand = iota
+	// AddVoter adds a server with Suffrage of Voter.
+	AddVoter ConfigurationChangeCommand = iota
 	// AddNonvoter makes a server Nonvoter unless its Staging or Voter.
 	AddNonvoter
 	// DemoteVoter makes a server Nonvoter unless its absent.
 	DemoteVoter
 	// RemoveServer removes a server entirely from the cluster membership.
 	RemoveServer
-	// Promote is created automatically by a leader; it turns a Staging server
-	// into a Voter.
+	// Promote changes a server from Staging to Voter. The command will be a
+	// no-op if the server is not Staging.
+	// Deprecated: use AddVoter instead.
 	Promote
+	// AddStaging makes a server a Voter.
+	// Deprecated: AddStaging was actually AddVoter. Use AddVoter instead.
+	AddStaging = 0 // explicit 0 to preserve the old value.
 )
 
 func (c ConfigurationChangeCommand) String() string {
 	switch c {
-	case AddStaging:
-		return "AddStaging"
+	case AddVoter:
+		return "AddVoter"
 	case AddNonvoter:
 		return "AddNonvoter"
 	case DemoteVoter:
@@ -122,7 +126,7 @@ func (c ConfigurationChangeCommand) String() string {
 type configurationChangeRequest struct {
 	command       ConfigurationChangeCommand
 	serverID      ServerID
-	serverAddress ServerAddress // only present for AddStaging, AddNonvoter
+	serverAddress ServerAddress // only present for AddVoter, AddNonvoter
 	// prevIndex, if nonzero, is the index of the only configuration upon which
 	// this change may be applied; if another configuration entry has been
 	// added in the meantime, this request will fail.
@@ -181,17 +185,17 @@ func checkConfiguration(configuration Configuration) error {
 	var voters int
 	for _, server := range configuration.Servers {
 		if server.ID == "" {
-			return fmt.Errorf("Empty ID in configuration: %v", configuration)
+			return fmt.Errorf("empty ID in configuration: %v", configuration)
 		}
 		if server.Address == "" {
-			return fmt.Errorf("Empty address in configuration: %v", server)
+			return fmt.Errorf("empty address in configuration: %v", server)
 		}
 		if idSet[server.ID] {
-			return fmt.Errorf("Found duplicate ID in configuration: %v", server.ID)
+			return fmt.Errorf("found duplicate ID in configuration: %v", server.ID)
 		}
 		idSet[server.ID] = true
 		if addressSet[server.Address] {
-			return fmt.Errorf("Found duplicate address in configuration: %v", server.Address)
+			return fmt.Errorf("found duplicate address in configuration: %v", server.Address)
 		}
 		addressSet[server.Address] = true
 		if server.Suffrage == Voter {
@@ -199,7 +203,7 @@ func checkConfiguration(configuration Configuration) error {
 		}
 	}
 	if voters == 0 {
-		return fmt.Errorf("Need at least one voter in configuration: %v", configuration)
+		return fmt.Errorf("need at least one voter in configuration: %v", configuration)
 	}
 	return nil
 }
@@ -209,20 +213,13 @@ func checkConfiguration(configuration Configuration) error {
 // that it can be unit tested easily.
 func nextConfiguration(current Configuration, currentIndex uint64, change configurationChangeRequest) (Configuration, error) {
 	if change.prevIndex > 0 && change.prevIndex != currentIndex {
-		return Configuration{}, fmt.Errorf("Configuration changed since %v (latest is %v)", change.prevIndex, currentIndex)
+		return Configuration{}, fmt.Errorf("configuration changed since %v (latest is %v)", change.prevIndex, currentIndex)
 	}
 
 	configuration := current.Clone()
 	switch change.command {
-	case AddStaging:
-		// TODO: barf on new address?
+	case AddVoter:
 		newServer := Server{
-			// TODO: This should add the server as Staging, to be automatically
-			// promoted to Voter later. However, the promotion to Voter is not yet
-			// implemented, and doing so is not trivial with the way the leader loop
-			// coordinates with the replication goroutines today. So, for now, the
-			// server will have a vote right away, and the Promote case below is
-			// unused.
 			Suffrage: Voter,
 			ID:       change.serverID,
 			Address:  change.serverAddress,
@@ -319,11 +316,11 @@ func encodePeers(configuration Configuration, trans Transport) []byte {
 // decodePeers is used to deserialize an old list of peers into a Configuration.
 // This is here for backwards compatibility with old log entries and snapshots;
 // it should be removed eventually.
-func decodePeers(buf []byte, trans Transport) Configuration {
+func decodePeers(buf []byte, trans Transport) (Configuration, error) {
 	// Decode the buffer first.
 	var encPeers [][]byte
 	if err := decodeMsgPack(buf, &encPeers); err != nil {
-		panic(fmt.Errorf("failed to decode peers: %v", err))
+		return Configuration{}, fmt.Errorf("failed to decode peers: %v", err)
 	}
 
 	// Deserialize each peer.
@@ -333,13 +330,11 @@ func decodePeers(buf []byte, trans Transport) Configuration {
 		servers = append(servers, Server{
 			Suffrage: Voter,
 			ID:       ServerID(p),
-			Address:  ServerAddress(p),
+			Address:  p,
 		})
 	}
 
-	return Configuration{
-		Servers: servers,
-	}
+	return Configuration{Servers: servers}, nil
 }
 
 // EncodeConfiguration serializes a Configuration using MsgPack, or panics on

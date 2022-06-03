@@ -1,10 +1,14 @@
-// +build windows
+//go:build (windows && 386) || (windows && arm)
+// +build windows,386 windows,arm
 
 package process
 
 import (
+	"errors"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 
 	"github.com/shirou/gopsutil/v3/internal/common"
 )
@@ -22,9 +26,9 @@ type PROCESS_MEMORY_COUNTERS struct {
 	PeakPagefileUsage          uint32
 }
 
-func queryPebAddress(procHandle syscall.Handle, is32BitProcess bool) uint64 {
+func queryPebAddress(procHandle syscall.Handle, is32BitProcess bool) (uint64, error) {
 	if is32BitProcess {
-		//we are on a 32-bit process reading an external 32-bit process
+		// we are on a 32-bit process reading an external 32-bit process
 		var info processBasicInformation32
 
 		ret, _, _ := common.ProcNtQueryInformationProcess.Call(
@@ -34,12 +38,14 @@ func queryPebAddress(procHandle syscall.Handle, is32BitProcess bool) uint64 {
 			uintptr(unsafe.Sizeof(info)),
 			uintptr(0),
 		)
-		if int(ret) >= 0 {
-			return uint64(info.PebBaseAddress)
+		if status := windows.NTStatus(ret); status == windows.STATUS_SUCCESS {
+			return uint64(info.PebBaseAddress), nil
+		} else {
+			return 0, windows.NTStatus(ret)
 		}
 	} else {
-		//we are on a 32-bit process reading an external 64-bit process
-		if common.ProcNtWow64QueryInformationProcess64.Find() == nil { //avoid panic
+		// we are on a 32-bit process reading an external 64-bit process
+		if common.ProcNtWow64QueryInformationProcess64.Find() == nil { // avoid panic
 			var info processBasicInformation64
 
 			ret, _, _ := common.ProcNtWow64QueryInformationProcess64.Call(
@@ -49,14 +55,15 @@ func queryPebAddress(procHandle syscall.Handle, is32BitProcess bool) uint64 {
 				uintptr(unsafe.Sizeof(info)),
 				uintptr(0),
 			)
-			if int(ret) >= 0 {
-				return info.PebBaseAddress
+			if status := windows.NTStatus(ret); status == windows.STATUS_SUCCESS {
+				return info.PebBaseAddress, nil
+			} else {
+				return 0, windows.NTStatus(ret)
 			}
+		} else {
+			return 0, errors.New("can't find API to query 64 bit process from 32 bit")
 		}
 	}
-
-	//return 0 on error
-	return 0
 }
 
 func readProcessMemory(h syscall.Handle, is32BitProcess bool, address uint64, size uint) []byte {
@@ -76,19 +83,19 @@ func readProcessMemory(h syscall.Handle, is32BitProcess bool, address uint64, si
 			return buffer[:read]
 		}
 	} else {
-		//reading a 64-bit process from a 32-bit one
-		if common.ProcNtWow64ReadVirtualMemory64.Find() == nil { //avoid panic
+		// reading a 64-bit process from a 32-bit one
+		if common.ProcNtWow64ReadVirtualMemory64.Find() == nil { // avoid panic
 			var read uint64
 
 			buffer := make([]byte, size)
 
 			ret, _, _ := common.ProcNtWow64ReadVirtualMemory64.Call(
 				uintptr(h),
-				uintptr(address & 0xFFFFFFFF), //the call expects a 64-bit value
-				uintptr(address >> 32),
+				uintptr(address&0xFFFFFFFF), // the call expects a 64-bit value
+				uintptr(address>>32),
 				uintptr(unsafe.Pointer(&buffer[0])),
-				uintptr(size), //the call expects a 64-bit value
-				uintptr(0),    //but size is 32-bit so pass zero as the high dword
+				uintptr(size), // the call expects a 64-bit value
+				uintptr(0),    // but size is 32-bit so pass zero as the high dword
 				uintptr(unsafe.Pointer(&read)),
 			)
 			if int(ret) >= 0 && read > 0 {
@@ -97,6 +104,6 @@ func readProcessMemory(h syscall.Handle, is32BitProcess bool, address uint64, si
 		}
 	}
 
-	//if we reach here, an error happened
+	// if we reach here, an error happened
 	return nil
 }

@@ -1,3 +1,4 @@
+//go:build darwin || freebsd || openbsd
 // +build darwin freebsd openbsd
 
 package process
@@ -17,10 +18,6 @@ type MemoryMapsStat struct{}
 
 func (p *Process) TgidWithContext(ctx context.Context) (int32, error) {
 	return 0, common.ErrNotImplementedError
-}
-
-func (p *Process) CwdWithContext(ctx context.Context) (string, error) {
-	return "", common.ErrNotImplementedError
 }
 
 func (p *Process) IOniceWithContext(ctx context.Context) (int32, error) {
@@ -67,10 +64,13 @@ func (p *Process) ThreadsWithContext(ctx context.Context) (map[int32]*cpu.TimesS
 	return nil, common.ErrNotImplementedError
 }
 
+func (p *Process) EnvironWithContext(ctx context.Context) ([]string, error) {
+	return nil, common.ErrNotImplementedError
+}
+
 func parseKinfoProc(buf []byte) (KinfoProc, error) {
 	var k KinfoProc
 	br := bytes.NewReader(buf)
 	err := common.Read(br, binary.LittleEndian, &k)
 	return k, err
 }
-

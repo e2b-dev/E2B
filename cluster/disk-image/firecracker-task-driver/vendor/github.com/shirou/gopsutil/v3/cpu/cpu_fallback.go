@@ -1,4 +1,5 @@
-// +build !darwin,!linux,!freebsd,!openbsd,!solaris,!windows,!dragonfly
+//go:build !darwin && !linux && !freebsd && !openbsd && !solaris && !windows && !dragonfly && !plan9 && !aix
+// +build !darwin,!linux,!freebsd,!openbsd,!solaris,!windows,!dragonfly,!plan9,!aix
 
 package cpu
 

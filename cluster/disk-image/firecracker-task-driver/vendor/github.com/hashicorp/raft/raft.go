@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	minCheckInterval = 10 * time.Millisecond
+	minCheckInterval       = 10 * time.Millisecond
+	oldestLogGaugeInterval = 10 * time.Second
 )
 
 var (
@@ -29,7 +30,7 @@ var (
 // responses.
 func (r *Raft) getRPCHeader() RPCHeader {
 	return RPCHeader{
-		ProtocolVersion: r.conf.ProtocolVersion,
+		ProtocolVersion: r.config().ProtocolVersion,
 	}
 }
 
@@ -56,7 +57,7 @@ func (r *Raft) checkRPCHeader(rpc RPC) error {
 	// currently what we want, and in general support one version back. We
 	// may need to revisit this policy depending on how future protocol
 	// changes evolve.
-	if header.ProtocolVersion < r.conf.ProtocolVersion-1 {
+	if header.ProtocolVersion < r.config().ProtocolVersion-1 {
 		return ErrUnsupportedProtocol
 	}
 
@@ -122,7 +123,7 @@ func (r *Raft) requestConfigChange(req configurationChangeRequest, timeout time.
 	}
 }
 
-// run is a long running goroutine that runs the Raft FSM.
+// run the main thread that handles leadership and RPC requests.
 func (r *Raft) run() {
 	for {
 		// Check if we are doing a shutdown
@@ -134,7 +135,6 @@ func (r *Raft) run() {
 		default:
 		}
 
-		// Enter into a sub-FSM
 		switch r.getState() {
 		case Follower:
 			r.runFollower()
@@ -146,12 +146,12 @@ func (r *Raft) run() {
 	}
 }
 
-// runFollower runs the FSM for a follower.
+// runFollower runs the main loop while in the follower state.
 func (r *Raft) runFollower() {
 	didWarn := false
 	r.logger.Info("entering follower state", "follower", r, "leader", r.Leader())
 	metrics.IncrCounter([]string{"raft", "state", "follower"}, 1)
-	heartbeatTimer := randomTimeout(r.conf.HeartbeatTimeout)
+	heartbeatTimer := randomTimeout(r.config().HeartbeatTimeout)
 
 	for r.getState() == Follower {
 		select {
@@ -187,11 +187,12 @@ func (r *Raft) runFollower() {
 
 		case <-heartbeatTimer:
 			// Restart the heartbeat timer
-			heartbeatTimer = randomTimeout(r.conf.HeartbeatTimeout)
+			hbTimeout := r.config().HeartbeatTimeout
+			heartbeatTimer = randomTimeout(hbTimeout)
 
 			// Check if we have had a successful contact
 			lastContact := r.LastContact()
-			if time.Now().Sub(lastContact) < r.conf.HeartbeatTimeout {
+			if time.Now().Sub(lastContact) < hbTimeout {
 				continue
 			}
 
@@ -211,10 +212,15 @@ func (r *Raft) runFollower() {
 					didWarn = true
 				}
 			} else {
-				r.logger.Warn("heartbeat timeout reached, starting election", "last-leader", lastLeader)
 				metrics.IncrCounter([]string{"raft", "transition", "heartbeat_timeout"}, 1)
-				r.setState(Candidate)
-				return
+				if hasVote(r.configurations.latest, r.localID) {
+					r.logger.Warn("heartbeat timeout reached, starting election", "last-leader", lastLeader)
+					r.setState(Candidate)
+					return
+				} else if !didWarn {
+					r.logger.Warn("heartbeat timeout reached, not part of a stable configuration or a non-voter, not triggering a leader election")
+					didWarn = true
+				}
 			}
 
 		case <-r.shutdownCh:
@@ -228,8 +234,8 @@ func (r *Raft) runFollower() {
 // called on the main thread, and only makes sense in the follower state.
 func (r *Raft) liveBootstrap(configuration Configuration) error {
 	// Use the pre-init API to make the static updates.
-	err := BootstrapCluster(&r.conf, r.logs, r.stable, r.snapshots,
-		r.trans, configuration)
+	cfg := r.config()
+	err := BootstrapCluster(&cfg, r.logs, r.stable, r.snapshots, r.trans, configuration)
 	if err != nil {
 		return err
 	}
@@ -241,11 +247,10 @@ func (r *Raft) liveBootstrap(configuration Configuration) error {
 	}
 	r.setCurrentTerm(1)
 	r.setLastLog(entry.Index, entry.Term)
-	r.processConfigurationLogEntry(&entry)
-	return nil
+	return r.processConfigurationLogEntry(&entry)
 }
 
-// runCandidate runs the FSM for a candidate.
+// runCandidate runs the main loop while in the candidate state.
 func (r *Raft) runCandidate() {
 	r.logger.Info("entering candidate state", "node", r, "term", r.getCurrentTerm()+1)
 	metrics.IncrCounter([]string{"raft", "state", "candidate"}, 1)
@@ -260,7 +265,7 @@ func (r *Raft) runCandidate() {
 	// otherwise.
 	defer func() { r.candidateFromLeadershipTransfer = false }()
 
-	electionTimer := randomTimeout(r.conf.ElectionTimeout)
+	electionTimer := randomTimeout(r.config().ElectionTimeout)
 
 	// Tally the votes, need a simple majority
 	grantedVotes := 0
@@ -311,6 +316,10 @@ func (r *Raft) runCandidate() {
 			// Reject any restores since we are not the leader
 			r.respond(ErrNotLeader)
 
+		case r := <-r.leadershipTransferCh:
+			// Reject any operations since we are not the leader
+			r.respond(ErrNotLeader)
+
 		case c := <-r.configurationsCh:
 			c.configurations = r.configurations.Clone()
 			c.respond(nil)
@@ -340,10 +349,7 @@ func (r *Raft) setLeadershipTransferInProgress(v bool) {
 
 func (r *Raft) getLeadershipTransferInProgress() bool {
 	v := atomic.LoadInt32(&r.leaderState.leadershipTransferInProgress)
-	if v == 1 {
-		return true
-	}
-	return false
+	return v == 1
 }
 
 func (r *Raft) setupLeaderState() {
@@ -357,7 +363,7 @@ func (r *Raft) setupLeaderState() {
 	r.leaderState.stepDown = make(chan struct{}, 1)
 }
 
-// runLeader runs the FSM for a leader. Do the setup here and drop into
+// runLeader runs the main loop while in leader state. Do the setup here and drop into
 // the leaderLoop for the hot loop.
 func (r *Raft) runLeader() {
 	r.logger.Info("entering leader state", "leader", r)
@@ -366,8 +372,13 @@ func (r *Raft) runLeader() {
 	// Notify that we are the leader
 	overrideNotifyBool(r.leaderCh, true)
 
+	// Store the notify chan. It's not reloadable so shouldn't change before the
+	// defer below runs, but this makes sure we always notify the same chan if
+	// ever for both gaining and loosing leadership.
+	notify := r.config().NotifyCh
+
 	// Push to the notify channel if given
-	if notify := r.conf.NotifyCh; notify != nil {
+	if notify != nil {
 		select {
 		case notify <- true:
 		case <-r.shutdownCh:
@@ -378,8 +389,14 @@ func (r *Raft) runLeader() {
 	// leaderloop.
 	r.setupLeaderState()
 
+	// Run a background go-routine to emit metrics on log age
+	stopCh := make(chan struct{})
+	go emitLogStoreMetrics(r.logs, []string{"raft", "leader"}, oldestLogGaugeInterval, stopCh)
+
 	// Cleanup state on step down
 	defer func() {
+		close(stopCh)
+
 		// Since we were the leader previously, we update our
 		// last contact time when we step down, so that we are not
 		// reporting a last contact time from before we were the
@@ -423,7 +440,7 @@ func (r *Raft) runLeader() {
 		overrideNotifyBool(r.leaderCh, false)
 
 		// Push to the notify channel if given
-		if notify := r.conf.NotifyCh; notify != nil {
+		if notify != nil {
 			select {
 			case notify <- false:
 			case <-r.shutdownCh:
@@ -445,11 +462,7 @@ func (r *Raft) runLeader() {
 	// an unbounded number of uncommitted configurations in the log. We now
 	// maintain that there exists at most one uncommitted configuration entry in
 	// any log, so we have to do proper no-ops here.
-	noop := &logFuture{
-		log: Log{
-			Type: LogNoop,
-		},
-	}
+	noop := &logFuture{log: Log{Type: LogNoop}}
 	r.dispatchLogs([]*logFuture{noop})
 
 	// Sit in the leader loop until we step down
@@ -469,10 +482,13 @@ func (r *Raft) startStopReplication() {
 		if server.ID == r.localID {
 			continue
 		}
+
 		inConfig[server.ID] = true
-		if _, ok := r.leaderState.replState[server.ID]; !ok {
+
+		s, ok := r.leaderState.replState[server.ID]
+		if !ok {
 			r.logger.Info("added peer, starting replication", "peer", server.ID)
-			s := &followerReplication{
+			s = &followerReplication{
 				peer:                server,
 				commitment:          r.leaderState.commitment,
 				stopCh:              make(chan uint64, 1),
@@ -485,10 +501,23 @@ func (r *Raft) startStopReplication() {
 				notifyCh:            make(chan struct{}, 1),
 				stepDown:            r.leaderState.stepDown,
 			}
+
 			r.leaderState.replState[server.ID] = s
 			r.goFunc(func() { r.replicate(s) })
 			asyncNotifyCh(s.triggerCh)
 			r.observe(PeerObservation{Peer: server, Removed: false})
+		} else if ok {
+
+			s.peerLock.RLock()
+			peer := s.peer
+			s.peerLock.RUnlock()
+
+			if peer.Address != server.Address {
+				r.logger.Info("updating peer", "peer", server.ID)
+				s.peerLock.Lock()
+				s.peer = server
+				s.peerLock.Unlock()
+			}
 		}
 	}
 
@@ -504,6 +533,9 @@ func (r *Raft) startStopReplication() {
 		delete(r.leaderState.replState, serverID)
 		r.observe(PeerObservation{Peer: repl.peer, Removed: true})
 	}
+
+	// Update peers metric
+	metrics.SetGauge([]string{"raft", "peers"}, float32(len(r.configurations.latest.Servers)))
 }
 
 // configurationChangeChIfStable returns r.configurationChangeCh if it's safe
@@ -534,7 +566,13 @@ func (r *Raft) leaderLoop() {
 	// only a single peer (ourself) and replicating to an undefined set
 	// of peers.
 	stepDown := false
-	lease := time.After(r.conf.LeaderLeaseTimeout)
+	// This is only used for the first lease check, we reload lease below
+	// based on the current config value.
+	lease := time.After(r.config().LeaderLeaseTimeout)
+
+	// This would unset leadershipTransferInProgress
+	// in case it was set during the loop
+	defer func() { r.setLeadershipTransferInProgress(false) }()
 
 	for r.getState() == Leader {
 		select {
@@ -569,7 +607,7 @@ func (r *Raft) leaderLoop() {
 			// the stopCh and doneCh.
 			go func() {
 				select {
-				case <-time.After(r.conf.ElectionTimeout):
+				case <-time.After(r.config().ElectionTimeout):
 					close(stopCh)
 					err := fmt.Errorf("leadership transfer timeout")
 					r.logger.Debug(err.Error())
@@ -610,7 +648,7 @@ func (r *Raft) leaderLoop() {
 				doneCh <- fmt.Errorf("cannot find replication state for %v", id)
 				continue
 			}
-
+			r.setLeadershipTransferInProgress(true)
 			go r.leadershipTransfer(*id, *address, state, stopCh, doneCh)
 
 		case <-r.leaderState.commitCh:
@@ -619,7 +657,7 @@ func (r *Raft) leaderLoop() {
 			commitIndex := r.leaderState.commitment.getCommitIndex()
 			r.setCommitIndex(commitIndex)
 
-			// New configration has been committed, set it as the committed
+			// New configuration has been committed, set it as the committed
 			// value.
 			if r.configurations.latestIndex > oldCommitIndex &&
 				r.configurations.latestIndex <= commitIndex {
@@ -666,7 +704,7 @@ func (r *Raft) leaderLoop() {
 			metrics.SetGauge([]string{"raft", "commitNumLogs"}, float32(len(groupReady)))
 
 			if stepDown {
-				if r.conf.ShutdownOnRemove {
+				if r.config().ShutdownOnRemove {
 					r.logger.Info("removed ourself, shutting down")
 					r.Shutdown()
 				} else {
@@ -737,7 +775,7 @@ func (r *Raft) leaderLoop() {
 			// Group commit, gather all the ready commits
 			ready := []*logFuture{newLog}
 		GROUP_COMMIT_LOOP:
-			for i := 0; i < r.conf.MaxAppendEntries; i++ {
+			for i := 0; i < r.config().MaxAppendEntries; i++ {
 				select {
 				case newLog := <-r.applyCh:
 					ready = append(ready, newLog)
@@ -762,7 +800,7 @@ func (r *Raft) leaderLoop() {
 
 			// Next check interval should adjust for the last node we've
 			// contacted, without going negative
-			checkInterval := r.conf.LeaderLeaseTimeout - maxDiff
+			checkInterval := r.config().LeaderLeaseTimeout - maxDiff
 			if checkInterval < minCheckInterval {
 				checkInterval = minCheckInterval
 			}
@@ -813,10 +851,6 @@ func (r *Raft) leadershipTransfer(id ServerID, address ServerAddress, repl *foll
 	default:
 	}
 
-	// Step 1: set this field which stops this leader from responding to any client requests.
-	r.setLeadershipTransferInProgress(true)
-	defer func() { r.setLeadershipTransferInProgress(false) }()
-
 	for atomic.LoadUint64(&repl.nextIndex) <= r.getLastIndex() {
 		err := &deferError{}
 		err.init()
@@ -858,6 +892,11 @@ func (r *Raft) checkLeaderLease() time.Duration {
 	// Track contacted nodes, we can always contact ourself
 	contacted := 0
 
+	// Store lease timeout for this one check invocation as we need to refer to it
+	// in the loop and would be confusing if it ever becomes reloadable and
+	// changes between iterations below.
+	leaseTimeout := r.config().LeaderLeaseTimeout
+
 	// Check each follower
 	var maxDiff time.Duration
 	now := time.Now()
@@ -869,14 +908,14 @@ func (r *Raft) checkLeaderLease() time.Duration {
 			}
 			f := r.leaderState.replState[server.ID]
 			diff := now.Sub(f.LastContact())
-			if diff <= r.conf.LeaderLeaseTimeout {
+			if diff <= leaseTimeout {
 				contacted++
 				if diff > maxDiff {
 					maxDiff = diff
 				}
 			} else {
 				// Log at least once at high value, then debug. Otherwise it gets very verbose.
-				if diff <= 3*r.conf.LeaderLeaseTimeout {
+				if diff <= 3*leaseTimeout {
 					r.logger.Warn("failed to contact", "server-id", server.ID, "time", diff)
 				} else {
 					r.logger.Debug("failed to contact", "server-id", server.ID, "time", diff)
@@ -982,6 +1021,7 @@ func (r *Raft) restoreUserSnapshot(meta *SnapshotMeta, reader io.Reader) error {
 	// Restore the snapshot into the FSM. If this fails we are in a
 	// bad state so we panic to take ourselves out.
 	fsm := &restoreFuture{ID: sink.ID()}
+	fsm.ShutdownCh = r.shutdownCh
 	fsm.init()
 	select {
 	case r.fsmMutateCh <- fsm:
@@ -1065,6 +1105,7 @@ func (r *Raft) dispatchLogs(applyLogs []*logFuture) {
 		lastIndex++
 		applyLog.log.Index = lastIndex
 		applyLog.log.Term = term
+		applyLog.log.AppendedAt = now
 		logs[idx] = &applyLog.log
 		r.leaderState.inflight.PushBack(applyLog)
 	}
@@ -1116,7 +1157,11 @@ func (r *Raft) processLogs(index uint64, futures map[uint64]*logFuture) {
 		}
 	}
 
-	batch := make([]*commitTuple, 0, r.conf.MaxAppendEntries)
+	// Store maxAppendEntries for this call in case it ever becomes reloadable. We
+	// need to use the same value for all lines here to get the expected result.
+	maxAppendEntries := r.config().MaxAppendEntries
+
+	batch := make([]*commitTuple, 0, maxAppendEntries)
 
 	// Apply all the preceding logs
 	for idx := lastApplied + 1; idx <= index; idx++ {
@@ -1141,9 +1186,9 @@ func (r *Raft) processLogs(index uint64, futures map[uint64]*logFuture) {
 			batch = append(batch, preparedLog)
 
 			// If we have filled up a batch, send it to the FSM
-			if len(batch) >= r.conf.MaxAppendEntries {
+			if len(batch) >= maxAppendEntries {
 				applyBatch(batch)
-				batch = make([]*commitTuple, 0, r.conf.MaxAppendEntries)
+				batch = make([]*commitTuple, 0, maxAppendEntries)
 			}
 
 		case futureOk:
@@ -1259,7 +1304,7 @@ func (r *Raft) appendEntries(rpc RPC, a *AppendEntriesRequest) {
 
 	// Increase the term if we see a newer one, also transition to follower
 	// if we ever get an appendEntries call
-	if a.Term > r.getCurrentTerm() || r.getState() != Follower {
+	if a.Term > r.getCurrentTerm() || (r.getState() != Follower && !r.candidateFromLeadershipTransfer) {
 		// Ensure transition to follower
 		r.setState(Follower)
 		r.setCurrentTerm(a.Term)
@@ -1267,7 +1312,7 @@ func (r *Raft) appendEntries(rpc RPC, a *AppendEntriesRequest) {
 	}
 
 	// Save the current leader
-	r.setLeader(ServerAddress(r.trans.DecodePeer(a.Leader)))
+	r.setLeader(r.trans.DecodePeer(a.Leader))
 
 	// Verify the last log entry
 	if a.PrevLogEntry > 0 {
@@ -1319,9 +1364,7 @@ func (r *Raft) appendEntries(rpc RPC, a *AppendEntriesRequest) {
 				return
 			}
 			if entry.Term != storeEntry.Term {
-				r.logger.Warn("clearing log suffix",
-					"from", entry.Index,
-					"to", lastLogIdx)
+				r.logger.Warn("clearing log suffix", "from", entry.Index, "to", lastLogIdx)
 				if err := r.logs.DeleteRange(entry.Index, lastLogIdx); err != nil {
 					r.logger.Error("failed to clear log suffix", "error", err)
 					return
@@ -1345,7 +1388,13 @@ func (r *Raft) appendEntries(rpc RPC, a *AppendEntriesRequest) {
 
 			// Handle any new configuration changes
 			for _, newEntry := range newEntries {
-				r.processConfigurationLogEntry(newEntry)
+				if err := r.processConfigurationLogEntry(newEntry); err != nil {
+					r.logger.Warn("failed to append entry",
+						"index", newEntry.Index,
+						"error", err)
+					rpcErr = err
+					return
+				}
 			}
 
 			// Update the lastLog
@@ -1377,17 +1426,24 @@ func (r *Raft) appendEntries(rpc RPC, a *AppendEntriesRequest) {
 // processConfigurationLogEntry takes a log entry and updates the latest
 // configuration if the entry results in a new configuration. This must only be
 // called from the main thread, or from NewRaft() before any threads have begun.
-func (r *Raft) processConfigurationLogEntry(entry *Log) {
-	if entry.Type == LogConfiguration {
+func (r *Raft) processConfigurationLogEntry(entry *Log) error {
+	switch entry.Type {
+	case LogConfiguration:
 		r.setCommittedConfiguration(r.configurations.latest, r.configurations.latestIndex)
 		r.setLatestConfiguration(DecodeConfiguration(entry.Data), entry.Index)
-	} else if entry.Type == LogAddPeerDeprecated || entry.Type == LogRemovePeerDeprecated {
+
+	case LogAddPeerDeprecated, LogRemovePeerDeprecated:
 		r.setCommittedConfiguration(r.configurations.latest, r.configurations.latestIndex)
-		r.setLatestConfiguration(decodePeers(entry.Data, r.trans), entry.Index)
+		conf, err := decodePeers(entry.Data, r.trans)
+		if err != nil {
+			return err
+		}
+		r.setLatestConfiguration(conf, entry.Index)
 	}
+	return nil
 }
 
-// requestVote is invoked when we get an request vote RPC call.
+// requestVote is invoked when we get a request vote RPC call.
 func (r *Raft) requestVote(rpc RPC, req *RequestVoteRequest) {
 	defer metrics.MeasureSince([]string{"raft", "rpc", "requestVote"}, time.Now())
 	r.observe(*req)
@@ -1451,7 +1507,7 @@ func (r *Raft) requestVote(rpc RPC, req *RequestVoteRequest) {
 	if lastVoteTerm == req.Term && lastVoteCandBytes != nil {
 		r.logger.Info("duplicate requestVote for same term", "term", req.Term)
 		if bytes.Compare(lastVoteCandBytes, req.Candidate) == 0 {
-			r.logger.Warn("duplicate requestVote from", "candidate", req.Candidate)
+			r.logger.Warn("duplicate requestVote from", "candidate", candidate)
 			resp.Granted = true
 		}
 		return
@@ -1527,7 +1583,7 @@ func (r *Raft) installSnapshot(rpc RPC, req *InstallSnapshotRequest) {
 	}
 
 	// Save the current leader
-	r.setLeader(ServerAddress(r.trans.DecodePeer(req.Leader)))
+	r.setLeader(r.trans.DecodePeer(req.Leader))
 
 	// Create a new snapshot
 	var reqConfiguration Configuration
@@ -1536,7 +1592,11 @@ func (r *Raft) installSnapshot(rpc RPC, req *InstallSnapshotRequest) {
 		reqConfiguration = DecodeConfiguration(req.Configuration)
 		reqConfigurationIndex = req.ConfigurationIndex
 	} else {
-		reqConfiguration = decodePeers(req.Peers, r.trans)
+		reqConfiguration, rpcErr = decodePeers(req.Peers, r.trans)
+		if rpcErr != nil {
+			r.logger.Error("failed to install snapshot", "error", rpcErr)
+			return
+		}
 		reqConfigurationIndex = req.LastLogIndex
 	}
 	version := getSnapshotVersion(r.protocolVersion)
@@ -1548,8 +1608,14 @@ func (r *Raft) installSnapshot(rpc RPC, req *InstallSnapshotRequest) {
 		return
 	}
 
+	// Separately track the progress of streaming a snapshot over the network
+	// because this too can take a long time.
+	countingRPCReader := newCountingReader(rpc.Reader)
+
 	// Spill the remote snapshot to disk
-	n, err := io.Copy(sink, rpc.Reader)
+	transferMonitor := startSnapshotRestoreMonitor(r.logger, countingRPCReader, req.Size, true)
+	n, err := io.Copy(sink, countingRPCReader)
+	transferMonitor.StopAndWait()
 	if err != nil {
 		sink.Cancel()
 		r.logger.Error("failed to copy snapshot", "error", err)
@@ -1576,6 +1642,7 @@ func (r *Raft) installSnapshot(rpc RPC, req *InstallSnapshotRequest) {
 
 	// Restore snapshot
 	future := &restoreFuture{ID: sink.ID()}
+	future.ShutdownCh = r.shutdownCh
 	future.init()
 	select {
 	case r.fsmMutateCh <- future:
@@ -1722,23 +1789,13 @@ func (r *Raft) setState(state RaftState) {
 	}
 }
 
-// LookupServer looks up a server by ServerID.
-func (r *Raft) lookupServer(id ServerID) *Server {
-	for _, server := range r.configurations.latest.Servers {
-		if server.ID != r.localID {
-			return &server
-		}
-	}
-	return nil
-}
-
-// pickServer returns the follower that is most up to date. Because it accesses
-// leaderstate, it should only be called from the leaderloop.
+// pickServer returns the follower that is most up to date and participating in quorum.
+// Because it accesses leaderstate, it should only be called from the leaderloop.
 func (r *Raft) pickServer() *Server {
 	var pick *Server
 	var current uint64
 	for _, server := range r.configurations.latest.Servers {
-		if server.ID == r.localID {
+		if server.ID == r.localID || server.Suffrage != Voter {
 			continue
 		}
 		state, ok := r.leaderState.replState[server.ID]

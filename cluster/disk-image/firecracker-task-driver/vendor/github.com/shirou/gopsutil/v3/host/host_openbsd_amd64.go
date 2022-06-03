@@ -25,6 +25,7 @@ type Utmp struct {
 	Host [256]int8
 	Time int64
 }
+
 type Timeval struct {
 	Sec  int64
 	Usec int64

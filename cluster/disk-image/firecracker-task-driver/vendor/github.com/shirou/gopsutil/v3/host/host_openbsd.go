@@ -1,3 +1,4 @@
+//go:build openbsd
 // +build openbsd
 
 package host
@@ -78,7 +79,7 @@ func UsersWithContext(ctx context.Context) ([]UserStat, error) {
 		var u Utmp
 		br := bytes.NewReader(b)
 		err := binary.Read(br, binary.LittleEndian, &u)
-		if err != nil || u.Time == 0 {
+		if err != nil || u.Time == 0 || u.Name[0] == 0 {
 			continue
 		}
 		user := UserStat{

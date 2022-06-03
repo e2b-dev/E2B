@@ -1,5 +1,5 @@
-// +build darwin
-// +build cgo
+//go:build darwin && cgo
+// +build darwin,cgo
 
 package disk
 
@@ -19,7 +19,7 @@ import (
 
 func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOCountersStat, error) {
 	var buf [C.NDRIVE]C.DriveStats
-	n, err := C.readdrivestat(&buf[0], C.int(len(buf)))
+	n, err := C.gopsutil_v3_readdrivestat(&buf[0], C.int(len(buf)))
 	if err != nil {
 		return nil, err
 	}

@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 package host
@@ -121,7 +122,6 @@ func UsersWithContext(ctx context.Context) ([]UserStat, error) {
 	}
 
 	return ret, nil
-
 }
 
 func getlsbStruct() (*lsbStruct, error) {
@@ -283,9 +283,9 @@ func PlatformInformationWithContext(ctx context.Context) (platform string, famil
 		family = "debian"
 	case "fedora":
 		family = "fedora"
-	case "oracle", "centos", "redhat", "scientific", "enterpriseenterprise", "amazon", "xenserver", "cloudlinux", "ibm_powerkvm":
+	case "oracle", "centos", "redhat", "scientific", "enterpriseenterprise", "amazon", "xenserver", "cloudlinux", "ibm_powerkvm", "rocky":
 		family = "rhel"
-	case "suse", "opensuse", "sles":
+	case "suse", "opensuse", "opensuse-leap", "opensuse-tumbleweed", "opensuse-tumbleweed-kubic", "sles", "sled", "caasp":
 		family = "suse"
 	case "gentoo":
 		family = "gentoo"
@@ -304,7 +304,6 @@ func PlatformInformationWithContext(ctx context.Context) (platform string, famil
 	}
 
 	return platform, family, version, nil
-
 }
 
 func KernelVersionWithContext(ctx context.Context) (version string, err error) {

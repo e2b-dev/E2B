@@ -52,6 +52,7 @@ type devstat struct {
 	Id            *byte
 	Sequence1     uint32
 }
+
 type bintime struct {
 	Sec  int32
 	Frac uint64
