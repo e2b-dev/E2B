@@ -108,9 +108,6 @@ build {
     inline = [
       "sudo mkdir -p /fc-vm",
       "sudo curl https://storage.googleapis.com/devbook-snapshot/vmlinux.bin -o /fc-vm/vmlinux.bin",
-      "sudo curl https://storage.googleapis.com/devbook-snapshot/mem_file -o /fc-vm/mem_file",
-      "sudo curl https://storage.googleapis.com/devbook-snapshot/rootfs.ext4 -o /fc-vm/rootfs.ext4",
-      "sudo curl https://storage.googleapis.com/devbook-snapshot/snapshot_file -o /fc-vm/snapshot_file",
     ]
   }
 }
