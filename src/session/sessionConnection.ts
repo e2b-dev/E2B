@@ -30,7 +30,7 @@ export interface SessionConnectionOpts {
   id: string
   onClose?: CloseHandler
   debug?: boolean
-  saveFSChanges?: boolean
+  editEnabled?: boolean
 }
 
 const getSession = api.path('/sessions').method('post').create()
@@ -111,7 +111,7 @@ abstract class SessionConnection {
     try {
       const res = await getSession({
         codeSnippetID: this.opts.id,
-        saveFSChanges: this.opts.saveFSChanges,
+        editEnabled: this.opts.editEnabled,
       })
       this.session = res.data
       this.logger.log('Aquired session:', this.session)

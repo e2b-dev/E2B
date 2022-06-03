@@ -2,7 +2,7 @@ import { Session } from '../dist/cjs/index.js'
 
 async function main() {
   const session = new Session({
-    id: 'aykyOKeGxc0h',
+    id: 'IUKVAOjElRCm',
     codeSnippet: {
       onStateChange(state) {
         console.log(state)
@@ -15,13 +15,23 @@ async function main() {
       },
     },
     debug: true,
-    saveFSChanges: true,
+    // editEnabled: true,
   })
 
   try {
     await session.open()
-    await session.codeSnippet().run(String.raw`
+
+    await session.codeSnippet?.run(String.raw`
     const fs = require('fs')
+
+    try {
+      const rest = fs.readFileSync('/test.file').toString()
+      console.log('file', rest)
+    } catch (e) {
+      console.error('no file')
+    }
+
+    fs.writeFileSync('/test.file', 'inline>>')
 
     setInterval(() => {
       try {
@@ -31,9 +41,7 @@ async function main() {
         console.error('no file')
       }
     }, 2000)
-    
-
-    
+        
     `)
     //     await session.codeSnippet.run(String.raw`
     //     const http = require('http');

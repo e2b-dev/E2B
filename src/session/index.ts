@@ -23,15 +23,8 @@ export interface SessionOpts extends SessionConnectionOpts {
 class Session extends SessionConnection {
   private readonly codeSnippetOpts?: CodeSnippetOpts
 
-  private _codeSnippet?: CodeSnippetManager
-  codeSnippet() {
-    return this._codeSnippet
-  }
-
-  private _terminal?: TerminalManager
-  terminal() {
-    return this._terminal
-  }
+  codeSnippet?: CodeSnippetManager
+  terminal?: TerminalManager
 
   constructor(opts: SessionOpts) {
     super(opts)
@@ -42,7 +35,7 @@ class Session extends SessionConnection {
     await super.open()
 
     // Init CodeSnippet handler
-    this._codeSnippet = {
+    this.codeSnippet = {
       run: async (code: string) => {
         if (!this.isOpen || !this.session) {
           throw new Error('Session is not active')
@@ -74,7 +67,7 @@ class Session extends SessionConnection {
     ])
 
     // Init Terminal handler
-    this._terminal = {
+    this.terminal = {
       createSession: async (onData, activeTerminalID) => {
         const terminalID = await this.call(`${terminalSubscriptionMethod}_start`, activeTerminalID ? [activeTerminalID] : [])
         if (typeof terminalID !== 'string') {

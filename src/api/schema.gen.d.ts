@@ -168,12 +168,16 @@ export interface components {
       readonly state: "Building" | "Failed" | "Done";
     };
     readonly NewSession: {
-      /** @description Option determining if the changes to the filesystem should be saved */
-      readonly saveFSChanges?: boolean;
+      /** @description Option determining if the session is a shared persistent edit session */
+      readonly editEnabled?: boolean;
       /** @description Identifier of a code snippet which which is the environment associated */
       readonly codeSnippetID: string;
     };
     readonly Session: {
+      /** @description Identifier of a code snippet which which is the environment associated */
+      readonly codeSnippetID: string;
+      /** @description Information if the session is a shared persistent edit session */
+      readonly editEnabled: boolean;
       /** @description Identifier of the session */
       readonly sessionID: string;
       /** @description Identifier of the client */
