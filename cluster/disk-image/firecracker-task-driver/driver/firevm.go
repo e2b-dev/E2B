@@ -76,7 +76,14 @@ func loadSnapshot(ctx context.Context, cfg *firecracker.Config, codeSnippetID st
 	return httpClient.Operations.LoadSnapshot(&snapshotConfig)
 }
 
-func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfig, taskConfig TaskConfig, slot *IPSlot, fcEnvsDisk string) (*vminfo, error) {
+func (d *Driver) initializeContainer(
+	ctx context.Context,
+	cfg *drivers.TaskConfig,
+	taskConfig TaskConfig,
+	slot *IPSlot,
+	fcEnvsDisk string,
+	saveFSChanges bool,
+) (*vminfo, error) {
 	opts := newOptions()
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
@@ -116,15 +123,28 @@ func (d *Driver) initializeContainer(ctx context.Context, cfg *drivers.TaskConfi
 
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s ", fcCfg.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
-	mountOverlayCmd := fmt.Sprintf(
-		"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s && ",
-		codeSnippetEnvPath,
-		slot.SessionTmpOverlay(),
-		slot.SessionTmpWorkdir(),
-		buildDirPath,
-	)
 
-	cmd := exec.CommandContext(ctx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountOverlayCmd+inNetNSCmd+fcCmd)
+	var mountCmd string
+
+	if saveFSChanges {
+		// Mount the actual rootfs
+		mountCmd = fmt.Sprintf(
+			"mount -o bind %s %s && ",
+			codeSnippetEnvPath,
+			buildDirPath,
+		)
+	} else {
+		// Mount overlay
+		mountCmd = fmt.Sprintf(
+			"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s && ",
+			codeSnippetEnvPath,
+			slot.SessionTmpOverlay(),
+			slot.SessionTmpWorkdir(),
+			buildDirPath,
+		)
+	}
+
+	cmd := exec.CommandContext(ctx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
 	cmd.Stderr = nil
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))

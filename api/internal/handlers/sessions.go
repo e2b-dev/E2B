@@ -27,6 +27,12 @@ func (a *APIStore) PostSessions(c *gin.Context) {
 		return
 	}
 
+	// The default option in the openapi does not automatically populate JSON field witht he default value
+	if newSession.SaveFSChanges == nil {
+		saveFSChanges := false
+		newSession.SaveFSChanges = &saveFSChanges
+	}
+
 	session, err := a.nomadClient.CreateSession(&newSession)
 
 	if err != nil {

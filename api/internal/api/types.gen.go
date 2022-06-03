@@ -79,6 +79,9 @@ type NewEnvironmentTemplate string
 type NewSession struct {
 	// Identifier of a code snippet which which is the environment associated
 	CodeSnippetID string `json:"codeSnippetID"`
+
+	// Option determining if the changes to the filesystem should be saved
+	SaveFSChanges *bool `json:"saveFSChanges,omitempty"`
 }
 
 // Session defines model for Session.
