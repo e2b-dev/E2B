@@ -137,7 +137,7 @@ func main() {
 
 	router := mux.NewRouter()
 	server := rpc.NewServer()
-	codeSnippet := new(CodeSnippet)
+	codeSnippet := NewCodeSnippetService()
 	if err := server.RegisterName("codeSnippet", codeSnippet); err != nil {
     slogger.Errorw("Failed to register code snippet service", "error", err)
 	}
