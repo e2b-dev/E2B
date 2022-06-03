@@ -60,13 +60,13 @@ var (
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 		"SessionID":     hclspec.NewAttr("SessionID", "string", false),
 		"CodeSnippetID": hclspec.NewAttr("CodeSnippetID", "string", false),
-		"SaveFSChanges": hclspec.NewAttr("SaveFSChanges", "bool", false),
+		"EditEnabled":   hclspec.NewAttr("EditEnabled", "bool", false),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
 	// optional features this driver supports
 	capabilities = &drivers.Capabilities{
-		SendSignals: true,
+		SendSignals: false,
 		Exec:        false,
 		FSIsolation: drivers.FSIsolationImage,
 	}
@@ -111,7 +111,7 @@ type Nic struct {
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
 	SessionID     string `codec:"SessionID"`
-	SaveFSChanges bool   `codec:"SaveFSChanges"`
+	EditEnabled   bool   `codec:"EditEnabled"`
 	CodeSnippetID string `codec:"CodeSnippetID"`
 }
 
@@ -263,7 +263,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		driverConfig,
 		ipSlot,
 		cfg.Env["FC_ENVS_DISK"],
-		driverConfig.SaveFSChanges,
+		driverConfig.EditEnabled,
 	)
 	if err != nil {
 		ipSlot.RemoveNamespace(d.logger)
@@ -278,6 +278,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		MachineInstance: m.Machine,
 		Slot:            ipSlot,
 		Info:            m.Info,
+		EditEnabled:     driverConfig.EditEnabled,
 		logger:          d.logger,
 		cpuStatsSys:     stats.NewCpuStats(),
 		cpuStatsUser:    stats.NewCpuStats(),
@@ -352,7 +353,13 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 }
 
 func (d *Driver) DestroyTask(taskID string, force bool) error {
-	return d.StopTask(taskID, 0, "")
+	_, ok := d.tasks.Get(taskID)
+	if !ok {
+		return drivers.ErrTaskNotFound
+	}
+
+	d.tasks.Delete(taskID)
+	return nil
 }
 
 func (d *Driver) InspectTask(taskID string) (*drivers.TaskStatus, error) {
@@ -387,6 +394,5 @@ func (d *Driver) ExecTask(taskID string, cmd []string, timeout time.Duration) (*
 }
 
 func (d *Driver) SignalTask(taskID string, signal string) error {
-	return d.StopTask(taskID, 0, "")
-	// return fmt.Errorf("Firecracker-task-driver does not support signal")
+	return fmt.Errorf("firecracker-task-driver does not support signal")
 }

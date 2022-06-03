@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	// "sync"
@@ -46,6 +47,7 @@ type taskHandle struct {
 	MachineInstance *firecracker.Machine
 	Slot            *IPSlot
 	Info            Instance_info
+	EditEnabled     bool
 	startedAt       time.Time
 	completedAt     time.Time
 	exitResult      *drivers.ExitResult
@@ -181,7 +183,43 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 }
 
 func (h *taskHandle) shutdown() error {
+	var err error
+	if h.EditEnabled {
+		err = saveEditSnapshot(h.Slot, &h.Info)
+		h.logger.Error("error persisting edit session %v", err)
+
+	}
+
 	h.MachineInstance.StopVMM()
+
+	pid, err := strconv.Atoi(h.Info.Pid)
+	if err == nil {
+		timeout := time.After(20 * time.Second)
+
+	pidCheck:
+		for {
+			select {
+			case <-timeout:
+				break pidCheck
+			default:
+				process, err := os.FindProcess(int(pid))
+				if err != nil {
+					break pidCheck
+				}
+
+				if process.Signal(syscall.Signal(0)) != nil {
+					break pidCheck
+				}
+			}
+			time.Sleep(containerMonitorIntv)
+		}
+	}
+
+	if h.EditEnabled {
+		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, "edit", *h.Info.EditID)
+		os.RemoveAll(oldEditDirPath)
+	}
+
 	h.Slot.RemoveNamespace(h.logger)
 
 	return nil
