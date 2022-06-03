@@ -15,8 +15,8 @@ import (
 type CodeSnippetState string
 
 const (
-  CodeSnippetStateRunning CodeSnippetState = "Running"
-  CodeSnippetStateStopped CodeSnippetState = "Stopped"
+	CodeSnippetStateRunning CodeSnippetState = "Running"
+	CodeSnippetStateStopped CodeSnippetState = "Stopped"
 )
 
 // TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
@@ -28,17 +28,17 @@ type CodeSnippet struct {
 	mu      sync.Mutex
 	running bool
 
-  stdoutSubscribers map[rpc.ID]*subscriber
-  stderrSubscribers map[rpc.ID]*subscriber
-  stateSubscribers  map[rpc.ID]*subscriber
+	stdoutSubscribers map[rpc.ID]*subscriber
+	stderrSubscribers map[rpc.ID]*subscriber
+	stateSubscribers  map[rpc.ID]*subscriber
 }
 
 func NewCodeSnippetService() *CodeSnippet {
-  return &CodeSnippet{
-    stdoutSubscribers:  make(map[rpc.ID]*subscriber),
-    stderrSubscribers:  make(map[rpc.ID]*subscriber),
-    stateSubscribers:   make(map[rpc.ID]*subscriber),
-  }
+	return &CodeSnippet{
+		stdoutSubscribers: make(map[rpc.ID]*subscriber),
+		stderrSubscribers: make(map[rpc.ID]*subscriber),
+		stateSubscribers:  make(map[rpc.ID]*subscriber),
+	}
 }
 
 func (cs *CodeSnippet) setRunning(b bool) {
@@ -53,36 +53,36 @@ func (cs *CodeSnippet) setRunning(b bool) {
 }
 
 func (cs *CodeSnippet) notifyStdout(s string) {
-  for _, sub := range cs.stdoutSubscribers {
-    if err := sub.Notify(s); err != nil {
-      slogger.Errorw("Failed to send stdout notification",
-        "subscriptionID", sub.SubscriptionID(),
-        "error", err,
-      )
-    }
-  }
+	for _, sub := range cs.stdoutSubscribers {
+		if err := sub.Notify(s); err != nil {
+			slogger.Errorw("Failed to send stdout notification",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+		}
+	}
 }
 
 func (cs *CodeSnippet) notifyStderr(s string) {
-  for _, sub := range cs.stderrSubscribers {
-    if err := sub.Notify(s); err != nil {
-      slogger.Errorw("Failed to send stderr notification",
-        "subscriptionID", sub.SubscriptionID(),
-        "error", err,
-      )
-    }
-  }
+	for _, sub := range cs.stderrSubscribers {
+		if err := sub.Notify(s); err != nil {
+			slogger.Errorw("Failed to send stderr notification",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+		}
+	}
 }
 
 func (cs *CodeSnippet) notifyState(state CodeSnippetState) {
-  for _, sub := range cs.stateSubscribers {
-    if err := sub.Notify(state); err != nil {
-      slogger.Errorw("Failed to send state notification",
-        "subscriptionID", sub.SubscriptionID(),
-        "error", err,
-      )
-    }
-  }
+	for _, sub := range cs.stateSubscribers {
+		if err := sub.Notify(state); err != nil {
+			slogger.Errorw("Failed to send state notification",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+		}
+	}
 }
 
 func (cs *CodeSnippet) scanStdout(pipe io.ReadCloser) {
@@ -110,11 +110,11 @@ func (cs *CodeSnippet) runCmd(code string) {
 		cs.mu.Unlock()
 	}()
 
-  if err := os.WriteFile(entrypointFullPath, []byte(code), 0755); err != nil {
-    slogger.Errorw("Failed to write to the entrypoint file",
-      "entrypointFullPath", entrypointFullPath,
-      "error", err,
-    )
+	if err := os.WriteFile(entrypointFullPath, []byte(code), 0755); err != nil {
+		slogger.Errorw("Failed to write to the entrypoint file",
+			"entrypointFullPath", entrypointFullPath,
+			"error", err,
+		)
 	}
 
 	cs.cmd = exec.Command(runCmd, parsedRunArgs...)
@@ -122,18 +122,18 @@ func (cs *CodeSnippet) runCmd(code string) {
 
 	stdout, err := cs.cmd.StdoutPipe()
 	if err != nil {
-    slogger.Errorw("Failed to set up stdout pipe for the run command",
-      "cmd", cs.cmd,
-      "error", err,
-    )
+		slogger.Errorw("Failed to set up stdout pipe for the run command",
+			"cmd", cs.cmd,
+			"error", err,
+		)
 		cs.notifyStderr(err.Error())
 	}
 	stderr, err := cs.cmd.StderrPipe()
 	if err != nil {
-    slogger.Errorw("Failed to set up stderr pipe for the run command",
-      "cmd", cs.cmd,
-      "error", err,
-    )
+		slogger.Errorw("Failed to set up stderr pipe for the run command",
+			"cmd", cs.cmd,
+			"error", err,
+		)
 		cs.notifyStderr(err.Error())
 	}
 
@@ -141,18 +141,18 @@ func (cs *CodeSnippet) runCmd(code string) {
 	go cs.scanStderr(stderr)
 
 	if err := cs.cmd.Run(); err != nil {
-    slogger.Errorw("Failed to run the run command",
-      "cmd", cs.cmd,
-      "error", err,
-    )
+		slogger.Errorw("Failed to run the run command",
+			"cmd", cs.cmd,
+			"error", err,
+		)
 		cs.notifyStderr(err.Error())
 	}
 }
 
 func (cs *CodeSnippet) Run(code string) CodeSnippetState {
-  slogger.Infow("Run code request",
-    "code", code,
-  )
+	slogger.Infow("Run code request",
+		"code", code,
+	)
 
 	cs.mu.Lock()
 	if cs.running {
@@ -167,7 +167,7 @@ func (cs *CodeSnippet) Run(code string) CodeSnippetState {
 }
 
 func (cs *CodeSnippet) Stop() CodeSnippetState {
-  slogger.Info("Stop code request")
+	slogger.Info("Stop code request")
 
 	cs.mu.Lock()
 	if !cs.running {
@@ -175,13 +175,13 @@ func (cs *CodeSnippet) Stop() CodeSnippetState {
 		return CodeSnippetStateStopped
 	}
 
-  sig := syscall.SIGTERM
+	sig := syscall.SIGTERM
 	if err := cs.cmd.Process.Signal(sig); err != nil {
-    slogger.Errorw("Error while sending a signal to the run command",
-      "cmd", cs.cmd,
-      "signal", sig,
-      "error", err,
-    )
+		slogger.Errorw("Error while sending a signal to the run command",
+			"cmd", cs.cmd,
+			"signal", sig,
+			"error", err,
+		)
 		cs.notifyStderr(err.Error())
 	}
 
@@ -193,84 +193,99 @@ func (cs *CodeSnippet) Stop() CodeSnippetState {
 
 // Subscription
 func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
-  slogger.Info("New state subscription")
+	slogger.Info("New state subscription")
 	sub, err := newSubscriber(ctx)
 	if err != nil {
-    slogger.Errorw("Failed to create a state subscription from context",
-      "ctx", ctx,
-      "error", err,
-    )
+		slogger.Errorw("Failed to create a state subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
 		return nil, err
 	}
 
-  // Watch for subscription errors.
-  go func() {
-    select {
-    case err := <-sub.subscription.Err():
-      slogger.Infow("State subscribtion error",
-        "subscriptionID", sub.SubscriptionID(),
-        "error", err,
-      )
-      delete(cs.stateSubscribers, sub.SubscriptionID())
-    }
-  }()
+	// Watch for subscription errors.
+	go func() {
+		select {
+		case err := <-sub.subscription.Err():
+			slogger.Infow("State subscribtion error",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+			delete(cs.stateSubscribers, sub.SubscriptionID())
+		}
+	}()
 
-  cs.stateSubscribers[sub.SubscriptionID()] = sub
-  return sub.subscription, nil
+	// Send initial state
+	var state CodeSnippetState
+	if cs.running {
+		state = CodeSnippetStateRunning
+	} else {
+		state = CodeSnippetStateStopped
+	}
+
+	if err := sub.Notify(state); err != nil {
+		slogger.Errorw("Failed to send initial state notification",
+			"subscriptionID", sub.SubscriptionID(),
+			"error", err,
+		)
+	}
+
+	cs.stateSubscribers[sub.SubscriptionID()] = sub
+	return sub.subscription, nil
 }
 
 // Subscription
 func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
-  slogger.Info("New stdout subscription")
+	slogger.Info("New stdout subscription")
 	sub, err := newSubscriber(ctx)
 	if err != nil {
-    slogger.Errorw("Failed to create a stdout subscription from context",
-      "ctx", ctx,
-      "error", err,
-    )
+		slogger.Errorw("Failed to create a stdout subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
 		return nil, err
 	}
 
-  // Watch for subscription errors.
-  go func() {
-    select {
-    case err := <-sub.subscription.Err():
-      slogger.Infow("Stdout subscribtion error",
-        "subscriptionID", sub.SubscriptionID(),
-        "error", err,
-      )
-      delete(cs.stdoutSubscribers, sub.SubscriptionID())
-    }
-  }()
+	// Watch for subscription errors.
+	go func() {
+		select {
+		case err := <-sub.subscription.Err():
+			slogger.Infow("Stdout subscribtion error",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+			delete(cs.stdoutSubscribers, sub.SubscriptionID())
+		}
+	}()
 
-  cs.stdoutSubscribers[sub.SubscriptionID()] = sub
-  return sub.subscription, nil
+	cs.stdoutSubscribers[sub.SubscriptionID()] = sub
+	return sub.subscription, nil
 }
 
 // Subscription
 func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
-  slogger.Info("New stderr subscription")
+	slogger.Info("New stderr subscription")
 	sub, err := newSubscriber(ctx)
 	if err != nil {
-    slogger.Errorw("Failed to create a stderr subscription from context",
-      "ctx", ctx,
-      "error", err,
-    )
+		slogger.Errorw("Failed to create a stderr subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
 		return nil, err
 	}
 
-  // Watch for subscription errors.
-  go func() {
-    select {
-    case err := <-sub.subscription.Err():
-      slogger.Infow("Stderr subscribtion error",
-        "subscriptionID", sub.SubscriptionID(),
-        "error", err,
-      )
-      delete(cs.stderrSubscribers, sub.SubscriptionID())
-    }
-  }()
+	// Watch for subscription errors.
+	go func() {
+		select {
+		case err := <-sub.subscription.Err():
+			slogger.Infow("Stderr subscribtion error",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+			delete(cs.stderrSubscribers, sub.SubscriptionID())
+		}
+	}()
 
-  cs.stderrSubscribers[sub.SubscriptionID()] = sub
-  return sub.subscription, nil
+	cs.stderrSubscribers[sub.SubscriptionID()] = sub
+	return sub.subscription, nil
 }
