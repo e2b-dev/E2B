@@ -33,3 +33,6 @@ build-cluster-image:
 
 format-cluster-image:
 	$(MAKE) -C cluster/disk-image format
+
+publish-fc-env:
+	$(MAKE) -C fc-env publish

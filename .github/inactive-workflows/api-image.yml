@@ -36,7 +36,3 @@ jobs:
       - name: Push the image to GCR
         run: |-
           docker push "us-central1-docker.pkg.dev/$PROJECT_ID/$GCE_IMAGE"
-
-      - name: Publish mkfcenv
-        run: |-
-          make publish-mkfcenv-scripts
