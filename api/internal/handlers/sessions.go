@@ -52,10 +52,7 @@ func (a *APIStore) PostSessions(c *gin.Context) {
 	}
 
 	if *newSession.EditEnabled {
-		a.Lock.Lock()
-		defer a.Lock.Unlock()
-
-		// We check for the edit session again because we didn't want to lock the whole thread.
+		// We check for the edit session again because we didn't want to lock for the whole duration of this function.
 		// If we find an existing session now we just discard the one we created and everything will work.
 		existingSession, err := a.sessionsCache.FindEditSession(newSession.CodeSnippetID)
 
