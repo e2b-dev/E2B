@@ -1,5 +1,9 @@
 build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/devbookd .
 
-build-macos:
-	go build -o bin/devbookd-macos .
+build-darwin:
+	GOOS=darwin go build -o bin/devbookd-darwing .
+
+testenv:
+	make build
+	docker build -t devbookd-testenv . -f testenv.Dockerfile

@@ -12,6 +12,13 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+type CodeSnippetState string
+
+const (
+  CodeSnippetStateRunning CodeSnippetState = "Running"
+  CodeSnippetStateStopped CodeSnippetState = "Stopped"
+)
+
 // TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
 // There isn't an explicit documentation, I'm using source code of tests as a reference:
 // https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
@@ -28,19 +35,19 @@ type CodeSnippet struct {
 
 func NewCodeSnippetService() *CodeSnippet {
   return &CodeSnippet{
-    stdoutSubscribers: make(map[rpc.ID]*subscriber),
-    stderrSubscribers: make(map[rpc.ID]*subscriber),
-    stateSubscribers: make(map[rpc.ID]*subscriber),
+    stdoutSubscribers:  make(map[rpc.ID]*subscriber),
+    stderrSubscribers:  make(map[rpc.ID]*subscriber),
+    stateSubscribers:   make(map[rpc.ID]*subscriber),
   }
 }
 
 func (cs *CodeSnippet) setRunning(b bool) {
 	cs.running = b
-	var state string
+	var state CodeSnippetState
 	if b {
-		state = "running"
+		state = CodeSnippetStateRunning
 	} else {
-		state = "stopped"
+		state = CodeSnippetStateStopped
 	}
 	cs.notifyState(state)
 }
@@ -67,7 +74,7 @@ func (cs *CodeSnippet) notifyStderr(s string) {
   }
 }
 
-func (cs *CodeSnippet) notifyState(state string) {
+func (cs *CodeSnippet) notifyState(state CodeSnippetState) {
   for _, sub := range cs.stateSubscribers {
     if err := sub.Notify(state); err != nil {
       slogger.Errorw("Failed to send state notification",
@@ -142,30 +149,30 @@ func (cs *CodeSnippet) runCmd(code string) {
 	}
 }
 
-func (cs *CodeSnippet) Run(code string) string {
-  slogger.Infow("Run code",
+func (cs *CodeSnippet) Run(code string) CodeSnippetState {
+  slogger.Infow("Run code request",
     "code", code,
   )
 
 	cs.mu.Lock()
 	if cs.running {
 		cs.mu.Unlock()
-		return "running"
+		return CodeSnippetStateRunning
 	}
 	cs.setRunning(true)
 	cs.mu.Unlock()
 
 	go cs.runCmd(code)
-	return "running"
+	return CodeSnippetStateRunning
 }
 
-func (cs *CodeSnippet) Stop() string {
-  slogger.Info("Stop code")
+func (cs *CodeSnippet) Stop() CodeSnippetState {
+  slogger.Info("Stop code request")
 
 	cs.mu.Lock()
 	if !cs.running {
 		cs.mu.Unlock()
-		return "stopped"
+		return CodeSnippetStateStopped
 	}
 
   sig := syscall.SIGTERM
@@ -181,7 +188,7 @@ func (cs *CodeSnippet) Stop() string {
 	cs.setRunning(false)
 	cs.mu.Unlock()
 
-	return "stopped"
+	return CodeSnippetStateStopped
 }
 
 // Subscription
