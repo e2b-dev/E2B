@@ -80,14 +80,20 @@ type NewSession struct {
 	// Identifier of a code snippet which which is the environment associated
 	CodeSnippetID string `json:"codeSnippetID"`
 
-	// Option determining if the changes to the filesystem should be saved
-	SaveFSChanges *bool `json:"saveFSChanges,omitempty"`
+	// Option determining if the session is a shared persistent edit session
+	EditEnabled *bool `json:"editEnabled,omitempty"`
 }
 
 // Session defines model for Session.
 type Session struct {
 	// Identifier of the client
 	ClientID string `json:"clientID"`
+
+	// Identifier of a code snippet which which is the environment associated
+	CodeSnippetID string `json:"codeSnippetID"`
+
+	// Information if the session is a shared persistent edit session
+	EditEnabled bool `json:"editEnabled"`
 
 	// Identifier of the session
 	SessionID string `json:"sessionID"`

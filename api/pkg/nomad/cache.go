@@ -46,6 +46,21 @@ func (c *SessionCache) Exists(sessionID string) bool {
 	return item != nil
 }
 
+func (c *SessionCache) FindEditSession(codeSnippetID string) (*api.Session, error) {
+	for _, item := range c.cache.Items() {
+		if item.Value() == nil {
+			continue
+		}
+
+		if item.Value().EditEnabled == true && item.Value().CodeSnippetID == codeSnippetID {
+			c.Refresh(item.Key())
+			return item.Value(), nil
+		}
+	}
+
+	return nil, fmt.Errorf("Error edit session for code snippet '%s' not found", codeSnippetID)
+}
+
 // We will need to either use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now
 func NewSessionCache(handleDeleteSession func(sessionID string) *api.APIError, initialSessions []*api.Session) *SessionCache {

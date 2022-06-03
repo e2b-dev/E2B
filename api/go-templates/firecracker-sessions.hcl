@@ -32,7 +32,7 @@ job "{{ .SessionJobName }}/{{ .SessionID }}" {
       config {
         CodeSnippetID = "{{ .CodeSnippetID }}"
         SessionID   = "{{ .SessionID }}"
-        SaveFSChanges = "{{ .SaveFSChanges }}"
+        EditEnabled = "{{ .EditEnabled }}"
       }
     }
   }

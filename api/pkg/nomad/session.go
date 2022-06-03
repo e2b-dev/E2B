@@ -91,14 +91,14 @@ jobRegister:
 				FCTaskName     string
 				SessionJobName string
 				FCEnvsDisk     string
-				SaveFSChanges  bool
+				EditEnabled    bool
 			}{
 				CodeSnippetID:  newSession.CodeSnippetID,
 				SessionID:      sessionID,
 				FCTaskName:     fcTaskName,
 				SessionJobName: sessionsJobName,
 				FCEnvsDisk:     fcEnvsDisk,
-				SaveFSChanges: *newSession.SaveFSChanges,
+				EditEnabled:    *newSession.EditEnabled,
 			}
 
 			err = sessionsJobTemp.Execute(&jobDef, jobVars)
@@ -171,8 +171,10 @@ allocationCheck:
 
 				if alloc.TaskStates[fcTaskName].State == nomadTaskRunningState {
 					session := &api.Session{
-						ClientID:  alloc.NodeID[:shortNodeIDLength],
-						SessionID: sessionID,
+						ClientID:      alloc.NodeID[:shortNodeIDLength],
+						SessionID:     sessionID,
+						CodeSnippetID: newSession.CodeSnippetID,
+						EditEnabled:   *newSession.EditEnabled,
 					}
 
 					return session, nil
