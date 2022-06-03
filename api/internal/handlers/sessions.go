@@ -27,7 +27,7 @@ func (a *APIStore) PostSessions(c *gin.Context) {
 		return
 	}
 
-	// The default option in the openapi does not automatically populate JSON field witht he default value
+	// The default option in the openapi does not automatically populate JSON field with the default value
 	if newSession.EditEnabled == nil {
 		editEnabled := false
 		newSession.EditEnabled = &editEnabled
