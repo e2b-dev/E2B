@@ -44,7 +44,7 @@ func (a *APIStore) PostSessions(c *gin.Context) {
 		}
 		a.Lock.Unlock()
 	}
-	
+
 	session, err := a.nomadClient.CreateSession(&newSession)
 
 	if err != nil {
@@ -52,7 +52,7 @@ func (a *APIStore) PostSessions(c *gin.Context) {
 		sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
-	
+
 	var cacheErr error
 
 	if *newSession.EditEnabled {
@@ -69,6 +69,10 @@ func (a *APIStore) PostSessions(c *gin.Context) {
 			return
 		}
 
+		cacheErr = a.sessionsCache.Add(session)
+		a.Lock.Unlock()
+	} else {
+		a.Lock.Lock()
 		cacheErr = a.sessionsCache.Add(session)
 		a.Lock.Unlock()
 	}
