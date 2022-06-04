@@ -58,12 +58,6 @@ components:
         - Done
 
     # Environment
-    DeleteEnvironment:
-      required:
-        - codeSnippetID
-      properties:
-        codeSnippetID:
-          type: string
     NewEnvironment:
       required:
         - codeSnippetID
@@ -91,11 +85,8 @@ components:
               $ref: "#/components/schemas/EnvironmentState"
     EnvironmentStateUpdate:
       required:
-        - codeSnippetID
         - state
       properties:
-        codeSnippetID:
-          type: string
         state:
           $ref: "#/components/schemas/EnvironmentState"
 
@@ -247,31 +238,6 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /envs:
-    delete:
-      description: Delete the code snippet environment
-      tags:
-        - envs
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DeleteEnvironment"
-      responses:
-        204:
-          description: Successfully deleted the environment
-        400:
-          description: Cannot delete the environment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        500:
-          description: Server error when deleting the environment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
     post:
       description: Create a new env for a code snippet
       tags:
@@ -297,6 +263,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /envs/{codeSnippetID}:
+    delete:
+      description: Delete the code snippet environment
+      tags:
+        - envs
+      parameters:
+        - name: codeSnippetID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Successfully deleted the environment
+        400:
+          description: Cannot delete the environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Server error when deleting the environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /envs/{codeSnippetID}/publish:
     post:
       description: Publish the edit environment of the code snippet
@@ -317,11 +309,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /envs/state:
-    description: Update the state of the environment
-    post:
+  /envs/{codeSnippetID}/state:
+    put:
+      description: Update the state of the environment
       tags:
         - envs
+      parameters:
+        - name: codeSnippetID
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
