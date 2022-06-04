@@ -100,9 +100,14 @@ export interface paths {
       };
     };
   };
-  readonly "/envs": {
+  readonly "/envs/{codeSnippetID}": {
     /** Create a new env for a code snippet */
     readonly post: {
+      readonly parameters: {
+        readonly path: {
+          readonly codeSnippetID: string;
+        };
+      };
       readonly responses: {
         /** Successfully created an environment */
         readonly 204: never;
@@ -125,8 +130,6 @@ export interface paths {
         };
       };
     };
-  };
-  readonly "/envs/{codeSnippetID}": {
     /** Delete the code snippet environment */
     readonly delete: {
       readonly parameters: {
@@ -202,17 +205,12 @@ export interface paths {
 export interface components {
   readonly schemas: {
     /** @enum {string} */
-    readonly Template: "Nodejs";
+    readonly Template: "Nodejs" | "Golang" | "Bash" | "Python";
     /** @enum {string} */
     readonly EnvironmentState: "Building" | "Failed" | "Done";
     readonly NewEnvironment: {
-      readonly codeSnippetID: string;
       readonly template: components["schemas"]["Template"];
       readonly deps: readonly string[];
-    };
-    readonly Environment: components["schemas"]["NewEnvironment"] & {
-      readonly id: string;
-      readonly state: components["schemas"]["EnvironmentState"];
     };
     readonly EnvironmentStateUpdate: {
       readonly state: components["schemas"]["EnvironmentState"];

@@ -9,22 +9,27 @@ npm install @devbookhq/sdk
 
 ### JS/TS
 ```js
+import { Session } from '@devbookhq/sdk'
+
 async function main() {
-  const session = new Session('<codeSnippetID>', {
-    onStateChange(state) {
-      console.log(state)
-    },
-    onStderr(stderr) {
-      console.log(stderr)
-    },
-    onStdout(stdout) {
-      console.log(stdout)
+  const session = new Session({
+    id: '<code-snippet-id>',
+    codeSnippet: {
+      onStateChange(state) {
+        console.log(state)
+      },
+      onStderr(stderr) {
+        console.log(stderr)
+      },
+      onStdout(stdout) {
+        console.log(stdout)
+      },
     },
   })
 
   try {
-    await session.connect()
-    await session.run('console.log("4")')
+    await session.open()
+    await session.codeSnippet?.run('console.error("test")')
   } catch (e) {
     console.error(e)
   }
