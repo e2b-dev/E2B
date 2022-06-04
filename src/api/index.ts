@@ -2,7 +2,7 @@ import 'cross-fetch/polyfill'
 
 import { Fetcher } from 'openapi-typescript-fetch'
 
-import { SESSION_DOMAIN } from 'src/constants'
+import { SESSION_DOMAIN } from '../constants'
 import type {
   paths,
   components,
@@ -15,4 +15,4 @@ client.configure({
 })
 
 export default client
-export type { components }
+export type { components, paths }

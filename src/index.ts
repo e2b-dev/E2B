@@ -18,3 +18,9 @@ export type {
   TerminalManager,
   TerminalSession,
 } from './session/terminal'
+
+export { default as api } from './api'
+export type {
+  components,
+  paths,
+} from './api'

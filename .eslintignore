@@ -1,2 +1,2 @@
-src/api/schema.gen.d.ts
+src/api/schema.gen.ts
 dist/**
