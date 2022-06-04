@@ -29,6 +29,9 @@ servers:
         description: Port to connect to
         default: "8080"
 
+#security:
+#- ApiKeyAuth: [] # Use the same name as under securitySchemes
+
 tags:
   - name: sessions
     description: Managing VM sessions
@@ -42,15 +45,26 @@ components:
   #    in: query # Can be 'header', 'query' or 'cookie'
   #    name: API_KEY # Name of the header, query parameter or cookie
   schemas:
+    # Enums
+    Template:
+      type: string
+      enum:
+        - Nodejs
+    EnvironmentState:
+      type: string
+      enum:
+        - Building
+        - Failed
+        - Done
+
+    # Environment
     DeleteEnvironment:
-      type: object
       required:
         - codeSnippetID
       properties:
         codeSnippetID:
           type: string
     NewEnvironment:
-      type: object
       required:
         - codeSnippetID
         - template
@@ -59,8 +73,7 @@ components:
         codeSnippetID:
           type: string
         template:
-          type: string
-          enum: [Nodejs]
+          $ref: "#/components/schemas/Template"
         deps:
           type: array
           items:
@@ -68,18 +81,15 @@ components:
     Environment:
       allOf:
         - $ref: "#/components/schemas/NewEnvironment"
-        - type: object
-          required:
+        - required:
             - id
             - state
           properties:
             id:
               type: string
             state:
-              type: string
-              enum: [Building, Failed, Done]
+              $ref: "#/components/schemas/EnvironmentState"
     EnvironmentStateUpdate:
-      type: object
       required:
         - codeSnippetID
         - state
@@ -87,30 +97,9 @@ components:
         codeSnippetID:
           type: string
         state:
-          type: string
-          enum: [Building, Failed, Done]
+          $ref: "#/components/schemas/EnvironmentState"
 
-      #NewEnvironment:
-      #  required:
-      #    - codeSnippetID
-      #    - template
-      #    - deps
-      #  properties:
-      #    codeSnippetID:
-      #      type: string
-      #      description: Identifier of a code snippet which which is the environment associated
-      #    template:
-      #      type: string
-      #      enum: [nodejs]
-      #    deps: # ['dep1', 'dep2']
-      #      type: array
-      #      items:
-      #        type: string
-      #  Environment:
-      #    required:
-      #      - codeSnippetID
-      #      - r
-
+    # Session
     NewSession:
       required:
         - codeSnippetID
@@ -142,6 +131,7 @@ components:
           type: string
           description: Identifier of the client
 
+    # Errors
     Error:
       required:
         - code
@@ -155,9 +145,6 @@ components:
           type: string
           description: Error
 
-#security:
-#- ApiKeyAuth: [] # Use the same name as under securitySchemes
-
 paths:
   /health:
     get:
@@ -167,9 +154,9 @@ paths:
           description: Request was successful
   /sessions:
     get:
+      description: List all sessions
       tags:
         - sessions
-      description: List all sessions
       responses:
         200:
           description: Successfully returned all sessions
@@ -188,9 +175,9 @@ paths:
                 $ref: "#/components/schemas/Error"
 
     post:
+      description: Create a session on the server
       tags:
         - sessions
-      description: Create a session on the server
       requestBody:
         required: true
         content:
@@ -219,6 +206,7 @@ paths:
 
   /sessions/{sessionID}:
     delete:
+      description: Delete a session on the server
       tags:
         - sessions
       parameters:
@@ -227,7 +215,6 @@ paths:
           required: true
           schema:
             type: string
-      description: Delete a session on the server
       responses:
         204:
           description: Successfully deleted the session
@@ -240,6 +227,7 @@ paths:
 
   /sessions/{sessionID}/refresh:
     put:
+      description: Refresh the session extending its time to live
       tags:
         - sessions
       parameters:
@@ -248,7 +236,6 @@ paths:
           required: true
           schema:
             type: string
-      description: Refresh the session extending its time to live
       responses:
         204:
           description: Successfully refreshed the session
@@ -261,6 +248,7 @@ paths:
 
   /envs:
     delete:
+      description: Delete the code snippet environment
       tags:
         - envs
       requestBody:
@@ -269,36 +257,49 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/DeleteEnvironment"
-    post:
-      tags:
-        - envs
       responses:
-        200:
-          description: Successfully created an environment
+        204:
+          description: Successfully deleted the environment
+        400:
+          description: Cannot delete the environment
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NewEnvironment"
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Server error when deleting the environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      description: Create a new env for a code snippet
+      tags:
+        - envs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewEnvironment"
+      responses:
+        204:
+          description: Successfully created an environment
+        400:
+          description: Cannot create a new environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Server error when creating new environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /envs/{codeSnippetID}/publish:
     post:
-      parameters:
-        - name: codeSnippetID
-          in: path
-          required: true
-          schema:
-            type: string
-      tags:
-        - envs
-      responses:
-        200:
-          description: Successfully published the edit environment for code snippet
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NewEnvironment"
-  /envs/{codeSnippetID}:
-    # TODO: This endpoint might not be needed.
-    get:
+      description: Publish the edit environment of the code snippet
       tags:
         - envs
       parameters:
@@ -308,12 +309,16 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        204:
+          description: Publishing the edit environment for code snippet
+        500:
+          description: Error publishing the edit environment
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Environment"
+                $ref: "#/components/schemas/Error"
   /envs/state:
+    description: Update the state of the environment
     post:
       tags:
         - envs
@@ -323,3 +328,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/EnvironmentStateUpdate"
+      responses:
+        204:
+          description: Publishing the edit environment for code snippet
+        400:
+          description: Error publishing the edit environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
