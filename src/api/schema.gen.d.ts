@@ -119,6 +119,23 @@ export interface paths {
       };
     };
   };
+  readonly "/envs/{codeSnippetID}/publish": {
+    readonly post: {
+      readonly parameters: {
+        readonly path: {
+          readonly codeSnippetID: string;
+        };
+      };
+      readonly responses: {
+        /** Successfully published the edit environment for code snippet */
+        readonly 200: {
+          readonly content: {
+            readonly "application/json": components["schemas"]["NewEnvironment"];
+          };
+        };
+      };
+    };
+  };
   readonly "/envs/{codeSnippetID}": {
     readonly get: {
       readonly parameters: {
