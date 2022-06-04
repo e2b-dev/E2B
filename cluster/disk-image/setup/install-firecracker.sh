@@ -33,6 +33,7 @@ function install {
 
   sudo mv release-${selected}-$(uname -m)/firecracker-${selected}-$(uname -m) /usr/bin/firecracker
   sudo mv release-${selected}-$(uname -m)/jailer-${selected}-$(uname -m) /usr/bin/jailer
+  sudo mv release-${selected}-$(uname -m)/rebase-snap-${selected}-$(uname -m) /usr/bin/rebase-snap
 }
 
 install "$@"
