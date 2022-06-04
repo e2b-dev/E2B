@@ -36,7 +36,15 @@ const (
 	// containerMonitorIntv is the interval at which the driver checks if the
 	// firecracker micro-vm is still running
 	containerMonitorIntv = 2 * time.Second
-	defaultbootoptions   = " console=ttyS0 reboot=k panic=1 pci=off nomodules"
+
+	editIDName   = "edit_id"
+	buildIDName  = "build_id"
+	rootfsName   = "rootfs.ext4"
+	snapfileName = "snapfile"
+	memfileName  = "memfile"
+
+	editDirName  = "edit"
+	buildDirName = "builds"
 )
 
 type vminfo struct {
@@ -63,11 +71,11 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
-func loadSnapshot(ctx context.Context, cfg *firecracker.Config, codeSnippetID string, fcEnvsDisk string) (*operations.LoadSnapshotNoContent, error) {
-	httpClient := newFirecrackerClient(cfg.SocketPath)
+func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string) (*operations.LoadSnapshotNoContent, error) {
+	httpClient := newFirecrackerClient(socketPath)
 
-	memFilePath := filepath.Join(fcEnvsDisk, codeSnippetID, "memfile")
-	snapshotFilePath := filepath.Join(fcEnvsDisk, codeSnippetID, "snapfile")
+	memfilePath := filepath.Join(snapshotRootPath, memfileName)
+	snapfilePath := filepath.Join(snapshotRootPath, snapfileName)
 
 	backendType := models.MemoryBackendBackendTypeFile
 	snapshotConfig := operations.LoadSnapshotParams{
@@ -76,10 +84,10 @@ func loadSnapshot(ctx context.Context, cfg *firecracker.Config, codeSnippetID st
 			ResumeVM:            true,
 			EnableDiffSnapshots: true,
 			MemBackend: &models.MemoryBackend{
-				BackendPath: &memFilePath,
+				BackendPath: &memfilePath,
 				BackendType: &backendType,
 			},
-			SnapshotPath: &snapshotFilePath,
+			SnapshotPath: &snapfilePath,
 		},
 	}
 
@@ -127,15 +135,11 @@ func (d *Driver) initializeContainer(
 	var editID string
 
 	if editEnabled {
-		snapshotRootPath := codeSnippetEnvPath
+		codeSnippetEditPath := filepath.Join(codeSnippetEnvPath, editDirName)
 
-		codeSnippetEditPath := filepath.Join(codeSnippetEnvPath, "edit")
-
-		buildIDName := "build_id"
 		buildIDSrc := filepath.Join(codeSnippetEnvPath, buildIDName)
 		buildIDDest := filepath.Join(codeSnippetEditPath, buildIDName)
 
-		editIDName := "edit_id"
 		editIDPath := filepath.Join(codeSnippetEditPath, editIDName)
 
 		os.MkdirAll(codeSnippetEditPath, 0777)
@@ -154,15 +158,12 @@ func (d *Driver) initializeContainer(
 			snapshotRootPath = filepath.Join(codeSnippetEditPath, editID)
 			os.MkdirAll(snapshotRootPath, 0777)
 
-			rootfsName := "rootfs.ext4"
 			rootfsSrc := filepath.Join(codeSnippetEnvPath, rootfsName)
 			rootfsDest := filepath.Join(codeSnippetEditPath, editID, rootfsName)
 
-			snapfileName := "snapfile"
 			snapfileSrc := filepath.Join(codeSnippetEnvPath, snapfileName)
 			snapfileDest := filepath.Join(codeSnippetEditPath, editID, snapfileName)
 
-			memfileName := "memfile"
 			memfileSrc := filepath.Join(codeSnippetEnvPath, memfileName)
 			memfileDest := filepath.Join(codeSnippetEditPath, editID, memfileName)
 
@@ -183,7 +184,7 @@ func (d *Driver) initializeContainer(
 		}
 		buildID := string(data)
 
-		buildDirPath = filepath.Join(codeSnippetEnvPath, "builds", buildID)
+		buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
 		os.MkdirAll(buildDirPath, 0777)
 
 		mountCmd = fmt.Sprintf(
@@ -197,7 +198,7 @@ func (d *Driver) initializeContainer(
 		// Mount overlay
 		snapshotRootPath = codeSnippetEnvPath
 
-		buildIDPath := filepath.Join(codeSnippetEnvPath, "build_id")
+		buildIDPath := filepath.Join(codeSnippetEnvPath, buildIDName)
 
 		data, err := os.ReadFile(buildIDPath)
 		if err != nil {
@@ -205,7 +206,7 @@ func (d *Driver) initializeContainer(
 		}
 		buildID := string(data)
 
-		buildDirPath = filepath.Join(codeSnippetEnvPath, "builds", buildID)
+		buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
 		os.MkdirAll(buildDirPath, 0777)
 
 		mountCmd = fmt.Sprintf(
@@ -230,28 +231,20 @@ func (d *Driver) initializeContainer(
 		MmdsAddress:       fcCfg.MmdsAddress,
 		Seccomp:           fcCfg.Seccomp,
 		ForwardSignals:    fcCfg.ForwardSignals,
-		// NetNS:             slot.NetNSPath(),
-		VMID: fcCfg.VMID,
-		// JailerCfg:         &firecracker.JailerConfig{},
-		MachineCfg:    fcCfg.MachineCfg,
-		VsockDevices:  fcCfg.VsockDevices,
-		FifoLogWriter: fcCfg.FifoLogWriter,
-		// NetworkInterfaces: []firecracker.NetworkInterface{{
-		// 	CNIConfiguration: &firecracker.CNIConfiguration{
-		// 		NetworkName: "default",
-		// 		IfName:      "eth0",
-		// 	},
-		// }},
-		Drives:          fcCfg.Drives,
-		KernelArgs:      fcCfg.KernelArgs,
-		InitrdPath:      fcCfg.InitrdPath,
-		KernelImagePath: fcCfg.KernelImagePath,
-		MetricsFifo:     fcCfg.MetricsFifo,
-		MetricsPath:     fcCfg.MetricsPath,
-		LogLevel:        fcCfg.LogLevel,
-		LogFifo:         fcCfg.LogFifo,
-		LogPath:         fcCfg.LogPath,
-		SocketPath:      fcCfg.SocketPath,
+		VMID:              fcCfg.VMID,
+		MachineCfg:        fcCfg.MachineCfg,
+		VsockDevices:      fcCfg.VsockDevices,
+		FifoLogWriter:     fcCfg.FifoLogWriter,
+		Drives:            fcCfg.Drives,
+		KernelArgs:        fcCfg.KernelArgs,
+		InitrdPath:        fcCfg.InitrdPath,
+		KernelImagePath:   fcCfg.KernelImagePath,
+		MetricsFifo:       fcCfg.MetricsFifo,
+		MetricsPath:       fcCfg.MetricsPath,
+		LogLevel:          fcCfg.LogLevel,
+		LogFifo:           fcCfg.LogFifo,
+		LogPath:           fcCfg.LogPath,
+		SocketPath:        fcCfg.SocketPath,
 	}
 
 	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, machineOpts...)
@@ -270,7 +263,7 @@ func (d *Driver) initializeContainer(
 		return nil, fmt.Errorf("failed to start preboot FC: %v", err)
 	}
 
-	if _, err := loadSnapshot(vmmCtx, &fcCfg, taskConfig.CodeSnippetID, fcEnvsDisk); err != nil {
+	if _, err := loadSnapshot(vmmCtx, fcCfg.SocketPath, snapshotRootPath); err != nil {
 		m.StopVMM()
 		return nil, fmt.Errorf("failed to load snapshot: %v", err)
 	}

@@ -19,12 +19,12 @@ func saveEditSnapshot(ipSlot *IPSlot, info *Instance_info) error {
 
 	editID := uuid.New().String()
 
-	newEditDirPath := filepath.Join(info.CodeSnippetDirectory, "edit", editID)
+	newEditDirPath := filepath.Join(info.CodeSnippetDirectory, editDirName, editID)
 
 	os.MkdirAll(newEditDirPath, 0777)
 
-	memfilePath := filepath.Join(newEditDirPath, "memfile")
-	snapfilePath := filepath.Join(newEditDirPath, "snapfile")
+	memfilePath := filepath.Join(newEditDirPath, memfileName)
+	snapfilePath := filepath.Join(newEditDirPath, snapfileName)
 
 	// Pause VM
 	state := models.VMStatePaused
@@ -59,8 +59,8 @@ func saveEditSnapshot(ipSlot *IPSlot, info *Instance_info) error {
 		}
 	}()
 
-	rootfsPathSrc := filepath.Join(info.BuildDirPath, "rootfs.ext4")
-	rootfsPathDest := filepath.Join(newEditDirPath, "rootfs.ext4")
+	rootfsPathSrc := filepath.Join(info.BuildDirPath, rootfsName)
+	rootfsPathDest := filepath.Join(newEditDirPath, rootfsName)
 
 	copyCmd := fmt.Sprintf("cp %s %s", rootfsPathSrc, rootfsPathDest)
 	cmd := exec.CommandContext(ctx, "nsenter", "-t", info.Pid, "-m", "--", "bash", "-c", copyCmd)
@@ -70,7 +70,7 @@ func saveEditSnapshot(ipSlot *IPSlot, info *Instance_info) error {
 		return fmt.Errorf("failed copying rootfs: %v", err)
 	}
 
-	editIDPath := filepath.Join(info.CodeSnippetDirectory, "edit", "edit_id")
+	editIDPath := filepath.Join(info.CodeSnippetDirectory, editDirName, editIDName)
 	err = os.WriteFile(editIDPath, []byte(editID), 0777)
 	if err != nil {
 		return fmt.Errorf("unable to create edit_id file: %v", err)
