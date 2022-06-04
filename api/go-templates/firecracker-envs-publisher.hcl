@@ -76,7 +76,7 @@ if [ -z "$CODE_SNIPPET_ID" ]; then
 fi
 
 API_URL="https://ondevbook.com"
-ENVS_ENDPOINT="${API_URL}/envs/state"
+ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state"
 
 # Main didn't finish successfully.
 if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
@@ -84,9 +84,8 @@ if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
   # TODO: Set env status
   curl $ENVS_ENDPOINT \
     -H "Content-Type: application/json" \
-    -X POST \
+    -X PUT \
     -d "{
-      \"codeSnippetID\": \"$CODE_SNIPPET_ID\",
       \"state\": \"Failed\"
     }"
 
@@ -100,9 +99,8 @@ echo "Main finished successfully"
 
 response=$(curl $ENVS_ENDPOINT \
   -H "Content-Type: application/json" \
-  -X POST \
+  -X PUT \
   -d "{
-    \"codeSnippetID\": \"$CODE_SNIPPET_ID\",
     \"state\": \"Done\"
   }")
 echo "Response: $response"

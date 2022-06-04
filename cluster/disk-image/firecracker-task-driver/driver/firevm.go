@@ -82,7 +82,7 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string) (*op
 		Context: ctx,
 		Body: &models.SnapshotLoadParams{
 			ResumeVM:            true,
-			EnableDiffSnapshots: true,
+			EnableDiffSnapshots: false,
 			MemBackend: &models.MemoryBackend{
 				BackendPath: &memfilePath,
 				BackendType: &backendType,

@@ -34,7 +34,7 @@ func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 	})
 	if err != nil {
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("Failed to retrieve allocations from Nomad %+v", err),
+			Msg:       fmt.Sprintf("failed to retrieve allocations from Nomad %+v", err),
 			ClientMsg: "Cannot retrieve sessions right now",
 			Code:      http.StatusInternalServerError,
 		}
@@ -57,7 +57,7 @@ func (n *NomadClient) CreateSession(newSession *api.NewSession) (*api.Session, *
 	sessionsJobTemp, err := template.ParseFiles(tname)
 	if err != nil {
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("Failed to parse template file '%s': %s", tname, err),
+			Msg:       fmt.Sprintf("failed to parse template file '%s': %s", tname, err),
 			ClientMsg: "Cannot create a session right now",
 			Code:      http.StatusInternalServerError,
 		}
@@ -77,7 +77,7 @@ jobRegister:
 		select {
 		case <-timeout:
 			return nil, &api.APIError{
-				Msg:       "Failed to find empty sessionID",
+				Msg:       "failed to find empty sessionID",
 				ClientMsg: "Cannot create a session right now",
 				Code:      http.StatusInternalServerError,
 			}
@@ -104,7 +104,7 @@ jobRegister:
 			err = sessionsJobTemp.Execute(&jobDef, jobVars)
 			if err != nil {
 				return nil, &api.APIError{
-					Msg:       fmt.Sprintf("Failed to `sessionsJobTemp.Execute()`: %+v", err),
+					Msg:       fmt.Sprintf("failed to `sessionsJobTemp.Execute()`: %+v", err),
 					ClientMsg: "Cannot create a session right now",
 					Code:      http.StatusInternalServerError,
 				}
@@ -113,7 +113,7 @@ jobRegister:
 			job, err = n.client.Jobs().ParseHCL(jobDef.String(), false)
 			if err != nil {
 				return nil, &api.APIError{
-					Msg:       fmt.Sprintf("Failed to parse the `%s` HCL job file: %+v", sessionsJobFile, err),
+					Msg:       fmt.Sprintf("failed to parse the `%s` HCL job file: %+v", sessionsJobFile, err),
 					ClientMsg: "Cannot create a session right now",
 					Code:      http.StatusInternalServerError,
 				}
@@ -137,7 +137,7 @@ allocationCheck:
 		select {
 		case <-timeout:
 			allocErr = &api.APIError{
-				Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, sessionID, allocationCheckTimeout.String()),
+				Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, sessionID, allocationCheckTimeout.String()),
 				ClientMsg: "Cannot create a session right now - timeout",
 				Code:      http.StatusInternalServerError,
 			}
@@ -146,7 +146,7 @@ allocationCheck:
 			allocs, _, err := n.client.Evaluations().Allocations(evalID, &nomadAPI.QueryOptions{})
 			if err != nil {
 				allocErr = &api.APIError{
-					Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
+					Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 					ClientMsg: "Cannot create a session right now",
 					Code:      http.StatusInternalServerError,
 				}
@@ -161,7 +161,7 @@ allocationCheck:
 				if alloc.TaskStates[fcTaskName].State == nomadTaskFailedState {
 					msgStruct, _ := json.Marshal(newSession)
 					allocErr = &api.APIError{
-						Msg:       fmt.Sprintf("Cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
+						Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 						ClientMsg: fmt.Sprintf("Session couldn't be started: the problem may be in the request's payload - is the 'codeSnippetID' valid?: %+v", string(msgStruct)),
 						Code:      http.StatusBadRequest,
 					}
@@ -197,7 +197,7 @@ func (n *NomadClient) DeleteSession(sessionID string) *api.APIError {
 	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, true, &nomadAPI.WriteOptions{})
 	if err != nil {
 		return &api.APIError{
-			Msg:       fmt.Sprintf("Cannot delete job '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
+			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
 			ClientMsg: "Cannot delete the session right now",
 			Code:      http.StatusInternalServerError,
 		}

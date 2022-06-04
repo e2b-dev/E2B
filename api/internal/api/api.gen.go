@@ -14,20 +14,17 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (DELETE /envs)
-	DeleteEnvs(c *gin.Context)
+	// (DELETE /envs/{codeSnippetID})
+	DeleteEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
 
-	// (POST /envs)
-	PostEnvs(c *gin.Context)
-
-	// (POST /envs/state)
-	PostEnvsState(c *gin.Context)
-
-	// (GET /envs/{codeSnippetID})
-	GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
+	// (POST /envs/{codeSnippetID})
+	PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
 
 	// (POST /envs/{codeSnippetID}/publish)
 	PostEnvsCodeSnippetIDPublish(c *gin.Context, codeSnippetID string)
+
+	// (PUT /envs/{codeSnippetID}/state)
+	PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID string)
 
 	// (GET /health)
 	GetHealth(c *gin.Context)
@@ -53,38 +50,8 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(c *gin.Context)
 
-// DeleteEnvs operation middleware
-func (siw *ServerInterfaceWrapper) DeleteEnvs(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-	}
-
-	siw.Handler.DeleteEnvs(c)
-}
-
-// PostEnvs operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-	}
-
-	siw.Handler.PostEnvs(c)
-}
-
-// PostEnvsState operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvsState(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-	}
-
-	siw.Handler.PostEnvsState(c)
-}
-
-// GetEnvsCodeSnippetID operation middleware
-func (siw *ServerInterfaceWrapper) GetEnvsCodeSnippetID(c *gin.Context) {
+// DeleteEnvsCodeSnippetID operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEnvsCodeSnippetID(c *gin.Context) {
 
 	var err error
 
@@ -101,7 +68,28 @@ func (siw *ServerInterfaceWrapper) GetEnvsCodeSnippetID(c *gin.Context) {
 		middleware(c)
 	}
 
-	siw.Handler.GetEnvsCodeSnippetID(c, codeSnippetID)
+	siw.Handler.DeleteEnvsCodeSnippetID(c, codeSnippetID)
+}
+
+// PostEnvsCodeSnippetID operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetID(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "codeSnippetID" -------------
+	var codeSnippetID string
+
+	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PostEnvsCodeSnippetID(c, codeSnippetID)
 }
 
 // PostEnvsCodeSnippetIDPublish operation middleware
@@ -123,6 +111,27 @@ func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetIDPublish(c *gin.Context) 
 	}
 
 	siw.Handler.PostEnvsCodeSnippetIDPublish(c, codeSnippetID)
+}
+
+// PutEnvsCodeSnippetIDState operation middleware
+func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDState(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "codeSnippetID" -------------
+	var codeSnippetID string
+
+	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PutEnvsCodeSnippetIDState(c, codeSnippetID)
 }
 
 // GetHealth operation middleware
@@ -215,15 +224,13 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 		HandlerMiddlewares: options.Middlewares,
 	}
 
-	router.DELETE(options.BaseURL+"/envs", wrapper.DeleteEnvs)
+	router.DELETE(options.BaseURL+"/envs/:codeSnippetID", wrapper.DeleteEnvsCodeSnippetID)
 
-	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
-
-	router.POST(options.BaseURL+"/envs/state", wrapper.PostEnvsState)
-
-	router.GET(options.BaseURL+"/envs/:codeSnippetID", wrapper.GetEnvsCodeSnippetID)
+	router.POST(options.BaseURL+"/envs/:codeSnippetID", wrapper.PostEnvsCodeSnippetID)
 
 	router.POST(options.BaseURL+"/envs/:codeSnippetID/publish", wrapper.PostEnvsCodeSnippetIDPublish)
+
+	router.PUT(options.BaseURL+"/envs/:codeSnippetID/state", wrapper.PutEnvsCodeSnippetIDState)
 
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
 

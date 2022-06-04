@@ -21,7 +21,7 @@ func (a *APIStore) GetSessions(c *gin.Context) {
 }
 
 func (a *APIStore) PostSessions(c *gin.Context) {
-	var newSession api.NewSession
+	var newSession api.PostSessionsJSONBody
 	if err := c.Bind(&newSession); err != nil {
 		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return

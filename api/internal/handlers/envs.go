@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *APIStore) PostEnvs(c *gin.Context) {
+func (a *APIStore) PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
 	// TODO: Check for API token
 
-	var env api.NewEnvironment
+	var env api.PostEnvsCodeSnippetIDJSONBody
 	if err := c.Bind(&env); err != nil {
 		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
@@ -20,60 +20,64 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	// TODO: Download the base Dockerfile based on a template field in `env`.
 	// TODO: Add deps to the Dockerfile.
-	err := a.nomadClient.RegisterFCEnvJob(env.CodeSnippetID, string(env.Template), env.Deps)
+	err := a.nomadClient.CreateEnv(codeSnippetID, string(env.Template), env.Deps)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, struct{ Error string }{err.Error()})
+		fmt.Printf("error: %v\n", err)
+		sendAPIStoreError(
+			c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", codeSnippetID, err),
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, struct{}{})
+	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) DeleteEnvs(c *gin.Context) {
+func (a *APIStore) DeleteEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
 	// TODO: Check for API token
 	// First we delete an env from DB and then we start a Nomad to cleanup files.
-
-	var body api.DeleteEnvironment
-	if err := c.Bind(&body); err != nil {
-		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
-		return
-	}
 
 	err := a.supabase.DB.
 		From("envs").
 		Delete().
-		Eq("code_snippet_id", body.CodeSnippetID).
+		Eq("code_snippet_id", codeSnippetID).
 		Execute(nil)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		sendAPIStoreError(
 			c,
 			http.StatusBadRequest,
-			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", body.CodeSnippetID, err),
+			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", codeSnippetID, err),
 		)
 		return
 	}
 
-	err = a.nomadClient.RegisterFCEnvDeleterJob(body.CodeSnippetID)
+	err = a.nomadClient.DeleteEnv(codeSnippetID)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
-		c.JSON(http.StatusInternalServerError, struct{ Error string }{err.Error()})
+		fmt.Printf("error: %v\n", err)
+		sendAPIStoreError(
+			c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", codeSnippetID, err),
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, struct{}{})
+	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
-
-}
-
-func (a *APIStore) PostEnvsState(c *gin.Context) {
+func (a *APIStore) PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID string) {
 	// TODO: Check for API token
 
-	var envStateUpdate api.EnvironmentStateUpdate
+	var envStateUpdate api.PutEnvsCodeSnippetIDStateJSONBody
 	if err := c.Bind(&envStateUpdate); err != nil {
-		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+		sendAPIStoreError(
+			c,
+			http.StatusBadRequest,
+			fmt.Sprintf("Error when parsing request: %s", err),
+		)
 		return
 	}
 
@@ -81,7 +85,7 @@ func (a *APIStore) PostEnvsState(c *gin.Context) {
 	err := a.supabase.DB.
 		From("envs").
 		Update(body).
-		Eq("code_snippet_id", envStateUpdate.CodeSnippetID).
+		Eq("code_snippet_id", codeSnippetID).
 		Execute(nil)
 
 	if err != nil {
@@ -92,25 +96,30 @@ func (a *APIStore) PostEnvsState(c *gin.Context) {
 		sendAPIStoreError(
 			c,
 			http.StatusBadRequest,
-			fmt.Sprintf("Failed to update env for code snippet '%s': %s", envStateUpdate.CodeSnippetID, err),
+			fmt.Sprintf("Failed to update env for code snippet '%s': %s", codeSnippetID, err),
 		)
 		return
 	}
 
-	c.JSON(http.StatusNoContent, struct{}{})
+	c.Status(http.StatusNoContent)
 }
 
 func (a *APIStore) PostEnvsCodeSnippetIDPublish(c *gin.Context, codeSnippetID string) {
 	session, err := a.sessionsCache.FindEditSession(codeSnippetID)
 	if err != nil {
-		fmt.Printf("cannot find active edit session for the code snippet '%s': %v - will use archived rootfs", codeSnippetID, err)
+		fmt.Printf("cannot find active edit session for the code snippet '%s': %v - will use saved rootfs", codeSnippetID, err)
 	}
 
-	err = a.nomadClient.PublishEditEnv(codeSnippetID, session)
+	err = a.nomadClient.PublishEnv(codeSnippetID, session)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, struct{ Error string }{err.Error()})
+		fmt.Printf("error: %v\n", err)
+		sendAPIStoreError(
+			c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("Failed to delete env for code snippet '%s': %+v", codeSnippetID, err),
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, struct{}{})
+	c.Status(http.StatusNoContent)
 }

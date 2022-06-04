@@ -5,56 +5,26 @@ package api
 
 // Defines values for EnvironmentState.
 const (
-	EnvironmentStateBuilding EnvironmentState = "Building"
-	EnvironmentStateDone     EnvironmentState = "Done"
-	EnvironmentStateFailed   EnvironmentState = "Failed"
+	Building EnvironmentState = "Building"
+	Done     EnvironmentState = "Done"
+	Failed   EnvironmentState = "Failed"
 )
 
-// Defines values for EnvironmentTemplate.
+// Defines values for Template.
 const (
-	EnvironmentTemplateNodejs EnvironmentTemplate = "Nodejs"
+	Bash   Template = "Bash"
+	Golang Template = "Golang"
+	Nodejs Template = "Nodejs"
+	Python Template = "Python"
 )
 
-// Defines values for EnvironmentStateUpdateState.
-const (
-	EnvironmentStateUpdateStateBuilding EnvironmentStateUpdateState = "Building"
-	EnvironmentStateUpdateStateDone     EnvironmentStateUpdateState = "Done"
-	EnvironmentStateUpdateStateFailed   EnvironmentStateUpdateState = "Failed"
-)
-
-// Defines values for NewEnvironmentTemplate.
-const (
-	NewEnvironmentTemplateNodejs NewEnvironmentTemplate = "Nodejs"
-)
-
-// DeleteEnvironment defines model for DeleteEnvironment.
-type DeleteEnvironment struct {
-	CodeSnippetID string `json:"codeSnippetID"`
-}
-
-// Environment defines model for Environment.
-type Environment struct {
-	CodeSnippetID string              `json:"codeSnippetID"`
-	Deps          []string            `json:"deps"`
-	Id            string              `json:"id"`
-	State         EnvironmentState    `json:"state"`
-	Template      EnvironmentTemplate `json:"template"`
-}
-
-// EnvironmentState defines model for Environment.State.
+// EnvironmentState defines model for EnvironmentState.
 type EnvironmentState string
-
-// EnvironmentTemplate defines model for Environment.Template.
-type EnvironmentTemplate string
 
 // EnvironmentStateUpdate defines model for EnvironmentStateUpdate.
 type EnvironmentStateUpdate struct {
-	CodeSnippetID string                      `json:"codeSnippetID"`
-	State         EnvironmentStateUpdateState `json:"state"`
+	State EnvironmentState `json:"state"`
 }
-
-// EnvironmentStateUpdateState defines model for EnvironmentStateUpdate.State.
-type EnvironmentStateUpdateState string
 
 // Error defines model for Error.
 type Error struct {
@@ -67,13 +37,9 @@ type Error struct {
 
 // NewEnvironment defines model for NewEnvironment.
 type NewEnvironment struct {
-	CodeSnippetID string                 `json:"codeSnippetID"`
-	Deps          []string               `json:"deps"`
-	Template      NewEnvironmentTemplate `json:"template"`
+	Deps     []string `json:"deps"`
+	Template Template `json:"template"`
 }
-
-// NewEnvironmentTemplate defines model for NewEnvironment.Template.
-type NewEnvironmentTemplate string
 
 // NewSession defines model for NewSession.
 type NewSession struct {
@@ -99,20 +65,23 @@ type Session struct {
 	SessionID string `json:"sessionID"`
 }
 
-// DeleteEnvsJSONBody defines parameters for DeleteEnvs.
-type DeleteEnvsJSONBody = DeleteEnvironment
+// Template defines model for Template.
+type Template string
 
-// PostEnvsStateJSONBody defines parameters for PostEnvsState.
-type PostEnvsStateJSONBody = EnvironmentStateUpdate
+// PostEnvsCodeSnippetIDJSONBody defines parameters for PostEnvsCodeSnippetID.
+type PostEnvsCodeSnippetIDJSONBody = NewEnvironment
+
+// PutEnvsCodeSnippetIDStateJSONBody defines parameters for PutEnvsCodeSnippetIDState.
+type PutEnvsCodeSnippetIDStateJSONBody = EnvironmentStateUpdate
 
 // PostSessionsJSONBody defines parameters for PostSessions.
 type PostSessionsJSONBody = NewSession
 
-// DeleteEnvsJSONRequestBody defines body for DeleteEnvs for application/json ContentType.
-type DeleteEnvsJSONRequestBody = DeleteEnvsJSONBody
+// PostEnvsCodeSnippetIDJSONRequestBody defines body for PostEnvsCodeSnippetID for application/json ContentType.
+type PostEnvsCodeSnippetIDJSONRequestBody = PostEnvsCodeSnippetIDJSONBody
 
-// PostEnvsStateJSONRequestBody defines body for PostEnvsState for application/json ContentType.
-type PostEnvsStateJSONRequestBody = PostEnvsStateJSONBody
+// PutEnvsCodeSnippetIDStateJSONRequestBody defines body for PutEnvsCodeSnippetIDState for application/json ContentType.
+type PutEnvsCodeSnippetIDStateJSONRequestBody = PutEnvsCodeSnippetIDStateJSONBody
 
 // PostSessionsJSONRequestBody defines body for PostSessions for application/json ContentType.
 type PostSessionsJSONRequestBody = PostSessionsJSONBody

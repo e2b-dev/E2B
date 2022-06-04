@@ -46,7 +46,7 @@ if [ -z "$FC_ENVS_DISK" ]; then
 fi
 
 API_URL="https://ondevbook.com"
-ENVS_ENDPOINT="${API_URL}/envs/state"
+ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state"
 
 echo "==== Args ==========================================================================================="
 echo "| RUN_UUID:           $RUN_UUID"
@@ -167,8 +167,7 @@ function startfc() {
   ],
   "machine-config": {
     "vcpu_count": 1,
-    "mem_size_mib": 256,
-    "track_dirty_pages": true
+    "mem_size_mib": 256
   }
 }
 EOF
@@ -215,9 +214,8 @@ function del_build_dir() {
 
 curl $ENVS_ENDPOINT \
   -H "Content-Type: application/json" \
-  -X POST \
+  -X PUT \
   -d "{
-    \"codeSnippetID\": \"$CODE_SNIPPET_ID\",
     \"state\": \"Building\"
   }"
 
