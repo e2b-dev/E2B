@@ -1,0 +1,9 @@
+//go:build !linux
+// +build !linux
+
+package allocdir
+
+// currently a noop on non-Linux platforms
+func (t *TaskDir) unmountSpecialDirs() error {
+	return nil
+}

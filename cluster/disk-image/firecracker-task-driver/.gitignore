@@ -13,8 +13,6 @@
 .plan
 alloc
 plugin
-client
-plugin
 firecracker-task-driver
 
 bin
