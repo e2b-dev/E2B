@@ -279,8 +279,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NewEnvironment"
-  # TODO: This endpoint might not be needed.
+  /envs/{codeSnippetID}/publish:
+    post:
+      parameters:
+        - name: codeSnippetID
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - envs
+      responses:
+        200:
+          description: Successfully published the edit environment for code snippet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewEnvironment"
   /envs/{codeSnippetID}:
+    # TODO: This endpoint might not be needed.
     get:
       tags:
         - envs
