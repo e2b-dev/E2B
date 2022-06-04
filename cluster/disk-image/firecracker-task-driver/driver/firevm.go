@@ -21,10 +21,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cneira/firecracker-task-driver/driver/client/client"
+	"github.com/cneira/firecracker-task-driver/driver/client/client/operations"
+	"github.com/cneira/firecracker-task-driver/driver/client/models"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
-	client "github.com/firecracker-microvm/firecracker-go-sdk/client"
-	"github.com/firecracker-microvm/firecracker-go-sdk/client/models"
-	"github.com/firecracker-microvm/firecracker-go-sdk/client/operations"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	hclog "github.com/hashicorp/go-hclog"
@@ -69,14 +69,17 @@ func loadSnapshot(ctx context.Context, cfg *firecracker.Config, codeSnippetID st
 	memFilePath := filepath.Join(fcEnvsDisk, codeSnippetID, "memfile")
 	snapshotFilePath := filepath.Join(fcEnvsDisk, codeSnippetID, "snapfile")
 
-	// TODO: Use new API (mem_backend)
+	backendType := models.MemoryBackendBackendTypeFile
 	snapshotConfig := operations.LoadSnapshotParams{
 		Context: ctx,
 		Body: &models.SnapshotLoadParams{
 			ResumeVM:            true,
-			EnableDiffSnapshots: false,
-			MemFilePath:         &memFilePath,
-			SnapshotPath:        &snapshotFilePath,
+			EnableDiffSnapshots: true,
+			MemBackend: &models.MemoryBackend{
+				BackendPath: &memFilePath,
+				BackendType: &backendType,
+			},
+			SnapshotPath: &snapshotFilePath,
 		},
 	}
 

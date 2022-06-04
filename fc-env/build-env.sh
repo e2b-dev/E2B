@@ -167,7 +167,8 @@ function startfc() {
   ],
   "machine-config": {
     "vcpu_count": 1,
-    "mem_size_mib": 256
+    "mem_size_mib": 256,
+    "track_dirty_pages": true
   }
 }
 EOF
@@ -188,6 +189,7 @@ function pausefc() {
       }'
 }
 
+# We could do a diff snapshot here because it's the first snapshot - we don't have anything to merge it with.
 function snapfc() {
   curl --unix-socket $FC_SOCK -i \
       -X PUT 'http://localhost/snapshot/create' \

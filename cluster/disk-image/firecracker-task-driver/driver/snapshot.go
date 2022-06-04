@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/firecracker-microvm/firecracker-go-sdk/client/models"
-	"github.com/firecracker-microvm/firecracker-go-sdk/client/operations"
+	"github.com/cneira/firecracker-task-driver/driver/client/client/operations"
+	"github.com/cneira/firecracker-task-driver/driver/client/models"
 	"github.com/google/uuid"
 )
 
