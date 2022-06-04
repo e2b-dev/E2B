@@ -8,4 +8,4 @@ A script that's executed once inside a running Docker container. The Docker cont
 A Devbook agent that runs inside a Firecracker VM for its whole lifecycle. It provides the ability to run code inside the VM.
 
 ## publish.sh
-Used for uploading the devbookd binary, build-env.sh, and provision-env.sh to the Google Cloud Storage. The files are then downloaded as artifacts during the Nomad job for building the Firecracker environment.
+Used for uploading the devbookd binary, build-env.sh, publish-env.sh and provision-env.sh to the Google Cloud Storage. The files are then downloaded as artifacts during the Nomad job for building the Firecracker environment.

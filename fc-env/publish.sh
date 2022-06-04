@@ -5,14 +5,15 @@
 
 set -euo pipefail
 
-rm env.tar.gz
-rm -rf env
+rm env.tar.gz || true
+rm -rf env || true
 
 mkdir env
 
 mv devbookd/bin/devbookd env
 cp ./devbookd-init ./env/
 cp ./build-env.sh ./env/
+cp ./publish-env.sh ./env/
 cp ./provision-env.sh ./env/
 
 tar czf env.tar.gz env

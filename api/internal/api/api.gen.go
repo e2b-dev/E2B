@@ -26,6 +26,9 @@ type ServerInterface interface {
 	// (GET /envs/{codeSnippetID})
 	GetEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
 
+	// (POST /envs/{codeSnippetID}/publish)
+	PostEnvsCodeSnippetIDPublish(c *gin.Context, codeSnippetID string)
+
 	// (GET /health)
 	GetHealth(c *gin.Context)
 
@@ -99,6 +102,27 @@ func (siw *ServerInterfaceWrapper) GetEnvsCodeSnippetID(c *gin.Context) {
 	}
 
 	siw.Handler.GetEnvsCodeSnippetID(c, codeSnippetID)
+}
+
+// PostEnvsCodeSnippetIDPublish operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetIDPublish(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "codeSnippetID" -------------
+	var codeSnippetID string
+
+	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PostEnvsCodeSnippetIDPublish(c, codeSnippetID)
 }
 
 // GetHealth operation middleware
@@ -198,6 +222,8 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 	router.POST(options.BaseURL+"/envs/state", wrapper.PostEnvsState)
 
 	router.GET(options.BaseURL+"/envs/:codeSnippetID", wrapper.GetEnvsCodeSnippetID)
+
+	router.POST(options.BaseURL+"/envs/:codeSnippetID/publish", wrapper.PostEnvsCodeSnippetIDPublish)
 
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
 
