@@ -23,7 +23,7 @@
     "watch": "rollup -c -w",
     "run": "node examples/index.mjs",
     "fix": "npx eslint **/src/**/*.{ts,tsx,js} --fix",
-    "generate": "openapi-typescript shared/api/openapi.yml --immutable-types --output src/api/schema.gen.d.ts"
+    "generate": "openapi-typescript shared/api/openapi.yml --immutable-types --output src/api/schema.gen.ts"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.3.0",

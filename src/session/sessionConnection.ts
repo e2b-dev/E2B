@@ -33,7 +33,7 @@ export interface SessionConnectionOpts {
   editEnabled?: boolean
 }
 
-const getSession = api.path('/sessions').method('post').create()
+const createSession = api.path('/sessions').method('post').create()
 const refreshSession = api.path('/sessions/{sessionID}/refresh').method('put').create()
 
 abstract class SessionConnection {
@@ -109,7 +109,7 @@ abstract class SessionConnection {
     }
 
     try {
-      const res = await getSession({
+      const res = await createSession({
         codeSnippetID: this.opts.id,
         editEnabled: this.opts.editEnabled,
       })
@@ -118,7 +118,7 @@ abstract class SessionConnection {
 
       this.refresh(this.session.sessionID)
     } catch (e) {
-      if (e instanceof getSession.Error) {
+      if (e instanceof createSession.Error) {
         const error = e.getActualType()
         if (error.status === 400) {
           throw new Error(`Error creating session - (${error.status}) bad request: ${error.data.message}`)

@@ -101,59 +101,95 @@ export interface paths {
     };
   };
   readonly "/envs": {
+    /** Create a new env for a code snippet */
     readonly post: {
       readonly responses: {
         /** Successfully created an environment */
-        readonly 200: {
+        readonly 204: never;
+        /** Cannot create a new environment */
+        readonly 400: {
           readonly content: {
-            readonly "application/json": components["schemas"]["NewEnvironment"];
+            readonly "application/json": components["schemas"]["Error"];
+          };
+        };
+        /** Server error when creating new environment */
+        readonly 500: {
+          readonly content: {
+            readonly "application/json": components["schemas"]["Error"];
           };
         };
       };
-    };
-    readonly delete: {
       readonly requestBody: {
         readonly content: {
-          readonly "application/json": components["schemas"]["DeleteEnvironment"];
-        };
-      };
-    };
-  };
-  readonly "/envs/{codeSnippetID}/publish": {
-    readonly post: {
-      readonly parameters: {
-        readonly path: {
-          readonly codeSnippetID: string;
-        };
-      };
-      readonly responses: {
-        /** Successfully published the edit environment for code snippet */
-        readonly 200: {
-          readonly content: {
-            readonly "application/json": components["schemas"]["NewEnvironment"];
-          };
+          readonly "application/json": components["schemas"]["NewEnvironment"];
         };
       };
     };
   };
   readonly "/envs/{codeSnippetID}": {
-    readonly get: {
+    /** Delete the code snippet environment */
+    readonly delete: {
       readonly parameters: {
         readonly path: {
           readonly codeSnippetID: string;
         };
       };
       readonly responses: {
-        readonly 200: {
+        /** Successfully deleted the environment */
+        readonly 204: never;
+        /** Cannot delete the environment */
+        readonly 400: {
           readonly content: {
-            readonly "application/json": components["schemas"]["Environment"];
+            readonly "application/json": components["schemas"]["Error"];
+          };
+        };
+        /** Server error when deleting the environment */
+        readonly 500: {
+          readonly content: {
+            readonly "application/json": components["schemas"]["Error"];
           };
         };
       };
     };
   };
-  readonly "/envs/state": {
+  readonly "/envs/{codeSnippetID}/publish": {
+    /** Publish the edit environment of the code snippet */
     readonly post: {
+      readonly parameters: {
+        readonly path: {
+          readonly codeSnippetID: string;
+        };
+      };
+      readonly responses: {
+        /** Publishing the edit environment for code snippet */
+        readonly 204: never;
+        /** Error publishing the edit environment */
+        readonly 500: {
+          readonly content: {
+            readonly "application/json": components["schemas"]["Error"];
+          };
+        };
+      };
+    };
+  };
+  readonly "/envs/{codeSnippetID}/state": {
+    /** Update the state of the environment */
+    readonly put: {
+      readonly parameters: {
+        readonly path: {
+          readonly codeSnippetID: string;
+        };
+      };
+      readonly responses: {
+        /** Publishing the edit environment for code snippet */
+        readonly 204: never;
+        /** Error publishing the edit environment */
+        readonly 400: {
+          readonly content: {
+            readonly "application/json": components["schemas"]["Error"];
+          };
+        };
+      };
       readonly requestBody: {
         readonly content: {
           readonly "application/json": components["schemas"]["EnvironmentStateUpdate"];
@@ -165,24 +201,21 @@ export interface paths {
 
 export interface components {
   readonly schemas: {
-    readonly DeleteEnvironment: {
-      readonly codeSnippetID: string;
-    };
+    /** @enum {string} */
+    readonly Template: "Nodejs";
+    /** @enum {string} */
+    readonly EnvironmentState: "Building" | "Failed" | "Done";
     readonly NewEnvironment: {
       readonly codeSnippetID: string;
-      /** @enum {string} */
-      readonly template: "Nodejs";
+      readonly template: components["schemas"]["Template"];
       readonly deps: readonly string[];
     };
     readonly Environment: components["schemas"]["NewEnvironment"] & {
       readonly id: string;
-      /** @enum {string} */
-      readonly state: "Building" | "Failed" | "Done";
+      readonly state: components["schemas"]["EnvironmentState"];
     };
     readonly EnvironmentStateUpdate: {
-      readonly codeSnippetID: string;
-      /** @enum {string} */
-      readonly state: "Building" | "Failed" | "Done";
+      readonly state: components["schemas"]["EnvironmentState"];
     };
     readonly NewSession: {
       /** @description Option determining if the session is a shared persistent edit session */

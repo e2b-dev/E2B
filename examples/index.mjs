@@ -2,7 +2,7 @@ import { Session } from '../dist/cjs/index.js'
 
 async function main() {
   const session = new Session({
-    id: 'IUKVAOjElRCm',
+    id: 'OVyFjRfq6WTe',
     codeSnippet: {
       onStateChange(state) {
         console.log(state)
@@ -15,7 +15,7 @@ async function main() {
       },
     },
     debug: true,
-    // editEnabled: true,
+    editEnabled: true,
   })
 
   try {
@@ -25,24 +25,38 @@ async function main() {
     const fs = require('fs')
 
     try {
-      const rest = fs.readFileSync('/test.file').toString()
+      const rest = fs.readFileSync('/test.fileg').toString()
       console.log('file', rest)
     } catch (e) {
       console.error('no file')
     }
 
-    fs.writeFileSync('/test.file', 'inline>>')
+    fs.writeFileSync('/test.fileg', 'c;')
+    // try {
+    //     const rest = fs.readFileSync('/test.file').toString()
+    //   console.log('file', rest)
+    // } catch (e) {
+    //   console.error('no file')
+    // }
+    // // fs.writeFileSync('/test.file', '>>out')
+    // try {
+    //   const rest = fs.readFileSync('/test.file').toString()
+    //   console.log('file', rest)
+    // } catch (e) {
+    //   console.error('no file')
+    // }
 
-    setInterval(() => {
-      try {
-        const rest = fs.readFileSync('/test.file').toString()
-        console.log('file', rest)
-      } catch (e) {
-        console.error('no file')
-      }
-    }, 2000)
-        
-    `)
+
+    // // setInterval(() => {
+    // //   try {
+    // //     const rest = fs.readFileSync('/test.file').toString()
+    // //     console.log('file', rest)
+    // //   } catch (e) {
+    // //     console.error('no file')
+    // //   }
+    // // }, 2000)
+
+    // `)
     //     await session.codeSnippet.run(String.raw`
     //     const http = require('http');
 
