@@ -5,6 +5,9 @@
 
 set -euo pipefail
 
+rm env.tar.gz
+rm -rf env
+
 mkdir env
 
 mv devbookd/bin/devbookd env
