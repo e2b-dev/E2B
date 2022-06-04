@@ -12,3 +12,6 @@ update-dev-driver:
 
 set-project-gcloud:
 	gcloud config set project devbookhq
+
+generate:
+	cd driver/client && swagger generate client -f firecracker.yml -A firecracker
