@@ -24,11 +24,6 @@ if [ -z "$SCRIPTDIR" ]; then
   exit 1
 fi
 
-if [ -z "$SESSION_ID" ]; then
-  echo "ERROR: Expected SESSION_ID as the third argument"
-  exit 1
-fi
-
 if [ -z "$CODE_SNIPPET_ID" ]; then
   echo "ERROR: Expected code snippet ID as the fourth argument"
   exit 1
