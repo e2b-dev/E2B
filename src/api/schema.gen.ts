@@ -82,7 +82,7 @@ export interface paths {
   };
   readonly "/sessions/{sessionID}/refresh": {
     /** Refresh the session extending its time to live */
-    readonly put: {
+    readonly post: {
       readonly parameters: {
         readonly path: {
           readonly sessionID: string;
@@ -154,19 +154,17 @@ export interface paths {
         };
       };
     };
-  };
-  readonly "/envs/{codeSnippetID}/publish": {
-    /** Publish the edit environment of the code snippet */
-    readonly post: {
+    /** Update the environment of the code snippet to match the edit environment */
+    readonly patch: {
       readonly parameters: {
         readonly path: {
           readonly codeSnippetID: string;
         };
       };
       readonly responses: {
-        /** Publishing the edit environment for code snippet */
+        /** Updated the edit environment for code snippet */
         readonly 204: never;
-        /** Error publishing the edit environment */
+        /** Error updating the edit environment */
         readonly 500: {
           readonly content: {
             readonly "application/json": components["schemas"]["Error"];

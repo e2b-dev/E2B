@@ -34,7 +34,7 @@ export interface SessionConnectionOpts {
 }
 
 const createSession = api.path('/sessions').method('post').create()
-const refreshSession = api.path('/sessions/{sessionID}/refresh').method('put').create()
+const refreshSession = api.path('/sessions/{sessionID}/refresh').method('post').create()
 
 abstract class SessionConnection {
   protected readonly logger: Logger
