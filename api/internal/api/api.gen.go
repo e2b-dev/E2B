@@ -64,8 +64,6 @@ func (siw *ServerInterfaceWrapper) DeleteEnvsCodeSnippetID(c *gin.Context) {
 		return
 	}
 
-	c.Set(ApiKeyAuthScopes, []string{""})
-
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteEnvsCodeSnippetIDParams
 
@@ -100,8 +98,6 @@ func (siw *ServerInterfaceWrapper) PatchEnvsCodeSnippetID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
 		return
 	}
-
-	c.Set(ApiKeyAuthScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PatchEnvsCodeSnippetIDParams
@@ -138,8 +134,6 @@ func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetID(c *gin.Context) {
 		return
 	}
 
-	c.Set(ApiKeyAuthScopes, []string{""})
-
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PostEnvsCodeSnippetIDParams
 
@@ -174,8 +168,6 @@ func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDState(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
 		return
 	}
-
-	c.Set(ApiKeyAuthScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PutEnvsCodeSnippetIDStateParams
@@ -212,8 +204,6 @@ func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 func (siw *ServerInterfaceWrapper) GetSessions(c *gin.Context) {
 
 	var err error
-
-	c.Set(ApiKeyAuthScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetSessionsParams
@@ -275,8 +265,6 @@ func (siw *ServerInterfaceWrapper) DeleteSessionsSessionID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter sessionID: %s", err)})
 		return
 	}
-
-	c.Set(ApiKeyAuthScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteSessionsSessionIDParams

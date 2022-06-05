@@ -57,7 +57,7 @@ func (a *APIStore) PostSessions(
 
 		existingSession, err := a.sessionsCache.FindEditSession(newSession.CodeSnippetID)
 		if err != nil {
-			fmt.Printf("Creating a new edit session because there is no existing edit session: %v\n", err)
+			fmt.Printf("No edit session found - will create a new edit session")
 		} else {
 			c.JSON(http.StatusCreated, &existingSession)
 			return
@@ -77,10 +77,8 @@ func (a *APIStore) PostSessions(
 		// If we find an existing session now we just discard the one we created and everything will work.
 		existingSession, err := a.sessionsCache.FindEditSession(newSession.CodeSnippetID)
 
-		if err != nil {
-			fmt.Printf("Creating a new edit session because there is no existing edit session: %v\n", err)
-		} else {
-			fmt.Printf("Found an another edit session after we created a new editing session. Returning the other session.")
+		if err == nil {
+			fmt.Printf("Found another edit session after we created a new editing session. Returning the other session.")
 
 			err = a.nomadClient.DeleteSession(session.SessionID)
 			fmt.Printf("Error when cleaning up session: %v\n", err)

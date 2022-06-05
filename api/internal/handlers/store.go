@@ -68,8 +68,6 @@ func (a *APIStore) validateAPIKey(apiKey *string) (string, error) {
 		Eq("api_key", *apiKey).
 		Execute(&result)
 
-	fmt.Printf("result, %+v", result)
-
 	if err != nil || result == nil {
 		return "", fmt.Errorf("error validating API key: %+v", err)
 	}
