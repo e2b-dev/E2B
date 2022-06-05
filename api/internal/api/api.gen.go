@@ -17,11 +17,11 @@ type ServerInterface interface {
 	// (DELETE /envs/{codeSnippetID})
 	DeleteEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
 
+	// (PATCH /envs/{codeSnippetID})
+	PatchEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
+
 	// (POST /envs/{codeSnippetID})
 	PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
-
-	// (POST /envs/{codeSnippetID}/publish)
-	PostEnvsCodeSnippetIDPublish(c *gin.Context, codeSnippetID string)
 
 	// (PUT /envs/{codeSnippetID}/state)
 	PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID string)
@@ -38,8 +38,8 @@ type ServerInterface interface {
 	// (DELETE /sessions/{sessionID})
 	DeleteSessionsSessionID(c *gin.Context, sessionID string)
 
-	// (PUT /sessions/{sessionID}/refresh)
-	PutSessionsSessionIDRefresh(c *gin.Context, sessionID string)
+	// (POST /sessions/{sessionID}/refresh)
+	PostSessionsSessionIDRefresh(c *gin.Context, sessionID string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -71,6 +71,27 @@ func (siw *ServerInterfaceWrapper) DeleteEnvsCodeSnippetID(c *gin.Context) {
 	siw.Handler.DeleteEnvsCodeSnippetID(c, codeSnippetID)
 }
 
+// PatchEnvsCodeSnippetID operation middleware
+func (siw *ServerInterfaceWrapper) PatchEnvsCodeSnippetID(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "codeSnippetID" -------------
+	var codeSnippetID string
+
+	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PatchEnvsCodeSnippetID(c, codeSnippetID)
+}
+
 // PostEnvsCodeSnippetID operation middleware
 func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetID(c *gin.Context) {
 
@@ -90,27 +111,6 @@ func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetID(c *gin.Context) {
 	}
 
 	siw.Handler.PostEnvsCodeSnippetID(c, codeSnippetID)
-}
-
-// PostEnvsCodeSnippetIDPublish operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetIDPublish(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "codeSnippetID" -------------
-	var codeSnippetID string
-
-	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter codeSnippetID: %s", err)})
-		return
-	}
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-	}
-
-	siw.Handler.PostEnvsCodeSnippetIDPublish(c, codeSnippetID)
 }
 
 // PutEnvsCodeSnippetIDState operation middleware
@@ -185,8 +185,8 @@ func (siw *ServerInterfaceWrapper) DeleteSessionsSessionID(c *gin.Context) {
 	siw.Handler.DeleteSessionsSessionID(c, sessionID)
 }
 
-// PutSessionsSessionIDRefresh operation middleware
-func (siw *ServerInterfaceWrapper) PutSessionsSessionIDRefresh(c *gin.Context) {
+// PostSessionsSessionIDRefresh operation middleware
+func (siw *ServerInterfaceWrapper) PostSessionsSessionIDRefresh(c *gin.Context) {
 
 	var err error
 
@@ -203,7 +203,7 @@ func (siw *ServerInterfaceWrapper) PutSessionsSessionIDRefresh(c *gin.Context) {
 		middleware(c)
 	}
 
-	siw.Handler.PutSessionsSessionIDRefresh(c, sessionID)
+	siw.Handler.PostSessionsSessionIDRefresh(c, sessionID)
 }
 
 // GinServerOptions provides options for the Gin server.
@@ -226,9 +226,9 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 
 	router.DELETE(options.BaseURL+"/envs/:codeSnippetID", wrapper.DeleteEnvsCodeSnippetID)
 
-	router.POST(options.BaseURL+"/envs/:codeSnippetID", wrapper.PostEnvsCodeSnippetID)
+	router.PATCH(options.BaseURL+"/envs/:codeSnippetID", wrapper.PatchEnvsCodeSnippetID)
 
-	router.POST(options.BaseURL+"/envs/:codeSnippetID/publish", wrapper.PostEnvsCodeSnippetIDPublish)
+	router.POST(options.BaseURL+"/envs/:codeSnippetID", wrapper.PostEnvsCodeSnippetID)
 
 	router.PUT(options.BaseURL+"/envs/:codeSnippetID/state", wrapper.PutEnvsCodeSnippetIDState)
 
@@ -240,7 +240,7 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 
 	router.DELETE(options.BaseURL+"/sessions/:sessionID", wrapper.DeleteSessionsSessionID)
 
-	router.PUT(options.BaseURL+"/sessions/:sessionID/refresh", wrapper.PutSessionsSessionIDRefresh)
+	router.POST(options.BaseURL+"/sessions/:sessionID/refresh", wrapper.PostSessionsSessionIDRefresh)
 
 	return router
 }

@@ -18,6 +18,8 @@ func (a *APIStore) PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
 		return
 	}
 
+
+
 	// TODO: Download the base Dockerfile based on a template field in `env`.
 	// TODO: Add deps to the Dockerfile.
 	err := a.nomadClient.CreateEnv(codeSnippetID, string(env.Template), env.Deps)
@@ -104,7 +106,7 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID strin
 	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) PostEnvsCodeSnippetIDPublish(c *gin.Context, codeSnippetID string) {
+func (a *APIStore) PatchEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
 	session, err := a.sessionsCache.FindEditSession(codeSnippetID)
 	if err != nil {
 		fmt.Printf("cannot find active edit session for the code snippet '%s': %v - will use saved rootfs", codeSnippetID, err)

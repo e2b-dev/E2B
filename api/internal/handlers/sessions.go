@@ -94,7 +94,7 @@ func (a *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
 	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) PutSessionsSessionIDRefresh(c *gin.Context, sessionID string) {
+func (a *APIStore) PostSessionsSessionIDRefresh(c *gin.Context, sessionID string) {
 	err := a.sessionsCache.Refresh(sessionID)
 	if err != nil {
 		fmt.Printf("Error when refreshing session: %v\n", err)
