@@ -43,7 +43,7 @@ components:
     apiKey:
       name: api_key
       in: query
-      required: true
+      required: false
       schema:
         type: string
     codeSnippetID:
