@@ -115,7 +115,6 @@ components:
         state:
           $ref: "#/components/schemas/EnvironmentState"
 
-    # Session
     NewSession:
       required:
         - codeSnippetID
@@ -147,7 +146,6 @@ components:
           type: string
           description: Identifier of the client
 
-    # Errors
     Error:
       required:
         - code
