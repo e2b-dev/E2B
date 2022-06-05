@@ -302,7 +302,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-
   /envs/{codeSnippetID}/state:
     put:
       description: Update the state of the environment
