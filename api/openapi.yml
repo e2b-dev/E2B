@@ -4,84 +4,125 @@ info:
   title: Devbook
   description: Devbook API
 
-tags:
-  - name: sessions
-    description: Managing VM sessions
-  - name: envs
-    description: Environment for VM
-  - name: envevals
-    description: Status of the job building the environment
+servers:
+  - url: https://ondevbook.com/
+    description: API endpoint
+  - url: https://{sessionID}-{clientID}.ondevbook.com/
+    description: Session endpoint without specified port
+    variables:
+      sessionID:
+        description: ID of the session
+        default: _sessionID
+      clientID:
+        description: ID of the client
+        default: _clientID
+  - url: https://{port}-{sessionID}-{clientID}.ondevbook.com/
+    description: Session endpoint with specificed port
+    variables:
+      sessionID:
+        description: ID of the session
+        default: _sessionID
+      clientID:
+        description: ID of the client
+        default: _clientID
+      port:
+        description: Port to connect to
+        default: "8080"
 
 components:
-  #securitySchemes:
-  #  ApiKeyAuth: # Arbitrary name for the security scheme
-  #    type: apiKey
-  #    in: query # Can be 'header', 'query' or 'cookie'
-  #    name: API_KEY # Name of the header, query parameter or cookie
+  securitySchemes:
+    ApiKeyAuth:
+      name: api_key
+      type: apiKey
+      in: query
+
+  parameters:
+    apiKeyOpt:
+      name: api_key
+      in: query
+      required: false
+      schema:
+        type: string
+    apiKeyReq:
+      name: api_key
+      in: query
+      required: false
+      schema:
+        type: string
+    codeSnippetID:
+      name: codeSnippetID
+      in: path
+      required: true
+      schema:
+        type: string
+    sessionID:
+      name: sessionID
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    400:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    401:
+      description: Authentication error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    500:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
   schemas:
+    Template:
+      type: string
+      enum:
+        - Nodejs
+        - Golang
+        - Bash
+        - Python
+    EnvironmentState:
+      type: string
+      enum:
+        - Building
+        - Failed
+        - Done
+
     NewEnvironment:
-      type: object
       required:
-        - codeSnippetID
-        - runtime
+        - template
         - deps
       properties:
-        codeSnippetID:
-          type: string
-        runtime:
-          type: string
-          enum: [Nodejs]
+        template:
+          $ref: "#/components/schemas/Template"
         deps:
           type: array
           items:
             type: string
-    Environment:
-      allOf:
-        - $ref: "#/components/schemas/NewEnvironment"
-        - type: object
-          required:
-            - id
-            - status
-          properties:
-            id:
-              type: string
-            status:
-              type: string
-              enum: [Building, Failed, Done]
-    EnvironmentStatus:
-      type: object
+    EnvironmentStateUpdate:
       required:
-        - status
+        - state
       properties:
-        status:
-          type: string
-          enum: [Building, Failed, Done]
-
-      #NewEnvironment:
-      #  required:
-      #    - codeSnippetID
-      #    - runtime
-      #    - deps
-      #  properties:
-      #    codeSnippetID:
-      #      type: string
-      #      description: Identifier of a code snippet which which is the environment associated
-      #    runtime:
-      #      type: string
-      #      enum: [nodejs]
-      #    deps: # ['dep1', 'dep2']
-      #      type: array
-      #      items:
-      #        type: string
-      #  Environment:
-      #    required:
-      #      - codeSnippetID
-      #      - r
+        state:
+          $ref: "#/components/schemas/EnvironmentState"
 
     NewSession:
       required:
         - codeSnippetID
       properties:
+        editEnabled:
+          type: boolean
+          default: false
+          description: Option determining if the session is a shared persistent edit session
         codeSnippetID:
           type: string
           description: Identifier of a code snippet which which is the environment associated
@@ -89,7 +130,15 @@ components:
       required:
         - sessionID
         - clientID
+        - editEnabled
+        - codeSnippetID
       properties:
+        codeSnippetID:
+          type: string
+          description: Identifier of a code snippet which which is the environment associated
+        editEnabled:
+          type: boolean
+          description: Information if the session is a shared persistent edit session
         sessionID:
           type: string
           description: Identifier of the session
@@ -110,21 +159,28 @@ components:
           type: string
           description: Error
 
-#security:
-#- ApiKeyAuth: [] # Use the same name as under securitySchemes
+tags:
+  - name: sessions
+    description: Managing VM sessions
+  - name: envs
+    description: Environment for VM
 
 paths:
-  /:
+  /health:
     get:
       description: Health check
       responses:
         200:
           description: Request was successful
+        401:
+          $ref: "#/components/responses/401"
+
   /sessions:
     get:
-      tags:
-        - sessions
       description: List all sessions
+      tags: [sessions]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyReq"
       responses:
         200:
           description: Successfully returned all sessions
@@ -135,17 +191,15 @@ paths:
                 items:
                   allOf:
                     - $ref: "#/components/schemas/Session"
+        401:
+          $ref: "#/components/responses/401"
         500:
-          description: Error listing sessions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
+          $ref: "#/components/responses/500"
     post:
-      tags:
-        - sessions
       description: Create a session on the server
+      tags: [sessions]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyOpt"
       requestBody:
         required: true
         content:
@@ -159,101 +213,119 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
+        401:
+          $ref: "#/components/responses/401"
         400:
-          description: Bad request body format
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/400"
         500:
-          description: Error creating session
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/500"
 
   /sessions/{sessionID}:
     delete:
-      tags:
-        - sessions
-      parameters:
-        - name: sessionID
-          in: path
-          required: true
-          schema:
-            type: string
       description: Delete a session on the server
+      tags: [sessions]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyReq"
+        - $ref: "#/components/parameters/sessionID"
       responses:
         204:
           description: Successfully deleted the session
+        401:
+          $ref: "#/components/responses/401"
         500:
-          description: Error deleting the session
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/500"
 
   /sessions/{sessionID}/refresh:
-    put:
-      tags:
-        - sessions
-      parameters:
-        - name: sessionID
-          in: path
-          required: true
-          schema:
-            type: string
+    post:
       description: Refresh the session extending its time to live
+      tags: [sessions]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyOpt"
+        - $ref: "#/components/parameters/sessionID"
       responses:
         204:
           description: Successfully refreshed the session
-        500:
-          description: Error refreshing the session
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          description: Error refreshing session - session not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /envs:
-    post:
-      tags:
-        - envs
-      responses:
-        200:
-          description: Successfully created an environment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NewEnvironment"
   /envs/{codeSnippetID}:
-    get:
-      tags:
-        - envs
-      parameters:
-        - name: codeSnippetID
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Environment"
-  /envs/{codeSnippetID}/status:
     post:
-      tags:
-        - envs
+      description: Create a new env for a code snippet
+      tags: [envs]
       parameters:
-        - name: codeSnippetID
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/apiKeyReq"
+        - $ref: "#/components/parameters/codeSnippetID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EnvironmentStatus"
+              $ref: "#/components/schemas/NewEnvironment"
+      responses:
+        204:
+          description: Successfully created an environment
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      description: Delete the code snippet environment
+      tags: [envs]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyReq"
+        - $ref: "#/components/parameters/codeSnippetID"
+      responses:
+        204:
+          description: Successfully deleted the environment
+        400:
+          description: Cannot delete the environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+    patch:
+      description: Update the environment of the code snippet to match the edit environment
+      tags: [envs]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyReq"
+        - $ref: "#/components/parameters/codeSnippetID"
+      responses:
+        204:
+          description: Updated the edit environment for code snippet
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  /envs/{codeSnippetID}/state:
+    put:
+      description: Update the state of the environment
+      tags: [envs]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyReq"
+        - $ref: "#/components/parameters/codeSnippetID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentStateUpdate"
+      responses:
+        204:
+          description: Publishing the edit environment for code snippet
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
