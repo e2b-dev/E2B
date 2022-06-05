@@ -29,9 +29,6 @@ servers:
         description: Port to connect to
         default: "8080"
 
-security:
-  - ApiKeyAuth: []
-
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -40,7 +37,13 @@ components:
       in: query
 
   parameters:
-    apiKey:
+    apiKeyOpt:
+      name: api_key
+      in: query
+      required: false
+      schema:
+        type: string
+    apiKeyReq:
       name: api_key
       in: query
       required: false
@@ -176,8 +179,10 @@ paths:
     get:
       description: List all sessions
       tags: [sessions]
+      security:
+        - ApiKeyAuth: []
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyReq"
       responses:
         200:
           description: Successfully returned all sessions
@@ -196,7 +201,7 @@ paths:
       description: Create a session on the server
       tags: [sessions]
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyOpt"
       requestBody:
         required: true
         content:
@@ -221,8 +226,10 @@ paths:
     delete:
       description: Delete a session on the server
       tags: [sessions]
+      security:
+        - ApiKeyAuth: []
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyReq"
         - $ref: "#/components/parameters/sessionID"
       responses:
         204:
@@ -237,7 +244,7 @@ paths:
       description: Refresh the session extending its time to live
       tags: [sessions]
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyOpt"
         - $ref: "#/components/parameters/sessionID"
       responses:
         204:
@@ -255,8 +262,10 @@ paths:
     post:
       description: Create a new env for a code snippet
       tags: [envs]
+      security:
+        - ApiKeyAuth: []
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyReq"
         - $ref: "#/components/parameters/codeSnippetID"
       requestBody:
         required: true
@@ -276,8 +285,10 @@ paths:
     delete:
       description: Delete the code snippet environment
       tags: [envs]
+      security:
+        - ApiKeyAuth: []
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyReq"
         - $ref: "#/components/parameters/codeSnippetID"
       responses:
         204:
@@ -295,8 +306,10 @@ paths:
     patch:
       description: Update the environment of the code snippet to match the edit environment
       tags: [envs]
+      security:
+        - ApiKeyAuth: []
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyReq"
         - $ref: "#/components/parameters/codeSnippetID"
       responses:
         204:
@@ -310,8 +323,10 @@ paths:
     put:
       description: Update the state of the environment
       tags: [envs]
+      security:
+        - ApiKeyAuth: []
       parameters:
-        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/apiKeyReq"
         - $ref: "#/components/parameters/codeSnippetID"
       requestBody:
         required: true
