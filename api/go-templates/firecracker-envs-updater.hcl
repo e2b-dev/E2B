@@ -1,4 +1,4 @@
-job "firecracker-envs-publisher/{{ .CodeSnippetID }}" {
+job "firecracker-envs-updater/{{ .CodeSnippetID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
@@ -40,7 +40,7 @@ job "firecracker-envs-publisher/{{ .CodeSnippetID }}" {
           "{{ .CodeSnippetID }}",
           "${NOMAD_ALLOC_DIR}",
           "{{ .FCEnvsDisk }}",
-          # TODO: Add user's API key
+          "{{ .APIKey }}",
         ]
       }
     }
@@ -57,8 +57,7 @@ job "firecracker-envs-publisher/{{ .CodeSnippetID }}" {
         command = "/bin/ash"
         args = [
           "-c",
-          # TODO: Add user's API key
-          "chmod +x local/poststop.sh && local/poststop.sh {{ .CodeSnippetID }}",
+          "chmod +x local/poststop.sh && local/poststop.sh {{ .CodeSnippetID }} {{ .APIKey }}",
         ]
       }
 
@@ -67,6 +66,7 @@ job "firecracker-envs-publisher/{{ .CodeSnippetID }}" {
 #!/bin/ash
 
 CODE_SNIPPET_ID="$1"
+API_KEY="$2"
 
 set -euo pipefail
 
@@ -75,13 +75,17 @@ if [ -z "$CODE_SNIPPET_ID" ]; then
   exit 1
 fi
 
+if [ -z "$API_KEY" ]; then
+  echo "ERROR: Expected code snippet ID as the second argument"
+  exit 1
+fi
+
 API_URL="https://ondevbook.com"
-ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state"
+ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state?api_key=$API_KEY"
 
 # Main didn't finish successfully.
 if [ ! -f ${NOMAD_ALLOC_DIR}/main-done ]; then
   echo "No 'main-done' file"
-  # TODO: Set env status
   curl $ENVS_ENDPOINT \
     -H "Content-Type: application/json" \
     -X PUT \

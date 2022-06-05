@@ -34,12 +34,6 @@ func (a *APIStore) PostSessions(
 	c *gin.Context,
 	params api.PostSessionsParams,
 ) {
-	_, keyErr := a.validateAPIKey(params.ApiKey)
-	if keyErr != nil {
-		fmt.Printf("error with API key: %+v", keyErr)
-		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
-		return
-	}
 
 	var newSession api.PostSessionsJSONBody
 	if err := c.Bind(&newSession); err != nil {
@@ -54,6 +48,13 @@ func (a *APIStore) PostSessions(
 	}
 
 	if *newSession.EditEnabled {
+		_, keyErr := a.validateAPIKey(params.ApiKey)
+		if keyErr != nil {
+			fmt.Printf("error with API key: %+v", keyErr)
+			sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+			return
+		}
+
 		existingSession, err := a.sessionsCache.FindEditSession(newSession.CodeSnippetID)
 		if err != nil {
 			fmt.Printf("Creating a new edit session because there is no existing edit session: %v\n", err)
@@ -130,13 +131,6 @@ func (a *APIStore) PostSessionsSessionIDRefresh(
 	sessionID string,
 	params api.PostSessionsSessionIDRefreshParams,
 ) {
-	_, keyErr := a.validateAPIKey(params.ApiKey)
-	if keyErr != nil {
-		fmt.Printf("error with API key: %+v", keyErr)
-		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
-		return
-	}
-
 	err := a.sessionsCache.Refresh(sessionID)
 	if err != nil {
 		fmt.Printf("Error when refreshing session: %v\n", err)

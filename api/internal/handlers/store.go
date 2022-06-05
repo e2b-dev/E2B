@@ -46,33 +46,35 @@ func NewAPIStore() *APIStore {
 	}
 }
 
-func (a *APIStore) validateAPIKey(apiKey string) (*string, error) {
-	if apiKey == "" {
-		return nil, fmt.Errorf("no API key")
+func (a *APIStore) validateAPIKey(apiKey *string) (string, error) {
+	if apiKey == nil {
+		return "", fmt.Errorf("no API key")
 	}
 
-	result := []*struct {
-		owner_id string
-	}{}
+	if *apiKey == "" {
+		return "", fmt.Errorf("no API key")
+	}
+
+	if *apiKey == api.APIAdminKey {
+		return "api_admin_key", nil
+	}
+
+	var result map[string]interface{}
 
 	err := a.supabase.DB.
 		From("api_keys").
 		Select("owner_id").
-		Eq("api_key", apiKey).
-		Execute(result)
+		Single().
+		Eq("api_key", *apiKey).
+		Execute(&result)
 
-	if err != nil {
-		return nil, fmt.Errorf("error validating API key: %+v", err)
+	fmt.Printf("result, %+v", result)
+
+	if err != nil || result == nil {
+		return "", fmt.Errorf("error validating API key: %+v", err)
 	}
 
-	if len(result) == 0 {
-		return nil, fmt.Errorf("no user for the API key found: %+v", err)
-	}
-
-	if len(result) > 1 {
-		return nil, fmt.Errorf("more users have the same API key: %+v", err)
-	}
-	return &result[0].owner_id, nil
+	return result["owner_id"].(string), nil
 }
 
 // This function wraps sending of an error in the Error format, and

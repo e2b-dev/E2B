@@ -69,15 +69,12 @@ func (siw *ServerInterfaceWrapper) DeleteEnvsCodeSnippetID(c *gin.Context) {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteEnvsCodeSnippetIDParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return
@@ -109,15 +106,12 @@ func (siw *ServerInterfaceWrapper) PatchEnvsCodeSnippetID(c *gin.Context) {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PatchEnvsCodeSnippetIDParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return
@@ -149,15 +143,12 @@ func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetID(c *gin.Context) {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PostEnvsCodeSnippetIDParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return
@@ -189,15 +180,12 @@ func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDState(c *gin.Context) {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PutEnvsCodeSnippetIDStateParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return
@@ -212,8 +200,6 @@ func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDState(c *gin.Context) {
 
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
-
-	c.Set(ApiKeyAuthScopes, []string{""})
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -232,15 +218,12 @@ func (siw *ServerInterfaceWrapper) GetSessions(c *gin.Context) {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetSessionsParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return
@@ -258,20 +241,15 @@ func (siw *ServerInterfaceWrapper) PostSessions(c *gin.Context) {
 
 	var err error
 
-	c.Set(ApiKeyAuthScopes, []string{""})
-
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PostSessionsParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return
@@ -303,15 +281,12 @@ func (siw *ServerInterfaceWrapper) DeleteSessionsSessionID(c *gin.Context) {
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteSessionsSessionIDParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return
@@ -338,20 +313,15 @@ func (siw *ServerInterfaceWrapper) PostSessionsSessionIDRefresh(c *gin.Context) 
 		return
 	}
 
-	c.Set(ApiKeyAuthScopes, []string{""})
-
 	// Parameter object where we will unmarshal all parameters from the context
 	var params PostSessionsSessionIDRefreshParams
 
-	// ------------- Required query parameter "api_key" -------------
+	// ------------- Optional query parameter "api_key" -------------
 	if paramValue := c.Query("api_key"); paramValue != "" {
 
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
-		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	err = runtime.BindQueryParameter("form", true, false, "api_key", c.Request.URL.Query(), &params.ApiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
 		return

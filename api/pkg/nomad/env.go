@@ -93,10 +93,12 @@ func (n *NomadClient) CreateEnv(codeSnippetID string, envTemplate string, deps [
 		CodeSnippetID string
 		Dockerfile    string
 		FCEnvsDisk    string
+		APIKey        string
 	}{
 		CodeSnippetID: codeSnippetID,
 		Dockerfile:    dockerfile.String(),
 		FCEnvsDisk:    fcEnvsDisk,
+		APIKey:        api.APIAdminKey,
 	}
 	var jobDef bytes.Buffer
 	if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
@@ -116,9 +118,9 @@ func (n *NomadClient) CreateEnv(codeSnippetID string, envTemplate string, deps [
 	return nil
 }
 
-func (n *NomadClient) PublishEnv(codeSnippetID string, session *api.Session) error {
-	tname := path.Join(templatesDir, "firecracker-envs-publisher.hcl")
-	envsJobTemp, err := template.New("firecracker-envs-publisher.hcl").ParseFiles(tname)
+func (n *NomadClient) UpdateEnv(codeSnippetID string, session *api.Session) error {
+	tname := path.Join(templatesDir, "firecracker-envs-updater.hcl")
+	envsJobTemp, err := template.New("firecracker-envs-updater.hcl").ParseFiles(tname)
 	if err != nil {
 		return fmt.Errorf("failed to parse template file '%s': %s", tname, err)
 	}
@@ -136,10 +138,12 @@ func (n *NomadClient) PublishEnv(codeSnippetID string, session *api.Session) err
 		CodeSnippetID string
 		FCEnvsDisk    string
 		SessionID     string
+		APIKey        string
 	}{
 		CodeSnippetID: codeSnippetID,
 		FCEnvsDisk:    fcEnvsDisk,
 		SessionID:     sessionID,
+		APIKey:        api.APIAdminKey,
 	}
 	var jobDef bytes.Buffer
 	if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
@@ -148,12 +152,12 @@ func (n *NomadClient) PublishEnv(codeSnippetID string, session *api.Session) err
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
-		return fmt.Errorf("failed to parse the `firecracker-envs-publisher` HCL job file: %s", err)
+		return fmt.Errorf("failed to parse the `firecracker-envs-updater` HCL job file: %s", err)
 	}
 
 	_, _, err = n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to register 'firecracker-envs-publisher/%s' job: %s", jobVars.CodeSnippetID, err)
+		return fmt.Errorf("failed to register 'firecracker-envs-updater/%s' job: %s", jobVars.CodeSnippetID, err)
 	}
 
 	return nil

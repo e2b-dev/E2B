@@ -146,7 +146,7 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 		fmt.Printf("cannot find active edit session for the code snippet '%s': %v - will use saved rootfs", codeSnippetID, err)
 	}
 
-	err = a.nomadClient.PublishEnv(codeSnippetID, session)
+	err = a.nomadClient.UpdateEnv(codeSnippetID, session)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		sendAPIStoreError(

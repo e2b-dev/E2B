@@ -11,6 +11,7 @@ DOCKERFILE="$3"
 CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 FC_ENVS_DISK="$6"
+API_KEY="$7"
 
 set -euo pipefail
 
@@ -45,8 +46,13 @@ if [ -z "$FC_ENVS_DISK" ]; then
   exit 1
 fi
 
+if [ -z "$API_KEY" ]; then
+  echo "ERROR: Expected code snippet ID as the seventh argument"
+  exit 1
+fi
+
 API_URL="https://ondevbook.com"
-ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state"
+ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state?api_key=$API_KEY"
 
 echo "==== Args ==========================================================================================="
 echo "| RUN_UUID:           $RUN_UUID"

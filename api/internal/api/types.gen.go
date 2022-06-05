@@ -72,8 +72,11 @@ type Session struct {
 // Template defines model for Template.
 type Template string
 
-// ApiKey defines model for apiKey.
-type ApiKey = string
+// ApiKeyOpt defines model for apiKeyOpt.
+type ApiKeyOpt = string
+
+// ApiKeyReq defines model for apiKeyReq.
+type ApiKeyReq = string
 
 // CodeSnippetID defines model for codeSnippetID.
 type CodeSnippetID = string
@@ -92,12 +95,12 @@ type N500 = Error
 
 // DeleteEnvsCodeSnippetIDParams defines parameters for DeleteEnvsCodeSnippetID.
 type DeleteEnvsCodeSnippetIDParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyReq `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // PatchEnvsCodeSnippetIDParams defines parameters for PatchEnvsCodeSnippetID.
 type PatchEnvsCodeSnippetIDParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyReq `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // PostEnvsCodeSnippetIDJSONBody defines parameters for PostEnvsCodeSnippetID.
@@ -105,7 +108,7 @@ type PostEnvsCodeSnippetIDJSONBody = NewEnvironment
 
 // PostEnvsCodeSnippetIDParams defines parameters for PostEnvsCodeSnippetID.
 type PostEnvsCodeSnippetIDParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyReq `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // PutEnvsCodeSnippetIDStateJSONBody defines parameters for PutEnvsCodeSnippetIDState.
@@ -113,12 +116,12 @@ type PutEnvsCodeSnippetIDStateJSONBody = EnvironmentStateUpdate
 
 // PutEnvsCodeSnippetIDStateParams defines parameters for PutEnvsCodeSnippetIDState.
 type PutEnvsCodeSnippetIDStateParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyReq `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // GetSessionsParams defines parameters for GetSessions.
 type GetSessionsParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyReq `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // PostSessionsJSONBody defines parameters for PostSessions.
@@ -126,17 +129,17 @@ type PostSessionsJSONBody = NewSession
 
 // PostSessionsParams defines parameters for PostSessions.
 type PostSessionsParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyOpt `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // DeleteSessionsSessionIDParams defines parameters for DeleteSessionsSessionID.
 type DeleteSessionsSessionIDParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyReq `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // PostSessionsSessionIDRefreshParams defines parameters for PostSessionsSessionIDRefresh.
 type PostSessionsSessionIDRefreshParams struct {
-	ApiKey ApiKey `form:"api_key" json:"api_key"`
+	ApiKey *ApiKeyOpt `form:"api_key,omitempty" json:"api_key,omitempty"`
 }
 
 // PostEnvsCodeSnippetIDJSONRequestBody defines body for PostEnvsCodeSnippetID for application/json ContentType.
