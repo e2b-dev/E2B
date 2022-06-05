@@ -317,11 +317,7 @@ paths:
         401:
           $ref: "#/components/responses/401"
         500:
-          description: Error updating the edit environment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/500"
 
   /envs/{codeSnippetID}/state:
     put:
