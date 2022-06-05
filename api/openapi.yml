@@ -29,21 +29,16 @@ servers:
         description: Port to connect to
         default: "8080"
 
-#security:
-#- ApiKeyAuth: [] # Use the same name as under securitySchemes
-
-tags:
-  - name: sessions
-    description: Managing VM sessions
-  - name: envs
-    description: Environment for VM
+security:
+  - ApiKeyAuth: []
 
 components:
-  #securitySchemes:
-  #  ApiKeyAuth: # Arbitrary name for the security scheme
-  #    type: apiKey
-  #    in: query # Can be 'header', 'query' or 'cookie'
-  #    name: API_KEY # Name of the header, query parameter or cookie
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: api_key
+
   schemas:
     # Enums
     Template:
@@ -125,6 +120,12 @@ components:
           type: string
           description: Error
 
+tags:
+  - name: sessions
+    description: Managing VM sessions
+  - name: envs
+    description: Environment for VM
+
 paths:
   /health:
     get:
@@ -132,6 +133,12 @@ paths:
       responses:
         200:
           description: Request was successful
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /sessions:
     get:
       description: List all sessions
@@ -147,6 +154,12 @@ paths:
                 items:
                   allOf:
                     - $ref: "#/components/schemas/Session"
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           description: Error listing sessions
           content:
@@ -171,6 +184,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         400:
           description: Bad request
           content:
@@ -189,6 +208,7 @@ paths:
       description: Delete a session on the server
       tags:
         - sessions
+
       parameters:
         - name: sessionID
           in: path
@@ -198,6 +218,12 @@ paths:
       responses:
         204:
           description: Successfully deleted the session
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           description: Error deleting the session
           content:
@@ -219,6 +245,12 @@ paths:
       responses:
         204:
           description: Successfully refreshed the session
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         404:
           description: Error refreshing session - session not found
           content:
@@ -252,6 +284,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           description: Server error when creating new environment
           content:
@@ -277,6 +315,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           description: Server error when deleting the environment
           content:
@@ -296,6 +340,12 @@ paths:
       responses:
         204:
           description: Updated the edit environment for code snippet
+        401:
+          description: Authentication error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           description: Error updating the edit environment
           content:
@@ -325,6 +375,12 @@ paths:
           description: Publishing the edit environment for code snippet
         400:
           description: Error publishing the edit environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        401:
+          description: Authentication error
           content:
             application/json:
               schema:
