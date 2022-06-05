@@ -28,13 +28,14 @@ export type CloseHandler = () => void
 
 export interface SessionConnectionOpts {
   id: string
+  apiKey?: string
   onClose?: CloseHandler
   debug?: boolean
   editEnabled?: boolean
 }
 
-const createSession = api.path('/sessions').method('post').create()
-const refreshSession = api.path('/sessions/{sessionID}/refresh').method('post').create()
+const createSession = api.path('/sessions').method('post').create({ api_key: true })
+const refreshSession = api.path('/sessions/{sessionID}/refresh').method('post').create({ api_key: true })
 
 abstract class SessionConnection {
   protected readonly logger: Logger
@@ -112,6 +113,7 @@ abstract class SessionConnection {
       const res = await createSession({
         codeSnippetID: this.opts.id,
         editEnabled: this.opts.editEnabled,
+        api_key: this.opts.apiKey,
       })
       this.session = res.data
       this.logger.log('Aquired session:', this.session)
@@ -182,7 +184,10 @@ abstract class SessionConnection {
 
         try {
           this.logger.log(`Refreshed session "${sessionID}"`)
-          await refreshSession({ sessionID })
+          await refreshSession({
+            sessionID,
+            api_key: this.opts.apiKey,
+          })
         } catch (e) {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()

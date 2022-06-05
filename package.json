@@ -1,6 +1,6 @@
 {
   "name": "@devbookhq/sdk",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "Devbook allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -23,7 +23,7 @@
     "watch": "rollup -c -w",
     "run": "node examples/index.mjs",
     "fix": "npx eslint **/src/**/*.{ts,tsx,js} --fix",
-    "generate": "openapi-typescript shared/api/openapi.yml --immutable-types --output src/api/schema.gen.ts"
+    "generate": "openapi-typescript shared/api/openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.3.0",
