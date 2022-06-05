@@ -15,31 +15,31 @@ import (
 type ServerInterface interface {
 
 	// (DELETE /envs/{codeSnippetID})
-	DeleteEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
+	DeleteEnvsCodeSnippetID(c *gin.Context, codeSnippetID CodeSnippetID, params DeleteEnvsCodeSnippetIDParams)
 
 	// (PATCH /envs/{codeSnippetID})
-	PatchEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
+	PatchEnvsCodeSnippetID(c *gin.Context, codeSnippetID CodeSnippetID, params PatchEnvsCodeSnippetIDParams)
 
 	// (POST /envs/{codeSnippetID})
-	PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
+	PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID CodeSnippetID, params PostEnvsCodeSnippetIDParams)
 
 	// (PUT /envs/{codeSnippetID}/state)
-	PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID string)
+	PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID CodeSnippetID, params PutEnvsCodeSnippetIDStateParams)
 
 	// (GET /health)
 	GetHealth(c *gin.Context)
 
 	// (GET /sessions)
-	GetSessions(c *gin.Context)
+	GetSessions(c *gin.Context, params GetSessionsParams)
 
 	// (POST /sessions)
-	PostSessions(c *gin.Context)
+	PostSessions(c *gin.Context, params PostSessionsParams)
 
 	// (DELETE /sessions/{sessionID})
-	DeleteSessionsSessionID(c *gin.Context, sessionID string)
+	DeleteSessionsSessionID(c *gin.Context, sessionID SessionID, params DeleteSessionsSessionIDParams)
 
 	// (POST /sessions/{sessionID}/refresh)
-	PostSessionsSessionIDRefresh(c *gin.Context, sessionID string)
+	PostSessionsSessionIDRefresh(c *gin.Context, sessionID SessionID, params PostSessionsSessionIDRefreshParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -56,7 +56,7 @@ func (siw *ServerInterfaceWrapper) DeleteEnvsCodeSnippetID(c *gin.Context) {
 	var err error
 
 	// ------------- Path parameter "codeSnippetID" -------------
-	var codeSnippetID string
+	var codeSnippetID CodeSnippetID
 
 	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
 	if err != nil {
@@ -64,11 +64,30 @@ func (siw *ServerInterfaceWrapper) DeleteEnvsCodeSnippetID(c *gin.Context) {
 		return
 	}
 
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteEnvsCodeSnippetIDParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.DeleteEnvsCodeSnippetID(c, codeSnippetID)
+	siw.Handler.DeleteEnvsCodeSnippetID(c, codeSnippetID, params)
 }
 
 // PatchEnvsCodeSnippetID operation middleware
@@ -77,7 +96,7 @@ func (siw *ServerInterfaceWrapper) PatchEnvsCodeSnippetID(c *gin.Context) {
 	var err error
 
 	// ------------- Path parameter "codeSnippetID" -------------
-	var codeSnippetID string
+	var codeSnippetID CodeSnippetID
 
 	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
 	if err != nil {
@@ -85,11 +104,30 @@ func (siw *ServerInterfaceWrapper) PatchEnvsCodeSnippetID(c *gin.Context) {
 		return
 	}
 
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PatchEnvsCodeSnippetIDParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PatchEnvsCodeSnippetID(c, codeSnippetID)
+	siw.Handler.PatchEnvsCodeSnippetID(c, codeSnippetID, params)
 }
 
 // PostEnvsCodeSnippetID operation middleware
@@ -98,7 +136,7 @@ func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetID(c *gin.Context) {
 	var err error
 
 	// ------------- Path parameter "codeSnippetID" -------------
-	var codeSnippetID string
+	var codeSnippetID CodeSnippetID
 
 	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
 	if err != nil {
@@ -106,11 +144,30 @@ func (siw *ServerInterfaceWrapper) PostEnvsCodeSnippetID(c *gin.Context) {
 		return
 	}
 
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostEnvsCodeSnippetIDParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PostEnvsCodeSnippetID(c, codeSnippetID)
+	siw.Handler.PostEnvsCodeSnippetID(c, codeSnippetID, params)
 }
 
 // PutEnvsCodeSnippetIDState operation middleware
@@ -119,7 +176,7 @@ func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDState(c *gin.Context) {
 	var err error
 
 	// ------------- Path parameter "codeSnippetID" -------------
-	var codeSnippetID string
+	var codeSnippetID CodeSnippetID
 
 	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
 	if err != nil {
@@ -127,15 +184,36 @@ func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDState(c *gin.Context) {
 		return
 	}
 
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutEnvsCodeSnippetIDStateParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PutEnvsCodeSnippetIDState(c, codeSnippetID)
+	siw.Handler.PutEnvsCodeSnippetIDState(c, codeSnippetID, params)
 }
 
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
+
+	c.Set(ApiKeyAuthScopes, []string{""})
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -147,21 +225,63 @@ func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 // GetSessions operation middleware
 func (siw *ServerInterfaceWrapper) GetSessions(c *gin.Context) {
 
+	var err error
+
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSessionsParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.GetSessions(c)
+	siw.Handler.GetSessions(c, params)
 }
 
 // PostSessions operation middleware
 func (siw *ServerInterfaceWrapper) PostSessions(c *gin.Context) {
 
+	var err error
+
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSessionsParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PostSessions(c)
+	siw.Handler.PostSessions(c, params)
 }
 
 // DeleteSessionsSessionID operation middleware
@@ -170,7 +290,7 @@ func (siw *ServerInterfaceWrapper) DeleteSessionsSessionID(c *gin.Context) {
 	var err error
 
 	// ------------- Path parameter "sessionID" -------------
-	var sessionID string
+	var sessionID SessionID
 
 	err = runtime.BindStyledParameter("simple", false, "sessionID", c.Param("sessionID"), &sessionID)
 	if err != nil {
@@ -178,11 +298,30 @@ func (siw *ServerInterfaceWrapper) DeleteSessionsSessionID(c *gin.Context) {
 		return
 	}
 
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteSessionsSessionIDParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.DeleteSessionsSessionID(c, sessionID)
+	siw.Handler.DeleteSessionsSessionID(c, sessionID, params)
 }
 
 // PostSessionsSessionIDRefresh operation middleware
@@ -191,7 +330,7 @@ func (siw *ServerInterfaceWrapper) PostSessionsSessionIDRefresh(c *gin.Context) 
 	var err error
 
 	// ------------- Path parameter "sessionID" -------------
-	var sessionID string
+	var sessionID SessionID
 
 	err = runtime.BindStyledParameter("simple", false, "sessionID", c.Param("sessionID"), &sessionID)
 	if err != nil {
@@ -199,11 +338,30 @@ func (siw *ServerInterfaceWrapper) PostSessionsSessionIDRefresh(c *gin.Context) 
 		return
 	}
 
+	c.Set(ApiKeyAuthScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSessionsSessionIDRefreshParams
+
+	// ------------- Required query parameter "api_key" -------------
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Query argument api_key is required, but not found"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": fmt.Sprintf("Invalid format for parameter api_key: %s", err)})
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 	}
 
-	siw.Handler.PostSessionsSessionIDRefresh(c, sessionID)
+	siw.Handler.PostSessionsSessionIDRefresh(c, sessionID, params)
 }
 
 // GinServerOptions provides options for the Gin server.
