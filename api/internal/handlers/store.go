@@ -46,6 +46,35 @@ func NewAPIStore() *APIStore {
 	}
 }
 
+func (a *APIStore) validateAPIKey(apiKey string) (*string, error) {
+	if apiKey == "" {
+		return nil, fmt.Errorf("no API key")
+	}
+
+	result := []*struct {
+		owner_id string
+	}{}
+
+	err := a.supabase.DB.
+		From("api_keys").
+		Select("owner_id").
+		Eq("api_key", apiKey).
+		Execute(result)
+
+	if err != nil {
+		return nil, fmt.Errorf("error validating API key: %+v", err)
+	}
+
+	if len(result) == 0 {
+		return nil, fmt.Errorf("no user for the API key found: %+v", err)
+	}
+
+	if len(result) > 1 {
+		return nil, fmt.Errorf("more users have the same API key: %+v", err)
+	}
+	return &result[0].owner_id, nil
+}
+
 // This function wraps sending of an error in the Error format, and
 // handling the failure to marshal that.
 func sendAPIStoreError(c *gin.Context, code int, message string) {

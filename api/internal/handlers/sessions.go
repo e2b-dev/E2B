@@ -8,7 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *APIStore) GetSessions(c *gin.Context) {
+func (a *APIStore) GetSessions(
+	c *gin.Context,
+	params api.GetSessionsParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
+
 	sessions, err := a.nomadClient.GetSessions()
 
 	if err != nil {
@@ -20,7 +30,17 @@ func (a *APIStore) GetSessions(c *gin.Context) {
 	c.JSON(http.StatusOK, sessions)
 }
 
-func (a *APIStore) PostSessions(c *gin.Context) {
+func (a *APIStore) PostSessions(
+	c *gin.Context,
+	params api.PostSessionsParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
+
 	var newSession api.PostSessionsJSONBody
 	if err := c.Bind(&newSession); err != nil {
 		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
@@ -82,7 +102,18 @@ func (a *APIStore) PostSessions(c *gin.Context) {
 	c.JSON(http.StatusCreated, &session)
 }
 
-func (a *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
+func (a *APIStore) DeleteSessionsSessionID(
+	c *gin.Context,
+	sessionID string,
+	params api.DeleteSessionsSessionIDParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
+
 	err := a.nomadClient.DeleteSession(sessionID)
 
 	if err != nil {
@@ -94,7 +125,18 @@ func (a *APIStore) DeleteSessionsSessionID(c *gin.Context, sessionID string) {
 	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) PostSessionsSessionIDRefresh(c *gin.Context, sessionID string) {
+func (a *APIStore) PostSessionsSessionIDRefresh(
+	c *gin.Context,
+	sessionID string,
+	params api.PostSessionsSessionIDRefreshParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
+
 	err := a.sessionsCache.Refresh(sessionID)
 	if err != nil {
 		fmt.Printf("Error when refreshing session: %v\n", err)

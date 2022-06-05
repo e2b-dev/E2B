@@ -9,16 +9,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *APIStore) PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
-	// TODO: Check for API token
+func (a *APIStore) PostEnvsCodeSnippetID(
+	c *gin.Context,
+	codeSnippetID string,
+	params api.PostEnvsCodeSnippetIDParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
 
 	var env api.PostEnvsCodeSnippetIDJSONBody
 	if err := c.Bind(&env); err != nil {
 		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
 	}
-
-
 
 	// TODO: Download the base Dockerfile based on a template field in `env`.
 	// TODO: Add deps to the Dockerfile.
@@ -36,9 +43,17 @@ func (a *APIStore) PostEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
 	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) DeleteEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
-	// TODO: Check for API token
-	// First we delete an env from DB and then we start a Nomad to cleanup files.
+func (a *APIStore) DeleteEnvsCodeSnippetID(
+	c *gin.Context,
+	codeSnippetID string,
+	params api.DeleteEnvsCodeSnippetIDParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
 
 	err := a.supabase.DB.
 		From("envs").
@@ -70,8 +85,16 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(c *gin.Context, codeSnippetID string)
 	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID string) {
-	// TODO: Check for API token
+func (a *APIStore) PutEnvsCodeSnippetIDState(
+	c *gin.Context,
+	codeSnippetID string,
+	params api.PutEnvsCodeSnippetIDStateParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error with API token: %s", keyErr))
+		return
+	}
 
 	var envStateUpdate api.PutEnvsCodeSnippetIDStateJSONBody
 	if err := c.Bind(&envStateUpdate); err != nil {
@@ -106,7 +129,18 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID strin
 	c.Status(http.StatusNoContent)
 }
 
-func (a *APIStore) PatchEnvsCodeSnippetID(c *gin.Context, codeSnippetID string) {
+func (a *APIStore) PatchEnvsCodeSnippetID(
+	c *gin.Context,
+	codeSnippetID string,
+	params api.PatchEnvsCodeSnippetIDParams,
+) {
+	_, keyErr := a.validateAPIKey(params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
+
 	session, err := a.sessionsCache.FindEditSession(codeSnippetID)
 	if err != nil {
 		fmt.Printf("cannot find active edit session for the code snippet '%s': %v - will use saved rootfs", codeSnippetID, err)
