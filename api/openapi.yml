@@ -206,7 +206,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /sessions/{sessionID}/refresh:
-    put:
+    post:
       description: Refresh the session extending its time to live
       tags:
         - sessions
@@ -283,9 +283,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /envs/{codeSnippetID}/publish:
-    post:
-      description: Publish the edit environment of the code snippet
+    patch:
+      description: Update the environment of the code snippet to match the edit environment
       tags:
         - envs
       parameters:
@@ -296,13 +295,14 @@ paths:
             type: string
       responses:
         204:
-          description: Publishing the edit environment for code snippet
+          description: Updated the edit environment for code snippet
         500:
-          description: Error publishing the edit environment
+          description: Error updating the edit environment
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
   /envs/{codeSnippetID}/state:
     put:
       description: Update the state of the environment
