@@ -23,22 +23,55 @@ const (
 // There isn't an explicit documentation, I'm using source code of tests as a reference:
 // https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
 
+
 type CodeSnippet struct {
 	cmd     *exec.Cmd
 	mu      sync.Mutex
 	running bool
 
-	stdoutSubscribers map[rpc.ID]*subscriber
-	stderrSubscribers map[rpc.ID]*subscriber
-	stateSubscribers  map[rpc.ID]*subscriber
+  depsManager *depsManager
+
+	stdoutSubscribers     map[rpc.ID]*subscriber
+	stderrSubscribers     map[rpc.ID]*subscriber
+	stateSubscribers      map[rpc.ID]*subscriber
+  depsListSubscribers   map[rpc.ID]*subscriber
+  depsStdoutSubscribers map[rpc.ID]*subscriber
+  depsStderrSubscribers map[rpc.ID]*subscriber
 }
 
 func NewCodeSnippetService() *CodeSnippet {
-	return &CodeSnippet{
-		stdoutSubscribers: make(map[rpc.ID]*subscriber),
-		stderrSubscribers: make(map[rpc.ID]*subscriber),
-		stateSubscribers:  make(map[rpc.ID]*subscriber),
+  cs := &CodeSnippet{
+		stdoutSubscribers:     make(map[rpc.ID]*subscriber),
+		stderrSubscribers:     make(map[rpc.ID]*subscriber),
+		stateSubscribers:      make(map[rpc.ID]*subscriber),
+    depsListSubscribers:   make(map[rpc.ID]*subscriber),
+    depsStdoutSubscribers: make(map[rpc.ID]*subscriber),
+    depsStderrSubscribers: make(map[rpc.ID]*subscriber),
 	}
+  cs.depsManager = newDepsManager(cs.depsStdoutSubscribers, cs.depsStderrSubscribers)
+  return cs
+}
+
+func (cs *CodeSnippet) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*subscriber) (*subscriber, error) {
+	sub, err := newSubscriber(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Watch for subscription errors.
+	go func() {
+		select {
+		case err := <-sub.subscription.Err():
+			slogger.Infow("Subscribtion error",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+			delete(subs, sub.SubscriptionID())
+		}
+	}()
+
+  subs[sub.SubscriptionID()] = sub
+  return sub, nil
 }
 
 func (cs *CodeSnippet) setRunning(b bool) {
@@ -191,10 +224,38 @@ func (cs *CodeSnippet) Stop() CodeSnippetState {
 	return CodeSnippetStateStopped
 }
 
+func (cs *CodeSnippet) InstallDep(dep string) error {
+  slogger.Infow("Install dep request",
+    "dep", dep,
+  )
+
+  if err := cs.depsManager.Install(dep); err != nil {
+    slogger.Errorw(
+      "error", err,
+    )
+    return err
+  }
+  return nil
+}
+
+func (cs *CodeSnippet) UninstallDep(dep string) error {
+  slogger.Infow("Uninstall dep request",
+    "dep", dep,
+  )
+  if err := cs.depsManager.Uninstall(dep); err != nil {
+    slogger.Errorw(
+      "error", err,
+    )
+    return err
+  }
+  return nil
+}
+
 // Subscription
 func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New state subscription")
-	sub, err := newSubscriber(ctx)
+
+  sub, err := cs.saveNewSubscriber(ctx, cs.stateSubscribers)
 	if err != nil {
 		slogger.Errorw("Failed to create a state subscription from context",
 			"ctx", ctx,
@@ -203,26 +264,13 @@ func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
 		return nil, err
 	}
 
-	// Watch for subscription errors.
-	go func() {
-		select {
-		case err := <-sub.subscription.Err():
-			slogger.Infow("State subscribtion error",
-				"subscriptionID", sub.SubscriptionID(),
-				"error", err,
-			)
-			delete(cs.stateSubscribers, sub.SubscriptionID())
-		}
-	}()
-
-	// Send initial state
+	// Send initial state.
 	var state CodeSnippetState
 	if cs.running {
 		state = CodeSnippetStateRunning
 	} else {
 		state = CodeSnippetStateStopped
 	}
-
 	if err := sub.Notify(state); err != nil {
 		slogger.Errorw("Failed to send initial state notification",
 			"subscriptionID", sub.SubscriptionID(),
@@ -230,14 +278,13 @@ func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
 		)
 	}
 
-	cs.stateSubscribers[sub.SubscriptionID()] = sub
 	return sub.subscription, nil
 }
 
 // Subscription
 func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New stdout subscription")
-	sub, err := newSubscriber(ctx)
+	sub, err := cs.saveNewSubscriber(ctx, cs.stdoutSubscribers)
 	if err != nil {
 		slogger.Errorw("Failed to create a stdout subscription from context",
 			"ctx", ctx,
@@ -245,27 +292,13 @@ func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 		)
 		return nil, err
 	}
-
-	// Watch for subscription errors.
-	go func() {
-		select {
-		case err := <-sub.subscription.Err():
-			slogger.Infow("Stdout subscribtion error",
-				"subscriptionID", sub.SubscriptionID(),
-				"error", err,
-			)
-			delete(cs.stdoutSubscribers, sub.SubscriptionID())
-		}
-	}()
-
-	cs.stdoutSubscribers[sub.SubscriptionID()] = sub
 	return sub.subscription, nil
 }
 
 // Subscription
 func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New stderr subscription")
-	sub, err := newSubscriber(ctx)
+	sub, err := cs.saveNewSubscriber(ctx, cs.stderrSubscribers)
 	if err != nil {
 		slogger.Errorw("Failed to create a stderr subscription from context",
 			"ctx", ctx,
@@ -273,19 +306,56 @@ func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 		)
 		return nil, err
 	}
+	return sub.subscription, nil
+}
 
-	// Watch for subscription errors.
-	go func() {
-		select {
-		case err := <-sub.subscription.Err():
-			slogger.Infow("Stderr subscribtion error",
-				"subscriptionID", sub.SubscriptionID(),
-				"error", err,
-			)
-			delete(cs.stderrSubscribers, sub.SubscriptionID())
-		}
-	}()
+// Subscription
+func (cs *CodeSnippet) DepsList(ctx context.Context) (*rpc.Subscription, error) {
+	slogger.Info("New deps list subscription")
+	sub, err := cs.saveNewSubscriber(ctx, cs.depsListSubscribers)
+	if err != nil {
+		slogger.Errorw("Failed to create a deps list subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
 
-	cs.stderrSubscribers[sub.SubscriptionID()] = sub
+  // Send the initial deps.
+  if err := sub.Notify(cs.depsManager.Deps()); err != nil {
+		slogger.Errorw("Failed to send initial deps",
+			"subscriptionID", sub.SubscriptionID(),
+			"error", err,
+		)
+	}
+
+	return sub.subscription, nil
+}
+
+// Subscription
+func (cs *CodeSnippet) DepsStdout(ctx context.Context) (*rpc.Subscription, error) {
+	slogger.Info("New deps stdout subscription")
+	sub, err := cs.saveNewSubscriber(ctx, cs.depsStdoutSubscribers)
+	if err != nil {
+		slogger.Errorw("Failed to create a deps stdout subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+	return sub.subscription, nil
+}
+
+// Subscription
+func (cs *CodeSnippet) DepsStderr(ctx context.Context) (*rpc.Subscription, error) {
+	slogger.Info("New deps stderr subscription")
+	sub, err := cs.saveNewSubscriber(ctx, cs.depsStderrSubscribers)
+	if err != nil {
+		slogger.Errorw("Failed to create a deps stderr subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
 	return sub.subscription, nil
 }
