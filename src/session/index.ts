@@ -4,7 +4,11 @@ import {
   CodeSnippetStderrHandler,
   CodeSnippetStdoutHandler,
   codeSnippetMethod,
-  isCodeSnippetExeecState,
+  CodeSnippetExecState,
+  DepsErrorResponse,
+  DepsStdoutHandler,
+  DepsStderrHandler,
+  DepsChangeHandler,
 } from './codeSnippet'
 import { TerminalManager, terminalMethod } from './terminal'
 import SessionConnection, {
@@ -15,6 +19,9 @@ export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
   onStderr?: CodeSnippetStderrHandler
   onStdout?: CodeSnippetStdoutHandler
+  onDepsStdout?: DepsStdoutHandler
+  onDepsStderr?: DepsStderrHandler
+  onDepsChange?: DepsChangeHandler
 }
 
 export interface SessionOpts extends SessionConnectionOpts {
@@ -42,14 +49,7 @@ class Session extends SessionConnection {
           throw new Error('Session is not active')
         }
 
-        const state = await this.call(`${codeSnippetMethod}_run`, [code])
-        if (typeof state !== 'string') {
-          throw new Error('Invalid ')
-        }
-
-        if (!isCodeSnippetExeecState(state)) {
-          throw new Error(`Invalid CS state value "${state}"`)
-        }
+        const state = await this.call(`${codeSnippetMethod}_run`, [code]) as CodeSnippetExecState
 
         this.codeSnippetOpts?.onStateChange?.(state)
 
@@ -62,24 +62,42 @@ class Session extends SessionConnection {
           throw new Error('Session is not active')
         }
 
-        const state = await this.call(`${codeSnippetMethod}_stop`)
-        if (typeof state !== 'string') {
-          throw new Error('Invalid ')
-        }
-
-        if (!isCodeSnippetExeecState(state)) {
-          throw new Error(`Invalid CS state value "${state}"`)
-        }
+        const state = await this.call(`${codeSnippetMethod}_stop`) as CodeSnippetExecState
 
         this.codeSnippetOpts?.onStateChange?.(state)
 
         this.logger.log('Stopped running code')
         return state
       },
-      installDep: async (dep: string) => {
+      listDeps: async () => {
+        if (!this.isOpen || !this.session) {
+          throw new Error('Session is not active')
+        }
 
+        this.logger.log('Started listing deps')
+        const deps = await this.call(`${codeSnippetMethod}_deps`) as string[]
+        this.logger.log('Stopped listing deps', deps)
+        return deps
+      },
+      installDep: async (dep: string) => {
+        if (!this.isOpen || !this.session) {
+          throw new Error('Session is not active')
+        }
+
+        this.logger.log('Started installing dependency', dep)
+        const response = await this.call(`${codeSnippetMethod}_installDep`, [dep]) as DepsErrorResponse
+        this.logger.log('Stopped installing dependency', response)
+        return response
       },
       uninstallDep: async (dep: string) => {
+        if (!this.isOpen || !this.session) {
+          throw new Error('Session is not active')
+        }
+
+        this.logger.log('Started uninstalling dependency', dep)
+        const response = await this.call(`${codeSnippetMethod}_uninstallDep`, [dep]) as DepsErrorResponse
+        this.logger.log('Stopped uninstalling dependency', response)
+        return response
       },
     }
 
@@ -92,6 +110,15 @@ class Session extends SessionConnection {
         : Promise.resolve(),
       this.codeSnippetOpts?.onStdout
         ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStdout, 'stdout')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onDepsStdout
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsStdout, 'depsStdout')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onDepsStderr
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsStderr, 'depsStderr')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onDepsChange
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsChange, 'depsChange')
         : Promise.resolve(),
     ])
 

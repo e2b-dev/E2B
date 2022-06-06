@@ -6,29 +6,39 @@ export enum CodeSnippetExecState {
   Loading = 'Loading',
 }
 
-export function isCodeSnippetExeecState(state: string): state is CodeSnippetExecState {
-  return Object.values(CodeSnippetExecState).includes(state as CodeSnippetExecState)
+export interface DepsErrorResponse {
+  error: string
 }
 
 export type CodeSnippetStateHandler = (state: CodeSnippetExecState) => void
 export type CodeSnippetStderrHandler = (stderr: string) => void
 export type CodeSnippetStdoutHandler = (stdout: string) => void
+export type DepsStdoutHandler = (out: { line: string, dep: string }) => void
+export type DepsStderrHandler = (out: { line: string, dep: string }) => void
+export type DepsChangeHandler = (deps: string[]) => void
 
 export type CodeSnippetSubscriptionEvent = 'state' | 'stderr' | 'stdout'
 export type CodeSnippetSubscriptionHandler =
   CodeSnippetStateHandler |
   CodeSnippetStderrHandler |
-  CodeSnippetStdoutHandler
+  CodeSnippetStdoutHandler |
+  DepsStderrHandler |
+  DepsStderrHandler |
+  DepsChangeHandler
 
 export type CodeSnippetSubscriptionHandlerType = {
   'state': CodeSnippetStateHandler
   'stderr': CodeSnippetStderrHandler
   'stdout': CodeSnippetStdoutHandler
+  'depsStdout': DepsStdoutHandler
+  'depsStderr': DepsStderrHandler
+  'depsChange': DepsChangeHandler
 }
 
 export interface CodeSnippetManager {
   readonly run: (code: string) => Promise<CodeSnippetExecState>
   readonly stop: () => Promise<CodeSnippetExecState>
-  readonly installDep: (dep: string) => Promise<void>
-  readonly uninstallDep: (dep: string) => Promise<void>
+  readonly listDeps: () => Promise<string[]>
+  readonly installDep: (dep: string) => Promise<DepsErrorResponse>
+  readonly uninstallDep: (dep: string) => Promise<DepsErrorResponse>
 }

@@ -79,7 +79,7 @@ abstract class SessionConnection {
       handler,
       method,
     })
-    this.logger.log(`Subscribed to "${method}" with id "${id}"`)
+    this.logger.log(`Subscribed to "${method}_${params}" with id "${id}"`)
   }
 
   getHostname(port?: number) {
