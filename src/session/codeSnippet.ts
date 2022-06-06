@@ -29,4 +29,6 @@ export type CodeSnippetSubscriptionHandlerType = {
 export interface CodeSnippetManager {
   readonly run: (code: string) => Promise<CodeSnippetExecState>
   readonly stop: () => Promise<CodeSnippetExecState>
+  readonly installDep: (dep: string) => Promise<void>
+  readonly uninstallDep: (dep: string) => Promise<void>
 }

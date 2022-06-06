@@ -74,9 +74,13 @@ class Session extends SessionConnection {
         this.codeSnippetOpts?.onStateChange?.(state)
 
         this.logger.log('Stopped running code')
-
         return state
-      }
+      },
+      installDep: async (dep: string) => {
+
+      },
+      uninstallDep: async (dep: string) => {
+      },
     }
 
     await Promise.all([
