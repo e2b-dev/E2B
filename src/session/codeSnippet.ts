@@ -1,9 +1,13 @@
-export const codeSnippetSubscriptionMethod = 'codeSnippet'
+export const codeSnippetMethod = 'codeSnippet'
 
 export enum CodeSnippetExecState {
   Running = 'Running',
   Stopped = 'Stopped',
   Loading = 'Loading',
+}
+
+export function isCodeSnippetExeecState(state: string): state is CodeSnippetExecState {
+  return Object.values(CodeSnippetExecState).includes(state as CodeSnippetExecState)
 }
 
 export type CodeSnippetStateHandler = (state: CodeSnippetExecState) => void
@@ -23,6 +27,6 @@ export type CodeSnippetSubscriptionHandlerType = {
 }
 
 export interface CodeSnippetManager {
-  readonly run: (code: string) => Promise<void>
-  readonly stop: () => Promise<void>
+  readonly run: (code: string) => Promise<CodeSnippetExecState>
+  readonly stop: () => Promise<CodeSnippetExecState>
 }

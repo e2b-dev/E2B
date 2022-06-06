@@ -1,4 +1,4 @@
-export const terminalSubscriptionMethod = 'terminal'
+export const terminalMethod = 'terminal'
 
 export interface TerminalSession {
   readonly sendData: (data: string) => Promise<void>

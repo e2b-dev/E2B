@@ -22,6 +22,7 @@ type SubscriptionHandler = (result: any) => void
 interface Subscriber {
   id: string
   handler: SubscriptionHandler
+  method: string
 }
 
 export type CloseHandler = () => void
@@ -56,13 +57,13 @@ abstract class SessionConnection {
   }
 
   protected async unsubscribe(method: string, handler: SubscriptionHandler) {
-    const subscription = this.subscribers.find(s => s.handler === handler)
+    const subscription = this.subscribers.find(s => s.handler === handler && s.method === method)
     if (!subscription) return
 
     await this.call(`${method}_unsubscribe`, [subscription?.id])
 
-    this.subscribers = this.subscribers.filter(s => s.handler !== handler)
-    this.logger.log(`Unsubscribed from method "${method}"`)
+    this.subscribers = this.subscribers.filter(s => s !== subscription)
+    this.logger.log(`Unsubscribed from "${method}"`)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,14 +71,15 @@ abstract class SessionConnection {
     const id = await this.call(`${method}_subscribe`, [params])
 
     if (typeof id !== 'string') {
-      throw new Error(`Cannot subscribe to method ${method}. Ecpected response to be a subscription ID, instead got ${JSON.stringify(id)}`)
+      throw new Error(`Cannot subscribe to ${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(id)}`)
     }
 
     this.subscribers.push({
       id,
       handler,
+      method,
     })
-    this.logger.log(`Subscribed to method "${method}" with id "${id}"`)
+    this.logger.log(`Subscribed to "${method}" with id "${id}"`)
   }
 
   getHostname(port?: number) {
@@ -93,9 +95,18 @@ abstract class SessionConnection {
     }
   }
 
-  close() {
+  async close() {
     if (this.isOpen) {
       this.isOpen = false
+
+      this.logger.log('Unsubscribing...')
+      const results = await Promise.allSettled(this.subscribers.map(s => this.unsubscribe(s.method, s.handler)))
+      results.forEach(r => {
+        if (r.status === 'rejected') {
+          this.logger.log(`Failed to unsubscribe: "${r.reason}"`)
+        }
+      })
+
       this.rpc.ws?.close()
       this.opts?.onClose?.()
       this.logger.log('Disconected from the session')
@@ -124,6 +135,9 @@ abstract class SessionConnection {
         const error = e.getActualType()
         if (error.status === 400) {
           throw new Error(`Error creating session - (${error.status}) bad request: ${error.data.message}`)
+        }
+        if (error.status === 401) {
+          throw new Error(`Error creating session - (${error.status}) unauthenticated (you need to be authenticated to start an session with persistent edits): ${error.data.message}`)
         }
         if (error.status === 500) {
           throw new Error(`Error creating session - (${error.status}) server error: ${error.data.message}`)
@@ -192,6 +206,7 @@ abstract class SessionConnection {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
+
               this.logger.error(`Error refreshing session - (${error.status}): ${error.data.message}`)
               return
             }
