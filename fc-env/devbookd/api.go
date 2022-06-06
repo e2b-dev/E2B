@@ -14,6 +14,10 @@ import (
 
 type CodeSnippetState string
 
+type ErrResponse struct {
+  Error string `json:"error"`
+}
+
 const (
 	CodeSnippetStateRunning CodeSnippetState = "Running"
 	CodeSnippetStateStopped CodeSnippetState = "Stopped"
@@ -34,7 +38,7 @@ type CodeSnippet struct {
 	stdoutSubscribers     map[rpc.ID]*subscriber
 	stderrSubscribers     map[rpc.ID]*subscriber
 	stateSubscribers      map[rpc.ID]*subscriber
-  depsListSubscribers   map[rpc.ID]*subscriber
+  depsChangeSubscribers   map[rpc.ID]*subscriber
   depsStdoutSubscribers map[rpc.ID]*subscriber
   depsStderrSubscribers map[rpc.ID]*subscriber
 }
@@ -44,7 +48,7 @@ func NewCodeSnippetService() *CodeSnippet {
 		stdoutSubscribers:     make(map[rpc.ID]*subscriber),
 		stderrSubscribers:     make(map[rpc.ID]*subscriber),
 		stateSubscribers:      make(map[rpc.ID]*subscriber),
-    depsListSubscribers:   make(map[rpc.ID]*subscriber),
+    depsChangeSubscribers: make(map[rpc.ID]*subscriber),
     depsStdoutSubscribers: make(map[rpc.ID]*subscriber),
     depsStderrSubscribers: make(map[rpc.ID]*subscriber),
 	}
@@ -83,6 +87,17 @@ func (cs *CodeSnippet) setRunning(b bool) {
 		state = CodeSnippetStateStopped
 	}
 	cs.notifyState(state)
+}
+
+func (cs *CodeSnippet) notifyDepsChange() {
+  for _, sub := range cs.depsChangeSubscribers {
+		if err := sub.Notify(cs.depsManager.Deps()); err != nil {
+			slogger.Errorw("Failed to send deps change notification",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+		}
+  }
 }
 
 func (cs *CodeSnippet) notifyStdout(s string) {
@@ -224,7 +239,7 @@ func (cs *CodeSnippet) Stop() CodeSnippetState {
 	return CodeSnippetStateStopped
 }
 
-func (cs *CodeSnippet) InstallDep(dep string) error {
+func (cs *CodeSnippet) InstallDep(dep string) (resp ErrResponse) {
   slogger.Infow("Install dep request",
     "dep", dep,
   )
@@ -233,12 +248,13 @@ func (cs *CodeSnippet) InstallDep(dep string) error {
     slogger.Errorw("Error during dep installation",
       "error", err,
     )
-    return err
+    resp.Error = err.Error()
   }
-  return nil
+
+  return resp
 }
 
-func (cs *CodeSnippet) UninstallDep(dep string) error {
+func (cs *CodeSnippet) UninstallDep(dep string) (resp ErrResponse) {
   slogger.Infow("Uninstall dep request",
     "dep", dep,
   )
@@ -246,12 +262,12 @@ func (cs *CodeSnippet) UninstallDep(dep string) error {
     slogger.Errorw("Error during dep uninstallation",
       "error", err,
     )
-    return err
+    resp.Error = err.Error()
   }
-  return nil
+  return resp
 }
 
-func (cs *CodeSnippet) DepsList() []string {
+func (cs *CodeSnippet) Deps() []string {
   slogger.Info("Deps list request")
   return cs.depsManager.Deps()
 }
@@ -315,9 +331,9 @@ func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 }
 
 // Subscription
-func (cs *CodeSnippet) DepsLisChanget(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippet) DepsChange(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New deps list subscription")
-	sub, err := cs.saveNewSubscriber(ctx, cs.depsListSubscribers)
+	sub, err := cs.saveNewSubscriber(ctx, cs.depsChangeSubscribers)
 	if err != nil {
 		slogger.Errorw("Failed to create a deps list subscription from context",
 			"ctx", ctx,

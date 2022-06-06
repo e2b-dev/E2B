@@ -23,10 +23,10 @@ func scanPipe(dep string, pipe io.ReadCloser, subs map[rpc.ID]*subscriber) {
 	for scanner.Scan() {
     for _, sub := range subs {
       s := struct{
-        Text string `json:"text"`
+        Line string `json:"line"`
         Dep  string `json:"dep"`
       }{
-        Text: scanner.Text(),
+        Line: scanner.Text(),
         // Dep works as an identifier so the client knows to which dep install/uninstall command the command's output belongs.
         Dep: dep,
       }
@@ -152,7 +152,6 @@ func (dm *depsManager) Install(dep string) error {
     return fmt.Errorf("Failed to flush a list of installed deps to a file: %s", err)
   }
   dm.mu.Unlock()
-
   return nil
 }
 
