@@ -230,7 +230,7 @@ func (cs *CodeSnippet) InstallDep(dep string) error {
   )
 
   if err := cs.depsManager.Install(dep); err != nil {
-    slogger.Errorw(
+    slogger.Errorw("Error during dep installation",
       "error", err,
     )
     return err
@@ -243,12 +243,17 @@ func (cs *CodeSnippet) UninstallDep(dep string) error {
     "dep", dep,
   )
   if err := cs.depsManager.Uninstall(dep); err != nil {
-    slogger.Errorw(
+    slogger.Errorw("Error during dep uninstallation",
       "error", err,
     )
     return err
   }
   return nil
+}
+
+func (cs *CodeSnippet) DepsList() []string {
+  slogger.Info("Deps list request")
+  return cs.depsManager.Deps()
 }
 
 // Subscription
@@ -310,7 +315,7 @@ func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 }
 
 // Subscription
-func (cs *CodeSnippet) DepsList(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippet) DepsLisChanget(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New deps list subscription")
 	sub, err := cs.saveNewSubscriber(ctx, cs.depsListSubscribers)
 	if err != nil {

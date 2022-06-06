@@ -16,13 +16,21 @@ const (
   depsFilePath = "/.dbkdeps.json"
 )
 
-func scanPipe(pipe io.ReadCloser, subs map[rpc.ID]*subscriber) {
+func scanPipe(dep string, pipe io.ReadCloser, subs map[rpc.ID]*subscriber) {
 	scanner := bufio.NewScanner(pipe)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
     for _, sub := range subs {
-      if err := sub.Notify(scanner.Text()); err != nil {
+      s := struct{
+        Text string `json:"text"`
+        Dep  string `json:"dep"`
+      }{
+        Text: scanner.Text(),
+        // Dep works as an identifier so the client knows to which dep install/uninstall command the command's output belongs.
+        Dep: dep,
+      }
+      if err := sub.Notify(s); err != nil {
         slogger.Errorw("Failed to send dep stdout/stderr notification",
           "subscriptionID", sub.SubscriptionID(),
           "error", err,
@@ -110,32 +118,38 @@ func (dm *depsManager) Deps() []string {
   return deps
 }
 
-func (dm *depsManager) Install(dep string) error {
-  // TODO: Call install command based on the template.
-  // TODO: Add installed dep to dm.deps and flush it to a file.
-  cmd := exec.Command("npm", "install", dep)
+func (dm *depsManager) runCmd(command, dep string, args []string) error {
+  cmd := exec.Command(command, args...)
   cmd.Dir = workdir
 
   stdout, err := cmd.StdoutPipe()
   if err != nil {
-    return fmt.Errorf("Failed to set up stdout pipe for the install command '%s': %s", cmd, err)
+    return fmt.Errorf("Failed to set up stdout pipe for the command '%s': %s", cmd, err)
   }
-  go scanPipe(stdout, dm.stdoutSubscribers)
+  go scanPipe(dep, stdout, dm.stdoutSubscribers)
 
   stderr, err := cmd.StderrPipe()
   if err != nil {
-    return fmt.Errorf("Failed to set up stderr pipe for the install command '%s': %s", cmd, err)
+    return fmt.Errorf("Failed to set up stderr pipe for the command '%s': %s", cmd, err)
   }
-  go scanPipe(stderr, dm.stderrSubscribers)
+  go scanPipe(dep, stderr, dm.stderrSubscribers)
 
   if err := cmd.Run(); err != nil {
-    return fmt.Errorf("Failed to install '%s': %s", dep, err)
+    return fmt.Errorf("Failed to run '%s': %s", cmd, err)
+  }
+  return nil
+}
+
+func (dm *depsManager) Install(dep string) error {
+  // TODO: Call the install command based on the template.
+  if err := dm.runCmd("npm", dep, []string{"install", dep}); err != nil {
+    return fmt.Errorf("Failed to install dep '%s': %s", dep, err)
   }
 
   dm.mu.Lock()
   dm.deps[dep] = true
   if err := dm.flush(); err != nil {
-    // TODO
+    return fmt.Errorf("Failed to flush a list of installed deps to a file: %s", err)
   }
   dm.mu.Unlock()
 
@@ -143,9 +157,16 @@ func (dm *depsManager) Install(dep string) error {
 }
 
 func (dm *depsManager) Uninstall(dep string) error {
-  dm.mu.Lock()
-  defer dm.mu.Unlock()
+  // TODO: Call the uninstall command based on the template.
+  if err := dm.runCmd("npm", dep, []string{"uninstall", dep}); err != nil {
+    return fmt.Errorf("Failed to uninstall dep '%s': %s", dep, err)
+  }
 
-  // TODO: Call uninstall command based on the template.
+  dm.mu.Lock()
+  delete(dm.deps, dep)
+  if err := dm.flush(); err != nil {
+    return fmt.Errorf("Failed to flush a list of installed deps to a file: %s", err)
+  }
+  dm.mu.Unlock()
   return nil
 }
