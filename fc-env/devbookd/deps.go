@@ -16,36 +16,9 @@ const (
   depsFilePath = "/.dbkdeps.json"
 )
 
-func scanPipe(dep string, pipe io.ReadCloser, subs map[rpc.ID]*subscriber) {
-	scanner := bufio.NewScanner(pipe)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-    for _, sub := range subs {
-      s := struct{
-        Line string `json:"line"`
-        Dep  string `json:"dep"`
-      }{
-        Line: scanner.Text(),
-        // Dep works as an identifier so the client knows to which dep install/uninstall command the command's output belongs.
-        Dep: dep,
-      }
-      if err := sub.Notify(s); err != nil {
-        slogger.Errorw("Failed to send dep stdout/stderr notification",
-          "subscriptionID", sub.SubscriptionID(),
-          "error", err,
-        )
-      }
-    }
-	}
-}
-
 type depsManager struct {
 	mu      sync.RWMutex
   deps map[string]bool
-
-  Stdout chan string
-  Stderr chan string
 
   stdoutSubscribers map[rpc.ID]*subscriber
   stderrSubscribers map[rpc.ID]*subscriber
@@ -56,9 +29,6 @@ func newDepsManager(stdoutSubs, stderrSubs map[rpc.ID]*subscriber) *depsManager 
 
   dm := &depsManager{
     deps:   make(map[string]bool),
-
-    Stdout: make(chan string),
-    Stderr: make(chan string),
 
     stdoutSubscribers: stdoutSubs,
     stderrSubscribers: stderrSubs,
@@ -105,6 +75,47 @@ func (dm *depsManager) flush() error {
   return nil
 }
 
+func (dm *depsManager) notifyStdout(o *DepOutResponse) {
+  for _, sub := range dm.stdoutSubscribers {
+    if err := sub.Notify(o); err != nil {
+      slogger.Errorw("Failed to send dep stdout notification",
+        "subscriptionID", sub.SubscriptionID(),
+        "error", err,
+      )
+    }
+  }
+}
+
+func (dm *depsManager) notifyStderr(o *DepOutResponse) {
+  for _, sub := range dm.stderrSubscribers {
+    if err := sub.Notify(o); err != nil {
+      slogger.Errorw("Failed to send dep stderr notification",
+        "subscriptionID", sub.SubscriptionID(),
+        "error", err,
+      )
+    }
+  }
+}
+
+func (dm *depsManager) scanCmdOut(pipe io.ReadCloser, dep string, t outType) {
+	scanner := bufio.NewScanner(pipe)
+	scanner.Split(bufio.ScanLines)
+
+  for scanner.Scan() {
+    line := scanner.Text()
+
+    var o DepOutResponse
+    switch t {
+    case OutTypeStdout:
+      o = newDepStdoutResponse(dep, line)
+      dm.notifyStdout(&o)
+    case OutTypeStderr:
+      o = newDepStderrResponse(dep, line)
+      dm.notifyStderr(&o)
+    }
+  }
+}
+
 func (dm *depsManager) Deps() []string {
   dm.mu.RLock()
   defer dm.mu.RUnlock()
@@ -126,13 +137,13 @@ func (dm *depsManager) runCmd(command, dep string, args []string) error {
   if err != nil {
     return fmt.Errorf("Failed to set up stdout pipe for the command '%s': %s", cmd, err)
   }
-  go scanPipe(dep, stdout, dm.stdoutSubscribers)
+  go dm.scanCmdOut(stdout, dep, OutTypeStdout)
 
   stderr, err := cmd.StderrPipe()
   if err != nil {
     return fmt.Errorf("Failed to set up stderr pipe for the command '%s': %s", cmd, err)
   }
-  go scanPipe(dep, stderr, dm.stderrSubscribers)
+  go dm.scanCmdOut(stderr, dep, OutTypeStderr)
 
   if err := cmd.Run(); err != nil {
     return fmt.Errorf("Failed to run '%s': %s", cmd, err)
@@ -142,7 +153,7 @@ func (dm *depsManager) runCmd(command, dep string, args []string) error {
 
 func (dm *depsManager) Install(dep string) error {
   // TODO: Call the install command based on the template.
-  if err := dm.runCmd("npm", dep, []string{"install", dep}); err != nil {
+  if err := dm.runCmd(depsCmd, dep, append(parsedDepsInstallArgs, dep)); err != nil {
     return fmt.Errorf("Failed to install dep '%s': %s", dep, err)
   }
 
@@ -157,7 +168,7 @@ func (dm *depsManager) Install(dep string) error {
 
 func (dm *depsManager) Uninstall(dep string) error {
   // TODO: Call the uninstall command based on the template.
-  if err := dm.runCmd("npm", dep, []string{"uninstall", dep}); err != nil {
+  if err := dm.runCmd(depsCmd, dep, append(parsedDepsUninstallArgs, dep)); err != nil {
     return fmt.Errorf("Failed to uninstall dep '%s': %s", dep, err)
   }
 

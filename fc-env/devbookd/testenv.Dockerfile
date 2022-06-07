@@ -17,4 +17,9 @@ RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=index.js >> /.dbkenv
 
+# Deps installation
+RUN echo DEPS_CMD=npm >> /.dbkenv
+RUN echo DEPS_INSTALL_ARGS=install >> /.dbkenv
+RUN echo DEPS_UNINSTALL_ARGS=uninstall >> /.dbkenv
+
 WORKDIR /

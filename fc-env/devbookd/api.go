@@ -8,17 +8,63 @@ import (
 	"os/exec"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 type CodeSnippetState string
+type outType string
 
 type ErrResponse struct {
   Error string `json:"error"`
 }
 
+type OutResponse struct {
+  Type      outType `json:"type"`
+  Line      string  `json:"line"`
+  Timestamp int64   `json:"timestamp"` // Nanoseconds since epoch
+}
+
+func newStdoutResponse(line string) OutResponse {
+  return OutResponse{
+    Type: OutTypeStdout,
+    Line: line,
+    Timestamp: time.Now().UnixNano(),
+  }
+}
+
+func newStderrResponse(line string) OutResponse {
+  return OutResponse{
+    Type: OutTypeStderr,
+    Line: line,
+    Timestamp: time.Now().UnixNano(),
+  }
+}
+
+type DepOutResponse struct {
+  OutResponse
+  Dep string `json:"dep"`
+}
+
+func newDepStdoutResponse(dep, line string) DepOutResponse {
+  return DepOutResponse{
+    OutResponse: newStdoutResponse(line),
+    Dep: dep,
+  }
+}
+
+func newDepStderrResponse(dep, line string) DepOutResponse {
+  return DepOutResponse{
+    OutResponse: newStderrResponse(line),
+    Dep: dep,
+  }
+}
+
 const (
+  OutTypeStdout outType = "Stdout"
+  OutTypeStderr outType = "Stderr"
+
 	CodeSnippetStateRunning CodeSnippetState = "Running"
 	CodeSnippetStateStopped CodeSnippetState = "Stopped"
 )
@@ -33,12 +79,18 @@ type CodeSnippet struct {
 	mu      sync.Mutex
 	running bool
 
+  // The reason for caching cmd's outputs is if a client connects while the command
+  // is already running we can send all the output that has happened since the start
+  // of the command.
+  // This way a user on the frontend doesn't even notice that command has been running.
+  cachedOut []OutResponse
+
   depsManager *depsManager
 
 	stdoutSubscribers     map[rpc.ID]*subscriber
 	stderrSubscribers     map[rpc.ID]*subscriber
 	stateSubscribers      map[rpc.ID]*subscriber
-  depsChangeSubscribers   map[rpc.ID]*subscriber
+  depsChangeSubscribers map[rpc.ID]*subscriber
   depsStdoutSubscribers map[rpc.ID]*subscriber
   depsStderrSubscribers map[rpc.ID]*subscriber
 }
@@ -100,26 +152,27 @@ func (cs *CodeSnippet) notifyDepsChange() {
   }
 }
 
-func (cs *CodeSnippet) notifyStdout(s string) {
-	for _, sub := range cs.stdoutSubscribers {
-		if err := sub.Notify(s); err != nil {
-			slogger.Errorw("Failed to send stdout notification",
-				"subscriptionID", sub.SubscriptionID(),
-				"error", err,
-			)
-		}
-	}
-}
-
-func (cs *CodeSnippet) notifyStderr(s string) {
-	for _, sub := range cs.stderrSubscribers {
-		if err := sub.Notify(s); err != nil {
-			slogger.Errorw("Failed to send stderr notification",
-				"subscriptionID", sub.SubscriptionID(),
-				"error", err,
-			)
-		}
-	}
+func (cs *CodeSnippet) notifyOut(o *OutResponse) {
+  switch o.Type {
+    case OutTypeStdout:
+      for _, sub := range cs.stdoutSubscribers {
+        if err := sub.Notify(o); err != nil {
+          slogger.Errorw("Failed to send stdout notification",
+            "subscriptionID", sub.SubscriptionID(),
+            "error", err,
+          )
+        }
+      }
+    case OutTypeStderr:
+      for _, sub := range cs.stderrSubscribers {
+        if err := sub.Notify(o); err != nil {
+          slogger.Errorw("Failed to send stderr notification",
+            "subscriptionID", sub.SubscriptionID(),
+            "error", err,
+          )
+        }
+      }
+  }
 }
 
 func (cs *CodeSnippet) notifyState(state CodeSnippetState) {
@@ -133,21 +186,22 @@ func (cs *CodeSnippet) notifyState(state CodeSnippetState) {
 	}
 }
 
-func (cs *CodeSnippet) scanStdout(pipe io.ReadCloser) {
+func (cs *CodeSnippet) scanRunCmdOut(pipe io.ReadCloser, t outType) {
 	scanner := bufio.NewScanner(pipe)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		cs.notifyStdout(scanner.Text())
-	}
-}
+    line := scanner.Text()
 
-func (cs *CodeSnippet) scanStderr(pipe io.ReadCloser) {
-	scanner := bufio.NewScanner(pipe)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		cs.notifyStderr(scanner.Text())
+    var o OutResponse
+    switch t {
+    case OutTypeStdout:
+      o = newStdoutResponse(line)
+    case OutTypeStderr:
+      o = newStderrResponse(line)
+    }
+    cs.cachedOut = append(cs.cachedOut, o)
+    cs.notifyOut(&o)
 	}
 }
 
@@ -174,27 +228,32 @@ func (cs *CodeSnippet) runCmd(code string) {
 			"cmd", cs.cmd,
 			"error", err,
 		)
-		cs.notifyStderr(err.Error())
+    o := newStderrResponse(err.Error())
+    cs.notifyOut(&o)
 	}
+  go cs.scanRunCmdOut(stdout, OutTypeStdout)
+
 	stderr, err := cs.cmd.StderrPipe()
 	if err != nil {
 		slogger.Errorw("Failed to set up stderr pipe for the run command",
 			"cmd", cs.cmd,
 			"error", err,
 		)
-		cs.notifyStderr(err.Error())
+    o := newStderrResponse(err.Error())
+    cs.notifyOut(&o)
 	}
 
-	go cs.scanStdout(stdout)
-	go cs.scanStderr(stderr)
+  go cs.scanRunCmdOut(stderr, OutTypeStderr)
 
 	if err := cs.cmd.Run(); err != nil {
 		slogger.Errorw("Failed to run the run command",
 			"cmd", cs.cmd,
 			"error", err,
 		)
-		cs.notifyStderr(err.Error())
+    o := newStderrResponse(err.Error())
+    cs.notifyOut(&o)
 	}
+  cs.cachedOut = nil
 }
 
 func (cs *CodeSnippet) Run(code string) CodeSnippetState {
@@ -205,6 +264,7 @@ func (cs *CodeSnippet) Run(code string) CodeSnippetState {
 	cs.mu.Lock()
 	if cs.running {
 		cs.mu.Unlock()
+    slogger.Info("Already running")
 		return CodeSnippetStateRunning
 	}
 	cs.setRunning(true)
@@ -220,6 +280,7 @@ func (cs *CodeSnippet) Stop() CodeSnippetState {
 	cs.mu.Lock()
 	if !cs.running {
 		cs.mu.Unlock()
+    slogger.Info("Already stopped")
 		return CodeSnippetStateStopped
 	}
 
@@ -230,8 +291,11 @@ func (cs *CodeSnippet) Stop() CodeSnippetState {
 			"signal", sig,
 			"error", err,
 		)
-		cs.notifyStderr(err.Error())
+    o := newStderrResponse(err.Error())
+    cs.notifyOut(&o)
 	}
+
+  cs.cachedOut = nil
 
 	cs.setRunning(false)
 	cs.mu.Unlock()
@@ -318,6 +382,18 @@ func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 		)
 		return nil, err
 	}
+
+  // Send all the cached stdout to a new subscriber.
+  for _, l := range cs.cachedOut {
+    if l.Type == OutTypeStdout {
+      if err := sub.Notify(l); err != nil {
+        slogger.Errorw("Failed to send cached stdout notification",
+          "subscriptionID", sub.SubscriptionID(),
+          "error", err,
+        )
+      }
+    }
+  }
 	return sub.subscription, nil
 }
 
@@ -332,6 +408,18 @@ func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 		)
 		return nil, err
 	}
+
+  // Send all the cached stdout to a new subscriber.
+  for _, l := range cs.cachedOut {
+    if l.Type == OutTypeStderr {
+      if err := sub.Notify(l); err != nil {
+        slogger.Errorw("Failed to send cached stdout notification",
+          "subscriptionID", sub.SubscriptionID(),
+          "error", err,
+        )
+      }
+    }
+  }
 	return sub.subscription, nil
 }
 

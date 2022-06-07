@@ -22,12 +22,19 @@ var (
 
 	wsHandler          http.Handler
 
+  // Env vars
 	runCmd             string
 	runArgs            string
 	parsedRunArgs      []string
 	workdir            string
 	entrypoint         string
 	entrypointFullPath string
+
+  depsCmd                 string
+  depsInstallArgs         string
+  parsedDepsInstallArgs   []string
+  depsUninstallArgs       string
+  parsedDepsUninstallArgs []string
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -79,18 +86,36 @@ func loadDBKEnvs() {
       "value", value,
     )
 
-    if name == "RUN_CMD" {
+    switch name {
+    case "RUN_CMD":
       errLogUndefinedEnvVar("RUN_CMD", value)
       runCmd = value
-    } else if name == "RUN_ARGS" {
+    case "RUN_ARGS":
       errLogUndefinedEnvVar("RUN_ARGS", value)
       runArgs = value
-    } else if name == "WORKDIR" {
+      parsedRunArgs = strings.Fields(runArgs)
+    case "WORKDIR":
       errLogUndefinedEnvVar("WORKDIR", value)
       workdir = value
-    } else if name == "ENTRYPOINT" {
+    case "ENTRYPOINT":
       errLogUndefinedEnvVar("ENTRYPOINT", value)
       entrypoint = value
+    case "DEPS_CMD":
+      errLogUndefinedEnvVar("DEPS_CMD", value)
+      depsCmd = value
+    case "DEPS_INSTALL_ARGS":
+      errLogUndefinedEnvVar("DEPS_INSTALL_ARGS", value)
+      depsInstallArgs = value
+      parsedDepsInstallArgs = strings.Fields(depsInstallArgs)
+    case "DEPS_UNINSTALL_ARGS":
+      errLogUndefinedEnvVar("DEPS_UNINSTALL_ARGS", value)
+      depsUninstallArgs = value
+      parsedDepsUninstallArgs = strings.Fields(depsUninstallArgs)
+    default:
+      slogger.Errorw("Unknown Devbook env var",
+        "name", name,
+        "value", value,
+      )
     }
   }
 
@@ -132,7 +157,6 @@ func main() {
 
   loadDBKEnvs()
 
-	parsedRunArgs = strings.Fields(runArgs)
 	entrypointFullPath = path.Join(workdir, entrypoint)
 
 	router := mux.NewRouter()
