@@ -251,6 +251,8 @@ func (cs *CodeSnippet) InstallDep(dep string) (resp ErrResponse) {
     resp.Error = err.Error()
   }
 
+  go cs.notifyDepsChange()
+
   return resp
 }
 
@@ -264,6 +266,9 @@ func (cs *CodeSnippet) UninstallDep(dep string) (resp ErrResponse) {
     )
     resp.Error = err.Error()
   }
+
+  go cs.notifyDepsChange()
+
   return resp
 }
 
