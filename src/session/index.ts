@@ -63,7 +63,6 @@ class Session extends SessionConnection {
         }
 
         const state = await this.call(`${codeSnippetMethod}_stop`) as CodeSnippetExecState
-
         this.codeSnippetOpts?.onStateChange?.(state)
 
         this.logger.log('Stopped running code')

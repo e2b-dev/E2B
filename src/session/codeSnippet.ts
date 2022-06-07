@@ -10,14 +10,41 @@ export interface DepsErrorResponse {
   error: string
 }
 
+export enum OutType {
+  Stdout = 'Stdout',
+  Stderr = 'Stderr',
+}
+
+export interface OutResponse {
+  type: OutType
+  // Unix epoch in nanoseconds
+  timestamp: number
+  line: string
+}
+export interface OutStdoutResponse extends OutResponse {
+  type: OutType.Stdout
+}
+export interface OutStderrResponse extends OutResponse {
+  type: OutType.Stderr
+}
+
+export interface DepOutResponse extends OutResponse {
+  dep: string
+}
+export interface DepStdoutResponse extends DepOutResponse {
+  type: OutType.Stdout
+}
+export interface DepStderrResponse extends DepOutResponse {
+  type: OutType.Stderr
+}
+
 export type CodeSnippetStateHandler = (state: CodeSnippetExecState) => void
-export type CodeSnippetStderrHandler = (stderr: string) => void
-export type CodeSnippetStdoutHandler = (stdout: string) => void
-export type DepsStdoutHandler = (out: { line: string, dep: string }) => void
-export type DepsStderrHandler = (out: { line: string, dep: string }) => void
+export type CodeSnippetStderrHandler = (o: OutStderrResponse) => void
+export type CodeSnippetStdoutHandler = (o: OutStdoutResponse) => void
+export type DepsStdoutHandler = (o: DepStdoutResponse) => void
+export type DepsStderrHandler = (o: DepStderrResponse) => void
 export type DepsChangeHandler = (deps: string[]) => void
 
-export type CodeSnippetSubscriptionEvent = 'state' | 'stderr' | 'stdout'
 export type CodeSnippetSubscriptionHandler =
   CodeSnippetStateHandler |
   CodeSnippetStderrHandler |

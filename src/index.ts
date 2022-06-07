@@ -4,15 +4,24 @@ export type {
 } from './session'
 export {
   CodeSnippetExecState,
+  OutType,
 } from './session/codeSnippet'
 export type {
   CodeSnippetManager,
   CodeSnippetStateHandler,
   CodeSnippetStderrHandler,
   CodeSnippetStdoutHandler,
-  CodeSnippetSubscriptionEvent,
   CodeSnippetSubscriptionHandler,
   CodeSnippetSubscriptionHandlerType,
+
+  OutResponse,
+  OutStdoutResponse,
+  OutStderrResponse,
+
+  DepsErrorResponse,
+  DepOutResponse,
+  DepStdoutResponse,
+  DepStderrResponse,
 } from './session/codeSnippet'
 export type {
   TerminalManager,
