@@ -103,8 +103,8 @@ function mkbuildidfile() {
 function mkrootfs() {
   echo "===> Making rootfs..."
 
-  local tag=rootfs
-  local free=50000000 # 50MB in B
+  local tag=rootfs-${RUN_UUID}
+  local free=100000000 # 100MB in B
 
   echo -e "$DOCKERFILE" | docker build -t $tag -f - $SCRIPTDIR
   local container_id=$(docker run -dt $tag /bin/ash)

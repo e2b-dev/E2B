@@ -6,7 +6,9 @@ RUN apk add nodejs npm
 
 WORKDIR code
 RUN npm init -y
+{{ if .Deps }}
 RUN npm i {{ range .Deps }}{{ . }} {{ end }}
+{{ end }}
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=node >> /.dbkenv

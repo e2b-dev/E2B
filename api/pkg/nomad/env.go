@@ -12,9 +12,10 @@ import (
 
 const (
 	baseDockerfile = `
-FROM alpine:3.14
+FROM alpine:3.16
 
-RUN apk add --update util-linux openrc openssh
+RUN apk update && apk upgrade
+RUN apk add util-linux openrc openssh
 
 COPY devbookd /usr/bin/devbookd
 COPY devbookd-init /etc/init.d/devbookd
