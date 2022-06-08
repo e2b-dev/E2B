@@ -1,4 +1,4 @@
-job "firecrackers-env-deleters/{{ .CodeSnippetID }}" {
+job "{{ .JobName }}/{{ .CodeSnippetID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 

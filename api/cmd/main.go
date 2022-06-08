@@ -18,6 +18,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var ignoreLoggingForPaths = []string{"/health"}
+
 func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	swagger, err := api.GetSwagger()
 	if err != nil {
@@ -29,8 +31,11 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	// that server names match. We don't know how this thing will be run.
 	swagger.Servers = nil
 
-	// This is how you set up a basic gin router
-	r := gin.Default()
+	r := gin.New()
+	r.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, ignoreLoggingForPaths...),
+		gin.Recovery(),
+	)
 
 	// Allow all origins
 	r.Use(cors.Default())

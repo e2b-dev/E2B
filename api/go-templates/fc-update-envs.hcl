@@ -1,4 +1,4 @@
-job "firecracker-envs/{{ .CodeSnippetID }}" {
+job "{{ .JobName }}/{{ .CodeSnippetID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
@@ -8,7 +8,7 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
     run_uuid = "${uuidv4()}"
   }
 
-  group "build-env" {
+  group "publish-env" {
     reschedule {
       attempts  = 0
       unlimited = false
@@ -19,7 +19,7 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
       mode = "fail"
     }
 
-    task "build-env" {
+    task "publish-env" {
       resources {
         memory  = 300
         cores   = 1
@@ -32,11 +32,11 @@ job "firecracker-envs/{{ .CodeSnippetID }}" {
       }
 
       config {
-        command = "local/env/build-env.sh"
+        command = "local/env/update-env.sh"
         args = [
           "${NOMAD_META_RUN_UUID}",
           "local/env",
-          "{{ escapeHCL .Dockerfile }}",
+          "{{ .SessionID }}",
           "{{ .CodeSnippetID }}",
           "${NOMAD_ALLOC_DIR}",
           "{{ .FCEnvsDisk }}",

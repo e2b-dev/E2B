@@ -1,12 +1,14 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
+	"github.com/devbookhq/orchestration-services/api/pkg/supabase"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/exp/slices"
 )
 
 func (a *APIStore) PostEnvsCodeSnippetID(
@@ -27,17 +29,40 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		return
 	}
 
-	// TODO: Download the base Dockerfile based on a template field in `env`.
-	// TODO: Add deps to the Dockerfile.
-	err := a.nomadClient.CreateEnv(codeSnippetID, string(env.Template), env.Deps)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		sendAPIStoreError(
-			c,
-			http.StatusInternalServerError,
-			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", codeSnippetID, err),
-		)
-		return
+	if len(env.Deps) == 0 {
+		err := a.nomadClient.UsePrebuiltEnv(codeSnippetID, string(env.Template), func(err *error) {
+			if err != nil {
+				fmt.Printf("failed to use prebuilt for code snippet %s: %+v", codeSnippetID, err)
+			} else {
+				updateErr := supabase.UpdateEnvState(a.supabase, codeSnippetID, api.Done)
+				if updateErr != nil {
+					fmt.Printf("Failed to update env state for code snippet '%s': %+v", codeSnippetID, err)
+				}
+			}
+		})
+		if err != nil {
+			fmt.Printf("error: %v\n", err)
+			sendAPIStoreError(
+				c,
+				http.StatusInternalServerError,
+				fmt.Sprintf("Failed to create template env for code snippet '%s': %s", codeSnippetID, err),
+			)
+			return
+		}
+
+	} else {
+		// TODO: Download the base Dockerfile based on a template field in `env`.
+		// TODO: Add deps to the Dockerfile.
+		err := a.nomadClient.BuildEnv(codeSnippetID, string(env.Template), env.Deps)
+		if err != nil {
+			fmt.Printf("error: %v\n", err)
+			sendAPIStoreError(
+				c,
+				http.StatusInternalServerError,
+				fmt.Sprintf("Failed to create env for code snippet '%s': %s", codeSnippetID, err),
+			)
+			return
+		}
 	}
 
 	c.Status(http.StatusNoContent)
@@ -106,22 +131,21 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 		return
 	}
 
-	body := map[string]interface{}{"state": envStateUpdate.State}
-	err := a.supabase.DB.
-		From("envs").
-		Update(body).
-		Eq("code_snippet_id", codeSnippetID).
-		Execute(nil)
-
+	templates, err := nomad.GetTemplates()
 	if err != nil {
-		if e, ok := err.(*json.SyntaxError); ok {
-			fmt.Printf("syntax error at byte offset %d", e.Offset)
-		}
-		fmt.Printf("error: %v\n", err)
+		fmt.Printf("error retrieving templates: %+v\n", err)
+	} else if slices.Contains(*templates, codeSnippetID) {
+		fmt.Printf("state update is for a template - we will not be updating env in Supabase")
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	err = supabase.UpdateEnvState(a.supabase, codeSnippetID, envStateUpdate.State)
+	if err != nil {
 		sendAPIStoreError(
 			c,
 			http.StatusBadRequest,
-			fmt.Sprintf("Failed to update env for code snippet '%s': %s", codeSnippetID, err),
+			fmt.Sprintf("Failed to update env state for code snippet '%s': %s", codeSnippetID, err),
 		)
 		return
 	}
@@ -152,7 +176,7 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 		sendAPIStoreError(
 			c,
 			http.StatusInternalServerError,
-			fmt.Sprintf("Failed to delete env for code snippet '%s': %+v", codeSnippetID, err),
+			fmt.Sprintf("Failed to update env for code snippet '%s': %+v", codeSnippetID, err),
 		)
 		return
 	}

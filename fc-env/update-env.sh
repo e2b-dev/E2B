@@ -11,7 +11,7 @@ SESSION_ID="$3"
 CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 FC_ENVS_DISK="$6"
-API_KEY="$6"
+API_KEY="$7"
 
 set -euo pipefail
 
@@ -55,6 +55,7 @@ echo "| SCRIPTDIR:          $SCRIPTDIR"
 echo "| CODE_SNIPPET_ID:    $CODE_SNIPPET_ID"
 echo "| ALLOC_DIR:          $ALLOC_DIR"
 echo "| FC_ENVS_DISK:       $FC_ENVS_DISK"
+echo "| API_KEY:            $API_KEY"
 echo "======================================================================================================="
 echo
 
@@ -108,9 +109,6 @@ function geteditrootfs() {
     cp $EDIT_ID_DIR/rootfs.ext4 $BUILD_FC_ROOTFS
   else
     # session exists -> mount overlay and copy
-    BUILD_ID_PATH="$EDIT_DIR/build_id"
-    BUILD_ID=`cat $BUILD_ID_PATH`
-
     TMP_OVERLAY="/tmp/fc-$SESSION_ID/overlay"
     
     mount -t overlay overlay -o lowerdir=$TMP_OVERLAY:$EDIT_ID_DIR $BUILD_MNT_DIR
@@ -241,4 +239,4 @@ echo "| Memfile:          $FINAL_FC_MEMFILE"
 echo "| Build ID file:    $FINAL_BUILD_ID_FILE"
 echo "======================================================================================================="
 echo
-echo "===> Env Done"
+echo "===> Env Updated"

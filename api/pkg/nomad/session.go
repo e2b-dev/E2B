@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	sessionsJobName          = "firecracker-sessions"
+	sessionsJobName          = "fc-sessions"
 	sessionsJobNameWithSlash = sessionsJobName + "/"
-	sessionsJobFile          = sessionsJobName + ".hcl"
+	sessionsJobFile          = sessionsJobName + jobFileSuffix
 	jobRegisterTimeout       = time.Second * 10
 	allocationCheckTimeout   = time.Second * 10
 	allocationCheckInterval  = time.Millisecond * 100
@@ -25,7 +25,7 @@ const (
 	sessionIDRandomLength    = 7
 	shortNodeIDLength        = 8
 	nomadTaskRunningState    = "running"
-	nomadTaskFailedState     = "dead"
+	nomadTaskDeadState       = "dead"
 )
 
 func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
@@ -41,7 +41,6 @@ func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 	}
 
 	sessions := []*api.Session{}
-
 	for _, alloc := range allocations {
 		sessions = append(sessions, &api.Session{
 			ClientID:  alloc.NodeID[:shortNodeIDLength],
@@ -86,19 +85,19 @@ jobRegister:
 
 			var jobDef bytes.Buffer
 			jobVars := struct {
-				CodeSnippetID  string
-				SessionID      string
-				FCTaskName     string
-				SessionJobName string
-				FCEnvsDisk     string
-				EditEnabled    bool
+				CodeSnippetID string
+				SessionID     string
+				FCTaskName    string
+				JobName       string
+				FCEnvsDisk    string
+				EditEnabled   bool
 			}{
-				CodeSnippetID:  newSession.CodeSnippetID,
-				SessionID:      sessionID,
-				FCTaskName:     fcTaskName,
-				SessionJobName: sessionsJobName,
-				FCEnvsDisk:     fcEnvsDisk,
-				EditEnabled:    *newSession.EditEnabled,
+				CodeSnippetID: newSession.CodeSnippetID,
+				SessionID:     sessionID,
+				FCTaskName:    fcTaskName,
+				JobName:       sessionsJobName,
+				FCEnvsDisk:    fcEnvsDisk,
+				EditEnabled:   *newSession.EditEnabled,
 			}
 
 			err = sessionsJobTemp.Execute(&jobDef, jobVars)
@@ -158,16 +157,15 @@ allocationCheck:
 					continue
 				}
 
-				if alloc.TaskStates[fcTaskName].State == nomadTaskFailedState {
+				if alloc.TaskStates[fcTaskName].State == nomadTaskDeadState {
 					msgStruct, _ := json.Marshal(newSession)
 					allocErr = &api.APIError{
-						Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
+						Msg:       fmt.Sprintf("allocation is %s for '%s%s' job", alloc.TaskStates[fcTaskName].State, sessionsJobNameWithSlash, sessionID),
 						ClientMsg: fmt.Sprintf("Session couldn't be started: the problem may be in the request's payload - is the 'codeSnippetID' valid?: %+v", string(msgStruct)),
 						Code:      http.StatusBadRequest,
 					}
 					break allocationCheck
 				}
-				fmt.Printf(alloc.TaskStates[fcTaskName].State)
 
 				if alloc.TaskStates[fcTaskName].State == nomadTaskRunningState {
 					session := &api.Session{
@@ -185,16 +183,16 @@ allocationCheck:
 		time.Sleep(allocationCheckInterval)
 	}
 
-	_, _, err = n.client.Jobs().Deregister(*job.ID, true, &nomadAPI.WriteOptions{})
-	if err != nil {
-		fmt.Printf("Failed to deregister '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err)
+	apiErr := n.DeleteSession(sessionID, false)
+	if apiErr != nil {
+		fmt.Printf("error in cleanup after failing to create session for code snippet '%s':%+v", newSession.CodeSnippetID, apiErr.Msg)
 	}
 
 	return nil, allocErr
 }
 
-func (n *NomadClient) DeleteSession(sessionID string) *api.APIError {
-	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, true, &nomadAPI.WriteOptions{})
+func (n *NomadClient) DeleteSession(sessionID string, purge bool) *api.APIError {
+	_, _, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, purge, &nomadAPI.WriteOptions{})
 	if err != nil {
 		return &api.APIError{
 			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),

@@ -37,11 +37,12 @@ const (
 	// firecracker micro-vm is still running
 	containerMonitorIntv = 2 * time.Second
 
-	editIDName   = "edit_id"
-	buildIDName  = "build_id"
-	rootfsName   = "rootfs.ext4"
-	snapfileName = "snapfile"
-	memfileName  = "memfile"
+	editIDName     = "edit_id"
+	buildIDName    = "build_id"
+	templateIDName = "template_id"
+	rootfsName     = "rootfs.ext4"
+	snapfileName   = "snapfile"
+	memfileName    = "memfile"
 
 	editDirName  = "edit"
 	buildDirName = "builds"
@@ -135,16 +136,21 @@ func (d *Driver) initializeContainer(
 	var editID string
 
 	if editEnabled {
+		// Use the shared edit sessions
 		codeSnippetEditPath := filepath.Join(codeSnippetEnvPath, editDirName)
 
 		buildIDSrc := filepath.Join(codeSnippetEnvPath, buildIDName)
 		buildIDDest := filepath.Join(codeSnippetEditPath, buildIDName)
+
+		templateIDSrc := filepath.Join(codeSnippetEnvPath, templateIDName)
+		templateIDDest := filepath.Join(codeSnippetEditPath, templateIDName)
 
 		editIDPath := filepath.Join(codeSnippetEditPath, editIDName)
 
 		os.MkdirAll(codeSnippetEditPath, 0777)
 
 		if _, err := os.Stat(editIDPath); err == nil {
+			// If the edit_file exists we expect that the other files will exists too (we are creating te edit last)
 			data, err := os.ReadFile(editIDPath)
 			if err != nil {
 				return nil, fmt.Errorf("failed reading edit id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
@@ -153,6 +159,7 @@ func (d *Driver) initializeContainer(
 
 			snapshotRootPath = filepath.Join(codeSnippetEditPath, editID)
 		} else {
+			// Link the fc files from the root CS directory and create edit_id
 			editID = uuid.New().String()
 
 			snapshotRootPath = filepath.Join(codeSnippetEditPath, editID)
@@ -171,6 +178,7 @@ func (d *Driver) initializeContainer(
 			os.Link(snapfileSrc, snapfileDest)
 			os.Link(memfileSrc, memfileDest)
 			os.Link(buildIDSrc, buildIDDest)
+			os.Link(templateIDSrc, templateIDDest)
 
 			err := os.WriteFile(editIDPath, []byte(editID), 0777)
 			if err != nil {
@@ -178,13 +186,33 @@ func (d *Driver) initializeContainer(
 			}
 		}
 
-		data, err := os.ReadFile(buildIDDest)
-		if err != nil {
-			return nil, fmt.Errorf("failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
-		}
-		buildID := string(data)
+		if _, err := os.Stat(buildIDDest); err != nil {
+			// If the build_id file does not exist this envs is templated - we check to which env the template points to and use that as our new "virtual" env
+			data, err := os.ReadFile(templateIDDest)
+			if err != nil {
+				return nil, fmt.Errorf("failed reading template id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
+			}
+			templateID := string(data)
 
-		buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
+			templateEnvPath := filepath.Join(fcEnvsDisk, templateID)
+			templateBuildIDPath := filepath.Join(templateEnvPath, buildIDName)
+
+			data, err = os.ReadFile(templateBuildIDPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed reading build id for the template %s of code snippet %s: %v", templateID, taskConfig.CodeSnippetID, err)
+			}
+			templateBuildID := string(data)
+			buildDirPath = filepath.Join(templateEnvPath, buildDirName, templateBuildID)
+		} else {
+			// build_id is present so this is a non-templated session
+			data, err := os.ReadFile(buildIDDest)
+			if err != nil {
+				return nil, fmt.Errorf("failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
+			}
+			buildID := string(data)
+			buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
+		}
+
 		os.MkdirAll(buildDirPath, 0777)
 
 		mountCmd = fmt.Sprintf(
@@ -198,15 +226,36 @@ func (d *Driver) initializeContainer(
 		// Mount overlay
 		snapshotRootPath = codeSnippetEnvPath
 
+		templateIDPath := filepath.Join(codeSnippetEnvPath, templateIDName)
 		buildIDPath := filepath.Join(codeSnippetEnvPath, buildIDName)
 
-		data, err := os.ReadFile(buildIDPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
-		}
-		buildID := string(data)
+		if _, err := os.Stat(buildIDPath); err != nil {
+			// If the build_id file does not exist this envs is templated - we check to which env the template points to and use that as our new "virtual" env
+			data, err := os.ReadFile(templateIDPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed reading template id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
+			}
+			templateID := string(data)
 
-		buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
+			templateEnvPath := filepath.Join(fcEnvsDisk, templateID)
+			templateBuildIDPath := filepath.Join(templateEnvPath, buildIDName)
+
+			data, err = os.ReadFile(templateBuildIDPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed reading build id for the template %s of code snippet %s: %v", templateID, taskConfig.CodeSnippetID, err)
+			}
+			templateBuildID := string(data)
+			buildDirPath = filepath.Join(templateEnvPath, buildDirName, templateBuildID)
+		} else {
+			// build_id is present and this is a normal non-templated and non-edit session
+			data, err := os.ReadFile(buildIDPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
+			}
+			buildID := string(data)
+			buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
+		}
+
 		os.MkdirAll(buildDirPath, 0777)
 
 		mountCmd = fmt.Sprintf(

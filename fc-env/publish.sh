@@ -13,7 +13,8 @@ mkdir env
 mv devbookd/bin/devbookd env
 cp ./devbookd-init ./env/
 cp ./build-env.sh ./env/
-cp ./publish-env.sh ./env/
+cp ./use-prebuilt-env.sh ./env/
+cp ./update-env.sh ./env/
 cp ./provision-env.sh ./env/
 
 tar czf env.tar.gz env

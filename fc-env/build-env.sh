@@ -60,6 +60,7 @@ echo "| SCRIPTDIR:          $SCRIPTDIR"
 echo "| CODE_SNIPPET_ID:    $CODE_SNIPPET_ID"
 echo "| ALLOC_DIR:          $ALLOC_DIR"
 echo "| FC_ENVS_DISK:       $FC_ENVS_DISK"
+echo "| API_KEY:            $API_KEY"
 echo "======================================================================================================="
 echo
 
@@ -87,6 +88,8 @@ FINAL_FC_ROOTFS="$FINAL_DIR/rootfs.ext4"
 FINAL_FC_SNAPFILE="$FINAL_DIR/snapfile"
 FINAL_FC_MEMFILE="$FINAL_DIR/memfile"
 FINAL_BUILD_ID_FILE="$FINAL_DIR/build_id"
+
+FINAL_BUILD_EDIT_DIR="$FINAL_DIR/edit"
 
 FC_PID=""
 
@@ -207,6 +210,10 @@ function snapfc() {
           }"
 }
 
+function delete_edit_dir() {
+  rm -rf $FINAL_BUILD_EDIT_DIR
+}
+
 function mv_env_files() {
   mv $BUILD_FC_ROOTFS $FINAL_FC_ROOTFS
   mv $BUILD_FC_SNAPFILE $FINAL_FC_SNAPFILE
@@ -235,6 +242,7 @@ pausefc
 snapfc
 kill $FC_PID
 delns
+delete_edit_dir
 mv_env_files
 del_build_dir
 
@@ -248,4 +256,4 @@ echo "| Memfile:          $FINAL_FC_MEMFILE"
 echo "| Build ID file:    $FINAL_BUILD_ID_FILE"
 echo "======================================================================================================="
 echo
-echo "===> Env Done"
+echo "===> Env Built"

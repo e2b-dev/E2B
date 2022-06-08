@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"text/template"
+	"time"
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	nomadAPI "github.com/hashicorp/nomad/api"
@@ -21,51 +22,135 @@ COPY devbookd /usr/bin/devbookd
 COPY devbookd-init /etc/init.d/devbookd
 COPY provision-env.sh provision-env.sh
 RUN chmod +x provision-env.sh`
+
+	buildEnvJobName = "fc-build-envs"
+	buildEnvJobFile = buildEnvJobName + jobFileSuffix
+
+	updateEnvJobName = "fc-update-envs"
+	updateEnvJobFile = updateEnvJobName + jobFileSuffix
+
+	deleteEnvJobName = "fc-delete-envs"
+	deleteEnvJobFile = deleteEnvJobName + jobFileSuffix
+
+	usePrebuiltEnvJobName = "fc-use-prebuilt-envs"
+	usePrebuiltEnvJobFile = usePrebuiltEnvJobName + jobFileSuffix
+
+	nomadEvaluationCompleteState = "complete"
 )
 
 func (n *NomadClient) DeleteEnv(codeSnippetID string) error {
-	tempName := path.Join(templatesDir, "firecracker-env-deleters.hcl")
+	tempName := path.Join(templatesDir, deleteEnvJobFile)
 	temp, err := template.ParseFiles(tempName)
 	if err != nil {
-		return fmt.Errorf("failed to parse template file '%s': %s", tempName, err)
+		return fmt.Errorf("failed to parse template file '%s': %+v", tempName, err)
 	}
 	temp = template.Must(temp, err)
 
 	tempVars := struct {
 		CodeSnippetID string
 		FCEnvsDisk    string
+		JobName       string
 	}{
+		JobName:       deleteEnvJobName,
 		CodeSnippetID: codeSnippetID,
 		FCEnvsDisk:    fcEnvsDisk,
 	}
 	var spec bytes.Buffer
 	if err := temp.Execute(&spec, tempVars); err != nil {
-		return fmt.Errorf("failed to `temp.Execute()`: %s", err)
+		return fmt.Errorf("failed to `temp.Execute()`: %+v", err)
 	}
 
 	job, err := n.client.Jobs().ParseHCL(spec.String(), false)
 	if err != nil {
-		return fmt.Errorf("failed to parse template '%s': %s", tempName, err)
+		return fmt.Errorf("failed to parse template '%s': %+v", tempName, err)
 	}
 
 	_, _, err = n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to register 'firecracker-env-deleters/%s' job: %s", tempVars.CodeSnippetID, err)
+		return fmt.Errorf("failed to register '%s/%s' job: %+v", deleteEnvJobName, tempVars.CodeSnippetID, err)
 	}
 
 	return nil
 }
 
-func (n *NomadClient) CreateEnv(codeSnippetID string, envTemplate string, deps []string) error {
+func (n *NomadClient) UsePrebuiltEnv(codeSnippetID string, envTemplate string, callback func(err *error)) error {
+	tname := path.Join(templatesDir, usePrebuiltEnvJobFile)
+	envsJobTemp, err := template.New(usePrebuiltEnvJobFile).ParseFiles(tname)
+	if err != nil {
+		return fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
+	}
+
+	envsJobTemp = template.Must(envsJobTemp, err)
+
+	jobVars := struct {
+		CodeSnippetID string
+		FCEnvsDisk    string
+		JobName       string
+		APIKey        string
+		Template      string
+	}{
+		CodeSnippetID: codeSnippetID,
+		FCEnvsDisk:    fcEnvsDisk,
+		JobName:       usePrebuiltEnvJobName,
+		APIKey:        api.APIAdminKey,
+		Template:      envTemplate,
+	}
+
+	var jobDef bytes.Buffer
+	if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
+		return fmt.Errorf("failed to `envsJobTemp.Execute()`: %+v", err)
+	}
+
+	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
+	if err != nil {
+		return fmt.Errorf("failed to parse the `%s` HCL job file: %+v", usePrebuiltEnvJobName, err)
+	}
+
+	registeredJob, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to register '%s/%s' job: %+v", usePrebuiltEnvJobName, jobVars.CodeSnippetID, err)
+	}
+
+	go func() {
+		timeout := time.After(allocationCheckTimeout)
+
+	allocationCheck:
+		for {
+			select {
+			case <-timeout:
+				break allocationCheck
+			default:
+				eval, _, err := n.client.Evaluations().Info(registeredJob.EvalID, &nomadAPI.QueryOptions{})
+				if err != nil {
+					callbackError := fmt.Errorf("cannot retrieve evaluation for '%s/%s' job: %+v", usePrebuiltEnvJobName, codeSnippetID, err)
+					callback(&callbackError)
+					return
+				}
+
+				if eval.Status == nomadEvaluationCompleteState {
+					callback(nil)
+					return
+				}
+			}
+			time.Sleep(allocationCheckInterval)
+		}
+
+		callbackError := fmt.Errorf("cannot retrieve allocations for '%s/%s' job: %+v", usePrebuiltEnvJobName, codeSnippetID, err)
+		callback(&callbackError)
+	}()
+
+	return nil
+}
+
+func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []string) error {
 	dockerfileName := fmt.Sprintf("%s.Dockerfile", envTemplate)
-	tname := path.Join(templatesDir, "env-templates", dockerfileName)
+	tname := path.Join(templatesDir, envTemplatesDir, dockerfileName)
 	dockerfileTemp, err := template.ParseFiles(tname)
 	if err != nil {
-		return fmt.Errorf("failed to parse template file '%s': %s", tname, err)
+		return fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
 	}
 
 	dockerfileTemp = template.Must(dockerfileTemp, err)
-
 	dockerfileVars := struct {
 		Deps           []string
 		BaseDockerfile string
@@ -73,19 +158,20 @@ func (n *NomadClient) CreateEnv(codeSnippetID string, envTemplate string, deps [
 		Deps:           deps,
 		BaseDockerfile: baseDockerfile,
 	}
+
 	var dockerfile bytes.Buffer
 	if err := dockerfileTemp.Execute(&dockerfile, dockerfileVars); err != nil {
-		return fmt.Errorf("failed to `dockerfileTemp.Execute()`: %s", err)
+		return fmt.Errorf("failed to `dockerfileTemp.Execute()`: %+v", err)
 	}
 
-	tname = path.Join(templatesDir, "firecracker-envs.hcl")
-	envsJobTemp, err := template.New("firecracker-envs.hcl").Funcs(
+	tname = path.Join(templatesDir, buildEnvJobFile)
+	envsJobTemp, err := template.New(buildEnvJobFile).Funcs(
 		template.FuncMap{
 			"escapeHCL": escapeHCL,
 		},
 	).ParseFiles(tname)
 	if err != nil {
-		return fmt.Errorf("failed to parse template file '%s': %s", tname, err)
+		return fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
 	}
 
 	envsJobTemp = template.Must(envsJobTemp, err)
@@ -95,35 +181,38 @@ func (n *NomadClient) CreateEnv(codeSnippetID string, envTemplate string, deps [
 		Dockerfile    string
 		FCEnvsDisk    string
 		APIKey        string
+		JobName       string
 	}{
 		CodeSnippetID: codeSnippetID,
 		Dockerfile:    dockerfile.String(),
 		FCEnvsDisk:    fcEnvsDisk,
+		JobName:       buildEnvJobName,
 		APIKey:        api.APIAdminKey,
 	}
+
 	var jobDef bytes.Buffer
 	if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
-		return fmt.Errorf("failed to `envsJobTemp.Execute()`: %s", err)
+		return fmt.Errorf("failed to `envsJobTemp.Execute()`: %+v", err)
 	}
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
-		return fmt.Errorf("failed to parse the `firecracker-envs` HCL job file: %s", err)
+		return fmt.Errorf("failed to parse the `%s` HCL job file: %+v", buildEnvJobName, err)
 	}
 
 	_, _, err = n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to register 'firecracker-envs/%s' job: %s", jobVars.CodeSnippetID, err)
+		return fmt.Errorf("failed to register '%s/%s' job: %+v", buildEnvJobName, jobVars.CodeSnippetID, err)
 	}
 
 	return nil
 }
 
 func (n *NomadClient) UpdateEnv(codeSnippetID string, session *api.Session) error {
-	tname := path.Join(templatesDir, "firecracker-envs-updater.hcl")
-	envsJobTemp, err := template.New("firecracker-envs-updater.hcl").ParseFiles(tname)
+	tname := path.Join(templatesDir, updateEnvJobFile)
+	envsJobTemp, err := template.New(updateEnvJobFile).ParseFiles(tname)
 	if err != nil {
-		return fmt.Errorf("failed to parse template file '%s': %s", tname, err)
+		return fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
 	}
 
 	envsJobTemp = template.Must(envsJobTemp, err)
@@ -138,27 +227,30 @@ func (n *NomadClient) UpdateEnv(codeSnippetID string, session *api.Session) erro
 	jobVars := struct {
 		CodeSnippetID string
 		FCEnvsDisk    string
+		JobName       string
 		SessionID     string
 		APIKey        string
 	}{
 		CodeSnippetID: codeSnippetID,
 		FCEnvsDisk:    fcEnvsDisk,
+		JobName:       updateEnvJobName,
 		SessionID:     sessionID,
 		APIKey:        api.APIAdminKey,
 	}
+
 	var jobDef bytes.Buffer
 	if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
-		return fmt.Errorf("failed to `envsJobTemp.Execute()`: %s", err)
+		return fmt.Errorf("failed to `envsJobTemp.Execute()`: %+v", err)
 	}
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
-		return fmt.Errorf("failed to parse the `firecracker-envs-updater` HCL job file: %s", err)
+		return fmt.Errorf("failed to parse the `%s` HCL job file: %+v", updateEnvJobName, err)
 	}
 
 	_, _, err = n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to register 'firecracker-envs-updater/%s' job: %s", jobVars.CodeSnippetID, err)
+		return fmt.Errorf("failed to register '%s/%s' job: %+v", updateEnvJobName, jobVars.CodeSnippetID, err)
 	}
 
 	return nil

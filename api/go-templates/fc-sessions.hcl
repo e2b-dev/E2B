@@ -1,4 +1,4 @@
-job "{{ .SessionJobName }}/{{ .SessionID }}" {
+job "{{ .JobName }}/{{ .SessionID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 

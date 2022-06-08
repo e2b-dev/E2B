@@ -80,7 +80,7 @@ func (a *APIStore) PostSessions(
 		if err == nil {
 			fmt.Printf("Found another edit session after we created a new editing session. Returning the other session.")
 
-			err = a.nomadClient.DeleteSession(session.SessionID)
+			err = a.nomadClient.DeleteSession(session.SessionID, false)
 			fmt.Printf("Error when cleaning up session: %v\n", err)
 
 			c.JSON(http.StatusCreated, &existingSession)
@@ -91,7 +91,7 @@ func (a *APIStore) PostSessions(
 	if err := a.sessionsCache.Add(session); err != nil {
 		fmt.Printf("Error when adding session to cache: %v\n", err)
 
-		err = a.nomadClient.DeleteSession(session.SessionID)
+		err = a.nomadClient.DeleteSession(session.SessionID, false)
 		fmt.Printf("Error when cleaning up session: %v\n", err)
 
 		sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a session right now")
@@ -113,7 +113,7 @@ func (a *APIStore) DeleteSessionsSessionID(
 		return
 	}
 
-	err := a.nomadClient.DeleteSession(sessionID)
+	err := a.nomadClient.DeleteSession(sessionID, true)
 
 	if err != nil {
 		fmt.Printf("Error when deleting session: %v\n", err)

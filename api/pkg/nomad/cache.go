@@ -87,14 +87,14 @@ func (c *SessionCache) Sync(sessions []*api.Session) {
 
 // We will need to either use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now
-func NewSessionCache(handleDeleteSession func(sessionID string) *api.APIError, initialSessions []*api.Session) *SessionCache {
+func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api.APIError, initialSessions []*api.Session) *SessionCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, *api.Session](sessionExpiration),
 	)
 
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, *api.Session]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
-			err := handleDeleteSession(i.Key())
+			err := handleDeleteSession(i.Key(), er == ttlcache.EvictionReasonExpired)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error deleting session (%v)\n: %s", er, err.Error())
 			}

@@ -1,4 +1,4 @@
-job "firecracker-envs-updater/{{ .CodeSnippetID }}" {
+job "{{ .JobName }}/{{ .CodeSnippetID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
@@ -8,7 +8,7 @@ job "firecracker-envs-updater/{{ .CodeSnippetID }}" {
     run_uuid = "${uuidv4()}"
   }
 
-  group "publish-env" {
+  group "use-prebuilt-env" {
     reschedule {
       attempts  = 0
       unlimited = false
@@ -19,7 +19,7 @@ job "firecracker-envs-updater/{{ .CodeSnippetID }}" {
       mode = "fail"
     }
 
-    task "publish-env" {
+    task "use-prebuilt-env" {
       resources {
         memory  = 300
         cores   = 1
@@ -32,11 +32,9 @@ job "firecracker-envs-updater/{{ .CodeSnippetID }}" {
       }
 
       config {
-        command = "local/env/publish-env.sh"
+        command = "local/env/use-prebuilt-env.sh"
         args = [
-          "${NOMAD_META_RUN_UUID}",
-          "local/env",
-          "{{ .SessionID }}",
+          "{{ .Template }}",
           "{{ .CodeSnippetID }}",
           "${NOMAD_ALLOC_DIR}",
           "{{ .FCEnvsDisk }}",
