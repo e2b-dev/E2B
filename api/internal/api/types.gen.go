@@ -13,7 +13,7 @@ const (
 // Defines values for Template.
 const (
 	Bash   Template = "Bash"
-	Golang Template = "Golang"
+	Go     Template = "Go"
 	Nodejs Template = "Nodejs"
 	Python Template = "Python"
 )
