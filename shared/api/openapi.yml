@@ -87,7 +87,7 @@ components:
       type: string
       enum:
         - Nodejs
-        - Golang
+        - Go
         - Bash
         - Python
     EnvironmentState:
