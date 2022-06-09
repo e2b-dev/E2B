@@ -1,0 +1,19 @@
+# .github/workflows/scheduled-builds.yml
+name: Measure performance
+
+on:
+  schedule:
+    # Runs "at minute 55 past every hour" (see https://crontab.guru)
+    - cron: "0 0 * * *"
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm install
+      - run: npm run build
+      - run: CODE_SNIPPET_ID=$CODE_SNIPPET_ID SUMMARY_FILE=$GITHUB_STEP_SUMMARY npm run measure

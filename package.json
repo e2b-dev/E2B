@@ -21,7 +21,8 @@
     "prepublishOnly": "rollup -c",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "run": "node examples/index.mjs",
+    "measure": "node test/performance.mjs",
+    "test": "node test/index.mjs",
     "fix": "npx eslint **/src/**/*.{ts,tsx,js} --fix",
     "generate": "openapi-typescript shared/api/openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts"
   },
