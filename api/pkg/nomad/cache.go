@@ -12,7 +12,7 @@ import (
 
 const (
 	sessionExpiration = time.Second * 15
-	cacheSyncTime     = time.Second * 10
+	cacheSyncTime     = time.Second * 30
 )
 
 type SessionCache struct {

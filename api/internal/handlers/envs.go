@@ -11,6 +11,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var postEnvsParallelLock = CreateRequestLimitLock(DefaultRequestLimit)
+
 func (a *APIStore) PostEnvsCodeSnippetID(
 	c *gin.Context,
 	codeSnippetID string,
@@ -22,6 +24,9 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
+
+	unlock := postEnvsParallelLock()
+	defer unlock()
 
 	var env api.PostEnvsCodeSnippetIDJSONBody
 	if err := c.Bind(&env); err != nil {
@@ -153,6 +158,8 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 	c.Status(http.StatusNoContent)
 }
 
+var patchEnvsParallelLock = CreateRequestLimitLock(DefaultRequestLimit)
+
 func (a *APIStore) PatchEnvsCodeSnippetID(
 	c *gin.Context,
 	codeSnippetID string,
@@ -164,6 +171,9 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
+
+	unlock := patchEnvsParallelLock()
+	defer unlock()
 
 	session, err := a.sessionsCache.FindEditSession(codeSnippetID)
 	if err != nil {

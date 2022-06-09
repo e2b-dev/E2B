@@ -4,7 +4,7 @@ FROM gitpod/workspace-full
 RUN sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl \
   && curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - \
   && sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
-  && sudo apt-get update && sudo apt-get install -y terraform packer nomad consul
+  && sudo apt-get update && sudo apt-get install -y terraform=1.1.9 packer=1.8.0 nomad consul
 
 # Install GCP CLI
 RUN sudo apt-get install -y apt-transport-https ca-certificates gnupg \

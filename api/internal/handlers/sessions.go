@@ -30,10 +30,14 @@ func (a *APIStore) GetSessions(
 	c.JSON(http.StatusOK, sessions)
 }
 
+var postSessionParallelLock = CreateRequestLimitLock(DefaultRequestLimit)
+
 func (a *APIStore) PostSessions(
 	c *gin.Context,
 	params api.PostSessionsParams,
 ) {
+	unlock := postSessionParallelLock()
+	defer unlock()
 
 	var newSession api.PostSessionsJSONBody
 	if err := c.Bind(&newSession); err != nil {
