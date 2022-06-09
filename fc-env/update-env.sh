@@ -84,6 +84,18 @@ FINAL_FC_SNAPFILE="$FINAL_DIR/snapfile"
 FINAL_FC_MEMFILE="$FINAL_DIR/memfile"
 FINAL_BUILD_ID_FILE="$FINAL_DIR/build_id"
 
+EDIT_DIR="$FC_ENVS_DISK/$CODE_SNIPPET_ID/edit"
+EDIT_ID_PATH="$EDIT_DIR/edit_id"
+
+# If no edit_id exists there is nothing to update
+if [ ! -f "$EDIT_ID_PATH" ]; then
+  echo "$EDIT_ID_PATH does not exist - there is nothing to update"
+
+  touch ${ALLOC_DIR}/main-done
+
+  exit
+fi
+
 FC_PID=""
 
 function mkdirs() {
@@ -99,8 +111,6 @@ function mkbuildidfile() {
 function geteditrootfs() {
   echo "===> Getting rootfs..."
 
-  EDIT_DIR="$FC_ENVS_DISK/$CODE_SNIPPET_ID/edit"
-  EDIT_ID_PATH="$EDIT_DIR/edit_id"
   EDIT_ID=`cat $EDIT_ID_PATH`
   EDIT_ID_DIR="$EDIT_DIR/$EDIT_ID"
 
