@@ -3,12 +3,12 @@ import { Session } from '../dist/cjs/index.js'
 
 const reportSummaryFile = process.env.SUMMARY_FILE
 
-async function spinSession() {
+async function spinSession(id) {
   let session
   try {
     const startTime = performance.now()
     session = new Session({
-      id: process.env.CODE_SNIPPET_ID,
+      id,
       codeSnippet: {
         onStateChange(state) {
           console.log(state)
@@ -20,7 +20,6 @@ async function spinSession() {
           console.log(stdout)
         },
       },
-      editEnabled: true,
     })
     await session.open()
 
@@ -50,22 +49,20 @@ function createReport(data, time) {
   return template
 }
 
-
 function writeMeasurements(data) {
   const time = new Date(Date.now())
 
   const report = createReport(data, time)
-
   writeFileSync(reportSummaryFile, report)
 }
 
 async function main() {
   try {
-    const timeToSession = await spinSession()
-    writeMeasurements({ timeToSession })
+    const timeToSession = await spinSession(process.env.CODE_SNIPPET_ID)
+    writeMeasurements({ [`Public session (${process.env.CODE_SNIPPET_ID})`]: `${Math.round(timeToSession)}ms` })
 
   } catch (e) {
-    writeMeasurements({ timeToSessionError: e.message })
+    writeMeasurements({ [`Public session (${process.env.CODE_SNIPPET_ID})`]: e.message })
   }
 }
 

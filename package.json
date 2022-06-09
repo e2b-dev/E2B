@@ -22,7 +22,7 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "measure": "node test/performance.mjs",
-    "test": "node test/index.mjs",
+    "run": "node test/run.mjs",
     "fix": "npx eslint **/src/**/*.{ts,tsx,js} --fix",
     "generate": "openapi-typescript shared/api/openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts"
   },

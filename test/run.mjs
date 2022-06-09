@@ -15,7 +15,7 @@ async function main() {
       },
     },
     debug: true,
-    editEnabled: true,
+    // editEnabled: true,
   })
 
   try {

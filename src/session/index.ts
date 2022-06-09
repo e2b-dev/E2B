@@ -42,6 +42,27 @@ class Session extends SessionConnection {
   async open() {
     await super.open()
 
+    await Promise.all([
+      this.codeSnippetOpts?.onStateChange
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStateChange, 'state')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onStderr
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStderr, 'stderr')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onStdout
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStdout, 'stdout')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onDepsStdout
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsStdout, 'depsStdout')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onDepsStderr
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsStderr, 'depsStderr')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onDepsChange
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsChange, 'depsChange')
+        : Promise.resolve(),
+    ])
+
     // Init CodeSnippet handler
     this.codeSnippet = {
       run: async (code: string) => {
@@ -99,27 +120,6 @@ class Session extends SessionConnection {
         return response
       },
     }
-
-    await Promise.all([
-      this.codeSnippetOpts?.onStateChange
-        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStateChange, 'state')
-        : Promise.resolve(),
-      this.codeSnippetOpts?.onStderr
-        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStderr, 'stderr')
-        : Promise.resolve(),
-      this.codeSnippetOpts?.onStdout
-        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStdout, 'stdout')
-        : Promise.resolve(),
-      this.codeSnippetOpts?.onDepsStdout
-        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsStdout, 'depsStdout')
-        : Promise.resolve(),
-      this.codeSnippetOpts?.onDepsStderr
-        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsStderr, 'depsStderr')
-        : Promise.resolve(),
-      this.codeSnippetOpts?.onDepsChange
-        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsChange, 'depsChange')
-        : Promise.resolve(),
-    ])
 
     // Init Terminal handler
     this.terminal = {
