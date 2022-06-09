@@ -17,8 +17,8 @@ const (
 	sessionsJobName          = "fc-sessions"
 	sessionsJobNameWithSlash = sessionsJobName + "/"
 	sessionsJobFile          = sessionsJobName + jobFileSuffix
-	jobRegisterTimeout       = time.Second * 10
-	allocationCheckTimeout   = time.Second * 10
+	jobRegisterTimeout       = time.Second * 2
+	allocationCheckTimeout   = time.Second * 4
 	allocationCheckInterval  = time.Millisecond * 100
 	fcTaskName               = "start"
 	sessionIDPrefix          = "s"
@@ -183,7 +183,7 @@ allocationCheck:
 		time.Sleep(allocationCheckInterval)
 	}
 
-	apiErr := n.DeleteSession(sessionID, false)
+	apiErr := n.DeleteSession(sessionID, true)
 	if apiErr != nil {
 		fmt.Printf("error in cleanup after failing to create session for code snippet '%s':%+v", newSession.CodeSnippetID, apiErr.Msg)
 	}

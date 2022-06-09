@@ -94,7 +94,7 @@ func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api
 
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, *api.Session]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
-			err := handleDeleteSession(i.Key(), er == ttlcache.EvictionReasonExpired)
+			err := handleDeleteSession(i.Key(), true)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error deleting session (%v)\n: %s", er, err.Error())
 			}
