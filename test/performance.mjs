@@ -28,7 +28,11 @@ async function spinSession(id) {
   } catch (e) {
     console.error(e)
   } finally {
-    await session?.close()
+    try {
+      await session?.close()
+    } catch (e) {
+      //
+    }
   }
 }
 
