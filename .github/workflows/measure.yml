@@ -5,7 +5,8 @@ on:
   schedule:
     - cron: "*/5 * * * *"
 jobs:
-  build:
+  measure:
+    name: Measure SDK performance
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2

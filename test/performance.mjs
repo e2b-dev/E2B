@@ -34,9 +34,11 @@ async function spinSession(id) {
 
 function createReport(data, time) {
   let template = `
-  Devbook SDK - session performance
+  # Devbook SDK - session performance
 
-  Date: ${time}
+  *${time}*
+
+  ## Results
 
 | Test  | Result |
 | ------------- | ------------- |`
