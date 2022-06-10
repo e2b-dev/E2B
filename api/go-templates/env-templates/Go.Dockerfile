@@ -17,7 +17,17 @@ WORKDIR code
 RUN go mod init main
 
 {{ if .Deps }}
-RUN go get {{ range .Deps }}{{ . }} {{ end }}
+  RUN go get {{ range .Deps }}{{ . }} {{ end }}
+
+  # {
+  #   "dep1": true
+  #   ,"dep2": true
+  # }
+  RUN echo { >> /.dbkdeps.json
+  {{ range .Deps }}
+    RUN echo ',"{{ . }}": true' >> /.dbkdeps.json
+  {{ end }}
+  RUN echo } >> /.dbkdeps.json
 {{ end }}
 
 # Set env vars for devbook-daemon

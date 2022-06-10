@@ -84,12 +84,10 @@ func (a *APIStore) validateAPIKey(apiKey *string) (string, error) {
 // This function wraps sending of an error in the Error format, and
 // handling the failure to marshal that.
 func sendAPIStoreError(c *gin.Context, code int, message string) {
-
 	apiErr := api.Error{
 		Code:    int32(code),
 		Message: message,
 	}
-
 	c.JSON(code, apiErr)
 }
 
