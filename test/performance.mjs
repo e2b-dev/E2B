@@ -18,7 +18,7 @@ async function spinSession(id, isEditSession) {
     const startTime = performance.now()
     session = new Session({
       id,
-      debug: false,
+      debug: true,
       editEnabled: isEditSession,
       ...isEditSession && { apiKey },
     })
@@ -49,13 +49,11 @@ function createReport(data, time) {
 
   ## Results
 
-  *Sample - ${samplePerID} sessions per every environment when the sessions are started as soon as the previous session is connects.*
-
-| Test  | Result |
-| ------------- | ------------- |`
+| Test | Samples | Result |
+| ------------- | ------------- | ------------- |`
 
   const createRow = (key, value) => {
-    template = template + `\n| ${key} | ${value} |`
+    template = template + `\n| ${key} | ${value.size} | ${value.result} |`
   }
 
   Object.entries(data).forEach(e => createRow(e[0], e[1]))
@@ -87,9 +85,9 @@ async function sample(id, size, isEditSession) {
 
     const averageTime = Math.round(totalTime / size)
 
-    return { [entryName]: `${averageTime}ms ${averageTime < upperBoundary ? ':heavy_check_mark:' : ':x:'}` }
+    return { [entryName]: { result: `${averageTime}ms ${averageTime < upperBoundary ? ':heavy_check_mark:' : ':x:'}`, size } }
   } catch (e) {
-    return { [entryName]: e.message }
+    return { [entryName]: { size, result: e.message } }
   }
 }
 
@@ -102,7 +100,8 @@ async function main() {
   }
 
   for (const id of codeSnippetIDs) {
-    const entry = await sample(id, samplePerID, true)
+    // We do only one sample of persistent session because otherview we would get reconnected to the same session
+    const entry = await sample(id, 1, true)
     entries = { ...entries, ...entry }
   }
 
