@@ -56,8 +56,6 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		}
 
 	} else {
-		// TODO: Download the base Dockerfile based on a template field in `env`.
-		// TODO: Add deps to the Dockerfile.
 		err := a.nomadClient.BuildEnv(codeSnippetID, string(env.Template), env.Deps)
 		if err != nil {
 			fmt.Printf("error: %v\n", err)
