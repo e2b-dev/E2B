@@ -16,4 +16,4 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: npm install
       - run: npm run build
-      - run: API_TOKEN=${{ secrets.API_TOKEN }} SUMMARY_FILE=$GITHUB_STEP_SUMMARY npm run measure
+      - run: API_KEY=${{ secrets.API_KEY }} SUMMARY_FILE=$GITHUB_STEP_SUMMARY npm run measure
