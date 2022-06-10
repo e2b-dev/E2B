@@ -16,4 +16,4 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: npm install
       - run: npm run build
-      - run: CODE_SNIPPET_ID=Nodejs SUMMARY_FILE=$GITHUB_STEP_SUMMARY npm run measure
+      - run: API_TOKEN=${{ secrets.API_TOKEN }} SUMMARY_FILE=$GITHUB_STEP_SUMMARY npm run measure

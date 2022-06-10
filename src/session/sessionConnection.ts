@@ -152,9 +152,30 @@ abstract class SessionConnection {
 
     const sessionURL = `wss://${this.getHostname(WS_PORT)}${WS_ROUTE}`
 
-    this.logger.log('Connection to session:', this.session)
-    await this.rpc.connect(sessionURL)
-    this.logger.log('Connected to session:', this.session)
+    this.rpc.onError((e) => {
+      this.logger.log('Error in WS session:', this.session, e)
+    })
+
+    let isFinished = false
+    let resolveOpening: (() => void) | undefined
+    let rejectOpening: (() => void) | undefined
+
+    const openingPromise = new Promise<void>((resolve, reject) => {
+      resolveOpening = () => {
+        if (isFinished) return
+        isFinished = true
+        resolve()
+      }
+      rejectOpening = () => {
+        if (isFinished) return
+        isFinished = true
+        reject()
+      }
+    })
+
+    this.rpc.onOpen(() => {
+      resolveOpening?.()
+    })
 
     this.rpc.onClose(async (e) => {
       this.logger.log('Closing WS connection to session:', this.session, e)
@@ -165,16 +186,24 @@ abstract class SessionConnection {
           await this.rpc.connect(sessionURL)
           this.logger.log('Reconnected to session:', this.session)
         } catch (e) {
-          this.logger.error('Failed reconnecting to session:', this.session)
+          this.logger.log('Failed reconnecting to session:', this.session)
         }
+      } else {
+        rejectOpening?.()
       }
     })
 
-    this.rpc.onError((e) => {
-      this.logger.error('Error in WS session:', this.session, e)
-    })
-
     this.rpc.onNotification.push(this.handleNotification.bind(this))
+
+    try {
+      this.logger.log('Connection to session:', this.session)
+      await this.rpc.connect(sessionURL)
+    } catch (e) {
+      this.logger.log('Error connecting to session', e)
+    }
+
+    await openingPromise
+    this.logger.log('Connected to session:', this.session)
   }
 
   private handleNotification(data: IRpcNotification) {
