@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/drael/GOnetstat"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -87,24 +88,27 @@ type CodeSnippet struct {
 
   depsManager *depsManager
 
-	stdoutSubscribers     map[rpc.ID]*subscriber
-	stderrSubscribers     map[rpc.ID]*subscriber
-	stateSubscribers      map[rpc.ID]*subscriber
-  depsChangeSubscribers map[rpc.ID]*subscriber
-  depsStdoutSubscribers map[rpc.ID]*subscriber
-  depsStderrSubscribers map[rpc.ID]*subscriber
+	stdoutSubscribers          map[rpc.ID]*subscriber
+	stderrSubscribers          map[rpc.ID]*subscriber
+	stateSubscribers           map[rpc.ID]*subscriber
+  depsChangeSubscribers      map[rpc.ID]*subscriber
+  depsStdoutSubscribers      map[rpc.ID]*subscriber
+  depsStderrSubscribers      map[rpc.ID]*subscriber
+  scanOpenedPortsSubscribers map[rpc.ID]*subscriber
 }
 
 func NewCodeSnippetService() *CodeSnippet {
   cs := &CodeSnippet{
-		stdoutSubscribers:     make(map[rpc.ID]*subscriber),
-		stderrSubscribers:     make(map[rpc.ID]*subscriber),
-		stateSubscribers:      make(map[rpc.ID]*subscriber),
-    depsChangeSubscribers: make(map[rpc.ID]*subscriber),
-    depsStdoutSubscribers: make(map[rpc.ID]*subscriber),
-    depsStderrSubscribers: make(map[rpc.ID]*subscriber),
+		stdoutSubscribers:          make(map[rpc.ID]*subscriber),
+		stderrSubscribers:          make(map[rpc.ID]*subscriber),
+		stateSubscribers:           make(map[rpc.ID]*subscriber),
+    depsChangeSubscribers:      make(map[rpc.ID]*subscriber),
+    depsStdoutSubscribers:      make(map[rpc.ID]*subscriber),
+    depsStderrSubscribers:      make(map[rpc.ID]*subscriber),
+    scanOpenedPortsSubscribers: make(map[rpc.ID]*subscriber),
 	}
   cs.depsManager = newDepsManager(cs.depsStdoutSubscribers, cs.depsStderrSubscribers)
+  go cs.scanTCPPorts()
   return cs
 }
 
@@ -118,7 +122,7 @@ func (cs *CodeSnippet) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*s
 	go func() {
 		select {
 		case err := <-sub.subscription.Err():
-			slogger.Infow("Subscribtion error",
+			slogger.Errorw("Subscribtion error",
 				"subscriptionID", sub.SubscriptionID(),
 				"error", err,
 			)
@@ -139,6 +143,28 @@ func (cs *CodeSnippet) setRunning(b bool) {
 		state = CodeSnippetStateStopped
 	}
 	cs.notifyState(state)
+}
+
+func (cs *CodeSnippet) scanTCPPorts() {
+  ticker := time.NewTicker(1 * time.Second)
+  for {
+    select {
+    case <-ticker.C:
+      d := GOnetstat.Tcp()
+      cs.notifyScanOpenedPorts(d)
+    }
+  }
+}
+
+func (cs *CodeSnippet) notifyScanOpenedPorts(ports []GOnetstat.Process) {
+  for _, sub := range cs.scanOpenedPortsSubscribers {
+		if err := sub.Notify(ports); err != nil {
+			slogger.Errorw("Failed to send scan opened ports notification",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+		}
+  }
 }
 
 func (cs *CodeSnippet) notifyDepsChange() {
@@ -473,3 +499,18 @@ func (cs *CodeSnippet) DepsStderr(ctx context.Context) (*rpc.Subscription, error
 	}
 	return sub.subscription, nil
 }
+
+// Subscription
+func (cs *CodeSnippet) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error) {
+  slogger.Info("New scan opened ports subscription")
+  sub, err := cs.saveNewSubscriber(ctx, cs.scanOpenedPortsSubscribers)
+  if err != nil {
+		slogger.Errorw("Failed to create a scan opened ports subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+  }
+  return sub.subscription, nil
+}
+
