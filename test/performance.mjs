@@ -8,8 +8,8 @@ const codeSnippetIDs = [
   'Go',
   'Nodejs',
 ]
-const samplePerID = 4
-const upperBoundary = 1000 // ms
+const samplePerID = 10
+const upperBoundary = 1000 // 1s
 
 async function spinSession(id, isEditSession) {
   console.log('Creating session...')
@@ -33,7 +33,7 @@ async function spinSession(id, isEditSession) {
       try {
         await session?.close()
       } catch (e) {
-        //
+        // Do nothing
       }
     })()
   }
@@ -42,12 +42,11 @@ async function spinSession(id, isEditSession) {
 }
 
 function createReport(data, time) {
-  let template = `
-  # Devbook SDK - Session Performance
+  let template = `# Devbook SDK - Session Performance
 
-  *${time}*
+*${time}*
 
-  ## Results
+## Results
 
 | Test | Samples | Result |
 | ------------- | ------------- | ------------- |`

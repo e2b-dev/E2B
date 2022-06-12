@@ -38,3 +38,4 @@ dist
 build/Release
 
 devbookd
+/test.md

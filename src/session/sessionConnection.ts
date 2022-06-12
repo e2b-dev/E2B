@@ -174,6 +174,7 @@ abstract class SessionConnection {
     })
 
     this.rpc.onOpen(() => {
+      this.logger.log('Connected to session:', this.session)
       resolveOpening?.()
     })
 
@@ -185,8 +186,9 @@ abstract class SessionConnection {
         try {
           await this.rpc.connect(sessionURL)
           this.logger.log('Reconnected to session:', this.session)
-        } catch (e) {
-          this.logger.log('Failed reconnecting to session:', this.session)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (e: any) {
+          this.logger.log('Failed reconnecting to session:', this.session, e)
         }
       } else {
         rejectOpening?.()
@@ -198,12 +200,13 @@ abstract class SessionConnection {
     try {
       this.logger.log('Connection to session:', this.session)
       await this.rpc.connect(sessionURL)
-    } catch (e) {
-      this.logger.log('Error connecting to session', e)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      this.logger.log('Error connecting to session', this.session, e)
     }
 
     await openingPromise
-    this.logger.log('Connected to session:', this.session)
   }
 
   private handleNotification(data: IRpcNotification) {
@@ -235,7 +238,6 @@ abstract class SessionConnection {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
-
               this.logger.error(`Error refreshing session - (${error.status}): ${error.data.message}`)
               return
             }
