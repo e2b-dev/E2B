@@ -38,12 +38,19 @@ export interface DepStderrResponse extends DepOutResponse {
   type: OutType.Stderr
 }
 
+export interface OpenedPort {
+  State: string
+  Ip: string
+  Port: number
+}
+
 export type CodeSnippetStateHandler = (state: CodeSnippetExecState) => void
 export type CodeSnippetStderrHandler = (o: OutStderrResponse) => void
 export type CodeSnippetStdoutHandler = (o: OutStdoutResponse) => void
 export type DepsStdoutHandler = (o: DepStdoutResponse) => void
 export type DepsStderrHandler = (o: DepStderrResponse) => void
 export type DepsChangeHandler = (deps: string[]) => void
+export type ScanOpenedPortsHandler = (ports: OpenedPort[]) => void
 
 export type CodeSnippetSubscriptionHandler =
   CodeSnippetStateHandler |
@@ -51,7 +58,8 @@ export type CodeSnippetSubscriptionHandler =
   CodeSnippetStdoutHandler |
   DepsStderrHandler |
   DepsStderrHandler |
-  DepsChangeHandler
+  DepsChangeHandler |
+  ScanOpenedPortsHandler
 
 export type CodeSnippetSubscriptionHandlerType = {
   'state': CodeSnippetStateHandler
@@ -60,6 +68,7 @@ export type CodeSnippetSubscriptionHandlerType = {
   'depsStdout': DepsStdoutHandler
   'depsStderr': DepsStderrHandler
   'depsChange': DepsChangeHandler
+  'scanOpenedPorts': ScanOpenedPortsHandler
 }
 
 export interface CodeSnippetManager {

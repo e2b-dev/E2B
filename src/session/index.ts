@@ -9,6 +9,7 @@ import {
   DepsStdoutHandler,
   DepsStderrHandler,
   DepsChangeHandler,
+  ScanOpenedPortsHandler,
 } from './codeSnippet'
 import { TerminalManager, terminalMethod } from './terminal'
 import SessionConnection, {
@@ -22,6 +23,7 @@ export interface CodeSnippetOpts {
   onDepsStdout?: DepsStdoutHandler
   onDepsStderr?: DepsStderrHandler
   onDepsChange?: DepsChangeHandler
+  onScanPorts?: ScanOpenedPortsHandler
 }
 
 export interface SessionOpts extends SessionConnectionOpts {
@@ -60,6 +62,9 @@ class Session extends SessionConnection {
         : Promise.resolve(),
       this.codeSnippetOpts?.onDepsChange
         ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onDepsChange, 'depsChange')
+        : Promise.resolve(),
+      this.codeSnippetOpts?.onScanPorts
+        ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onScanPorts, 'scanOpenedPorts')
         : Promise.resolve(),
     ])
 
