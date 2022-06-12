@@ -23,6 +23,7 @@ package firevm
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	hclog "github.com/hashicorp/go-hclog"
@@ -96,6 +97,9 @@ type Driver struct {
 
 	// logger will log to the Nomad agent
 	logger hclog.Logger
+
+	// /etc/hosts lock
+	etcHosts sync.Mutex
 }
 
 // Config is the driver configuration set by the SetConfig RPC call
@@ -135,6 +139,7 @@ func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 		ctx:            ctx,
 		signalShutdown: cancel,
 		logger:         logger,
+		etcHosts:       sync.Mutex{},
 	}
 }
 
@@ -223,7 +228,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 	}
 
 	if oldHandle != nil {
-		oldHandle.shutdown()
+		oldHandle.shutdown(d)
 	}
 
 	return fmt.Errorf("cannot recover task")
@@ -243,17 +248,17 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	ipSlot, err := CreateNamespace(cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d.logger)
+	ipSlot, err := CreateNamespace(cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d)
 
 	defer func() {
 		if err != nil {
-			ipSlot.RemoveNamespace(d.logger)
+			ipSlot.RemoveNamespace(d)
 			d.logger.Error("Cleaning up after unsuccessful start: %v", err)
 		}
 	}()
 
 	if err != nil {
-		ipSlot.RemoveNamespace(d.logger)
+		ipSlot.RemoveNamespace(d)
 		return nil, nil, fmt.Errorf("failed to create networking: %v", err)
 	}
 
@@ -266,7 +271,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		driverConfig.EditEnabled,
 	)
 	if err != nil {
-		ipSlot.RemoveNamespace(d.logger)
+		ipSlot.RemoveNamespace(d)
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
 		return nil, nil, fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
 	}
@@ -292,7 +297,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	if err = handle.SetDriverState(&driverState); err != nil {
-		ipSlot.RemoveNamespace(d.logger)
+		ipSlot.RemoveNamespace(d)
 		m.Machine.StopVMM()
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
 		return nil, nil, fmt.Errorf("failed to set driver state: %v", err)
@@ -300,7 +305,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	d.tasks.Set(cfg.ID, h)
 
-	go h.run()
+	go h.run(d)
 
 	return handle, nil, nil
 }
@@ -345,7 +350,7 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 		return drivers.ErrTaskNotFound
 	}
 
-	if err := h.shutdown(); err != nil {
+	if err := h.shutdown(d); err != nil {
 		return fmt.Errorf("executor Shutdown failed: %v", err)
 	}
 

@@ -74,7 +74,7 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 	}
 }
 
-func (h *taskHandle) run() {
+func (h *taskHandle) run(driver *Driver) {
 	// h.stateLock.Lock()
 	// if h.exitResult == nil {
 	// 	h.exitResult = &drivers.ExitResult{}
@@ -88,7 +88,7 @@ func (h *taskHandle) run() {
 
 	pid, err := strconv.Atoi(h.Info.Pid)
 	if err != nil {
-		h.Slot.RemoveNamespace(h.logger)
+		h.Slot.RemoveNamespace(driver)
 		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.Info.Pid))
 		// h.stateLock.Lock()
 		h.exitResult = &drivers.ExitResult{}
@@ -116,7 +116,7 @@ func (h *taskHandle) run() {
 	// h.stateLock.Lock()
 	// defer h.stateLock.Unlock()
 
-	h.Slot.RemoveNamespace(h.logger)
+	h.Slot.RemoveNamespace(driver)
 	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0
@@ -182,12 +182,24 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 	}
 }
 
-func (h *taskHandle) shutdown() error {
+func (h *taskHandle) shutdown(driver *Driver) error {
 	var err error
 	if h.EditEnabled {
-		err = saveEditSnapshot(h.Slot, &h.Info)
-		h.logger.Error("error persisting edit session %v", err)
-
+		// if the build id and template id doesn't exist the code snippet was deleted
+		buildIDPath := filepath.Join(h.Info.CodeSnippetDirectory, buildIDName)
+		if _, err := os.Stat(buildIDPath); err != nil {
+			// build id doesn't exist - the code snippet may be using template
+			templateIDPath := filepath.Join(h.Info.CodeSnippetDirectory, templateIDName)
+			if _, err := os.Stat(templateIDPath); err != nil {
+				// template id doesn't exist
+			} else {
+				err = saveEditSnapshot(h.Slot, &h.Info)
+				h.logger.Error("error persisting edit session %v", err)
+			}
+		} else {
+			err = saveEditSnapshot(h.Slot, &h.Info)
+			h.logger.Error("error persisting edit session %v", err)
+		}
 	}
 
 	h.MachineInstance.StopVMM()
@@ -216,11 +228,11 @@ func (h *taskHandle) shutdown() error {
 	}
 
 	if h.EditEnabled {
-		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, "edit", *h.Info.EditID)
+		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, editDirName, *h.Info.EditID)
 		os.RemoveAll(oldEditDirPath)
 	}
 
-	h.Slot.RemoveNamespace(h.logger)
+	h.Slot.RemoveNamespace(driver)
 
 	return nil
 }

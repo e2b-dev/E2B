@@ -11,8 +11,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var postEnvsParallelLock = CreateRequestLimitLock(DefaultRequestLimit)
-
 func (a *APIStore) PostEnvsCodeSnippetID(
 	c *gin.Context,
 	codeSnippetID string,
@@ -25,12 +23,18 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		return
 	}
 
-	unlock := postEnvsParallelLock()
-	defer unlock()
-
 	var env api.PostEnvsCodeSnippetIDJSONBody
 	if err := c.Bind(&env); err != nil {
 		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+		return
+	}
+
+	templates, err := nomad.GetTemplates()
+	if err != nil {
+		fmt.Printf("error retrieving templates: %+v\n", err)
+	} else if slices.Contains(*templates, codeSnippetID) {
+		fmt.Printf("stopped request trying to recreate template environment %s", codeSnippetID)
+		sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
 		return
 	}
 
@@ -83,7 +87,16 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 		return
 	}
 
-	err := a.supabase.DB.
+	templates, err := nomad.GetTemplates()
+	if err != nil {
+		fmt.Printf("error retrieving templates: %+v\n", err)
+	} else if slices.Contains(*templates, codeSnippetID) {
+		fmt.Printf("stopped request trying to delete template environment %s", codeSnippetID)
+		sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
+		return
+	}
+
+	err = a.supabase.DB.
 		From("envs").
 		Delete().
 		Eq("code_snippet_id", codeSnippetID).
@@ -156,8 +169,6 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 	c.Status(http.StatusNoContent)
 }
 
-var patchEnvsParallelLock = CreateRequestLimitLock(DefaultRequestLimit)
-
 func (a *APIStore) PatchEnvsCodeSnippetID(
 	c *gin.Context,
 	codeSnippetID string,
@@ -170,8 +181,14 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 		return
 	}
 
-	unlock := patchEnvsParallelLock()
-	defer unlock()
+	templates, err := nomad.GetTemplates()
+	if err != nil {
+		fmt.Printf("error retrieving templates: %+v\n", err)
+	} else if slices.Contains(*templates, codeSnippetID) {
+		fmt.Printf("stopped request trying to update template environment %s", codeSnippetID)
+		sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
+		return
+	}
 
 	session, err := a.sessionsCache.FindEditSession(codeSnippetID)
 	if err != nil {

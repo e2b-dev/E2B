@@ -7,7 +7,6 @@ import (
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/hashicorp/go-hclog"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
@@ -16,9 +15,9 @@ import (
 const hostDefaultGateway = "ens4"
 const loNS = "lo"
 
-func CreateNamespace(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
+func CreateNamespace(nodeID string, sessionID string, driver *Driver) (*IPSlot, error) {
 	// Get slot from Consul KV
-	ipSlot, err := getIPSlot(nodeID, sessionID, logger)
+	ipSlot, err := getIPSlot(nodeID, sessionID, driver.logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get IP slot: %v", err)
 	}
@@ -207,9 +206,17 @@ func CreateNamespace(nodeID string, sessionID string, logger hclog.Logger) (*IPS
 	// mkdir -p "/etc/netns/$NS"
 	// ln -s /run/systemd/resolve/resolv.conf /etc/netns/"$NS"/resolv.conf
 
+	driver.etcHosts.Lock()
+	defer driver.etcHosts.Unlock()
+
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize etc hosts handler: %v", err)
+	}
+
+	err = hosts.Reload()
+	if err != nil {
+		return nil, fmt.Errorf("failed loading etc hosts: %v", err)
 	}
 
 	// Add entry to etc hosts
@@ -222,21 +229,31 @@ func CreateNamespace(nodeID string, sessionID string, logger hclog.Logger) (*IPS
 	return ipSlot, nil
 }
 
-func (ipSlot *IPSlot) RemoveNamespace(logger hclog.Logger) error {
+func (ipSlot *IPSlot) RemoveNamespace(driver *Driver) error {
+
+	driver.etcHosts.Lock()
+
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
-		logger.Error("Failed to initialize etc hosts handler: %v", err)
+		driver.logger.Error("Failed to initialize etc hosts handler: %v", err)
 	}
 
-	hosts.RemoveAddress(ipSlot.HostSnapshotIP())
+	err = hosts.Reload()
+	if err != nil {
+		driver.logger.Error("failed loading etc hosts: %v", err)
+	}
+
+	hosts.RemoveHost(ipSlot.SessionID)
 	err = hosts.Save()
 	if err != nil {
-		logger.Error("error adding session to etc hosts %v", err)
+		driver.logger.Error("error adding session to etc hosts %v", err)
 	}
+
+	driver.etcHosts.Unlock()
 
 	tables, err := iptables.New()
 	if err != nil {
-		logger.Error("error initializing iptables %v", err)
+		driver.logger.Error("error initializing iptables %v", err)
 	}
 
 	// Delete host forwarding rules
@@ -249,7 +266,7 @@ func (ipSlot *IPSlot) RemoveNamespace(logger hclog.Logger) error {
 	// Delete routing from host to FC namespace
 	_, ipNet, err := net.ParseCIDR(ipSlot.HostSnapshotCIDR())
 	if err != nil {
-		logger.Error("error parsing host snapshot CIDR %v", err)
+		driver.logger.Error("error parsing host snapshot CIDR %v", err)
 	}
 
 	err = netlink.RouteDel(&netlink.Route{
@@ -257,22 +274,22 @@ func (ipSlot *IPSlot) RemoveNamespace(logger hclog.Logger) error {
 		Dst: ipNet,
 	})
 	if err != nil {
-		logger.Error("error deleting route from host to FC %v", err)
+		driver.logger.Error("error deleting route from host to FC %v", err)
 	}
 
 	err = os.RemoveAll(ipSlot.SessionTmp())
 	if err != nil {
-		logger.Error("error deleting session tmp files (overlay, workdir) %v", err)
+		driver.logger.Error("error deleting session tmp files (overlay, workdir) %v", err)
 		// return fmt.Errorf("error deleting session tmp files (overlay, workdir) %v", err)
 	}
 
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
-		logger.Error("error deleting namespace %v", err)
+		driver.logger.Error("error deleting namespace %v", err)
 		// return fmt.Errorf("error deleting namespace %v", err)
 	}
 
-	err = ipSlot.releaseIPSlot(logger)
+	err = ipSlot.releaseIPSlot(driver.logger)
 	if err != nil {
 		return fmt.Errorf("error releasing slot %v", err)
 	}
