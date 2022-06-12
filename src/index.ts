@@ -22,6 +22,8 @@ export type {
   DepOutResponse,
   DepStdoutResponse,
   DepStderrResponse,
+
+  OpenedPort,
 } from './session/codeSnippet'
 export type {
   TerminalManager,
