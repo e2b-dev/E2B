@@ -62,6 +62,7 @@ FINAL_FC_ROOTFS="$FINAL_DIR/rootfs.ext4"
 FINAL_FC_SNAPFILE="$FINAL_DIR/snapfile"
 FINAL_FC_MEMFILE="$FINAL_DIR/memfile"
 FINAL_TEMPLATE_ID_FILE="$FINAL_DIR/template_id"
+FINAL_BUILD_ID_FILE="$FINAL_DIR/build_id"
 
 function mkdirs() {
   mkdir -p $FINAL_DIR
@@ -72,6 +73,12 @@ function mk_template_id_file() {
 }
 
 function link_env_files() {
+  rm -rf $FINAL_FC_ROOTFS
+  rm -rf $FINAL_FC_SNAPFILE
+  rm -rf $FINAL_FC_MEMFILE
+  rm -rf $FINAL_BUILD_ID_FILE
+  rm -rf $FINAL_TEMPLATE_ID_FILE
+
   ln $TEMPLATE_FC_ROOTFS $FINAL_FC_ROOTFS
   ln $TEMPLATE_FC_SNAPFILE $FINAL_FC_SNAPFILE
   ln $TEMPLATE_FC_MEMFILE $FINAL_FC_MEMFILE
