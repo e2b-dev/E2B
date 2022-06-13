@@ -98,11 +98,11 @@ async function main() {
     entries = { ...entries, ...entry }
   }
 
-  for (const id of codeSnippetIDs) {
-    // We do only one sample of persistent session because otherview we would get reconnected to the same session
-    const entry = await sample(id, 1, true)
-    entries = { ...entries, ...entry }
-  }
+  // for (const id of codeSnippetIDs) {
+  //   // We do only one sample of persistent session because otherview we would get reconnected to the same session
+  //   const entry = await sample(id, 1, true)
+  //   entries = { ...entries, ...entry }
+  // }
 
   writeMeasurements(entries)
 }
