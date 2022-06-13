@@ -97,6 +97,7 @@ abstract class SessionConnection {
 
   async close() {
     if (this.isOpen) {
+      this.logger.log('Closing', this.session)
       this.isOpen = false
 
       this.logger.log('Unsubscribing...')
@@ -222,7 +223,7 @@ abstract class SessionConnection {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
-          this.logger.log('Cannot refresh session - it was closed')
+          this.logger.log('Cannot refresh session - it was closed', this.session)
           return
         }
 
