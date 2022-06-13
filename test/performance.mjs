@@ -18,7 +18,7 @@ async function spinSession(id, isEditSession) {
     const startTime = performance.now()
     session = new Session({
       id,
-      debug: true,
+      // debug: true,
       editEnabled: isEditSession,
       ...isEditSession && { apiKey },
     })
