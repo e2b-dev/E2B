@@ -102,7 +102,13 @@ server {
   proxy_set_header Upgrade $http_upgrade;
   proxy_set_header Connection "Upgrade";
 
+  proxy_http_version 1.1;
+
   proxy_read_timeout 7d;
+  proxy_send_timeout 7d;
+
+  proxy_cache_bypass 1;
+  proxy_no_cache 1;
 
   location / {
     if ($dbk_session_id = "") {
