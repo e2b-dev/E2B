@@ -7,7 +7,6 @@ import (
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
@@ -20,6 +19,13 @@ func CreateNamespace(nodeID string, sessionID string, driver *Driver) (*IPSlot, 
 	ipSlot, err := getIPSlot(nodeID, sessionID, driver.logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get IP slot: %v", err)
+	}
+
+	// Add entry to etc hosts
+	driver.hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.SessionID)
+	err = driver.hosts.Save()
+	if err != nil {
+		return nil, fmt.Errorf("error adding session to etc hosts %v", err)
 	}
 
 	// Prevent thread changes so the we can safely manipulate with namespaces
@@ -206,50 +212,15 @@ func CreateNamespace(nodeID string, sessionID string, driver *Driver) (*IPSlot, 
 	// mkdir -p "/etc/netns/$NS"
 	// ln -s /run/systemd/resolve/resolv.conf /etc/netns/"$NS"/resolv.conf
 
-	driver.etcHosts.Lock()
-	defer driver.etcHosts.Unlock()
-
-	hosts, err := txeh.NewHostsDefault()
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize etc hosts handler: %v", err)
-	}
-
-	err = hosts.Reload()
-	if err != nil {
-		return nil, fmt.Errorf("failed loading etc hosts: %v", err)
-	}
-
-	// Add entry to etc hosts
-	hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.SessionID)
-	err = hosts.Save()
-	if err != nil {
-		return nil, fmt.Errorf("error adding session to etc hosts %v", err)
-	}
-
 	return ipSlot, nil
 }
 
 func (ipSlot *IPSlot) RemoveNamespace(driver *Driver) error {
-
-	driver.etcHosts.Lock()
-
-	hosts, err := txeh.NewHostsDefault()
+	driver.hosts.RemoveHost(ipSlot.SessionID)
+	err := driver.hosts.Save()
 	if err != nil {
-		driver.logger.Error("Failed to initialize etc hosts handler: %v", err)
+		driver.logger.Error("error removing session to etc hosts %v", err)
 	}
-
-	err = hosts.Reload()
-	if err != nil {
-		driver.logger.Error("failed loading etc hosts: %v", err)
-	}
-
-	hosts.RemoveHost(ipSlot.SessionID)
-	err = hosts.Save()
-	if err != nil {
-		driver.logger.Error("error adding session to etc hosts %v", err)
-	}
-
-	driver.etcHosts.Unlock()
 
 	tables, err := iptables.New()
 	if err != nil {

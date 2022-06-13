@@ -23,7 +23,6 @@ package firevm
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	hclog "github.com/hashicorp/go-hclog"
@@ -33,6 +32,7 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	pstructs "github.com/hashicorp/nomad/plugins/shared/structs"
+	"github.com/txn2/txeh"
 )
 
 const (
@@ -98,8 +98,7 @@ type Driver struct {
 	// logger will log to the Nomad agent
 	logger hclog.Logger
 
-	// /etc/hosts lock
-	etcHosts sync.Mutex
+	hosts *txeh.Hosts
 }
 
 // Config is the driver configuration set by the SetConfig RPC call
@@ -132,6 +131,16 @@ func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 	ctx, cancel := context.WithCancel(context.Background())
 	logger = logger.Named(pluginName)
 
+	hosts, err := txeh.NewHostsDefault()
+	if err != nil {
+		panic("Failed to initialize etc hosts handler")
+	}
+
+	err = hosts.Reload()
+	if err != nil {
+		panic("Failed to load etc hosts")
+	}
+
 	return &Driver{
 		eventer:        eventer.NewEventer(ctx, logger),
 		config:         &Config{},
@@ -139,7 +148,7 @@ func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
 		ctx:            ctx,
 		signalShutdown: cancel,
 		logger:         logger,
-		etcHosts:       sync.Mutex{},
+		hosts:          hosts,
 	}
 }
 

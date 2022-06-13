@@ -183,7 +183,7 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 }
 
 func (h *taskHandle) shutdown(driver *Driver) error {
-	var err error
+	// var err error
 	if h.EditEnabled {
 		// if the build id and template id doesn't exist the code snippet was deleted
 		buildIDPath := filepath.Join(h.Info.CodeSnippetDirectory, buildIDName)
@@ -202,16 +202,18 @@ func (h *taskHandle) shutdown(driver *Driver) error {
 		}
 	}
 
-	h.MachineInstance.StopVMM()
+	// time.Sleep(containerMonitorIntv * 5)
+	h.Info.Cmd.Process.Signal(syscall.SIGTERM)
 
-	pid, err := strconv.Atoi(h.Info.Pid)
-	if err == nil {
-		timeout := time.After(20 * time.Second)
+	pid, pErr := strconv.Atoi(h.Info.Pid)
+	if pErr == nil {
+		timeout := time.After(10 * time.Second)
 
 	pidCheck:
 		for {
 			select {
 			case <-timeout:
+				h.Info.Cmd.Process.Kill()
 				break pidCheck
 			default:
 				process, err := os.FindProcess(int(pid))
@@ -226,6 +228,8 @@ func (h *taskHandle) shutdown(driver *Driver) error {
 			time.Sleep(containerMonitorIntv)
 		}
 	}
+
+	h.Info.Cmd.Process.Wait()
 
 	if h.EditEnabled {
 		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, editDirName, *h.Info.EditID)

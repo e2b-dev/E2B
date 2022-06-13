@@ -61,6 +61,7 @@ type Instance_info struct {
 	CodeSnippetID        string
 	CodeSnippetDirectory string
 	BuildDirPath         string
+	Cmd                  *exec.Cmd
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -267,7 +268,7 @@ func (d *Driver) initializeContainer(
 		)
 	}
 
-	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s ", fcCfg.SocketPath)
+	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fcCfg.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
 	cmd := exec.CommandContext(ctx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
@@ -336,6 +337,7 @@ func (d *Driver) initializeContainer(
 	}
 
 	info := Instance_info{
+		Cmd:                  cmd,
 		AllocId:              cfg.AllocID,
 		Pid:                  strconv.Itoa(pid),
 		SnapshotRootPath:     snapshotRootPath,
