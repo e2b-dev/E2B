@@ -8,7 +8,7 @@ const codeSnippetIDs = [
   'Go',
   'Nodejs',
 ]
-const samplePerID = 5
+const samplePerID = 3
 const upperBoundary = 1000 // 1s
 
 async function spinSession(id, isEditSession) {
