@@ -90,6 +90,8 @@ components:
         - Go
         - Bash
         - Python
+        - Java
+        - Rust
     EnvironmentState:
       type: string
       enum:
