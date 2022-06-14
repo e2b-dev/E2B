@@ -89,9 +89,11 @@ components:
         - Nodejs
         - Go
         - Bash
-        - Python
+        - Python3
         - Java
         - Rust
+        - Perl
+        - PHP
     EnvironmentState:
       type: string
       enum:
