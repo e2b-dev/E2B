@@ -91,7 +91,7 @@ components:
         - Bash
         - Python
         - Java
-        - Rest
+        - Rust
     EnvironmentState:
       type: string
       enum:
