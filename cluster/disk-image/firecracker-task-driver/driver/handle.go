@@ -202,7 +202,6 @@ func (h *taskHandle) shutdown(driver *Driver) error {
 		}
 	}
 
-	// time.Sleep(containerMonitorIntv * 5)
 	h.Info.Cmd.Process.Signal(syscall.SIGTERM)
 
 	pid, pErr := strconv.Atoi(h.Info.Pid)

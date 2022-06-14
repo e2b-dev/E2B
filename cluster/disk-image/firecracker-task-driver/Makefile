@@ -6,9 +6,9 @@ build:
 
 update-dev-driver:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/ .
-	gcloud compute ssh orch-client-080d -- 'sudo rm -f /opt/nomad/plugins/firecracker-task-driver'
-	gcloud compute scp /workspace/orchestration-services/cluster/disk-image/firecracker-task-driver/bin/firecracker-task-driver root@orch-client-080d:/opt/nomad/plugins/firecracker-task-driver
-	gcloud compute ssh orch-client-080d -- 'sudo pgrep nomad | xargs sudo kill'
+	gcloud compute ssh orch-client-whnn -- 'sudo rm -f /opt/nomad/plugins/firecracker-task-driver'
+	gcloud compute scp /workspace/orchestration-services/cluster/disk-image/firecracker-task-driver/bin/firecracker-task-driver root@orch-client-whnn:/opt/nomad/plugins/firecracker-task-driver
+	gcloud compute ssh orch-client-whnn -- 'sudo pgrep nomad | xargs sudo kill'
 
 set-project-gcloud:
 	gcloud config set project devbookhq
