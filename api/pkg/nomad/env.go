@@ -16,7 +16,7 @@ const (
 FROM alpine:3.16
 
 RUN apk update && apk upgrade
-RUN apk add util-linux openrc openssh
+RUN apk add --no-cache util-linux openrc openssh
 
 COPY devbookd /usr/bin/devbookd
 COPY devbookd-init /etc/init.d/devbookd

@@ -12,10 +12,14 @@ const (
 
 // Defines values for Template.
 const (
-	Bash   Template = "Bash"
-	Go     Template = "Go"
-	Nodejs Template = "Nodejs"
-	Python Template = "Python"
+	Bash    Template = "Bash"
+	Go      Template = "Go"
+	Java    Template = "Java"
+	Nodejs  Template = "Nodejs"
+	PHP     Template = "PHP"
+	Perl    Template = "Perl"
+	Python3 Template = "Python3"
+	Rust    Template = "Rust"
 )
 
 // EnvironmentState defines model for EnvironmentState.
