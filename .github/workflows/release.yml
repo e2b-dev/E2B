@@ -1,7 +1,9 @@
 name: Publish NPM Package
+
 on:
-  release:
-    types: [created]
+  push:
+    tags: [v*]
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -16,3 +18,7 @@ jobs:
       - run: npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
