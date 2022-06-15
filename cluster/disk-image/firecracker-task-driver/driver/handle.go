@@ -88,7 +88,6 @@ func (h *taskHandle) run(driver *Driver) {
 
 	pid, err := strconv.Atoi(h.Info.Pid)
 	if err != nil {
-		h.Slot.RemoveNamespace(driver)
 		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.Info.Pid))
 		// h.stateLock.Lock()
 		h.exitResult = &drivers.ExitResult{}
@@ -116,7 +115,6 @@ func (h *taskHandle) run(driver *Driver) {
 	// h.stateLock.Lock()
 	// defer h.stateLock.Unlock()
 
-	h.Slot.RemoveNamespace(driver)
 	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0
@@ -234,8 +232,6 @@ func (h *taskHandle) shutdown(driver *Driver) error {
 		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, editDirName, *h.Info.EditID)
 		os.RemoveAll(oldEditDirPath)
 	}
-
-	h.Slot.RemoveNamespace(driver)
 
 	return nil
 }

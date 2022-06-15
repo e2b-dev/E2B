@@ -367,10 +367,18 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 }
 
 func (d *Driver) DestroyTask(taskID string, force bool) error {
-	_, ok := d.tasks.Get(taskID)
+	h, ok := d.tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
 	}
+
+	if force {
+		if err := h.shutdown(d); err != nil {
+			d.logger.Error("executor Shutdown failed: %v", err)
+		}
+	}
+
+	h.Slot.RemoveNamespace(d)
 
 	d.tasks.Delete(taskID)
 	return nil

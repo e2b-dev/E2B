@@ -21,13 +21,6 @@ func CreateNamespace(nodeID string, sessionID string, driver *Driver) (*IPSlot, 
 		return nil, fmt.Errorf("failed to get IP slot: %v", err)
 	}
 
-	// Add entry to etc hosts
-	driver.hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.SessionID)
-	err = driver.hosts.Save()
-	if err != nil {
-		return nil, fmt.Errorf("error adding session to etc hosts %v", err)
-	}
-
 	// Prevent thread changes so the we can safely manipulate with namespaces
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
@@ -207,10 +200,12 @@ func CreateNamespace(nodeID string, sessionID string, driver *Driver) (*IPSlot, 
 	// Add host postrouting rules
 	tables.Append("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
 
-	// Add namespace to etc netns and resolv
-	// TODO: Is this needed?
-	// mkdir -p "/etc/netns/$NS"
-	// ln -s /run/systemd/resolve/resolv.conf /etc/netns/"$NS"/resolv.conf
+	// Add entry to etc hosts
+	driver.hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.SessionID)
+	err = driver.hosts.Save()
+	if err != nil {
+		return nil, fmt.Errorf("error adding session to etc hosts %v", err)
+	}
 
 	return ipSlot, nil
 }
@@ -251,13 +246,11 @@ func (ipSlot *IPSlot) RemoveNamespace(driver *Driver) error {
 	err = os.RemoveAll(ipSlot.SessionTmp())
 	if err != nil {
 		driver.logger.Error("error deleting session tmp files (overlay, workdir) %v", err)
-		// return fmt.Errorf("error deleting session tmp files (overlay, workdir) %v", err)
 	}
 
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
 		driver.logger.Error("error deleting namespace %v", err)
-		// return fmt.Errorf("error deleting namespace %v", err)
 	}
 
 	err = ipSlot.releaseIPSlot(driver.logger)
