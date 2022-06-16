@@ -1,5 +1,9 @@
+variable "gcp_zone" {
+  type = string
+}
+
 job "grafana" {
-  datacenters = ["us-central1-a"]
+  datacenters = [var.gcp_zone]
   type        = "service"
 
   constraint {
