@@ -93,13 +93,6 @@ build {
     destination = "/tmp"
   }
 
-  # Setup monitoring files
-
-  provisioner "file" {
-    source      = "${path.root}/setup/grafana/dashboards"
-    destination = "/tmp/supervisord.conf"
-  }
-
   provisioner "shell" {
     inline = [
       "cd /tmp/firecracker-task-driver",
