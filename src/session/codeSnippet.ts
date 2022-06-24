@@ -15,6 +15,8 @@ export enum OutType {
   Stderr = 'Stderr',
 }
 
+export type EnvVars = { [key: string]: string }
+
 export interface OutResponse {
   type: OutType
   // Unix epoch in nanoseconds
@@ -72,7 +74,7 @@ export type CodeSnippetSubscriptionHandlerType = {
 }
 
 export interface CodeSnippetManager {
-  readonly run: (code: string) => Promise<CodeSnippetExecState>
+  readonly run: (code: string, envVars?: EnvVars) => Promise<CodeSnippetExecState>
   readonly stop: () => Promise<CodeSnippetExecState>
   readonly listDeps: () => Promise<string[]>
   readonly installDep: (dep: string) => Promise<DepsErrorResponse>

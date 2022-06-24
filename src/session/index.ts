@@ -10,6 +10,7 @@ import {
   DepsStderrHandler,
   DepsChangeHandler,
   ScanOpenedPortsHandler,
+  EnvVars,
 } from './codeSnippet'
 import { TerminalManager, terminalMethod } from './terminal'
 import SessionConnection, {
@@ -70,12 +71,12 @@ class Session extends SessionConnection {
 
     // Init CodeSnippet handler
     this.codeSnippet = {
-      run: async (code: string) => {
+      run: async (code: string, envVars: EnvVars = {}) => {
         if (!this.isOpen || !this.session) {
           throw new Error('Session is not active')
         }
 
-        const state = await this.call(`${codeSnippetMethod}_run`, [code]) as CodeSnippetExecState
+        const state = await this.call(`${codeSnippetMethod}_run`, [code, envVars]) as CodeSnippetExecState
 
         this.codeSnippetOpts?.onStateChange?.(state)
 

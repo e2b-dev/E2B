@@ -24,6 +24,8 @@ export type {
   DepStderrResponse,
 
   OpenedPort,
+
+  EnvVars
 } from './session/codeSnippet'
 export type {
   TerminalManager,
