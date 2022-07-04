@@ -6,18 +6,18 @@ import (
 )
 
 type TerminalManager struct {
-	lock sync.RWMutex
-	tmap map[TerminalID]*Terminal
+	lock    sync.RWMutex
+	termMap map[TerminalID]*Terminal
 }
 
 func NewTerminalManager() *TerminalManager {
 	return &TerminalManager{
-		tmap: make(map[TerminalID]*Terminal),
+		termMap: make(map[TerminalID]*Terminal),
 	}
 }
 
 func (t *TerminalManager) Remove(id TerminalID) {
-	term, ok := t.Get(&id)
+	term, ok := t.Get(id)
 
 	if !ok {
 		return
@@ -27,28 +27,31 @@ func (t *TerminalManager) Remove(id TerminalID) {
 
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	delete(t.tmap, id)
+
+	delete(t.termMap, id)
 }
 
-func (m *TerminalManager) Get(id *TerminalID) (*Terminal, bool) {
-	if id == nil {
+func (m *TerminalManager) Get(id TerminalID) (*Terminal, bool) {
+	if id == "" {
 		return nil, false
 	}
 
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	term, ok := m.tmap[*id]
+
+	term, ok := m.termMap[id]
 	return term, ok
 }
 
 func (m *TerminalManager) Add() (*Terminal, error) {
-	term, err := newTerminal()
+	term, err := NewTerminal()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new terminal: %s", err)
 	}
 
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	m.tmap[term.ID] = term
+
+	m.termMap[term.ID] = term
 	return term, nil
 }

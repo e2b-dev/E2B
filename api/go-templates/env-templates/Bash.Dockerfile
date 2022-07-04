@@ -5,15 +5,10 @@
 RUN apk add curl
 
 WORKDIR code
-RUN npm init -y
 
 {{ if .Deps }}
-  RUN npm i {{ range .Deps }}{{ . }} {{ end }}
+  RUN apt add {{ range .Deps }}{{ . }} {{ end }}
 
-  # {
-  #   "dep1": true
-  #   ,"dep2": true
-  # }
   RUN echo { >> /.dbkdeps.json
   {{ range $idx, $el := .Deps }}
     RUN echo '{{if $idx}},{{end}}"{{ $el }}": true' >> /.dbkdeps.json
@@ -22,16 +17,16 @@ RUN npm init -y
 {{ end }}
 
 # Set env vars for devbook-daemon
-RUN echo RUN_CMD=node >> /.dbkenv
+RUN echo RUN_CMD=bash >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
-RUN echo RUN_ARGS=index.js >> /.dbkenv
+RUN echo RUN_ARGS=index.sh >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
-RUN echo ENTRYPOINT=index.js >> /.dbkenv
+RUN echo ENTRYPOINT=index.sh >> /.dbkenv
 
 # Deps installation
-RUN echo DEPS_CMD=npm >> /.dbkenv
-RUN echo DEPS_INSTALL_ARGS=install >> /.dbkenv
-RUN echo DEPS_UNINSTALL_ARGS=uninstall >> /.dbkenv
+RUN echo DEPS_CMD=apt >> /.dbkenv
+RUN echo DEPS_INSTALL_ARGS=add >> /.dbkenv
+RUN echo DEPS_UNINSTALL_ARGS=remove >> /.dbkenv
 
 WORKDIR /

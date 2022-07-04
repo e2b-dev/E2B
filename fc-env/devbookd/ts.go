@@ -1,10 +1,10 @@
-package terminal
+package main
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/devbookhq/orchestration-services/fc-env/devbookd/internal/subscriber"
+	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/terminal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 )
@@ -12,27 +12,27 @@ import (
 const ServiceName = "terminal"
 
 type TerminalDataSubscriber struct {
-	*subscriber.Subscriber
-	terminalID TerminalID
+	subscriber *subscriber
+	terminalID terminal.TerminalID
 }
 
 type TerminalService struct {
-	terminals *TerminalManager
+	termManager *terminal.TerminalManager
 
 	logger *zap.SugaredLogger
 
 	terminalDataSubscribers map[rpc.ID]*TerminalDataSubscriber
 }
 
-func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*TerminalDataSubscriber, terminalID TerminalID) (*TerminalDataSubscriber, error) {
-	sub, err := subscriber.NewSubscriber(ctx)
+func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*TerminalDataSubscriber, terminalID terminal.TerminalID) (*TerminalDataSubscriber, error) {
+	sub, err := newSubscriber(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Watch for subscription errors.
 	go func() {
-		err := <-sub.Subscription.Err()
+		err := <-sub.subscription.Err()
 		ts.logger.Errorw("Subscribtion error",
 			"subscriptionID", sub.SubscriptionID(),
 			"error", err,
@@ -42,7 +42,7 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 
 	wrappedSub := &TerminalDataSubscriber{
 		terminalID: terminalID,
-		Subscriber: sub,
+		subscriber: sub,
 	}
 
 	subs[sub.SubscriptionID()] = wrappedSub
@@ -52,17 +52,18 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 func NewTerminalService(logger *zap.SugaredLogger) *TerminalService {
 	ts := &TerminalService{
 		terminalDataSubscribers: make(map[rpc.ID]*TerminalDataSubscriber),
-		terminals:               &TerminalManager{},
 		logger:                  logger,
+		termManager:             terminal.NewTerminalManager(),
 	}
 
 	return ts
 }
 
-func (ts *TerminalService) OnData(ctx context.Context, terminalID TerminalID) (*rpc.Subscription, error) {
+// Subscription
+func (ts *TerminalService) OnData(ctx context.Context, terminalID terminal.TerminalID) (*rpc.Subscription, error) {
 	ts.logger.Info("Subscribe to terminal data")
 
-	_, ok := ts.terminals.Get(&terminalID)
+	_, ok := ts.termManager.Get(terminalID)
 
 	if !ok {
 		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)
@@ -79,46 +80,65 @@ func (ts *TerminalService) OnData(ctx context.Context, terminalID TerminalID) (*
 		return nil, err
 	}
 
-	return sub.Subscription, nil
+	return sub.subscriber.subscription, nil
 }
 
-func (ts *TerminalService) Start(terminalID *TerminalID) TerminalID {
+func (ts *TerminalService) Start(terminalID terminal.TerminalID) (terminal.TerminalID, error) {
 	ts.logger.Info("Starting terminal")
 
-	term, ok := ts.terminals.Get(terminalID)
+	term, ok := ts.termManager.Get(terminalID)
 
 	// Terminal doesn't exist, we will create a new one.
 	if !ok {
-		newterm, err := ts.terminals.Add()
+		ts.logger.Info("Creating a new terminal")
+
+		newterm, err := ts.termManager.Add()
 		if err != nil {
-			ts.logger.Info(fmt.Sprintf("Failed to `TermStart`, error from templ.NewTerminal(): %v", err))
+			errMsg := fmt.Sprintf("Failed to start new terminal: %v", err)
+			ts.logger.Info(errMsg)
+			return "", fmt.Errorf(errMsg)
 		}
 
-		go term.Watch(func(data string) {
-			for _, sub := range ts.terminalDataSubscribers {
-				if sub.terminalID != *terminalID {
-					continue
+		ts.logger.Info("New terminal created")
+
+		go func() {
+			for {
+				buf := make([]byte, 1024)
+				read, err := term.Read(buf)
+
+				if err != nil {
+					return
 				}
 
-				if err := sub.Subscriber.Notify(data); err != nil {
-					ts.logger.Errorw("Failed to send on data notification",
-						"subscriptionID", sub.SubscriptionID(),
-						"error", err,
-					)
+				data := string(buf[:read])
+
+				for _, sub := range ts.terminalDataSubscribers {
+					if sub.terminalID != terminalID {
+						continue
+					}
+
+					if err := sub.subscriber.Notify(data); err != nil {
+						ts.logger.Errorw("Failed to send data notification",
+							"subscriptionID", sub.subscriber.SubscriptionID(),
+							"error", err,
+						)
+					}
 				}
 			}
-		}, ts.logger)
+		}()
+
+		ts.logger.Info("Started terminal output data watcher")
 
 		term = newterm
 	}
 
-	return term.ID
+	return term.ID, nil
 }
 
-func (ts *TerminalService) Data(terminalID TerminalID, data string) error {
+func (ts *TerminalService) Data(terminalID terminal.TerminalID, data string) error {
 	ts.logger.Info("Write data to terminal")
 
-	term, ok := ts.terminals.Get(&terminalID)
+	term, ok := ts.termManager.Get(terminalID)
 
 	if !ok {
 		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)

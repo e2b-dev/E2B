@@ -74,7 +74,7 @@ const (
 // There isn't an explicit documentation, I'm using source code of tests as a reference:
 // https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
 
-type CodeSnippet struct {
+type CodeSnippetService struct {
 	cmd     *exec.Cmd
 	mu      sync.Mutex
 	running bool
@@ -96,8 +96,8 @@ type CodeSnippet struct {
 	scanOpenedPortsSubscribers map[rpc.ID]*subscriber
 }
 
-func NewCodeSnippetService() *CodeSnippet {
-	cs := &CodeSnippet{
+func NewCodeSnippetService() *CodeSnippetService {
+	cs := &CodeSnippetService{
 		stdoutSubscribers:          make(map[rpc.ID]*subscriber),
 		stderrSubscribers:          make(map[rpc.ID]*subscriber),
 		stateSubscribers:           make(map[rpc.ID]*subscriber),
@@ -111,13 +111,13 @@ func NewCodeSnippetService() *CodeSnippet {
 	return cs
 }
 
-func (cs *CodeSnippet) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*subscriber) (*subscriber, error) {
+func (cs *CodeSnippetService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*subscriber) (*subscriber, error) {
 	sub, err := newSubscriber(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Watch for subscription errors.
+	// Watch for subscription errors. 
 	go func() {
 		select {
 		case err := <-sub.subscription.Err():
@@ -133,7 +133,7 @@ func (cs *CodeSnippet) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*s
 	return sub, nil
 }
 
-func (cs *CodeSnippet) setRunning(b bool) {
+func (cs *CodeSnippetService) setRunning(b bool) {
 	cs.running = b
 	var state CodeSnippetState
 	if b {
@@ -144,7 +144,7 @@ func (cs *CodeSnippet) setRunning(b bool) {
 	cs.notifyState(state)
 }
 
-func (cs *CodeSnippet) scanTCPPorts() {
+func (cs *CodeSnippetService) scanTCPPorts() {
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
@@ -155,7 +155,7 @@ func (cs *CodeSnippet) scanTCPPorts() {
 	}
 }
 
-func (cs *CodeSnippet) notifyScanOpenedPorts(ports []GOnetstat.Process) {
+func (cs *CodeSnippetService) notifyScanOpenedPorts(ports []GOnetstat.Process) {
 	for _, sub := range cs.scanOpenedPortsSubscribers {
 		if err := sub.Notify(ports); err != nil {
 			slogger.Errorw("Failed to send scan opened ports notification",
@@ -166,7 +166,7 @@ func (cs *CodeSnippet) notifyScanOpenedPorts(ports []GOnetstat.Process) {
 	}
 }
 
-func (cs *CodeSnippet) notifyDepsChange() {
+func (cs *CodeSnippetService) notifyDepsChange() {
 	for _, sub := range cs.depsChangeSubscribers {
 		if err := sub.Notify(cs.depsManager.Deps()); err != nil {
 			slogger.Errorw("Failed to send deps change notification",
@@ -177,7 +177,7 @@ func (cs *CodeSnippet) notifyDepsChange() {
 	}
 }
 
-func (cs *CodeSnippet) notifyOut(o *OutResponse) {
+func (cs *CodeSnippetService) notifyOut(o *OutResponse) {
 	switch o.Type {
 	case OutTypeStdout:
 		for _, sub := range cs.stdoutSubscribers {
@@ -200,7 +200,7 @@ func (cs *CodeSnippet) notifyOut(o *OutResponse) {
 	}
 }
 
-func (cs *CodeSnippet) notifyState(state CodeSnippetState) {
+func (cs *CodeSnippetService) notifyState(state CodeSnippetState) {
 	for _, sub := range cs.stateSubscribers {
 		if err := sub.Notify(state); err != nil {
 			slogger.Errorw("Failed to send state notification",
@@ -211,7 +211,7 @@ func (cs *CodeSnippet) notifyState(state CodeSnippetState) {
 	}
 }
 
-func (cs *CodeSnippet) scanRunCmdOut(pipe io.ReadCloser, t outType) {
+func (cs *CodeSnippetService) scanRunCmdOut(pipe io.ReadCloser, t outType) {
 	scanner := bufio.NewScanner(pipe)
 	scanner.Split(bufio.ScanLines)
 
@@ -230,7 +230,7 @@ func (cs *CodeSnippet) scanRunCmdOut(pipe io.ReadCloser, t outType) {
 	}
 }
 
-func (cs *CodeSnippet) runCmd(code string, envVars *map[string]string) {
+func (cs *CodeSnippetService) runCmd(code string, envVars *map[string]string) {
 	defer func() {
 		cs.mu.Lock()
 		cs.setRunning(false)
@@ -290,7 +290,7 @@ func (cs *CodeSnippet) runCmd(code string, envVars *map[string]string) {
 	cs.cachedOut = nil
 }
 
-func (cs *CodeSnippet) Run(code string, envVars map[string]string) CodeSnippetState {
+func (cs *CodeSnippetService) Run(code string, envVars map[string]string) CodeSnippetState {
 	slogger.Infow("Run code request",
 		"code", code,
 	)
@@ -308,7 +308,7 @@ func (cs *CodeSnippet) Run(code string, envVars map[string]string) CodeSnippetSt
 	return CodeSnippetStateRunning
 }
 
-func (cs *CodeSnippet) Stop() CodeSnippetState {
+func (cs *CodeSnippetService) Stop() CodeSnippetState {
 	slogger.Info("Stop code request")
 
 	cs.mu.Lock()
@@ -337,7 +337,7 @@ func (cs *CodeSnippet) Stop() CodeSnippetState {
 	return CodeSnippetStateStopped
 }
 
-func (cs *CodeSnippet) InstallDep(dep string) (resp ErrResponse) {
+func (cs *CodeSnippetService) InstallDep(dep string) (resp ErrResponse) {
 	slogger.Infow("Install dep request",
 		"dep", dep,
 	)
@@ -354,7 +354,7 @@ func (cs *CodeSnippet) InstallDep(dep string) (resp ErrResponse) {
 	return resp
 }
 
-func (cs *CodeSnippet) UninstallDep(dep string) (resp ErrResponse) {
+func (cs *CodeSnippetService) UninstallDep(dep string) (resp ErrResponse) {
 	slogger.Infow("Uninstall dep request",
 		"dep", dep,
 	)
@@ -370,13 +370,13 @@ func (cs *CodeSnippet) UninstallDep(dep string) (resp ErrResponse) {
 	return resp
 }
 
-func (cs *CodeSnippet) Deps() []string {
+func (cs *CodeSnippetService) Deps() []string {
 	slogger.Info("Deps list request")
 	return cs.depsManager.Deps()
 }
 
 // Subscription
-func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippetService) State(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New state subscription")
 
 	sub, err := cs.saveNewSubscriber(ctx, cs.stateSubscribers)
@@ -406,7 +406,7 @@ func (cs *CodeSnippet) State(ctx context.Context) (*rpc.Subscription, error) {
 }
 
 // Subscription
-func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippetService) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New stdout subscription")
 	sub, err := cs.saveNewSubscriber(ctx, cs.stdoutSubscribers)
 	if err != nil {
@@ -432,7 +432,7 @@ func (cs *CodeSnippet) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 }
 
 // Subscription
-func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippetService) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New stderr subscription")
 	sub, err := cs.saveNewSubscriber(ctx, cs.stderrSubscribers)
 	if err != nil {
@@ -458,7 +458,7 @@ func (cs *CodeSnippet) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 }
 
 // Subscription
-func (cs *CodeSnippet) DepsChange(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippetService) DepsChange(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New deps list subscription")
 	sub, err := cs.saveNewSubscriber(ctx, cs.depsChangeSubscribers)
 	if err != nil {
@@ -481,7 +481,7 @@ func (cs *CodeSnippet) DepsChange(ctx context.Context) (*rpc.Subscription, error
 }
 
 // Subscription
-func (cs *CodeSnippet) DepsStdout(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippetService) DepsStdout(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New deps stdout subscription")
 	sub, err := cs.saveNewSubscriber(ctx, cs.depsStdoutSubscribers)
 	if err != nil {
@@ -495,7 +495,7 @@ func (cs *CodeSnippet) DepsStdout(ctx context.Context) (*rpc.Subscription, error
 }
 
 // Subscription
-func (cs *CodeSnippet) DepsStderr(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippetService) DepsStderr(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New deps stderr subscription")
 	sub, err := cs.saveNewSubscriber(ctx, cs.depsStderrSubscribers)
 	if err != nil {
@@ -509,7 +509,7 @@ func (cs *CodeSnippet) DepsStderr(ctx context.Context) (*rpc.Subscription, error
 }
 
 // Subscription
-func (cs *CodeSnippet) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error) {
+func (cs *CodeSnippetService) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New scan opened ports subscription")
 	sub, err := cs.saveNewSubscriber(ctx, cs.scanOpenedPortsSubscribers)
 	if err != nil {

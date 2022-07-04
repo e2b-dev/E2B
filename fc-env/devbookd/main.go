@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/terminal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -163,13 +162,13 @@ func main() {
 	router := mux.NewRouter()
 	server := rpc.NewServer()
 
-	codeSnippet := NewCodeSnippetService()
-	if err := server.RegisterName("codeSnippet", codeSnippet); err != nil {
+	codeSnippetService := NewCodeSnippetService()
+	if err := server.RegisterName("codeSnippet", codeSnippetService); err != nil {
 		slogger.Errorw("Failed to register code snippet service", "error", err)
 	}
 
-	terminalService := terminal.NewTerminalService(slogger)
-	if err := server.RegisterName(terminal.ServiceName, terminalService); err != nil {
+	terminalService := NewTerminalService(slogger)
+	if err := server.RegisterName("terminal", terminalService); err != nil {
 		slogger.Errorw("Failed to register terminal service", "error", err)
 	}
 

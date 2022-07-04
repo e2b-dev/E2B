@@ -2,12 +2,11 @@
 # docker build -t devbookd-testenv . -f testenv.Dockerfile
 # docker run -p 127.0.0.1:8010:8010 -it devbookd-testenv /bin/bash
 
-FROM node:16
+FROM ubuntu
 
 COPY bin/devbookd /usr/bin/devbookd
 
 WORKDIR code
-RUN npm init -y
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=node >> /.dbkenv
