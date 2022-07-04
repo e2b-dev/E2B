@@ -10,7 +10,7 @@ packer {
 
 # TODO: Separate server and client images
 source "googlecompute" "orch" {
-  image_family        = "orch"
+  image_family = "orch"
   # TODO: Overwrite the image instead of creating timestamped images every time we build its
   image_name          = "orch-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
   project_id          = var.gcp_project_id
@@ -48,7 +48,7 @@ build {
       "sudo apt-get install -y unzip jq golang-go build-essential net-tools qemu-utils",
     ]
   }
-  
+
   # Install Docker
   provisioner "shell" {
     inline = [
@@ -58,7 +58,7 @@ build {
       "sudo usermod -aG docker $USER",
     ]
   }
-  
+
   # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
@@ -75,7 +75,7 @@ build {
 
   # TODO: Remove unused deps - is Consul already using dnsmasq?
   provisioner "shell" {
-    script          = "${path.root}/setup/install-dnsmasq.sh"
+    script = "${path.root}/setup/install-dnsmasq.sh"
   }
 
   provisioner "shell" {

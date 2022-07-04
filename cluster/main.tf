@@ -65,7 +65,7 @@ resource "google_compute_firewall" "orchstrator_firewall_ingress" {
   direction = "INGRESS"
   # source_tags = [var.cluster_tag_name]
   target_tags   = [var.cluster_tag_name]
-  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16", "94.113.136.120"]
 }
 
 resource "google_compute_firewall" "orchstrator_firewall_egress" {

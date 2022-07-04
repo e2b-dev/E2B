@@ -50,16 +50,3 @@ git subtree pull --prefix shared https://github.com/devbookhq/shared.git master
 ```bash
 git subtree push --prefix shared https://github.com/devbookhq/shared.git master
 ```
-
-## Issues
-### Clock drift
-- https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it
-
-### Security
-- Restrict firewalls
-- Add ACL to the Nomad/Consul
-- Remove public IPs from the cluster instances
-
-### Automation
-- Separate cluster server and client images
-- Stop timestamping cluster disk images
