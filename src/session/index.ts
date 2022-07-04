@@ -130,24 +130,30 @@ class Session extends SessionConnection {
     // Init Terminal handler
     this.terminal = {
       createSession: async (onData, activeTerminalID) => {
-        const terminalID = await this.call(`${terminalMethod}_start`, activeTerminalID ? [activeTerminalID] : [])
-        if (typeof terminalID !== 'string') {
-          throw new Error('Cannot initialize terminal')
-        }
+        try {
+          const terminalID = await this.call(`${terminalMethod}_start`, [activeTerminalID ? activeTerminalID : ''])
+          if (typeof terminalID !== 'string') {
+            throw new Error('Cannot initialize terminal')
+          }
 
-        await this.subscribe(terminalMethod, onData, [terminalID])
+          await this.subscribe(`${terminalMethod}_onData`, onData, [terminalID])
 
-        return {
-          destroy: async () => {
-            await this.unsubscribe(terminalMethod, onData)
-          },
-          sendData: async (data) => {
-            await this.call(`${terminalMethod}_data`, [terminalID, data])
+          return {
+            destroy: async () => {
+              await this.unsubscribe(terminalMethod, onData)
+            },
+            sendData: async (data) => {
+              await this.call(`${terminalMethod}_data`, [terminalID, data])
 
-          },
-          resize: async ({ cols, rows }: { cols: number, rows: number }) => {
-            await this.call(`${terminalMethod}_resize`, [terminalID, cols, rows])
-          },
+            },
+            resize: async ({ cols, rows }: { cols: number, rows: number }) => {
+              await this.call(`${terminalMethod}_resize`, [terminalID, cols, rows])
+            },
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+          this.logger.error(err)
+          throw new Error('Error starting terminal session', err)
         }
       }
     }
