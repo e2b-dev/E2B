@@ -2,6 +2,8 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
+# 5
+
 #RUN apk add --no-cache go=1.18.2-r0
 COPY --from=golang:1.18-alpine /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
