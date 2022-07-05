@@ -129,18 +129,18 @@ class Session extends SessionConnection {
 
     // Init Terminal handler
     this.terminal = {
-      createSession: async (onData, activeTerminalID) => {
+      createSession: async (onData, size, activeTerminalID) => {
         try {
-          const terminalID = await this.call(`${terminalMethod}_start`, [activeTerminalID ? activeTerminalID : ''])
+          const terminalID = await this.call(`${terminalMethod}_start`, [activeTerminalID ? activeTerminalID : '', size.cols, size.rows])
           if (typeof terminalID !== 'string') {
             throw new Error('Cannot initialize terminal')
           }
 
-          await this.subscribe(`${terminalMethod}_onData`, onData, [terminalID])
+          const subscriptionID = await this.subscribe(terminalMethod, onData, 'onData', terminalID)
 
           return {
             destroy: async () => {
-              await this.unsubscribe(terminalMethod, onData)
+              await this.unsubscribe(subscriptionID)
             },
             sendData: async (data) => {
               await this.call(`${terminalMethod}_data`, [terminalID, data])

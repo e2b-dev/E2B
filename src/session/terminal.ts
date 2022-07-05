@@ -7,5 +7,5 @@ export interface TerminalSession {
 }
 
 export interface TerminalManager {
-  readonly createSession: (onData: (data: string) => void, activeTerminalID?: string) => Promise<TerminalSession>
+  readonly createSession: (onData: (data: string) => void, size: { cols: number, rows: number }, activeTerminalID?: string) => Promise<TerminalSession>
 }

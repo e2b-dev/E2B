@@ -56,19 +56,19 @@ abstract class SessionConnection {
     return this.rpc.call(method, params)
   }
 
-  protected async unsubscribe(method: string, handler: SubscriptionHandler) {
-    const subscription = this.subscribers.find(s => s.handler === handler && s.method === method)
+  protected async unsubscribe(subscriptionID: string) {
+    const subscription = this.subscribers.find(s => s.id === subscriptionID)
     if (!subscription) return
 
-    await this.call(`${method}_unsubscribe`, [subscription?.id])
+    await this.call(`${subscription.method}_unsubscribe`, [subscription?.id])
 
     this.subscribers = this.subscribers.filter(s => s !== subscription)
-    this.logger.log(`Unsubscribed from "${method}"`)
+    this.logger.log(`Unsubscribed from "${subscription.method}"`)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async subscribe(method: string, handler: SubscriptionHandler, params?: any) {
-    const id = await this.call(`${method}_subscribe`, [params])
+  protected async subscribe(method: string, handler: SubscriptionHandler, ...params: any) {
+    const id = await this.call(`${method}_subscribe`, params)
 
     if (typeof id !== 'string') {
       throw new Error(`Cannot subscribe to ${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(id)}`)
@@ -80,6 +80,8 @@ abstract class SessionConnection {
       method,
     })
     this.logger.log(`Subscribed to "${method}_${params}" with id "${id}"`)
+
+    return id
   }
 
   getHostname(port?: number) {
@@ -101,7 +103,9 @@ abstract class SessionConnection {
       this.isOpen = false
 
       this.logger.log('Unsubscribing...')
-      const results = await Promise.allSettled(this.subscribers.map(s => this.unsubscribe(s.method, s.handler)))
+      const results = await Promise.allSettled(
+        this.subscribers.map(s => this.unsubscribe(s.id)),
+      )
       results.forEach(r => {
         if (r.status === 'rejected') {
           this.logger.log(`Failed to unsubscribe: "${r.reason}"`)
