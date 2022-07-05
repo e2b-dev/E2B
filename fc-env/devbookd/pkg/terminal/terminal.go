@@ -17,12 +17,16 @@ type Terminal struct {
 	tty *os.File
 }
 
-func NewTerminal() (*Terminal, error) {
+func NewTerminal(root string, cols, rows uint16) (*Terminal, error) {
 	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
 	cmd := exec.Command("/bin/sh", "-l")
 	cmd.Env = append(os.Environ(), "TERM=xterm")
+	cmd.Dir = root
 
-	tty, err := pty.Start(cmd)
+	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
+		Cols: cols,
+		Rows: rows,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to pty.Start() with command '%s': %s", cmd, err)
 	}
@@ -46,4 +50,11 @@ func (t *Terminal) Destroy() {
 
 func (t *Terminal) Write(b []byte) (int, error) {
 	return t.tty.Write(b)
+}
+
+func (t *Terminal) Resize(cols, rows uint16) error {
+	return pty.Setsize(t.tty, &pty.Winsize{
+		Cols: cols,
+		Rows: rows,
+	})
 }

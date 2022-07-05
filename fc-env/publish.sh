@@ -11,6 +11,7 @@ rm -rf env || true
 mkdir env
 
 mv devbookd/bin/devbookd env
+cp ./rc-mount ./env/
 cp ./devbookd-init ./env/
 cp ./build-env.sh ./env/
 cp ./use-prebuilt-env.sh ./env/

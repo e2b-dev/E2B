@@ -7,7 +7,7 @@ RUN apk add curl
 WORKDIR code
 
 {{ if .Deps }}
-  RUN apt add {{ range .Deps }}{{ . }} {{ end }}
+  RUN apk add {{ range .Deps }}{{ . }} {{ end }}
 
   RUN echo { >> /.dbkdeps.json
   {{ range $idx, $el := .Deps }}
@@ -25,7 +25,7 @@ RUN echo WORKDIR=/code >> /.dbkenv
 RUN echo ENTRYPOINT=index.sh >> /.dbkenv
 
 # Deps installation
-RUN echo DEPS_CMD=apt >> /.dbkenv
+RUN echo DEPS_CMD=apk >> /.dbkenv
 RUN echo DEPS_INSTALL_ARGS=add >> /.dbkenv
 RUN echo DEPS_UNINSTALL_ARGS=remove >> /.dbkenv
 

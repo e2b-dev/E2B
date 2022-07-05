@@ -50,4 +50,7 @@
 ### Delete files after a failed build/update env
 - Stop possible running containers and delete docker image
 
-### Rebuild only the changed templates of push
+### Rebuild only the changed templates on push
+
+### Alpine Linux init example
+- https://gist.github.com/thde/5312a42665c5c901aef4

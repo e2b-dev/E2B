@@ -20,6 +20,10 @@ RUN apk add --no-cache util-linux openrc openssh
 
 COPY devbookd /usr/bin/devbookd
 COPY devbookd-init /etc/init.d/devbookd
+
+COPY rc-mount /etc/local.d/rc-mount.start
+RUN chmod +x /etc/local.d/rc-mount.start
+
 COPY provision-env.sh provision-env.sh
 RUN chmod +x provision-env.sh`
 

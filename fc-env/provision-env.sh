@@ -16,6 +16,7 @@ rc-update add agetty.ttyS0 default
 rc-update add devfs boot
 rc-update add procfs boot
 rc-update add sysfs boot
+rc-update add local default
 rc-update add sshd
 rc-update add devbookd
 

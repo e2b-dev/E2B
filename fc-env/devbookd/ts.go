@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/terminal"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -21,6 +22,7 @@ type TerminalService struct {
 
 	logger *zap.SugaredLogger
 
+	subscribersLock         sync.RWMutex
 	terminalDataSubscribers map[rpc.ID]*TerminalDataSubscriber
 }
 
@@ -37,6 +39,10 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 			"subscriptionID", sub.SubscriptionID(),
 			"error", err,
 		)
+
+		ts.subscribersLock.Lock()
+		defer ts.subscribersLock.Unlock()
+
 		delete(subs, sub.SubscriptionID())
 	}()
 
@@ -45,8 +51,33 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 		subscriber: sub,
 	}
 
+	ts.subscribersLock.Lock()
+	defer ts.subscribersLock.Unlock()
+
 	subs[sub.SubscriptionID()] = wrappedSub
 	return wrappedSub, nil
+}
+
+func (ts *TerminalService) removeSubscriber(subs map[rpc.ID]*TerminalDataSubscriber, subscriberID rpc.ID) {
+	ts.subscribersLock.Lock()
+	defer ts.subscribersLock.Unlock()
+
+	delete(subs, subscriberID)
+}
+
+func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalDataSubscriber, terminalID terminal.TerminalID) []*TerminalDataSubscriber {
+	terminalSubscribers := []*TerminalDataSubscriber{}
+
+	ts.subscribersLock.RLock()
+	defer ts.subscribersLock.RUnlock()
+
+	for _, s := range ts.terminalDataSubscribers {
+		if s.terminalID == terminalID {
+			terminalSubscribers = append(terminalSubscribers, s)
+		}
+	}
+
+	return terminalSubscribers
 }
 
 func NewTerminalService(logger *zap.SugaredLogger) *TerminalService {
@@ -83,7 +114,7 @@ func (ts *TerminalService) OnData(ctx context.Context, terminalID terminal.Termi
 	return sub.subscriber.subscription, nil
 }
 
-func (ts *TerminalService) Start(terminalID terminal.TerminalID) (terminal.TerminalID, error) {
+func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint16) (terminal.TerminalID, error) {
 	ts.logger.Info("Starting terminal")
 
 	term, ok := ts.termManager.Get(terminalID)
@@ -92,7 +123,7 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID) (terminal.Termi
 	if !ok {
 		ts.logger.Info("Creating a new terminal")
 
-		newterm, err := ts.termManager.Add()
+		newterm, err := ts.termManager.Add(workdir, cols, rows)
 		if err != nil {
 			errMsg := fmt.Sprintf("Failed to start new terminal: %v", err)
 			ts.logger.Info(errMsg)
@@ -107,16 +138,13 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID) (terminal.Termi
 				read, err := term.Read(buf)
 
 				if err != nil {
+					ts.logger.Infof("Error reading from terminal %s - stopped reading", term.ID)
 					return
 				}
 
 				data := string(buf[:read])
 
-				for _, sub := range ts.terminalDataSubscribers {
-					if sub.terminalID != terminalID {
-						continue
-					}
-
+				for _, sub := range ts.getSubscribers(ts.terminalDataSubscribers, term.ID) {
 					if err := sub.subscriber.Notify(data); err != nil {
 						ts.logger.Errorw("Failed to send data notification",
 							"subscriptionID", sub.subscriber.SubscriptionID(),
@@ -136,8 +164,6 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID) (terminal.Termi
 }
 
 func (ts *TerminalService) Data(terminalID terminal.TerminalID, data string) error {
-	ts.logger.Info("Write data to terminal")
-
 	term, ok := ts.termManager.Get(terminalID)
 
 	if !ok {
@@ -152,6 +178,40 @@ func (ts *TerminalService) Data(terminalID terminal.TerminalID, data string) err
 		errMsg := fmt.Sprint("Cannot write data %s to terminal with ID %s", data, terminalID)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
+	}
+
+	return nil
+}
+
+func (ts *TerminalService) Resize(terminalID terminal.TerminalID, cols, rows uint16) error {
+	ts.logger.Info("Resize terminal")
+
+	term, ok := ts.termManager.Get(terminalID)
+
+	if !ok {
+		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)
+		ts.logger.Error(errMsg)
+		return fmt.Errorf(errMsg)
+	}
+
+	err := term.Resize(cols, rows)
+
+	if err != nil {
+		errMsg := fmt.Sprint("Cannot resize terminal with ID %s", terminalID)
+		ts.logger.Error(errMsg)
+		return fmt.Errorf(errMsg)
+	}
+
+	return nil
+}
+
+func (ts *TerminalService) Destroy(terminalID terminal.TerminalID) error {
+	ts.logger.Info("Destroy")
+
+	ts.termManager.Remove(terminalID)
+
+	for _, s := range ts.getSubscribers(ts.terminalDataSubscribers, terminalID) {
+		ts.removeSubscriber(ts.terminalDataSubscribers, s.subscriber.SubscriptionID())
 	}
 
 	return nil
