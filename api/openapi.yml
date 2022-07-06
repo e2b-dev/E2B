@@ -90,8 +90,6 @@ components:
         - Go
         - Bash
         - Python3
-        - Java
-        - PHP
     EnvironmentState:
       type: string
       enum:
