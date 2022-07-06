@@ -90,10 +90,6 @@ components:
         - Go
         - Bash
         - Python3
-        - Java
-        - Rust
-        - Perl
-        - PHP
     EnvironmentState:
       type: string
       enum:
@@ -308,6 +304,8 @@ paths:
       responses:
         204:
           description: Updated the edit environment for code snippet
+        400:
+          $ref: "#/components/responses/400"
         401:
           $ref: "#/components/responses/401"
         500:
