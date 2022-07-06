@@ -37,9 +37,4 @@ RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=main.py >> /.dbkenv
 
-# Deps installation
-RUN echo DEPS_CMD=/root/.poetry/bin/poetry >> /.dbkenv
-RUN echo DEPS_INSTALL_ARGS=add >> /.dbkenv
-RUN echo DEPS_UNINSTALL_ARGS=remove >> /.dbkenv
-
 WORKDIR /

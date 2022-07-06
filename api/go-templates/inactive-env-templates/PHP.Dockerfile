@@ -17,9 +17,4 @@ RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=index.php >> /.dbkenv
 
-# TODO: Deps (un)installation
-#RUN echo DEPS_CMD=go >> /.dbkenv
-#RUN echo DEPS_INSTALL_ARGS=get >> /.dbkenv
-#RUN echo DEPS_UNINSTALL_ARGS=uninstall >> /.dbkenv
-
 WORKDIR /

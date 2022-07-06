@@ -40,10 +40,4 @@ RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=main.go >> /.dbkenv
 
-# Deps installation
-RUN echo DEPS_CMD=go >> /.dbkenv
-RUN echo DEPS_INSTALL_ARGS=get >> /.dbkenv
-# TODO: https://stackoverflow.com/questions/13792254/removing-packages-installed-with-go-get
-RUN echo DEPS_UNINSTALL_ARGS=uninstall >> /.dbkenv
-
 WORKDIR /

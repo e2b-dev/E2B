@@ -14,9 +14,7 @@ const (
 const (
 	Bash    Template = "Bash"
 	Go      Template = "Go"
-	Java    Template = "Java"
 	Nodejs  Template = "Nodejs"
-	PHP     Template = "PHP"
 	Python3 Template = "Python3"
 )
 
