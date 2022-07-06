@@ -18,11 +18,6 @@ export type {
   OutStdoutResponse,
   OutStderrResponse,
 
-  DepsErrorResponse,
-  DepOutResponse,
-  DepStdoutResponse,
-  DepStderrResponse,
-
   OpenedPort,
 
   EnvVars
