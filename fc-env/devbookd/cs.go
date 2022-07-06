@@ -12,6 +12,7 @@ import (
 
 	"github.com/drael/GOnetstat"
 	"github.com/ethereum/go-ethereum/rpc"
+	"go.uber.org/zap"
 )
 
 type CodeSnippetState string
@@ -43,25 +44,6 @@ func newStderrResponse(line string) OutResponse {
 	}
 }
 
-type DepOutResponse struct {
-	OutResponse
-	Dep string `json:"dep"`
-}
-
-func newDepStdoutResponse(dep, line string) DepOutResponse {
-	return DepOutResponse{
-		OutResponse: newStdoutResponse(line),
-		Dep:         dep,
-	}
-}
-
-func newDepStderrResponse(dep, line string) DepOutResponse {
-	return DepOutResponse{
-		OutResponse: newStderrResponse(line),
-		Dep:         dep,
-	}
-}
-
 const (
 	OutTypeStdout outType = "Stdout"
 	OutTypeStderr outType = "Stderr"
@@ -79,34 +61,30 @@ type CodeSnippetService struct {
 	mu      sync.Mutex
 	running bool
 
+	logger *zap.SugaredLogger
+
 	// The reason for caching cmd's outputs is if a client connects while the command
 	// is already running we can send all the output that has happened since the start
 	// of the command.
 	// This way a user on the frontend doesn't even notice that command has been running.
 	cachedOut []OutResponse
 
-	depsManager *depsManager
+	subscribersLock sync.RWMutex
 
 	stdoutSubscribers          map[rpc.ID]*subscriber
 	stderrSubscribers          map[rpc.ID]*subscriber
 	stateSubscribers           map[rpc.ID]*subscriber
-	depsChangeSubscribers      map[rpc.ID]*subscriber
-	depsStdoutSubscribers      map[rpc.ID]*subscriber
-	depsStderrSubscribers      map[rpc.ID]*subscriber
 	scanOpenedPortsSubscribers map[rpc.ID]*subscriber
 }
 
-func NewCodeSnippetService() *CodeSnippetService {
+func NewCodeSnippetService(logger *zap.SugaredLogger) *CodeSnippetService {
 	cs := &CodeSnippetService{
+		logger:                     logger,
 		stdoutSubscribers:          make(map[rpc.ID]*subscriber),
 		stderrSubscribers:          make(map[rpc.ID]*subscriber),
 		stateSubscribers:           make(map[rpc.ID]*subscriber),
-		depsChangeSubscribers:      make(map[rpc.ID]*subscriber),
-		depsStdoutSubscribers:      make(map[rpc.ID]*subscriber),
-		depsStderrSubscribers:      make(map[rpc.ID]*subscriber),
 		scanOpenedPortsSubscribers: make(map[rpc.ID]*subscriber),
 	}
-	cs.depsManager = newDepsManager(cs.depsStdoutSubscribers, cs.depsStderrSubscribers)
 	go cs.scanTCPPorts()
 	return cs
 }
@@ -117,20 +95,42 @@ func (cs *CodeSnippetService) saveNewSubscriber(ctx context.Context, subs map[rp
 		return nil, err
 	}
 
-	// Watch for subscription errors. 
+	// Watch for subscription errors.
 	go func() {
-		select {
-		case err := <-sub.subscription.Err():
-			slogger.Errorw("Subscribtion error",
-				"subscriptionID", sub.SubscriptionID(),
-				"error", err,
-			)
-			delete(subs, sub.SubscriptionID())
-		}
+		err := <-sub.subscription.Err()
+		cs.logger.Errorw("Subscribtion error",
+			"subscriptionID", sub.SubscriptionID(),
+			"error", err,
+		)
+
+		cs.removeSubscriber(subs, sub.SubscriptionID())
 	}()
+
+	cs.subscribersLock.Lock()
+	defer cs.subscribersLock.Unlock()
 
 	subs[sub.SubscriptionID()] = sub
 	return sub, nil
+}
+
+func (cs *CodeSnippetService) removeSubscriber(subs map[rpc.ID]*subscriber, subscriberID rpc.ID) {
+	cs.subscribersLock.Lock()
+	defer cs.subscribersLock.Unlock()
+
+	delete(subs, subscriberID)
+}
+
+func (cs *CodeSnippetService) getSubscribers(subs map[rpc.ID]*subscriber) []*subscriber {
+	subscribersList := []*subscriber{}
+
+	cs.subscribersLock.RLock()
+	defer cs.subscribersLock.RUnlock()
+
+	for _, s := range subs {
+		subscribersList = append(subscribersList, s)
+	}
+
+	return subscribersList
 }
 
 func (cs *CodeSnippetService) setRunning(b bool) {
@@ -146,30 +146,17 @@ func (cs *CodeSnippetService) setRunning(b bool) {
 
 func (cs *CodeSnippetService) scanTCPPorts() {
 	ticker := time.NewTicker(1 * time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			d := GOnetstat.Tcp()
-			cs.notifyScanOpenedPorts(d)
-		}
+
+	for range ticker.C {
+		d := GOnetstat.Tcp()
+		cs.notifyScanOpenedPorts(d)
 	}
 }
 
 func (cs *CodeSnippetService) notifyScanOpenedPorts(ports []GOnetstat.Process) {
-	for _, sub := range cs.scanOpenedPortsSubscribers {
+	for _, sub := range cs.getSubscribers(cs.scanOpenedPortsSubscribers) {
 		if err := sub.Notify(ports); err != nil {
 			slogger.Errorw("Failed to send scan opened ports notification",
-				"subscriptionID", sub.SubscriptionID(),
-				"error", err,
-			)
-		}
-	}
-}
-
-func (cs *CodeSnippetService) notifyDepsChange() {
-	for _, sub := range cs.depsChangeSubscribers {
-		if err := sub.Notify(cs.depsManager.Deps()); err != nil {
-			slogger.Errorw("Failed to send deps change notification",
 				"subscriptionID", sub.SubscriptionID(),
 				"error", err,
 			)
@@ -180,7 +167,7 @@ func (cs *CodeSnippetService) notifyDepsChange() {
 func (cs *CodeSnippetService) notifyOut(o *OutResponse) {
 	switch o.Type {
 	case OutTypeStdout:
-		for _, sub := range cs.stdoutSubscribers {
+		for _, sub := range cs.getSubscribers(cs.stdoutSubscribers) {
 			if err := sub.Notify(o); err != nil {
 				slogger.Errorw("Failed to send stdout notification",
 					"subscriptionID", sub.SubscriptionID(),
@@ -189,7 +176,7 @@ func (cs *CodeSnippetService) notifyOut(o *OutResponse) {
 			}
 		}
 	case OutTypeStderr:
-		for _, sub := range cs.stderrSubscribers {
+		for _, sub := range cs.getSubscribers(cs.stderrSubscribers) {
 			if err := sub.Notify(o); err != nil {
 				slogger.Errorw("Failed to send stderr notification",
 					"subscriptionID", sub.SubscriptionID(),
@@ -201,7 +188,7 @@ func (cs *CodeSnippetService) notifyOut(o *OutResponse) {
 }
 
 func (cs *CodeSnippetService) notifyState(state CodeSnippetState) {
-	for _, sub := range cs.stateSubscribers {
+	for _, sub := range cs.getSubscribers(cs.stateSubscribers) {
 		if err := sub.Notify(state); err != nil {
 			slogger.Errorw("Failed to send state notification",
 				"subscriptionID", sub.SubscriptionID(),
@@ -337,44 +324,6 @@ func (cs *CodeSnippetService) Stop() CodeSnippetState {
 	return CodeSnippetStateStopped
 }
 
-func (cs *CodeSnippetService) InstallDep(dep string) (resp ErrResponse) {
-	slogger.Infow("Install dep request",
-		"dep", dep,
-	)
-
-	if err := cs.depsManager.Install(dep); err != nil {
-		slogger.Errorw("Error during dep installation",
-			"error", err,
-		)
-		resp.Error = err.Error()
-	}
-
-	go cs.notifyDepsChange()
-
-	return resp
-}
-
-func (cs *CodeSnippetService) UninstallDep(dep string) (resp ErrResponse) {
-	slogger.Infow("Uninstall dep request",
-		"dep", dep,
-	)
-	if err := cs.depsManager.Uninstall(dep); err != nil {
-		slogger.Errorw("Error during dep uninstallation",
-			"error", err,
-		)
-		resp.Error = err.Error()
-	}
-
-	go cs.notifyDepsChange()
-
-	return resp
-}
-
-func (cs *CodeSnippetService) Deps() []string {
-	slogger.Info("Deps list request")
-	return cs.depsManager.Deps()
-}
-
 // Subscription
 func (cs *CodeSnippetService) State(ctx context.Context) (*rpc.Subscription, error) {
 	slogger.Info("New state subscription")
@@ -453,57 +402,6 @@ func (cs *CodeSnippetService) Stderr(ctx context.Context) (*rpc.Subscription, er
 				)
 			}
 		}
-	}
-	return sub.subscription, nil
-}
-
-// Subscription
-func (cs *CodeSnippetService) DepsChange(ctx context.Context) (*rpc.Subscription, error) {
-	slogger.Info("New deps list subscription")
-	sub, err := cs.saveNewSubscriber(ctx, cs.depsChangeSubscribers)
-	if err != nil {
-		slogger.Errorw("Failed to create a deps list subscription from context",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
-	}
-
-	// Send the initial deps.
-	if err := sub.Notify(cs.depsManager.Deps()); err != nil {
-		slogger.Errorw("Failed to send initial deps",
-			"subscriptionID", sub.SubscriptionID(),
-			"error", err,
-		)
-	}
-
-	return sub.subscription, nil
-}
-
-// Subscription
-func (cs *CodeSnippetService) DepsStdout(ctx context.Context) (*rpc.Subscription, error) {
-	slogger.Info("New deps stdout subscription")
-	sub, err := cs.saveNewSubscriber(ctx, cs.depsStdoutSubscribers)
-	if err != nil {
-		slogger.Errorw("Failed to create a deps stdout subscription from context",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
-	}
-	return sub.subscription, nil
-}
-
-// Subscription
-func (cs *CodeSnippetService) DepsStderr(ctx context.Context) (*rpc.Subscription, error) {
-	slogger.Info("New deps stderr subscription")
-	sub, err := cs.saveNewSubscriber(ctx, cs.depsStderrSubscribers)
-	if err != nil {
-		slogger.Errorw("Failed to create a deps stderr subscription from context",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
 	}
 	return sub.subscription, nil
 }

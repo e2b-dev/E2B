@@ -29,12 +29,6 @@ var (
 	workdir            string
 	entrypoint         string
 	entrypointFullPath string
-
-	depsCmd                 string
-	depsInstallArgs         string
-	parsedDepsInstallArgs   []string
-	depsUninstallArgs       string
-	parsedDepsUninstallArgs []string
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -100,17 +94,6 @@ func loadDBKEnvs() {
 		case "ENTRYPOINT":
 			errLogUndefinedEnvVar("ENTRYPOINT", value)
 			entrypoint = value
-		case "DEPS_CMD":
-			errLogUndefinedEnvVar("DEPS_CMD", value)
-			depsCmd = value
-		case "DEPS_INSTALL_ARGS":
-			errLogUndefinedEnvVar("DEPS_INSTALL_ARGS", value)
-			depsInstallArgs = value
-			parsedDepsInstallArgs = strings.Fields(depsInstallArgs)
-		case "DEPS_UNINSTALL_ARGS":
-			errLogUndefinedEnvVar("DEPS_UNINSTALL_ARGS", value)
-			depsUninstallArgs = value
-			parsedDepsUninstallArgs = strings.Fields(depsUninstallArgs)
 		default:
 			slogger.Errorw("Unknown Devbook env var",
 				"name", name,
@@ -162,7 +145,7 @@ func main() {
 	router := mux.NewRouter()
 	server := rpc.NewServer()
 
-	codeSnippetService := NewCodeSnippetService()
+	codeSnippetService := NewCodeSnippetService(slogger)
 	if err := server.RegisterName("codeSnippet", codeSnippetService); err != nil {
 		slogger.Errorw("Failed to register code snippet service", "error", err)
 	}
@@ -173,7 +156,6 @@ func main() {
 	}
 
 	wsHandler = server.WebsocketHandler([]string{"*"})
-	//router.Handle("/ws", wshandler)
 	router.HandleFunc("/ws", serveWs)
 
 	slogger.Info("Starting server on the port :8010")

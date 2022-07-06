@@ -40,10 +40,7 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 			"error", err,
 		)
 
-		ts.subscribersLock.Lock()
-		defer ts.subscribersLock.Unlock()
-
-		delete(subs, sub.SubscriptionID())
+		ts.removeSubscriber(subs, sub.SubscriptionID())
 	}()
 
 	wrappedSub := &TerminalDataSubscriber{

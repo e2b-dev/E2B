@@ -17,9 +17,7 @@ const (
 	Java    Template = "Java"
 	Nodejs  Template = "Nodejs"
 	PHP     Template = "PHP"
-	Perl    Template = "Perl"
 	Python3 Template = "Python3"
-	Rust    Template = "Rust"
 )
 
 // EnvironmentState defines model for EnvironmentState.
