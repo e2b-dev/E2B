@@ -234,13 +234,12 @@ func (cs *CodeSnippetService) runCmd(code string, envVars *map[string]string) {
 	cs.cmd = exec.Command(runCmd, parsedRunArgs...)
 	cs.cmd.Dir = workdir
 
-	formattedVars := []string{}
+	formattedVars := os.Environ()
 
 	for key, value := range *envVars {
 		formattedVars = append(formattedVars, key+"="+value)
 	}
 
-	// Because the Env is not nil we will not be able to use the env vars from the FC's environment.
 	cs.cmd.Env = formattedVars
 
 	stdout, err := cs.cmd.StdoutPipe()
