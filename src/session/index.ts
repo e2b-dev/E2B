@@ -141,6 +141,7 @@ class Session extends SessionConnection {
           return {
             destroy: async () => {
               await this.unsubscribe(subscriptionID)
+              await this.call(`${terminalMethod}_destroy`, [terminalID])
             },
             sendData: async (data) => {
               await this.call(`${terminalMethod}_data`, [terminalID, data])

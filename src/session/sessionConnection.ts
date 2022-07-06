@@ -20,7 +20,7 @@ import Logger from '../utils/logger'
 type SubscriptionHandler = (result: any) => void
 
 interface Subscriber {
-  id: string
+  subscriptionID: string
   handler: SubscriptionHandler
   method: string
 }
@@ -57,10 +57,10 @@ abstract class SessionConnection {
   }
 
   protected async unsubscribe(subscriptionID: string) {
-    const subscription = this.subscribers.find(s => s.id === subscriptionID)
+    const subscription = this.subscribers.find(s => s.subscriptionID === subscriptionID)
     if (!subscription) return
 
-    await this.call(`${subscription.method}_unsubscribe`, [subscription?.id])
+    await this.call(`${subscription.method}_unsubscribe`, [subscription?.subscriptionID])
 
     this.subscribers = this.subscribers.filter(s => s !== subscription)
     this.logger.log(`Unsubscribed from "${subscription.method}"`)
@@ -68,20 +68,20 @@ abstract class SessionConnection {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected async subscribe(method: string, handler: SubscriptionHandler, ...params: any) {
-    const id = await this.call(`${method}_subscribe`, params)
+    const subscriptionID = await this.call(`${method}_subscribe`, params)
 
-    if (typeof id !== 'string') {
-      throw new Error(`Cannot subscribe to ${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(id)}`)
+    if (typeof subscriptionID !== 'string') {
+      throw new Error(`Cannot subscribe to ${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(subscriptionID)}`)
     }
 
     this.subscribers.push({
-      id,
+      subscriptionID,
       handler,
       method,
     })
-    this.logger.log(`Subscribed to "${method}_${params}" with id "${id}"`)
+    this.logger.log(`Subscribed to "${method}_${params}" with id "${subscriptionID}"`)
 
-    return id
+    return subscriptionID
   }
 
   getHostname(port?: number) {
@@ -104,7 +104,7 @@ abstract class SessionConnection {
 
       this.logger.log('Unsubscribing...')
       const results = await Promise.allSettled(
-        this.subscribers.map(s => this.unsubscribe(s.id)),
+        this.subscribers.map(s => this.unsubscribe(s.subscriptionID)),
       )
       results.forEach(r => {
         if (r.status === 'rejected') {
@@ -216,7 +216,7 @@ abstract class SessionConnection {
 
   private handleNotification(data: IRpcNotification) {
     this.subscribers
-      .filter(s => s.id === data.params?.subscription)
+      .filter(s => s.subscriptionID === data.params?.subscription)
       .forEach(s => s.handler(data.params?.result))
   }
 
