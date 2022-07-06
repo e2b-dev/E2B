@@ -161,6 +161,7 @@ export interface paths {
       readonly responses: {
         /** Updated the edit environment for code snippet */
         readonly 204: never;
+        readonly 400: components["responses"]["400"];
         readonly 401: components["responses"]["401"];
         readonly 500: components["responses"]["500"];
       };
@@ -195,15 +196,7 @@ export interface paths {
 export interface components {
   readonly schemas: {
     /** @enum {string} */
-    readonly Template:
-      | "Nodejs"
-      | "Go"
-      | "Bash"
-      | "Python3"
-      | "Java"
-      | "Rust"
-      | "Perl"
-      | "PHP";
+    readonly Template: "Nodejs" | "Go" | "Bash" | "Python3";
     /** @enum {string} */
     readonly EnvironmentState: "Building" | "Failed" | "Done";
     readonly NewEnvironment: {
@@ -214,7 +207,10 @@ export interface components {
       readonly state: components["schemas"]["EnvironmentState"];
     };
     readonly NewSession: {
-      /** @description Option determining if the session is a shared persistent edit session */
+      /**
+       * @description Option determining if the session is a shared persistent edit session
+       * @default false
+       */
       readonly editEnabled?: boolean;
       /** @description Identifier of a code snippet which which is the environment associated */
       readonly codeSnippetID: string;
