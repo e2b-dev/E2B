@@ -2,21 +2,26 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk add --no-cache python3 curl
-# Install poetry
-RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
+ENV PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    POETRY_VERSION=1.0.5
 
-RUN /root/.poetry/bin/poetry new code
+RUN apk update && apk add --no-cache python3 py3-pip
+# Install poetry
+RUN pip3 install "poetry==$POETRY_VERSION"
+
+RUN poetry new code
 
 WORKDIR code
 RUN rm -rf tests README.rst
 RUN touch main.py
 
 # Poetry creates a virtual env on the first run.
-RUN /root/.poetry/bin/poetry run python main.py
+RUN poetry run python main.py
 
 {{ if .Deps }}
-  RUN /root/.poetry/bin/poetry add {{ range .Deps }}{{ . }} {{ end }}
+  RUN poetry add {{ range .Deps }}{{ . }} {{ end }}
 
   # {
   #   "dep1": true
@@ -30,7 +35,7 @@ RUN /root/.poetry/bin/poetry run python main.py
 {{ end }}
 
 # Set env vars for devbook-daemon
-RUN echo RUN_CMD=/root/.poetry/bin/poetry >> /.dbkenv
+RUN echo RUN_CMD=poetry >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
 RUN echo RUN_ARGS=run python main.py >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv

@@ -2,7 +2,7 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk add nodejs npm
+RUN apk update && apk add --no-cache add nodejs npm
 
 WORKDIR code
 RUN npm init -y

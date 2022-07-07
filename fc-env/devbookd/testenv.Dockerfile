@@ -2,7 +2,7 @@
 # docker build -t devbookd-testenv . -f testenv.Dockerfile
 # docker run -p 127.0.0.1:8010:8010 -it devbookd-testenv /bin/bash
 
-FROM ubuntu
+FROM alpine:3.16
 
 COPY bin/devbookd /usr/bin/devbookd
 
