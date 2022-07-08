@@ -26,11 +26,15 @@ interface Subscriber {
 }
 
 export type CloseHandler = () => void
+export type DisconnectHandler = () => void
+export type ReconnectHandler = () => void
 
 export interface SessionConnectionOpts {
   id: string
   apiKey?: string
   onClose?: CloseHandler
+  onDisconnect?: DisconnectHandler
+  onReconnect?: ReconnectHandler
   debug?: boolean
   editEnabled?: boolean
 }
@@ -186,10 +190,12 @@ abstract class SessionConnection {
     this.rpc.onClose(async (e) => {
       this.logger.log('Closing WS connection to session:', this.session, e)
       if (this.isOpen) {
+        this.opts.onDisconnect?.()
         await wait(WS_RECONNECT_INTERVAL)
         this.logger.log('Reconnecting to session:', this.session)
         try {
           await this.rpc.connect(sessionURL)
+          this.opts.onReconnect?.()
           this.logger.log('Reconnected to session:', this.session)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
