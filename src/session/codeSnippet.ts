@@ -3,7 +3,6 @@ export const codeSnippetMethod = 'codeSnippet'
 export enum CodeSnippetExecState {
   Running = 'Running',
   Stopped = 'Stopped',
-  Loading = 'Loading',
 }
 
 export enum OutType {
