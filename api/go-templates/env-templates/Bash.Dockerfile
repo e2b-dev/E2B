@@ -2,7 +2,7 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk add --no-cache add curl
+RUN apk update && apk add --no-cache curl
 
 WORKDIR code
 
