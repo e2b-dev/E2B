@@ -9,16 +9,6 @@ RUN npm init -y
 
 {{ if .Deps }}
   RUN npm i {{ range .Deps }}{{ . }} {{ end }}
-
-  # {
-  #   "dep1": true
-  #   ,"dep2": true
-  # }
-  RUN echo { >> /.dbkdeps.json
-  {{ range $idx, $el := .Deps }}
-    RUN echo '{{if $idx}},{{end}}"{{ $el }}": true' >> /.dbkdeps.json
-  {{ end }}
-  RUN echo } >> /.dbkdeps.json
 {{ end }}
 
 # Set env vars for devbook-daemon

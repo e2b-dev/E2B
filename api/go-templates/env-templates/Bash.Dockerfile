@@ -2,18 +2,12 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk add --no-cache curl
+RUN apk update && apk add --no-cache curl bash
 
 WORKDIR code
 
 {{ if .Deps }}
   RUN apk add {{ range .Deps }}{{ . }} {{ end }}
-
-  RUN echo { >> /.dbkdeps.json
-  {{ range $idx, $el := .Deps }}
-    RUN echo '{{if $idx}},{{end}}"{{ $el }}": true' >> /.dbkdeps.json
-  {{ end }}
-  RUN echo } >> /.dbkdeps.json
 {{ end }}
 
 # Set env vars for devbook-daemon

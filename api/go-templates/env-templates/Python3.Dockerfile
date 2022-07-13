@@ -22,16 +22,6 @@ RUN poetry run python main.py
 
 {{ if .Deps }}
   RUN poetry add {{ range .Deps }}{{ . }} {{ end }}
-
-  # {
-  #   "dep1": true
-  #   ,"dep2": true
-  # }
-  RUN echo { >> /.dbkdeps.json
-  {{ range .Deps }}
-    RUN echo ',"{{ . }}": true' >> /.dbkdeps.json
-  {{ end }}
-  RUN echo } >> /.dbkdeps.json
 {{ end }}
 
 # Set env vars for devbook-daemon
