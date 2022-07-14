@@ -196,7 +196,7 @@ export interface paths {
 export interface components {
   readonly schemas: {
     /** @enum {string} */
-    readonly Template: "Nodejs" | "Go" | "Bash" | "Python3";
+    readonly Template: "Nodejs" | "Go" | "Bash" | "Rust" | "Python3";
     /** @enum {string} */
     readonly EnvironmentState: "Building" | "Failed" | "Done";
     readonly NewEnvironment: {
