@@ -37,12 +37,13 @@ const (
 	// firecracker micro-vm is still running
 	containerMonitorIntv = 2 * time.Second
 
-	editIDName     = "edit_id"
-	buildIDName    = "build_id"
-	templateIDName = "template_id"
-	rootfsName     = "rootfs.ext4"
-	snapfileName   = "snapfile"
-	memfileName    = "memfile"
+	editIDName          = "edit_id"
+	buildIDName         = "build_id"
+	templateIDName      = "template_id"
+	templateBuildIDName = "template_build_id"
+	rootfsName          = "rootfs.ext4"
+	snapfileName        = "snapfile"
+	memfileName         = "memfile"
 
 	editDirName  = "edit"
 	buildDirName = "builds"
@@ -146,6 +147,9 @@ func (d *Driver) initializeContainer(
 		templateIDSrc := filepath.Join(codeSnippetEnvPath, templateIDName)
 		templateIDDest := filepath.Join(codeSnippetEditPath, templateIDName)
 
+		templateBuildIDSrc := filepath.Join(codeSnippetEnvPath, templateBuildIDName)
+		templateBuildIDDest := filepath.Join(codeSnippetEditPath, templateBuildIDName)
+
 		editIDPath := filepath.Join(codeSnippetEditPath, editIDName)
 
 		os.MkdirAll(codeSnippetEditPath, 0777)
@@ -180,6 +184,7 @@ func (d *Driver) initializeContainer(
 			os.Link(memfileSrc, memfileDest)
 			os.Link(buildIDSrc, buildIDDest)
 			os.Link(templateIDSrc, templateIDDest)
+			os.Link(templateBuildIDSrc, templateBuildIDDest)
 
 			err := os.WriteFile(editIDPath, []byte(editID), 0777)
 			if err != nil {
@@ -196,9 +201,8 @@ func (d *Driver) initializeContainer(
 			templateID := string(data)
 
 			templateEnvPath := filepath.Join(fcEnvsDisk, templateID)
-			templateBuildIDPath := filepath.Join(templateEnvPath, buildIDName)
 
-			data, err = os.ReadFile(templateBuildIDPath)
+			data, err = os.ReadFile(templateBuildIDDest)
 			if err != nil {
 				return nil, fmt.Errorf("failed reading build id for the template %s of code snippet %s: %v", templateID, taskConfig.CodeSnippetID, err)
 			}
@@ -228,6 +232,7 @@ func (d *Driver) initializeContainer(
 		snapshotRootPath = codeSnippetEnvPath
 
 		templateIDPath := filepath.Join(codeSnippetEnvPath, templateIDName)
+		templateBuildIDPath := filepath.Join(codeSnippetEnvPath, templateBuildIDName)
 		buildIDPath := filepath.Join(codeSnippetEnvPath, buildIDName)
 
 		if _, err := os.Stat(buildIDPath); err != nil {
@@ -239,7 +244,6 @@ func (d *Driver) initializeContainer(
 			templateID := string(data)
 
 			templateEnvPath := filepath.Join(fcEnvsDisk, templateID)
-			templateBuildIDPath := filepath.Join(templateEnvPath, buildIDName)
 
 			data, err = os.ReadFile(templateBuildIDPath)
 			if err != nil {

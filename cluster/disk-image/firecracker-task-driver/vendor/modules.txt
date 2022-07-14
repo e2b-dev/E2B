@@ -155,7 +155,7 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/hashicorp/nomad v1.3.1
+# github.com/hashicorp/nomad v1.3.2
 ## explicit
 github.com/hashicorp/nomad/acl
 github.com/hashicorp/nomad/client/allocdir
@@ -329,7 +329,7 @@ go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
 # go.uber.org/atomic v1.9.0
 go.uber.org/atomic
-# golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+# golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/cryptobyte
 golang.org/x/crypto/cryptobyte/asn1

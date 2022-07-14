@@ -67,7 +67,7 @@ func (n *NomadClient) RebuildTemplates() error {
 		err := n.BuildEnv(template, template, []string{})
 
 		if err != nil {
-			return err
+			return fmt.Errorf("error building template %s", template, err)
 		}
 	}
 

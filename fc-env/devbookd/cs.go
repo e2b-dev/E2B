@@ -231,7 +231,13 @@ func (cs *CodeSnippetService) runCmd(code string, envVars *map[string]string) {
 		)
 	}
 
-	cs.cmd = exec.Command(runCmd, parsedRunArgs...)
+	cmdToExecute := runCmd
+
+	for _, arg := range parsedRunArgs {
+		cmdToExecute = cmdToExecute + " " + arg
+	}
+
+	cs.cmd = exec.Command("sh", "-c", "-l", cmdToExecute)
 	cs.cmd.Dir = workdir
 
 	formattedVars := os.Environ()

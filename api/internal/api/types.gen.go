@@ -16,6 +16,7 @@ const (
 	Go      Template = "Go"
 	Nodejs  Template = "Nodejs"
 	Python3 Template = "Python3"
+	Rust    Template = "Rust"
 )
 
 // EnvironmentState defines model for EnvironmentState.

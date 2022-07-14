@@ -725,6 +725,7 @@ func hashConnect(h hash.Hash, connect *ConsulConnect) {
 			hashConfig(h, p.Config)
 			for _, upstream := range p.Upstreams {
 				hashString(h, upstream.DestinationName)
+				hashString(h, upstream.DestinationNamespace)
 				hashString(h, strconv.Itoa(upstream.LocalBindPort))
 				hashStringIfNonEmpty(h, upstream.Datacenter)
 				hashStringIfNonEmpty(h, upstream.LocalBindAddress)
@@ -912,6 +913,14 @@ func (c *ConsulConnect) IsIngress() bool {
 // IsTerminating checks if the service is a terminating gateway.
 func (c *ConsulConnect) IsTerminating() bool {
 	return c.IsGateway() && c.Gateway.Terminating != nil
+}
+
+// IsCustomizedTLS checks if the service customizes ingress tls config.
+func (c *ConsulConnect) IsCustomizedTLS() bool {
+	return c.IsIngress() && c.Gateway.Ingress.TLS != nil &&
+		(c.Gateway.Ingress.TLS.TLSMinVersion != "" ||
+			c.Gateway.Ingress.TLS.TLSMaxVersion != "" ||
+			len(c.Gateway.Ingress.TLS.CipherSuites) != 0)
 }
 
 func (c *ConsulConnect) IsMesh() bool {
@@ -1363,6 +1372,9 @@ type ConsulUpstream struct {
 	// DestinationName is the name of the upstream service.
 	DestinationName string
 
+	// DestinationNamespace is the namespace of the upstream service.
+	DestinationNamespace string
+
 	// LocalBindPort is the port the proxy will receive connections for the
 	// upstream on.
 	LocalBindPort int
@@ -1403,11 +1415,12 @@ func (u *ConsulUpstream) Copy() *ConsulUpstream {
 	}
 
 	return &ConsulUpstream{
-		DestinationName:  u.DestinationName,
-		LocalBindPort:    u.LocalBindPort,
-		Datacenter:       u.Datacenter,
-		LocalBindAddress: u.LocalBindAddress,
-		MeshGateway:      u.MeshGateway.Copy(),
+		DestinationName:      u.DestinationName,
+		DestinationNamespace: u.DestinationNamespace,
+		LocalBindPort:        u.LocalBindPort,
+		Datacenter:           u.Datacenter,
+		LocalBindAddress:     u.LocalBindAddress,
+		MeshGateway:          u.MeshGateway.Copy(),
 	}
 }
 
@@ -1419,6 +1432,8 @@ func (u *ConsulUpstream) Equals(o *ConsulUpstream) bool {
 
 	switch {
 	case u.DestinationName != o.DestinationName:
+		return false
+	case u.DestinationNamespace != o.DestinationNamespace:
 		return false
 	case u.LocalBindPort != o.LocalBindPort:
 		return false
@@ -1469,9 +1484,7 @@ func (e *ConsulExposeConfig) Copy() *ConsulExposeConfig {
 		return nil
 	}
 	paths := make([]ConsulExposePath, len(e.Paths))
-	for i := 0; i < len(e.Paths); i++ {
-		paths[i] = e.Paths[i]
-	}
+	copy(paths, e.Paths)
 	return &ConsulExposeConfig{
 		Paths: paths,
 	}
@@ -1757,7 +1770,10 @@ func (p *ConsulGatewayProxy) Validate() error {
 
 // ConsulGatewayTLSConfig is used to configure TLS for a gateway.
 type ConsulGatewayTLSConfig struct {
-	Enabled bool
+	Enabled       bool
+	TLSMinVersion string
+	TLSMaxVersion string
+	CipherSuites  []string
 }
 
 func (c *ConsulGatewayTLSConfig) Copy() *ConsulGatewayTLSConfig {
@@ -1766,7 +1782,10 @@ func (c *ConsulGatewayTLSConfig) Copy() *ConsulGatewayTLSConfig {
 	}
 
 	return &ConsulGatewayTLSConfig{
-		Enabled: c.Enabled,
+		Enabled:       c.Enabled,
+		TLSMinVersion: c.TLSMinVersion,
+		TLSMaxVersion: c.TLSMaxVersion,
+		CipherSuites:  helper.CopySliceString(c.CipherSuites),
 	}
 }
 
@@ -1775,7 +1794,10 @@ func (c *ConsulGatewayTLSConfig) Equals(o *ConsulGatewayTLSConfig) bool {
 		return c == o
 	}
 
-	return c.Enabled == o.Enabled
+	return c.Enabled == o.Enabled &&
+		c.TLSMinVersion == o.TLSMinVersion &&
+		c.TLSMaxVersion == o.TLSMaxVersion &&
+		helper.CompareSliceSetString(c.CipherSuites, o.CipherSuites)
 }
 
 // ConsulIngressService is used to configure a service fronted by the ingress gateway.

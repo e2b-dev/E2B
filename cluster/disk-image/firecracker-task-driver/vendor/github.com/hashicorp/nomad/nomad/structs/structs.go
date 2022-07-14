@@ -146,6 +146,9 @@ const (
 
 	// AllNamespacesSentinel is the value used as a namespace RPC value
 	// to indicate that endpoints must search in all namespaces
+	//
+	// Also defined in acl/acl.go to avoid circular dependencies. If modified
+	// it should be updated there as well.
 	AllNamespacesSentinel = "*"
 
 	// maxNamespaceDescriptionLength limits a namespace description length
@@ -207,7 +210,7 @@ type RPCInfo interface {
 	IsForwarded() bool
 	SetForwarded()
 	TimeToBlock() time.Duration
-	// TimeToBlock sets how long this request can block. The requested time may not be possible,
+	// SetTimeToBlock sets how long this request can block. The requested time may not be possible,
 	// so Callers should readback TimeToBlock. E.g. you cannot set time to block at all on WriteRequests
 	// and it cannot exceed MaxBlockingRPCQueryTime
 	SetTimeToBlock(t time.Duration)
@@ -822,10 +825,20 @@ type EvalUpdateRequest struct {
 	WriteRequest
 }
 
-// EvalDeleteRequest is used for deleting an evaluation.
-type EvalDeleteRequest struct {
+// EvalReapRequest is used for reaping evaluations and allocation. This struct
+// is used by the Eval.Reap RPC endpoint as a request argument, and also when
+// performing eval reap or deletes via Raft. This is because Eval.Reap and
+// Eval.Delete use the same Raft message when performing deletes so we do not
+// need more Raft message types.
+type EvalReapRequest struct {
 	Evals  []string
 	Allocs []string
+
+	// UserInitiated tracks whether this reap request is the result of an
+	// operator request. If this is true, the FSM needs to ensure the eval
+	// broker is paused as the request can include non-terminal allocations.
+	UserInitiated bool
+
 	WriteRequest
 }
 
@@ -913,6 +926,14 @@ type ApplyPlanResultsRequest struct {
 	// PreemptionEvals is a slice of follow up evals for jobs whose allocations
 	// have been preempted to place allocs in this plan
 	PreemptionEvals []*Evaluation
+
+	// IneligibleNodes are nodes the plan applier has repeatedly rejected
+	// placements for and should therefore be considered ineligible by workers
+	// to avoid retrying them repeatedly.
+	IneligibleNodes []string
+
+	// UpdatedAt represents server time of receiving request.
+	UpdatedAt int64
 }
 
 // AllocUpdateRequest is used to submit changes to allocations, either
@@ -1632,6 +1653,7 @@ const (
 	NodeEventSubsystemDriver    = "Driver"
 	NodeEventSubsystemHeartbeat = "Heartbeat"
 	NodeEventSubsystemCluster   = "Cluster"
+	NodeEventSubsystemScheduler = "Scheduler"
 	NodeEventSubsystemStorage   = "Storage"
 )
 
@@ -1725,7 +1747,7 @@ func ValidNodeStatus(status string) bool {
 
 const (
 	// NodeSchedulingEligible and Ineligible marks the node as eligible or not,
-	// respectively, for receiving allocations. This is orthoginal to the node
+	// respectively, for receiving allocations. This is orthogonal to the node
 	// status being ready.
 	NodeSchedulingEligible   = "eligible"
 	NodeSchedulingIneligible = "ineligible"
@@ -2892,13 +2914,23 @@ func (r *RequestedDevice) Validate() error {
 
 // NodeResources is used to define the resources available on a client node.
 type NodeResources struct {
-	Cpu          NodeCpuResources
-	Memory       NodeMemoryResources
-	Disk         NodeDiskResources
-	Networks     Networks
-	NodeNetworks []*NodeNetworkResource
-	Devices      []*NodeDeviceResource
+	Cpu     NodeCpuResources
+	Memory  NodeMemoryResources
+	Disk    NodeDiskResources
+	Devices []*NodeDeviceResource
 
+	// NodeNetworks was added in Nomad 0.12 to support multiple interfaces.
+	// It is the superset of host_networks, fingerprinted networks, and the
+	// node's default interface.
+	NodeNetworks []*NodeNetworkResource
+
+	// Networks is the node's bridge network and default interface. It is
+	// only used when scheduling jobs with a deprecated
+	// task.resources.network stanza.
+	Networks Networks
+
+	// MinDynamicPort and MaxDynamicPort represent the inclusive port range
+	// to select dynamic ports from across all networks.
 	MinDynamicPort int
 	MaxDynamicPort int
 }
@@ -2975,23 +3007,23 @@ func (n *NodeResources) Merge(o *NodeResources) {
 	}
 
 	if len(o.NodeNetworks) != 0 {
-		lookupNetwork := func(nets []*NodeNetworkResource, name string) (int, *NodeNetworkResource) {
-			for i, nw := range nets {
-				if nw.Device == name {
-					return i, nw
-				}
-			}
-			return 0, nil
-		}
-
 		for _, nw := range o.NodeNetworks {
-			if i, nnw := lookupNetwork(n.NodeNetworks, nw.Device); nnw != nil {
+			if i, nnw := lookupNetworkByDevice(n.NodeNetworks, nw.Device); nnw != nil {
 				n.NodeNetworks[i] = nw
 			} else {
 				n.NodeNetworks = append(n.NodeNetworks, nw)
 			}
 		}
 	}
+}
+
+func lookupNetworkByDevice(nets []*NodeNetworkResource, name string) (int, *NodeNetworkResource) {
+	for i, nw := range nets {
+		if nw.Device == name {
+			return i, nw
+		}
+	}
+	return 0, nil
 }
 
 func (n *NodeResources) Equals(o *NodeResources) bool {
@@ -3961,10 +3993,7 @@ func (a *AllocatedDeviceResource) Copy() *AllocatedDeviceResource {
 
 	// Copy the devices
 	na.DeviceIDs = make([]string, len(a.DeviceIDs))
-	for i, id := range a.DeviceIDs {
-		na.DeviceIDs[i] = id
-	}
-
+	copy(na.DeviceIDs, a.DeviceIDs)
 	return &na
 }
 
@@ -6969,7 +6998,7 @@ type Task struct {
 	// task exits, other tasks will be gracefully terminated.
 	Leader bool
 
-	// ShutdownDelay is the duration of the delay between deregistering a
+	// ShutdownDelay is the duration of the delay between de-registering a
 	// task from Consul and sending it a signal to shutdown. See #2441
 	ShutdownDelay time.Duration
 
@@ -8372,9 +8401,14 @@ func (e *TaskEvent) SetValidationError(err error) *TaskEvent {
 	return e
 }
 
-func (e *TaskEvent) SetKillTimeout(timeout time.Duration) *TaskEvent {
-	e.KillTimeout = timeout
-	e.Details["kill_timeout"] = timeout.String()
+func (e *TaskEvent) SetKillTimeout(timeout, maxTimeout time.Duration) *TaskEvent {
+	lower := timeout
+	if maxTimeout < lower {
+		lower = maxTimeout
+	}
+
+	e.KillTimeout = lower
+	e.Details["kill_timeout"] = lower.String()
 	return e
 }
 
@@ -10890,6 +10924,14 @@ func (e *Evaluation) GetID() string {
 	return e.ID
 }
 
+// GetNamespace implements the NamespaceGetter interface, required for pagination.
+func (e *Evaluation) GetNamespace() string {
+	if e == nil {
+		return ""
+	}
+	return e.Namespace
+}
+
 // GetCreateIndex implements the CreateIndexGetter interface, required for
 // pagination.
 func (e *Evaluation) GetCreateIndex() uint64 {
@@ -11148,8 +11190,8 @@ type Plan struct {
 	// of the plan by only including it once.
 	Job *Job
 
-	// NodeUpdate contains all the allocations for each node. For each node,
-	// this is a list of the allocations to update to either stop or evict.
+	// NodeUpdate contains all the allocations to be stopped or evicted for
+	// each node.
 	NodeUpdate map[string][]*Allocation
 
 	// NodeAllocation contains all the allocations for each node.
@@ -11376,7 +11418,7 @@ func (p *Plan) NormalizeAllocations() {
 
 // PlanResult is the result of a plan submitted to the leader.
 type PlanResult struct {
-	// NodeUpdate contains all the updates that were committed.
+	// NodeUpdate contains all the evictions and stops that were committed.
 	NodeUpdate map[string][]*Allocation
 
 	// NodeAllocation contains all the allocations that were committed.
@@ -11393,6 +11435,16 @@ type PlanResult struct {
 	// as stopped.
 	NodePreemptions map[string][]*Allocation
 
+	// RejectedNodes are nodes the scheduler worker has rejected placements for
+	// and should be considered for ineligibility by the plan applier to avoid
+	// retrying them repeatedly.
+	RejectedNodes []string
+
+	// IneligibleNodes are nodes the plan applier has repeatedly rejected
+	// placements for and should therefore be considered ineligible by workers
+	// to avoid retrying them repeatedly.
+	IneligibleNodes []string
+
 	// RefreshIndex is the index the worker should refresh state up to.
 	// This allows all evictions and allocations to be materialized.
 	// If any allocations were rejected due to stale data (node state,
@@ -11406,8 +11458,9 @@ type PlanResult struct {
 
 // IsNoOp checks if this plan result would do nothing
 func (p *PlanResult) IsNoOp() bool {
-	return len(p.NodeUpdate) == 0 && len(p.NodeAllocation) == 0 &&
-		len(p.DeploymentUpdates) == 0 && p.Deployment == nil
+	return len(p.IneligibleNodes) == 0 && len(p.NodeUpdate) == 0 &&
+		len(p.NodeAllocation) == 0 && len(p.DeploymentUpdates) == 0 &&
+		p.Deployment == nil
 }
 
 // FullCommit is used to check if all the allocations in a plan
@@ -11912,8 +11965,9 @@ type ACLTokenDeleteRequest struct {
 
 // ACLTokenBootstrapRequest is used to bootstrap ACLs
 type ACLTokenBootstrapRequest struct {
-	Token      *ACLToken // Not client specifiable
-	ResetIndex uint64    // Reset index is used to clear the bootstrap token
+	Token           *ACLToken // Not client specifiable
+	ResetIndex      uint64    // Reset index is used to clear the bootstrap token
+	BootstrapSecret string
 	WriteRequest
 }
 

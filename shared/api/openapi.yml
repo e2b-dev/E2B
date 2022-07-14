@@ -89,6 +89,7 @@ components:
         - Nodejs
         - Go
         - Bash
+        - Rust
         - Python3
     EnvironmentState:
       type: string

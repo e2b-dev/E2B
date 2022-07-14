@@ -17,7 +17,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/consul/api v1.13.0
 	github.com/hashicorp/go-hclog v1.2.0
-	github.com/hashicorp/nomad v1.3.1
+	github.com/hashicorp/nomad v1.3.2
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
