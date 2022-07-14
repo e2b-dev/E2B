@@ -18,7 +18,7 @@ const (
 	sessionsJobNameWithSlash = sessionsJobName + "/"
 	sessionsJobFile          = sessionsJobName + jobFileSuffix
 	jobRegisterTimeout       = time.Second * 2
-	allocationCheckTimeout   = time.Second * 5
+	allocationCheckTimeout   = time.Second * 12
 	allocationCheckInterval  = time.Millisecond * 100
 	fcTaskName               = "start"
 	sessionIDPrefix          = "s"
