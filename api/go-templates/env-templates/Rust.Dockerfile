@@ -31,8 +31,12 @@ WORKDIR code
 RUN echo "" > src/main.rs
 
 {{ if .Deps }}
-  RUN cargo install {{ range .Deps }}{{ . }} {{ end }}
+  {{ range .Deps }}
+    RUN echo "{{ . }}" >> Cargo.toml
+  {{ end }}
 {{ end }}
+
+RUN cargo fetch
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=cargo >> /.dbkenv
