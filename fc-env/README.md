@@ -9,3 +9,6 @@ A Devbook agent that runs inside a Firecracker VM for its whole lifecycle. It pr
 
 ## publish.sh
 Used for uploading the devbookd binary, build-env.sh, publish-env.sh, use-prebuilt-env.sh and provision-env.sh to the Google Cloud Storage. The files are then downloaded as artifacts during the Nomad job for building the Firecracker environment.
+
+## Resizing fc-envs disk
+After modifying https://console.cloud.google.com/compute/disksDetail/zones/us-central1-a/disks/orch-firecracker-envs?project=devbookhq disk size in the dashboard you need to resize the partition by running the `resize2fs /dev/sdb` command.

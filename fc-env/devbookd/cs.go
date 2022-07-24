@@ -215,15 +215,17 @@ func (cs *CodeSnippetService) scanRunCmdOut(pipe io.ReadCloser, t outType) {
 		cs.cachedOut = append(cs.cachedOut, o)
 		cs.notifyOut(&o)
 	}
+
+	cs.mu.Lock()
+	if cs.running {
+		cs.cmd.Wait()
+		cs.cachedOut = nil
+		cs.setRunning(false)
+	}
+	cs.mu.Unlock()
 }
 
 func (cs *CodeSnippetService) runCmd(code string, envVars *map[string]string) {
-	defer func() {
-		cs.mu.Lock()
-		cs.setRunning(false)
-		cs.mu.Unlock()
-	}()
-
 	if err := os.WriteFile(entrypointFullPath, []byte(code), 0755); err != nil {
 		slogger.Errorw("Failed to write to the entrypoint file",
 			"entrypointFullPath", entrypointFullPath,
@@ -271,15 +273,15 @@ func (cs *CodeSnippetService) runCmd(code string, envVars *map[string]string) {
 
 	go cs.scanRunCmdOut(stderr, OutTypeStderr)
 
-	if err := cs.cmd.Run(); err != nil {
+	if err := cs.cmd.Start(); err != nil {
 		slogger.Errorw("Failed to run the run command",
 			"cmd", cs.cmd,
 			"error", err,
 		)
 		o := newStderrResponse(err.Error())
 		cs.notifyOut(&o)
+		cs.cachedOut = nil
 	}
-	cs.cachedOut = nil
 }
 
 func (cs *CodeSnippetService) Run(code string, envVars map[string]string) CodeSnippetState {

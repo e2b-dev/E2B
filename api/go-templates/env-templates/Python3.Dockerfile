@@ -27,7 +27,7 @@ RUN poetry run python main.py
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=poetry >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
-RUN echo RUN_ARGS=run python main.py >> /.dbkenv
+RUN echo RUN_ARGS=run python -u main.py >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=main.py >> /.dbkenv
