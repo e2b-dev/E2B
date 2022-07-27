@@ -176,7 +176,7 @@ function startfc() {
   ],
   "machine-config": {
     "vcpu_count": 1,
-    "mem_size_mib": 256
+    "mem_size_mib": 1024
   }
 }
 EOF
