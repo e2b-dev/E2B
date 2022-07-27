@@ -11,6 +11,8 @@ RUN npm init -y
   RUN npm i {{ range .Deps }}{{ . }} {{ end }}
 {{ end }}
 
+RUN npm config set strict-ssl false
+
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=node >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
