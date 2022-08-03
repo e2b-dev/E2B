@@ -1,3 +1,6 @@
+import SessionConnection, {
+  SessionConnectionOpts,
+} from './sessionConnection'
 import {
   CodeSnippetManager,
   CodeSnippetStateHandler,
@@ -6,12 +9,16 @@ import {
   codeSnippetMethod,
   CodeSnippetExecState,
   ScanOpenedPortsHandler,
-  EnvVars,
 } from './codeSnippet'
-import { TerminalManager, terminalMethod } from './terminal'
-import SessionConnection, {
-  SessionConnectionOpts,
-} from './sessionConnection'
+import {
+  TerminalManager,
+  terminalMethod,
+} from './terminal'
+import {
+  FilesystemManager,
+  filesystemMethod,
+  FileInfo,
+} from './filesystem'
 
 export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
@@ -29,6 +36,7 @@ class Session extends SessionConnection {
 
   codeSnippet?: CodeSnippetManager
   terminal?: TerminalManager
+  filesystem?: FilesystemManager
 
   constructor(opts: SessionOpts) {
     super(opts)
@@ -55,7 +63,7 @@ class Session extends SessionConnection {
 
     // Init CodeSnippet handler
     this.codeSnippet = {
-      run: async (code: string, envVars: EnvVars = {}) => {
+      run: async (code, envVars = {}) => {
         if (!this.isOpen || !this.session) {
           throw new Error('Session is not active')
         }
@@ -81,20 +89,52 @@ class Session extends SessionConnection {
       },
     }
 
+    // Init Filesystem handler
+    this.filesystem = {
+      listAllFiles: async (path) => {
+        if (!this.isOpen || !this.session) {
+          throw new Error('Session is not active')
+        }
+        const files = await this.call(`${filesystemMethod}_listAllFiles`, [path]) as FileInfo[]
+        return files
+      },
+      removeFile: async (path) => {
+        if (!this.isOpen || !this.session) {
+          throw new Error('Session is not active')
+        }
+        await this.call(`${filesystemMethod}_removeFile`, [path])
+      },
+      writeFile: async (path, content) => {
+        if (!this.isOpen || !this.session) {
+          throw new Error('Session is not active')
+        }
+        await this.call(`${filesystemMethod}_writeFile`, [path, content])
+      },
+      readFile: async (path) => {
+        if (!this.isOpen || !this.session) {
+          throw new Error('Session is not active')
+        }
+        const content = await this.call(`${filesystemMethod}_readFile`, [path]) as string
+        return content
+      },
+    }
+
     // Init Terminal handler
     this.terminal = {
-      createSession: async (onData, size, activeTerminalID) => {
+      createSession: async (onData, onChildProcessesChange, size, activeTerminalID) => {
         try {
           const terminalID = await this.call(`${terminalMethod}_start`, [activeTerminalID ? activeTerminalID : '', size.cols, size.rows])
           if (typeof terminalID !== 'string') {
             throw new Error('Cannot initialize terminal')
           }
 
-          const subscriptionID = await this.subscribe(terminalMethod, onData, 'onData', terminalID)
+          const onDataSubscriptionID = await this.subscribe(terminalMethod, onData, 'onData', terminalID)
+          const onChildProcessesChangeSubscriptionID = await this.subscribe(terminalMethod, onChildProcessesChange, 'onChildProcessesChange', terminalID)
 
           return {
             destroy: async () => {
-              await this.unsubscribe(subscriptionID)
+              await this.unsubscribe(onDataSubscriptionID)
+              await this.unsubscribe(onChildProcessesChangeSubscriptionID)
               await this.call(`${terminalMethod}_destroy`, [terminalID])
             },
             sendData: async (data) => {

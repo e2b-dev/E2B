@@ -6,6 +6,16 @@ export interface TerminalSession {
   readonly destroy: () => Promise<void>
 }
 
+export interface ChildProcess {
+  cmd: string
+  pid: number
+}
+
 export interface TerminalManager {
-  readonly createSession: (onData: (data: string) => void, size: { cols: number, rows: number }, activeTerminalID?: string) => Promise<TerminalSession>
+  readonly createSession: (
+    onData: (data: string) => void,
+    onChildProcessesChange: (cps: ChildProcess[]) => void,
+    size: { cols: number, rows: number },
+    activeTerminalID?: string,
+  ) => Promise<TerminalSession>
 }

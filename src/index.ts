@@ -26,6 +26,10 @@ export type {
   TerminalManager,
   TerminalSession,
 } from './session/terminal'
+export type {
+  FilesystemManager,
+  FileInfo,
+} from './session/filesystem'
 
 export { default as api } from './api'
 export type {
