@@ -150,6 +150,11 @@ func main() {
 		slogger.Errorw("Failed to register code snippet service", "error", err)
 	}
 
+	filesystemService := NewFilesystemService(slogger)
+	if err := server.RegisterName("filesystem", filesystemService); err != nil {
+		slogger.Errorw("Failed to register filesystem service", "error", err)
+	}
+
 	terminalService := NewTerminalService(slogger)
 	if err := server.RegisterName("terminal", terminalService); err != nil {
 		slogger.Errorw("Failed to register terminal service", "error", err)

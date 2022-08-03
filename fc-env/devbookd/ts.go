@@ -3,16 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sync"
+	"time"
 
+	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/process"
 	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/terminal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 )
 
-const ServiceName = "terminal"
+const (
+	ServiceName                       = "terminal"
+	terminalChildProcessCheckInterval = 700 * time.Millisecond
+)
 
-type TerminalDataSubscriber struct {
+type TerminalSubscriber struct {
 	subscriber *subscriber
 	terminalID terminal.TerminalID
 }
@@ -22,11 +28,12 @@ type TerminalService struct {
 
 	logger *zap.SugaredLogger
 
-	subscribersLock         sync.RWMutex
-	terminalDataSubscribers map[rpc.ID]*TerminalDataSubscriber
+	subscribersLock                   sync.RWMutex
+	terminalDataSubscribers           map[rpc.ID]*TerminalSubscriber
+	terminalChildProcessesSubscribers map[rpc.ID]*TerminalSubscriber
 }
 
-func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*TerminalDataSubscriber, terminalID terminal.TerminalID) (*TerminalDataSubscriber, error) {
+func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*TerminalSubscriber, terminalID terminal.TerminalID) (*TerminalSubscriber, error) {
 	sub, err := newSubscriber(ctx)
 	if err != nil {
 		return nil, err
@@ -43,7 +50,7 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 		ts.removeSubscriber(subs, sub.SubscriptionID())
 	}()
 
-	wrappedSub := &TerminalDataSubscriber{
+	wrappedSub := &TerminalSubscriber{
 		terminalID: terminalID,
 		subscriber: sub,
 	}
@@ -55,15 +62,15 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 	return wrappedSub, nil
 }
 
-func (ts *TerminalService) removeSubscriber(subs map[rpc.ID]*TerminalDataSubscriber, subscriberID rpc.ID) {
+func (ts *TerminalService) removeSubscriber(subs map[rpc.ID]*TerminalSubscriber, subscriberID rpc.ID) {
 	ts.subscribersLock.Lock()
 	defer ts.subscribersLock.Unlock()
 
 	delete(subs, subscriberID)
 }
 
-func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalDataSubscriber, terminalID terminal.TerminalID) []*TerminalDataSubscriber {
-	terminalSubscribers := []*TerminalDataSubscriber{}
+func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalSubscriber, terminalID terminal.TerminalID) []*TerminalSubscriber {
+	terminalSubscribers := []*TerminalSubscriber{}
 
 	ts.subscribersLock.RLock()
 	defer ts.subscribersLock.RUnlock()
@@ -79,7 +86,7 @@ func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalDataSubscribe
 
 func NewTerminalService(logger *zap.SugaredLogger) *TerminalService {
 	ts := &TerminalService{
-		terminalDataSubscribers: make(map[rpc.ID]*TerminalDataSubscriber),
+		terminalDataSubscribers: make(map[rpc.ID]*TerminalSubscriber),
 		logger:                  logger,
 		termManager:             terminal.NewTerminalManager(),
 	}
@@ -106,6 +113,36 @@ func (ts *TerminalService) OnData(ctx context.Context, terminalID terminal.Termi
 			"error", err,
 		)
 		return nil, err
+	}
+
+	return sub.subscriber.subscription, nil
+}
+
+// Subscription
+func (ts *TerminalService) OnChildProcessesChange(ctx context.Context, terminalID terminal.TerminalID) (*rpc.Subscription, error) {
+	ts.logger.Info("Subscribe to terminal child processes")
+
+	term, ok := ts.termManager.Get(terminalID)
+	if !ok {
+		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)
+		ts.logger.Error(errMsg)
+		return nil, fmt.Errorf(errMsg)
+	}
+
+	sub, err := ts.saveNewSubscriber(ctx, ts.terminalChildProcessesSubscribers, terminalID)
+	if err != nil {
+		ts.logger.Errorw("Failed to create a terminal child processes subscription",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	if err := sub.subscriber.Notify(term.GetCachedChildProcesses()); err != nil {
+		slogger.Errorw("Failed to send initial child processes",
+			"subscriptionID", sub.subscriber.SubscriptionID(),
+			"error", err,
+		)
 	}
 
 	return sub.subscriber.subscription, nil
@@ -144,6 +181,42 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 				for _, sub := range ts.getSubscribers(ts.terminalDataSubscribers, term.ID) {
 					if err := sub.subscriber.Notify(data); err != nil {
 						ts.logger.Errorw("Failed to send data notification",
+							"subscriptionID", sub.subscriber.SubscriptionID(),
+							"error", err,
+						)
+					}
+				}
+			}
+		}()
+
+		go func() {
+			ticker := time.NewTicker(terminalChildProcessCheckInterval)
+			pid := term.Pid()
+
+			for range ticker.C {
+				if term.IsDestroyed() {
+					return
+				}
+
+				cps, err := process.GetChildProcesses(pid, ts.logger)
+				if err != nil {
+					ts.logger.Errorw("failed to get child processes for terminal",
+						"terminalID", term.ID,
+						"pid", pid,
+						"error", err,
+					)
+					return
+				}
+
+				changed := !reflect.DeepEqual(cps, term.GetCachedChildProcesses())
+				if !changed {
+					continue
+				}
+
+				term.SetCachedChildProcesses(cps)
+				for _, sub := range ts.getSubscribers(ts.terminalChildProcessesSubscribers, term.ID) {
+					if err := sub.subscriber.Notify(cps); err != nil {
+						ts.logger.Errorw("Failed to send child processes notification",
 							"subscriptionID", sub.subscriber.SubscriptionID(),
 							"error", err,
 						)
@@ -209,6 +282,20 @@ func (ts *TerminalService) Destroy(terminalID terminal.TerminalID) error {
 
 	for _, s := range ts.getSubscribers(ts.terminalDataSubscribers, terminalID) {
 		ts.removeSubscriber(ts.terminalDataSubscribers, s.subscriber.SubscriptionID())
+	}
+
+	return nil
+}
+
+func (ts *TerminalService) KillProcess(pid int) error {
+	ts.logger.Info("Kill process")
+
+	err := process.KillProcess(pid)
+
+	if err != nil {
+		errMsg := fmt.Sprint("Cannot kill process %d: %v", pid, err)
+		ts.logger.Error(errMsg)
+		return fmt.Errorf(errMsg)
 	}
 
 	return nil

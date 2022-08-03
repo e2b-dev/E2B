@@ -351,6 +351,7 @@ func (cs *CodeSnippetService) State(ctx context.Context) (*rpc.Subscription, err
 	} else {
 		state = CodeSnippetStateStopped
 	}
+
 	if err := sub.Notify(state); err != nil {
 		slogger.Errorw("Failed to send initial state notification",
 			"subscriptionID", sub.SubscriptionID(),
