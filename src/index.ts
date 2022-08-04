@@ -25,6 +25,7 @@ export type {
 export type {
   TerminalManager,
   TerminalSession,
+  ChildProcess,
 } from './session/terminal'
 export type {
   FilesystemManager,
