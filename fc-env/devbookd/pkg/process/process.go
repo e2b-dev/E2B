@@ -17,18 +17,20 @@ type ChildProcess struct {
 }
 
 func GetChildProcesses(pid int, logger *zap.SugaredLogger) (*[]ChildProcess, error) {
-	out, err := exec.Command("pgrep", "-l", "-P", fmt.Sprint(pid)).Output()
-
-	if err != nil {
-		logger.Warnf("failed listing child processes for process %d: %s, %+v", pid, string(out), err)
-	}
-
-	lines := strings.Split(string(out), "\n")
+	out, _ := exec.Command("pgrep", "-l", "-P", fmt.Sprint(pid)).Output()
 
 	children := []ChildProcess{}
 
+	// if err != nil {
+	// 	// logger.Warnf("failed listing child processes for process %d: %s, %+v", pid, string(out), err)
+	// 	// return &children, nil
+	// }
+
+	lines := strings.Split(string(out), "\n")
+
 	for _, line := range lines {
 		parsed := strings.Split(line, " ")
+
 		if len(parsed) != 2 {
 			continue
 		}

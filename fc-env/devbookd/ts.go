@@ -75,7 +75,7 @@ func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalSubscriber, t
 	ts.subscribersLock.RLock()
 	defer ts.subscribersLock.RUnlock()
 
-	for _, s := range ts.terminalDataSubscribers {
+	for _, s := range subs {
 		if s.terminalID == terminalID {
 			terminalSubscribers = append(terminalSubscribers, s)
 		}
@@ -86,9 +86,10 @@ func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalSubscriber, t
 
 func NewTerminalService(logger *zap.SugaredLogger) *TerminalService {
 	ts := &TerminalService{
-		terminalDataSubscribers: make(map[rpc.ID]*TerminalSubscriber),
-		logger:                  logger,
-		termManager:             terminal.NewTerminalManager(),
+		terminalChildProcessesSubscribers: make(map[rpc.ID]*TerminalSubscriber),
+		terminalDataSubscribers:           make(map[rpc.ID]*TerminalSubscriber),
+		logger:                            logger,
+		termManager:                       terminal.NewTerminalManager(),
 	}
 
 	return ts
@@ -282,6 +283,10 @@ func (ts *TerminalService) Destroy(terminalID terminal.TerminalID) error {
 
 	for _, s := range ts.getSubscribers(ts.terminalDataSubscribers, terminalID) {
 		ts.removeSubscriber(ts.terminalDataSubscribers, s.subscriber.SubscriptionID())
+	}
+
+	for _, s := range ts.getSubscribers(ts.terminalChildProcessesSubscribers, terminalID) {
+		ts.removeSubscriber(ts.terminalChildProcessesSubscribers, s.subscriber.SubscriptionID())
 	}
 
 	return nil
