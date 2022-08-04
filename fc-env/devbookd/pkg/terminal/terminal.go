@@ -56,7 +56,6 @@ func NewTerminal(root string, cols, rows uint16) (*Terminal, error) {
 	cmd.Env = append(
 		os.Environ(),
 		"TERM=xterm",
-		"PS1=\\w \\$ ",
 	)
 	cmd.Dir = root
 

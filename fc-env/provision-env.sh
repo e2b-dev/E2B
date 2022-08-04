@@ -32,3 +32,6 @@ echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
 # Delete itself once done.
 rm -- "$0"
+
+# Change terminal prompt
+sed -i.bak '/^export PS1/i PS1="\\w $ "' "/etc/profile"
