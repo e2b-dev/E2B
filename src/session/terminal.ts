@@ -13,6 +13,7 @@ export interface ChildProcess {
 }
 
 export interface TerminalManager {
+  readonly killProcess: (pid: number) => Promise<void>
   readonly createSession: (
     onData: (data: string) => void,
     onChildProcessesChange: (cps: ChildProcess[]) => void,

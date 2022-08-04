@@ -121,6 +121,9 @@ class Session extends SessionConnection {
 
     // Init Terminal handler
     this.terminal = {
+      killProcess: async (pid) => {
+        await this.call(`${terminalMethod}_killProcess`, [pid])
+      },
       createSession: async (onData, onChildProcessesChange, size, activeTerminalID) => {
         try {
           const terminalID = await this.call(`${terminalMethod}_start`, [activeTerminalID ? activeTerminalID : '', size.cols, size.rows])
