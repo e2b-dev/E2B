@@ -2,7 +2,7 @@ import { Session } from '../dist/cjs/index.js'
 
 async function main() {
   const session = new Session({
-    id: 'rUYO4bUmF4Ms',
+    id: 'OgHOvvX1rR0o',
     codeSnippet: {
       onStateChange(state) {
         console.log(state)
@@ -69,13 +69,22 @@ async function main() {
     // //   console.log('Listening on 8080')
     // // });`)
 
+    const file = '/code/test.js'
+    const content = 'testing'
+    await session.filesystem.writeFile(file, content)
+    const fileContent = await session.filesystem.readFile(file)
+    console.log('file content', fileContent)
 
-    const p = '/code/test.js'
-    await session.filesystem.writeFile(p, 'test>>')
+    const fileNames = await session.filesystem.listAllFiles('/')
+    console.log('file names', fileNames)
 
-    const t = await session.filesystem.listAllFiles('/')
-
-    console.log('outf', t)
+    const term = await session.terminal.createSession(
+      (data) => console.log('terminal data', data),
+      (cps) => console.log('child processes', cps),
+      { rows: 40, cols: 90 },
+    )
+    console.log('terminalID', term.terminalID)
+    await term.sendData('sleep 10\n')
 
   } catch (e) {
     console.error(e)

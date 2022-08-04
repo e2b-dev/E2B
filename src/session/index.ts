@@ -132,6 +132,7 @@ class Session extends SessionConnection {
           const onChildProcessesChangeSubscriptionID = await this.subscribe(terminalMethod, onChildProcessesChange, 'onChildProcessesChange', terminalID)
 
           return {
+            terminalID,
             destroy: async () => {
               await this.unsubscribe(onDataSubscriptionID)
               await this.unsubscribe(onChildProcessesChangeSubscriptionID)
