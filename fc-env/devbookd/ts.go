@@ -15,7 +15,7 @@ import (
 
 const (
 	ServiceName                       = "terminal"
-	terminalChildProcessCheckInterval = 700 * time.Millisecond
+	terminalChildProcessCheckInterval = 400 * time.Millisecond
 )
 
 type TerminalSubscriber struct {
