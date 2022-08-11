@@ -12,6 +12,7 @@ const (
 
 // Defines values for Template.
 const (
+	Ansys   Template = "Ansys"
 	Bash    Template = "Bash"
 	Go      Template = "Go"
 	Nodejs  Template = "Nodejs"
