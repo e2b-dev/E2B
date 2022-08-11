@@ -29,9 +29,9 @@ passwd -d root
 # Add DNS.
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
-# Change terminal prompt.
-echo 'PS1="\w $ "' >> /etc/profile
-echo 'export PS1' >> /etc/profile
+# DOES NOT WORK: Change terminal prompt.
+#echo 'PS1="\w $ "' >> /etc/profile
+#echo 'export PS1' >> /etc/profile
 
 # Delete itself once done.
 rm -- "$0"
