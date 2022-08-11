@@ -91,6 +91,7 @@ components:
         - Bash
         - Rust
         - Python3
+        - Ansys
     EnvironmentState:
       type: string
       enum:
