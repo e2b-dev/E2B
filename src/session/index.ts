@@ -132,13 +132,13 @@ class Session extends SessionConnection {
           }
 
           const onDataSubscriptionID = await this.subscribe(terminalMethod, onData, 'onData', terminalID)
-          const onChildProcessesChangeSubscriptionID = await this.subscribe(terminalMethod, onChildProcessesChange, 'onChildProcessesChange', terminalID)
+          const onChildProcessesChangeSubscriptionID = onChildProcessesChange ? await this.subscribe(terminalMethod, onChildProcessesChange, 'onChildProcessesChange', terminalID) : undefined
 
           return {
             terminalID,
             destroy: async () => {
               await this.unsubscribe(onDataSubscriptionID)
-              await this.unsubscribe(onChildProcessesChangeSubscriptionID)
+              if (onChildProcessesChangeSubscriptionID) await this.unsubscribe(onChildProcessesChangeSubscriptionID)
               await this.call(`${terminalMethod}_destroy`, [terminalID])
             },
             sendData: async (data) => {
