@@ -196,7 +196,7 @@ export interface paths {
 export interface components {
   readonly schemas: {
     /** @enum {string} */
-    readonly Template: "Nodejs" | "Go" | "Bash" | "Rust" | "Python3";
+    readonly Template: "Nodejs" | "Go" | "Bash" | "Rust" | "Python3" | "Ansys";
     /** @enum {string} */
     readonly EnvironmentState: "Building" | "Failed" | "Done";
     readonly NewEnvironment: {
@@ -207,10 +207,7 @@ export interface components {
       readonly state: components["schemas"]["EnvironmentState"];
     };
     readonly NewSession: {
-      /**
-       * @description Option determining if the session is a shared persistent edit session
-       * @default false
-       */
+      /** @description Option determining if the session is a shared persistent edit session */
       readonly editEnabled?: boolean;
       /** @description Identifier of a code snippet which which is the environment associated */
       readonly codeSnippetID: string;
