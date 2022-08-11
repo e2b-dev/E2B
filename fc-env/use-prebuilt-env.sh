@@ -1,10 +1,10 @@
 #! /usr/bin/bash
 
 # This script creates (mostly using hardlinks) 3 files that together creates a Firecracker environment:
-# - rootfs: rootfs file 
+# - rootfs: rootfs file
 # - snap: snapshot file
 # - mem: memory file
-# - template_id: file pointing to the original code snippet's id - where the env should be mounted 
+# - template_id: file pointing to the original code snippet's id - where the env should be mounted
 
 TEMPLATE="$1"
 CODE_SNIPPET_ID="$2"

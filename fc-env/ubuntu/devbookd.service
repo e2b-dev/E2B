@@ -1,0 +1,13 @@
+[Unit]
+Description=Devbook Daemon Service
+
+[Service]
+Type=simple
+Restart=always
+User=root
+Group=root
+EnvironmentFile=/home/env
+ExecStart=/usr/bin/devbookd
+
+[Install]
+WantedBy=multi-user.target

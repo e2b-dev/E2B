@@ -1,6 +1,7 @@
 #! /bin/ash
 
-# This script is supposed to be executed in a running container. The container is then extracted to a rootfs image for the Firecracker VM.
+# This script is supposed to be executed in a running *Alpine* container.
+# The container is then extracted to a rootfs image for the Firecracker VM.
 
 set -euo pipefail
 
@@ -30,8 +31,8 @@ passwd -d root
 # Add DNS.
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
-# Delete itself once done.
-rm -- "$0"
-
 # Change terminal prompt
 sed -i.bak '/^export PS1/i PS1="\\w $ "' "/etc/profile"
+
+# Delete itself once done.
+rm -- "$0"

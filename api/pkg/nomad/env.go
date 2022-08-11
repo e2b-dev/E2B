@@ -19,13 +19,13 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache util-linux openrc openssh
 
 COPY devbookd /usr/bin/devbookd
-COPY devbookd-init /etc/init.d/devbookd
+COPY alpine/devbookd-init /etc/init.d/devbookd
 
-COPY rc-mount /etc/local.d/rc-mount.start
+COPY alpine/rc-mount /etc/local.d/rc-mount.start
 RUN chmod +x /etc/local.d/rc-mount.start
 
-COPY provision-env.sh provision-env.sh
-RUN chmod +x provision-env.sh`
+COPY alpine/provision-env.alpine.sh /provision-env.sh
+RUN chmod +x /provision-env.sh`
 
 	buildEnvJobName = "fc-build-envs"
 	buildEnvJobFile = buildEnvJobName + jobFileSuffix
