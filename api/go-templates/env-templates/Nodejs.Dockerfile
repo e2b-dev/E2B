@@ -4,11 +4,21 @@
 
 RUN apk update && apk add --no-cache nodejs npm
 
-WORKDIR code
+WORKDIR /code
+# Multiline string https://stackoverflow.com/questions/33439230/how-to-write-commands-with-multiple-lines-in-dockerfile-while-preserving-the-new
+RUN echo $'{ \n\
+  "name": "devbook", \n\
+  "version": "1.0.0", \n\
+  "main": "index.js", \n\
+  "keywords": [], \n\
+  "author": "", \n\
+  "license": "ISC", \n\
+  "type": "module" \n\
+  }' > package.json
 RUN npm init -y
 
 {{ if .Deps }}
-  RUN npm i {{ range .Deps }}{{ . }} {{ end }}
+RUN npm i {{ range .Deps }}{{ . }} {{ end }}
 {{ end }}
 
 RUN npm config set strict-ssl false
