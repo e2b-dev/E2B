@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/orchestration-services/api/pkg/cockroach"
 	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
 	"github.com/devbookhq/orchestration-services/api/pkg/supabase"
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,7 @@ type APIStore struct {
 	sessionsCache *nomad.SessionCache
 	nomadClient   *nomad.NomadClient
 	supabase      *supabase.Client
+	cockroach     *cockroach.Client
 	NextId        int64
 	Lock          sync.Mutex
 }
@@ -23,6 +25,11 @@ type APIStore struct {
 func NewAPIStore() *APIStore {
 	nomadClient := nomad.InitNomadClient()
 	supabaseClient, err := supabase.NewClient()
+	if err != nil {
+		panic(err)
+	}
+
+	cockroachClient, err := cockroach.NewClient()
 	if err != nil {
 		panic(err)
 	}
@@ -47,6 +54,7 @@ func NewAPIStore() *APIStore {
 	return &APIStore{
 		nomadClient:   nomadClient,
 		supabase:      supabaseClient,
+		cockroach:     cockroachClient,
 		NextId:        1000,
 		sessionsCache: cache,
 	}

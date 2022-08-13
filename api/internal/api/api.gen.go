@@ -29,6 +29,9 @@ type ServerInterface interface {
 	// (GET /health)
 	GetHealth(c *gin.Context)
 
+	// (POST /prisma-hub/db)
+	PostPrismaHubDb(c *gin.Context)
+
 	// (GET /sessions)
 	GetSessions(c *gin.Context, params GetSessionsParams)
 
@@ -200,6 +203,16 @@ func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 	siw.Handler.GetHealth(c)
 }
 
+// PostPrismaHubDb operation middleware
+func (siw *ServerInterfaceWrapper) PostPrismaHubDb(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PostPrismaHubDb(c)
+}
+
 // GetSessions operation middleware
 func (siw *ServerInterfaceWrapper) GetSessions(c *gin.Context) {
 
@@ -349,6 +362,8 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 	router.PUT(options.BaseURL+"/envs/:codeSnippetID/state", wrapper.PutEnvsCodeSnippetIDState)
 
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
+
+	router.POST(options.BaseURL+"/prisma-hub/db", wrapper.PostPrismaHubDb)
 
 	router.GET(options.BaseURL+"/sessions", wrapper.GetSessions)
 
