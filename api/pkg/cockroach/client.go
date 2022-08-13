@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	user      = "mlejva"
-	password  = "ehQuYPk5CE1KXQ9PHYOfaA"
-	defaultdb = "defaultdb"
+	user     = "mlejva"
+	password = "ehQuYPk5CE1KXQ9PHYOfaA"
 )
 
 type Client struct {
@@ -21,7 +20,7 @@ type Client struct {
 
 func databaseURL(databaseID string) string {
 	return fmt.Sprintf(
-		"postgresql://%s:%s@free-tier5.gcp-europe-west1.cockroachlabs.cloud:26257/%s?sslmode=verify-full&options=--cluster%3Dthick-cow-4620",
+		"postgresql://%s:%s@free-tier5.gcp-europe-west1.cockroachlabs.cloud:26257/%s?sslmode=verify-full&options=--cluster=thick-cow-4620",
 		user,
 		password,
 		databaseID,
@@ -29,13 +28,13 @@ func databaseURL(databaseID string) string {
 }
 
 func NewClient() (*Client, error) {
-	connString := databaseURL(defaultdb)
-	config, err := pgx.ParseConfig(connString)
-	if err != nil {
-		return nil, err
-	}
+	dsn := fmt.Sprintf(
+		"postgresql://%s:%s@free-tier5.gcp-europe-west1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&options=--cluster=thick-cow-4620",
+		user,
+		password,
+	)
 
-	conn, err := pgx.ConnectConfig(context.Background(), config)
+	conn, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -43,4 +42,8 @@ func NewClient() (*Client, error) {
 	return &Client{
 		conn: conn,
 	}, nil
+}
+
+func (c *Client) Close(ctx context.Context) {
+	c.conn.Close(ctx)
 }
