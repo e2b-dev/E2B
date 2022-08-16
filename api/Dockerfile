@@ -15,7 +15,7 @@ FROM alpine:3.15
 
 COPY --from=builder /build/bin/api .
 COPY go-templates go-templates
-#RUN cd go-templates/env-templates && rm Java.* Nodejs.* PHP.* Perl.* Python3.* Rust.*
+
 
 RUN chmod +x api
 
