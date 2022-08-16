@@ -6,7 +6,7 @@ import (
 
 	//"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
 	//"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 )
 
 type Client struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 func databaseURL(databaseID string) string {
@@ -34,16 +34,12 @@ func NewClient() (*Client, error) {
 		password,
 	)
 
-	conn, err := pgx.Connect(context.Background(), dsn)
+	pool, err := pgxpool.Connect(context.Background(), dsn)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
-		conn: conn,
+		pool: pool,
 	}, nil
-}
-
-func (c *Client) Close(ctx context.Context) {
-	c.conn.Close(ctx)
 }
