@@ -3,6 +3,7 @@ package cockroach
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/rand"
 )
 
@@ -18,9 +19,14 @@ func genRandomID(length int) string {
 
 func (c *Client) CreateDatabase(ctx context.Context) (string, error) {
 	id := genRandomID(8)
+	log.Printf("New database ID: %s\n", id)
+
+	query := fmt.Sprintf("CREATE DATABASE %s;", id)
+	log.Printf("New database SQL query: '%s'\n", query)
+
 	_, err := c.pool.Exec(
 		ctx,
-		fmt.Sprintf("CREATE DATABASE %s", id),
+		query,
 	)
 
 	if err != nil {
