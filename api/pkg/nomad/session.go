@@ -183,7 +183,7 @@ allocationCheck:
 		time.Sleep(allocationCheckInterval)
 	}
 
-	apiErr := n.DeleteSession(sessionID, true)
+	apiErr := n.DeleteSession(sessionID, false)
 	if apiErr != nil {
 		fmt.Printf("error in cleanup after failing to create session for code snippet '%s':%+v", newSession.CodeSnippetID, apiErr.Msg)
 	}
