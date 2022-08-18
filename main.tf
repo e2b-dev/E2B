@@ -49,15 +49,15 @@ provider "nomad" {
   address = "http://${module.cluster.server_proxy_ip}"
 }
 
-# module "monitoring" {
-#   source = "./monitoring"
+module "monitoring" {
+  source = "./monitoring"
 
-#   depends_on = [
-#     module.cluster,
-#   ]
+  depends_on = [
+    module.cluster,
+  ]
 
-#   gcp_zone = var.gcp_zone
-# }
+  gcp_zone = var.gcp_zone
+}
 
 module "session_proxy" {
   source = "./session-proxy"

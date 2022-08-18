@@ -23,6 +23,25 @@
 - Connecting WS (subscriptions take additional call, etc.)
 - Diff snapshots
 
+### FC errors
+```
+rpc error: code = Unknown desc = task with ID "6d791002-62d8-dd6a-5ba5-e5aa5c415d61/start/1367a2c6" failed: "failed to start preboot FC: Firecracker did not create API socket /tmp/.firecracker.sock-1985-926: 1 error occurred:\n\t* exit status 1\n\n"
+```
+
+```
+rpc error: code = Unknown desc = task with ID "fbb4585a-e2b8-2038-12b2-281c9bd29d14/start/401fe14b" failed: "failed to load snapshot: [PUT /snapshot/load][400] loadSnapshotBadRequest &{FaultMessage:The requested operation is not supported after starting the microVM.}"
+```
+
+```
+rpc error: code = Unknown desc = task with ID "c1df116d-e3ab-593c-77b0-16ea17e02bdc/start/c3b29e1d" failed: "failed getting pid for machine: machine process has exited"
+```
+
+```
+failed to setup alloc: pre-run hook "alloc_dir" failed: Failed to make the alloc directory /opt/nomad/data/alloc/86ebb35a-bcdd-e1b1-7b1e-09349deb894d: mkdir /opt/nomad/data/alloc/86ebb35a-bcdd-e1b1-7b1e-09349deb894d: no space left on device
+```
+
+- fc-task-driver crashed (panic?) and it couldn't cleanup the old sesions
+
 ### devbookd update
 - Update devbookd in all envs
 
