@@ -33,3 +33,7 @@ func NewClient() (*Client, error) {
 		DB: pclient,
 	}, nil
 }
+
+func (c *Client) Close() {
+	c.DB.CloseIdleConnections()
+}

@@ -25,3 +25,7 @@ func InitNomadClient() *NomadClient {
 		client: client,
 	}
 }
+
+func (nc *NomadClient) Close() {
+	nc.client.Close()
+}

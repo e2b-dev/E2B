@@ -60,6 +60,12 @@ func NewAPIStore() *APIStore {
 	}
 }
 
+func (a *APIStore) Close() {
+	a.nomadClient.Close()
+	a.cockroach.Close()
+	a.supabase.Close()
+}
+
 func (a *APIStore) validateAPIKey(apiKey *string) (string, error) {
 	if apiKey == nil {
 		return "", fmt.Errorf("no API key")

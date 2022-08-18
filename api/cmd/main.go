@@ -62,6 +62,7 @@ func main() {
 	// Create an instance of our handler which satisfies the generated interface
 
 	apiStore := handlers.NewAPIStore()
+	defer apiStore.Close()
 
 	s := NewGinServer(apiStore, *port)
 	// And we serve HTTP until the world ends.

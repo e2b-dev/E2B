@@ -43,3 +43,7 @@ func NewClient() (*Client, error) {
 		pool: pool,
 	}, nil
 }
+
+func (c *Client) Close() {
+	c.pool.Close()
+}
