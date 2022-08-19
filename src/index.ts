@@ -4,7 +4,6 @@ export type {
 } from './session'
 export {
   CodeSnippetExecState,
-  OutType,
 } from './session/codeSnippet'
 export type {
   CodeSnippetManager,
@@ -14,12 +13,16 @@ export type {
   CodeSnippetSubscriptionHandler,
   CodeSnippetSubscriptionHandlerType,
 
-  OutResponse,
-  OutStdoutResponse,
-  OutStderrResponse,
-
   OpenedPort,
 } from './session/codeSnippet'
+export type {
+  OutResponse,
+  OutStderrResponse,
+  OutStdoutResponse,
+} from './session/out'
+export {
+  OutType,
+} from './session/out'
 export type {
   TerminalManager,
   TerminalSession,

@@ -1,3 +1,7 @@
+import {
+  OutStderrResponse,
+  OutStdoutResponse,
+} from './out'
 import { EnvVars } from './envVars'
 
 export const codeSnippetMethod = 'codeSnippet'
@@ -5,24 +9,6 @@ export const codeSnippetMethod = 'codeSnippet'
 export enum CodeSnippetExecState {
   Running = 'Running',
   Stopped = 'Stopped',
-}
-
-export enum OutType {
-  Stdout = 'Stdout',
-  Stderr = 'Stderr',
-}
-
-export interface OutResponse {
-  type: OutType
-  // Unix epoch in nanoseconds
-  timestamp: number
-  line: string
-}
-export interface OutStdoutResponse extends OutResponse {
-  type: OutType.Stdout
-}
-export interface OutStderrResponse extends OutResponse {
-  type: OutType.Stderr
 }
 
 export interface OpenedPort {
