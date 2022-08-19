@@ -19,8 +19,6 @@ export type {
   OutStderrResponse,
 
   OpenedPort,
-
-  EnvVars
 } from './session/codeSnippet'
 export type {
   TerminalManager,
@@ -35,6 +33,9 @@ export type {
   Process,
   ProcessManager,
 } from './session/process'
+export type {
+  EnvVars,
+} from './session/envVars'
 
 export { default as api } from './api'
 export type {

@@ -1,3 +1,5 @@
+import { EnvVars } from './envVars'
+
 export const codeSnippetMethod = 'codeSnippet'
 
 export enum CodeSnippetExecState {
@@ -9,8 +11,6 @@ export enum OutType {
   Stdout = 'Stdout',
   Stderr = 'Stderr',
 }
-
-export type EnvVars = { [key: string]: string }
 
 export interface OutResponse {
   type: OutType

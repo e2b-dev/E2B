@@ -1,3 +1,5 @@
+import { EnvVars } from './envVars'
+
 export const processMethod = 'process'
 
 export interface Process {
@@ -8,8 +10,10 @@ export interface Process {
 
 export interface ProcessManager {
   readonly start: (
+    cmd: string,
     onStdout?: (data: string) => void,
     onStderr?: (data: string) => void,
+    envVars?: EnvVars,
     processID?: string,
   ) => Promise<Process>
 }
