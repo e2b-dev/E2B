@@ -31,6 +31,10 @@ export type {
   FilesystemManager,
   FileInfo,
 } from './session/filesystem'
+export type {
+  Process,
+  ProcessManager,
+} from './session/process'
 
 export { default as api } from './api'
 export type {

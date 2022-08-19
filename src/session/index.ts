@@ -19,6 +19,10 @@ import {
   filesystemMethod,
   FileInfo,
 } from './filesystem'
+import {
+  ProcessManager,
+  processMethod,
+} from './process'
 
 export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
@@ -37,6 +41,7 @@ class Session extends SessionConnection {
   codeSnippet?: CodeSnippetManager
   terminal?: TerminalManager
   filesystem?: FilesystemManager
+  process?: ProcessManager
 
   constructor(opts: SessionOpts) {
     super(opts)
@@ -153,6 +158,38 @@ class Session extends SessionConnection {
         } catch (err: any) {
           this.logger.error(err)
           throw new Error('Error starting terminal session', err)
+        }
+      }
+    }
+
+    // Init Process handler
+    this.process = {
+      start: async (onStdout, onStderr, activeProcessID) => {
+        try {
+          const processID = await this.call(`${processMethod}_start`, [activeProcessID ? activeProcessID : ''])
+          if (typeof processID !== 'string') {
+            throw new Error('Cannot start process')
+          }
+
+          const onStdoutSubscriptionID = onStdout ? await this.subscribe(processMethod, onStdout, 'onStdout', processID) : undefined
+          const onStderrSubscriptionID = onStderr ? await this.subscribe(processMethod, onStderr, 'onStderr', processID) : undefined
+
+          return {
+            processID,
+            kill: async () => {
+              if (onStdoutSubscriptionID) await this.unsubscribe(onStdoutSubscriptionID)
+              if (onStderrSubscriptionID) await this.unsubscribe(onStderrSubscriptionID)
+
+              await this.call(`${terminalMethod}_kill`, [processID])
+            },
+            sendStdin: async (data) => {
+              await this.call(`${processMethod}_stdin`, [processID, data])
+            },
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+          this.logger.error(err)
+          throw new Error('Error starting process', err)
         }
       }
     }
