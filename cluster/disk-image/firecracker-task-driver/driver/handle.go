@@ -28,7 +28,6 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/plugins/drivers"
-	"github.com/shirou/gopsutil/process"
 )
 
 var (
@@ -76,16 +75,6 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 }
 
 func (h *taskHandle) run(driver *Driver) {
-	h.stateLock.Lock()
-	if h.exitResult == nil {
-		h.exitResult = &drivers.ExitResult{}
-	}
-	// /* TODO:
-	//  *  To really check the status by querying the firecracker's API, you need to call DescribeInstance
-	//  *  which is not implemented in firecracker-go-sdk
-	//  *  https://github.com/firecracker-microvm/firecracker-go-sdk/issues/115
-	//  */
-	h.stateLock.Unlock()
 
 	pid, err := strconv.Atoi(h.Info.Pid)
 	if err != nil {
@@ -114,15 +103,6 @@ func (h *taskHandle) run(driver *Driver) {
 			break
 		}
 	}
-
-	h.stateLock.Lock()
-	defer h.stateLock.Unlock()
-
-	h.exitResult = &drivers.ExitResult{}
-	h.exitResult.ExitCode = 0
-	h.exitResult.Signal = 0
-	h.completedAt = time.Now()
-	h.State = drivers.TaskStateExited
 }
 
 func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
@@ -137,49 +117,6 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 		case <-timer.C:
 			timer.Reset(interval)
 		}
-
-		h.stateLock.Lock()
-		t := time.Now()
-
-		pid, err := strconv.Atoi(h.Info.Pid)
-		if err != nil {
-			h.logger.Error("unable to convert pid ", h.Info.Pid, " to int from ", h.taskConfig.ID)
-			continue
-		}
-
-		p, err := process.NewProcess(int32(pid))
-		if err != nil {
-			h.logger.Error("unable create new process ", h.Info.Pid, " from ", h.taskConfig.ID)
-			continue
-		}
-		ms := &drivers.MemoryStats{}
-		if memInfo, err := p.MemoryInfo(); err == nil {
-			ms.RSS = memInfo.RSS
-			ms.Swap = memInfo.Swap
-			ms.Measured = firecrackerMemStats
-		}
-
-		cs := &drivers.CpuStats{}
-		if cpuStats, err := p.Times(); err == nil {
-			cs.SystemMode = h.cpuStatsSys.Percent(cpuStats.System * float64(time.Second))
-			cs.UserMode = h.cpuStatsUser.Percent(cpuStats.User * float64(time.Second))
-			cs.Measured = firecrackerCPUStats
-
-			// calculate cpu usage percent
-			cs.Percent = h.cpuStatsTotal.Percent(cpuStats.Total() * float64(time.Second))
-		}
-		h.stateLock.Unlock()
-
-		// update uasge
-		usage := drivers.TaskResourceUsage{
-			ResourceUsage: &drivers.ResourceUsage{
-				CpuStats:    cs,
-				MemoryStats: ms,
-			},
-			Timestamp: t.UTC().UnixNano(),
-		}
-		// send stats to nomad
-		statsChannel <- &usage
 	}
 }
 
@@ -235,6 +172,15 @@ func (h *taskHandle) shutdown(driver *Driver) error {
 		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, editDirName, *h.Info.EditID)
 		os.RemoveAll(oldEditDirPath)
 	}
+
+	h.stateLock.Lock()
+	defer h.stateLock.Unlock()
+
+	h.exitResult = &drivers.ExitResult{}
+	h.exitResult.ExitCode = 0
+	h.exitResult.Signal = 0
+	h.completedAt = time.Now()
+	h.State = drivers.TaskStateExited
 
 	return nil
 }

@@ -78,8 +78,6 @@ Error loading current sessions from Nomad
 ### Open Graph
 - Add dynamic open graph images for the sharable CS links
 
-### Change GH auth to email auth
-
 ### Use hardlinks for edit snapshots
 
 ### Limit build/update env CPU and memory
