@@ -48,6 +48,20 @@ failed to setup alloc: pre-run hook "alloc_dir" failed: Failed to make the alloc
 failed to start task after driver exited unexpectedly: plugin is shut down
 ```
 
+```
+Error loading current sessions from Nomad
+: failed to retrieve allocations from Nomad Unexpected response code: 400 (failed to read result page: error finding value in datum: /TaskStates/start/State at part 1: couldn't find key "start")Error deleting session (3)
+: cannot delete job 'fc-sessions/stn7zmtt' job: Delete "http://34.149.1.201/v1/job/fc-sessions%2Fstn7zmtt?purge=true": read tcp 172.17.0.2:46002->34.149.1.201:80: read: connection reset by peerError loading current sessions from Nomad
+: failed to retrieve allocations from Nomad Unexpected response code: 400 (failed to read result page: error finding value in datum: /TaskStates/start/State at part 1: couldn't find key "start")Error loading current sessions from Nomad
+: failed to retrieve allocations from Nomad Unexpected response code: 400 (failed to read result page: error finding value in datum: /TaskStates/start/State at part 1: couldn't find key "start")Error loading current sessions from Nomad
+Error loading current sessions from Nomad
+: failed to retrieve allocations from Nomad Unexpected response code: 400 (failed to read result page: error finding value in datum: /TaskStates/start/State at part 1: couldn't find key "start")Error deleting session (3)
+: cannot delete job 'fc-sessions/stn7zmtt' job: Delete "http://34.149.1.201/v1/job/fc-sessions%2Fstn7zmtt?purge=true": read tcp 172.17.0.2:46002->34.149.1.201:80: read: connection reset by peerError loading current sessions from Nomad
+: failed to retrieve allocations from Nomad Unexpected response code: 400 (failed to read result page: error finding value in datum: /TaskStates/start/State at part 1: couldn't find key "start")Error loading current sessions from Nomad
+: failed to retrieve allocations from Nomad Unexpected response code: 400 (failed to read result page: error finding value in datum: /TaskStates/start/State at part 1: couldn't find key "start")Error loading current sessions from Nomad
+: failed to retrieve allocations from Nomad Unexpected response code: 400 (failed to read result page: error finding value in datum: /TaskStates/start/State at part 1: couldn't find key "start")Error loading current sessions from Nomad
+```
+
 ### devbookd update
 - Update devbookd in all envs
 

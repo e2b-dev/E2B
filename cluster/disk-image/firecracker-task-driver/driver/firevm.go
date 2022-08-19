@@ -35,7 +35,7 @@ import (
 const (
 	// containerMonitorIntv is the interval at which the driver checks if the
 	// firecracker micro-vm is still running
-	containerMonitorIntv = 2 * time.Second
+	containerMonitorIntv = 4 * time.Second
 
 	editIDName          = "edit_id"
 	buildIDName         = "build_id"
