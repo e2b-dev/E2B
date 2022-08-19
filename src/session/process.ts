@@ -14,6 +14,7 @@ export interface ProcessManager {
     onStdout?: (data: string) => void,
     onStderr?: (data: string) => void,
     envVars?: EnvVars,
+    rootdir?: string,
     processID?: string,
   ) => Promise<Process>
 }

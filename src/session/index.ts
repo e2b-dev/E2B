@@ -164,9 +164,9 @@ class Session extends SessionConnection {
 
     // Init Process handler
     this.process = {
-      start: async (cmd, onStdout, onStderr, envVars = {}, activeProcessID) => {
+      start: async (cmd, onStdout, onStderr, envVars = {}, rootdir = '/', activeProcessID) => {
         try {
-          const processID = await this.call(`${processMethod}_start`, [activeProcessID ? activeProcessID : '', cmd, envVars])
+          const processID = await this.call(`${processMethod}_start`, [activeProcessID ? activeProcessID : '', cmd, envVars, rootdir])
           if (typeof processID !== 'string') {
             throw new Error('Cannot start process')
           }
