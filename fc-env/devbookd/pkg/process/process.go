@@ -2,12 +2,14 @@ package process
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/rs/xid"
 	"go.uber.org/zap"
 )
 
@@ -59,8 +61,42 @@ func KillProcess(pid int) error {
 	err := syscall.Kill(pid, syscall.SIGKILL)
 
 	if err != nil {
-		return fmt.Errorf("Failed to kill process %d: %+v", pid, err)
+		return fmt.Errorf("failed to kill process %d: %+v", pid, err)
 	}
 
 	return nil
+}
+
+type ProcessID = string
+
+type Process struct {
+	ID  ProcessID
+	Cmd *exec.Cmd
+}
+
+func NewProcess(cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
+	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
+	cmd.Dir = rootdir
+
+	formattedVars := os.Environ()
+
+	for key, value := range *envVars {
+		formattedVars = append(formattedVars, key+"="+value)
+	}
+
+	cmd.Env = formattedVars
+
+	return &Process{
+		ID:  xid.New().String(),
+		Cmd: cmd,
+	}, nil
+}
+
+func (p *Process) Kill() error {
+	return p.Cmd.Process.Kill()
+}
+
+func (p *Process) WriteStdin(data string) error {
+	_, err := p.Cmd.Stdin.Read([]byte(data))
+	return err
 }

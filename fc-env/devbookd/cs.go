@@ -270,7 +270,6 @@ func (cs *CodeSnippetService) runCmd(code string, envVars *map[string]string) {
 		o := newStderrResponse(err.Error())
 		cs.notifyOut(&o)
 	}
-
 	go cs.scanRunCmdOut(stderr, OutTypeStderr)
 
 	if err := cs.cmd.Start(); err != nil {

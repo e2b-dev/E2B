@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	ServiceName                       = "terminal"
 	terminalChildProcessCheckInterval = 400 * time.Millisecond
 )
 
@@ -109,7 +108,7 @@ func (ts *TerminalService) OnData(ctx context.Context, terminalID terminal.Termi
 
 	sub, err := ts.saveNewSubscriber(ctx, ts.terminalDataSubscribers, terminalID)
 	if err != nil {
-		ts.logger.Errorw("Failed to create a state subscription from context",
+		ts.logger.Errorw("Failed to create a data subscription from context",
 			"ctx", ctx,
 			"error", err,
 		)
