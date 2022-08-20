@@ -122,7 +122,7 @@ abstract class SessionConnection {
     }
   }
 
-  readonly open = async () => {
+  async open() {
     if (this.isOpen || !!this.session) {
       throw new Error('Session connect was already called')
     } else {
