@@ -88,7 +88,7 @@ abstract class SessionConnection {
     return subscriptionID
   }
 
-  readonly getHostname = (port?: number) => {
+  getHostname(port?: number) {
     if (!this.isOpen || !this.session) {
       throw new Error('Session is not active')
     }
@@ -101,7 +101,7 @@ abstract class SessionConnection {
     }
   }
 
-  readonly close = async () => {
+  async close() {
     if (this.isOpen) {
       this.logger.log('Closing', this.session)
       this.isOpen = false
