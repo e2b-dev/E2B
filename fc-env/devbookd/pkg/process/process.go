@@ -96,6 +96,23 @@ func (p *Process) Kill() error {
 	return p.Cmd.Process.Kill()
 }
 
+func (p *Process) IsRunning() bool {
+	if p.Cmd.ProcessState.Exited() || p.Cmd.ProcessState.Success() {
+		return false
+	}
+
+	process, err := os.FindProcess(p.Cmd.Process.Pid)
+	if err != nil {
+		return false
+	}
+
+	if process.Signal(syscall.Signal(0)) != nil {
+		return false
+	}
+
+	return true
+}
+
 func (p *Process) WriteStdin(data string) error {
 	_, err := p.Cmd.Stdin.Read([]byte(data))
 	return err

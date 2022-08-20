@@ -25,6 +25,7 @@ type ProcessService struct {
 	subscribersLock   sync.RWMutex
 	stdoutSubscribers map[rpc.ID]*ProcessSubscriber
 	stderrSubscribers map[rpc.ID]*ProcessSubscriber
+	exitSubscribers   map[rpc.ID]*ProcessSubscriber
 }
 
 func (ps *ProcessService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*ProcessSubscriber, processID process.ProcessID) (*ProcessSubscriber, error) {
@@ -82,6 +83,7 @@ func NewProcessService(logger *zap.SugaredLogger) *ProcessService {
 	ps := &ProcessService{
 		stdoutSubscribers: make(map[rpc.ID]*ProcessSubscriber),
 		stderrSubscribers: make(map[rpc.ID]*ProcessSubscriber),
+		exitSubscribers:   make(map[rpc.ID]*ProcessSubscriber),
 		logger:            logger,
 		procManager:       process.NewProcessManager(),
 	}
@@ -156,12 +158,25 @@ func (ps *ProcessService) scanRunCmdOut(pipe io.ReadCloser, t outType, process *
 
 	process.Cmd.Wait()
 
+	for _, sub := range ps.getSubscribers(ps.exitSubscribers, process.ID) {
+		if err := sub.subscriber.Notify(struct{}{}); err != nil {
+			ps.logger.Errorw("Failed to send exit notification",
+				"subscriptionID", sub.subscriber.SubscriptionID(),
+				"error", err,
+			)
+		}
+	}
+
 	for _, s := range ps.getSubscribers(ps.stdoutSubscribers, process.ID) {
 		ps.removeSubscriber(ps.stdoutSubscribers, s.subscriber.SubscriptionID())
 	}
 
 	for _, s := range ps.getSubscribers(ps.stderrSubscribers, process.ID) {
 		ps.removeSubscriber(ps.stderrSubscribers, s.subscriber.SubscriptionID())
+	}
+
+	for _, s := range ps.getSubscribers(ps.exitSubscribers, process.ID) {
+		ps.removeSubscriber(ps.exitSubscribers, s.subscriber.SubscriptionID())
 	}
 }
 
@@ -277,4 +292,38 @@ func (ps *ProcessService) Kill(processID process.ProcessID) error {
 	}
 
 	return nil
+}
+
+// Subscription
+func (ps *ProcessService) OnExit(ctx context.Context, processID process.ProcessID) (*rpc.Subscription, error) {
+	ps.logger.Info("Subscribe to process stderr")
+
+	proc, ok := ps.procManager.Get(processID)
+
+	if !ok {
+		errMsg := fmt.Sprint("Cannot find process with ID %s", processID)
+		ps.logger.Error(errMsg)
+		return nil, fmt.Errorf(errMsg)
+	}
+
+	sub, err := ps.saveNewSubscriber(ctx, ps.exitSubscribers, processID)
+	if err != nil {
+		ps.logger.Errorw("Failed to create and exit subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	// Send exit if the process already exited
+	if !proc.IsRunning() {
+		if err := sub.subscriber.Notify(struct{}{}); err != nil {
+			slogger.Errorw("Failed to send initial state notification",
+				"subscriptionID", sub.subscriber.SubscriptionID(),
+				"error", err,
+			)
+		}
+	}
+
+	return sub.subscriber.subscription, nil
 }
