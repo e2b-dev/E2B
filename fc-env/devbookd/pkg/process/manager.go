@@ -43,8 +43,8 @@ func (p *ProcessManager) Get(id ProcessID) (*Process, bool) {
 	return proc, ok
 }
 
-func (p *ProcessManager) Add(cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
-	proc, err := NewProcess(cmd, envVars, rootdir)
+func (p *ProcessManager) Add(id ProcessID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
+	proc, err := NewProcess(id, cmd, envVars, rootdir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start new process: %s", err)
 	}

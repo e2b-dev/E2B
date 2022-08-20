@@ -9,6 +9,7 @@ import (
 
 	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/process"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/rs/xid"
 	"go.uber.org/zap"
 )
 
@@ -64,6 +65,23 @@ func (ps *ProcessService) removeSubscriber(subs map[rpc.ID]*ProcessSubscriber, s
 	delete(subs, subscriberID)
 }
 
+func (ps *ProcessService) removeSubscribers(processID process.ProcessID, subscribers map[rpc.ID]*ProcessSubscriber) {
+	for _, s := range ps.getSubscribers(subscribers, processID) {
+		ps.removeSubscriber(subscribers, s.subscriber.SubscriptionID())
+	}
+}
+
+func (ps *ProcessService) notifySubscribers(processID process.ProcessID, subscribers map[rpc.ID]*ProcessSubscriber, data interface{}, errMsg string) {
+	for _, sub := range ps.getSubscribers(subscribers, processID) {
+		if err := sub.subscriber.Notify(data); err != nil {
+			ps.logger.Errorw(errMsg,
+				"subscriptionID", sub.subscriber.SubscriptionID(),
+				"error", err,
+			)
+		}
+	}
+}
+
 func (ps *ProcessService) getSubscribers(subs map[rpc.ID]*ProcessSubscriber, processID process.ProcessID) []*ProcessSubscriber {
 	processSubscribers := []*ProcessSubscriber{}
 
@@ -95,14 +113,6 @@ func NewProcessService(logger *zap.SugaredLogger) *ProcessService {
 func (ps *ProcessService) OnStdout(ctx context.Context, processID process.ProcessID) (*rpc.Subscription, error) {
 	ps.logger.Info("Subscribe to process stdout")
 
-	_, ok := ps.procManager.Get(processID)
-
-	if !ok {
-		errMsg := fmt.Sprint("Cannot find process with ID %s", processID)
-		ps.logger.Error(errMsg)
-		return nil, fmt.Errorf(errMsg)
-	}
-
 	sub, err := ps.saveNewSubscriber(ctx, ps.stdoutSubscribers, processID)
 	if err != nil {
 		ps.logger.Errorw("Failed to create a stdout subscription from context",
@@ -118,14 +128,6 @@ func (ps *ProcessService) OnStdout(ctx context.Context, processID process.Proces
 // Subscription
 func (ps *ProcessService) OnStderr(ctx context.Context, processID process.ProcessID) (*rpc.Subscription, error) {
 	ps.logger.Info("Subscribe to process stderr")
-
-	_, ok := ps.procManager.Get(processID)
-
-	if !ok {
-		errMsg := fmt.Sprint("Cannot find process with ID %s", processID)
-		ps.logger.Error(errMsg)
-		return nil, fmt.Errorf(errMsg)
-	}
 
 	sub, err := ps.saveNewSubscriber(ctx, ps.stderrSubscribers, processID)
 	if err != nil {
@@ -158,48 +160,28 @@ func (ps *ProcessService) scanRunCmdOut(pipe io.ReadCloser, t outType, process *
 
 	process.Cmd.Wait()
 
-	for _, sub := range ps.getSubscribers(ps.exitSubscribers, process.ID) {
-		if err := sub.subscriber.Notify(struct{}{}); err != nil {
-			ps.logger.Errorw("Failed to send exit notification",
-				"subscriptionID", sub.subscriber.SubscriptionID(),
-				"error", err,
-			)
-		}
-	}
+	switch t {
+	case OutTypeStdout:
+		process.SetHasExited(true)
 
-	for _, s := range ps.getSubscribers(ps.stdoutSubscribers, process.ID) {
-		ps.removeSubscriber(ps.stdoutSubscribers, s.subscriber.SubscriptionID())
-	}
+		// We handle the exit notification here in the stdout handler
+		ps.notifySubscribers(process.ID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
 
-	for _, s := range ps.getSubscribers(ps.stderrSubscribers, process.ID) {
-		ps.removeSubscriber(ps.stderrSubscribers, s.subscriber.SubscriptionID())
-	}
+		ps.removeSubscribers(process.ID, ps.exitSubscribers)
+		ps.removeSubscribers(process.ID, ps.stdoutSubscribers)
 
-	for _, s := range ps.getSubscribers(ps.exitSubscribers, process.ID) {
-		ps.removeSubscriber(ps.exitSubscribers, s.subscriber.SubscriptionID())
+		ps.procManager.Remove(process.ID)
+	case OutTypeStderr:
+		ps.removeSubscribers(process.ID, ps.stderrSubscribers)
 	}
 }
 
 func (ps *ProcessService) notifyOut(o *OutResponse, process *process.Process) {
 	switch o.Type {
 	case OutTypeStdout:
-		for _, sub := range ps.getSubscribers(ps.stdoutSubscribers, process.ID) {
-			if err := sub.subscriber.Notify(o); err != nil {
-				ps.logger.Errorw("Failed to send stdout notification",
-					"subscriptionID", sub.subscriber.SubscriptionID(),
-					"error", err,
-				)
-			}
-		}
+		ps.notifySubscribers(process.ID, ps.stdoutSubscribers, o, "Failed to send stdout notification")
 	case OutTypeStderr:
-		for _, sub := range ps.getSubscribers(ps.stderrSubscribers, process.ID) {
-			if err := sub.subscriber.Notify(o); err != nil {
-				ps.logger.Errorw("Failed to send stderr notification",
-					"subscriptionID", sub.subscriber.SubscriptionID(),
-					"error", err,
-				)
-			}
-		}
+		ps.notifySubscribers(process.ID, ps.stderrSubscribers, o, "Failed to send stderr notification")
 	}
 }
 
@@ -212,42 +194,59 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 	if !ok {
 		ps.logger.Info("Starting a new process")
 
-		newProc, err := ps.procManager.Add(cmd, envVars, rootdir)
+		id := processID
+		if id == "" {
+			id = xid.New().String()
+		}
+
+		newProc, err := ps.procManager.Add(id, cmd, envVars, rootdir)
 		if err != nil {
-			errMsg := fmt.Sprintf("Failed to start process: %v", err)
+			errMsg := fmt.Sprintf("Failed to create the process: %v", err)
 			ps.logger.Info(errMsg)
+			ps.removeSubscribers(processID, ps.stdoutSubscribers)
+			ps.removeSubscribers(processID, ps.stderrSubscribers)
+			ps.removeSubscribers(processID, ps.exitSubscribers)
 			return "", fmt.Errorf(errMsg)
 		}
 
 		stdout, err := newProc.Cmd.StdoutPipe()
 		if err != nil {
-			slogger.Errorw("Failed to set up stdout pipe for the command",
-				"cmd", cmd,
-				"error", err,
-			)
-			o := newStderrResponse(err.Error())
-			ps.notifyOut(&o, newProc)
+			errMsg := fmt.Sprintf("Failed to set up stdout pipe for the process: %v", err)
+			ps.logger.Error(errMsg)
+			newProc.SetHasExited(true)
+			ps.procManager.Remove(newProc.ID)
+			ps.removeSubscribers(processID, ps.stdoutSubscribers)
+			ps.removeSubscribers(processID, ps.stderrSubscribers)
+			ps.removeSubscribers(processID, ps.exitSubscribers)
+			return "", fmt.Errorf(errMsg)
 		}
 		go ps.scanRunCmdOut(stdout, OutTypeStdout, newProc)
 
 		stderr, err := newProc.Cmd.StderrPipe()
 		if err != nil {
-			slogger.Errorw("Failed to set up stderr pipe for the command",
-				"cmd", cmd,
-				"error", err,
-			)
-			o := newStderrResponse(err.Error())
-			ps.notifyOut(&o, newProc)
+			errMsg := fmt.Sprintf("Failed to set up stderr pipe for the procces: %v", err)
+			ps.logger.Error(errMsg)
+			newProc.SetHasExited(true)
+			ps.procManager.Remove(newProc.ID)
+			stdout.Close()
+			ps.removeSubscribers(processID, ps.stdoutSubscribers)
+			ps.removeSubscribers(processID, ps.stderrSubscribers)
+			ps.removeSubscribers(processID, ps.exitSubscribers)
+			return "", fmt.Errorf(errMsg)
 		}
 		go ps.scanRunCmdOut(stderr, OutTypeStderr, newProc)
 
-		if err := newProc.Cmd.Start(); err != nil {
-			slogger.Errorw("Failed to run the run command",
-				"cmd", cmd,
-				"error", err,
-			)
-			o := newStderrResponse(err.Error())
-			ps.notifyOut(&o, newProc)
+		if err := newProc.Cmd.Run(); err != nil {
+			errMsg := fmt.Sprintf("Failed to start the process: %v", err)
+			ps.logger.Error(errMsg)
+			newProc.SetHasExited(true)
+			ps.procManager.Remove(newProc.ID)
+			stdout.Close()
+			stderr.Close()
+			ps.removeSubscribers(processID, ps.stdoutSubscribers)
+			ps.removeSubscribers(processID, ps.stderrSubscribers)
+			ps.removeSubscribers(processID, ps.exitSubscribers)
+			return "", fmt.Errorf(errMsg)
 		}
 
 		ps.logger.Info("New process started")
@@ -283,28 +282,16 @@ func (ps *ProcessService) Kill(processID process.ProcessID) error {
 
 	ps.procManager.Remove(processID)
 
-	for _, s := range ps.getSubscribers(ps.stdoutSubscribers, processID) {
-		ps.removeSubscriber(ps.stdoutSubscribers, s.subscriber.SubscriptionID())
-	}
-
-	for _, s := range ps.getSubscribers(ps.stderrSubscribers, processID) {
-		ps.removeSubscriber(ps.stderrSubscribers, s.subscriber.SubscriptionID())
-	}
+	ps.removeSubscribers(processID, ps.stdoutSubscribers)
+	ps.removeSubscribers(processID, ps.stderrSubscribers)
+	ps.removeSubscribers(processID, ps.exitSubscribers)
 
 	return nil
 }
 
 // Subscription
 func (ps *ProcessService) OnExit(ctx context.Context, processID process.ProcessID) (*rpc.Subscription, error) {
-	ps.logger.Info("Subscribe to process stderr")
-
-	proc, ok := ps.procManager.Get(processID)
-
-	if !ok {
-		errMsg := fmt.Sprint("Cannot find process with ID %s", processID)
-		ps.logger.Error(errMsg)
-		return nil, fmt.Errorf(errMsg)
-	}
+	ps.logger.Info("Subscribe to process exit")
 
 	sub, err := ps.saveNewSubscriber(ctx, ps.exitSubscribers, processID)
 	if err != nil {
@@ -315,13 +302,17 @@ func (ps *ProcessService) OnExit(ctx context.Context, processID process.ProcessI
 		return nil, err
 	}
 
-	// Send exit if the process already exited
-	if !proc.IsRunning() {
-		if err := sub.subscriber.Notify(struct{}{}); err != nil {
-			slogger.Errorw("Failed to send initial state notification",
-				"subscriptionID", sub.subscriber.SubscriptionID(),
-				"error", err,
-			)
+	proc, ok := ps.procManager.Get(processID)
+
+	if ok {
+		// Send exit if the process already exited
+		if proc.HasExited() {
+			if err := sub.subscriber.Notify(struct{}{}); err != nil {
+				slogger.Errorw("Failed to send initial state notification",
+					"subscriptionID", sub.subscriber.SubscriptionID(),
+					"error", err,
+				)
+			}
 		}
 	}
 

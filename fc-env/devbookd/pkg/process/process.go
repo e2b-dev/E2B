@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
-	"github.com/rs/xid"
 	"go.uber.org/zap"
 )
 
@@ -70,11 +70,14 @@ func KillProcess(pid int) error {
 type ProcessID = string
 
 type Process struct {
+	lock      sync.RWMutex
+	hasExited bool
+
 	ID  ProcessID
 	Cmd *exec.Cmd
 }
 
-func NewProcess(cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
+func NewProcess(id ProcessID, cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
 	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
 	cmd.Dir = rootdir
 
@@ -87,8 +90,9 @@ func NewProcess(cmdToExecute string, envVars *map[string]string, rootdir string)
 	cmd.Env = formattedVars
 
 	return &Process{
-		ID:  xid.New().String(),
-		Cmd: cmd,
+		ID:        id,
+		Cmd:       cmd,
+		hasExited: false,
 	}, nil
 }
 
@@ -96,21 +100,17 @@ func (p *Process) Kill() error {
 	return p.Cmd.Process.Kill()
 }
 
-func (p *Process) IsRunning() bool {
-	if p.Cmd.ProcessState.Exited() || p.Cmd.ProcessState.Success() {
-		return false
-	}
+func (p *Process) SetHasExited(value bool) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.hasExited = value
+}
 
-	process, err := os.FindProcess(p.Cmd.Process.Pid)
-	if err != nil {
-		return false
-	}
+func (p *Process) HasExited() bool {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 
-	if process.Signal(syscall.Signal(0)) != nil {
-		return false
-	}
-
-	return true
+	return p.hasExited
 }
 
 func (p *Process) WriteStdin(data string) error {
