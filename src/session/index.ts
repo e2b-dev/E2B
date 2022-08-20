@@ -172,7 +172,7 @@ class Session extends SessionConnection {
             throw new Error('Cannot start process')
           }
 
-          const [onStdoutSubscriptionID, onStderrSubscriptionID] = await Promise.all([
+          const [onExitSubscriptionID, onStdoutSubscriptionID, onStderrSubscriptionID] = await Promise.all([
             onExit ? this.subscribe(processMethod, onExit, 'onExit', processID) : undefined,
             onStdout ? this.subscribe(processMethod, onStdout, 'onStdout', processID) : undefined,
             onStderr ? this.subscribe(processMethod, onStderr, 'onStderr', processID) : undefined,
@@ -182,6 +182,7 @@ class Session extends SessionConnection {
             processID,
             kill: async () => {
               await Promise.all([
+                onExitSubscriptionID ? this.unsubscribe(onExitSubscriptionID) : undefined,
                 onStdoutSubscriptionID ? this.unsubscribe(onStdoutSubscriptionID) : undefined,
                 onStderrSubscriptionID ? this.unsubscribe(onStderrSubscriptionID) : undefined,
                 this.call(`${terminalMethod}_kill`, [processID]),
