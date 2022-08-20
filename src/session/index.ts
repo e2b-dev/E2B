@@ -136,8 +136,10 @@ class Session extends SessionConnection {
             throw new Error('Cannot initialize terminal')
           }
 
-          const onDataSubscriptionID = await this.subscribe(terminalMethod, onData, 'onData', terminalID)
-          const onChildProcessesChangeSubscriptionID = onChildProcessesChange ? await this.subscribe(terminalMethod, onChildProcessesChange, 'onChildProcessesChange', terminalID) : undefined
+          const [onDataSubscriptionID, onChildProcessesChangeSubscriptionID] = await Promise.all([
+            this.subscribe(terminalMethod, onData, 'onData', terminalID),
+            onChildProcessesChange ? this.subscribe(terminalMethod, onChildProcessesChange, 'onChildProcessesChange', terminalID) : undefined,
+          ])
 
           return {
             terminalID,
@@ -148,7 +150,6 @@ class Session extends SessionConnection {
             },
             sendData: async (data) => {
               await this.call(`${terminalMethod}_data`, [terminalID, data])
-
             },
             resize: async ({ cols, rows }) => {
               await this.call(`${terminalMethod}_resize`, [terminalID, cols, rows])
@@ -171,16 +172,19 @@ class Session extends SessionConnection {
             throw new Error('Cannot start process')
           }
 
-          const onStdoutSubscriptionID = onStdout ? await this.subscribe(processMethod, onStdout, 'onStdout', processID) : undefined
-          const onStderrSubscriptionID = onStderr ? await this.subscribe(processMethod, onStderr, 'onStderr', processID) : undefined
+          const [onStdoutSubscriptionID, onStderrSubscriptionID] = await Promise.all([
+            onStdout ? this.subscribe(processMethod, onStdout, 'onStdout', processID) : undefined,
+            onStderr ? this.subscribe(processMethod, onStderr, 'onStderr', processID) : undefined,
+          ])
 
           return {
             processID,
             kill: async () => {
-              if (onStdoutSubscriptionID) await this.unsubscribe(onStdoutSubscriptionID)
-              if (onStderrSubscriptionID) await this.unsubscribe(onStderrSubscriptionID)
-
-              await this.call(`${terminalMethod}_kill`, [processID])
+              await Promise.all([
+                onStdoutSubscriptionID ? this.unsubscribe(onStdoutSubscriptionID) : undefined,
+                onStderrSubscriptionID ? this.unsubscribe(onStderrSubscriptionID) : undefined,
+                this.call(`${terminalMethod}_kill`, [processID]),
+              ])
             },
             sendStdin: async (data) => {
               await this.call(`${processMethod}_stdin`, [processID, data])
