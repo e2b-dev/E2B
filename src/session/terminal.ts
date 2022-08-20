@@ -14,10 +14,10 @@ export interface ChildProcess {
 
 export interface TerminalManager {
   readonly killProcess: (pid: number) => Promise<void>
-  readonly createSession: (
+  readonly createSession: (opts: {
     onData: (data: string) => void,
     onChildProcessesChange: ((cps: ChildProcess[]) => void) | undefined,
     size: { cols: number, rows: number },
     activeTerminalID?: string,
-  ) => Promise<TerminalSession>
+  }) => Promise<TerminalSession>
 }

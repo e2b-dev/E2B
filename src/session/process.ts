@@ -13,12 +13,13 @@ export interface Process {
 }
 
 export interface ProcessManager {
-  readonly start: (
+  readonly start: (opts: {
     cmd: string,
     onStdout?: (o: OutStdoutResponse) => void,
     onStderr?: (o: OutStderrResponse) => void,
+    onExit?: () => void,
     envVars?: EnvVars,
     rootdir?: string,
-    processID?: string,
-  ) => Promise<Process>
+    activeProcessID?: string,
+  }) => Promise<Process>
 }

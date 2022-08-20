@@ -129,7 +129,7 @@ class Session extends SessionConnection {
       killProcess: async (pid) => {
         await this.call(`${terminalMethod}_killProcess`, [pid])
       },
-      createSession: async (onData, onChildProcessesChange, size, activeTerminalID) => {
+      createSession: async ({ onData, onChildProcessesChange, size, activeTerminalID }) => {
         try {
           const terminalID = await this.call(`${terminalMethod}_start`, [activeTerminalID ? activeTerminalID : '', size.cols, size.rows])
           if (typeof terminalID !== 'string') {
@@ -165,7 +165,7 @@ class Session extends SessionConnection {
 
     // Init Process handler
     this.process = {
-      start: async (cmd, onStdout, onStderr, envVars = {}, rootdir = '/', activeProcessID) => {
+      start: async ({ cmd, onStdout, onStderr, onExit, envVars = {}, rootdir = '/', activeProcessID }) => {
         try {
           const processID = await this.call(`${processMethod}_start`, [activeProcessID ? activeProcessID : '', cmd, envVars, rootdir])
           if (typeof processID !== 'string') {
@@ -173,6 +173,7 @@ class Session extends SessionConnection {
           }
 
           const [onStdoutSubscriptionID, onStderrSubscriptionID] = await Promise.all([
+            onExit ? this.subscribe(processMethod, onExit, 'onExit', processID) : undefined,
             onStdout ? this.subscribe(processMethod, onStdout, 'onStdout', processID) : undefined,
             onStderr ? this.subscribe(processMethod, onStderr, 'onStderr', processID) : undefined,
           ])
