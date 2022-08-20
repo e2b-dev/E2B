@@ -88,6 +88,14 @@ abstract class SessionConnection {
     return subscriptionID
   }
 
+  /**
+   * Get the hostname for the session or for the specified session's port.
+   * 
+   * `getHostname` method requires `this` context - you may need to bind it.
+   * 
+   * @param port specify if you want to connect to a specific port of the session
+   * @returns hostname of the session or session's port
+   */
   getHostname(port?: number) {
     if (!this.isOpen || !this.session) {
       throw new Error('Session is not active')
@@ -101,6 +109,11 @@ abstract class SessionConnection {
     }
   }
 
+  /**
+   * Close the connection to the session
+   * 
+   * `close` method requires `this` context - you may need to bind it.
+   */
   async close() {
     if (this.isOpen) {
       this.logger.log('Closing', this.session)
@@ -122,6 +135,12 @@ abstract class SessionConnection {
     }
   }
 
+
+  /**
+   * Open a connection to a new session
+   * 
+   * `open` method requires `this` context - you may need to bind it.
+   */
   async open() {
     if (this.isOpen || !!this.session) {
       throw new Error('Session connect was already called')
