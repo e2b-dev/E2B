@@ -181,12 +181,15 @@ class Session extends SessionConnection {
           return {
             processID,
             kill: async () => {
+              if (onExitSubscriptionID) await this.unsubscribe(onExitSubscriptionID)
+
               await Promise.all([
-                onExitSubscriptionID ? this.unsubscribe(onExitSubscriptionID) : undefined,
                 onStdoutSubscriptionID ? this.unsubscribe(onStdoutSubscriptionID) : undefined,
                 onStderrSubscriptionID ? this.unsubscribe(onStderrSubscriptionID) : undefined,
                 this.call(`${terminalMethod}_kill`, [processID]),
               ])
+
+              onExit?.()
             },
             sendStdin: async (data) => {
               await this.call(`${processMethod}_stdin`, [processID, data])
