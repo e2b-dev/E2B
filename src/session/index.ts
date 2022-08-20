@@ -48,7 +48,7 @@ class Session extends SessionConnection {
     this.codeSnippetOpts = opts.codeSnippet
   }
 
-  async open() {
+  override readonly open = async () => {
     await super.open()
 
     await Promise.all([
