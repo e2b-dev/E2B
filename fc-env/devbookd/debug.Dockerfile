@@ -1,12 +1,12 @@
 # This Dockerfile is for creating a testing environment for devbookd.
 
-FROM alpine:3.16
+FROM rhaps1071/golang-1.14-alpine-git
 
 RUN apk add bash nodejs npm strace
 
-RUN npm i -g typescript
+RUN CGO_ENABLED=0 go get -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv
 
-COPY bin/devbookd /usr/bin/devbookd
+RUN npm i -g typescript
 
 WORKDIR code
 
@@ -17,5 +17,7 @@ RUN echo RUN_ARGS=index.sh >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=index.sh >> /.dbkenv
+
+COPY bin/devbookd-debug /usr/bin/devbookd
 
 WORKDIR /

@@ -41,3 +41,10 @@ Subscribers:
 Methods:
 - `{"jsonrpc": "2.0", "method": "terminal_start", "params": ["", 100, 80], "id": 5}` - Start a new terminal session
 - `{"jsonrpc": "2.0", "method": "terminal_data", "params": ["cblpusiko5ps759fdas0", "sleep 10\n"], "id": 57}` - Execute input in a specified terminal
+
+## Debugging
+- https://golangforall.com/en/post/go-docker-delve-remote-debug.html
+- https://github.com/golang/vscode-go/blob/master/docs/debugging.md
+
+Run `make debug` and the connect to the port 2345 with a debugger or
+use the VSCode run/debug and run the "Debug in Docker" to build the devbookd, Docker and start the debugging.
