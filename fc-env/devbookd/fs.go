@@ -31,10 +31,7 @@ func NewFilesystemService(logger *zap.SugaredLogger) *FilesystemService {
 func (fs *FilesystemService) ListAllFiles(path string) (*[]FileInfoResponse, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		errMsg := fmt.Errorf("Failed to list files in %s: %+v",
-			"path", path,
-			"error", err,
-		)
+		errMsg := fmt.Errorf("failed to list files in %s: %+v", path, err)
 		slogger.Errorw(errMsg.Error())
 		return nil, errMsg
 	}
@@ -54,10 +51,7 @@ func (fs *FilesystemService) ListAllFiles(path string) (*[]FileInfoResponse, err
 func (fs *FilesystemService) RemoveFile(path string) error {
 	err := os.Remove(path)
 	if err != nil {
-		errMsg := fmt.Errorf("Failed to remove file %s: %+v",
-			"path", path,
-			"error", err,
-		)
+		errMsg := fmt.Errorf("failed to remove file %s: %+v", path, err)
 		slogger.Errorw(errMsg.Error())
 		return err
 	}
@@ -67,10 +61,7 @@ func (fs *FilesystemService) RemoveFile(path string) error {
 func (fs *FilesystemService) WriteFile(path string, content string) error {
 	err := os.WriteFile(path, []byte(content), 0755)
 	if err != nil {
-		errMsg := fmt.Errorf("Failed to write to the file %s: %+v",
-			"path", path,
-			"error", err,
-		)
+		errMsg := fmt.Errorf("failed to write to the file %s: %+v", path, err)
 		slogger.Errorw(errMsg.Error())
 		return err
 	}
@@ -80,10 +71,7 @@ func (fs *FilesystemService) WriteFile(path string, content string) error {
 func (fs *FilesystemService) ReadFile(path string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		errMsg := fmt.Errorf("Failed to read the file %s: %+v",
-			"path", path,
-			"error", err,
-		)
+		errMsg := fmt.Errorf("failed to read the file %s: %+v", path, err)
 		slogger.Errorw(errMsg.Error())
 		return "", err
 	}

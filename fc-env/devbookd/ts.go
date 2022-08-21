@@ -101,7 +101,7 @@ func (ts *TerminalService) OnData(ctx context.Context, terminalID terminal.Termi
 	_, ok := ts.termManager.Get(terminalID)
 
 	if !ok {
-		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)
+		errMsg := fmt.Sprintf("cannot find terminal with ID %s", terminalID)
 		ts.logger.Error(errMsg)
 		return nil, fmt.Errorf(errMsg)
 	}
@@ -124,7 +124,7 @@ func (ts *TerminalService) OnChildProcessesChange(ctx context.Context, terminalI
 
 	term, ok := ts.termManager.Get(terminalID)
 	if !ok {
-		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)
+		errMsg := fmt.Sprintf("cannot find terminal with ID %s", terminalID)
 		ts.logger.Error(errMsg)
 		return nil, fmt.Errorf(errMsg)
 	}
@@ -237,7 +237,7 @@ func (ts *TerminalService) Data(terminalID terminal.TerminalID, data string) err
 	term, ok := ts.termManager.Get(terminalID)
 
 	if !ok {
-		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)
+		errMsg := fmt.Sprintf("cannot find terminal with ID %s", terminalID)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -245,7 +245,7 @@ func (ts *TerminalService) Data(terminalID terminal.TerminalID, data string) err
 	_, err := term.Write([]byte(data))
 
 	if err != nil {
-		errMsg := fmt.Sprint("Cannot write data %s to terminal with ID %s", data, terminalID)
+		errMsg := fmt.Sprintf("cannot write data %s to terminal with ID %s: %+v", data, terminalID, err)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -259,7 +259,7 @@ func (ts *TerminalService) Resize(terminalID terminal.TerminalID, cols, rows uin
 	term, ok := ts.termManager.Get(terminalID)
 
 	if !ok {
-		errMsg := fmt.Sprint("Cannot find terminal with ID %s", terminalID)
+		errMsg := fmt.Sprintf("cannot find terminal with ID %s", terminalID)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -267,7 +267,7 @@ func (ts *TerminalService) Resize(terminalID terminal.TerminalID, cols, rows uin
 	err := term.Resize(cols, rows)
 
 	if err != nil {
-		errMsg := fmt.Sprint("Cannot resize terminal with ID %s", terminalID)
+		errMsg := fmt.Sprintf("cannot resize terminal with ID %s: %+v", terminalID, err)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -297,7 +297,7 @@ func (ts *TerminalService) KillProcess(pid int) error {
 	err := process.KillProcess(pid)
 
 	if err != nil {
-		errMsg := fmt.Sprint("Cannot kill process %d: %v", pid, err)
+		errMsg := fmt.Sprintf("cannot kill process %d: %v", pid, err)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
