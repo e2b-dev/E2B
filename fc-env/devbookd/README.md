@@ -3,7 +3,7 @@
 ## Development
 To locally test the devbookd:
 
-1. Build the devbookd and start the container with `make test-devbookd` (Use `make test-env` if you want to just run the container and start the `devbookd` manually later.)
+1. Build the devbookd and start the container with `make test-devbookd` (Use `make test-env` if you want to just build the devbookd, run the container and start the `devbookd` manually later.)
 2. Connect to the devbookd with `make connect-wscat`
 3. Test the devbookd methods by entering the [services' JSONRPC messages](#services-messages)  to wscat stdin
 
