@@ -236,7 +236,7 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 		}
 		go ps.scanRunCmdOut(stderr, OutTypeStderr, newProc)
 
-		if err := newProc.Cmd.Run(); err != nil {
+		if err := newProc.Cmd.Start(); err != nil {
 			errMsg := fmt.Sprintf("Failed to start the process: %v", err)
 			ps.logger.Error(errMsg)
 			newProc.SetHasExited(true)
