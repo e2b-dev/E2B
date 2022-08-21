@@ -20,7 +20,7 @@ start-debug-docker:
 	docker run -p 127.0.0.1:8010:8010 -p 127.0.0.1:2345:2345 -d devbookd-debug sh -l -c "/go/bin/dlv --listen=:2345 --headless=true --log=true --log-output=debugger,debuglineerr,gdbwire,lldbout,rpc --accept-multiclient --api-version=2 exec /usr/bin/devbookd"
 
 stop-debug-docker:
-	docker kill `docker ps -a -q  --filter ancestor=devbookd-debug`
+	docker kill `docker ps -a -q --filter ancestor=devbookd-debug`
 
 connect-wscat:
 	npx wscat -c ws://localhost:8010/ws

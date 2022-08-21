@@ -24,7 +24,7 @@ Subscribers:
 - `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onExit", "testing1"], "id": 6}` - Subscibe to process stderr
 
 Methods:
-- `{"jsonrpc": "2.0", "method": "process_start", "params": ["testing1", "tsserver", {}, "/code"], "id": 57}` - Start new process
+- `{"jsonrpc": "2.0", "method": "process_start", "params": ["testing1", "tsserver", {}, "/"], "id": 57}` - Start new process
 - `{"jsonrpc": "2.0", "method": "process_kill", "params": ["testing1"], "id": 60}` - Kill existing process
 - `{"jsonrpc": "2.0", "method": "process_stdin", "params": ["testing1", "test"], "id": 59}` - Send stdin to process
 
