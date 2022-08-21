@@ -22,6 +22,9 @@ start-debug-docker:
 stop-debug-docker:
 	docker kill `docker ps -a -q  --filter ancestor=devbookd-debug`
 
+connect-wscat:
+	npx wscat -c ws://localhost:8010/ws
+
 debug:
 	make build-debug-devbookd
 	make build-docker
