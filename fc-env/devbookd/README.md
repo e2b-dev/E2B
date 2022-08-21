@@ -11,7 +11,7 @@ To locally test the devbookd:
 - https://golangforall.com/en/post/go-docker-delve-remote-debug.html
 - https://github.com/golang/vscode-go/blob/master/docs/debugging.md
 
-Run `make debug` and the connect to the port 2345 with a debugger or
+Run `make debug` and then connect to the port 2345 with a debugger or
 use the VSCode run/debug and run the "Debug in Docker" to build the devbookd, Docker and start the debugging.
 
 ## Services' messages
