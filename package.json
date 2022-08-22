@@ -1,6 +1,6 @@
 {
   "name": "@devbookhq/sdk",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Devbook allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -42,6 +42,7 @@
   },
   "files": [
     "dist",
+    "src",
     "README.md",
     "LICENSE",
     "package.json",

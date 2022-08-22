@@ -29,7 +29,10 @@ export default {
       sourcemap: true,
     },
   ],
-  external: ['cross-fetch', 'cross-fetch/polyfill'],
+  external: [
+    'cross-fetch',
+    'cross-fetch/polyfill',
+  ],
   plugins: [
     autoExternal({ builtins: false }),
     typescript(),
