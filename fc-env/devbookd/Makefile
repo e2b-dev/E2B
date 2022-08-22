@@ -23,7 +23,7 @@ stop-debug-docker:
 	docker kill `docker ps -a -q --filter ancestor=devbookd-debug`
 
 connect-wscat:
-	npx wscat -c ws://localhost:8010/ws
+	npx -y wscat -c ws://localhost:8010/ws
 
 # Build devbookd and start a detached container you can connect to with a debugger
 debug:
