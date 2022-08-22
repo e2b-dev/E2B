@@ -160,6 +160,11 @@ func main() {
 		slogger.Errorw("Failed to register terminal service", "error", err)
 	}
 
+	processService := NewProcessService(slogger)
+	if err := server.RegisterName("process", processService); err != nil {
+		slogger.Errorw("Failed to register process service", "error", err)
+	}
+
 	wsHandler = server.WebsocketHandler([]string{"*"})
 	router.HandleFunc("/ws", serveWs)
 

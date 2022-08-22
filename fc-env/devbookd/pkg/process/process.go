@@ -2,10 +2,13 @@ package process
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
 	"go.uber.org/zap"
@@ -59,8 +62,60 @@ func KillProcess(pid int) error {
 	err := syscall.Kill(pid, syscall.SIGKILL)
 
 	if err != nil {
-		return fmt.Errorf("Failed to kill process %d: %+v", pid, err)
+		return fmt.Errorf("failed to kill process %d: %+v", pid, err)
 	}
 
 	return nil
+}
+
+type ProcessID = string
+
+type Process struct {
+	lock      sync.RWMutex
+	hasExited bool
+
+	Stdin *io.WriteCloser
+	ID    ProcessID
+	Cmd   *exec.Cmd
+}
+
+func NewProcess(id ProcessID, cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
+	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
+	cmd.Dir = rootdir
+
+	formattedVars := os.Environ()
+
+	for key, value := range *envVars {
+		formattedVars = append(formattedVars, key+"="+value)
+	}
+
+	cmd.Env = formattedVars
+
+	return &Process{
+		ID:        id,
+		Cmd:       cmd,
+		hasExited: false,
+	}, nil
+}
+
+func (p *Process) Kill() error {
+	return p.Cmd.Process.Kill()
+}
+
+func (p *Process) SetHasExited(value bool) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.hasExited = value
+}
+
+func (p *Process) HasExited() bool {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	return p.hasExited
+}
+
+func (p *Process) WriteStdin(data string) error {
+	_, err := io.WriteString(*p.Stdin, data)
+	return err
 }
