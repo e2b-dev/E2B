@@ -8,7 +8,7 @@ RUN CGO_ENABLED=0 go get -ldflags "-s -w -extldflags '-static'" github.com/go-de
 
 RUN npm i -g typescript
 
-WORKDIR code
+WORKDIR /code
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=bash >> /.dbkenv

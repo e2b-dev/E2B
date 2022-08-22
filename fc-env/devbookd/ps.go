@@ -71,6 +71,12 @@ func (ps *ProcessService) removeSubscribers(processID process.ProcessID, subscri
 	}
 }
 
+func (ps *ProcessService) removeProcessSubscribers(processID process.ProcessID) {
+	ps.removeSubscribers(processID, ps.exitSubscribers)
+	ps.removeSubscribers(processID, ps.stdoutSubscribers)
+	ps.removeSubscribers(processID, ps.stderrSubscribers)
+}
+
 func (ps *ProcessService) notifySubscribers(processID process.ProcessID, subscribers map[rpc.ID]*ProcessSubscriber, data interface{}, errMsg string) {
 	for _, sub := range ps.getSubscribers(subscribers, processID) {
 		if err := sub.subscriber.Notify(data); err != nil {
@@ -143,7 +149,6 @@ func (ps *ProcessService) OnStderr(ctx context.Context, processID process.Proces
 
 func (ps *ProcessService) scanRunCmdOut(pipe io.ReadCloser, t outType, process *process.Process) {
 	scanner := bufio.NewScanner(pipe)
-	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -152,36 +157,21 @@ func (ps *ProcessService) scanRunCmdOut(pipe io.ReadCloser, t outType, process *
 		switch t {
 		case OutTypeStdout:
 			o = newStdoutResponse(line)
+			ps.notifySubscribers(process.ID, ps.stdoutSubscribers, o, "Failed to send stdout notification")
 		case OutTypeStderr:
 			o = newStderrResponse(line)
+			ps.notifySubscribers(process.ID, ps.stderrSubscribers, o, "Failed to send stderr notification")
 		}
-		ps.notifyOut(&o, process)
 	}
 
 	process.Cmd.Wait()
+	pipe.Close()
 
 	switch t {
 	case OutTypeStdout:
-		process.SetHasExited(true)
-
-		// We handle the exit notification here in the stdout handler
-		ps.notifySubscribers(process.ID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
-
-		ps.removeSubscribers(process.ID, ps.exitSubscribers)
 		ps.removeSubscribers(process.ID, ps.stdoutSubscribers)
-
-		ps.procManager.Remove(process.ID)
 	case OutTypeStderr:
 		ps.removeSubscribers(process.ID, ps.stderrSubscribers)
-	}
-}
-
-func (ps *ProcessService) notifyOut(o *OutResponse, process *process.Process) {
-	switch o.Type {
-	case OutTypeStdout:
-		ps.notifySubscribers(process.ID, ps.stdoutSubscribers, o, "Failed to send stdout notification")
-	case OutTypeStderr:
-		ps.notifySubscribers(process.ID, ps.stderrSubscribers, o, "Failed to send stderr notification")
 	}
 }
 
@@ -201,53 +191,83 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 
 		newProc, err := ps.procManager.Add(id, cmd, envVars, rootdir)
 		if err != nil {
+			ps.removeProcessSubscribers(processID)
+
 			errMsg := fmt.Sprintf("Failed to create the process: %v", err)
 			ps.logger.Info(errMsg)
-			ps.removeSubscribers(processID, ps.stdoutSubscribers)
-			ps.removeSubscribers(processID, ps.stderrSubscribers)
-			ps.removeSubscribers(processID, ps.exitSubscribers)
 			return "", fmt.Errorf(errMsg)
 		}
 
 		stdout, err := newProc.Cmd.StdoutPipe()
 		if err != nil {
+			newProc.SetHasExited(true)
+			ps.procManager.Remove(processID)
+			ps.removeProcessSubscribers(processID)
+
 			errMsg := fmt.Sprintf("Failed to set up stdout pipe for the process: %v", err)
 			ps.logger.Error(errMsg)
-			newProc.SetHasExited(true)
-			ps.procManager.Remove(newProc.ID)
-			ps.removeSubscribers(processID, ps.stdoutSubscribers)
-			ps.removeSubscribers(processID, ps.stderrSubscribers)
-			ps.removeSubscribers(processID, ps.exitSubscribers)
 			return "", fmt.Errorf(errMsg)
 		}
 		go ps.scanRunCmdOut(stdout, OutTypeStdout, newProc)
 
 		stderr, err := newProc.Cmd.StderrPipe()
 		if err != nil {
+			newProc.SetHasExited(true)
+			stdout.Close()
+			ps.procManager.Remove(processID)
+			ps.removeProcessSubscribers(processID)
+
 			errMsg := fmt.Sprintf("Failed to set up stderr pipe for the procces: %v", err)
 			ps.logger.Error(errMsg)
-			newProc.SetHasExited(true)
-			ps.procManager.Remove(newProc.ID)
-			stdout.Close()
-			ps.removeSubscribers(processID, ps.stdoutSubscribers)
-			ps.removeSubscribers(processID, ps.stderrSubscribers)
-			ps.removeSubscribers(processID, ps.exitSubscribers)
 			return "", fmt.Errorf(errMsg)
 		}
 		go ps.scanRunCmdOut(stderr, OutTypeStderr, newProc)
 
+		stdin, err := newProc.Cmd.StdinPipe()
+		if err != nil {
+			newProc.SetHasExited(true)
+			stdout.Close()
+			stderr.Close()
+			ps.procManager.Remove(processID)
+			ps.removeProcessSubscribers(processID)
+
+			errMsg := fmt.Sprintf("Failed to set up stdin pipe for the procces: %v", err)
+			ps.logger.Error(errMsg)
+			return "", fmt.Errorf(errMsg)
+		}
+		newProc.Stdin = &stdin
+
 		if err := newProc.Cmd.Start(); err != nil {
 			errMsg := fmt.Sprintf("Failed to start the process: %v", err)
 			ps.logger.Error(errMsg)
+
 			newProc.SetHasExited(true)
-			ps.procManager.Remove(newProc.ID)
+
+			ps.notifySubscribers(processID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
+
 			stdout.Close()
 			stderr.Close()
-			ps.removeSubscribers(processID, ps.stdoutSubscribers)
-			ps.removeSubscribers(processID, ps.stderrSubscribers)
-			ps.removeSubscribers(processID, ps.exitSubscribers)
+			stdin.Close()
+
+			ps.procManager.Remove(processID)
+			ps.removeProcessSubscribers(processID)
+
 			return "", fmt.Errorf(errMsg)
 		}
+
+		go func() {
+			newProc.Cmd.Wait()
+
+			newProc.SetHasExited(true)
+
+			ps.notifySubscribers(processID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
+
+			stdin.Close()
+
+			ps.procManager.Remove(processID)
+
+			ps.removeSubscribers(processID, ps.exitSubscribers)
+		}()
 
 		ps.logger.Info("New process started")
 
@@ -261,7 +281,7 @@ func (ps *ProcessService) Stdin(processID process.ProcessID, data string) error 
 	proc, ok := ps.procManager.Get(processID)
 
 	if !ok {
-		errMsg := fmt.Sprint("Cannot find process with ID %s", processID)
+		errMsg := fmt.Sprintf("cannot find process with ID %s", processID)
 		ps.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -269,7 +289,7 @@ func (ps *ProcessService) Stdin(processID process.ProcessID, data string) error 
 	err := proc.WriteStdin(data)
 
 	if err != nil {
-		errMsg := fmt.Sprint("Cannot write stdin %s to process with ID %s", data, processID)
+		errMsg := fmt.Sprintf("cannot write stdin to process with ID %s: %+v", processID, err)
 		ps.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -281,10 +301,7 @@ func (ps *ProcessService) Kill(processID process.ProcessID) error {
 	ps.logger.Info("Kill")
 
 	ps.procManager.Remove(processID)
-
-	ps.removeSubscribers(processID, ps.stdoutSubscribers)
-	ps.removeSubscribers(processID, ps.stderrSubscribers)
-	ps.removeSubscribers(processID, ps.exitSubscribers)
+	ps.removeProcessSubscribers(processID)
 
 	return nil
 }

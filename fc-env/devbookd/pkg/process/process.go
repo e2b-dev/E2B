@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"sort"
@@ -73,8 +74,9 @@ type Process struct {
 	lock      sync.RWMutex
 	hasExited bool
 
-	ID  ProcessID
-	Cmd *exec.Cmd
+	Stdin *io.WriteCloser
+	ID    ProcessID
+	Cmd   *exec.Cmd
 }
 
 func NewProcess(id ProcessID, cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
@@ -114,6 +116,6 @@ func (p *Process) HasExited() bool {
 }
 
 func (p *Process) WriteStdin(data string) error {
-	_, err := p.Cmd.Stdin.Read([]byte(data))
+	_, err := io.WriteString(*p.Stdin, data)
 	return err
 }
