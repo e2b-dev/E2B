@@ -1,8 +1,11 @@
+import { promisify } from 'util'
 import { Session } from '../dist/cjs/index.js'
+
+const wait = promisify(setTimeout)
 
 async function main() {
   const session = new Session({
-    id: '1k7EcyQxhviR',
+    id: 'xYBy4D9Gi5GM',
     // codeSnippet: {
     //   onStateChange(state) {
     //     console.log(state)
@@ -78,16 +81,18 @@ async function main() {
     // const fileNames = await session.filesystem.listAllFiles('/')
     // console.log('file names', fileNames)
 
-    // const term = await session.terminal.createSession(
-    //   (data) => console.log('terminal data', data),
-    //   (cps) => console.log('child processes', cps),
-    //   { rows: 40, cols: 90 },
-    // )
-    // console.log('terminalID', term.terminalID)
-    // await term.sendData('sleep 10\n')
+    const term = await session.terminal.createSession({
+      onData: (data) => console.log('terminal data', data),
+      onChildProcessesChange: (cps) => console.log('child processes', cps),
+      size: { rows: 40, cols: 90 },
+    })
+    console.log('terminalID', term.terminalID)
+    await term.sendData('prisma studio\n')
 
-    await session.process.start({
-      cmd: 'echo 4',
+    await session.filesystem.writeFile('/code/index.ts', 'const p = p')
+
+    const tsserver = await session.process.start({
+      cmd: 'tsserver',
       onExit: () => {
         console.log('Exit')
       },
@@ -98,6 +103,17 @@ async function main() {
         console.log(o)
       },
     })
+
+    await wait(4000)
+    console.log('sending')
+    await tsserver.sendStdin('{"seq":5,"type":"request","command":"open","arguments":{"file":"/code/index.ts","fileContent":"const p = p"}}\n')
+
+    for (let i = 0; i < 50; i++) {
+      console.log(i, '--------------------')
+      await wait(3000)
+      await tsserver.sendStdin('{"seq":1,"type":"request","command":"completionInfo","arguments":{"file":"/code/index.ts","line":1,"offset":11}}\n')
+    }
+
 
   } catch (e) {
     console.error(e)
