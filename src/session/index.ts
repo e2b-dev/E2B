@@ -145,9 +145,11 @@ class Session extends SessionConnection {
           return {
             terminalID,
             destroy: async () => {
-              await this.unsubscribe(onDataSubscriptionID)
-              if (onChildProcessesChangeSubscriptionID) await this.unsubscribe(onChildProcessesChangeSubscriptionID)
-              await this.call(`${terminalMethod}_destroy`, [terminalID])
+              await Promise.all([
+                this.unsubscribe(onDataSubscriptionID),
+                onChildProcessesChangeSubscriptionID ? this.unsubscribe(onChildProcessesChangeSubscriptionID) : undefined,
+                await this.call(`${terminalMethod}_destroy`, [terminalID])
+              ])
             },
             sendData: async (data) => {
               await this.call(`${terminalMethod}_data`, [terminalID, data])
