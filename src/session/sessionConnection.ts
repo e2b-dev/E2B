@@ -97,8 +97,8 @@ abstract class SessionConnection {
    * @returns hostname of the session or session's port
    */
   getHostname(port?: number) {
-    if (!this.isOpen || !this.session) {
-      throw new Error('Session is not active')
+    if (!this.session) {
+      return undefined
     }
 
     const hostname = `${this.session.sessionID}-${this.session.clientID}.${SESSION_DOMAIN}`
@@ -178,7 +178,13 @@ abstract class SessionConnection {
       throw new Error('Session is not defined')
     }
 
-    const sessionURL = `wss://${this.getHostname(WS_PORT)}${WS_ROUTE}`
+    const hostname = this.getHostname(WS_PORT)
+
+    if (!hostname) {
+      throw new Error('Cannot get session\'s hostname')
+    }
+
+    const sessionURL = `wss://${hostname}${WS_ROUTE}`
 
     this.rpc.onError((e) => {
       this.logger.log('Error in WS session:', this.session, e)
