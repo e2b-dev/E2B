@@ -39,10 +39,26 @@ export interface SessionOpts extends SessionConnectionOpts {
 class Session extends SessionConnection {
   private readonly codeSnippetOpts?: CodeSnippetOpts
 
-  codeSnippet?: CodeSnippetManager
-  terminal?: TerminalManager
-  filesystem?: FilesystemManager
-  process?: ProcessManager
+  private _codeSnippet?: CodeSnippetManager
+  private _terminal?: TerminalManager
+  private _filesystem?: FilesystemManager
+  private _process?: ProcessManager
+
+  get codeSnippet() {
+    return (this.isOpen && this.session) ? this._codeSnippet : undefined
+  }
+
+  get terminal() {
+    return (this.isOpen && this.session) ? this._terminal : undefined
+  }
+
+  get filesystem() {
+    return (this.isOpen && this.session) ? this._filesystem : undefined
+  }
+
+  get process() {
+    return (this.isOpen && this.session) ? this._process : undefined
+  }
 
   constructor(opts: SessionOpts) {
     super(opts)
@@ -68,65 +84,39 @@ class Session extends SessionConnection {
     ])
 
     // Init CodeSnippet handler
-    this.codeSnippet = {
+    this._codeSnippet = {
       run: async (code, envVars = {}) => {
-        if (!this.isOpen || !this.session) {
-          throw new Error('Session is not active')
-        }
-
         const state = await this.call(`${codeSnippetMethod}_run`, [code, envVars]) as CodeSnippetExecState
-
         this.codeSnippetOpts?.onStateChange?.(state)
-
-        this.logger.log('Started running code', code)
-
         return state
       },
       stop: async () => {
-        if (!this.isOpen || !this.session) {
-          throw new Error('Session is not active')
-        }
-
         const state = await this.call(`${codeSnippetMethod}_stop`) as CodeSnippetExecState
         this.codeSnippetOpts?.onStateChange?.(state)
-
-        this.logger.log('Stopped running code')
         return state
       },
     }
 
     // Init Filesystem handler
-    this.filesystem = {
+    this._filesystem = {
       listAllFiles: async (path) => {
-        if (!this.isOpen || !this.session) {
-          throw new Error('Session is not active')
-        }
         const files = await this.call(`${filesystemMethod}_listAllFiles`, [path]) as FileInfo[]
         return files
       },
       removeFile: async (path) => {
-        if (!this.isOpen || !this.session) {
-          throw new Error('Session is not active')
-        }
         await this.call(`${filesystemMethod}_removeFile`, [path])
       },
       writeFile: async (path, content) => {
-        if (!this.isOpen || !this.session) {
-          throw new Error('Session is not active')
-        }
         await this.call(`${filesystemMethod}_writeFile`, [path, content])
       },
       readFile: async (path) => {
-        if (!this.isOpen || !this.session) {
-          throw new Error('Session is not active')
-        }
         const content = await this.call(`${filesystemMethod}_readFile`, [path]) as string
         return content
       },
     }
 
     // Init Terminal handler
-    this.terminal = {
+    this._terminal = {
       killProcess: async (pid) => {
         await this.call(`${terminalMethod}_killProcess`, [pid])
       },
@@ -167,7 +157,7 @@ class Session extends SessionConnection {
     }
 
     // Init Process handler
-    this.process = {
+    this._process = {
       start: async ({ cmd, onStdout, onStderr, onExit, envVars = {}, rootdir = '/' }) => {
         // We are generating process ID in the SDK because we need to subscribe to the process stdout/stderr before starting it.
         const processID = id(12)
