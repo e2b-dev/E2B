@@ -2,7 +2,7 @@ import { writeFileSync } from 'fs'
 import { Session } from '../dist/cjs/index.js'
 
 const apiKey = process.env.API_KEY
-const reportSummaryFile = process.env.SUMMARY_FILE
+const reportSummaryFile = process.env.SUMMARY_FILE || './test.md'
 
 const codeSnippetIDs = [
   'Go',
