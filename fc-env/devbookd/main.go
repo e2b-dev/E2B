@@ -134,6 +134,18 @@ func initLogger() {
 }
 
 func main() {
+	// defer profile.Start(
+	// 	// profile.CPUProfile,
+	// 	// profile.GoroutineProfile,
+	// 	// profile.BlockProfile,
+	// 	// profile.ThreadcreationProfile,
+	// 	// profile.MemProfileHeap,
+	// 	// profile.MemProfileAllocs,
+	// 	// profile.MutexProfile,
+	// 	profile.ProfilePath("."),
+	// 	profile.NoShutdownHook,
+	// ).Stop()
+
 	initLogger()
 	defer slogger.Sync()
 	slogger.Info("Logger construction succeeded")

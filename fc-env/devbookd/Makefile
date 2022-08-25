@@ -32,13 +32,13 @@ debug:
 	make start-debug-docker
 
 # Build devbookd and start a interactive container with devbookd as a main process
-test-devbookd:
+run-devbookd:
 	make build-debug-devbookd
 	make build-docker
 	make start-devbookd-docker
 
 # Build devbookd and start a interactive container where you can start devbookd manually
-test-env:
+run-env:
 	make build-debug-devbookd
 	make build-docker
 	make start-docker
