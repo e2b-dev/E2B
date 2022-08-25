@@ -11,6 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+
+	_ "net/http/pprof"
 )
 
 const (
@@ -134,18 +136,6 @@ func initLogger() {
 }
 
 func main() {
-	// defer profile.Start(
-	// 	// profile.CPUProfile,
-	// 	// profile.GoroutineProfile,
-	// 	// profile.BlockProfile,
-	// 	// profile.ThreadcreationProfile,
-	// 	// profile.MemProfileHeap,
-	// 	// profile.MemProfileAllocs,
-	// 	// profile.MutexProfile,
-	// 	profile.ProfilePath("."),
-	// 	profile.NoShutdownHook,
-	// ).Stop()
-
 	initLogger()
 	defer slogger.Sync()
 	slogger.Info("Logger construction succeeded")
@@ -155,6 +145,9 @@ func main() {
 	entrypointFullPath = path.Join(workdir, entrypoint)
 
 	router := mux.NewRouter()
+	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
+	router.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+
 	server := rpc.NewServer()
 
 	codeSnippetService := NewCodeSnippetService(slogger)

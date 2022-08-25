@@ -25,6 +25,12 @@ stop-debug-docker:
 connect-wscat:
 	npx -y wscat -c ws://127.0.0.1:8010/ws
 
+launch-profiler-ui:
+	go tool pprof -http :9991 http://:8010/debug/pprof/goroutine
+
+install-profiler-deps:
+	apt update && apt install graphviz
+
 # Build devbookd and start a detached container you can connect to with a debugger
 debug:
 	make build-debug-devbookd

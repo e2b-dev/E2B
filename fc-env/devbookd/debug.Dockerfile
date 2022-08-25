@@ -4,7 +4,7 @@ FROM golang:1.18-alpine
 
 RUN apk update && \
     apk upgrade && \
-    apk add bash nodejs npm strace curl git
+    apk add bash nodejs npm strace curl git graphviz
 
 RUN CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest
 
