@@ -178,7 +178,7 @@ abstract class SessionConnection {
 
     const hostname = this.getHostname(WS_PORT)
 
-    if (!hostname) {
+    if (!hostname && !this.opts.__debug_url) {
       throw new Error('Cannot get session\'s hostname')
     }
 
