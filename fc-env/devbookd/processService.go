@@ -9,6 +9,7 @@ import (
 
 	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/process"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/rs/xid"
 	"go.uber.org/zap"
 )
 
@@ -184,6 +185,10 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 		ps.logger.Info("Starting a new process")
 
 		id := processID
+		if id == "" {
+			id = xid.New().String()
+		}
+
 		newProc, err := ps.procManager.Add(id, cmd, envVars, rootdir)
 		if err != nil {
 			ps.removeProcessSubscribers(processID)
