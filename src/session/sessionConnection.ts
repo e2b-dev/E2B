@@ -37,7 +37,8 @@ export interface SessionConnectionOpts {
   onReconnect?: ReconnectHandler
   debug?: boolean
   editEnabled?: boolean
-  __debug_url?: string
+  __debug_hostname?: string
+  __debug_devEnv?: 'remote' | 'local'
 }
 
 const createSession = api.path('/sessions').method('post').create({ api_key: true })
@@ -98,6 +99,17 @@ abstract class SessionConnection {
    * @returns hostname of the session or session's port
    */
   getHostname(port?: number) {
+    if (this.opts.__debug_hostname) {
+      // Debugging remotely (with GitPod) and on local needs different formats of the hostname.
+      if (port && this.opts.__debug_devEnv === 'remote') {
+        return `${port}-${this.opts.__debug_hostname}`
+      } else if (port) {
+        return `${this.opts.__debug_hostname}:${port}`
+      } else {
+        return this.opts.__debug_hostname
+      }
+    }
+
     if (!this.session) {
       return undefined
     }
@@ -148,7 +160,7 @@ abstract class SessionConnection {
       this.isOpen = true
     }
 
-    if (!this.opts.__debug_url) {
+    if (!this.opts.__debug_hostname) {
       try {
         const res = await createSession({
           codeSnippetID: this.opts.id,
@@ -178,13 +190,12 @@ abstract class SessionConnection {
 
     const hostname = this.getHostname(WS_PORT)
 
-    if (!hostname && !this.opts.__debug_url) {
+    if (!hostname) {
       throw new Error('Cannot get session\'s hostname')
     }
 
-    const sessionURL = this.opts.__debug_url
-      ? `ws://${this.opts.__debug_url}`
-      : `wss://${hostname}${WS_ROUTE}`
+    const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
+    const sessionURL = `${protocol}://${hostname}${WS_ROUTE}`
 
     this.rpc.onError((e) => {
       this.logger.log('Error in WS session:', this.session, e)
