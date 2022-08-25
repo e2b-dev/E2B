@@ -37,6 +37,7 @@ export interface SessionConnectionOpts {
   onReconnect?: ReconnectHandler
   debug?: boolean
   editEnabled?: boolean
+  __debug_url?: string
 }
 
 const createSession = api.path('/sessions').method('post').create({ api_key: true })
@@ -135,7 +136,6 @@ abstract class SessionConnection {
     }
   }
 
-
   /**
    * Open a connection to a new session
    * 
@@ -148,34 +148,32 @@ abstract class SessionConnection {
       this.isOpen = true
     }
 
-    try {
-      const res = await createSession({
-        codeSnippetID: this.opts.id,
-        editEnabled: this.opts.editEnabled,
-        api_key: this.opts.apiKey,
-      })
-      this.session = res.data
-      this.logger.log('Aquired session:', this.session)
+    if (!this.opts.__debug_url) {
+      try {
+        const res = await createSession({
+          codeSnippetID: this.opts.id,
+          editEnabled: this.opts.editEnabled,
+          api_key: this.opts.apiKey,
+        })
+        this.session = res.data
+        this.logger.log('Aquired session:', this.session)
 
-      this.refresh(this.session.sessionID)
-    } catch (e) {
-      if (e instanceof createSession.Error) {
-        const error = e.getActualType()
-        if (error.status === 400) {
-          throw new Error(`Error creating session - (${error.status}) bad request: ${error.data.message}`)
+        this.refresh(this.session.sessionID)
+      } catch (e) {
+        if (e instanceof createSession.Error) {
+          const error = e.getActualType()
+          if (error.status === 400) {
+            throw new Error(`Error creating session - (${error.status}) bad request: ${error.data.message}`)
+          }
+          if (error.status === 401) {
+            throw new Error(`Error creating session - (${error.status}) unauthenticated (you need to be authenticated to start an session with persistent edits): ${error.data.message}`)
+          }
+          if (error.status === 500) {
+            throw new Error(`Error creating session - (${error.status}) server error: ${error.data.message}`)
+          }
+          throw e
         }
-        if (error.status === 401) {
-          throw new Error(`Error creating session - (${error.status}) unauthenticated (you need to be authenticated to start an session with persistent edits): ${error.data.message}`)
-        }
-        if (error.status === 500) {
-          throw new Error(`Error creating session - (${error.status}) server error: ${error.data.message}`)
-        }
-        throw e
       }
-    }
-
-    if (!this.session) {
-      throw new Error('Session is not defined')
     }
 
     const hostname = this.getHostname(WS_PORT)
@@ -184,7 +182,9 @@ abstract class SessionConnection {
       throw new Error('Cannot get session\'s hostname')
     }
 
-    const sessionURL = `wss://${hostname}${WS_ROUTE}`
+    const sessionURL = this.opts.__debug_url
+      ? `ws://${this.opts.__debug_url}`
+      : `wss://${hostname}${WS_ROUTE}`
 
     this.rpc.onError((e) => {
       this.logger.log('Error in WS session:', this.session, e)

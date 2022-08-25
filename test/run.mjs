@@ -5,7 +5,7 @@ const wait = promisify(setTimeout)
 
 async function main() {
   const session = new Session({
-    id: 'xYBy4D9Gi5GM',
+    // id: 'xYBy4D9Gi5GM',
     // codeSnippet: {
     //   onStateChange(state) {
     //     console.log(state)
@@ -17,6 +17,7 @@ async function main() {
     //     console.log(stdout)
     //   },
     // },
+    __debug_url: 'localhost:8010/ws',
     debug: true,
     // editEnabled: true,
   })
@@ -81,40 +82,43 @@ async function main() {
     // const fileNames = await session.filesystem.listAllFiles('/')
     // console.log('file names', fileNames)
 
-    const term = await session.terminal.createSession({
-      onData: (data) => console.log('terminal data', data),
+    const terminal = await session.terminal.createSession({
+      onData: (data) => console.log('Terminal', data),
       onChildProcessesChange: (cps) => console.log('child processes', cps),
       size: { rows: 40, cols: 90 },
     })
-    console.log('terminalID', term.terminalID)
-    await term.sendData('prisma studio\n')
 
-    await session.filesystem.writeFile('/code/index.ts', 'const p = p')
 
-    const tsserver = await session.process.start({
-      cmd: 'tsserver',
+    const languageServer = await session.process.start({
+      cmd: 'lsp-ws-proxy -l 9999 -- typescript-language-server --stdio',
       onExit: () => {
         console.log('Exit')
       },
       onStdout: (o) => {
-        console.log(o)
+        console.log('Language server', o.line)
       },
       onStderr: (o) => {
-        console.log(o)
+        console.error('Language server', o.line)
       },
     })
 
-    await wait(4000)
-    console.log('sending')
-    await tsserver.sendStdin('{"seq":5,"type":"request","command":"open","arguments":{"file":"/code/index.ts","fileContent":"const p = p"}}\n')
+    // prisma studio --browser none
+    const prismaStudio = await session.process.start({
+      cmd: 'npx prisma studio',
+      onExit: () => {
+        console.log('Exit')
+      },
+      onStdout: (o) => {
+        console.log('Prisma studio', o.line)
+      },
+      onStderr: (o) => {
+        console.error('Prisma studio', o.line)
+      },
+    })
 
-    for (let i = 0; i < 50; i++) {
-      console.log(i, '--------------------')
-      await wait(3000)
-      await tsserver.sendStdin('{"seq":1,"type":"request","command":"completionInfo","arguments":{"file":"/code/index.ts","line":1,"offset":11}}\n')
-    }
+    terminal.sendData('ls')
 
-
+    await new Promise()
   } catch (e) {
     console.error(e)
   }
