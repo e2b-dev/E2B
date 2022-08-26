@@ -164,7 +164,6 @@ func (ps *ProcessService) scanRunCmdOut(pipe io.ReadCloser, t outType, process *
 		}
 	}
 
-	process.Cmd.Wait()
 	pipe.Close()
 
 	switch t {
@@ -191,7 +190,7 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 
 		newProc, err := ps.procManager.Add(id, cmd, envVars, rootdir)
 		if err != nil {
-			ps.removeProcessSubscribers(processID)
+			ps.removeProcessSubscribers(id)
 
 			errMsg := fmt.Sprintf("Failed to create the process: %v", err)
 			ps.logger.Info(errMsg)
@@ -201,8 +200,8 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 		stdout, err := newProc.Cmd.StdoutPipe()
 		if err != nil {
 			newProc.SetHasExited(true)
-			ps.procManager.Remove(processID)
-			ps.removeProcessSubscribers(processID)
+			ps.procManager.Remove(newProc.ID)
+			ps.removeProcessSubscribers(newProc.ID)
 
 			errMsg := fmt.Sprintf("Failed to set up stdout pipe for the process: %v", err)
 			ps.logger.Error(errMsg)
@@ -214,8 +213,8 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 		if err != nil {
 			newProc.SetHasExited(true)
 			stdout.Close()
-			ps.procManager.Remove(processID)
-			ps.removeProcessSubscribers(processID)
+			ps.procManager.Remove(newProc.ID)
+			ps.removeProcessSubscribers(newProc.ID)
 
 			errMsg := fmt.Sprintf("Failed to set up stderr pipe for the procces: %v", err)
 			ps.logger.Error(errMsg)
@@ -228,8 +227,8 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 			newProc.SetHasExited(true)
 			stdout.Close()
 			stderr.Close()
-			ps.procManager.Remove(processID)
-			ps.removeProcessSubscribers(processID)
+			ps.procManager.Remove(newProc.ID)
+			ps.removeProcessSubscribers(newProc.ID)
 
 			errMsg := fmt.Sprintf("Failed to set up stdin pipe for the procces: %v", err)
 			ps.logger.Error(errMsg)
@@ -243,14 +242,14 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 
 			newProc.SetHasExited(true)
 
-			ps.notifySubscribers(processID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
+			ps.notifySubscribers(newProc.ID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
 
 			stdout.Close()
 			stderr.Close()
 			stdin.Close()
 
-			ps.procManager.Remove(processID)
-			ps.removeProcessSubscribers(processID)
+			ps.procManager.Remove(newProc.ID)
+			ps.removeProcessSubscribers(newProc.ID)
 
 			return "", fmt.Errorf(errMsg)
 		}
@@ -261,18 +260,18 @@ func (ps *ProcessService) Start(processID process.ProcessID, cmd string, envVars
 
 			newProc.SetHasExited(true)
 
-			ps.notifySubscribers(processID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
+			ps.notifySubscribers(newProc.ID, ps.exitSubscribers, struct{}{}, "Failed to send exit notification")
 
 			stdin.Close()
 
-			ps.procManager.Remove(processID)
+			ps.procManager.Remove(newProc.ID)
 
-			ps.removeSubscribers(processID, ps.exitSubscribers)
+			ps.removeSubscribers(newProc.ID, ps.exitSubscribers)
 		}()
 
 		ps.logger.Info("New process started")
 
-		proc = newProc
+		return newProc.ID, nil
 	}
 
 	return proc.ID, nil

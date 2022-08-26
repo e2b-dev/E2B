@@ -157,7 +157,7 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 	if !ok {
 		ts.logger.Info("Creating a new terminal")
 
-		newterm, err := ts.termManager.Add(workdir, cols, rows)
+		newTerm, err := ts.termManager.Add(workdir, cols, rows)
 		if err != nil {
 			errMsg := fmt.Sprintf("Failed to start new terminal: %v", err)
 			ts.logger.Info(errMsg)
@@ -169,16 +169,16 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 		go func() {
 			for {
 				buf := make([]byte, 1024)
-				read, err := term.Read(buf)
+				read, err := newTerm.Read(buf)
 
 				if err != nil {
-					ts.logger.Infof("Error reading from terminal %s - stopped reading", term.ID)
+					ts.logger.Infof("Error reading from terminal %s - stopped reading", newTerm.ID)
 					return
 				}
 
 				data := string(buf[:read])
 
-				for _, sub := range ts.getSubscribers(ts.terminalDataSubscribers, term.ID) {
+				for _, sub := range ts.getSubscribers(ts.terminalDataSubscribers, newTerm.ID) {
 					if err := sub.subscriber.Notify(data); err != nil {
 						ts.logger.Errorw("Failed to send data notification",
 							"subscriptionID", sub.subscriber.SubscriptionID(),
@@ -191,30 +191,30 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 
 		go func() {
 			ticker := time.NewTicker(terminalChildProcessCheckInterval)
-			pid := term.Pid()
+			pid := newTerm.Pid()
 
 			for range ticker.C {
-				if term.IsDestroyed() {
+				if newTerm.IsDestroyed() {
 					return
 				}
 
 				cps, err := process.GetChildProcesses(pid, ts.logger)
 				if err != nil {
 					ts.logger.Errorw("failed to get child processes for terminal",
-						"terminalID", term.ID,
+						"terminalID", newTerm.ID,
 						"pid", pid,
 						"error", err,
 					)
 					return
 				}
 
-				changed := !reflect.DeepEqual(cps, term.GetCachedChildProcesses())
+				changed := !reflect.DeepEqual(cps, newTerm.GetCachedChildProcesses())
 				if !changed {
 					continue
 				}
 
-				term.SetCachedChildProcesses(cps)
-				for _, sub := range ts.getSubscribers(ts.terminalChildProcessesSubscribers, term.ID) {
+				newTerm.SetCachedChildProcesses(cps)
+				for _, sub := range ts.getSubscribers(ts.terminalChildProcessesSubscribers, newTerm.ID) {
 					if err := sub.subscriber.Notify(cps); err != nil {
 						ts.logger.Errorw("Failed to send child processes notification",
 							"subscriptionID", sub.subscriber.SubscriptionID(),
@@ -226,8 +226,7 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 		}()
 
 		ts.logger.Info("Started terminal output data watcher")
-
-		term = newterm
+		return newTerm.ID, nil
 	}
 
 	return term.ID, nil
