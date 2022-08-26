@@ -20,5 +20,6 @@ export interface ProcessManager {
     onExit?: () => void,
     envVars?: EnvVars,
     rootdir?: string,
+    processID?: string,
   }) => Promise<Process>
 }

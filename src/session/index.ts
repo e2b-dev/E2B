@@ -137,10 +137,17 @@ class Session extends SessionConnection {
 
     // Init Process handler
     this.process = {
-      start: async ({ cmd, onStdout, onStderr, onExit, envVars = {}, rootdir = '/' }) => {
+      start: async ({
+        cmd,
+        onStdout,
+        onStderr,
+        onExit,
+        envVars = {},
+        rootdir = '/',
         // TODO: If the process or one of the subscriptions fails to register we are currently not unsubscribing from the others
         // We are generating process ID in the SDK because we need to subscribe to the process stdout/stderr before starting it.
-        const processID = id(12)
+        processID = id(12),
+      }) => {
         const [
           onExitSubscriptionID,
           onStdoutSubscriptionID,
