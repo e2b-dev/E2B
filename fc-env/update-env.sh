@@ -173,8 +173,8 @@ function startfc() {
     }
   ],
   "machine-config": {
-    "vcpu_count": 1,
-    "mem_size_mib": 256
+    "vcpu_count": 2,
+    "mem_size_mib": 512
   }
 }
 EOF
