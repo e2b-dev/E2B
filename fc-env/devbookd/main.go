@@ -11,8 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
-
-	_ "net/http/pprof"
 )
 
 const (

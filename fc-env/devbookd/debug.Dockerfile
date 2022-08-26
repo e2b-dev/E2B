@@ -4,7 +4,7 @@ FROM golang:1.18-alpine
 
 RUN apk update && \
     apk upgrade && \
-    apk add bash nodejs npm strace curl git graphviz
+    apk add bash nodejs npm strace curl git graphviz make build-base
 
 RUN CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest
 
@@ -32,6 +32,13 @@ RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=index.sh >> /.dbkenv
 
-COPY bin/devbookd-debug /usr/bin/devbookd
+WORKDIR /
+COPY go.mod go.sum /
+RUN go mod download
+
+COPY ./ /
+
+RUN make build-debug-devbookd
+RUN mv /bin/devbookd-debug /usr/bin/devbookd
 
 WORKDIR /
