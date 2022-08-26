@@ -26,10 +26,10 @@ connect-wscat:
 	npx -y wscat -c ws://127.0.0.1:8010/ws
 
 launch-profiler-goroutine:
-	go tool pprof -http :9991 https://8010-s61vcj0v-beba8075.ondevbook.com/debug/pprof/goroutine?seconds=30
+	go tool pprof -http :9991 https://8010-savds4yn-beba8075.ondevbook.com/debug/pprof/goroutine?seconds=30
 
 launch-profiler:
-	go tool pprof -http :9991 https://8010-s61vcj0v-beba8075.ondevbook.com/debug/pprof/profile?seconds=4
+	go tool pprof -http :9991 https://8010-savds4yn-beba8075.ondevbook.com/debug/pprof/profile?seconds=50
 
 install-profiler-deps:
 	sudo apt update && sudo apt install graphviz

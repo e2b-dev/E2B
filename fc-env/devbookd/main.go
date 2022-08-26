@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
@@ -171,8 +172,15 @@ func main() {
 	wsHandler = server.WebsocketHandler([]string{"*"})
 	router.HandleFunc("/ws", serveWs)
 
+	srv := &http.Server{
+		ReadTimeout:  120 * time.Second,
+		WriteTimeout: 120 * time.Second,
+		Addr:         ":8010",
+		Handler:      router,
+	}
+
 	slogger.Info("Starting server on the port :8010")
-	if err := http.ListenAndServe(":8010", router); err != nil {
+	if err := srv.ListenAndServe(); err != nil {
 		slogger.Errorw("Failed to start the server", "error", err)
 	}
 }

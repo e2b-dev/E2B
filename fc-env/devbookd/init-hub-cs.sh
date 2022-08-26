@@ -65,3 +65,74 @@ cat <<EOF > /code/tsconfig.json
 EOF
 
 mkdir dist
+
+cat <<EOF > /code/prisma/seed.ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+
+const categories = [
+  {
+    name: 'Math',
+  },
+  {
+    name: 'Science',
+  },
+  {
+    name: 'History',
+  },
+  {
+    name: 'Geography',
+  },
+]
+
+const users = [
+  {
+    name: 'Jasmine',
+    email: 'jasmine@prisma.io',
+    age: 24,
+    country: 'Narnia',
+    posts: {
+      create: [
+        {
+          title: 'Post with title 1',
+        },
+        {
+          title: 'Post with title 2',
+        },
+      ],
+    },
+  },
+  {
+    name: 'Ashkan',
+    email: 'ashkan@prisma.io',
+    age: 23,
+    country: 'Westeros',
+    posts: {
+      create: [
+        {
+          title: 'Post with title 3',
+        },
+        {
+          title: 'Post with title 4',
+        },
+      ],
+    },
+  }
+]
+
+async function main() {
+  await prisma.category.createMany({
+    data: categories,
+    skipDuplicates: true,
+  })
+
+  const ps2 = users.map(u => prisma.user.upsert({
+    where: { email: u.email },
+    update: {},
+    create: u,
+  }))
+  await Promise.all(ps2)
+}
+
+main()
+EOF
