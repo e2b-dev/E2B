@@ -12,6 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+
+	_ "net/http/pprof"
 )
 
 const (
@@ -145,7 +147,7 @@ func main() {
 
 	router := mux.NewRouter()
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
-	router.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 
 	server := rpc.NewServer()
 

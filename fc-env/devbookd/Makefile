@@ -26,7 +26,7 @@ connect-wscat:
 	npx -y wscat -c ws://127.0.0.1:8010/ws
 
 # You run the parametrized command like this:
-# make hostname=s3izkj4c-beba8075.ondevbook.com metric=cpu interval=90 run-profiler
+# make hostname=s3izkj4c-beba8075.ondevbook.com metric=heap interval=90 run-profiler
 run-profiler:
 	go tool pprof -http :9991 https://8010-$(hostname)/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
 
