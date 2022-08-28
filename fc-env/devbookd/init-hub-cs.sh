@@ -136,3 +136,5 @@ async function main() {
 
 main()
 EOF
+
+echo 'Now you need to generate prisma typings manually'

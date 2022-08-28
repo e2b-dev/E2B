@@ -25,11 +25,10 @@ stop-debug-docker:
 connect-wscat:
 	npx -y wscat -c ws://127.0.0.1:8010/ws
 
-launch-profiler-goroutine:
-	go tool pprof -http :9991 https://8010-savds4yn-beba8075.ondevbook.com/debug/pprof/goroutine?seconds=30
-
-launch-profiler:
-	go tool pprof -http :9991 https://8010-savds4yn-beba8075.ondevbook.com/debug/pprof/profile?seconds=50
+# You run the parametrized command like this:
+# make hostname=s3izkj4c-beba8075.ondevbook.com metric=cpu interval=90 run-profiler
+run-profiler:
+	go tool pprof -http :9991 https://8010-$(hostname)/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
 
 install-profiler-deps:
 	sudo apt update && sudo apt install graphviz
