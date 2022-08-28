@@ -147,7 +147,7 @@ func main() {
 
 	router := mux.NewRouter()
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
-	router.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 
 	server := rpc.NewServer()
 
