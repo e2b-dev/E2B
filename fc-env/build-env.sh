@@ -176,7 +176,7 @@ function startfc() {
   ],
   "machine-config": {
     "vcpu_count": 1,
-    "mem_size_mib": 1024
+    "mem_size_mib": 512
   }
 }
 EOF
@@ -257,3 +257,31 @@ echo "| Build ID file:    $FINAL_BUILD_ID_FILE"
 echo "======================================================================================================="
 echo
 echo "===> Env Built"
+2022-08-28T19:07:05.975504414 [anonymous-instance:main:WARN:src/vmm/src/rpc_interface.rs:517] [DevPreview] Restoring snapshots is currently in development preview.
+2022-08-28T19:07:05.977596989 [anonymous-instance:main:WARN:src/devices/src/legacy/serial.rs:249] Failed to register serial input fd: event_manager: failed to manage epoll file descriptor
+2022-08-28T19:07:09.393884202 [anonymous-instance:main:WARN:src/vmm/src/rpc_interface.rs:563] [DevPreview] 'load snapshot' VMM action took 3418293 us.
+2022-08-28T19:07:09.393983416 [anonymous-instance:fc_api:WARN:src/api_server/src/lib.rs:260] PUT /snapshot/load: mem_file_path field is deprecated.
+HTTP/1.1 204
+Server: Firecracker API
+Connection: keep-alive
+Deprecation: true
+
+
+real	0m3.431s
+user	0m0.012s
+sys	0m0.000s
+
+2022-08-28T19:09:16.575991455 [anonymous-instance:main:WARN:src/devices/src/virtio/net/event_handler.rs:62] Received unknown event: ERROR from source: 30
+2022-08-28T19:09:16.923049977 [anonymous-instance:main:WARN:src/vmm/src/rpc_interface.rs:517] [DevPreview] Restoring snapshots is currently in development preview.
+2022-08-28T19:09:16.926662817 [anonymous-instance:main:WARN:src/devices/src/legacy/serial.rs:249] Failed to register serial input fd: event_manager: failed to manage epoll file descriptor
+2022-08-28T19:09:17.425503546 [anonymous-instance:main:WARN:src/vmm/src/rpc_interface.rs:563] [DevPreview] 'load snapshot' VMM action took 502360 us.
+2022-08-28T19:09:17.425608323 [anonymous-instance:fc_api:WARN:src/api_server/src/lib.rs:260] PUT /snapshot/load: mem_file_path field is deprecated.
+HTTP/1.1 204
+Server: Firecracker API
+Connection: keep-alive
+Deprecation: true
+
+
+real	0m0.514s
+user	0m0.006s
+sys	0m0.006s

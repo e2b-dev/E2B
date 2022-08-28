@@ -50,7 +50,7 @@ cat <<EOF > vmconfig.json
       }
   ],
   "machine-config": {
-    "vcpu_count": 1,
+    "vcpu_count": 2,
     "mem_size_mib": 512
   }
 }
