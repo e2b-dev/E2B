@@ -10,11 +10,15 @@ import (
 )
 
 const (
-	dbCluster = "thick-cow-4620"
+	//dbCluster = "thick-cow-4620"
+	dbCluster = "vale-coyote-5017"
 	dbRegion  = "gcp-europe-west1"
 
-	dbUser     = "mlejva"
-	dbPassword = "ehQuYPk5CE1KXQ9PHYOfaA"
+	//dbUser     = "mlejva"
+	//dbPassword = "ehQuYPk5CE1KXQ9PHYOfaA"
+
+	dbUser     = "dbk"
+	dbPassword = "WajNf9RcgqFp8_aOdybuqg"
 
 	defaultDatabaseID = "defaultdb"
 )
