@@ -1,12 +1,20 @@
 package main
 
 import (
-	"github.com/cneira/firecracker-task-driver/driver"
+	firevm "github.com/cneira/firecracker-task-driver/driver"
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
+
+	"net/http"
+
+	_ "net/http/pprof"
 )
 
 func main() {
+	go func() {
+		http.ListenAndServe(":6061", nil)
+	}()
+
 	// Serve the plugin
 	plugins.Serve(factory)
 }
