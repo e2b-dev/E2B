@@ -42,7 +42,7 @@ if [ -z "$FC_ENVS_DISK" ]; then
 fi
 
 if [ -z "$API_KEY" ]; then
-  echo "ERROR: Expected code snippet ID as the seventh argument"
+  echo "ERROR: Expected API key as the seventh argument"
   exit 1
 fi
 
