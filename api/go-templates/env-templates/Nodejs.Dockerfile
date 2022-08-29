@@ -17,9 +17,9 @@ RUN npm config set strict-ssl false
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=node >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
-RUN echo RUN_ARGS=index.js >> /.dbkenv
+RUN echo RUN_ARGS=index.mjs >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
-RUN echo ENTRYPOINT=index.js >> /.dbkenv
+RUN echo ENTRYPOINT=index.mjs >> /.dbkenv
 
 WORKDIR /
