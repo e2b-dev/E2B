@@ -6,7 +6,8 @@ RUN apk update && apk add --no-cache nodejs npm
 RUN npm config set strict-ssl false
 
 WORKDIR /code
-RUN npm i -D typescript ts-node
+RUN npm i -g ts-node
+RUN npm i -D typescript
 RUN npx tsc --init
 RUN touch index.ts
 
