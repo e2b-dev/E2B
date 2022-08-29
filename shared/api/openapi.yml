@@ -84,8 +84,8 @@ components:
 
   schemas:
     HubDatabase:
-      reuired:
-        dbURL
+      required:
+        - dbURL
       properties:
         dbURL:
           type: string
@@ -355,4 +355,3 @@ paths:
                 $ref: "#/components/schemas/HubDatabase"
         500:
           $ref: "#/components/responses/500"
-
