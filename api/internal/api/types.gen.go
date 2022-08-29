@@ -12,12 +12,13 @@ const (
 
 // Defines values for Template.
 const (
-	Ansys   Template = "Ansys"
-	Bash    Template = "Bash"
-	Go      Template = "Go"
-	Nodejs  Template = "Nodejs"
-	Python3 Template = "Python3"
-	Rust    Template = "Rust"
+	Ansys      Template = "Ansys"
+	Bash       Template = "Bash"
+	Go         Template = "Go"
+	Nodejs     Template = "Nodejs"
+	Python3    Template = "Python3"
+	Rust       Template = "Rust"
+	Typescript Template = "Typescript"
 )
 
 // EnvironmentState defines model for EnvironmentState.
