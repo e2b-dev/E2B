@@ -1,10 +1,9 @@
 # Orchestration Services
-
 Backend services for handling VM sessions, environments' pipeline, and the API for them.
 
 ## Development
 Nomad dashboard - http://34.149.1.201/ui
-Consule dashboard - https://35.244.214.226/ui
+Consule dashboard - http://35.244.214.226/ui
 
 Architecture - https://www.figma.com/file/pr02o1okRpScOmNpAmgvCL/Architecture
 

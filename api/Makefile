@@ -9,7 +9,7 @@ build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/api ./cmd
 
 run:
-	GOOS=linux go build -a -o bin/api ./cmd
+	GOOS=linux go build -o bin/api ./cmd
 	NOMAD_ADDRESS=http://34.149.1.201 ./bin/api --port 3000
 
 push:
