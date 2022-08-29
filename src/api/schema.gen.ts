@@ -191,12 +191,37 @@ export interface paths {
       };
     };
   };
+  readonly "/prisma-hub/db": {
+    /** Creates a new hub database */
+    readonly post: {
+      readonly responses: {
+        /** Successfully created a new hub database */
+        readonly 201: {
+          readonly content: {
+            readonly "application/json": components["schemas"]["HubDatabase"];
+          };
+        };
+        readonly 500: components["responses"]["500"];
+      };
+    };
+  };
 }
 
 export interface components {
   readonly schemas: {
+    readonly HubDatabase: {
+      /** @description Connectiong string to the database. */
+      readonly dbURL?: string;
+    };
     /** @enum {string} */
-    readonly Template: "Nodejs" | "Go" | "Bash" | "Rust" | "Python3" | "Ansys";
+    readonly Template:
+      | "Nodejs"
+      | "Go"
+      | "Bash"
+      | "Rust"
+      | "Python3"
+      | "Ansys"
+      | "Typescript";
     /** @enum {string} */
     readonly EnvironmentState: "Building" | "Failed" | "Done";
     readonly NewEnvironment: {
@@ -207,7 +232,10 @@ export interface components {
       readonly state: components["schemas"]["EnvironmentState"];
     };
     readonly NewSession: {
-      /** @description Option determining if the session is a shared persistent edit session */
+      /**
+       * @description Option determining if the session is a shared persistent edit session
+       * @default false
+       */
       readonly editEnabled?: boolean;
       /** @description Identifier of a code snippet which which is the environment associated */
       readonly codeSnippetID: string;
