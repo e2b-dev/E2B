@@ -16,7 +16,7 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/portForward"
+	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/port"
 )
 
 const (
@@ -155,8 +155,8 @@ func main() {
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 
-	portForwarder := portForward.NewPortForwarder(slogger, 1*time.Second, defaultGateway)
-	go portForwarder.Scan()
+	portForwarder := port.NewForwarder(slogger, 1*time.Second, defaultGateway)
+	go portForwarder.ScanAndForward()
 	server := rpc.NewServer()
 
 	codeSnippetService := NewCodeSnippetService(slogger)
