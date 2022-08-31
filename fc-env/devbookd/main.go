@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -14,6 +15,8 @@ import (
 	"go.uber.org/zap"
 
 	_ "net/http/pprof"
+
+	"github.com/devbookhq/orchestration-services/fc-env/devbookd/pkg/portForward"
 )
 
 const (
@@ -32,6 +35,9 @@ var (
 	workdir            string
 	entrypoint         string
 	entrypointFullPath string
+
+	// Address of the default gateway interface inside Firecracker.
+	defaultGateway = net.IPv4(169, 254, 0, 21)
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -149,6 +155,8 @@ func main() {
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 
+	portForwarder := portForward.NewPortForwarder(slogger, 1*time.Second, defaultGateway)
+	go portForwarder.Scan()
 	server := rpc.NewServer()
 
 	codeSnippetService := NewCodeSnippetService(slogger)
