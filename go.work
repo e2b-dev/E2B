@@ -2,5 +2,4 @@ go 1.18
 
 use (
 	./api
-	./fc-env/devbookd
 )
