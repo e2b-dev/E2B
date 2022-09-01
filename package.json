@@ -1,5 +1,5 @@
 {
-  "name": "devbookd",
+  "name": "@devbookhq/devbookd",
   "version": "0.0.0-automated",
   "description": "Devbook Daemon",
   "repository": "devbookhq/devbookd",
