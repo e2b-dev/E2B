@@ -50,22 +50,22 @@ func main() {
 
 	codeSnippetService := service.NewCodeSnippetService(logger, env)
 	if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
-		logger.Errorw("Failed to register code snippet service", "error", err)
+		logger.Errorw("failed to register code snippet service", "error", err)
 	}
 
 	filesystemService := service.NewFilesystemService(logger)
 	if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
-		logger.Errorw("Failed to register filesystem service", "error", err)
+		logger.Errorw("failed to register filesystem service", "error", err)
 	}
 
 	terminalService := service.NewTerminalService(logger, env)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
-		logger.Errorw("Failed to register terminal service", "error", err)
+		logger.Errorw("failed to register terminal service", "error", err)
 	}
 
 	processService := service.NewProcessService(logger)
 	if err := rpcServer.RegisterName("process", processService); err != nil {
-		logger.Errorw("Failed to register process service", "error", err)
+		logger.Errorw("failed to register process service", "error", err)
 	}
 
 	router := mux.NewRouter()
