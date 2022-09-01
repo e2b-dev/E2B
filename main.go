@@ -9,10 +9,10 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/devbookhq/devbookd/pkg/env"
-	"github.com/devbookhq/devbookd/pkg/log"
-	"github.com/devbookhq/devbookd/pkg/port"
-	"github.com/devbookhq/devbookd/pkg/service"
+	"github.com/devbookhq/devbookd/internal/env"
+	"github.com/devbookhq/devbookd/internal/log"
+	"github.com/devbookhq/devbookd/internal/port"
+	"github.com/devbookhq/devbookd/internal/service"
 )
 
 var (

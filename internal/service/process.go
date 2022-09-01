@@ -7,7 +7,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/devbookhq/devbookd/pkg/process"
+	"github.com/devbookhq/devbookd/internal/process"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/xid"
 	"go.uber.org/zap"

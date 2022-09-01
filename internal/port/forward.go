@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/devbookhq/devbookd/pkg/env"
+	"github.com/devbookhq/devbookd/internal/env"
 	"github.com/drael/GOnetstat"
 	"go.uber.org/zap"
 )

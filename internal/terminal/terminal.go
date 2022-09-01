@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/devbookhq/devbookd/pkg/process"
+	"github.com/devbookhq/devbookd/internal/process"
 
 	"github.com/creack/pty"
 	"github.com/rs/xid"

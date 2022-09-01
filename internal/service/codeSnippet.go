@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/devbookhq/devbookd/pkg/env"
+	"github.com/devbookhq/devbookd/internal/env"
 	"github.com/drael/GOnetstat"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"

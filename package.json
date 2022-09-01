@@ -1,0 +1,18 @@
+{
+  "name": "devbookd",
+  "version": "0.0.0-automated",
+  "description": "Devbook Daemon",
+  "repository": "devbookhq/devbookd",
+  "homepage": "https://github.com/devbookhq/devbookd",
+  "bugs": "https://github.com/devbookhq/devbookd/issues",
+  "license": "MIT",
+  "author": "Devbook",
+  "type": "module",
+  "url": "https://github.com/devbookhq/devbookd/releases/download/v{{version}}/{{bin_name}}_{{version}}_{{platform}}_{{arch}}.tar.gz",
+  "bin": "bin/devbookd",
+  "release": {
+    "branches": [
+      "main"
+    ]
+  }
+}

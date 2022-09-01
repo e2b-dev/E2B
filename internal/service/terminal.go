@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/devbookhq/devbookd/pkg/env"
-	"github.com/devbookhq/devbookd/pkg/process"
-	"github.com/devbookhq/devbookd/pkg/terminal"
+	"github.com/devbookhq/devbookd/internal/env"
+	"github.com/devbookhq/devbookd/internal/process"
+	"github.com/devbookhq/devbookd/internal/terminal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 )
