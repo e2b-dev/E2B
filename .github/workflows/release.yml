@@ -8,28 +8,28 @@ on:
 
 
 jobs:
-  #release:
-  #  name: semantic-release
-  #  runs-on: ubuntu-20.04
-  #  outputs:
-  #    new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
-  #    new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
-  #  steps:
-  #    - uses: actions/checkout@v3
+  release:
+    name: semantic-release
+    runs-on: ubuntu-20.04
+    outputs:
+      new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
+      new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
+    steps:
+      - uses: actions/checkout@v3
 
-  #    - id: semantic-release
-  #      uses: cycjimmy/semantic-release-action@v2
-  #      with:
-  #        semantic_version: 18
-  #      env:
-  #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #        # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - id: semantic-release
+        uses: cycjimmy/semantic-release-action@v2
+        with:
+          semantic_version: 18
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   goreleaser:
     name: GoReleaser
-    #needs:
-    #  - release
-    #if: needs.release.outputs.new-release-published == 'true'
+    needs:
+      - release
+    if: needs.release.outputs.new-release-published == 'true'
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
