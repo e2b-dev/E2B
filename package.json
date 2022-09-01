@@ -12,7 +12,7 @@
   "bin": "bin/devbookd",
   "release": {
     "branches": [
-      "main"
+      "master"
     ]
   }
 }
