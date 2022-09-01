@@ -14,7 +14,7 @@ type PortScanFilter struct {
 
 func (sf *PortScanFilter) Match(proc *GOnetstat.Process) bool {
 	// Filter is an empty struct.
-	if sf.State == "" && len(sf.IP) == 0 {
+	if sf.State == "" && len(sf.IPs) == 0 {
 		return false
 	}
 
