@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "prepare-debug",
+      "command": "make debug",
+    },
+    {
+      "type": "shell",
+      "label": "stop-debug-docker",
+      "command": "make stop-debug-docker",
+    },
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "strict": true,
+    "lib": [
+      "esnext"
+    ],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noUncheckedIndexedAccess": true,
+    "target": "esnext",
+  },
+  "include": [
+    "**/*"
+  ],
+  "ts-node": {
+    "transpileOnly": true,
+    "esm": true
+  }
+}
