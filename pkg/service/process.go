@@ -19,14 +19,26 @@ type ProcessSubscriber struct {
 }
 
 type ProcessService struct {
-	procManager *process.ProcessManager
-
 	logger *zap.SugaredLogger
+
+	procManager *process.ProcessManager
 
 	subscribersLock   sync.RWMutex
 	stdoutSubscribers map[rpc.ID]*ProcessSubscriber
 	stderrSubscribers map[rpc.ID]*ProcessSubscriber
 	exitSubscribers   map[rpc.ID]*ProcessSubscriber
+}
+
+func NewProcessService(logger *zap.SugaredLogger) *ProcessService {
+	ps := &ProcessService{
+		logger:            logger,
+		stdoutSubscribers: make(map[rpc.ID]*ProcessSubscriber),
+		stderrSubscribers: make(map[rpc.ID]*ProcessSubscriber),
+		exitSubscribers:   make(map[rpc.ID]*ProcessSubscriber),
+		procManager:       process.NewProcessManager(),
+	}
+
+	return ps
 }
 
 func (ps *ProcessService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID]*ProcessSubscriber, processID process.ProcessID) (*ProcessSubscriber, error) {
@@ -101,18 +113,6 @@ func (ps *ProcessService) getSubscribers(subs map[rpc.ID]*ProcessSubscriber, pro
 	}
 
 	return processSubscribers
-}
-
-func NewProcessService(logger *zap.SugaredLogger) *ProcessService {
-	ps := &ProcessService{
-		stdoutSubscribers: make(map[rpc.ID]*ProcessSubscriber),
-		stderrSubscribers: make(map[rpc.ID]*ProcessSubscriber),
-		exitSubscribers:   make(map[rpc.ID]*ProcessSubscriber),
-		logger:            logger,
-		procManager:       process.NewProcessManager(),
-	}
-
-	return ps
 }
 
 // Subscription

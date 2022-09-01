@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/devbookhq/devbookd/pkg/env"
 	"github.com/drael/GOnetstat"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
@@ -57,11 +58,12 @@ const (
 // https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
 
 type CodeSnippetService struct {
+	logger *zap.SugaredLogger
+	env    *env.Env
+
 	cmd     *exec.Cmd
 	mu      sync.Mutex
 	running bool
-
-	logger *zap.SugaredLogger
 
 	// The reason for caching cmd's outputs is if a client connects while the command
 	// is already running we can send all the output that has happened since the start
@@ -77,9 +79,10 @@ type CodeSnippetService struct {
 	scanOpenedPortsSubscribers map[rpc.ID]*subscriber
 }
 
-func NewCodeSnippetService(logger *zap.SugaredLogger) *CodeSnippetService {
+func NewCodeSnippetService(logger *zap.SugaredLogger, env *env.Env) *CodeSnippetService {
 	cs := &CodeSnippetService{
 		logger:                     logger,
+		env:                        env,
 		stdoutSubscribers:          make(map[rpc.ID]*subscriber),
 		stderrSubscribers:          make(map[rpc.ID]*subscriber),
 		stateSubscribers:           make(map[rpc.ID]*subscriber),
@@ -226,21 +229,21 @@ func (cs *CodeSnippetService) scanRunCmdOut(pipe io.ReadCloser, t outType) {
 }
 
 func (cs *CodeSnippetService) runCmd(code string, envVars *map[string]string) {
-	if err := os.WriteFile(entrypointFullPath, []byte(code), 0755); err != nil {
+	if err := os.WriteFile(cs.env.EntrypointFullPath(), []byte(code), 0755); err != nil {
 		cs.logger.Errorw("Failed to write to the entrypoint file",
-			"entrypointFullPath", entrypointFullPath,
+			"entrypointFullPath", cs.env.EntrypointFullPath(),
 			"error", err,
 		)
 	}
 
-	cmdToExecute := runCmd
+	cmdToExecute := cs.env.RunCMD()
 
-	for _, arg := range parsedRunArgs {
+	for _, arg := range cs.env.ParsedRunArgs() {
 		cmdToExecute = cmdToExecute + " " + arg
 	}
 
 	cs.cmd = exec.Command("sh", "-c", "-l", cmdToExecute)
-	cs.cmd.Dir = workdir
+	cs.cmd.Dir = cs.env.Workdir()
 
 	formattedVars := os.Environ()
 

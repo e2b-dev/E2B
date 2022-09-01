@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/devbookhq/devbookd/pkg/env"
 	"github.com/devbookhq/devbookd/pkg/process"
 	"github.com/devbookhq/devbookd/pkg/terminal"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -23,10 +24,10 @@ type TerminalSubscriber struct {
 }
 
 type TerminalService struct {
-	workdir     string
-	termManager *terminal.TerminalManager
-
 	logger *zap.SugaredLogger
+	env    *env.Env
+
+	termManager *terminal.TerminalManager
 
 	subscribersLock                   sync.RWMutex
 	terminalDataSubscribers           map[rpc.ID]*TerminalSubscriber
@@ -84,12 +85,12 @@ func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalSubscriber, t
 	return terminalSubscribers
 }
 
-func NewTerminalService(logger *zap.SugaredLogger, workdir string) *TerminalService {
+func NewTerminalService(logger *zap.SugaredLogger, env *env.Env) *TerminalService {
 	ts := &TerminalService{
-		workdir:                           workdir,
+		logger:                            logger,
+		env:                               env,
 		terminalChildProcessesSubscribers: make(map[rpc.ID]*TerminalSubscriber),
 		terminalDataSubscribers:           make(map[rpc.ID]*TerminalSubscriber),
-		logger:                            logger,
 		termManager:                       terminal.NewTerminalManager(),
 	}
 
@@ -159,7 +160,7 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 	if !ok {
 		ts.logger.Info("Creating a new terminal")
 
-		newTerm, err := ts.termManager.Add(ts.workdir, cols, rows)
+		newTerm, err := ts.termManager.Add(ts.env.Workdir(), cols, rows)
 		if err != nil {
 			errMsg := fmt.Sprintf("Failed to start new terminal: %v", err)
 			ts.logger.Info(errMsg)

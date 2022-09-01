@@ -31,9 +31,11 @@ func NewFilesystemService(logger *zap.SugaredLogger) *FilesystemService {
 func (fs *FilesystemService) ListAllFiles(path string) (*[]FileInfoResponse, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to list files in %s: %+v", path, err)
-		fs.logger.Errorw(errMsg.Error())
-		return nil, errMsg
+		fs.logger.Errorw("failed to list files in a directory",
+			"directoryPath", path,
+			"error", err,
+		)
+		return nil, fmt.Errorf("failed to list files in '%s': %+v", path, err)
 	}
 
 	results := []FileInfoResponse{}
@@ -49,21 +51,24 @@ func (fs *FilesystemService) ListAllFiles(path string) (*[]FileInfoResponse, err
 }
 
 func (fs *FilesystemService) RemoveFile(path string) error {
-	err := os.Remove(path)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to remove file %s: %+v", path, err)
-		fs.logger.Errorw(errMsg.Error())
-		return err
+	if err := os.Remove(path); err != nil {
+		fs.logger.Errorw("failed to remove a file",
+			"filePath", path,
+			"error", err,
+		)
+		return fmt.Errorf("failed to remove a file '%s': %+v", path, err)
 	}
 	return nil
 }
 
 func (fs *FilesystemService) WriteFile(path string, content string) error {
-	err := os.WriteFile(path, []byte(content), 0755)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to write to the file %s: %+v", path, err)
-		fs.logger.Errorw(errMsg.Error())
-		return err
+	if err := os.WriteFile(path, []byte(content), 0755); err != nil {
+		fs.logger.Errorw("failed to write to a file",
+			"filePath", path,
+			"content", content,
+			"error", err,
+		)
+		return fmt.Errorf("failed to write to the file '%s': %+v", path, err)
 	}
 	return nil
 }
@@ -71,10 +76,12 @@ func (fs *FilesystemService) WriteFile(path string, content string) error {
 func (fs *FilesystemService) ReadFile(path string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to read the file %s: %+v", path, err)
-		fs.logger.Errorw(errMsg.Error())
-		return "", err
+		fs.logger.Errorw("failed to read a file",
+			"filePath", path,
+			"error", err,
+		)
+		return "", fmt.Errorf("failed to read a file '%s': %+v", path, err)
 	}
-	content := string(data)
-	return content, nil
+
+	return string(data), nil
 }

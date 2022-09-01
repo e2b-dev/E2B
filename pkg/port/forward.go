@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/devbookhq/devbookd/pkg/env"
 	"github.com/drael/GOnetstat"
 	"go.uber.org/zap"
 )
@@ -36,13 +37,13 @@ type Forwarder struct {
 
 func NewForwarder(
 	logger *zap.SugaredLogger,
+	env *env.Env,
 	period time.Duration,
-	sourceIP net.IP,
 ) *Forwarder {
 	return &Forwarder{
 		logger:   logger,
 		ticker:   time.NewTicker(period),
-		sourceIP: sourceIP,
+		sourceIP: env.DefaultGatewayIP(),
 		ports:    make(map[string]*PortToForward),
 	}
 }
