@@ -16,17 +16,23 @@ changelog:
   skip: true
 
 release:
+  # If set to auto, will mark the release as not ready for production
+  # in case there is an indicator for this in the tag e.g. v1.0.0-rc1
+  # If set to true, will mark the release as not ready for production.
   prerelease: auto
+
+snapshot:
+  name_template: "{{ .Branch }}-{{ .ShortCommit }}"
 
 checksum:
   name_template: 'checksums.txt'
 
-nfpms:
-  - maintainer: Devbook
-    description: Devbook Daemon
-    homepage: https://github.com/devbookhq/devbookd
-    license: MIT
-    formats:
-      - apk
-      - deb
-      - rpm
+#nfpms:
+#  - maintainer: Devbook
+#    description: Devbook Daemon
+#    homepage: https://github.com/devbookhq/devbookd
+#    license: MIT
+#    formats:
+#      - apk
+#      - deb
+#      - rpm
