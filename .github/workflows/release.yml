@@ -24,13 +24,12 @@ jobs:
   #      env:
   #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
   goreleaser:
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'dev-')
     # if: needs.release.outputs.new-release-published == 'true'
+    #needs:
+    #  - release
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'dev-')
     name: GoReleaser
-    needs:
-      - release
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
