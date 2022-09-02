@@ -55,16 +55,16 @@ class Session extends SessionConnection {
     await Promise.all([
       this.codeSnippetOpts?.onStateChange
         ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStateChange, 'state')
-        : Promise.resolve(),
+        : undefined,
       this.codeSnippetOpts?.onStderr
         ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStderr, 'stderr')
-        : Promise.resolve(),
+        : undefined,
       this.codeSnippetOpts?.onStdout
         ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onStdout, 'stdout')
-        : Promise.resolve(),
+        : undefined,
       this.codeSnippetOpts?.onScanPorts
         ? this.subscribe(codeSnippetMethod, this.codeSnippetOpts.onScanPorts, 'scanOpenedPorts')
-        : Promise.resolve(),
+        : undefined,
     ])
 
     // Init CodeSnippet handler
@@ -168,7 +168,7 @@ class Session extends SessionConnection {
             await Promise.all([
               onStdoutSubscriptionID ? this.unsubscribe(onStdoutSubscriptionID) : undefined,
               onStderrSubscriptionID ? this.unsubscribe(onStderrSubscriptionID) : undefined,
-              this.call(`${terminalMethod}_kill`, [processID]),
+              this.call(`${processMethod}_kill`, [processID]),
             ])
 
             onExit?.()
