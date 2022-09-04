@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/devbookhq/devbookd/internal/env"
+	"github.com/devbookhq/devbookd/internal/port"
 	"github.com/drael/GOnetstat"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
@@ -77,9 +78,24 @@ type CodeSnippetService struct {
 	stderrSubscribers          map[rpc.ID]*subscriber
 	stateSubscribers           map[rpc.ID]*subscriber
 	scanOpenedPortsSubscribers map[rpc.ID]*subscriber
+
+	scannerSubscriber *port.ScannerSubscriber
 }
 
-func NewCodeSnippetService(logger *zap.SugaredLogger, env *env.Env) *CodeSnippetService {
+func NewCodeSnippetService(
+	logger *zap.SugaredLogger,
+	env *env.Env,
+	portScanner *port.Scanner,
+) *CodeSnippetService {
+	scannerSub := portScanner.AddSubscriber(
+		"code-snippet-service",
+		// We only want to forward ports that are actively listening on localhost.
+		&port.ScannerFilter{
+			IPs:   []string{"127.0.0.1", "localhost"},
+			State: "LISTEN",
+		},
+	)
+
 	cs := &CodeSnippetService{
 		logger:                     logger,
 		env:                        env,
@@ -87,8 +103,11 @@ func NewCodeSnippetService(logger *zap.SugaredLogger, env *env.Env) *CodeSnippet
 		stderrSubscribers:          make(map[rpc.ID]*subscriber),
 		stateSubscribers:           make(map[rpc.ID]*subscriber),
 		scanOpenedPortsSubscribers: make(map[rpc.ID]*subscriber),
+		scannerSubscriber:          scannerSub,
 	}
-	go cs.scanTCPPorts()
+
+	go cs.listenToOpenPorts()
+
 	return cs
 }
 
@@ -145,6 +164,14 @@ func (cs *CodeSnippetService) setRunning(b bool) {
 		state = CodeSnippetStateStopped
 	}
 	cs.notifyState(state)
+}
+
+func (cs *CodeSnippetService) listenToOpenPorts() {
+	for {
+		if procs, ok := <-cs.scannerSubscriber.Messages; ok {
+			cs.notifyScanOpenedPorts(procs)
+		}
+	}
 }
 
 func (cs *CodeSnippetService) scanTCPPorts() {

@@ -29,7 +29,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 func main() {
 	l, err := log.NewLogger()
 	if err != nil {
-		// We panic because we require logger. Without it we don't know what is happening.
+		// We panic because we require logger. Without it we don't know what's happening.
 		panic(err)
 	}
 	logger = l
@@ -42,13 +42,16 @@ func main() {
 		panic(err)
 	}
 
-	portForwarder := port.NewForwarder(logger, env, 1*time.Second)
-	go portForwarder.ScanAndForward()
+	portScanner := port.NewScanner(1 * time.Second)
+	go portScanner.ScanAndBroadcast()
 
-	// This server is for Websocket-RPC communication
+	portForwarder := port.NewForwarder(logger, env, portScanner)
+	go portForwarder.StartForwarding()
+
+	// This server is for Websocket-RPC communication.
 	rpcServer := rpc.NewServer()
 
-	codeSnippetService := service.NewCodeSnippetService(logger, env)
+	codeSnippetService := service.NewCodeSnippetService(logger, env, portScanner)
 	if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
 		logger.Errorw("failed to register code snippet service", "error", err)
 	}

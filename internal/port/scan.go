@@ -1,68 +1,55 @@
 package port
 
 import (
-	"net"
+	"sync"
 	"time"
 
 	"github.com/drael/GOnetstat"
 )
 
-type PortScanFilter struct {
-	IPs   []net.IP
-	State string
-}
-
-func (sf *PortScanFilter) Match(proc *GOnetstat.Process) bool {
-	// Filter is an empty struct.
-	if sf.State == "" && len(sf.IPs) == 0 {
-		return false
-	}
-
-	ipMatch := false
-	for _, ip := range sf.IPs {
-		if ip.To4().String() == proc.Ip {
-			ipMatch = true
-			break
-		}
-	}
-
-	if ipMatch == true && sf.State == proc.State {
-		return true
-	}
-
-	return false
-}
-
 type Scanner struct {
 	ticker *time.Ticker
 
 	Processes chan GOnetstat.Process
-	Filter    *PortScanFilter
+
+	subMutex    sync.RWMutex                  // Lock for manipulation with the subscribers map.
+	subscribers map[string]*ScannerSubscriber // Map of subscribers id:Subscriber.
 }
 
-func NewScanner(period time.Duration, filter *PortScanFilter) *Scanner {
+func NewScanner(period time.Duration) *Scanner {
 	return &Scanner{
-		ticker:    time.NewTicker(period),
-		Processes: make(chan GOnetstat.Process),
-		Filter:    filter,
+		ticker:      time.NewTicker(period),
+		Processes:   make(chan GOnetstat.Process),
+		subscribers: map[string]*ScannerSubscriber{},
 	}
 }
 
-func (s *Scanner) Scan() {
+func (s *Scanner) AddSubscriber(id string, filter *ScannerFilter) *ScannerSubscriber {
+	s.subMutex.Lock()
+	defer s.subMutex.Unlock()
+
+	subscriber := NewScannerSubscriber(id, filter)
+	s.subscribers[id] = subscriber
+
+	return subscriber
+}
+
+func (s *Scanner) Unsubscribe(sub *ScannerSubscriber) {
+	s.subMutex.Lock()
+	delete(s.subscribers, sub.ID())
+	s.subMutex.Unlock()
+
+	sub.Destroy()
+}
+
+// ScanAndBroadcast starts scanning open TCP ports and broadcasts every open port to all subscribers.
+func (s *Scanner) ScanAndBroadcast() {
 	for range s.ticker.C {
 		processes := GOnetstat.Tcp()
-
-		for _, proc := range processes {
-			// Filter isn't specified.
-			if s.Filter == nil {
-				s.Processes <- proc
-				continue
-			}
-
-			// If the filter matched a process, we will send it to a channel.
-			if s.Filter.Match(&proc) {
-				s.Processes <- proc
-			}
+		for _, sub := range s.subscribers {
+			go func(sub *ScannerSubscriber) {
+				sub.Signal(processes)
+			}(sub)
 		}
 	}
 }
