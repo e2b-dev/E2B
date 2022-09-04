@@ -118,57 +118,6 @@ func (f *Forwarder) StartForwarding() {
 	}
 }
 
-// ScanAndForward starts scanning opened ports 127.0.0.1/localhost
-// automatically tries to forward each of them to the PortForwarder.defaultGateway
-//func (f *Forwarder) ScanAndForward() {
-//	for range f.ticker.C {
-//		processes := GOnetstat.Tcp()
-//
-//		// Now we are going to refresh all ports that are being forwarded. Maybe add new ones
-//		// and maybe remove some.
-//
-//		// Go through the ports that are currently being forwarded and set all of them
-//		// to the `DELETE` state. We don't know yet if they will be there after refresh.
-//		for _, v := range f.ports {
-//			v.state = "DELETE"
-//		}
-//
-//		// Let's collect all currently opened ports on the localhost.
-//		// We also update our map of ports and mark the opened ones with the "FORWARD" state - this will make sure we won't delete them later.
-//		for _, p := range processes {
-//			if (p.Ip == "127.0.0.1" || p.Ip == "localhost") && p.State == "LISTEN" {
-//				key := fmt.Sprintf("%s-%v", p.Pid, p.Port)
-//
-//				// We check if the opened port is in our map of forwarded ports.
-//				val, ok := f.ports[key]
-//				if ok {
-//					// Just mark the port as being forwarded so we don't delete it.
-//					// The actual socat process that handles forwarding should be running from the last iteration.
-//					val.state = "FORWARD"
-//				} else {
-//					f.logger.Infow("Detected new opened port on localhost that is not forwarded",
-//						"ip", p.Ip,
-//						"port", p.Port,
-//						"state", p.State,
-//					)
-//					// The opened port wasn't in the map so we create a new PortToForward and start forwarding.
-//					ptf := &PortToForward{p.Pid, p.Port, "FORWARD", nil}
-//					f.ports[key] = ptf
-//					f.starPortForwarding(ptf)
-//				}
-//			}
-//		}
-//
-//		// We go through the ports map one more time and stop forwarding all ports
-//		// that stayed marked as "DELETE"
-//		for _, v := range f.ports {
-//			if v.state == "DELETE" {
-//				f.stopPortForwarding(v)
-//			}
-//		}
-//	}
-//}
-
 func (f *Forwarder) starPortForwarding(p *PortToForward) {
 	// https://unix.stackexchange.com/questions/311492/redirect-application-listening-on-localhost-to-listening-on-external-interface
 	// socat -d -d TCP4-LISTEN:4000,bind=169.254.0.21,fork TCP4:localhost:4000
