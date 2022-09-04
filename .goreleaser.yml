@@ -12,6 +12,15 @@ builds:
       - darwin_arm64
       - linux_amd64
       - linux_arm64
+
+archives:
+  - id: latest
+    builds:
+      - devbookd
+    wrap_in_directory: false
+    format: tar.gz
+    name_template: "devbookd_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+
 changelog:
   skip: true
 
