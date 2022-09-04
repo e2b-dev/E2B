@@ -102,6 +102,8 @@ server {
   proxy_set_header Upgrade $http_upgrade;
   proxy_set_header Connection "Upgrade";
 
+  proxy_hide_header x-frame-options;
+
   proxy_http_version 1.1;
 
   proxy_read_timeout 7d;

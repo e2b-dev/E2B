@@ -10,7 +10,16 @@ set -euo pipefail
 
 mkdir env
 
-mv devbookd/bin/devbookd env
+# Download latest release of devbookd.
+os="linux"
+arch="amd64"
+exe="env/devbookd"
+devbookd_uri="https://github.com/devbookhq/devbookd/releases/latest/download/devbookd_${os}_${arch}.tar.gz"
+curl --fail --location --progress-bar --output "$exe.tar.gz" "$devbookd_uri"
+tar xzf "$exe.tar.gz" -C env
+chmod +x "$exe"
+rm "$exe.tar.gz"
+
 cp -r alpine env/
 cp -r ubuntu env/
 

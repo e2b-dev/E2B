@@ -22,7 +22,7 @@ variable "server_cluster_size" {
 
 variable "server_machine_type" {
   type    = string
-  default = "n1-standard-4"
+  default = "n1-standard-1"
 }
 
 variable "client_cluster_size" {
