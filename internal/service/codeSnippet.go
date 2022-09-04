@@ -89,11 +89,7 @@ func NewCodeSnippetService(
 ) *CodeSnippetService {
 	scannerSub := portScanner.AddSubscriber(
 		"code-snippet-service",
-		// We only want to forward ports that are actively listening on localhost.
-		&port.ScannerFilter{
-			IPs:   []string{"127.0.0.1", "localhost"},
-			State: "LISTEN",
-		},
+		nil,
 	)
 
 	cs := &CodeSnippetService{
