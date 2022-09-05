@@ -30,6 +30,10 @@ variable "api_admin_key" {
   type = string
 }
 
+variable "lightstep_api_key" {
+  type = string
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -55,6 +59,7 @@ job "orchestration-api" {
         SUPABASE_URL = var.supabase_url
         SUPABASE_KEY = var.supabase_key
         API_ADMIN_KEY = var.api_admin_key
+        LIGHTSTEP_API_KEY = var.lightstep_api_key
       }
 
       config {

@@ -33,7 +33,14 @@ import (
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	pstructs "github.com/hashicorp/nomad/plugins/shared/structs"
 	"github.com/txn2/txeh"
+
+	// "go.opentelemetry.io/otel/attribute"
+  // "go.opentelemetry.io/otel/trace"
+	// "go.opentelemetry.io/otel"
+
 )
+
+// https://opentelemetry.io/docs/instrumentation/go/getting-started/
 
 const (
 	// pluginName is the name of the plugin

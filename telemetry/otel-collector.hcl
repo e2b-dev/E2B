@@ -2,15 +2,21 @@ variable "gcp_zone" {
   type = string
 }
 
+variable "lightstep_api_key" {
+  type = string
+}
+
 variables {
   otel_image = "otel/opentelemetry-collector:0.54.0"
 }
 
-job "nomad-otel-collector" {
+job "otel-collector" {
   datacenters = [var.gcp_zone]
   type        = "service"
 
-  group "otel-collector" {
+  priority = 95
+
+  group "collector" {
     count = 1
 
     network {
@@ -22,37 +28,20 @@ job "nomad-otel-collector" {
       port "grpc" {
         to = 4317
       }
-
-      port "jaeger-grpc" {
-        to = 14250
-      }
-
-      port "jaeger-thrift-http" {
-        to = 14268
-      }
-
-      port "zipkin" {
-        to = 9411
-      }
-
-      # Extensions
-      port "zpages" {
-        to = 55679
-      }
     }
 
     service {
-      name     = "otel-collector"
-      port     = "grpc"
-      tags     = ["grpc"]
-      provider = "nomad"
+      name = "otel-collector"
+      port = "grpc"
+      tags = ["grpc"]
     }
 
-    task "otel-collector" {
+    task "start-collector" {
       driver = "docker"
 
       config {
-        image = var.otel_image
+        network_mode = "host"
+        image        = var.otel_image
 
         entrypoint = [
           "/otelcol",
@@ -62,16 +51,12 @@ job "nomad-otel-collector" {
         ports = [
           "metrics",
           "grpc",
-          "jaeger-grpc",
-          "jaeger-thrift-http",
-          "zipkin",
-          "zpages",
         ]
       }
 
       resources {
         cpu    = 500
-        memory = 1024
+        memory = 512
       }
 
       template {
@@ -80,28 +65,31 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: 'nomad-server'
-          scrape_inteval: 10s
-          scrape_timeout: 20s
-          metrics_path: '/v1/metrics?format=prometheus'
+        - job_name: prometheus
+          scrape_interval: 10s
+          scrape_timeout: 8s
+          metrics_path: '/v1/metrics'
           params:
             format: ['prometheus']
           static_configs:
             - targets: ['localhost:4646']
 
 exporters:
-  otlp/metrics:
-    endpoint: "api.honeycomb.io:443"
+  logging:
+    loglevel: debug
+  otlp/lightstep:
+    endpoint: ingest.lightstep.com:443
     headers:
-      "x-honeycomb-team": "DfR4iT3PC1ImOt8HGSwOdB"
-      "x-honeycomb-dataset": "nomad"
+      "lightstep-access-token": ${var.lightstep_api_key}
 
 service:
+  telemetry:
+    logs:
+      level: debug
   pipelines:
     metrics:
       receivers: [prometheus]
-      processors: []
-      exporters: [otlp/metrics]
+      exporters: [otlp/lightstep, logging]
 EOF
 
         destination = "local/config/otel-collector-config.yaml"

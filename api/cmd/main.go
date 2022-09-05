@@ -10,16 +10,24 @@ import (
 	"time"
 
 	"github.com/gin-contrib/cors"
-	"github.com/lightstep/otel-launcher-go/launcher"
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/devbookhq/orchestration-services/api/internal/handlers"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
+
+	"github.com/lightstep/otel-launcher-go/launcher"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
-var ignoreLoggingForPaths = []string{"/health"}
+var (
+	tracer                trace.Tracer
+	ignoreLoggingForPaths = []string{"/health"}
+	serviceName           = "orchestration-api"
+)
 
 func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	swagger, err := api.GetSwagger()
@@ -34,6 +42,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 
 	r := gin.New()
 	r.Use(
+		otelgin.Middleware(serviceName),
 		gin.LoggerWithWriter(gin.DefaultWriter, ignoreLoggingForPaths...),
 		gin.Recovery(),
 	)
@@ -56,52 +65,13 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 }
 
 func main() {
-	// Telemetry setup
-
-	ctx := context.Background()
-
-	// Configure a new exporter using environment variables for sending data to Honeycomb over gRPC.
-	exporter, err := otlptracegrpc.New(ctx)
-	if err != nil {
-		log.Fatalf("failed to initialize exporter: %v", err)
-	}
-
-	// Create a new tracer provider with a batch span processor and the otlp exporter.
-	tp := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-	)
-
-	// Handle shutdown errors in a sensible manner where possible
-	defer func() { _ = tp.Shutdown(ctx) }()
-
-	// Set the Tracer Provider global
-	otel.SetTracerProvider(tp)
-
-	// Register the trace context and baggage propagators so data is propagated across services/processes.
-	otel.SetTextMapPropagator(
-		propagation.NewCompositeTextMapPropagator(
-			propagation.TraceContext{},
-			propagation.Baggage{},
-		),
-	)
-
-	// Implement an HTTP Handler func to be instrumented
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World")
-	})
-
-	// Initialize HTTP handler instrumentation
-	otelHandler := otelhttp.NewHandler(handler, "hello")
-	http.Handle("/hello", otelHandler)
-
-	// Run web server
-	log.Fatal(http.ListenAndServe(":8000", nil))
-
 	otelLauncher := launcher.ConfigureOpentelemetry(
-		launcher.WithServiceName("service-123"),
-		launcher.WithAccessToken("ZalSXzlSX3N89FVEX6wT2JR7Zd2GBo9bv9ewUddPmA8XYWxUFBIGqKSUFUV9xAMlFtmwfLOd4y3DT9GNZ08NGbmQaOqqLKGg/krQ9JkX"),
+		launcher.WithServiceName(serviceName),
+		launcher.WithAccessToken(os.Getenv("LIGHTSTEP_API_KEY")),
 	)
 	defer otelLauncher.Shutdown()
+
+	tracer = otel.Tracer("orchestration-api")
 
 	rand.Seed(time.Now().UnixNano())
 

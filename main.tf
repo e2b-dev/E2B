@@ -49,8 +49,8 @@ provider "nomad" {
   address = "http://${module.cluster.server_proxy_ip}"
 }
 
-module "monitoring" {
-  source = "./monitoring"
+module "telemetry" {
+  source = "./telemetry"
 
   depends_on = [
     module.cluster,
