@@ -13,6 +13,7 @@ import (
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/devbookhq/orchestration-services/api/internal/handlers"
+	middlewareWrapper "github.com/devbookhq/orchestration-services/api/internal/middleware"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
@@ -41,8 +42,10 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	swagger.Servers = nil
 
 	r := gin.New()
+
+	otelMiddleware := middlewareWrapper.ExcludeRoutes(otelgin.Middleware(serviceName), ignoreLoggingForPaths...)
 	r.Use(
-		otelgin.Middleware(serviceName),
+		otelMiddleware,
 		gin.LoggerWithWriter(gin.DefaultWriter, ignoreLoggingForPaths...),
 		gin.Recovery(),
 	)
