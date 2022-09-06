@@ -47,3 +47,7 @@ Subscribers:
 Methods:
 - `{"jsonrpc": "2.0", "method": "terminal_start", "params": ["", 100, 80], "id": 5}` - Start a new terminal session
 - `{"jsonrpc": "2.0", "method": "terminal_data", "params": ["cblpusiko5ps759fdas0", "sleep 10\n"], "id": 57}` - Execute input in a specified terminal
+
+
+## Resizing fc-envs (or /) disk
+After modifying https://console.cloud.google.com/compute/disksDetail/zones/us-central1-a/disks/orch-firecracker-envs?project=devbookhq disk size in the dashboard you need to resize the partition by running the `resize2fs /dev/sdb` (or `resize2fs /dev/sda1`) command.
