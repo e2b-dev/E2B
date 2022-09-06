@@ -23,7 +23,7 @@ variable "client_proxy_port_number" {
 }
 
 variable "session_proxy_service_name" {
-  type  = string
+  type = string
 }
 
 job "client-proxy" {
@@ -50,8 +50,9 @@ job "client-proxy" {
       driver = "docker"
 
       config {
-        image = "nginx"
-        ports = [var.client_proxy_health_port_name, var.client_proxy_port_name]
+        image        = "nginx"
+        network_mode = "host"
+        ports        = [var.client_proxy_health_port_name, var.client_proxy_port_name]
         volumes = [
           "local:/etc/nginx/conf.d",
         ]
@@ -60,9 +61,9 @@ job "client-proxy" {
       template {
         left_delimiter  = "[["
         right_delimiter = "]]"
-        destination   = "local/load-balancer.conf"
-        change_mode   = "signal"
-        change_signal = "SIGHUP"
+        destination     = "local/load-balancer.conf"
+        change_mode     = "signal"
+        change_signal   = "SIGHUP"
         data            = <<EOF
 map $http_upgrade $conn_upgrade {
   default     "";
@@ -106,6 +107,11 @@ server {
     access_log off;
     add_header 'Content-Type' 'application/json';
     return 200 '{"status":"UP"}';
+  }
+
+  location /status {
+    stub_status;
+    allow all;
   }
 }
 EOF

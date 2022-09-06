@@ -248,6 +248,10 @@ EOF
   "connect": {
     "enabled": true
   },
+  "telemetry": {
+    "prometheus_retention_time": "60s",
+    "disable_hostname": true
+  },
   "advertise_addr": "$instance_ip_address",
   "bind_addr": "$instance_ip_address",
   $bootstrap_expect

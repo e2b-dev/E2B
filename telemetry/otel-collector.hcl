@@ -7,7 +7,7 @@ variable "lightstep_api_key" {
 }
 
 variables {
-  otel_image = "otel/opentelemetry-collector:0.54.0"
+  otel_image = "otel/opentelemetry-collector-contrib:0.59.0"
 }
 
 job "otel-collector" {
@@ -43,8 +43,7 @@ job "otel-collector" {
         network_mode = "host"
         image        = var.otel_image
 
-        entrypoint = [
-          "/otelcol",
+        args = [
           "--config=local/config/otel-collector-config.yaml",
         ]
 
@@ -62,34 +61,87 @@ job "otel-collector" {
       template {
         data = <<EOF
 receivers:
+  nginx/client-proxy:
+    endpoint: 'http://localhost:3001/status'
+    collection_interval: 10s
+  nginx/session-proxy:
+    endpoint: 'http://localhost:3004/status'
+    collection_interval: 10s
+  hostmetrics:
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+      load:
+      memory:
+      network:
+      paging:
+      process:
+      processes:
   prometheus:
     config:
       scrape_configs:
-        - job_name: prometheus
+        - job_name: nomad
           scrape_interval: 10s
-          scrape_timeout: 8s
+          scrape_timeout: 5s
           metrics_path: '/v1/metrics'
           params:
             format: ['prometheus']
           static_configs:
             - targets: ['localhost:4646']
+        - job_name: consul
+          scrape_interval: 10s
+          scrape_timeout: 5s
+          metrics_path: '/v1/agent/metrics'
+          params:
+            format: ['prometheus']
+          static_configs:
+            - targets: ['localhost:8500']
+
+processors:
+  attributes/session-proxy:
+    actions:
+      - key: proxy
+        value: session
+        action: upsert
+  attributes/client-proxy:
+    actions:
+      - key: proxy
+        value: client
+        action: upsert
 
 exporters:
-  logging:
-    loglevel: debug
+  # logging:
+  #   loglevel: debug
   otlp/lightstep:
     endpoint: ingest.lightstep.com:443
     headers:
       "lightstep-access-token": ${var.lightstep_api_key}
 
 service:
-  telemetry:
-    logs:
-      level: debug
+  # telemetry:
+  #   logs:
+  #     level: debug
   pipelines:
+    metrics/client-proxy:
+      receivers:
+        - nginx/client-proxy
+      processors: [attributes/client-proxy]
+      exporters:
+        - otlp/lightstep
+    metrics/session-proxy:
+      receivers:
+        - nginx/session-proxy
+      processors: [attributes/session-proxy]
+      exporters:
+        - otlp/lightstep
     metrics:
-      receivers: [prometheus]
-      exporters: [otlp/lightstep, logging]
+      receivers: 
+        - prometheus
+        - hostmetrics
+      exporters:
+        - otlp/lightstep
+      #   - logging
 EOF
 
         destination = "local/config/otel-collector-config.yaml"

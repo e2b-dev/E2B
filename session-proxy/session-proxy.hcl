@@ -11,11 +11,11 @@ variable "session_proxy_port_number" {
 }
 
 variable "session_proxy_port_name" {
-  type  = string
+  type = string
 }
 
 variable "session_proxy_service_name" {
-  type  = string
+  type = string
 }
 
 job "session-proxy" {
@@ -28,8 +28,8 @@ job "session-proxy" {
   }
 
   constraint {
-    operator  = "distinct_hosts"
-    value     = "true"
+    operator = "distinct_hosts"
+    value    = "true"
   }
 
   group "session-proxy" {
@@ -43,22 +43,25 @@ job "session-proxy" {
       port "session" {
         static = var.session_proxy_port_number
       }
+      port "status" {
+        static = 3004
+      }
     }
 
     service {
       name = var.session_proxy_service_name
       port = var.session_proxy_port_name
       meta {
-        Client = "${node.unique.id}"
+        Client = node.unique.id
       }
     }
 
     task "session-proxy" {
       driver = "docker"
       config {
-        image = "nginx"
+        image        = "nginx"
         network_mode = "host"
-        ports = [var.session_proxy_port_name]
+        ports        = [var.session_proxy_port_name, "status"]
         volumes = [
           "local:/etc/nginx/conf.d",
         ]
@@ -67,10 +70,10 @@ job "session-proxy" {
       template {
         left_delimiter  = "[["
         right_delimiter = "]]"
-        destination   = "local/load-balancer.conf"
-        change_mode   = "signal"
-        change_signal = "SIGHUP"
-        data = <<EOF
+        destination     = "local/load-balancer.conf"
+        change_mode     = "signal"
+        change_signal   = "SIGHUP"
+        data            = <<EOF
 map $host $dbk_port {
   default         "";
   "~^(?<p>\d+)-"  ":$p";
@@ -117,6 +120,15 @@ server {
       return 400 "Unsupported session domain";
     }
     proxy_pass $scheme://$dbk_session_id$dbk_port$request_uri;
+  }
+}
+
+server {
+  listen 3004;
+
+  location /status {
+    stub_status;
+    allow all;
   }
 }
 EOF
