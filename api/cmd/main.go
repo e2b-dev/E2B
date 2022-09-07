@@ -9,11 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/gin-contrib/cors"
-
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/devbookhq/orchestration-services/api/internal/handlers"
 	middlewareWrapper "github.com/devbookhq/orchestration-services/api/internal/middleware"
+	"github.com/gin-contrib/cors"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
@@ -73,6 +72,7 @@ func main() {
 		launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
 		launcher.WithMetricExporterInsecure(true),
 		launcher.WithSpanExporterInsecure(true),
+		launcher.WithPropagators([]string{"tracecontext", "baggage"}),
 		// TODO: Try to configure and use the logger for sending stdout/err through otel
 		// launcher.WithLogger(serviceName),
 	)
