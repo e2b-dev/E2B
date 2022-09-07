@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,6 +11,10 @@ import (
 	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
 	"github.com/devbookhq/orchestration-services/api/pkg/supabase"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type APIStore struct {
@@ -18,9 +23,12 @@ type APIStore struct {
 	supabase      *supabase.Client
 	NextId        int64
 	Lock          sync.Mutex
+	tracer        trace.Tracer
 }
 
 func NewAPIStore() *APIStore {
+	tracer := otel.Tracer("api")
+
 	nomadClient := nomad.InitNomadClient()
 	supabaseClient, err := supabase.NewClient()
 	if err != nil {
@@ -49,6 +57,7 @@ func NewAPIStore() *APIStore {
 		supabase:      supabaseClient,
 		NextId:        1000,
 		sessionsCache: cache,
+		tracer:        tracer,
 	}
 }
 
@@ -88,14 +97,47 @@ func (a *APIStore) validateAPIKey(apiKey *string) (string, error) {
 
 // This function wraps sending of an error in the Error format, and
 // handling the failure to marshal that.
-func sendAPIStoreError(c *gin.Context, code int, message string) {
+func (a *APIStore) sendAPIStoreError(c *gin.Context, code int, message string) {
 	apiErr := api.Error{
 		Code:    int32(code),
 		Message: message,
 	}
+
+	c.Error(fmt.Errorf(message))
 	c.JSON(code, apiErr)
 }
 
 func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
+}
+
+func (a *APIStore) ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) {
+	span := trace.SpanFromContext(ctx)
+
+	fmt.Println(name, attrs)
+
+	span.AddEvent(name,
+		trace.WithAttributes(attrs...),
+	)
+}
+
+func (a *APIStore) ReportCriticalError(ctx context.Context, err error) {
+	span := trace.SpanFromContext(ctx)
+
+	fmt.Fprint(os.Stderr, err.Error())
+
+	span.RecordError(err,
+		trace.WithStackTrace(true),
+	)
+	span.SetStatus(codes.Error, "critical error")
+}
+
+func (a *APIStore) ReportError(ctx context.Context, err error) {
+	span := trace.SpanFromContext(ctx)
+
+	fmt.Fprint(os.Stderr, err.Error())
+
+	span.RecordError(err,
+		trace.WithStackTrace(true),
+	)
 }

@@ -19,13 +19,13 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 	_, keyErr := a.validateAPIKey(params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
-		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
 
 	var env api.PostEnvsCodeSnippetIDJSONBody
 	if err := c.Bind(&env); err != nil {
-		sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
 	}
 
@@ -34,7 +34,7 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		fmt.Printf("error retrieving templates: %+v\n", err)
 	} else if slices.Contains(*templates, codeSnippetID) {
 		fmt.Printf("stopped request trying to recreate template environment %s", codeSnippetID)
-		sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
+		a.sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
 		return
 	}
 
@@ -51,7 +51,7 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		})
 		if err != nil {
 			fmt.Printf("error: %v\n", err)
-			sendAPIStoreError(
+			a.sendAPIStoreError(
 				c,
 				http.StatusInternalServerError,
 				fmt.Sprintf("Failed to create template env for code snippet '%s': %s", codeSnippetID, err),
@@ -63,7 +63,7 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		err := a.nomadClient.BuildEnv(codeSnippetID, string(env.Template), env.Deps)
 		if err != nil {
 			fmt.Printf("error: %v\n", err)
-			sendAPIStoreError(
+			a.sendAPIStoreError(
 				c,
 				http.StatusInternalServerError,
 				fmt.Sprintf("Failed to create env for code snippet '%s': %s", codeSnippetID, err),
@@ -83,7 +83,7 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 	_, keyErr := a.validateAPIKey(params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
-		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
 
@@ -92,7 +92,7 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 		fmt.Printf("error retrieving templates: %+v\n", err)
 	} else if slices.Contains(*templates, codeSnippetID) {
 		fmt.Printf("stopped request trying to delete template environment %s", codeSnippetID)
-		sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
+		a.sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
 		return
 	}
 
@@ -103,7 +103,7 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 		Execute(nil)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
-		sendAPIStoreError(
+		a.sendAPIStoreError(
 			c,
 			http.StatusBadRequest,
 			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", codeSnippetID, err),
@@ -115,7 +115,7 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		fmt.Printf("error: %v\n", err)
-		sendAPIStoreError(
+		a.sendAPIStoreError(
 			c,
 			http.StatusInternalServerError,
 			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", codeSnippetID, err),
@@ -133,13 +133,13 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 ) {
 	_, keyErr := a.validateAPIKey(params.ApiKey)
 	if keyErr != nil {
-		sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error with API token: %s", keyErr))
+		a.sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error with API token: %s", keyErr))
 		return
 	}
 
 	var envStateUpdate api.PutEnvsCodeSnippetIDStateJSONBody
 	if err := c.Bind(&envStateUpdate); err != nil {
-		sendAPIStoreError(
+		a.sendAPIStoreError(
 			c,
 			http.StatusBadRequest,
 			fmt.Sprintf("Error when parsing request: %s", err),
@@ -158,7 +158,7 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 
 	err = supabase.UpdateEnvState(a.supabase, codeSnippetID, envStateUpdate.State)
 	if err != nil {
-		sendAPIStoreError(
+		a.sendAPIStoreError(
 			c,
 			http.StatusBadRequest,
 			fmt.Sprintf("Failed to update env state for code snippet '%s': %s", codeSnippetID, err),
@@ -177,7 +177,7 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 	_, keyErr := a.validateAPIKey(params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
-		sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
 
@@ -186,7 +186,7 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 		fmt.Printf("error retrieving templates: %+v\n", err)
 	} else if slices.Contains(*templates, codeSnippetID) {
 		fmt.Printf("stopped request trying to update template environment %s", codeSnippetID)
-		sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
+		a.sendAPIStoreError(c, http.StatusBadRequest, "template envs cannot be modified")
 		return
 	}
 
@@ -198,7 +198,7 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 	err = a.nomadClient.UpdateEnv(codeSnippetID, session)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
-		sendAPIStoreError(
+		a.sendAPIStoreError(
 			c,
 			http.StatusInternalServerError,
 			fmt.Sprintf("Failed to update env for code snippet '%s': %+v", codeSnippetID, err),

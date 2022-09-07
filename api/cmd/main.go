@@ -11,14 +11,13 @@ import (
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	"github.com/devbookhq/orchestration-services/api/internal/handlers"
-	middlewareWrapper "github.com/devbookhq/orchestration-services/api/internal/middleware"
+	customMiddleware "github.com/devbookhq/orchestration-services/api/internal/middleware"
 	"github.com/gin-contrib/cors"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
 
 	"github.com/lightstep/otel-launcher-go/launcher"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var (
@@ -40,7 +39,8 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 
 	r := gin.New()
 
-	otelMiddleware := middlewareWrapper.ExcludeRoutes(otelgin.Middleware(serviceName), ignoreLoggingForPaths...)
+	// We use custom otelgin middleware because we want to log 4xx errors in the otel
+	otelMiddleware := customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), ignoreLoggingForPaths...)
 	r.Use(
 		otelMiddleware,
 		gin.LoggerWithWriter(gin.DefaultWriter, ignoreLoggingForPaths...),

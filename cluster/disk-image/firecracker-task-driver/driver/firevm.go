@@ -30,6 +30,9 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -97,7 +100,7 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string) (*op
 	return httpClient.Operations.LoadSnapshot(&snapshotConfig)
 }
 
-func (d *Driver) initializeContainer(
+func (d *Driver) initializeFC(
 	ctx context.Context,
 	cfg *drivers.TaskConfig,
 	taskConfig TaskConfig,
@@ -105,23 +108,33 @@ func (d *Driver) initializeContainer(
 	fcEnvsDisk string,
 	editEnabled bool,
 ) (*vminfo, error) {
+	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
+		attribute.String("session_id", slot.SessionID),
+		attribute.Int("ip_slot_index", slot.SlotIdx),
+	))
+	defer childSpan.End()
+
 	opts := newOptions()
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
-		log.Errorf("Error: %s", err)
-		return nil, err
+		errMsg := fmt.Errorf("error assembling FC config: %v", err)
+		d.ReportCriticalError(childCtx, errMsg)
+		return nil, errMsg
 	}
+
+	vmmChildCtx, vmmChildSpan := d.tracer.Start(childCtx, "fc-vmm")
+	defer vmmChildSpan.End()
+
+	vmmCtx, vmmCancel := context.WithCancel(vmmChildCtx)
+	defer vmmCancel()
 
 	d.logger.Info("Starting firecracker", "driver_initialize_container", hclog.Fmt("%v+", opts))
 	logger := log.New()
+	log.SetLevel(log.DebugLevel)
+	logger.SetLevel(log.DebugLevel)
 
-	if opts.Debug {
-		log.SetLevel(log.DebugLevel)
-		logger.SetLevel(log.DebugLevel)
-	}
-
-	vmmCtx, vmmCancel := context.WithCancel(ctx)
-	defer vmmCancel()
+	otelHook := NewOtelHook(vmmChildSpan)
+	logger.AddHook(otelHook)
 
 	machineOpts := []firecracker.Opt{
 		firecracker.WithLogger(log.NewEntry(logger)),
@@ -303,8 +316,14 @@ func (d *Driver) initializeContainer(
 
 	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, machineOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating machine: %v", err)
+		errMsg := fmt.Errorf("failed creating machine: %v", err)
+
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		return nil, errMsg
 	}
+	d.ReportEvent(ctx, "created vmm")
+
 	m.Handlers.Validation = m.Handlers.Validation.Clear()
 	m.Handlers.FcInit =
 		m.Handlers.FcInit.Clear().
@@ -314,13 +333,23 @@ func (d *Driver) initializeContainer(
 
 	err = m.Handlers.Run(ctx, m)
 	if err != nil {
-		return nil, fmt.Errorf("failed to start preboot FC: %v", err)
+		errMsg := fmt.Errorf("failed to start preboot FC: %v", err)
+
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		return nil, errMsg
 	}
+	d.ReportEvent(ctx, "started FC in preboot")
 
 	if _, err := loadSnapshot(vmmCtx, fcCfg.SocketPath, snapshotRootPath); err != nil {
 		m.StopVMM()
-		return nil, fmt.Errorf("failed to load snapshot: %v", err)
+		errMsg := fmt.Errorf("failed to load snapshot: %v", err)
+
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		return nil, errMsg
 	}
+	d.ReportEvent(ctx, "loaded snapshot")
 
 	defer func() {
 		if err != nil {
@@ -337,7 +366,11 @@ func (d *Driver) initializeContainer(
 
 	pid, errpid := m.PID()
 	if errpid != nil {
-		return nil, fmt.Errorf("failed getting pid for machine: %v", errpid)
+		errMsg := fmt.Errorf("failed getting pid for machine: %v", errpid)
+
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		return nil, errMsg
 	}
 
 	info := Instance_info{

@@ -74,8 +74,7 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 	}
 }
 
-func (h *taskHandle) run(driver *Driver) {
-
+func (h *taskHandle) run(ctx context.Context, driver *Driver) {
 	pid, err := strconv.Atoi(h.Info.Pid)
 	if err != nil {
 		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.Info.Pid))
@@ -120,7 +119,10 @@ func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskR
 	}
 }
 
-func (h *taskHandle) shutdown(driver *Driver) error {
+func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
+	childCtx, childSpan := driver.tracer.Start(ctx, "shutdown")
+	defer childSpan.End()
+
 	// var err error
 	if h.EditEnabled {
 		// if the build id and template id doesn't exist the code snippet was deleted
@@ -131,16 +133,21 @@ func (h *taskHandle) shutdown(driver *Driver) error {
 			if _, err := os.Stat(templateIDPath); err != nil {
 				// template id doesn't exist
 			} else {
-				err = saveEditSnapshot(h.Slot, &h.Info)
-				h.logger.Error("error persisting edit session %v", err)
+				saveEditErr := saveEditSnapshot(h.Slot, &h.Info)
+				if saveEditErr != nil {
+					driver.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
+				}
 			}
 		} else {
-			err = saveEditSnapshot(h.Slot, &h.Info)
-			h.logger.Error("error persisting edit session %v", err)
+			saveEditErr := saveEditSnapshot(h.Slot, &h.Info)
+			if saveEditErr != nil {
+				driver.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
+			}
 		}
 	}
 
 	h.Info.Cmd.Process.Signal(syscall.SIGTERM)
+	driver.ReportEvent(childCtx, "sent SIGTERM to FC process")
 
 	pid, pErr := strconv.Atoi(h.Info.Pid)
 	if pErr == nil {
@@ -173,8 +180,10 @@ func (h *taskHandle) shutdown(driver *Driver) error {
 		os.RemoveAll(oldEditDirPath)
 	}
 
+	driver.ReportEvent(childCtx, "waiting for state lock")
 	h.stateLock.Lock()
 	defer h.stateLock.Unlock()
+	driver.ReportEvent(childCtx, "passed state lock")
 
 	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0

@@ -4,11 +4,14 @@ init:
 build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/ .
 
+build-test:
+	CGO_ENABLED=0 GOOS=linux go build -o bin/ .
+
 # This is just for development - changes to fc-driver are lost when you redeploy the client instance
 # You run the parametrized command like this:
 # make client=orch-client-6w0k update-dev-driver
 update-dev-driver:
-	CGO_ENABLED=0 GOOS=linux go build -a -o bin/ .
+	make build-test
 	gcloud compute ssh $(client) -- 'sudo rm -f /opt/nomad/plugins/firecracker-task-driver'
 	gcloud compute scp /workspace/orchestration-services/cluster/disk-image/firecracker-task-driver/bin/firecracker-task-driver root@$(client):/opt/nomad/plugins/firecracker-task-driver
 	gcloud compute ssh $(client) -- 'sudo pgrep nomad | xargs sudo kill'

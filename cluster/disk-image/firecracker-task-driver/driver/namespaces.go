@@ -1,6 +1,7 @@
 package firevm
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -14,21 +15,27 @@ import (
 const hostDefaultGateway = "ens4"
 const loNS = "lo"
 
-func CreateNamespace(nodeID string, sessionID string, driver *Driver) (*IPSlot, error) {
+func CreateNamespaces(ctx context.Context, nodeID string, sessionID string, driver *Driver) (*IPSlot, error) {
+	_, childSpan := driver.tracer.Start(ctx, "create-namespaces")
+	defer childSpan.End()
+
 	// Get slot from Consul KV
 	ipSlot, err := getIPSlot(nodeID, sessionID, driver.logger)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get IP slot: %v", err)
+		errMsg := fmt.Errorf("failed to get IP slot: %v", err)
+		return nil, errMsg
 	}
 
 	// Prevent thread changes so the we can safely manipulate with namespaces
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+	driver.ReportEvent(ctx, "locked OS thread")
 
 	// Save the original (host) namespace and restore it upon function exit
 	hostNS, err := netns.Get()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get current (host) namespace %v", err)
+		errMsg := fmt.Errorf("cannot get current (host) namespace %v", err)
+		return nil, errMsg
 	}
 	defer func() {
 		netns.Set(hostNS)
@@ -210,7 +217,10 @@ func CreateNamespace(nodeID string, sessionID string, driver *Driver) (*IPSlot, 
 	return ipSlot, nil
 }
 
-func (ipSlot *IPSlot) RemoveNamespace(driver *Driver) error {
+func (ipSlot *IPSlot) RemoveNamespace(ctx context.Context, driver *Driver) error {
+	_, childSpan := driver.tracer.Start(ctx, "remove-namespaces")
+	defer childSpan.End()
+
 	driver.hosts.RemoveHost(ipSlot.SessionID)
 	err := driver.hosts.Save()
 	if err != nil {
