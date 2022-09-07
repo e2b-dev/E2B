@@ -20,12 +20,9 @@ import (
 
 	"github.com/lightstep/otel-launcher-go/launcher"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	tracer                trace.Tracer
 	ignoreLoggingForPaths = []string{"/health"}
 	serviceName           = "orchestration-api"
 )
@@ -71,14 +68,14 @@ func main() {
 	otelLauncher := launcher.ConfigureOpentelemetry(
 		launcher.WithServiceName(serviceName),
 		launcher.WithMetricReportingPeriod(10*time.Second),
-		launcher.WithSpanExporterEndpoint("http://localhost:4318"),
-		launcher.WithMetricExporterEndpoint("http://localhost:4318"),
+		launcher.WithSpanExporterEndpoint("0.0.0.0:4317"),
+		launcher.WithMetricExporterEndpoint("0.0.0.0:4317"),
+		launcher.WithMetricExporterInsecure(true),
+		launcher.WithSpanExporterInsecure(true),
+		// TODO: Try to configure and use the logger for sending stdout/err through otel
 		// launcher.WithLogger(serviceName),
-		// launcher.WithAccessToken(os.Getenv("LIGHTSTEP_API_KEY")),
 	)
 	defer otelLauncher.Shutdown()
-
-	tracer = otel.Tracer(serviceName)
 
 	rand.Seed(time.Now().UnixNano())
 
