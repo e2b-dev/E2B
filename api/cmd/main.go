@@ -23,8 +23,9 @@ import (
 )
 
 var (
-	ignoreLoggingForPaths = []string{"/health"}
-	serviceName           = "orchestration-api"
+	ignoreLoggingForPaths     = []string{"/health"}
+	serviceName               = "orchestration-api"
+	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
 func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
@@ -68,8 +69,8 @@ func main() {
 	otelLauncher := launcher.ConfigureOpentelemetry(
 		launcher.WithServiceName(serviceName),
 		launcher.WithMetricReportingPeriod(10*time.Second),
-		launcher.WithSpanExporterEndpoint("0.0.0.0:4317"),
-		launcher.WithMetricExporterEndpoint("0.0.0.0:4317"),
+		launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
+		launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
 		launcher.WithMetricExporterInsecure(true),
 		launcher.WithSpanExporterInsecure(true),
 		// TODO: Try to configure and use the logger for sending stdout/err through otel
