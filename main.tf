@@ -49,6 +49,10 @@ provider "nomad" {
   address = "http://${module.cluster.server_proxy_ip}"
 }
 
+data "google_secret_manager_secret_version" "lightstep_api_key" {
+  secret = "lightstep-api-key"
+}
+
 module "telemetry" {
   source = "./telemetry"
 
@@ -56,7 +60,8 @@ module "telemetry" {
     module.cluster,
   ]
 
-  gcp_zone = var.gcp_zone
+  lightstep_api_key = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
+  gcp_zone          = var.gcp_zone
 }
 
 module "session_proxy" {
