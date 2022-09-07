@@ -113,6 +113,8 @@ processors:
       - key: proxy
         value: client
         action: upsert
+  batch:
+    timeout: 5s
 
 exporters:
   # logging:
@@ -130,13 +132,13 @@ service:
     metrics/client-proxy:
       receivers:
         - nginx/client-proxy
-      processors: [attributes/client-proxy]
+      processors: [attributes/client-proxy, batch]
       exporters:
         - otlp/lightstep
     metrics/session-proxy:
       receivers:
         - nginx/session-proxy
-      processors: [attributes/session-proxy]
+      processors: [attributes/session-proxy, batch]
       exporters:
         - otlp/lightstep
     metrics:
@@ -144,17 +146,20 @@ service:
         - prometheus
         - hostmetrics
         - otlp
+      processors: [batch]
       exporters:
         - otlp/lightstep
         # - logging
     traces:
       receivers:
         - otlp
+      processors: [batch]
       exporters:
         - otlp/lightstep
     logs:
       receivers:
         - otlp
+      processors: [batch]
       exporters:
         - otlp/lightstep
     
