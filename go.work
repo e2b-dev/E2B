@@ -2,4 +2,5 @@ go 1.18
 
 use (
 	./api
+	./cluster/disk-image/firecracker-task-driver
 )

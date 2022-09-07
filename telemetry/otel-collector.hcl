@@ -25,16 +25,17 @@ job "otel-collector" {
       }
 
       # Receivers
-      port "grpc" {
-        to = 4317
+      port "http" {
+        to = 4318
       }
     }
 
     service {
       name = "otel-collector"
-      port = "grpc"
-      tags = ["grpc"]
+      port = "http"
+      tags = ["http"]
     }
+
 
     task "start-collector" {
       driver = "docker"
@@ -49,7 +50,7 @@ job "otel-collector" {
 
         ports = [
           "metrics",
-          "grpc",
+          "http",
         ]
       }
 
@@ -61,6 +62,10 @@ job "otel-collector" {
       template {
         data = <<EOF
 receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "localhost:4318"
   nginx/client-proxy:
     endpoint: 'http://localhost:3001/status'
     collection_interval: 10s
@@ -111,17 +116,17 @@ processors:
         action: upsert
 
 exporters:
-  # logging:
-  #   loglevel: debug
+  logging:
+    loglevel: debug
   otlp/lightstep:
     endpoint: ingest.lightstep.com:443
     headers:
       "lightstep-access-token": ${var.lightstep_api_key}
 
 service:
-  # telemetry:
-  #   logs:
-  #     level: debug
+  telemetry:
+    logs:
+      level: debug
   pipelines:
     metrics/client-proxy:
       receivers:
@@ -139,9 +144,10 @@ service:
       receivers: 
         - prometheus
         - hostmetrics
+        - otlp
       exporters:
         - otlp/lightstep
-      #   - logging
+        - logging
 EOF
 
         destination = "local/config/otel-collector-config.yaml"

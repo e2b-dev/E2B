@@ -63,6 +63,7 @@ job "orchestration-api" {
       }
 
       config {
+        network_mode = "host"
         image = var.image_name
         ports = [var.api_port_name]
         args = [

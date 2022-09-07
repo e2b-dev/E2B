@@ -70,11 +70,15 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 func main() {
 	otelLauncher := launcher.ConfigureOpentelemetry(
 		launcher.WithServiceName(serviceName),
-		launcher.WithAccessToken(os.Getenv("LIGHTSTEP_API_KEY")),
+		launcher.WithMetricReportingPeriod(10*time.Second),
+		launcher.WithSpanExporterEndpoint("http://localhost:4318"),
+		launcher.WithMetricExporterEndpoint("http://localhost:4318"),
+		// launcher.WithLogger(serviceName),
+		// launcher.WithAccessToken(os.Getenv("LIGHTSTEP_API_KEY")),
 	)
 	defer otelLauncher.Shutdown()
 
-	tracer = otel.Tracer("orchestration-api")
+	tracer = otel.Tracer(serviceName)
 
 	rand.Seed(time.Now().UnixNano())
 
