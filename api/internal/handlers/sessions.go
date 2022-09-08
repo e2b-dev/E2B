@@ -88,7 +88,7 @@ func (a *APIStore) PostSessions(
 		}
 	}
 
-	session, err := a.nomadClient.CreateSession(&newSession)
+	session, err := a.nomadClient.CreateSession(a.tracer, ctx, &newSession)
 	if err != nil {
 		errMsg := fmt.Errorf("error when creating: %v", err)
 		a.ReportCriticalError(ctx, errMsg)

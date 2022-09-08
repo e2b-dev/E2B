@@ -70,6 +70,8 @@ var (
 		"SessionID":     hclspec.NewAttr("SessionID", "string", false),
 		"CodeSnippetID": hclspec.NewAttr("CodeSnippetID", "string", false),
 		"EditEnabled":   hclspec.NewAttr("EditEnabled", "bool", false),
+		"SpanID":        hclspec.NewAttr("SpanID", "string", false),
+		"TraceID":       hclspec.NewAttr("TraceID", "string", false),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -132,13 +134,16 @@ func (d *Driver) ReportCriticalError(ctx context.Context, err error) {
 	span.SetStatus(codes.Error, "critical error")
 }
 
-func (d *Driver) ReportError(ctx context.Context, err error) {
+func (d *Driver) ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
 	fmt.Fprint(os.Stderr, err.Error())
 
 	span.RecordError(err,
 		trace.WithStackTrace(true),
+		trace.WithAttributes(
+			attrs...,
+		),
 	)
 }
 
@@ -154,6 +159,8 @@ type Nic struct {
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
+	TraceID       string `codec:"TraceID"`
+	SpanID        string `codec:"SpanID"`
 	SessionID     string `codec:"SessionID"`
 	EditEnabled   bool   `codec:"EditEnabled"`
 	CodeSnippetID string `codec:"CodeSnippetID"`
@@ -292,7 +299,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-	ctx, span := d.tracer.Start(d.ctx, "start-session-task", trace.WithAttributes(
+	ctx, span := d.tracer.Start(d.ctx, "start-session-task-validation", trace.WithAttributes(
 		attribute.String("alloc_id", cfg.AllocID),
 	))
 	defer span.End()
@@ -311,9 +318,45 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		d.ReportCriticalError(ctx, errMsg)
 		return nil, nil, errMsg
 	}
-	span.SetAttributes(
+
+	tid, traceIDErr := trace.TraceIDFromHex(driverConfig.TraceID)
+	if traceIDErr != nil {
+		d.ReportError(
+			ctx,
+			traceIDErr,
+			attribute.String("trace_id", driverConfig.TraceID),
+			attribute.Int("trace_id.length", len(driverConfig.TraceID)),
+		)
+	}
+
+	sid, spanIDErr := trace.SpanIDFromHex(driverConfig.SpanID)
+	if spanIDErr != nil {
+		d.ReportError(
+			ctx,
+			spanIDErr,
+			attribute.String("span_id", driverConfig.SpanID),
+			attribute.Int("span_id.length", len(driverConfig.SpanID)),
+		)
+	}
+
+	remoteCtx := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    tid,
+		SpanID:     sid,
+		TraceFlags: 0x0,
+	})
+
+	childCtx, childSpan := d.tracer.Start(
+		trace.ContextWithRemoteSpanContext(d.ctx, remoteCtx),
+		"start-session-task",
+		trace.WithLinks(trace.LinkFromContext(ctx)),
+	)
+	defer childSpan.End()
+
+	childSpan.SetAttributes(
+		attribute.String("alloc_id", cfg.AllocID),
 		attribute.String("code_snippet_id", driverConfig.CodeSnippetID),
 		attribute.String("session_id", driverConfig.SessionID),
+		attribute.String("client_id", cfg.Env["NOMAD_NODE_ID"]),
 		attribute.Bool("edit_enabled", driverConfig.EditEnabled),
 	)
 
@@ -321,25 +364,25 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	ipSlot, err := CreateNamespaces(ctx, cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d)
+	ipSlot, err := CreateNamespaces(childCtx, cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d)
 	if err != nil {
-		ipSlot.RemoveNamespace(ctx, d)
+		ipSlot.RemoveNamespace(childCtx, d)
 		errMsg := fmt.Errorf("failed to create namespaces: %v", err)
 
-		d.ReportCriticalError(ctx, errMsg)
+		d.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
-	d.ReportEvent(ctx, "created namespaces")
+	d.ReportEvent(childCtx, "created namespaces")
 
 	defer func() {
 		if err != nil {
-			ipSlot.RemoveNamespace(ctx, d)
+			ipSlot.RemoveNamespace(childCtx, d)
 			d.logger.Error("Cleaning up after unsuccessful start: %v", err)
 		}
 	}()
 
 	m, err := d.initializeFC(
-		ctx,
+		childCtx,
 		cfg,
 		driverConfig,
 		ipSlot,
@@ -347,13 +390,13 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		driverConfig.EditEnabled,
 	)
 	if err != nil {
-		ipSlot.RemoveNamespace(ctx, d)
+		ipSlot.RemoveNamespace(childCtx, d)
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
 		errMsg := fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
-		d.ReportCriticalError(ctx, errMsg)
+		d.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
-	d.ReportEvent(ctx, "initialized FC")
+	d.ReportEvent(childCtx, "initialized FC")
 
 	h := &taskHandle{
 		taskConfig:      cfg,
@@ -376,17 +419,17 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	if err = handle.SetDriverState(&driverState); err != nil {
-		ipSlot.RemoveNamespace(ctx, d)
+		ipSlot.RemoveNamespace(childCtx, d)
 		m.Machine.StopVMM()
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
 		errMsg := fmt.Errorf("failed to set driver state: %v", err)
-		d.ReportCriticalError(ctx, errMsg)
+		d.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
 
 	d.tasks.Set(cfg.ID, h)
 
-	go h.run(ctx, d)
+	go h.run(childCtx, d)
 
 	return handle, nil, nil
 }

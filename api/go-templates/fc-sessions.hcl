@@ -33,6 +33,8 @@ job "{{ .JobName }}/{{ .SessionID }}" {
         CodeSnippetID = "{{ .CodeSnippetID }}"
         SessionID   = "{{ .SessionID }}"
         EditEnabled = "{{ .EditEnabled }}"
+        SpanID = "{{ .SpanID }}"
+        TraceID = "{{ .TraceID }}"
       }
     }
   }

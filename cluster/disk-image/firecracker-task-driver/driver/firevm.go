@@ -13,12 +13,16 @@
 package firevm
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/cneira/firecracker-task-driver/driver/client/client"
@@ -77,11 +81,23 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
-func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string) (*operations.LoadSnapshotNoContent, error) {
+func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *Driver) error {
+	childCtx, childSpan := d.tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
+		attribute.String("socket_path", socketPath),
+		attribute.String("snapshot_root_path", snapshotRootPath),
+	))
+	defer childSpan.End()
+
 	httpClient := newFirecrackerClient(socketPath)
+	d.ReportEvent(childCtx, "created FC socket client")
 
 	memfilePath := filepath.Join(snapshotRootPath, memfileName)
 	snapfilePath := filepath.Join(snapshotRootPath, snapfileName)
+
+	childSpan.SetAttributes(
+		attribute.String("memfile_path", memfilePath),
+		attribute.String("snapfile_path", snapfilePath),
+	)
 
 	backendType := models.MemoryBackendBackendTypeFile
 	snapshotConfig := operations.LoadSnapshotParams{
@@ -97,7 +113,15 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string) (*op
 		},
 	}
 
-	return httpClient.Operations.LoadSnapshot(&snapshotConfig)
+	_, err := httpClient.Operations.LoadSnapshot(&snapshotConfig)
+	if err != nil {
+		childSpan.RecordError(err)
+		childSpan.SetStatus(codes.Error, "critical error")
+		return err
+	}
+	d.ReportEvent(childCtx, "snapshot loaded")
+
+	return nil
 }
 
 func (d *Driver) initializeFC(
@@ -115,6 +139,11 @@ func (d *Driver) initializeFC(
 	defer childSpan.End()
 
 	opts := newOptions()
+
+	opts.FcLogFifo = path.Join(cfg.AllocDir, "fc-log-fifo")
+	syscall.Mkfifo(opts.FcLogFifo, 0644)
+	opts.FcMetricsFifo = path.Join(cfg.AllocDir, "fc-metrics-fifo")
+	syscall.Mkfifo(opts.FcMetricsFifo, 0644)
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
 		errMsg := fmt.Errorf("error assembling FC config: %v", err)
@@ -122,7 +151,12 @@ func (d *Driver) initializeFC(
 		return nil, errMsg
 	}
 
-	vmmChildCtx, vmmChildSpan := d.tracer.Start(childCtx, "fc-vmm")
+	vmmChildCtx, vmmChildSpan := d.tracer.Start(
+		childCtx,
+		"fc-vmm",
+		trace.WithAttributes(attribute.String("fc_log_fifo", opts.FcLogFifo)),
+		trace.WithAttributes(attribute.String("fc_metrics_fifo", opts.FcMetricsFifo)),
+	)
 	defer vmmChildSpan.End()
 
 	vmmCtx, vmmCancel := context.WithCancel(vmmChildCtx)
@@ -288,10 +322,28 @@ func (d *Driver) initializeFC(
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fcCfg.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
-	cmd := exec.CommandContext(ctx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
+	cmd := exec.CommandContext(childCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
 	cmd.Stderr = nil
 
 	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
+
+	vmmLogsReader, vmmLogsWriter := io.Pipe()
+
+	go func() {
+		scanner := bufio.NewScanner(vmmLogsReader)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			vmmChildSpan.AddEvent("log message",
+				trace.WithAttributes(
+					attribute.String("message", line),
+				),
+			)
+		}
+
+		vmmLogsReader.Close()
+	}()
 
 	prebootFcConfig := firecracker.Config{
 		DisableValidation: true,
@@ -301,7 +353,7 @@ func (d *Driver) initializeFC(
 		VMID:              fcCfg.VMID,
 		MachineCfg:        fcCfg.MachineCfg,
 		VsockDevices:      fcCfg.VsockDevices,
-		FifoLogWriter:     fcCfg.FifoLogWriter,
+		FifoLogWriter:     vmmLogsWriter,
 		Drives:            fcCfg.Drives,
 		KernelArgs:        fcCfg.KernelArgs,
 		InitrdPath:        fcCfg.InitrdPath,
@@ -322,16 +374,17 @@ func (d *Driver) initializeFC(
 		childSpan.SetStatus(codes.Error, "critical error")
 		return nil, errMsg
 	}
-	d.ReportEvent(ctx, "created vmm")
+	d.ReportEvent(childCtx, "created vmm")
 
 	m.Handlers.Validation = m.Handlers.Validation.Clear()
 	m.Handlers.FcInit =
 		m.Handlers.FcInit.Clear().
 			Append(
 				firecracker.StartVMMHandler,
+				firecracker.BootstrapLoggingHandler,
 			)
 
-	err = m.Handlers.Run(ctx, m)
+	err = m.Handlers.Run(childCtx, m)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to start preboot FC: %v", err)
 
@@ -339,9 +392,9 @@ func (d *Driver) initializeFC(
 		childSpan.SetStatus(codes.Error, "critical error")
 		return nil, errMsg
 	}
-	d.ReportEvent(ctx, "started FC in preboot")
+	d.ReportEvent(childCtx, "started FC in preboot")
 
-	if _, err := loadSnapshot(vmmCtx, fcCfg.SocketPath, snapshotRootPath); err != nil {
+	if err := loadSnapshot(childCtx, fcCfg.SocketPath, snapshotRootPath, d); err != nil {
 		m.StopVMM()
 		errMsg := fmt.Errorf("failed to load snapshot: %v", err)
 
@@ -349,7 +402,7 @@ func (d *Driver) initializeFC(
 		childSpan.SetStatus(codes.Error, "critical error")
 		return nil, errMsg
 	}
-	d.ReportEvent(ctx, "loaded snapshot")
+	d.ReportEvent(childCtx, "loaded snapshot")
 
 	defer func() {
 		if err != nil {

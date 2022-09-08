@@ -326,7 +326,6 @@ func parseBlockDevices(entries []string) ([]models.Drive, error) {
 	return devices, nil
 }
 
-
 // Given a list of string representations of vsock devices,
 // return a corresponding slice of machine.VsockDevice objects
 func parseVsocks(devices []string) ([]firecracker.VsockDevice, error) {

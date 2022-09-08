@@ -2,6 +2,7 @@ package nomad
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/devbookhq/orchestration-services/api/internal/api"
 	nomadAPI "github.com/hashicorp/nomad/api"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -51,7 +54,10 @@ func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 	return sessions, nil
 }
 
-func (n *NomadClient) CreateSession(newSession *api.NewSession) (*api.Session, *api.APIError) {
+func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSession *api.NewSession) (*api.Session, *api.APIError) {
+	_, childSpan := t.Start(ctx, "create-session")
+	defer childSpan.End()
+
 	tname := path.Join(templatesDir, sessionsJobFile)
 	sessionsJobTemp, err := template.ParseFiles(tname)
 	if err != nil {
@@ -67,6 +73,13 @@ func (n *NomadClient) CreateSession(newSession *api.NewSession) (*api.Session, *
 	var sessionID string
 	var evalID string
 
+	traceID := childSpan.SpanContext().TraceID().String()
+	spanID := childSpan.SpanContext().SpanID().String()
+
+	childSpan.SetAttributes(
+		attribute.String("passed_trace_id_hex", string(traceID)),
+		attribute.String("passed_span_id_hex", string(spanID)),
+	)
 	var job *nomadAPI.Job
 
 	timeout := time.After(jobRegisterTimeout)
@@ -85,6 +98,8 @@ jobRegister:
 
 			var jobDef bytes.Buffer
 			jobVars := struct {
+				SpanID        string
+				TraceID       string
 				CodeSnippetID string
 				SessionID     string
 				FCTaskName    string
@@ -92,6 +107,8 @@ jobRegister:
 				FCEnvsDisk    string
 				EditEnabled   bool
 			}{
+				SpanID:        spanID,
+				TraceID:       traceID,
 				CodeSnippetID: newSession.CodeSnippetID,
 				SessionID:     sessionID,
 				FCTaskName:    fcTaskName,
