@@ -1,6 +1,3 @@
-init:
-	go mod vendor
-
 build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/ .
 
@@ -27,3 +24,6 @@ generate:
 # make client-ip=34.72.208.46 metric=heap interval=90 run-profiler
 run-profiler:
 	go tool pprof -http :9991 http://$(client-ip):6061/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
+
+test-docker:
+	docker build -t test.fc-driver . -f debug.Dockerfile

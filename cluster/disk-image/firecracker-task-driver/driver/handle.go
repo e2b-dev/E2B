@@ -36,6 +36,7 @@ var (
 )
 
 type taskHandle struct {
+	ctx    context.Context
 	logger hclog.Logger
 	// TODO: The mutext here causes deadlock when we are stopping tasks
 	// For now we are not using it - the relevant data will be still valid (FC running/exit).
@@ -190,6 +191,7 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	h.exitResult.Signal = 0
 	h.completedAt = time.Now()
 	h.State = drivers.TaskStateExited
+	driver.ReportEvent(childCtx, "updated task exit info")
 
 	return nil
 }

@@ -45,7 +45,7 @@ build {
     inline = [
       "sudo add-apt-repository ppa:longsleep/golang-backports",
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq golang-go build-essential net-tools qemu-utils",
+      "sudo apt-get install -y unzip jq golang-1.18-go build-essential net-tools qemu-utils",
     ]
   }
 
@@ -95,15 +95,14 @@ build {
 
   provisioner "shell" {
     inline = [
+      "PATH=$PATH:/usr/lib/go-1.18/bin",
       "cd /tmp/firecracker-task-driver",
-      "make init",
       "make build",
       "sudo mkdir -p /opt/nomad/plugins",
       "sudo cp /tmp/firecracker-task-driver/bin/firecracker-task-driver /opt/nomad/plugins/firecracker-task-driver",
     ]
   }
 
-  # TODO: Remove testing snapshots and bucket after we have envs pipeline ready
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /fc-vm",

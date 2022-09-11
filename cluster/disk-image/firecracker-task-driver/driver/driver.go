@@ -348,7 +348,9 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	childCtx, childSpan := d.tracer.Start(
 		trace.ContextWithRemoteSpanContext(d.ctx, remoteCtx),
 		"start-session-task",
-		trace.WithLinks(trace.LinkFromContext(ctx)),
+		trace.WithLinks(
+			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
+		),
 	)
 	defer childSpan.End()
 
@@ -374,13 +376,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 	d.ReportEvent(childCtx, "created namespaces")
 
-	defer func() {
-		if err != nil {
-			ipSlot.RemoveNamespace(childCtx, d)
-			d.logger.Error("Cleaning up after unsuccessful start: %v", err)
-		}
-	}()
-
 	m, err := d.initializeFC(
 		childCtx,
 		cfg,
@@ -399,6 +394,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	d.ReportEvent(childCtx, "initialized FC")
 
 	h := &taskHandle{
+		ctx:             childCtx,
 		taskConfig:      cfg,
 		State:           drivers.TaskStateRunning,
 		startedAt:       time.Now().Round(time.Millisecond),
@@ -435,19 +431,30 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 }
 
 func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.ExitResult, error) {
-	childCtx, childSpan := d.tracer.Start(ctx, "wait-session-task", trace.WithAttributes(
+	validationCtx, validationSpan := d.tracer.Start(ctx, "wait-session-task-validation", trace.WithAttributes(
 		attribute.String("task_id", taskID),
 	))
-	defer childSpan.End()
+	defer validationSpan.End()
 
-	handle, ok := d.tasks.Get(taskID)
+	h, ok := d.tasks.Get(taskID)
 	if !ok {
-		d.ReportCriticalError(childCtx, drivers.ErrTaskNotFound)
+		d.ReportCriticalError(validationCtx, drivers.ErrTaskNotFound)
 		return nil, drivers.ErrTaskNotFound
 	}
 
+	childCtx, childSpan := d.tracer.Start(d.ctx, "wait-session-task",
+		trace.WithAttributes(
+			attribute.String("task_id", taskID),
+		),
+		trace.WithLinks(
+			trace.LinkFromContext(validationCtx, attribute.String("link", "validation")),
+			trace.LinkFromContext(h.ctx, attribute.String("link", "start-session-task")),
+		),
+	)
+	defer childSpan.End()
+
 	ch := make(chan *drivers.ExitResult)
-	go d.handleWait(childCtx, handle, ch)
+	go d.handleWait(childCtx, h, ch)
 
 	return ch, nil
 }
@@ -475,7 +482,7 @@ func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *dr
 }
 
 func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) error {
-	ctx, span := d.tracer.Start(d.ctx, "stop-session-task", trace.WithAttributes(
+	ctx, span := d.tracer.Start(d.ctx, "stop-session-task-validation", trace.WithAttributes(
 		attribute.String("task_id", taskID),
 	))
 	defer span.End()
@@ -486,18 +493,29 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 		return drivers.ErrTaskNotFound
 	}
 
-	if err := h.shutdown(ctx, d); err != nil {
+	childCtx, childSpan := d.tracer.Start(d.ctx, "stop-session-task",
+		trace.WithAttributes(
+			attribute.String("task_id", taskID),
+		),
+		trace.WithLinks(
+			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
+			trace.LinkFromContext(h.ctx, attribute.String("link", "start-session-task")),
+		),
+	)
+	defer childSpan.End()
+
+	if err := h.shutdown(childCtx, d); err != nil {
 		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
-		d.ReportCriticalError(ctx, errMsg)
+		d.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
-	d.ReportEvent(ctx, "shutdown task")
+	d.ReportEvent(childCtx, "shutdown task")
 
 	return nil
 }
 
 func (d *Driver) DestroyTask(taskID string, force bool) error {
-	ctx, span := d.tracer.Start(d.ctx, "destroy-session-task", trace.WithAttributes(
+	ctx, span := d.tracer.Start(d.ctx, "destroy-session-task-validation", trace.WithAttributes(
 		attribute.String("task_id", taskID),
 	))
 	defer span.End()
@@ -508,16 +526,27 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		return drivers.ErrTaskNotFound
 	}
 
-	if err := h.shutdown(ctx, d); err != nil {
-		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
-		d.ReportCriticalError(ctx, errMsg)
-	}
-	d.ReportEvent(ctx, "shutdown task")
+	childCtx, childSpan := d.tracer.Start(d.ctx, "destroy-session-task",
+		trace.WithAttributes(
+			attribute.String("task_id", taskID),
+		),
+		trace.WithLinks(
+			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
+			trace.LinkFromContext(h.ctx, attribute.String("link", "start-session-task")),
+		),
+	)
+	defer childSpan.End()
 
-	h.Slot.RemoveNamespace(ctx, d)
+	if err := h.shutdown(childCtx, d); err != nil {
+		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
+		d.ReportCriticalError(childCtx, errMsg)
+	}
+	d.ReportEvent(childCtx, "shutdown task")
+
+	h.Slot.RemoveNamespace(childCtx, d)
 
 	d.tasks.Delete(taskID)
-	d.ReportEvent(ctx, "task deleted")
+	d.ReportEvent(childCtx, "task deleted")
 
 	return nil
 }

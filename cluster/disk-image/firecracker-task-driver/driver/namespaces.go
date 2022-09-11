@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"go.opentelemetry.io/otel/codes"
 )
 
 const hostDefaultGateway = "ens4"
@@ -224,25 +225,53 @@ func (ipSlot *IPSlot) RemoveNamespace(ctx context.Context, driver *Driver) error
 	driver.hosts.RemoveHost(ipSlot.SessionID)
 	err := driver.hosts.Save()
 	if err != nil {
-		driver.logger.Error("error removing session to etc hosts %v", err)
+		errMsg := fmt.Errorf("error removing session to etc hosts %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
 	}
 
 	tables, err := iptables.New()
 	if err != nil {
-		driver.logger.Error("error initializing iptables %v", err)
+		errMsg := fmt.Errorf("error initializing iptables %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
 	}
 
 	// Delete host forwarding rules
-	tables.Delete("filter", "FORWARD", "-i", ipSlot.VethName(), "-o", hostDefaultGateway, "-j", "ACCEPT")
-	tables.Delete("filter", "FORWARD", "-i", hostDefaultGateway, "-o", ipSlot.VethName(), "-j", "ACCEPT")
+	err = tables.Delete("filter", "FORWARD", "-i", ipSlot.VethName(), "-o", hostDefaultGateway, "-j", "ACCEPT")
+	if err != nil {
+		errMsg := fmt.Errorf("error deleting host forwarding rule to default gateway %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
+	}
+
+	err = tables.Delete("filter", "FORWARD", "-i", hostDefaultGateway, "-o", ipSlot.VethName(), "-j", "ACCEPT")
+	if err != nil {
+		errMsg := fmt.Errorf("error deleting host forwarding rule from default gateway %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
+	}
 
 	// Delete host postrouting rules
-	tables.Delete("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
+	err = tables.Delete("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
+	if err != nil {
+		errMsg := fmt.Errorf("error deleting host postrouting rule %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
+	}
 
 	// Delete routing from host to FC namespace
 	_, ipNet, err := net.ParseCIDR(ipSlot.HostSnapshotCIDR())
 	if err != nil {
-		driver.logger.Error("error parsing host snapshot CIDR %v", err)
+		errMsg := fmt.Errorf("error parsing host snapshot CIDR %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
 	}
 
 	err = netlink.RouteDel(&netlink.Route{
@@ -250,22 +279,35 @@ func (ipSlot *IPSlot) RemoveNamespace(ctx context.Context, driver *Driver) error
 		Dst: ipNet,
 	})
 	if err != nil {
-		driver.logger.Error("error deleting route from host to FC %v", err)
+		errMsg := fmt.Errorf("error deleting route from host to FC %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
 	}
 
 	err = os.RemoveAll(ipSlot.SessionTmp())
 	if err != nil {
-		driver.logger.Error("error deleting session tmp files (overlay, workdir) %v", err)
+		errMsg := fmt.Errorf("error deleting session tmp files (overlay, workdir) %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
 	}
 
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
-		driver.logger.Error("error deleting namespace %v", err)
+		errMsg := fmt.Errorf("error deleting namespace %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
 	}
 
 	err = ipSlot.releaseIPSlot(driver.logger)
 	if err != nil {
-		return fmt.Errorf("error releasing slot %v", err)
+		errMsg := fmt.Errorf("error releasing slot %v", err)
+		childSpan.RecordError(errMsg)
+		childSpan.SetStatus(codes.Error, "critical error")
+		driver.logger.Error(errMsg.Error())
+		return errMsg
 	}
 
 	return nil

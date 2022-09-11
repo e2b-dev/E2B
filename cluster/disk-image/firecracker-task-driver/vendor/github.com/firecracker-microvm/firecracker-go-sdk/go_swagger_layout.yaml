@@ -1,6 +1,0 @@
-layout:
-  application:
-    - name: mockClient
-      source: asset:mockclient
-      target: "{{ joinFilePath .Target .ClientPackage }}"
-      file_name: "{{ .Name }}_mock_client.go"
