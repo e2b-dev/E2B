@@ -28,9 +28,10 @@ func CreateNamespaces(ctx context.Context, nodeID string, sessionID string, driv
 	}
 
 	// Prevent thread changes so the we can safely manipulate with namespaces
+	driver.ReportEvent(ctx, "waiting for OS thread lock")
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	driver.ReportEvent(ctx, "locked OS thread")
+	driver.ReportEvent(ctx, "OS thread lock passed")
 
 	// Save the original (host) namespace and restore it upon function exit
 	hostNS, err := netns.Get()
