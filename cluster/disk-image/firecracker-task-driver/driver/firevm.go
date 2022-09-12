@@ -19,10 +19,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strconv"
-	"syscall"
 	"time"
 
 	"github.com/cneira/firecracker-task-driver/driver/client/client"
@@ -140,10 +138,6 @@ func (d *Driver) initializeFC(
 
 	opts := newOptions()
 
-	opts.FcLogFifo = path.Join(cfg.AllocDir, "fc-log-fifo")
-	syscall.Mkfifo(opts.FcLogFifo, 0644)
-	opts.FcMetricsFifo = path.Join(cfg.AllocDir, "fc-metrics-fifo")
-	syscall.Mkfifo(opts.FcMetricsFifo, 0644)
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
 		errMsg := fmt.Errorf("error assembling FC config: %v", err)
@@ -322,21 +316,66 @@ func (d *Driver) initializeFC(
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fcCfg.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
 
-	cmd := exec.CommandContext(childCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
-	cmd.Stderr = nil
+	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
+	cmdStderrReader, cmdStderrWriter := io.Pipe()
 
-	machineOpts = append(machineOpts, firecracker.WithProcessRunner(cmd))
+	cmd := exec.CommandContext(childCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
+	cmd.Stderr = cmdStdoutWriter
+	cmd.Stdout = cmdStderrWriter
+
+	machineOpts = append(
+		machineOpts,
+		firecracker.WithProcessRunner(cmd),
+	)
+
+	// TODO: Make the log collecting long running
+	go func() {
+		scanner := bufio.NewScanner(cmdStdoutReader)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			vmmChildSpan.AddEvent("vmm log",
+				trace.WithAttributes(
+					attribute.String("level", "stdout"),
+					attribute.String("message", line),
+				),
+			)
+		}
+
+		cmdStdoutReader.Close()
+	}()
+
+	// TODO: Make the log collecting long running
+	go func() {
+		scanner := bufio.NewScanner(cmdStderrReader)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			vmmChildSpan.AddEvent("vmm log",
+				trace.WithAttributes(
+					attribute.String("level", "stderr"),
+					attribute.String("message", line),
+				),
+			)
+		}
+
+		cmdStderrReader.Close()
+	}()
 
 	vmmLogsReader, vmmLogsWriter := io.Pipe()
 
+	// TODO: Make the log collecting long running
 	go func() {
 		scanner := bufio.NewScanner(vmmLogsReader)
 
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			vmmChildSpan.AddEvent("log message",
+			vmmChildSpan.AddEvent("vmm log",
 				trace.WithAttributes(
+					attribute.String("level", "setup"),
 					attribute.String("message", line),
 				),
 			)
@@ -360,7 +399,7 @@ func (d *Driver) initializeFC(
 		KernelImagePath:   fcCfg.KernelImagePath,
 		MetricsFifo:       fcCfg.MetricsFifo,
 		MetricsPath:       fcCfg.MetricsPath,
-		LogLevel:          fcCfg.LogLevel,
+		LogLevel:          "Debug",
 		LogFifo:           fcCfg.LogFifo,
 		LogPath:           fcCfg.LogPath,
 		SocketPath:        fcCfg.SocketPath,
