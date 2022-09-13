@@ -24,6 +24,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cneira/firecracker-task-driver/driver/slot"
+	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
@@ -46,7 +48,7 @@ type taskHandle struct {
 	taskConfig      *drivers.TaskConfig
 	State           drivers.TaskState
 	MachineInstance *firecracker.Machine
-	Slot            *IPSlot
+	Slot            *slot.IPSlot
 	Info            Instance_info
 	EditEnabled     bool
 	startedAt       time.Time
@@ -134,21 +136,21 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 			if _, err := os.Stat(templateIDPath); err != nil {
 				// template id doesn't exist
 			} else {
-				saveEditErr := saveEditSnapshot(h.Slot, &h.Info)
+				saveEditErr := saveEditSnapshot(childCtx, h.Slot, &h.Info, driver.tracer)
 				if saveEditErr != nil {
-					driver.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
+					telemetry.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
 				}
 			}
 		} else {
-			saveEditErr := saveEditSnapshot(h.Slot, &h.Info)
+			saveEditErr := saveEditSnapshot(childCtx, h.Slot, &h.Info, driver.tracer)
 			if saveEditErr != nil {
-				driver.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
+				telemetry.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
 			}
 		}
 	}
 
 	h.Info.Cmd.Process.Signal(syscall.SIGTERM)
-	driver.ReportEvent(childCtx, "sent SIGTERM to FC process")
+	telemetry.ReportEvent(childCtx, "sent SIGTERM to FC process")
 
 	pid, pErr := strconv.Atoi(h.Info.Pid)
 	if pErr == nil {
@@ -174,24 +176,32 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 		}
 	}
 
-	h.Info.Cmd.Process.Wait()
+	_, err := h.Info.Cmd.Process.Wait()
+	if err != nil {
+		errMsg := fmt.Errorf("error waiting for FC process %v", err)
+		telemetry.ReportError(childCtx, errMsg)
+	}
 
 	if h.EditEnabled {
 		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, editDirName, *h.Info.EditID)
-		os.RemoveAll(oldEditDirPath)
+		err = os.RemoveAll(oldEditDirPath)
+		if err != nil {
+			errMsg := fmt.Errorf("error deleting old edit dir %v", err)
+			telemetry.ReportError(childCtx, errMsg)
+		}
 	}
 
-	driver.ReportEvent(childCtx, "waiting for state lock")
+	telemetry.ReportEvent(childCtx, "waiting for state lock")
 	h.stateLock.Lock()
 	defer h.stateLock.Unlock()
-	driver.ReportEvent(childCtx, "passed state lock")
+	telemetry.ReportEvent(childCtx, "passed state lock")
 
 	h.exitResult = &drivers.ExitResult{}
 	h.exitResult.ExitCode = 0
 	h.exitResult.Signal = 0
 	h.completedAt = time.Now()
 	h.State = drivers.TaskStateExited
-	driver.ReportEvent(childCtx, "updated task exit info")
+	telemetry.ReportEvent(childCtx, "updated task exit info")
 
 	return nil
 }

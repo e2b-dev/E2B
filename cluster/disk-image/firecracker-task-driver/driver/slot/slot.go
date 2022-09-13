@@ -1,12 +1,15 @@
-package firevm
+package slot
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	consul "github.com/hashicorp/consul/api"
-	"github.com/hashicorp/go-hclog"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // We are using a more debuggable IP address allocation for now
@@ -86,7 +89,7 @@ func (ips *IPSlot) TapCIDR() string {
 }
 
 func (ips *IPSlot) SessionTmp() string {
-	return filepath.Join("/tmp", fmt.Sprintf("fc-%s", ips.SessionID))
+	return filepath.Join(os.TempDir(), fmt.Sprintf("fc-%s", ips.SessionID))
 }
 
 func (ips *IPSlot) SessionTmpOverlay() string {
@@ -97,11 +100,17 @@ func (ips *IPSlot) SessionTmpWorkdir() string {
 	return filepath.Join(ips.SessionTmp(), "workdir")
 }
 
-func getIPSlot(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, error) {
+func NewIPSlot(ctx context.Context, nodeID string, sessionID string, tracer trace.Tracer) (*IPSlot, error) {
+	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
+	defer childSpan.End()
+
 	consulClient, err := consul.NewClient(consul.DefaultConfig())
 	if err != nil {
-		panic(fmt.Errorf("failed to initialize Consul client: %v", err))
+		errMsg := fmt.Errorf("failed to initialize Consul client: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return nil, errMsg
 	}
+	telemetry.ReportEvent(childCtx, "initialized Consul client")
 
 	kv := consulClient.KV()
 
@@ -119,7 +128,9 @@ func getIPSlot(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, e
 			}, &consul.WriteOptions{})
 
 			if err != nil {
-				return nil, fmt.Errorf("failed to write to Consul KV: %v", err)
+				errMsg := fmt.Errorf("failed to write to Consul KV: %v", err)
+				telemetry.ReportCriticalError(childCtx, errMsg)
+				return nil, errMsg
 			}
 
 			if status {
@@ -132,39 +143,50 @@ func getIPSlot(nodeID string, sessionID string, logger hclog.Logger) (*IPSlot, e
 				break
 			}
 		}
+
 		if slot != nil {
 			break
 		}
+
 		msg := fmt.Sprintf("Failed to acquire IP slot: no empty slots found, waiting %d seconds...", slotCheckWaitTime)
-		logger.Warn(msg)
+		telemetry.ReportEvent(childCtx, msg)
 		time.Sleep(slotCheckWaitTime * time.Second)
 	}
+	telemetry.ReportEvent(childCtx, "ip slot reserved")
 
 	return slot, nil
 }
 
-func (slot *IPSlot) releaseIPSlot(logger hclog.Logger) error {
+func (slot *IPSlot) ReleaseIPSlot(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot")
+	defer childSpan.End()
+
 	consulClient, err := consul.NewClient(consul.DefaultConfig())
 	if err != nil {
-		panic(fmt.Errorf("failed to initialize Consul client: %v", err))
+		errMsg := fmt.Errorf("failed to initialize Consul client: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "initialized Consul client")
 
 	kv := consulClient.KV()
 
 	pair, _, err := kv.Get(slot.KVKey, &consul.QueryOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to release IPSlot: Failed to read Consul KV: %v", err)
+		errMsg := fmt.Errorf("failed to release IPSlot: Failed to read Consul KV: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
 
 	if pair == nil {
-		msg := fmt.Sprintf("IP slot %d for session %s was already released", slot.SlotIdx, slot.SessionID)
-		logger.Warn(msg)
+		errMsg := fmt.Errorf("IP slot %d for session %s was already released", slot.SlotIdx, slot.SessionID)
+		telemetry.ReportError(childCtx, errMsg)
 		return nil
 	}
 
 	if string(pair.Value) != slot.SessionID {
-		msg := fmt.Sprintf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.SessionID, string(pair.Value))
-		logger.Error(msg)
+		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.SessionID, string(pair.Value))
+		telemetry.ReportError(childCtx, errMsg)
 		return nil
 	}
 
@@ -172,15 +194,18 @@ func (slot *IPSlot) releaseIPSlot(logger hclog.Logger) error {
 		Key:         slot.KVKey,
 		ModifyIndex: pair.ModifyIndex,
 	}, &consul.WriteOptions{})
-
 	if err != nil {
-		return fmt.Errorf("failed to release IPSlot: Failed to delete slot from Consul KV: %v", err)
+		errMsg := fmt.Errorf("failed to release IPSlot: Failed to delete slot from Consul KV: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
 
 	if !status {
-		msg := fmt.Sprintf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.SessionID, string(pair.Value))
-		return fmt.Errorf(msg)
+		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.SessionID, string(pair.Value))
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "ip slot released")
 
 	return nil
 }

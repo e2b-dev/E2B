@@ -26,6 +26,8 @@ import (
 	"github.com/cneira/firecracker-task-driver/driver/client/client"
 	"github.com/cneira/firecracker-task-driver/driver/client/client/operations"
 	"github.com/cneira/firecracker-task-driver/driver/client/models"
+	"github.com/cneira/firecracker-task-driver/driver/slot"
+	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -33,7 +35,6 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -87,7 +88,7 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *D
 	defer childSpan.End()
 
 	httpClient := newFirecrackerClient(socketPath)
-	d.ReportEvent(childCtx, "created FC socket client")
+	telemetry.ReportEvent(childCtx, "created FC socket client")
 
 	memfilePath := filepath.Join(snapshotRootPath, memfileName)
 	snapfilePath := filepath.Join(snapshotRootPath, snapfileName)
@@ -99,7 +100,7 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *D
 
 	backendType := models.MemoryBackendBackendTypeFile
 	snapshotConfig := operations.LoadSnapshotParams{
-		Context: ctx,
+		Context: childCtx,
 		Body: &models.SnapshotLoadParams{
 			ResumeVM:            true,
 			EnableDiffSnapshots: false,
@@ -113,11 +114,10 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *D
 
 	_, err := httpClient.Operations.LoadSnapshot(&snapshotConfig)
 	if err != nil {
-		childSpan.RecordError(err)
-		childSpan.SetStatus(codes.Error, "critical error")
+		telemetry.ReportCriticalError(childCtx, err)
 		return err
 	}
-	d.ReportEvent(childCtx, "snapshot loaded")
+	telemetry.ReportEvent(childCtx, "snapshot loaded")
 
 	return nil
 }
@@ -126,7 +126,7 @@ func (d *Driver) initializeFC(
 	ctx context.Context,
 	cfg *drivers.TaskConfig,
 	taskConfig TaskConfig,
-	slot *IPSlot,
+	slot *slot.IPSlot,
 	fcEnvsDisk string,
 	editEnabled bool,
 ) (*vminfo, error) {
@@ -141,7 +141,7 @@ func (d *Driver) initializeFC(
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
 	if err != nil {
 		errMsg := fmt.Errorf("error assembling FC config: %v", err)
-		d.ReportCriticalError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
 
@@ -161,15 +161,21 @@ func (d *Driver) initializeFC(
 	log.SetLevel(log.DebugLevel)
 	logger.SetLevel(log.DebugLevel)
 
-	otelHook := NewOtelHook(vmmChildSpan)
+	otelHook := telemetry.NewOtelHook(vmmChildSpan)
 	logger.AddHook(otelHook)
 
 	machineOpts := []firecracker.Opt{
 		firecracker.WithLogger(log.NewEntry(logger)),
 	}
 
-	os.MkdirAll(slot.SessionTmpOverlay(), 0777)
-	os.MkdirAll(slot.SessionTmpWorkdir(), 0777)
+	err = os.MkdirAll(slot.SessionTmpOverlay(), 0777)
+	if err != nil {
+		telemetry.ReportError(childCtx, err)
+	}
+	err = os.MkdirAll(slot.SessionTmpWorkdir(), 0777)
+	if err != nil {
+		telemetry.ReportError(childCtx, err)
+	}
 
 	codeSnippetEnvPath := filepath.Join(fcEnvsDisk, taskConfig.CodeSnippetID)
 
@@ -193,7 +199,10 @@ func (d *Driver) initializeFC(
 
 		editIDPath := filepath.Join(codeSnippetEditPath, editIDName)
 
-		os.MkdirAll(codeSnippetEditPath, 0777)
+		err = os.MkdirAll(codeSnippetEditPath, 0777)
+		if err != nil {
+			telemetry.ReportError(childCtx, err)
+		}
 
 		if _, err := os.Stat(editIDPath); err == nil {
 			// If the edit_file exists we expect that the other files will exists too (we are creating te edit last)
@@ -209,7 +218,10 @@ func (d *Driver) initializeFC(
 			editID = uuid.New().String()
 
 			snapshotRootPath = filepath.Join(codeSnippetEditPath, editID)
-			os.MkdirAll(snapshotRootPath, 0777)
+			err = os.MkdirAll(snapshotRootPath, 0777)
+			if err != nil {
+				telemetry.ReportError(childCtx, err)
+			}
 
 			rootfsSrc := filepath.Join(codeSnippetEnvPath, rootfsName)
 			rootfsDest := filepath.Join(codeSnippetEditPath, editID, rootfsName)
@@ -220,16 +232,40 @@ func (d *Driver) initializeFC(
 			memfileSrc := filepath.Join(codeSnippetEnvPath, memfileName)
 			memfileDest := filepath.Join(codeSnippetEditPath, editID, memfileName)
 
-			os.Link(rootfsSrc, rootfsDest)
-			os.Link(snapfileSrc, snapfileDest)
-			os.Link(memfileSrc, memfileDest)
-			os.Link(buildIDSrc, buildIDDest)
-			os.Link(templateIDSrc, templateIDDest)
-			os.Link(templateBuildIDSrc, templateBuildIDDest)
+			err = os.Link(rootfsSrc, rootfsDest)
+			if err != nil {
+				telemetry.ReportError(childCtx, err)
+			}
+
+			err = os.Link(snapfileSrc, snapfileDest)
+			if err != nil {
+				telemetry.ReportError(childCtx, err)
+			}
+
+			err = os.Link(memfileSrc, memfileDest)
+			if err != nil {
+				telemetry.ReportError(childCtx, err)
+			}
+
+			err = os.Link(buildIDSrc, buildIDDest)
+			if err != nil {
+				telemetry.ReportError(childCtx, err)
+			}
+
+			err = os.Link(templateIDSrc, templateIDDest)
+			if err != nil {
+				telemetry.ReportError(childCtx, err)
+			}
+
+			err = os.Link(templateBuildIDSrc, templateBuildIDDest)
+			if err != nil {
+				telemetry.ReportError(childCtx, err)
+			}
 
 			err := os.WriteFile(editIDPath, []byte(editID), 0777)
 			if err != nil {
-				fmt.Printf("Unable to create edit_id file: %v", err)
+				errMsg := fmt.Errorf("unable to create edit_id file: %v", err)
+				telemetry.ReportError(childCtx, errMsg)
 			}
 		}
 
@@ -259,7 +295,10 @@ func (d *Driver) initializeFC(
 			buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
 		}
 
-		os.MkdirAll(buildDirPath, 0777)
+		err = os.MkdirAll(buildDirPath, 0777)
+		if err != nil {
+			telemetry.ReportError(childCtx, err)
+		}
 
 		mountCmd = fmt.Sprintf(
 			"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s && ",
@@ -302,7 +341,10 @@ func (d *Driver) initializeFC(
 			buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
 		}
 
-		os.MkdirAll(buildDirPath, 0777)
+		err = os.MkdirAll(buildDirPath, 0777)
+		if err != nil {
+			telemetry.ReportError(childCtx, err)
+		}
 
 		mountCmd = fmt.Sprintf(
 			"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s && ",
@@ -335,15 +377,17 @@ func (d *Driver) initializeFC(
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			vmmChildSpan.AddEvent("vmm log",
-				trace.WithAttributes(
-					attribute.String("level", "stdout"),
-					attribute.String("message", line),
-				),
+			telemetry.ReportEvent(vmmChildCtx, "vmm log",
+				attribute.String("type", "stdout"),
+				attribute.String("message", line),
 			)
 		}
 
-		cmdStdoutReader.Close()
+		readerErr := cmdStdoutReader.Close()
+		if readerErr != nil {
+			errMsg := fmt.Errorf("error closing vmm stdout reader %v", readerErr)
+			telemetry.ReportError(vmmChildCtx, errMsg)
+		}
 	}()
 
 	// TODO: Make the log collecting long running
@@ -353,15 +397,17 @@ func (d *Driver) initializeFC(
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			vmmChildSpan.AddEvent("vmm log",
-				trace.WithAttributes(
-					attribute.String("level", "stderr"),
-					attribute.String("message", line),
-				),
+			telemetry.ReportEvent(vmmChildCtx, "vmm log",
+				attribute.String("type", "stderr"),
+				attribute.String("message", line),
 			)
 		}
 
-		cmdStderrReader.Close()
+		readerErr := cmdStderrReader.Close()
+		if readerErr != nil {
+			errMsg := fmt.Errorf("error closing vmm stderr reader %v", readerErr)
+			telemetry.ReportError(vmmChildCtx, errMsg)
+		}
 	}()
 
 	vmmLogsReader, vmmLogsWriter := io.Pipe()
@@ -373,15 +419,17 @@ func (d *Driver) initializeFC(
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			vmmChildSpan.AddEvent("vmm log",
-				trace.WithAttributes(
-					attribute.String("level", "setup"),
-					attribute.String("message", line),
-				),
+			telemetry.ReportEvent(vmmChildCtx, "vmm log",
+				attribute.String("type", "setup"),
+				attribute.String("message", line),
 			)
 		}
 
-		vmmLogsReader.Close()
+		readerErr := vmmLogsReader.Close()
+		if readerErr != nil {
+			errMsg := fmt.Errorf("error closing vmm setup reader %v", readerErr)
+			telemetry.ReportError(vmmChildCtx, errMsg)
+		}
 	}()
 
 	prebootFcConfig := firecracker.Config{
@@ -408,12 +456,10 @@ func (d *Driver) initializeFC(
 	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, machineOpts...)
 	if err != nil {
 		errMsg := fmt.Errorf("failed creating machine: %v", err)
-
-		childSpan.RecordError(errMsg)
-		childSpan.SetStatus(codes.Error, "critical error")
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
-	d.ReportEvent(childCtx, "created vmm")
+	telemetry.ReportEvent(childCtx, "created vmm")
 
 	m.Handlers.Validation = m.Handlers.Validation.Clear()
 	m.Handlers.FcInit =
@@ -426,28 +472,26 @@ func (d *Driver) initializeFC(
 	err = m.Handlers.Run(childCtx, m)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to start preboot FC: %v", err)
-
-		childSpan.RecordError(errMsg)
-		childSpan.SetStatus(codes.Error, "critical error")
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
-	d.ReportEvent(childCtx, "started FC in preboot")
+	telemetry.ReportEvent(childCtx, "started FC in preboot")
 
 	if err := loadSnapshot(childCtx, fcCfg.SocketPath, snapshotRootPath, d); err != nil {
 		m.StopVMM()
 		errMsg := fmt.Errorf("failed to load snapshot: %v", err)
-
-		childSpan.RecordError(errMsg)
-		childSpan.SetStatus(codes.Error, "critical error")
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
-	d.ReportEvent(childCtx, "loaded snapshot")
+	telemetry.ReportEvent(childCtx, "loaded snapshot")
 
 	defer func() {
 		if err != nil {
 			stopErr := m.StopVMM()
 			if stopErr != nil {
-				logger.Error(fmt.Sprintf("Failed stopping machine after error: %+v", stopErr))
+				errMsg := fmt.Errorf("error stopping machine after error: %+v", stopErr)
+				telemetry.ReportError(childCtx, errMsg)
+				logger.Error(errMsg)
 			}
 		}
 	}()
@@ -459,9 +503,7 @@ func (d *Driver) initializeFC(
 	pid, errpid := m.PID()
 	if errpid != nil {
 		errMsg := fmt.Errorf("failed getting pid for machine: %v", errpid)
-
-		childSpan.RecordError(errMsg)
-		childSpan.SetStatus(codes.Error, "critical error")
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
 

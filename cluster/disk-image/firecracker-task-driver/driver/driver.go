@@ -23,9 +23,10 @@ package firevm
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/cneira/firecracker-task-driver/driver/slot"
+	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
@@ -37,7 +38,6 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -111,40 +111,6 @@ type Driver struct {
 	logger hclog.Logger
 
 	hosts *txeh.Hosts
-}
-
-func (d *Driver) ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) {
-	span := trace.SpanFromContext(ctx)
-
-	fmt.Println(name, attrs)
-
-	span.AddEvent(name,
-		trace.WithAttributes(attrs...),
-	)
-}
-
-func (d *Driver) ReportCriticalError(ctx context.Context, err error) {
-	span := trace.SpanFromContext(ctx)
-
-	fmt.Fprint(os.Stderr, err.Error())
-
-	span.RecordError(err,
-		trace.WithStackTrace(true),
-	)
-	span.SetStatus(codes.Error, "critical error")
-}
-
-func (d *Driver) ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
-	span := trace.SpanFromContext(ctx)
-
-	fmt.Fprint(os.Stderr, err.Error())
-
-	span.RecordError(err,
-		trace.WithStackTrace(true),
-		trace.WithAttributes(
-			attrs...,
-		),
-	)
 }
 
 // Config is the driver configuration set by the SetConfig RPC call
@@ -281,7 +247,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 
 	if handle == nil {
 		errMsg := fmt.Errorf("error: handle cannot be nil")
-		d.ReportCriticalError(ctx, errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 		return errMsg
 	}
 
@@ -307,7 +273,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	if _, ok := d.tasks.Get(cfg.ID); ok {
 		errMsg := fmt.Errorf("task with ID %q already started", cfg.ID)
 
-		d.ReportCriticalError(ctx, errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 		return nil, nil, errMsg
 	}
 
@@ -315,13 +281,13 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	if err := cfg.DecodeDriverConfig(&driverConfig); err != nil {
 		errMsg := fmt.Errorf("failed to decode driver config: %v", err)
 
-		d.ReportCriticalError(ctx, errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 		return nil, nil, errMsg
 	}
 
 	tid, traceIDErr := trace.TraceIDFromHex(driverConfig.TraceID)
 	if traceIDErr != nil {
-		d.ReportError(
+		telemetry.ReportError(
 			ctx,
 			traceIDErr,
 			attribute.String("trace_id", driverConfig.TraceID),
@@ -331,7 +297,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	sid, spanIDErr := trace.SpanIDFromHex(driverConfig.SpanID)
 	if spanIDErr != nil {
-		d.ReportError(
+		telemetry.ReportError(
 			ctx,
 			spanIDErr,
 			attribute.String("span_id", driverConfig.SpanID),
@@ -366,15 +332,47 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	ipSlot, err := CreateNamespaces(childCtx, cfg.Env["NOMAD_NODE_ID"], driverConfig.SessionID, d)
+	// Get slot from Consul KV
+	ipSlot, err := slot.NewIPSlot(
+		childCtx,
+		cfg.Env["NOMAD_NODE_ID"],
+		driverConfig.SessionID,
+		d.tracer,
+	)
 	if err != nil {
-		ipSlot.RemoveNamespace(childCtx, d)
-		errMsg := fmt.Errorf("failed to create namespaces: %v", err)
-
-		d.ReportCriticalError(childCtx, errMsg)
+		errMsg := fmt.Errorf("failed to get IP slot: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
-	d.ReportEvent(childCtx, "created namespaces")
+	telemetry.ReportEvent(childCtx, "reserved ip slot")
+
+	defer func() {
+		if err != nil {
+			slotErr := ipSlot.ReleaseIPSlot(childCtx, d.tracer)
+			if slotErr != nil {
+				errMsg := fmt.Errorf("error removing network namespace after failed session start %v", slotErr)
+				telemetry.ReportError(childCtx, errMsg)
+			}
+		}
+	}()
+
+	defer func() {
+		if err != nil {
+			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, d.tracer)
+			if ntErr != nil {
+				errMsg := fmt.Errorf("error removing network namespace after failed session start %v", ntErr)
+				telemetry.ReportError(childCtx, errMsg)
+			}
+		}
+	}()
+
+	err = CreateNetwork(childCtx, ipSlot, d.hosts, d.tracer)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to create namespaces: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return nil, nil, errMsg
+	}
+	telemetry.ReportEvent(childCtx, "created network")
 
 	m, err := d.initializeFC(
 		childCtx,
@@ -385,13 +383,12 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		driverConfig.EditEnabled,
 	)
 	if err != nil {
-		ipSlot.RemoveNamespace(childCtx, d)
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
 		errMsg := fmt.Errorf("task with ID %q failed: %q", cfg.ID, err.Error())
-		d.ReportCriticalError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
-	d.ReportEvent(childCtx, "initialized FC")
+	telemetry.ReportEvent(childCtx, "initialized FC")
 
 	h := &taskHandle{
 		ctx:             childCtx,
@@ -415,11 +412,10 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	if err = handle.SetDriverState(&driverState); err != nil {
-		ipSlot.RemoveNamespace(childCtx, d)
 		m.Machine.StopVMM()
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
 		errMsg := fmt.Errorf("failed to set driver state: %v", err)
-		d.ReportCriticalError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
 
@@ -438,7 +434,7 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 
 	h, ok := d.tasks.Get(taskID)
 	if !ok {
-		d.ReportCriticalError(validationCtx, drivers.ErrTaskNotFound)
+		telemetry.ReportCriticalError(validationCtx, drivers.ErrTaskNotFound)
 		return nil, drivers.ErrTaskNotFound
 	}
 
@@ -489,7 +485,7 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 
 	h, ok := d.tasks.Get(taskID)
 	if !ok {
-		d.ReportCriticalError(ctx, drivers.ErrTaskNotFound)
+		telemetry.ReportCriticalError(ctx, drivers.ErrTaskNotFound)
 		return drivers.ErrTaskNotFound
 	}
 
@@ -506,10 +502,10 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 
 	if err := h.shutdown(childCtx, d); err != nil {
 		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
-		d.ReportCriticalError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
-	d.ReportEvent(childCtx, "shutdown task")
+	telemetry.ReportEvent(childCtx, "shutdown task")
 
 	return nil
 }
@@ -522,7 +518,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 
 	h, ok := d.tasks.Get(taskID)
 	if !ok {
-		d.ReportCriticalError(ctx, drivers.ErrTaskNotFound)
+		telemetry.ReportCriticalError(ctx, drivers.ErrTaskNotFound)
 		return drivers.ErrTaskNotFound
 	}
 
@@ -539,14 +535,24 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 
 	if err := h.shutdown(childCtx, d); err != nil {
 		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
-		d.ReportCriticalError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
-	d.ReportEvent(childCtx, "shutdown task")
+	telemetry.ReportEvent(childCtx, "shutdown task")
 
-	h.Slot.RemoveNamespace(childCtx, d)
+	err := RemoveNetwork(childCtx, h.Slot, d.hosts, d.tracer)
+	if err != nil {
+		errMsg := fmt.Errorf("cannot remove network when destroying task %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	}
+
+	err = h.Slot.ReleaseIPSlot(childCtx, d.tracer)
+	if err != nil {
+		errMsg := fmt.Errorf("cannot release ip slot when destroying task %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	}
 
 	d.tasks.Delete(taskID)
-	d.ReportEvent(childCtx, "task deleted")
+	telemetry.ReportEvent(childCtx, "task deleted")
 
 	return nil
 }

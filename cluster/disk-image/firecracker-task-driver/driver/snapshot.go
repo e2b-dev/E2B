@@ -9,11 +9,15 @@ import (
 
 	"github.com/cneira/firecracker-task-driver/driver/client/client/operations"
 	"github.com/cneira/firecracker-task-driver/driver/client/models"
+	"github.com/cneira/firecracker-task-driver/driver/slot"
+	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func saveEditSnapshot(ipSlot *IPSlot, info *Instance_info) error {
-	ctx := context.Background()
+func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_info, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "save-edit-snapshot")
+	defer childSpan.End()
 
 	httpClient := newFirecrackerClient(info.SocketPath)
 
@@ -29,19 +33,21 @@ func saveEditSnapshot(ipSlot *IPSlot, info *Instance_info) error {
 	// Pause VM
 	state := models.VMStatePaused
 	pauseConfig := operations.PatchVMParams{
-		Context: ctx,
+		Context: childCtx,
 		Body: &models.VM{
 			State: &state,
 		},
 	}
 	_, err := httpClient.Operations.PatchVM(&pauseConfig)
 	if err != nil {
-		return fmt.Errorf("error pausing vm %v", err)
+		errMsg := fmt.Errorf("error pausing vm %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
 
 	// Create snapshot
 	snapshotConfig := operations.CreateSnapshotParams{
-		Context: ctx,
+		Context: childCtx,
 		Body: &models.SnapshotCreateParams{
 			SnapshotType: models.SnapshotCreateParamsSnapshotTypeFull,
 			MemFilePath:  &memfilePath,
@@ -51,11 +57,17 @@ func saveEditSnapshot(ipSlot *IPSlot, info *Instance_info) error {
 	_, err = httpClient.Operations.CreateSnapshot(&snapshotConfig)
 
 	if err != nil {
-		return fmt.Errorf("error creating vm snapshot %v", err)
+		errMsg := fmt.Errorf("error creating vm snapshot %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
 	defer func() {
 		if err != nil {
-			os.RemoveAll(newEditDirPath)
+			rmErr := os.RemoveAll(newEditDirPath)
+			if rmErr != nil {
+				errMsg := fmt.Errorf("error removing edit dir %v", rmErr)
+				telemetry.ReportError(childCtx, errMsg)
+			}
 		}
 	}()
 
@@ -67,13 +79,17 @@ func saveEditSnapshot(ipSlot *IPSlot, info *Instance_info) error {
 
 	_, err = cmd.Output()
 	if err != nil {
-		return fmt.Errorf("failed copying rootfs: %v", err)
+		errMsg := fmt.Errorf("failed copying rootfs: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
 
 	editIDPath := filepath.Join(info.CodeSnippetDirectory, editDirName, editIDName)
 	err = os.WriteFile(editIDPath, []byte(editID), 0777)
 	if err != nil {
-		return fmt.Errorf("unable to create edit_id file: %v", err)
+		errMsg := fmt.Errorf("unable to create edit_id file: %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
 	return nil
 }

@@ -121,7 +121,11 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 	if opts.FcSocketPath != "" {
 		socketPath = opts.FcSocketPath
 	} else {
-		socketPath = getSocketPath()
+		socket, sockErr := getSocketPath()
+		if sockErr != nil {
+			return firecracker.Config{}, sockErr
+		}
+		socketPath = socket
 	}
 
 	//  htEnabled := !opts.FcDisableHt
@@ -356,7 +360,7 @@ func createFifoFileLogs(fifoPath string) (*os.File, error) {
 // and searching for the existance of directories {$HOME, os.TempDir()} and returning
 // the path with the first directory joined with the unique filename. If we can't
 // find a good path panics.
-func getSocketPath() string {
+func getSocketPath() (string, error) {
 	filename := strings.Join([]string{
 		".firecracker.sock",
 		strconv.Itoa(os.Getpid()),
@@ -369,10 +373,11 @@ func getSocketPath() string {
 	} else if checkExistsAndDir(os.TempDir()) {
 		dir = os.TempDir()
 	} else {
-		panic("Unable to find a location for firecracker socket. 'It's not going to do any good to land on mars if we're stupid.' --Ray Bradbury")
+		errMsg := fmt.Errorf("unable to find a location for firecracker socket.")
+		return "", errMsg
 	}
 
-	return filepath.Join(dir, filename)
+	return filepath.Join(dir, filename), nil
 }
 
 // checkExistsAndDir returns true if path exists and is a Dir
