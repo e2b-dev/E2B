@@ -3,8 +3,6 @@ package slot
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/cneira/firecracker-task-driver/driver/telemetry"
@@ -88,19 +86,7 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func (ips *IPSlot) SessionTmp() string {
-	return filepath.Join(os.TempDir(), fmt.Sprintf("fc-%s", ips.SessionID))
-}
-
-func (ips *IPSlot) SessionTmpOverlay() string {
-	return filepath.Join(ips.SessionTmp(), "overlay")
-}
-
-func (ips *IPSlot) SessionTmpWorkdir() string {
-	return filepath.Join(ips.SessionTmp(), "workdir")
-}
-
-func NewIPSlot(ctx context.Context, nodeID string, sessionID string, tracer trace.Tracer) (*IPSlot, error) {
+func New(ctx context.Context, nodeID string, sessionID string, tracer trace.Tracer) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()
 
@@ -157,7 +143,7 @@ func NewIPSlot(ctx context.Context, nodeID string, sessionID string, tracer trac
 	return slot, nil
 }
 
-func (slot *IPSlot) ReleaseIPSlot(ctx context.Context, tracer trace.Tracer) error {
+func (slot *IPSlot) Release(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot")
 	defer childSpan.End()
 

@@ -48,6 +48,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/datadog-go v2.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
+github.com/KarpelesLab/reflink v0.0.2 h1:PK0nDUsk2eEdIvMOUzh2TI35GY5KYmTdqdCCwd3BIz0=
+github.com/KarpelesLab/reflink v0.0.2/go.mod h1:mB+2afhyn+eZTMFSH1gXunrgArTsiUBzfoAy0X2fatA=
 github.com/LK4D4/joincontext v0.0.0-20171026170139-1724345da6d5 h1:U7q69tqXiCf6m097GRlNQB0/6SI1qWIOHYHhCEvDxF4=
 github.com/LK4D4/joincontext v0.0.0-20171026170139-1724345da6d5/go.mod h1:nxQPcNPR/34g+HcK2hEsF99O+GJgIkW/OmPl8wtzhmk=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=

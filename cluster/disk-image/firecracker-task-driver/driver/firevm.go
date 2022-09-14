@@ -17,7 +17,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -26,11 +25,11 @@ import (
 	"github.com/cneira/firecracker-task-driver/driver/client/client"
 	"github.com/cneira/firecracker-task-driver/driver/client/client/operations"
 	"github.com/cneira/firecracker-task-driver/driver/client/models"
+	"github.com/cneira/firecracker-task-driver/driver/env"
 	"github.com/cneira/firecracker-task-driver/driver/slot"
 	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	log "github.com/sirupsen/logrus"
@@ -42,17 +41,6 @@ const (
 	// containerMonitorIntv is the interval at which the driver checks if the
 	// firecracker micro-vm is still running
 	containerMonitorIntv = 4 * time.Second
-
-	editIDName          = "edit_id"
-	buildIDName         = "build_id"
-	templateIDName      = "template_id"
-	templateBuildIDName = "template_build_id"
-	rootfsName          = "rootfs.ext4"
-	snapfileName        = "snapfile"
-	memfileName         = "memfile"
-
-	editDirName  = "edit"
-	buildDirName = "builds"
 )
 
 type vminfo struct {
@@ -90,8 +78,8 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *D
 	httpClient := newFirecrackerClient(socketPath)
 	telemetry.ReportEvent(childCtx, "created FC socket client")
 
-	memfilePath := filepath.Join(snapshotRootPath, memfileName)
-	snapfilePath := filepath.Join(snapshotRootPath, snapfileName)
+	memfilePath := filepath.Join(snapshotRootPath, env.MemfileName)
+	snapfilePath := filepath.Join(snapshotRootPath, env.SnapfileName)
 
 	childSpan.SetAttributes(
 		attribute.String("memfile_path", memfilePath),
@@ -127,8 +115,7 @@ func (d *Driver) initializeFC(
 	cfg *drivers.TaskConfig,
 	taskConfig TaskConfig,
 	slot *slot.IPSlot,
-	fcEnvsDisk string,
-	editEnabled bool,
+	env *env.Env,
 ) (*vminfo, error) {
 	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
 		attribute.String("session_id", slot.SessionID),
@@ -168,192 +155,11 @@ func (d *Driver) initializeFC(
 		firecracker.WithLogger(log.NewEntry(logger)),
 	}
 
-	err = os.MkdirAll(slot.SessionTmpOverlay(), 0777)
-	if err != nil {
-		telemetry.ReportError(childCtx, err)
-	}
-	err = os.MkdirAll(slot.SessionTmpWorkdir(), 0777)
-	if err != nil {
-		telemetry.ReportError(childCtx, err)
-	}
-
-	codeSnippetEnvPath := filepath.Join(fcEnvsDisk, taskConfig.CodeSnippetID)
-
-	var buildDirPath string
-	var snapshotRootPath string
-	var mountCmd string
-	var editID string
-
-	if editEnabled {
-		// Use the shared edit sessions
-		codeSnippetEditPath := filepath.Join(codeSnippetEnvPath, editDirName)
-
-		buildIDSrc := filepath.Join(codeSnippetEnvPath, buildIDName)
-		buildIDDest := filepath.Join(codeSnippetEditPath, buildIDName)
-
-		templateIDSrc := filepath.Join(codeSnippetEnvPath, templateIDName)
-		templateIDDest := filepath.Join(codeSnippetEditPath, templateIDName)
-
-		templateBuildIDSrc := filepath.Join(codeSnippetEnvPath, templateBuildIDName)
-		templateBuildIDDest := filepath.Join(codeSnippetEditPath, templateBuildIDName)
-
-		editIDPath := filepath.Join(codeSnippetEditPath, editIDName)
-
-		err = os.MkdirAll(codeSnippetEditPath, 0777)
-		if err != nil {
-			telemetry.ReportError(childCtx, err)
-		}
-
-		if _, err := os.Stat(editIDPath); err == nil {
-			// If the edit_file exists we expect that the other files will exists too (we are creating te edit last)
-			data, err := os.ReadFile(editIDPath)
-			if err != nil {
-				return nil, fmt.Errorf("failed reading edit id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
-			}
-			editID = string(data)
-
-			snapshotRootPath = filepath.Join(codeSnippetEditPath, editID)
-		} else {
-			// Link the fc files from the root CS directory and create edit_id
-			editID = uuid.New().String()
-
-			snapshotRootPath = filepath.Join(codeSnippetEditPath, editID)
-			err = os.MkdirAll(snapshotRootPath, 0777)
-			if err != nil {
-				telemetry.ReportError(childCtx, err)
-			}
-
-			rootfsSrc := filepath.Join(codeSnippetEnvPath, rootfsName)
-			rootfsDest := filepath.Join(codeSnippetEditPath, editID, rootfsName)
-
-			snapfileSrc := filepath.Join(codeSnippetEnvPath, snapfileName)
-			snapfileDest := filepath.Join(codeSnippetEditPath, editID, snapfileName)
-
-			memfileSrc := filepath.Join(codeSnippetEnvPath, memfileName)
-			memfileDest := filepath.Join(codeSnippetEditPath, editID, memfileName)
-
-			err = os.Link(rootfsSrc, rootfsDest)
-			if err != nil {
-				telemetry.ReportError(childCtx, err)
-			}
-
-			err = os.Link(snapfileSrc, snapfileDest)
-			if err != nil {
-				telemetry.ReportError(childCtx, err)
-			}
-
-			err = os.Link(memfileSrc, memfileDest)
-			if err != nil {
-				telemetry.ReportError(childCtx, err)
-			}
-
-			err = os.Link(buildIDSrc, buildIDDest)
-			if err != nil {
-				telemetry.ReportError(childCtx, err)
-			}
-
-			err = os.Link(templateIDSrc, templateIDDest)
-			if err != nil {
-				telemetry.ReportError(childCtx, err)
-			}
-
-			err = os.Link(templateBuildIDSrc, templateBuildIDDest)
-			if err != nil {
-				telemetry.ReportError(childCtx, err)
-			}
-
-			err := os.WriteFile(editIDPath, []byte(editID), 0777)
-			if err != nil {
-				errMsg := fmt.Errorf("unable to create edit_id file: %v", err)
-				telemetry.ReportError(childCtx, errMsg)
-			}
-		}
-
-		if _, err := os.Stat(buildIDDest); err != nil {
-			// If the build_id file does not exist this envs is templated - we check to which env the template points to and use that as our new "virtual" env
-			data, err := os.ReadFile(templateIDDest)
-			if err != nil {
-				return nil, fmt.Errorf("failed reading template id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
-			}
-			templateID := string(data)
-
-			templateEnvPath := filepath.Join(fcEnvsDisk, templateID)
-
-			data, err = os.ReadFile(templateBuildIDDest)
-			if err != nil {
-				return nil, fmt.Errorf("failed reading build id for the template %s of code snippet %s: %v", templateID, taskConfig.CodeSnippetID, err)
-			}
-			templateBuildID := string(data)
-			buildDirPath = filepath.Join(templateEnvPath, buildDirName, templateBuildID)
-		} else {
-			// build_id is present so this is a non-templated session
-			data, err := os.ReadFile(buildIDDest)
-			if err != nil {
-				return nil, fmt.Errorf("failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
-			}
-			buildID := string(data)
-			buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
-		}
-
-		err = os.MkdirAll(buildDirPath, 0777)
-		if err != nil {
-			telemetry.ReportError(childCtx, err)
-		}
-
-		mountCmd = fmt.Sprintf(
-			"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s && ",
-			snapshotRootPath,
-			slot.SessionTmpOverlay(),
-			slot.SessionTmpWorkdir(),
-			buildDirPath,
-		)
-	} else {
-		// Mount overlay
-		snapshotRootPath = codeSnippetEnvPath
-
-		templateIDPath := filepath.Join(codeSnippetEnvPath, templateIDName)
-		templateBuildIDPath := filepath.Join(codeSnippetEnvPath, templateBuildIDName)
-		buildIDPath := filepath.Join(codeSnippetEnvPath, buildIDName)
-
-		if _, err := os.Stat(buildIDPath); err != nil {
-			// If the build_id file does not exist this envs is templated - we check to which env the template points to and use that as our new "virtual" env
-			data, err := os.ReadFile(templateIDPath)
-			if err != nil {
-				return nil, fmt.Errorf("failed reading template id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
-			}
-			templateID := string(data)
-
-			templateEnvPath := filepath.Join(fcEnvsDisk, templateID)
-
-			data, err = os.ReadFile(templateBuildIDPath)
-			if err != nil {
-				return nil, fmt.Errorf("failed reading build id for the template %s of code snippet %s: %v", templateID, taskConfig.CodeSnippetID, err)
-			}
-			templateBuildID := string(data)
-			buildDirPath = filepath.Join(templateEnvPath, buildDirName, templateBuildID)
-		} else {
-			// build_id is present and this is a normal non-templated and non-edit session
-			data, err := os.ReadFile(buildIDPath)
-			if err != nil {
-				return nil, fmt.Errorf("failed reading build id for the code snippet %s: %v", taskConfig.CodeSnippetID, err)
-			}
-			buildID := string(data)
-			buildDirPath = filepath.Join(codeSnippetEnvPath, buildDirName, buildID)
-		}
-
-		err = os.MkdirAll(buildDirPath, 0777)
-		if err != nil {
-			telemetry.ReportError(childCtx, err)
-		}
-
-		mountCmd = fmt.Sprintf(
-			"mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s && ",
-			snapshotRootPath,
-			slot.SessionTmpOverlay(),
-			slot.SessionTmpWorkdir(),
-			buildDirPath,
-		)
-	}
+	mountCmd := fmt.Sprintf(
+		"mount --bind  %s %s && ",
+		env.SnapshotRootPath,
+		env.BuildDirPath,
+	)
 
 	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fcCfg.SocketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
@@ -477,7 +283,7 @@ func (d *Driver) initializeFC(
 	}
 	telemetry.ReportEvent(childCtx, "started FC in preboot")
 
-	if err := loadSnapshot(childCtx, fcCfg.SocketPath, snapshotRootPath, d); err != nil {
+	if err := loadSnapshot(childCtx, fcCfg.SocketPath, env.SnapshotRootPath, d); err != nil {
 		m.StopVMM()
 		errMsg := fmt.Errorf("failed to load snapshot: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -511,12 +317,12 @@ func (d *Driver) initializeFC(
 		Cmd:                  cmd,
 		AllocId:              cfg.AllocID,
 		Pid:                  strconv.Itoa(pid),
-		SnapshotRootPath:     snapshotRootPath,
-		EditID:               &editID,
+		SnapshotRootPath:     env.SnapshotRootPath,
+		EditID:               env.EditID,
 		SocketPath:           fcCfg.SocketPath,
 		CodeSnippetID:        taskConfig.CodeSnippetID,
-		CodeSnippetDirectory: codeSnippetEnvPath,
-		BuildDirPath:         buildDirPath,
+		CodeSnippetDirectory: env.CodeSnippetEnvPath,
+		BuildDirPath:         env.BuildDirPath,
 	}
 
 	return &vminfo{Machine: m, Info: info}, nil

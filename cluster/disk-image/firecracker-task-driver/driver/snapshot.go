@@ -9,6 +9,7 @@ import (
 
 	"github.com/cneira/firecracker-task-driver/driver/client/client/operations"
 	"github.com/cneira/firecracker-task-driver/driver/client/models"
+	"github.com/cneira/firecracker-task-driver/driver/env"
 	"github.com/cneira/firecracker-task-driver/driver/slot"
 	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	"github.com/google/uuid"
@@ -23,12 +24,12 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 
 	editID := uuid.New().String()
 
-	newEditDirPath := filepath.Join(info.CodeSnippetDirectory, editDirName, editID)
+	newEditDirPath := filepath.Join(info.CodeSnippetDirectory, env.EditDirName, editID)
 
 	os.MkdirAll(newEditDirPath, 0777)
 
-	memfilePath := filepath.Join(newEditDirPath, memfileName)
-	snapfilePath := filepath.Join(newEditDirPath, snapfileName)
+	memfilePath := filepath.Join(newEditDirPath, env.MemfileName)
+	snapfilePath := filepath.Join(newEditDirPath, env.SnapfileName)
 
 	// Pause VM
 	state := models.VMStatePaused
@@ -61,6 +62,7 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+
 	defer func() {
 		if err != nil {
 			rmErr := os.RemoveAll(newEditDirPath)
@@ -71,10 +73,10 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 		}
 	}()
 
-	rootfsPathSrc := filepath.Join(info.BuildDirPath, rootfsName)
-	rootfsPathDest := filepath.Join(newEditDirPath, rootfsName)
+	rootfsPathSrc := filepath.Join(info.BuildDirPath, env.RootfsName)
+	rootfsPathDest := filepath.Join(newEditDirPath, env.RootfsName)
 
-	copyCmd := fmt.Sprintf("cp %s %s", rootfsPathSrc, rootfsPathDest)
+	copyCmd := fmt.Sprintf("cp -pRd --reflink %s %s", rootfsPathSrc, rootfsPathDest)
 	cmd := exec.CommandContext(ctx, "nsenter", "-t", info.Pid, "-m", "--", "bash", "-c", copyCmd)
 
 	_, err = cmd.Output()
@@ -84,7 +86,7 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 		return errMsg
 	}
 
-	editIDPath := filepath.Join(info.CodeSnippetDirectory, editDirName, editIDName)
+	editIDPath := filepath.Join(info.CodeSnippetDirectory, env.EditDirName, env.EditIDName)
 	err = os.WriteFile(editIDPath, []byte(editID), 0777)
 	if err != nil {
 		errMsg := fmt.Errorf("unable to create edit_id file: %v", err)

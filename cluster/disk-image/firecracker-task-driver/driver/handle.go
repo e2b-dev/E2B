@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cneira/firecracker-task-driver/driver/env"
 	"github.com/cneira/firecracker-task-driver/driver/slot"
 	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
@@ -32,10 +33,10 @@ import (
 	"github.com/hashicorp/nomad/plugins/drivers"
 )
 
-var (
-	firecrackerCPUStats = []string{"System Mode", "User Mode", "Percent"}
-	firecrackerMemStats = []string{"RSS", "Swap"}
-)
+// var (
+// 	firecrackerCPUStats = []string{"System Mode", "User Mode", "Percent"}
+// 	firecrackerMemStats = []string{"RSS", "Swap"}
+// )
 
 type taskHandle struct {
 	ctx    context.Context
@@ -129,10 +130,10 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	// var err error
 	if h.EditEnabled {
 		// if the build id and template id doesn't exist the code snippet was deleted
-		buildIDPath := filepath.Join(h.Info.CodeSnippetDirectory, buildIDName)
+		buildIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.BuildIDName)
 		if _, err := os.Stat(buildIDPath); err != nil {
 			// build id doesn't exist - the code snippet may be using template
-			templateIDPath := filepath.Join(h.Info.CodeSnippetDirectory, templateIDName)
+			templateIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.TemplateIDName)
 			if _, err := os.Stat(templateIDPath); err != nil {
 				// template id doesn't exist
 			} else {
@@ -183,7 +184,7 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	}
 
 	if h.EditEnabled {
-		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, editDirName, *h.Info.EditID)
+		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, env.EditDirName, *h.Info.EditID)
 		err = os.RemoveAll(oldEditDirPath)
 		if err != nil {
 			errMsg := fmt.Errorf("error deleting old edit dir %v", err)

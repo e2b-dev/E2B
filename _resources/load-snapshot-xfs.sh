@@ -1,7 +1,7 @@
 set -eu
 
 # NETWORK
-NAMESPACE="ns1"
+NAMESPACE="ns2"
 
 TAP_DEV="tap0"
 MASK_LONG="255.255.255.252"
@@ -28,7 +28,7 @@ mkdir -p $TMP
 ROOTFS=$TMP/rootfs.ext4
 
 # Don't use relative soft link
-ln -s ${WORKDIR}/test/snapshots/rootfs-2/rootfs.ext4 $ROOTFS
+ln -s ${WORKDIR}/ts/rootfs.ext4 $ROOTFS
 
 # FC
 FC_SOCKET="/tmp/firecracker.socket"

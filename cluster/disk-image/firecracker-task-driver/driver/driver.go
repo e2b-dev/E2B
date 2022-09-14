@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cneira/firecracker-task-driver/driver/env"
 	"github.com/cneira/firecracker-task-driver/driver/slot"
 	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	hclog "github.com/hashicorp/go-hclog"
@@ -333,7 +334,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle.Config = cfg
 
 	// Get slot from Consul KV
-	ipSlot, err := slot.NewIPSlot(
+	ipSlot, err := slot.New(
 		childCtx,
 		cfg.Env["NOMAD_NODE_ID"],
 		driverConfig.SessionID,
@@ -348,7 +349,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			slotErr := ipSlot.ReleaseIPSlot(childCtx, d.tracer)
+			slotErr := ipSlot.Release(childCtx, d.tracer)
 			if slotErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed session start %v", slotErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -368,19 +369,43 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	err = CreateNetwork(childCtx, ipSlot, d.hosts, d.tracer)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create namespaces: %v", err)
+		errMsg := fmt.Errorf("failed to create namespaces %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
 	telemetry.ReportEvent(childCtx, "created network")
+
+	env, err := env.New(
+		childCtx,
+		ipSlot,
+		driverConfig.CodeSnippetID,
+		cfg.Env["FC_ENVS_DISK"],
+		driverConfig.EditEnabled,
+		d.tracer,
+	)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to create env for FC %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return nil, nil, errMsg
+	}
+	telemetry.ReportEvent(childCtx, "created env for FC")
+
+	defer func() {
+		if err != nil {
+			envErr := env.Delete(childCtx, d.tracer)
+			if envErr != nil {
+				errMsg := fmt.Errorf("error deleting env after failed fc start %v", err)
+				telemetry.ReportCriticalError(childCtx, errMsg)
+			}
+		}
+	}()
 
 	m, err := d.initializeFC(
 		childCtx,
 		cfg,
 		driverConfig,
 		ipSlot,
-		cfg.Env["FC_ENVS_DISK"],
-		driverConfig.EditEnabled,
+		env,
 	)
 	if err != nil {
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
@@ -545,7 +570,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
-	err = h.Slot.ReleaseIPSlot(childCtx, d.tracer)
+	err = h.Slot.Release(childCtx, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot release ip slot when destroying task %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

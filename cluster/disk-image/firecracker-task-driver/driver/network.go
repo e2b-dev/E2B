@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"runtime"
 
 	"github.com/cneira/firecracker-task-driver/driver/slot"
@@ -312,19 +311,13 @@ func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, 
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
-	err = os.RemoveAll(ipSlot.SessionTmp())
-	if err != nil {
-		errMsg := fmt.Errorf("error deleting session tmp files (overlay, workdir) %v", err)
-		telemetry.ReportError(childCtx, errMsg)
-	}
-
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting namespace %v", err)
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
-	err = ipSlot.ReleaseIPSlot(childCtx, tracer)
+	err = ipSlot.Release(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error releasing slot %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

@@ -116,16 +116,13 @@ function geteditrootfs() {
 
   if [[ "$SESSION_ID" == "" ]]; then
     # no session -> copy from edit directory
-    cp $EDIT_ID_DIR/rootfs.ext4 $BUILD_FC_ROOTFS
+    cp -pRd --reflink $EDIT_ID_DIR/rootfs.ext4 $BUILD_FC_ROOTFS
   else
-    # session exists -> mount overlay and copy
-    TMP_OVERLAY="/tmp/fc-$SESSION_ID/overlay"
-    
-    mount -t overlay overlay -o lowerdir=$TMP_OVERLAY:$EDIT_ID_DIR $BUILD_MNT_DIR
+    # session exists -> copy from current session
+    SESSION_ROOTFS=$FC_ENVS_DISK/$CODE_SNIPPET_ID/session-envs/$SESSION_ID/rootfs.ext4
 
-    cp $BUILD_MNT_DIR/rootfs.ext4 $BUILD_FC_ROOTFS
-
-    umount $BUILD_MNT_DIR
+    # TODO: Handle possible partial writes?
+    cp -pRd --reflink $SESSION_ROOTFS $BUILD_FC_ROOTFS
   fi
 
   echo "===> rootfs done"

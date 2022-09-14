@@ -3,6 +3,7 @@ module github.com/cneira/firecracker-task-driver
 go 1.18
 
 require (
+	github.com/KarpelesLab/reflink v0.0.2
 	github.com/coreos/go-iptables v0.6.0
 	github.com/firecracker-microvm/firecracker-go-sdk v0.22.1-0.20220321145446-b53c309b851b
 	github.com/go-openapi/errors v0.20.2
