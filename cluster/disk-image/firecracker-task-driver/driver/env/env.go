@@ -47,7 +47,7 @@ func New(
 	defer childSpan.End()
 
 	codeSnippetEnvPath := filepath.Join(fcEnvsDisk, codeSnippetID)
-	sessionEnvPath := filepath.Join(codeSnippetEnvPath, SessionEnvsDirName, codeSnippetID)
+	sessionEnvPath := filepath.Join(codeSnippetEnvPath, SessionEnvsDirName, slot.SessionID)
 
 	err := os.MkdirAll(sessionEnvPath, 0777)
 	if err != nil {

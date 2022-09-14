@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"time"
 
 	firevm "github.com/cneira/firecracker-task-driver/driver"
@@ -25,18 +26,27 @@ func main() {
 		http.ListenAndServe(":6061", nil)
 	}()
 
-	otelLauncher := launcher.ConfigureOpentelemetry(
-		launcher.WithServiceName(serviceName),
-		launcher.WithMetricReportingPeriod(10*time.Second),
-		launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-		launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-		launcher.WithMetricExporterInsecure(true),
-		launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-		launcher.WithSpanExporterInsecure(true),
-		// TODO: Try to configure and use the logger for sending stdout/err through otel
-		// launcher.WithLogger(serviceName),
-	)
-	defer otelLauncher.Shutdown()
+	telemetryAPIKey := flag.String("telemetry-api", "", "api key for telemetry")
+	flag.Parse()
+
+	if *telemetryAPIKey == "" {
+		otelLauncher := launcher.ConfigureOpentelemetry(
+			launcher.WithServiceName(serviceName),
+			launcher.WithMetricReportingPeriod(10*time.Second),
+			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterInsecure(true),
+			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
+			launcher.WithSpanExporterInsecure(true),
+		)
+		defer otelLauncher.Shutdown()
+	} else {
+		otelLauncher := launcher.ConfigureOpentelemetry(
+			launcher.WithServiceName(serviceName),
+			launcher.WithAccessToken(*telemetryAPIKey),
+		)
+		defer otelLauncher.Shutdown()
+	}
 
 	// Serve the plugin
 	plugins.Serve(factory)

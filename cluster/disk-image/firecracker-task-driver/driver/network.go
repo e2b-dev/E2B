@@ -55,7 +55,7 @@ func CreateNetwork(
 	// Create NS for the session
 	ns, err := netns.NewNamed(ipSlot.NamespaceID())
 	if err != nil {
-		return fmt.Errorf("cannot create new namespace [] %v", err)
+		return fmt.Errorf("cannot create new namespace %v", err)
 	}
 	defer ns.Close()
 
