@@ -53,6 +53,11 @@ func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 	return sessions, nil
 }
 
+type AllocResult struct {
+	session *api.Session
+	err     *api.APIError
+}
+
 func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSession *api.NewSession) (*api.Session, *api.APIError) {
 	childCtx, childSpan := t.Start(ctx, "create-session",
 		trace.WithAttributes(
@@ -72,9 +77,9 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 	}
 
 	sessionsJobTemp = template.Must(sessionsJobTemp, err)
-
-	var sessionID string
+	sessionID := sessionIDPrefix + genRandomSession(sessionIDRandomLength)
 	var evalID string
+	var job *nomadAPI.Job
 
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()
@@ -83,34 +88,17 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 		attribute.String("passed_trace_id_hex", string(traceID)),
 		attribute.String("passed_span_id_hex", string(spanID)),
 	)
-	var job *nomadAPI.Job
-
-	timeout := time.After(jobRegisterTimeout)
-
-	topics := map[nomadAPI.Topic][]string{
-		nomadAPI.TopicAllocation: {"*"},
-	}
-	eventCh, err := n.client.EventStream().Stream(childCtx, topics, 0, &nomadAPI.QueryOptions{})
-	if err != nil {
-		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to get Nomad event stream for session '%s': %+v", sessionID, err),
-			ClientMsg: "Cannot create a session right now",
-			Code:      http.StatusInternalServerError,
-		}
-	}
 
 jobRegister:
 	for {
 		select {
-		case <-timeout:
+		case <-time.After(jobRegisterTimeout):
 			return nil, &api.APIError{
 				Msg:       "failed to find empty sessionID",
 				ClientMsg: "Cannot create a session right now",
 				Code:      http.StatusInternalServerError,
 			}
 		default:
-			sessionID = sessionIDPrefix + genRandomSession(sessionIDRandomLength)
-
 			var jobDef bytes.Buffer
 			jobVars := struct {
 				SpanID        string
@@ -155,80 +143,117 @@ jobRegister:
 				fmt.Printf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err)
 				continue
 			}
+
 			evalID = res.EvalID
 			break jobRegister
 		}
 	}
 
-	timeout = time.After(allocationCheckTimeout)
+	topics := map[nomadAPI.Topic][]string{
+		nomadAPI.TopicAllocation: {sessionsJobNameWithSlash + sessionID},
+	}
 
-	var allocErr *api.APIError
+	allocationWait := make(chan *AllocResult, 1)
 
-allocationCheck:
-	for {
-		select {
-		case <-timeout:
-			allocErr = &api.APIError{
-				Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, sessionID, allocationCheckTimeout.String()),
-				ClientMsg: "Cannot create a session right now - timeout",
-				Code:      http.StatusInternalServerError,
-			}
-			break allocationCheck
-		case <-ctx.Done():
-			break allocationCheck
+	streamCtx, streamCancel := context.WithCancel(childCtx)
+	defer streamCancel()
+	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, 0, &nomadAPI.QueryOptions{
+		WaitTime: 40 * time.Millisecond,
+	})
+	if err != nil {
+		return nil, &api.APIError{
+			Msg:       fmt.Sprintf("failed to get Nomad event stream for session '%s': %+v", sessionID, err),
+			ClientMsg: "Cannot create a session right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
 
-		case event := <-eventCh:
-			if event.IsHeartbeat() {
-				continue
-			}
-
-			for _, e := range event.Events {
-				alloc, err := e.Allocation()
-				if err != nil {
-					allocErr = &api.APIError{
-						Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
-						ClientMsg: "Cannot create a session right now",
-						Code:      http.StatusInternalServerError,
-					}
-					break allocationCheck
+	go func(c chan *AllocResult) {
+		for {
+			select {
+			case <-time.After(allocationCheckTimeout):
+				allocErr := &api.APIError{
+					Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: Timeout - %s", sessionsJobNameWithSlash, sessionID, allocationCheckTimeout.String()),
+					ClientMsg: "Cannot create a session right now - timeout",
+					Code:      http.StatusInternalServerError,
 				}
 
-				if alloc.EvalID != evalID {
+				c <- &AllocResult{
+					err: allocErr,
+				}
+
+				return
+			case <-ctx.Done():
+				return
+			case event := <-eventCh:
+				for _, e := range event.Events {
+					alloc, err := e.Allocation()
+					if err != nil {
+						allocErr := &api.APIError{
+							Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
+							ClientMsg: "Cannot create a session right now",
+							Code:      http.StatusInternalServerError,
+						}
+
+						c <- &AllocResult{
+							err: allocErr,
+						}
+
+						return
+					}
+
+					if alloc.EvalID != evalID {
+						continue
+					}
+
+					if alloc.TaskStates[fcTaskName] == nil {
+						continue
+					}
+
+					if alloc.TaskStates[fcTaskName].State == nomadTaskDeadState {
+						msgStruct, _ := json.Marshal(newSession)
+						allocErr := &api.APIError{
+							Msg:       fmt.Sprintf("allocation is %s for '%s%s' job", alloc.TaskStates[fcTaskName].State, sessionsJobNameWithSlash, sessionID),
+							ClientMsg: fmt.Sprintf("Session couldn't be started: the problem may be in the request's payload - is the 'codeSnippetID' valid?: %+v", string(msgStruct)),
+							Code:      http.StatusBadRequest,
+						}
+
+						c <- &AllocResult{
+							err: allocErr,
+						}
+
+						return
+					}
+
+					if alloc.TaskStates[fcTaskName].State == nomadTaskRunningState {
+						session := &api.Session{
+							ClientID:      alloc.NodeID[:shortNodeIDLength],
+							SessionID:     sessionID,
+							CodeSnippetID: newSession.CodeSnippetID,
+							EditEnabled:   *newSession.EditEnabled,
+						}
+
+						c <- &AllocResult{
+							session: session,
+						}
+
+						return
+					}
 					continue
 				}
-
-				if alloc.TaskStates[fcTaskName] == nil {
-					continue
-				}
-
-				if alloc.TaskStates[fcTaskName].State == nomadTaskDeadState {
-					msgStruct, _ := json.Marshal(newSession)
-					allocErr = &api.APIError{
-						Msg:       fmt.Sprintf("allocation is %s for '%s%s' job", alloc.TaskStates[fcTaskName].State, sessionsJobNameWithSlash, sessionID),
-						ClientMsg: fmt.Sprintf("Session couldn't be started: the problem may be in the request's payload - is the 'codeSnippetID' valid?: %+v", string(msgStruct)),
-						Code:      http.StatusBadRequest,
-					}
-					break allocationCheck
-				}
-
-				if alloc.TaskStates[fcTaskName].State == nomadTaskRunningState {
-					session := &api.Session{
-						ClientID:      alloc.NodeID[:shortNodeIDLength],
-						SessionID:     sessionID,
-						CodeSnippetID: newSession.CodeSnippetID,
-						EditEnabled:   *newSession.EditEnabled,
-					}
-
-					childSpan.SetAttributes(
-						attribute.String("session_id", session.SessionID),
-						attribute.String("client_id", session.ClientID),
-					)
-
-					return session, nil
-				}
-				continue
 			}
 		}
+	}(allocationWait)
+
+	allocResult := <-allocationWait
+
+	if allocResult.session != nil {
+		childSpan.SetAttributes(
+			attribute.String("session_id", allocResult.session.SessionID),
+			attribute.String("client_id", allocResult.session.ClientID),
+		)
+
+		return allocResult.session, nil
 	}
 
 	apiErr := n.DeleteSession(sessionID, false)
@@ -236,7 +261,7 @@ allocationCheck:
 		fmt.Printf("error in cleanup after failing to create session for code snippet '%s':%+v", newSession.CodeSnippetID, apiErr.Msg)
 	}
 
-	return nil, allocErr
+	return nil, allocResult.err
 }
 
 func (n *NomadClient) DeleteSession(sessionID string, purge bool) *api.APIError {

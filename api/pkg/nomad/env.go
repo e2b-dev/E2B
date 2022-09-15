@@ -40,6 +40,7 @@ RUN chmod +x /provision-env.sh`
 	usePrebuiltEnvJobFile = usePrebuiltEnvJobName + jobFileSuffix
 
 	nomadEvaluationCompleteState = "complete"
+	allocationCheckInterval      = time.Millisecond * 100
 )
 
 func (n *NomadClient) DeleteEnv(codeSnippetID string) error {
