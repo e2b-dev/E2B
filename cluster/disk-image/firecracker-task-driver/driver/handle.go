@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 
@@ -50,6 +49,7 @@ type taskHandle struct {
 	State           drivers.TaskState
 	MachineInstance *firecracker.Machine
 	Slot            *slot.IPSlot
+	Env             *env.Env
 	Info            Instance_info
 	EditEnabled     bool
 	startedAt       time.Time
@@ -127,29 +127,6 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	childCtx, childSpan := driver.tracer.Start(ctx, "shutdown")
 	defer childSpan.End()
 
-	// var err error
-	if h.EditEnabled {
-		// if the build id and template id doesn't exist the code snippet was deleted
-		buildIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.BuildIDName)
-		if _, err := os.Stat(buildIDPath); err != nil {
-			// build id doesn't exist - the code snippet may be using template
-			templateIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.TemplateIDName)
-			if _, err := os.Stat(templateIDPath); err != nil {
-				// template id doesn't exist
-			} else {
-				saveEditErr := saveEditSnapshot(childCtx, h.Slot, &h.Info, driver.tracer)
-				if saveEditErr != nil {
-					telemetry.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
-				}
-			}
-		} else {
-			saveEditErr := saveEditSnapshot(childCtx, h.Slot, &h.Info, driver.tracer)
-			if saveEditErr != nil {
-				telemetry.ReportError(childCtx, fmt.Errorf("error persisting edit session %v", err))
-			}
-		}
-	}
-
 	h.Info.Cmd.Process.Signal(syscall.SIGTERM)
 	telemetry.ReportEvent(childCtx, "sent SIGTERM to FC process")
 
@@ -179,17 +156,8 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 
 	_, err := h.Info.Cmd.Process.Wait()
 	if err != nil {
-		errMsg := fmt.Errorf("error waiting for FC process %v", err)
+		errMsg := fmt.Errorf("error waiting for FC process end %v", err)
 		telemetry.ReportError(childCtx, errMsg)
-	}
-
-	if h.EditEnabled {
-		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, env.EditDirName, *h.Info.EditID)
-		err = os.RemoveAll(oldEditDirPath)
-		if err != nil {
-			errMsg := fmt.Errorf("error deleting old edit dir %v", err)
-			telemetry.ReportError(childCtx, errMsg)
-		}
 	}
 
 	telemetry.ReportEvent(childCtx, "waiting for state lock")

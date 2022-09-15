@@ -7,6 +7,7 @@ import (
 
 	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	consul "github.com/hashicorp/consul/api"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -140,11 +141,23 @@ func New(ctx context.Context, nodeID string, sessionID string, tracer trace.Trac
 	}
 	telemetry.ReportEvent(childCtx, "ip slot reserved")
 
+	childSpan.SetAttributes(
+		attribute.String("slot.kv_key", slot.KVKey),
+		attribute.String("slot.node_short_id", slot.NodeShortID),
+		attribute.String("slot.session_id", slot.SessionID),
+	)
+
 	return slot, nil
 }
 
 func (slot *IPSlot) Release(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot")
+	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
+		trace.WithAttributes(
+			attribute.String("slot.kv_key", slot.KVKey),
+			attribute.String("slot.node_short_id", slot.NodeShortID),
+			attribute.String("slot.session_id", slot.SessionID),
+		),
+	)
 	defer childSpan.End()
 
 	consulClient, err := consul.NewClient(consul.DefaultConfig())

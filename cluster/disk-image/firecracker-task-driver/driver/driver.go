@@ -23,6 +23,8 @@ package firevm
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/cneira/firecracker-task-driver/driver/env"
@@ -252,16 +254,6 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 		return errMsg
 	}
 
-	oldHandle, ok := d.tasks.Get(handle.Config.ID)
-
-	if ok {
-		return nil
-	}
-
-	if oldHandle != nil {
-		oldHandle.shutdown(ctx, d)
-	}
-
 	return fmt.Errorf("cannot recover task")
 }
 
@@ -375,7 +367,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 	telemetry.ReportEvent(childCtx, "created network")
 
-	env, err := env.New(
+	fsEnv, err := env.New(
 		childCtx,
 		ipSlot,
 		driverConfig.CodeSnippetID,
@@ -392,7 +384,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			envErr := env.Delete(childCtx, d.tracer)
+			envErr := fsEnv.Delete(childCtx, d.tracer)
 			if envErr != nil {
 				errMsg := fmt.Errorf("error deleting env after failed fc start %v", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
@@ -405,7 +397,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		cfg,
 		driverConfig,
 		ipSlot,
-		env,
+		fsEnv,
 	)
 	if err != nil {
 		d.logger.Info("Error starting firecracker vm", "driver_cfg", hclog.Fmt("%+v", err))
@@ -422,6 +414,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		startedAt:       time.Now().Round(time.Millisecond),
 		MachineInstance: m.Machine,
 		Slot:            ipSlot,
+		Env:             fsEnv,
 		Info:            m.Info,
 		EditEnabled:     driverConfig.EditEnabled,
 		logger:          d.logger,
@@ -525,12 +518,50 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 	)
 	defer childSpan.End()
 
+	snapshotOk := false
+	if h.EditEnabled {
+		// if the build id and template id doesn't exist the code snippet was deleted
+		buildIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.BuildIDName)
+		if _, err := os.Stat(buildIDPath); err != nil {
+			// build id doesn't exist - the code snippet may be using template
+			templateIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.TemplateIDName)
+			if _, err := os.Stat(templateIDPath); err != nil {
+				// template id doesn't exist
+			} else {
+				saveEditErr := saveEditSnapshot(childCtx, h.Slot, h.Env, &h.Info, d.tracer)
+				if saveEditErr != nil {
+					telemetry.ReportCriticalError(childCtx, fmt.Errorf("error persisting edit session %v", err))
+				} else {
+					snapshotOk = true
+				}
+			}
+		} else {
+			saveEditErr := saveEditSnapshot(childCtx, h.Slot, h.Env, &h.Info, d.tracer)
+			if saveEditErr != nil {
+				telemetry.ReportCriticalError(childCtx, fmt.Errorf("error persisting edit session %v", err))
+			} else {
+				snapshotOk = true
+			}
+		}
+	}
+
 	if err := h.shutdown(childCtx, d); err != nil {
 		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
 	telemetry.ReportEvent(childCtx, "shutdown task")
+
+	if h.EditEnabled && snapshotOk {
+		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, env.EditDirName, *h.Info.EditID)
+		err := os.RemoveAll(oldEditDirPath)
+		if err != nil {
+			errMsg := fmt.Errorf("error deleting old edit dir %v", err)
+			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "deleted old edit directory", attribute.String("old_edit_dir", oldEditDirPath))
+		}
+	}
 
 	return nil
 }
@@ -558,15 +589,23 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 	)
 	defer childSpan.End()
 
-	if err := h.shutdown(childCtx, d); err != nil {
-		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
+	if force {
+		if err := h.shutdown(childCtx, d); err != nil {
+			errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+		}
+		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
-	telemetry.ReportEvent(childCtx, "shutdown task")
 
 	err := RemoveNetwork(childCtx, h.Slot, d.hosts, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove network when destroying task %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+	}
+
+	err = h.Env.Delete(childCtx, d.tracer)
+	if err != nil {
+		errMsg := fmt.Errorf("cannot remove env when destroying task %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 

@@ -325,5 +325,24 @@ func (d *Driver) initializeFC(
 		BuildDirPath:         env.BuildDirPath,
 	}
 
+	childSpan.SetAttributes(
+		attribute.String("instance.alloc_id", info.AllocId),
+		attribute.String("instance.pid", info.Pid),
+		attribute.String("instance.snapshot_root_path", info.SnapshotRootPath),
+		attribute.String("instance.socket_path", info.SocketPath),
+		attribute.String("instance.code_snippet_id", info.CodeSnippetID),
+		attribute.String("instance.code_snippet_directory", info.CodeSnippetDirectory),
+		attribute.String("instance.build_dir_path", info.BuildDirPath),
+		attribute.String("instance.cmd", info.Cmd.String()),
+		attribute.String("instance.cmd.dir", info.Cmd.Dir),
+		attribute.String("instance.cmd.path", info.Cmd.Path),
+	)
+
+	if info.EditID != nil {
+		childSpan.SetAttributes(
+			attribute.String("instance.edit_id", *info.EditID),
+		)
+	}
+
 	return &vminfo{Machine: m, Info: info}, nil
 }

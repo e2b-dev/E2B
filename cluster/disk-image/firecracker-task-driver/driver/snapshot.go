@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
+	"github.com/KarpelesLab/reflink"
 	"github.com/cneira/firecracker-task-driver/driver/client/client/operations"
 	"github.com/cneira/firecracker-task-driver/driver/client/models"
 	"github.com/cneira/firecracker-task-driver/driver/env"
@@ -16,7 +16,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_info, tracer trace.Tracer) error {
+func saveEditSnapshot(
+	ctx context.Context,
+	ipSlot *slot.IPSlot,
+	fsEnv *env.Env,
+	info *Instance_info,
+	tracer trace.Tracer,
+) error {
 	childCtx, childSpan := tracer.Start(ctx, "save-edit-snapshot")
 	defer childSpan.End()
 
@@ -26,7 +32,20 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 
 	newEditDirPath := filepath.Join(info.CodeSnippetDirectory, env.EditDirName, editID)
 
-	os.MkdirAll(newEditDirPath, 0777)
+	err := os.MkdirAll(newEditDirPath, 0777)
+	if err != nil {
+		telemetry.ReportCriticalError(childCtx, err)
+	}
+
+	defer func() {
+		if err != nil {
+			rmErr := os.RemoveAll(newEditDirPath)
+			if rmErr != nil {
+				errMsg := fmt.Errorf("error removing new edit dir after failed edit snapshot %v", rmErr)
+				telemetry.ReportError(childCtx, errMsg)
+			}
+		}
+	}()
 
 	memfilePath := filepath.Join(newEditDirPath, env.MemfileName)
 	snapfilePath := filepath.Join(newEditDirPath, env.SnapfileName)
@@ -39,7 +58,7 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 			State: &state,
 		},
 	}
-	_, err := httpClient.Operations.PatchVM(&pauseConfig)
+	_, err = httpClient.Operations.PatchVM(&pauseConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error pausing vm %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -56,30 +75,16 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 		},
 	}
 	_, err = httpClient.Operations.CreateSnapshot(&snapshotConfig)
-
 	if err != nil {
 		errMsg := fmt.Errorf("error creating vm snapshot %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
 
-	defer func() {
-		if err != nil {
-			rmErr := os.RemoveAll(newEditDirPath)
-			if rmErr != nil {
-				errMsg := fmt.Errorf("error removing edit dir %v", rmErr)
-				telemetry.ReportError(childCtx, errMsg)
-			}
-		}
-	}()
-
-	rootfsPathSrc := filepath.Join(info.BuildDirPath, env.RootfsName)
+	rootfsPathSrc := filepath.Join(fsEnv.SessionEnvPath, env.RootfsName)
 	rootfsPathDest := filepath.Join(newEditDirPath, env.RootfsName)
 
-	copyCmd := fmt.Sprintf("cp -pRd --reflink %s %s", rootfsPathSrc, rootfsPathDest)
-	cmd := exec.CommandContext(ctx, "nsenter", "-t", info.Pid, "-m", "--", "bash", "-c", copyCmd)
-
-	_, err = cmd.Output()
+	err = reflink.Always(rootfsPathSrc, rootfsPathDest)
 	if err != nil {
 		errMsg := fmt.Errorf("failed copying rootfs: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -93,5 +98,6 @@ func saveEditSnapshot(ctx context.Context, ipSlot *slot.IPSlot, info *Instance_i
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+
 	return nil
 }

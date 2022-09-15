@@ -10,6 +10,7 @@ import (
 	"github.com/cneira/firecracker-task-driver/driver/slot"
 	"github.com/cneira/firecracker-task-driver/driver/telemetry"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -43,7 +44,13 @@ func New(
 	editEnabled bool,
 	tracer trace.Tracer,
 ) (*Env, error) {
-	childCtx, childSpan := tracer.Start(ctx, "create-env")
+	childCtx, childSpan := tracer.Start(ctx, "create-env",
+		trace.WithAttributes(
+			attribute.String("code_snippet_id", codeSnippetID),
+			attribute.String("fc_envs_disk", fcEnvsDisk),
+			attribute.Bool("edit_enabled", editEnabled),
+		),
+	)
 	defer childSpan.End()
 
 	codeSnippetEnvPath := filepath.Join(fcEnvsDisk, codeSnippetID)
@@ -106,32 +113,32 @@ func New(
 			memfileSrc := filepath.Join(codeSnippetEnvPath, MemfileName)
 			memfileDest := filepath.Join(codeSnippetEditPath, editID, MemfileName)
 
-			err = os.Link(rootfsSrc, rootfsDest)
+			err = reflink.Always(rootfsSrc, rootfsDest)
 			if err != nil {
 				telemetry.ReportError(childCtx, err)
 			}
 
-			err = os.Link(snapfileSrc, snapfileDest)
+			err = reflink.Always(snapfileSrc, snapfileDest)
 			if err != nil {
 				telemetry.ReportError(childCtx, err)
 			}
 
-			err = os.Link(memfileSrc, memfileDest)
+			err = reflink.Always(memfileSrc, memfileDest)
 			if err != nil {
 				telemetry.ReportError(childCtx, err)
 			}
 
-			err = os.Link(buildIDSrc, buildIDDest)
+			err = reflink.Always(buildIDSrc, buildIDDest)
 			if err != nil {
 				telemetry.ReportError(childCtx, err)
 			}
 
-			err = os.Link(templateIDSrc, templateIDDest)
+			err = reflink.Always(templateIDSrc, templateIDDest)
 			if err != nil {
 				telemetry.ReportError(childCtx, err)
 			}
 
-			err = os.Link(templateBuildIDSrc, templateBuildIDDest)
+			err = reflink.Always(templateBuildIDSrc, templateBuildIDDest)
 			if err != nil {
 				telemetry.ReportError(childCtx, err)
 			}
@@ -183,6 +190,14 @@ func New(
 			telemetry.ReportCriticalError(childCtx, errMsg)
 			return nil, errMsg
 		}
+
+		childSpan.SetAttributes(
+			attribute.String("env.session_env_path", sessionEnvPath),
+			attribute.String("env.snapshot_root_path", snapshotRootPath),
+			attribute.String("env.build_dir_path", buildDirPath),
+			attribute.String("env.code_snippet_env_path", codeSnippetEnvPath),
+			attribute.String("env.edit_id", editID),
+		)
 
 		return &Env{
 			SessionEnvPath:     sessionEnvPath,
@@ -241,6 +256,13 @@ func New(
 			return nil, errMsg
 		}
 
+		childSpan.SetAttributes(
+			attribute.String("env.session_env_path", sessionEnvPath),
+			attribute.String("env.snapshot_root_path", snapshotRootPath),
+			attribute.String("env.build_dir_path", buildDirPath),
+			attribute.String("env.code_snippet_env_path", codeSnippetEnvPath),
+		)
+
 		return &Env{
 			SessionEnvPath:     sessionEnvPath,
 			SnapshotRootPath:   snapshotRootPath,
@@ -254,13 +276,26 @@ func (env *Env) Delete(
 	ctx context.Context,
 	tracer trace.Tracer,
 ) error {
-	childCtx, childSpan := tracer.Start(ctx, "delete-env")
+	childCtx, childSpan := tracer.Start(ctx, "delete-env",
+		trace.WithAttributes(
+			attribute.String("env.session_env_path", env.SessionEnvPath),
+			attribute.String("env.snapshot_root_path", env.SnapshotRootPath),
+			attribute.String("env.build_dir_path", env.BuildDirPath),
+			attribute.String("env.code_snippet_env_path", env.CodeSnippetEnvPath),
+		),
+	)
 	defer childSpan.End()
+
+	if env.EditID != nil {
+		childSpan.SetAttributes(
+			attribute.String("env.edit_id", *env.EditID),
+		)
+	}
 
 	err := os.RemoveAll(env.SessionEnvPath)
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting session env files %v", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	return nil
