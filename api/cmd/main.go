@@ -65,25 +65,32 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 }
 
 func main() {
-	otelLauncher := launcher.ConfigureOpentelemetry(
-		launcher.WithServiceName(serviceName),
-		launcher.WithMetricReportingPeriod(10*time.Second),
-		launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-		launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-		launcher.WithMetricExporterInsecure(true),
-		launcher.WithSpanExporterInsecure(true),
-		launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-		// TODO: Try to configure and use the logger for sending stdout/err through otel
-		// launcher.WithLogger(serviceName),
-	)
-	defer otelLauncher.Shutdown()
+	telemetryAPIKey := flag.String("telemetry-api", "", "api key for telemetry")
+	port := flag.Int("port", 80, "Port for test HTTP server")
+	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano())
 
-	var port = flag.Int("port", 80, "Port for test HTTP server")
-	flag.Parse()
-	// Create an instance of our handler which satisfies the generated interface
+	if *telemetryAPIKey == "" {
+		otelLauncher := launcher.ConfigureOpentelemetry(
+			launcher.WithServiceName(serviceName),
+			launcher.WithMetricReportingPeriod(10*time.Second),
+			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterInsecure(true),
+			launcher.WithSpanExporterInsecure(true),
+			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
+		)
+		defer otelLauncher.Shutdown()
+	} else {
+		otelLauncher := launcher.ConfigureOpentelemetry(
+			launcher.WithServiceName(serviceName),
+			launcher.WithAccessToken(*telemetryAPIKey),
+		)
+		defer otelLauncher.Shutdown()
+	}
 
+	// Create an instance of our handler which satisfies the generated interface
 	apiStore := handlers.NewAPIStore()
 	defer apiStore.Close()
 

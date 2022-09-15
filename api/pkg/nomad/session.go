@@ -22,7 +22,6 @@ const (
 	sessionsJobFile          = sessionsJobName + jobFileSuffix
 	jobRegisterTimeout       = time.Second * 2
 	allocationCheckTimeout   = time.Second * 12
-	allocationCheckInterval  = time.Millisecond * 100
 	fcTaskName               = "start"
 	sessionIDPrefix          = "s"
 	sessionIDRandomLength    = 7
@@ -55,7 +54,11 @@ func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 }
 
 func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSession *api.NewSession) (*api.Session, *api.APIError) {
-	_, childSpan := t.Start(ctx, "create-session")
+	childCtx, childSpan := t.Start(ctx, "create-session",
+		trace.WithAttributes(
+			attribute.String("code_snippet_id", newSession.CodeSnippetID),
+		),
+	)
 	defer childSpan.End()
 
 	tname := path.Join(templatesDir, sessionsJobFile)
@@ -83,6 +86,18 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 	var job *nomadAPI.Job
 
 	timeout := time.After(jobRegisterTimeout)
+
+	topics := map[nomadAPI.Topic][]string{
+		nomadAPI.TopicAllocation: {"*"},
+	}
+	eventCh, err := n.client.EventStream().Stream(childCtx, topics, 0, &nomadAPI.QueryOptions{})
+	if err != nil {
+		return nil, &api.APIError{
+			Msg:       fmt.Sprintf("failed to get Nomad event stream for session '%s': %+v", sessionID, err),
+			ClientMsg: "Cannot create a session right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
 
 jobRegister:
 	for {
@@ -146,6 +161,7 @@ jobRegister:
 	}
 
 	timeout = time.After(allocationCheckTimeout)
+
 	var allocErr *api.APIError
 
 allocationCheck:
@@ -158,18 +174,29 @@ allocationCheck:
 				Code:      http.StatusInternalServerError,
 			}
 			break allocationCheck
-		default:
-			allocs, _, err := n.client.Evaluations().Allocations(evalID, &nomadAPI.QueryOptions{})
-			if err != nil {
-				allocErr = &api.APIError{
-					Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
-					ClientMsg: "Cannot create a session right now",
-					Code:      http.StatusInternalServerError,
-				}
-				break allocationCheck
+		case <-ctx.Done():
+			break allocationCheck
+
+		case event := <-eventCh:
+			if event.IsHeartbeat() {
+				continue
 			}
 
-			for _, alloc := range allocs {
+			for _, e := range event.Events {
+				alloc, err := e.Allocation()
+				if err != nil {
+					allocErr = &api.APIError{
+						Msg:       fmt.Sprintf("cannot retrieve allocations for '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
+						ClientMsg: "Cannot create a session right now",
+						Code:      http.StatusInternalServerError,
+					}
+					break allocationCheck
+				}
+
+				if alloc.EvalID != evalID {
+					continue
+				}
+
 				if alloc.TaskStates[fcTaskName] == nil {
 					continue
 				}
@@ -192,12 +219,16 @@ allocationCheck:
 						EditEnabled:   *newSession.EditEnabled,
 					}
 
+					childSpan.SetAttributes(
+						attribute.String("session_id", session.SessionID),
+						attribute.String("client_id", session.ClientID),
+					)
+
 					return session, nil
 				}
 				continue
 			}
 		}
-		time.Sleep(allocationCheckInterval)
 	}
 
 	apiErr := n.DeleteSession(sessionID, false)

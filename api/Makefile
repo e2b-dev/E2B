@@ -10,7 +10,7 @@ build:
 
 run:
 	GOOS=linux go build -o bin/api ./cmd
-	NOMAD_ADDRESS=http://34.149.1.201 ./bin/api --port 3000
+	NOMAD_ADDRESS=http://34.149.1.201 ./bin/api --port 3000 -telemetry-api=$(telemetry-api)
 
 push:
 	docker build --tag us-central1-docker.pkg.dev/devbookhq/orchestration/api .
