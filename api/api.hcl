@@ -50,6 +50,12 @@ job "orchestration-api" {
     task "start" {
       driver = "docker"
 
+      resources {
+        memory_max = 1024
+        memory = 512
+        cpu = 1000
+      }
+
       env {
         NOMAD_ADDRESS = var.nomad_address
         SUPABASE_URL = var.supabase_url

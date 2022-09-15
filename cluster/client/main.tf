@@ -77,10 +77,10 @@ resource "google_compute_instance_template" "client" {
   }
 
   disk {
-    source      = "orch-firecracker-envs"
+    source      = "orch-fc-envs"
     auto_delete = false
     boot        = false
-    device_name = "envs"
+    device_name = "fc-envs"
     mode        = "READ_WRITE"
   }
 

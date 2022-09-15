@@ -19,11 +19,11 @@ disk_name="sdb"
 mount_dir="fc-envs"
 
 mkdir -p /mnt/disks/$mount_dir
-mount -o discard,defaults /dev/$disk_name /mnt/disks/fc-envs
+mount /dev/$disk_name /mnt/disks/fc-envs
 chmod a+w /mnt/disks/$mount_dir
 
 # Add automatic mounting on VM restart.
 cp /etc/fstab /etc/fstab.backup
 UUID=$(blkid /dev/sdb | tr ' ' '\n' | grep UUID)
 
-echo "$UUID /mnt/disks/$mount_dir ext4 discard,defaults,nofail 0 2" >> /etc/fstab
+echo "$UUID /mnt/disks/$mount_dir xfs defaults 0 0" >> /etc/fstab
