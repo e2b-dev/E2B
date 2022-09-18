@@ -1,4 +1,4 @@
-name: Orchestration Services - Cluster disk image
+name: Orchestration Services - Terraform
 
 on:
   workflow_call:
@@ -9,27 +9,27 @@ on:
         required: true
 
 jobs:
-  build:
-    name: Build
+  deploy:
+    name: Deploy
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - id: Auth
+      - name: Setup Service Account
         uses: google-github-actions/auth@v0
         with:
           create_credentials_file: true
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
-      - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v1
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.1.9
 
-      - name: Initialize Packer
-        run: |-
-          make init-cluster-image
+      - name: Init Terraform
+        run: make init-infrastructure
 
-      - name: Build the image on GCE VM and save it on GCP
-        run: |-
-          make build-cluster-image
+      - name: Deploy Terraform
+        run: make deploy-infrastructure

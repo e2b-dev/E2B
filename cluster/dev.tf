@@ -1,3 +1,5 @@
+# Development server
+
 data "google_compute_image" "source_image" {
   family = var.client_image_family
 }
@@ -5,7 +7,6 @@ data "google_compute_image" "source_image" {
 data "google_secret_manager_secret_version" "lightstep_api_key" {
   secret = "lightstep-api-key-dev"
 }
-
 
 resource "google_compute_instance" "dev_instance" {
   name         = "dev-instance"

@@ -8,8 +8,13 @@ terraform {
   }
 }
 
-data "docker_image" "latest" {
+data "docker_registry_image" "api_image" {
   name = var.image_name
+}
+
+resource "docker_image" "api_image" {
+  name          = data.docker_registry_image.api_image.name
+  pull_triggers = [data.docker_registry_image.api_image.sha256_digest]
 }
 
 data "google_secret_manager_secret_version" "supabase_key" {
@@ -37,7 +42,7 @@ resource "nomad_job" "api" {
       api_port_number = var.api_port.port
       api_port_name   = var.api_port.name
       nomad_address   = var.nomad_address
-      image_name      = data.docker_image.latest.repo_digest
+      image_name      = resource.docker_image.api_image.repo_digest
     }
   }
 }

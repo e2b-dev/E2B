@@ -18,7 +18,6 @@ FROM alpine:3.15
 COPY --from=builder /build/bin/api .
 COPY go-templates go-templates
 
-
 RUN chmod +x api
 
 # Set Gin server to the production mode

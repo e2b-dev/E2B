@@ -117,8 +117,6 @@ processors:
     timeout: 5s
 
 exporters:
-  # logging:
-  #   loglevel: debug
   otlp/lightstep:
     endpoint: ingest.lightstep.com:443
     headers:
@@ -149,7 +147,6 @@ service:
       processors: [batch]
       exporters:
         - otlp/lightstep
-        # - logging
     traces:
       receivers:
         - otlp

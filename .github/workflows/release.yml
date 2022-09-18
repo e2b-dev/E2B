@@ -1,0 +1,104 @@
+name: Orchestration Services
+
+on:
+  push:
+    tags: [v*.*.*]
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  changes:
+    name: Repository changes
+    runs-on: ubuntu-20.04
+    outputs:
+      cluster_disk_image: ${{ steps.filter.outputs.cluster_disk_image }}
+      api_image: ${{ steps.filter.outputs.api_image }}
+      fc_env: ${{ steps.filter.outputs.fc_env }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get the last release
+        id: last_release
+        uses: cardinalby/git-get-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          latest: true
+          prerelease: false
+          draft: false
+
+      - name: Find changes since the last release
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: ${{ steps.last_release.outputs.tag_name }}
+          filters: |
+            cluster_disk_image:
+              - 'cluster/disk-image/**'
+              - '.github/workflows/cluster-disk-image.yml'
+              - '.github/workflows/release.yml'
+            fc_env:
+              - 'fc-env/**'
+              - '.github/workflows/fc-env.yml'
+              - '.github/workflows/release.yml'
+            api_image:
+              - 'api/**'
+              - '.github/workflows/api-image.yml'
+              - '.github/workflows/release.yml'
+
+  cluster_disk_image:
+    name: Cluster disk image
+    needs: changes
+    if: ${{ needs.changes.outputs.cluster_disk_image == 'true' }}
+    uses: ./.github/workflows/cluster-disk-image.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+  fc_env:
+    name: FC env (pipeline scripts, devbookd)
+    needs: changes
+    if: ${{ needs.changes.outputs.fc_env == 'true' }}
+    uses: ./.github/workflows/fc-env.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+  api_image:
+    name: API image
+    needs: changes
+    if: ${{ needs.changes.outputs.api_image == 'true' }}
+    uses: ./.github/workflows/api-image.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+  terraform:
+    name: Terraform
+    needs: [changes, cluster_disk_image, fc_env, api_image]
+    if: |
+      always() &&
+      needs.changes.result == 'success' &&
+      (needs.cluster_disk_image.result == 'success' || needs.cluster_disk_image.result == 'skipped') &&
+      (needs.fc_env.result == 'success' || needs.fc_env.result == 'skipped') &&
+      (needs.api_image.result == 'success' || needs.api_image.result == 'skipped')
+    uses: ./.github/workflows/terraform.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+  release:
+    name: Release
+    needs: terraform
+    if: always() && needs.terraform.result == 'success'
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true

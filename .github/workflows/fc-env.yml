@@ -1,0 +1,29 @@
+name: Orchestration Services - FC env (pipeline scripts, devbookd)
+
+on:
+  workflow_call:
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
+
+jobs:
+  publish:
+    name: Publish envs' pipelines and devbookd
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-action@devbookhq.iam.gserviceaccount.com
+
+      - name: Setup GCloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+
+      - name: Package and upload pipelines and devbookd
+        run: make publish-fc-env

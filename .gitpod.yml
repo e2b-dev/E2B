@@ -10,12 +10,14 @@ tasks:
     init: |-
       go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
       go install honnef.co/go/tools/cmd/staticcheck@latest
+
   - name: Init Terraform
     init: |-
       make terraform-init
+
   - name: Init Packer
     init: |-
-      make orchestrator-image-init
+      make init-cluster-image
 
 github:
   prebuilds:
