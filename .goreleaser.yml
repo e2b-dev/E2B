@@ -2,6 +2,7 @@ project_name: devbookd
 before:
   hooks:
     - go mod tidy
+
 builds:
   - id: devbookd
     binary: devbookd
@@ -17,9 +18,14 @@ archives:
   - id: latest
     builds:
       - devbookd
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
     wrap_in_directory: false
     format: tar.gz
-    name_template: "devbookd_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    #name_template: "devbookd_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 
 changelog:
   skip: true
