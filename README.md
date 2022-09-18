@@ -1,8 +1,3 @@
----
-What needs to be changed
-- devbookd needs to start using a port that isn't already widely used
----
-
 # Devbook Daemon
 
 Devbook daemon can run in 2 modes
