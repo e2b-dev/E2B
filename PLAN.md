@@ -78,8 +78,6 @@ Error loading current sessions from Nomad
 
 ### Add balooning
 
-### Check if the session is really limited
-
 ### Can we use NIX to solve our deps in envs?
 
 ### Delete files after a failed build/update env
