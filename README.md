@@ -1,11 +1,40 @@
-# Devbook Daemon
-
 ---
 What needs to be changed
-- add user install script (use a version of what we used for devbookctl)
-- user-installed daemon must actually work as a daemon that automatically starts when user starts their machine
-- devbookd needs to start using a port that isn't common, especially for the development
+- devbookd needs to start using a port that isn't already widely used
 ---
+
+# Devbook Daemon
+
+Devbook daemon can run in 2 modes
+1. user mode
+2. server mode
+
+The server mode is meant to run on Devbook infrastructure for our Devbook VMs. The user mode is intended for users to use together with our Devbook browser extension for terminal.
+
+## Usage
+
+### `server` mode
+By default, devbookd starts in the server mode.
+```sh
+devbookd
+```
+
+Optionally, pass the `mode` flag.
+```sh
+devbookd -mode=server
+```
+
+### `user` mode (only macOS supported)
+```sh
+devbookd -mode=user
+```
+
+## Installation (only macOS supported)
+> ❌ Don't use this for installing devbookd on your server!
+
+```sh
+curl -L https://install.usedevbook.com/devbookd | sh
+```
 
 ## Development
 To locally test the devbookd:
