@@ -11,8 +11,8 @@ set -euo pipefail
 mkdir env
 
 # Download latest release of devbookd.
-os="linux"
-arch="amd64"
+os="Linux"
+arch="x86_64"
 exe="env/devbookd"
 devbookd_uri="https://github.com/devbookhq/devbookd/releases/latest/download/devbookd_${os}_${arch}.tar.gz"
 curl --fail --location --progress-bar --output "$exe.tar.gz" "$devbookd_uri"
