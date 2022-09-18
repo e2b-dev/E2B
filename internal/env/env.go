@@ -77,7 +77,7 @@ func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
 		}
 		logDir = dbkConfigDir
 	case RuntimeModeServer:
-		logDir = path.Join("var", "log")
+		logDir = path.Join("/var", "log")
 	}
 
 	logger, err := log.NewLogger(logDir)

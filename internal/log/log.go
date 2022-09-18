@@ -15,8 +15,8 @@ func NewLogger(logDir string) (*zap.SugaredLogger, error) {
 	rawJSON := []byte(fmt.Sprintf(`{
 	  "level": "debug",
 	  "encoding": "json",
-	  "outputPaths": ["stdout", "%s"],
-	  "errorOutputPaths": ["stderr", "%s"],
+	  "outputPaths": ["%s"],
+	  "errorOutputPaths": ["%s"],
 	  "encoderConfig": {
 	    "messageKey": "message",
 	    "levelKey": "level",

@@ -10,8 +10,6 @@ os=$(uname -s)
 arch=$(uname -m)
 #version=${1:-latest}
 devbookd_uri="https://github.com/devbookhq/devbookd/releases/latest/download/devbookd_${os}_${arch}.tar.gz"
-echo $devbookd_uri
-exit 1
 
 if [ ! "$devbookd_uri" ]; then
 	echo "Error: Unable to find a devbookd release for $os/$arch - see github.com/devbookhq/devbookd/releases for all releases and version" 1>&2
@@ -42,7 +40,7 @@ rm "$exe.tar.gz"
 
 echo "Devbook daemon was installed successfully to $exe"
 echo "Starting Devbook daemon..."
-sh -c "$exe"
+$exe -mode=user &
 echo "✅ Devbook daemon is running"
 
 # No need to add devbookd to the user's path env var. Devbook daemon isn't a CLI.
