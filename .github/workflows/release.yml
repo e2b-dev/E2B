@@ -6,7 +6,6 @@ on:
       - master
   workflow_dispatch:
 
-
 jobs:
   #release:
   #  name: semantic-release
