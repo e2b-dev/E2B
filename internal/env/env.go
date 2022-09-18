@@ -3,16 +3,23 @@ package env
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/devbookhq/devbookd/internal/log"
 	"go.uber.org/zap"
 )
 
+type RuntimeMode string
+
 const (
 	envFilePath = "/.dbkenv"
+
+	RuntimeModeServer RuntimeMode = "server"
+	RuntimeModeUser   RuntimeMode = "user"
 
 	ENV_VAR_RUN_CMD    = "RUN_CMD"
 	ENV_VAR_RUN_ARGS   = "RUN_ARGS"
@@ -21,9 +28,9 @@ const (
 )
 
 type Env struct {
-	logger *zap.SugaredLogger
+	runtimeMode RuntimeMode
 
-	// Env vars
+	// Env vars. Assigned only in the server mode.
 	runCmd             string
 	runArgs            string
 	parsedRunArgs      []string
@@ -43,71 +50,112 @@ func warnEmptyEnvVar(logger *zap.SugaredLogger, line, name string) {
 	)
 }
 
-func NewEnv(logger *zap.SugaredLogger) (*Env, error) {
-	logger.Infow("Loading envinronment", "envFilePath", envFilePath)
-
-	file, err := os.Open(envFilePath)
-	if err != nil {
-		logger.Errorw("Failed to open env file",
-			"envFilePath", envFilePath,
-			"error", err,
+func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
+	// Check that runtime mode is one of the allowed values.
+	if rawRuntimeMode != string(RuntimeModeUser) && rawRuntimeMode != string(RuntimeModeServer) {
+		return nil, nil, fmt.Errorf(
+			"not allowed value for the 'env' flag. Allowed values are either 'server' or 'user'. Got '%s'",
+			rawRuntimeMode,
 		)
-		return nil, err
 	}
-	defer file.Close()
 
-	env := &Env{}
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		// Expects vars in the format "VAR_NAME=VALUE"
-		// ["VAR_NAME", "VALUE"]
-		line := scanner.Text()
+	env := &Env{
+		runtimeMode: RuntimeMode(rawRuntimeMode),
+	}
 
-		name, value, found := strings.Cut(line, "=")
+	// Create log dir
+	var logDir string
+	switch env.runtimeMode {
+	case RuntimeModeUser:
+		userConfigDir, err := os.UserConfigDir()
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to determine location of the user's config directory: %s", err)
+		}
+		dbkConfigDir := path.Join(userConfigDir, "devbook")
+		if err := os.MkdirAll(dbkConfigDir, os.ModePerm); err != nil {
+			return nil, nil, fmt.Errorf("failed to create a devbook config directory on '%s': %s", dbkConfigDir, err)
+		}
+		logDir = dbkConfigDir
+	case RuntimeModeServer:
+		logDir = path.Join("var", "log")
+	}
 
-		if !found {
-			logger.Warnw("Invalid env format in the env file",
+	logger, err := log.NewLogger(logDir)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create new logger: %s", err)
+	}
+
+	if env.runtimeMode == RuntimeModeServer {
+		// Read and parse the /.dbkenv file only if we are in the server mode.
+		logger.Infow("Loading envinronment", "envFilePath", envFilePath)
+
+		file, err := os.Open(envFilePath)
+		if err != nil {
+			logger.Errorw("Failed to open env file",
 				"envFilePath", envFilePath,
-				"line", line,
+				"error", err,
 			)
+			return nil, nil, err
 		}
+		defer file.Close()
 
-		logger.Infow("Loaded env var from the env file",
-			"envFilePath", envFilePath,
-			"name", name,
-			"value", value,
-		)
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			// Expects vars in the format "VAR_NAME=VALUE"
+			// ["VAR_NAME", "VALUE"]
+			line := scanner.Text()
 
-		if value == "" {
-			warnEmptyEnvVar(logger, line, name)
-			continue
-		}
+			name, value, found := strings.Cut(line, "=")
 
-		switch name {
-		case ENV_VAR_RUN_CMD:
-			env.runCmd = value
-		case ENV_VAR_RUN_ARGS:
-			env.runArgs = value
-			env.parsedRunArgs = strings.Fields(value)
-		case ENV_VAR_WORKDIR:
-			env.workdir = value
-		case ENV_VAR_ENTRYPOINT:
-			env.entrypoint = value
-		default:
-			logger.Warnw("Unknown env var in the env file",
+			if !found {
+				logger.Warnw("Invalid env format in the env file",
+					"envFilePath", envFilePath,
+					"line", line,
+				)
+			}
+
+			logger.Infow("Loaded env var from the env file",
 				"envFilePath", envFilePath,
-				"line", line,
 				"name", name,
 				"value", value,
 			)
+
+			if value == "" {
+				warnEmptyEnvVar(logger, line, name)
+				continue
+			}
+
+			switch name {
+			case ENV_VAR_RUN_CMD:
+				env.runCmd = value
+			case ENV_VAR_RUN_ARGS:
+				env.runArgs = value
+				env.parsedRunArgs = strings.Fields(value)
+			case ENV_VAR_WORKDIR:
+				env.workdir = value
+			case ENV_VAR_ENTRYPOINT:
+				env.entrypoint = value
+			default:
+				logger.Warnw("Unknown env var in the env file. Will be ignored",
+					"envFilePath", envFilePath,
+					"line", line,
+					"name", name,
+					"value", value,
+				)
+			}
 		}
+
+		// Every Firecracker clone has the same default gateway IP.
+		// TODO: This should also be specified in the /.dbkenv file.
+		env.defaultGatewayIP = net.IPv4(169, 254, 0, 21)
+		env.entrypointFullPath = path.Join(env.workdir, env.entrypoint)
 	}
 
-	// Every Firecracker clone has the same default gateway IP.
-	// TODO: This should also be specified in the /.dbkenv file.
-	env.defaultGatewayIP = net.IPv4(169, 254, 0, 21)
-	env.entrypointFullPath = path.Join(env.workdir, env.entrypoint)
-	return env, nil
+	return env, logger, nil
+}
+
+func (e *Env) RuntimeMode() RuntimeMode {
+	return e.runtimeMode
 }
 
 func (e *Env) RunCMD() string {

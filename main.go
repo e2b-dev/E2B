@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/devbookhq/devbookd/internal/env"
-	"github.com/devbookhq/devbookd/internal/log"
 	"github.com/devbookhq/devbookd/internal/port"
 	"github.com/devbookhq/devbookd/internal/service"
 )
@@ -18,6 +18,8 @@ import (
 var (
 	logger    *zap.SugaredLogger
 	wsHandler http.Handler
+
+	rawRuntimeMode string
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -26,49 +28,58 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	wsHandler.ServeHTTP(w, r)
 }
 
+func parseFlags() {
+	// -mode="user" or -mode="server"
+	// "server" is default
+	flag.StringVar(
+		&rawRuntimeMode,
+		"mode",
+		string(env.RuntimeModeServer),
+		"a runtime mode in which the daemon should run. Affects things like logs and loading env vars. Accepted values are either 'server' or 'user'",
+	)
+	flag.Parse()
+}
+
 func main() {
-	l, err := log.NewLogger()
+	parseFlags()
+
+	newEnv, l, err := env.NewEnv(rawRuntimeMode)
 	if err != nil {
-		// We panic because we require logger. Without it we don't know what's happening.
 		panic(err)
 	}
 	logger = l
 	defer logger.Sync()
-	logger.Info("Logger construction succeeded")
+	logger.Info("Logger and environment construction succeeded")
 
-	env, err := env.NewEnv(logger)
-	if err != nil {
-		// devbookd cannot operate without properly loaded environment.
-		panic(err)
-	}
-
-	portScanner := port.NewScanner(1 * time.Second)
-	go portScanner.ScanAndBroadcast()
-
-	portForwarder := port.NewForwarder(logger, env, portScanner)
-	go portForwarder.StartForwarding()
-
-	// This server is for Websocket-RPC communication.
+	// This server is for the Websocket-RPC communication.
 	rpcServer := rpc.NewServer()
 
-	codeSnippetService := service.NewCodeSnippetService(logger, env, portScanner)
-	if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
-		logger.Errorw("failed to register code snippet service", "error", err)
+	if newEnv.RuntimeMode() == env.RuntimeModeServer {
+		portScanner := port.NewScanner(1 * time.Second)
+		go portScanner.ScanAndBroadcast()
+
+		portForwarder := port.NewForwarder(logger, newEnv, portScanner)
+		go portForwarder.StartForwarding()
+
+		codeSnippetService := service.NewCodeSnippetService(logger, newEnv, portScanner)
+		if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
+			logger.Errorw("failed to register code snippet service", "error", err)
+		}
+
+		filesystemService := service.NewFilesystemService(logger)
+		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
+			logger.Errorw("failed to register filesystem service", "error", err)
+		}
+
+		processService := service.NewProcessService(logger)
+		if err := rpcServer.RegisterName("process", processService); err != nil {
+			logger.Errorw("failed to register process service", "error", err)
+		}
 	}
 
-	filesystemService := service.NewFilesystemService(logger)
-	if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
-		logger.Errorw("failed to register filesystem service", "error", err)
-	}
-
-	terminalService := service.NewTerminalService(logger, env)
+	terminalService := service.NewTerminalService(logger, newEnv)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Errorw("failed to register terminal service", "error", err)
-	}
-
-	processService := service.NewProcessService(logger)
-	if err := rpcServer.RegisterName("process", processService); err != nil {
-		logger.Errorw("failed to register process service", "error", err)
 	}
 
 	router := mux.NewRouter()

@@ -1,5 +1,13 @@
 # Devbook Daemon
 
+---
+What needs to be changed
+- macos release (later windows and more linux flavors)
+- add user install script (use a version of what we used for devbookctl)
+- user-installed daemon must actually work as a daemon that automatically starts when user starts their machine
+- devbookd needs to start using a port that isn't common, especially for the development
+---
+
 ## Development
 To locally test the devbookd:
 

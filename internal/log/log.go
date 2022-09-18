@@ -2,22 +2,27 @@ package log
 
 import (
 	"encoding/json"
+	"fmt"
+	"path"
 
 	"go.uber.org/zap"
 )
 
-func NewLogger() (*zap.SugaredLogger, error) {
-	rawJSON := []byte(`{
+func NewLogger(logDir string) (*zap.SugaredLogger, error) {
+	stdout := path.Join(logDir, "devbookd.log")
+	stderr := path.Join(logDir, "devbookd.err")
+
+	rawJSON := []byte(fmt.Sprintf(`{
 	  "level": "debug",
 	  "encoding": "json",
-	  "outputPaths": ["stdout", "/var/log/devbookd.log"],
-	  "errorOutputPaths": ["stderr", "/var/log/devbookd.err"],
+	  "outputPaths": ["stdout", "%s"],
+	  "errorOutputPaths": ["stderr", "%s"],
 	  "encoderConfig": {
 	    "messageKey": "message",
 	    "levelKey": "level",
 	    "levelEncoder": "lowercase"
 	  }
-	}`)
+	}`, stdout, stderr))
 
 	var cfg zap.Config
 	if err := json.Unmarshal(rawJSON, &cfg); err != nil {
@@ -27,5 +32,6 @@ func NewLogger() (*zap.SugaredLogger, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return l.Sugar(), nil
 }
