@@ -56,6 +56,8 @@ func main() {
 
 	if newEnv.RuntimeMode() == env.RuntimeModeServer {
 		portScanner := port.NewScanner(1 * time.Second)
+		defer portScanner.Destroy()
+
 		go portScanner.ScanAndBroadcast()
 
 		portForwarder := port.NewForwarder(logger, newEnv, portScanner)

@@ -172,6 +172,7 @@ func (cs *CodeSnippetService) listenToOpenPorts() {
 
 func (cs *CodeSnippetService) scanTCPPorts() {
 	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
 	for range ticker.C {
 		d := GOnetstat.Tcp()

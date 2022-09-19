@@ -194,6 +194,8 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 
 		go func() {
 			ticker := time.NewTicker(terminalChildProcessCheckInterval)
+			defer ticker.Stop()
+
 			pid := newTerm.Pid()
 
 			for range ticker.C {

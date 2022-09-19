@@ -16,6 +16,10 @@ type Scanner struct {
 	subscribers map[string]*ScannerSubscriber // Map of subscribers id:Subscriber.
 }
 
+func (s *Scanner) Destroy() {
+	s.ticker.Stop()
+}
+
 func NewScanner(period time.Duration) *Scanner {
 	return &Scanner{
 		ticker:      time.NewTicker(period),
