@@ -116,9 +116,10 @@ func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api
 
 // Sync the cache with the actual sessions in Nomad to handle sessions that died.
 func (c *SessionCache) KeepInSync(client *NomadClient) {
-	ticker := time.NewTicker(cacheSyncTime)
-
 	go func() {
+		ticker := time.NewTicker(cacheSyncTime)
+		defer ticker.Stop()
+
 		for range ticker.C {
 			activeSessions, err := client.GetSessions()
 			if err != nil {
