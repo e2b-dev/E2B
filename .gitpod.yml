@@ -1,0 +1,8 @@
+tasks:
+  - name: Setup tools
+    init: |-
+      go install honnef.co/go/tools/cmd/staticcheck@latest
+
+github:
+  prebuilds:
+    branches: true
