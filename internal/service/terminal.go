@@ -258,8 +258,6 @@ func (ts *TerminalService) Data(terminalID terminal.TerminalID, data string) err
 }
 
 func (ts *TerminalService) Resize(terminalID terminal.TerminalID, cols, rows uint16) error {
-	ts.logger.Info("Resize terminal")
-
 	term, ok := ts.termManager.Get(terminalID)
 
 	if !ok {
