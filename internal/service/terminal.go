@@ -40,21 +40,20 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 		return nil, err
 	}
 
-	// Watch for subscription errors.
-	go func() {
-		err := <-sub.subscription.Err()
-		ts.logger.Errorw("Subscribtion error",
-			"subscriptionID", sub.SubscriptionID(),
-			"error", err,
-		)
-
-		ts.removeSubscriber(subs, sub.SubscriptionID())
-	}()
-
 	wrappedSub := &TerminalSubscriber{
 		terminalID: terminalID,
 		subscriber: sub,
 	}
+
+	// Watch for subscription errors.
+	go func() {
+		err := <-sub.subscription.Err()
+		ts.logger.Errorw("Subscribtion error",
+			"subscriptionID", wrappedSub.subscriber.SubscriptionID(),
+			"error", err,
+		)
+		ts.Destroy(wrappedSub.terminalID)
+	}()
 
 	ts.subscribersLock.Lock()
 	defer ts.subscribersLock.Unlock()
@@ -171,6 +170,10 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 
 		go func() {
 			for {
+				if newTerm.IsDestroyed() {
+					return
+				}
+
 				buf := make([]byte, 1024)
 				read, err := newTerm.Read(buf)
 
@@ -277,9 +280,7 @@ func (ts *TerminalService) Resize(terminalID terminal.TerminalID, cols, rows uin
 	return nil
 }
 
-func (ts *TerminalService) Destroy(terminalID terminal.TerminalID) error {
-	ts.logger.Info("Destroy")
-
+func (ts *TerminalService) Destroy(terminalID terminal.TerminalID) {
 	ts.termManager.Remove(terminalID)
 
 	for _, s := range ts.getSubscribers(ts.terminalDataSubscribers, terminalID) {
@@ -289,13 +290,9 @@ func (ts *TerminalService) Destroy(terminalID terminal.TerminalID) error {
 	for _, s := range ts.getSubscribers(ts.terminalChildProcessesSubscribers, terminalID) {
 		ts.removeSubscriber(ts.terminalChildProcessesSubscribers, s.subscriber.SubscriptionID())
 	}
-
-	return nil
 }
 
 func (ts *TerminalService) KillProcess(pid int) error {
-	ts.logger.Info("Kill process")
-
 	err := process.KillProcess(pid)
 
 	if err != nil {

@@ -1,3 +1,8 @@
+---
+- clean up logs. I don't know yet when we should clean up logs
+- destroy terminal on subscription error (this might be causing memory leaks and might also be happening with other subscriptions)
+- allow re-using an already created terminal subscription
+---
 # Devbook Daemon
 
 Devbook daemon can run in 2 modes
