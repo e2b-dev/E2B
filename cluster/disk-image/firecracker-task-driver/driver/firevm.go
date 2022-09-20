@@ -125,7 +125,7 @@ func (d *Driver) initializeFC(
 
 	opts := newOptions()
 
-	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID)
+	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID, slot.SessionID)
 	if err != nil {
 		errMsg := fmt.Errorf("error assembling FC config: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -157,7 +157,7 @@ func (d *Driver) initializeFC(
 
 	mountCmd := fmt.Sprintf(
 		"mount --bind  %s %s && ",
-		env.SnapshotRootPath,
+		env.SessionEnvPath,
 		env.BuildDirPath,
 	)
 

@@ -86,7 +86,7 @@ type options struct {
 }
 
 // Converts options to a usable firecracker config
-func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, error) {
+func (opts *options) getFirecrackerConfig(AllocId string, sessionID string) (firecracker.Config, error) {
 	// validate metadata json
 	if opts.FcMetadata != "" {
 		if err := json.Unmarshal([]byte(opts.FcMetadata), &opts.validMetadata); err != nil {
@@ -121,7 +121,7 @@ func (opts *options) getFirecrackerConfig(AllocId string) (firecracker.Config, e
 	if opts.FcSocketPath != "" {
 		socketPath = opts.FcSocketPath
 	} else {
-		socket, sockErr := getSocketPath()
+		socket, sockErr := getSocketPath(sessionID)
 		if sockErr != nil {
 			return firecracker.Config{}, sockErr
 		}
@@ -360,17 +360,16 @@ func createFifoFileLogs(fifoPath string) (*os.File, error) {
 // and searching for the existance of directories {$HOME, os.TempDir()} and returning
 // the path with the first directory joined with the unique filename. If we can't
 // find a good path panics.
-func getSocketPath() (string, error) {
+func getSocketPath(sessionID string) (string, error) {
 	filename := strings.Join([]string{
-		".firecracker.sock",
-		strconv.Itoa(os.Getpid()),
-		strconv.Itoa(rand.Intn(1000))},
-		"-",
-	)
+		"firecracker-",
+		sessionID,
+		".socket",
+	}, "")
+
 	var dir string
-	if d := os.Getenv("HOME"); checkExistsAndDir(d) {
-		dir = d
-	} else if checkExistsAndDir(os.TempDir()) {
+
+	if checkExistsAndDir(os.TempDir()) {
 		dir = os.TempDir()
 	} else {
 		errMsg := fmt.Errorf("unable to find a location for firecracker socket")
