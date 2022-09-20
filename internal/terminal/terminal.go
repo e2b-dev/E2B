@@ -64,7 +64,7 @@ func NewTerminal(shell, root string, cols, rows uint16) (*Terminal, error) {
 		Rows: rows,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to pty.Start() with command '%s': %s", cmd, err)
+		return nil, fmt.Errorf("failed to pty.Start() with command '%s': %s", cmd, err)
 	}
 
 	childProcesses := []process.ChildProcess{}
