@@ -107,7 +107,7 @@ function mkrootfs() {
   echo "===> Making rootfs..."
 
   local tag=rootfs-${RUN_UUID}
-  local free=1000000000 # 1000MB in B
+  local free=1500000000 # 1000MB in B
 
   echo -e "$DOCKERFILE" | docker build -t $tag -f - $SCRIPTDIR
   local container_id=$(docker run -dt $tag /bin/sh)
