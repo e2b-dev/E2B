@@ -9,6 +9,10 @@ import (
 )
 
 func NewLogger(logDir string) (*zap.SugaredLogger, error) {
+	if logDir == "" {
+		return nil, fmt.Errorf("Cannot create a logger, passed logDir string is empty")
+	}
+
 	stdout := path.Join(logDir, "devbookd.log")
 	stderr := path.Join(logDir, "devbookd.err")
 

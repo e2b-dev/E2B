@@ -160,7 +160,7 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 	if !ok {
 		ts.logger.Info("Creating a new terminal")
 
-		newTerm, err := ts.termManager.Add(ts.env.Workdir(), cols, rows)
+		newTerm, err := ts.termManager.Add(ts.env.Shell(), ts.env.Workdir(), cols, rows)
 		if err != nil {
 			errMsg := fmt.Sprintf("Failed to start new terminal: %v", err)
 			ts.logger.Info(errMsg)

@@ -43,8 +43,8 @@ func (m *TerminalManager) Get(id TerminalID) (*Terminal, bool) {
 	return term, ok
 }
 
-func (m *TerminalManager) Add(root string, cols, rows uint16) (*Terminal, error) {
-	term, err := NewTerminal(root, cols, rows)
+func (m *TerminalManager) Add(shell, root string, cols, rows uint16) (*Terminal, error) {
+	term, err := NewTerminal(shell, root, cols, rows)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new terminal: %s", err)
 	}

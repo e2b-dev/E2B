@@ -30,6 +30,10 @@ const (
 type Env struct {
 	runtimeMode RuntimeMode
 
+	logDir string
+	// shell is the path to a shell
+	shell string
+
 	// Env vars. Assigned only in the server mode.
 	runCmd             string
 	runArgs            string
@@ -50,6 +54,43 @@ func warnEmptyEnvVar(logger *zap.SugaredLogger, line, name string) {
 	)
 }
 
+func configureEnvForUserMode(env *Env) error {
+	// Create a new log dir or *delete the old one from previous session and create it again*.
+	// We do this to "reset" log files.
+
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("failed to determine location of the user's config directory: %s", err)
+	}
+	dbkConfigDir := path.Join(userConfigDir, "devbook")
+
+	if _, err := os.Stat(dbkConfigDir); !os.IsNotExist(err) {
+		// Config dir exists. Delete its content. This will remove old log files.
+		if err := os.RemoveAll(dbkConfigDir); err != nil {
+			return fmt.Errorf("failed to delete the old Devbook config directory at '%s': %s", dbkConfigDir, err)
+		}
+	}
+
+	// (re)create the config dir.
+	if err := os.MkdirAll(dbkConfigDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create a Devbook config directory at '%s': %s", dbkConfigDir, err)
+	}
+	env.logDir = dbkConfigDir
+
+	preferredShell, ok := os.LookupEnv("SHELL")
+	if !ok {
+		preferredShell = path.Join("/bin", "sh")
+	}
+	env.shell = preferredShell
+
+	return nil
+}
+
+func configureEnvForServerMode(env *Env) {
+	env.logDir = path.Join("/var", "log")
+	env.shell = path.Join("/bin", "sh")
+}
+
 func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
 	// Check that runtime mode is one of the allowed values.
 	if rawRuntimeMode != string(RuntimeModeUser) && rawRuntimeMode != string(RuntimeModeServer) {
@@ -63,30 +104,24 @@ func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
 		runtimeMode: RuntimeMode(rawRuntimeMode),
 	}
 
-	// Create log dir
-	var logDir string
 	switch env.runtimeMode {
 	case RuntimeModeUser:
-		userConfigDir, err := os.UserConfigDir()
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to determine location of the user's config directory: %s", err)
+		if err := configureEnvForUserMode(env); err != nil {
+			return nil, nil, err
 		}
-		dbkConfigDir := path.Join(userConfigDir, "devbook")
-		if err := os.MkdirAll(dbkConfigDir, os.ModePerm); err != nil {
-			return nil, nil, fmt.Errorf("failed to create a devbook config directory on '%s': %s", dbkConfigDir, err)
-		}
-		logDir = dbkConfigDir
 	case RuntimeModeServer:
-		logDir = path.Join("/var", "log")
+		configureEnvForServerMode(env)
 	}
 
-	logger, err := log.NewLogger(logDir)
+	logger, err := log.NewLogger(env.logDir)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create new logger: %s", err)
 	}
 
+	// Read and parse the /.dbkenv file only if we are in the server mode.
+	// TODO: Move this configuration to `configureEnvForServerMode`?
+	// We want to use a logger here though.
 	if env.runtimeMode == RuntimeModeServer {
-		// Read and parse the /.dbkenv file only if we are in the server mode.
 		logger.Infow("Loading envinronment", "envFilePath", envFilePath)
 
 		file, err := os.Open(envFilePath)
@@ -152,6 +187,10 @@ func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
 	}
 
 	return env, logger, nil
+}
+
+func (e *Env) Shell() string {
+	return e.shell
 }
 
 func (e *Env) RuntimeMode() RuntimeMode {

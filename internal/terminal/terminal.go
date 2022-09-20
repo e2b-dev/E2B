@@ -50,9 +50,9 @@ func (t *Terminal) SetCachedChildProcesses(cps *[]process.ChildProcess) {
 	t.childProcesses = cps
 }
 
-func NewTerminal(root string, cols, rows uint16) (*Terminal, error) {
+func NewTerminal(shell, root string, cols, rows uint16) (*Terminal, error) {
 	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
-	cmd := exec.Command("/bin/sh", "-l")
+	cmd := exec.Command(shell, "-l")
 	cmd.Env = append(
 		os.Environ(),
 		"TERM=xterm",
