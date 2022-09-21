@@ -20,6 +20,10 @@ job "otel-collector" {
     count = 1
 
     network {
+      port "health" {
+        to = 13133
+      }
+
       port "metrics" {
         to = 8888
       }
@@ -34,6 +38,15 @@ job "otel-collector" {
       name = "otel-collector"
       port = "grpc"
       tags = ["grpc"]
+
+      check {
+        type     = "http"
+        name     = "health"
+        path     = "/health"
+        interval = "20s"
+        timeout  = "5s"
+        port     = 13133
+      }
     }
 
     task "start-collector" {
@@ -50,6 +63,7 @@ job "otel-collector" {
         ports = [
           "metrics",
           "grpc",
+          "health",
         ]
       }
 
@@ -116,6 +130,9 @@ processors:
   batch:
     timeout: 5s
 
+extensions:
+  health_check:
+
 exporters:
   otlp/lightstep:
     endpoint: ingest.lightstep.com:443
@@ -123,6 +140,7 @@ exporters:
       "lightstep-access-token": ${var.lightstep_api_key}
 
 service:
+  extensions: [health_check]
   telemetry:
     logs:
       level: debug

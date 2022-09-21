@@ -44,6 +44,15 @@ job "client-proxy" {
     service {
       name = "client-proxy"
       port = var.client_proxy_port_name
+
+      check {
+        type     = "http"
+        name     = "health"
+        path     = "/health"
+        interval = "20s"
+        timeout  = "5s"
+        port     = "health"
+      }
     }
 
     task "client-proxy" {

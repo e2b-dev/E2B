@@ -54,6 +54,16 @@ job "session-proxy" {
       meta {
         Client = node.unique.id
       }
+
+      check {
+        type     = "http"
+        name     = "health"
+        path     = "/health"
+        interval = "20s"
+        timeout  = "5s"
+        port     = "status"
+      }
+
     }
 
     task "session-proxy" {
@@ -125,6 +135,12 @@ server {
 
 server {
   listen 3004;
+
+  location /health {
+    access_log off;
+    add_header 'Content-Type' 'application/json';
+    return 200 '{"status":"UP"}';
+  }
 
   location /status {
     stub_status;

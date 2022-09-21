@@ -45,6 +45,15 @@ job "orchestration-api" {
     service {
       name = "api"
       port = var.api_port_number
+
+      check {
+        type     = "http"
+        name     = "health"
+        path     = "/health"
+        interval = "20s"
+        timeout  = "5s"
+        port     = var.api_port_number
+      }
     }
 
     task "start" {
@@ -52,21 +61,21 @@ job "orchestration-api" {
 
       resources {
         memory_max = 1024
-        memory = 512
-        cpu = 1000
+        memory     = 512
+        cpu        = 1000
       }
 
       env {
         NOMAD_ADDRESS = var.nomad_address
-        SUPABASE_URL = var.supabase_url
-        SUPABASE_KEY = var.supabase_key
+        SUPABASE_URL  = var.supabase_url
+        SUPABASE_KEY  = var.supabase_key
         API_ADMIN_KEY = var.api_admin_key
       }
 
       config {
         network_mode = "host"
-        image = var.image_name
-        ports = [var.api_port_name]
+        image        = var.image_name
+        ports        = [var.api_port_name]
         args = [
           "--port", "${var.api_port_number}",
         ]
