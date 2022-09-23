@@ -75,7 +75,7 @@ abstract class SessionConnection {
     return this.rpc.call(`${service}_${method}`, params)
   }
 
-  protected async handleSubscriptions<T extends (ReturnType<typeof this.subscribe> | undefined)[]>(...subs: T): Promise<{ [P in keyof T]: Awaited<T[P]> }> {
+  protected async handleSubscriptions<T extends (ReturnType<SessionConnection['subscribe']> | undefined)[]>(...subs: T): Promise<{ [P in keyof T]: Awaited<T[P]> }> {
     const results = await Promise.allSettled(subs)
 
     if (results.every(r => r.status === 'fulfilled')) {
