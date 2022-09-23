@@ -20,6 +20,7 @@ var (
 	wsHandler http.Handler
 
 	rawRuntimeMode string
+	debug          bool
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -37,13 +38,20 @@ func parseFlags() {
 		string(env.RuntimeModeServer),
 		"a runtime mode in which the daemon should run. Affects things like logs and loading env vars. Accepted values are either 'server' or 'user'",
 	)
+
+	flag.BoolVar(
+		&debug,
+		"debug",
+		false,
+		"debug mode prints all logs to stdout and stderr",
+	)
 	flag.Parse()
 }
 
 func main() {
 	parseFlags()
 
-	newEnv, l, err := env.NewEnv(rawRuntimeMode)
+	newEnv, l, err := env.NewEnv(rawRuntimeMode, debug)
 	if err != nil {
 		panic(err)
 	}

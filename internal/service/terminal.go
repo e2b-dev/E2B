@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"sync"
 	"time"
@@ -40,20 +41,26 @@ func (ts *TerminalService) saveNewSubscriber(ctx context.Context, subs map[rpc.I
 		return nil, err
 	}
 
+	// Watch for subscription errors.
+	go func() {
+		err, ok := <-sub.subscription.Err()
+		if !ok {
+			return
+		}
+
+		if err != nil {
+			ts.logger.Errorw("Terminal subscription error",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+			ts.Destroy(terminalID, sub.SubscriptionID())
+		}
+	}()
+
 	wrappedSub := &TerminalSubscriber{
 		terminalID: terminalID,
 		subscriber: sub,
 	}
-
-	// Watch for subscription errors.
-	go func() {
-		err := <-sub.subscription.Err()
-		ts.logger.Errorw("Subscribtion error",
-			"subscriptionID", wrappedSub.subscriber.SubscriptionID(),
-			"error", err,
-		)
-		ts.Destroy(wrappedSub.terminalID)
-	}()
 
 	ts.subscribersLock.Lock()
 	defer ts.subscribersLock.Unlock()
@@ -85,20 +92,20 @@ func (ts *TerminalService) getSubscribers(subs map[rpc.ID]*TerminalSubscriber, t
 }
 
 func NewTerminalService(logger *zap.SugaredLogger, env *env.Env) *TerminalService {
-	ts := &TerminalService{
+	return &TerminalService{
 		logger:                            logger,
 		env:                               env,
 		terminalChildProcessesSubscribers: make(map[rpc.ID]*TerminalSubscriber),
 		terminalDataSubscribers:           make(map[rpc.ID]*TerminalSubscriber),
 		termManager:                       terminal.NewTerminalManager(),
 	}
-
-	return ts
 }
 
 // Subscription
 func (ts *TerminalService) OnData(ctx context.Context, terminalID terminal.TerminalID) (*rpc.Subscription, error) {
-	ts.logger.Info("Subscribe to terminal data")
+	ts.logger.Infow("Subscribe to terminal data",
+		"terminalID", terminalID,
+	)
 
 	_, ok := ts.termManager.Get(terminalID)
 
@@ -122,7 +129,9 @@ func (ts *TerminalService) OnData(ctx context.Context, terminalID terminal.Termi
 
 // Subscription
 func (ts *TerminalService) OnChildProcessesChange(ctx context.Context, terminalID terminal.TerminalID) (*rpc.Subscription, error) {
-	ts.logger.Info("Subscribe to terminal child processes")
+	ts.logger.Infow("Subscribe to terminal child processes",
+		"terminalID", terminalID,
+	)
 
 	term, ok := ts.termManager.Get(terminalID)
 	if !ok {
@@ -151,22 +160,37 @@ func (ts *TerminalService) OnChildProcessesChange(ctx context.Context, terminalI
 }
 
 func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint16) (terminal.TerminalID, error) {
-	ts.logger.Info("Starting terminal")
+	ts.logger.Infow("Start terminal",
+		"terminalID", terminalID,
+	)
 
 	term, ok := ts.termManager.Get(terminalID)
 
-	// Terminal doesn't exist, we will create a new one.
-	if !ok {
-		ts.logger.Info("Creating a new terminal")
+	if ok {
+		ts.logger.Infow("Terminal with this ID already exists", "terminalID", terminalID)
+	} else {
+		// Terminal doesn't exist, we will create a new one.
+		ts.logger.Infow("Terminal with ID doesn't exist yet. Creating a new terminal",
+			"requestedTerminalID", terminalID,
+		)
 
-		newTerm, err := ts.termManager.Add(ts.env.Shell(), ts.env.Workdir(), cols, rows)
+		newTerm, err := ts.termManager.Add(
+			ts.logger,
+			terminalID,
+			ts.env.Shell(),
+			ts.env.Workdir(),
+			cols,
+			rows,
+		)
 		if err != nil {
 			errMsg := fmt.Sprintf("Failed to start new terminal: %v", err)
 			ts.logger.Info(errMsg)
 			return "", fmt.Errorf(errMsg)
 		}
 
-		ts.logger.Info("New terminal created")
+		ts.logger.Infow("New terminal created",
+			"terminalID", newTerm.ID,
+		)
 
 		go func() {
 			for {
@@ -178,18 +202,29 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 				read, err := newTerm.Read(buf)
 
 				if err != nil {
-					ts.logger.Infof("Error reading from terminal %s - stopped reading", newTerm.ID)
-					return
-				}
-
-				data := string(buf[:read])
-
-				for _, sub := range ts.getSubscribers(ts.terminalDataSubscribers, newTerm.ID) {
-					if err := sub.subscriber.Notify(data); err != nil {
-						ts.logger.Errorw("Failed to send data notification",
-							"subscriptionID", sub.subscriber.SubscriptionID(),
+					if err == io.EOF {
+						return
+					} else {
+						ts.logger.Infow("Error reading from terminal",
+							"terminalID", newTerm.ID,
 							"error", err,
 						)
+						// TODO: Destroy only if there aren't other subscribers using it.
+						//ts.Destroy(newTerm.ID)
+						return
+					}
+				}
+
+				if read > 0 {
+					data := string(buf[:read])
+
+					for _, sub := range ts.getSubscribers(ts.terminalDataSubscribers, newTerm.ID) {
+						if err := sub.subscriber.Notify(data); err != nil {
+							ts.logger.Errorw("Failed to send data notification",
+								"subscriptionID", sub.subscriber.SubscriptionID(),
+								"error", err,
+							)
+						}
 					}
 				}
 			}
@@ -233,7 +268,7 @@ func (ts *TerminalService) Start(terminalID terminal.TerminalID, cols, rows uint
 			}
 		}()
 
-		ts.logger.Info("Started terminal output data watcher")
+		ts.logger.Infow("Started terminal output data watcher", "terminalID", newTerm.ID)
 		return newTerm.ID, nil
 	}
 
@@ -249,9 +284,7 @@ func (ts *TerminalService) Data(terminalID terminal.TerminalID, data string) err
 		return fmt.Errorf(errMsg)
 	}
 
-	_, err := term.Write([]byte(data))
-
-	if err != nil {
+	if _, err := term.Write([]byte(data)); err != nil {
 		errMsg := fmt.Sprintf("cannot write data %s to terminal with ID %s: %+v", data, terminalID, err)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
@@ -269,9 +302,7 @@ func (ts *TerminalService) Resize(terminalID terminal.TerminalID, cols, rows uin
 		return fmt.Errorf(errMsg)
 	}
 
-	err := term.Resize(cols, rows)
-
-	if err != nil {
+	if err := term.Resize(cols, rows); err != nil {
 		errMsg := fmt.Sprintf("cannot resize terminal with ID %s: %+v", terminalID, err)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)
@@ -280,22 +311,49 @@ func (ts *TerminalService) Resize(terminalID terminal.TerminalID, cols, rows uin
 	return nil
 }
 
-func (ts *TerminalService) Destroy(terminalID terminal.TerminalID) {
-	ts.termManager.Remove(terminalID)
+func (ts *TerminalService) Destroy(terminalID terminal.TerminalID, subID rpc.ID) {
+	ts.logger.Infow("Remove subscriber for terminal",
+		"terminalID", terminalID,
+		"subscriptionID", subID,
+	)
 
-	for _, s := range ts.getSubscribers(ts.terminalDataSubscribers, terminalID) {
-		ts.removeSubscriber(ts.terminalDataSubscribers, s.subscriber.SubscriptionID())
+	dataSubs := ts.getSubscribers(ts.terminalDataSubscribers, terminalID)
+	dataSubsCount := len(dataSubs)
+	for _, s := range dataSubs {
+		if s.subscriber.SubscriptionID() == subID {
+			ts.removeSubscriber(ts.terminalDataSubscribers, s.subscriber.SubscriptionID())
+			dataSubsCount -= 1
+		}
 	}
 
-	for _, s := range ts.getSubscribers(ts.terminalChildProcessesSubscribers, terminalID) {
-		ts.removeSubscriber(ts.terminalChildProcessesSubscribers, s.subscriber.SubscriptionID())
+	childProcSubs := ts.getSubscribers(ts.terminalChildProcessesSubscribers, terminalID)
+	childProcSubsCount := len(childProcSubs)
+	for _, s := range childProcSubs {
+		if s.subscriber.SubscriptionID() == subID {
+			ts.removeSubscriber(ts.terminalChildProcessesSubscribers, s.subscriber.SubscriptionID())
+			childProcSubsCount -= 1
+		}
+	}
+
+	ts.logger.Debugw("Sub count",
+		"terminalID", terminalID,
+		"dataSubsCountForTerminalID", dataSubsCount,
+		"childProcSubsCountForTerminalID", childProcSubsCount,
+		"dataSubCountTotal", len(ts.terminalDataSubscribers),
+		"childProcSubsCountTotal", len(ts.terminalChildProcessesSubscribers),
+	)
+
+	// Remove terminal only if there aren't any subscriptions left.
+	if dataSubsCount == 0 && childProcSubsCount == 0 {
+		ts.logger.Infow("Removing terminal, no subscribers left",
+			"terminalID", terminalID,
+		)
+		ts.termManager.Remove(terminalID)
 	}
 }
 
 func (ts *TerminalService) KillProcess(pid int) error {
-	err := process.KillProcess(pid)
-
-	if err != nil {
+	if err := process.KillProcess(pid); err != nil {
 		errMsg := fmt.Sprintf("cannot kill process %d: %v", pid, err)
 		ts.logger.Error(errMsg)
 		return fmt.Errorf(errMsg)

@@ -28,6 +28,7 @@ const (
 )
 
 type Env struct {
+	debug       bool
 	runtimeMode RuntimeMode
 
 	logDir string
@@ -91,7 +92,7 @@ func configureEnvForServerMode(env *Env) {
 	env.shell = path.Join("/bin", "sh")
 }
 
-func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
+func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error) {
 	// Check that runtime mode is one of the allowed values.
 	if rawRuntimeMode != string(RuntimeModeUser) && rawRuntimeMode != string(RuntimeModeServer) {
 		return nil, nil, fmt.Errorf(
@@ -102,6 +103,7 @@ func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
 
 	env := &Env{
 		runtimeMode: RuntimeMode(rawRuntimeMode),
+		debug:       debug,
 	}
 
 	switch env.runtimeMode {
@@ -113,7 +115,7 @@ func NewEnv(rawRuntimeMode string) (*Env, *zap.SugaredLogger, error) {
 		configureEnvForServerMode(env)
 	}
 
-	logger, err := log.NewLogger(env.logDir)
+	logger, err := log.NewLogger(env.logDir, env.debug)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create new logger: %s", err)
 	}

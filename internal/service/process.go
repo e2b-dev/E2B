@@ -49,13 +49,18 @@ func (ps *ProcessService) saveNewSubscriber(ctx context.Context, subs map[rpc.ID
 
 	// Watch for subscription errors.
 	go func() {
-		err := <-sub.subscription.Err()
-		ps.logger.Errorw("Subscribtion error",
-			"subscriptionID", sub.SubscriptionID(),
-			"error", err,
-		)
+		err, ok := <-sub.subscription.Err()
+		if !ok {
+			return
+		}
 
-		ps.removeSubscriber(subs, sub.SubscriptionID())
+		if err != nil {
+			ps.logger.Errorw("Process subscription error",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+			ps.removeSubscriber(subs, sub.SubscriptionID())
+		}
 	}()
 
 	wrappedSub := &ProcessSubscriber{

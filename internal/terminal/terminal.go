@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/devbookhq/devbookd/internal/process"
+	"go.uber.org/zap"
 
 	"github.com/creack/pty"
 	"github.com/rs/xid"
@@ -15,7 +16,8 @@ import (
 type TerminalID = string
 
 type Terminal struct {
-	lock sync.RWMutex
+	logger *zap.SugaredLogger
+	lock   sync.RWMutex
 
 	childProcesses *[]process.ChildProcess
 	isDestroyed    bool
@@ -50,7 +52,7 @@ func (t *Terminal) SetCachedChildProcesses(cps *[]process.ChildProcess) {
 	t.childProcesses = cps
 }
 
-func NewTerminal(shell, root string, cols, rows uint16) (*Terminal, error) {
+func NewTerminal(logger *zap.SugaredLogger, id, shell, root string, cols, rows uint16) (*Terminal, error) {
 	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
 	cmd := exec.Command(shell, "-l")
 	cmd.Env = append(
@@ -69,8 +71,13 @@ func NewTerminal(shell, root string, cols, rows uint16) (*Terminal, error) {
 
 	childProcesses := []process.ChildProcess{}
 
+	if id == "" {
+		id = xid.New().String()
+	}
+
 	return &Terminal{
-		ID:             xid.New().String(),
+		logger:         logger,
+		ID:             id,
 		cmd:            cmd,
 		tty:            tty,
 		isDestroyed:    false,
@@ -83,9 +90,32 @@ func (t *Terminal) Read(b []byte) (int, error) {
 }
 
 func (t *Terminal) Destroy() {
-	t.cmd.Process.Kill()
-	t.cmd.Process.Wait()
-	t.tty.Close()
+	t.logger.Infow("Destroying terminal", "id", t.ID)
+	if err := t.cmd.Process.Kill(); err != nil {
+		t.logger.Errorw("Failed kill terminal command",
+			"id", t.ID,
+			"cmd", t.cmd,
+			"pid", t.cmd.Process.Pid,
+			"error", err,
+		)
+	}
+	if _, err := t.cmd.Process.Wait(); err != nil {
+		t.logger.Errorw("Failed wait for terminal command to exit",
+			"id", t.ID,
+			"cmd", t.cmd,
+			"pid", t.cmd.Process.Pid,
+			"error", err,
+		)
+	}
+	if err := t.tty.Close(); err != nil {
+		t.logger.Errorw("Failed to close tty",
+			"id", t.ID,
+			"tty", t.tty.Name(),
+			"cmd", t.cmd,
+			"pid", t.cmd.Process.Pid,
+			"error", err,
+		)
+	}
 
 	t.lock.Lock()
 	t.isDestroyed = true

@@ -115,13 +115,18 @@ func (cs *CodeSnippetService) saveNewSubscriber(ctx context.Context, subs map[rp
 
 	// Watch for subscription errors.
 	go func() {
-		err := <-sub.subscription.Err()
-		cs.logger.Errorw("Subscribtion error",
-			"subscriptionID", sub.SubscriptionID(),
-			"error", err,
-		)
+		err, ok := <-sub.subscription.Err()
+		if !ok {
+			return
+		}
 
-		cs.removeSubscriber(subs, sub.SubscriptionID())
+		if err != nil {
+			cs.logger.Errorw("CodeSnippet subscription error",
+				"subscriptionID", sub.SubscriptionID(),
+				"error", err,
+			)
+			cs.removeSubscriber(subs, sub.SubscriptionID())
+		}
 	}()
 
 	cs.subscribersLock.Lock()

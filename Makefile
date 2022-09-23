@@ -2,10 +2,10 @@ build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/devbookd .
 
 build-darwin:
-	GOOS=darwin go build -o bin/devbookd-darwin .
+	GOOS=darwin go build -o bin/darwin/devbookd .
 
 build-debug-devbookd:
-	CGO_ENABLED=1 GOOS=linux go build -race -gcflags=all="-N -l" -o bin/devbookd-debug
+	CGO_ENABLED=1 GOOS=linux go build -race -gcflags=all="-N -l" -o bin/darwing/debug/devbookd
 
 build-docker:
 	docker build -t devbookd-debug . -f debug.Dockerfile
