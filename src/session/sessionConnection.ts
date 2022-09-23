@@ -19,6 +19,10 @@ import { processService } from './process'
 import { codeSnippetService } from './codeSnippet'
 import { filesystemService } from './filesystem'
 import { terminalService } from './terminal'
+import {
+  assertFulfilled,
+  formatSettledErrors,
+} from '../utils/promise'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void
@@ -30,7 +34,7 @@ type Service = typeof processService
 
 interface Subscriber {
   service: Service
-  subscriptionID: string
+  subID: string
   handler: SubscriptionHandler
 }
 
@@ -71,11 +75,27 @@ abstract class SessionConnection {
     return this.rpc.call(`${service}_${method}`, params)
   }
 
-  protected async unsubscribe(subscriptionID: string) {
-    const subscription = this.subscribers.find(s => s.subscriptionID === subscriptionID)
+  protected async handleSubscriptions<T extends (ReturnType<typeof this.subscribe> | undefined)[]>(...subs: T): Promise<{ [P in keyof T]: Awaited<T[P]> }> {
+    const results = await Promise.allSettled(subs)
+
+    if (results.every(r => r.status === 'fulfilled')) {
+      return results.map(r => r.status === 'fulfilled' ? r.value : undefined) as { [P in keyof T]: Awaited<T[P]> }
+    }
+
+    await Promise.all(
+      results
+        .filter(assertFulfilled)
+        .map(r => r.value ? this.unsubscribe(r.value) : undefined)
+    )
+
+    throw new Error(formatSettledErrors(results))
+  }
+
+  protected async unsubscribe(subID: string) {
+    const subscription = this.subscribers.find(s => s.subID === subID)
     if (!subscription) return
 
-    await this.call(subscription.service, 'unsubscribe', [subscription.subscriptionID])
+    await this.call(subscription.service, 'unsubscribe', [subscription.subID])
 
     this.subscribers = this.subscribers.filter(s => s !== subscription)
     this.logger.log(`Unsubscribed from "${subscription.service}"`)
@@ -83,20 +103,20 @@ abstract class SessionConnection {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected async subscribe(service: Service, handler: SubscriptionHandler, method: string, ...params: any) {
-    const subscriptionID = await this.call(service, 'subscribe', [method, ...params])
+    const subID = await this.call(service, 'subscribe', [method, ...params])
 
-    if (typeof subscriptionID !== 'string') {
-      throw new Error(`Cannot subscribe to ${service}_${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(subscriptionID)}`)
+    if (typeof subID !== 'string') {
+      throw new Error(`Cannot subscribe to ${service}_${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(subID)}`)
     }
 
     this.subscribers.push({
-      subscriptionID,
+      subID,
       handler,
       service,
     })
-    this.logger.log(`Subscribed to "${service}_${method}" (${params}) with id "${subscriptionID}"`)
+    this.logger.log(`Subscribed to "${service}_${method}" (${params}) with id "${subID}"`)
 
-    return subscriptionID
+    return subID
   }
 
   /**
@@ -143,7 +163,7 @@ abstract class SessionConnection {
 
       this.logger.log('Unsubscribing...')
       const results = await Promise.allSettled(
-        this.subscribers.map(s => this.unsubscribe(s.subscriptionID)),
+        this.subscribers.map(s => this.unsubscribe(s.subID)),
       )
       results.forEach(r => {
         if (r.status === 'rejected') {
@@ -267,7 +287,7 @@ abstract class SessionConnection {
 
   private handleNotification(data: IRpcNotification) {
     this.subscribers
-      .filter(s => s.subscriptionID === data.params?.subscription)
+      .filter(s => s.subID === data.params?.subscription)
       .forEach(s => s.handler(data.params?.result))
   }
 

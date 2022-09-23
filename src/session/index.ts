@@ -24,6 +24,7 @@ import {
   processService,
 } from './process'
 import { id } from '../utils/id'
+import { evaluateSettledPromises } from '../utils/promise'
 
 export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
@@ -49,10 +50,11 @@ class Session extends SessionConnection {
     this.codeSnippetOpts = opts.codeSnippet
   }
 
+
   async open() {
     await super.open()
 
-    await Promise.all([
+    await this.handleSubscriptions(
       this.codeSnippetOpts?.onStateChange
         ? this.subscribe(codeSnippetService, this.codeSnippetOpts.onStateChange, 'state')
         : undefined,
@@ -65,7 +67,7 @@ class Session extends SessionConnection {
       this.codeSnippetOpts?.onScanPorts
         ? this.subscribe(codeSnippetService, this.codeSnippetOpts.onScanPorts, 'scanOpenedPorts')
         : undefined,
-    ])
+    )
 
     // Init CodeSnippet handler
     this.codeSnippet = {
@@ -98,8 +100,6 @@ class Session extends SessionConnection {
     }
 
     // Init Terminal handler
-    // TODO: If the process or one of the subscriptions fails to register we are currently not unsubscribing from the others
-    // We are generating process ID in the SDK because we need to subscribe to the process stdout/stderr before starting it.
     this.terminal = {
       killProcess: async (pid) => {
         await this.call(terminalService, 'killProcess', [pid])
@@ -111,23 +111,25 @@ class Session extends SessionConnection {
         terminalID = id(12),
       }) => {
         const [
-          onDataSubscriptionID,
-          onChildProcessesChangeSubscriptionID,
-        ] = await Promise.all([
+          onDataSubID,
+          onChildProcessesChangeSubID,
+        ] = await this.handleSubscriptions(
           this.subscribe(terminalService, onData, 'onData', terminalID),
           onChildProcessesChange ? this.subscribe(terminalService, onChildProcessesChange, 'onChildProcessesChange', terminalID) : undefined,
-        ])
+        )
 
         await this.call(terminalService, 'start', [terminalID, size.cols, size.rows])
 
         return {
           terminalID,
           destroy: async () => {
-            await Promise.all([
-              this.unsubscribe(onDataSubscriptionID),
-              onChildProcessesChangeSubscriptionID ? this.unsubscribe(onChildProcessesChangeSubscriptionID) : undefined,
+            const results = await Promise.allSettled([
+              this.unsubscribe(onDataSubID),
+              onChildProcessesChangeSubID ? this.unsubscribe(onChildProcessesChangeSubID) : undefined,
               await this.call(terminalService, 'destroy', [terminalID])
             ])
+
+            evaluateSettledPromises(results)
           },
           sendData: async (data) => {
             await this.call(terminalService, 'data', [terminalID, data])
@@ -140,8 +142,6 @@ class Session extends SessionConnection {
     }
 
     // Init Process handler
-    // TODO: If the process or one of the subscriptions fails to register we are currently not unsubscribing from the others
-    // We are generating process ID in the SDK because we need to subscribe to the process stdout/stderr before starting it.
     this.process = {
       start: async ({
         cmd,
@@ -153,29 +153,31 @@ class Session extends SessionConnection {
         processID = id(12),
       }) => {
         const [
-          onExitSubscriptionID,
-          onStdoutSubscriptionID,
-          onStderrSubscriptionID,
-        ] = await Promise.all([
+          onExitSubID,
+          onStdoutSubID,
+          onStderrSubID,
+        ] = await this.handleSubscriptions(
           onExit ? this.subscribe(processService, onExit, 'onExit', processID) : undefined,
           onStdout ? this.subscribe(processService, onStdout, 'onStdout', processID) : undefined,
           onStderr ? this.subscribe(processService, onStderr, 'onStderr', processID) : undefined,
-        ])
+        )
 
         await this.call(processService, 'start', [processID, cmd, envVars, rootdir])
 
         return {
           processID,
           kill: async () => {
-            if (onExitSubscriptionID) await this.unsubscribe(onExitSubscriptionID)
+            // This prevents the onExit from being called twice
+            if (onExitSubID) await this.unsubscribe(onExitSubID)
 
-            await Promise.all([
-              onStdoutSubscriptionID ? this.unsubscribe(onStdoutSubscriptionID) : undefined,
-              onStderrSubscriptionID ? this.unsubscribe(onStderrSubscriptionID) : undefined,
+            const results = await Promise.allSettled([
+              onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
+              onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
               this.call(processService, 'kill', [processID]),
             ])
 
             onExit?.()
+            evaluateSettledPromises(results)
           },
           sendStdin: async (data) => {
             await this.call(processService, 'stdin', [processID, data])
