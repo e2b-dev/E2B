@@ -1,4 +1,4 @@
-export const filesystemMethod = 'filesystem'
+export const filesystemService = 'filesystem'
 
 export interface FileInfo {
   isDir: boolean

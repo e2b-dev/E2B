@@ -4,7 +4,7 @@ import {
 } from './out'
 import { EnvVars } from './envVars'
 
-export const codeSnippetMethod = 'codeSnippet'
+export const codeSnippetService = 'codeSnippet'
 
 export enum CodeSnippetExecState {
   Running = 'Running',

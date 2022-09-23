@@ -15,14 +15,23 @@ import {
   WS_ROUTE,
 } from '../constants'
 import Logger from '../utils/logger'
+import { processService } from './process'
+import { codeSnippetService } from './codeSnippet'
+import { filesystemService } from './filesystem'
+import { terminalService } from './terminal'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void
 
+type Service = typeof processService
+  | typeof codeSnippetService
+  | typeof filesystemService
+  | typeof terminalService
+
 interface Subscriber {
+  service: Service
   subscriptionID: string
   handler: SubscriptionHandler
-  method: string
 }
 
 export type CloseHandler = () => void
@@ -58,34 +67,34 @@ abstract class SessionConnection {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async call(method: string, params?: any[]) {
-    return this.rpc.call(method, params)
+  protected async call(service: Service, method: string, params?: any[]) {
+    return this.rpc.call(`${service}_${method}`, params)
   }
 
   protected async unsubscribe(subscriptionID: string) {
     const subscription = this.subscribers.find(s => s.subscriptionID === subscriptionID)
     if (!subscription) return
 
-    await this.call(`${subscription.method}_unsubscribe`, [subscription?.subscriptionID])
+    await this.call(subscription.service, 'unsubscribe', [subscription.subscriptionID])
 
     this.subscribers = this.subscribers.filter(s => s !== subscription)
-    this.logger.log(`Unsubscribed from "${subscription.method}"`)
+    this.logger.log(`Unsubscribed from "${subscription.service}"`)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async subscribe(method: string, handler: SubscriptionHandler, ...params: any) {
-    const subscriptionID = await this.call(`${method}_subscribe`, params)
+  protected async subscribe(service: Service, handler: SubscriptionHandler, method: string, ...params: any) {
+    const subscriptionID = await this.call(service, 'subscribe', [method, ...params])
 
     if (typeof subscriptionID !== 'string') {
-      throw new Error(`Cannot subscribe to ${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(subscriptionID)}`)
+      throw new Error(`Cannot subscribe to ${service}_${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(subscriptionID)}`)
     }
 
     this.subscribers.push({
       subscriptionID,
       handler,
-      method,
+      service,
     })
-    this.logger.log(`Subscribed to "${method}_${params}" with id "${subscriptionID}"`)
+    this.logger.log(`Subscribed to "${service}_${method}" (${params}) with id "${subscriptionID}"`)
 
     return subscriptionID
   }

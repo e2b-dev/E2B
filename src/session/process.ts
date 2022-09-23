@@ -4,7 +4,7 @@ import {
   OutStderrResponse,
 } from './out'
 
-export const processMethod = 'process'
+export const processService = 'process'
 
 export interface Process {
   readonly sendStdin: (data: string) => Promise<void>

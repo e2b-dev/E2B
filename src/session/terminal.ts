@@ -1,4 +1,4 @@
-export const terminalMethod = 'terminal'
+export const terminalService = 'terminal'
 
 export interface TerminalSession {
   readonly sendData: (data: string) => Promise<void>
@@ -18,6 +18,6 @@ export interface TerminalManager {
     onData: (data: string) => void,
     onChildProcessesChange: ((cps: ChildProcess[]) => void) | undefined,
     size: { cols: number, rows: number },
-    activeTerminalID?: string,
+    terminalID?: string,
   }) => Promise<TerminalSession>
 }
