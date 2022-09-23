@@ -10,7 +10,7 @@ export function formatSettledErrors<T>(settled: PromiseSettledResult<T>[]) {
   return settled
     .filter(assertRejected)
     .reduce((prev, curr) => {
-      return prev + '\n' + curr.reason
+      return prev + '\n' + `${JSON.stringify(curr.reason)}`
     }, 'errors:\n')
 }
 
