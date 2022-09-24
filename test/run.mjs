@@ -4,6 +4,11 @@ async function main() {
   const session = new Session({
     id: 'Nodejs',
     debug: true,
+    // codeSnippet: {
+    //   onStateChange(state) {
+    //     console.log(state)
+    //   },
+    // },
     onDisconnect() {
       console.log('disconnect')
     },
@@ -13,14 +18,30 @@ async function main() {
     onClose() {
       console.log('close')
     },
-    // __debug_hostname: '127.0.0.1',
-    // __debug_devEnv: 'local',
+    __debug_hostname: 'localhost',
+    __debug_devEnv: 'local',
   })
 
   try {
     await session.open()
     console.log('connected')
 
+    // const term = await session.terminal.createSession({
+    //   onData: (data) => console.log(data),
+    //   size: { cols: 20, rows: 40 },
+    // })
+
+    // const term2 = await session.terminal.createSession({
+    //   onData: (data) => console.log(data),
+    //   size: { cols: 20, rows: 40 },
+    // })
+
+    await session.process.start({
+      cmd: 'echo 22',
+      onStdout: (o) => console.log(o.line)
+    })
+
+    // await term.destroy()
     const hostname = session.getHostname()
     console.log(hostname)
   } catch (e) {

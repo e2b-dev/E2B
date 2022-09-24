@@ -24,7 +24,7 @@ import {
   processService,
 } from './process'
 import { id } from '../utils/id'
-import { evaluateSettledPromises } from '../utils/promise'
+import { createDeferredPromise, evaluateSettledPromises, formatSettledErrors } from '../utils/promise'
 
 export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
@@ -118,7 +118,17 @@ class Session extends SessionConnection {
           onChildProcessesChange ? this.subscribe(terminalService, onChildProcessesChange, 'onChildProcessesChange', terminalID) : undefined,
         )
 
-        await this.call(terminalService, 'start', [terminalID, size.cols, size.rows])
+        try {
+          await this.call(terminalService, 'start', [terminalID, size.cols, size.rows])
+        } catch (err) {
+          const results = await Promise.allSettled([
+            this.unsubscribe(onDataSubID),
+            onChildProcessesChangeSubID ? this.unsubscribe(onChildProcessesChangeSubID) : undefined,
+          ])
+
+          this.logger.error(formatSettledErrors(results))
+          throw err
+        }
 
         return {
           terminalID,
@@ -152,32 +162,57 @@ class Session extends SessionConnection {
         rootdir = '/',
         processID = id(12),
       }) => {
+
+        const {
+          promise: processExited,
+          resolve: triggerExit,
+        } = createDeferredPromise()
+
         const [
           onExitSubID,
           onStdoutSubID,
           onStderrSubID,
         ] = await this.handleSubscriptions(
-          onExit ? this.subscribe(processService, onExit, 'onExit', processID) : undefined,
+          onExit ? this.subscribe(processService, triggerExit, 'onExit', processID) : undefined,
           onStdout ? this.subscribe(processService, onStdout, 'onStdout', processID) : undefined,
           onStderr ? this.subscribe(processService, onStderr, 'onStderr', processID) : undefined,
         )
 
-        await this.call(processService, 'start', [processID, cmd, envVars, rootdir])
+        const {
+          promise: unsubscribing,
+          resolve: handleFinishUnsubscribing,
+        } = createDeferredPromise()
+
+        processExited.then(async () => {
+          const results = await Promise.allSettled([
+            onExitSubID ? this.unsubscribe(onExitSubID) : undefined,
+            onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
+            onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
+          ])
+
+          this.logger.error(formatSettledErrors(results))
+
+          onExit?.()
+
+          handleFinishUnsubscribing()
+        })
+
+        try {
+          await this.call(processService, 'start', [processID, cmd, envVars, rootdir])
+        } finally {
+          triggerExit()
+          await unsubscribing
+        }
 
         return {
           processID,
           kill: async () => {
-            // This prevents the onExit from being called twice
-            if (onExitSubID) await this.unsubscribe(onExitSubID)
-
-            const results = await Promise.allSettled([
-              onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
-              onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
-              this.call(processService, 'kill', [processID]),
-            ])
-
-            onExit?.()
-            evaluateSettledPromises(results)
+            try {
+              await this.call(processService, 'kill', [processID])
+            } finally {
+              triggerExit()
+              await unsubscribing
+            }
           },
           sendStdin: async (data) => {
             await this.call(processService, 'stdin', [processID, data])

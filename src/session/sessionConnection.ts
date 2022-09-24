@@ -259,6 +259,9 @@ abstract class SessionConnection {
         await wait(WS_RECONNECT_INTERVAL)
         this.logger.log('Reconnecting to session:', this.session)
         try {
+          // When the WS connection closes the subscribers in devbookd are removed.
+          // We want to delete the subscriber handlers here so there are no orphans.
+          this.subscribers = []
           await this.rpc.connect(sessionURL)
           this.opts.onReconnect?.()
           this.logger.log('Reconnected to session:', this.session)
