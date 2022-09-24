@@ -24,7 +24,7 @@ func NewScanner(period time.Duration) *Scanner {
 	return &Scanner{
 		ticker:      time.NewTicker(period),
 		Processes:   make(chan GOnetstat.Process),
-		subscribers: map[string]*ScannerSubscriber{},
+		subscribers: make(map[string]*ScannerSubscriber),
 	}
 }
 

@@ -5,19 +5,19 @@ import (
 	"sync"
 )
 
-type ProcessManager struct {
+type Manager struct {
 	lock    sync.RWMutex
-	procMap map[ProcessID]*Process
+	procMap map[ID]*Process
 }
 
-func NewProcessManager() *ProcessManager {
-	return &ProcessManager{
-		procMap: make(map[ProcessID]*Process),
+func NewManager() *Manager {
+	return &Manager{
+		procMap: make(map[ID]*Process),
 	}
 }
 
-func (p *ProcessManager) Remove(id ProcessID) {
-	proc, ok := p.Get(id)
+func (m *Manager) Remove(id ID) {
+	proc, ok := m.Get(id)
 
 	if !ok {
 		return
@@ -25,33 +25,33 @@ func (p *ProcessManager) Remove(id ProcessID) {
 
 	proc.Kill()
 
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
-	delete(p.procMap, id)
+	delete(m.procMap, id)
 }
 
-func (p *ProcessManager) Get(id ProcessID) (*Process, bool) {
+func (m *Manager) Get(id ID) (*Process, bool) {
 	if id == "" {
 		return nil, false
 	}
 
-	p.lock.RLock()
-	defer p.lock.RUnlock()
+	m.lock.RLock()
+	defer m.lock.RUnlock()
 
-	proc, ok := p.procMap[id]
+	proc, ok := m.procMap[id]
 	return proc, ok
 }
 
-func (p *ProcessManager) Add(id ProcessID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
-	proc, err := NewProcess(id, cmd, envVars, rootdir)
+func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
+	proc, err := New(id, cmd, envVars, rootdir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start new process: %s", err)
 	}
 
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
-	p.procMap[proc.ID] = proc
+	m.procMap[proc.ID] = proc
 	return proc, nil
 }

@@ -19,7 +19,7 @@ type ChildProcess struct {
 	Pid int    `json:"pid"`
 }
 
-func GetChildProcesses(pid int, logger *zap.SugaredLogger) (*[]ChildProcess, error) {
+func GetChildProcesses(pid int, logger *zap.SugaredLogger) ([]ChildProcess, error) {
 	out, _ := exec.Command("pgrep", "-l", "-P", fmt.Sprint(pid)).Output()
 
 	children := []ChildProcess{}
@@ -55,7 +55,7 @@ func GetChildProcesses(pid int, logger *zap.SugaredLogger) (*[]ChildProcess, err
 		return children[i].Pid < children[j].Pid
 	})
 
-	return &children, nil
+	return children, nil
 }
 
 func KillProcess(pid int) error {
@@ -68,18 +68,19 @@ func KillProcess(pid int) error {
 	return nil
 }
 
-type ProcessID = string
+type ID = string
 
 type Process struct {
-	lock      sync.RWMutex
-	hasExited bool
+	ID ID
 
-	Stdin *io.WriteCloser
-	ID    ProcessID
-	Cmd   *exec.Cmd
+	lock sync.RWMutex
+
+	hasExited bool
+	Cmd       *exec.Cmd
+	Stdin     *io.WriteCloser
 }
 
-func NewProcess(id ProcessID, cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
+func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
 	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
 	cmd.Dir = rootdir
 

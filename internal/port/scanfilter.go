@@ -23,7 +23,7 @@ func (sf *ScannerFilter) Match(proc *GOnetstat.Process) bool {
 		}
 	}
 
-	if ipMatch == true && sf.State == proc.State {
+	if ipMatch && sf.State == proc.State {
 		return true
 	}
 

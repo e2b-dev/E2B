@@ -12,7 +12,10 @@ import (
 
 	"github.com/devbookhq/devbookd/internal/env"
 	"github.com/devbookhq/devbookd/internal/port"
-	"github.com/devbookhq/devbookd/internal/service"
+	"github.com/devbookhq/devbookd/internal/terminal"
+	"github.com/devbookhq/devbookd/internal/process"
+	"github.com/devbookhq/devbookd/internal/filesystem"
+	"github.com/devbookhq/devbookd/internal/codeSnippet"
 )
 
 var (
@@ -71,23 +74,23 @@ func main() {
 		portForwarder := port.NewForwarder(logger, newEnv, portScanner)
 		go portForwarder.StartForwarding()
 
-		codeSnippetService := service.NewCodeSnippetService(logger, newEnv, portScanner)
+		codeSnippetService := codeSnippet.NewService(logger, newEnv, portScanner)
 		if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
 			logger.Errorw("failed to register code snippet service", "error", err)
 		}
 
-		filesystemService := service.NewFilesystemService(logger)
+		filesystemService := filesystem.NewService(logger)
 		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
 			logger.Errorw("failed to register filesystem service", "error", err)
 		}
 
-		processService := service.NewProcessService(logger)
+		processService := process.NewService(logger)
 		if err := rpcServer.RegisterName("process", processService); err != nil {
 			logger.Errorw("failed to register process service", "error", err)
 		}
 	}
 
-	terminalService := service.NewTerminalService(logger, newEnv)
+	terminalService := terminal.NewService(logger, newEnv)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Errorw("failed to register terminal service", "error", err)
 	}

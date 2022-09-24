@@ -1,4 +1,4 @@
-package service
+package filesystem
 
 import (
 	"fmt"
@@ -17,21 +17,20 @@ type FileInfoResponse struct {
 	Name  string `json:"name"`
 }
 
-type FilesystemService struct {
+type Service struct {
 	logger *zap.SugaredLogger
 }
 
-func NewFilesystemService(logger *zap.SugaredLogger) *FilesystemService {
-	fs := &FilesystemService{
+func NewService(logger *zap.SugaredLogger) *Service {
+	return &Service{
 		logger: logger,
 	}
-	return fs
 }
 
-func (fs *FilesystemService) ListAllFiles(path string) (*[]FileInfoResponse, error) {
+func (s *Service) ListAllFiles(path string) (*[]FileInfoResponse, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		fs.logger.Errorw("failed to list files in a directory",
+		s.logger.Errorw("failed to list files in a directory",
 			"directoryPath", path,
 			"error", err,
 		)
@@ -50,9 +49,9 @@ func (fs *FilesystemService) ListAllFiles(path string) (*[]FileInfoResponse, err
 	return &results, nil
 }
 
-func (fs *FilesystemService) RemoveFile(path string) error {
+func (s *Service) RemoveFile(path string) error {
 	if err := os.Remove(path); err != nil {
-		fs.logger.Errorw("failed to remove a file",
+		s.logger.Errorw("failed to remove a file",
 			"filePath", path,
 			"error", err,
 		)
@@ -61,9 +60,9 @@ func (fs *FilesystemService) RemoveFile(path string) error {
 	return nil
 }
 
-func (fs *FilesystemService) WriteFile(path string, content string) error {
+func (s *Service) WriteFile(path string, content string) error {
 	if err := os.WriteFile(path, []byte(content), 0755); err != nil {
-		fs.logger.Errorw("failed to write to a file",
+		s.logger.Errorw("failed to write to a file",
 			"filePath", path,
 			"content", content,
 			"error", err,
@@ -73,10 +72,10 @@ func (fs *FilesystemService) WriteFile(path string, content string) error {
 	return nil
 }
 
-func (fs *FilesystemService) ReadFile(path string) (string, error) {
+func (s *Service) ReadFile(path string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fs.logger.Errorw("failed to read a file",
+		s.logger.Errorw("failed to read a file",
 			"filePath", path,
 			"error", err,
 		)

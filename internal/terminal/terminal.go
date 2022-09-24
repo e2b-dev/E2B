@@ -7,22 +7,22 @@ import (
 	"sync"
 
 	"github.com/devbookhq/devbookd/internal/process"
+	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 
 	"github.com/creack/pty"
-	"github.com/rs/xid"
 )
 
-type TerminalID = string
+type ID = string
 
 type Terminal struct {
 	logger *zap.SugaredLogger
 	lock   sync.RWMutex
 
-	childProcesses *[]process.ChildProcess
+	childProcesses []process.ChildProcess
 	isDestroyed    bool
 
-	ID  TerminalID
+	ID  ID
 	cmd *exec.Cmd
 	tty *os.File
 }
@@ -38,21 +38,21 @@ func (t *Terminal) IsDestroyed() bool {
 	return t.isDestroyed
 }
 
-func (t *Terminal) GetCachedChildProcesses() *[]process.ChildProcess {
+func (t *Terminal) GetCachedChildProcesses() []process.ChildProcess {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
 	return t.childProcesses
 }
 
-func (t *Terminal) SetCachedChildProcesses(cps *[]process.ChildProcess) {
+func (t *Terminal) SetCachedChildProcesses(cps []process.ChildProcess) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
 	t.childProcesses = cps
 }
 
-func NewTerminal(logger *zap.SugaredLogger, id, shell, root string, cols, rows uint16) (*Terminal, error) {
+func New(logger *zap.SugaredLogger, id, shell, root string, cols, rows uint16) (*Terminal, error) {
 	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
 	cmd := exec.Command(shell, "-l")
 	cmd.Env = append(
@@ -71,17 +71,13 @@ func NewTerminal(logger *zap.SugaredLogger, id, shell, root string, cols, rows u
 
 	childProcesses := []process.ChildProcess{}
 
-	if id == "" {
-		id = xid.New().String()
-	}
-
 	return &Terminal{
 		logger:         logger,
 		ID:             id,
 		cmd:            cmd,
 		tty:            tty,
 		isDestroyed:    false,
-		childProcesses: &childProcesses,
+		childProcesses: childProcesses,
 	}, nil
 }
 
@@ -131,4 +127,13 @@ func (t *Terminal) Resize(cols, rows uint16) error {
 		Cols: cols,
 		Rows: rows,
 	})
+}
+
+func (s *Service) Unsubscribe(subID rpc.ID) error {
+	s.logger.Info("Unsubscribe")
+
+	s.childProcessesSubs.RemoveBySubID(subID)
+	s.dataSubs.RemoveBySubID(subID)
+
+	return nil
 }
