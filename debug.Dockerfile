@@ -1,3 +1,5 @@
+# syntax = docker/dockerfile:1-experimental
+
 # This Dockerfile is for creating a testing environment for devbookd.
 
 FROM golang:1.18-alpine
@@ -38,7 +40,9 @@ RUN go mod download
 
 COPY ./ /
 
-RUN make build-debug-devbookd
-RUN mv /bin/devbookd-debug /usr/bin/devbookd
+RUN --mount=type=cache,target=/root/.cache/go-build \
+make build-debug-devbookd
+
+RUN mv /bin/debug/devbookd /usr/bin/devbookd
 
 WORKDIR /

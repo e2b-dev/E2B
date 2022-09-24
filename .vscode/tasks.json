@@ -4,7 +4,7 @@
     {
       "type": "shell",
       "label": "prepare-debug",
-      "command": "make debug",
+      "command": "make run-debug",
     },
     {
       "type": "shell",
