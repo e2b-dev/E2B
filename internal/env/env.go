@@ -61,20 +61,20 @@ func configureEnvForUserMode(env *Env) error {
 
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		return fmt.Errorf("failed to determine location of the user's config directory: %s", err)
+		return fmt.Errorf("error determining location of the user's config directory: %+v", err)
 	}
 	dbkConfigDir := path.Join(userConfigDir, "devbook")
 
 	if _, err := os.Stat(dbkConfigDir); !os.IsNotExist(err) {
 		// Config dir exists. Delete its content. This will remove old log files.
 		if err := os.RemoveAll(dbkConfigDir); err != nil {
-			return fmt.Errorf("failed to delete the old Devbook config directory at '%s': %s", dbkConfigDir, err)
+			return fmt.Errorf("error deleting the old Devbook config directory at '%s': %+v", dbkConfigDir, err)
 		}
 	}
 
 	// (re)create the config dir.
 	if err := os.MkdirAll(dbkConfigDir, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create a Devbook config directory at '%s': %s", dbkConfigDir, err)
+		return fmt.Errorf("error creating a Devbook config directory at '%s': %+v", dbkConfigDir, err)
 	}
 	env.logDir = dbkConfigDir
 
@@ -117,7 +117,7 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 
 	logger, err := log.NewLogger(env.logDir, env.debug)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create new logger: %s", err)
+		return nil, nil, fmt.Errorf("error creating a new logger: %+v", err)
 	}
 
 	// Read and parse the /.dbkenv file only if we are in the server mode.

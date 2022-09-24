@@ -92,8 +92,9 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 	)
 
 	term, ok := s.terminals.Get(id)
+
+	// Terminal doesn't exist, we will create a new one.
 	if !ok {
-		// Terminal doesn't exist, we will create a new one.
 		s.logger.Infow("Terminal with ID doesn't exist yet. Creating a new terminal",
 			"requestedTerminalID", id,
 		)
@@ -112,9 +113,11 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 			rows,
 		)
 		if err != nil {
-			errMsg := fmt.Sprintf("Failed to start new terminal: %v", err)
-			s.logger.Info(errMsg)
-			return "", fmt.Errorf(errMsg)
+			s.logger.Errorw("Failed to start new terminal",
+				"terminalID", id,
+				"error", err,
+			)
+			return "", fmt.Errorf("error starting new terminal '%s': %+v", id, err)
 		}
 
 		s.logger.Infow("New terminal created",
@@ -136,7 +139,7 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 					if err == io.EOF {
 						return
 					} else {
-						s.logger.Infow("Error reading from terminal",
+						s.logger.Warnw("Error reading from terminal",
 							"terminalID", newTerm.ID,
 							"error", err,
 						)
@@ -150,6 +153,7 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 					err = s.dataSubs.Notify(newTerm.ID, data)
 					if err != nil {
 						s.logger.Errorw("Failed to send data notification",
+							"terminalID", newTerm.ID,
 							"error", err,
 						)
 					}
@@ -170,7 +174,7 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 
 				cps, err := process.GetChildProcesses(pid, s.logger)
 				if err != nil {
-					s.logger.Errorw("failed to get child processes for terminal",
+					s.logger.Errorw("Failed to get child processes for terminal",
 						"terminalID", newTerm.ID,
 						"pid", pid,
 						"error", err,
@@ -188,75 +192,95 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 				err = s.childProcessesSubs.Notify(newTerm.ID, cps)
 				if err != nil {
 					s.logger.Errorw("Failed to send child processes notification",
+						"terminalID", newTerm.ID,
 						"error", err,
 					)
 				}
 			}
 		}()
 
-		s.logger.Infow("Started terminal output data watcher", "terminalID", newTerm.ID)
+		s.logger.Infow("Started new terminal", "terminalID", newTerm.ID)
 		return newTerm.ID, nil
 	}
 
-	s.logger.Infow("Terminal with this ID already exists", "terminalID", id)
+	s.logger.Infow("Terminal with this ID already exists",
+		"terminalID", id,
+	)
 	return term.ID, nil
 }
 
 func (s *Service) Data(id ID, data string) error {
+	s.logger.Infow("Handle terminal data",
+		"terminalID", id,
+	)
+
 	term, ok := s.terminals.Get(id)
 
 	if !ok {
-		errMsg := fmt.Sprintf("cannot find terminal with ID %s", id)
-		s.logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		s.logger.Errorw("Failed to find terminal",
+			"terminalID", id,
+		)
+		return fmt.Errorf("error finding terminal '%s'", id)
 	}
 
 	if _, err := term.Write([]byte(data)); err != nil {
-		errMsg := fmt.Sprintf("cannot write data %s to terminal with ID %s: %+v", data, id, err)
-		s.logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		s.logger.Errorw("Failed to write data to terminal",
+			"terminalID", id,
+			"error", err,
+			"data", data,
+		)
+		return fmt.Errorf("error writing data to terminal '%s': %+v", id, err)
 	}
 
 	return nil
 }
 
 func (s *Service) Resize(id ID, cols, rows uint16) error {
+	s.logger.Infow("Resize terminal",
+		"terminalID", id,
+	)
+
 	term, ok := s.terminals.Get(id)
 
 	if !ok {
-		errMsg := fmt.Sprintf("cannot find terminal with ID %s", id)
-		s.logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		s.logger.Errorw("Failed finding terminal",
+			"terminalID", id,
+		)
+		return fmt.Errorf("error finding terminal '%s'", id)
 	}
 
 	if err := term.Resize(cols, rows); err != nil {
-		errMsg := fmt.Sprintf("cannot resize terminal with ID %s: %+v", id, err)
-		s.logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		s.logger.Errorw("Failed resizing terminal",
+			"terminalID", id,
+			"error", err,
+			"cols", cols,
+			"rows", rows,
+		)
+		return fmt.Errorf("error resizing terminal '%s': %+v", id, err)
 	}
 
 	return nil
 }
 
 func (s *Service) Destroy(id ID) {
-	s.logger.Infow("Remove subscriber for terminal",
+	s.logger.Infow("Destroy terminal",
 		"terminalID", id,
 	)
 
 	s.terminals.Remove(id)
-
-	s.logger.Debugw("Sub count",
-		"terminalID", id,
-		"dataSubCountTotal", len(s.dataSubs.List()),
-		"childProcSubsCountTotal", len(s.childProcessesSubs.List()),
-	)
 }
 
 func (s *Service) KillProcess(pid int) error {
+	s.logger.Infow("Kill child process",
+		"pid", pid,
+	)
+
 	if err := process.KillProcess(pid); err != nil {
-		errMsg := fmt.Sprintf("cannot kill process %d: %v", pid, err)
-		s.logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		s.logger.Errorw("Failed killing child process",
+			"pid", pid,
+			"error", err,
+		)
+		return fmt.Errorf("error killing child process '%d': %+v", pid, err)
 	}
 	return nil
 }

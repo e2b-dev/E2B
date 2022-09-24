@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/devbookhq/devbookd/internal/process"
-	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 
 	"github.com/creack/pty"
@@ -17,7 +16,8 @@ type ID = string
 
 type Terminal struct {
 	logger *zap.SugaredLogger
-	lock   sync.RWMutex
+
+	mu sync.RWMutex
 
 	childProcesses []process.ChildProcess
 	isDestroyed    bool
@@ -32,22 +32,22 @@ func (t *Terminal) Pid() int {
 }
 
 func (t *Terminal) IsDestroyed() bool {
-	t.lock.RLock()
-	defer t.lock.RUnlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
 	return t.isDestroyed
 }
 
 func (t *Terminal) GetCachedChildProcesses() []process.ChildProcess {
-	t.lock.RLock()
-	defer t.lock.RUnlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
 	return t.childProcesses
 }
 
 func (t *Terminal) SetCachedChildProcesses(cps []process.ChildProcess) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	t.childProcesses = cps
 }
@@ -66,7 +66,7 @@ func New(logger *zap.SugaredLogger, id, shell, root string, cols, rows uint16) (
 		Rows: rows,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to pty.Start() with command '%s': %s", cmd, err)
+		return nil, fmt.Errorf("error starting pty with command '%s': %+v", cmd, err)
 	}
 
 	childProcesses := []process.ChildProcess{}
@@ -86,18 +86,20 @@ func (t *Terminal) Read(b []byte) (int, error) {
 }
 
 func (t *Terminal) Destroy() {
-	t.logger.Infow("Destroying terminal", "id", t.ID)
+	t.logger.Infow("Destroy terminal",
+		"terminalID", t.ID,
+	)
 	if err := t.cmd.Process.Kill(); err != nil {
-		t.logger.Errorw("Failed kill terminal command",
-			"id", t.ID,
+		t.logger.Errorw("Failed to kill terminal process",
+			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 			"error", err,
 		)
 	}
 	if _, err := t.cmd.Process.Wait(); err != nil {
-		t.logger.Errorw("Failed wait for terminal command to exit",
-			"id", t.ID,
+		t.logger.Errorw("Failed to wait for terminal process to exit",
+			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 			"error", err,
@@ -105,7 +107,7 @@ func (t *Terminal) Destroy() {
 	}
 	if err := t.tty.Close(); err != nil {
 		t.logger.Errorw("Failed to close tty",
-			"id", t.ID,
+			"terminalID", t.ID,
 			"tty", t.tty.Name(),
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
@@ -113,9 +115,9 @@ func (t *Terminal) Destroy() {
 		)
 	}
 
-	t.lock.Lock()
+	t.mu.Lock()
 	t.isDestroyed = true
-	t.lock.Unlock()
+	t.mu.Unlock()
 }
 
 func (t *Terminal) Write(b []byte) (int, error) {
@@ -127,13 +129,4 @@ func (t *Terminal) Resize(cols, rows uint16) error {
 		Cols: cols,
 		Rows: rows,
 	})
-}
-
-func (s *Service) Unsubscribe(subID rpc.ID) error {
-	s.logger.Info("Unsubscribe")
-
-	s.childProcessesSubs.RemoveBySubID(subID)
-	s.dataSubs.RemoveBySubID(subID)
-
-	return nil
 }

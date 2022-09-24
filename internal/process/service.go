@@ -36,7 +36,9 @@ func NewService(logger *zap.SugaredLogger) *Service {
 
 // Subscription
 func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to process stdout")
+	s.logger.Info("Subscribe to process stdout",
+		"processID", id,
+	)
 
 	sub, err := s.stdoutSubs.Add(ctx, id, s.logger)
 	if err != nil {
@@ -52,7 +54,9 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 
 // Subscription
 func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to process stderr")
+	s.logger.Info("Subscribe to process stderr",
+		"processID", id,
+	)
 
 	sub, err := s.stderrSubs.Add(ctx, id, s.logger)
 	if err != nil {
@@ -77,13 +81,17 @@ func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType, process *P
 			o = output.NewStdoutResponse(line)
 			err := s.stdoutSubs.Notify(process.ID, o)
 			if err != nil {
-				s.logger.Errorf("Failed to send stdout notification")
+				s.logger.Errorw("Failed to send stdout notification",
+					"error", err,
+				)
 			}
 		case output.OutTypeStderr:
 			o = output.NewStderrResponse(line)
 			err := s.stderrSubs.Notify(process.ID, o)
 			if err != nil {
-				s.logger.Errorf("Failed to send stderr notification")
+				s.logger.Errorw("Failed to send stderr notification",
+					"error", err,
+				)
 			}
 		}
 	}
@@ -92,13 +100,17 @@ func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType, process *P
 }
 
 func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir string) (ID, error) {
-	s.logger.Info("Starting process")
+	s.logger.Infow("Start process",
+		"processID", id,
+	)
 
 	proc, ok := s.processes.Get(id)
 
 	// Process doesn't exist, we will create a new one.
 	if !ok {
-		s.logger.Info("Starting a new process")
+		s.logger.Infow("Process with ID doesn't exist yet. Creating a new process",
+			"requestedProcessID", id,
+		)
 
 		id := id
 		if id == "" {
@@ -107,19 +119,22 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 		newProc, err := s.processes.Add(id, cmd, envVars, rootdir)
 		if err != nil {
-			errMsg := fmt.Sprintf("Failed to create the process: %v", err)
-			s.logger.Info(errMsg)
-			return "", fmt.Errorf(errMsg)
+			s.logger.Errorw("Failed to create new process",
+				"processID", id,
+				"error", err,
+			)
+			return "", err
 		}
 
 		stdout, err := newProc.Cmd.StdoutPipe()
 		if err != nil {
 			newProc.SetHasExited(true)
 			s.processes.Remove(newProc.ID)
-
-			errMsg := fmt.Sprintf("Failed to set up stdout pipe for the process: %v", err)
-			s.logger.Error(errMsg)
-			return "", fmt.Errorf(errMsg)
+			s.logger.Errorw("Failed to set up stdout pipe for the process",
+				"processID", newProc.ID,
+				"error", err,
+			)
+			return "", fmt.Errorf("error setting up stdout pipe for the process '%s': %+v", newProc.ID, err)
 		}
 		go s.scanRunCmdOut(stdout, output.OutTypeStdout, newProc)
 
@@ -129,9 +144,11 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			stdout.Close()
 			s.processes.Remove(newProc.ID)
 
-			errMsg := fmt.Sprintf("Failed to set up stderr pipe for the procces: %v", err)
-			s.logger.Error(errMsg)
-			return "", fmt.Errorf(errMsg)
+			s.logger.Errorw("Failed to set up stderr pipe for the process",
+				"processID", newProc.ID,
+				"error", err,
+			)
+			return "", fmt.Errorf("error setting up stderr pipe for the process '%s': %+v", newProc.ID, err)
 		}
 		go s.scanRunCmdOut(stderr, output.OutTypeStderr, newProc)
 
@@ -142,21 +159,29 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			stderr.Close()
 			s.processes.Remove(newProc.ID)
 
-			errMsg := fmt.Sprintf("Failed to set up stdin pipe for the procces: %v", err)
-			s.logger.Error(errMsg)
-			return "", fmt.Errorf(errMsg)
+			s.logger.Errorw("Failed to set up stdin pipe for the process",
+				"processID", newProc.ID,
+				"error", err,
+			)
+			return "", fmt.Errorf("error setting up stdin pipe for the process '%s': %+v", newProc.ID, err)
 		}
 		newProc.Stdin = &stdin
 
 		if err := newProc.Cmd.Start(); err != nil {
-			errMsg := fmt.Sprintf("Failed to start the process: %v", err)
-			s.logger.Error(errMsg)
+			s.logger.Errorw("Failed to start process",
+				"processID", newProc.ID,
+				"error", err,
+				"cmd", newProc.Cmd,
+			)
 
 			newProc.SetHasExited(true)
 
 			err := s.exitSubs.Notify(newProc.ID, struct{}{})
 			if err != nil {
-				s.logger.Errorf("Failed to send exit notification %+v", err)
+				s.logger.Errorw("Failed to send exit notification",
+					"processID", newProc.ID,
+					"error", err,
+				)
 			}
 
 			stdout.Close()
@@ -164,7 +189,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			stdin.Close()
 
 			s.processes.Remove(newProc.ID)
-			return "", fmt.Errorf(errMsg)
+			return "", fmt.Errorf("error starting process '%s': %+v", newProc.ID, err)
 		}
 
 		go func() {
@@ -173,7 +198,10 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			defer func() {
 				err = s.exitSubs.Notify(newProc.ID, struct{}{})
 				if err != nil {
-					s.logger.Errorf("Failed to send exit notification %+v", err)
+					s.logger.Errorw("Failed to send exit notification",
+						"processID", newProc.ID,
+						"error", err,
+					)
 				}
 			}()
 
@@ -183,55 +211,59 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 			err := newProc.Cmd.Wait()
 			if err != nil {
-				s.logger.Error(err)
+				s.logger.Warnw("Failed waiting for process",
+					"processID", newProc.ID,
+					"error", err,
+				)
 			}
 
 			newProc.SetHasExited(true)
 		}()
 
-		s.logger.Info("New process started")
-
+		s.logger.Infow("Started new process", "processID", newProc.ID)
 		return newProc.ID, nil
 	}
 
+	s.logger.Infow("Process with this ID already exists",
+		"processID", id,
+	)
 	return proc.ID, nil
 }
 
 func (s *Service) Stdin(id ID, data string) error {
+	s.logger.Info("Handle process stdin",
+		"processID", id,
+	)
+
 	proc, ok := s.processes.Get(id)
 
 	if !ok {
-		errMsg := fmt.Sprintf("cannot find process with ID %s", id)
-		s.logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		s.logger.Errorw("Failed to find process",
+			"processID", id,
+		)
+		return fmt.Errorf("error finding process '%s'", id)
 	}
 
 	err := proc.WriteStdin(data)
 
 	if err != nil {
-		errMsg := fmt.Sprintf("cannot write stdin to process with ID %s: %+v", id, err)
-		s.logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		s.logger.Errorw("Failed to write stdin",
+			"processID", id,
+			"error", err,
+			"stdin", data,
+		)
+		return fmt.Errorf("error writing stdin to process '%s': %+v", id, err)
 	}
 
 	return nil
 }
 
 func (s *Service) Kill(id ID) error {
-	s.logger.Info("Kill")
+	s.logger.Info("Kill process",
+		"processID", id,
+	)
 
 	s.processes.Remove(id)
-
-	return nil
-}
-
-func (s *Service) Unsubscribe(subID rpc.ID) error {
-	s.logger.Info("Unsubscribe")
-
-	s.exitSubs.RemoveBySubID(subID)
-	s.stderrSubs.RemoveBySubID(subID)
-	s.stdoutSubs.RemoveBySubID(subID)
-
 	return nil
 }
 
@@ -241,7 +273,7 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 
 	sub, err := s.exitSubs.Add(ctx, id, s.logger)
 	if err != nil {
-		s.logger.Errorw("Failed to create and exit subscription from context",
+		s.logger.Errorw("Failed to create an exit subscription from context",
 			"ctx", ctx,
 			"error", err,
 		)

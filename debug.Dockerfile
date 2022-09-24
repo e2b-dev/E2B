@@ -2,7 +2,7 @@
 
 # This Dockerfile is for creating a testing environment for devbookd.
 
-FROM golang:1.18-alpine
+FROM golang:1.19-alpine
 
 RUN apk update && \
     apk upgrade && \

@@ -10,7 +10,7 @@ import (
 )
 
 type Manager struct {
-	lock sync.RWMutex
+	mu   sync.RWMutex
 	subs map[rpc.ID]*Subscriber
 }
 
@@ -20,48 +20,9 @@ func NewManager() *Manager {
 	}
 }
 
-func (m *Manager) GetBySubID(subID rpc.ID) (*Subscriber, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	sub := m.subs[subID]
-
-	if sub == nil {
-		return nil, fmt.Errorf("error retrieving subscriber with subID %s", subID)
-	}
-
-	return sub, nil
-}
-
-func (m *Manager) GetByID(id ID) (*Subscriber, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	for _, sub := range m.subs {
-		if sub.ID == id {
-			return sub, nil
-		}
-	}
-
-	return nil, fmt.Errorf("error retrieving subscriber with ID %s", id)
-}
-
-func (m *Manager) List() map[rpc.ID]*Subscriber {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	list := make(map[rpc.ID]*Subscriber, len(m.subs))
-
-	for k, v := range m.subs {
-		list[k] = v
-	}
-
-	return list
-}
-
 func (m *Manager) Notify(id ID, data interface{}) error {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
 	for _, sub := range m.subs {
 		if sub.ID == id {
@@ -75,34 +36,22 @@ func (m *Manager) Notify(id ID, data interface{}) error {
 	return nil
 }
 
-func (m *Manager) RemoveBySubID(subID rpc.ID) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+func (m *Manager) Remove(subID rpc.ID) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	delete(m.subs, subID)
 }
 
-func (m *Manager) RemoveAll() {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	m.subs = make(map[rpc.ID]*Subscriber)
-}
-
 func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*Subscriber, error) {
-
 	sub, err := New(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Info("Created subscriber", sub.Subscription.ID, m.subs)
-
-	m.lock.Lock()
+	m.mu.Lock()
 	m.subs[sub.Subscription.ID] = sub
-	m.lock.Unlock()
-
-	logger.Info("Subscriber added to map")
+	m.mu.Unlock()
 
 	go func() {
 		err := <-sub.Subscription.Err()
@@ -114,7 +63,12 @@ func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*S
 			)
 		}
 
-		m.RemoveBySubID(sub.Subscription.ID)
+		m.Remove(sub.Subscription.ID)
+
+		logger.Infow("Unsubscribed",
+			"subID",
+			sub.Subscription.ID,
+		)
 	}()
 
 	return sub, nil

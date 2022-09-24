@@ -38,7 +38,7 @@ type Service struct {
 	env    *env.Env
 
 	cmd     *exec.Cmd
-	mu      sync.Mutex
+	mu      sync.RWMutex
 	running bool
 
 	// The reason for caching cmd's outputs is if a client connects while the command
@@ -82,8 +82,42 @@ func NewService(
 	return cs
 }
 
+func (s *Service) getCachedOut() []output.OutResponse {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	list := make([]output.OutResponse, len(s.cachedOut))
+	copy(list, s.cachedOut)
+
+	return list
+}
+
+func (s *Service) setCachedOut(out []output.OutResponse) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.cachedOut = out
+}
+
+func (s *Service) addToCachedOut(o output.OutResponse) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.cachedOut = append(s.cachedOut, o)
+}
+
+func (s *Service) isRunning() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.running
+}
+
 func (s *Service) setRunning(b bool) {
+	s.mu.Lock()
 	s.running = b
+	s.mu.Unlock()
+
 	var state CodeSnippetState
 	if b {
 		state = CodeSnippetStateRunning
@@ -130,7 +164,7 @@ func (s *Service) notifyOut(o *output.OutResponse) {
 }
 
 func (s *Service) notifyState(state CodeSnippetState) {
-	err := s.stderrSubs.Notify("", state)
+	err := s.stateSubs.Notify("", state)
 	if err != nil {
 		s.logger.Errorw("Failed to send state notification",
 			"error", err,
@@ -140,32 +174,29 @@ func (s *Service) notifyState(state CodeSnippetState) {
 
 func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType) {
 	scanner := bufio.NewScanner(pipe)
-	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
 		line := scanner.Text()
-
 		var o output.OutResponse
+
 		switch t {
 		case output.OutTypeStdout:
 			o = output.NewStdoutResponse(line)
 		case output.OutTypeStderr:
 			o = output.NewStderrResponse(line)
 		}
-		s.cachedOut = append(s.cachedOut, o)
+
+		s.addToCachedOut(o)
 		s.notifyOut(&o)
 	}
 
-	s.mu.Lock()
-	if s.running {
-		s.cmd.Wait()
-		s.cachedOut = nil
-		s.setRunning(false)
-	}
-	s.mu.Unlock()
+	pipe.Close()
 }
 
 func (s *Service) runCmd(code string, envVars *map[string]string) {
+	defer s.setRunning(false)
+	defer s.setCachedOut(nil)
+
 	if err := os.WriteFile(s.env.EntrypointFullPath(), []byte(code), 0755); err != nil {
 		s.logger.Errorw("Failed to write to the entrypoint file",
 			"entrypointFullPath", s.env.EntrypointFullPath(),
@@ -179,7 +210,10 @@ func (s *Service) runCmd(code string, envVars *map[string]string) {
 		cmdToExecute = cmdToExecute + " " + arg
 	}
 
+	s.mu.Lock()
 	s.cmd = exec.Command("sh", "-c", "-l", cmdToExecute)
+	s.mu.Unlock()
+
 	s.cmd.Dir = s.env.Workdir()
 
 	formattedVars := os.Environ()
@@ -190,17 +224,6 @@ func (s *Service) runCmd(code string, envVars *map[string]string) {
 
 	s.cmd.Env = formattedVars
 
-	stdout, err := s.cmd.StdoutPipe()
-	if err != nil {
-		s.logger.Errorw("Failed to set up stdout pipe for the run command",
-			"cmd", s.cmd,
-			"error", err,
-		)
-		o := output.NewStderrResponse(err.Error())
-		s.notifyOut(&o)
-	}
-	go s.scanRunCmdOut(stdout, output.OutTypeStdout)
-
 	stderr, err := s.cmd.StderrPipe()
 	if err != nil {
 		s.logger.Errorw("Failed to set up stderr pipe for the run command",
@@ -209,51 +232,61 @@ func (s *Service) runCmd(code string, envVars *map[string]string) {
 		)
 		o := output.NewStderrResponse(err.Error())
 		s.notifyOut(&o)
+		return
 	}
 	go s.scanRunCmdOut(stderr, output.OutTypeStderr)
 
-	if err := s.cmd.Start(); err != nil {
-		s.logger.Errorw("Failed to run the run command",
+	stdout, err := s.cmd.StdoutPipe()
+	if err != nil {
+		s.logger.Errorw("Failed to set up stdout pipe for the run command",
 			"cmd", s.cmd,
 			"error", err,
 		)
 		o := output.NewStderrResponse(err.Error())
 		s.notifyOut(&o)
-		s.cachedOut = nil
+		stderr.Close()
+		return
 	}
+	go s.scanRunCmdOut(stdout, output.OutTypeStdout)
+
+	if err := s.cmd.Start(); err != nil {
+		s.logger.Errorw("Failed to start cmd",
+			"cmd", s.cmd,
+			"error", err,
+		)
+		o := output.NewStderrResponse(err.Error())
+		s.notifyOut(&o)
+		stdout.Close()
+		stderr.Close()
+		return
+	}
+	s.cmd.Wait()
 }
 
 func (s *Service) Run(code string, envVars map[string]string) CodeSnippetState {
-	s.logger.Infow("Run code request",
-		"code", code,
-	)
+	s.logger.Infow("Run code snippet")
 
-	s.mu.Lock()
-	if s.running {
-		s.mu.Unlock()
-		s.logger.Info("Already running")
+	if s.isRunning() {
+		s.logger.Info("Code snippet is already running")
 		return CodeSnippetStateRunning
 	}
 	s.setRunning(true)
-	s.mu.Unlock()
 
 	go s.runCmd(code, &envVars)
 	return CodeSnippetStateRunning
 }
 
 func (s *Service) Stop() CodeSnippetState {
-	s.logger.Info("Stop code request")
+	s.logger.Info("Stop running code snippet")
 
-	s.mu.Lock()
-	if !s.running {
-		s.mu.Unlock()
-		s.logger.Info("Already stopped")
+	if !s.isRunning() {
+		s.logger.Info("Code snippet is already stopped")
 		return CodeSnippetStateStopped
 	}
 
 	sig := syscall.SIGTERM
 	if err := s.cmd.Process.Signal(sig); err != nil {
-		s.logger.Errorw("Error while sending a signal to the run command",
+		s.logger.Errorw("Failed to send a signal to the run command",
 			"cmd", s.cmd,
 			"signal", sig,
 			"error", err,
@@ -262,17 +295,14 @@ func (s *Service) Stop() CodeSnippetState {
 		s.notifyOut(&o)
 	}
 
-	s.cachedOut = nil
-
+	s.setCachedOut(nil)
 	s.setRunning(false)
-	s.mu.Unlock()
-
 	return CodeSnippetStateStopped
 }
 
 // Subscription
 func (s *Service) State(ctx context.Context) (*rpc.Subscription, error) {
-	s.logger.Info("New state subscription")
+	s.logger.Info("Subscribe to code snippet state")
 
 	sub, err := s.stateSubs.Add(ctx, "", s.logger)
 	if err != nil {
@@ -285,7 +315,7 @@ func (s *Service) State(ctx context.Context) (*rpc.Subscription, error) {
 
 	// Send initial state.
 	var state CodeSnippetState
-	if s.running {
+	if s.isRunning() {
 		state = CodeSnippetStateRunning
 	} else {
 		state = CodeSnippetStateStopped
@@ -303,7 +333,7 @@ func (s *Service) State(ctx context.Context) (*rpc.Subscription, error) {
 
 // Subscription
 func (s *Service) Stdout(ctx context.Context) (*rpc.Subscription, error) {
-	s.logger.Info("New stdout subscription")
+	s.logger.Info("Subscribe to code snippet stdout")
 
 	sub, err := s.stdoutSubs.Add(ctx, "", s.logger)
 	if err != nil {
@@ -315,7 +345,7 @@ func (s *Service) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 	}
 
 	// Send all the cached stdout to a new subscriber.
-	for _, l := range s.cachedOut {
+	for _, l := range s.getCachedOut() {
 		if l.Type == output.OutTypeStdout {
 			if err := sub.Notify(l); err != nil {
 				s.logger.Errorw("Failed to send cached stdout notification",
@@ -330,7 +360,7 @@ func (s *Service) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 
 // Subscription
 func (s *Service) Stderr(ctx context.Context) (*rpc.Subscription, error) {
-	s.logger.Info("New stderr subscription")
+	s.logger.Info("Subscribe to code snippet stderr")
 
 	sub, err := s.stderrSubs.Add(ctx, "", s.logger)
 	if err != nil {
@@ -342,10 +372,10 @@ func (s *Service) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 	}
 
 	// Send all the cached stdout to a new subscriber.
-	for _, l := range s.cachedOut {
+	for _, l := range s.getCachedOut() {
 		if l.Type == output.OutTypeStderr {
 			if err := sub.Notify(l); err != nil {
-				s.logger.Errorw("Failed to send cached stdout notification",
+				s.logger.Errorw("Failed to send cached stderr notification",
 					"subID", sub.Subscription.ID,
 					"error", err,
 				)
@@ -357,7 +387,7 @@ func (s *Service) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 
 // Subscription
 func (s *Service) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error) {
-	s.logger.Info("New scan opened ports subscription")
+	s.logger.Info("Subscribe to scanning open ports")
 
 	sub, err := s.scanOpenedPortsSubs.Add(ctx, "", s.logger)
 	if err != nil {
@@ -368,15 +398,4 @@ func (s *Service) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error
 		return nil, err
 	}
 	return sub.Subscription, nil
-}
-
-func (s *Service) Unsubscribe(subID rpc.ID) error {
-	s.logger.Info("Unsubscribe")
-
-	s.scanOpenedPortsSubs.RemoveBySubID(subID)
-	s.stateSubs.RemoveBySubID(subID)
-	s.stderrSubs.RemoveBySubID(subID)
-	s.stdoutSubs.RemoveBySubID(subID)
-
-	return nil
 }

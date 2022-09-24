@@ -8,7 +8,7 @@ import (
 )
 
 type Manager struct {
-	lock    sync.RWMutex
+	mu      sync.RWMutex
 	termMap map[ID]*Terminal
 }
 
@@ -27,8 +27,8 @@ func (m *Manager) Remove(id ID) {
 
 	term.Destroy()
 
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	delete(m.termMap, id)
 }
@@ -38,8 +38,8 @@ func (m *Manager) Get(id ID) (*Terminal, bool) {
 		return nil, false
 	}
 
-	m.lock.RLock()
-	defer m.lock.RUnlock()
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
 	term, ok := m.termMap[id]
 	return term, ok
@@ -55,11 +55,11 @@ func (m *Manager) Add(
 ) (*Terminal, error) {
 	term, err := New(logger, id, shell, root, cols, rows)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new terminal: %s", err)
+		return nil, fmt.Errorf("error creating new terminal: %+v", err)
 	}
 
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	m.termMap[term.ID] = term
 	return term, nil
