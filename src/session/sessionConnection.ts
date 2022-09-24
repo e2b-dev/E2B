@@ -102,11 +102,11 @@ abstract class SessionConnection {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async subscribe(service: Service, handler: SubscriptionHandler, method: string, ...params: any) {
+  protected async subscribe(service: Service, handler: SubscriptionHandler, method: string, ...params: any[]) {
     const subID = await this.call(service, 'subscribe', [method, ...params])
 
     if (typeof subID !== 'string') {
-      throw new Error(`Cannot subscribe to ${service}_${method} with params ${params}. Expected response to be a subscription ID, instead got ${JSON.stringify(subID)}`)
+      throw new Error(`Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''}. Expected response should have been a subscription ID, instead we got ${JSON.stringify(subID)}`)
     }
 
     this.subscribers.push({
@@ -114,7 +114,7 @@ abstract class SessionConnection {
       handler,
       service,
     })
-    this.logger.log(`Subscribed to "${service}_${method}" (${params}) with id "${subID}"`)
+    this.logger.log(`Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''} with id "${subID}"`)
 
     return subID
   }
