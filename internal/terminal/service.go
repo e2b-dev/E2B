@@ -142,6 +142,7 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 						s.logger.Warnw("Error reading from terminal",
 							"terminalID", newTerm.ID,
 							"error", err,
+							"isDestroyed", newTerm.IsDestroyed(),
 						)
 						return
 					}
@@ -178,6 +179,7 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 						"terminalID", newTerm.ID,
 						"pid", pid,
 						"error", err,
+						"isDestroyed", newTerm.IsDestroyed(),
 					)
 					return
 				}
@@ -199,7 +201,9 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 			}
 		}()
 
-		s.logger.Infow("Started new terminal", "terminalID", newTerm.ID)
+		s.logger.Infow("Started new terminal",
+			"terminalID", newTerm.ID,
+		)
 		return newTerm.ID, nil
 	}
 
@@ -228,6 +232,7 @@ func (s *Service) Data(id ID, data string) error {
 			"terminalID", id,
 			"error", err,
 			"data", data,
+			"isDestroyed", term.IsDestroyed(),
 		)
 		return fmt.Errorf("error writing data to terminal '%s': %+v", id, err)
 	}
@@ -255,6 +260,7 @@ func (s *Service) Resize(id ID, cols, rows uint16) error {
 			"error", err,
 			"cols", cols,
 			"rows", rows,
+			"isDestroyed", term.IsDestroyed(),
 		)
 		return fmt.Errorf("error resizing terminal '%s': %+v", id, err)
 	}
@@ -275,7 +281,7 @@ func (s *Service) KillProcess(pid int) error {
 		"pid", pid,
 	)
 
-	if err := process.KillProcess(pid); err != nil {
+	if err := process.KillChildProcess(pid); err != nil {
 		s.logger.Errorw("Failed killing child process",
 			"pid", pid,
 			"error", err,

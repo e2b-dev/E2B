@@ -37,15 +37,15 @@ type Service struct {
 	logger *zap.SugaredLogger
 	env    *env.Env
 
-	cmd     *exec.Cmd
-	mu      sync.RWMutex
-	running bool
+	mu sync.RWMutex
 
 	// The reason for caching cmd's outputs is if a client connects while the command
 	// is already running we can send all the output that has happened since the start
 	// of the command.
 	// This way a user on the frontend doesn't even notice that command has been running.
 	cachedOut []output.OutResponse
+	running   bool
+	cmd       *exec.Cmd
 
 	stdoutSubs          *subscriber.Manager
 	stderrSubs          *subscriber.Manager

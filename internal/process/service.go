@@ -205,7 +205,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				}
 			}()
 
-			if newProc.hasExited {
+			if newProc.HasExited() {
 				return
 			}
 

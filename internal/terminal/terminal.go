@@ -20,7 +20,7 @@ type Terminal struct {
 	mu sync.RWMutex
 
 	childProcesses []process.ChildProcess
-	isDestroyed    bool
+	destroyed      bool
 
 	ID  ID
 	cmd *exec.Cmd
@@ -35,7 +35,7 @@ func (t *Terminal) IsDestroyed() bool {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	return t.isDestroyed
+	return t.destroyed
 }
 
 func (t *Terminal) GetCachedChildProcesses() []process.ChildProcess {
@@ -76,7 +76,7 @@ func New(logger *zap.SugaredLogger, id, shell, root string, cols, rows uint16) (
 		ID:             id,
 		cmd:            cmd,
 		tty:            tty,
-		isDestroyed:    false,
+		destroyed:      false,
 		childProcesses: childProcesses,
 	}, nil
 }
@@ -86,15 +86,13 @@ func (t *Terminal) Read(b []byte) (int, error) {
 }
 
 func (t *Terminal) Destroy() {
-	t.logger.Infow("Destroy terminal",
-		"terminalID", t.ID,
-	)
 	if err := t.cmd.Process.Kill(); err != nil {
 		t.logger.Errorw("Failed to kill terminal process",
 			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 			"error", err,
+			"isDestroyed", t.IsDestroyed(),
 		)
 	}
 	if _, err := t.cmd.Process.Wait(); err != nil {
@@ -103,6 +101,7 @@ func (t *Terminal) Destroy() {
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 			"error", err,
+			"isDestroyed", t.IsDestroyed(),
 		)
 	}
 	if err := t.tty.Close(); err != nil {
@@ -112,11 +111,12 @@ func (t *Terminal) Destroy() {
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 			"error", err,
+			"isDestroyed", t.IsDestroyed(),
 		)
 	}
 
 	t.mu.Lock()
-	t.isDestroyed = true
+	t.destroyed = true
 	t.mu.Unlock()
 }
 
