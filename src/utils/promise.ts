@@ -7,10 +7,14 @@ export function assertRejected<T>(item: PromiseSettledResult<T>): item is Promis
 }
 
 export function formatSettledErrors<T>(settled: PromiseSettledResult<T>[]) {
+  if (settled.every(s => s.status === 'fulfilled')) return
+
   return settled
-    .filter(assertRejected)
-    .reduce((prev, curr) => {
-      return prev + '\n' + `${JSON.stringify(curr.reason)}`
+    .reduce((prev, curr, i) => {
+      if (curr.status === 'rejected') {
+        return prev + '\n' + `[${i}]: ` + `${JSON.stringify(curr)}`
+      }
+      return prev
     }, 'errors:\n')
 }
 

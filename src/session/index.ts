@@ -24,7 +24,11 @@ import {
   processService,
 } from './process'
 import { id } from '../utils/id'
-import { createDeferredPromise, evaluateSettledPromises, formatSettledErrors } from '../utils/promise'
+import {
+  createDeferredPromise,
+  evaluateSettledPromises,
+  formatSettledErrors,
+} from '../utils/promise'
 
 export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
@@ -126,7 +130,11 @@ class Session extends SessionConnection {
             onChildProcessesChangeSubID ? this.unsubscribe(onChildProcessesChangeSubID) : undefined,
           ])
 
-          this.logger.error(formatSettledErrors(results))
+          const errMsg = formatSettledErrors(results)
+          if (errMsg) {
+            this.logger.error()
+          }
+
           throw err
         }
 
@@ -190,18 +198,21 @@ class Session extends SessionConnection {
             onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
           ])
 
-          this.logger.error(formatSettledErrors(results))
+          const errMsg = formatSettledErrors(results)
+          if (errMsg) {
+            this.logger.error(errMsg)
+          }
 
           onExit?.()
-
           handleFinishUnsubscribing()
         })
 
         try {
           await this.call(processService, 'start', [processID, cmd, envVars, rootdir])
-        } finally {
+        } catch (err) {
           triggerExit()
           await unsubscribing
+          throw err
         }
 
         return {
