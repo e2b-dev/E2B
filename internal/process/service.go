@@ -117,7 +117,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			id = xid.New().String()
 		}
 
-		newProc, err := s.processes.Add(id, cmd, envVars, rootdir)
+		newProc, err := s.processes.Add(id, cmd, envVars, rootdir, s.logger)
 		if err != nil {
 			s.logger.Errorw("Failed to create new process",
 				"processID", id,
@@ -126,7 +126,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			return "", err
 		}
 
-		stdout, err := newProc.Cmd.StdoutPipe()
+		stdout, err := newProc.cmd.StdoutPipe()
 		if err != nil {
 			newProc.SetHasExited(true)
 			s.processes.Remove(newProc.ID)
@@ -138,7 +138,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		}
 		go s.scanRunCmdOut(stdout, output.OutTypeStdout, newProc)
 
-		stderr, err := newProc.Cmd.StderrPipe()
+		stderr, err := newProc.cmd.StderrPipe()
 		if err != nil {
 			newProc.SetHasExited(true)
 			stdout.Close()
@@ -152,7 +152,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		}
 		go s.scanRunCmdOut(stderr, output.OutTypeStderr, newProc)
 
-		stdin, err := newProc.Cmd.StdinPipe()
+		stdin, err := newProc.cmd.StdinPipe()
 		if err != nil {
 			newProc.SetHasExited(true)
 			stdout.Close()
@@ -167,11 +167,11 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		}
 		newProc.Stdin = &stdin
 
-		if err := newProc.Cmd.Start(); err != nil {
+		if err := newProc.cmd.Start(); err != nil {
 			s.logger.Errorw("Failed to start process",
 				"processID", newProc.ID,
 				"error", err,
-				"cmd", newProc.Cmd,
+				"cmd", newProc.cmd,
 			)
 
 			newProc.SetHasExited(true)
@@ -195,6 +195,8 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		go func() {
 			defer s.processes.Remove(newProc.ID)
 			defer stdin.Close()
+			defer newProc.SetHasExited(true)
+
 			defer func() {
 				err = s.exitSubs.Notify(newProc.ID, struct{}{})
 				if err != nil {
@@ -209,15 +211,13 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				return
 			}
 
-			err := newProc.Cmd.Wait()
+			err := newProc.cmd.Wait()
 			if err != nil {
 				s.logger.Warnw("Failed waiting for process",
 					"processID", newProc.ID,
 					"error", err,
 				)
 			}
-
-			newProc.SetHasExited(true)
 		}()
 
 		s.logger.Infow("Started new process", "processID", newProc.ID)

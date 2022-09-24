@@ -126,6 +126,7 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 
 		go func() {
 			defer s.terminals.Remove(newTerm.ID)
+			defer newTerm.SetIsDestroyed(true)
 
 			for {
 				if newTerm.IsDestroyed() {
@@ -165,6 +166,7 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 		go func() {
 			ticker := time.NewTicker(terminalChildProcessCheckInterval)
 			defer ticker.Stop()
+			defer newTerm.SetIsDestroyed(true)
 
 			pid := newTerm.Pid()
 

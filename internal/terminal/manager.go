@@ -53,7 +53,7 @@ func (m *Manager) Add(
 	cols,
 	rows uint16,
 ) (*Terminal, error) {
-	term, err := New(logger, id, shell, root, cols, rows)
+	term, err := New(id, shell, root, cols, rows, logger)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new terminal: %+v", err)
 	}

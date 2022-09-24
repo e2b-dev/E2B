@@ -31,6 +31,13 @@ func (t *Terminal) Pid() int {
 	return t.cmd.Process.Pid
 }
 
+func (t *Terminal) SetIsDestroyed(v bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.destroyed = v
+}
+
 func (t *Terminal) IsDestroyed() bool {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -52,7 +59,7 @@ func (t *Terminal) SetCachedChildProcesses(cps []process.ChildProcess) {
 	t.childProcesses = cps
 }
 
-func New(logger *zap.SugaredLogger, id, shell, root string, cols, rows uint16) (*Terminal, error) {
+func New(id, shell, root string, cols, rows uint16, logger *zap.SugaredLogger) (*Terminal, error) {
 	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
 	cmd := exec.Command(shell, "-l")
 	cmd.Env = append(
@@ -115,9 +122,7 @@ func (t *Terminal) Destroy() {
 		)
 	}
 
-	t.mu.Lock()
-	t.destroyed = true
-	t.mu.Unlock()
+	t.SetIsDestroyed(true)
 }
 
 func (t *Terminal) Write(b []byte) (int, error) {

@@ -3,6 +3,8 @@ package process
 import (
 	"fmt"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 type Manager struct {
@@ -43,8 +45,8 @@ func (m *Manager) Get(id ID) (*Process, bool) {
 	return proc, ok
 }
 
-func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
-	proc, err := New(id, cmd, envVars, rootdir)
+func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
+	proc, err := New(id, cmd, envVars, rootdir, logger)
 	if err != nil {
 		return nil, fmt.Errorf("error starting new process with id '%s': %+v", id, err)
 	}

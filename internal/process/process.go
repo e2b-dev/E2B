@@ -5,6 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
+
+	"go.uber.org/zap"
 )
 
 type ID = string
@@ -15,11 +18,13 @@ type Process struct {
 	mu sync.RWMutex
 
 	exited bool
-	Cmd    *exec.Cmd
+	cmd    *exec.Cmd
 	Stdin  *io.WriteCloser
+
+	logger *zap.SugaredLogger
 }
 
-func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string) (*Process, error) {
+func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
 	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
 	cmd.Dir = rootdir
 
@@ -33,13 +38,32 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string)
 
 	return &Process{
 		ID:     id,
-		Cmd:    cmd,
+		cmd:    cmd,
 		exited: false,
+		logger: logger,
 	}, nil
 }
 
-func (p *Process) Kill() error {
-	return p.Cmd.Process.Kill()
+func (p *Process) Kill() {
+	if err := p.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		p.logger.Errorw("Failed to kill process with signal",
+			"processID", p.ID,
+			"cmd", p.cmd,
+			"pid", p.cmd.Process.Pid,
+			"error", err,
+			"hasExited", p.HasExited(),
+		)
+	}
+	if _, err := p.cmd.Process.Wait(); err != nil {
+		p.logger.Errorw("Failed to wait for process to exit",
+			"processID", p.ID,
+			"cmd", p.cmd,
+			"pid", p.cmd.Process.Pid,
+			"error", err,
+			"hasExited", p.HasExited(),
+		)
+	}
+	p.SetHasExited(true)
 }
 
 func (p *Process) SetHasExited(value bool) {
