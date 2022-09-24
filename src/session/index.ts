@@ -132,7 +132,7 @@ class Session extends SessionConnection {
 
           const errMsg = formatSettledErrors(results)
           if (errMsg) {
-            this.logger.error()
+            this.logger.error(errMsg)
           }
 
           throw err
@@ -181,7 +181,7 @@ class Session extends SessionConnection {
           onStdoutSubID,
           onStderrSubID,
         ] = await this.handleSubscriptions(
-          onExit ? this.subscribe(processService, triggerExit, 'onExit', processID) : undefined,
+          this.subscribe(processService, triggerExit, 'onExit', processID),
           onStdout ? this.subscribe(processService, onStdout, 'onStdout', processID) : undefined,
           onStderr ? this.subscribe(processService, onStderr, 'onStderr', processID) : undefined,
         )
@@ -193,7 +193,7 @@ class Session extends SessionConnection {
 
         processExited.then(async () => {
           const results = await Promise.allSettled([
-            onExitSubID ? this.unsubscribe(onExitSubID) : undefined,
+            this.unsubscribe(onExitSubID),
             onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
             onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
           ])
