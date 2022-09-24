@@ -166,7 +166,6 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 		go func() {
 			ticker := time.NewTicker(terminalChildProcessCheckInterval)
 			defer ticker.Stop()
-			defer newTerm.SetIsDestroyed(true)
 
 			pid := newTerm.Pid()
 

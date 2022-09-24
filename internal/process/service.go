@@ -195,8 +195,6 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		go func() {
 			defer s.processes.Remove(newProc.ID)
 			defer stdin.Close()
-			defer newProc.SetHasExited(true)
-
 			defer func() {
 				err = s.exitSubs.Notify(newProc.ID, struct{}{})
 				if err != nil {
@@ -206,6 +204,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 					)
 				}
 			}()
+			defer newProc.SetHasExited(true)
 
 			if newProc.HasExited() {
 				return

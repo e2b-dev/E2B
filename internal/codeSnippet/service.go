@@ -29,10 +29,6 @@ const (
 	CodeSnippetStateStopped CodeSnippetState = "Stopped"
 )
 
-// TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
-// There isn't an explicit documentation, I'm using source code of tests as a reference:
-// https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
-
 type Service struct {
 	logger *zap.SugaredLogger
 	env    *env.Env

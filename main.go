@@ -10,13 +10,17 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/devbookhq/devbookd/internal/env"
-	"github.com/devbookhq/devbookd/internal/port"
-	"github.com/devbookhq/devbookd/internal/terminal"
-	"github.com/devbookhq/devbookd/internal/process"
-	"github.com/devbookhq/devbookd/internal/filesystem"
 	"github.com/devbookhq/devbookd/internal/codeSnippet"
+	"github.com/devbookhq/devbookd/internal/env"
+	"github.com/devbookhq/devbookd/internal/filesystem"
+	"github.com/devbookhq/devbookd/internal/port"
+	"github.com/devbookhq/devbookd/internal/process"
+	"github.com/devbookhq/devbookd/internal/terminal"
 )
+
+// TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.
+// There isn't an explicit documentation, I'm using source code of tests as a reference:
+// https://cs.github.com/ethereum/go-ethereum/blob/440c9fcf75d9d5383b72646a65d5e21fa7ab6a26/rpc/testservice_test.go#L160
 
 var (
 	logger    *zap.SugaredLogger
@@ -28,7 +32,6 @@ var (
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("Client connected")
-	// TODO: Separate new connection?
 	wsHandler.ServeHTTP(w, r)
 }
 
