@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
+	"time"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func NewLogger(logDir string, debug bool) (*zap.SugaredLogger, error) {
@@ -27,6 +29,7 @@ func NewLogger(logDir string, debug bool) (*zap.SugaredLogger, error) {
 	  "outputPaths": [%s],
 	  "errorOutputPaths": [%s],
 	  "encoderConfig": {
+			"timeKey": "timestamp",
 	    "messageKey": "message",
 	    "levelKey": "level",
 	    "levelEncoder": "lowercase"
@@ -37,6 +40,11 @@ func NewLogger(logDir string, debug bool) (*zap.SugaredLogger, error) {
 	if err := json.Unmarshal(rawJSON, &cfg); err != nil {
 		return nil, err
 	}
+	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
+		// 2019-08-13T04:39:11Z
+	})
+
 	l, err := cfg.Build()
 	if err != nil {
 		return nil, err
