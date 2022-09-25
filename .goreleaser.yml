@@ -28,7 +28,8 @@ archives:
     name_template: "devbookd_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 
 changelog:
-  skip: true
+  skip: false
+  use: github-native
 
 release:
   # If set to auto, will mark the release as not ready for production
@@ -40,14 +41,4 @@ snapshot:
   name_template: "{{ .Branch }}-{{ .ShortCommit }}"
 
 checksum:
-  name_template: 'checksums.txt'
-
-#nfpms:
-#  - maintainer: Devbook
-#    description: Devbook Daemon
-#    homepage: https://github.com/devbookhq/devbookd
-#    license: MIT
-#    formats:
-#      - apk
-#      - deb
-#      - rpm
+  name_template: "checksums.txt"
