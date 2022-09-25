@@ -6,6 +6,8 @@ before:
 builds:
   - id: devbookd
     binary: devbookd
+    ldflags:
+      - -X main.Version={{ .Version }}
     env:
       - CGO_ENABLED=0
     targets:

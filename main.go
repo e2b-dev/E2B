@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
@@ -28,6 +29,8 @@ var (
 
 	rawRuntimeMode string
 	debug          bool
+	versionFlag    bool
+	Version        = "dev"
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -51,11 +54,24 @@ func parseFlags() {
 		false,
 		"debug mode prints all logs to stdout and stderr",
 	)
+
+	flag.BoolVar(
+		&versionFlag,
+		"version",
+		false,
+		"print devbookd version",
+	)
+
 	flag.Parse()
 }
 
 func main() {
 	parseFlags()
+
+	if versionFlag {
+		fmt.Println("Version:\t", Version)
+		return
+	}
 
 	newEnv, l, err := env.NewEnv(rawRuntimeMode, debug)
 	if err != nil {
