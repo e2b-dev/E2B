@@ -35,6 +35,12 @@ Running in debug mode will print all stdout and stderr to your console.
 devbookd -debug
 ```
 
+### `version` flag
+Running devbookd with the `-version` flag will print the devbookd version to the console.
+```sh
+devbookd -version
+```
+
 ## Installation (only macOS supported)
 > ❌ Don't use this for installing devbookd on your server!
 
