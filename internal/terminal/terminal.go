@@ -86,7 +86,7 @@ func (t *Terminal) Read(b []byte) (int, error) {
 
 func (t *Terminal) Destroy() {
 	if err := t.cmd.Process.Kill(); err != nil {
-		t.logger.Errorw("Failed to kill terminal process",
+		t.logger.Warnw("Failed to kill terminal process",
 			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
@@ -95,7 +95,7 @@ func (t *Terminal) Destroy() {
 		)
 	}
 	if _, err := t.cmd.Process.Wait(); err != nil {
-		t.logger.Errorw("Failed to wait for terminal process to exit",
+		t.logger.Warnw("Failed to wait for terminal process to exit",
 			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
@@ -104,7 +104,7 @@ func (t *Terminal) Destroy() {
 		)
 	}
 	if err := t.tty.Close(); err != nil {
-		t.logger.Errorw("Failed to close tty",
+		t.logger.Warnw("Failed to close tty",
 			"terminalID", t.ID,
 			"tty", t.tty.Name(),
 			"cmd", t.cmd,

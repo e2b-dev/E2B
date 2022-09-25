@@ -44,7 +44,7 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 
 func (p *Process) Kill() {
 	if err := p.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		p.logger.Errorw("Failed to kill process with signal",
+		p.logger.Warnw("Failed to kill process with signal",
 			"processID", p.ID,
 			"cmd", p.cmd,
 			"pid", p.cmd.Process.Pid,
@@ -53,7 +53,7 @@ func (p *Process) Kill() {
 		)
 	}
 	if _, err := p.cmd.Process.Wait(); err != nil {
-		p.logger.Errorw("Failed to wait for process to exit",
+		p.logger.Warnw("Failed to wait for process to exit",
 			"processID", p.ID,
 			"cmd", p.cmd,
 			"pid", p.cmd.Process.Pid,
