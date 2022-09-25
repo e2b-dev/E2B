@@ -2,47 +2,34 @@ package process
 
 import (
 	"fmt"
-	"sync"
 
+	"github.com/devbookhq/devbookd/internal/smap"
 	"go.uber.org/zap"
 )
 
 type Manager struct {
-	mu      sync.RWMutex
-	procMap map[ID]*Process
+	procs *smap.Map[ID, Process]
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		procMap: make(map[ID]*Process),
+		procs: smap.New[ID, Process](),
 	}
 }
 
 func (m *Manager) Remove(id ID) {
-	proc, ok := m.Get(id)
+	proc, ok := m.procs.Get(id)
 
 	if !ok {
 		return
 	}
 
 	proc.Kill()
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	delete(m.procMap, id)
+	m.procs.Remove(id)
 }
 
 func (m *Manager) Get(id ID) (*Process, bool) {
-	if id == "" {
-		return nil, false
-	}
-
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	proc, ok := m.procMap[id]
-	return proc, ok
+	return m.procs.Get(id)
 }
 
 func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
@@ -51,9 +38,6 @@ func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir str
 		return nil, fmt.Errorf("error starting new process with id '%s': %+v", id, err)
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	m.procMap[proc.ID] = proc
+	m.procs.Insert(proc.ID, proc)
 	return proc, nil
 }

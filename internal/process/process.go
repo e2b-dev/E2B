@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"go.uber.org/zap"
@@ -15,9 +15,7 @@ type ID = string
 type Process struct {
 	ID ID
 
-	mu sync.RWMutex
-
-	exited bool
+	exited *atomic.Bool
 	cmd    *exec.Cmd
 	Stdin  *io.WriteCloser
 
@@ -39,7 +37,7 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 	return &Process{
 		ID:     id,
 		cmd:    cmd,
-		exited: false,
+		exited: &atomic.Bool{},
 		logger: logger,
 	}, nil
 }
@@ -67,17 +65,11 @@ func (p *Process) Kill() {
 }
 
 func (p *Process) SetHasExited(value bool) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.exited = value
+	p.exited.Store(value)
 }
 
 func (p *Process) HasExited() bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	return p.exited
+	return p.exited.Load()
 }
 
 func (p *Process) WriteStdin(data string) error {

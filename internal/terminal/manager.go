@@ -2,47 +2,34 @@ package terminal
 
 import (
 	"fmt"
-	"sync"
 
+	"github.com/devbookhq/devbookd/internal/smap"
 	"go.uber.org/zap"
 )
 
 type Manager struct {
-	mu      sync.RWMutex
-	termMap map[ID]*Terminal
+	terms *smap.Map[ID, Terminal]
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		termMap: make(map[ID]*Terminal),
+		terms: smap.New[ID, Terminal](),
 	}
 }
 
 func (m *Manager) Remove(id ID) {
-	term, ok := m.Get(id)
+	term, ok := m.terms.Get(id)
 
 	if !ok {
 		return
 	}
 
 	term.Destroy()
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	delete(m.termMap, id)
+	m.terms.Remove(id)
 }
 
 func (m *Manager) Get(id ID) (*Terminal, bool) {
-	if id == "" {
-		return nil, false
-	}
-
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	term, ok := m.termMap[id]
-	return term, ok
+	return m.terms.Get(id)
 }
 
 func (m *Manager) Add(
@@ -58,9 +45,6 @@ func (m *Manager) Add(
 		return nil, fmt.Errorf("error creating new terminal: %+v", err)
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	m.termMap[term.ID] = term
+	m.terms.Insert(term.ID, term)
 	return term, nil
 }

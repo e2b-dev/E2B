@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/devbookhq/devbookd/internal/env"
@@ -40,7 +41,7 @@ type Service struct {
 	// of the command.
 	// This way a user on the frontend doesn't even notice that command has been running.
 	cachedOut []output.OutResponse
-	running   bool
+	running   *atomic.Bool
 	cmd       *exec.Cmd
 
 	stdoutSubs          *subscriber.Manager
@@ -64,6 +65,8 @@ func NewService(
 	cs := &Service{
 		logger: logger,
 		env:    env,
+
+		running: &atomic.Bool{},
 
 		scannerSubscriber: scannerSub,
 
@@ -103,16 +106,11 @@ func (s *Service) addToCachedOut(o output.OutResponse) {
 }
 
 func (s *Service) isRunning() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.running
+	return s.running.Load()
 }
 
 func (s *Service) setRunning(b bool) {
-	s.mu.Lock()
-	s.running = b
-	s.mu.Unlock()
+	s.running.Store(b)
 
 	var state CodeSnippetState
 	if b {

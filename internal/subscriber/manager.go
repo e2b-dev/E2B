@@ -3,44 +3,32 @@ package subscriber
 import (
 	"context"
 	"fmt"
-	"sync"
 
+	"github.com/devbookhq/devbookd/internal/smap"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 )
 
 type Manager struct {
-	mu   sync.RWMutex
-	subs map[rpc.ID]*Subscriber
+	subs *smap.Map[rpc.ID, Subscriber]
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		subs: make(map[rpc.ID]*Subscriber),
+		subs: smap.New[rpc.ID, Subscriber](),
 	}
 }
 
 func (m *Manager) Notify(id ID, data interface{}) error {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	for _, sub := range m.subs {
+	return m.subs.Iterate(func(_ rpc.ID, sub *Subscriber) error {
 		if sub.ID == id {
 			err := sub.Notify(data)
 			if err != nil {
 				return fmt.Errorf("error sending data notification for subID %s, %+v", sub.Subscription.ID, err)
 			}
 		}
-	}
-
-	return nil
-}
-
-func (m *Manager) Remove(subID rpc.ID) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	delete(m.subs, subID)
+		return nil
+	})
 }
 
 func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*Subscriber, error) {
@@ -49,9 +37,7 @@ func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*S
 		return nil, err
 	}
 
-	m.mu.Lock()
-	m.subs[sub.Subscription.ID] = sub
-	m.mu.Unlock()
+	m.subs.Insert(sub.Subscription.ID, sub)
 
 	go func() {
 		err := <-sub.Subscription.Err()
@@ -63,7 +49,7 @@ func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*S
 			)
 		}
 
-		m.Remove(sub.Subscription.ID)
+		m.subs.Remove(sub.Subscription.ID)
 
 		logger.Infow("Unsubscribed",
 			"subID",

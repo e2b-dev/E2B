@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"sync/atomic"
 
 	"github.com/devbookhq/devbookd/internal/process"
 	"go.uber.org/zap"
@@ -20,7 +21,7 @@ type Terminal struct {
 	mu sync.RWMutex
 
 	childProcesses []process.ChildProcess
-	destroyed      bool
+	destroyed      *atomic.Bool
 
 	ID  ID
 	cmd *exec.Cmd
@@ -31,18 +32,12 @@ func (t *Terminal) Pid() int {
 	return t.cmd.Process.Pid
 }
 
-func (t *Terminal) SetIsDestroyed(v bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.destroyed = v
+func (t *Terminal) SetIsDestroyed(value bool) {
+	t.destroyed.Store(value)
 }
 
 func (t *Terminal) IsDestroyed() bool {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	return t.destroyed
+	return t.destroyed.Load()
 }
 
 func (t *Terminal) GetCachedChildProcesses() []process.ChildProcess {
@@ -76,15 +71,12 @@ func New(id, shell, root string, cols, rows uint16, logger *zap.SugaredLogger) (
 		return nil, fmt.Errorf("error starting pty with command '%s': %+v", cmd, err)
 	}
 
-	childProcesses := []process.ChildProcess{}
-
 	return &Terminal{
-		logger:         logger,
-		ID:             id,
-		cmd:            cmd,
-		tty:            tty,
-		destroyed:      false,
-		childProcesses: childProcesses,
+		logger:    logger,
+		ID:        id,
+		cmd:       cmd,
+		tty:       tty,
+		destroyed: &atomic.Bool{},
 	}, nil
 }
 
