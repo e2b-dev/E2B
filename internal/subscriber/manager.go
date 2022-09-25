@@ -31,10 +31,35 @@ func (m *Manager) Notify(id ID, data interface{}) error {
 	})
 }
 
-func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*Subscriber, error) {
+func (m *Manager) HasSubscribers(id ID) bool {
+	subs, err := m.GetByID(id)
+
+	if err != nil {
+		return false
+	}
+
+	return len(subs) > 0
+}
+
+func (m *Manager) GetByID(id ID) ([]*Subscriber, error) {
+	var subscribers []*Subscriber
+
+	err := m.subs.Iterate(func(_ rpc.ID, sub *Subscriber) error {
+		if sub.ID == id {
+			subscribers = append(subscribers, sub)
+		}
+		return nil
+	})
+
+	return subscribers, err
+}
+
+func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*Subscriber, chan bool, error) {
+	lastUnsubscribed := make(chan bool, 1)
+
 	sub, err := New(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, lastUnsubscribed, err
 	}
 
 	m.subs.Insert(sub.Subscription.ID, sub)
@@ -55,7 +80,11 @@ func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*S
 			"subID",
 			sub.Subscription.ID,
 		)
+
+		if m.subs.Size() == 0 {
+			lastUnsubscribed <- true
+		}
 	}()
 
-	return sub, nil
+	return sub, lastUnsubscribed, nil
 }

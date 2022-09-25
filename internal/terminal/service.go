@@ -27,6 +27,7 @@ type Service struct {
 
 	dataSubs           *subscriber.Manager
 	childProcessesSubs *subscriber.Manager
+	exitSubs           *subscriber.Manager
 }
 
 func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
@@ -36,54 +37,13 @@ func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
 		terminals:          NewManager(),
 		dataSubs:           subscriber.NewManager(),
 		childProcessesSubs: subscriber.NewManager(),
+		exitSubs:           subscriber.NewManager(),
 	}
 }
 
-// Subscription
-func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribe to terminal data",
-		"terminalID", id,
-	)
-
-	sub, err := s.dataSubs.Add(ctx, id, s.logger)
-	if err != nil {
-		s.logger.Errorw("Failed to create a data subscription from context",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
-	}
-
-	return sub.Subscription, nil
-}
-
-// Subscription
-func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribe to terminal child processes",
-		"terminalID", id,
-	)
-
-	sub, err := s.childProcessesSubs.Add(ctx, id, s.logger)
-	if err != nil {
-		s.logger.Errorw("Failed to create a terminal child processes subscription",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
-	}
-
-	term, ok := s.terminals.Get(id)
-
-	if ok {
-		if err := sub.Notify(term.GetCachedChildProcesses()); err != nil {
-			s.logger.Errorw("Failed to send initial child processes",
-				"subID", sub.Subscription.ID,
-				"error", err,
-			)
-		}
-	}
-
-	return sub.Subscription, nil
+func (s *Service) hasSubscibers(id ID) bool {
+	return s.childProcessesSubs.HasSubscribers(id) ||
+		s.dataSubs.HasSubscribers(id)
 }
 
 func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
@@ -286,4 +246,106 @@ func (s *Service) KillProcess(pid int) error {
 		return fmt.Errorf("error killing child process '%d': %+v", pid, err)
 	}
 	return nil
+}
+
+// Subscription
+func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) {
+	s.logger.Infow("Subscribe to terminal data",
+		"terminalID", id,
+	)
+
+	sub, lastUnsubscribed, err := s.dataSubs.Add(ctx, id, s.logger)
+	if err != nil {
+		s.logger.Errorw("Failed to create a data subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	go func() {
+		<-lastUnsubscribed
+
+		if !s.hasSubscibers(id) {
+			s.terminals.Remove(id)
+		}
+	}()
+
+	return sub.Subscription, nil
+}
+
+// Subscription
+func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subscription, error) {
+	s.logger.Infow("Subscribe to terminal child processes",
+		"terminalID", id,
+	)
+
+	sub, lastUnsubscribed, err := s.childProcessesSubs.Add(ctx, id, s.logger)
+	if err != nil {
+		s.logger.Errorw("Failed to create a terminal child processes subscription",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	go func() {
+		<-lastUnsubscribed
+
+		if !s.hasSubscibers(id) {
+			s.terminals.Remove(id)
+		}
+	}()
+
+	term, ok := s.terminals.Get(id)
+
+	if ok {
+		if err := sub.Notify(term.GetCachedChildProcesses()); err != nil {
+			s.logger.Errorw("Failed to send initial child processes",
+				"subID", sub.Subscription.ID,
+				"error", err,
+			)
+		}
+	}
+
+	return sub.Subscription, nil
+}
+
+// Subscription
+func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
+	s.logger.Info("Subscribe to terminal exit")
+
+	sub, lastUnsubscribed, err := s.exitSubs.Add(ctx, id, s.logger)
+	if err != nil {
+		s.logger.Errorw("Failed to create an exit subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	go func() {
+		<-lastUnsubscribed
+
+		if !s.hasSubscibers(id) {
+			s.terminals.Remove(id)
+		}
+	}()
+
+	term, ok := s.terminals.Get(id)
+
+	if ok {
+		// Send exit if the terminal process already exited
+		if term.IsDestroyed() {
+			if err := sub.Notify(struct{}{}); err != nil {
+				s.logger.Errorw("Failed to send on exit notification",
+					"terminalID", id,
+					"subID", sub.Subscription.ID,
+					"error", err,
+				)
+			}
+		}
+	}
+
+	return sub.Subscription, nil
 }

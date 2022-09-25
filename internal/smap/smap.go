@@ -30,6 +30,13 @@ func (m *Map[K, V]) Remove(key K) *V {
 	return value
 }
 
+func (m *Map[K, V]) Size() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	return len(m.m)
+}
+
 func (m *Map[K, V]) Get(key K) (*V, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

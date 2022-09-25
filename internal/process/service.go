@@ -34,40 +34,10 @@ func NewService(logger *zap.SugaredLogger) *Service {
 	}
 }
 
-// Subscription
-func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to process stdout",
-		"processID", id,
-	)
-
-	sub, err := s.stdoutSubs.Add(ctx, id, s.logger)
-	if err != nil {
-		s.logger.Errorw("Failed to create a stdout subscription from context",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
-	}
-
-	return sub.Subscription, nil
-}
-
-// Subscription
-func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to process stderr",
-		"processID", id,
-	)
-
-	sub, err := s.stderrSubs.Add(ctx, id, s.logger)
-	if err != nil {
-		s.logger.Errorw("Failed to create a stderr subscription from context",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
-	}
-
-	return sub.Subscription, nil
+func (s *Service) hasSubscibers(id ID) bool {
+	return s.exitSubs.HasSubscribers(id) ||
+		s.stdoutSubs.HasSubscribers(id) ||
+		s.stderrSubs.HasSubscribers(id)
 }
 
 func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType, process *Process) {
@@ -270,7 +240,7 @@ func (s *Service) Kill(id ID) error {
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to process exit")
 
-	sub, err := s.exitSubs.Add(ctx, id, s.logger)
+	sub, lastUnsubscribed, err := s.exitSubs.Add(ctx, id, s.logger)
 	if err != nil {
 		s.logger.Errorw("Failed to create an exit subscription from context",
 			"ctx", ctx,
@@ -279,19 +249,80 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		return nil, err
 	}
 
+	go func() {
+		<-lastUnsubscribed
+
+		if !s.hasSubscibers(id) {
+			s.processes.Remove(id)
+		}
+	}()
+
 	proc, ok := s.processes.Get(id)
 
 	if ok {
 		// Send exit if the process already exited
 		if proc.HasExited() {
 			if err := sub.Notify(struct{}{}); err != nil {
-				s.logger.Errorw("Failed to send initial state notification",
+				s.logger.Errorw("Failed to send initial exit notification",
+					"processID", id,
 					"subID", sub.Subscription.ID,
 					"error", err,
 				)
 			}
 		}
 	}
+
+	return sub.Subscription, nil
+}
+
+// Subscription
+func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error) {
+	s.logger.Info("Subscribe to process stdout",
+		"processID", id,
+	)
+
+	sub, lastUnsubscribed, err := s.stdoutSubs.Add(ctx, id, s.logger)
+	if err != nil {
+		s.logger.Errorw("Failed to create a stdout subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	go func() {
+		<-lastUnsubscribed
+
+		if !s.hasSubscibers(id) {
+			s.processes.Remove(id)
+		}
+	}()
+
+	return sub.Subscription, nil
+}
+
+// Subscription
+func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error) {
+	s.logger.Info("Subscribe to process stderr",
+		"processID", id,
+	)
+
+	sub, lastUnsubscribed, err := s.stderrSubs.Add(ctx, id, s.logger)
+	if err != nil {
+		s.logger.Errorw("Failed to create a stderr subscription from context",
+			"ctx", ctx,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	go func() {
+		<-lastUnsubscribed
+
+		if !s.hasSubscibers(id) {
+			s.processes.Remove(id)
+		}
+	}()
 
 	return sub.Subscription, nil
 }

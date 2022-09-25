@@ -28,6 +28,32 @@ type Terminal struct {
 	tty *os.File
 }
 
+func New(id, shell, root string, cols, rows uint16, logger *zap.SugaredLogger) (*Terminal, error) {
+	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
+	cmd := exec.Command(shell, "-l")
+	cmd.Env = append(
+		os.Environ(),
+		"TERM=xterm",
+	)
+	cmd.Dir = root
+
+	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
+		Cols: cols,
+		Rows: rows,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error starting pty with command '%s': %+v", cmd, err)
+	}
+
+	return &Terminal{
+		logger:    logger,
+		ID:        id,
+		cmd:       cmd,
+		tty:       tty,
+		destroyed: &atomic.Bool{},
+	}, nil
+}
+
 func (t *Terminal) Pid() int {
 	return t.cmd.Process.Pid
 }
@@ -55,32 +81,6 @@ func (t *Terminal) SetCachedChildProcesses(cps []process.ChildProcess) {
 	defer t.mu.Unlock()
 
 	t.childProcesses = cps
-}
-
-func New(id, shell, root string, cols, rows uint16, logger *zap.SugaredLogger) (*Terminal, error) {
-	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
-	cmd := exec.Command(shell, "-l")
-	cmd.Env = append(
-		os.Environ(),
-		"TERM=xterm",
-	)
-	cmd.Dir = root
-
-	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
-		Cols: cols,
-		Rows: rows,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error starting pty with command '%s': %+v", cmd, err)
-	}
-
-	return &Terminal{
-		logger:    logger,
-		ID:        id,
-		cmd:       cmd,
-		tty:       tty,
-		destroyed: &atomic.Bool{},
-	}, nil
 }
 
 func (t *Terminal) Read(b []byte) (int, error) {
