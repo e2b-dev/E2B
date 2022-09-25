@@ -29,6 +29,12 @@ devbookd -mode=server
 devbookd -mode=user
 ```
 
+### `debug` flag
+Running in debug mode will print all stdout and stderr to your console.
+```sh
+devbookd -debug
+```
+
 ## Installation (only macOS supported)
 > ❌ Don't use this for installing devbookd on your server!
 
