@@ -44,7 +44,10 @@ func (t *Terminal) GetCachedChildProcesses() []process.ChildProcess {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	return t.childProcesses
+	list := make([]process.ChildProcess, len(t.childProcesses))
+	copy(list, t.childProcesses)
+
+	return list
 }
 
 func (t *Terminal) SetCachedChildProcesses(cps []process.ChildProcess) {
@@ -113,7 +116,6 @@ func (t *Terminal) Destroy() {
 			"isDestroyed", t.IsDestroyed(),
 		)
 	}
-
 	t.SetIsDestroyed(true)
 }
 
