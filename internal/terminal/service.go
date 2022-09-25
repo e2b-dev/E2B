@@ -215,10 +215,6 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 }
 
 func (s *Service) Data(id ID, data string) error {
-	s.logger.Infow("Handle terminal data",
-		"terminalID", id,
-	)
-
 	term, ok := s.terminals.Get(id)
 
 	if !ok {
