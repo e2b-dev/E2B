@@ -73,6 +73,14 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 			rows,
 		)
 		if err != nil {
+			notifyErr := s.exitSubs.Notify(id, struct{}{})
+			if notifyErr != nil {
+				s.logger.Errorw("Failed to send exit notification",
+					"terminalID", id,
+					"error", notifyErr,
+				)
+			}
+
 			s.logger.Errorw("Failed to start new terminal",
 				"terminalID", id,
 				"error", err,
@@ -85,8 +93,16 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 		)
 
 		go func() {
-			defer s.terminals.Remove(newTerm.ID)
-			defer newTerm.SetIsDestroyed(true)
+			defer func() {
+				s.Destroy(newTerm.ID)
+				err := s.exitSubs.Notify(id, struct{}{})
+				if err != nil {
+					s.logger.Errorw("Failed to send exit notification",
+						"terminalID", id,
+						"error", err,
+					)
+				}
+			}()
 
 			for {
 				if newTerm.IsDestroyed() {
@@ -267,7 +283,7 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.terminals.Remove(id)
+			s.Destroy(id)
 		}
 	}()
 
@@ -293,7 +309,7 @@ func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subsc
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.terminals.Remove(id)
+			s.Destroy(id)
 		}
 	}()
 
@@ -328,7 +344,7 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.terminals.Remove(id)
+			s.Destroy(id)
 		}
 	}()
 
