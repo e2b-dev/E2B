@@ -26,7 +26,6 @@ import {
 import { id } from '../utils/id'
 import {
   createDeferredPromise,
-  evaluateSettledPromises,
   formatSettledErrors,
 } from '../utils/promise'
 
@@ -53,7 +52,6 @@ class Session extends SessionConnection {
     super(opts)
     this.codeSnippetOpts = opts.codeSnippet
   }
-
 
   async open() {
     await super.open()
@@ -112,20 +110,32 @@ class Session extends SessionConnection {
         onData,
         onChildProcessesChange,
         size,
+        onExit,
         terminalID = id(12),
       }) => {
+        const {
+          promise: terminalExited,
+          resolve: triggerExit,
+        } = createDeferredPromise()
+
         const [
           onDataSubID,
+          onExitSubID,
           onChildProcessesChangeSubID,
         ] = await this.handleSubscriptions(
           this.subscribe(terminalService, onData, 'onData', terminalID),
+          this.subscribe(terminalService, triggerExit, 'onExit', terminalID),
           onChildProcessesChange ? this.subscribe(terminalService, onChildProcessesChange, 'onChildProcessesChange', terminalID) : undefined,
         )
 
-        try {
-          await this.call(terminalService, 'start', [terminalID, size.cols, size.rows])
-        } catch (err) {
+        const {
+          promise: unsubscribing,
+          resolve: handleFinishUnsubscribing,
+        } = createDeferredPromise()
+
+        terminalExited.then(async () => {
           const results = await Promise.allSettled([
+            this.unsubscribe(onExitSubID),
             this.unsubscribe(onDataSubID),
             onChildProcessesChangeSubID ? this.unsubscribe(onChildProcessesChangeSubID) : undefined,
           ])
@@ -135,19 +145,28 @@ class Session extends SessionConnection {
             this.logger.error(errMsg)
           }
 
+          onExit?.()
+          handleFinishUnsubscribing()
+        })
+
+
+        try {
+          await this.call(terminalService, 'start', [terminalID, size.cols, size.rows])
+        } catch (err) {
+          triggerExit()
+          await unsubscribing
           throw err
         }
 
         return {
           terminalID,
           destroy: async () => {
-            const results = await Promise.allSettled([
-              this.unsubscribe(onDataSubID),
-              onChildProcessesChangeSubID ? this.unsubscribe(onChildProcessesChangeSubID) : undefined,
+            try {
               await this.call(terminalService, 'destroy', [terminalID])
-            ])
-
-            evaluateSettledPromises(results)
+            } finally {
+              triggerExit()
+              await unsubscribing
+            }
           },
           sendData: async (data) => {
             await this.call(terminalService, 'data', [terminalID, data])

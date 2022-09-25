@@ -72,7 +72,6 @@ abstract class SessionConnection {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected async call(service: Service, method: string, params?: any[]) {
-    this.logger.log(`${service}_${method}`, params)
     return this.rpc.call(`${service}_${method}`, params)
   }
 

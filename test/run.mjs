@@ -4,17 +4,17 @@ async function main() {
   const session = new Session({
     id: 'Nodejs',
     debug: true,
-    codeSnippet: {
-      onStateChange(state) {
-        console.log(state)
-      },
-      onStdout(out) {
-        console.log(out)
-      },
-      onStderr(err) {
-        console.log(err)
-      },
-    },
+    // codeSnippet: {
+    //   onStateChange(state) {
+    //     console.log(state)
+    //   },
+    //   onStdout(out) {
+    //     console.log(out)
+    //   },
+    //   onStderr(err) {
+    //     console.log(err)
+    //   },
+    // },
     onDisconnect() {
       console.log('disconnect')
     },
@@ -30,31 +30,31 @@ async function main() {
 
   try {
     await session.open()
-    await session.codeSnippet.run('console')
-    await session.codeSnippet.run('echo 2')
-    await session.codeSnippet.stop()
-    await session.codeSnippet.run('sleep 2')
-    await session.codeSnippet.stop()
+    // await session.codeSnippet.run('console')
+    // await session.codeSnippet.run('echo 2')
+    // await session.codeSnippet.stop()
+    // await session.codeSnippet.run('sleep 2')
+    // await session.codeSnippet.stop()
     const term = await session.terminal.createSession({
       onData: (data) => console.log(data),
       size: { cols: 20, rows: 40 },
       onChildProcessesChange: (cp) => console.log(cp),
     })
 
-    const term2 = await session.terminal.createSession({
-      onData: (data) => console.log(data),
-      size: { cols: 20, rows: 40 },
-    })
+    // const term2 = await session.terminal.createSession({
+    //   onData: (data) => console.log(data),
+    //   size: { cols: 20, rows: 40 },
+    // })
 
 
-    const p = await session.process.start({
-      cmd: 'echo 22',
-      onStdout: (o) => console.log(o.line)
-    })
+    // const p = await session.process.start({
+    //   cmd: 'echo 22',
+    //   onStdout: (o) => console.log(o.line)
+    // })
     // await p.sendStdin('xx')
-    await term.sendData('sleep 2\n')
-    await p.kill()
-    await term2.destroy()
+    // await term.sendData('sleep 2\n')
+    // await p.kill()
+    // await term2.destroy()
 
     // const files = await session.filesystem.listAllFiles('/')
     // console.log(files)
