@@ -18,14 +18,6 @@ export function formatSettledErrors<T>(settled: PromiseSettledResult<T>[]) {
     }, 'errors:\n')
 }
 
-export function evaluateSettledPromises<T>(settled: PromiseSettledResult<T>[]) {
-  if (settled.some(s => s.status === 'rejected')) {
-    throw new Error(formatSettledErrors(settled))
-  }
-
-  return settled.filter(assertFulfilled).map(s => s.value)
-}
-
 export function createDeferredPromise<T = void>() {
   let resolve: ((value: T) => void)
   let reject: ((reason?: unknown) => void)
