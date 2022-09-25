@@ -8,12 +8,14 @@ import (
 )
 
 type Manager struct {
-	procs *smap.Map[ID, Process]
+	procs  *smap.Map[ID, Process]
+	logger *zap.SugaredLogger
 }
 
-func NewManager() *Manager {
+func NewManager(logger *zap.SugaredLogger) *Manager {
 	return &Manager{
-		procs: smap.New[ID, Process](),
+		procs:  smap.New[ID, Process](),
+		logger: logger,
 	}
 }
 
@@ -32,8 +34,8 @@ func (m *Manager) Get(id ID) (*Process, bool) {
 	return m.procs.Get(id)
 }
 
-func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
-	proc, err := New(id, cmd, envVars, rootdir, logger)
+func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
+	proc, err := New(id, cmd, envVars, rootdir, m.logger)
 	if err != nil {
 		return nil, fmt.Errorf("error starting new process with id '%s': %+v", id, err)
 	}

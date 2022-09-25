@@ -70,10 +70,10 @@ func NewService(
 
 		scannerSubscriber: scannerSub,
 
-		stdoutSubs:          subscriber.NewManager(),
-		stderrSubs:          subscriber.NewManager(),
-		stateSubs:           subscriber.NewManager(),
-		scanOpenedPortsSubs: subscriber.NewManager(),
+		stdoutSubs:          subscriber.NewManager("codeSnippet/stdoutSubs", logger),
+		stderrSubs:          subscriber.NewManager("codeSnippet/stderrSubs", logger),
+		stateSubs:           subscriber.NewManager("codeSnippet/stateSubs", logger),
+		scanOpenedPortsSubs: subscriber.NewManager("codeSnippet/scanOpenedPortsSubs", logger),
 	}
 
 	go cs.listenToOpenPorts()
@@ -298,7 +298,7 @@ func (s *Service) Stop() CodeSnippetState {
 func (s *Service) State(ctx context.Context) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to code snippet state")
 
-	sub, _, err := s.stateSubs.Add(ctx, "", s.logger)
+	sub, _, err := s.stateSubs.Add(ctx, "")
 	if err != nil {
 		s.logger.Errorw("Failed to create a state subscription from context",
 			"ctx", ctx,
@@ -329,7 +329,7 @@ func (s *Service) State(ctx context.Context) (*rpc.Subscription, error) {
 func (s *Service) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to code snippet stdout")
 
-	sub, _, err := s.stdoutSubs.Add(ctx, "", s.logger)
+	sub, _, err := s.stdoutSubs.Add(ctx, "")
 	if err != nil {
 		s.logger.Errorw("Failed to create a stdout subscription from context",
 			"ctx", ctx,
@@ -356,7 +356,7 @@ func (s *Service) Stdout(ctx context.Context) (*rpc.Subscription, error) {
 func (s *Service) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to code snippet stderr")
 
-	sub, _, err := s.stderrSubs.Add(ctx, "", s.logger)
+	sub, _, err := s.stderrSubs.Add(ctx, "")
 	if err != nil {
 		s.logger.Errorw("Failed to create a stderr subscription from context",
 			"ctx", ctx,
@@ -383,7 +383,7 @@ func (s *Service) Stderr(ctx context.Context) (*rpc.Subscription, error) {
 func (s *Service) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to scanning open ports")
 
-	sub, _, err := s.scanOpenedPortsSubs.Add(ctx, "", s.logger)
+	sub, _, err := s.scanOpenedPortsSubs.Add(ctx, "")
 	if err != nil {
 		s.logger.Errorw("Failed to create a scan opened ports subscription from context",
 			"ctx", ctx,

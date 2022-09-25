@@ -10,12 +10,16 @@ import (
 )
 
 type Manager struct {
-	subs *smap.Map[rpc.ID, Subscriber]
+	subs   *smap.Map[rpc.ID, Subscriber]
+	label  string
+	logger *zap.SugaredLogger
 }
 
-func NewManager() *Manager {
+func NewManager(label string, logger *zap.SugaredLogger) *Manager {
 	return &Manager{
-		subs: smap.New[rpc.ID, Subscriber](),
+		label:  label,
+		logger: logger,
+		subs:   smap.New[rpc.ID, Subscriber](),
 	}
 }
 
@@ -32,29 +36,31 @@ func (m *Manager) Notify(id ID, data interface{}) error {
 }
 
 func (m *Manager) HasSubscribers(id ID) bool {
-	subs, err := m.GetByID(id)
+	subs := m.GetByID(id)
 
-	if err != nil {
-		return false
-	}
+	m.logger.Debugw("Remaining subscribers",
+		"subscription", m.label,
+		"ID", id,
+		"count", len(subs),
+	)
 
 	return len(subs) > 0
 }
 
-func (m *Manager) GetByID(id ID) ([]*Subscriber, error) {
+func (m *Manager) GetByID(id ID) []*Subscriber {
 	var subscribers []*Subscriber
 
-	err := m.subs.Iterate(func(_ rpc.ID, sub *Subscriber) error {
+	m.subs.Iterate(func(_ rpc.ID, sub *Subscriber) error {
 		if sub.ID == id {
 			subscribers = append(subscribers, sub)
 		}
 		return nil
 	})
 
-	return subscribers, err
+	return subscribers
 }
 
-func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*Subscriber, chan bool, error) {
+func (m *Manager) Add(ctx context.Context, id ID) (*Subscriber, chan bool, error) {
 	lastUnsubscribed := make(chan bool, 1)
 
 	sub, err := New(ctx, id)
@@ -68,20 +74,21 @@ func (m *Manager) Add(ctx context.Context, id ID, logger *zap.SugaredLogger) (*S
 		err := <-sub.Subscription.Err()
 
 		if err != nil {
-			logger.Errorw("Subscription error",
+			m.logger.Errorw("Subscription error",
 				"subID", sub.Subscription.ID,
+				"subscription", m.label,
 				"error", err,
 			)
 		}
 
 		m.subs.Remove(sub.Subscription.ID)
 
-		logger.Infow("Unsubscribed",
-			"subID",
-			sub.Subscription.ID,
+		m.logger.Infow("Unsubscribed",
+			"subscription", m.label,
+			"subID", sub.Subscription.ID,
 		)
 
-		if m.subs.Size() == 0 {
+		if !m.HasSubscribers(sub.ID) {
 			lastUnsubscribed <- true
 		}
 	}()

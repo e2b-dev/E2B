@@ -26,11 +26,11 @@ type Service struct {
 func NewService(logger *zap.SugaredLogger) *Service {
 	return &Service{
 		logger:    logger,
-		processes: NewManager(),
+		processes: NewManager(logger),
 
-		stdoutSubs: subscriber.NewManager(),
-		stderrSubs: subscriber.NewManager(),
-		exitSubs:   subscriber.NewManager(),
+		stdoutSubs: subscriber.NewManager("process/stdoutSubs", logger),
+		stderrSubs: subscriber.NewManager("process/stderrSubs", logger),
+		exitSubs:   subscriber.NewManager("process/exitSubs", logger),
 	}
 }
 
@@ -92,7 +92,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			id = xid.New().String()
 		}
 
-		newProc, err := s.processes.Add(id, cmd, envVars, rootdir, s.logger)
+		newProc, err := s.processes.Add(id, cmd, envVars, rootdir)
 		if err != nil {
 			notifyErr := s.exitSubs.Notify(id, struct{}{})
 			if notifyErr != nil {
@@ -310,7 +310,7 @@ func (s *Service) Kill(id ID) {
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to process exit")
 
-	sub, lastUnsubscribed, err := s.exitSubs.Add(ctx, id, s.logger)
+	sub, lastUnsubscribed, err := s.exitSubs.Add(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create an exit subscription from context",
 			"ctx", ctx,
@@ -351,7 +351,7 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 		"processID", id,
 	)
 
-	sub, lastUnsubscribed, err := s.stdoutSubs.Add(ctx, id, s.logger)
+	sub, lastUnsubscribed, err := s.stdoutSubs.Add(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create a stdout subscription from context",
 			"ctx", ctx,
@@ -377,7 +377,7 @@ func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error
 		"processID", id,
 	)
 
-	sub, lastUnsubscribed, err := s.stderrSubs.Add(ctx, id, s.logger)
+	sub, lastUnsubscribed, err := s.stderrSubs.Add(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create a stderr subscription from context",
 			"ctx", ctx,

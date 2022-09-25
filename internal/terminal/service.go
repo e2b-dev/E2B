@@ -32,12 +32,14 @@ type Service struct {
 
 func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
 	return &Service{
-		logger:             logger,
-		env:                env,
-		terminals:          NewManager(),
-		dataSubs:           subscriber.NewManager(),
-		childProcessesSubs: subscriber.NewManager(),
-		exitSubs:           subscriber.NewManager(),
+		logger: logger,
+
+		env:       env,
+		terminals: NewManager(logger),
+
+		dataSubs:           subscriber.NewManager("terminal/dataSubs", logger),
+		childProcessesSubs: subscriber.NewManager("terminal/childProcessesSubs", logger),
+		exitSubs:           subscriber.NewManager("terminal/exitSubs", logger),
 	}
 }
 
@@ -65,7 +67,6 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 		}
 
 		newTerm, err := s.terminals.Add(
-			s.logger,
 			id,
 			s.env.Shell(),
 			s.env.Workdir(),
@@ -270,7 +271,7 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		"terminalID", id,
 	)
 
-	sub, lastUnsubscribed, err := s.dataSubs.Add(ctx, id, s.logger)
+	sub, lastUnsubscribed, err := s.dataSubs.Add(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create a data subscription from context",
 			"ctx", ctx,
@@ -296,7 +297,7 @@ func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subsc
 		"terminalID", id,
 	)
 
-	sub, lastUnsubscribed, err := s.childProcessesSubs.Add(ctx, id, s.logger)
+	sub, lastUnsubscribed, err := s.childProcessesSubs.Add(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create a terminal child processes subscription",
 			"ctx", ctx,
@@ -331,7 +332,7 @@ func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subsc
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to terminal exit")
 
-	sub, lastUnsubscribed, err := s.exitSubs.Add(ctx, id, s.logger)
+	sub, lastUnsubscribed, err := s.exitSubs.Add(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create an exit subscription from context",
 			"ctx", ctx,

@@ -8,12 +8,14 @@ import (
 )
 
 type Manager struct {
-	terms *smap.Map[ID, Terminal]
+	terms  *smap.Map[ID, Terminal]
+	logger *zap.SugaredLogger
 }
 
-func NewManager() *Manager {
+func NewManager(logger *zap.SugaredLogger) *Manager {
 	return &Manager{
-		terms: smap.New[ID, Terminal](),
+		terms:  smap.New[ID, Terminal](),
+		logger: logger,
 	}
 }
 
@@ -33,14 +35,13 @@ func (m *Manager) Get(id ID) (*Terminal, bool) {
 }
 
 func (m *Manager) Add(
-	logger *zap.SugaredLogger,
 	id,
 	shell,
 	root string,
 	cols,
 	rows uint16,
 ) (*Terminal, error) {
-	term, err := New(id, shell, root, cols, rows, logger)
+	term, err := New(id, shell, root, cols, rows, m.logger)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new terminal: %+v", err)
 	}
