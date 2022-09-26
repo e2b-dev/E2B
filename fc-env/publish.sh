@@ -10,11 +10,12 @@ set -euo pipefail
 
 mkdir env
 
-# Download latest release of devbookd.
+# Download release of devbookd.
+version=v1.1.2
 os="Linux"
 arch="x86_64"
 exe="env/devbookd"
-devbookd_uri="https://github.com/devbookhq/devbookd/releases/latest/download/devbookd_${os}_${arch}.tar.gz"
+devbookd_uri="https://github.com/devbookhq/devbookd/releases/download/${version}/devbookd_${os}_${arch}.tar.gz"
 curl --fail --location --progress-bar --output "$exe.tar.gz" "$devbookd_uri"
 tar xzf "$exe.tar.gz" -C env
 chmod +x "$exe"
@@ -34,3 +35,5 @@ gsutil -h "Cache-Control:no-cache, max-age=0" \
 
 rm env.tar.gz
 rm -rf env
+
+echo Published devbookd VERSION ${version}
