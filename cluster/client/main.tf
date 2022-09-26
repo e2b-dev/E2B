@@ -77,18 +77,10 @@ resource "google_compute_instance_template" "client" {
   }
 
   disk {
-    source      = "orch-fc-envs"
-    auto_delete = false
-    boot        = false
-    device_name = "fc-envs"
-    mode        = "READ_WRITE"
-  }
-
-  disk {
     source      = "fc-envs"
     auto_delete = false
     boot        = false
-    device_name = "fc-envs-2"
+    device_name = "fc-envs"
     mode        = "READ_WRITE"
   }
 
