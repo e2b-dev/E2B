@@ -84,6 +84,14 @@ resource "google_compute_instance_template" "client" {
     mode        = "READ_WRITE"
   }
 
+  disk {
+    source      = "fc-envs"
+    auto_delete = false
+    boot        = false
+    device_name = "fc-envs-2"
+    mode        = "READ_WRITE"
+  }
+
   network_interface {
     network = var.network_name
 
