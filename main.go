@@ -38,6 +38,12 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	wsHandler.ServeHTTP(w, r)
 }
 
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	logger.Info("/ping request")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("pong"))
+}
+
 func parseFlags() {
 	// -mode="user" or -mode="server"
 	// "server" is default
@@ -117,6 +123,8 @@ func main() {
 	router := mux.NewRouter()
 	wsHandler = rpcServer.WebsocketHandler([]string{"*"})
 	router.HandleFunc("/ws", serveWs)
+	// The /ping route is used for the terminal extension to check if devbookd is running.
+	router.HandleFunc("/ping", pingHandler)
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 
