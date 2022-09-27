@@ -38,10 +38,6 @@ func New(id, shell, root string, cols, rows uint16, logger *zap.SugaredLogger) (
 	)
 	cmd.Dir = root
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGKILL,
-	}
-
 	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
 		Cols: cols,
 		Rows: rows,

@@ -37,10 +37,6 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 
 	cmd.Env = formattedVars
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGKILL,
-	}
-
 	return &Process{
 		ID:     id,
 		cmd:    cmd,
