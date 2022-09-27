@@ -66,7 +66,7 @@ cat << EOF > $service_file
   <key>Listeners</key>
   <dict>
     <key>SockServiceName</key>
-    <string>8010</string>
+    <string>49982</string>
     <key>SockType</key>
     <string>stream</string>
     <key>SockFamily</key>

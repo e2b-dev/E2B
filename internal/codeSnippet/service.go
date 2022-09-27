@@ -278,7 +278,7 @@ func (s *Service) Stop() CodeSnippetState {
 		return CodeSnippetStateStopped
 	}
 
-	sig := syscall.SIGTERM
+	sig := syscall.SIGKILL
 	if err := s.cmd.Process.Signal(sig); err != nil {
 		s.logger.Errorw("Failed to send a signal to the run command",
 			"cmd", s.cmd,

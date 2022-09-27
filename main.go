@@ -29,8 +29,11 @@ var (
 
 	rawRuntimeMode string
 	debug          bool
+	serverPort     uint
 	versionFlag    bool
-	Version        = "dev"
+
+	Version                = "dev"
+	defaultServerPort uint = 49982
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +69,13 @@ func parseFlags() {
 		"version",
 		false,
 		"print devbookd version",
+	)
+
+	flag.UintVar(
+		&serverPort,
+		"port",
+		defaultServerPort,
+		"a port on which the daemon should run",
 	)
 
 	flag.Parse()
@@ -131,11 +141,13 @@ func main() {
 	server := &http.Server{
 		ReadTimeout:  120 * time.Second,
 		WriteTimeout: 120 * time.Second,
-		Addr:         ":8010",
+		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      router,
 	}
 
-	logger.Info("Starting server on the port :8010")
+	logger.Infow("Starting server",
+		"port", serverPort,
+	)
 	if err := server.ListenAndServe(); err != nil {
 		logger.Errorw("Failed to start the server", "error", err)
 	}

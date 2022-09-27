@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"sync"
 	"sync/atomic"
+	"syscall"
 
 	"github.com/devbookhq/devbookd/internal/process"
 	"go.uber.org/zap"
@@ -36,6 +37,10 @@ func New(id, shell, root string, cols, rows uint16, logger *zap.SugaredLogger) (
 		"TERM=xterm",
 	)
 	cmd.Dir = root
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGKILL,
+	}
 
 	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
 		Cols: cols,
@@ -88,22 +93,28 @@ func (t *Terminal) Read(b []byte) (int, error) {
 }
 
 func (t *Terminal) Destroy() {
-	if err := t.cmd.Process.Kill(); err != nil {
+	t.logger.Info("lock")
+	t.mu.Lock()
+	defer t.logger.Info("unlock")
+	defer t.mu.Unlock()
+
+	if t.IsDestroyed() {
+		t.logger.Debugw("Terminal was already destroyed",
+			"terminalID", t.ID,
+			"cmd", t.cmd,
+			"pid", t.cmd.Process.Pid,
+		)
+		return
+	} else {
+		t.SetIsDestroyed(true)
+	}
+
+	if err := t.cmd.Process.Signal(syscall.SIGKILL); err != nil {
 		t.logger.Warnw("Failed to kill terminal process",
 			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 			"error", err,
-			"isDestroyed", t.IsDestroyed(),
-		)
-	}
-	if _, err := t.cmd.Process.Wait(); err != nil {
-		t.logger.Warnw("Failed to wait for terminal process to exit",
-			"terminalID", t.ID,
-			"cmd", t.cmd,
-			"pid", t.cmd.Process.Pid,
-			"error", err,
-			"isDestroyed", t.IsDestroyed(),
 		)
 	}
 	if err := t.tty.Close(); err != nil {
@@ -113,10 +124,8 @@ func (t *Terminal) Destroy() {
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 			"error", err,
-			"isDestroyed", t.IsDestroyed(),
 		)
 	}
-	t.SetIsDestroyed(true)
 }
 
 func (t *Terminal) Write(b []byte) (int, error) {
