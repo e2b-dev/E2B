@@ -93,9 +93,7 @@ func (t *Terminal) Read(b []byte) (int, error) {
 }
 
 func (t *Terminal) Destroy() {
-	t.logger.Info("lock")
 	t.mu.Lock()
-	defer t.logger.Info("unlock")
 	defer t.mu.Unlock()
 
 	if t.IsDestroyed() {
