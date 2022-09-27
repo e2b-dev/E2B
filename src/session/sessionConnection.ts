@@ -51,6 +51,7 @@ export interface SessionConnectionOpts {
   debug?: boolean
   editEnabled?: boolean
   __debug_hostname?: string
+  __debug_port?: number
   __debug_devEnv?: 'remote' | 'local'
 }
 
@@ -217,7 +218,7 @@ abstract class SessionConnection {
       }
     }
 
-    const hostname = this.getHostname(WS_PORT)
+    const hostname = this.getHostname(this.opts.__debug_port || WS_PORT)
 
     if (!hostname) {
       throw new Error('Cannot get session\'s hostname')
