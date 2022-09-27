@@ -55,7 +55,7 @@ func (p *Process) Kill() {
 
 	if p.HasExited() {
 		p.logger.Debugw("Process was already killed",
-			"terminalID", p.ID,
+			"processID", p.ID,
 			"cmd", p.cmd,
 			"pid", p.cmd.Process.Pid,
 		)
