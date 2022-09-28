@@ -10,9 +10,9 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger(logDir string, debug bool) (*zap.SugaredLogger, error) {
+func NewLogger(logDir string, debug bool, mmds bool) (*zap.SugaredLogger, error) {
 	if logDir == "" {
-		return nil, fmt.Errorf("cannot create a logger, passed logDir string is empty")
+		return nil, fmt.Errorf("error creating logger, passed logDir string is empty")
 	}
 
 	outputPaths := fmt.Sprintf("\"%s\"", path.Join(logDir, "devbookd.log"))
@@ -48,6 +48,22 @@ func NewLogger(logDir string, debug bool) (*zap.SugaredLogger, error) {
 	l, err := cfg.Build()
 	if err != nil {
 		return nil, err
+	}
+
+	if mmds {
+		mmds := newMMDSWriter()
+
+		level := zap.ErrorLevel
+		if debug {
+			level = zap.DebugLevel
+		}
+
+		core := zapcore.NewTee(
+			l.Core(),
+			zapcore.NewCore(zapcore.NewJSONEncoder(cfg.EncoderConfig), zapcore.AddSync(mmds), level),
+		)
+
+		l = zap.New(core)
 	}
 
 	return l.Sugar(), nil

@@ -93,6 +93,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	
 	logger = l
 	defer logger.Sync()
 	logger.Info("Logger and environment construction succeeded")
