@@ -51,7 +51,7 @@ func NewLogger(logDir string, debug bool, mmds bool) (*zap.SugaredLogger, error)
 	}
 
 	if mmds {
-		mmds := newMMDSWriter()
+		sessionWriter := newSessionWriter()
 
 		level := zap.ErrorLevel
 		if debug {
@@ -60,7 +60,7 @@ func NewLogger(logDir string, debug bool, mmds bool) (*zap.SugaredLogger, error)
 
 		core := zapcore.NewTee(
 			l.Core(),
-			zapcore.NewCore(zapcore.NewJSONEncoder(cfg.EncoderConfig), zapcore.AddSync(mmds), level),
+			zapcore.NewCore(zapcore.NewJSONEncoder(cfg.EncoderConfig), zapcore.AddSync(sessionWriter), level),
 		)
 
 		l = zap.New(core)
