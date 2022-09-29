@@ -177,6 +177,10 @@ function startfc() {
   "machine-config": {
     "vcpu_count": 1,
     "mem_size_mib": 512
+  },
+  "mmds-config": {
+    "network_interfaces": ["eth0"],
+    "version": "V2"
   }
 }
 EOF

@@ -15,10 +15,11 @@ ip -n $NAMESPACE addr add "${TAP_IP}${MASK_SHORT}" dev "$TAP_DEV"
 ip -n $NAMESPACE link set dev "$TAP_DEV" up
 
 # FILESYSTEM
-CODE_SNIPPET_ID="moiGcf40TPsT"
-TMP="/tmp/${NAMESPACE}"
+CODE_SNIPPET_ID="Nodejs"
 
 WORKDIR="/mnt/disks/fc-envs/${CODE_SNIPPET_ID}"
+
+TMP="$WORKDIR/session-envs/${NAMESPACE}"
 BUILD_ID=`cat build_id`
 mkdir builds/${BUILD_ID} > /dev/null 2>&1 || true
 
@@ -28,7 +29,7 @@ mkdir -p $TMP
 ROOTFS=$TMP/rootfs.ext4
 
 # Don't use relative soft link
-ln -s ${WORKDIR}/ts/rootfs.ext4 $ROOTFS
+cp --reflink ${WORKDIR}/rootfs.ext4 $ROOTFS
 
 # FC
 FC_SOCKET="/tmp/firecracker.socket"

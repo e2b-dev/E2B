@@ -302,9 +302,21 @@ func (d *Driver) initializeFC(
 		}
 	}()
 
-	if opts.validMetadata != nil {
-		m.SetMetadata(vmmCtx, opts.validMetadata)
+	err = m.SetMetadata(vmmCtx, struct {
+		sessionID     string
+		codeSnippetID string
+		address       string
+	}{
+		sessionID:     slot.SessionID,
+		codeSnippetID: taskConfig.CodeSnippetID,
+		address: ,
+	})
+	if err != nil {
+		telemetry.ReportCriticalError(childCtx, err)
+		return nil, err
 	}
+
+	telemetry.ReportEvent(childCtx, "updated mmds metadata")
 
 	pid, errpid := m.PID()
 	if errpid != nil {
