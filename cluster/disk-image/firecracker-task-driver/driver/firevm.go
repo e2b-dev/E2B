@@ -309,7 +309,7 @@ func (d *Driver) initializeFC(
 	}{
 		sessionID:     slot.SessionID,
 		codeSnippetID: taskConfig.CodeSnippetID,
-		address: ,
+		address:       taskConfig.LogsProxyAddress,
 	})
 	if err != nil {
 		telemetry.ReportCriticalError(childCtx, err)

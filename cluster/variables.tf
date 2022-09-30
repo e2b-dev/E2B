@@ -82,3 +82,10 @@ variable "network_name" {
   type    = string
   default = "default"
 }
+
+variable "logs_proxy_port" {
+  type = object({
+    name = string
+    port = number
+  })
+}

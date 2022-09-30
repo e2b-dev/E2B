@@ -35,6 +35,7 @@ job "session/dev" {
         EditEnabled = false
         SpanID = ""
         TraceID = ""
+        LogsProxyAddress = ""
       }
     }
   }

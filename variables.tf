@@ -75,6 +75,17 @@ variable "session_proxy_port" {
   }
 }
 
+variable "logs_proxy_port" {
+  type = object({
+    name = string
+    port = number
+  })
+  default = {
+    name = "logs"
+    port = 30006
+  }
+}
+
 variable "api_port" {
   type = object({
     name        = string

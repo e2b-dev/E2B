@@ -9,3 +9,16 @@ resource "nomad_job" "otel-collector" {
     }
   }
 }
+
+resource "nomad_job" "logs-collector" {
+  jobspec = file("${path.module}/logs-collector.hcl")
+
+  hcl2 {
+    enabled = true
+    vars = {
+      logs_port_number = var.logs_proxy_port.port
+      logs_port_name   = var.logs_proxy_port.name
+      gcp_zone         = var.gcp_zone
+    }
+  }
+}

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"path"
 	"text/template"
 	"time"
@@ -28,6 +29,10 @@ const (
 	shortNodeIDLength        = 8
 	nomadTaskRunningState    = "running"
 	nomadTaskDeadState       = "dead"
+)
+
+var (
+	logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
 )
 
 func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
@@ -101,23 +106,25 @@ jobRegister:
 		default:
 			var jobDef bytes.Buffer
 			jobVars := struct {
-				SpanID        string
-				TraceID       string
-				CodeSnippetID string
-				SessionID     string
-				FCTaskName    string
-				JobName       string
-				FCEnvsDisk    string
-				EditEnabled   bool
+				SpanID           string
+				TraceID          string
+				CodeSnippetID    string
+				SessionID        string
+				LogsProxyAddress string
+				FCTaskName       string
+				JobName          string
+				FCEnvsDisk       string
+				EditEnabled      bool
 			}{
-				SpanID:        spanID,
-				TraceID:       traceID,
-				CodeSnippetID: newSession.CodeSnippetID,
-				SessionID:     sessionID,
-				FCTaskName:    fcTaskName,
-				JobName:       sessionsJobName,
-				FCEnvsDisk:    fcEnvsDisk,
-				EditEnabled:   *newSession.EditEnabled,
+				SpanID:           spanID,
+				TraceID:          traceID,
+				LogsProxyAddress: logsProxyAddress,
+				CodeSnippetID:    newSession.CodeSnippetID,
+				SessionID:        sessionID,
+				FCTaskName:       fcTaskName,
+				JobName:          sessionsJobName,
+				FCEnvsDisk:       fcEnvsDisk,
+				EditEnabled:      *newSession.EditEnabled,
 			}
 
 			err = sessionsJobTemp.Execute(&jobDef, jobVars)

@@ -18,6 +18,10 @@ variable "nomad_address" {
   type = string
 }
 
+variable "logs_proxy_address" {
+  type = string
+}
+
 variable "supabase_url" {
   type = string
 }
@@ -66,10 +70,11 @@ job "orchestration-api" {
       }
 
       env {
-        NOMAD_ADDRESS = var.nomad_address
-        SUPABASE_URL  = var.supabase_url
-        SUPABASE_KEY  = var.supabase_key
-        API_ADMIN_KEY = var.api_admin_key
+        LOGS_PROXY_ADDRESS = var.logs_proxy_address
+        NOMAD_ADDRESS      = var.nomad_address
+        SUPABASE_URL       = var.supabase_url
+        SUPABASE_KEY       = var.supabase_key
+        API_ADMIN_KEY      = var.api_admin_key
       }
 
       config {

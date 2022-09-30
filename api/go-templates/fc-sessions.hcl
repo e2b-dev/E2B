@@ -35,6 +35,7 @@ job "{{ .JobName }}/{{ .SessionID }}" {
         EditEnabled = "{{ .EditEnabled }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"
+        LogsProxyAddress = "{{ .LogsProxyAddress }}"
       }
     }
   }

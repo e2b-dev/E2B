@@ -70,11 +70,12 @@ var (
 	// taskConfigSpec is the hcl specification for the driver config section of
 	// a task within a job. It is returned in the TaskConfigSchema RPC
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"SessionID":     hclspec.NewAttr("SessionID", "string", false),
-		"CodeSnippetID": hclspec.NewAttr("CodeSnippetID", "string", false),
-		"EditEnabled":   hclspec.NewAttr("EditEnabled", "bool", false),
-		"SpanID":        hclspec.NewAttr("SpanID", "string", false),
-		"TraceID":       hclspec.NewAttr("TraceID", "string", false),
+		"SessionID":        hclspec.NewAttr("SessionID", "string", false),
+		"CodeSnippetID":    hclspec.NewAttr("CodeSnippetID", "string", false),
+		"EditEnabled":      hclspec.NewAttr("EditEnabled", "bool", false),
+		"SpanID":           hclspec.NewAttr("SpanID", "string", false),
+		"TraceID":          hclspec.NewAttr("TraceID", "string", false),
+		"LogsProxyAddress": hclspec.NewAttr("LogsProxyAddress", "string", false),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -128,11 +129,12 @@ type Nic struct {
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
-	TraceID       string `codec:"TraceID"`
-	SpanID        string `codec:"SpanID"`
-	SessionID     string `codec:"SessionID"`
-	EditEnabled   bool   `codec:"EditEnabled"`
-	CodeSnippetID string `codec:"CodeSnippetID"`
+	TraceID          string `codec:"TraceID"`
+	SpanID           string `codec:"SpanID"`
+	SessionID        string `codec:"SessionID"`
+	LogsProxyAddress string `codec:"LogsProxyAddress"`
+	EditEnabled      bool   `codec:"EditEnabled"`
+	CodeSnippetID    string `codec:"CodeSnippetID"`
 }
 
 // TaskState is the state which is encoded in the handle returned in

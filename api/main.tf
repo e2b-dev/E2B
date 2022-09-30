@@ -35,14 +35,15 @@ resource "nomad_job" "api" {
   hcl2 {
     enabled = true
     vars = {
-      supabase_key    = data.google_secret_manager_secret_version.supabase_key.secret_data
-      supabase_url    = data.google_secret_manager_secret_version.supabase_url.secret_data
-      api_admin_key   = data.google_secret_manager_secret_version.api_admin_key.secret_data
-      gcp_zone        = var.gcp_zone
-      api_port_number = var.api_port.port
-      api_port_name   = var.api_port.name
-      nomad_address   = var.nomad_address
-      image_name      = resource.docker_image.api_image.repo_digest
+      logs_proxy_address = var.logs_proxy_address
+      supabase_key       = data.google_secret_manager_secret_version.supabase_key.secret_data
+      supabase_url       = data.google_secret_manager_secret_version.supabase_url.secret_data
+      api_admin_key      = data.google_secret_manager_secret_version.api_admin_key.secret_data
+      gcp_zone           = var.gcp_zone
+      api_port_number    = var.api_port.port
+      api_port_name      = var.api_port.name
+      nomad_address      = var.nomad_address
+      image_name         = resource.docker_image.api_image.repo_digest
     }
   }
 }

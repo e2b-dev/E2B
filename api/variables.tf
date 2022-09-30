@@ -6,6 +6,10 @@ variable "nomad_address" {
   type = string
 }
 
+variable "logs_proxy_address" {
+  type = string
+}
+
 variable "api_port" {
   type = object({
     name        = string

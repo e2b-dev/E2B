@@ -39,6 +39,8 @@ module "cluster" {
 
   session_proxy_service_name = var.session_proxy_service_name
 
+  logs_proxy_port = var.logs_proxy_port
+
   session_proxy_port       = var.session_proxy_port
   client_proxy_health_port = var.client_proxy_health_port
   client_proxy_port        = var.client_proxy_port
@@ -60,6 +62,7 @@ module "telemetry" {
     module.cluster,
   ]
 
+  logs_proxy_port   = var.logs_proxy_port
   lightstep_api_key = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
   gcp_zone          = var.gcp_zone
 }
@@ -100,6 +103,7 @@ module "api" {
   ]
   gcp_zone = var.gcp_zone
 
-  nomad_address = "http://${module.cluster.server_proxy_ip}"
-  api_port      = var.api_port
+  logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
+  nomad_address      = "http://${module.cluster.server_proxy_ip}"
+  api_port           = var.api_port
 }

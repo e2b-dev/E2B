@@ -285,3 +285,10 @@ variable "root_volume_disk_type" {
 variable "gcp_project_id" {
   type = string
 }
+
+variable "logs_proxy_port" {
+  type = object({
+    name = string
+    port = number
+  })
+}
