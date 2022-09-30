@@ -211,7 +211,7 @@ export interface components {
   readonly schemas: {
     readonly HubDatabase: {
       /** @description Connectiong string to the database. */
-      readonly dbURL?: string;
+      readonly dbURL: string;
     };
     /** @enum {string} */
     readonly Template:
@@ -220,7 +220,6 @@ export interface components {
       | "Bash"
       | "Rust"
       | "Python3"
-      | "Ansys"
       | "Typescript";
     /** @enum {string} */
     readonly EnvironmentState: "Building" | "Failed" | "Done";
