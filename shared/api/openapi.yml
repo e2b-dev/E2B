@@ -84,8 +84,8 @@ components:
 
   schemas:
     HubDatabase:
-      reuired:
-        dbURL
+      required:
+        - dbURL
       properties:
         dbURL:
           type: string
@@ -99,7 +99,6 @@ components:
         - Bash
         - Rust
         - Python3
-        - Ansys
         - Typescript
     EnvironmentState:
       type: string
@@ -355,4 +354,3 @@ paths:
                 $ref: "#/components/schemas/HubDatabase"
         500:
           $ref: "#/components/responses/500"
-
