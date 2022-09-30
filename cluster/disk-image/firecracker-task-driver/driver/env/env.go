@@ -192,11 +192,11 @@ func New(
 		}
 
 		childSpan.SetAttributes(
-			attribute.String("env.session_env_path", sessionEnvPath),
-			attribute.String("env.snapshot_root_path", snapshotRootPath),
-			attribute.String("env.build_dir_path", buildDirPath),
-			attribute.String("env.code_snippet_env_path", codeSnippetEnvPath),
-			attribute.String("env.edit_id", editID),
+			attribute.String("session_env_path", sessionEnvPath),
+			attribute.String("snapshot_root_path", snapshotRootPath),
+			attribute.String("build_dir_path", buildDirPath),
+			attribute.String("code_snippet_env_path", codeSnippetEnvPath),
+			attribute.String("edit_id", editID),
 		)
 
 		return &Env{
@@ -257,10 +257,10 @@ func New(
 		}
 
 		childSpan.SetAttributes(
-			attribute.String("env.session_env_path", sessionEnvPath),
-			attribute.String("env.snapshot_root_path", snapshotRootPath),
-			attribute.String("env.build_dir_path", buildDirPath),
-			attribute.String("env.code_snippet_env_path", codeSnippetEnvPath),
+			attribute.String("session_env_path", sessionEnvPath),
+			attribute.String("snapshot_root_path", snapshotRootPath),
+			attribute.String("build_dir_path", buildDirPath),
+			attribute.String("code_snippet_env_path", codeSnippetEnvPath),
 		)
 
 		return &Env{
@@ -278,17 +278,17 @@ func (env *Env) Delete(
 ) error {
 	childCtx, childSpan := tracer.Start(ctx, "delete-env",
 		trace.WithAttributes(
-			attribute.String("env.session_env_path", env.SessionEnvPath),
-			attribute.String("env.snapshot_root_path", env.SnapshotRootPath),
-			attribute.String("env.build_dir_path", env.BuildDirPath),
-			attribute.String("env.code_snippet_env_path", env.CodeSnippetEnvPath),
+			attribute.String("session_env_path", env.SessionEnvPath),
+			attribute.String("snapshot_root_path", env.SnapshotRootPath),
+			attribute.String("build_dir_path", env.BuildDirPath),
+			attribute.String("code_snippet_env_path", env.CodeSnippetEnvPath),
 		),
 	)
 	defer childSpan.End()
 
 	if env.EditID != nil {
 		childSpan.SetAttributes(
-			attribute.String("env.edit_id", *env.EditID),
+			attribute.String("edit_id", *env.EditID),
 		)
 	}
 

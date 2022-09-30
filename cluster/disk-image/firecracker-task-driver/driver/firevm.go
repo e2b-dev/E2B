@@ -338,21 +338,21 @@ func (d *Driver) initializeFC(
 	}
 
 	childSpan.SetAttributes(
-		attribute.String("instance.alloc_id", info.AllocId),
-		attribute.String("instance.pid", info.Pid),
-		attribute.String("instance.snapshot_root_path", info.SnapshotRootPath),
-		attribute.String("instance.socket_path", info.SocketPath),
-		attribute.String("instance.code_snippet_id", info.CodeSnippetID),
-		attribute.String("instance.code_snippet_directory", info.CodeSnippetDirectory),
-		attribute.String("instance.build_dir_path", info.BuildDirPath),
-		attribute.String("instance.cmd", info.Cmd.String()),
-		attribute.String("instance.cmd.dir", info.Cmd.Dir),
-		attribute.String("instance.cmd.path", info.Cmd.Path),
+		attribute.String("alloc_id", info.AllocId),
+		attribute.String("pid", info.Pid),
+		attribute.String("snapshot_root_path", info.SnapshotRootPath),
+		attribute.String("socket_path", info.SocketPath),
+		attribute.String("code_snippet_id", info.CodeSnippetID),
+		attribute.String("code_snippet_directory", info.CodeSnippetDirectory),
+		attribute.String("build_dir_path", info.BuildDirPath),
+		attribute.String("cmd", info.Cmd.String()),
+		attribute.String("cmd.dir", info.Cmd.Dir),
+		attribute.String("cmd.path", info.Cmd.Path),
 	)
 
 	if info.EditID != nil {
 		childSpan.SetAttributes(
-			attribute.String("instance.edit_id", *info.EditID),
+			attribute.String("edit_id", *info.EditID),
 		)
 	}
 
