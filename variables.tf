@@ -86,6 +86,19 @@ variable "logs_proxy_port" {
   }
 }
 
+variable "logs_health_proxy_port" {
+  type = object({
+    name        = string
+    port        = number
+    health_path = string
+  })
+  default = {
+    name        = "logs-health"
+    port        = 44313
+    health_path = "/health"
+  }
+}
+
 variable "api_port" {
   type = object({
     name        = string

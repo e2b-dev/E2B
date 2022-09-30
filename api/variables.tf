@@ -6,10 +6,6 @@ variable "nomad_address" {
   type = string
 }
 
-variable "logs_proxy_address" {
-  type = string
-}
-
 variable "api_port" {
   type = object({
     name        = string
@@ -21,4 +17,8 @@ variable "api_port" {
 variable "image_name" {
   type    = string
   default = "us-central1-docker.pkg.dev/devbookhq/orchestration/api"
+}
+
+variable "logs_proxy_address" {
+  type = string
 }

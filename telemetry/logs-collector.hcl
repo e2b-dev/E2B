@@ -2,11 +2,27 @@ variable "gcp_zone" {
   type = string
 }
 
-variables {
-  otel_image = "otel/opentelemetry-collector-contrib:0.59.0"
+variable "logs_port_number" {
+  type = number
 }
 
-job "otel-collector" {
+variable "logs_health_port_number" {
+  type = string
+}
+
+variable "logs_health_path" {
+  type = string
+}
+
+variable "logs_port_name" {
+  type = string
+}
+
+variable "logtail_api_key" {
+  type = string
+}
+
+job "logs-collector" {
   datacenters = [var.gcp_zone]
   type        = "service"
 
@@ -17,31 +33,28 @@ job "otel-collector" {
 
     network {
       port "health" {
-        to = 13133
+        to = var.logs_health_port_number
       }
-
-      port "metrics" {
-        to = 8888
-      }
-
-      # Receivers
-      port "grpc" {
-        to = 4317
+      port "logs" {
+        to = var.logs_port_number
       }
     }
 
     service {
-      name = "otel-collector"
-      port = "grpc"
-      tags = ["grpc"]
+      name = "logs-collector"
+      port = "logs"
+      tags = [
+        "logs",
+        "health",
+      ]
 
       check {
         type     = "http"
         name     = "health"
-        path     = "/health"
+        path     = var.logs_health_path
         interval = "20s"
         timeout  = "5s"
-        port     = 13133
+        port     = var.logs_health_port_number
       }
     }
 
@@ -50,17 +63,17 @@ job "otel-collector" {
 
       config {
         network_mode = "host"
-        image        = var.otel_image
-
-        args = [
-          "--config=local/config/otel-collector-config.yaml",
-        ]
+        image        = "timberio/vector:0.14.X-alpine"
 
         ports = [
-          "metrics",
-          "grpc",
           "health",
+          "logs",
         ]
+      }
+
+      env {
+        VECTOR_CONFIG          = "local/vector.toml"
+        VECTOR_REQUIRE_HEALTHY = "true"
       }
 
       resources {
@@ -69,9 +82,39 @@ job "otel-collector" {
       }
 
       template {
-        data = <<EOF
-EOF
-        destination = "local/config/otel-collector-config.yaml"
+        destination   = "local/vector.toml"
+        change_mode   = "signal"
+        change_signal = "SIGHUP"
+        # overriding the delimiters to [[ ]] to avoid conflicts with Vector's native templating, which also uses {{ }}
+        left_delimiter  = "[["
+        right_delimiter = "]]"
+        data            = <<EOH
+data_dir = "alloc/data/vector/"
+
+[api]
+  enabled = true
+  address = "0.0.0.0:${var.logs_health_port_number}"
+
+[sources.http_source]
+type = "http"
+address = "0.0.0.0:${var.logs_port_number}"
+encoding = "json"
+
+[transforms.logtail_transform_Ng2hNptjHFG5TLHYJnMKdrAY]
+type = "remap"
+inputs = [ "*" ]
+source = '''
+  .dt = del(.timestamp)
+'''
+
+[sinks.logtail_http_sink_Ng2hNptjHFG5TLHYJnMKdrAY]
+type = "http"
+inputs = [ "logtail_transform_Ng2hNptjHFG5TLHYJnMKdrAY" ]
+uri = "https://in.logtail.com/"
+encoding.codec = "json"
+auth.strategy = "bearer"
+auth.token = "${var.logtail_api_key}"
+        EOH
       }
     }
   }

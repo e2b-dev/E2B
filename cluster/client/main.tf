@@ -19,6 +19,16 @@ resource "google_compute_instance_group_manager" "client_cluster" {
   }
 
   named_port {
+    name = var.logs_health_proxy_port.name
+    port = var.logs_health_proxy_port.port
+  }
+
+  named_port {
+    name = var.logs_proxy_port.name
+    port = var.logs_proxy_port.port
+  }
+
+  named_port {
     name = var.api_port.name
     port = var.api_port.port
   }
@@ -175,7 +185,7 @@ module "gce_lb_http" {
       port                            = var.client_proxy_port.port
       port_name                       = var.client_proxy_port.name
       timeout_sec                     = 86400
-      connection_draining_timeout_sec = null
+      connection_draining_timeout_sec = 1
       enable_cdn                      = false
       security_policy                 = null
       session_affinity                = null
@@ -227,7 +237,7 @@ module "gce_lb_http" {
       port                            = var.api_port.port
       port_name                       = var.api_port.name
       timeout_sec                     = 30
-      connection_draining_timeout_sec = null
+      connection_draining_timeout_sec = 1
       enable_cdn                      = false
       security_policy                 = null
       session_affinity                = null
@@ -242,6 +252,74 @@ module "gce_lb_http" {
         unhealthy_threshold = null
         request_path        = var.api_port.health_path
         port                = var.api_port.port
+        host                = null
+        logging             = null
+      }
+
+      log_config = {
+        enable      = true
+        sample_rate = 1.0
+      }
+
+      groups = [
+        {
+          group                        = google_compute_instance_group_manager.client_cluster.instance_group
+          balancing_mode               = null
+          capacity_scaler              = null
+          description                  = null
+          max_connections              = null
+          max_connections_per_instance = null
+          max_connections_per_endpoint = null
+          max_rate                     = null
+          max_rate_per_instance        = null
+          max_rate_per_endpoint        = null
+          max_utilization              = null
+        },
+      ]
+
+      iap_config = {
+        enable               = false
+        oauth2_client_id     = ""
+        oauth2_client_secret = ""
+      }
+    }
+  }
+}
+
+module "gce_lb_http_logs" {
+  source         = "GoogleCloudPlatform/lb-http/google"
+  version        = "~> 5.1"
+  name           = "orch-external-logs-endpoint"
+  project        = var.gcp_project_id
+  address        = "34.110.214.205"
+  create_address = false
+  target_tags = [
+    var.cluster_tag_name,
+  ]
+  firewall_networks = [var.network_name]
+
+  backends = {
+    default = {
+      description                     = null
+      protocol                        = "HTTP"
+      port                            = var.logs_proxy_port.port
+      port_name                       = var.logs_proxy_port.name
+      timeout_sec                     = 20
+      connection_draining_timeout_sec = 1
+      enable_cdn                      = false
+      security_policy                 = null
+      session_affinity                = null
+      affinity_cookie_ttl_sec         = null
+      custom_request_headers          = null
+      custom_response_headers         = null
+
+      health_check = {
+        check_interval_sec  = null
+        timeout_sec         = null
+        healthy_threshold   = null
+        unhealthy_threshold = null
+        request_path        = var.logs_health_proxy_port.health_path
+        port                = var.logs_health_proxy_port.port
         host                = null
         logging             = null
       }

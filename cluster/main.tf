@@ -22,8 +22,6 @@ module "server_cluster" {
   machine_type = var.server_machine_type
   image_family = var.server_image_family
 
-  logs_proxy_port = var.logs_proxy_port
-
   gcp_project_id = var.gcp_project_id
   network_name   = var.network_name
 }
@@ -51,6 +49,9 @@ module "client_cluster" {
 
   gcp_project_id = var.gcp_project_id
   network_name   = var.network_name
+
+  logs_health_proxy_port = var.logs_health_proxy_port
+  logs_proxy_port        = var.logs_proxy_port
 
   client_proxy_port        = var.client_proxy_port
   client_proxy_health_port = var.client_proxy_health_port

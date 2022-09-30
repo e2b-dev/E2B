@@ -89,3 +89,11 @@ variable "logs_proxy_port" {
     port = number
   })
 }
+
+variable "logs_health_proxy_port" {
+  type = object({
+    name        = string
+    port        = number
+    health_path = string
+  })
+}

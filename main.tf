@@ -39,7 +39,8 @@ module "cluster" {
 
   session_proxy_service_name = var.session_proxy_service_name
 
-  logs_proxy_port = var.logs_proxy_port
+  logs_health_proxy_port = var.logs_health_proxy_port
+  logs_proxy_port        = var.logs_proxy_port
 
   session_proxy_port       = var.session_proxy_port
   client_proxy_health_port = var.client_proxy_health_port
@@ -55,24 +56,23 @@ data "google_secret_manager_secret_version" "lightstep_api_key" {
   secret = "lightstep-api-key"
 }
 
+data "google_secret_manager_secret_version" "logtail_api_key" {
+  secret = "logtail-api-key"
+}
+
 module "telemetry" {
   source = "./telemetry"
 
-  depends_on = [
-    module.cluster,
-  ]
 
-  logs_proxy_port   = var.logs_proxy_port
-  lightstep_api_key = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
-  gcp_zone          = var.gcp_zone
+  logs_health_proxy_port = var.logs_health_proxy_port
+  logs_proxy_port        = var.logs_proxy_port
+  lightstep_api_key      = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
+  logtail_api_key        = data.google_secret_manager_secret_version.logtail_api_key.secret_data
+  gcp_zone               = var.gcp_zone
 }
 
 module "session_proxy" {
   source = "./session-proxy"
-
-  depends_on = [
-    module.cluster,
-  ]
 
   client_cluster_size        = var.client_cluster_size
   gcp_zone                   = var.gcp_zone
@@ -84,10 +84,6 @@ module "session_proxy" {
 module "client_proxy" {
   source = "./client-proxy"
 
-  depends_on = [
-    module.cluster,
-    module.session_proxy,
-  ]
   gcp_zone                   = var.gcp_zone
   session_proxy_service_name = var.session_proxy_service_name
 
@@ -98,9 +94,6 @@ module "client_proxy" {
 module "api" {
   source = "./api"
 
-  depends_on = [
-    module.cluster,
-  ]
   gcp_zone = var.gcp_zone
 
   logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
