@@ -99,7 +99,6 @@ components:
         - Bash
         - Rust
         - Python3
-        - Ansys
         - Typescript
     EnvironmentState:
       type: string
