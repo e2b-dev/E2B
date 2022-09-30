@@ -56,8 +56,6 @@ func (w *sessionWriter) getMMDSToken() (string, error) {
 		return "", err
 	}
 
-	fmt.Println("response Body:", string(body))
-
 	return string(body), nil
 }
 
