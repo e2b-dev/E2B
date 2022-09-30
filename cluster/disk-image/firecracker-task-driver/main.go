@@ -4,7 +4,7 @@ import (
 	"flag"
 	"time"
 
-	firevm "github.com/cneira/firecracker-task-driver/driver"
+	driver "github.com/devbookhq/firecracker-task-driver/internal"
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
 
@@ -48,10 +48,9 @@ func main() {
 		defer otelLauncher.Shutdown()
 	}
 
-	// Serve the plugin
 	plugins.Serve(factory)
 }
 
 func factory(log log.Logger) interface{} {
-	return firevm.NewFirecrackerDriver(log)
+	return driver.NewFirecrackerDriver(log)
 }

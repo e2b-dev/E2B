@@ -11,7 +11,7 @@ set-project-gcloud:
 	gcloud config set project devbookhq
 
 generate:
-	cd driver/client && swagger generate client -f firecracker.yml -A firecracker
+	cd internal/client && swagger generate client -f firecracker.yml -A firecracker
 
 # request for the pprof works in the browser but there are some problems with the requests from terminal
 # You run the parametrized command like this:
