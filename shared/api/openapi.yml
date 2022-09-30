@@ -27,7 +27,7 @@ servers:
         default: _clientID
       port:
         description: Port to connect to
-        default: "8080"
+        default: "49982"
 
 components:
   securitySchemes:

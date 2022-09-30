@@ -9,7 +9,7 @@ generate:
 	oapi-codegen -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
 
 build:
-	CGO_ENABLED=0 GOOS=linux go build -a -o bin/api ./cmd
+	CGO_ENABLED=0 GOOS=linux go build -a -o bin/api .
 
 run:
 	GOOS=linux go build -o bin/api ./cmd
