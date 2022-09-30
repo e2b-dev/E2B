@@ -11,16 +11,18 @@ import (
 
 const (
 	//dbCluster = "thick-cow-4620"
-	//dbCluster = "vale-coyote-5017"
-	dbCluster = "floaty-owl-5201"
-	dbRegion  = "gcp-europe-west1"
-
 	//dbUser     = "mlejva"
 	//dbPassword = "ehQuYPk5CE1KXQ9PHYOfaA"
 
+	//dbCluster = "vale-coyote-5017"
+	//dbCluster = "floaty-owl-5201"
+	dbCluster = "chilly-rat-5380"
+	dbRegion  = "gcp-europe-west1"
+
 	dbUser = "dbk"
 	//dbPassword = "WajNf9RcgqFp8_aOdybuqg"
-	dbPassword = "fSt3ahMLf2i2sVnG9BNhqA"
+	//dbPassword = "fSt3ahMLf2i2sVnG9BNhqA"
+	dbPassword = "ZtjYFXwlNGj5vJqQfMQ3OQ"
 
 	defaultDatabaseID = "defaultdb"
 )

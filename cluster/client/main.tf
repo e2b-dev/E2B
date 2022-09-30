@@ -77,7 +77,7 @@ resource "google_compute_instance_template" "client" {
   }
 
   disk {
-    source      = "orch-fc-envs"
+    source      = "fc-envs"
     auto_delete = false
     boot        = false
     device_name = "fc-envs"
