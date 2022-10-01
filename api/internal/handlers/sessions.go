@@ -19,20 +19,20 @@ func (a *APIStore) GetSessions(
 	_, keyErr := a.validateAPIKey(params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
-		a.ReportCriticalError(ctx, errMsg)
+		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
-	a.ReportEvent(ctx, "validated API key")
+	ReportEvent(ctx, "validated API key")
 
 	sessions, err := a.nomadClient.GetSessions()
 	if err != nil {
 		errMsg := fmt.Errorf("error when listing sessions: %v", err)
-		a.ReportCriticalError(ctx, errMsg)
+		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
-	a.ReportEvent(ctx, "listed sessions")
+	ReportEvent(ctx, "listed sessions")
 
 	c.JSON(http.StatusOK, sessions)
 }
@@ -46,19 +46,19 @@ func (a *APIStore) PostSessions(
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
 
-	a.ReportEvent(ctx, "waiting for parallel lock")
+	ReportEvent(ctx, "waiting for parallel lock")
 	unlock := postSessionParallelLock()
 	defer unlock()
-	a.ReportEvent(ctx, "parallel lock passed")
+	ReportEvent(ctx, "parallel lock passed")
 
 	var newSession api.PostSessionsJSONBody
 	if err := c.Bind(&newSession); err != nil {
 		errMsg := fmt.Errorf("error when parsing request: %s", err)
-		a.ReportCriticalError(ctx, errMsg)
+		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
 	}
-	a.ReportEvent(ctx, "parsed request")
+	ReportEvent(ctx, "parsed request")
 
 	// The default option in the openapi does not automatically populate JSON field with the default value
 	if newSession.EditEnabled == nil {
@@ -72,17 +72,17 @@ func (a *APIStore) PostSessions(
 		_, keyErr := a.validateAPIKey(params.ApiKey)
 		if keyErr != nil {
 			errMsg := fmt.Errorf("error with API key: %+v", keyErr)
-			a.ReportCriticalError(ctx, errMsg)
+			ReportCriticalError(ctx, errMsg)
 			a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 			return
 		}
-		a.ReportEvent(ctx, "validated API key")
+		ReportEvent(ctx, "validated API key")
 
 		existingSession, err := a.sessionsCache.FindEditSession(newSession.CodeSnippetID)
 		if err != nil {
-			a.ReportEvent(ctx, "no existing edit session found")
+			ReportEvent(ctx, "no existing edit session found")
 		} else {
-			a.ReportEvent(ctx, "found existing edit session")
+			ReportEvent(ctx, "found existing edit session")
 			c.JSON(http.StatusCreated, &existingSession)
 			return
 		}
@@ -91,11 +91,11 @@ func (a *APIStore) PostSessions(
 	session, err := a.nomadClient.CreateSession(a.tracer, ctx, &newSession)
 	if err != nil {
 		errMsg := fmt.Errorf("error when creating: %v", err)
-		a.ReportCriticalError(ctx, errMsg)
+		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
-	a.ReportEvent(ctx, "created session")
+	ReportEvent(ctx, "created session")
 
 	if *newSession.EditEnabled {
 		// We check for the edit session again because we didn't want to lock for the whole duration of this function.
@@ -107,9 +107,9 @@ func (a *APIStore) PostSessions(
 			delErr := a.nomadClient.DeleteSession(session.SessionID, true)
 			if delErr != nil {
 				errMsg := fmt.Errorf("redundant session couldn't be deleted: %v", delErr)
-				a.ReportError(ctx, errMsg)
+				ReportError(ctx, errMsg)
 			} else {
-				a.ReportEvent(ctx, "deleted redundant session")
+				ReportEvent(ctx, "deleted redundant session")
 			}
 
 			c.JSON(http.StatusCreated, &existingSession)
@@ -119,14 +119,14 @@ func (a *APIStore) PostSessions(
 
 	if err := a.sessionsCache.Add(session); err != nil {
 		errMsg := fmt.Errorf("error when adding session to cache: %v", err)
-		a.ReportError(ctx, errMsg)
+		ReportError(ctx, errMsg)
 
 		delErr := a.nomadClient.DeleteSession(session.SessionID, true)
 		if delErr != nil {
 			errMsg := fmt.Errorf("couldn't delete session that couldn't be added to cache: %v", delErr)
-			a.ReportError(ctx, errMsg)
+			ReportError(ctx, errMsg)
 		} else {
-			a.ReportEvent(ctx, "deleted session that couldn't be added to cache")
+			ReportEvent(ctx, "deleted session that couldn't be added to cache")
 		}
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a session right now")
@@ -145,7 +145,7 @@ func (a *APIStore) DeleteSessionsSessionID(
 	_, keyErr := a.validateAPIKey(params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
-		a.ReportCriticalError(ctx, errMsg)
+		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
@@ -153,11 +153,11 @@ func (a *APIStore) DeleteSessionsSessionID(
 	err := a.nomadClient.DeleteSession(sessionID, true)
 	if err != nil {
 		errMsg := fmt.Errorf("error when deleting session: %v", err)
-		a.ReportCriticalError(ctx, errMsg)
+		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
-	a.ReportEvent(ctx, "deleted session")
+	ReportEvent(ctx, "deleted session")
 
 	c.Status(http.StatusNoContent)
 }
@@ -171,11 +171,11 @@ func (a *APIStore) PostSessionsSessionIDRefresh(
 	err := a.sessionsCache.Refresh(sessionID)
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing session: %v", err)
-		a.ReportCriticalError(ctx, errMsg)
+		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing session - session '%s' was not found", sessionID))
 		return
 	}
-	a.ReportEvent(ctx, "refreshed session")
+	ReportEvent(ctx, "refreshed session")
 
 	c.Status(http.StatusNoContent)
 }

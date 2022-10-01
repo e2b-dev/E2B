@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,8 +11,6 @@ import (
 	"github.com/devbookhq/orchestration-services/api/pkg/supabase"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -27,6 +24,8 @@ type APIStore struct {
 }
 
 func NewAPIStore() *APIStore {
+	fmt.Printf("Initializing API store")
+
 	tracer := otel.Tracer("api")
 
 	nomadClient := nomad.InitNomadClient()
@@ -36,10 +35,12 @@ func NewAPIStore() *APIStore {
 	}
 
 	// TODO: Build only templates that changed
-	err = nomadClient.RebuildTemplates()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
-	}
+	go func() {
+		err = nomadClient.RebuildTemplates(tracer)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
+		}
+	}()
 
 	var initialSessions []*api.Session
 	initialSessions, sessionErr := nomadClient.GetSessions()
@@ -109,35 +110,4 @@ func (a *APIStore) sendAPIStoreError(c *gin.Context, code int, message string) {
 
 func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
-}
-
-func (a *APIStore) ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) {
-	span := trace.SpanFromContext(ctx)
-
-	fmt.Println(name, attrs)
-
-	span.AddEvent(name,
-		trace.WithAttributes(attrs...),
-	)
-}
-
-func (a *APIStore) ReportCriticalError(ctx context.Context, err error) {
-	span := trace.SpanFromContext(ctx)
-
-	fmt.Fprint(os.Stderr, err.Error())
-
-	span.RecordError(err,
-		trace.WithStackTrace(true),
-	)
-	span.SetStatus(codes.Error, "critical error")
-}
-
-func (a *APIStore) ReportError(ctx context.Context, err error) {
-	span := trace.SpanFromContext(ctx)
-
-	fmt.Fprint(os.Stderr, err.Error())
-
-	span.RecordError(err,
-		trace.WithStackTrace(true),
-	)
 }

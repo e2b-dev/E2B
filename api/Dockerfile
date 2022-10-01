@@ -9,6 +9,7 @@ RUN go mod download
 
 COPY internal internal
 COPY pkg pkg
+COPY main.go main.go
 
 RUN make build
 

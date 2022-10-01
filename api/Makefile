@@ -12,7 +12,7 @@ build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/api .
 
 run:
-	GOOS=linux go build -o bin/api ./cmd
+	GOOS=linux go build -o bin/api .
 	NOMAD_ADDRESS=http://34.149.1.201 ./bin/api --port 3000 -telemetry-api=$(telemetry-api)
 
 push:

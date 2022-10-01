@@ -147,12 +147,12 @@ func (n *NomadClient) UsePrebuiltEnv(codeSnippetID string, envTemplate string, c
 	return nil
 }
 
-func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []string) error {
+func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []string) (*JobInfo, error) {
 	dockerfileName := fmt.Sprintf("%s.Dockerfile", envTemplate)
 	tname := path.Join(templatesDir, envTemplatesDir, dockerfileName)
 	dockerfileTemp, err := template.ParseFiles(tname)
 	if err != nil {
-		return fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
+		return nil, fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
 	}
 
 	dockerfileTemp = template.Must(dockerfileTemp, err)
@@ -166,7 +166,7 @@ func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []
 
 	var dockerfile bytes.Buffer
 	if err := dockerfileTemp.Execute(&dockerfile, dockerfileVars); err != nil {
-		return fmt.Errorf("failed to `dockerfileTemp.Execute()`: %+v", err)
+		return nil, fmt.Errorf("failed to `dockerfileTemp.Execute()`: %+v", err)
 	}
 
 	tname = path.Join(templatesDir, buildEnvJobFile)
@@ -176,7 +176,7 @@ func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []
 		},
 	).ParseFiles(tname)
 	if err != nil {
-		return fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
+		return nil, fmt.Errorf("failed to parse template file '%s': %+v", tname, err)
 	}
 
 	envsJobTemp = template.Must(envsJobTemp, err)
@@ -197,20 +197,24 @@ func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []
 
 	var jobDef bytes.Buffer
 	if err := envsJobTemp.Execute(&jobDef, jobVars); err != nil {
-		return fmt.Errorf("failed to `envsJobTemp.Execute()`: %+v", err)
+		return nil, fmt.Errorf("failed to `envsJobTemp.Execute()`: %+v", err)
 	}
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
-		return fmt.Errorf("failed to parse the `%s` HCL job file: %+v", buildEnvJobName, err)
+		return nil, fmt.Errorf("failed to parse the `%s` HCL job file: %+v", buildEnvJobName, err)
 	}
 
-	_, _, err = n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
+	jobResponse, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to register '%s/%s' job: %+v", buildEnvJobName, jobVars.CodeSnippetID, err)
+		return nil, fmt.Errorf("failed to register '%s/%s' job: %+v", buildEnvJobName, jobVars.CodeSnippetID, err)
 	}
 
-	return nil
+	return &JobInfo{
+		name:   *job.Name,
+		evalID: jobResponse.EvalID,
+		index:  0,
+	}, nil
 }
 
 func (n *NomadClient) UpdateEnv(codeSnippetID string, session *api.Session) error {

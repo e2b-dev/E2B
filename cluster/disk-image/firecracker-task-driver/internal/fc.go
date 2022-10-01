@@ -56,7 +56,7 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
-func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *Driver) error {
+func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *Driver, metadata interface{}) error {
 	childCtx, childSpan := d.tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
 		attribute.String("socket_path", socketPath),
 		attribute.String("snapshot_root_path", snapshotRootPath),
@@ -94,6 +94,20 @@ func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *D
 		return err
 	}
 	telemetry.ReportEvent(childCtx, "snapshot loaded")
+
+	go func() {
+		mmdsConfig := operations.PutMmdsParams{
+			Context: childCtx,
+			Body:    metadata,
+		}
+
+		_, err = httpClient.Operations.PutMmds(&mmdsConfig)
+		if err != nil {
+			telemetry.ReportCriticalError(childCtx, err)
+		} else {
+			telemetry.ReportEvent(childCtx, "mmds data set")
+		}
+	}()
 
 	return nil
 }
@@ -269,7 +283,21 @@ func (d *Driver) initializeFC(
 	}
 	telemetry.ReportEvent(childCtx, "started FC in preboot")
 
-	if err := loadSnapshot(childCtx, fcCfg.SocketPath, env.SnapshotRootPath, d); err != nil {
+	if err := loadSnapshot(
+		childCtx,
+		fcCfg.SocketPath,
+		env.SnapshotRootPath,
+		d,
+		struct {
+			sessionID     string
+			codeSnippetID string
+			address       string
+		}{
+			sessionID:     slot.SessionID,
+			codeSnippetID: taskConfig.CodeSnippetID,
+			address:       taskConfig.LogsProxyAddress,
+		},
+	); err != nil {
 		m.StopVMM()
 		errMsg := fmt.Errorf("failed to load snapshot: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -287,22 +315,6 @@ func (d *Driver) initializeFC(
 			}
 		}
 	}()
-
-	err = m.SetMetadata(vmmCtx, struct {
-		sessionID     string
-		codeSnippetID string
-		address       string
-	}{
-		sessionID:     slot.SessionID,
-		codeSnippetID: taskConfig.CodeSnippetID,
-		address:       taskConfig.LogsProxyAddress,
-	})
-	if err != nil {
-		telemetry.ReportCriticalError(childCtx, err)
-		return nil, err
-	}
-
-	telemetry.ReportEvent(childCtx, "updated mmds metadata")
 
 	pid, errpid := m.PID()
 	if errpid != nil {

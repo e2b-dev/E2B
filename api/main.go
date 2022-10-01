@@ -65,6 +65,8 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 }
 
 func main() {
+	fmt.Println("Initializing...")
+
 	telemetryAPIKey := flag.String("telemetry-api", "", "api key for telemetry")
 	port := flag.Int("port", 80, "Port for test HTTP server")
 	flag.Parse()

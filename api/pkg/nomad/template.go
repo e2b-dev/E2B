@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -13,6 +15,8 @@ const (
 	fcEnvsDisk       = "/mnt/disks/fc-envs"
 	dockerfileSuffix = ".Dockerfile"
 	jobFileSuffix    = ".hcl"
+
+	// buildTemplateTimeout = time.Minute * 15
 )
 
 var (
@@ -27,7 +31,6 @@ var (
 // Escapes various characters that need to be escaped in the HCL files.
 func escapeHCL(input string) string {
 	return escapeReplacer.Replace(input)
-	//return strings.Replace(input, "\n", "\\\\n", -1)
 }
 
 func GetTemplates() (*[]string, error) {
@@ -57,18 +60,22 @@ func GetTemplates() (*[]string, error) {
 	return &templates, nil
 }
 
-func (n *NomadClient) RebuildTemplates() error {
+func (n *NomadClient) RebuildTemplates(t trace.Tracer) error {
 	templates, err := GetTemplates()
 	if err != nil {
 		return fmt.Errorf("error retrieving templates from the filesystem: %+v", err)
 	}
 
 	for _, template := range *templates {
-		err := n.BuildEnv(template, template, []string{})
-
+		fmt.Printf("Rebuilding %s\n", template)
+		_, err := n.BuildEnv(template, template, []string{})
 		if err != nil {
-			return fmt.Errorf("error building template %s, %+v", template, err)
+			return fmt.Errorf("error starting template '%s' building: %+v", template, err)
 		}
+		// _, err = n.WaitForJob(*job, buildTemplateTimeout)
+		// if err != nil {
+		// 	return fmt.Errorf("error waiting for template '%s' to build: %+v", template, err)
+		// }
 	}
 
 	return nil

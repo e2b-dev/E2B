@@ -60,7 +60,7 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		}
 
 	} else {
-		err := a.nomadClient.BuildEnv(codeSnippetID, string(env.Template), env.Deps)
+		_, err := a.nomadClient.BuildEnv(codeSnippetID, string(env.Template), env.Deps)
 		if err != nil {
 			fmt.Printf("error: %v\n", err)
 			a.sendAPIStoreError(
