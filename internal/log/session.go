@@ -44,7 +44,7 @@ func newSessionWriter(logger *zap.SugaredLogger) *sessionWriter {
 	return &sessionWriter{
 		logger: logger,
 		client: &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: 4 * time.Second,
 		},
 	}
 }
@@ -149,35 +149,37 @@ func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
 
 func (w *sessionWriter) Write(logs []byte) (int, error) {
 	w.logger.Info("Writing session error logs")
-	go func() {
-		mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
-		if err != nil {
-			errMsg := fmt.Sprintf("error getting mmds token: %+v", err)
-			w.logger.Error(errMsg)
-			return
-		}
 
-		mmdsOpts, err := w.getMMDSOpts(mmdsToken)
-		if err != nil {
-			errMsg := fmt.Sprintf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
-			w.logger.Error(errMsg)
-			return
-		}
+	mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
+	if err != nil {
+		errMsg := fmt.Sprintf("error getting mmds token: %+v", err)
+		w.logger.Error(errMsg)
+		return 0, err
+	}
 
-		sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
-		if err != nil {
-			errMsg := fmt.Sprintf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
-			w.logger.Error(errMsg)
-			return
-		}
+	mmdsOpts, err := w.getMMDSOpts(mmdsToken)
+	if err != nil {
+		errMsg := fmt.Sprintf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
+		w.logger.Error(errMsg)
+		return 0, err
+	}
 
-		err = w.sendSessionLogs(sessionLogs, mmdsOpts.Address)
-		if err != nil {
-			errMsg := fmt.Sprintf("error sending session logs: %+v", err)
-			w.logger.Error(errMsg)
-			return
-		}
-	}()
+	w.logger.Infow("Logs identification",
+		"opts", mmdsOpts,
+	)
 
+	sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
+	if err != nil {
+		errMsg := fmt.Sprintf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+		w.logger.Error(errMsg)
+		return 0, err
+	}
+
+	err = w.sendSessionLogs(sessionLogs, mmdsOpts.Address)
+	if err != nil {
+		errMsg := fmt.Sprintf("error sending session logs: %+v", err)
+		w.logger.Error(errMsg)
+		return 0, err
+	}
 	return len(logs), nil
 }
