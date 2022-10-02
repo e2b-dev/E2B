@@ -69,7 +69,7 @@ func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 		return nil, err
 	}
 	request.Header["X-metadata-token"] = []string{token}
-	request.Header.Set("Accept", "application/json")
+	request.Header["Accept"] = []string{"application/json"}
 
 	response, err := w.client.Do(request)
 	if err != nil {
