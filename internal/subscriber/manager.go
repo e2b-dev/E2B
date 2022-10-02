@@ -71,14 +71,14 @@ func (m *Manager) Add(ctx context.Context, id ID) (*Subscriber, chan bool, error
 	m.subs.Insert(sub.Subscription.ID, sub)
 
 	go func() {
-		err := <-sub.Subscription.Err()
-
-		if err != nil {
-			m.logger.Errorw("Subscription error",
-				"subID", sub.Subscription.ID,
-				"subscription", m.label,
-				"error", err,
-			)
+		for err := range sub.Subscription.Err() {
+			if err != nil {
+				m.logger.Errorw("Subscription error",
+					"subID", sub.Subscription.ID,
+					"subscription", m.label,
+					"error", err,
+				)
+			}
 		}
 
 		m.subs.Remove(sub.Subscription.ID)
@@ -90,6 +90,7 @@ func (m *Manager) Add(ctx context.Context, id ID) (*Subscriber, chan bool, error
 
 		if !m.HasSubscribers(sub.ID) {
 			lastUnsubscribed <- true
+			close(lastUnsubscribed)
 		}
 	}()
 
