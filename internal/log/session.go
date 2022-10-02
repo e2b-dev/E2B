@@ -7,6 +7,9 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -15,7 +18,8 @@ const (
 )
 
 type sessionWriter struct {
-	client *http.Client
+	client    *http.Client
+	errLogger *zap.Logger
 }
 
 type opts struct {
@@ -36,9 +40,12 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	return data, err
 }
 
-func newSessionWriter() *sessionWriter {
+func newSessionWriter(errLogger *zap.Logger) *sessionWriter {
 	return &sessionWriter{
-		client: &http.Client{},
+		errLogger: errLogger,
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 
@@ -109,25 +116,31 @@ func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
 }
 
 func (w *sessionWriter) Write(logs []byte) (int, error) {
-	mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
-	if err != nil {
-		return 0, fmt.Errorf("error getting mmds token: %+v", err)
-	}
+	go func() {
+		mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
+		if err != nil {
+			w.errLogger.Error(fmt.Sprintf("error getting mmds token: %+v", err))
+			return
+		}
 
-	mmdsOpts, err := w.getMMDSOpts(mmdsToken)
-	if err != nil {
-		return 0, fmt.Errorf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
-	}
+		mmdsOpts, err := w.getMMDSOpts(mmdsToken)
+		if err != nil {
+			w.errLogger.Error(fmt.Sprintf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err))
+			return
+		}
 
-	sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
-	if err != nil {
-		return 0, fmt.Errorf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
-	}
+		sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
+		if err != nil {
+			w.errLogger.Error(fmt.Sprintf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err))
+			return
+		}
 
-	err = w.sendSessionLogs(sessionLogs, mmdsOpts.Address)
-	if err != nil {
-		return 0, fmt.Errorf("error sending session logs: %+v", err)
-	}
+		err = w.sendSessionLogs(sessionLogs, mmdsOpts.Address)
+		if err != nil {
+			w.errLogger.Error(fmt.Sprintf("error sending session logs: %+v", err))
+			return
+		}
+	}()
 
 	return len(logs), nil
 }

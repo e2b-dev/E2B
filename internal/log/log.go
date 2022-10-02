@@ -50,8 +50,10 @@ func NewLogger(logDir string, debug bool, mmds bool) (*zap.SugaredLogger, error)
 		return nil, err
 	}
 
+	var combinedLogger *zap.Logger
+
 	if mmds {
-		sessionWriter := newSessionWriter()
+		sessionWriter := newSessionWriter(l)
 
 		level := zap.ErrorLevel
 		if debug {
@@ -63,8 +65,8 @@ func NewLogger(logDir string, debug bool, mmds bool) (*zap.SugaredLogger, error)
 			zapcore.NewCore(zapcore.NewJSONEncoder(cfg.EncoderConfig), zapcore.AddSync(sessionWriter), level),
 		)
 
-		l = zap.New(core)
+		combinedLogger = zap.New(core)
 	}
 
-	return l.Sugar(), nil
+	return combinedLogger.Sugar(), nil
 }
