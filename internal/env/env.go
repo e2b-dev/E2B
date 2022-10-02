@@ -124,7 +124,7 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 	// TODO: Move this configuration to `configureEnvForServerMode`?
 	// We want to use a logger here though.
 	if env.runtimeMode == RuntimeModeServer {
-		logger.Infow("Loading envinronment", "envFilePath", envFilePath)
+		logger.Infow("Loading environment", "envFilePath", envFilePath)
 
 		file, err := os.Open(envFilePath)
 		if err != nil {
