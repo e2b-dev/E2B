@@ -104,7 +104,8 @@ encoding = "json"
 type = "remap"
 inputs = [ "*" ]
 source = '''
-  .dt = del(.timestamp)
+  del(.timestamp)
+  .dt = now()
 '''
 
 [sinks.logtail_http_sink_Ng2hNptjHFG5TLHYJnMKdrAY]
