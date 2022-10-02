@@ -20,9 +20,9 @@ type sessionWriter struct {
 }
 
 type opts struct {
-	SessionID     string `json:"sessionID"`
-	CodeSnippetID string `json:"codeSnippetID"`
-	Address       string `json:"address"`
+	SessionID     *string `json:"sessionID"`
+	CodeSnippetID *string `json:"codeSnippetID"`
+	Address       *string `json:"address"`
 }
 
 func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
@@ -30,8 +30,8 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 
 	json.Unmarshal(jsonLogs, &parsed)
 
-	parsed["sessionID"] = opts.SessionID
-	parsed["codeSnippetID"] = opts.CodeSnippetID
+	parsed["sessionID"] = *opts.SessionID
+	parsed["codeSnippetID"] = *opts.CodeSnippetID
 
 	data, err := json.Marshal(parsed)
 	return data, err
@@ -63,7 +63,13 @@ func (w *sessionWriter) getMMDSToken(expiration int) (string, error) {
 		return "", err
 	}
 
-	return string(body), nil
+	token := string(body)
+
+	if len(token) == 0 {
+		return "", fmt.Errorf("mmds token is an empty string")
+	}
+
+	return token, nil
 }
 
 func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
@@ -85,13 +91,29 @@ func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 		return nil, err
 	}
 
-	var opts opts
-	err = json.Unmarshal(body, &opts)
+	var opts *opts
+	err = json.Unmarshal(body, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &opts, nil
+	if opts == nil {
+		return nil, fmt.Errorf("mmds opts is nil")
+	}
+
+	if opts.Address == nil {
+		return nil, fmt.Errorf("no 'address' in mmds opts")
+	}
+
+	if opts.CodeSnippetID == nil {
+		return nil, fmt.Errorf("no 'codeSnippetID' in mmds opts")
+	}
+
+	if opts.SessionID == nil {
+		return nil, fmt.Errorf("no 'sessionID' in mmds opts")
+	}
+
+	return opts, nil
 }
 
 func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
@@ -131,7 +153,7 @@ func (w *sessionWriter) Write(logs []byte) (int, error) {
 			return
 		}
 
-		err = w.sendSessionLogs(sessionLogs, mmdsOpts.Address)
+		err = w.sendSessionLogs(sessionLogs, *mmdsOpts.Address)
 		if err != nil {
 			fmt.Printf("error sending session logs: %+v", err)
 			return
