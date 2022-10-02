@@ -24,7 +24,7 @@ resource "google_compute_instance" "dev_instance" {
     ]
   }
 
-  desired_status            = "TERMINATED"
+  desired_status            = "RUNNING"
   allow_stopping_for_update = true
 
   boot_disk {
