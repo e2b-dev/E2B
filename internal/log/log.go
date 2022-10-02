@@ -61,7 +61,7 @@ func NewLogger(logDir string, debug bool, mmds bool) (*zap.SugaredLogger, error)
 		}
 
 		core := zapcore.NewTee(
-			l.Core(),
+			// l.Core(),
 			zapcore.NewCore(zapcore.NewJSONEncoder(cfg.EncoderConfig), zapcore.AddSync(sessionWriter), level),
 		)
 
