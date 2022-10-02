@@ -18,7 +18,6 @@ type Scanner struct {
 
 func (s *Scanner) Destroy() {
 	s.ticker.Stop()
-	close(s.Processes)
 }
 
 func NewScanner(period time.Duration) *Scanner {

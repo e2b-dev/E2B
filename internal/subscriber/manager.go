@@ -90,7 +90,6 @@ func (m *Manager) Add(ctx context.Context, id ID) (*Subscriber, chan bool, error
 
 		if !m.HasSubscribers(sub.ID) {
 			lastUnsubscribed <- true
-			close(lastUnsubscribed)
 		}
 	}()
 
