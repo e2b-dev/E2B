@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -17,6 +19,7 @@ const (
 
 type sessionWriter struct {
 	client *http.Client
+	logger *zap.Logger
 }
 
 type opts struct {
@@ -37,8 +40,9 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	return data, err
 }
 
-func newSessionWriter() *sessionWriter {
+func newSessionWriter(logger *zap.Logger) *sessionWriter {
 	return &sessionWriter{
+		logger: logger,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -121,15 +125,14 @@ func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
 	if err != nil {
 		return err
 	}
-
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := w.client.Do(request)
 	if err != nil {
 		return err
 	}
-
 	defer response.Body.Close()
+
 	return nil
 }
 
@@ -137,25 +140,29 @@ func (w *sessionWriter) Write(logs []byte) (int, error) {
 	go func() {
 		mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
 		if err != nil {
-			fmt.Printf("error getting mmds token: %+v", err)
+			errMsg := fmt.Sprintf("error getting mmds token: %+v", err)
+			w.logger.Error(errMsg)
 			return
 		}
 
 		mmdsOpts, err := w.getMMDSOpts(mmdsToken)
 		if err != nil {
-			fmt.Printf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
+			errMsg := fmt.Sprintf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
+			w.logger.Error(errMsg)
 			return
 		}
 
 		sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
 		if err != nil {
-			fmt.Printf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+			errMsg := fmt.Sprintf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+			w.logger.Error(errMsg)
 			return
 		}
 
 		err = w.sendSessionLogs(sessionLogs, *mmdsOpts.Address)
 		if err != nil {
-			fmt.Printf("error sending session logs: %+v", err)
+			errMsg := fmt.Sprintf("error sending session logs: %+v", err)
+			w.logger.Error(errMsg)
 			return
 		}
 	}()

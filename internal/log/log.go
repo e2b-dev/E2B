@@ -53,7 +53,7 @@ func NewLogger(logDir string, debug bool, mmds bool) (*zap.SugaredLogger, error)
 	var combinedLogger *zap.Logger
 
 	if mmds {
-		sessionWriter := newSessionWriter()
+		sessionWriter := newSessionWriter(l)
 
 		level := zap.ErrorLevel
 		if debug {
