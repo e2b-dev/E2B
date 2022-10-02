@@ -19,7 +19,7 @@ const (
 
 type sessionWriter struct {
 	client *http.Client
-	logger *zap.Logger
+	logger *zap.SugaredLogger
 }
 
 type opts struct {
@@ -40,7 +40,7 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	return data, err
 }
 
-func newSessionWriter(logger *zap.Logger) *sessionWriter {
+func newSessionWriter(logger *zap.SugaredLogger) *sessionWriter {
 	return &sessionWriter{
 		logger: logger,
 		client: &http.Client{
@@ -95,14 +95,10 @@ func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 		return nil, err
 	}
 
-	var opts *opts
-	err = json.Unmarshal(body, opts)
+	var opts opts
+	err = json.Unmarshal(body, &opts)
 	if err != nil {
 		return nil, err
-	}
-
-	if opts == nil {
-		return nil, fmt.Errorf("mmds opts is nil")
 	}
 
 	if opts.Address == nil {
@@ -117,7 +113,7 @@ func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 		return nil, fmt.Errorf("no 'sessionID' in mmds opts")
 	}
 
-	return opts, nil
+	return &opts, nil
 }
 
 func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
