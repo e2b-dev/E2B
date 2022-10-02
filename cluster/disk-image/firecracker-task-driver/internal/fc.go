@@ -289,13 +289,13 @@ func (d *Driver) initializeFC(
 		env.SnapshotRootPath,
 		d,
 		struct {
-			sessionID     string
-			codeSnippetID string
-			address       string
+			SessionID     string `json:"sessionID"`
+			CodeSnippetID string `json:"codeSnippetID"`
+			Address       string `json:"address"`
 		}{
-			sessionID:     slot.SessionID,
-			codeSnippetID: taskConfig.CodeSnippetID,
-			address:       taskConfig.LogsProxyAddress,
+			SessionID:     slot.SessionID,
+			CodeSnippetID: taskConfig.CodeSnippetID,
+			Address:       taskConfig.LogsProxyAddress,
 		},
 	); err != nil {
 		m.StopVMM()
