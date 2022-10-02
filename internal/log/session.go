@@ -6,21 +6,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 )
 
-const mmdsDefaultAddress = "169.254.169.254"
+const (
+	mmdsDefaultAddress  = "169.254.169.254"
+	mmdsTokenExpiration = 60 // seconds
+)
 
 type sessionWriter struct {
 	client *http.Client
 }
 
-type mmdsOpts struct {
+type opts struct {
 	SessionID     string `json:"sessionID"`
 	CodeSnippetID string `json:"codeSnippetID"`
 	Address       string `json:"address"`
 }
 
-func addOptsToJSON(jsonLogs []byte, opts *mmdsOpts) ([]byte, error) {
+func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	var parsed map[string]interface{}
 
 	json.Unmarshal(jsonLogs, &parsed)
@@ -38,12 +42,12 @@ func newSessionWriter() *sessionWriter {
 	}
 }
 
-func (w *sessionWriter) getMMDSToken() (string, error) {
+func (w *sessionWriter) getMMDSToken(expiration int) (string, error) {
 	request, err := http.NewRequest("PUT", "http://"+mmdsDefaultAddress+"/latest/api/token", new(bytes.Buffer))
 	if err != nil {
 		return "", err
 	}
-	request.Header.Set("X-metadata-token-ttl-seconds", "21600")
+	request.Header["X-metadata-token-ttl-seconds"] = []string{strconv.FormatInt(int64(expiration), 10)}
 
 	response, err := w.client.Do(request)
 	if err != nil {
@@ -59,7 +63,7 @@ func (w *sessionWriter) getMMDSToken() (string, error) {
 	return string(body), nil
 }
 
-func (w *sessionWriter) getMMDSOpts(token string) (*mmdsOpts, error) {
+func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 	request, err := http.NewRequest("GET", "http://"+mmdsDefaultAddress, new(bytes.Buffer))
 	if err != nil {
 		return nil, err
@@ -78,7 +82,7 @@ func (w *sessionWriter) getMMDSOpts(token string) (*mmdsOpts, error) {
 		return nil, err
 	}
 
-	var opts mmdsOpts
+	var opts opts
 	err = json.Unmarshal(body, &opts)
 	if err != nil {
 		return nil, err
@@ -105,7 +109,7 @@ func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
 }
 
 func (w *sessionWriter) Write(logs []byte) (int, error) {
-	mmdsToken, err := w.getMMDSToken()
+	mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
 	if err != nil {
 		return 0, fmt.Errorf("error getting mmds token: %+v", err)
 	}
@@ -125,5 +129,5 @@ func (w *sessionWriter) Write(logs []byte) (int, error) {
 		return 0, fmt.Errorf("error sending session logs: %+v", err)
 	}
 
-	return len(sessionLogs), nil
+	return len(logs), nil
 }
