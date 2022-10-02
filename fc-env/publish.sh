@@ -11,7 +11,7 @@ set -euo pipefail
 mkdir env
 
 # Download release of devbookd.
-version=v1.1.5
+version=v1.1.7
 os="Linux"
 arch="x86_64"
 exe="env/devbookd"
