@@ -50,6 +50,8 @@ func newSessionWriter(logger *zap.SugaredLogger) *sessionWriter {
 }
 
 func (w *sessionWriter) getMMDSToken(expiration int) (string, error) {
+	w.logger.Info("Retrieving MMDS token")
+
 	request, err := http.NewRequest("PUT", "http://"+mmdsDefaultAddress+"/latest/api/token", new(bytes.Buffer))
 	if err != nil {
 		return "", err
@@ -61,6 +63,8 @@ func (w *sessionWriter) getMMDSToken(expiration int) (string, error) {
 		return "", err
 	}
 	defer response.Body.Close()
+
+	w.logger.Info("Reading mmds token response body")
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -77,6 +81,8 @@ func (w *sessionWriter) getMMDSToken(expiration int) (string, error) {
 }
 
 func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
+	w.logger.Info("Retrieving MMDS opts")
+
 	request, err := http.NewRequest("GET", "http://"+mmdsDefaultAddress, new(bytes.Buffer))
 	if err != nil {
 		return nil, err
@@ -90,16 +96,21 @@ func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 	}
 	defer response.Body.Close()
 
+	w.logger.Info("Reading mmds opts response body")
+
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	w.logger.Infow("Unmarshalling body to json")
 	var opts opts
 	err = json.Unmarshal(body, &opts)
 	if err != nil {
 		return nil, err
 	}
+
+	w.logger.Infow("MMDS opts body unmarshalled")
 
 	if opts.Address == nil {
 		return nil, fmt.Errorf("no 'address' in mmds opts")
@@ -117,6 +128,8 @@ func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 }
 
 func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
+	w.logger.Infow("Sending session logs")
+
 	request, err := http.NewRequest("POST", address, bytes.NewBuffer(logs))
 	if err != nil {
 		return err
@@ -129,10 +142,13 @@ func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
 	}
 	defer response.Body.Close()
 
+	w.logger.Infow("Session logs sent")
+
 	return nil
 }
 
 func (w *sessionWriter) Write(logs []byte) (int, error) {
+	w.logger.Info("Writing session error logs")
 	go func() {
 		mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
 		if err != nil {
