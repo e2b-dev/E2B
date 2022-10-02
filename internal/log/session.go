@@ -23,9 +23,9 @@ type sessionWriter struct {
 }
 
 type opts struct {
-	SessionID     *string `json:"sessionID"`
-	CodeSnippetID *string `json:"codeSnippetID"`
-	Address       *string `json:"address"`
+	SessionID     string `json:"sessionID"`
+	CodeSnippetID string `json:"codeSnippetID"`
+	Address       string `json:"address"`
 }
 
 func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
@@ -33,8 +33,8 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 
 	json.Unmarshal(jsonLogs, &parsed)
 
-	parsed["sessionID"] = *opts.SessionID
-	parsed["codeSnippetID"] = *opts.CodeSnippetID
+	parsed["sessionID"] = opts.SessionID
+	parsed["codeSnippetID"] = opts.CodeSnippetID
 
 	data, err := json.Marshal(parsed)
 	return data, err
@@ -112,15 +112,15 @@ func (w *sessionWriter) getMMDSOpts(token string) (*opts, error) {
 
 	w.logger.Infow("MMDS opts body unmarshalled")
 
-	if opts.Address == nil {
+	if opts.Address == "" {
 		return nil, fmt.Errorf("no 'address' in mmds opts")
 	}
 
-	if opts.CodeSnippetID == nil {
+	if opts.CodeSnippetID == "" {
 		return nil, fmt.Errorf("no 'codeSnippetID' in mmds opts")
 	}
 
-	if opts.SessionID == nil {
+	if opts.SessionID == "" {
 		return nil, fmt.Errorf("no 'sessionID' in mmds opts")
 	}
 
@@ -171,7 +171,7 @@ func (w *sessionWriter) Write(logs []byte) (int, error) {
 			return
 		}
 
-		err = w.sendSessionLogs(sessionLogs, *mmdsOpts.Address)
+		err = w.sendSessionLogs(sessionLogs, mmdsOpts.Address)
 		if err != nil {
 			errMsg := fmt.Sprintf("error sending session logs: %+v", err)
 			w.logger.Error(errMsg)
