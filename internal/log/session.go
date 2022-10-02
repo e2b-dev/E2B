@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -18,8 +16,7 @@ const (
 )
 
 type sessionWriter struct {
-	client    *http.Client
-	errLogger *zap.Logger
+	client *http.Client
 }
 
 type opts struct {
@@ -40,9 +37,8 @@ func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	return data, err
 }
 
-func newSessionWriter(errLogger *zap.Logger) *sessionWriter {
+func newSessionWriter() *sessionWriter {
 	return &sessionWriter{
-		errLogger: errLogger,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -104,7 +100,7 @@ func (w *sessionWriter) sendSessionLogs(logs []byte, address string) error {
 		return err
 	}
 
-	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	request.Header.Set("Content-Type", "application/json")
 
 	response, err := w.client.Do(request)
 	if err != nil {
@@ -119,25 +115,25 @@ func (w *sessionWriter) Write(logs []byte) (int, error) {
 	go func() {
 		mmdsToken, err := w.getMMDSToken(mmdsTokenExpiration)
 		if err != nil {
-			w.errLogger.Error(fmt.Sprintf("error getting mmds token: %+v", err))
+			fmt.Printf("error getting mmds token: %+v", err)
 			return
 		}
 
 		mmdsOpts, err := w.getMMDSOpts(mmdsToken)
 		if err != nil {
-			w.errLogger.Error(fmt.Sprintf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err))
+			fmt.Printf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
 			return
 		}
 
 		sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
 		if err != nil {
-			w.errLogger.Error(fmt.Sprintf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err))
+			fmt.Printf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
 			return
 		}
 
 		err = w.sendSessionLogs(sessionLogs, mmdsOpts.Address)
 		if err != nil {
-			w.errLogger.Error(fmt.Sprintf("error sending session logs: %+v", err))
+			fmt.Printf("error sending session logs: %+v", err)
 			return
 		}
 	}()
