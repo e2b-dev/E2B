@@ -130,11 +130,11 @@ const proc = await session.process.start({
   processID: '<process-id>',
 })
 
-await p.kill()
+await proc.kill()
 
-await p.sendStdin('\n')
+await proc.sendStdin('\n')
 
-console.log(p.processID)
+console.log(proc.processID)
 ```
 
 ## Development
