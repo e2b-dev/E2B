@@ -52,7 +52,7 @@ You can **run arbitrary code** with the runtime predefined in the Devbook env by
 
 You receive the `stderr`, `stdout`, and the information about the code execution from the `onStderr`, `onStdout`, and `onStateChange` handlers that you can pass to the `Session` constructor inside the `codeSnippet` object.
 
-There can be only **one running code snippet at the same time** — you can stop the one that is currently running by calling `session.codesnippet.stop`.
+There can be only **one running code snippet at the same time** — you can stop the one that is currently running by calling `session.codeSnippet.stop`.
 
 ```ts
 await session.codeSnippet.run('echo 2')
@@ -82,7 +82,7 @@ await session.filesystem.removeFile('/new.sh')
 ### Start a Terminal
 You can **start a new terminal** in the session by calling `session.terminal.createSession`. 
 
-> If you want to connect the same terminal when you reconnect to a session you can use the `terminalID`. This is currently primarily used for debugging purposes and when you connect to a special persistent session (`editEnabled` option when creating a new `Session`).
+> If you want to connect to the same terminal when you reconnect to a session you can use the `terminalID` option when creating the terminal. This is currently used for debugging purposes and when you connect to a special persistent session (`editEnabled` option when creating a new `Session`).
 
 > If you are using frontend terminal component like [Xtermjs](https://github.com/xtermjs/xterm.js/) you want to pass the data from `onData` handler to Xtermjs and forward the data from Xtermjs to the `term.sendData` method.
 
@@ -111,9 +111,9 @@ await session.terminal.killProcess('<child-process-pid>')
 ```
 
 ### Start a Process
-You can **start a new process** in the session by calling `session.process.start`. The only required filed is the `cmd`, but you can also define the `rootdir` and `envVars` options that the command should be executed with.
+You can **start a new process** in the session by calling `session.process.start`. The only required option is the `cmd`, but you can also define the `rootdir` and `envVars` options that the command should be executed with.
 
-> If you want to connect the same process when you reconnect to a session you can use the `processID`. This is currently primarily used for debugging purposes.
+> If you want to connect to the same process when you reconnect to a session you can use the `processID` option when starting the process. This is currently primarily used for debugging purposes.
 
 You **send the stdin to the process** by calling `proc.sendStdin`.
 
@@ -138,7 +138,7 @@ console.log(p.processID)
 ```
 
 ## Development
-You generate the types for Devbook API by calling:
+You generate the types for Devbook API from OpenAPI spec by calling:
 ```sh
 npm run generate
 ```
