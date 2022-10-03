@@ -2,6 +2,8 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
+  priority = 30
+
   meta {
     # This makes sure the job always runs even though nothing has changed in the job spec file.
     # See section "Always Deploy a New Job Version" in https://storiesfromtheherd.com/nomad-tips-and-tricks-766878dfebf4
@@ -21,8 +23,8 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
 
     task "build-env" {
       resources {
-        memory  = 300
-        cores   = 1
+        memory  = 200
+        cpu   = 400
       }
       driver = "raw_exec"
 

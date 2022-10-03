@@ -58,6 +58,11 @@ job "client-proxy" {
     task "client-proxy" {
       driver = "docker"
 
+      resources {
+        memory = 128
+        cpu    = 200
+      }
+
       config {
         image        = "nginx"
         network_mode = "host"

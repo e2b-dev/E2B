@@ -64,9 +64,8 @@ job "orchestration-api" {
       driver = "docker"
 
       resources {
-        memory_max = 1024
-        memory     = 512
-        cpu        = 1000
+        memory = 256
+        cpu    = 400
       }
 
       env {

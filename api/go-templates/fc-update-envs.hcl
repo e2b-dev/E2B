@@ -2,6 +2,8 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
+  priority = 50
+
   meta {
     # This makes sure the job always runs even though nothing has changed in the job spec file.
     # See section "Always Deploy a New Job Version" in https://storiesfromtheherd.com/nomad-tips-and-tricks-766878dfebf4
@@ -20,11 +22,12 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
     }
 
     task "publish-env" {
-      resources {
-        memory  = 300
-        cores   = 1
-      }
       driver = "raw_exec"
+
+      resources {
+        memory = 128
+        cpu    = 200
+      }
 
       artifact {
         source = "https://storage.googleapis.com/devbook-environment-pipeline/env.tar.gz"

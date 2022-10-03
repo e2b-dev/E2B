@@ -77,8 +77,8 @@ job "logs-collector" {
       }
 
       resources {
-        cpu    = 500
-        memory = 512
+        memory = 128
+        cpu    = 200
       }
 
       template {

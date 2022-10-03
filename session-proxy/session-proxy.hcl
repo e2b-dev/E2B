@@ -77,6 +77,11 @@ job "session-proxy" {
         ]
       }
 
+      resources {
+        memory = 128
+        cpu    = 200
+      }
+
       template {
         left_delimiter  = "[["
         right_delimiter = "]]"
