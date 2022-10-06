@@ -112,6 +112,10 @@ func (a *APIStore) PostSessions(
 				ReportEvent(ctx, "deleted redundant session")
 			}
 
+			SetAttributes(ctx,
+				attribute.String("session_id", existingSession.SessionID),
+			)
+
 			c.JSON(http.StatusCreated, &existingSession)
 			return
 		}
@@ -133,6 +137,10 @@ func (a *APIStore) PostSessions(
 		return
 	}
 
+	SetAttributes(ctx,
+		attribute.String("session_id", session.SessionID),
+	)
+
 	c.JSON(http.StatusCreated, &session)
 }
 
@@ -142,6 +150,11 @@ func (a *APIStore) DeleteSessionsSessionID(
 	params api.DeleteSessionsSessionIDParams,
 ) {
 	ctx := c.Request.Context()
+
+	SetAttributes(ctx,
+		attribute.String("session_id", sessionID),
+	)
+
 	_, keyErr := a.validateAPIKey(params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
@@ -168,6 +181,11 @@ func (a *APIStore) PostSessionsSessionIDRefresh(
 	params api.PostSessionsSessionIDRefreshParams,
 ) {
 	ctx := c.Request.Context()
+
+	SetAttributes(ctx,
+		attribute.String("session_id", sessionID),
+	)
+
 	err := a.sessionsCache.Refresh(sessionID)
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing session: %v", err)

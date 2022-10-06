@@ -10,6 +10,12 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
+	span := trace.SpanFromContext(ctx)
+
+	span.SetAttributes(attrs...)
+}
+
 func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 

@@ -171,6 +171,10 @@ jobRegister:
 		}
 	}
 
+	childSpan.SetAttributes(
+		attribute.String("session_id", sessionID),
+	)
+
 	session := &api.Session{
 		ClientID:      alloc.NodeID[:shortNodeIDLength],
 		SessionID:     sessionID,
