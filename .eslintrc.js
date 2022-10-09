@@ -19,6 +19,8 @@ module.exports = {
       {
         code: 90,
         ignoreComments: true,
+        ignoreStrings: true,
+        ignoreTemplateLiterals: true,
       },
     ],
     'prettier/prettier': ['error'],
