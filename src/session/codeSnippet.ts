@@ -1,8 +1,5 @@
-import {
-  OutStderrResponse,
-  OutStdoutResponse,
-} from './out'
 import { EnvVars } from './envVars'
+import { OutStderrResponse, OutStdoutResponse } from './out'
 
 export const codeSnippetService = 'codeSnippet'
 
@@ -23,16 +20,16 @@ export type CodeSnippetStdoutHandler = (o: OutStdoutResponse) => void
 export type ScanOpenedPortsHandler = (ports: OpenedPort[]) => void
 
 export type CodeSnippetSubscriptionHandler =
-  CodeSnippetStateHandler |
-  CodeSnippetStderrHandler |
-  CodeSnippetStdoutHandler |
-  ScanOpenedPortsHandler
+  | CodeSnippetStateHandler
+  | CodeSnippetStderrHandler
+  | CodeSnippetStdoutHandler
+  | ScanOpenedPortsHandler
 
 export type CodeSnippetSubscriptionHandlerType = {
-  'state': CodeSnippetStateHandler
-  'stderr': CodeSnippetStderrHandler
-  'stdout': CodeSnippetStdoutHandler
-  'scanOpenedPorts': ScanOpenedPortsHandler
+  state: CodeSnippetStateHandler
+  stderr: CodeSnippetStderrHandler
+  stdout: CodeSnippetStdoutHandler
+  scanOpenedPorts: ScanOpenedPortsHandler
 }
 
 export interface CodeSnippetManager {

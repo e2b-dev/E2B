@@ -1,17 +1,23 @@
 # Devbook SDK
+
 SDK for managing Devbook sessions from JavaScript/TypeScript.
 
 ## Installation
+
 ```sh
 npm install @devbookhq/sdk
 ```
+
 or
+
 ```sh
 yarn add @devbookhq/sdk
 ```
 
 ## Usage
+
 ### Open a New Session
+
 You **start a new session** by creating a `Session` instance and calling the `session.open` method.
 
 `<code-snippet-id>` is the ID of the environment from Devbook backend.
@@ -30,9 +36,9 @@ const session = new Session({
   apiKey: undefined,
   // Event handlers
   codeSnippet: {
-    onStateChange: (state) => console.log(state),
-    onStderr: (stderr) => console.log(stderr),
-    onStdout: (stdout) => console.log(stdout),
+    onStateChange: state => console.log(state),
+    onStderr: stderr => console.log(stderr),
+    onStdout: stdout => console.log(stdout),
   },
   onDisconnect: () => console.log('disconnect'),
   onReconnect: () => console.log('reconnect'),
@@ -48,6 +54,7 @@ await session.close()
 > You shall not call any other methods on the `session` object before the `session.open` finishes. Before this method successfully finishes you are **not** connected to the actual session and the fields `session.codeSnippet`, `session.terminal`, `session.filesystem`, and `session.process` are `undefined`.
 
 ### Run Code Snippet
+
 You can **run arbitrary code** with the runtime predefined in the Devbook env by calling `session.codeSnippet.run`.
 
 You receive the `stderr`, `stdout`, and the information about the code execution from the `onStderr`, `onStdout`, and `onStateChange` handlers that you can pass to the `Session` constructor inside the `codeSnippet` object.
@@ -61,6 +68,7 @@ await session.codeSnippet.stop()
 ```
 
 ### Interact with the Filesystem
+
 You can **list all the files and directories** in a specific directory by calling the `session.filesystem.listAllFiles` method.
 
 You can **create a file and/or modify its content** by calling the `session.filesystem.writeFile` method.
@@ -80,7 +88,8 @@ await session.filesystem.removeFile('/new.sh')
 ```
 
 ### Start a Terminal
-You can **start a new terminal** in the session by calling `session.terminal.createSession`. 
+
+You can **start a new terminal** in the session by calling `session.terminal.createSession`.
 
 > If you want to connect to the same terminal when you reconnect to a session you can use the `terminalID` option when creating the terminal. This is currently used for debugging purposes and when you connect to a special persistent session (`editEnabled` option when creating a new `Session`).
 
@@ -111,6 +120,7 @@ await session.terminal.killProcess('<child-process-pid>')
 ```
 
 ### Start a Process
+
 You can **start a new process** in the session by calling `session.process.start`. The only required option is the `cmd`, but you can also define the `rootdir` and `envVars` options that the command should be executed with.
 
 > If you want to connect to the same process when you reconnect to a session you can use the `processID` option when starting the process. This is currently primarily used for debugging purposes.
@@ -122,8 +132,8 @@ You can **manually kill** the process by calling `proc.kill`.
 ```ts
 const proc = await session.process.start({
   cmd: 'echo 2',
-  onStdout: (stdout) => consoel.log(stdout),
-  onStderr: (stderr) => console.log(stderr),
+  onStdout: stdout => consoel.log(stdout),
+  onStderr: stderr => console.log(stderr),
   onExit: () => console.log('exit'),
   envVars: { ['ENV']: 'prod' },
   rootdir: '/',
@@ -138,12 +148,15 @@ console.log(proc.processID)
 ```
 
 ## Development
+
 You generate the types for Devbook API from OpenAPI spec by calling:
+
 ```sh
 npm run generate
 ```
 
 You build the SDK by calling:
+
 ```sh
 npm run build
 ```
@@ -151,10 +164,13 @@ npm run build
 You release a new version of the NPM package by tagging commit with a tag in the `v*.*.*` format and pushing in to GitHub.
 
 ### Subtrees
+
 #### shared
+
 Shared is a subtree made from https://github.com/devbookhq/shared repository.
 
 The subtree commands you need for controling this repo are:
+
 ```bash
 git subtree add --prefix shared https://github.com/devbookhq/shared.git master
 ```

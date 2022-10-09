@@ -1,1 +1,3 @@
-export type EnvVars = { [key: string]: string }
+export type EnvVars = {
+  [key: string]: string
+}

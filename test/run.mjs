@@ -36,16 +36,15 @@ async function main() {
     // await session.codeSnippet.run('sleep 2')
     // await session.codeSnippet.stop()
     const term = await session.terminal.createSession({
-      onData: (data) => console.log(data),
+      onData: data => console.log(data),
       size: { cols: 20, rows: 40 },
-      onChildProcessesChange: (cp) => console.log(cp),
+      onChildProcessesChange: cp => console.log(cp),
     })
 
     // const term2 = await session.terminal.createSession({
     //   onData: (data) => console.log(data),
     //   size: { cols: 20, rows: 40 },
     // })
-
 
     // const p = await session.process.start({
     //   cmd: 'echo 22',

@@ -1,8 +1,5 @@
 import { EnvVars } from './envVars'
-import {
-  OutStdoutResponse,
-  OutStderrResponse,
-} from './out'
+import { OutStderrResponse, OutStdoutResponse } from './out'
 
 export const processService = 'process'
 
@@ -14,12 +11,12 @@ export interface Process {
 
 export interface ProcessManager {
   readonly start: (opts: {
-    cmd: string,
-    onStdout?: (o: OutStdoutResponse) => void,
-    onStderr?: (o: OutStderrResponse) => void,
-    onExit?: () => void,
-    envVars?: EnvVars,
-    rootdir?: string,
-    processID?: string,
+    cmd: string
+    onStdout?: (o: OutStdoutResponse) => void
+    onStderr?: (o: OutStderrResponse) => void
+    onExit?: () => void
+    envVars?: EnvVars
+    rootdir?: string
+    processID?: string
   }) => Promise<Process>
 }

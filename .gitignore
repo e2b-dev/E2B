@@ -37,6 +37,5 @@ dist
 # compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-devbookd
 /test.md
 logs.txt

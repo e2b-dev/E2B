@@ -2,14 +2,10 @@
 type LogID = string | (() => string)
 
 class Logger {
-  constructor(
-    public readonly logID: LogID,
-    public readonly isEnabled = false
-  ) { }
+  constructor(public readonly logID: LogID, public readonly isEnabled = false) {}
 
-  private id() {
-    if (typeof this.logID === 'function') return this.logID()
-    return this.logID
+  error(...args: any[]) {
+    console.error(`\x1b[31m[${this.id()} ERROR]\x1b[0m`, ...args)
   }
 
   log(...args: any[]) {
@@ -18,8 +14,9 @@ class Logger {
     }
   }
 
-  error(...args: any[]) {
-    console.error(`\x1b[31m[${this.id()} ERROR]\x1b[0m`, ...args)
+  private id() {
+    if (typeof this.logID === 'function') return this.logID()
+    return this.logID
   }
 }
 

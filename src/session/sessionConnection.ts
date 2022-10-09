@@ -1,12 +1,6 @@
-import {
-  RpcWebSocketClient,
-  IRpcNotification,
-} from 'rpc-websocket-client'
+import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
 
-import api, {
-  components,
-} from '../api'
-import wait from '../utils/wait'
+import api, { components } from '../api'
 import {
   SESSION_DOMAIN,
   SESSION_REFRESH_PERIOD,
@@ -15,19 +9,18 @@ import {
   WS_ROUTE,
 } from '../constants'
 import Logger from '../utils/logger'
-import { processService } from './process'
+import { assertFulfilled, formatSettledErrors } from '../utils/promise'
+import wait from '../utils/wait'
 import { codeSnippetService } from './codeSnippet'
 import { filesystemService } from './filesystem'
+import { processService } from './process'
 import { terminalService } from './terminal'
-import {
-  assertFulfilled,
-  formatSettledErrors,
-} from '../utils/promise'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void
 
-type Service = typeof processService
+type Service =
+  | typeof processService
   | typeof codeSnippetService
   | typeof filesystemService
   | typeof terminalService
@@ -56,7 +49,10 @@ export interface SessionConnectionOpts {
 }
 
 const createSession = api.path('/sessions').method('post').create({ api_key: true })
-const refreshSession = api.path('/sessions/{sessionID}/refresh').method('post').create({ api_key: true })
+const refreshSession = api
+  .path('/sessions/{sessionID}/refresh')
+  .method('post')
+  .create({ api_key: true })
 
 abstract class SessionConnection {
   protected readonly logger: Logger
@@ -71,60 +67,11 @@ abstract class SessionConnection {
     this.logger.log(`Session for code snippet "${opts.id}" initialized`)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async call(service: Service, method: string, params?: any[]) {
-    return this.rpc.call(`${service}_${method}`, params)
-  }
-
-  protected async handleSubscriptions<T extends (ReturnType<SessionConnection['subscribe']> | undefined)[]>(...subs: T): Promise<{ [P in keyof T]: Awaited<T[P]> }> {
-    const results = await Promise.allSettled(subs)
-
-    if (results.every(r => r.status === 'fulfilled')) {
-      return results.map(r => r.status === 'fulfilled' ? r.value : undefined) as { [P in keyof T]: Awaited<T[P]> }
-    }
-
-    await Promise.all(
-      results
-        .filter(assertFulfilled)
-        .map(r => r.value ? this.unsubscribe(r.value) : undefined)
-    )
-
-    throw new Error(formatSettledErrors(results))
-  }
-
-  protected async unsubscribe(subID: string) {
-    const subscription = this.subscribers.find(s => s.subID === subID)
-    if (!subscription) return
-
-    await this.call(subscription.service, 'unsubscribe', [subscription.subID])
-
-    this.subscribers = this.subscribers.filter(s => s !== subscription)
-    this.logger.log(`Unsubscribed from "${subscription.service}"`)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async subscribe(service: Service, handler: SubscriptionHandler, method: string, ...params: any[]) {
-    const subID = await this.call(service, 'subscribe', [method, ...params])
-
-    if (typeof subID !== 'string') {
-      throw new Error(`Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''}. Expected response should have been a subscription ID, instead we got ${JSON.stringify(subID)}`)
-    }
-
-    this.subscribers.push({
-      subID,
-      handler,
-      service,
-    })
-    this.logger.log(`Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''} with id "${subID}"`)
-
-    return subID
-  }
-
   /**
    * Get the hostname for the session or for the specified session's port.
-   * 
+   *
    * `getHostname` method requires `this` context - you may need to bind it.
-   * 
+   *
    * @param port specify if you want to connect to a specific port of the session
    * @returns hostname of the session or session's port
    */
@@ -154,7 +101,7 @@ abstract class SessionConnection {
 
   /**
    * Close the connection to the session
-   * 
+   *
    * `close` method requires `this` context - you may need to bind it.
    */
   async close() {
@@ -180,7 +127,7 @@ abstract class SessionConnection {
 
   /**
    * Open a connection to a new session
-   * 
+   *
    * `open` method requires `this` context - you may need to bind it.
    */
   async open() {
@@ -193,9 +140,9 @@ abstract class SessionConnection {
     if (!this.opts.__debug_hostname) {
       try {
         const res = await createSession({
+          api_key: this.opts.apiKey,
           codeSnippetID: this.opts.id,
           editEnabled: this.opts.editEnabled,
-          api_key: this.opts.apiKey,
         })
         this.session = res.data
         this.logger.log('Aquired session:', this.session)
@@ -205,13 +152,19 @@ abstract class SessionConnection {
         if (e instanceof createSession.Error) {
           const error = e.getActualType()
           if (error.status === 400) {
-            throw new Error(`Error creating session - (${error.status}) bad request: ${error.data.message}`)
+            throw new Error(
+              `Error creating session - (${error.status}) bad request: ${error.data.message}`,
+            )
           }
           if (error.status === 401) {
-            throw new Error(`Error creating session - (${error.status}) unauthenticated (you need to be authenticated to start an session with persistent edits): ${error.data.message}`)
+            throw new Error(
+              `Error creating session - (${error.status}) unauthenticated (you need to be authenticated to start an session with persistent edits): ${error.data.message}`,
+            )
           }
           if (error.status === 500) {
-            throw new Error(`Error creating session - (${error.status}) server error: ${error.data.message}`)
+            throw new Error(
+              `Error creating session - (${error.status}) server error: ${error.data.message}`,
+            )
           }
           throw e
         }
@@ -221,13 +174,13 @@ abstract class SessionConnection {
     const hostname = this.getHostname(this.opts.__debug_port || WS_PORT)
 
     if (!hostname) {
-      throw new Error('Cannot get session\'s hostname')
+      throw new Error("Cannot get session's hostname")
     }
 
     const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
     const sessionURL = `${protocol}://${hostname}${WS_ROUTE}`
 
-    this.rpc.onError((e) => {
+    this.rpc.onError(e => {
       this.logger.log('Error in WS session:', this.session, e)
     })
 
@@ -253,7 +206,7 @@ abstract class SessionConnection {
       resolveOpening?.()
     })
 
-    this.rpc.onClose(async (e) => {
+    this.rpc.onClose(async e => {
       this.logger.log('Closing WS connection to session:', this.session, e)
       if (this.isOpen) {
         this.opts.onDisconnect?.()
@@ -289,6 +242,79 @@ abstract class SessionConnection {
     await openingPromise
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected async call(service: Service, method: string, params?: any[]) {
+    return this.rpc.call(`${service}_${method}`, params)
+  }
+
+  protected async handleSubscriptions<
+    T extends (ReturnType<SessionConnection['subscribe']> | undefined)[],
+  >(
+    ...subs: T
+  ): Promise<{
+    [P in keyof T]: Awaited<T[P]>
+  }> {
+    const results = await Promise.allSettled(subs)
+
+    if (results.every(r => r.status === 'fulfilled')) {
+      return results.map(r => (r.status === 'fulfilled' ? r.value : undefined)) as {
+        [P in keyof T]: Awaited<T[P]>
+      }
+    }
+
+    await Promise.all(
+      results
+        .filter(assertFulfilled)
+        .map(r => (r.value ? this.unsubscribe(r.value) : undefined)),
+    )
+
+    throw new Error(formatSettledErrors(results))
+  }
+
+  protected async unsubscribe(subID: string) {
+    const subscription = this.subscribers.find(s => s.subID === subID)
+    if (!subscription) return
+
+    await this.call(subscription.service, 'unsubscribe', [subscription.subID])
+
+    this.subscribers = this.subscribers.filter(s => s !== subscription)
+    this.logger.log(`Unsubscribed from "${subscription.service}"`)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected async subscribe(
+    service: Service,
+    handler: SubscriptionHandler,
+    method: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...params: any[]
+  ) {
+    const subID = await this.call(service, 'subscribe', [method, ...params])
+
+    if (typeof subID !== 'string') {
+      throw new Error(
+        `Cannot subscribe to ${service}_${method}${
+          params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
+        }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
+          subID,
+        )}`,
+      )
+    }
+
+    this.subscribers.push({
+      handler,
+      service,
+      subID,
+    })
+    this.logger.log(
+      `Subscribed to "${service}_${method}"${
+        params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
+      } with id "${subID}"`,
+    )
+
+    return subID
+  }
+
   private handleNotification(data: IRpcNotification) {
     this.subscribers
       .filter(s => s.subID === data.params?.subscription)
@@ -311,17 +337,21 @@ abstract class SessionConnection {
         try {
           this.logger.log(`Refreshed session "${sessionID}"`)
           await refreshSession({
-            sessionID,
             api_key: this.opts.apiKey,
+            sessionID,
           })
         } catch (e) {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
-              this.logger.error(`Error refreshing session - (${error.status}): ${error.data.message}`)
+              this.logger.error(
+                `Error refreshing session - (${error.status}): ${error.data.message}`,
+              )
               return
             }
-            this.logger.error(`Refreshing session "${sessionID}" failed - (${error.status})`)
+            this.logger.error(
+              `Refreshing session "${sessionID}" failed - (${error.status})`,
+            )
           }
         }
       }

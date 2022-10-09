@@ -1,7 +1,7 @@
 {
   "name": "@devbookhq/sdk",
   "version": "2.5.4",
-  "description": "Devbook allows visitors of your docs to interact with and execute any code snippet or shell command in a private VM",
+  "description": "SDK for managing Devbook sessions from JavaScript/TypeScript",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
   "author": {
@@ -23,16 +23,26 @@
     "watch": "rollup -c -w",
     "measure": "node test/performance.mjs",
     "run": "node test/run.mjs",
-    "fix": "npx eslint **/src/**/*.{ts,tsx,js} --fix",
-    "generate": "openapi-typescript shared/api/openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts"
+    "fix": "npx eslint **/src/**/*.{ts,js} --fix",
+    "format": "prettier --check --ignore-path .gitignore .",
+    "format:fix": "prettier --write --ignore-path .gitignore .",
+    "generate": "openapi-typescript shared/api/openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^14.1.0",
+    "@trivago/prettier-plugin-sort-imports": "^3.3.0",
     "@types/node": "^18.7.23",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
     "eslint": "^8.24.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-unused-imports": "^2.0.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
     "openapi-typescript": "^5.4.1",
+    "prettier": "^2.7.1",
     "rollup": "^2.79.1",
     "rollup-plugin-auto-external": "^2.0.0",
     "rollup-plugin-polyfill-node": "^0.10.2",

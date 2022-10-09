@@ -1,10 +1,6 @@
 export { default as Session } from './session'
-export type {
-  SessionOpts,
-} from './session'
-export {
-  CodeSnippetExecState,
-} from './session/codeSnippet'
+export type { SessionOpts } from './session'
+export { CodeSnippetExecState } from './session/codeSnippet'
 export type {
   CodeSnippetManager,
   CodeSnippetStateHandler,
@@ -12,36 +8,13 @@ export type {
   CodeSnippetStdoutHandler,
   CodeSnippetSubscriptionHandler,
   CodeSnippetSubscriptionHandlerType,
-
   OpenedPort,
 } from './session/codeSnippet'
-export type {
-  OutResponse,
-  OutStderrResponse,
-  OutStdoutResponse,
-} from './session/out'
-export {
-  OutType,
-} from './session/out'
-export type {
-  TerminalManager,
-  TerminalSession,
-  ChildProcess,
-} from './session/terminal'
-export type {
-  FilesystemManager,
-  FileInfo,
-} from './session/filesystem'
-export type {
-  Process,
-  ProcessManager,
-} from './session/process'
-export type {
-  EnvVars,
-} from './session/envVars'
-
+export type { OutResponse, OutStderrResponse, OutStdoutResponse } from './session/out'
+export { OutType } from './session/out'
+export type { TerminalManager, TerminalSession, ChildProcess } from './session/terminal'
+export type { FilesystemManager, FileInfo } from './session/filesystem'
+export type { Process, ProcessManager } from './session/process'
+export type { EnvVars } from './session/envVars'
 export { default as api } from './api'
-export type {
-  components,
-  paths,
-} from './api'
+export type { components, paths } from './api'

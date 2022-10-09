@@ -1,13 +1,11 @@
 import { writeFileSync } from 'fs'
+
 import { Session } from '../dist/cjs/index.js'
 
 const apiKey = process.env.API_KEY
 const reportSummaryFile = process.env.SUMMARY_FILE || './test.md'
 
-const codeSnippetIDs = [
-  'Go',
-  'Nodejs',
-]
+const codeSnippetIDs = ['Go', 'Nodejs']
 const samplePerID = 3
 const upperBoundary = 1000 // 1s
 
@@ -20,16 +18,19 @@ async function spinSession(id, isEditSession) {
       id,
       // debug: true,
       editEnabled: isEditSession,
-      ...isEditSession && { apiKey },
+      ...(isEditSession && { apiKey }),
     })
     await session.open()
 
     const endTime = performance.now()
     return endTime - startTime
   } catch (e) {
-    console.error(`Measuring ${id}${isEditSession ? ' (persistent session)' : ''} failed`, e)
+    console.error(
+      `Measuring ${id}${isEditSession ? ' (persistent session)' : ''} failed`,
+      e,
+    )
   } finally {
-    (async () => {
+    ;(async () => {
       try {
         await session?.close()
       } catch (e) {
@@ -84,9 +85,21 @@ async function sample(id, size, isEditSession) {
 
     const averageTime = Math.round(totalTime / size)
 
-    return { [entryName]: { result: `${averageTime}ms ${averageTime < upperBoundary ? ':heavy_check_mark:' : ':x:'}`, size } }
+    return {
+      [entryName]: {
+        result: `${averageTime}ms ${
+          averageTime < upperBoundary ? ':heavy_check_mark:' : ':x:'
+        }`,
+        size,
+      },
+    }
   } catch (e) {
-    return { [entryName]: { size, result: e.message } }
+    return {
+      [entryName]: {
+        size,
+        result: e.message,
+      },
+    }
   }
 }
 

@@ -1,33 +1,18 @@
-import SessionConnection, {
-  SessionConnectionOpts,
-} from './sessionConnection'
+import { id } from '../utils/id'
+import { createDeferredPromise, formatSettledErrors } from '../utils/promise'
 import {
+  CodeSnippetExecState,
   CodeSnippetManager,
   CodeSnippetStateHandler,
   CodeSnippetStderrHandler,
   CodeSnippetStdoutHandler,
-  codeSnippetService,
-  CodeSnippetExecState,
   ScanOpenedPortsHandler,
+  codeSnippetService,
 } from './codeSnippet'
-import {
-  TerminalManager,
-  terminalService,
-} from './terminal'
-import {
-  FilesystemManager,
-  FileInfo,
-  filesystemService,
-} from './filesystem'
-import {
-  ProcessManager,
-  processService,
-} from './process'
-import { id } from '../utils/id'
-import {
-  createDeferredPromise,
-  formatSettledErrors,
-} from '../utils/promise'
+import { FileInfo, FilesystemManager, filesystemService } from './filesystem'
+import { ProcessManager, processService } from './process'
+import SessionConnection, { SessionConnectionOpts } from './sessionConnection'
+import { TerminalManager, terminalService } from './terminal'
 
 export interface CodeSnippetOpts {
   onStateChange?: CodeSnippetStateHandler
@@ -41,12 +26,12 @@ export interface SessionOpts extends SessionConnectionOpts {
 }
 
 class Session extends SessionConnection {
-  private readonly codeSnippetOpts?: CodeSnippetOpts
-
   codeSnippet?: CodeSnippetManager
   terminal?: TerminalManager
   filesystem?: FilesystemManager
   process?: ProcessManager
+
+  private readonly codeSnippetOpts?: CodeSnippetOpts
 
   constructor(opts: SessionOpts) {
     super(opts)
@@ -67,19 +52,29 @@ class Session extends SessionConnection {
         ? this.subscribe(codeSnippetService, this.codeSnippetOpts.onStdout, 'stdout')
         : undefined,
       this.codeSnippetOpts?.onScanPorts
-        ? this.subscribe(codeSnippetService, this.codeSnippetOpts.onScanPorts, 'scanOpenedPorts')
+        ? this.subscribe(
+            codeSnippetService,
+            this.codeSnippetOpts.onScanPorts,
+            'scanOpenedPorts',
+          )
         : undefined,
     )
 
     // Init CodeSnippet handler
     this.codeSnippet = {
       run: async (code, envVars = {}) => {
-        const state = await this.call(codeSnippetService, 'run', [code, envVars]) as CodeSnippetExecState
+        const state = (await this.call(codeSnippetService, 'run', [
+          code,
+          envVars,
+        ])) as CodeSnippetExecState
         this.codeSnippetOpts?.onStateChange?.(state)
         return state
       },
       stop: async () => {
-        const state = await this.call(codeSnippetService, 'stop') as CodeSnippetExecState
+        const state = (await this.call(
+          codeSnippetService,
+          'stop',
+        )) as CodeSnippetExecState
         this.codeSnippetOpts?.onStateChange?.(state)
         return state
       },
@@ -87,25 +82,22 @@ class Session extends SessionConnection {
 
     // Init Filesystem handler
     this.filesystem = {
-      listAllFiles: async (path) => {
-        return await this.call(filesystemService, 'listAllFiles', [path]) as FileInfo[]
+      listAllFiles: async path => {
+        return (await this.call(filesystemService, 'listAllFiles', [path])) as FileInfo[]
       },
-      removeFile: async (path) => {
+      readFile: async path => {
+        return (await this.call(filesystemService, 'readFile', [path])) as string
+      },
+      removeFile: async path => {
         await this.call(filesystemService, 'removeFile', [path])
       },
       writeFile: async (path, content) => {
         await this.call(filesystemService, 'writeFile', [path, content])
       },
-      readFile: async (path) => {
-        return await this.call(filesystemService, 'readFile', [path]) as string
-      },
     }
 
     // Init Terminal handler
     this.terminal = {
-      killProcess: async (pid) => {
-        await this.call(terminalService, 'killProcess', [pid])
-      },
       createSession: async ({
         onData,
         onChildProcessesChange,
@@ -113,31 +105,32 @@ class Session extends SessionConnection {
         onExit,
         terminalID = id(12),
       }) => {
-        const {
-          promise: terminalExited,
-          resolve: triggerExit,
-        } = createDeferredPromise()
+        const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
 
-        const [
-          onDataSubID,
-          onExitSubID,
-          onChildProcessesChangeSubID,
-        ] = await this.handleSubscriptions(
-          this.subscribe(terminalService, onData, 'onData', terminalID),
-          this.subscribe(terminalService, triggerExit, 'onExit', terminalID),
-          onChildProcessesChange ? this.subscribe(terminalService, onChildProcessesChange, 'onChildProcessesChange', terminalID) : undefined,
-        )
+        const [onDataSubID, onExitSubID, onChildProcessesChangeSubID] =
+          await this.handleSubscriptions(
+            this.subscribe(terminalService, onData, 'onData', terminalID),
+            this.subscribe(terminalService, triggerExit, 'onExit', terminalID),
+            onChildProcessesChange
+              ? this.subscribe(
+                  terminalService,
+                  onChildProcessesChange,
+                  'onChildProcessesChange',
+                  terminalID,
+                )
+              : undefined,
+          )
 
-        const {
-          promise: unsubscribing,
-          resolve: handleFinishUnsubscribing,
-        } = createDeferredPromise()
+        const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
+          createDeferredPromise()
 
         terminalExited.then(async () => {
           const results = await Promise.allSettled([
             this.unsubscribe(onExitSubID),
             this.unsubscribe(onDataSubID),
-            onChildProcessesChangeSubID ? this.unsubscribe(onChildProcessesChangeSubID) : undefined,
+            onChildProcessesChangeSubID
+              ? this.unsubscribe(onChildProcessesChangeSubID)
+              : undefined,
           ])
 
           const errMsg = formatSettledErrors(results)
@@ -149,7 +142,6 @@ class Session extends SessionConnection {
           handleFinishUnsubscribing()
         })
 
-
         try {
           await this.call(terminalService, 'start', [terminalID, size.cols, size.rows])
         } catch (err) {
@@ -159,7 +151,6 @@ class Session extends SessionConnection {
         }
 
         return {
-          terminalID,
           destroy: async () => {
             try {
               await this.call(terminalService, 'destroy', [terminalID])
@@ -168,14 +159,18 @@ class Session extends SessionConnection {
               await unsubscribing
             }
           },
-          sendData: async (data) => {
-            await this.call(terminalService, 'data', [terminalID, data])
-          },
           resize: async ({ cols, rows }) => {
             await this.call(terminalService, 'resize', [terminalID, cols, rows])
           },
+          sendData: async data => {
+            await this.call(terminalService, 'data', [terminalID, data])
+          },
+          terminalID,
         }
-      }
+      },
+      killProcess: async pid => {
+        await this.call(terminalService, 'killProcess', [pid])
+      },
     }
 
     // Init Process handler
@@ -189,26 +184,21 @@ class Session extends SessionConnection {
         rootdir = '/',
         processID = id(12),
       }) => {
+        const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
-        const {
-          promise: processExited,
-          resolve: triggerExit,
-        } = createDeferredPromise()
+        const [onExitSubID, onStdoutSubID, onStderrSubID] =
+          await this.handleSubscriptions(
+            this.subscribe(processService, triggerExit, 'onExit', processID),
+            onStdout
+              ? this.subscribe(processService, onStdout, 'onStdout', processID)
+              : undefined,
+            onStderr
+              ? this.subscribe(processService, onStderr, 'onStderr', processID)
+              : undefined,
+          )
 
-        const [
-          onExitSubID,
-          onStdoutSubID,
-          onStderrSubID,
-        ] = await this.handleSubscriptions(
-          this.subscribe(processService, triggerExit, 'onExit', processID),
-          onStdout ? this.subscribe(processService, onStdout, 'onStdout', processID) : undefined,
-          onStderr ? this.subscribe(processService, onStderr, 'onStderr', processID) : undefined,
-        )
-
-        const {
-          promise: unsubscribing,
-          resolve: handleFinishUnsubscribing,
-        } = createDeferredPromise()
+        const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
+          createDeferredPromise()
 
         processExited.then(async () => {
           const results = await Promise.allSettled([
@@ -235,7 +225,6 @@ class Session extends SessionConnection {
         }
 
         return {
-          processID,
           kill: async () => {
             try {
               await this.call(processService, 'kill', [processID])
@@ -244,11 +233,12 @@ class Session extends SessionConnection {
               await unsubscribing
             }
           },
-          sendStdin: async (data) => {
+          processID,
+          sendStdin: async data => {
             await this.call(processService, 'stdin', [processID, data])
           },
         }
-      }
+      },
     }
   }
 }
