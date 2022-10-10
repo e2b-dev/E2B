@@ -156,12 +156,16 @@ resource "google_compute_url_map" "client_map" {
   }
 }
 
+data "google_compute_global_address" "orch_client_ip" {
+  name = "orch-client-ip"
+}
+
 module "gce_lb_http" {
   source  = "GoogleCloudPlatform/lb-http/google"
   version = "~> 5.1"
   name    = "orch-external-session"
   project = var.gcp_project_id
-  address = "34.120.40.50"
+  address = data.google_compute_global_address.orch_client_ip.address
   ssl_certificates = [
     data.google_compute_ssl_certificate.session_certificate.self_link,
     data.google_compute_ssl_certificate.ondevbook_certificate.self_link,
@@ -286,12 +290,16 @@ module "gce_lb_http" {
   }
 }
 
+data "google_compute_global_address" "orch_logs_ip" {
+  name = "orch-logs-ip"
+}
+
 module "gce_lb_http_logs" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
   name           = "orch-external-logs-endpoint"
   project        = var.gcp_project_id
-  address        = "34.110.214.205"
+  address        = data.google_compute_global_address.orch_logs_ip.address
   create_address = false
   target_tags = [
     var.cluster_tag_name,

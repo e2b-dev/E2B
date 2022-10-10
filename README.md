@@ -2,10 +2,6 @@
 Backend services for handling VM sessions, environments' pipeline, and the API for them.
 
 ## Development
-Nomad dashboard - http://34.149.1.201/ui
-
-Consule dashboard - http://35.244.214.226/ui
-
 Architecture - https://www.figma.com/file/pr02o1okRpScOmNpAmgvCL/Architecture
 
 ### GCE Terraform troubleshooting
@@ -22,8 +18,6 @@ If you have problems with variables when redeploying from scratch (missing api k
 
 ### Subtrees
 #### firecracker-task-driver
-FC task driver is a subtree made from https://github.com/devbookhq/firecracker-task-driver repository.
-
 The subtree commands you need for controling this repo are:
 ```bash
 git subtree add --prefix cluster/disk-image/firecracker-task-driver https://github.com/devbookhq/firecracker-task-driver.git master

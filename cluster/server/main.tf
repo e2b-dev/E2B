@@ -112,12 +112,16 @@ resource "google_compute_instance_template" "server" {
 
 # LOAD BALANCERS
 
+data "google_compute_global_address" "orch_server_ip" {
+  name = "orch-server-ip"
+}
+
 module "gce_lb_http_nomad" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
   name           = "orch-external-nomad-dashboard"
   project        = var.gcp_project_id
-  address        = "34.149.1.201"
+  address        = data.google_compute_global_address.orch_server_ip.address
   create_address = false
   target_tags = [
     var.cluster_tag_name,
@@ -180,12 +184,16 @@ module "gce_lb_http_nomad" {
   }
 }
 
+data "google_compute_global_address" "orch_server_consul_ip" {
+  name = "orch-server-consul-ip"
+}
+
 module "gce_lb_http_consul" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
   name           = "orch-external-consul-dashboard"
   project        = var.gcp_project_id
-  address        = "35.244.214.226"
+  address        = data.google_compute_global_address.orch_server_consul_ip.address
   create_address = false
   target_tags = [
     var.cluster_tag_name,

@@ -48,8 +48,12 @@ module "cluster" {
   api_port                 = var.api_port
 }
 
+data "google_compute_global_address" "orch_server_ip" {
+  name = "orch-server-ip"
+}
+
 provider "nomad" {
-  address = "http://${module.cluster.server_proxy_ip}"
+  address = "http://${data.google_compute_global_address.orch_server_ip.address}"
 }
 
 data "google_secret_manager_secret_version" "lightstep_api_key" {
@@ -62,7 +66,6 @@ data "google_secret_manager_secret_version" "logtail_api_key" {
 
 module "telemetry" {
   source = "./telemetry"
-
 
   logs_health_proxy_port = var.logs_health_proxy_port
   logs_proxy_port        = var.logs_proxy_port
