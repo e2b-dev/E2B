@@ -14,8 +14,6 @@ to start temporary Nomad on any server and tear it all down with `terraform appl
 
 If the Nomad is running but it has no leader, delete Load balancer and Instance group then destroy the infrastructure.
 
-If you have problems with variables when redeploying from scratch (missing api key variables in hcl/nomad jobs, etc) comment out the api in the top `main.tf` file and deploy it after you deploy all the other infrastructure.
-
 ### Subtrees
 #### firecracker-task-driver
 The subtree commands you need for controling this repo are:
