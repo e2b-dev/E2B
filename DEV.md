@@ -15,18 +15,21 @@ Run `make run-debug` and then connect to the port 2345 with a debugger or
 use the VSCode run/debug and run the "Debug in Docker" to build the devbookd, Docker and start the debugging.
 
 ## Services' messages
-> You need to replace the `terminalID` and `processID` in some JSONRPC messages.
+> You need to replace the `myTerminalID` and `myProcessID` in some JSONRPC messages.
+
+`myProcessID` isn't the actual process ID (pid) of the OS. It's a custom ID you pass to devbookd to make it easier keeping track of processes you want to run.
+
 
 ### Process service
 Subscribers:
-- `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onStdout", "testing1"], "id": 4}` - Subscibe to process exit
-- `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onStderr", "testing1"], "id": 5}` - Subscibe to process stdout
-- `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onExit", "testing1"], "id": 6}` - Subscibe to process stderr
+- `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onStdout", "myProcessID"], "id": 4}` - Subscibe to process exit
+- `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onStderr", "myProcessID"], "id": 5}` - Subscibe to process stdout
+- `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onExit", "myProcessID"], "id": 6}` - Subscibe to process stderr
 
 Methods:
-- `{"jsonrpc": "2.0", "method": "process_start", "params": ["testing1", "tsserver", {}, "/"], "id": 57}` - Start new process
-- `{"jsonrpc": "2.0", "method": "process_kill", "params": ["testing1"], "id": 60}` - Kill existing process
-- `{"jsonrpc": "2.0", "method": "process_stdin", "params": ["testing1", "test"], "id": 59}` - Send stdin to process
+- `{"jsonrpc": "2.0", "method": "process_start", "params": ["myProcessID", "tsserver", {}, "/"], "id": 57}` - Start new process
+- `{"jsonrpc": "2.0", "method": "process_kill", "params": ["myProcessID"], "id": 60}` - Kill existing process
+- `{"jsonrpc": "2.0", "method": "process_stdin", "params": ["myProcessID", "test"], "id": 59}` - Send stdin to process
 
 ### Code snippet service
 Subscribers:
@@ -40,8 +43,8 @@ Methods:
 
 ### Terminal service
 Subscribers:
-- `{"jsonrpc": "2.0", "method": "terminal_subscribe", "params": ["onChildProcessesChange", "cblpusiko5ps759fdas0"], "id": 4}` - Subscibe to changes in terminal's child processes
-- `{"jsonrpc": "2.0", "method": "terminal_subscribe", "params": ["onExit", "cblpusiko5ps759fdas0"], "id": 4}` - Subscibe to terminal process exit
+- `{"jsonrpc": "2.0", "method": "terminal_subscribe", "params": ["onChildProcessesChange", "myTerminalID"], "id": 4}` - Subscibe to changes in terminal's child processes
+- `{"jsonrpc": "2.0", "method": "terminal_subscribe", "params": ["onExit", "myTerminalID"], "id": 4}` - Subscibe to terminal process exit
 
 Methods:
 - `{"jsonrpc": "2.0", "method": "terminal_start", "params": ["", 100, 80], "id": 5}` - Start a new terminal session
