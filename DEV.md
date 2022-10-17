@@ -49,3 +49,11 @@ Subscribers:
 Methods:
 - `{"jsonrpc": "2.0", "method": "terminal_start", "params": ["", 100, 80], "id": 5}` - Start a new terminal session
 - `{"jsonrpc": "2.0", "method": "terminal_data", "params": ["cblpusiko5ps759fdas0", "sleep 10\n"], "id": 57}` - Execute input in a specified terminal
+
+### Filesystem service
+Methods:
+- `{"jsonrpc": "2.0", "method": "filesystem_listAllFiles", "params": ["myPath"], "id": 5}` - List all files (and directories) on a specified path
+- `{"jsonrpc": "2.0", "method": "filesystem_readFile", "params": ["myPath"], "id": 57}` - Returns content of the file on the specified path
+- `{"jsonrpc": "2.0", "method": "filesystem_removeFile", "params": ["myPath"], "id": 57}` - Remove file on the specified path
+- `{"jsonrpc": "2.0", "method": "filesystem_writeFile", "params": ["myPath", "myContent"], "id": 57}` - Create or overwrite file on the specified path with the specified content
+
