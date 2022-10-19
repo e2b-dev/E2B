@@ -19,7 +19,6 @@ use the VSCode run/debug and run the "Debug in Docker" to build the devbookd, Do
 
 `myProcessID` isn't the actual process ID (pid) of the OS. It's a custom ID you pass to devbookd to make it easier keeping track of processes you want to run.
 
-
 ### Process service
 Subscribers:
 - `{"jsonrpc": "2.0", "method": "process_subscribe", "params": ["onStdout", "myProcessID"], "id": 4}` - Subscibe to process exit
