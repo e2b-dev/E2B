@@ -37,9 +37,9 @@ func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
 		env:       env,
 		terminals: NewManager(logger),
 
-		dataSubs:           subscriber.NewManager("terminal/dataSubs", logger),
-		childProcessesSubs: subscriber.NewManager("terminal/childProcessesSubs", logger),
-		exitSubs:           subscriber.NewManager("terminal/exitSubs", logger),
+		dataSubs:           subscriber.NewManager("terminal/dataSubs", logger.Named("subscriber.terminal.dataSubs")),
+		childProcessesSubs: subscriber.NewManager("terminal/childProcessesSubs", logger.Named("subscriber.terminal.childProcessesSubs")),
+		exitSubs:           subscriber.NewManager("terminal/exitSubs", logger.Named("subscriber.terminal.exitSubs")),
 	}
 }
 

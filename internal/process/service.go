@@ -28,9 +28,9 @@ func NewService(logger *zap.SugaredLogger) *Service {
 		logger:    logger,
 		processes: NewManager(logger),
 
-		stdoutSubs: subscriber.NewManager("process/stdoutSubs", logger),
-		stderrSubs: subscriber.NewManager("process/stderrSubs", logger),
-		exitSubs:   subscriber.NewManager("process/exitSubs", logger),
+		stdoutSubs: subscriber.NewManager("process/stdoutSubs", logger.Named("subscriber.process.stdoutSubs")),
+		stderrSubs: subscriber.NewManager("process/stderrSubs", logger.Named("subscriber.process.stderrSubs")),
+		exitSubs:   subscriber.NewManager("process/exitSubs", logger.Named("subscriber.process.exitSubs")),
 	}
 }
 
@@ -45,10 +45,10 @@ func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType, process *P
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		var o output.OutResponse
+		var o output.OutMessage
 		switch t {
 		case output.OutTypeStdout:
-			o = output.NewStdoutResponse(line)
+			o = output.NewStdoutMessage(line)
 			err := s.stdoutSubs.Notify(process.ID, o)
 			if err != nil {
 				s.logger.Errorw("Failed to send stdout notification",
@@ -56,7 +56,7 @@ func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType, process *P
 				)
 			}
 		case output.OutTypeStderr:
-			o = output.NewStderrResponse(line)
+			o = output.NewStderrMessage(line)
 			err := s.stderrSubs.Notify(process.ID, o)
 			if err != nil {
 				s.logger.Errorw("Failed to send stderr notification",

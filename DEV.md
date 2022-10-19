@@ -51,6 +51,9 @@ Methods:
 - `{"jsonrpc": "2.0", "method": "terminal_data", "params": ["cblpusiko5ps759fdas0", "sleep 10\n"], "id": 57}` - Execute input in a specified terminal
 
 ### Filesystem service
+Subscribers:
+- `{"jsonrpc": "2.0", "method": "filesystem_watch", "params": ["/path/to/watch"], "id": 4}` - Subscribe to filesystem events on a path. Trying to watch a nonexisting path will result in error.
+
 Methods:
 - `{"jsonrpc": "2.0", "method": "filesystem_listAllFiles", "params": ["myPath"], "id": 5}` - List all files (and directories) on a specified path
 - `{"jsonrpc": "2.0", "method": "filesystem_readFile", "params": ["myPath"], "id": 57}` - Returns content of the file on the specified path

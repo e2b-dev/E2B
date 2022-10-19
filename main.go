@@ -93,7 +93,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	logger = l
 	defer logger.Sync()
 	logger.Info("Logger and environment construction succeeded")
@@ -110,25 +110,31 @@ func main() {
 		portForwarder := port.NewForwarder(logger, newEnv, portScanner)
 		go portForwarder.StartForwarding()
 
-		codeSnippetService := codeSnippet.NewService(logger, newEnv, portScanner)
+		codeSnippetService := codeSnippet.NewService(logger.Named("codeSnippetSvc"), newEnv, portScanner)
 		if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
-			logger.Errorw("failed to register code snippet service", "error", err)
+			logger.Panicw("failed to register code snippet service", "error", err)
 		}
 
-		filesystemService := filesystem.NewService(logger)
-		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
-			logger.Errorw("failed to register filesystem service", "error", err)
+		if filesystemService, err := filesystem.NewService(logger.Named("filesystemSvc")); err == nil {
+			if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
+				logger.Panicw("failed to register filesystem service", "error", err)
+			}
+		} else {
+			logger.Panicw(
+				"failed to create filesystem service",
+				"err", err,
+			)
 		}
 
-		processService := process.NewService(logger)
+		processService := process.NewService(logger.Named("processSvc"))
 		if err := rpcServer.RegisterName("process", processService); err != nil {
-			logger.Errorw("failed to register process service", "error", err)
+			logger.Panicw("failed to register process service", "error", err)
 		}
 	}
 
-	terminalService := terminal.NewService(logger, newEnv)
+	terminalService := terminal.NewService(logger.Named("terminalSvc"), newEnv)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
-		logger.Errorw("failed to register terminal service", "error", err)
+		logger.Panicw("failed to register terminal service", "error", err)
 	}
 
 	router := mux.NewRouter()
@@ -150,6 +156,6 @@ func main() {
 		"port", serverPort,
 	)
 	if err := server.ListenAndServe(); err != nil {
-		logger.Errorw("Failed to start the server", "error", err)
+		logger.Panicw("Failed to start the server", "error", err)
 	}
 }

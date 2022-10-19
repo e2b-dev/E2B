@@ -40,7 +40,7 @@ type Service struct {
 	// is already running we can send all the output that has happened since the start
 	// of the command.
 	// This way a user on the frontend doesn't even notice that command has been running.
-	cachedOut []output.OutResponse
+	cachedOut []output.OutMessage
 	running   *atomic.Bool
 	cmd       *exec.Cmd
 
@@ -70,10 +70,10 @@ func NewService(
 
 		scannerSubscriber: scannerSub,
 
-		stdoutSubs:          subscriber.NewManager("codeSnippet/stdoutSubs", logger),
-		stderrSubs:          subscriber.NewManager("codeSnippet/stderrSubs", logger),
-		stateSubs:           subscriber.NewManager("codeSnippet/stateSubs", logger),
-		scanOpenedPortsSubs: subscriber.NewManager("codeSnippet/scanOpenedPortsSubs", logger),
+		stdoutSubs:          subscriber.NewManager("codeSnippet/stdoutSubs", logger.Named("subscriber.codeSnippet.stdoutSubs")),
+		stderrSubs:          subscriber.NewManager("codeSnippet/stderrSubs", logger.Named("subscriber.codeSnippet.stderrSubs")),
+		stateSubs:           subscriber.NewManager("codeSnippet/stateSubs", logger.Named("subscriber.codeSnippet.stateSubs")),
+		scanOpenedPortsSubs: subscriber.NewManager("codeSnippet/scanOpenedPortsSubs", logger.Named("subscriber.codeSnippet.scanOpenedPorts")),
 	}
 
 	go cs.listenToOpenPorts()
@@ -81,24 +81,24 @@ func NewService(
 	return cs
 }
 
-func (s *Service) getCachedOut() []output.OutResponse {
+func (s *Service) getCachedOut() []output.OutMessage {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	list := make([]output.OutResponse, len(s.cachedOut))
+	list := make([]output.OutMessage, len(s.cachedOut))
 	copy(list, s.cachedOut)
 
 	return list
 }
 
-func (s *Service) setCachedOut(out []output.OutResponse) {
+func (s *Service) setCachedOut(out []output.OutMessage) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.cachedOut = out
 }
 
-func (s *Service) addToCachedOut(o output.OutResponse) {
+func (s *Service) addToCachedOut(o output.OutMessage) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -138,7 +138,7 @@ func (s *Service) notifyScanOpenedPorts(ports []GOnetstat.Process) {
 	}
 }
 
-func (s *Service) notifyOut(o *output.OutResponse) {
+func (s *Service) notifyOut(o *output.OutMessage) {
 	switch o.Type {
 	case output.OutTypeStdout:
 		err := s.stdoutSubs.Notify("", o)
@@ -171,13 +171,13 @@ func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		var o output.OutResponse
+		var o output.OutMessage
 
 		switch t {
 		case output.OutTypeStdout:
-			o = output.NewStdoutResponse(line)
+			o = output.NewStdoutMessage(line)
 		case output.OutTypeStderr:
-			o = output.NewStderrResponse(line)
+			o = output.NewStderrMessage(line)
 		}
 
 		s.addToCachedOut(o)
@@ -224,7 +224,7 @@ func (s *Service) runCmd(code string, envVars *map[string]string) {
 			"cmd", s.cmd,
 			"error", err,
 		)
-		o := output.NewStderrResponse(err.Error())
+		o := output.NewStderrMessage(err.Error())
 		s.notifyOut(&o)
 		return
 	}
@@ -236,7 +236,7 @@ func (s *Service) runCmd(code string, envVars *map[string]string) {
 			"cmd", s.cmd,
 			"error", err,
 		)
-		o := output.NewStderrResponse(err.Error())
+		o := output.NewStderrMessage(err.Error())
 		s.notifyOut(&o)
 		stderr.Close()
 		return
@@ -248,7 +248,7 @@ func (s *Service) runCmd(code string, envVars *map[string]string) {
 			"cmd", s.cmd,
 			"error", err,
 		)
-		o := output.NewStderrResponse(err.Error())
+		o := output.NewStderrMessage(err.Error())
 		s.notifyOut(&o)
 		stdout.Close()
 		stderr.Close()
@@ -285,7 +285,7 @@ func (s *Service) Stop() CodeSnippetState {
 			"signal", sig,
 			"error", err,
 		)
-		o := output.NewStderrResponse(err.Error())
+		o := output.NewStderrMessage(err.Error())
 		s.notifyOut(&o)
 	}
 

@@ -115,7 +115,30 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 		configureEnvForServerMode(env)
 	}
 
-	logger, err := log.NewLogger(env.logDir, env.debug, env.runtimeMode == RuntimeModeServer)
+	//logger, err := log.NewLogger(env.logDir, env.debug, env.runtimeMode == RuntimeModeServer)
+	l, err := log.NewLogger(env.logDir, env.debug, false)
+	envLogger := l.Named("env")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+	envLogger.Warn("TODO: ++++++++++++++++++++++++++++ ENABLE MMDS +++++++++++++++++++++++++++++++++++++++++")
+
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating a new logger: %+v", err)
 	}
@@ -124,11 +147,11 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 	// TODO: Move this configuration to `configureEnvForServerMode`?
 	// We want to use a logger here though.
 	if env.runtimeMode == RuntimeModeServer {
-		logger.Infow("Loading environment", "envFilePath", envFilePath)
+		envLogger.Infow("Loading environment", "envFilePath", envFilePath)
 
 		file, err := os.Open(envFilePath)
 		if err != nil {
-			logger.Errorw("Failed to open env file",
+			envLogger.Errorw("Failed to open env file",
 				"envFilePath", envFilePath,
 				"error", err,
 			)
@@ -145,20 +168,20 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 			name, value, found := strings.Cut(line, "=")
 
 			if !found {
-				logger.Warnw("Invalid env format in the env file",
+				envLogger.Warnw("Invalid env format in the env file",
 					"envFilePath", envFilePath,
 					"line", line,
 				)
 			}
 
-			logger.Infow("Loaded env var from the env file",
+			envLogger.Infow("Loaded env var from the env file",
 				"envFilePath", envFilePath,
 				"name", name,
 				"value", value,
 			)
 
 			if value == "" {
-				warnEmptyEnvVar(logger, line, name)
+				warnEmptyEnvVar(envLogger, line, name)
 				continue
 			}
 
@@ -173,7 +196,7 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 			case ENV_VAR_ENTRYPOINT:
 				env.entrypoint = value
 			default:
-				logger.Warnw("Unknown env var in the env file. Will be ignored",
+				envLogger.Warnw("Unknown env var in the env file. Will be ignored",
 					"envFilePath", envFilePath,
 					"line", line,
 					"name", name,
@@ -188,7 +211,7 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 		env.entrypointFullPath = path.Join(env.workdir, env.entrypoint)
 	}
 
-	return env, logger, nil
+	return env, l, nil
 }
 
 func (e *Env) Shell() string {

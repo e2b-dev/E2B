@@ -6,6 +6,7 @@ require (
 	github.com/creack/pty v1.1.18
 	github.com/drael/GOnetstat v0.0.0-20201004132414-bf4a88b0bdab
 	github.com/ethereum/go-ethereum v1.10.20
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/rs/xid v1.4.0
 	go.uber.org/zap v1.21.0
@@ -23,6 +24,6 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
-	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e // indirect
+	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )

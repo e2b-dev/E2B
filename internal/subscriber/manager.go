@@ -37,13 +37,6 @@ func (m *Manager) Notify(id ID, data interface{}) error {
 
 func (m *Manager) HasSubscribers(id ID) bool {
 	subs := m.GetByID(id)
-
-	m.logger.Debugw("Remaining subscribers",
-		"subscription", m.label,
-		"ID", id,
-		"count", len(subs),
-	)
-
 	return len(subs) > 0
 }
 
