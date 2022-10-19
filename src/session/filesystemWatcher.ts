@@ -1,12 +1,12 @@
 import { filesystemService } from './filesystem'
-import SessionConnection from "./sessionConnection"
+import SessionConnection from './sessionConnection'
 
 export enum FilesystemOperation {
   Create = 'Create',
-	Write = 'Write',
-	Remove = 'Remove',
-	Rename = 'Rename',
-	Chmod = 'Chmod',
+  Write = 'Write',
+  Remove = 'Remove',
+  Rename = 'Rename',
+  Chmod = 'Chmod',
 }
 
 export interface FilesystemEvent {
@@ -26,10 +26,7 @@ class FilesystemWatcher {
   private listeners: Set<FilesystemEventListener>
   private rpcSubscriptionID?: string
 
-  constructor(
-    private sessConn: SessionConnection,
-    private path: string,
-  ) {
+  constructor(private sessConn: SessionConnection, private path: string) {
     this.listeners = new Set<FilesystemEventListener>()
   }
 
@@ -56,19 +53,19 @@ class FilesystemWatcher {
     this.listeners.clear()
   }
 
-  private handleFilesystemEvents(fsChange: FilesystemEvent) {
-    this.listeners.forEach(l => {
-      l(fsChange)
-    })
-  }
-
   addEventListener(l: FilesystemEventListener) {
     this.listeners.add(l)
     return {
       remove: () => {
         this.listeners.delete(l)
-      }
+      },
     }
+  }
+
+  private handleFilesystemEvents(fsChange: FilesystemEvent) {
+    this.listeners.forEach(l => {
+      l(fsChange)
+    })
   }
 }
 
