@@ -1,4 +1,5 @@
 import normalizePath from 'normalize-path'
+
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors } from '../utils/promise'
 import {
@@ -10,11 +11,7 @@ import {
   ScanOpenedPortsHandler,
   codeSnippetService,
 } from './codeSnippet'
-import {
-  FileInfo,
-  FilesystemManager,
-  filesystemService,
-} from './filesystem'
+import { FileInfo, FilesystemManager, filesystemService } from './filesystem'
 import FilesystemWatcher from './filesystemWatcher'
 import { ProcessManager, processService } from './process'
 import SessionConnection, { SessionConnectionOpts } from './sessionConnection'
@@ -100,7 +97,7 @@ class Session extends SessionConnection {
       writeFile: async (path, content) => {
         await this.call(filesystemService, 'writeFile', [path, content])
       },
-      watch: async (path: string) => {
+      watch: (path: string) => {
         const npath = normalizePath(path)
         return new FilesystemWatcher(this, npath)
       },
