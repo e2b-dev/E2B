@@ -62,7 +62,7 @@ class FilesystemWatcher {
     })
   }
 
-  addEventListener(s: FilesystemEventListener) {
+  addEventListener(l: FilesystemEventListener) {
     this.listeners.add(s)
     return {
       remove: () => {

@@ -12,5 +12,5 @@ export interface FilesystemManager {
   readonly readFile: (path: string) => Promise<string>
   readonly removeFile: (path: string) => Promise<void>
   readonly listAllFiles: (path: string) => Promise<FileInfo[]>
-  readonly watch: (path: string) => Promise<FilesystemWatcher>
+  readonly watch: (path: string) => FilesystemWatcher
 }
