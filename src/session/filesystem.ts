@@ -1,3 +1,5 @@
+import FilesystemWatcher from "./filesystemWatcher"
+
 export const filesystemService = 'filesystem'
 
 export interface FileInfo {
@@ -10,4 +12,5 @@ export interface FilesystemManager {
   readonly readFile: (path: string) => Promise<string>
   readonly removeFile: (path: string) => Promise<void>
   readonly listAllFiles: (path: string) => Promise<FileInfo[]>
+  readonly watch: (path: string) => Promise<FilesystemWatcher>
 }

@@ -30,16 +30,36 @@ async function main() {
 
   try {
     await session.open()
+    const watcher = await session.filesystem.watch('/code')
+    const lis = watcher.addEventListener(event => {
+      console.log('watcher', event)
+    })
+    await watcher.start()
+
+    const watcher2 = await session.filesystem.watch('/code/prisma')
+    watcher2.addEventListener(event => {
+      console.log('watcher2', event)
+    })
+    await watcher2.start()
+
+    const watcher3 = await session.filesystem.watch('/code')
+    const lis3 = watcher3.addEventListener(event => {
+      console.log('watcher3', event)
+      //watcher3.stop()
+    })
+    await watcher3.start()
+
+
     // await session.codeSnippet.run('console')
     // await session.codeSnippet.run('echo 2')
     // await session.codeSnippet.stop()
     // await session.codeSnippet.run('sleep 2')
     // await session.codeSnippet.stop()
-    const term = await session.terminal.createSession({
-      onData: data => console.log(data),
-      size: { cols: 20, rows: 40 },
-      onChildProcessesChange: cp => console.log(cp),
-    })
+    //const term = await session.terminal.createSession({
+    //  onData: data => console.log(data),
+    //  size: { cols: 20, rows: 40 },
+    //  onChildProcessesChange: cp => console.log(cp),
+    //})
 
     // const term2 = await session.terminal.createSession({
     //   onData: (data) => console.log(data),
@@ -67,7 +87,7 @@ async function main() {
     // const hostname = session.getHostname()
     // console.log(hostname)
   } catch (e) {
-    console.error(e)
+    console.error('Session error', e)
   }
 }
 
