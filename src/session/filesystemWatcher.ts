@@ -63,10 +63,10 @@ class FilesystemWatcher {
   }
 
   addEventListener(l: FilesystemEventListener) {
-    this.listeners.add(s)
+    this.listeners.add(l)
     return {
       remove: () => {
-        this.listeners.delete(s)
+        this.listeners.delete(l)
       }
     }
   }
