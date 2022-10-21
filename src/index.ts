@@ -14,6 +14,15 @@ export type { OutResponse, OutStderrResponse, OutStdoutResponse } from './sessio
 export { OutType } from './session/out'
 export type { TerminalManager, TerminalSession, ChildProcess } from './session/terminal'
 export type { FilesystemManager, FileInfo } from './session/filesystem'
+export {
+  default as FilesystemWatcher,
+  FilesystemOperation,
+} from './session/filesystemWatcher'
+export type {
+  FilesystemEvent,
+  FilesystemEventListener,
+} from './session/filesystemWatcher'
+
 export type { Process, ProcessManager } from './session/process'
 export type { EnvVars } from './session/envVars'
 export { default as api } from './api'
