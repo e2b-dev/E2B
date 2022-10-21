@@ -14,7 +14,7 @@ export interface FilesystemEvent {
   operation: FilesystemOperation
   // Unix epoch in nanoseconds
   timestamp: number
-  isDiretory: boolean
+  isDirectory: boolean
 }
 
 export type FilesystemEventListener = (event: FilesystemEvent) => void
