@@ -7,15 +7,13 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-type ID = string
-
 type Subscriber struct {
 	Notifier     *rpc.Notifier
 	Subscription *rpc.Subscription
-	ID           ID
+	Topic        string
 }
 
-func New(ctx context.Context, id ID) (*Subscriber, error) {
+func New(ctx context.Context, topic string) (*Subscriber, error) {
 	notifier, support := rpc.NotifierFromContext(ctx)
 
 	if !support {
@@ -23,7 +21,7 @@ func New(ctx context.Context, id ID) (*Subscriber, error) {
 	}
 
 	return &Subscriber{
-		ID:           id,
+		Topic:        topic,
 		Notifier:     notifier,
 		Subscription: notifier.CreateSubscription(),
 	}, nil

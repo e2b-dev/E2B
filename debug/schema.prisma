@@ -8,6 +8,12 @@ generator client {
   previewFeatures = ["interactiveTransactions"]
 }
 
+model Invoice {
+  id   BigInt @id @default(autoincrement())
+  paid Int
+  due  Int
+}
+
 model User {
   id        BigInt   @id @default(autoincrement())
   createdAt DateTime @default(now())
@@ -39,9 +45,9 @@ model Post {
 
 model CategoriesOnPosts {
   post       Post     @relation(fields: [postId], references: [id])
-  postId     BigInt // relation scalar field (used in the `@relation` attribute above)
+  postId     BigInt // relation scalar field
   category   Category @relation(fields: [categoryId], references: [id])
-  categoryId BigInt // relation scalar field (used in the `@relation` attribute above)
+  categoryId BigInt // relation scalar field
   assignedAt DateTime @default(now())
   assignedBy String
 

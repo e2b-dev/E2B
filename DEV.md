@@ -49,13 +49,15 @@ Methods:
 - `{"jsonrpc": "2.0", "method": "terminal_start", "params": ["", 100, 80], "id": 5}` - Start a new terminal session
 - `{"jsonrpc": "2.0", "method": "terminal_data", "params": ["cblpusiko5ps759fdas0", "sleep 10\n"], "id": 57}` - Execute input in a specified terminal
 
+
 ### Filesystem service
 Subscribers:
-- `{"jsonrpc": "2.0", "method": "filesystem_watch", "params": ["/path/to/watch"], "id": 4}` - Subscribe to filesystem events on a path. Trying to watch a nonexisting path will result in error.
+- `{"jsonrpc": "2.0", "method": "filesystem_watchDir", "params": ["/dirA/dirB"], "id": 4}` - Subscribe to filesystem events on a directory path. Trying to watch a nonexisting directory will result in error.
 
 Methods:
-- `{"jsonrpc": "2.0", "method": "filesystem_listAllFiles", "params": ["myPath"], "id": 5}` - List all files (and directories) on a specified path
-- `{"jsonrpc": "2.0", "method": "filesystem_readFile", "params": ["myPath"], "id": 57}` - Returns content of the file on the specified path
-- `{"jsonrpc": "2.0", "method": "filesystem_removeFile", "params": ["myPath"], "id": 57}` - Remove file on the specified path
-- `{"jsonrpc": "2.0", "method": "filesystem_writeFile", "params": ["myPath", "myContent"], "id": 57}` - Create or overwrite file on the specified path with the specified content
+- `{"jsonrpc": "2.0", "method": "filesystem_list", "params": ["/dirA/dirB"], "id": 5}` - List all files (and directories) on a specified path
+- `{"jsonrpc": "2.0", "method": "filesystem_read" "params": ["/dirA/dirB/file.txt"], "id": 57}` - Return content of the file on the specified path
+- `{"jsonrpc": "2.0", "method": "filesystem_remove", "params": ["/dirA/dirB"], "id": 57}` - Remove a file or a directory on the specified path
+- `{"jsonrpc": "2.0", "method": "filesystem_write", "params": ["/dirA/dirB/file.txt", "myContent"], "id": 57}` - Create or overwrite file on the specified path with the specified content
 
+- `{"jsonrpc": "2.0", "method": "filesystem_makeDir", "params": ["/dirA/dirB/dirC"], "id": 57}` - Create or overwrite file on the specified path with the specified content

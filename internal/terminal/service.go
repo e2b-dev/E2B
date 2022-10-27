@@ -44,8 +44,8 @@ func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
 }
 
 func (s *Service) hasSubscibers(id ID) bool {
-	return s.childProcessesSubs.HasSubscribers(id) ||
-		s.dataSubs.HasSubscribers(id)
+	return s.childProcessesSubs.Has(id) ||
+		s.dataSubs.Has(id)
 }
 
 func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
@@ -271,7 +271,7 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		"terminalID", id,
 	)
 
-	sub, lastUnsubscribed, err := s.dataSubs.Add(ctx, id)
+	sub, lastUnsubscribed, err := s.dataSubs.Create(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create a data subscription from context",
 			"ctx", ctx,
@@ -297,7 +297,7 @@ func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subsc
 		"terminalID", id,
 	)
 
-	sub, lastUnsubscribed, err := s.childProcessesSubs.Add(ctx, id)
+	sub, lastUnsubscribed, err := s.childProcessesSubs.Create(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create a terminal child processes subscription",
 			"ctx", ctx,
@@ -332,7 +332,7 @@ func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subsc
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
 	s.logger.Info("Subscribe to terminal exit")
 
-	sub, lastUnsubscribed, err := s.exitSubs.Add(ctx, id)
+	sub, lastUnsubscribed, err := s.exitSubs.Create(ctx, id)
 	if err != nil {
 		s.logger.Errorw("Failed to create an exit subscription from context",
 			"ctx", ctx,

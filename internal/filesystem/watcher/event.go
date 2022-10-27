@@ -1,8 +1,9 @@
-package event
+package watcher
 
 import (
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -18,17 +19,19 @@ const (
 	Chmod  Op = "Chmod"
 )
 
-// EventMessage is the message that filesystem/watch RPC subscribers receive
-// on a change on a filesystem path.
-type EventMessage struct {
+type Event struct {
 	Path      string `json:"path"`
+	Name      string `json:"name"`
 	Operation Op     `json:"operation"`
 	// Timestamp is nanoseconds since epoch
 	Timestamp int64 `json:"timestamp"`
-	Directory bool  `json:"isDirectory"`
+	// Directory doesn't hold a valid value for the remove operation.
+	// Because we can't stat a path that just got removed to find out
+	// if it was a file or a dir that got removed.
+	Directory bool `json:"isDir"`
 }
 
-func NewEventMessage(event fsnotify.Event) (*EventMessage, error) {
+func newEvent(event fsnotify.Event) (Event, error) {
 	var op Op
 	if fsnotify.Create.Has(event.Op) {
 		op = Create
@@ -46,14 +49,15 @@ func NewEventMessage(event fsnotify.Event) (*EventMessage, error) {
 	if op != Remove && op != Rename {
 		stat, err := os.Stat(event.Name)
 		if err != nil {
-			return nil, fmt.Errorf("failed to stat path '%s': %s", event.Name, err)
+			return Event{}, fmt.Errorf("failed to stat path '%s': %s", event.Name, err)
 		}
 		dir = stat.IsDir()
 	}
 
-	return &EventMessage{
+	return Event{
 		Operation: op,
 		Path:      event.Name,
+		Name:      path.Base(event.Name),
 		Timestamp: time.Now().UnixNano(),
 		Directory: dir,
 	}, nil

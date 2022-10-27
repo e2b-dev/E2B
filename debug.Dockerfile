@@ -6,7 +6,7 @@ FROM golang:1.19-alpine
 
 RUN apk update && \
     apk upgrade && \
-    apk add bash nodejs npm strace curl git graphviz make build-base
+    apk add bash nodejs npm strace curl git graphviz make build-base jq
 
 RUN CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest
 
@@ -21,10 +21,14 @@ RUN npm i -g typescript typescript-language-server prisma
 
 WORKDIR /code
 
-COPY debug/index.ts debug/tsconfig.json debug/.env* /code/
+COPY debug/index.ts debug/tsconfig.json debug/.env* debug/package.json /code/
+
+RUN npm i
 
 WORKDIR /code/prisma
 COPY debug/schema.prisma schema.prisma
+
+WORKDIR /code
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=bash >> /.dbkenv

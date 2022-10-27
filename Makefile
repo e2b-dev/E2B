@@ -27,8 +27,8 @@ start-devbookd-docker:
 	-p 2345:2345 \
 	-p 9999:9999 \
 	--rm \
-	-it devbookd-debug \
-	/usr/bin/devbookd -debug
+	-i devbookd-debug \
+	/usr/bin/devbookd -debug | jq .
 
 start-debug-docker:
 	docker run \

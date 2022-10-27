@@ -10,22 +10,22 @@ import (
 )
 
 type Manager struct {
-	subs   *smap.Map[rpc.ID, Subscriber]
-	label  string
 	logger *zap.SugaredLogger
+	label  string
+	subs   *smap.Map[rpc.ID, Subscriber]
 }
 
 func NewManager(label string, logger *zap.SugaredLogger) *Manager {
 	return &Manager{
-		label:  label,
 		logger: logger,
+		label:  label,
 		subs:   smap.New[rpc.ID, Subscriber](),
 	}
 }
 
-func (m *Manager) Notify(id ID, data interface{}) error {
+func (m *Manager) Notify(topic string, data interface{}) error {
 	return m.subs.Iterate(func(_ rpc.ID, sub *Subscriber) error {
-		if sub.ID == id {
+		if sub.Topic == topic {
 			err := sub.Notify(data)
 			if err != nil {
 				return fmt.Errorf("error sending data notification for subID %s, %+v", sub.Subscription.ID, err)
@@ -35,16 +35,17 @@ func (m *Manager) Notify(id ID, data interface{}) error {
 	})
 }
 
-func (m *Manager) HasSubscribers(id ID) bool {
-	subs := m.GetByID(id)
-	return len(subs) > 0
+// Has returns true if there's at least one subscriber associated with the topic.
+func (m *Manager) Has(topic string) bool {
+	return len(m.Get(topic)) > 0
 }
 
-func (m *Manager) GetByID(id ID) []*Subscriber {
+// Get returns all subscribers associated with the topic.
+func (m *Manager) Get(topic string) []*Subscriber {
 	var subscribers []*Subscriber
 
 	m.subs.Iterate(func(_ rpc.ID, sub *Subscriber) error {
-		if sub.ID == id {
+		if sub.Topic == topic {
 			subscribers = append(subscribers, sub)
 		}
 		return nil
@@ -53,17 +54,20 @@ func (m *Manager) GetByID(id ID) []*Subscriber {
 	return subscribers
 }
 
-func (m *Manager) Add(ctx context.Context, id ID) (*Subscriber, chan bool, error) {
-	lastUnsubscribed := make(chan bool, 1)
+// Create creates a new subscriber for a given topic.
+// It returns the newly created subsriber and a blocking channel indicating whether there are any subscribers left for the passed topic.
+func (m *Manager) Create(ctx context.Context, topic string) (*Subscriber, chan bool, error) {
+	allUnsubscribed := make(chan bool, 1)
 
-	sub, err := New(ctx, id)
+	sub, err := New(ctx, topic)
 	if err != nil {
-		return nil, lastUnsubscribed, err
+		return nil, allUnsubscribed, err
 	}
 
 	m.subs.Insert(sub.Subscription.ID, sub)
 
 	go func() {
+		// Keep iterating over the error channel until it's closed.
 		for err := range sub.Subscription.Err() {
 			if err != nil {
 				m.logger.Errorw("Subscription error",
@@ -74,17 +78,19 @@ func (m *Manager) Add(ctx context.Context, id ID) (*Subscriber, chan bool, error
 			}
 		}
 
+		// Remove a subscriber once the error channel closes.
 		m.subs.Remove(sub.Subscription.ID)
 
 		m.logger.Infow("Unsubscribed",
 			"subscription", m.label,
+			"topic", topic,
 			"subID", sub.Subscription.ID,
 		)
 
-		if !m.HasSubscribers(sub.ID) {
-			lastUnsubscribed <- true
+		if !m.Has(sub.Topic) {
+			allUnsubscribed <- true
 		}
 	}()
 
-	return sub, lastUnsubscribed, nil
+	return sub, allUnsubscribed, nil
 }
