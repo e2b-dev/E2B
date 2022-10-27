@@ -85,19 +85,50 @@ class Session extends SessionConnection {
 
     // Init Filesystem handler
     this.filesystem = {
-      listAllFiles: async path => {
-        return (await this.call(filesystemService, 'listAllFiles', [path])) as FileInfo[]
+      /**
+       * List files in a directory.
+       * @param path path to a directory
+       * @returns Array of files in a directory
+       */
+      list: async path => {
+        return (await this.call(filesystemService, 'list', [path])) as FileInfo[]
       },
-      readFile: async path => {
-        return (await this.call(filesystemService, 'readFile', [path])) as string
+      /**
+       * Reads the whole content of a file.
+       * @param path path to a file
+       * @returns Content of a file
+       */
+      read: async path => {
+        return (await this.call(filesystemService, 'read', [path])) as string
       },
-      removeFile: async path => {
-        await this.call(filesystemService, 'removeFile', [path])
+      /**
+       * Removes a file or a directory.
+       * @param path path to a file or a directory
+       */
+      remove: async path => {
+        await this.call(filesystemService, 'remove', [path])
       },
-      writeFile: async (path, content) => {
-        await this.call(filesystemService, 'writeFile', [path, content])
+      /**
+       * Writes content to a new file on path.
+       * @param path path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
+       * @param content content to write to a new file
+       */
+      write: async (path, content) => {
+        await this.call(filesystemService, 'write', [path, content])
       },
-      watch: (path: string) => {
+      /**
+       * Creates a new directory and all directories along the way if needed on the specified pth.
+       * @param path path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+       */
+      makeDir: async path => {
+        await this.call(filesystemService, 'makeDir', [path])
+      },
+      /**
+       * Watches directory for filesystem events.
+       * @param path path to a directory that will be watched
+       * @returns new watcher
+       */
+      watchDir: (path: string) => {
         const npath = normalizePath(path)
         return new FilesystemWatcher(this, npath)
       },

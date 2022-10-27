@@ -278,7 +278,7 @@ abstract class SessionConnection {
     await this.call(subscription.service, 'unsubscribe', [subscription.subID])
 
     this.subscribers = this.subscribers.filter(s => s !== subscription)
-    this.logger.log(`Unsubscribed from "${subscription.service}"`)
+    this.logger.log(`Unsubscribed '${subID}' from '${subscription.service}'`)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

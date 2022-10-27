@@ -1,4 +1,4 @@
-import { Session } from '../dist/cjs/index.js'
+import { FilesystemOperation, FilesystemWatcher, Session } from '../dist/cjs/index.js'
 
 async function main() {
   const session = new Session({
@@ -30,62 +30,34 @@ async function main() {
 
   try {
     await session.open()
-    const watcher = await session.filesystem.watch('/code')
-    const lis = watcher.addEventListener(event => {
-      console.log('watcher', event)
+
+    const dirWatchers = new Map()
+
+
+    const w2 = session.filesystem.watchDir('/code/dir')
+    dirWatchers.set('/code/dir', w2)
+    await w2.start()
+    w2.addEventListener(fsevent => {
+      console.log('w2', fsevent)
+      //if (fsevent.operation === FilesystemOperation.Remove) {
+      //  // Remove and stop watcher for a dir that got removed.
+      //  const dirwatcher = dirWatchers.get(fsevent.path)
+      //  if (dirwatcher) {
+      //    dirwatcher.stop()
+      //    dirWatchers.delete(fsevent.path)
+      //  }
+      //}
     })
-    await watcher.start()
 
-    const watcher2 = await session.filesystem.watch('/code/prisma')
-    watcher2.addEventListener(event => {
-      console.log('watcher2', event)
+    const w3 = session.filesystem.watchDir('/code/dir/subdir')
+    dirWatchers.set('/code/dir/subdir', w3)
+    await w3.start()
+    w3.addEventListener(fsevent => {
+      console.log('w3', fsevent)
+      //if (fsevent.operation === FilesystemOperation.Remove && fsevent.path === '/code/dir/subdir') {
+      //  w3.stop()
+      //}
     })
-    await watcher2.start()
-
-    const watcher3 = await session.filesystem.watch('/code')
-    const lis3 = watcher3.addEventListener(event => {
-      console.log('watcher3', event)
-      //watcher3.stop()
-    })
-    await watcher3.start()
-
-
-    // await session.codeSnippet.run('console')
-    // await session.codeSnippet.run('echo 2')
-    // await session.codeSnippet.stop()
-    // await session.codeSnippet.run('sleep 2')
-    // await session.codeSnippet.stop()
-    //const term = await session.terminal.createSession({
-    //  onData: data => console.log(data),
-    //  size: { cols: 20, rows: 40 },
-    //  onChildProcessesChange: cp => console.log(cp),
-    //})
-
-    // const term2 = await session.terminal.createSession({
-    //   onData: (data) => console.log(data),
-    //   size: { cols: 20, rows: 40 },
-    // })
-
-    // const p = await session.process.start({
-    //   cmd: 'echo 22',
-    //   onStdout: (o) => console.log(o.line)
-    // })
-    // await p.sendStdin('xx')
-    // await term.sendData('sleep 2\n')
-    // await p.kill()
-    // await term2.destroy()
-
-    // const files = await session.filesystem.listAllFiles('/')
-    // console.log(files)
-    // await session.filesystem.writeFile('/new', '>>--')
-    // const content = await session.filesystem.readFile('/new')
-    // console.log(content)
-    // await session.filesystem.removeFile('/new')
-    // const lastFiles = await session.filesystem.listAllFiles('/')
-    // console.log(lastFiles)
-
-    // const hostname = session.getHostname()
-    // console.log(hostname)
   } catch (e) {
     console.error('Session error', e)
   }

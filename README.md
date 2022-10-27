@@ -1,6 +1,6 @@
 # Devbook SDK
 
-SDK for managing Devbook sessions from JavaScript/TypeScript.
+SDK for managing Devbook sessions from JavaScript/TypeScript. Devbook SDK requires [`devbookd`](https://github.com/devbookhq/devbookd) running on the server to which it's connecting.
 
 ## Installation
 
@@ -16,7 +16,7 @@ yarn add @devbookhq/sdk
 
 ## Usage
 
-### Open a New Session
+### Open a new session
 
 You **start a new session** by creating a `Session` instance and calling the `session.open` method.
 
@@ -53,7 +53,7 @@ await session.close()
 
 > You shall not call any other methods on the `session` object before the `session.open` finishes. Before this method successfully finishes you are **not** connected to the actual session and the fields `session.codeSnippet`, `session.terminal`, `session.filesystem`, and `session.process` are `undefined`.
 
-### Run Code Snippet
+### Run code snippet
 
 You can **run arbitrary code** with the runtime predefined in the Devbook env by calling `session.codeSnippet.run`.
 
@@ -67,27 +67,63 @@ await session.codeSnippet.run('echo 2')
 await session.codeSnippet.stop()
 ```
 
-### Interact with the Filesystem
+### Interact with the filesystem
 
-You can **list all the files and directories** in a specific directory by calling the `session.filesystem.listAllFiles` method.
+Following filesystem operations are supported.
 
-You can **create a file and/or modify its content** by calling the `session.filesystem.writeFile` method.
+- **`list`**
 
-You can **read the file's content** by calling the `session.filesystem.readFile` method. The method throws an error if the file is not found.
-
-You can **remove file** by calling the `session.filesystem.removeFile` method.
-
+Lists content of a directory.
 ```ts
-const files = await session.filesystem.listAllFiles('/')
-
-await session.filesystem.writeFile('/new.sh', 'echo 2')
-
-const content = await session.filesystem.readFile('/new.sh')
-
-await session.filesystem.removeFile('/new.sh')
+const dirBContent = await session.filesystem.list('/dirA/dirB')
 ```
 
-### Start a Terminal
+- **`write`**
+
+Writes content to a new file.
+```ts
+// This will create a new file 'file.txt' inside the dir 'dirB' with the content 'Hello world'.
+await session.filesystem.write('/dirA/dirB/file.txt', 'Hello World')
+```
+
+- **`read`**
+
+Reads content of a file.
+```ts
+const fileContent = await session.filesystem.read('/dirA/dirB/file.txt')
+```
+
+- **`remove`**
+
+Removes a file or a directory.
+```ts
+// Remove a file.
+await session.filesystem.remove('/dirA/dirB/file.txt')
+
+// Remove a directory and all of its content.
+await session.filesystem.remove('/dirA')
+```
+
+- **`makeDir`**
+
+Creates a new directory and all directories along the way if needed.
+```ts
+// Creates a new directory 'dirC' and also 'dirA' and 'dirB' if those directories don't already exist.
+await session.filesystem.makeDir('/dirA/dirB/dirC')
+```
+
+- **`watchDir`**
+
+Watches a directory for filesystem events.
+```ts
+const watcher = session.filesystem.watchDir('/dirA/dirB')
+watcher.addEventListener(fsevent => {
+  console.log('Change inside the dirB', fsevent)
+})
+await watcher.start()
+```
+
+### Start a terminal session
 
 You can **start a new terminal** in the session by calling `session.terminal.createSession`.
 
@@ -119,7 +155,7 @@ console.log(term.terminalID)
 await session.terminal.killProcess('<child-process-pid>')
 ```
 
-### Start a Process
+### Start a process
 
 You can **start a new process** in the session by calling `session.process.start`. The only required option is the `cmd`, but you can also define the `rootdir` and `envVars` options that the command should be executed with.
 

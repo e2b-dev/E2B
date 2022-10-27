@@ -11,10 +11,11 @@ export enum FilesystemOperation {
 
 export interface FilesystemEvent {
   path: string
+  name: string
   operation: FilesystemOperation
   // Unix epoch in nanoseconds
   timestamp: number
-  isDirectory: boolean
+  isDir: boolean
 }
 
 export type FilesystemEventListener = (event: FilesystemEvent) => void
@@ -40,26 +41,22 @@ class FilesystemWatcher {
     this.rpcSubscriptionID = await this.sessConn.subscribe(
       filesystemService,
       this.handleFilesystemEvents,
-      'watch',
+      'watchDir',
       this.path,
     )
   }
 
   // Stops watching the path and removes all listeners.
   async stop() {
+    this.listeners.clear()
     if (this.rpcSubscriptionID) {
       await this.sessConn.unsubscribe(this.rpcSubscriptionID)
     }
-    this.listeners.clear()
   }
 
   addEventListener(l: FilesystemEventListener) {
     this.listeners.add(l)
-    return {
-      remove: () => {
-        this.listeners.delete(l)
-      },
-    }
+    return () => this.listeners.delete(l)
   }
 
   private handleFilesystemEvents(fsChange: FilesystemEvent) {
