@@ -17,14 +17,20 @@ const (
 	//dbCluster = "vale-coyote-5017"
 	//dbCluster = "floaty-owl-5201"
 	// dbCluster = "chilly-rat-5380"
-	dbCluster = "abyss-avocet-5617"
-	dbRegion  = "gcp-europe-west1"
+	//dbCluster = "abyss-avocet-5617"
+	//dbRegion  = "gcp-europe-west1"
 
-	dbUser = "dbk"
+	//dbUser = "dbk"
 	//dbPassword = "WajNf9RcgqFp8_aOdybuqg"
 	//dbPassword = "fSt3ahMLf2i2sVnG9BNhqA"
 	// dbPassword = "ZtjYFXwlNGj5vJqQfMQ3OQ"
-	dbPassword = "uMJ9g-Tapq37Oh6Svq5pFw"
+	//dbPassword = "uMJ9g-Tapq37Oh6Svq5pFw"
+
+	// // Created a new CockroachDB account using vasek@usedevbook.com
+	dbUser     = "dbk"
+	dbPassword = "hlXRKDPiVa89WFNuz-0tXA"
+	dbCluster  = "teak-wallaby-3666"
+	dbRegion   = "aws-eu-west-1"
 
 	defaultDatabaseID = "defaultdb"
 )
