@@ -47,7 +47,7 @@ func genRandomID(length int) string {
 
 func databaseURL(dbID string) string {
 	return fmt.Sprintf(
-		"postgresql://%s:%s@free-tier5.%s.cockroachlabs.cloud:26257/%s?sslmode=verify-full&options=--cluster=%s",
+		"postgresql://%s:%s@free-tier7.%s.cockroachlabs.cloud:26257/%s?sslmode=verify-full&options=--cluster=%s",
 		dbUser,
 		dbPassword,
 		dbRegion,
