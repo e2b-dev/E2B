@@ -43,7 +43,7 @@ build {
   # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
-      "sudo add-apt-repository ppa:longsleep/golang-backports",
+      "sudo add-apt-repository -y ppa:longsleep/golang-backports",
       "sudo apt-get update",
       "sudo apt-get install -y unzip jq golang-1.18-go build-essential net-tools qemu-utils",
     ]
