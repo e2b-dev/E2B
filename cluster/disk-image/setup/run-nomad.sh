@@ -228,6 +228,10 @@ telemetry {
   publish_node_metrics = true
 }
 
+acl {
+  enabled = true
+}
+
 consul {
   address = "127.0.0.1:8500"
 }

@@ -248,6 +248,9 @@ EOF
   "connect": {
     "enabled": true
   },
+  "acl": {
+    "enabled": true
+  },
   "telemetry": {
     "prometheus_retention_time": "60s",
     "disable_hostname": true
