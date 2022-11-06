@@ -43,6 +43,7 @@ resource "nomad_job" "api" {
       api_port_number    = var.api_port.port
       api_port_name      = var.api_port.name
       nomad_address      = var.nomad_address
+      nomad_token        = var.nomad_token
       image_name         = resource.docker_image.api_image.repo_digest
     }
   }

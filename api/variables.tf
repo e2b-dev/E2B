@@ -6,10 +6,15 @@ variable "nomad_address" {
   type = string
 }
 
+variable "nomad_token" {
+  type = string
+}
+
 variable "api_port" {
   type = object({
     name        = string
     port        = number
+    health_path = string
     health_path = string
   })
 }

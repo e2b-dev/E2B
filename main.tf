@@ -52,8 +52,25 @@ data "google_compute_global_address" "orch_server_ip" {
   name = "orch-server-ip"
 }
 
+data "google_secret_manager_secret_version" "nomad_acl_token" {
+  secret = "nomad-acl-token-full"
+}
+
 provider "nomad" {
-  address = "http://${data.google_compute_global_address.orch_server_ip.address}"
+  address   = "http://${data.google_compute_global_address.orch_server_ip.address}"
+  secret_id = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
+}
+
+module "secret" {
+  source     = "./secret-manager"
+  project_id = "devbookhq"
+  id         = "nomad-acl-token-full"
+  secret     = nomad_acl_token.token.secret_id
+}
+
+resource "nomad_acl_token" "token" {
+  name = "full-access"
+  type = "management"
 }
 
 data "google_secret_manager_secret_version" "lightstep_api_key" {
@@ -102,4 +119,5 @@ module "api" {
   logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
   nomad_address      = "http://${module.cluster.server_proxy_ip}"
   api_port           = var.api_port
+  nomad_token        = nomad_acl_token.token.secret_id
 }

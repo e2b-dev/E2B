@@ -17,6 +17,7 @@ type NomadClient struct {
 func InitNomadClient() *NomadClient {
 	config := api.Config{
 		Address: os.Getenv("NOMAD_ADDRESS"),
+		SecretID: os.Getenv("NOMAD_TOKEN"),
 	}
 
 	client, err := api.NewClient(&config)
