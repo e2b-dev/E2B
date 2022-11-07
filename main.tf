@@ -53,24 +53,34 @@ data "google_compute_global_address" "orch_server_ip" {
 }
 
 data "google_secret_manager_secret_version" "nomad_acl_token" {
-  secret = "nomad-acl-token-full"
+  secret = "nomad-acl-token"
 }
 
 provider "nomad" {
   address   = "http://${data.google_compute_global_address.orch_server_ip.address}"
-  secret_id = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
-}
-
-module "secret" {
-  source     = "./secret-manager"
-  project_id = "devbookhq"
-  id         = "nomad-acl-token-full"
-  secret     = nomad_acl_token.token.secret_id
+  secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
 }
 
 resource "nomad_acl_token" "token" {
   name = "full-access"
   type = "management"
+}
+
+resource "google_secret_manager_secret" "nomad_acl_secret" {
+  secret_id = "nomad-acl-token"
+
+  replication {
+    user_managed {
+      replicas {
+        location = "us-central1"
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "nomad_acl_secret_version" {
+  secret      = google_secret_manager_secret.nomad_acl_secret.id
+  secret_data = nomad_acl_token.token.secret_id
 }
 
 data "google_secret_manager_secret_version" "lightstep_api_key" {
@@ -118,6 +128,6 @@ module "api" {
 
   logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
   nomad_address      = "http://${module.cluster.server_proxy_ip}"
+  nomad_token = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
   api_port           = var.api_port
-  nomad_token        = nomad_acl_token.token.secret_id
 }

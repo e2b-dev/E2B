@@ -39,9 +39,9 @@ resource "google_compute_instance_group_manager" "server_cluster" {
 
   lifecycle {
     # DEV ONLY - IGNORE CHANGES TO THE IMAGE
-    # ignore_changes = [
-    #   version,
-    # ]
+    ignore_changes = [
+      version,
+    ]
     create_before_destroy = false
   }
 }
@@ -103,9 +103,9 @@ resource "google_compute_instance_template" "server" {
   # which this Terraform resource depends will also need this lifecycle statement.
   lifecycle {
     # DEV ONLY - IGNORE CHANGES TO THE IMAGE
-    # ignore_changes = [
-    #   disk,
-    # ]
+    ignore_changes = [
+      disk,
+    ]
     create_before_destroy = true
   }
 }
@@ -148,7 +148,7 @@ module "gce_lb_http_nomad" {
         timeout_sec         = null
         healthy_threshold   = null
         unhealthy_threshold = null
-        request_path        = "/v1/jobs"
+        request_path        = "/v1/status/peers"
         port                = 4646
         host                = null
         logging             = null

@@ -14,11 +14,11 @@ variable "api_port_number" {
   type = number
 }
 
-variable "nomad_address" {
+variable "nomad_token" {
   type = string
 }
 
-variable "nomad_token" {
+variable "nomad_address" {
   type = string
 }
 
