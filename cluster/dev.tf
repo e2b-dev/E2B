@@ -14,7 +14,8 @@
 
 #   network_interface {
 #     network = "default"
-#     access_config {}
+#     access_config {
+#     } 
 #   }
 
 #   service_account {

@@ -128,6 +128,6 @@ module "api" {
 
   logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
   nomad_address      = "http://${module.cluster.server_proxy_ip}"
-  nomad_token = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
+  nomad_token        = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
   api_port           = var.api_port
 }

@@ -44,7 +44,7 @@ resource "nomad_job" "api" {
       api_admin_key      = data.google_secret_manager_secret_version.api_admin_key.secret_data
       logs_proxy_address = var.logs_proxy_address
       nomad_address      = var.nomad_address
-      nomad_token      = var.nomad_token
+      nomad_token        = var.nomad_token
     }
   }
 }

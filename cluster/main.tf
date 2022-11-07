@@ -62,11 +62,13 @@ module "client_cluster" {
 resource "google_compute_firewall" "orchstrator_firewall_ingress" {
   name    = "${var.cluster_tag_name}-firewall-ingress"
   network = var.network_name
+
   allow {
-    protocol = "all"
+    protocol = "tcp"
+    ports    = ["80", "8080", "4646", "3001", "3002", "3003", "30006", "44313", "50001", "8500"]
   }
-  direction = "INGRESS"
-  # source_tags = [var.cluster_tag_name]
+
+  direction     = "INGRESS"
   target_tags   = [var.cluster_tag_name]
   source_ranges = ["130.211.0.0/22", "35.191.0.0/16", "94.113.136.120"]
 }
@@ -74,9 +76,11 @@ resource "google_compute_firewall" "orchstrator_firewall_ingress" {
 resource "google_compute_firewall" "orchstrator_firewall_egress" {
   name    = "${var.cluster_tag_name}-firewall-egress"
   network = var.network_name
+
   allow {
     protocol = "all"
   }
+
   direction   = "EGRESS"
   target_tags = [var.cluster_tag_name]
 }
