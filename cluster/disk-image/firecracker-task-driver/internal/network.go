@@ -258,7 +258,7 @@ func CreateNetwork(
 	return nil
 }
 
-func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, tracer trace.Tracer) error {
+func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, consulToken string, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "remove-network")
 	defer childSpan.End()
 
@@ -317,7 +317,7 @@ func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, 
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
-	err = ipSlot.Release(childCtx, tracer)
+	err = ipSlot.Release(childCtx, consulToken, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error releasing slot %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

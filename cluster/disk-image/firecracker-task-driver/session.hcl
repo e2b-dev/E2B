@@ -36,6 +36,7 @@ job "session/dev" {
         SpanID = ""
         TraceID = ""
         LogsProxyAddress = ""
+        ConsulToken = ""
       }
     }
   }

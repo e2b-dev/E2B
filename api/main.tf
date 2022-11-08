@@ -45,6 +45,7 @@ resource "nomad_job" "api" {
       logs_proxy_address = var.logs_proxy_address
       nomad_address      = var.nomad_address
       nomad_token        = var.nomad_token
+      consul_token       = var.consul_token
     }
   }
 }

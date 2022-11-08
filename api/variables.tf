@@ -6,6 +6,10 @@ variable "nomad_address" {
   type = string
 }
 
+variable "consul_token" {
+  type = string
+}
+
 variable "nomad_token" {
   type = string
 }

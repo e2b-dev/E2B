@@ -30,6 +30,7 @@ job "{{ .JobName }}/{{ .SessionID }}" {
 
       config {
         CodeSnippetID = "{{ .CodeSnippetID }}"
+        ConsulToken   = "{{ .ConsulToken }}"
         SessionID   = "{{ .SessionID }}"
         EditEnabled = "{{ .EditEnabled }}"
         SpanID = "{{ .SpanID }}"

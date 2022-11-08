@@ -32,6 +32,7 @@ const (
 
 var (
 	logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
+	consulToken 		 = os.Getenv("CONSUL_TOKEN")
 )
 
 func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
@@ -101,6 +102,7 @@ jobRegister:
 			var jobDef bytes.Buffer
 			jobVars := struct {
 				SpanID           string
+				ConsulToken      string
 				TraceID          string
 				CodeSnippetID    string
 				SessionID        string
@@ -113,6 +115,7 @@ jobRegister:
 				SpanID:           spanID,
 				TraceID:          traceID,
 				LogsProxyAddress: logsProxyAddress,
+				ConsulToken: 			consulToken,
 				CodeSnippetID:    newSession.CodeSnippetID,
 				SessionID:        sessionID,
 				FCTaskName:       fcTaskName,

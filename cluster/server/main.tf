@@ -220,7 +220,7 @@ module "gce_lb_http_consul" {
         timeout_sec         = null
         healthy_threshold   = null
         unhealthy_threshold = null
-        request_path        = "/v1/catalog/services"
+        request_path        = "/v1/status/peers"
         port                = 8500
         host                = null
         logging             = null

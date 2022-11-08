@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/devbookhq/firecracker-task-driver/internal/env"
 	"github.com/devbookhq/firecracker-task-driver/internal/slot"
 	"github.com/devbookhq/firecracker-task-driver/internal/telemetry"
-	"github.com/devbookhq/firecracker-task-driver/internal/env"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
@@ -56,6 +56,7 @@ var (
 		"SpanID":           hclspec.NewAttr("SpanID", "string", false),
 		"TraceID":          hclspec.NewAttr("TraceID", "string", false),
 		"LogsProxyAddress": hclspec.NewAttr("LogsProxyAddress", "string", false),
+		"ConsulToken": 			hclspec.NewAttr("ConsulToken", "string", false),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -113,6 +114,7 @@ type TaskConfig struct {
 	SpanID           string `codec:"SpanID"`
 	SessionID        string `codec:"SessionID"`
 	LogsProxyAddress string `codec:"LogsProxyAddress"`
+	ConsulToken 		 string `codec:"ConsulToken"`
 	EditEnabled      bool   `codec:"EditEnabled"`
 	CodeSnippetID    string `codec:"CodeSnippetID"`
 }
@@ -312,6 +314,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		childCtx,
 		cfg.Env["NOMAD_NODE_ID"],
 		driverConfig.SessionID,
+		driverConfig.ConsulToken,
 		d.tracer,
 	)
 	if err != nil {
@@ -323,7 +326,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			slotErr := ipSlot.Release(childCtx, d.tracer)
+			slotErr := ipSlot.Release(childCtx, driverConfig.ConsulToken, d.tracer)
 			if slotErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed session start %v", slotErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -333,7 +336,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, d.tracer)
+			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, driverConfig.ConsulToken, d.tracer)
 			if ntErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed session start %v", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -399,6 +402,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		Env:             fsEnv,
 		Info:            m.Info,
 		EditEnabled:     driverConfig.EditEnabled,
+		ConsulToken:     driverConfig.ConsulToken,
 		logger:          d.logger,
 		cpuStatsSys:     stats.NewCpuStats(),
 		cpuStatsUser:    stats.NewCpuStats(),
@@ -579,7 +583,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportEvent(childCtx, "shutdown task")
 	}
 
-	err := RemoveNetwork(childCtx, h.Slot, d.hosts, d.tracer)
+	err := RemoveNetwork(childCtx, h.Slot, d.hosts, h.ConsulToken, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove network when destroying task %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -591,7 +595,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
-	err = h.Slot.Release(childCtx, d.tracer)
+	err = h.Slot.Release(childCtx, h.ConsulToken, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot release ip slot when destroying task %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

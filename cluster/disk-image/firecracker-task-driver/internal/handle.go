@@ -34,6 +34,7 @@ type taskHandle struct {
 	Env             *env.Env
 	Info            Instance_info
 	EditEnabled     bool
+	ConsulToken     string
 	startedAt       time.Time
 	completedAt     time.Time
 	exitResult      *drivers.ExitResult

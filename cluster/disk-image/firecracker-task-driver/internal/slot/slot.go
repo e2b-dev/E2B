@@ -87,11 +87,14 @@ func (ips *IPSlot) TapCIDR() string {
 	return fmt.Sprintf("%s/%d", ips.TapIP(), ips.TapMask())
 }
 
-func New(ctx context.Context, nodeID string, sessionID string, tracer trace.Tracer) (*IPSlot, error) {
+func New(ctx context.Context, nodeID, sessionID, consulToken string, tracer trace.Tracer) (*IPSlot, error) {
 	childCtx, childSpan := tracer.Start(ctx, "reserve-ip-slot")
 	defer childSpan.End()
 
-	consulClient, err := consul.NewClient(consul.DefaultConfig())
+	config := consul.DefaultConfig()
+	config.Token = consulToken
+
+	consulClient, err := consul.NewClient(config)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to initialize Consul client: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -150,7 +153,7 @@ func New(ctx context.Context, nodeID string, sessionID string, tracer trace.Trac
 	return slot, nil
 }
 
-func (slot *IPSlot) Release(ctx context.Context, tracer trace.Tracer) error {
+func (slot *IPSlot) Release(ctx context.Context, consulToken string, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
 		trace.WithAttributes(
 			attribute.String("kv_key", slot.KVKey),
@@ -160,7 +163,10 @@ func (slot *IPSlot) Release(ctx context.Context, tracer trace.Tracer) error {
 	)
 	defer childSpan.End()
 
-	consulClient, err := consul.NewClient(consul.DefaultConfig())
+	config := consul.DefaultConfig()
+	config.Token = consulToken
+
+	consulClient, err := consul.NewClient(config)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to initialize Consul client: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
