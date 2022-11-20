@@ -81,7 +81,7 @@ jobs:
 
   fc_env:
     name: FC env (pipeline scripts, devbookd)
-    needs: devbookd
+    needs: changes
     if: needs.changes.outputs.fc_env == 'true'
     uses: ./.github/workflows/fc-env.yml
     secrets:
@@ -99,19 +99,19 @@ jobs:
 
   terraform:
     name: Terraform
-    needs: [changes, cluster_disk_image, fc_env, api_image]
+    needs: [changes, cluster_disk_image, fc_env, api_image, devbookd]
     if: |
       always() &&
       needs.changes.result == 'success' &&
       (needs.cluster_disk_image.result == 'success' || needs.cluster_disk_image.result == 'skipped') &&
       (needs.fc_env.result == 'success' || needs.fc_env.result == 'skipped') &&
+      (needs.devbookd.result == 'success' || needs.devbookd.result == 'skipped') &&
       (needs.api_image.result == 'success' || needs.api_image.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-    # TODO: Add dynamic tags for SDK
     # TODO: Restart API when devbookd changes
 
   sdk:
@@ -124,12 +124,11 @@ jobs:
 
   release:
     name: Release
-    needs: [terraform, sdk, devbookd]
+    needs: [terraform, sdk]
     if: |
       always() &&
       needs.terraform.result == 'success' &&
       (needs.sdk.result == 'success' || needs.sdk.result == 'skipped') &&
-      (needs.devbookd.result == 'success' || needs.devbookd.result == 'skipped')
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
