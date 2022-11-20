@@ -76,7 +76,6 @@ jobs:
     if: needs.changes.outputs.devbookd == 'true'
     uses: ./.github/workflows/devbookd.yml
     secrets:
-      github_token: ${{ github.token }}
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
