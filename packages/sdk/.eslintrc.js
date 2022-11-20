@@ -10,6 +10,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
+  ignorePatterns: ['src/api/schema.gen.ts', 'dist/**'],
   plugins: ['@typescript-eslint', 'prettier', 'unused-imports'],
   rules: {
     '@typescript-eslint/member-ordering': ['error'],

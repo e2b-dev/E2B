@@ -196,25 +196,3 @@ You build the SDK by calling:
 ```sh
 npm run build
 ```
-
-You release a new version of the NPM package by tagging commit with a tag in the `v*.*.*` format and pushing in to GitHub.
-
-### Subtrees
-
-#### shared
-
-Shared is a subtree made from https://github.com/devbookhq/shared repository.
-
-The subtree commands you need for controling this repo are:
-
-```bash
-git subtree add --prefix shared https://github.com/devbookhq/shared.git master
-```
-
-```bash
-git subtree pull --prefix shared https://github.com/devbookhq/shared.git master
-```
-
-```bash
-git subtree push --prefix shared https://github.com/devbookhq/shared.git master
-```

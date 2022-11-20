@@ -39,3 +39,7 @@ create-tagged-release:
 
 push-tagged-release:
 	git push && git push --tags
+
+generate-from-openapi:
+	$(MAKE) -C packages/api generate
+	npm run generate --prefix packages/sdk
