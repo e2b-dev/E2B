@@ -34,7 +34,7 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
       }
 
       artifact {
-        source = "https://storage.googleapis.com/devbook-environment-pipeline/devbookd-env.tar.gz"
+        source = "https://storage.googleapis.com/devbook-environment-pipeline/devbookd"
         destination = "local"
       }
 
@@ -48,7 +48,7 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
           "${NOMAD_ALLOC_DIR}",
           "{{ .FCEnvsDisk }}",
           "{{ .APIKey }}",
-          "local/devbookd-env",
+          "local/devbookd",
         ]
       }
     }
