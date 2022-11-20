@@ -26,7 +26,7 @@ jobs:
         with:
           workdir: ./packages/devbookd
           version: latest
-          args: release --rm-dist
+          args: release
         env:
           GITHUB_TOKEN: ${{ github.token  }}
 
