@@ -118,6 +118,12 @@ function mkrootfs() {
 
   cp $DEVBOOKD $SCRIPTDIR/devbookd
 
+  ls "local"
+
+  ls $DEVBOOKD
+
+  ls $SCRIPTDIR
+
   echo -e "$DOCKERFILE" | docker build -t $tag -f - $SCRIPTDIR
   local container_id=$(docker run -dt $tag /bin/sh)
   docker exec $container_id /provision-env.sh
