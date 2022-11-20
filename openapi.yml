@@ -8,7 +8,7 @@ servers:
   - url: https://ondevbook.com/
     description: API endpoint
   - url: https://{sessionID}-{clientID}.ondevbook.com/
-    description: Session endpoint without specified port
+    description: Session endpoint without a specified port
     variables:
       sessionID:
         description: ID of the session
@@ -17,7 +17,7 @@ servers:
         description: ID of the client
         default: _clientID
   - url: https://{port}-{sessionID}-{clientID}.ondevbook.com/
-    description: Session endpoint with specificed port
+    description: Session endpoint with a specificed port
     variables:
       sessionID:
         description: ID of the session
@@ -26,7 +26,7 @@ servers:
         description: ID of the client
         default: _clientID
       port:
-        description: Port to connect to
+        description: Devbook Daemon default port
         default: "49982"
 
 components:

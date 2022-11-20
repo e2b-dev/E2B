@@ -20,9 +20,6 @@ tasks:
     init: |-
       make init-cluster-image
 
-  # - name: Setup
-  #   init: npm i
-
 github:
   prebuilds:
     branches: true

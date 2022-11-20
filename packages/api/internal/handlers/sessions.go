@@ -51,7 +51,7 @@ func (a *APIStore) PostSessions(
 	defer unlock()
 	ReportEvent(ctx, "parallel lock passed")
 
-	var newSession api.PostSessionsJSONBody
+	var newSession api.PostSessionsJSONRequestBody
 	if err := c.Bind(&newSession); err != nil {
 		errMsg := fmt.Errorf("error when parsing request: %s", err)
 		ReportCriticalError(ctx, errMsg)

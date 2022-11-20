@@ -23,7 +23,7 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		return
 	}
 
-	var env api.PostEnvsCodeSnippetIDJSONBody
+	var env api.PostEnvsCodeSnippetIDJSONRequestBody
 	if err := c.Bind(&env); err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
@@ -137,7 +137,7 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 		return
 	}
 
-	var envStateUpdate api.PutEnvsCodeSnippetIDStateJSONBody
+	var envStateUpdate api.PutEnvsCodeSnippetIDStateJSONRequestBody
 	if err := c.Bind(&envStateUpdate); err != nil {
 		a.sendAPIStoreError(
 			c,
