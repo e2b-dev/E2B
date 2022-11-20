@@ -18,7 +18,8 @@ FROM alpine:3.16
 RUN apk update && apk upgrade
 RUN apk add --no-cache util-linux openrc openssh socat
 
-COPY devbookd /usr/bin/devbookd
+COPY ./devbookd /usr/bin/devbookd
+RUN chmod +x /usr/bin/devbookd
 COPY alpine/devbookd-init /etc/init.d/devbookd
 
 COPY alpine/rc-mount /etc/local.d/rc-mount.start
