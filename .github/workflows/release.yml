@@ -16,7 +16,6 @@ jobs:
       cluster_disk_image: ${{ steps.filter.outputs.cluster_disk_image }}
       api_image: ${{ steps.filter.outputs.api_image }}
       fc_env: ${{ steps.filter.outputs.fc_env }}
-      fc_task_driver: ${{ steps.filter.outputs.fc_task_driver }}
       devbookd: ${{ steps.filter.outputs.devbookd }}
       sdk: ${{ steps.filter.outputs.sdk }}
     steps:
@@ -61,33 +60,30 @@ jobs:
               - 'packages/devbookd/**'
               - '.github/workflows/devbookd.yml'
               - '.github/workflows/release.yml'
-            fc_task_driver:
-              - 'packages/fc-task-driver/**'
-              - '.github/workflows/fc-task-driver.yml'
-              - '.github/workflows/release.yml'
-
-  fc_task_driver:
-    name: Firecracker task driver
-    needs: changes
-    if: ${{ needs.changes.outputs.fc_task_driver == 'true' }}
-    uses: ./.github/workflows/fc-task-driver.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   cluster_disk_image:
     name: Cluster disk image
-    needs: [changes, fc_task_driver]
-    if: ${{ needs.changes.outputs.cluster_disk_image == 'true' }}
+    needs: changes
+    if: needs.changes.outputs.cluster_disk_image == 'true'
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
+  devbookd:
+    name: Devbook Daemon
+    needs: changes
+    if: needs.changes.outputs.devbookd == 'true' }}
+    uses: ./.github/workflows/devbookd.yml
+    secrets:
+      github_token: ${{ github.token }}
+
   fc_env:
     name: FC env (pipeline scripts, devbookd)
-    needs: changes
-    if: ${{ needs.changes.outputs.fc_env == 'true' }}
+    needs: [changes, devbookd]
+    if: |
+      needs.changes.outputs.fc_env == 'true' ||
+      needs.devbookd.result == 'success'
     uses: ./.github/workflows/fc-env.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -96,17 +92,8 @@ jobs:
   api_image:
     name: API image
     needs: changes
-    if: ${{ needs.changes.outputs.api_image == 'true' }}
+    if: needs.changes.outputs.api_image == 'true'
     uses: ./.github/workflows/api-image.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
-
-  devbookd:
-    name: Devbook Daemon
-    needs: changes
-    if: ${{ needs.changes.outputs.devbookd == 'true' }}
-    uses: ./.github/workflows/devbookd.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
@@ -125,29 +112,30 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
+    # TODO: Add dynamic tags for SDK
     # TODO: Restart API when devbookd changes
     # -> wait for devbookd and terraform
 
   sdk:
     name: SDK
-    needs: [api_image, terraform]
-    if: ${{ needs.changes.outputs.devbookd == 'true' && needs.api_image.result == 'success' && needs.terraform.result == 'success' }}
+    needs: changes
+    if: needs.changes.outputs.sdk == 'true'
     uses: ./.github/workflows/sdk.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      node_auth_token: ${{ secrets.NPM_TOKEN }}
 
   release:
     name: Release
-    needs: terraform
-    if: always() && needs.terraform.result == 'success'
+    needs: [terraform, sdk, devbookd]
+    if: |
+      always() &&
+      needs.terraform.result == 'success' &&
+      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped') &&
+      (needs.devbookd.result == 'success' || needs.devbookd.result == 'skipped')
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
-
-  # TODO: Add release artifacts for devbookd and fc-task-driver
-  # TODO: How to handle tags and version for multiple
-  # TODO: Rename path in repo to devboook-api
+          # TODO: Add release artifacts for devbookd

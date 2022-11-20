@@ -20,19 +20,22 @@ deploy-infrastructure:
 	terraform apply -auto-approve -input=false -compact-warnings
 
 push-api-image:
-	$(MAKE) -C api push
-
-generate-api-image:
-	$(MAKE) -C api generate
+	$(MAKE) -C packages/api push
 
 init-cluster-image:
-	$(MAKE) -C cluster/disk-image init
+	$(MAKE) -C packages/cluster-disk-image init
 
 build-cluster-image:
-	$(MAKE) -C cluster/disk-image build
-
-format-cluster-image:
-	$(MAKE) -C cluster/disk-image format
+	$(MAKE) -C packages/cluster-disk-image build
 
 publish-fc-env:
-	$(MAKE) -C fc-env publish
+	$(MAKE) -C packages/fc-env publish
+
+build-firecracker-task-driver:
+	$(MAKE) -C packages/firecracker-task-driver build
+
+create-tagged-release:
+	./scripts/autotag.sh b
+
+push-tagged-release:
+	git push && git push --tags

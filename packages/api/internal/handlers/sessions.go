@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"

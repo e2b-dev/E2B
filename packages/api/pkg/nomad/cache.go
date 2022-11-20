@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/internal/api"
 	"github.com/jellydator/ttlcache/v3"
 )
 

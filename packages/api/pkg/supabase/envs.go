@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/internal/api"
 )
 
 func UpdateEnvState(client *Client, codeSnippetID string, state api.EnvironmentState) error {

@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/devbookhq/orchestration-services/api/internal/api"
-	"github.com/devbookhq/orchestration-services/api/internal/handlers"
-	customMiddleware "github.com/devbookhq/orchestration-services/api/internal/middleware"
+	"github.com/devbookhq/devbook-api/packages/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/internal/handlers"
+	customMiddleware "github.com/devbookhq/devbook-api/packages/api/internal/middleware"
 	"github.com/gin-contrib/cors"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"

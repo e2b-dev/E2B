@@ -30,10 +30,11 @@ archives:
     name_template: "devbookd_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 
 changelog:
-  skip: false
+  skip: true
   use: github-native
 
-release: 
+release:
+  disable: true
   # If set to auto, will mark the release as not ready for production
   # in case there is an indicator for this in the tag e.g. v1.0.0-rc1
   # If set to true, will mark the release as not ready for production.

@@ -1,4 +1,4 @@
-module github.com/devbookhq/orchestration-services/api
+module github.com/devbookhq/devbook-api/packages/api
 
 go 1.18
 

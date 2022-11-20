@@ -10,7 +10,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/devbookhq/orchestration-services/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/internal/api"
 	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	fswatcher "github.com/devbookhq/devbook/packages/devbookd/internal/filesystem/watcher"
-	"github.com/devbookhq/devbook/packages/devbookd/internal/subscriber"
+	fswatcher "github.com/devbookhq/devbook-api/packages/devbookd/internal/filesystem/watcher"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 )

@@ -23,8 +23,8 @@ jobs:
       - name: Setup Service Account
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: projects/424909584475/locations/global/workloadIdentityPools/github-actions/providers/github
-          service_account: github-action@devbookhq.iam.gserviceaccount.com
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
 
       - name: Setup GCloud SDK
         uses: google-github-actions/setup-gcloud@v0

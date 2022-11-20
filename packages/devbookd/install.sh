@@ -17,10 +17,11 @@ if [ $os != "Darwin" ]; then
 fi
 
 #version=${1:-latest}
-devbookd_uri="https://github.com/devbookhq/devbook/packages/devbookd/releases/latest/download/devbookd_${os}_${arch}.tar.gz"
+# TODO: Handle uploading published artifacts in the CI/CD
+# devbookd_uri="https://github.com/devbookhq/devbook-api/packages/devbookd/releases/latest/download/devbookd_${os}_${arch}.tar.gz"
 
 if [ ! "$devbookd_uri" ]; then
-	echo "Error: Unable to find a devbookd release for $os/$arch - see github.com/devbookhq/devbook/packages/devbookd/releases for all releases and version" 1>&2
+	echo "Error: Unable to find a devbookd release for $os/$arch - see github.com/devbookhq/devbook-api/packages/devbookd/releases for all releases and version" 1>&2
 	exit 1
 fi
 

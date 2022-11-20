@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/devbookhq/orchestration-services/api/pkg/cockroach"
+	"github.com/devbookhq/devbook-api/packages/api/pkg/cockroach"
 	"github.com/gin-gonic/gin"
 )
 

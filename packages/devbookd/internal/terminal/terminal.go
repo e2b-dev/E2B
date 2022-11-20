@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/devbookhq/devbook/packages/devbookd/internal/process"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/process"
 	"go.uber.org/zap"
 
 	"github.com/creack/pty"

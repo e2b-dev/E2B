@@ -6,9 +6,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/devbookhq/orchestration-services/api/internal/api"
-	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
-	"github.com/devbookhq/orchestration-services/api/pkg/supabase"
+	"github.com/devbookhq/devbook-api/packages/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/pkg/nomad"
+	"github.com/devbookhq/devbook-api/packages/api/pkg/supabase"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"

@@ -1,4 +1,4 @@
-module github.com/devbookhq/devbook/packages/devbookd
+module github.com/devbookhq/devbook-api/packages/devbookd
 
 go 1.19
 

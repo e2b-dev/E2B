@@ -3,7 +3,7 @@ package process
 import (
 	"fmt"
 
-	"github.com/devbookhq/devbook/packages/devbookd/internal/smap"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/smap"
 	"go.uber.org/zap"
 )
 

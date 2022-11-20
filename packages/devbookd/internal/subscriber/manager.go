@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/devbookhq/devbook/packages/devbookd/internal/smap"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/smap"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 )

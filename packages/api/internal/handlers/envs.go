@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/devbookhq/orchestration-services/api/internal/api"
-	"github.com/devbookhq/orchestration-services/api/pkg/nomad"
-	"github.com/devbookhq/orchestration-services/api/pkg/supabase"
+	"github.com/devbookhq/devbook-api/packages/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/pkg/nomad"
+	"github.com/devbookhq/devbook-api/packages/api/pkg/supabase"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/exp/slices"
 )

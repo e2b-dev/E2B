@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/devbookhq/devbook/packages/devbookd/internal/env"
-	"github.com/devbookhq/devbook/packages/devbookd/internal/process"
-	"github.com/devbookhq/devbook/packages/devbookd/internal/subscriber"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/env"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/process"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
