@@ -22,9 +22,11 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
+        working-directory: ./packages/sdk
         run: npm install
 
       - name: Publish package
         run: npm publish --access=public
+        working-directory: ./packages/sdk
         env:
           NODE_AUTH_TOKEN: ${{ secrets.node_auth_token }}
