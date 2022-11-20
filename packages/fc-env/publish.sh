@@ -25,4 +25,4 @@ gsutil -h "Cache-Control:no-cache, max-age=0" \
 rm env.tar.gz
 rm -rf env
 
-echo Published env pipelines ${version}
+echo Published env pipelines
