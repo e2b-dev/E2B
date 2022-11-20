@@ -14,7 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Setup .npmrc file to publish to npm
       - name: Setup Node
         uses: actions/setup-node@v2
         with:

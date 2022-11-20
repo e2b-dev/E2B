@@ -1,4 +1,4 @@
-name: Orchestration Services - FC env (pipeline scripts, devbookd)
+name: Orchestration Services - FC env (pipeline scripts)
 
 on:
   workflow_call:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   publish:
-    name: Publish envs' pipelines and devbookd
+    name: Publish envs' pipeline
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
@@ -25,5 +25,5 @@ jobs:
       - name: Setup GCloud SDK
         uses: google-github-actions/setup-gcloud@v0
 
-      - name: Package and upload pipelines and devbookd
+      - name: Package and upload pipelines
         run: make publish-fc-env
