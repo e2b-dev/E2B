@@ -128,7 +128,7 @@ jobs:
     if: |
       always() &&
       needs.terraform.result == 'success' &&
-      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped') &&
+      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
