@@ -114,25 +114,25 @@ jobs:
 
     # TODO: Restart API when devbookd changes
 
-  # sdk:
-  #   name: SDK
-  #   needs: changes
-  #   if: needs.changes.outputs.sdk == 'true'
-  #   uses: ./.github/workflows/sdk.yml
-  #   secrets:
-  #     node_auth_token: ${{ secrets.NPM_TOKEN }}
+  sdk:
+    name: SDK
+    needs: changes
+    if: needs.changes.outputs.sdk == 'true'
+    uses: ./.github/workflows/sdk.yml
+    secrets:
+      node_auth_token: ${{ secrets.NPM_TOKEN }}
 
-  # release:
-  #   name: Release
-  #   needs: [terraform, sdk]
-  #   if: |
-  #     always() &&
-  #     needs.terraform.result == 'success' &&
-  #     (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - name: Create release
-  #       uses: softprops/action-gh-release@v1
-  #       with:
-  #         generate_release_notes: true
-  #         # TODO: Add release artifacts for devbookd
+  release:
+    name: Release
+    needs: [terraform, sdk]
+    if: |
+      always() &&
+      needs.terraform.result == 'success' &&
+      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          # TODO: Add release artifacts for devbookd
