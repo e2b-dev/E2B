@@ -1,0 +1,5 @@
+bin
+bin/**
+test/**
+debug/.env
+dist

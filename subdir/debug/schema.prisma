@@ -1,0 +1,66 @@
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+model Invoice {
+  id   BigInt @id @default(autoincrement())
+  paid Int
+  due  Int
+}
+
+model User {
+  id        BigInt   @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  name      String
+  age       Int
+  role      Role     @default(USER)
+  country   String
+  posts     Post[]
+  profile   Profile?
+}
+
+model Profile {
+  id     BigInt    @id @default(autoincrement())
+  bio    String
+  user   User      @relation(fields: [userId], references: [id])
+  userId BigInt    @unique
+}
+
+model Post {
+  id         BigInt     @id @default(autoincrement())
+  createdAt  DateTime   @default(now())
+  title      String
+  published  Boolean    @default(false)
+  categories CategoriesOnPosts[]
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   BigInt
+}
+
+model CategoriesOnPosts {
+  post       Post     @relation(fields: [postId], references: [id])
+  postId     BigInt // relation scalar field
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId BigInt // relation scalar field
+  assignedAt DateTime @default(now())
+  assignedBy String
+
+  @@id([postId, categoryId])
+}
+
+model Category {
+  id    BigInt    @id @default(autoincrement())
+  name  String
+  posts CategoriesOnPosts[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
