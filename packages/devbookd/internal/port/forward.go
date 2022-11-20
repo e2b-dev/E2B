@@ -11,7 +11,7 @@ import (
 	"net"
 	"os/exec"
 
-	"github.com/devbookhq/devbookd/internal/env"
+	"github.com/devbookhq/devbook/packages/devbookd/internal/env"
 	"go.uber.org/zap"
 )
 

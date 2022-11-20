@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/devbookhq/devbookd/internal/log"
+	"github.com/devbookhq/devbook/packages/devbookd/internal/log"
 	"go.uber.org/zap"
 )
 

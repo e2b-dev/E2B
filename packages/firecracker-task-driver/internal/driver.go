@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/devbookhq/firecracker-task-driver/internal/env"
-	"github.com/devbookhq/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/firecracker-task-driver/internal/telemetry"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/env"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/slot"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/telemetry"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/KarpelesLab/reflink"
-	"github.com/devbookhq/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/firecracker-task-driver/internal/telemetry"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/slot"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/telemetry"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"

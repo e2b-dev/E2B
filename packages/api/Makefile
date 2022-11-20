@@ -1,4 +1,4 @@
-openapi := ../shared/api/openapi.yml
+openapi := ../../openapi.yml
 
 GCP_PROJECT := devbookhq
 IMAGE := orchestration/api

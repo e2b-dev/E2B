@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/KarpelesLab/reflink"
-	"github.com/devbookhq/firecracker-task-driver/internal/client/client/operations"
-	"github.com/devbookhq/firecracker-task-driver/internal/client/models"
-	"github.com/devbookhq/firecracker-task-driver/internal/env"
-	"github.com/devbookhq/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/firecracker-task-driver/internal/telemetry"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/client/client/operations"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/client/models"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/env"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/slot"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/telemetry"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
 )

@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/devbookhq/firecracker-task-driver/internal/env"
-	"github.com/devbookhq/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/firecracker-task-driver/internal/telemetry"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/env"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/slot"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/client/stats"

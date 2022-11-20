@@ -4,7 +4,7 @@ import (
 	"flag"
 	"time"
 
-	driver "github.com/devbookhq/firecracker-task-driver/internal"
+	driver "github.com/devbookhq/packages/firecracker-task-driver/internal"
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
 

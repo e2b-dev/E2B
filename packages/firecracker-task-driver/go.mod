@@ -1,4 +1,4 @@
-module github.com/devbookhq/firecracker-task-driver
+module github.com/devbookhq/packages/firecracker-task-driver
 
 go 1.18
 

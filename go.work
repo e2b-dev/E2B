@@ -1,6 +1,7 @@
 go 1.18
 
 use (
-	./api
-	./cluster/disk-image/firecracker-task-driver
+	./packages/api
+	./packages/firecracker-task-driver
+	./packages/devbookd
 )

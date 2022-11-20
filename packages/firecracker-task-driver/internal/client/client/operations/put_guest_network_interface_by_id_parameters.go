@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/firecracker-task-driver/internal/client/models"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/client/models"
 )
 
 // NewPutGuestNetworkInterfaceByIDParams creates a new PutGuestNetworkInterfaceByIDParams object,

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/devbookhq/devbookd/internal/output"
-	"github.com/devbookhq/devbookd/internal/subscriber"
+	"github.com/devbookhq/devbook/packages/devbookd/internal/output"
+	"github.com/devbookhq/devbook/packages/devbookd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/xid"
 	"go.uber.org/zap"

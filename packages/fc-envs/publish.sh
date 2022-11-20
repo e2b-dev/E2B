@@ -15,7 +15,7 @@ version=v1.1.26
 os="Linux"
 arch="x86_64"
 exe="env/devbookd"
-devbookd_uri="https://github.com/devbookhq/devbookd/releases/download/${version}/devbookd_${os}_${arch}.tar.gz"
+devbookd_uri="https://github.com/devbookhq/devbook/packages/devbookd/releases/download/${version}/devbookd_${os}_${arch}.tar.gz"
 curl --fail --location --progress-bar --output "$exe.tar.gz" "$devbookd_uri"
 tar xzf "$exe.tar.gz" -C env
 chmod +x "$exe"

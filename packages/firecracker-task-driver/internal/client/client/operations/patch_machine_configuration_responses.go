@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/firecracker-task-driver/internal/client/models"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/client/models"
 )
 
 // PatchMachineConfigurationReader is a Reader for the PatchMachineConfiguration structure.

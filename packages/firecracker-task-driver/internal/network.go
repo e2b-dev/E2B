@@ -7,8 +7,8 @@ import (
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/devbookhq/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/firecracker-task-driver/internal/telemetry"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/slot"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/telemetry"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/devbookhq/firecracker-task-driver/internal/telemetry"
+	"github.com/devbookhq/packages/firecracker-task-driver/internal/telemetry"
 	consul "github.com/hashicorp/consul/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
