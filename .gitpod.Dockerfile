@@ -17,3 +17,7 @@ RUN download_url=$(curl -s https://api.github.com/repos/go-swagger/go-swagger/re
   jq -r '.assets[] | select(.name | contains("'"$(uname | tr '[:upper:]' '[:lower:]')"'_amd64")) | .browser_download_url') \
   && sudo curl -o /usr/local/bin/swagger -L'#' "$download_url" \
   && sudo chmod +x /usr/local/bin/swagger
+
+RUN bash -c ". .nvm/nvm.sh && nvm install 16.11.0 && nvm use 16.11.0 && nvm alias default 16.11.0"
+RUN echo "nvm use default &>/dev/null" >> ~/.bashrc.d/51-nvm-fix
+RUN npm i depcheck npm-check-updates -g

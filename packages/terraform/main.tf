@@ -27,7 +27,7 @@ provider "google" {
 }
 
 module "cluster" {
-  source = "./cluster"
+  source = "../cluster"
 
   gcp_project_id = var.gcp_project_id
 
@@ -98,7 +98,7 @@ data "google_secret_manager_secret_version" "logtail_api_key" {
 }
 
 module "telemetry" {
-  source = "./telemetry"
+  source = "../telemetry"
 
   logs_health_proxy_port = var.logs_health_proxy_port
   logs_proxy_port        = var.logs_proxy_port
@@ -108,7 +108,7 @@ module "telemetry" {
 }
 
 module "session_proxy" {
-  source = "./session-proxy"
+  source = "../session-proxy"
 
   client_cluster_size        = var.client_cluster_size
   gcp_zone                   = var.gcp_zone
@@ -118,7 +118,7 @@ module "session_proxy" {
 }
 
 module "client_proxy" {
-  source = "./client-proxy"
+  source = "../client-proxy"
 
   gcp_zone                   = var.gcp_zone
   session_proxy_service_name = var.session_proxy_service_name
@@ -128,7 +128,7 @@ module "client_proxy" {
 }
 
 module "api" {
-  source = "./api"
+  source = "../api"
 
   gcp_zone = var.gcp_zone
 

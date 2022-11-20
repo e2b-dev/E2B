@@ -4,6 +4,7 @@ image:
 vscode:
   extensions:
     - 42Crunch.vscode-openapi
+    - dbaeumer.vscode-eslint
 
 tasks:
   - name: Setup tools
@@ -18,6 +19,9 @@ tasks:
   - name: Init Packer
     init: |-
       make init-cluster-image
+
+  # - name: Setup
+  #   init: npm i
 
 github:
   prebuilds:

@@ -9,10 +9,10 @@
     "email": "hello@usedevbook.com",
     "url": "https://usedevbook.com"
   },
-  "bugs": "https://github.com/DevbookHQ/sdk/issues",
+  "bugs": "https://github.com/DevbookHQ/devbook/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DevbookHQ/sdk"
+    "url": "https://github.com/DevbookHQ/devbook"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -26,8 +26,7 @@
     "fix": "npx eslint **/src/**/*.{ts,js} --fix",
     "format": "prettier --check --ignore-path .gitignore .",
     "format:fix": "prettier --write --ignore-path .gitignore .",
-    "generate": "openapi-typescript shared/api/openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts",
-    "prepare": "husky install"
+    "generate": "openapi-typescript ../../openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^14.1.0",
@@ -40,8 +39,6 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-unused-imports": "^2.0.0",
-    "husky": "^8.0.1",
-    "lint-staged": "^13.0.3",
     "openapi-typescript": "^5.4.1",
     "prettier": "^2.7.1",
     "rollup": "^2.79.1",

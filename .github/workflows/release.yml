@@ -1,4 +1,4 @@
-name: Orchestration Services
+name: Devbook API
 
 on:
   push:
