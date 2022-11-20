@@ -35,7 +35,7 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
 
       artifact {
         source = "https://storage.googleapis.com/devbook-environment-pipeline/devbookd"
-        destination = "local"
+        destination = "local/devbookd"
         mode = "file"
       }
 
