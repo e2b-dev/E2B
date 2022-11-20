@@ -4,12 +4,12 @@
     {
       "type": "shell",
       "label": "prepare-debug",
-      "command": "make run-debug",
+      "command": "$(MAKE) -C packages/devbookd make run-debug",
     },
     {
       "type": "shell",
       "label": "stop-debug-docker",
-      "command": "make stop-debug-docker",
+      "command": "$(MAKE) -C packages/devbookd make stop-debug-docker",
     },
   ]
 }
