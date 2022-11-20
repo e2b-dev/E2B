@@ -1,4 +1,4 @@
-build:
+upload:
 	./upload.sh
 
 build:
