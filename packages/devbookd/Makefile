@@ -1,4 +1,7 @@
 build:
+	./upload.sh
+
+build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/devbookd .
 
 build-darwin:

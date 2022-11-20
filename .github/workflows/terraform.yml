@@ -31,5 +31,7 @@ jobs:
       - name: Init Terraform
         run: make init-infrastructure
 
+      # - name: Deploy Terraform
+      #   run: make deploy-infrastructure
       - name: Deploy Terraform
-        run: make deploy-infrastructure
+        run: make plan-infrastructure

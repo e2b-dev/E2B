@@ -73,17 +73,17 @@ jobs:
   devbookd:
     name: Devbook Daemon
     needs: changes
-    if: needs.changes.outputs.devbookd == 'true' }}
+    if: needs.changes.outputs.devbookd == 'true'
     uses: ./.github/workflows/devbookd.yml
     secrets:
       github_token: ${{ github.token }}
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   fc_env:
     name: FC env (pipeline scripts, devbookd)
-    needs: [changes, devbookd]
-    if: |
-      needs.changes.outputs.fc_env == 'true' ||
-      needs.devbookd.result == 'success'
+    needs: devbookd
+    if: needs.changes.outputs.fc_env == 'true'
     uses: ./.github/workflows/fc-env.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -114,7 +114,6 @@ jobs:
 
     # TODO: Add dynamic tags for SDK
     # TODO: Restart API when devbookd changes
-    # -> wait for devbookd and terraform
 
   sdk:
     name: SDK

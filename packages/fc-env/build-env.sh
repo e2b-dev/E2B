@@ -12,6 +12,7 @@ CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 FC_ENVS_DISK="$6"
 API_KEY="$7"
+DEVBOOKD_DIR="$8"
 
 set -euo pipefail
 
@@ -51,6 +52,11 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
+if [ -z "$DEVBOOKD_DIR" ]; then
+  echo "ERROR: Expected devbookd dir as the eighth argument"
+  exit 1
+fi
+
 API_URL="https://ondevbook.com"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state?api_key=$API_KEY"
 
@@ -61,6 +67,7 @@ echo "| CODE_SNIPPET_ID:    $CODE_SNIPPET_ID"
 echo "| ALLOC_DIR:          $ALLOC_DIR"
 echo "| FC_ENVS_DISK:       $FC_ENVS_DISK"
 echo "| API_KEY:            $API_KEY"
+echo "| DEVBOOKD_DIR:       $DEVBOOKD_DIR"
 echo "======================================================================================================="
 echo
 
@@ -108,6 +115,8 @@ function mkrootfs() {
 
   local tag=rootfs-${RUN_UUID}
   local free=1500000000 # 1000MB in B
+
+  cp $DEVBOOKD_DIR/devbookd $SCRIPTDIR/devbookd
 
   echo -e "$DOCKERFILE" | docker build -t $tag -f - $SCRIPTDIR
   local container_id=$(docker run -dt $tag /bin/sh)

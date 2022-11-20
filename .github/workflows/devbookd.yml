@@ -5,6 +5,10 @@ on:
     secrets:
       github_token:
         required: true
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
 
 jobs:
   publish:
@@ -27,3 +31,16 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.github_token }}
+
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
+
+      - name: Setup GCloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+
+      - name: Upload devbookd
+        run: make upload
+        working-directory: ./packages/devbookd

@@ -1,20 +1,18 @@
 #!/bin/bash
 
-# This script zips the `mkfcenv` directory and uploads it to a GCS bucket.
-# The `firecracker-envs` Nomad job then downloads the zipped directory from the bucket every time it runs and is making a new environment.
-
 set -euo pipefail
 
-mkdir env
+[ -e devbookd-env.tar.gz ] && rm env.tar.gz
+[ -d devbookd-env ] && rm -rf env
 
-mv devbookd/bin/devbookd env
-cp ./build-env.sh ./env/
-cp ./provision-env.sh ./env/
+mkdir devbookd-env
 
-tar czf env.tar.gz env
+cp dist/devbookd_linux_amd64_v1 devbookd-env/devbookd
+
+tar czf devbookd-env.tar.gz devbookd-env
 
 gsutil -h "Cache-Control:no-cache, max-age=0" \
-  cp env.tar.gz gs://devbook-environment-pipeline
+  cp c.tar.gz gs://devbook-environment-pipeline
 
-rm env.tar.gz
-rm -rf env
+rm devbookd-env.tar.gz
+rm -rf devbookd-env

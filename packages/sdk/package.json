@@ -1,6 +1,6 @@
 {
   "name": "@devbookhq/sdk",
-  "version": "2.5.10",
+  "version": "0.0.0",
   "description": "SDK for managing Devbook sessions from JavaScript/TypeScript",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -18,12 +18,13 @@
   "module": "dist/esm/index.js",
   "umd": "dist/umd/index.js",
   "scripts": {
-    "prepublishOnly": "rollup -c",
+    "prepublishOnly": "npm run use-tag-version; rollup -c",
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "measure": "node test/performance.mjs",
     "run": "node test/run.mjs",
     "fix": "npx eslint **/src/**/*.{ts,js} --fix",
+    "use-tag-version": "npm config set git-tag-version=false && npm version $(git describe --tags)",
     "format": "prettier --check --ignore-path .gitignore .",
     "format:fix": "prettier --write --ignore-path .gitignore .",
     "generate": "openapi-typescript ../../openapi.yml -x api_key --immutable-types --output src/api/schema.gen.ts"

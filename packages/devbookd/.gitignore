@@ -3,3 +3,5 @@ bin/**
 test/**
 debug/.env
 dist
+devbookd-env/
+devbookd-env.tar.gz

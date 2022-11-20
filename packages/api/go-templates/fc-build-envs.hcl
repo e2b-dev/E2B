@@ -33,6 +33,11 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
         destination = "local"
       }
 
+      artifact {
+        source = "https://storage.googleapis.com/devbook-environment-pipeline/devbookd-env.tar.gz"
+        destination = "local"
+      }
+
       config {
         command = "local/env/build-env.sh"
         args = [
@@ -43,6 +48,7 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
           "${NOMAD_ALLOC_DIR}",
           "{{ .FCEnvsDisk }}",
           "{{ .APIKey }}",
+          "local/devbookd-env",
         ]
       }
     }
