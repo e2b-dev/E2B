@@ -195,10 +195,6 @@ export interface paths {
 
 export interface components {
   readonly schemas: {
-    readonly HubDatabase: {
-      /** @description Connectiong string to the database. */
-      readonly dbURL: string;
-    };
     /** @enum {string} */
     readonly Template:
       | "Nodejs"

@@ -83,14 +83,6 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
-    HubDatabase:
-      required:
-        - dbURL
-      properties:
-        dbURL:
-          type: string
-          description: Connectiong string to the database.
-
     Template:
       type: string
       enum:
