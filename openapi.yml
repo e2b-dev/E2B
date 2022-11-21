@@ -341,16 +341,3 @@ paths:
           $ref: "#/components/responses/400"
         401:
           $ref: "#/components/responses/401"
-
-  /prisma-hub/db:
-    post:
-      description: Creates a new hub database
-      responses:
-        201:
-          description: Successfully created a new hub database
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HubDatabase"
-        500:
-          $ref: "#/components/responses/500"

@@ -37,12 +37,6 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// HubDatabase defines model for HubDatabase.
-type HubDatabase struct {
-	// DbURL Connectiong string to the database.
-	DbURL string `json:"dbURL"`
-}
-
 // NewEnvironment defines model for NewEnvironment.
 type NewEnvironment struct {
 	Deps     []string `json:"deps"`

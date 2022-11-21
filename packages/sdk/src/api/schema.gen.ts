@@ -191,20 +191,6 @@ export interface paths {
       };
     };
   };
-  readonly "/prisma-hub/db": {
-    /** Creates a new hub database */
-    readonly post: {
-      readonly responses: {
-        /** Successfully created a new hub database */
-        readonly 201: {
-          readonly content: {
-            readonly "application/json": components["schemas"]["HubDatabase"];
-          };
-        };
-        readonly 500: components["responses"]["500"];
-      };
-    };
-  };
 }
 
 export interface components {
