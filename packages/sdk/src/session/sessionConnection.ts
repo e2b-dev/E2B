@@ -166,8 +166,8 @@ abstract class SessionConnection {
               `Error creating session - (${error.status}) server error: ${error.data.message}`,
             )
           }
-          throw e
         }
+        throw e
       }
     }
 
