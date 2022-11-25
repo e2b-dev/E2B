@@ -1,8 +1,10 @@
-name: Devbook API
+name: Devbook API release
 
 on:
   push:
     tags: [v*.*.*]
+
+concurrency: ${{ github.repository }}-${{ github.workflow }}
 
 permissions:
   id-token: write
