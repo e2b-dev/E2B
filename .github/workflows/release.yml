@@ -45,23 +45,18 @@ jobs:
             cluster_disk_image:
               - 'packages/cluster-disk-image/**'
               - '.github/workflows/cluster-disk-image.yml'
-              - '.github/workflows/release.yml'
             fc_env:
               - 'packages/fc-env/**'
               - '.github/workflows/fc-env.yml'
-              - '.github/workflows/release.yml'
             api_image:
               - 'packages/api/**'
               - '.github/workflows/api-image.yml'
-              - '.github/workflows/release.yml'
             sdk:
               - 'packages/sdk/**'
               - '.github/workflows/sdk.yml'
-              - '.github/workflows/release.yml'
             devbookd:
               - 'packages/devbookd/**'
               - '.github/workflows/devbookd.yml'
-              - '.github/workflows/release.yml'
 
   cluster_disk_image:
     name: Cluster disk image
