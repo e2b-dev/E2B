@@ -8,15 +8,15 @@ generate:
 	oapi-codegen -old-config-style -generate types --package api $(openapi) > internal/api/types.gen.go
 	oapi-codegen -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
 
-build-local:
+build:
 	CGO_ENABLED=0 GOOS=linux go build -a -o bin/api .
 
 run:
 	GOOS=linux go build -o bin/api .
 	NOMAD_ADDRESS=http://34.149.1.201 ./bin/api --port 3000 -telemetry-api=$(telemetry-api)
 
-build:
+build-docker:
 	docker build --tag us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE) .
 
-push:
+push-docket:
 	docker push us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE)

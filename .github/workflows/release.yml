@@ -76,9 +76,7 @@ jobs:
   cluster_disk_image:
     name: Cluster disk image
     needs: [changes, firecracker_task_driver]
-    if: |
-      needs.changes.outputs.cluster_disk_image == 'true' ||
-      (needs.firecracker_task_driver.result == 'success' || needs.firecracker_task_driver.result == 'skipped')
+    if: needs.changes.outputs.cluster_disk_image == 'true' || needs.firecracker_task_driver.result == 'success'
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -94,7 +92,7 @@ jobs:
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   fc_env:
-    name: FC env (pipeline scripts, devbookd)
+    name: FC env (pipeline scripts)
     needs: changes
     if: needs.changes.outputs.fc_env == 'true'
     uses: ./.github/workflows/fc-env.yml
@@ -114,13 +112,14 @@ jobs:
 
   terraform:
     name: Terraform
-    needs: [changes, cluster_disk_image, fc_env, api_image, devbookd]
+    needs: [changes, cluster_disk_image, fc_env, api_image, devbookd, firecracker_task_driver]
     if: |
       always() &&
       needs.changes.result == 'success' &&
       (needs.cluster_disk_image.result == 'success' || needs.cluster_disk_image.result == 'skipped') &&
       (needs.fc_env.result == 'success' || needs.fc_env.result == 'skipped') &&
       (needs.devbookd.result == 'success' || needs.devbookd.result == 'skipped') &&
+      (needs.firecracker_task_driver.result == 'success' || needs.firecracker_task_driver.result == 'skipped') &&
       (needs.api_image.result == 'success' || needs.api_image.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
@@ -131,8 +130,8 @@ jobs:
 
   sdk:
     name: SDK
-    needs: changes
-    if: needs.changes.outputs.sdk == 'true'
+    needs: [changes, terraform]
+    if: needs.changes.outputs.sdk == 'true' && needs.terraform.result == 'success'
     uses: ./.github/workflows/sdk.yml
     secrets:
       node_auth_token: ${{ secrets.NPM_TOKEN }}
@@ -140,11 +139,9 @@ jobs:
   # The last succeesful release is used for determining which changed and what should be deployed in this release.
   release:
     name: Release
-    needs: [terraform, sdk, firecracker_task_driver]
+    needs: [sdk]
     if: |
       always() &&
-      needs.terraform.result == 'success' &&
-      (needs.firecracker_task_driver.result == 'success' || needs.firecracker_task_driver.result == 'skipped') &&
       (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
     runs-on: ubuntu-20.04
     steps:
