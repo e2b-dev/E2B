@@ -32,14 +32,14 @@ jobs:
           GITHUB_TOKEN: ${{ github.token  }}
 
       - name: Setup Service Account
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
       # Takes cca 18s - cache system wide
       - name: Setup GCloud SDK
-        uses: google-github-actions/setup-gcloud@v0
+        uses: google-github-actions/setup-gcloud@v1
 
       - name: Upload devbookd
         working-directory: ./packages/devbookd

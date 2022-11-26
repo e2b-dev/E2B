@@ -4,7 +4,8 @@ on:
   push:
     tags: [v*.*.*]
 
-# Allow canceling the previous workflow if a new one is pending
+# TODO: Allow canceling the previous workflow if a new one is pending
+# Make this workflow wait if there is a running workflow
 concurrency: ${{ github.repository }}-${{ github.workflow }}
 
 permissions:
