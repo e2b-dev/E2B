@@ -18,7 +18,7 @@ tasks:
 
   - name: Init Packer
     init: |-
-      make init-cluster-image
+      cd ./packages/cluster-disk-image && make init
 
 github:
   prebuilds:

@@ -19,21 +19,6 @@ plan-infrastructure:
 deploy-infrastructure:
 	terraform apply -auto-approve -input=false -compact-warnings -parallelism=20
 
-push-api-image:
-	$(MAKE) -C packages/api push
-
-init-cluster-image:
-	$(MAKE) -C packages/cluster-disk-image init
-
-build-cluster-image:
-	$(MAKE) -C packages/cluster-disk-image build
-
-publish-fc-env:
-	$(MAKE) -C packages/fc-env publish
-
-build-firecracker-task-driver:
-	$(MAKE) -C packages/firecracker-task-driver build
-
 create-tagged-release:
 	./scripts/autotag.sh b
 

@@ -35,4 +35,5 @@ jobs:
 
       # Takes cca 1m 26s - cache Docker layers, cache golang deps, cache golang build?
       - name: Build & push API image
-        run: make GCP_PROJECT=$GCP_PROJECT IMAGE=$IMAGE push-api-image
+        working-directory: ./packages/api
+        run: make GCP_PROJECT=$GCP_PROJECT IMAGE=$IMAGE push
