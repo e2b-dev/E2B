@@ -17,7 +17,7 @@ plan-infrastructure:
 	terraform plan -compact-warnings -detailed-exitcode
 
 deploy-infrastructure:
-	terraform apply -auto-approve -input=false -compact-warnings
+	terraform apply -auto-approve -input=false -compact-warnings -parallelism=20
 
 push-api-image:
 	$(MAKE) -C packages/api push
