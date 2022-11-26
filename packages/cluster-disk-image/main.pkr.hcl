@@ -14,7 +14,7 @@ source "googlecompute" "orch" {
   # TODO: Overwrite the image instead of creating timestamped images every time we build its
   image_name          = "orch-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
   project_id          = var.gcp_project_id
-  source_image_family = "ubuntu-2004-lts"
+  source_image_family = "ubuntu-2204-lts"
   ssh_username        = "ubuntu"
   zone                = var.gcp_zone
   disk_size           = 10
