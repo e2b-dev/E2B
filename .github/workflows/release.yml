@@ -121,6 +121,7 @@ jobs:
     secrets:
       node_auth_token: ${{ secrets.NPM_TOKEN }}
 
+  # The last succeesful release is used for determining which files' changes should be deployed in this release
   release:
     name: Release
     needs: [terraform, sdk]
