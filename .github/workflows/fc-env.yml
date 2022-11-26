@@ -27,5 +27,5 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
 
       - name: Package and upload pipelines
-        working-directory: ./packages/fc-env publish
+        working-directory: ./packages/fc-env
         run: make publish
