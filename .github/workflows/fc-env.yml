@@ -22,6 +22,7 @@ jobs:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
+      # Takes cca 19s - cache system wide
       - name: Setup GCloud SDK
         uses: google-github-actions/setup-gcloud@v0
 

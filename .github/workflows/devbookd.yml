@@ -21,6 +21,7 @@ jobs:
         with:
           go-version: 1.19
 
+      # Takes cca 1m 8s - cache dependencies, cache build?
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
@@ -36,6 +37,7 @@ jobs:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
+      # Takes cca 18s - cache system wide
       - name: Setup GCloud SDK
         uses: google-github-actions/setup-gcloud@v0
 

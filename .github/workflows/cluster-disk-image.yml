@@ -31,5 +31,6 @@ jobs:
       - name: Init Packer
         run: make init-cluster-image
 
+      # Takes cca 6m 25s - check if we need app deps in the image setup, move fc-snapshot-driver building to a separate package
       - name: Build the image on GCE VM and save it on GCP
         run: make build-cluster-image
