@@ -9,8 +9,7 @@ on:
         required: true
 
 env:
-  GCP_PROJECT: ${{ secrets.GCE_PROJECT }}
-  IMAGE: orchestration/api
+  IMAGE_TAG:  us-central1-docker.pkg.dev/${{ secrets.GCE_PROJECT }}/orchestration/api:latest
 
 jobs:
   publish:
@@ -19,6 +18,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build
+        uses: docker/build-push-action@v3
+        with:
+          context: "{{defaultContext}}:packages/api"
+          push: false
+          tags: $IMAGE_TAG
 
       - name: Setup Service Account
         uses: google-github-actions/auth@v1
@@ -33,7 +42,9 @@ jobs:
       - name: Configure Docker
         run: gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
 
-      # Takes cca 1m 26s - cache Docker layers, cache golang deps, cache golang build?
-      - name: Build & push API image
-        working-directory: ./packages/api
-        run: make GCP_PROJECT=$GCP_PROJECT IMAGE=$IMAGE push
+      - name: Push
+        uses: docker/build-push-action@v3
+        with:
+          context: "{{defaultContext}}:packages/api"
+          push: true
+          tags: $IMAGE_TAG

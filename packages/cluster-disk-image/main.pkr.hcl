@@ -43,9 +43,8 @@ build {
   # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
-      "sudo add-apt-repository -y ppa:longsleep/golang-backports",
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq golang-1.18-go build-essential net-tools qemu-utils",
+      "sudo apt-get install -y unzip jq net-tools",
     ]
   }
 
@@ -74,9 +73,9 @@ build {
   }
 
   # TODO: Remove unused deps - is Consul already using dnsmasq?
-  provisioner "shell" {
-    script = "${path.root}/setup/install-dnsmasq.sh"
-  }
+  # provisioner "shell" {
+  #   script = "${path.root}/setup/install-dnsmasq.sh"
+  # }
 
   provisioner "shell" {
     script          = "${path.root}/setup/install-nomad.sh"
@@ -88,18 +87,10 @@ build {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }} --version ${var.firecracker_version}"
   }
 
-  provisioner "file" {
-    source      = "${path.root}/firecracker-task-driver"
-    destination = "/tmp"
-  }
-
   provisioner "shell" {
     inline = [
-      "PATH=$PATH:/usr/lib/go-1.18/bin",
-      "cd /tmp/firecracker-task-driver",
-      "make build",
       "sudo mkdir -p /opt/nomad/plugins",
-      "sudo cp /tmp/firecracker-task-driver/bin/firecracker-task-driver /opt/nomad/plugins/firecracker-task-driver",
+      "sudo curl https://storage.googleapis.com/devbook-environment-pipeline/firecracker-task-driver -o /opt/nomad/plugins/firecracker-task-driver",
     ]
   }
 

@@ -21,6 +21,7 @@ jobs:
       api_image: ${{ steps.filter.outputs.api_image }}
       fc_env: ${{ steps.filter.outputs.fc_env }}
       devbookd: ${{ steps.filter.outputs.devbookd }}
+      firecracker_task_driver: ${{ steps.filter.outputs.firecracker_task_driver }}
       sdk: ${{ steps.filter.outputs.sdk }}
     steps:
       - name: Checkout repository
@@ -59,11 +60,25 @@ jobs:
             devbookd:
               - 'packages/devbookd/**'
               - '.github/workflows/devbookd.yml'
+            firecracker-task-driver:
+              - 'packages/firecracker-task-driver/**'
+              - '.github/workflows/firecracker-task-driver.yml'
+
+  firecracker_task_driver:
+    name: Devbook Firecracker Task Driver
+    needs: changes
+    if: needs.changes.outputs.firecracker_task_driver == 'true'
+    uses: ./.github/workflows/firecracker-task-driver.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   cluster_disk_image:
     name: Cluster disk image
-    needs: changes
-    if: needs.changes.outputs.cluster_disk_image == 'true'
+    needs: [changes, firecracker_task_driver]
+    if: |
+      needs.changes.outputs.cluster_disk_image == 'true' ||
+      (needs.firecracker_task_driver.result == 'success' || needs.firecracker_task_driver.result == 'skipped')
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -124,10 +139,11 @@ jobs:
   # The last succeesful release is used for determining which changed and what should be deployed in this release.
   release:
     name: Release
-    needs: [terraform, sdk]
+    needs: [terraform, sdk, firecracker_task_driver]
     if: |
       always() &&
       needs.terraform.result == 'success' &&
+      (needs.firecracker_task_driver.result == 'success' || needs.firecracker_task_driver.result == 'skipped') &&
       (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
     runs-on: ubuntu-20.04
     steps:

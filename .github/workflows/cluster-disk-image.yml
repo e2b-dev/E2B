@@ -32,7 +32,6 @@ jobs:
         working-directory: ./packages/cluster-disk-image
         run: make init
 
-      # Takes cca 6m 25s - check if we need app deps in the image setup, move fc-snapshot-driver building to a separate package
       - name: Build the image on GCE VM and save it on GCP
         working-directory: ./packages/cluster-disk-image
         run: make build

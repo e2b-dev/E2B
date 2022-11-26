@@ -19,7 +19,6 @@ jobs:
         with:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
-          check-latest: true
           cache: npm
           cache-dependency-path: ./packages/sdk/package-lock.json
 

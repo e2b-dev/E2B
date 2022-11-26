@@ -1,4 +1,4 @@
-name: Devbook Daemon
+name: Devbook Firecracker Task Driver
 
 on:
   workflow_call:
@@ -19,18 +19,17 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version-file: ./packages/devbookd/go.mod
+          go-version-file: ./packages/firecracker-task-driver/go.mod
           cache: true
-          cache-dependency-path: ./packages/devbookd/go.sum
+          cache-dependency-path: ./packages/firecracker-task-driver/go.sum
+          
+      - name: Download deps
+        working-directory: ./packages/firecracker-task-driver
+        run: go mod tidy
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
-        with:
-          workdir: ./packages/devbookd
-          version: latest
-          args: release
-        env:
-          GITHUB_TOKEN: ${{ github.token  }}
+      - name: Build
+        working-directory: ./packages/firecracker-task-driver
+        run: make build
 
       - name: Setup Service Account
         uses: google-github-actions/auth@v1
@@ -42,6 +41,6 @@ jobs:
       - name: Setup GCloud SDK
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Upload devbookd
-        working-directory: ./packages/devbookd
+      - name: Upload
+        working-directory: ./packages/firecracker-task-driver
         run: make upload

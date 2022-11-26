@@ -5,7 +5,7 @@ RUN apk add --no-cache make
 WORKDIR /build
 
 COPY go.mod go.sum Makefile ./
-RUN go mod download
+RUN go mod tidy
 
 COPY internal internal
 COPY pkg pkg
@@ -23,3 +23,4 @@ RUN chmod +x api
 # Set Gin server to the production mode
 ENV GIN_MODE=release
 ENTRYPOINT [ "./api"]
+ 
