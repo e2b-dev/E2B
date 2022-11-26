@@ -1,4 +1,4 @@
-name: Devbook API release
+name: API release
 
 on:
   push:

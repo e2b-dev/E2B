@@ -1,4 +1,4 @@
-name: Devbook Daemon
+name: Devbookd
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Devbook Firecracker Task Driver
+name: Firecracker Task Driver
 
 on:
   workflow_call:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   publish:
-    name: Build, upload and release (releasing is disabled right now)
+    name: Build, upload and release
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository

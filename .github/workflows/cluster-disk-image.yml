@@ -1,4 +1,4 @@
-name: Orchestration Services - Cluster disk image
+name: Cluster disk image
 
 on:
   workflow_call:

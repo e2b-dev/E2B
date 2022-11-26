@@ -1,4 +1,4 @@
-name: Orchestration Services - FC env (pipeline scripts)
+name: FC env
 
 on:
   workflow_call:

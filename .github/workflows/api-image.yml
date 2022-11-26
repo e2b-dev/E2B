@@ -1,4 +1,4 @@
-name: Orchestration Services - API image
+name: API image
 
 on:
   workflow_call:

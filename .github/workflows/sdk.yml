@@ -1,4 +1,4 @@
-name: Devbook SDK
+name: SDK
 
 on:
   workflow_call:

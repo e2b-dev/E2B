@@ -1,4 +1,4 @@
-name: Orchestration Services - Terraform
+name: Terraform
 
 on:
   workflow_call:
