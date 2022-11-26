@@ -114,7 +114,6 @@ jobs:
     name: Terraform
     needs: [changes, cluster_disk_image, fc_env, api_image, devbookd, firecracker_task_driver]
     if: |
-      always() &&
       needs.changes.result == 'success' &&
       (needs.cluster_disk_image.result == 'success' || needs.cluster_disk_image.result == 'skipped') &&
       (needs.fc_env.result == 'success' || needs.fc_env.result == 'skipped') &&
@@ -140,9 +139,7 @@ jobs:
   release:
     name: Release
     needs: [sdk]
-    if: |
-      always() &&
-      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
+    if: needs.sdk.result == 'success' || needs.sdk.result == 'skipped'
     runs-on: ubuntu-20.04
     steps:
       - name: Create release

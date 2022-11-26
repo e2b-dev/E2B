@@ -5,7 +5,7 @@ RUN apk add --no-cache make
 WORKDIR /build
 
 COPY go.mod go.sum Makefile ./
-RUN go mod tidy
+RUN go mod download
 
 COPY internal internal
 COPY pkg pkg
