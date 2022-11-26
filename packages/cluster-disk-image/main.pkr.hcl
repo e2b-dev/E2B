@@ -91,6 +91,7 @@ build {
     inline = [
       "sudo mkdir -p /opt/nomad/plugins",
       "sudo curl https://storage.googleapis.com/devbook-environment-pipeline/firecracker-task-driver -o /opt/nomad/plugins/firecracker-task-driver",
+      "chmod +x /opt/nomad/plugins/firecracker-task-driver",
     ]
   }
 
