@@ -27,7 +27,7 @@ jobs:
         with:
           context: "{{defaultContext}}:packages/api"
           push: false
-          tags: ${{ IMAGE_TAG }}
+          tags: ${{ env.IMAGE_TAG }}
 
       - name: Setup Service Account
         uses: google-github-actions/auth@v1
@@ -47,4 +47,4 @@ jobs:
         with:
           context: "{{defaultContext}}:packages/api"
           push: true
-          tags: ${{ IMAGE_TAG }}
+          tags: ${{ env.IMAGE_TAG }}
