@@ -110,6 +110,7 @@ jobs:
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      gce_project: ${{ secrets.GCE_PROJECT }}
 
   terraform:
     name: Terraform
