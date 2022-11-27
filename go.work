@@ -1,7 +1,7 @@
-go 1.18
+go 1.19
 
 use (
 	./packages/api
-	./packages/firecracker-task-driver
 	./packages/devbookd
+	./packages/firecracker-task-driver
 )

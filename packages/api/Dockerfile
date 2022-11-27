@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine3.15 as builder
+FROM golang:1.19-alpine3.15 as builder
 
 RUN apk add --no-cache make
 
