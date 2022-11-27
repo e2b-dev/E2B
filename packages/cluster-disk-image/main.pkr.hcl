@@ -1,8 +1,8 @@
 packer {
-  required_version = "1.8.0"
+  required_version = "1.8.4"
   required_plugins {
     googlecompute = {
-      version = "1.0.11"
+      version = "1.0.16"
       source  = "github.com/hashicorp/googlecompute"
     }
   }
@@ -14,7 +14,7 @@ source "googlecompute" "orch" {
   # TODO: Overwrite the image instead of creating timestamped images every time we build its
   image_name          = "orch-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
   project_id          = var.gcp_project_id
-  source_image_family = "ubuntu-2204-lts"
+  source_image_family = "ubuntu-2004-lts"
   ssh_username        = "ubuntu"
   zone                = var.gcp_zone
   disk_size           = 10
