@@ -5,4 +5,8 @@ new_version=`./scripts/semver.sh -p $old_version`
 
 echo -n $new_version > $version_file
 
-npm version --prefix packages/sdk $new_version
+
+sdk_path="packages/sdk" 
+
+npm version --prefix $sdk_path $new_version
+npm i --package-lock-only --prefix $sdk_path
