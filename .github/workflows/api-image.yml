@@ -21,9 +21,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Setup Service Account
         uses: google-github-actions/auth@v1
         with:
@@ -36,6 +33,9 @@ jobs:
 
       - name: Configure Docker
         run: gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Build and Push
         uses: docker/build-push-action@v3
