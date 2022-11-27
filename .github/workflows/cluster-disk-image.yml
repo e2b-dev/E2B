@@ -16,22 +16,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Service Account
-        uses: google-github-actions/auth@v1
-        with:
-          create_credentials_file: true
-          workload_identity_provider: ${{ secrets.workload_identity_provider }}
-          service_account: ${{ secrets.service_account_email }}
+      # - name: Setup Service Account
+      #   uses: google-github-actions/auth@v1
+      #   with:
+      #     create_credentials_file: true
+      #     workload_identity_provider: ${{ secrets.workload_identity_provider }}
+      #     service_account: ${{ secrets.service_account_email }}
 
-      - name: Setup Packer
-        uses: hashicorp-contrib/setup-packer@v2
-        with:
-          packer-version: 1.8.0
+      # - name: Setup Packer
+      #   uses: hashicorp-contrib/setup-packer@v2
+      #   with:
+      #     packer-version: 1.8.0
 
-      - name: Init Packer
-        working-directory: ./packages/cluster-disk-image
-        run: make init
+      # - name: Init Packer
+      #   working-directory: ./packages/cluster-disk-image
+      #   run: make init
 
-      - name: Build the image on GCE VM and save it on GCP
-        working-directory: ./packages/cluster-disk-image
-        run: make build
+      # - name: Build the image on GCE VM and save it on GCP
+      #   working-directory: ./packages/cluster-disk-image
+      #   run: make build
