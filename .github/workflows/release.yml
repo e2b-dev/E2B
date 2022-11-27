@@ -116,7 +116,7 @@ jobs:
     name: Terraform
     needs: [changes, cluster-disk-image, fc-env, api-image, devbookd, firecracker-task-driver]
     if: |
-      always()
+      always() &&
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.fc-env.result == 'success' || needs.fc-env.result == 'skipped') &&
