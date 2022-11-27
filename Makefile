@@ -9,14 +9,14 @@ login-gcloud-user:
 	gcloud config set project devbookhq
 	gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
 
-init-infrastructure:
+init:
 	terraform init -input=false
 
-plan-infrastructure:
+plan:
 	terraform fmt -recursive
 	terraform plan -compact-warnings -detailed-exitcode
 
-deploy-infrastructure:
+apply:
 	terraform apply -auto-approve -input=false -compact-warnings -parallelism=20
 
 generate-from-openapi:

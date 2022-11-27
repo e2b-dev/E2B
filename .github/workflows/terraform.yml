@@ -43,7 +43,7 @@ jobs:
             ${{ runner.os }}-terraform-
 
       - name: Init Terraform
-        run: make init-infrastructure
+        run: make init
 
       - name: Deploy Terraform
-        run: make deploy-infrastructure
+        run: make apply
