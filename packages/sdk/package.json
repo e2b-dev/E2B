@@ -12,7 +12,7 @@
   "bugs": "https://github.com/DevbookHQ/devbook-api/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DevbookHQ/devbook-api/packages/sdk"
+    "url": "https://github.com/DevbookHQ/devbook-api"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

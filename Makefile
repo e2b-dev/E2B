@@ -1,4 +1,4 @@
-# Login for Terraform (uses application default creds)
+# Login for Terraform (uses application default creds) (Gitpod only)
 login-gcloud:
 	gcloud auth application-default login
 	echo "export GOOGLE_APPLICATION_CREDENTIALS=/home/gitpod/.config/gcloud/application_default_credentials.json" >>  ~/.bashrc
