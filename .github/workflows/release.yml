@@ -163,9 +163,10 @@ jobs:
   # The last succeesful release is used for determining which changed and what should be deployed in this release.
   release:
     name: Release
-    needs: [sdk]
+    needs: [changes, sdk, terraform]
     if: |
       always() &&
+      needs.terraform.result == 'success' &&
       needs.changes.outputs.version == 'true' &&
       (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
     runs-on: ubuntu-20.04

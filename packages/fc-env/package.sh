@@ -8,12 +8,15 @@ set -euo pipefail
 [ -e env.tar.gz ] && rm env.tar.gz
 [ -d env ] && rm -rf env
 
-./package.sh
+mkdir env
 
-gsutil -h "Cache-Control:no-cache, max-age=0" \
-  cp env.tar.gz gs://devbook-environment-pipeline
+cp -r alpine env/
+cp -r ubuntu env/
 
-rm env.tar.gz
-rm -rf env
+cp build-env.sh env/
+cp use-prebuilt-env.sh env/
+cp update-env.sh env/
 
-echo Published env pipelines
+tar czf env.tar.gz env
+
+echo Packaged env pipelines

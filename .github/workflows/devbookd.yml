@@ -18,15 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Service Account
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: ${{ secrets.workload_identity_provider }}
-          service_account: ${{ secrets.service_account_email }}
-
-      # Takes cca 18s - cache system wide
-      - name: Setup GCloud SDK
-        uses: google-github-actions/setup-gcloud@v1
 
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -45,7 +36,14 @@ jobs:
           GITHUB_TOKEN: ${{ github.token  }}
           GORELEASER_CURRENT_TAG: ${{ secrets.version }}
 
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
 
       - name: Upload devbookd
-        working-directory: ./packages/devbookd
-        run: make upload
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: './packages/devbookd/dist/devbookd_linux_amd64_v1/devbookd'
+          destination: 'devbook-environment-pipeline'
