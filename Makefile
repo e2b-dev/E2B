@@ -19,12 +19,10 @@ plan-infrastructure:
 deploy-infrastructure:
 	terraform apply -auto-approve -input=false -compact-warnings -parallelism=20
 
-create-tagged-release:
-	./scripts/autotag.sh b
-
-push-tagged-release:
-	git push && git push --tags
-
 generate-from-openapi:
 	$(MAKE) -C packages/api generate
 	npm run generate --prefix packages/sdk
+
+increment-version:
+	./scripts/increment-version.sh
+	

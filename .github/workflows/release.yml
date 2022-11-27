@@ -2,7 +2,8 @@ name: API release
 
 on:
   push:
-    tags: [v*.*.*]
+    branches:
+      - master
 
 # TODO: Allow canceling the previous workflow if a new one is pending
 # This makes the workflow wait if there is already a running workflow
@@ -17,6 +18,8 @@ jobs:
     name: Repository changes
     runs-on: ubuntu-20.04
     outputs:
+      get-version: ${{ steps.getversion.outputs.version }}
+      version: ${{ steps.filter.outputs.version }}
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
       api-image: ${{ steps.filter.outputs.api-image }}
       fc-env: ${{ steps.filter.outputs.fc-env }}
@@ -48,6 +51,9 @@ jobs:
             cluster-disk-image:
               - 'packages/cluster-disk-image/**'
               - '.github/workflows/cluster-disk-image.yml'
+            cluster-disk-image:
+              - 'packages/cluster-disk-image/**'
+              - '.github/workflows/cluster-disk-image.yml'
             fc-env:
               - 'packages/fc-env/**'
               - '.github/workflows/fc-env.yml'
@@ -63,11 +69,19 @@ jobs:
             firecracker-task-driver:
               - 'packages/firecracker-task-driver/**'
               - '.github/workflows/firecracker-task-driver.yml'
+            version:
+              - 'version'
+
+      - name: Read Version file
+        id: getversion
+        run: echo "::set-output name=version::$(cat VERSION)"
 
   firecracker-task-driver:
     name: Devbook Firecracker Task Driver
     needs: changes
-    if: needs.changes.outputs.firecracker-task-driver == 'true'
+    if: |
+     needs.changes.outputs.version == 'true' &&
+     needs.changes.outputs.firecracker-task-driver == 'true'
     uses: ./.github/workflows/firecracker-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -76,7 +90,9 @@ jobs:
   cluster-disk-image:
     name: Cluster disk image
     needs: [changes, firecracker-task-driver]
-    if: needs.changes.outputs.cluster-disk-image == 'true' || needs.firecracker-task-driver.result == 'success'
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      (needs.changes.outputs.cluster-disk-image == 'true' || needs.firecracker-task-driver.result == 'success')
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -85,16 +101,21 @@ jobs:
   devbookd:
     name: Devbook Daemon
     needs: changes
-    if: needs.changes.outputs.devbookd == 'true'
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.devbookd == 'true'
     uses: ./.github/workflows/devbookd.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+      version: ${{ needs.changes.outputs.get-version }}
 
   fc-env:
     name: FC env (pipeline scripts)
     needs: changes
-    if: needs.changes.outputs.fc-env == 'true'
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.fc-env == 'true'
     uses: ./.github/workflows/fc-env.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -103,7 +124,9 @@ jobs:
   api-image:
     name: API image
     needs: changes
-    if: needs.changes.outputs.api-image == 'true'
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.api-image == 'true'
     uses: ./.github/workflows/api-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -114,6 +137,7 @@ jobs:
     name: Terraform
     needs: [changes, cluster-disk-image, fc-env, api-image, devbookd, firecracker-task-driver]
     if: |
+      needs.changes.outputs.version == 'true' &&
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.fc-env.result == 'success' || needs.fc-env.result == 'skipped') &&
@@ -130,20 +154,26 @@ jobs:
   sdk:
     name: SDK
     needs: [changes, terraform]
-    if: needs.changes.outputs.sdk == 'true' && needs.terraform.result == 'success'
+    if: | 
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.sdk == 'true' && needs.terraform.result == 'success'
     uses: ./.github/workflows/sdk.yml
     secrets:
       node_auth_token: ${{ secrets.NPM_TOKEN }}
+      version: ${{ needs.changes.outputs.get-version }}
 
   # The last succeesful release is used for determining which changed and what should be deployed in this release.
   release:
     name: Release
     needs: [sdk]
-    if: needs.sdk.result == 'success' || needs.sdk.result == 'skipped'
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
+          name: ${{ needs.changes.outputs.get-version }}
           generate_release_notes: true
           # TODO: Add release artifacts for devbookd

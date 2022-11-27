@@ -7,6 +7,8 @@ on:
         required: true
       workload_identity_provider:
         required: true
+      version:
+        required: true
 
 jobs:
   publish:
@@ -31,6 +33,7 @@ jobs:
           args: release
         env:
           GITHUB_TOKEN: ${{ github.token  }}
+          GORELEASER_CURRENT_TAG: ${{ secrets.version }}
 
       - name: Setup Service Account
         uses: google-github-actions/auth@v1
