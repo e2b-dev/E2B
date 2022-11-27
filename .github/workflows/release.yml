@@ -5,9 +5,9 @@ on:
     branches:
       - master
 
-# TODO: Allow canceling the previous workflow if a new one is pending
-# This makes the workflow wait if there is already a running workflow
-concurrency: ${{ github.repository }}-${{ github.workflow }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   id-token: write
@@ -162,7 +162,6 @@ jobs:
     uses: ./.github/workflows/sdk.yml
     secrets:
       node_auth_token: ${{ secrets.NPM_TOKEN }}
-      version: ${{ needs.changes.outputs.get-version }}
 
   # The last succeesful release is used for determining which changed and what should be deployed in this release.
   release:
