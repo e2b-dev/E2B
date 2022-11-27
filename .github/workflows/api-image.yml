@@ -27,10 +27,6 @@ jobs:
           workload_identity_provider: ${{ secrets.workload_identity_provider }}
           service_account: ${{ secrets.service_account_email }}
 
-      # # Takes cca 20s - cache system wide
-      # - name: Setup GCloud SDK
-      #   uses: google-github-actions/setup-gcloud@v1
-
       - name: Configure Docker
         run: gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
 
