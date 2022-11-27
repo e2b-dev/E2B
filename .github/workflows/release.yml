@@ -19,13 +19,13 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       get-version: ${{ steps.getversion.outputs.version }}
-      version: ${{ steps.filter.outputs.version }}
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
-      api-image: ${{ steps.filter.outputs.api-image }}
       fc-env: ${{ steps.filter.outputs.fc-env }}
+      api-image: ${{ steps.filter.outputs.api-image }}
+      sdk: ${{ steps.filter.outputs.sdk }}
       devbookd: ${{ steps.filter.outputs.devbookd }}
       firecracker-task-driver: ${{ steps.filter.outputs.firecracker-task-driver }}
-      sdk: ${{ steps.filter.outputs.sdk }}
+      version: ${{ steps.filter.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -48,9 +48,6 @@ jobs:
         with:
           base: ${{ steps.last_release.outputs.tag_name }}
           filters: |
-            cluster-disk-image:
-              - 'packages/cluster-disk-image/**'
-              - '.github/workflows/cluster-disk-image.yml'
             cluster-disk-image:
               - 'packages/cluster-disk-image/**'
               - '.github/workflows/cluster-disk-image.yml'
