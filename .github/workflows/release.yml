@@ -76,7 +76,9 @@ jobs:
   cluster-disk-image:
     name: Cluster disk image
     needs: [changes, firecracker-task-driver]
-    if: needs.changes.outputs.cluster-disk-image == 'true' || needs.firecracker-task-driver.result == 'success'
+    if: 
+      always() &&
+      (needs.changes.outputs.cluster-disk-image == 'true' || needs.firecracker-task-driver.result == 'success')
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -114,6 +116,7 @@ jobs:
     name: Terraform
     needs: [changes, cluster-disk-image, fc-env, api-image, devbookd, firecracker-task-driver]
     if: |
+      always()
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.fc-env.result == 'success' || needs.fc-env.result == 'skipped') &&
@@ -139,7 +142,9 @@ jobs:
   release:
     name: Release
     needs: [sdk]
-    if: needs.sdk.result == 'success' || needs.sdk.result == 'skipped'
+    if: 
+      always() &&
+      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
