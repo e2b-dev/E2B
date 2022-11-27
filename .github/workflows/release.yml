@@ -67,7 +67,7 @@ jobs:
               - 'packages/firecracker-task-driver/**'
               - '.github/workflows/firecracker-task-driver.yml'
             version:
-              - 'version'
+              - 'VERSION'
 
       - name: Read Version file
         id: getversion
