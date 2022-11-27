@@ -171,8 +171,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: ncipollo/release-action@v1
         with:
           name: ${{ needs.changes.outputs.get-version }}
-          generate_release_notes: true
+          tag: v${{ needs.changes.outputs.get-version }}
+          commit: master
+          generateReleaseNotes: true
           # TODO: Add release artifacts for devbookd
