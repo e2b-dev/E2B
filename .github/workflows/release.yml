@@ -91,6 +91,7 @@ jobs:
     name: Cluster disk image
     needs: [changes, firecracker-task-driver]
     if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       (needs.changes.outputs.cluster-disk-image == 'true' || needs.firecracker-task-driver.result == 'success')
     uses: ./.github/workflows/cluster-disk-image.yml
@@ -137,6 +138,7 @@ jobs:
     name: Terraform
     needs: [changes, cluster-disk-image, fc-env, api-image, devbookd, firecracker-task-driver]
     if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
@@ -167,6 +169,7 @@ jobs:
     name: Release
     needs: [sdk]
     if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       (needs.sdk.result == 'success' || needs.sdk.result == 'skipped')
     runs-on: ubuntu-20.04
