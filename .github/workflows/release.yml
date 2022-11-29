@@ -152,7 +152,8 @@ jobs:
   sdk:
     name: SDK
     needs: [changes, terraform]
-    if: | 
+    if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.sdk == 'true' && needs.terraform.result == 'success'
     uses: ./.github/workflows/sdk.yml
