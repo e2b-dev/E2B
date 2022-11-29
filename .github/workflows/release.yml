@@ -173,7 +173,7 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          name: ${{ needs.changes.outputs.get-version }}
+          name: Devbook API v${{ needs.changes.outputs.get-version }}
           tag: v${{ needs.changes.outputs.get-version }}
           commit: master
           generateReleaseNotes: true
