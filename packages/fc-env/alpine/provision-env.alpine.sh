@@ -20,6 +20,7 @@ rc-update add sysfs boot
 rc-update add local default
 rc-update add sshd
 rc-update add devbookd
+rc-update add chronyd
 
 echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config

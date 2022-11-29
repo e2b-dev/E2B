@@ -2,7 +2,7 @@ package nomad
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -36,7 +36,7 @@ func escapeHCL(input string) string {
 func GetTemplates() (*[]string, error) {
 	tempDirPath := filepath.Join(templatesDir, envTemplatesDir)
 
-	files, err := ioutil.ReadDir(tempDirPath)
+	files, err := os.ReadDir(tempDirPath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading dir %s: %+v", tempDirPath, err)
 	}
