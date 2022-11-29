@@ -26,7 +26,7 @@ COPY alpine/rc-mount /etc/local.d/rc-mount.start
 RUN chmod +x /etc/local.d/rc-mount.start
 
 RUN mkdir -p /etc/chrony
-RUN echo "refclock PHC /dev/ptp0 poll 3 dpoll -2 offset 0" >> /etc/chrony/chrony.conf
+RUN echo "refclock PHC /dev/ptp0 poll 3 dpoll -2 offset 0" > /etc/chrony/chrony.conf
 RUN echo "makestep 1 -1" >> /etc/chrony/chrony.conf
 
 COPY alpine/provision-env.alpine.sh /provision-env.sh
