@@ -29,14 +29,30 @@ type Terminal struct {
 	tty *os.File
 }
 
-func New(id, shell, root string, cols, rows uint16, logger *zap.SugaredLogger) (*Terminal, error) {
-	// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
-	cmd := exec.Command(shell, "-l")
+func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]string, cmdToExecute *string, logger *zap.SugaredLogger) (*Terminal, error) {
+	var cmd *exec.Cmd
+	
+	if cmdToExecute != nil {
+		cmd = exec.Command("sh", "-c", "-l", *cmdToExecute)	
+	} else {
+		// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
+		cmd = exec.Command(shell, "-l")	
+	}
+
+	formattedVars := os.Environ()
+	
+	if envVars != nil {	
+		for key, value := range *envVars {
+			formattedVars = append(formattedVars, key+"="+value)
+		}
+	}
+
 	cmd.Env = append(
-		os.Environ(),
+		formattedVars,
 		"TERM=xterm",
 	)
-	cmd.Dir = root
+	
+	cmd.Dir = rootdir
 
 	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
 		Cols: cols,

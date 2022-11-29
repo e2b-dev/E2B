@@ -37,11 +37,13 @@ func (m *Manager) Get(id ID) (*Terminal, bool) {
 func (m *Manager) Add(
 	id,
 	shell,
-	root string,
+	rootdir string,
 	cols,
 	rows uint16,
+	envVars *map[string]string, 
+	cmd *string,
 ) (*Terminal, error) {
-	term, err := New(id, shell, root, cols, rows, m.logger)
+	term, err := New(id, shell, rootdir, cols, rows, envVars, cmd, m.logger)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new terminal: %+v", err)
 	}

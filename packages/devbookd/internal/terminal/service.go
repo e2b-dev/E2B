@@ -48,7 +48,7 @@ func (s *Service) hasSubscibers(id ID) bool {
 		s.dataSubs.Has(id)
 }
 
-func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
+func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cmd, rootdir *string) (ID, error) {
 	s.logger.Infow("Start terminal",
 		"terminalID", id,
 	)
@@ -66,12 +66,21 @@ func (s *Service) Start(id ID, cols, rows uint16) (ID, error) {
 			id = xid.New().String()
 		}
 
+		var validRootdir string
+		if rootdir != nil {
+			validRootdir = *rootdir
+		} else {
+			validRootdir = s.env.Workdir()
+		}
+
 		newTerm, err := s.terminals.Add(
 			id,
 			s.env.Shell(),
-			s.env.Workdir(),
+			validRootdir,
 			cols,
 			rows,
+			envVars,
+			cmd,
 		)
 		if err != nil {
 			notifyErr := s.exitSubs.Notify(id, struct{}{})

@@ -25,4 +25,3 @@ generate-from-openapi:
 
 increment-version:
 	./scripts/increment-version.sh
-	

@@ -141,6 +141,9 @@ class Session extends SessionConnection {
         onChildProcessesChange,
         size,
         onExit,
+        envVars,
+        cmd,
+        rootdir,
         terminalID = id(12),
       }) => {
         const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
@@ -181,7 +184,14 @@ class Session extends SessionConnection {
         })
 
         try {
-          await this.call(terminalService, 'start', [terminalID, size.cols, size.rows])
+          await this.call(terminalService, 'start', [
+            terminalID,
+            size.cols,
+            size.rows,
+            envVars,
+            cmd,
+            rootdir,
+          ])
         } catch (err) {
           triggerExit()
           await unsubscribing

@@ -51,7 +51,7 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !mmds {
+	if !mmds || debug {
 		return l.Sugar(), nil
 	}
 
@@ -61,9 +61,6 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 	sessionWriter := newSessionWriter(l.Sugar())
 
 	level := zap.ErrorLevel
-	if debug {
-		level = zap.DebugLevel
-	}
 
 	core := zapcore.NewTee(
 		l.Core(),
