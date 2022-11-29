@@ -188,9 +188,8 @@ class Session extends SessionConnection {
             terminalID,
             size.cols,
             size.rows,
-            envVars,
-            cmd,
-            rootdir,
+            // Handle optional args for old devbookd compatibility
+            ...(cmd !== undefined ? [envVars, cmd, rootdir] : []),
           ])
         } catch (err) {
           triggerExit()
