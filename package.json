@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "changeset": "changeset",
+    "version-packages": "changeset version"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.22.0"
+  },
+  "packageManager": "pnpm@7.15.0"
+}
