@@ -68,7 +68,7 @@ func (n *NomadClient) RebuildTemplates(t trace.Tracer) error {
 
 	for _, template := range *templates {
 		fmt.Printf("Rebuilding %s\n", template)
-		_, err := n.BuildEnv(template, template, []string{})
+		_, err := n.BuildEnv(template, template)
 		if err != nil {
 			return fmt.Errorf("error starting template '%s' building: %+v", template, err)
 		}

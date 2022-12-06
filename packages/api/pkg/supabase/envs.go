@@ -25,3 +25,37 @@ func UpdateEnvState(client *Client, codeSnippetID string, state api.EnvironmentS
 
 	return nil
 }
+
+func GetEnvs(client *Client, apiKey string) error {
+	body := map[string]interface{}{"state": state}
+	err := client.DB.
+		From("envs")
+
+
+	return nil
+}
+
+func DeleteEnv(client *Client, apiKey, envID string) error {
+	body := map[string]interface{}{"state": state}
+	err := client.DB.
+		From("envs")
+
+
+	return nil
+}
+
+func CreateEnv(client *Client, apiKey, template string) error {
+	body := map[string]interface{}{"state": state}
+	err := client.DB.
+		From("envs")
+		
+		return nil
+	}
+
+func PublishEnv(client *Client, apiKey, envID string) error {
+	body := map[string]interface{}{"state": state}
+	err := client.DB.
+	From("envs")
+
+	return nil
+}

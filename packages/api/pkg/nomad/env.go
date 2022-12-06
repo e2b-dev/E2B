@@ -152,7 +152,7 @@ func (n *NomadClient) UsePrebuiltEnv(codeSnippetID string, envTemplate string, c
 	return nil
 }
 
-func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []string) (*JobInfo, error) {
+func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string) (*JobInfo, error) {
 	dockerfileName := fmt.Sprintf("%s.Dockerfile", envTemplate)
 	tname := path.Join(templatesDir, envTemplatesDir, dockerfileName)
 	dockerfileTemp, err := template.ParseFiles(tname)
@@ -162,10 +162,8 @@ func (n *NomadClient) BuildEnv(codeSnippetID string, envTemplate string, deps []
 
 	dockerfileTemp = template.Must(dockerfileTemp, err)
 	dockerfileVars := struct {
-		Deps           []string
 		BaseDockerfile string
 	}{
-		Deps:           deps,
 		BaseDockerfile: baseDockerfile,
 	}
 

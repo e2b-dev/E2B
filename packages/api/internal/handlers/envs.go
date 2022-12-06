@@ -11,12 +11,94 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+func (a *APIStore) GetEnvs(
+	c *gin.Context,
+	params api.GetEnvsParams,
+) {
+	ctx := c.Request.Context()
+
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
+	if keyErr != nil {
+		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
+		ReportCriticalError(ctx, errMsg)
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
+	ReportEvent(ctx, "validated API key")
+
+	// Get envs from db
+
+	c.JSON(http.StatusOK, sessions)
+}
+
+func (a *APIStore) PostEnvs(
+	c *gin.Context,
+	params api.PostEnvsParams,
+) {
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
+	if keyErr != nil {
+		fmt.Printf("error with API key: %+v", keyErr)
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
+		return
+	}
+
+	var env api.PostEnvsJSONRequestBody
+	if err := c.Bind(&env); err != nil {
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+		return
+	}
+
+	// envID = // get from supabase
+
+	var template string
+
+	maybeTemplate, err := env.Template.AsTemplate()
+	if (err == nil) {
+		template = string(maybeTemplate)
+	} else {
+		maybeTemplate, err := env.Template.AsNewEnvironmentTemplate1()
+		if (err == nil) {
+			template = maybeTemplate
+		} else {
+			fmt.Printf("error: %v\n", err)
+			a.sendAPIStoreError(
+				c,
+				http.StatusInternalServerError,
+				fmt.Sprintf("Failed to parse template'%s': %s", env.Template, err),
+			)
+			return	
+		}
+	}
+
+	err = a.nomadClient.UsePrebuiltEnv(envID, string(template), func(err *error) {
+		if err != nil {
+			fmt.Printf("failed to use prebuilt for envID '%s' with template '%s': %+v", envID, template, err)
+		} else {
+			updateErr := supabase.UpdateEnvState(a.supabase, envID, api.Done)
+			if updateErr != nil {
+				fmt.Printf("Failed to update env state for envID '%s' with template: %+v", envID, template, err)
+			}
+		}
+	})
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		a.sendAPIStoreError(
+			c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("Failed to create env for template '%s': %s", envID, err),
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, )
+}
+
 func (a *APIStore) PostEnvsCodeSnippetID(
 	c *gin.Context,
 	codeSnippetID string,
 	params api.PostEnvsCodeSnippetIDParams,
 ) {
-	_, keyErr := a.validateAPIKey(params.ApiKey)
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
@@ -38,38 +120,44 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		return
 	}
 
-	if len(env.Deps) == 0 {
-		err := a.nomadClient.UsePrebuiltEnv(codeSnippetID, string(env.Template), func(err *error) {
-			if err != nil {
-				fmt.Printf("failed to use prebuilt for code snippet %s: %+v", codeSnippetID, err)
-			} else {
-				updateErr := supabase.UpdateEnvState(a.supabase, codeSnippetID, api.Done)
-				if updateErr != nil {
-					fmt.Printf("Failed to update env state for code snippet '%s': %+v", codeSnippetID, err)
-				}
-			}
-		})
-		if err != nil {
-			fmt.Printf("error: %v\n", err)
-			a.sendAPIStoreError(
-				c,
-				http.StatusInternalServerError,
-				fmt.Sprintf("Failed to create template env for code snippet '%s': %s", codeSnippetID, err),
-			)
-			return
-		}
+	var template string
 
+	maybeTemplate, err := env.Template.AsTemplate()
+	if (err == nil) {
+		template = string(maybeTemplate)
 	} else {
-		_, err := a.nomadClient.BuildEnv(codeSnippetID, string(env.Template), env.Deps)
-		if err != nil {
+		maybeTemplate, err := env.Template.AsNewEnvironmentTemplate1()
+		if (err == nil) {
+			template = maybeTemplate
+		} else {
 			fmt.Printf("error: %v\n", err)
 			a.sendAPIStoreError(
 				c,
 				http.StatusInternalServerError,
-				fmt.Sprintf("Failed to create env for code snippet '%s': %s", codeSnippetID, err),
+				fmt.Sprintf("Failed to parse template'%s': %s", env.Template, err),
 			)
-			return
+			return	
 		}
+	}
+
+	err = a.nomadClient.UsePrebuiltEnv(codeSnippetID, string(template), func(err *error) {
+		if err != nil {
+			fmt.Printf("failed to use prebuilt for code snippet %s: %+v", codeSnippetID, err)
+		} else {
+			updateErr := supabase.UpdateEnvState(a.supabase, codeSnippetID, api.Done)
+			if updateErr != nil {
+				fmt.Printf("Failed to update env state for code snippet '%s': %+v", codeSnippetID, err)
+			}
+		}
+	})
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		a.sendAPIStoreError(
+			c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("Failed to create template env for code snippet '%s': %s", codeSnippetID, err),
+		)
+		return
 	}
 
 	c.Status(http.StatusNoContent)
@@ -80,7 +168,7 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 	codeSnippetID string,
 	params api.DeleteEnvsCodeSnippetIDParams,
 ) {
-	_, keyErr := a.validateAPIKey(params.ApiKey)
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
@@ -131,7 +219,7 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 	codeSnippetID string,
 	params api.PutEnvsCodeSnippetIDStateParams,
 ) {
-	_, keyErr := a.validateAPIKey(params.ApiKey)
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		a.sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error with API token: %s", keyErr))
 		return
@@ -174,7 +262,7 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 	codeSnippetID string,
 	params api.PatchEnvsCodeSnippetIDParams,
 ) {
-	_, keyErr := a.validateAPIKey(params.ApiKey)
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")

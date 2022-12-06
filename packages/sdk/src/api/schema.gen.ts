@@ -19,7 +19,7 @@ export interface paths {
     readonly get: {
       readonly parameters: {
         readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyReq"];
+          readonly api_key: components["parameters"]["apiKeyReq"];
         };
       };
       readonly responses: {
@@ -63,7 +63,7 @@ export interface paths {
     readonly delete: {
       readonly parameters: {
         readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyReq"];
+          readonly api_key: components["parameters"]["apiKeyReq"];
         };
         readonly path: {
           readonly sessionID: components["parameters"]["sessionID"];
@@ -101,12 +101,56 @@ export interface paths {
       };
     };
   };
+  readonly "/envs": {
+    /** List all environments */
+    readonly get: {
+      readonly parameters: {
+        readonly query: {
+          readonly api_key: components["parameters"]["apiKeyReq"];
+        };
+      };
+      readonly responses: {
+        /** Successfully returned all environments */
+        readonly 200: {
+          readonly content: {
+            readonly "application/json": readonly components["schemas"]["Environment"][];
+          };
+        };
+        readonly 401: components["responses"]["401"];
+        readonly 500: components["responses"]["500"];
+      };
+    };
+    /** Create a new environment */
+    readonly post: {
+      readonly parameters: {
+        readonly query: {
+          readonly api_key: components["parameters"]["apiKeyReq"];
+        };
+      };
+      readonly responses: {
+        /** Successfully created an environment */
+        readonly 200: {
+          readonly content: {
+            readonly "application/json": components["schemas"]["Environment"];
+          };
+        };
+        readonly 400: components["responses"]["400"];
+        readonly 401: components["responses"]["401"];
+        readonly 500: components["responses"]["500"];
+      };
+      readonly requestBody: {
+        readonly content: {
+          readonly "application/json": components["schemas"]["NewEnvironment"];
+        };
+      };
+    };
+  };
   readonly "/envs/{codeSnippetID}": {
     /** Create a new env for a code snippet */
     readonly post: {
       readonly parameters: {
         readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyReq"];
+          readonly api_key: components["parameters"]["apiKeyReq"];
         };
         readonly path: {
           readonly codeSnippetID: components["parameters"]["codeSnippetID"];
@@ -129,7 +173,7 @@ export interface paths {
     readonly delete: {
       readonly parameters: {
         readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyReq"];
+          readonly api_key: components["parameters"]["apiKeyReq"];
         };
         readonly path: {
           readonly codeSnippetID: components["parameters"]["codeSnippetID"];
@@ -152,7 +196,7 @@ export interface paths {
     readonly patch: {
       readonly parameters: {
         readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyReq"];
+          readonly api_key: components["parameters"]["apiKeyReq"];
         };
         readonly path: {
           readonly codeSnippetID: components["parameters"]["codeSnippetID"];
@@ -172,7 +216,7 @@ export interface paths {
     readonly put: {
       readonly parameters: {
         readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyReq"];
+          readonly api_key: components["parameters"]["apiKeyReq"];
         };
         readonly path: {
           readonly codeSnippetID: components["parameters"]["codeSnippetID"];
@@ -205,9 +249,13 @@ export interface components {
       | "Typescript";
     /** @enum {string} */
     readonly EnvironmentState: "Building" | "Failed" | "Done";
+    readonly Environment: {
+      readonly id: string;
+      readonly template?: string;
+      readonly state: components["schemas"]["EnvironmentState"];
+    };
     readonly NewEnvironment: {
-      readonly template: components["schemas"]["Template"];
-      readonly deps: readonly string[];
+      readonly template: components["schemas"]["Template"] | string;
     };
     readonly EnvironmentStateUpdate: {
       readonly state: components["schemas"]["EnvironmentState"];

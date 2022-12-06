@@ -14,20 +14,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 7
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
-          cache: npm
-          cache-dependency-path: packages/cli/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: ./packages/cli
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Publish package
-        run: npm publish --access=public
+        run: pnpm publish
         working-directory: ./packages/cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.node_auth_token }}

@@ -12,10 +12,6 @@ RUN sed -i.bak '/export PATH/a export GOLANG_VERSION=$GOLANG_VERSION' "/etc/prof
 WORKDIR code
 RUN go mod init main
 
-{{ if .Deps }}
-  RUN go get {{ range .Deps }}{{ . }} {{ end }}
-{{ end }}
-
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=go >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3

@@ -11,11 +11,6 @@ RUN npm i -D typescript
 RUN npx tsc --init
 RUN touch index.ts
 
-{{ if .Deps }}
-RUN npm i {{ range .Deps }}{{ . }} {{ end }}
-{{ end }}
-
-
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=ts-node >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3

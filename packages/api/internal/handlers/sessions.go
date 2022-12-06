@@ -16,7 +16,7 @@ func (a *APIStore) GetSessions(
 ) {
 	ctx := c.Request.Context()
 
-	_, keyErr := a.validateAPIKey(params.ApiKey)
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
 		ReportCriticalError(ctx, errMsg)
@@ -155,7 +155,7 @@ func (a *APIStore) DeleteSessionsSessionID(
 		attribute.String("session_id", sessionID),
 	)
 
-	_, keyErr := a.validateAPIKey(params.ApiKey)
+	_, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
 		ReportCriticalError(ctx, errMsg)

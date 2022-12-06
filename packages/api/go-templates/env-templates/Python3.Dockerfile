@@ -21,10 +21,6 @@ RUN touch main.py
 # Poetry creates a virtual env on the first run.
 RUN poetry run python main.py
 
-{{ if .Deps }}
-  RUN poetry add {{ range .Deps }}{{ . }} {{ end }}
-{{ end }}
-
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=poetry >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3

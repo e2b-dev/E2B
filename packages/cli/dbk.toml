@@ -1,0 +1,10 @@
+# Devbook Environment Configuration
+
+id = "as"
+
+[filesystem]
+
+local_root = "./files"
+# ignore = 
+
+# [setup]

@@ -1,8 +1,9 @@
 module.exports = {
   env: {
-    browser: true,
-    es2021: true,
+    commonjs: true,
     node: true,
+    browser: false,
+    es6: true,
   },
   extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
   parser: '@typescript-eslint/parser',
@@ -10,7 +11,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  ignorePatterns: ['src/api/schema.gen.ts', 'dist/**', 'node_modules/'],
+  ignorePatterns: ['dist/**', 'node_modules/'],
   plugins: ['@typescript-eslint', 'prettier', 'unused-imports'],
   rules: {
     '@typescript-eslint/member-ordering': ['error'],

@@ -8,9 +8,6 @@ WORKDIR /code
 # Multiline string https://stackoverflow.com/questions/33439230/how-to-write-commands-with-multiple-lines-in-dockerfile-while-preserving-the-new
 RUN npm init -y
 
-{{ if .Deps }}
-RUN npm i {{ range .Deps }}{{ . }} {{ end }}
-{{ end }}
 
 RUN npm config set strict-ssl false
 

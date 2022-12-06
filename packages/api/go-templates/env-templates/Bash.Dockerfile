@@ -6,10 +6,6 @@ RUN apk update && apk add --no-cache curl bash
 
 WORKDIR code
 
-{{ if .Deps }}
-  RUN apk add {{ range .Deps }}{{ . }} {{ end }}
-{{ end }}
-
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=bash >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3

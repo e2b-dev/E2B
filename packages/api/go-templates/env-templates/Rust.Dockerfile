@@ -30,12 +30,6 @@ WORKDIR code
 
 RUN echo "" > src/main.rs
 
-{{ if .Deps }}
-  {{ range .Deps }}
-    RUN echo "{{ . }}" >> Cargo.toml
-  {{ end }}
-{{ end }}
-
 RUN cargo fetch
 
 # Set env vars for devbook-daemon

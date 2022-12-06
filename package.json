@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version",
+    "release": "pnpm --filter @devbookhq/sdk run build && pnpm --filter @devbookhq/cli run build && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.22.0"
