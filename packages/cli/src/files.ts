@@ -1,8 +1,8 @@
 import * as fsWalk from '@nodelib/fs.walk'
-import path from 'path'
-import { promisify } from 'util'
+import * as path from 'path'
+import * as util from 'util'
 
-const walk = promisify(fsWalk.walk)
+const walk = util.promisify(fsWalk.walk)
 
 export async function getFiles(
   rootPath: string,

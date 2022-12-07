@@ -1,7 +1,8 @@
 import { Session } from '@devbookhq/sdk'
-import { readFile } from 'fs/promises'
-import path from 'path'
-import { getFiles } from 'src/files'
+import * as fsPromise from 'fs/promises'
+import * as path from 'path'
+
+import { getFiles } from '../files'
 import { DevbookConfig } from '../config'
 
 export async function pushEnvironment({
@@ -28,7 +29,7 @@ export async function pushEnvironment({
 
   await Promise.all(
     files.map(async f => {
-      const content = await readFile(f.path, 'utf-8')
+      const content = await fsPromise.readFile(f.path, 'utf-8')
       await session.filesystem?.write(f.rootPath, content)
     }),
   )

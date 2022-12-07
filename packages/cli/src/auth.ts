@@ -1,11 +1,11 @@
-import boxen from 'boxen'
-import chalk from 'chalk'
+import * as boxen from 'boxen'
+import * as chalk from 'chalk'
 
 export function getAPIKey() {
   const apiKey = process.env.DEVBOOK_KEY
   if (!apiKey) {
-    const errorBox = boxen(
-      `Cannot find env var ${chalk.bold(
+    const errorBox = boxen.default(
+      `Cannot find env var ${chalk.default.bold(
         'DEVBOOK_KEY',
       )}\n\nVisit https://dash.usedevbook.com/settings to get your API key then run this CLI with the env var set.`,
       {

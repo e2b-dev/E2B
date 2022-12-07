@@ -1,20 +1,23 @@
-import { object, string, InferType } from 'yup'
-import toml from '@iarna/toml'
-import { readFile, writeFile } from 'fs/promises'
-import path from 'path'
-import { existsSync } from 'fs'
+import * as yup from 'yup'
+import * as toml from '@iarna/toml'
+import * as fsPromise from 'fs/promises'
+import * as path from 'path'
+import * as fs from 'fs'
+
 import { getFiles } from './files'
 
 export const configName = 'dbk.toml'
 
-const configSchema = object({
-  id: string().required(),
-  filesystem: object({
-    local_root: string().required(),
-  }).required(),
+const configSchema = yup.object({
+  id: yup.string().required(),
+  filesystem: yup
+    .object({
+      local_root: yup.string().required(),
+    })
+    .required(),
 })
 
-export type DevbookConfig = InferType<typeof configSchema>
+export type DevbookConfig = yup.InferType<typeof configSchema>
 
 const defaultConfig: Omit<DevbookConfig, 'id'> = {
   filesystem: {
@@ -25,14 +28,14 @@ const defaultConfig: Omit<DevbookConfig, 'id'> = {
 export async function loadConfig(envRootPath: string) {
   const configPath = path.join(envRootPath, configName)
 
-  const configExists = existsSync(configPath)
+  const configExists = fs.existsSync(configPath)
   if (!configExists) {
     throw new Error(
       `Devbook environment config "${configName}" does not exist in this (${envRootPath}) directory - cannot read the config.`,
     )
   }
 
-  const tomlRaw = await readFile(configPath, 'utf-8')
+  const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
   const config = toml.parse(tomlRaw)
   console.log(
     `Devbook config with environment ID "${config.id}" created at "${configPath}".`,
@@ -43,7 +46,7 @@ export async function loadConfig(envRootPath: string) {
 export async function createConfig(envRootPath: string, id: string) {
   const configPath = path.join(envRootPath, configName)
 
-  const configExists = existsSync(configPath)
+  const configExists = fs.existsSync(configPath)
   if (configExists) {
     throw new Error(
       `Devbook environment config "${configName}" already exists in this (${envRootPath}) directory - config for environemnt "${id}" cannot be created here.`,
@@ -55,7 +58,7 @@ export async function createConfig(envRootPath: string, id: string) {
     ...defaultConfig,
   }
   const tomlRaw = toml.stringify(config)
-  await writeFile(configPath, tomlRaw)
+  await fsPromise.writeFile(configPath, tomlRaw)
   console.log(
     `Devbook config with environment ID "${config.id}" found at "${configPath}".`,
   )

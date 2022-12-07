@@ -1,4 +1,5 @@
 import { api } from '@devbookhq/sdk'
+
 import { createConfig, DevbookConfig } from '../config'
 
 const createEnv = api.path('/envs').method('post').create({ api_key: true })

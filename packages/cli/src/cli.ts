@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { program } from 'commander'
-import updateNotifier from 'update-notifier'
-import inquirer from 'inquirer'
-import chalk from 'chalk'
-import { mkdir } from 'fs/promises'
+import * as commander from 'commander'
+import * as inquirer from 'inquirer'
+import * as chalk from 'chalk'
+import * as fs from 'fs/promises'
+import * as path from 'path'
 
 import { getAPIKey } from './auth'
 import { configName, getEnvRootPath, getNestedConfigs, loadConfig } from './config'
@@ -15,15 +15,14 @@ import { deleteEnvironment } from './env/delete'
 import { publishEnvironment } from './env/publish'
 import { pushEnvironment } from './env/push'
 
-import packageJSON from '../package.json'
-import path from 'path'
+import * as packageJSON from '../package.json'
 
 const apiKey = getAPIKey()
 
+const program = commander.program
+
 program.description('A tool for interacting with Devbook from command line or CI/CD')
 program.version(packageJSON.version, undefined, 'Displays the version of Devbook CLI')
-
-updateNotifier({ pkg: packageJSON }).notify()
 
 const env = program
   .command('env')
@@ -48,7 +47,7 @@ env
       const template = cmdObj.template as string
 
       const envRootPath = getEnvRootPath(envPath)
-      await mkdir(envRootPath)
+      await fs.mkdir(envRootPath)
 
       console.log(
         `Initializing a new environment with "${template}" template in the "${envRootPath}" directory...`,
@@ -90,11 +89,11 @@ env
           return
         }
 
-        console.log(chalk.bgGreen('Environments\n'))
+        console.log(chalk.default.bgGreen('Environments\n'))
         envs.forEach(e =>
           console.log(
-            `- ${chalk.bold(e.id)} (${
-              e.state === 'Failed' ? chalk.red(e.state) : e.state
+            `- ${chalk.default.bold(e.id)} (${
+              e.state === 'Failed' ? chalk.default.red(e.state) : e.state
             })`,
           ),
         )
@@ -111,17 +110,19 @@ env
           }),
         )
 
-        console.log(chalk.bgGreen('Local environments\n'))
+        console.log(chalk.default.bgGreen('Local environments\n'))
         for (let i = 0; i < configPaths.length; i++) {
           const configPath = configPaths[i]
           const config = configs[i]
 
           if (config.status === 'rejected') {
             console.log(
-              chalk.red(`- cannot access or validate config "${configPath.path}"`),
+              chalk.default.red(
+                `- cannot access or validate config "${configPath.path}"`,
+              ),
             )
           } else {
-            console.log(`- ${chalk.bold(config.value.id)} [${configPath.path}]`)
+            console.log(`- ${chalk.default.bold(config.value.id)} [${configPath.path}]`)
           }
         }
 
@@ -149,7 +150,7 @@ env
       let envID: string
 
       const envRootPath = getEnvRootPath(envPath)
-      await mkdir(envRootPath)
+      await fs.mkdir(envRootPath)
 
       if (cmdObj.id) {
         envID = cmdObj.id as string
@@ -161,7 +162,7 @@ env
           return
         }
 
-        const envsAnwsers = await inquirer.prompt([
+        const envsAnwsers = await inquirer.default.prompt([
           {
             name: 'envID',
             message: 'Select an environment to use:',
@@ -297,7 +298,7 @@ env
         envIDs.push(...ids)
       }
 
-      const confirmAnswers = await inquirer.prompt([
+      const confirmAnswers = await inquirer.default.prompt([
         {
           name: 'confirm',
           type: 'confirm',
@@ -366,7 +367,7 @@ env
         )
       }
 
-      const confirmAnswers = await inquirer.prompt([
+      const confirmAnswers = await inquirer.default.prompt([
         {
           name: 'confirm',
           type: 'confirm',
