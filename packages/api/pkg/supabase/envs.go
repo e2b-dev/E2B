@@ -29,7 +29,7 @@ func UpdateEnvState(client *Client, codeSnippetID string, state api.EnvironmentS
 func GetEnvs(client *Client, apiKey string) error {
 	body := map[string]interface{}{"state": state}
 	err := client.DB.
-		From("envs")
+		From("envs").
 
 
 	return nil

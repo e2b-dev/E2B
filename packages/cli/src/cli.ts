@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import * as commander from 'commander'
-import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
 import * as fs from 'fs/promises'
 import * as path from 'path'
@@ -162,6 +161,8 @@ env
           return
         }
 
+        const inquirer = await import('inquirer')
+
         const envsAnwsers = await inquirer.default.prompt([
           {
             name: 'envID',
@@ -298,6 +299,8 @@ env
         envIDs.push(...ids)
       }
 
+      const inquirer = await import('inquirer')
+
       const confirmAnswers = await inquirer.default.prompt([
         {
           name: 'confirm',
@@ -366,6 +369,8 @@ env
           `Deleting environment with ID "${envID}" in the "${envRootPath}" directory...`,
         )
       }
+
+      const inquirer = await import('inquirer')
 
       const confirmAnswers = await inquirer.default.prompt([
         {

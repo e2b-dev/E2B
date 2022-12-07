@@ -1,9 +1,11 @@
 import { defineConfig } from 'tsup'
 
+import packageJSON from './package.json'
+
 export default defineConfig({
   entry: ['src/cli.ts'],
   target: 'node16',
   platform: 'node',
   format: 'cjs',
-  noExternal: ['chalk', 'boxen', 'inquirer'],
+  noExternal: Object.keys(packageJSON.dependencies).filter(f => f !== 'inquirer'),
 })
