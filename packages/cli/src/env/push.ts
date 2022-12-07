@@ -2,17 +2,17 @@ import { Session } from '@devbookhq/sdk'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import { getFiles } from 'src/files'
-import { DevbookConfig, loadConfig } from '../config'
+import { DevbookConfig } from '../config'
 
 export async function pushEnvironment({
   apiKey,
   envRootPath,
+  config,
 }: {
   apiKey: string
   envRootPath: string
+  config: DevbookConfig
 }): Promise<DevbookConfig> {
-  const config = await loadConfig(envRootPath)
-
   const envFilesDir = path.join(envRootPath, config.filesystem.local_root)
   const files = await getFiles(envFilesDir)
 

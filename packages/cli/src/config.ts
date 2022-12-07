@@ -66,3 +66,17 @@ export async function createConfig(envRootPath: string, id: string) {
 export async function getNestedConfigs(rootPath: string) {
   return getFiles(rootPath, { name: configName })
 }
+
+export function getEnvRootPath(envPath?: string) {
+  const defaultPath = process.cwd()
+
+  if (!envPath) {
+    return defaultPath
+  }
+
+  if (path.isAbsolute(envPath)) {
+    return envPath
+  }
+
+  return path.resolve(defaultPath, envPath)
+}
