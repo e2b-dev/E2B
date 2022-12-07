@@ -3,6 +3,7 @@ import toml from '@iarna/toml'
 import { readFile, writeFile } from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
+import { getFiles } from './files'
 
 export const configName = 'dbk.toml'
 
@@ -60,4 +61,8 @@ export async function createConfig(envRootPath: string, id: string) {
   )
 
   return config
+}
+
+export async function getNestedConfigs(rootPath: string) {
+  return getFiles(rootPath, { name: configName })
 }
