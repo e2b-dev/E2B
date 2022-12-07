@@ -3,7 +3,7 @@ import { createConfig, DevbookConfig } from '../config'
 
 const createEnv = api.path('/envs').method('post').create({ api_key: true })
 
-export async function createEnvironment({
+export async function initEnvironment({
   template,
   apiKey,
   envRootPath,
@@ -18,7 +18,7 @@ export async function createEnvironment({
   })
 
   if (result.data.state === 'Failed') {
-    throw new Error(`Failed to create new environment for the template "${template}"`)
+    throw new Error(`Failed to initialize new environment for the template "${template}"`)
   }
 
   const config = await createConfig(envRootPath, result.data.id)

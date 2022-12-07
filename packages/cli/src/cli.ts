@@ -7,12 +7,12 @@ import chalk from 'chalk'
 
 import { getAPIKey } from './auth'
 import { configName, loadConfig } from './config'
-import { createEnvironment } from './envs/create'
-import { listEnvironments } from './envs/list'
-import { useEnvironment } from './envs/use'
-import { deleteEnvironment } from './envs/delete'
-import { publishEnvironment } from './envs/publish'
-import { updateEnvironment } from './envs/update'
+import { initEnvironment } from './env/init'
+import { listEnvironments } from './env/list'
+import { useEnvironment } from './env/use'
+import { deleteEnvironment } from './env/delete'
+import { publishEnvironment } from './env/publish'
+import { pushEnvironment } from './env/push'
 
 import packageJSON from '../package.json'
 
@@ -23,16 +23,16 @@ program.version(packageJSON.version, undefined, 'Displays the version of Devbook
 
 updateNotifier({ pkg: packageJSON }).notify()
 
-const envs = program
-  .command('envs')
+const env = program
+  .command('env')
   .description(
     'A command for managing Devbook environments and their configs in repositories',
   )
 
-envs
-  .command('create')
+env
+  .command('init')
   .description(
-    'Create a new environment based on a template. The environment must be published before it is publicly available',
+    'Initialize a new environment based on a template. The environment must be published before it is publicly available',
   )
   .requiredOption(
     '-t, --template <template>',
@@ -48,17 +48,17 @@ envs
       const envRootPath = process.cwd()
 
       console.log(
-        `Creating a new environment with "${template}" template in the "${envRootPath}" directory...`,
+        `Initializing a new environment with "${template}" template in the "${envRootPath}" directory...`,
       )
 
-      const config = await createEnvironment({
+      const config = await initEnvironment({
         template,
         apiKey,
         envRootPath,
       })
 
       console.log(
-        `Done - Created a new environment with ID "${config.id}" and with config "${configName}" in the "${envRootPath}" directory.`,
+        `Done - Initialized a new environment with ID "${config.id}" and with config "${configName}" in the "${envRootPath}" directory.`,
       )
     } catch (err) {
       console.error(err)
@@ -66,7 +66,7 @@ envs
     }
   })
 
-envs
+env
   .command('list')
   .description('List all available environments')
   .action(async () => {
@@ -98,7 +98,7 @@ envs
     }
   })
 
-envs
+env
   .command('use')
   .argument('[id]', 'ID of the environment that you want to recreate the config for')
   .description('Recreate config for an existing environment')
@@ -158,10 +158,10 @@ envs
     }
   })
 
-envs
-  .command('update')
+env
+  .command('push')
   .description(
-    `Update environment based on the "${configName}" config in the current directory`,
+    `Push environment based on the "${configName}" config in the current directory`,
   )
   .action(async () => {
     try {
@@ -169,12 +169,12 @@ envs
 
       const envRootPath = process.cwd()
 
-      console.log(`Updating environment in the "${envRootPath}" directory...`)
+      console.log(`Pushing environment in the "${envRootPath}" directory...`)
 
-      const config = await updateEnvironment({ apiKey, envRootPath })
+      const config = await pushEnvironment({ apiKey, envRootPath })
 
       console.log(
-        `Done - Updated environment with id "${config.id}" in the "${envRootPath}" directory according to the config "${configName}".`,
+        `Done - Pushed environment with id "${config.id}" in the "${envRootPath}" directory according to the config "${configName}".`,
       )
     } catch (err) {
       console.error(err)
@@ -182,7 +182,7 @@ envs
     }
   })
 
-envs
+env
   .command('publish')
   .argument(
     '[id]',
@@ -234,7 +234,7 @@ envs
     }
   })
 
-envs
+env
   .command('delete')
   .argument(
     '[id]',

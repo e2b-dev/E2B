@@ -4,7 +4,7 @@ import path from 'path'
 import { getFiles } from 'src/files'
 import { DevbookConfig, loadConfig } from '../config'
 
-export async function updateEnvironment({
+export async function pushEnvironment({
   apiKey,
   envRootPath,
 }: {
