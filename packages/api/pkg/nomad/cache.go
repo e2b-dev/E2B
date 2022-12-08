@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	sessionExpiration = time.Second * 15
+	sessionExpiration = time.Second * 20
 	cacheSyncTime     = time.Second * 30
 )
 

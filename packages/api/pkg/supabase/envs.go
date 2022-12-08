@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
+	"github.com/rs/xid"
 )
 
-func UpdateEnvState(client *Client, codeSnippetID string, state api.EnvironmentState) error {
+func (db *DB) UpdateEnvStateCodeSnippet(codeSnippetID string, state api.EnvironmentState) error {
 	body := map[string]interface{}{"state": state}
-	err := client.DB.
+	err := db.Client.
 		From("envs").
-		Update(body).
+		Update(&body).
 		Eq("code_snippet_id", codeSnippetID).
 		Execute(nil)
 
@@ -26,36 +27,50 @@ func UpdateEnvState(client *Client, codeSnippetID string, state api.EnvironmentS
 	return nil
 }
 
-func GetEnvs(client *Client, apiKey string) error {
-	body := map[string]interface{}{"state": state}
-	err := client.DB.
+func (db *DB) DeleteEnv(codeSnippetID string) error {
+	err := db.Client.
 		From("envs").
+		Delete().
+		Eq("code_snippet_id", codeSnippetID).
+		Execute(nil)
 
-
-	return nil
-}
-
-func DeleteEnv(client *Client, apiKey, envID string) error {
-	body := map[string]interface{}{"state": state}
-	err := client.DB.
-		From("envs")
-
-
-	return nil
-}
-
-func CreateEnv(client *Client, apiKey, template string) error {
-	body := map[string]interface{}{"state": state}
-	err := client.DB.
-		From("envs")
-		
-		return nil
+	if err != nil {
+		if e, ok := err.(*json.SyntaxError); ok {
+			fmt.Printf("syntax error at byte offset %d", e.Offset)
+		}
+		fmt.Printf("error: %v\n", err)
+		return fmt.Errorf("failed to delete env '%s': %s", codeSnippetID, err)
 	}
 
-func PublishEnv(client *Client, apiKey, envID string) error {
-	body := map[string]interface{}{"state": state}
-	err := client.DB.
-	From("envs")
-
 	return nil
+}
+
+type newEnv struct {
+	OwnerID  string `json:"owner_id"`
+	Template string `json:"template"`
+	ID       string `json:"id"`
+}
+
+func (db *DB) CreateEnv(userID, template string) (string, error) {
+	id := "env_" + xid.New().String()
+
+	body := newEnv{
+		ID:       id,
+		OwnerID:  userID,
+		Template: template,
+	}
+	err := db.Client.
+		From("envs").
+		Insert(&body).
+		Execute(nil)
+
+	if err != nil {
+		if e, ok := err.(*json.SyntaxError); ok {
+			fmt.Printf("syntax error at byte offset %d", e.Offset)
+		}
+		fmt.Printf("error: %v\n", err)
+		return "", fmt.Errorf("failed to create env for userID '%s' with template '%s': %s", userID, template, err)
+	}
+
+	return id, nil
 }

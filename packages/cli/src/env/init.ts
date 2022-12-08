@@ -1,8 +1,7 @@
-import { api } from '@devbookhq/sdk'
-
+import client from '../api'
 import { createConfig, DevbookConfig } from '../config'
 
-const createEnv = api.path('/envs').method('post').create({ api_key: true })
+const createEnv = client.path('/envs').method('post').create({ api_key: true })
 
 export async function initEnvironment({
   template,

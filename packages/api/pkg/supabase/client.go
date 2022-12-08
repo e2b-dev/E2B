@@ -1,39 +1,40 @@
 package supabase
 
 import (
+	"os"
+
 	"fmt"
 	"net/url"
-	"os"
 
 	postgrest "github.com/nedpals/postgrest-go/pkg"
 )
 
-type Client struct {
-	DB *postgrest.Client
+type DB struct {
+	Client *postgrest.Client
 }
 
-func NewClient() (*Client, error) {
-	skey := os.Getenv("SUPABASE_KEY")
-	surl := os.Getenv("SUPABASE_URL")
-	parsedURL, err := url.Parse(surl)
+func NewClient() (*DB, error) {
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_KEY")
+	parsedURL, err := url.Parse(supabaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse Supabase URL '%s': %s", surl, err)
+		return nil, fmt.Errorf("failed to parse Supabase URL '%s': %s", supabaseURL, err)
 	}
 
-	pclient := postgrest.NewClient(
+	client := postgrest.NewClient(
 		*parsedURL,
-		postgrest.WithTokenAuth(skey),
+		postgrest.WithTokenAuth(supabaseKey),
 		func(c *postgrest.Client) {
-			//c.Debug = true
-			c.AddHeader("apikey", skey)
+			c.Debug = true
+			c.AddHeader("apikey", supabaseKey)
 		},
 	)
 
-	return &Client{
-		DB: pclient,
+	return &DB{
+		Client: client,
 	}, nil
 }
 
-func (c *Client) Close() {
-	c.DB.CloseIdleConnections()
+func (db *DB) Close() {
+	db.Client.CloseIdleConnections()
 }

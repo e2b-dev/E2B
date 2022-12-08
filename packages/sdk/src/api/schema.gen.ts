@@ -252,9 +252,10 @@ export interface components {
     readonly Environment: {
       readonly id: string;
       readonly template?: string;
-      readonly state: components["schemas"]["EnvironmentState"];
+      readonly title?: string;
     };
     readonly NewEnvironment: {
+      readonly title?: string;
       readonly template: components["schemas"]["Template"] | string;
     };
     readonly EnvironmentStateUpdate: {

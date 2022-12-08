@@ -16,8 +16,8 @@ import (
 
 type APIStore struct {
 	sessionsCache *nomad.SessionCache
-	nomadClient   *nomad.NomadClient
-	supabase      *supabase.Client
+	nomad         *nomad.NomadClient
+	supabase      *supabase.DB
 	NextId        int64
 	Lock          sync.Mutex
 	tracer        trace.Tracer
@@ -35,18 +35,18 @@ func NewAPIStore() *APIStore {
 	}
 
 	// TODO: Build only templates that changed
-	go func() {
-		err = nomadClient.RebuildTemplates(tracer)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
-		}
-	}()
+	// go func() {
+	// 	err := nomadClient.RebuildTemplates(tracer)
+	// 	if err != nil {
+	// 		fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
+	// 	}
+	// }()
 
 	var initialSessions []*api.Session
 	initialSessions, sessionErr := nomadClient.GetSessions()
 	if sessionErr != nil {
 		initialSessions = []*api.Session{}
-		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", sessionErr)
 	}
 
 	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
@@ -54,7 +54,7 @@ func NewAPIStore() *APIStore {
 	cache.KeepInSync(nomadClient)
 
 	return &APIStore{
-		nomadClient:   nomadClient,
+		nomad:         nomadClient,
 		supabase:      supabaseClient,
 		NextId:        1000,
 		sessionsCache: cache,
@@ -63,37 +63,30 @@ func NewAPIStore() *APIStore {
 }
 
 func (a *APIStore) Close() {
-	a.nomadClient.Close()
+	a.nomad.Close()
 	a.supabase.Close()
 }
 
-func (a *APIStore) validateAPIKey(apiKey *string) (string, error) {
+func (a *APIStore) validateAPIKey(apiKey *string) (*string, error) {
 	if apiKey == nil {
-		return "", fmt.Errorf("no API key")
+		return nil, fmt.Errorf("no API key")
 	}
 
 	if *apiKey == "" {
-		return "", fmt.Errorf("no API key")
+		return nil, fmt.Errorf("no API key")
 	}
 
 	if *apiKey == api.APIAdminKey {
-		return "api_admin_key", nil
+		return nil, nil
 	}
 
-	var result map[string]interface{}
+	user, err := a.supabase.GetUserID(*apiKey)
 
-	err := a.supabase.DB.
-		From("api_keys").
-		Select("owner_id").
-		Single().
-		Eq("api_key", *apiKey).
-		Execute(&result)
-
-	if err != nil || result == nil {
-		return "", fmt.Errorf("error validating API key: %+v", err)
+	if err != nil || user == nil {
+		return nil, fmt.Errorf("error validating API key: %+v", err)
 	}
 
-	return result["owner_id"].(string), nil
+	return &user.ID, nil
 }
 
 // This function wraps sending of an error in the Error format, and

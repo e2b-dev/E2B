@@ -11,6 +11,7 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.0.0
 	github.com/lightstep/otel-launcher-go v1.10.1
 	github.com/nedpals/postgrest-go v0.1.3
+	github.com/rs/xid v1.4.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.34.0
 	go.opentelemetry.io/otel v1.9.0
 	go.opentelemetry.io/otel/trace v1.9.0

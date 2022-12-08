@@ -4,12 +4,17 @@ import * as fsPromise from 'fs/promises'
 import * as path from 'path'
 import * as fs from 'fs'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const dockerNames = require('docker-names')
+
 import { getFiles } from './files'
 
 export const configName = 'dbk.toml'
 
 const configSchema = yup.object({
   id: yup.string().required(),
+  title: yup.string().required(),
+  template: yup.string().required(),
   filesystem: yup
     .object({
       local_root: yup.string().required(),
@@ -19,10 +24,14 @@ const configSchema = yup.object({
 
 export type DevbookConfig = yup.InferType<typeof configSchema>
 
-const defaultConfig: Omit<DevbookConfig, 'id'> = {
-  filesystem: {
-    local_root: './files',
-  },
+function getDefaultConfig() {
+  const defaultConfig: Omit<DevbookConfig, 'id' | 'template'> = {
+    title: dockerNames.getRandomName().replace('_', '-'),
+    filesystem: {
+      local_root: './files',
+    },
+  }
+  return defaultConfig
 }
 
 export async function loadConfig(envRootPath: string) {
@@ -38,12 +47,12 @@ export async function loadConfig(envRootPath: string) {
   const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
   const config = toml.parse(tomlRaw)
   console.log(
-    `Devbook config with environment ID "${config.id}" created at "${configPath}".`,
+    `Devbook config with environment ID "${config.id}" found at "${configPath}".`,
   )
   return (await configSchema.validate(config)) as DevbookConfig
 }
 
-export async function createConfig(envRootPath: string, id: string) {
+export async function createConfig(envRootPath: string, id: string, template: string) {
   const configPath = path.join(envRootPath, configName)
 
   const configExists = fs.existsSync(configPath)
@@ -55,12 +64,13 @@ export async function createConfig(envRootPath: string, id: string) {
 
   const config: DevbookConfig = {
     id,
-    ...defaultConfig,
+    template,
+    ...getDefaultConfig(),
   }
   const tomlRaw = toml.stringify(config)
   await fsPromise.writeFile(configPath, tomlRaw)
   console.log(
-    `Devbook config with environment ID "${config.id}" found at "${configPath}".`,
+    `Devbook config with environment ID "${config.id}" created at "${configPath}".`,
   )
 
   return config

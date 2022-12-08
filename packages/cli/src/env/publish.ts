@@ -1,6 +1,6 @@
-import { api } from '@devbookhq/sdk'
+import client from '../api'
 
-const publishEnv = api
+const publishEnv = client
   .path('/envs/{codeSnippetID}')
   .method('patch')
   .create({ api_key: true })

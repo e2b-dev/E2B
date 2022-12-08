@@ -265,5 +265,7 @@ func (n *NomadClient) UpdateEnv(codeSnippetID string, session *api.Session) erro
 		return fmt.Errorf("failed to register '%s/%s' job: %+v", updateEnvJobName, jobVars.CodeSnippetID, err)
 	}
 
+	// TODO: Add callback on job finish
+
 	return nil
 }

@@ -18,6 +18,7 @@
     "noImplicitThis": true,
     "alwaysStrict": true,
     "esModuleInterop": true,
+    "preserveSymlinks": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,

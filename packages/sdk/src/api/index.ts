@@ -10,5 +10,7 @@ client.configure({
   baseUrl: `https://${SESSION_DOMAIN}`,
 })
 
+type ClientType = typeof client
+
 export default client
-export type { components, paths }
+export type { components, paths, ClientType }

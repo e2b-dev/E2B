@@ -25,7 +25,7 @@ func (a *APIStore) GetSessions(
 	}
 	ReportEvent(ctx, "validated API key")
 
-	sessions, err := a.nomadClient.GetSessions()
+	sessions, err := a.nomad.GetSessions()
 	if err != nil {
 		errMsg := fmt.Errorf("error when listing sessions: %v", err)
 		ReportCriticalError(ctx, errMsg)
@@ -88,7 +88,7 @@ func (a *APIStore) PostSessions(
 		}
 	}
 
-	session, err := a.nomadClient.CreateSession(a.tracer, ctx, &newSession)
+	session, err := a.nomad.CreateSession(a.tracer, ctx, &newSession)
 	if err != nil {
 		errMsg := fmt.Errorf("error when creating: %v", err)
 		ReportCriticalError(ctx, errMsg)
@@ -104,7 +104,7 @@ func (a *APIStore) PostSessions(
 		if err == nil {
 			fmt.Printf("Found another edit session after we created a new editing session. Returning the other session.")
 
-			delErr := a.nomadClient.DeleteSession(session.SessionID, true)
+			delErr := a.nomad.DeleteSession(session.SessionID, true)
 			if delErr != nil {
 				errMsg := fmt.Errorf("redundant session couldn't be deleted: %v", delErr)
 				ReportError(ctx, errMsg)
@@ -125,7 +125,7 @@ func (a *APIStore) PostSessions(
 		errMsg := fmt.Errorf("error when adding session to cache: %v", err)
 		ReportError(ctx, errMsg)
 
-		delErr := a.nomadClient.DeleteSession(session.SessionID, true)
+		delErr := a.nomad.DeleteSession(session.SessionID, true)
 		if delErr != nil {
 			errMsg := fmt.Errorf("couldn't delete session that couldn't be added to cache: %v", delErr)
 			ReportError(ctx, errMsg)
@@ -163,7 +163,7 @@ func (a *APIStore) DeleteSessionsSessionID(
 		return
 	}
 
-	err := a.nomadClient.DeleteSession(sessionID, true)
+	err := a.nomad.DeleteSession(sessionID, true)
 	if err != nil {
 		errMsg := fmt.Errorf("error when deleting session: %v", err)
 		ReportCriticalError(ctx, errMsg)

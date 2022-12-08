@@ -28,9 +28,9 @@ const (
 
 // Environment defines model for Environment.
 type Environment struct {
-	Id       string           `json:"id"`
-	State    EnvironmentState `json:"state"`
-	Template *string          `json:"template,omitempty"`
+	Id       string  `json:"id"`
+	Template *string `json:"template,omitempty"`
+	Title    *string `json:"title,omitempty"`
 }
 
 // EnvironmentState defines model for EnvironmentState.
@@ -53,6 +53,7 @@ type Error struct {
 // NewEnvironment defines model for NewEnvironment.
 type NewEnvironment struct {
 	Template NewEnvironment_Template `json:"template"`
+	Title    *string                 `json:"title,omitempty"`
 }
 
 // NewEnvironmentTemplate1 defines model for .

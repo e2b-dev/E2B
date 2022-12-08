@@ -1,6 +1,6 @@
-import { api } from '@devbookhq/sdk'
+import client from '../api'
 
-const deleteEnv = api
+const deleteEnv = client
   .path('/envs/{codeSnippetID}')
   .method('delete')
   .create({ api_key: true })

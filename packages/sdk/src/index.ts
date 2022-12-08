@@ -26,6 +26,6 @@ export type {
 export type { Process, ProcessManager } from './session/process'
 export type { EnvVars } from './session/envVars'
 export { default as api } from './api'
-export type { components, paths } from './api'
+export type { components, paths, ClientType } from './api'
 
 export { createSessionProcess } from './helpers'

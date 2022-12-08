@@ -1,6 +1,8 @@
 # Devbook Environment Configuration
 
-id = "as"
+id = "aas"
+template = "Nodejs"
+title = "tt"
 
 [filesystem]
 

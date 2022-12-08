@@ -103,19 +103,20 @@ components:
     Environment:
       required:
         - id
-        - state
       properties:
         id:
           type: string
         template:
           type: string
-        state:
-          $ref: "#/components/schemas/EnvironmentState"
+        title:
+          type: string
 
     NewEnvironment:
       required:
         - template
       properties:
+        title:
+          type: string
         template:
           oneOf:
             - $ref: "#/components/schemas/Template"

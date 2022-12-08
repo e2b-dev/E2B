@@ -1,6 +1,6 @@
-import { api } from '@devbookhq/sdk'
+import client from '../api'
 
-const listEnvs = api.path('/envs').method('get').create()
+const listEnvs = client.path('/envs').method('get').create()
 
 export async function listEnvironments({ apiKey }: { apiKey: string }) {
   const result = await listEnvs({

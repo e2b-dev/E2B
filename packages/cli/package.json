@@ -60,6 +60,7 @@
     "boxen": "^7.0.0",
     "chalk": "^5.1.2",
     "commander": "^9.4.1",
+    "docker-names": "^1.2.1",
     "inquirer": "^8.0.0",
     "yup": "^0.32.11"
   },

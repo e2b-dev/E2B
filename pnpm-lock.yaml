@@ -21,6 +21,7 @@ importers:
       boxen: ^7.0.0
       chalk: ^5.1.2
       commander: ^9.4.1
+      docker-names: ^1.2.1
       eslint: ^8.24.0
       eslint-config-prettier: ^8.5.0
       eslint-plugin-prettier: ^4.2.1
@@ -37,6 +38,7 @@ importers:
       boxen: 7.0.0
       chalk: 5.1.2
       commander: 9.4.1
+      docker-names: 1.2.1
       inquirer: 8.2.5
       yup: 0.32.11
     devDependencies:
@@ -1494,6 +1496,10 @@ packages:
     dependencies:
       path-type: 4.0.0
     dev: true
+
+  /docker-names/1.2.1:
+    resolution: {integrity: sha512-uh42tvWBp10fnMyJ9z0YL9kql+iolxEnQ+pGZANj+gcg/N2NxjrdHbMXT2Y2Y07A8Jf7KJp/6LkElPCfukCdWg==}
+    dev: false
 
   /doctrine/3.0.0:
     resolution: {integrity: sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==}

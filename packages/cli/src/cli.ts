@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import * as commander from 'commander'
-import * as chalk from 'chalk'
+import chalk from 'chalk'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 
@@ -15,6 +15,7 @@ import { publishEnvironment } from './env/publish'
 import { pushEnvironment } from './env/push'
 
 import * as packageJSON from '../package.json'
+import { formatEnvironment, formatError } from './format'
 
 const apiKey = getAPIKey()
 
@@ -36,10 +37,7 @@ env
     '[envPath]',
     'Directory where the environment should be initialized. If it is not specified the environemnt will be initialize in the current directory',
   )
-  .requiredOption(
-    '-t, --template <template>',
-    'Template to use as a base for the environment',
-  )
+  .option('-t, --template <template>', 'Template to use as a base for the environment')
   .action(async (envPath, cmdObj) => {
     try {
       if (!apiKey) process.exit(1)
@@ -79,7 +77,7 @@ env
       if (!apiKey) process.exit(1)
 
       if (cmdObj.local === undefined) {
-        console.log('Listing available environments ...')
+        console.log('Listing available environments...\n')
 
         const envs = await listEnvironments({ apiKey })
 
@@ -88,15 +86,9 @@ env
           return
         }
 
-        console.log(chalk.default.bgGreen('Environments\n'))
-        envs.forEach(e =>
-          console.log(
-            `- ${chalk.default.bold(e.id)} (${
-              e.state === 'Failed' ? chalk.default.red(e.state) : e.state
-            })`,
-          ),
-        )
-        console.log('Done - Listed available environments')
+        console.log(chalk.underline(chalk.green('Environments')))
+        envs.forEach(e => console.log(formatEnvironment(e)))
+        console.log('\nDone - Listed available environments')
       } else {
         const dirPath = getEnvRootPath(cmdObj.local === true ? undefined : cmdObj.local)
         console.log(`Listing available local environments from "${dirPath}"...`)
@@ -109,23 +101,24 @@ env
           }),
         )
 
-        console.log(chalk.default.bgGreen('Local environments\n'))
+        console.log(chalk.underline(chalk.green('\nLocal environments')))
         for (let i = 0; i < configPaths.length; i++) {
           const configPath = configPaths[i]
           const config = configs[i]
 
           if (config.status === 'rejected') {
             console.log(
-              chalk.default.red(
-                `- cannot access or validate config "${configPath.path}"`,
+              formatError(
+                `cannot access or validate config "${configPath.path}"`,
+                config.reason,
               ),
             )
           } else {
-            console.log(`- ${chalk.default.bold(config.value.id)} [${configPath.path}]`)
+            console.log(formatEnvironment(config.value, configPath.path))
           }
         }
 
-        console.log('Done - Listed available local environments')
+        console.log('\nDone - Listed available local environments')
       }
     } catch (err) {
       console.error(err)

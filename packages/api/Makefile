@@ -12,8 +12,14 @@ build:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/api .
 
 run:
-	GOOS=linux go build -o bin/api .
-	NOMAD_ADDRESS=http://34.149.1.201 ./bin/api --port 3000 -telemetry-api=$(telemetry-api)
+	make build
+	API_ADMIN_KEY=test \
+	NOMAD_ADDRESS=http://34.149.1.201 \
+	NOMAD_TOKEN=$(NOMAD_TOKEN) \
+	SUPABASE_KEY=$(SUPABASE_KEY) \
+	SUPABASE_URL=$(SUPABASE_URL) \
+	CONSUL_TOKEN=$(CONSUL_TOKEN) \
+	./bin/api --port 3000 -telemetry-api=$(telemetry-api)
 
 build-docker:
 	docker build --tag us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE) .
