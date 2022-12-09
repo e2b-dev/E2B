@@ -8,7 +8,7 @@
     "allowJs": true,
     "declaration": true,
     "declarationMap": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,

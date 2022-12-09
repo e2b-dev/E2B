@@ -8,7 +8,6 @@ COPY go.mod go.sum Makefile ./
 RUN go mod download
 
 COPY internal internal
-COPY pkg pkg
 COPY main.go main.go
 
 RUN make build

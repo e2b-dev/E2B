@@ -32,6 +32,9 @@ type ServerInterface interface {
 	// (PUT /envs/{codeSnippetID}/state)
 	PutEnvsCodeSnippetIDState(c *gin.Context, codeSnippetID CodeSnippetID, params PutEnvsCodeSnippetIDStateParams)
 
+	// (PUT /envs/{codeSnippetID}/title)
+	PutEnvsCodeSnippetIDTitle(c *gin.Context, codeSnippetID CodeSnippetID, params PutEnvsCodeSnippetIDTitleParams)
+
 	// (GET /health)
 	GetHealth(c *gin.Context)
 
@@ -273,6 +276,45 @@ func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDState(c *gin.Context) {
 	siw.Handler.PutEnvsCodeSnippetIDState(c, codeSnippetID, params)
 }
 
+// PutEnvsCodeSnippetIDTitle operation middleware
+func (siw *ServerInterfaceWrapper) PutEnvsCodeSnippetIDTitle(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "codeSnippetID" -------------
+	var codeSnippetID CodeSnippetID
+
+	err = runtime.BindStyledParameter("simple", false, "codeSnippetID", c.Param("codeSnippetID"), &codeSnippetID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter codeSnippetID: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutEnvsCodeSnippetIDTitleParams
+
+	// ------------- Required query parameter "api_key" -------------
+
+	if paramValue := c.Query("api_key"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Query argument api_key is required, but not found: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "api_key", c.Request.URL.Query(), &params.ApiKey)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter api_key: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+	}
+
+	siw.Handler.PutEnvsCodeSnippetIDTitle(c, codeSnippetID, params)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 
@@ -447,6 +489,8 @@ func RegisterHandlersWithOptions(router *gin.Engine, si ServerInterface, options
 	router.POST(options.BaseURL+"/envs/:codeSnippetID", wrapper.PostEnvsCodeSnippetID)
 
 	router.PUT(options.BaseURL+"/envs/:codeSnippetID/state", wrapper.PutEnvsCodeSnippetIDState)
+
+	router.PUT(options.BaseURL+"/envs/:codeSnippetID/title", wrapper.PutEnvsCodeSnippetIDTitle)
 
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
 

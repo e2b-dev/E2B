@@ -1,12 +1,9 @@
-# Devbook Environment Configuration
+# This is a config for a Devbook environment
 
-id = "aas"
-template = "Nodejs"
-title = "tt"
+title = "cli"
+template = "Bash"
+id = "pWn0oTpsxfZk"
+configPath = "/workspace/devbook-api/packages/cli/dbk.toml"
 
 [filesystem]
-
 local_root = "./files"
-# ignore = 
-
-# [setup]

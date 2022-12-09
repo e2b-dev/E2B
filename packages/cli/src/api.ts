@@ -1,9 +1,19 @@
-import { api, ClientType } from '@devbookhq/sdk'
+import * as sdk from '@devbookhq/sdk'
 
-const client: ClientType = api
+const client: sdk.ClientType = sdk.api
 
 client.configure({
   baseUrl: 'http://localhost:3000',
 })
 
-export default client
+const apiKey = process.env.DEVBOOK_KEY
+
+export function ensureAPIKey() {
+  if (!apiKey) {
+    process.exit(1)
+  } else {
+    return apiKey
+  }
+}
+
+export { client, apiKey }

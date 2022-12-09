@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
-	"github.com/devbookhq/devbook-api/packages/api/pkg/nomad"
+	"github.com/devbookhq/devbook-api/packages/api/internal/nomad"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/exp/slices"
 )
@@ -63,71 +63,56 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
-	var template string
-	maybeTemplate, err := env.Template.AsTemplate()
-	if err == nil {
-		template = string(maybeTemplate)
-	} else {
-		maybeTemplate, err := env.Template.AsNewEnvironmentTemplate1()
-		if err == nil {
-			template = maybeTemplate
-		} else {
-			fmt.Printf("error: %v\n", err)
-			a.sendAPIStoreError(
-				c,
-				http.StatusInternalServerError,
-				fmt.Sprintf("Failed to parse template'%s': %s", env.Template, err),
-			)
-			return
-		}
-	}
-
-	envID, err := a.supabase.CreateEnv(*userID, template)
-	if err != nil {
-		fmt.Printf("error creating env in Supabase: %+v", err)
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
-		return
-	}
-
-	codeSnippetID, err := a.supabase.CreateCodeSnippet(*userID, template)
+	newCodeSnippet, err := a.supabase.CreateCodeSnippet(*userID, env.Template, env.Title)
 	if err != nil {
 		fmt.Printf("error creating code snippet in Supabase: %+v", err)
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
 		return
 	}
 
-	buildStartErr := a.nomad.UsePrebuiltEnv(codeSnippetID, string(template), func(err *error) {
+	newEnv, err := a.supabase.CreateEnv(*userID, newCodeSnippet.ID, env.Template)
+	if err != nil {
+		fmt.Printf("error creating env in Supabase: %+v", err)
+
+		err := a.supabase.DeleteCodeSnippet(newCodeSnippet.ID)
 		if err != nil {
-			fmt.Printf("failed to use prebuilt for code snippet '%s' with template '%s': %+v", codeSnippetID, template, err)
+			fmt.Printf("error deleting code snippet '%s' during cleanup: %+v", newCodeSnippet.ID, err)
+		}
+
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
+		return
+	}
+
+	buildStartErr := a.nomad.UsePrebuiltEnv(newCodeSnippet.ID, env.Template, func(err *error) {
+		if err != nil {
+			fmt.Printf("failed to use prebuilt for code snippet '%s' with template '%s': %+v", newCodeSnippet.ID, env.Template, err)
 		} else {
-			updateErr := a.supabase.UpdateEnvStateCodeSnippet(codeSnippetID, api.Done)
+			updateErr := a.supabase.UpdateEnvStateCodeSnippet(newCodeSnippet.ID, api.Done)
 			if updateErr != nil {
-				fmt.Printf("Failed to update env state for code snippet '%s' with template '%s': %+v", codeSnippetID, template, err)
+				fmt.Printf("Failed to update env state for code snippet '%s' with template '%s': %+v", newCodeSnippet.ID, env.Template, err)
 			}
 		}
 	})
 
 	if buildStartErr != nil {
 		fmt.Printf("error: %v\n", err)
-		err := a.supabase.DeleteEnv(envID)
+		err := a.supabase.DeleteEnv(newEnv.ID)
 		if err != nil {
 			fmt.Printf("error deleting failed env in Supabase: %+v", err)
 		}
-		err = a.supabase.DeleteCodeSnippet(codeSnippetID)
+		err = a.supabase.DeleteCodeSnippet(newCodeSnippet.ID)
 		if err != nil {
 			fmt.Printf("error deleting failed code snippet in Supabase: %+v", err)
 		}
 		a.sendAPIStoreError(
 			c,
 			http.StatusInternalServerError,
-			fmt.Sprintf("Failed to create code snippet for template '%s': %s", envID, err),
+			fmt.Sprintf("Failed to create code snippet for template '%s': %s", newEnv.ID, err),
 		)
 		return
 	}
 
-	newEnv := map[string]interface{}{"id": codeSnippetID, "template": template}
-
-	c.JSON(http.StatusOK, newEnv)
+	c.JSON(http.StatusOK, map[string]interface{}{"id": newCodeSnippet.ID, "template": newCodeSnippet.Template, "title": newCodeSnippet.Title})
 }
 
 func (a *APIStore) PostEnvsCodeSnippetID(
@@ -157,27 +142,7 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 		return
 	}
 
-	var template string
-
-	maybeTemplate, err := env.Template.AsTemplate()
-	if err == nil {
-		template = string(maybeTemplate)
-	} else {
-		maybeTemplate, err := env.Template.AsNewEnvironmentTemplate1()
-		if err == nil {
-			template = maybeTemplate
-		} else {
-			fmt.Printf("error: %v\n", err)
-			a.sendAPIStoreError(
-				c,
-				http.StatusInternalServerError,
-				fmt.Sprintf("Failed to parse template'%s': %s", env.Template, err),
-			)
-			return
-		}
-	}
-
-	err = a.nomad.UsePrebuiltEnv(codeSnippetID, string(template), func(err *error) {
+	err = a.nomad.UsePrebuiltEnv(codeSnippetID, env.Template, func(err *error) {
 		if err != nil {
 			fmt.Printf("failed to use prebuilt for code snippet %s: %+v", codeSnippetID, err)
 		} else {
@@ -238,6 +203,17 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 		return
 	}
 
+	err = a.nomad.DeleteEnv(codeSnippetID)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		a.sendAPIStoreError(
+			c,
+			http.StatusInternalServerError,
+			fmt.Sprintf("Failed to delete FC env for code snippet '%s': %s", codeSnippetID, err),
+		)
+		return
+	}
+
 	err = a.supabase.DeletePublishedCodeSnippet(codeSnippetID)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
@@ -245,6 +221,17 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 			c,
 			http.StatusBadRequest,
 			fmt.Sprintf("Failed to delete published code snippet '%s': %s", codeSnippetID, err),
+		)
+		return
+	}
+
+	err = a.supabase.DeleteEnv(codeSnippetID)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		a.sendAPIStoreError(
+			c,
+			http.StatusBadRequest,
+			fmt.Sprintf("Failed to delete DB env '%s': %s", codeSnippetID, err),
 		)
 		return
 	}
@@ -260,14 +247,62 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 		return
 	}
 
-	err = a.nomad.DeleteEnv(codeSnippetID)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		fmt.Printf("error: %v\n", err)
+	c.Status(http.StatusNoContent)
+}
+
+func (a *APIStore) PutEnvsCodeSnippetIDTitle(
+	c *gin.Context,
+	codeSnippetID string,
+	params api.PutEnvsCodeSnippetIDTitleParams,
+) {
+	userID, keyErr := a.validateAPIKey(&params.ApiKey)
+	if keyErr != nil {
+		a.sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error with API token: %s", keyErr))
+		return
+	}
+
+	var codeSnippetTitleUpdate api.PutEnvsCodeSnippetIDTitleJSONRequestBody
+	if err := c.Bind(&codeSnippetTitleUpdate); err != nil {
 		a.sendAPIStoreError(
 			c,
-			http.StatusInternalServerError,
-			fmt.Sprintf("Failed to delete env for code snippet '%s': %s", codeSnippetID, err),
+			http.StatusBadRequest,
+			fmt.Sprintf("Error when parsing request: %s", err),
+		)
+		return
+	}
+
+	// TODO: Admin key
+	if userID == nil {
+		a.sendAPIStoreError(c, http.StatusNotImplemented, "Admin key request not supported")
+		return
+	}
+
+	codeSnippets, err := a.supabase.GetCodeSnippets(*userID)
+	if err != nil {
+		fmt.Printf("error getting code snippets from Supabase: %+v", err)
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
+		return
+	}
+
+	found := false
+	for _, v := range *codeSnippets {
+		if v.ID == codeSnippetID {
+			found = true
+		}
+	}
+
+	if !found {
+		fmt.Printf("user '%s' cannot access code snippet '%s'", *userID, codeSnippetID)
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Cannot retrieve data")
+		return
+	}
+
+	err = a.supabase.UpdateTitleCodeSnippet(codeSnippetID, codeSnippetTitleUpdate.Title)
+	if err != nil {
+		a.sendAPIStoreError(
+			c,
+			http.StatusBadRequest,
+			fmt.Sprintf("Failed to update code snippet title '%s': %s", codeSnippetID, err),
 		)
 		return
 	}
@@ -277,7 +312,7 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 
 func (a *APIStore) PutEnvsCodeSnippetIDState(
 	c *gin.Context,
-	codeSnippetIDorEnvID string,
+	codeSnippetID string,
 	params api.PutEnvsCodeSnippetIDStateParams,
 ) {
 	_, keyErr := a.validateAPIKey(&params.ApiKey)
@@ -299,18 +334,18 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 	templates, err := nomad.GetTemplates()
 	if err != nil {
 		fmt.Printf("error retrieving templates: %+v\n", err)
-	} else if slices.Contains(*templates, codeSnippetIDorEnvID) {
+	} else if slices.Contains(*templates, codeSnippetID) {
 		fmt.Printf("state update is for a template - we will not be updating env in Supabase")
 		c.Status(http.StatusNoContent)
 		return
 	}
 
-	err = a.supabase.UpdateEnvStateCodeSnippet(codeSnippetIDorEnvID, envStateUpdate.State)
+	err = a.supabase.UpdateEnvStateCodeSnippet(codeSnippetID, envStateUpdate.State)
 	if err != nil {
 		a.sendAPIStoreError(
 			c,
 			http.StatusBadRequest,
-			fmt.Sprintf("Failed to update env state for '%s': %s", codeSnippetIDorEnvID, err),
+			fmt.Sprintf("Failed to update env state for '%s': %s", codeSnippetID, err),
 		)
 		return
 	}
@@ -372,15 +407,20 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 		return
 	}
 
-	err = a.supabase.UpsertPublishedCodeSnippet(codeSnippetID)
+	_, err = a.supabase.GetPublishedCodeSnippet(codeSnippetID)
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		a.sendAPIStoreError(
-			c,
-			http.StatusInternalServerError,
-			fmt.Sprintf("Failed to upsert published code snippet '%s': %+v", codeSnippetID, err),
-		)
-		return
+		fmt.Printf("published code snippet not found, upserting published code snippet for code snippet '%s': %v\n", codeSnippetID, err)
+
+		err = a.supabase.UpsertPublishedCodeSnippet(codeSnippetID)
+		if err != nil {
+			fmt.Printf("error: %v\n", err)
+			a.sendAPIStoreError(
+				c,
+				http.StatusInternalServerError,
+				fmt.Sprintf("Failed to upsert published code snippet '%s': %+v", codeSnippetID, err),
+			)
+			return
+		}
 	}
 
 	c.Status(http.StatusNoContent)

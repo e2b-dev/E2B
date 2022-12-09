@@ -4,233 +4,257 @@
  */
 
 export interface paths {
-  readonly "/health": {
+  "/health": {
     /** Health check */
-    readonly get: {
-      readonly responses: {
+    get: {
+      responses: {
         /** Request was successful */
-        readonly 200: unknown;
-        readonly 401: components["responses"]["401"];
+        200: unknown;
+        401: components["responses"]["401"];
       };
     };
   };
-  readonly "/sessions": {
+  "/sessions": {
     /** List all sessions */
-    readonly get: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    get: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully returned all sessions */
-        readonly 200: {
-          readonly content: {
-            readonly "application/json": readonly components["schemas"]["Session"][];
+        200: {
+          content: {
+            "application/json": components["schemas"]["Session"][];
           };
         };
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
     };
     /** Create a session on the server */
-    readonly post: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyOpt"];
+    post: {
+      parameters: {
+        query: {
+          api_key?: components["parameters"]["apiKeyOpt"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully created a session */
-        readonly 201: {
-          readonly content: {
-            readonly "application/json": components["schemas"]["Session"];
+        201: {
+          content: {
+            "application/json": components["schemas"]["Session"];
           };
         };
-        readonly 400: components["responses"]["400"];
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
-      readonly requestBody: {
-        readonly content: {
-          readonly "application/json": components["schemas"]["NewSession"];
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NewSession"];
         };
       };
     };
   };
-  readonly "/sessions/{sessionID}": {
+  "/sessions/{sessionID}": {
     /** Delete a session on the server */
-    readonly delete: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    delete: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
-        readonly path: {
-          readonly sessionID: components["parameters"]["sessionID"];
+        path: {
+          sessionID: components["parameters"]["sessionID"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully deleted the session */
-        readonly 204: never;
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        204: never;
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
     };
   };
-  readonly "/sessions/{sessionID}/refresh": {
+  "/sessions/{sessionID}/refresh": {
     /** Refresh the session extending its time to live */
-    readonly post: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key?: components["parameters"]["apiKeyOpt"];
+    post: {
+      parameters: {
+        query: {
+          api_key?: components["parameters"]["apiKeyOpt"];
         };
-        readonly path: {
-          readonly sessionID: components["parameters"]["sessionID"];
+        path: {
+          sessionID: components["parameters"]["sessionID"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully refreshed the session */
-        readonly 204: never;
-        readonly 401: components["responses"]["401"];
+        204: never;
+        401: components["responses"]["401"];
         /** Error refreshing session - session not found */
-        readonly 404: {
-          readonly content: {
-            readonly "application/json": components["schemas"]["Error"];
+        404: {
+          content: {
+            "application/json": components["schemas"]["Error"];
           };
         };
       };
     };
   };
-  readonly "/envs": {
+  "/envs": {
     /** List all environments */
-    readonly get: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    get: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully returned all environments */
-        readonly 200: {
-          readonly content: {
-            readonly "application/json": readonly components["schemas"]["Environment"][];
+        200: {
+          content: {
+            "application/json": components["schemas"]["Environment"][];
           };
         };
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
     };
     /** Create a new environment */
-    readonly post: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    post: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully created an environment */
-        readonly 200: {
-          readonly content: {
-            readonly "application/json": components["schemas"]["Environment"];
+        200: {
+          content: {
+            "application/json": components["schemas"]["Environment"];
           };
         };
-        readonly 400: components["responses"]["400"];
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
-      readonly requestBody: {
-        readonly content: {
-          readonly "application/json": components["schemas"]["NewEnvironment"];
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NewEnvironment"];
         };
       };
     };
   };
-  readonly "/envs/{codeSnippetID}": {
+  "/envs/{codeSnippetID}": {
     /** Create a new env for a code snippet */
-    readonly post: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    post: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
-        readonly path: {
-          readonly codeSnippetID: components["parameters"]["codeSnippetID"];
+        path: {
+          codeSnippetID: components["parameters"]["codeSnippetID"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully created an environment */
-        readonly 204: never;
-        readonly 400: components["responses"]["400"];
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
-      readonly requestBody: {
-        readonly content: {
-          readonly "application/json": components["schemas"]["NewEnvironment"];
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NewEnvironment"];
         };
       };
     };
     /** Delete the code snippet environment */
-    readonly delete: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    delete: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
-        readonly path: {
-          readonly codeSnippetID: components["parameters"]["codeSnippetID"];
+        path: {
+          codeSnippetID: components["parameters"]["codeSnippetID"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Successfully deleted the environment */
-        readonly 204: never;
+        204: never;
         /** Cannot delete the environment */
-        readonly 400: {
-          readonly content: {
-            readonly "application/json": components["schemas"]["Error"];
+        400: {
+          content: {
+            "application/json": components["schemas"]["Error"];
           };
         };
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
     };
     /** Update the environment of the code snippet to match the edit environment */
-    readonly patch: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    patch: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
-        readonly path: {
-          readonly codeSnippetID: components["parameters"]["codeSnippetID"];
+        path: {
+          codeSnippetID: components["parameters"]["codeSnippetID"];
         };
       };
-      readonly responses: {
+      responses: {
         /** Updated the edit environment for code snippet */
-        readonly 204: never;
-        readonly 400: components["responses"]["400"];
-        readonly 401: components["responses"]["401"];
-        readonly 500: components["responses"]["500"];
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
       };
     };
   };
-  readonly "/envs/{codeSnippetID}/state": {
+  "/envs/{codeSnippetID}/state": {
     /** Update the state of the environment */
-    readonly put: {
-      readonly parameters: {
-        readonly query: {
-          readonly api_key: components["parameters"]["apiKeyReq"];
+    put: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
         };
-        readonly path: {
-          readonly codeSnippetID: components["parameters"]["codeSnippetID"];
+        path: {
+          codeSnippetID: components["parameters"]["codeSnippetID"];
         };
       };
-      readonly responses: {
-        /** Publishing the edit environment for code snippet */
-        readonly 204: never;
-        readonly 400: components["responses"]["400"];
-        readonly 401: components["responses"]["401"];
+      responses: {
+        /** Updated the state of environment */
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
       };
-      readonly requestBody: {
-        readonly content: {
-          readonly "application/json": components["schemas"]["EnvironmentStateUpdate"];
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["EnvironmentStateUpdate"];
+        };
+      };
+    };
+  };
+  "/envs/{codeSnippetID}/title": {
+    /** Update the title of the environment */
+    put: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
+        };
+        path: {
+          codeSnippetID: components["parameters"]["codeSnippetID"];
+        };
+      };
+      responses: {
+        /** Updated the title of the code snippet */
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["EnvironmentTitleUpdate"];
         };
       };
     };
@@ -238,83 +262,80 @@ export interface paths {
 }
 
 export interface components {
-  readonly schemas: {
+  schemas: {
     /** @enum {string} */
-    readonly Template:
-      | "Nodejs"
-      | "Go"
-      | "Bash"
-      | "Rust"
-      | "Python3"
-      | "Typescript";
+    Template: "Nodejs" | "Go" | "Bash" | "Rust" | "Python3" | "Typescript";
     /** @enum {string} */
-    readonly EnvironmentState: "Building" | "Failed" | "Done";
-    readonly Environment: {
-      readonly id: string;
-      readonly template?: string;
-      readonly title?: string;
+    EnvironmentState: "Building" | "Failed" | "Done";
+    Environment: {
+      id: string;
+      template?: string;
+      title?: string;
     };
-    readonly NewEnvironment: {
-      readonly title?: string;
-      readonly template: components["schemas"]["Template"] | string;
+    NewEnvironment: {
+      title?: string;
+      template: string;
     };
-    readonly EnvironmentStateUpdate: {
-      readonly state: components["schemas"]["EnvironmentState"];
+    EnvironmentStateUpdate: {
+      state: components["schemas"]["EnvironmentState"];
     };
-    readonly NewSession: {
+    EnvironmentTitleUpdate: {
+      title?: string;
+    };
+    NewSession: {
       /**
        * @description Option determining if the session is a shared persistent edit session
        * @default false
        */
-      readonly editEnabled?: boolean;
+      editEnabled?: boolean;
       /** @description Identifier of a code snippet which which is the environment associated */
-      readonly codeSnippetID: string;
+      codeSnippetID: string;
     };
-    readonly Session: {
+    Session: {
       /** @description Identifier of a code snippet which which is the environment associated */
-      readonly codeSnippetID: string;
+      codeSnippetID: string;
       /** @description Information if the session is a shared persistent edit session */
-      readonly editEnabled: boolean;
+      editEnabled: boolean;
       /** @description Identifier of the session */
-      readonly sessionID: string;
+      sessionID: string;
       /** @description Identifier of the client */
-      readonly clientID: string;
+      clientID: string;
     };
-    readonly Error: {
+    Error: {
       /**
        * Format: int32
        * @description Error code
        */
-      readonly code: number;
+      code: number;
       /** @description Error */
-      readonly message: string;
+      message: string;
     };
   };
-  readonly responses: {
+  responses: {
     /** Bad request */
-    readonly 400: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["Error"];
+    400: {
+      content: {
+        "application/json": components["schemas"]["Error"];
       };
     };
     /** Authentication error */
-    readonly 401: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["Error"];
+    401: {
+      content: {
+        "application/json": components["schemas"]["Error"];
       };
     };
     /** Server error */
-    readonly 500: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["Error"];
+    500: {
+      content: {
+        "application/json": components["schemas"]["Error"];
       };
     };
   };
-  readonly parameters: {
-    readonly apiKeyOpt: string;
-    readonly apiKeyReq: string;
-    readonly codeSnippetID: string;
-    readonly sessionID: string;
+  parameters: {
+    apiKeyOpt: string;
+    apiKeyReq: string;
+    codeSnippetID: string;
+    sessionID: string;
   };
 }
 

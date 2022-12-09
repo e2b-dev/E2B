@@ -118,9 +118,7 @@ components:
         title:
           type: string
         template:
-          oneOf:
-            - $ref: "#/components/schemas/Template"
-            - type: string
+          type: string
 
     EnvironmentStateUpdate:
       required:
@@ -128,6 +126,11 @@ components:
       properties:
         state:
           $ref: "#/components/schemas/EnvironmentState"
+
+    EnvironmentTitleUpdate:
+      properties:
+        title:
+          type: string
 
     NewSession:
       required:
@@ -386,7 +389,28 @@ paths:
               $ref: "#/components/schemas/EnvironmentStateUpdate"
       responses:
         204:
-          description: Publishing the edit environment for code snippet
+          description: Updated the state of environment
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+
+  /envs/{codeSnippetID}/title:
+    put:
+      description: Update the title of the environment
+      tags: [envs]
+      parameters:
+        - $ref: "#/components/parameters/apiKeyReq"
+        - $ref: "#/components/parameters/codeSnippetID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentTitleUpdate"
+      responses:
+        204:
+          description: Updated the title of the code snippet
         400:
           $ref: "#/components/responses/400"
         401:

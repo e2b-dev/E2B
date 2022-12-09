@@ -18,11 +18,10 @@
     "access": "public"
   },
   "sideEffects": false,
-  "type": "commonjs",
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "build": "tsup --minify",
-    "dev": "tsup --watch",
+    "prepublishOnly": "pnpm build",
+    "build": "rm -rf ./dist && tsup --minify",
+    "dev": "tsup --watch --sourcemap",
     "fix": "npx eslint **/src/**/*.{ts,js} --fix",
     "format": "prettier --check --ignore-path .gitignore .",
     "format:fix": "prettier --write --ignore-path .gitignore ."
@@ -31,6 +30,7 @@
     "@trivago/prettier-plugin-sort-imports": "^3.3.0",
     "@types/inquirer": "^8.0.0",
     "@types/node": "16.11",
+    "@types/update-notifier": "5.1.0",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
     "eslint": "^8.24.0",
@@ -48,10 +48,10 @@
     "package-lock.json"
   ],
   "bin": {
-    "dbk": "dist/cli.js",
-    "devbook": "dist/cli.js",
-    "devbookctl": "dist/cli.js",
-    "dbkctl": "dist/cli.js"
+    "dbk": "dist/index.js",
+    "devbook": "dist/index.js",
+    "devbookctl": "dist/index.js",
+    "dbkctl": "dist/index.js"
   },
   "dependencies": {
     "@devbookhq/sdk": "workspace:*",
@@ -59,9 +59,12 @@
     "@nodelib/fs.walk": "^1.2.8",
     "boxen": "^7.0.0",
     "chalk": "^5.1.2",
+    "cli-spinners": "^2.7.0",
     "commander": "^9.4.1",
     "docker-names": "^1.2.1",
     "inquirer": "^8.0.0",
+    "ora": "^6.1.2",
+    "update-notifier": "5.1.0",
     "yup": "^0.32.11"
   },
   "engines": {

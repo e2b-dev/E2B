@@ -1,6 +1,8 @@
 import * as fsWalk from '@nodelib/fs.walk'
 import * as path from 'path'
 import * as util from 'util'
+import * as fsPromise from 'fs/promises'
+import * as fs from 'fs'
 
 const walk = util.promisify(fsWalk.walk)
 
@@ -22,10 +24,30 @@ export async function getFiles(
   return await Promise.all(
     entries.map(async e => {
       return {
-        path: e.path,
+        path: e.path as string,
         rootPath: path.join('/', path.relative(rootPath, e.path)),
-        name: e.name,
+        name: e.name as string,
       }
     }),
   )
+}
+
+export function getRoot(envPath?: string) {
+  const defaultPath = process.cwd()
+
+  if (!envPath) {
+    return defaultPath
+  }
+
+  if (path.isAbsolute(envPath)) {
+    return envPath
+  }
+
+  return path.resolve(defaultPath, envPath)
+}
+
+export async function ensureDir(dirPath: string) {
+  if (!fs.existsSync(dirPath)) {
+    return fsPromise.mkdir(dirPath, { recursive: true })
+  }
 }

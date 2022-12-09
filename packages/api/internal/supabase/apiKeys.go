@@ -5,6 +5,9 @@ import (
 	"fmt"
 )
 
+// TODO: The API keys should be hashed
+const apiKeysTableName = "api_keys"
+
 type user struct {
 	ID string `json:"owner_id"`
 }
@@ -13,7 +16,7 @@ func (db *DB) GetUserID(apiKey string) (*user, error) {
 	var result user
 
 	err := db.Client.
-		From("api_keys").
+		From(apiKeysTableName).
 		Select("owner_id").
 		Single().
 		Eq("api_key", apiKey).

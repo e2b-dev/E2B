@@ -5,9 +5,11 @@ import (
 	"fmt"
 )
 
+const publishedCodeSnippetsTableName = "published_code_snippets"
+
 func (db *DB) DeletePublishedCodeSnippet(codeSnippetID string) error {
 	err := db.Client.
-		From("published_code_snippets").
+		From(publishedCodeSnippetsTableName).
 		Delete().
 		Eq("code_snippet_id", codeSnippetID).
 		Execute(nil)
@@ -23,6 +25,31 @@ func (db *DB) DeletePublishedCodeSnippet(codeSnippetID string) error {
 	return nil
 }
 
+type publishedCodeSnippet struct {
+	ID string `json:"id"`
+}
+
+func (db *DB) GetPublishedCodeSnippet(codeSnippetID string) (*publishedCodeSnippet, error) {
+	body := publishedCodeSnippet{}
+
+	err := db.Client.
+		From(publishedCodeSnippetsTableName).
+		Select("id").
+		Single().
+		Eq("code_snippet_id", codeSnippetID).
+		Execute(&body)
+
+	if err != nil {
+		if e, ok := err.(*json.SyntaxError); ok {
+			fmt.Printf("syntax error at byte offset %d", e.Offset)
+		}
+		fmt.Printf("error: %v\n", err)
+		return nil, fmt.Errorf("failed to get published code snippet '%s': %s", codeSnippetID, err)
+	}
+
+	return &body, nil
+}
+
 type newPublishedCodeSnippet struct {
 	Template      string `json:"template"`
 	CodeSnippetID string `json:"code_snippet_id"`
@@ -34,7 +61,7 @@ func (db *DB) UpsertPublishedCodeSnippet(codeSnippetID string) error {
 	}
 
 	err := db.Client.
-		From("published_code_snippets").
+		From(publishedCodeSnippetsTableName).
 		Upsert(&body).
 		Execute(nil)
 
