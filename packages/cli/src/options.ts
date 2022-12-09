@@ -1,13 +1,22 @@
 import { Option } from 'commander'
-
-export const idOption = new Option('-i, --id <id>', 'ID of the environment')
+import { asBold } from './utils/format'
 
 export const allOption = new Option(
   '-a, --all',
-  'Invoke this command in all subdirectories recursively',
+  'Call this command in all subdirectories',
 )
 
 export const selectOption = new Option(
   '-s, --select',
-  'Select environments from an interactive list',
+  'Select environment from interactive list',
+)
+
+export const selectMultipleOption = new Option(
+  '-s, --select',
+  'Select environments from interactive list',
+)
+
+export const pathOption = new Option(
+  '-p, --path <path>',
+  `Call this command in ${asBold('<path>')} directory`,
 )

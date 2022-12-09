@@ -2,69 +2,75 @@ import * as chalk from 'chalk'
 import * as commander from 'commander'
 
 import { client, ensureAPIKey } from 'src/api'
-import { getNestedConfigs, loadConfig } from 'src/config'
-import { spinner } from 'src/interactions/spinner'
+import { configName, getNestedConfigs, loadConfig } from 'src/config'
+import { pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
-import { formatEnvironment, formatError } from 'src/utils/format'
+import { asFormattedEnvironment, asFormattedError, asLocal } from 'src/utils/format'
+import { assertFulfilled, assertRejected } from 'src/utils/promise'
 import { sortEnvs } from 'src/utils/sort'
 
 export const listCommand = new commander.Command('list')
   .description('List available environments')
+  .addOption(pathOption)
   .option(
-    '-l, --local [dirPath]',
-    'Find local environments initialized in the current directory or in the specified "dirPath" directory and its nested directories.',
+    '-n, --no-local',
+    `Don't scan local filesystem for environment ${asLocal(configName)} configs`,
   )
-  .action(async cmdObj => {
+  .action(async opts => {
     try {
       const apiKey = ensureAPIKey()
+      process.stdout.write('\n')
 
-      if (cmdObj.local === undefined) {
-        spinner.text = 'Listing available environments'
-        spinner.start()
+      const root = getRoot(opts.path)
 
-        const envs = await listEnvironments({ apiKey })
-        spinner.stop()
+      const envsPromise = listEnvironments({ apiKey })
+      const configsPromise = opts.local
+        ? getNestedConfigs(root).then(configPaths =>
+            Promise.allSettled(
+              configPaths.map(async c => ({
+                config: await loadConfig(c.path),
+                configPath: c.path,
+              })),
+            ),
+          )
+        : Promise.resolve([])
 
-        if (envs.length === 0) {
-          console.log('No environments available')
-          return
-        }
+      const [envs, configs] = await Promise.all([envsPromise, configsPromise])
 
-        console.log(chalk.default.underline(chalk.default.green('\nEnvironments')))
+      const fulfilledConfigs = configs.filter(assertFulfilled)
 
-        envs.sort(sortEnvs).forEach(e => console.log(formatEnvironment(e)))
-      } else {
-        const dirPath = getRoot(cmdObj.local === true ? undefined : cmdObj.local)
-        console.log(`Listing available local environments from "${dirPath}"...`)
+      console.log(chalk.default.underline(chalk.default.green('Environments')))
 
-        const configPaths = await getNestedConfigs(dirPath)
+      envs.sort(sortEnvs).forEach(env => {
+        const configIdx = fulfilledConfigs.findIndex(c => c.value.config.id === env.id)
 
-        const configs = await Promise.allSettled(
-          configPaths.map(async c => {
-            return await loadConfig(c.path)
-          }),
-        )
+        const config =
+          configIdx > -1 ? fulfilledConfigs.splice(configIdx, 1).pop() : undefined
 
-        console.log(chalk.default.underline(chalk.default.green('\nLocal environments')))
-        for (let i = 0; i < configPaths.length; i++) {
-          const configPath = configPaths[i]
-          const config = configs[i]
+        console.log(asFormattedEnvironment(env, config?.value.configPath))
+      })
 
-          if (config.status === 'rejected') {
-            console.log(
-              formatError(
-                `cannot access or validate config "${configPath.path}"`,
-                config.reason,
-              ),
-            )
-          } else {
-            console.log(formatEnvironment(config.value, configPath.path))
-          }
-        }
+      const rejectedConfigs = configs.filter(assertRejected)
+      if (rejectedConfigs.length > 0) {
+        rejectedConfigs.forEach(c => {
+          console.error(asFormattedError(c.reason))
+        })
       }
-      console.log('\nDone')
-    } catch (err) {
-      console.error(err)
+
+      if (fulfilledConfigs.length > 0) {
+        console.log(
+          chalk.default.underline(
+            chalk.default.red('\nConfigs without existing environments'),
+          ),
+        )
+        fulfilledConfigs.forEach(c => {
+          console.log(asFormattedEnvironment(c.value.config, c.value.configPath))
+        })
+      }
+
+      process.stdout.write('\n')
+    } catch (err: any) {
+      console.error(asFormattedError(err.message))
       process.exit(1)
     }
   })

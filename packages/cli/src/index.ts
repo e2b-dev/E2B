@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import * as chalk from 'chalk'
 import * as boxen from 'boxen'
 import * as updateNotifier from 'update-notifier'
 
@@ -8,10 +7,11 @@ import { apiKey } from './api'
 import { program } from './commands/index'
 
 import * as packageJSON from '../package.json'
+import { asBold } from './utils/format'
 
 if (!apiKey) {
   const errorBox = boxen.default(
-    `Cannot find env var ${chalk.default.bold(
+    `Cannot find env var ${asBold(
       'DEVBOOK_KEY',
     )}\n\nVisit https://dash.usedevbook.com/settings to get your API key then run this CLI with the env var set.`,
     {
@@ -28,6 +28,4 @@ if (!apiKey) {
 
 updateNotifier.default({ pkg: packageJSON }).notify()
 
-program
-  .version(packageJSON.version, undefined, 'Displays the version of Devbook CLI')
-  .parse()
+program.version(packageJSON.version, undefined, 'Display Devbook CLI version').parse()

@@ -1,6 +1,12 @@
 import * as commander from 'commander'
+import { asBold } from './utils/format'
 
-export const envPathArgument = new commander.Argument(
-  '[envPath]',
-  'Path to the environment directory. If it is not specified the current directory will be used',
+export const idArgument = new commander.Argument(
+  '[id]',
+  `Use environment specified by ${asBold('[id]')}`,
+)
+
+export const idsArgument = new commander.Argument(
+  '[ids...]',
+  `Use environments specified by ${asBold('[ids...]')}`,
 )

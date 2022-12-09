@@ -51,3 +51,7 @@ export async function ensureDir(dirPath: string) {
     return fsPromise.mkdir(dirPath, { recursive: true })
   }
 }
+
+export function cwdRelative(absolutePath: string) {
+  return path.relative(process.cwd(), absolutePath)
+}

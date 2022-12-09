@@ -2,69 +2,76 @@ import * as sdk from '@devbookhq/sdk'
 import * as commander from 'commander'
 
 import { client, ensureAPIKey } from 'src/api'
-import { envPathArgument } from 'src/arguments'
+import { idsArgument } from 'src/arguments'
 import { loadConfigs } from 'src/config'
-import { confirm } from 'src/interactions/confirm'
 import { getPromptEnvs } from 'src/interactions/envs'
-import { allOption, idOption, selectOption } from 'src/options'
+import { allOption, pathOption, selectMultipleOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
-import { formatEnvironment } from 'src/utils/format'
+import {
+  asFormattedEnvironment,
+  asFormattedError,
+  asLocalRelative,
+} from 'src/utils/format'
 import { listEnvironments } from './list'
 
 export const publishCommand = new commander.Command('publish')
-  .description('Make the latest version of an environment publicly available')
-  .addArgument(envPathArgument)
-  .addOption(idOption)
-  .addOption(selectOption)
+  .description('Make latest version of environment publicly available')
+  .addArgument(idsArgument)
+  .addOption(selectMultipleOption)
+  .addOption(pathOption)
   .addOption(allOption)
-  .action(async (envPath, cmdObj) => {
+  .action(async (ids, opts) => {
     try {
       const apiKey = ensureAPIKey()
-      const root = getRoot(envPath)
+      process.stdout.write('\n')
 
-      let envs: sdk.components['schemas']['Environment'][] | undefined
+      const root = getRoot(opts.path)
 
-      if (cmdObj.id) {
-        envs = [cmdObj.id]
-      } else if (cmdObj.select) {
+      let envs:
+        | (sdk.components['schemas']['Environment'] & { configPath?: string })[]
+        | undefined
+
+      if (ids.length > 0) {
+        envs = ids.map((id: string) => ({ id }))
+
+        if (!envs || envs.length === 0) {
+          console.log('No environments selected')
+          return
+        }
+      } else if (opts.select) {
         const allEnvs = await listEnvironments({ apiKey })
-        envs = await getPromptEnvs(allEnvs)
+        envs = await getPromptEnvs(allEnvs, 'Select environments to publish')
+
+        if (!envs || envs.length === 0) {
+          console.log('No environments selected')
+          return
+        }
       } else {
-        const localConfigs = await loadConfigs(root, cmdObj.all)
+        const localConfigs = await loadConfigs(root, opts.all)
         if (localConfigs.length > 0) {
           envs = localConfigs
         }
-      }
-
-      if (!envs || envs.length === 0) {
-        console.log('No environments found')
-        return
-      }
-
-      envs.forEach(e => `- Environment "${formatEnvironment(e)}" is ready to publish`)
-
-      const confirmed = await confirm(
-        `Do you really want to publish ${
-          envs.length === 1 ? 'the environment' : 'environments'
-        }?`,
-        true,
-      )
-
-      if (!confirmed) {
-        console.log('Canceled')
-        return
+        if (!envs || envs.length === 0) {
+          console.log(
+            `No environments found in ${asLocalRelative(root)}${
+              opts.all ? ' and its subdirectories' : ''
+            }`,
+          )
+          return
+        }
       }
 
       await Promise.all(
         envs.map(async e => {
-          console.log(`- Publishing environment "${formatEnvironment(e)}"...`)
+          console.log(
+            `- Publishing environment ${asFormattedEnvironment(e, e.configPath)}`,
+          )
           await publishEnvironment({ apiKey, id: e.id })
         }),
       )
-
-      console.log('Done')
-    } catch (err) {
-      console.error(err)
+      process.stdout.write('\n')
+    } catch (err: any) {
+      console.error(asFormattedError(err.message))
       process.exit(1)
     }
   })

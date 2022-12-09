@@ -8,7 +8,7 @@ import * as path from 'path'
 const dockerNames = require('docker-names')
 
 import { getFiles } from '../utils/filesystem'
-import { formatEnvironment } from 'src/utils/format'
+import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
 
 export const configName = 'dbk.toml'
 
@@ -16,32 +16,42 @@ const configCommentHeader = `# This is a config for a Devbook environment
 
 `
 
+export function randomTitle() {
+  return dockerNames.getRandomName().replace('_', '-')
+}
+
 export const configSchema = yup.object({
   id: yup.string().required(),
   template: yup.string().required(),
-  title: yup.string().default(() => dockerNames.getRandomName().replace('_', '-')),
+  title: yup.string().default(randomTitle),
   filesystem: yup.object({
     change_hash: yup.string(),
     local_root: yup
       .string()
       .required()
-      .default(() => './files'),
+      .default(() => './code'),
   }),
 })
 
 export type DevbookConfig = yup.InferType<typeof configSchema>
 
 export async function loadConfig(configPath: string) {
-  const configExists = fs.existsSync(configPath)
-  if (!configExists) {
+  try {
+    const configExists = fs.existsSync(configPath)
+    if (!configExists) {
+      throw new Error(`Config on path ${asLocalRelative(configPath)} not found`)
+    }
+
+    const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
+    const config = toml.parse(tomlRaw)
+    return (await configSchema.validate(config)) as DevbookConfig
+  } catch (err: any) {
     throw new Error(
-      `Devbook environment config "${configName}" does not exist in this (${configPath}) directory - cannot read the config.`,
+      `Devbook environment config ${asLocalRelative(configPath)} cannot be loaded: ${
+        err.message
+      }`,
     )
   }
-
-  const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
-  const config = toml.parse(tomlRaw)
-  return (await configSchema.validate(config)) as DevbookConfig
 }
 
 export async function saveConfig(
@@ -49,17 +59,28 @@ export async function saveConfig(
   config: DevbookConfig,
   overwrite?: boolean,
 ) {
-  if (!overwrite) {
-    const configExists = fs.existsSync(configPath)
-    if (configExists) {
-      throw new Error(
-        `Devbook environment config "${configName}" already exists in this (${configPath}) directory - config for environemnt "${config.id}" cannot be created here.`,
-      )
+  try {
+    if (!overwrite) {
+      const configExists = fs.existsSync(configPath)
+      if (configExists) {
+        throw new Error(`Config already exists on path ${asLocalRelative(configPath)}`)
+      }
     }
-  }
 
-  const tomlRaw = toml.stringify(config as any)
-  await fsPromise.writeFile(configPath, configCommentHeader + tomlRaw)
+    const validatedConfig: any = await configSchema.validate(config, {
+      stripUnknown: true,
+    })
+
+    const tomlRaw = toml.stringify(validatedConfig)
+    await fsPromise.writeFile(configPath, configCommentHeader + tomlRaw)
+  } catch (err: any) {
+    throw new Error(
+      `Devbook environment config ${asFormattedEnvironment(
+        config,
+        configPath,
+      )} cannot be saved: ${err.message}`,
+    )
+  }
 }
 
 export async function deleteConfig(configPath: string) {
@@ -82,7 +103,6 @@ export async function loadConfigs(rootPath: string, nested?: boolean) {
   return Promise.all(
     configPaths.map(async configPath => {
       const config = await loadConfig(configPath)
-      console.log(`- Found environment "${formatEnvironment(config, configPath)}"`)
       return {
         ...config,
         configPath,

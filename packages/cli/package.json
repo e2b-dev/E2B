@@ -1,6 +1,6 @@
 {
   "name": "@devbookhq/cli",
-  "version": "2.6.36",
+  "version": "2.6.37",
   "description": "CLI for managing Devbook environments",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -21,7 +21,7 @@
   "scripts": {
     "prepublishOnly": "pnpm build",
     "build": "rm -rf ./dist && tsup --minify",
-    "dev": "tsup --watch --sourcemap",
+    "dev": "tsup --watch",
     "fix": "npx eslint **/src/**/*.{ts,js} --fix",
     "format": "prettier --check --ignore-path .gitignore .",
     "format:fix": "prettier --write --ignore-path .gitignore ."
@@ -59,11 +59,9 @@
     "@nodelib/fs.walk": "^1.2.8",
     "boxen": "^7.0.0",
     "chalk": "^5.1.2",
-    "cli-spinners": "^2.7.0",
     "commander": "^9.4.1",
     "docker-names": "^1.2.1",
     "inquirer": "^8.0.0",
-    "ora": "^6.1.2",
     "update-notifier": "5.1.0",
     "yup": "^0.32.11"
   },

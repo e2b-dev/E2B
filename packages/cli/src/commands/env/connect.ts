@@ -2,51 +2,51 @@ import * as sdk from '@devbookhq/sdk'
 import * as commander from 'commander'
 
 import { ensureAPIKey } from 'src/api'
-import { envPathArgument } from 'src/arguments'
+import { idArgument } from 'src/arguments'
 import { getPromptEnv, getRootEnv } from 'src/interactions/envs'
-import { idOption, selectOption } from 'src/options'
-import { createDeferredPromise } from 'src/utils/createDeferredPromise'
+import { pathOption, selectOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
+import {
+  asFormattedEnvironment,
+  asFormattedError,
+  asLocalRelative,
+} from 'src/utils/format'
+import { createDeferredPromise } from 'src/utils/promise'
 import { listEnvironments } from './list'
 
-export const sshCommand = new commander.Command('ssh')
-  .description('SSH into an environment')
-  .addArgument(envPathArgument)
+export const connectCommand = new commander.Command('connect')
+  .description('Connect terminal to environment')
+  .addArgument(idArgument)
   .addOption(selectOption)
-  .addOption(idOption)
-  .option(
-    '-p, --published',
-    'SSH into a newly created published environment. Any changes will not be persisted',
-  )
-  .action(async (envPath, cmdObj) => {
+  .addOption(pathOption)
+  .option('-P, --published', 'Connect to new instance of published environment')
+  .action(async (id, opts) => {
     try {
       const apiKey = ensureAPIKey()
-      const root = getRoot()
+      const root = getRoot(opts.path)
 
       let env: sdk.components['schemas']['Environment'] | undefined
-      if (cmdObj.id) {
-        env = cmdObj.id
-      } else if (cmdObj.select) {
+      if (id) {
+        env = { id }
+      } else if (opts.select) {
         const envs = await listEnvironments({ apiKey })
-        env = await getPromptEnv(envs)
+        env = await getPromptEnv(envs, 'Select environment to connect to')
       } else {
         env = await getRootEnv(root)
       }
 
       if (!env) {
-        console.log('No environment found')
+        console.log(`No environments found in ${asLocalRelative(root)}`)
         return
       }
 
-      await sshEnvironment({ apiKey, id: env.id, published: !!cmdObj.published })
-
-      console.log('Done')
+      await connectEnvironment({ apiKey, config: env, published: !!opts.published })
 
       // We explicitly call exit because the session is keeping the program alive.
       // We also don't want to call session.close because that would disconnect other users from the edit session.
       process.exit(0)
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      console.error(asFormattedError(err.message))
       process.exit(1)
     }
   })
@@ -58,11 +58,17 @@ function getStdoutSize() {
   }
 }
 
-async function spawnConnectedTerminal(manager: sdk.TerminalManager) {
+async function spawnConnectedTerminal(
+  manager: sdk.TerminalManager,
+  introText: string,
+  exitText: string,
+) {
   const { promise: exited, resolve: onExit } = createDeferredPromise()
 
   // Clear local terminal emulator before starting terminal
   // process.stdout.write('\x1b[2J\x1b[0f')
+
+  console.log(introText)
 
   const terminal = await manager.createSession({
     onData: data => process.stdout.write(data),
@@ -91,6 +97,7 @@ async function spawnConnectedTerminal(manager: sdk.TerminalManager) {
   )
 
   exited.then(() => {
+    console.log(exitText)
     resizeListener.destroy()
     stdinListener.destroy()
     if (oldStdinEncoding) {
@@ -108,30 +115,34 @@ async function spawnConnectedTerminal(manager: sdk.TerminalManager) {
   }
 }
 
-export async function sshEnvironment({
+export async function connectEnvironment({
   apiKey,
-  id,
+  config,
   published,
 }: {
   apiKey: string
-  id: string
+  config: sdk.components['schemas']['Environment']
   published: boolean
 }) {
   const session = new sdk.Session({
     apiKey,
     editEnabled: !published,
-    id,
+    id: config.id,
   })
 
   try {
     await session.open()
 
     if (session.terminal) {
-      const { exited } = await spawnConnectedTerminal(session.terminal)
+      const { exited } = await spawnConnectedTerminal(
+        session.terminal,
+        `Terminal connected to environment ${asFormattedEnvironment(config)}`,
+        `Disconnected terminal from environment ${asFormattedEnvironment(config)}`,
+      )
 
       await exited
     } else {
-      console.error('Cannot retrieve session terminal manager')
+      throw new Error('Cannot start terminal - no session')
     }
   } finally {
     // Don't call close - the edit session is shared so we don't want to close it.

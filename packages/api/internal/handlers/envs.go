@@ -31,6 +31,7 @@ func (a *APIStore) GetEnvs(
 		return
 	}
 
+	// TODO: This and similar queries could be executed as one transaction to the db
 	codeSnippets, err := a.supabase.GetCodeSnippets(*userID)
 	if err != nil {
 		fmt.Printf("error getting code snippets from Supabase: %+v", err)
@@ -203,6 +204,7 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 		return
 	}
 
+	// TODO: This and similar queries could be executed as one transaction to the db
 	err = a.nomad.DeleteEnv(codeSnippetID)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)

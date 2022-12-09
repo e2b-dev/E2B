@@ -1,57 +1,80 @@
 import * as commander from 'commander'
 import * as sdk from '@devbookhq/sdk'
+import * as chalk from 'chalk'
 
 import { client, ensureAPIKey } from 'src/api'
 import { confirm } from 'src/interactions/confirm'
-import { getRootEnv, getPromptEnv } from 'src/interactions/envs'
+import { getPromptEnvs } from 'src/interactions/envs'
 import { listEnvironments } from './list'
-import { formatEnvironment } from 'src/utils/format'
-import { envPathArgument } from 'src/arguments'
-import { idOption, selectOption } from 'src/options'
-import { spinner } from 'src/interactions/spinner'
-import { deleteConfig, getConfigPath } from 'src/config'
+import {
+  asFormattedEnvironment,
+  asFormattedError,
+  asLocal,
+  asLocalRelative,
+} from 'src/utils/format'
+import { allOption, pathOption, selectMultipleOption } from 'src/options'
+import { configName, deleteConfig, loadConfigs } from 'src/config'
 import { getRoot } from 'src/utils/filesystem'
+import { idsArgument } from 'src/arguments'
 
 export const deleteCommand = new commander.Command('delete')
-  .description('Delete an environment')
-  .addArgument(envPathArgument)
-  .addOption(idOption)
-  .addOption(selectOption)
+  .description(`Delete environment and ${asLocal(configName)} config`)
+  .addArgument(idsArgument)
+  .addOption(selectMultipleOption)
+  .addOption(pathOption)
+  .addOption(allOption)
   .option(
-    '-d, --delete-config',
-    'Delete the config in the local filesystem after deleting the environment',
+    '-k, --keep-config',
+    `Keep ${asLocal(configName)} config in local filesystem after deleting environment`,
   )
-  .action(async (envPath, cmdObj) => {
+  .action(async (ids, opts) => {
     try {
       const apiKey = ensureAPIKey()
-      const root = getRoot(envPath)
 
-      let env: sdk.components['schemas']['Environment'] | undefined
+      const root = getRoot(opts.path)
 
-      let isConfigInRoot = false
+      let envs:
+        | (sdk.components['schemas']['Environment'] & { configPath?: string })[]
+        | undefined
 
-      if (cmdObj.id) {
-        env = cmdObj.id
-      } else if (cmdObj.select) {
-        const envs = await listEnvironments({ apiKey })
-        env = await getPromptEnv(envs)
+      if (ids.length > 0) {
+        envs = ids.map((id: string) => ({ id }))
+
+        if (!envs || envs.length === 0) {
+          console.log('No environments selected')
+          return
+        }
+      } else if (opts.select) {
+        const allEnvs = await listEnvironments({ apiKey })
+        envs = await getPromptEnvs(allEnvs, 'Select environments to delete')
+
+        if (!envs || envs.length === 0) {
+          console.log('No environments selected')
+          return
+        }
       } else {
-        env = await getRootEnv(root)
-        if (env) {
-          isConfigInRoot = true
+        const localConfigs = await loadConfigs(root, opts.all)
+        if (localConfigs.length > 0) {
+          envs = localConfigs
+        }
+        if (!envs || envs.length === 0) {
+          console.log(
+            `No environments found in ${asLocalRelative(root)}${
+              opts.all ? ' and its subdirectories' : ''
+            }`,
+          )
+          return
         }
       }
 
-      if (!env) {
-        console.log('No environment found')
-        return
-      }
+      console.log(chalk.default.red(chalk.default.underline('\nEnvironments to delete')))
+      envs.forEach(e => console.log(asFormattedEnvironment(e, e.configPath)))
+      process.stdout.write('\n')
 
       const confirmed = await confirm(
-        `Do you really want to delete environment "${formatEnvironment(
-          env,
-          isConfigInRoot ? root : undefined,
-        )}"?`,
+        `Do you really want to delete ${
+          envs.length === 1 ? 'this environment' : 'these environments'
+        }?`,
       )
 
       if (!confirmed) {
@@ -59,21 +82,18 @@ export const deleteCommand = new commander.Command('delete')
         return
       }
 
-      spinner.text = `Deleting environment "${formatEnvironment(
-        env,
-        isConfigInRoot ? root : undefined,
-      )}"`
-      spinner.start()
-      await deleteEnvironment({ apiKey, id: env.id })
-      if (cmdObj.deleteConfig && isConfigInRoot) {
-        const configPath = getConfigPath(root)
-        await deleteConfig(configPath)
-      }
-
-      spinner.stop()
-      console.log('Done')
-    } catch (err) {
-      console.error(err)
+      await Promise.all(
+        envs.map(async e => {
+          console.log(`- Deleting environment ${asFormattedEnvironment(e, e.configPath)}`)
+          await deleteEnvironment({ apiKey, id: e.id })
+          if (!opts.keepConfig && e.configPath) {
+            await deleteConfig(e.configPath)
+          }
+        }),
+      )
+      process.stdout.write('\n')
+    } catch (err: any) {
+      console.error(asFormattedError(err.message))
       process.exit(1)
     }
   })

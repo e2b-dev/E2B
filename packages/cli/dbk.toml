@@ -1,9 +1,8 @@
 # This is a config for a Devbook environment
 
 title = "cli"
-template = "Bash"
-id = "pWn0oTpsxfZk"
-configPath = "/workspace/devbook-api/packages/cli/dbk.toml"
+template = "Go"
+id = "LpHEIivD707R"
 
 [filesystem]
-local_root = "./files"
+local_root = "./code"

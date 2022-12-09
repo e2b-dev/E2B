@@ -12,56 +12,68 @@ import {
 } from 'src/config'
 import { listEnvironments } from './list'
 import { getRoot, ensureDir } from 'src/utils/filesystem'
-import { envPathArgument } from 'src/arguments'
-import { idOption, selectOption } from 'src/options'
+import { pathOption, selectOption } from 'src/options'
 import { getPromptEnv } from 'src/interactions/envs'
-import { formatEnvironment } from 'src/utils/format'
-import { spinner } from 'src/interactions/spinner'
+import {
+  asFormattedEnvironment,
+  asFormattedError,
+  asLocal,
+  asLocalRelative,
+} from 'src/utils/format'
+import { idArgument } from 'src/arguments'
 
 export const useCommand = new commander.Command('use')
-  .description(
-    `Reinitialize an existing environment, creating "${configName}" config for the environment in the filesystem`,
-  )
-  .addArgument(envPathArgument)
+  .description(`Create ${asLocal(configName)} config for existing environment`)
+  .addArgument(idArgument)
   .addOption(selectOption)
-  .addOption(idOption)
-  .action(async (envPath, cmdObj) => {
+  .addOption(pathOption)
+  .action(async (id, opts) => {
     try {
       const apiKey = ensureAPIKey()
-      const root = getRoot(envPath)
+      process.stdout.write('\n')
+
+      const root = getRoot(opts.path)
 
       const configPath = getConfigPath(root)
       if (fs.existsSync(configPath)) {
         throw new Error(
-          `Devbook config on path "${configPath}" already exists - cannot create a new config`,
+          `Devbook config ${asLocalRelative(
+            configPath,
+          )} already exists - cannot create config`,
         )
       }
 
       let env: sdk.components['schemas']['Environment'] | undefined
-      if (cmdObj.id) {
-        env = { id: cmdObj.id }
+      if (id) {
+        env = { id }
       } else {
         const envs = await listEnvironments({ apiKey })
-        env = await getPromptEnv(envs)
+        env = await getPromptEnv(
+          envs,
+          `Select environment to create ${asLocalRelative(configPath)} config for`,
+        )
       }
 
       if (!env) {
-        console.log('No environment found')
+        console.log('No environments found')
         return
       }
 
-      spinner.text = `Reinitializing environment "${formatEnvironment(env, configPath)}"`
+      console.log(
+        `Creating config for environment ${asFormattedEnvironment(env, configPath)}`,
+      )
 
-      spinner.start()
       await ensureDir(root)
       await useEnvironment({
         configPath,
         env,
       })
-      spinner.stop()
-      console.log('Done')
-    } catch (err) {
-      console.error(err)
+      console.log(
+        `Config for environment ${asFormattedEnvironment(env, configPath)} created`,
+      )
+      process.stdout.write('\n')
+    } catch (err: any) {
+      console.error(asFormattedError(err.message))
       process.exit(1)
     }
   })
@@ -74,6 +86,5 @@ export async function useEnvironment({
   env: sdk.components['schemas']['Environment']
 }) {
   const configWithDefaults = configSchema.cast(env) as DevbookConfig
-
   await saveConfig(configPath, configWithDefaults)
 }

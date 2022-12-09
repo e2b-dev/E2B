@@ -1,19 +1,21 @@
 import * as commander from 'commander'
 
 import { deleteCommand } from './delete'
-import { initCommand } from './init'
+import { createCommand } from './create'
 import { listCommand } from './list'
 import { publishCommand } from './publish'
 import { pushCommand } from './push'
-import { sshCommand } from './ssh'
+import { connectCommand } from './connect'
 import { useCommand } from './use'
+import { asLocal } from 'src/utils/format'
+import { configName } from 'src/config'
 
 export const envCommand = new commander.Command('env')
-  .description('A command for managing Devbook environments and their configs')
-  .addCommand(deleteCommand)
-  .addCommand(initCommand)
-  .addCommand(listCommand)
-  .addCommand(publishCommand)
+  .description(`Manage Devbook environments and their ${asLocal(configName)} configs`)
+  .addCommand(createCommand)
   .addCommand(pushCommand)
+  .addCommand(publishCommand)
+  .addCommand(deleteCommand)
   .addCommand(useCommand)
-  .addCommand(sshCommand)
+  .addCommand(connectCommand)
+  .addCommand(listCommand)
