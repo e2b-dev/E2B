@@ -10,7 +10,7 @@
 - Diff snapshots
 
 ### Session speedup
-- `/etc/hosts` lock slowdown
+- `/etc/hosts` lock slowdown?
 - Kernel args
 - API (Nomad calls, polling, etc.)
 - Connecting WS (subscriptions take additional call, etc.)
@@ -52,7 +52,7 @@
 - Change template option description
 - Finish CLI README
 - Warn about having multiple configs for the same environment
-- Put template field in dbk.toml in a separate category so it is not confused with id because they can look the same
+- Put template field from dbk.toml in a separate [] category so it is not confused with id because they can look the same
 - Add default "empty" template that is used if you don't define anything
 
 ### Envs system
