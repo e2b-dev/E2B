@@ -29,7 +29,7 @@ export const configSchema = yup.object({
     local_root: yup
       .string()
       .required()
-      .default(() => './code'),
+      .default(() => './files'),
   }),
 })
 

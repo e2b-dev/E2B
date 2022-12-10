@@ -57,6 +57,8 @@ TEMPLATE_FC_ROOTFS="$TEMPLATE_DIR/rootfs.ext4"
 TEMPLATE_FC_SNAPFILE="$TEMPLATE_DIR/snapfile"
 TEMPLATE_FC_MEMFILE="$TEMPLATE_DIR/memfile"
 TEMPLATE_BUILD_ID="$TEMPLATE_DIR/build_id"
+TEMPLATE_TEMPLATE_ID_FILE="$TEMPLATE_DIR/template_id"
+TEMPLATE_TEMPLATE_BUILD_ID_FILE="$TEMPLATE_DIR/template_build_id"
 
 FINAL_DIR="$FC_ENVS_DISK/$CODE_SNIPPET_ID"
 FINAL_FC_ROOTFS="$FINAL_DIR/rootfs.ext4"
@@ -73,8 +75,17 @@ function mkdirs() {
 }
 
 function mk_template_files() {
-  cp $TEMPLATE_BUILD_ID $FINAL_TEMPLATE_BUILD_ID_FILE
-  echo -n "${TEMPLATE}" > ${FINAL_TEMPLATE_ID_FILE}
+  if [ -f "$TEMPLATE_BUILD_ID" ]; then
+    echo "$TEMPLATE_BUILD_ID exists - the template environemnt was rebuilt in this directory so we must copy the current build_id."
+
+    echo -n "${TEMPLATE}" > ${FINAL_TEMPLATE_ID_FILE}
+    cp $TEMPLATE_BUILD_ID $FINAL_TEMPLATE_BUILD_ID_FILE
+  else 
+    echo "$TEMPLATE_BUILD_ID does not exist - the template environment uses build_id from its own template - we copy files pointing to its own template."
+
+    cp $TEMPLATE_TEMPLATE_ID_FILE $FINAL_TEMPLATE_ID_FILE
+    cp $TEMPLATE_TEMPLATE_BUILD_ID_FILE $FINAL_TEMPLATE_BUILD_ID_FILE
+  fi
 }
 
 function link_env_files() {

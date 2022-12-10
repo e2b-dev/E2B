@@ -27,6 +27,10 @@ How does environment and published environment relate to each other?
 
 ### What is `dbk.toml` config?
 
+### What to do after deleting `dbk.toml`?
+
+### Can I have multiple `dbk.toml` configs for the same environment?
+
 #### How can I change title
 
 ### Create a new environment
@@ -56,10 +60,6 @@ How does environment and published environment relate to each other?
 ### Push all environments with configs in a respository
 
 ### Change environment title
-
-### What to do after deleting `dbk.toml`?
-
-### Can I have multiple `dbk.toml` configs for the same environment?
 
 ## Commands
 
