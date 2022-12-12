@@ -1,6 +1,6 @@
 {
   "name": "@devbookhq/cli",
-  "version": "2.6.39",
+  "version": "2.6.40",
   "description": "CLI for managing Devbook environments",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",

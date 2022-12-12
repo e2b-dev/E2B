@@ -47,7 +47,6 @@
 - Change `/` root to `/code` root in 
   - Handle deleting files that were removed in local filesystem - how can we recognize that the file was deleted? Saving what was pushed last and only manipulating with these files? (lock) If the file changed since then we should probably ignore it (save name+hash that we already calculate for everyting together)
 - Allow custom string for template (--select option for the current list?)
-- Verify updater
 - Fix size and dependencies
 - Change template option description
 - Finish CLI README
