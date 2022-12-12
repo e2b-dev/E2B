@@ -24,8 +24,8 @@ job "{{ .JobName }}/{{ .SessionID }}" {
       }
 
       resources {
-        memory = 200
-        cpu = 200
+        memory = 1000
+        cpu = 1000
       }
 
       config {
