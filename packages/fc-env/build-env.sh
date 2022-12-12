@@ -184,7 +184,7 @@ function startfc() {
     }
   ],
   "machine-config": {
-    "vcpu_count": 4,
+    "vcpu_count": 16,
     "mem_size_mib": 512
   },
   "mmds-config": {
