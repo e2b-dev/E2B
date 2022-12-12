@@ -24,7 +24,7 @@ job "{{ .JobName }}/{{ .SessionID }}" {
       }
 
       resources {
-        memory = 1000
+        memory = 512
         cpu = 1000
       }
 

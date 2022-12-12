@@ -184,8 +184,8 @@ function startfc() {
     }
   ],
   "machine-config": {
-    "vcpu_count": 2,
-    "mem_size_mib": 1024
+    "vcpu_count": 4,
+    "mem_size_mib": 512
   },
   "mmds-config": {
     "network_interfaces": ["eth0"],
