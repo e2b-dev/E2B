@@ -74,16 +74,16 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	if *telemetryAPIKey == "" {
-		// otelLauncher := launcher.ConfigureOpentelemetry(
-		// 	launcher.WithServiceName(serviceName),
-		// 	launcher.WithMetricReportingPeriod(10*time.Second),
-		// 	launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-		// 	launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-		// 	launcher.WithMetricExporterInsecure(true),
-		// 	launcher.WithSpanExporterInsecure(true),
-		// 	launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-		// )
-		// defer otelLauncher.Shutdown()
+		otelLauncher := launcher.ConfigureOpentelemetry(
+			launcher.WithServiceName(serviceName),
+			launcher.WithMetricReportingPeriod(10*time.Second),
+			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterInsecure(true),
+			launcher.WithSpanExporterInsecure(true),
+			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
+		)
+		defer otelLauncher.Shutdown()
 	} else {
 		otelLauncher := launcher.ConfigureOpentelemetry(
 			launcher.WithServiceName(serviceName),
