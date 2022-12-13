@@ -1,8 +1,0 @@
-# This is a config for a Devbook environment
-
-title = "cli"
-template = "Bash"
-id = "BkdvkxIZ1oM7"
-
-[filesystem]
-local_root = "./files"
