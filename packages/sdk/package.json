@@ -1,6 +1,6 @@
 {
   "name": "@devbookhq/sdk",
-  "version": "2.6.45",
+  "version": "2.6.46",
   "description": "SDK for managing Devbook sessions from JavaScript/TypeScript",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
