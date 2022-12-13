@@ -9,6 +9,7 @@ import { connectCommand } from './connect'
 import { useCommand } from './use'
 import { asLocal } from 'src/utils/format'
 import { configName } from 'src/config'
+import { setCommand } from './set'
 
 export const envCommand = new commander.Command('environment')
   .description(`Manage Devbook environments and their ${asLocal(configName)} configs`)
@@ -19,4 +20,5 @@ export const envCommand = new commander.Command('environment')
   .addCommand(useCommand)
   .addCommand(connectCommand)
   .addCommand(listCommand)
+  .addCommand(setCommand)
   .alias('env')

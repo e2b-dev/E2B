@@ -1,8 +1,8 @@
 # This is a config for a Devbook environment
 
 title = "cli"
-template = "Go"
-id = "LpHEIivD707R"
+template = "Bash"
+id = "BkdvkxIZ1oM7"
 
 [filesystem]
-local_root = "./code"
+local_root = "./files"
