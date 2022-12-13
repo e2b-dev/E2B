@@ -19,6 +19,7 @@ export const connectCommand = new commander.Command('connect')
   .addArgument(idArgument)
   .addOption(selectOption)
   .addOption(pathOption)
+  .alias('cn')
   .option('-P, --published', 'Connect to new instance of published environment')
   .action(async (id, opts) => {
     try {

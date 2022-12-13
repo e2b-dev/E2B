@@ -16,6 +16,7 @@ export const listCommand = new commander.Command('list')
     '-n, --no-local',
     `Don't scan local filesystem for environment ${asLocal(configName)} configs`,
   )
+  .alias('ls')
   .action(async opts => {
     try {
       const apiKey = ensureAPIKey()

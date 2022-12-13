@@ -33,6 +33,7 @@ export const createCommand = new commander.Command('create')
   .option('-t, --title <title>', `Use ${asBold('<title>')} as environment title`)
   .option('-n, --no-config', `Skip creating ${asLocal(configName)} config`)
   .addOption(pathOption)
+  .alias('cr')
   .action(async opts => {
     try {
       const apiKey = ensureAPIKey()

@@ -10,7 +10,7 @@ import { useCommand } from './use'
 import { asLocal } from 'src/utils/format'
 import { configName } from 'src/config'
 
-export const envCommand = new commander.Command('env')
+export const envCommand = new commander.Command('environment')
   .description(`Manage Devbook environments and their ${asLocal(configName)} configs`)
   .addCommand(createCommand)
   .addCommand(pushCommand)
@@ -19,3 +19,4 @@ export const envCommand = new commander.Command('env')
   .addCommand(useCommand)
   .addCommand(connectCommand)
   .addCommand(listCommand)
+  .alias('env')

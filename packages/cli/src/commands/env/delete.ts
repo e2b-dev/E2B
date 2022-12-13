@@ -23,6 +23,7 @@ export const deleteCommand = new commander.Command('delete')
   .addOption(selectMultipleOption)
   .addOption(pathOption)
   .addOption(allOption)
+  .alias('dl')
   .option(
     '-k, --keep-config',
     `Keep ${asLocal(configName)} config in local filesystem after deleting environment`,

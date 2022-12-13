@@ -26,6 +26,7 @@ export const useCommand = new commander.Command('use')
   .description(`Create ${asLocal(configName)} config for existing environment`)
   .addArgument(idArgument)
   .addOption(selectOption)
+  .alias('us')
   .addOption(pathOption)
   .action(async (id, opts) => {
     try {

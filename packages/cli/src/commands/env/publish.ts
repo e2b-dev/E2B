@@ -20,6 +20,7 @@ export const publishCommand = new commander.Command('publish')
   .addOption(selectMultipleOption)
   .addOption(pathOption)
   .addOption(allOption)
+  .alias('pb')
   .action(async (ids, opts) => {
     try {
       const apiKey = ensureAPIKey()

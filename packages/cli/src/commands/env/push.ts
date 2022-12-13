@@ -24,6 +24,7 @@ export const pushCommand = new commander.Command('push')
   .addOption(allOption)
   .addOption(pathOption)
   .option('-h, --hash', 'Update files only if their hash changed since last push')
+  .alias('ps')
   .action(async opts => {
     try {
       const apiKey = ensureAPIKey()
