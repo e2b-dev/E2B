@@ -67,26 +67,26 @@ func (a *APIStore) Close() {
 	a.supabase.Close()
 }
 
-func (a *APIStore) validateAPIKey(apiKey *string) (*string, error) {
+func (a *APIStore) validateAPIKey(apiKey *string) (string, bool, error) {
 	if apiKey == nil {
-		return nil, fmt.Errorf("no API key")
+		return "", false, fmt.Errorf("no API key")
 	}
 
 	if *apiKey == "" {
-		return nil, fmt.Errorf("no API key")
+		return "", false, fmt.Errorf("no API key")
 	}
 
 	if *apiKey == api.APIAdminKey {
-		return nil, nil
+		return "admin", true, nil
 	}
 
 	user, err := a.supabase.GetUserID(*apiKey)
 
 	if err != nil || user == nil {
-		return nil, fmt.Errorf("error validating API key: %+v", err)
+		return "", false, fmt.Errorf("error validating API key: %+v", err)
 	}
 
-	return &user.ID, nil
+	return user.ID, false, nil
 }
 
 // This function wraps sending of an error in the Error format, and
@@ -103,4 +103,20 @@ func (a *APIStore) sendAPIStoreError(c *gin.Context, code int, message string) {
 
 func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
+}
+
+func (a *APIStore) isOwner(codeSnippetID string, userID string) (bool, error) {
+	codeSnippets, err := a.supabase.GetCodeSnippets(userID)
+	if err != nil {
+		return false, fmt.Errorf("error getting code snippets from Supabase: %+v", err)
+	}
+
+	found := false
+	for _, v := range *codeSnippets {
+		if v.ID == codeSnippetID {
+			found = true
+		}
+	}
+
+	return found, nil
 }

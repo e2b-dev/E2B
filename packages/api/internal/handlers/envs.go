@@ -16,7 +16,7 @@ func (a *APIStore) GetEnvs(
 ) {
 	ctx := c.Request.Context()
 
-	userID, keyErr := a.validateAPIKey(&params.ApiKey)
+	userID, _, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
 		ReportCriticalError(ctx, errMsg)
@@ -25,14 +25,8 @@ func (a *APIStore) GetEnvs(
 	}
 	ReportEvent(ctx, "validated API key")
 
-	// TODO: Admin key
-	if userID == nil {
-		a.sendAPIStoreError(c, http.StatusNotImplemented, "Admin key request not supported")
-		return
-	}
-
 	// TODO: This and similar queries could be executed as one transaction to the db
-	codeSnippets, err := a.supabase.GetCodeSnippets(*userID)
+	codeSnippets, err := a.supabase.GetCodeSnippets(userID)
 	if err != nil {
 		fmt.Printf("error getting code snippets from Supabase: %+v", err)
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
@@ -45,7 +39,7 @@ func (a *APIStore) PostEnvs(
 	c *gin.Context,
 	params api.PostEnvsParams,
 ) {
-	userID, keyErr := a.validateAPIKey(&params.ApiKey)
+	userID, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
@@ -53,7 +47,7 @@ func (a *APIStore) PostEnvs(
 	}
 
 	// TODO: Admin key
-	if userID == nil {
+	if admin {
 		a.sendAPIStoreError(c, http.StatusNotImplemented, "Admin key request not supported")
 		return
 	}
@@ -64,14 +58,14 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
-	newCodeSnippet, err := a.supabase.CreateCodeSnippet(*userID, env.Template, env.Title)
+	newCodeSnippet, err := a.supabase.CreateCodeSnippet(userID, env.Template, env.Title)
 	if err != nil {
 		fmt.Printf("error creating code snippet in Supabase: %+v", err)
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
 		return
 	}
 
-	newEnv, err := a.supabase.CreateEnv(*userID, newCodeSnippet.ID, env.Template)
+	newEnv, err := a.supabase.CreateEnv(userID, newCodeSnippet.ID, env.Template)
 	if err != nil {
 		fmt.Printf("error creating env in Supabase: %+v", err)
 
@@ -121,7 +115,7 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 	codeSnippetID string,
 	params api.PostEnvsCodeSnippetIDParams,
 ) {
-	_, keyErr := a.validateAPIKey(&params.ApiKey)
+	userID, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
@@ -132,6 +126,19 @@ func (a *APIStore) PostEnvsCodeSnippetID(
 	if err := c.Bind(&env); err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
+	}
+
+	if !admin {
+		owner, err := a.isOwner(codeSnippetID, userID)
+		if err != nil {
+			fmt.Printf("error getting user data from Supabase: %+v", err)
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
+			return
+		}
+		if !owner {
+			a.sendAPIStoreError(c, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
 	}
 
 	templates, err := nomad.GetTemplates()
@@ -171,41 +178,28 @@ func (a *APIStore) DeleteEnvsCodeSnippetID(
 	codeSnippetID string,
 	params api.DeleteEnvsCodeSnippetIDParams,
 ) {
-	userID, keyErr := a.validateAPIKey(&params.ApiKey)
+	userID, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
 
-	// TODO: Admin key
-	if userID == nil {
-		a.sendAPIStoreError(c, http.StatusNotImplemented, "Admin key request not supported")
-		return
-	}
-
-	codeSnippets, err := a.supabase.GetCodeSnippets(*userID)
-	if err != nil {
-		fmt.Printf("error getting code snippets from Supabase: %+v", err)
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
-		return
-	}
-
-	found := false
-	for _, v := range *codeSnippets {
-		if v.ID == codeSnippetID {
-			found = true
+	if !admin {
+		owner, err := a.isOwner(codeSnippetID, userID)
+		if err != nil {
+			fmt.Printf("error getting user data from Supabase: %+v", err)
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
+			return
+		}
+		if !owner {
+			a.sendAPIStoreError(c, http.StatusUnauthorized, "Unauthorized")
+			return
 		}
 	}
 
-	if !found {
-		fmt.Printf("user '%s' cannot access code snippet '%s'", *userID, codeSnippetID)
-		a.sendAPIStoreError(c, http.StatusUnauthorized, "Cannot retrieve data")
-		return
-	}
-
 	// TODO: This and similar queries could be executed as one transaction to the db
-	err = a.nomad.DeleteEnv(codeSnippetID)
+	err := a.nomad.DeleteEnv(codeSnippetID)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		a.sendAPIStoreError(
@@ -257,7 +251,7 @@ func (a *APIStore) PutEnvsCodeSnippetIDTitle(
 	codeSnippetID string,
 	params api.PutEnvsCodeSnippetIDTitleParams,
 ) {
-	userID, keyErr := a.validateAPIKey(&params.ApiKey)
+	userID, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		a.sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error with API token: %s", keyErr))
 		return
@@ -273,33 +267,20 @@ func (a *APIStore) PutEnvsCodeSnippetIDTitle(
 		return
 	}
 
-	// TODO: Admin key
-	if userID == nil {
-		a.sendAPIStoreError(c, http.StatusNotImplemented, "Admin key request not supported")
-		return
-	}
-
-	codeSnippets, err := a.supabase.GetCodeSnippets(*userID)
-	if err != nil {
-		fmt.Printf("error getting code snippets from Supabase: %+v", err)
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
-		return
-	}
-
-	found := false
-	for _, v := range *codeSnippets {
-		if v.ID == codeSnippetID {
-			found = true
+	if !admin {
+		owner, err := a.isOwner(codeSnippetID, userID)
+		if err != nil {
+			fmt.Printf("error getting user data from Supabase: %+v", err)
+			a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot retrieve data")
+			return
+		}
+		if !owner {
+			a.sendAPIStoreError(c, http.StatusUnauthorized, "Unauthorized")
+			return
 		}
 	}
 
-	if !found {
-		fmt.Printf("user '%s' cannot access code snippet '%s'", *userID, codeSnippetID)
-		a.sendAPIStoreError(c, http.StatusUnauthorized, "Cannot retrieve data")
-		return
-	}
-
-	err = a.supabase.UpdateTitleCodeSnippet(codeSnippetID, codeSnippetTitleUpdate.Title)
+	err := a.supabase.UpdateTitleCodeSnippet(codeSnippetID, codeSnippetTitleUpdate.Title)
 	if err != nil {
 		a.sendAPIStoreError(
 			c,
@@ -317,7 +298,7 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 	codeSnippetID string,
 	params api.PutEnvsCodeSnippetIDStateParams,
 ) {
-	_, keyErr := a.validateAPIKey(&params.ApiKey)
+	_, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		a.sendAPIStoreError(c, http.StatusUnauthorized, fmt.Sprintf("Error with API token: %s", keyErr))
 		return
@@ -330,6 +311,11 @@ func (a *APIStore) PutEnvsCodeSnippetIDState(
 			http.StatusBadRequest,
 			fmt.Sprintf("Error when parsing request: %s", err),
 		)
+		return
+	}
+
+	if !admin {
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -360,37 +346,24 @@ func (a *APIStore) PatchEnvsCodeSnippetID(
 	codeSnippetID string,
 	params api.PatchEnvsCodeSnippetIDParams,
 ) {
-	userID, keyErr := a.validateAPIKey(&params.ApiKey)
+	userID, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		fmt.Printf("error with API key: %+v", keyErr)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
 
-	// TODO: Admin key
-	if userID == nil {
-		a.sendAPIStoreError(c, http.StatusNotImplemented, "Admin key request not supported")
-		return
-	}
-
-	codeSnippets, err := a.supabase.GetCodeSnippets(*userID)
-	if err != nil {
-		fmt.Printf("error getting code snippets from Supabase: %+v", err)
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
-		return
-	}
-
-	found := false
-	for _, v := range *codeSnippets {
-		if v.ID == codeSnippetID {
-			found = true
+	if !admin {
+		owner, err := a.isOwner(codeSnippetID, userID)
+		if err != nil {
+			fmt.Printf("error getting user data from Supabase: %+v", err)
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
+			return
 		}
-	}
-
-	if !found {
-		fmt.Printf("user '%s' cannot access code snippet '%s'", *userID, codeSnippetID)
-		a.sendAPIStoreError(c, http.StatusUnauthorized, "Cannot retrieve data")
-		return
+		if !owner {
+			a.sendAPIStoreError(c, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
 	}
 
 	session, err := a.sessionsCache.FindEditSession(codeSnippetID)

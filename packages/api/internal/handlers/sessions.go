@@ -16,7 +16,7 @@ func (a *APIStore) GetSessions(
 ) {
 	ctx := c.Request.Context()
 
-	_, keyErr := a.validateAPIKey(&params.ApiKey)
+	_, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
 		ReportCriticalError(ctx, errMsg)
@@ -24,6 +24,12 @@ func (a *APIStore) GetSessions(
 		return
 	}
 	ReportEvent(ctx, "validated API key")
+
+	if !admin {
+		ReportError(ctx, fmt.Errorf("Unauthorized"))
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
 
 	sessions, err := a.nomad.GetSessions()
 	if err != nil {
@@ -69,7 +75,7 @@ func (a *APIStore) PostSessions(
 	span.SetAttributes(attribute.Bool("session.edit_enabled", *newSession.EditEnabled))
 
 	if *newSession.EditEnabled {
-		_, keyErr := a.validateAPIKey(params.ApiKey)
+		userID, admin, keyErr := a.validateAPIKey(params.ApiKey)
 		if keyErr != nil {
 			errMsg := fmt.Errorf("error with API key: %+v", keyErr)
 			ReportCriticalError(ctx, errMsg)
@@ -77,6 +83,19 @@ func (a *APIStore) PostSessions(
 			return
 		}
 		ReportEvent(ctx, "validated API key")
+
+		if !admin {
+			owner, err := a.isOwner(newSession.CodeSnippetID, userID)
+			if err != nil {
+				ReportError(ctx, fmt.Errorf("error getting user data from Supabase: %+v", err))
+				a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Cannot retrieve data: %s", err))
+				return
+			}
+			if !owner {
+				a.sendAPIStoreError(c, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+		}
 
 		existingSession, err := a.sessionsCache.FindEditSession(newSession.CodeSnippetID)
 		if err != nil {
@@ -155,13 +174,21 @@ func (a *APIStore) DeleteSessionsSessionID(
 		attribute.String("session_id", sessionID),
 	)
 
-	_, keyErr := a.validateAPIKey(&params.ApiKey)
+	_, admin, keyErr := a.validateAPIKey(&params.ApiKey)
 	if keyErr != nil {
 		errMsg := fmt.Errorf("error with API key: %+v", keyErr)
 		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, http.StatusUnauthorized, "Error with API token")
 		return
 	}
+
+	if !admin {
+		ReportError(ctx, fmt.Errorf("Unauthorized"))
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Users cannot terminate sessions")
+		return
+	}
+
+	// TODO: Delete session from cache
 
 	err := a.nomad.DeleteSession(sessionID, true)
 	if err != nil {
@@ -185,6 +212,8 @@ func (a *APIStore) PostSessionsSessionIDRefresh(
 	SetAttributes(ctx,
 		attribute.String("session_id", sessionID),
 	)
+
+	// TODO: Require auth for refreshing edit sessions
 
 	err := a.sessionsCache.Refresh(sessionID)
 	if err != nil {
