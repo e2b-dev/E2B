@@ -7,6 +7,7 @@ import { getPromptEnv, getRootEnv } from 'src/interactions/envs'
 import { pathOption, selectOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
 import {
+  asBold,
   asFormattedEnvironment,
   asFormattedError,
   asLocalRelative,
@@ -137,7 +138,9 @@ export async function connectEnvironment({
     if (session.terminal) {
       const { exited } = await spawnConnectedTerminal(
         session.terminal,
-        `Terminal connected to environment ${asFormattedEnvironment(config)}`,
+        `Terminal connected to environment ${asFormattedEnvironment(
+          config,
+        )}\nWith session URL ${asBold(`https://${session.getHostname()}`)}`,
         `Disconnected terminal from environment ${asFormattedEnvironment(config)}`,
       )
 

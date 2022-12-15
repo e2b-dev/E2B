@@ -26,10 +26,10 @@ export const configSchema = yup.object({
   title: yup.string().default(randomTitle),
   filesystem: yup.object({
     change_hash: yup.string(),
-    local_root: yup
-      .string()
-      .required()
-      .default(() => './files'),
+    local_root: yup.string().required().default('./files'),
+  }),
+  setup: yup.object({
+    cmd: yup.string().nullable().default(''),
   }),
 })
 
