@@ -2,7 +2,7 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk add --no-cache nodejs npm
+RUN apk update && apk add --no-cache nodejs-current npm
 RUN npm config set strict-ssl false
 
 WORKDIR /code
