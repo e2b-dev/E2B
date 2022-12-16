@@ -2,7 +2,7 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-COPY --from=golang:1.18-alpine3.17 /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.18-alpine /usr/local/go/ /usr/local/go/
 
 ENV PATH=/usr/local/go/bin:$PATH
 
