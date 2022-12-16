@@ -64,6 +64,8 @@
 - It should contain just the files you want to be there. Right now the command finds all the files and uploads them — if overwrites the old files but if there were some files or directories already it will not delete them — for now you can do that via the “connect” and rm command in the env.
 > I’ve only connected to the environment to create the initial migration and install dependencies. I might also set up a seed script/ file to seed the database with data. (that might be an extra step)
 > Can I update an environment once I’ve published it?
+> Would updating one environment and publishing it cascade to the other environments that depend on it?
+
 
 ### Envs system
 - "ad-hoc" no provision if hash match
