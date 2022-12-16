@@ -16,6 +16,7 @@
 - Connecting WS (subscriptions take additional call, etc.)
 - Diff snapshots
 - Move to ubuntu
+- Executing `prisma generate` with 5 cores (smt off) takes 12 sec compared to 4 sec on 2 core (ht on) macbook.
 
 ### devbookd update
 - Update devbookd in all envs automatically
@@ -53,6 +54,16 @@
 - Warn about having multiple configs for the same environment
 - Put template field from dbk.toml in a separate [] category so it is not confused with id because they can look the same
 - Add default "empty" template that is used if you don't define anything
+#### Feedback
+> How can I create the DEVBOOK_KEY? It seems I can’t create resources without it
+> I haven’t used the dashboard before and I presumed I might have needed an invite to a team or sth of the sort.
+> Can I change my email? (dashboard)
+> Should I store the .dbk files in the repo?
+> I just realized the only way I can edit a file in an environment is using vim. I’m not familiar with vim, and editing files might be tedious. Is there a way I can connect to an environment using VS Code Remote - SSH extension?
+> Should the ./files directory mimic the file system on the environment? i.e. have a code/prisma/migrations directory and other files?
+- It should contain just the files you want to be there. Right now the command finds all the files and uploads them — if overwrites the old files but if there were some files or directories already it will not delete them — for now you can do that via the “connect” and rm command in the env.
+> I’ve only connected to the environment to create the initial migration and install dependencies. I might also set up a seed script/ file to seed the database with data. (that might be an extra step)
+> Can I update an environment once I’ve published it?
 
 ### Envs system
 - "ad-hoc" no provision if hash match
