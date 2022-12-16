@@ -13,7 +13,7 @@ import (
 
 const (
 	baseDockerfile = `
-FROM alpine:3.16
+FROM alpine:3.17
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache util-linux openrc openssh socat chrony
