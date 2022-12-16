@@ -184,7 +184,7 @@ function startfc() {
     }
   ],
   "machine-config": {
-    "vcpu_count": 2,
+    "vcpu_count": 4,
     "smt": true,
     "mem_size_mib": 512
   },
