@@ -22,7 +22,7 @@ variable "server_cluster_size" {
 
 variable "server_machine_type" {
   type    = string
-  default = "n1-standard-1"
+  default = "n1-standard-4"
 }
 
 variable "client_cluster_size" {
@@ -32,7 +32,7 @@ variable "client_cluster_size" {
 
 variable "client_machine_type" {
   type    = string
-  default = "n1-highcpu-16"
+  default = "n1-highcpu-96"
 }
 
 variable "client_proxy_health_port" {
