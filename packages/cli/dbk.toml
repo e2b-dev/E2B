@@ -1,0 +1,11 @@
+# This is a config for a Devbook environment
+
+title = "prisma-template"
+template = "Nodejs"
+id = "y4ugs1rmHuAz"
+
+[setup]
+cmd = ""
+
+[filesystem]
+local_root = "./files"
