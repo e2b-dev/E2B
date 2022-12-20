@@ -20,8 +20,8 @@ const (
 	sessionsJobName          = "fc-sessions"
 	sessionsJobNameWithSlash = sessionsJobName + "/"
 	sessionsJobFile          = sessionsJobName + jobFileSuffix
-	jobRegisterTimeout       = time.Second * 2
-	allocationCheckTimeout   = time.Second * 12
+	jobRegisterTimeout       = time.Second * 10
+	allocationCheckTimeout   = time.Second * 20
 	fcTaskName               = "start"
 	sessionIDPrefix          = "s"
 	sessionIDRandomLength    = 7
@@ -32,7 +32,7 @@ const (
 
 var (
 	logsProxyAddress = os.Getenv("LOGS_PROXY_ADDRESS")
-	consulToken 		 = os.Getenv("CONSUL_TOKEN")
+	consulToken      = os.Getenv("CONSUL_TOKEN")
 )
 
 func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
@@ -78,7 +78,7 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 
 	sessionsJobTemp = template.Must(sessionsJobTemp, err)
 	sessionID := sessionIDPrefix + genRandomSession(sessionIDRandomLength)
-	var evalID string
+	// var evalID string
 	var job *nomadAPI.Job
 
 	traceID := childSpan.SpanContext().TraceID().String()
@@ -115,7 +115,7 @@ jobRegister:
 				SpanID:           spanID,
 				TraceID:          traceID,
 				LogsProxyAddress: logsProxyAddress,
-				ConsulToken: 			consulToken,
+				ConsulToken:      consulToken,
 				CodeSnippetID:    newSession.CodeSnippetID,
 				SessionID:        sessionID,
 				FCTaskName:       fcTaskName,
@@ -142,25 +142,25 @@ jobRegister:
 				}
 			}
 
-			res, _, err := n.client.Jobs().EnforceRegister(job, 0, &nomadAPI.WriteOptions{})
+			_, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 			if err != nil {
 				fmt.Printf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err)
 				continue
 			}
 
-			evalID = res.EvalID
+			// evalID = res.EvalID
 			break jobRegister
 		}
 	}
 
-	alloc, err := n.WaitForJob(
-		JobInfo{
-			name:   sessionsJobNameWithSlash + sessionID,
-			evalID: evalID,
-			index:  0,
-		},
-		allocationCheckTimeout,
-	)
+	// alloc, err := n.WaitForJob(
+	// 	JobInfo{
+	// 		name:   sessionsJobNameWithSlash + sessionID,
+	// 		evalID: evalID,
+	// 		index:  0,
+	// 	},
+	// 	allocationCheckTimeout,
+	// )
 	if err != nil {
 		apiErr := n.DeleteSession(sessionID, false)
 		if apiErr != nil {
@@ -179,7 +179,8 @@ jobRegister:
 	)
 
 	session := &api.Session{
-		ClientID:      alloc.NodeID[:shortNodeIDLength],
+		ClientID: "2c8c4ddb",
+		// ClientID:      alloc.NodeID[:shortNodeIDLength],
 		SessionID:     sessionID,
 		CodeSnippetID: newSession.CodeSnippetID,
 		EditEnabled:   *newSession.EditEnabled,
