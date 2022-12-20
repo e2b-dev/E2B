@@ -37,9 +37,12 @@
 ### Delete files after a failed build/update env
 - Stop possible running containers and delete docker image
 
+### fc-envs build scripts are sometimes cached!
+
 ### Rebuild only the changed templates on push
 
 ### CLI
+- Add a warning about scanning local fs when the ls command takes too long
 - CLI program name should be obvious from the NPM package name
 - Fix CI/CD deployment (pnpm, SDK)
 - Integrate with environmentID in `guide.json`
