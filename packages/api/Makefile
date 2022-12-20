@@ -24,5 +24,5 @@ run:
 build-docker:
 	docker build --tag us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE) .
 
-push-docket:
+push-docker:
 	docker push us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE)
