@@ -162,6 +162,7 @@ export async function pushEnvironment({
             await session.filesystem?.write(f.rootPath, content)
           }),
         )
+        await session.close()
       } finally {
         // Don't call close - the edit session is shared so we don't want to close it.
         // await session.close()

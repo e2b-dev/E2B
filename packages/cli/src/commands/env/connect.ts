@@ -136,7 +136,7 @@ export async function connectEnvironment({
     await session.open()
 
     if (session.terminal) {
-      const { exited } = await spawnConnectedTerminal(
+      const { exited, destroy } = await spawnConnectedTerminal(
         session.terminal,
         `Terminal connected to environment ${asFormattedEnvironment(
           config,
@@ -145,9 +145,12 @@ export async function connectEnvironment({
       )
 
       await exited
+      await destroy()
     } else {
       throw new Error('Cannot start terminal - no session')
     }
+
+    await session.close()
   } finally {
     // Don't call close - the edit session is shared so we don't want to close it.
     // await session.close()
