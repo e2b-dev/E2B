@@ -42,6 +42,7 @@
 ### Rebuild only the changed templates on push
 
 ### CLI
+- fix error whe disconnecting from `connect`
 - `template is a required field` error when trying to `use [envID]`
 - Add a warning about scanning local fs when the ls command takes too long
 - CLI program name should be obvious from the NPM package name
