@@ -16,7 +16,7 @@ type NomadClient struct {
 
 func InitNomadClient() *NomadClient {
 	config := api.Config{
-		Address: os.Getenv("NOMAD_ADDRESS"),
+		Address:  os.Getenv("NOMAD_ADDRESS"),
 		SecretID: os.Getenv("NOMAD_TOKEN"),
 	}
 
@@ -59,7 +59,7 @@ func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration) (*api.Alloc
 	defer streamCancel()
 
 	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, job.index, &api.QueryOptions{
-		WaitTime: 40 * time.Millisecond,
+		WaitTime: 800 * time.Millisecond,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Nomad event stream for: %+v", err)

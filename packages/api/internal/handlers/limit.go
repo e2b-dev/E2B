@@ -1,6 +1,6 @@
 package handlers
 
-const DefaultRequestLimit = 3
+const DefaultRequestLimit = 4
 
 func CreateRequestLimitLock(limit int) func() func() {
 	sem := make(chan struct{}, limit)

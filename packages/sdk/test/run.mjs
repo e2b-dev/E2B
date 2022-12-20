@@ -4,6 +4,7 @@ async function main() {
   const session = new Session({
     id: 'Nodejs',
     debug: true,
+    retry: true,
     // codeSnippet: {
     //   onStateChange(state) {
     //     console.log(state)
@@ -24,9 +25,9 @@ async function main() {
     onClose() {
       console.log('close')
     },
-    __debug_port: 49982,
-    __debug_hostname: '127.0.0.1',
-    __debug_devEnv: 'local',
+    // __debug_port: 49982,
+    // __debug_hostname: '127.0.0.1',
+    // __debug_devEnv: 'local',
   })
 
   try {
