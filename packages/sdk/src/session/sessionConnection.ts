@@ -2,7 +2,6 @@ import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
 
 import api, { components } from '../api'
 import {
-  MAX_RECONNECTS,
   SESSION_DOMAIN,
   SESSION_REFRESH_PERIOD,
   WS_PORT,
@@ -43,7 +42,6 @@ export interface SessionConnectionOpts {
   onDisconnect?: DisconnectHandler
   onReconnect?: ReconnectHandler
   debug?: boolean
-  retry?: boolean
   editEnabled?: boolean
   __debug_hostname?: string
   __debug_port?: number
@@ -212,29 +210,22 @@ abstract class SessionConnection {
       this.logger.log('Closing WS connection to session:', this.session, e)
       if (this.isOpen) {
         this.opts.onDisconnect?.()
-      }
-
-      if (this.opts.retry) {
-        for (let reconnect = 0; reconnect < MAX_RECONNECTS; reconnect++) {
-          if (!this.isOpen) break
-          await wait(WS_RECONNECT_INTERVAL)
-          this.logger.log('Reconnecting to session:', this.session)
-          try {
-            // When the WS connection closes the subscribers in devbookd are removed.
-            // We want to delete the subscriber handlers here so there are no orphans.
-            this.subscribers = []
-            await this.rpc.connect(sessionURL)
-            this.opts.onReconnect?.()
-            this.logger.log('Reconnected to session:', this.session)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return
-          } catch (e: any) {
-            this.logger.log('Failed reconnecting to session:', this.session, e)
-          }
+        await wait(WS_RECONNECT_INTERVAL)
+        this.logger.log('Reconnecting to session:', this.session)
+        try {
+          // When the WS connection closes the subscribers in devbookd are removed.
+          // We want to delete the subscriber handlers here so there are no orphans.
+          this.subscribers = []
+          await this.rpc.connect(sessionURL)
+          this.opts.onReconnect?.()
+          this.logger.log('Reconnected to session:', this.session)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (e: any) {
+          this.logger.log('Failed reconnecting to session:', this.session, e)
         }
+      } else {
+        rejectOpening?.()
       }
-
-      rejectOpening?.()
     })
 
     this.rpc.onNotification.push(this.handleNotification.bind(this))
@@ -242,6 +233,7 @@ abstract class SessionConnection {
     try {
       this.logger.log('Connection to session:', this.session)
       await this.rpc.connect(sessionURL)
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       this.logger.log('Error connecting to session', this.session, e)
