@@ -180,7 +180,7 @@ jobRegister:
 	)
 
 	session := &api.Session{
-		ClientID: "08bf8226",
+		ClientID: "dd6a8ab7",
 		// ClientID:      alloc.NodeID[:shortNodeIDLength],
 		SessionID:     sessionID,
 		CodeSnippetID: newSession.CodeSnippetID,

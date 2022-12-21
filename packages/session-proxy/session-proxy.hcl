@@ -78,9 +78,8 @@ job "session-proxy" {
       }
 
       resources {
-        memory = 1024
-        cpu    = 1000
-        disk   = 1024
+        memory = 400
+        cpu    = 400
       }
 
       template {
