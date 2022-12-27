@@ -32,6 +32,8 @@
 
 ### Limit build/update env CPU and memory
 
+### Limit session length - is a session runnign 48 hours really something we want to allow? These sessions also accumulate over time
+
 ### Add balooning
 
 ### Delete files after a failed build/update env
