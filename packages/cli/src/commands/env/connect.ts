@@ -3,6 +3,7 @@ import * as commander from 'commander'
 
 import { ensureAPIKey } from 'src/api'
 import { idArgument } from 'src/arguments'
+import { handleExit } from 'src/handleExit'
 import { getPromptEnv, getRootEnv } from 'src/interactions/envs'
 import { pathOption, selectOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
@@ -43,10 +44,6 @@ export const connectCommand = new commander.Command('connect')
       }
 
       await connectEnvironment({ apiKey, config: env, published: !!opts.published })
-
-      // We explicitly call exit because the session is keeping the program alive.
-      // We also don't want to call session.close because that would disconnect other users from the edit session.
-      process.exit(0)
     } catch (err: any) {
       console.error(asFormattedError(err.message))
       process.exit(1)
@@ -81,34 +78,23 @@ async function spawnConnectedTerminal(
     },
   })
 
-  const oldStdinEncoding = process.stdin.readableEncoding
-  const oldRawMode = process.stdin.isRaw
-
   process.stdin.setEncoding('utf8')
   process.stdin.setRawMode(true)
 
-  const oldStdoutEncoding = process.stdout.readableEncoding
   process.stdout.setEncoding('utf8')
 
-  const resizeListener = process.stdout.on('resize', () =>
-    terminal.resize(getStdoutSize()),
-  )
+  const resizeListener = process.stdout
+    .unref()
+    .on('resize', () => terminal.resize(getStdoutSize()))
 
-  const stdinListener = process.stdin.on('data', data =>
-    terminal.sendData(data.toString('utf8')),
-  )
+  const stdinListener = process.stdin
+    .unref()
+    .on('data', data => terminal.sendData(data.toString('utf8')))
 
   exited.then(() => {
     console.log(exitText)
     resizeListener.destroy()
     stdinListener.destroy()
-    if (oldStdinEncoding) {
-      process.stdin.setEncoding(oldStdinEncoding)
-    }
-    if (oldStdoutEncoding) {
-      process.stdin.setEncoding(oldStdoutEncoding)
-    }
-    process.stdin.setRawMode(oldRawMode)
   })
 
   return {
@@ -140,16 +126,25 @@ export async function connectEnvironment({
         session.terminal,
         `Terminal connected to environment ${asFormattedEnvironment(
           config,
-        )}\nWith session URL ${asBold(`https://${session.getHostname()}`)}`,
-        `Disconnected terminal from environment ${asFormattedEnvironment(config)}`,
+        )}\nwith session URL ${asBold(`https://${session.getHostname()}`)}`,
+        `Disconnecting terminal from environment ${asFormattedEnvironment(config)}`,
       )
 
+      handleExit(async () => {
+        await destroy()
+        await session.close()
+      })
+
       await exited
+      console.log(
+        `Closing terminal connection to environment ${asFormattedEnvironment(config)}`,
+      )
       await destroy()
     } else {
       throw new Error('Cannot start terminal - no session')
     }
 
+    console.log(`Closing environment ${asFormattedEnvironment(config)}`)
     await session.close()
   } finally {
     // Don't call close - the edit session is shared so we don't want to close it.

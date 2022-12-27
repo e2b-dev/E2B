@@ -1,8 +1,8 @@
 # This is a config for a Devbook environment
 
-title = "prisma-template"
-template = "Nodejs"
-id = "y4ugs1rmHuAz"
+title = "cli"
+template = "5udkAFHBVrGz"
+id = "Pl1YE2jxNa9n"
 
 [setup]
 cmd = ""
