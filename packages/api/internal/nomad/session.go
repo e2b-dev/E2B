@@ -78,7 +78,7 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 
 	sessionsJobTemp = template.Must(sessionsJobTemp, err)
 	sessionID := sessionIDPrefix + genRandomSession(sessionIDRandomLength)
-	// var evalID string
+	var evalID string
 	var job *nomadAPI.Job
 
 	traceID := childSpan.SpanContext().TraceID().String()
@@ -142,25 +142,25 @@ jobRegister:
 				}
 			}
 
-			_, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
+			res, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 			if err != nil {
 				fmt.Printf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err)
 				continue
 			}
 
-			// evalID = res.EvalID
+			evalID = res.EvalID
 			break jobRegister
 		}
 	}
 
-	// alloc, err := n.WaitForJob(
-	// 	JobInfo{
-	// 		name:   sessionsJobNameWithSlash + sessionID,
-	// 		evalID: evalID,
-	// 		index:  0,
-	// 	},
-	// 	allocationCheckTimeout,
-	// )
+	alloc, err := n.WaitForJob(
+		JobInfo{
+			name:   sessionsJobNameWithSlash + sessionID,
+			evalID: evalID,
+			index:  0,
+		},
+		allocationCheckTimeout,
+	)
 
 	if err != nil {
 		apiErr := n.DeleteSession(sessionID, false)
@@ -180,8 +180,7 @@ jobRegister:
 	)
 
 	session := &api.Session{
-		ClientID: "dd6a8ab7",
-		// ClientID:      alloc.NodeID[:shortNodeIDLength],
+		ClientID:      alloc.NodeID[:shortNodeIDLength],
 		SessionID:     sessionID,
 		CodeSnippetID: newSession.CodeSnippetID,
 		EditEnabled:   *newSession.EditEnabled,
