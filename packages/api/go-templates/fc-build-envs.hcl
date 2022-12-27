@@ -23,8 +23,8 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
 
     task "build-env" {
       resources {
-        memory  = 200
-        cpu   = 400
+        memory  = 128
+        cpu   = 200
       }
       driver = "raw_exec"
 
