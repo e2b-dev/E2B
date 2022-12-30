@@ -38,7 +38,7 @@ devbook env --help
 ```
 
 You will need an API key to use the Devbook CLI — you can get it [here](https://dash.usedevbook.com/settings) after signing up. 
-After you get the API kye set the `DEVBOOK_KEY` env var in your terminal, or you call the CLI with the env var directly
+After you get the API key set the `DEVBOOK_KEY` env var in your terminal, or you call the CLI with the env var directly
 
 ```sh
 DEVBOOK_KEY=<your-api-key> devbook env ...
