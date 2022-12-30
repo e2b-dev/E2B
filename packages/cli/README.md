@@ -32,7 +32,7 @@ An environment is virtual machine image that you can customize through our CLI. 
 npm install -g @devbookhq/cli
 ```
 
-Then you can use the CLI:
+Then you can use the CLI with
 ```sh
 devbook env --help
 ```
@@ -66,7 +66,7 @@ By default, commands are referring to an environment defined by a `dbk.toml` in 
 All commands can be called with a `--path <path-to-dir>` flag that changes the directory where the command will be called, without the need to call `cd`.
 
 
-The Devbook CLI has following commands:
+The Devbook CLI has following commands
 
 ### `devbook env create`
 Create a new environment and `dbk.toml` config. 
@@ -116,11 +116,7 @@ List all environments and paths to their `dbk.toml` configs (if the configs are 
 ## `dbk.toml` config
 The `dbk.toml` config is used for tracking an environment in version control. It is created automatically by `devbook env create` command.
 
-> You can freely move the `dbk.toml` config and rename the directory the config is in. Just make sure to move the `./files` directory.
-
-> You should have only one `dbk.toml` config for each environment.
-
-The following fields are in each `dbk.toml` config:
+The following fields are in each `dbk.toml` config
 
 ### `id` 
 You **should not edit this field** manually.
