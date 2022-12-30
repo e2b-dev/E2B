@@ -38,7 +38,7 @@ devbook env --help
 ```
 
 You will need an API key to use the Devbook CLI — you can get it [here](https://dash.usedevbook.com/settings) after signing up. 
-After you get the API key set the `DEVBOOK_KEY` env var in your terminal, or you call the CLI with the env var directly
+After you get the API key set the `DEVBOOK_KEY` env var in your terminal, or call the CLI with the env var directly
 
 ```sh
 DEVBOOK_KEY=<your-api-key> devbook env ...
@@ -109,7 +109,7 @@ For example, to set `FOO` and `BAR` call `devbook env set FOO=1 BAR=2`.
 
 
 ### `devbook env connect`
-Open a terminal connected to an environment that you can use to configure and inspect the environment through the terminal.
+Open a terminal connected to an environment that you can use to configure and inspect the environment.
 
 > The environments are based on Alpine Linux that uses `apk add` and `apk del` for managing packages.
 
