@@ -104,7 +104,7 @@ For example, to set `FOO` and `BAR` call `devbook env set FOO=1 BAR=2`.
 
 
 ### `devbook env connect`
-Open a terminal connected to and environment that you can use to configure and inspect the environment through the terminal.
+Open a terminal connected to an environment that you can use to configure and inspect the environment through the terminal.
 
 > The environments are based on Alpine Linux that uses `apk add` and `apk del` for managing packages.
 
