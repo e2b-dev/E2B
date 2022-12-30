@@ -6,19 +6,19 @@ Environment is virtual machine image that you can customize through our CLI. You
 * [Installation](#installation)
 * [Quickstart](#quickstart)
 * [Commands](#commands)
-  + [`devbook env create`](#-devbook-env-create-)
-  + [`devbook env push`](#-devbook-env-push-)
-  + [`devbook env publish`](#-devbook-env-publish-)
-  + [`devbook env delete`](#-devbook-env-delete-)
-  + [`devbook env use`](#-devbook-env-use-)
-  + [`devbook env set --env-vars <KEY=VALUE...>`](#-devbook-env-set---env-vars--key-value--)
-  + [`devbook env connect`](#-devbook-env-connect-)
-  + [`devbook env list`](#-devbook-env-list-)
-* [`dbk.toml` config](#-dbktoml--config)
-  + [`id`](#-id-)
-  + [`template`](#-template-)
-  + [`title`](#-title-)
-  + [`filesystem.local_root`](#-filesystemlocal-root-)
+  + [`devbook env create`](#devbook-env-create)
+  + [`devbook env push`](#devbook-env-push)
+  + [`devbook env publish`](#devbook-env-publish)
+  + [`devbook env delete`](#devbook-env-delete)
+  + [`devbook env use`](#devbook-env-use)
+  + [`devbook env set`](#devbook-env-set)
+  + [`devbook env connect`](#devbook-env-connect)
+  + [`devbook env list`](#devbook-env-list)
+* [`dbk.toml` config](#dbktoml-config)
+  + [`id`](#id)
+  + [`template`](#template)
+  + [`title`](#title)
+  + [`filesystem.local_root`](#filesystemlocal_root)
 * [FAQ](#faq)
   + [Inspect how a published environment looks like](#inspect-how-a-published-environment-looks-like)
   + [Delete files from an environment](#delete-files-from-an-environment)
@@ -96,7 +96,7 @@ Delete the environment and the `dbk.toml` config for the environment.
 Create a `dbk.toml` for an existing environment. You can use this to start version tracking environments created through the dashboard.
 
 
-### `devbook env set --env-vars <KEY=VALUE...>`
+### `devbook env set`
 Set env vars inside of the environment.
 For example, to set `FOO` and `BAR` call `devbook env set FOO=1 BAR=2`.
 
