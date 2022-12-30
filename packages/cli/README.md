@@ -38,7 +38,7 @@ devbook env publish
 ```
 
 ## Commands
-By default, commands are refering to the environment defined by a `dbk.toml` in the directory where you called the command.
+By default, commands are referring to the environment defined by a `dbk.toml` in the directory where you called the command.
 
 All commands can be called with a `--path <path-to-dir>` flag that changes the directory where the command will be called, without the need to call `cd`.
 
@@ -111,7 +111,7 @@ The id of the environment that was used as a template for this environment.
 
 ### `title`
 Title of the environment. The title is used for easier navigation and to distinguish between environments.
- 
+
 By default the title is the name of the directory where you called the `devbook env create` command.
 You can change this field and use the `devbook env push` to save the changes.
 
