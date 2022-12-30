@@ -39,7 +39,9 @@ devbook env publish
 
 ## Commands
 By default, all commands are refering to the environment defined by a `dbk.toml` from the directory where you called the command.
+
 In several command you can override this by using an optional argument `[id]`.
+
 All commands can be called with a `--path <path-to-dir>` flag that changes the directory where the command will be called, without the need to call `cd`.
 
 
@@ -89,9 +91,6 @@ Open a terminal connected to the environment that you can use to configure and i
 
 ### `devbook env list`
 List all environment for this account and path to their `dbk.toml` configs if they are in subdirectories of the current directory.
-
-> `devbook env list` automatically scans subdirectories to find `dbk.toml` configs.
-
 
 ## `dbk.toml` config
 The `dbk.toml` config is used for tracking an environment in version control. It is created automatically by the `devbook env create` command.
