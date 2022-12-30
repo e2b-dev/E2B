@@ -124,24 +124,24 @@ For example, if you have a `./files/index.ts` file locally and run `devbook env 
 
 ## FAQ
 
-### Inspect how the published environment looks like
+### Inspect how a published environment looks like
 Use `devbook env connect --published` to open a terminal connected to a new instace of the environment.
 
 
-### Delete files from environment
+### Delete files from an environment
 Use `devbook env connect` to open a terminal connected to the environment. Then you can delete the files from the environment with `rm` shell command.
 
 
-### Inspect files inside of the environment
+### Inspect files in an environment
 Use `devbook env connect` to connect your terminal with the environment then use terminal commands like `ls`, `cd`, `cat`, etc. to inspect files.
 
 
-### Install dependencies inside environment
+### Install dependencies in an environment
 Use `devbook env connect` to open a terminal connected to the environment. Then you can install dependencies as you would on any other Linux machine.
 
 > The environments are running on Alpine Linux that uses `apk add` and `apk del` for managing packages.
 
 
-### Upload local files to environment
+### Upload local files to an environment
 Create `./files` directory next to the `dbk.toml` and put the files you want in the environment there.
 After you call the `devbook env push` files from the `./files` directory will be uploaded to the environment. Their path in the environment will reflect the path in the `./files` directory — file `./files/index.ts` will become `/index.ts` in the environment.
