@@ -27,10 +27,13 @@ mkdir ./files
 # Upload files from the ./files directory to the environment
 devbook env push
 
-# Connect terminal to the environment so you can install dependencies. You quit this terminal with Ctrl+D or by `exit` command.
+# Connect terminal to the environment so you can install dependencies. 
+# You quit this terminal with Ctrl+D or by `exit` command.
 devbook env connect
 
-# All changes you made to the environment so far are not published, and users that use this environment on your website cannot see them. To make all the changes you just made published, call the following command
+# All changes you made to the environment so far are not published,
+# and users that use this environment on your website cannot see them.
+# To make all the changes you just made published, call the following command
 devbook env publish
 ```
 
