@@ -49,7 +49,7 @@ DEVBOOK_KEY=<your-api-key> devbook env ...
 # Create an environment and a dbk.toml config for the environment
 devbook env create
 
-# Create directory for files you want to be in the environment
+# Create a directory for files you want to be in the environment
 mkdir ./files
 
 # Upload files from the ./files directory to the environment
