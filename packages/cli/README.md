@@ -54,7 +54,7 @@ You can specify another environment as a template with `--template <existing-env
 
 
 ### `devbook env push`
-Upload the files from the directory defined in config `filesystem.local_root` to the environment (`./files` by default).
+Upload the files from the directory defined in the `filesystem.local_root` field from `dbk.toml` config to the environment (`./files` by default).
 Path of the uploaded files in the environment will reflect their path in the `./files` directory - file `./files/index.ts` will become `/index.ts` in the environment.
 
 > Use `devbook env publish --all` to push all environments in subdirectories.
