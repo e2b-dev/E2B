@@ -3,6 +3,29 @@ CLI for managing Devbook environments.
 
 Environment is virtual machine image that you can customize through our CLI. You can add files, install dependencies, and set env vars in the environment. Then with Devbook, every user visiting your website will get a new copy of the environment they can use.
 
+* [Installation](#installation)
+* [Quickstart](#quickstart)
+* [Commands](#commands)
+  + [`devbook env create`](#-devbook-env-create-)
+  + [`devbook env push`](#-devbook-env-push-)
+  + [`devbook env publish`](#-devbook-env-publish-)
+  + [`devbook env delete`](#-devbook-env-delete-)
+  + [`devbook env use`](#-devbook-env-use-)
+  + [`devbook env set --env-vars <KEY=VALUE...>`](#-devbook-env-set---env-vars--key-value--)
+  + [`devbook env connect`](#-devbook-env-connect-)
+  + [`devbook env list`](#-devbook-env-list-)
+* [`dbk.toml` config](#-dbktoml--config)
+  + [`id`](#-id-)
+  + [`template`](#-template-)
+  + [`title`](#-title-)
+  + [`filesystem.local_root`](#-filesystemlocal-root-)
+* [FAQ](#faq)
+  + [Inspect how a published environment looks like](#inspect-how-a-published-environment-looks-like)
+  + [Delete files from an environment](#delete-files-from-an-environment)
+  + [Inspect files in an environment](#inspect-files-in-an-environment)
+  + [Install dependencies in an environment](#install-dependencies-in-an-environment)
+  + [Upload local files to an environment](#upload-local-files-to-an-environment)
+
 
 ## Installation
 ```sh
