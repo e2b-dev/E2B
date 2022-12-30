@@ -55,7 +55,7 @@ devbook env push
 devbook env connect
 
 # All changes you made to the environment so far are not published —
-# users that use this environment on your website cannot see them.
+# users that use this environment on your website cannot see the changes.
 # To make all the changes you just made published, call the following command
 devbook env publish
 ```
