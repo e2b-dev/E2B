@@ -41,7 +41,7 @@ You will need an API key to use the Devbook CLI — you can get it [here](https:
 After you get the API kye set the `DEVBOOK_KEY` env var in your terminal, or you call the CLI with the env var directly
 
 ```sh
-`DEVBOOK_KEY=<your-api-key> devbook env ...`.
+DEVBOOK_KEY=<your-api-key> devbook env ...
 ```
 
 ## Quickstart
