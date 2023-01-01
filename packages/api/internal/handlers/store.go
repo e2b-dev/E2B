@@ -35,12 +35,12 @@ func NewAPIStore() *APIStore {
 	}
 
 	// TODO: Build only templates that changed
-	// go func() {
-	// 	err := nomadClient.RebuildTemplates(tracer)
-	// 	if err != nil {
-	// 		fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
-	// 	}
-	// }()
+	go func() {
+		err := nomadClient.RebuildTemplates(tracer)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
+		}
+	}()
 
 	var initialSessions []*api.Session
 	initialSessions, sessionErr := nomadClient.GetSessions()
