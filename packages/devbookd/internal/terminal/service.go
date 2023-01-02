@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"reflect"
 	"time"
 
 	"github.com/devbookhq/devbook-api/packages/devbookd/internal/env"
@@ -149,44 +148,44 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 			}
 		}()
 
-		go func() {
-			ticker := time.NewTicker(terminalChildProcessCheckInterval)
-			defer ticker.Stop()
+		// go func() {
+		// 	ticker := time.NewTicker(terminalChildProcessCheckInterval)
+		// 	defer ticker.Stop()
 
-			pid := newTerm.Pid()
+		// 	pid := newTerm.Pid()
 
-			for range ticker.C {
-				if newTerm.IsDestroyed() {
-					return
-				}
+		// 	for range ticker.C {
+		// 		if newTerm.IsDestroyed() {
+		// 			return
+		// 		}
 
-				cps, err := process.GetChildProcesses(pid, s.logger)
-				if err != nil {
-					s.logger.Errorw("Failed to get child processes for terminal",
-						"terminalID", newTerm.ID,
-						"pid", pid,
-						"error", err,
-						"isDestroyed", newTerm.IsDestroyed(),
-					)
-					return
-				}
+		// 		cps, err := process.GetChildProcesses(pid, s.logger)
+		// 		if err != nil {
+		// 			s.logger.Errorw("Failed to get child processes for terminal",
+		// 				"terminalID", newTerm.ID,
+		// 				"pid", pid,
+		// 				"error", err,
+		// 				"isDestroyed", newTerm.IsDestroyed(),
+		// 			)
+		// 			return
+		// 		}
 
-				changed := !reflect.DeepEqual(cps, newTerm.GetCachedChildProcesses())
-				if !changed {
-					continue
-				}
+		// 		changed := !reflect.DeepEqual(cps, newTerm.GetCachedChildProcesses())
+		// 		if !changed {
+		// 			continue
+		// 		}
 
-				newTerm.SetCachedChildProcesses(cps)
+		// 		newTerm.SetCachedChildProcesses(cps)
 
-				err = s.childProcessesSubs.Notify(newTerm.ID, cps)
-				if err != nil {
-					s.logger.Errorw("Failed to send child processes notification",
-						"terminalID", newTerm.ID,
-						"error", err,
-					)
-				}
-			}
-		}()
+		// 		err = s.childProcessesSubs.Notify(newTerm.ID, cps)
+		// 		if err != nil {
+		// 			s.logger.Errorw("Failed to send child processes notification",
+		// 				"terminalID", newTerm.ID,
+		// 				"error", err,
+		// 			)
+		// 		}
+		// 	}
+		// }()
 
 		s.logger.Infow("Started new terminal",
 			"terminalID", newTerm.ID,
