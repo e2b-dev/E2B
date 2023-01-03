@@ -28,6 +28,7 @@ export const deleteCommand = new commander.Command('delete')
     '-k, --keep-config',
     `Keep ${asLocal(configName)} config in local filesystem after deleting environment`,
   )
+  .option('-y, --yes', 'Skip manual delete confirmation')
   .action(async (ids, opts) => {
     try {
       const apiKey = ensureAPIKey()
@@ -72,15 +73,17 @@ export const deleteCommand = new commander.Command('delete')
       envs.forEach(e => console.log(asFormattedEnvironment(e, e.configPath)))
       process.stdout.write('\n')
 
-      const confirmed = await confirm(
-        `Do you really want to delete ${
-          envs.length === 1 ? 'this environment' : 'these environments'
-        }?`,
-      )
+      if (!opts.yes) {
+        const confirmed = await confirm(
+          `Do you really want to delete ${
+            envs.length === 1 ? 'this environment' : 'these environments'
+          }?`,
+        )
 
-      if (!confirmed) {
-        console.log('Canceled')
-        return
+        if (!confirmed) {
+          console.log('Canceled')
+          return
+        }
       }
 
       await Promise.all(
