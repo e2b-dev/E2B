@@ -8,21 +8,23 @@ import (
 )
 
 type Scanner struct {
-	ticker *time.Ticker
-
 	Processes chan GOnetstat.Process
 
-	subMutex    sync.RWMutex                  // Lock for manipulation with the subscribers map.
+	scanExit chan struct{}
+	period   time.Duration
+
+	subMutex    sync.Mutex                    // Lock for manipulation with the subscribers map.
 	subscribers map[string]*ScannerSubscriber // Map of subscribers id:Subscriber.
 }
 
 func (s *Scanner) Destroy() {
-	s.ticker.Stop()
+	s.scanExit <- struct{}{}
 }
 
 func NewScanner(period time.Duration) *Scanner {
 	return &Scanner{
-		ticker:      time.NewTicker(period),
+		period:      period,
+		scanExit:    make(chan struct{}),
 		Processes:   make(chan GOnetstat.Process),
 		subscribers: make(map[string]*ScannerSubscriber),
 	}
@@ -48,12 +50,16 @@ func (s *Scanner) Unsubscribe(sub *ScannerSubscriber) {
 
 // ScanAndBroadcast starts scanning open TCP ports and broadcasts every open port to all subscribers.
 func (s *Scanner) ScanAndBroadcast() {
-	for range s.ticker.C {
+	for {
 		processes := GOnetstat.Tcp()
 		for _, sub := range s.subscribers {
-			go func(sub *ScannerSubscriber) {
-				sub.Signal(processes)
-			}(sub)
+			sub.Signal(processes)
+		}
+		select {
+		case <-s.scanExit:
+			return
+		default:
+			time.Sleep(s.period)
 		}
 	}
 }

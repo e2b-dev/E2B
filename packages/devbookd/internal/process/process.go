@@ -47,16 +47,17 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 
 func (p *Process) Kill() {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	if p.HasExited() {
-		p.logger.Debugw("Process was already killed",
+		p.logger.Infow("Process was already killed",
 			"processID", p.ID,
 			"cmd", p.cmd,
 			"pid", p.cmd.Process.Pid,
 		)
+		p.mu.Unlock()
 		return
 	} else {
+		p.mu.Unlock()
 		p.SetHasExited(true)
 	}
 

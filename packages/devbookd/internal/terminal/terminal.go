@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/devbookhq/devbook-api/packages/devbookd/internal/process"
 	"go.uber.org/zap"
 
 	"github.com/creack/pty"
@@ -21,8 +20,7 @@ type Terminal struct {
 
 	mu sync.RWMutex
 
-	childProcesses []process.ChildProcess
-	destroyed      *atomic.Bool
+	destroyed *atomic.Bool
 
 	ID  ID
 	cmd *exec.Cmd
@@ -31,17 +29,17 @@ type Terminal struct {
 
 func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]string, cmdToExecute *string, logger *zap.SugaredLogger) (*Terminal, error) {
 	var cmd *exec.Cmd
-	
+
 	if cmdToExecute != nil {
-		cmd = exec.Command("sh", "-c", "-l", *cmdToExecute)	
+		cmd = exec.Command("sh", "-c", "-l", *cmdToExecute)
 	} else {
 		// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
-		cmd = exec.Command(shell, "-l")	
+		cmd = exec.Command(shell, "-l")
 	}
 
 	formattedVars := os.Environ()
-	
-	if envVars != nil {	
+
+	if envVars != nil {
 		for key, value := range *envVars {
 			formattedVars = append(formattedVars, key+"="+value)
 		}
@@ -51,7 +49,7 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 		formattedVars,
 		"TERM=xterm",
 	)
-	
+
 	cmd.Dir = rootdir
 
 	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
@@ -83,40 +81,30 @@ func (t *Terminal) IsDestroyed() bool {
 	return t.destroyed.Load()
 }
 
-func (t *Terminal) GetCachedChildProcesses() []process.ChildProcess {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	list := make([]process.ChildProcess, len(t.childProcesses))
-	copy(list, t.childProcesses)
-
-	return list
-}
-
-func (t *Terminal) SetCachedChildProcesses(cps []process.ChildProcess) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.childProcesses = cps
-}
-
 func (t *Terminal) Read(b []byte) (int, error) {
 	return t.tty.Read(b)
 }
 
 func (t *Terminal) Destroy() {
+	t.logger.Infow("Destroying terminal",
+		"terminalID", t.ID,
+		"cmd", t.cmd,
+		"pid", t.cmd.Process.Pid,
+	)
+
 	t.mu.Lock()
-	defer t.mu.Unlock()
 
 	if t.IsDestroyed() {
-		t.logger.Debugw("Terminal was already destroyed",
+		t.logger.Infow("Terminal was already destroyed",
 			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 		)
+		t.mu.Unlock()
 		return
 	} else {
 		t.SetIsDestroyed(true)
+		t.mu.Unlock()
 	}
 
 	if err := t.cmd.Process.Signal(syscall.SIGKILL); err != nil {

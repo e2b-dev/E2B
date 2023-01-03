@@ -26,8 +26,9 @@ func (m *Manager) Remove(id ID) {
 		return
 	}
 
-	term.Destroy()
 	m.terms.Remove(id)
+
+	term.Destroy()
 }
 
 func (m *Manager) Get(id ID) (*Terminal, bool) {
@@ -40,7 +41,7 @@ func (m *Manager) Add(
 	rootdir string,
 	cols,
 	rows uint16,
-	envVars *map[string]string, 
+	envVars *map[string]string,
 	cmd *string,
 ) (*Terminal, error) {
 	term, err := New(id, shell, rootdir, cols, rows, envVars, cmd, m.logger)

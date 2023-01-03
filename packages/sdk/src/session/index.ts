@@ -138,7 +138,6 @@ class Session extends SessionConnection {
     this.terminal = {
       createSession: async ({
         onData,
-        onChildProcessesChange,
         size,
         onExit,
         envVars,
@@ -148,19 +147,10 @@ class Session extends SessionConnection {
       }) => {
         const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
 
-        const [onDataSubID, onExitSubID, onChildProcessesChangeSubID] =
-          await this.handleSubscriptions(
-            this.subscribe(terminalService, onData, 'onData', terminalID),
-            this.subscribe(terminalService, triggerExit, 'onExit', terminalID),
-            onChildProcessesChange
-              ? this.subscribe(
-                  terminalService,
-                  onChildProcessesChange,
-                  'onChildProcessesChange',
-                  terminalID,
-                )
-              : undefined,
-          )
+        const [onDataSubID, onExitSubID] = await this.handleSubscriptions(
+          this.subscribe(terminalService, onData, 'onData', terminalID),
+          this.subscribe(terminalService, triggerExit, 'onExit', terminalID),
+        )
 
         const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
           createDeferredPromise()
@@ -169,9 +159,6 @@ class Session extends SessionConnection {
           const results = await Promise.allSettled([
             this.unsubscribe(onExitSubID),
             this.unsubscribe(onDataSubID),
-            onChildProcessesChangeSubID
-              ? this.unsubscribe(onChildProcessesChangeSubID)
-              : undefined,
           ])
 
           const errMsg = formatSettledErrors(results)
@@ -214,9 +201,6 @@ class Session extends SessionConnection {
           },
           terminalID,
         }
-      },
-      killProcess: async pid => {
-        await this.call(terminalService, 'killProcess', [pid])
       },
     }
 

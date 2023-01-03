@@ -4,18 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/devbookhq/devbook-api/packages/devbookd/internal/env"
-	"github.com/devbookhq/devbook-api/packages/devbookd/internal/process"
 	"github.com/devbookhq/devbook-api/packages/devbookd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
-)
-
-const (
-	terminalChildProcessCheckInterval = 400 * time.Millisecond
 )
 
 type Service struct {
@@ -24,9 +18,8 @@ type Service struct {
 
 	terminals *Manager
 
-	dataSubs           *subscriber.Manager
-	childProcessesSubs *subscriber.Manager
-	exitSubs           *subscriber.Manager
+	dataSubs *subscriber.Manager
+	exitSubs *subscriber.Manager
 }
 
 func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
@@ -36,15 +29,13 @@ func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
 		env:       env,
 		terminals: NewManager(logger),
 
-		dataSubs:           subscriber.NewManager("terminal/dataSubs", logger.Named("subscriber.terminal.dataSubs")),
-		childProcessesSubs: subscriber.NewManager("terminal/childProcessesSubs", logger.Named("subscriber.terminal.childProcessesSubs")),
-		exitSubs:           subscriber.NewManager("terminal/exitSubs", logger.Named("subscriber.terminal.exitSubs")),
+		dataSubs: subscriber.NewManager("terminal/dataSubs", logger.Named("subscriber.terminal.dataSubs")),
+		exitSubs: subscriber.NewManager("terminal/exitSubs", logger.Named("subscriber.terminal.exitSubs")),
 	}
 }
 
 func (s *Service) hasSubscibers(id ID) bool {
-	return s.childProcessesSubs.Has(id) ||
-		s.dataSubs.Has(id)
+	return s.exitSubs.Has(id) || s.dataSubs.Has(id)
 }
 
 func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cmd, rootdir *string) (ID, error) {
@@ -148,45 +139,6 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 			}
 		}()
 
-		// go func() {
-		// 	ticker := time.NewTicker(terminalChildProcessCheckInterval)
-		// 	defer ticker.Stop()
-
-		// 	pid := newTerm.Pid()
-
-		// 	for range ticker.C {
-		// 		if newTerm.IsDestroyed() {
-		// 			return
-		// 		}
-
-		// 		cps, err := process.GetChildProcesses(pid, s.logger)
-		// 		if err != nil {
-		// 			s.logger.Errorw("Failed to get child processes for terminal",
-		// 				"terminalID", newTerm.ID,
-		// 				"pid", pid,
-		// 				"error", err,
-		// 				"isDestroyed", newTerm.IsDestroyed(),
-		// 			)
-		// 			return
-		// 		}
-
-		// 		changed := !reflect.DeepEqual(cps, newTerm.GetCachedChildProcesses())
-		// 		if !changed {
-		// 			continue
-		// 		}
-
-		// 		newTerm.SetCachedChildProcesses(cps)
-
-		// 		err = s.childProcessesSubs.Notify(newTerm.ID, cps)
-		// 		if err != nil {
-		// 			s.logger.Errorw("Failed to send child processes notification",
-		// 				"terminalID", newTerm.ID,
-		// 				"error", err,
-		// 			)
-		// 		}
-		// 	}
-		// }()
-
 		s.logger.Infow("Started new terminal",
 			"terminalID", newTerm.ID,
 		)
@@ -258,21 +210,6 @@ func (s *Service) Destroy(id ID) {
 	s.terminals.Remove(id)
 }
 
-func (s *Service) KillProcess(pid int) error {
-	s.logger.Infow("Kill child process",
-		"pid", pid,
-	)
-
-	if err := process.KillChildProcess(pid); err != nil {
-		s.logger.Errorw("Failed killing child process",
-			"pid", pid,
-			"error", err,
-		)
-		return fmt.Errorf("error killing child process '%d': %+v", pid, err)
-	}
-	return nil
-}
-
 // Subscription
 func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) {
 	s.logger.Infow("Subscribe to terminal data",
@@ -300,45 +237,8 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 }
 
 // Subscription
-func (s *Service) OnChildProcessesChange(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribe to terminal child processes",
-		"terminalID", id,
-	)
-
-	sub, lastUnsubscribed, err := s.childProcessesSubs.Create(ctx, id)
-	if err != nil {
-		s.logger.Errorw("Failed to create a terminal child processes subscription",
-			"ctx", ctx,
-			"error", err,
-		)
-		return nil, err
-	}
-
-	go func() {
-		<-lastUnsubscribed
-
-		if !s.hasSubscibers(id) {
-			s.Destroy(id)
-		}
-	}()
-
-	term, ok := s.terminals.Get(id)
-
-	if ok {
-		if err := sub.Notify(term.GetCachedChildProcesses()); err != nil {
-			s.logger.Errorw("Failed to send initial child processes",
-				"subID", sub.Subscription.ID,
-				"error", err,
-			)
-		}
-	}
-
-	return sub.Subscription, nil
-}
-
-// Subscription
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to terminal exit")
+	s.logger.Infow("Subscribe to terminal exit", "terminalID", id)
 
 	sub, lastUnsubscribed, err := s.exitSubs.Create(ctx, id)
 	if err != nil {

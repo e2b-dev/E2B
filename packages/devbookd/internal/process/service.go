@@ -271,7 +271,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 }
 
 func (s *Service) Stdin(id ID, data string) error {
-	s.logger.Info("Handle process stdin",
+	s.logger.Infow("Handle process stdin",
 		"processID", id,
 	)
 
@@ -347,7 +347,7 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 
 // Subscription
 func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to process stdout",
+	s.logger.Infow("Subscribe to process stdout",
 		"processID", id,
 	)
 
@@ -373,7 +373,7 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 
 // Subscription
 func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to process stderr",
+	s.logger.Infow("Subscribe to process stderr",
 		"processID", id,
 	)
 

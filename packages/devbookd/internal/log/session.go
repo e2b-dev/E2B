@@ -148,11 +148,13 @@ func sendLogs(logs []byte) {
 	mmdsToken, err := getMMDSToken(client)
 	if err != nil {
 		fmt.Printf("error getting mmds token: %+v", err)
+		return
 	}
 
 	mmdsOpts, err := getMMDSOpts(client, mmdsToken)
 	if err != nil {
 		fmt.Printf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
+		return
 	}
 
 	fmt.Printf("Logs identification: %+v", mmdsOpts)
@@ -160,16 +162,18 @@ func sendLogs(logs []byte) {
 	sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
 	if err != nil {
 		fmt.Printf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+		return
 	}
 
 	err = sendSessionLogs(client, sessionLogs, mmdsOpts.Address)
 	if err != nil {
 		fmt.Printf("error sending session logs: %+v", err)
+		return
 	}
 }
 
 func (w *sessionWriter) Write(logs []byte) (int, error) {
-	// go sendLogs(logs)
+	go sendLogs(logs)
 
 	return len(logs), nil
 }

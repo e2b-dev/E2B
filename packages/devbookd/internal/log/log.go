@@ -51,29 +51,26 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if !mmds || debug {
 		return l.Sugar(), nil
 	}
 
-	// return l.Sugar(), nil
-	// mmds is enabled, create a logger that sends logs to the Firecracker's mmds
+	// mmds is enabled, create a logger that sends logs with info from the FC's MMDS
+	var combinedLogger *zap.Logger
+	sessionWriter := newSessionWriter()
 
-	return l.Sugar(), nil
+	level := zap.ErrorLevel
 
-	// var combinedLogger *zap.Logger
-	// sessionWriter := newSessionWriter()
+	core := zapcore.NewTee(
+		l.Core(),
+		zapcore.NewCore(
+			zapcore.NewJSONEncoder(cfg.EncoderConfig),
+			zapcore.AddSync(sessionWriter),
+			level,
+		),
+	)
 
-	// level := zap.ErrorLevel
-
-	// core := zapcore.NewTee(
-	// 	l.Core(),
-	// 	zapcore.NewCore(
-	// 		zapcore.NewJSONEncoder(cfg.EncoderConfig),
-	// 		zapcore.AddSync(sessionWriter),
-	// 		level,
-	// 	),
-	// )
-
-	// combinedLogger = zap.New(core)
-	// return combinedLogger.Sugar(), nil
+	combinedLogger = zap.New(core)
+	return combinedLogger.Sugar(), nil
 }

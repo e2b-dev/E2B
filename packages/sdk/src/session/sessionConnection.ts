@@ -119,7 +119,10 @@ abstract class SessionConnection {
         }
       })
 
-      this.rpc.ws?.close()
+      // This is `ws` way of closing connection
+      this.rpc.ws?.terminate?.()
+      // This is the browser WebSocket way of closing connection
+      this.rpc.ws?.close?.()
       this.opts?.onClose?.()
       this.logger.log('Disconected from the session')
     }

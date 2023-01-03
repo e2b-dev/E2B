@@ -95,6 +95,12 @@ func main() {
 	}
 
 	logger = l
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Infow("panic", r)
+		}
+	}()
 	defer logger.Sync()
 	logger.Info("Logger and environment construction succeeded")
 
@@ -102,13 +108,13 @@ func main() {
 	rpcServer := rpc.NewServer()
 
 	if newEnv.RuntimeMode() == env.RuntimeModeServer {
-		portScanner := port.NewScanner(1 * time.Second)
+		portScanner := port.NewScanner(1000 * time.Millisecond)
 		defer portScanner.Destroy()
-
-		go portScanner.ScanAndBroadcast()
 
 		portForwarder := port.NewForwarder(logger, newEnv, portScanner)
 		go portForwarder.StartForwarding()
+
+		go portScanner.ScanAndBroadcast()
 
 		codeSnippetService := codeSnippet.NewService(logger.Named("codeSnippetSvc"), newEnv, portScanner)
 		if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {

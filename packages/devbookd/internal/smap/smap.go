@@ -15,19 +15,11 @@ func New[K comparable, V any]() *Map[K, V] {
 	}
 }
 
-func (m *Map[K, V]) Remove(key K) *V {
-	value, ok := m.Get(key)
-
-	if !ok {
-		return nil
-	}
-
+func (m *Map[K, V]) Remove(key K) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	delete(m.m, key)
-
-	return value
 }
 
 func (m *Map[K, V]) Get(key K) (*V, bool) {
