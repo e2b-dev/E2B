@@ -23,10 +23,19 @@ export const connectCommand = new commander.Command('connect')
   .addOption(pathOption)
   .alias('cn')
   .option('-P, --published', 'Connect to new instance of published environment')
+  .option(
+    '-L, --local-debug',
+    'Connect to existing local environment instance for debugging',
+  )
   .action(async (id, opts) => {
     try {
       const apiKey = ensureAPIKey()
       const root = getRoot(opts.path)
+
+      if (opts.localDebug) {
+        await connectEnvironment({ local: true, config: { id: 'local-debug' } })
+        return
+      }
 
       let env: sdk.components['schemas']['Environment'] | undefined
       if (id) {
@@ -107,15 +116,24 @@ export async function connectEnvironment({
   apiKey,
   config,
   published,
+  local,
 }: {
-  apiKey: string
+  apiKey?: string
+  local?: boolean
   config: sdk.components['schemas']['Environment']
-  published: boolean
+  published?: boolean
 }) {
   const session = new sdk.Session({
     apiKey,
     editEnabled: !published,
     id: config.id,
+    ...(local
+      ? {
+          __debug_devEnv: 'local',
+          __debug_hostname: 'localhost',
+          __debug_port: 49982,
+        }
+      : {}),
   })
 
   try {
