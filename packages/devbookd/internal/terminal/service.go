@@ -34,6 +34,23 @@ func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
 	}
 }
 
+type dataWriter struct {
+	terminalID string
+	dataSubs   *subscriber.Manager
+}
+
+func (d *dataWriter) Write(p []byte) (int, error) {
+	err := d.dataSubs.Notify(d.terminalID, string(p))
+	return len(p), err
+}
+
+func (s *Service) dataSubsWriter(terminalID string) *dataWriter {
+	return &dataWriter{
+		terminalID: terminalID,
+		dataSubs:   s.dataSubs,
+	}
+}
+
 func (s *Service) hasSubscibers(id ID) bool {
 	return s.exitSubs.Has(id) || s.dataSubs.Has(id)
 }
@@ -93,6 +110,8 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 		)
 
 		go func() {
+			writer := s.dataSubsWriter(newTerm.ID)
+
 			defer func() {
 				s.Destroy(newTerm.ID)
 				err := s.exitSubs.Notify(id, struct{}{})
@@ -104,37 +123,17 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 				}
 			}()
 
-			for {
-				if newTerm.IsDestroyed() {
+			_, err := io.Copy(writer, newTerm.tty)
+			if err != nil {
+				if err == io.EOF {
 					return
-				}
-
-				buf := make([]byte, 1024)
-				read, err := newTerm.Read(buf)
-
-				if err != nil {
-					if err == io.EOF {
-						return
-					} else {
-						s.logger.Warnw("Error reading from terminal",
-							"terminalID", newTerm.ID,
-							"error", err,
-							"isDestroyed", newTerm.IsDestroyed(),
-						)
-						return
-					}
-				}
-
-				if read > 0 {
-					data := string(buf[:read])
-
-					err = s.dataSubs.Notify(newTerm.ID, data)
-					if err != nil {
-						s.logger.Errorw("Failed to send data notification",
-							"terminalID", newTerm.ID,
-							"error", err,
-						)
-					}
+				} else {
+					s.logger.Warnw("Error reading from terminal",
+						"terminalID", newTerm.ID,
+						"error", err,
+						"isDestroyed", newTerm.IsDestroyed(),
+					)
+					return
 				}
 			}
 		}()
