@@ -142,7 +142,7 @@ func sendSessionLogs(client http.Client, logs []byte, address string) error {
 
 func sendLogs(logs []byte) {
 	client := http.Client{
-		Timeout: 6 * time.Second,
+		Timeout: 2 * time.Second,
 	}
 
 	mmdsToken, err := getMMDSToken(client)
