@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"sync"
 	"sync/atomic"
 	"syscall"
 
@@ -15,8 +14,6 @@ type ID = string
 
 type Process struct {
 	ID ID
-
-	mu sync.Mutex
 
 	exited *atomic.Bool
 	cmd    *exec.Cmd
@@ -46,18 +43,14 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 }
 
 func (p *Process) Kill() {
-	p.mu.Lock()
-
 	if p.HasExited() {
 		p.logger.Infow("Process was already killed",
 			"processID", p.ID,
 			"cmd", p.cmd,
 			"pid", p.cmd.Process.Pid,
 		)
-		p.mu.Unlock()
 		return
 	} else {
-		p.mu.Unlock()
 		p.SetHasExited(true)
 	}
 
