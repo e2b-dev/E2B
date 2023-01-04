@@ -1,52 +1,40 @@
 package smap
 
 import (
-	"sync"
+	"github.com/lrita/cmap"
 )
 
 type Map[K comparable, V any] struct {
-	mu sync.RWMutex
-	m  map[K]*V
+	m *cmap.Map[K, V]
 }
 
 func New[K comparable, V any]() *Map[K, V] {
 	return &Map[K, V]{
-		m: make(map[K]*V),
+		m: &cmap.Map[K, V]{},
 	}
 }
 
 func (m *Map[K, V]) Remove(key K) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	delete(m.m, key)
+	m.m.Delete(key)
 }
 
 func (m *Map[K, V]) Get(key K) (*V, bool) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	term, ok := m.m[key]
-	return term, ok
+	value, ok := m.m.Load(key)
+	return &value, ok
 }
 
 func (m *Map[K, V]) Insert(key K, value *V) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	m.m[key] = value
+	m.m.Store(key, *value)
 }
 
-func (m *Map[K, V]) Iterate(apply func(key K, value *V) error) error {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	for key, value := range m.m {
-		err := apply(key, value)
-		if err != nil {
-			return err
+func (m *Map[K, V]) Iterate(apply func(key K, value *V) error) (err error) {
+	m.m.Range(func(key K, value V) bool {
+		if err == nil {
+			err = apply(key, &value)
+			return err == nil
 		}
-	}
+		return false
+	})
 
-	return nil
+	return err
 }
