@@ -5,12 +5,14 @@ vscode:
   extensions:
     - 42Crunch.vscode-openapi
     - dbaeumer.vscode-eslint
+    - errata-ai.vale-server
 
 tasks:
   - name: Setup tools
     init: |-
       go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
       go install honnef.co/go/tools/cmd/staticcheck@latest
+      go install github.com/goreleaser/goreleaser@latest
 
   - name: Init Terraform
     init: |-
@@ -19,6 +21,10 @@ tasks:
   - name: Init Packer
     init: |-
       cd ./packages/cluster-disk-image && make init
+
+  - name: Init Styles
+    init: |-
+      vale sync
 
 github:
   prebuilds:
