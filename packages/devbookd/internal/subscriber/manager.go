@@ -57,7 +57,7 @@ func (m *Manager) Get(topic string) []*Subscriber {
 // Create a new subscriber for a given topic.
 // It returns the newly created subscriber and a blocking channel indicating whether there are any subscribers left for the passed topic.
 func (m *Manager) Create(ctx context.Context, topic string) (*Subscriber, chan bool, error) {
-	allUnsubscribed := make(chan bool, 1)
+	allUnsubscribed := make(chan bool)
 
 	sub, err := New(ctx, topic)
 	if err != nil {
@@ -89,6 +89,7 @@ func (m *Manager) Create(ctx context.Context, topic string) (*Subscriber, chan b
 
 		if !m.Has(sub.Topic) {
 			allUnsubscribed <- true
+			close(allUnsubscribed)
 		}
 	}()
 
