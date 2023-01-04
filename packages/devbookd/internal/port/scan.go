@@ -10,7 +10,7 @@ import (
 type Scanner struct {
 	Processes chan GOnetstat.Process
 
-	scanExit chan struct{}
+	scanExit chan bool
 	period   time.Duration
 
 	subMutex    sync.Mutex                    // Lock for manipulation with the subscribers map.
@@ -18,13 +18,13 @@ type Scanner struct {
 }
 
 func (s *Scanner) Destroy() {
-	s.scanExit <- struct{}{}
+	s.scanExit <- true
 }
 
 func NewScanner(period time.Duration) *Scanner {
 	return &Scanner{
 		period:      period,
-		scanExit:    make(chan struct{}),
+		scanExit:    make(chan bool),
 		Processes:   make(chan GOnetstat.Process),
 		subscribers: make(map[string]*ScannerSubscriber),
 	}
