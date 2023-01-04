@@ -94,14 +94,6 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 		newProc, err := s.processes.Add(id, cmd, envVars, rootdir)
 		if err != nil {
-			notifyErr := s.exitSubs.Notify(id, struct{}{})
-			if notifyErr != nil {
-				s.logger.Errorw("Failed to send exit notification",
-					"processID", id,
-					"error", notifyErr,
-				)
-			}
-
 			s.logger.Errorw("Failed to create new process",
 				"processID", id,
 				"error", err,
@@ -111,15 +103,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 		stderr, err := newProc.cmd.StderrPipe()
 		if err != nil {
-			s.Kill(newProc.ID)
-
-			notifyErr := s.exitSubs.Notify(id, struct{}{})
-			if notifyErr != nil {
-				s.logger.Errorw("Failed to send exit notification",
-					"processID", newProc.ID,
-					"error", notifyErr,
-				)
-			}
+			s.processes.Remove(newProc.ID)
 
 			s.logger.Errorw("Failed to set up stderr pipe for the process",
 				"processID", newProc.ID,
@@ -132,19 +116,11 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 		stdout, err := newProc.cmd.StdoutPipe()
 		if err != nil {
-			s.Kill(newProc.ID)
+			s.processes.Remove(newProc.ID)
 			pipeErr := stderr.Close()
 			if pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
 					"error", pipeErr,
-				)
-			}
-
-			notifyErr := s.exitSubs.Notify(id, struct{}{})
-			if notifyErr != nil {
-				s.logger.Errorw("Failed to send exit notification",
-					"processID", newProc.ID,
-					"error", notifyErr,
 				)
 			}
 
@@ -158,7 +134,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 		stdin, err := newProc.cmd.StdinPipe()
 		if err != nil {
-			s.Kill(newProc.ID)
+			s.processes.Remove(newProc.ID)
 			pipeErr := stdout.Close()
 			if pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
@@ -172,14 +148,6 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				)
 			}
 
-			notifyErr := s.exitSubs.Notify(newProc.ID, struct{}{})
-			if notifyErr != nil {
-				s.logger.Errorw("Failed to send exit notification",
-					"processID", newProc.ID,
-					"error", notifyErr,
-				)
-			}
-
 			s.logger.Errorw("Failed to set up stdin pipe for the process",
 				"processID", newProc.ID,
 				"error", err,
@@ -190,7 +158,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		newProc.Stdin = &stdin
 
 		if err := newProc.cmd.Start(); err != nil {
-			s.Kill(newProc.ID)
+			s.processes.Remove(newProc.ID)
 			pipeErr := stdout.Close()
 			if pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
@@ -212,14 +180,6 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				)
 			}
 
-			notifyErr := s.exitSubs.Notify(id, struct{}{})
-			if notifyErr != nil {
-				s.logger.Errorw("Failed to send exit notification",
-					"processID", newProc.ID,
-					"error", notifyErr,
-				)
-			}
-
 			s.logger.Errorw("Failed to start process",
 				"processID", newProc.ID,
 				"error", err,
@@ -230,7 +190,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 		go func() {
 			defer func() {
-				s.Kill(newProc.ID)
+				s.processes.Remove(newProc.ID)
 				pipeErr := stdin.Close()
 				if pipeErr != nil {
 					s.logger.Warnw("Failed to close pipe",
@@ -246,10 +206,6 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 					)
 				}
 			}()
-
-			if newProc.HasExited() {
-				return
-			}
 
 			err := newProc.cmd.Wait()
 			if err != nil {
@@ -308,7 +264,7 @@ func (s *Service) Kill(id ID) {
 
 // Subscription
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Info("Subscribe to process exit")
+	s.logger.Infow("Subscribing to process exit", "processID", id)
 
 	sub, lastUnsubscribed, err := s.exitSubs.Create(ctx, id)
 	if err != nil {
@@ -323,31 +279,18 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.Kill(id)
+			s.processes.Remove(id)
 		}
 	}()
 
-	proc, ok := s.processes.Get(id)
-
-	if ok {
-		// Send exit if the process already exited
-		if proc.HasExited() {
-			if err := sub.Notify(struct{}{}); err != nil {
-				s.logger.Errorw("Failed to send initial exit notification",
-					"processID", id,
-					"subID", sub.Subscription.ID,
-					"error", err,
-				)
-			}
-		}
-	}
+	s.logger.Infow("Subscribed to process exit", "processID", id, "subID", sub.Subscription.ID)
 
 	return sub.Subscription, nil
 }
 
 // Subscription
 func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribe to process stdout",
+	s.logger.Infow("Subscribing to process stdout",
 		"processID", id,
 	)
 
@@ -364,9 +307,14 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.Kill(id)
+			s.processes.Remove(id)
 		}
 	}()
+
+	s.logger.Infow("Subscribing to process stdout",
+		"processID", id,
+		"subID", sub.Subscription.ID,
+	)
 
 	return sub.Subscription, nil
 }
@@ -390,9 +338,14 @@ func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.Kill(id)
+			s.processes.Remove(id)
 		}
 	}()
+
+	s.logger.Infow("Subscribe to process stderr",
+		"processID", id,
+		"subID", sub.Subscription.ID,
+	)
 
 	return sub.Subscription, nil
 }

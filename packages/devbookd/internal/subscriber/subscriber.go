@@ -20,13 +20,21 @@ func New(ctx context.Context, topic string) (*Subscriber, error) {
 		return nil, fmt.Errorf("error creating data subscription from context %+v, %+v", ctx, rpc.ErrNotificationsUnsupported)
 	}
 
+	subscription := notifier.CreateSubscription()
+
 	return &Subscriber{
 		Topic:        topic,
 		Notifier:     notifier,
-		Subscription: notifier.CreateSubscription(),
+		Subscription: subscription,
 	}, nil
 }
 
-func (s *Subscriber) Notify(data interface{}) error {
+func (s *Subscriber) Notify(data interface{}) (err error) {
+	defer func() {
+		if recoverErr := recover(); recoverErr != nil {
+			err = fmt.Errorf("recovered from subscriber notify panic: %+v", recoverErr)
+		}
+	}()
+
 	return s.Notifier.Notify(s.Subscription.ID, data)
 }

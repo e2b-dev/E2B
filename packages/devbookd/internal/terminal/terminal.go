@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sync/atomic"
 
 	"go.uber.org/zap"
 
@@ -15,8 +14,6 @@ type ID = string
 
 type Terminal struct {
 	logger *zap.SugaredLogger
-
-	destroyed *atomic.Bool
 
 	ID  ID
 	cmd *exec.Cmd
@@ -57,24 +54,15 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	}
 
 	return &Terminal{
-		logger:    logger,
-		ID:        id,
-		cmd:       cmd,
-		tty:       tty,
-		destroyed: &atomic.Bool{},
+		logger: logger,
+		ID:     id,
+		cmd:    cmd,
+		tty:    tty,
 	}, nil
 }
 
 func (t *Terminal) Pid() int {
 	return t.cmd.Process.Pid
-}
-
-func (t *Terminal) SetIsDestroyed(value bool) {
-	t.destroyed.Store(value)
-}
-
-func (t *Terminal) IsDestroyed() bool {
-	return t.destroyed.Load()
 }
 
 func (t *Terminal) Read(b []byte) (int, error) {
@@ -88,17 +76,6 @@ func (t *Terminal) Destroy() {
 		"pid", t.cmd.Process.Pid,
 	)
 
-	if t.IsDestroyed() {
-		t.logger.Infow("Terminal was already destroyed",
-			"terminalID", t.ID,
-			"cmd", t.cmd,
-			"pid", t.cmd.Process.Pid,
-		)
-		return
-	} else {
-		t.SetIsDestroyed(true)
-	}
-
 	if err := t.tty.Close(); err != nil {
 		t.logger.Warnw("Failed to close tty",
 			"terminalID", t.ID,
@@ -107,13 +84,13 @@ func (t *Terminal) Destroy() {
 			"pid", t.cmd.Process.Pid,
 			"error", err,
 		)
+	} else {
+		t.logger.Infow("Closed terminal PTY",
+			"terminalID", t.ID,
+			"cmd", t.cmd,
+			"pid", t.cmd.Process.Pid,
+		)
 	}
-	t.logger.Infow("Closed terminal PTY",
-		"terminalID", t.ID,
-		"cmd", t.cmd,
-		"pid", t.cmd.Process.Pid,
-	)
-
 }
 
 func (t *Terminal) Write(b []byte) (int, error) {

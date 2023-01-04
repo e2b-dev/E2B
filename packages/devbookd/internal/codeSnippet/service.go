@@ -34,7 +34,7 @@ type Service struct {
 	logger *zap.SugaredLogger
 	env    *env.Env
 
-	mu sync.RWMutex
+	mu sync.Mutex
 
 	// The reason for caching cmd's outputs is if a client connects while the command
 	// is already running we can send all the output that has happened since the start
@@ -82,8 +82,8 @@ func NewService(
 }
 
 func (s *Service) getCachedOut() []output.OutMessage {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	list := make([]output.OutMessage, len(s.cachedOut))
 	copy(list, s.cachedOut)

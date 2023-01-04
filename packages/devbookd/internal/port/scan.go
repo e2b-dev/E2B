@@ -1,50 +1,42 @@
 package port
 
 import (
-	"sync"
 	"time"
 
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/smap"
 	"github.com/drael/GOnetstat"
 )
 
 type Scanner struct {
 	Processes chan GOnetstat.Process
 
-	scanExit chan bool
+	scanExit chan struct{}
 	period   time.Duration
 
-	subMutex    sync.Mutex                    // Lock for manipulation with the subscribers map.
-	subscribers map[string]*ScannerSubscriber // Map of subscribers id:Subscriber.
+	subs *smap.Map[*ScannerSubscriber]
 }
 
 func (s *Scanner) Destroy() {
-	s.scanExit <- true
+	close(s.scanExit)
 }
 
 func NewScanner(period time.Duration) *Scanner {
 	return &Scanner{
-		period:      period,
-		scanExit:    make(chan bool),
-		Processes:   make(chan GOnetstat.Process),
-		subscribers: make(map[string]*ScannerSubscriber),
+		period:    period,
+		subs:      smap.New[*ScannerSubscriber](),
+		scanExit:  make(chan struct{}),
+		Processes: make(chan GOnetstat.Process),
 	}
 }
 
 func (s *Scanner) AddSubscriber(id string, filter *ScannerFilter) *ScannerSubscriber {
-	s.subMutex.Lock()
-	defer s.subMutex.Unlock()
-
 	subscriber := NewScannerSubscriber(id, filter)
-	s.subscribers[id] = subscriber
-
+	s.subs.Insert(id, subscriber)
 	return subscriber
 }
 
 func (s *Scanner) Unsubscribe(sub *ScannerSubscriber) {
-	s.subMutex.Lock()
-	delete(s.subscribers, sub.ID())
-	s.subMutex.Unlock()
-
+	s.subs.Remove(sub.ID())
 	sub.Destroy()
 }
 
@@ -52,7 +44,7 @@ func (s *Scanner) Unsubscribe(sub *ScannerSubscriber) {
 func (s *Scanner) ScanAndBroadcast() {
 	for {
 		processes := GOnetstat.Tcp()
-		for _, sub := range s.subscribers {
+		for _, sub := range s.subs.Items() {
 			sub.Signal(processes)
 		}
 		select {

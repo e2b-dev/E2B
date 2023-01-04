@@ -15,7 +15,7 @@ import (
 // DirWatcher returns an error when trying to watch files.
 type DirWatcher struct {
 	logger  *zap.SugaredLogger
-	mu      sync.RWMutex
+	mu      sync.Mutex
 	watcher *fsnotify.Watcher
 	Errors  chan error
 	Events  chan Event
@@ -133,8 +133,8 @@ func (dw *DirWatcher) addToWatchedDirs(dirpath string) {
 }
 
 func (dw *DirWatcher) isInWatchedDirs(dirpath string) bool {
-	dw.mu.RLock()
-	defer dw.mu.RUnlock()
+	dw.mu.Lock()
+	defer dw.mu.Unlock()
 
 	exists := false
 	for _, p := range dw.watchedDirs {

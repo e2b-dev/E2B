@@ -90,14 +90,6 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 			cmd,
 		)
 		if err != nil {
-			notifyErr := s.exitSubs.Notify(id, struct{}{})
-			if notifyErr != nil {
-				s.logger.Errorw("Failed to send exit notification",
-					"terminalID", id,
-					"error", notifyErr,
-				)
-			}
-
 			s.logger.Errorw("Failed to start new terminal",
 				"terminalID", id,
 				"error", err,
@@ -109,28 +101,27 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 			"terminalID", newTerm.ID,
 		)
 
+		writer := s.dataSubsWriter(newTerm.ID)
+
 		go func() {
-			writer := s.dataSubsWriter(newTerm.ID)
-
-			defer func() {
-				s.Destroy(newTerm.ID)
-				err := s.exitSubs.Notify(id, struct{}{})
-				if err != nil {
-					s.logger.Errorw("Failed to send exit notification",
-						"terminalID", id,
-						"error", err,
-					)
-				}
-			}()
-
 			_, err := io.Copy(writer, newTerm.tty)
 			if err != nil {
 				s.logger.Warnw("Error reading from terminal",
 					"terminalID", newTerm.ID,
 					"error", err,
-					"isDestroyed", newTerm.IsDestroyed(),
 				)
-				return
+			}
+
+			s.terminals.Remove(newTerm.ID)
+			s.logger.Infow("Sending terminal exit notification", "terminalID", newTerm.ID)
+			err = s.exitSubs.Notify(id, struct{}{})
+			if err != nil {
+				s.logger.Errorw("Failed to send exit notification",
+					"terminalID", id,
+					"error", err,
+				)
+			} else {
+				s.logger.Infow("Sent terminal exit notification", "terminalID", newTerm.ID)
 			}
 		}()
 
@@ -161,7 +152,6 @@ func (s *Service) Data(id ID, data string) error {
 			"terminalID", id,
 			"error", err,
 			"data", data,
-			"isDestroyed", term.IsDestroyed(),
 		)
 		return fmt.Errorf("error writing data to terminal '%s': %+v", id, err)
 	}
@@ -189,7 +179,6 @@ func (s *Service) Resize(id ID, cols, rows uint16) error {
 			"error", err,
 			"cols", cols,
 			"rows", rows,
-			"isDestroyed", term.IsDestroyed(),
 		)
 		return fmt.Errorf("error resizing terminal '%s': %+v", id, err)
 	}
@@ -207,7 +196,7 @@ func (s *Service) Destroy(id ID) {
 
 // Subscription
 func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribe to terminal data",
+	s.logger.Infow("Subscribing to terminal data",
 		"terminalID", id,
 	)
 
@@ -224,16 +213,20 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.Destroy(id)
+			s.terminals.Remove(id)
 		}
 	}()
 
+	s.logger.Infow("Subscribed to terminal data",
+		"terminalID", id,
+		"subID", sub.Subscription.ID,
+	)
 	return sub.Subscription, nil
 }
 
 // Subscription
 func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) {
-	s.logger.Infow("Subscribe to terminal exit", "terminalID", id)
+	s.logger.Infow("Subscribing to terminal exit", "terminalID", id)
 
 	sub, lastUnsubscribed, err := s.exitSubs.Create(ctx, id)
 	if err != nil {
@@ -248,24 +241,14 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		<-lastUnsubscribed
 
 		if !s.hasSubscibers(id) {
-			s.Destroy(id)
+			s.terminals.Remove(id)
 		}
 	}()
 
-	term, ok := s.terminals.Get(id)
-
-	if ok {
-		// Send exit if the terminal process already exited
-		if term.IsDestroyed() {
-			if err := sub.Notify(struct{}{}); err != nil {
-				s.logger.Errorw("Failed to send on exit notification",
-					"terminalID", id,
-					"subID", sub.Subscription.ID,
-					"error", err,
-				)
-			}
-		}
-	}
+	s.logger.Infow("Subscribed to terminal exit",
+		"terminalID", id,
+		"subID", sub.Subscription.ID,
+	)
 
 	return sub.Subscription, nil
 }

@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"sync/atomic"
 	"syscall"
 
 	"go.uber.org/zap"
@@ -13,13 +12,11 @@ import (
 type ID = string
 
 type Process struct {
-	ID ID
-
-	exited *atomic.Bool
-	cmd    *exec.Cmd
-	Stdin  *io.WriteCloser
-
 	logger *zap.SugaredLogger
+
+	ID    ID
+	cmd   *exec.Cmd
+	Stdin *io.WriteCloser
 }
 
 func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
@@ -37,23 +34,11 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 	return &Process{
 		ID:     id,
 		cmd:    cmd,
-		exited: &atomic.Bool{},
 		logger: logger,
 	}, nil
 }
 
 func (p *Process) Kill() {
-	if p.HasExited() {
-		p.logger.Infow("Process was already killed",
-			"processID", p.ID,
-			"cmd", p.cmd,
-			"pid", p.cmd.Process.Pid,
-		)
-		return
-	} else {
-		p.SetHasExited(true)
-	}
-
 	if err := p.cmd.Process.Signal(syscall.SIGKILL); err != nil {
 		p.logger.Warnw("Failed to kill process with signal",
 			"processID", p.ID,
@@ -61,15 +46,13 @@ func (p *Process) Kill() {
 			"pid", p.cmd.Process.Pid,
 			"error", err,
 		)
+	} else {
+		p.logger.Infow("Process killed",
+			"processID", p.ID,
+			"cmd", p.cmd,
+			"pid", p.cmd.Process.Pid,
+		)
 	}
-}
-
-func (p *Process) SetHasExited(value bool) {
-	p.exited.Store(value)
-}
-
-func (p *Process) HasExited() bool {
-	return p.exited.Load()
 }
 
 func (p *Process) WriteStdin(data string) error {

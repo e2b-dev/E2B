@@ -8,13 +8,13 @@ import (
 )
 
 type Manager struct {
-	procs  *smap.Map[ID, Process]
+	procs  *smap.Map[*Process]
 	logger *zap.SugaredLogger
 }
 
 func NewManager(logger *zap.SugaredLogger) *Manager {
 	return &Manager{
-		procs:  smap.New[ID, Process](),
+		procs:  smap.New[*Process](),
 		logger: logger,
 	}
 }
