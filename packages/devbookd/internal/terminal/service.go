@@ -125,16 +125,12 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 
 			_, err := io.Copy(writer, newTerm.tty)
 			if err != nil {
-				if err == io.EOF {
-					return
-				} else {
-					s.logger.Warnw("Error reading from terminal",
-						"terminalID", newTerm.ID,
-						"error", err,
-						"isDestroyed", newTerm.IsDestroyed(),
-					)
-					return
-				}
+				s.logger.Warnw("Error reading from terminal",
+					"terminalID", newTerm.ID,
+					"error", err,
+					"isDestroyed", newTerm.IsDestroyed(),
+				)
+				return
 			}
 		}()
 
