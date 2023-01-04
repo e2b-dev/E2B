@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sync"
 	"sync/atomic"
-	"syscall"
 
 	"go.uber.org/zap"
 
@@ -17,8 +15,6 @@ type ID = string
 
 type Terminal struct {
 	logger *zap.SugaredLogger
-
-	mu sync.RWMutex
 
 	destroyed *atomic.Bool
 
@@ -92,29 +88,17 @@ func (t *Terminal) Destroy() {
 		"pid", t.cmd.Process.Pid,
 	)
 
-	t.mu.Lock()
-
 	if t.IsDestroyed() {
 		t.logger.Infow("Terminal was already destroyed",
 			"terminalID", t.ID,
 			"cmd", t.cmd,
 			"pid", t.cmd.Process.Pid,
 		)
-		t.mu.Unlock()
 		return
 	} else {
 		t.SetIsDestroyed(true)
-		t.mu.Unlock()
 	}
 
-	if err := t.cmd.Process.Signal(syscall.SIGKILL); err != nil {
-		t.logger.Warnw("Failed to kill terminal process",
-			"terminalID", t.ID,
-			"cmd", t.cmd,
-			"pid", t.cmd.Process.Pid,
-			"error", err,
-		)
-	}
 	if err := t.tty.Close(); err != nil {
 		t.logger.Warnw("Failed to close tty",
 			"terminalID", t.ID,
@@ -124,6 +108,12 @@ func (t *Terminal) Destroy() {
 			"error", err,
 		)
 	}
+	t.logger.Infow("Closed terminal PTY",
+		"terminalID", t.ID,
+		"cmd", t.cmd,
+		"pid", t.cmd.Process.Pid,
+	)
+
 }
 
 func (t *Terminal) Write(b []byte) (int, error) {
