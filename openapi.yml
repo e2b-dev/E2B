@@ -94,7 +94,7 @@ components:
         - PHP
         - Java
         - Perl
-        - VisualBasic
+        - DotNET
         - Typescript
 
     EnvironmentState:

@@ -16,7 +16,7 @@ const enabledTemplates: Templates = {
   Java: true,
   Perl: true,
   PHP: true,
-  VisualBasic: true,
+  DotNET: true,
 }
 
 export const templates = Object.entries(enabledTemplates)
