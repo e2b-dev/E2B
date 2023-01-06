@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
+	"github.com/devbookhq/devbook-api/packages/api/internal/utils"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -43,7 +44,7 @@ func (a *APIStore) GetSessions(
 	c.JSON(http.StatusOK, sessions)
 }
 
-var postSessionParallelLock = CreateRequestLimitLock(DefaultRequestLimit)
+var postSessionParallelLock = utils.CreateRequestLimitLock(utils.DefaultRequestLimit)
 
 func (a *APIStore) PostSessions(
 	c *gin.Context,

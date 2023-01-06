@@ -7,7 +7,6 @@ COPY devbookd /usr/bin/devbookd
 COPY devbookd-init /etc/init.d/devbookd
 COPY provision-env.sh provision-env.sh
 RUN chmod +x provision-env.sh
-#####
 
 WORKDIR code
 
@@ -22,24 +21,6 @@ RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
 RUN echo ENTRYPOINT=main.pl >> /.dbkenv
 
-{{ if .Deps }}
-  {{ range .Deps }}
-    RUN cpanm {{ . }}
-  {{ end }}
-
-  # {
-  #   "dep1": true
-  #   ,"dep2": true
-  # }
-  RUN echo { >> /.dbkdeps.json
-  {{ range .Deps }}
-    RUN echo ',"{{ . }}": true' >> /.dbkdeps.json
-  {{ end }}
-  RUN echo } >> /.dbkdeps.json
-{{ end }}
-
-# TODO: Deps uninstallation
-# Deps installation
 RUN echo DEPS_CMD=cpanm >> /.dbkenv
 RUN echo DEPS_INSTALL_ARGS= >> /.dbkenv
 

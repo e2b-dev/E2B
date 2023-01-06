@@ -2,7 +2,7 @@ import * as sdk from '@devbookhq/sdk'
 
 import { notEmpty } from '../utils/notEmpty'
 
-export type Template = sdk.components['schemas']['Template'] | 'Prisma'
+export type Template = sdk.components['schemas']['Template']
 
 type Templates = { [key in Template]: boolean }
 
@@ -13,8 +13,10 @@ const enabledTemplates: Templates = {
   Python3: true,
   Rust: true,
   Typescript: true,
-  // Custom template
-  Prisma: false,
+  Java: true,
+  Perl: true,
+  PHP: true,
+  VisualBasic: true,
 }
 
 export const templates = Object.entries(enabledTemplates)

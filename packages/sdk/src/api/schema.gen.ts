@@ -264,7 +264,17 @@ export interface paths {
 export interface components {
   schemas: {
     /** @enum {string} */
-    Template: "Nodejs" | "Go" | "Bash" | "Rust" | "Python3" | "Typescript";
+    Template:
+      | "Nodejs"
+      | "Go"
+      | "Bash"
+      | "Rust"
+      | "Python3"
+      | "PHP"
+      | "Java"
+      | "Perl"
+      | "VisualBasic"
+      | "Typescript";
     /** @enum {string} */
     EnvironmentState: "Building" | "Failed" | "Done";
     Environment: {

@@ -1,4 +1,4 @@
-package handlers
+package utils
 
 const DefaultRequestLimit = 2
 

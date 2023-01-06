@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/devbookhq/devbook-api/packages/api/internal/utils"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -16,7 +18,8 @@ const (
 	dockerfileSuffix = ".Dockerfile"
 	jobFileSuffix    = ".hcl"
 
-	// buildTemplateTimeout = time.Minute * 15
+	templateTaskName     = "build-env"
+	buildTemplateTimeout = time.Minute * 15
 )
 
 var (
@@ -66,16 +69,33 @@ func (n *NomadClient) RebuildTemplates(t trace.Tracer) error {
 		return fmt.Errorf("error retrieving templates from the filesystem: %+v", err)
 	}
 
+	templateParallelBuildLock := utils.CreateRequestLimitLock(2)
+
 	for _, template := range *templates {
-		fmt.Printf("Rebuilding %s\n", template)
-		_, err := n.BuildEnv(template, template)
-		if err != nil {
-			return fmt.Errorf("error starting template '%s' building: %+v", template, err)
-		}
-		// _, err = n.WaitForJob(*job, buildTemplateTimeout)
-		// if err != nil {
-		// 	return fmt.Errorf("error waiting for template '%s' to build: %+v", template, err)
-		// }
+		go func(template string) {
+			unlock := templateParallelBuildLock()
+			defer unlock()
+
+			fmt.Printf("Rebuilding %s\n", template)
+			job, err := n.BuildEnv(template, template)
+			if err != nil {
+				fmt.Printf("error starting template '%s' building: %+v\n", template, err)
+				return
+			}
+			fmt.Printf("Rebuilding template '%s' started\n", template)
+			alloc, err := n.WaitForJob(*job, buildTemplateTimeout, NomadTaskDeadState, "", templateTaskName)
+			if err != nil {
+				fmt.Printf("error waiting for template '%s' to build: %+v\n", template, err)
+				return
+			}
+
+			if alloc.TaskStates["build-env"].Failed {
+				fmt.Printf("template '%s' building failed\n", template)
+			} else {
+				fmt.Printf("template '%s' successfuly finished with state '%s'\n", template, alloc.TaskStates["build-env"].State)
+			}
+
+		}(template)
 	}
 
 	return nil

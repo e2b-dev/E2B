@@ -91,6 +91,10 @@ components:
         - Bash
         - Rust
         - Python3
+        - PHP
+        - Java
+        - Perl
+        - VisualBasic
         - Typescript
 
     EnvironmentState:

@@ -13,7 +13,7 @@ tasks:
       go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
       go install honnef.co/go/tools/cmd/staticcheck@latest
       go install github.com/goreleaser/goreleaser@latest
-
+      
   - name: Init Terraform
     init: |-
       make terraform-init
@@ -24,6 +24,7 @@ tasks:
 
   - name: Init Styles
     init: |-
+      snap install --edge vale
       vale sync
 
 github:

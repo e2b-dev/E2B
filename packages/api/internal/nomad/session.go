@@ -26,8 +26,8 @@ const (
 	sessionIDPrefix          = "s"
 	sessionIDRandomLength    = 7
 	shortNodeIDLength        = 8
-	nomadTaskRunningState    = "running"
-	nomadTaskDeadState       = "dead"
+	NomadTaskRunningState    = "running"
+	NomadTaskDeadState       = "dead"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 
 func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
-		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", sessionsJobNameWithSlash, fcTaskName, nomadTaskRunningState),
+		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", sessionsJobNameWithSlash, fcTaskName, NomadTaskRunningState),
 	})
 	if err != nil {
 		return nil, &api.APIError{
@@ -160,6 +160,9 @@ jobRegister:
 			index:  0,
 		},
 		allocationCheckTimeout,
+		NomadTaskRunningState,
+		"",
+		fcTaskName,
 	)
 
 	if err != nil {
