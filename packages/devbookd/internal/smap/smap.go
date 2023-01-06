@@ -1,50 +1,31 @@
 package smap
 
 import (
-	"sync"
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Map[V any] struct {
-	mu sync.Mutex
-	m  map[string]V
+	m cmap.ConcurrentMap[string, V]
 }
 
 func New[V any]() *Map[V] {
 	return &Map[V]{
-		m: make(map[string]V),
+		m: cmap.New[V](),
 	}
 }
 
 func (m *Map[V]) Remove(key string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	delete(m.m, key)
+	m.m.Remove(key)
 }
 
 func (m *Map[V]) Get(key string) (V, bool) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	term, ok := m.m[key]
-	return term, ok
+	return m.m.Get(key)
 }
 
 func (m *Map[V]) Insert(key string, value V) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	m.m[key] = value
+	m.m.Set(key, value)
 }
 
 func (m *Map[V]) Items() map[string]V {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	items := make(map[string]V)
-	for k, v := range m.m {
-		items[k] = v
-	}
-
-	return items
+	return m.m.Items()
 }
