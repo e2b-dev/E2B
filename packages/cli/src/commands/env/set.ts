@@ -15,7 +15,7 @@ import {
 } from 'src/utils/format'
 import { listEnvironments } from './list'
 
-const envVarScriptPath = '/etc/profile.d/envs.sh'
+const envVarScriptPath = '/etc/profile.d/env-vars.sh'
 
 export const setCommand = new commander.Command('set')
   .description('Set env vars in environment')
@@ -126,12 +126,7 @@ export async function setEnvVars({
   try {
     await session.open()
 
-    // const envsString = Object.entries(envVars).reduce((prev, [key, value]) => {
-    //   const currentVar = `export ${key.toUpperCase()}="${value}"\n`
-    //   return prev + currentVar
-    // }, '')
-
-    const envsString = envVars.join('\n')
+    const envsString = envVars.map(envVar => `export ${envVar}`).join('\n')
 
     await session.filesystem?.write(envVarScriptPath, envsString)
   } finally {
