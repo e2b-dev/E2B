@@ -139,12 +139,10 @@ func (n *NomadClient) WaitForEnvBuild(job JobInfo, timeout time.Duration) error 
 					return
 				}
 
-				fmt.Printf("allocs %+v", allocations)
 				for _, alloc := range allocations {
 					if alloc.TaskStates[templateTaskName] == nil {
 						continue
 					}
-					fmt.Printf("state %v", alloc.TaskStates[templateTaskName].State)
 					if alloc.TaskStates[templateTaskName].State == NomadTaskDeadState {
 						if alloc.TaskStates[templateTaskName].Failed {
 							allocationWait <- fmt.Errorf("building env failed")
