@@ -8,6 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gorilla/mux v1.8.0
+	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/rs/xid v1.4.0
 	go.uber.org/zap v1.21.0
 )
