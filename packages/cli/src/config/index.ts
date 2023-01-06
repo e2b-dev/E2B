@@ -28,9 +28,6 @@ export const configSchema = yup.object({
     change_hash: yup.string(),
     local_root: yup.string().required().default('./files'),
   }),
-  setup: yup.object({
-    cmd: yup.string().nullable().default(''),
-  }),
 })
 
 export type DevbookConfig = yup.InferType<typeof configSchema>
