@@ -2,7 +2,7 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk add --no-cache openjdk11
+RUN apk add --no-cache openjdk17
 
 WORKDIR code
 
