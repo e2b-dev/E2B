@@ -45,7 +45,7 @@ type JobInfo struct {
 	index  uint64
 }
 
-func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration, nomadDesiredState, nomadFailedState, taskName string) (*api.Allocation, error) {
+func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration) (*api.Allocation, error) {
 	ctx := context.Background()
 
 	topics := map[api.Topic][]string{
@@ -79,7 +79,6 @@ func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration, nomadDesire
 			case event := <-eventCh:
 				for _, e := range event.Events {
 					alloc, err := e.Allocation()
-
 					if err != nil {
 						allocationWait <- &allocResult{
 							err: fmt.Errorf("cannot retrieve allocations for '%s' job: %+v", job.name, err),
@@ -91,22 +90,18 @@ func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration, nomadDesire
 						continue
 					}
 
-					fmt.Printf("state %+v\n", alloc.TaskStates)
-
-					if alloc.TaskStates[taskName] == nil {
+					if alloc.TaskStates[fcTaskName] == nil {
 						continue
 					}
 
-					if nomadFailedState != "" {
-						if alloc.TaskStates[taskName].State == nomadFailedState {
-							allocationWait <- &allocResult{
-								err: fmt.Errorf("allocation is %s for '%s' job", alloc.TaskStates[taskName].State, job.name),
-							}
-							return
+					if alloc.TaskStates[fcTaskName].State == NomadTaskDeadState {
+						allocationWait <- &allocResult{
+							err: fmt.Errorf("allocation is %s for '%s' job", alloc.TaskStates[fcTaskName].State, job.name),
 						}
+						return
 					}
 
-					if alloc.TaskStates[taskName].State == nomadDesiredState {
+					if alloc.TaskStates[fcTaskName].State == NomadTaskRunningState {
 						allocationWait <- &allocResult{
 							alloc: alloc,
 						}
@@ -121,4 +116,47 @@ func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration, nomadDesire
 	result := <-allocationWait
 
 	return result.alloc, result.err
+}
+
+func (n *NomadClient) WaitForEnvBuild(job JobInfo, timeout time.Duration) error {
+	allocationWait := make(chan error, 1)
+
+	go func() {
+		ticker := time.NewTicker(4000 * time.Millisecond)
+
+		for {
+			select {
+			case <-time.After(timeout):
+				allocationWait <- fmt.Errorf("cannot retrieve allocations for '%s' job: Timeout - %s", job.name, timeout.String())
+				return
+			case <-ticker.C:
+				filter := fmt.Sprintf("JobID contains \"%s\" and EvalID == \"%s\"", job.name, job.evalID)
+				allocations, _, err := n.client.Allocations().List(&api.QueryOptions{
+					Filter: filter,
+				})
+				if err != nil {
+					allocationWait <- fmt.Errorf("cannot retrieve allocations from nomad %+v", err)
+					return
+				}
+
+				fmt.Printf("allocs %+v", allocations)
+				for _, alloc := range allocations {
+					if alloc.TaskStates[templateTaskName] == nil {
+						continue
+					}
+					fmt.Printf("state %v", alloc.TaskStates[templateTaskName].State)
+					if alloc.TaskStates[templateTaskName].State == NomadTaskDeadState {
+						if alloc.TaskStates[templateTaskName].Failed {
+							allocationWait <- fmt.Errorf("building env failed")
+						} else {
+							close(allocationWait)
+						}
+						return
+					}
+				}
+			}
+		}
+	}()
+
+	return <-allocationWait
 }

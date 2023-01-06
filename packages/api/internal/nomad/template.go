@@ -19,7 +19,7 @@ const (
 	jobFileSuffix    = ".hcl"
 
 	templateTaskName     = "build-env"
-	buildTemplateTimeout = time.Minute * 15
+	buildTemplateTimeout = time.Minute * 5
 )
 
 var (
@@ -83,18 +83,13 @@ func (n *NomadClient) RebuildTemplates(t trace.Tracer) error {
 				return
 			}
 			fmt.Printf("Rebuilding template '%s' started\n", template)
-			alloc, err := n.WaitForJob(*job, buildTemplateTimeout, NomadTaskDeadState, "", templateTaskName)
+			err = n.WaitForEnvBuild(*job, buildTemplateTimeout)
 			if err != nil {
 				fmt.Printf("error waiting for template '%s' to build: %+v\n", template, err)
 				return
 			}
 
-			if alloc.TaskStates["build-env"].Failed {
-				fmt.Printf("template '%s' building failed\n", template)
-			} else {
-				fmt.Printf("template '%s' successfuly finished with state '%s'\n", template, alloc.TaskStates["build-env"].State)
-			}
-
+			fmt.Printf("built template environment '%s'", template)
 		}(template)
 	}
 

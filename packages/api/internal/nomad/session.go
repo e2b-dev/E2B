@@ -160,9 +160,6 @@ jobRegister:
 			index:  0,
 		},
 		allocationCheckTimeout,
-		NomadTaskRunningState,
-		"",
-		fcTaskName,
 	)
 
 	if err != nil {
