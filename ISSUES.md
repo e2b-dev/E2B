@@ -61,6 +61,8 @@
 - Warn about having multiple configs for the same environment
 - Put template field from dbk.toml in a separate [] category so it is not confused with id because they can look the same
 - Add default "empty" template that is used if you don't define anything
+- Ignore "files" directory when pushing if it is not present
+- Connect with id may be creating toml?
 #### Feedback
 > How can I create the DEVBOOK_KEY? It seems I can’t create resources without it
 > I haven’t used the dashboard before and I presumed I might have needed an invite to a team or sth of the sort.
@@ -94,3 +96,11 @@ There will be no "templates", just other envs you want to base the current env o
 The template field that each environment has will be used for composing the diff snapshots and can be also used for constructing the "tree of 
 
 - How to turn this into serverless?
+
+# devbookd
+- change to sharded map
+  - the problem may not be the terminal
+- test the process deadlock
+
+# envs
+- How to manage envs with git workflow?
