@@ -123,14 +123,9 @@ export async function setEnvVars({
     id: config.id,
   })
 
-  try {
-    await session.open()
+  await session.open()
 
-    const envsString = envVars.map(envVar => `export ${envVar}`).join('\n')
+  const envsString = envVars.map(envVar => `export ${envVar}`).join('\n')
 
-    await session.filesystem?.write(envVarScriptPath, envsString)
-  } finally {
-    // Don't call close - the edit session is shared so we don't want to close it.
-    // await session.close()
-  }
+  await session.filesystem?.write(envVarScriptPath, envsString)
 }

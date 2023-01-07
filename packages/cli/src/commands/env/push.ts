@@ -148,25 +148,19 @@ export async function pushEnvironment({
 
       // TODO: Delete files that should not be in the final destination
 
-      try {
-        await session.open()
-        await Promise.all(
-          files.map(async f => {
-            const content = await fsPromise.readFile(f.path, 'utf-8')
-            console.log(
-              `  - ${asLocalRelative(f.path)} ${asDim('(local)')} ${asDim('-->')} ${asEnv(
-                f.rootPath,
-              )} ${asDim('(env)')}`,
-            )
-            await session.filesystem?.makeDir(path.dirname(f.rootPath))
-            await session.filesystem?.write(f.rootPath, content)
-          }),
-        )
-        await session.close()
-      } finally {
-        // Don't call close - the edit session is shared so we don't want to close it.
-        // await session.close()
-      }
+      await session.open()
+      await Promise.all(
+        files.map(async f => {
+          const content = await fsPromise.readFile(f.path, 'utf-8')
+          console.log(
+            `  - ${asLocalRelative(f.path)} ${asDim('(local)')} ${asDim('-->')} ${asEnv(
+              f.rootPath,
+            )} ${asDim('(env)')}`,
+          )
+          await session.filesystem?.makeDir(path.dirname(f.rootPath))
+          await session.filesystem?.write(f.rootPath, content)
+        }),
+      )
     }
 
     const newConfig = {
