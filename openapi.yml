@@ -95,7 +95,6 @@ components:
         - Java
         - Perl
         - DotNET
-        - Typescript
 
     EnvironmentState:
       type: string

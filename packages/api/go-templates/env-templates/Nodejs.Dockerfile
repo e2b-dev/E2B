@@ -2,21 +2,20 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk add --no-cache nodejs-current npm
-RUN npm config set strict-ssl false
+RUN apk update && apk upgrade 
+RUN apk add --no-cache nodejs-current npm
 
 WORKDIR /code
-RUN npm i -g ts-node
-RUN npm i -D typescript
-RUN npx tsc --init
-RUN touch index.ts
+
+RUN npm init -y
+RUN npm config set strict-ssl false
 
 # Set env vars for devbook-daemon
-RUN echo RUN_CMD=ts-node >> /.dbkenv
+RUN echo RUN_CMD=node >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
-RUN echo RUN_ARGS=index.ts >> /.dbkenv
+RUN echo RUN_ARGS=index.mjs >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
-RUN echo ENTRYPOINT=index.ts >> /.dbkenv
+RUN echo ENTRYPOINT=index.mjs >> /.dbkenv
 
 WORKDIR /

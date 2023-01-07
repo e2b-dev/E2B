@@ -273,8 +273,7 @@ export interface components {
       | "PHP"
       | "Java"
       | "Perl"
-      | "DotNET"
-      | "Typescript";
+      | "DotNET";
     /** @enum {string} */
     EnvironmentState: "Building" | "Failed" | "Done";
     Environment: {

@@ -2,16 +2,17 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk add --no-cache php php-curl
+RUN apk update && apk upgrade 
+RUN apk add --no-cache openjdk17
 
 WORKDIR code
 
 # Set env vars for devbook-daemon
-RUN echo RUN_CMD=php >> /.dbkenv
+RUN echo RUN_CMD=java >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
-RUN echo RUN_ARGS=index.php >> /.dbkenv
+RUN echo RUN_ARGS=Main.java >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
-RUN echo ENTRYPOINT=index.php >> /.dbkenv
+RUN echo ENTRYPOINT=Main.java >> /.dbkenv
 
 WORKDIR /

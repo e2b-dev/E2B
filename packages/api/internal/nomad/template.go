@@ -89,7 +89,7 @@ func (n *NomadClient) RebuildTemplates(t trace.Tracer) error {
 				return
 			}
 
-			fmt.Printf("built template environment '%s'", template)
+			fmt.Printf("built template environment '%s'\n", template)
 		}(template)
 	}
 

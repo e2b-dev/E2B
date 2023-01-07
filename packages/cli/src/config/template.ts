@@ -12,7 +12,6 @@ const enabledTemplates: Templates = {
   Nodejs: true,
   Python3: true,
   Rust: true,
-  Typescript: true,
   Java: true,
   Perl: true,
   PHP: true,

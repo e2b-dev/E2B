@@ -10,6 +10,7 @@ RUN sed -i.bak '/^unset -f append_path/i append_path "/usr/local/go/bin"' /etc/p
 RUN sed -i.bak '/export PATH/a export GOLANG_VERSION=$GOLANG_VERSION' "/etc/profile"
 
 WORKDIR code
+
 RUN go mod init main
 
 # Set env vars for devbook-daemon

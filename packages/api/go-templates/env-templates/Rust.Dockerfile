@@ -2,7 +2,8 @@
 # We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk add --no-cache gcc
+RUN apk update && apk upgrade 
+RUN apk add --no-cache gcc
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
