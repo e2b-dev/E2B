@@ -3,7 +3,10 @@
 {{ .BaseDockerfile }}
 
 RUN apk update && apk upgrade
-RUN apk add --no-cache perl perl-app-cpanminus
+RUN apk add --no-cache curl tar make gcc build-base wget gnupg ca-certificates g++ git gd-dev
+RUN apk add --no-cache zlib zlib-dev
+RUN apk add --no-cache perl perl-dev
+RUN apk add --no-cache perl-app-cpanminus
 
 WORKDIR code
 
