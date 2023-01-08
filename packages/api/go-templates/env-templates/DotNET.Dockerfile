@@ -6,9 +6,9 @@ RUN apk update && apk upgrade
 
 # Install .NET SDK
 RUN apk add --no-cache \
-  --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing \
-  --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
-  --repository http://dl-cdn.alpinelinux.org/alpine/edge/community \
+  --repository http://dl-cdn.alpinelinux.org/alpine/v3.16/testing \
+  --repository http://dl-cdn.alpinelinux.org/alpine/v3.16/main \
+  --repository http://dl-cdn.alpinelinux.org/alpine/v3.16/community \
   libgdiplus dotnet7-sdk bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib
 
 # Install Powershell
