@@ -58,7 +58,9 @@ func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration) (*api.Alloc
 	streamCtx, streamCancel := context.WithCancel(ctx)
 	defer streamCancel()
 
-	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, job.index, &api.QueryOptions{})
+	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, job.index, &api.QueryOptions{
+		Filter:  fmt.Sprintf("JobID contains \"%s\" and EvalID == \"%s\"", job.name, job.evalID),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Nomad event stream for: %+v", err)
 	}
