@@ -59,7 +59,7 @@ func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration) (*api.Alloc
 	defer streamCancel()
 
 	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, job.index, &api.QueryOptions{
-		Filter:  fmt.Sprintf("JobID contains \"%s\" and EvalID == \"%s\"", job.name, job.evalID),
+		Filter: fmt.Sprintf("EvalID == \"%s\"", job.evalID),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Nomad event stream for: %+v", err)
@@ -132,7 +132,7 @@ func (n *NomadClient) WaitForEnvBuild(job JobInfo, timeout time.Duration) error 
 				allocationWait <- fmt.Errorf("cannot retrieve allocations for '%s' job: Timeout - %s", job.name, timeout.String())
 				return
 			case <-ticker.C:
-				filter := fmt.Sprintf("JobID contains \"%s\" and EvalID == \"%s\"", job.name, job.evalID)
+				filter := fmt.Sprintf("EvalID == \"%s\"", job.evalID)
 				allocations, _, err := n.client.Allocations().List(&api.QueryOptions{
 					Filter: filter,
 				})
