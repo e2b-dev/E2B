@@ -1,37 +1,32 @@
-# IMPORTANT: Don't specify the FROM field here. The FROM field (with additional configuration) is injected during runtime.
-# We will have a proper Devbook based image in the future.
-{{ .BaseDockerfile }}
+FROM ubuntu:20.04
 
-RUN apk update && apk upgrade 
-RUN apk add --no-cache gcc
+ARG DEBIAN_FRONTEND=noninteractive
 
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.66.0
+COPY ./devbookd /usr/bin/devbookd
+RUN chmod +x /usr/bin/devbookd
+COPY ubuntu/devbookd.service /etc/init.d/devbookd
 
-RUN set -eux; \
-    wget "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-musl/rustup-init"; \
-    chmod +x rustup-init; \
-    ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host x86_64-unknown-linux-musl; \
-    rm rustup-init; \
-    chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
-    rustup --version; \
-    cargo --version; \
-    rustc --version;
+RUN mkdir -p /etc/chrony
+RUN echo "refclock PHC /dev/ptp0 poll 3 dpoll -2 offset 0" > /etc/chrony/chrony.conf
+RUN echo "makestep 1 -1" >> /etc/chrony/chrony.conf
 
-RUN sed -i.bak '/^unset -f append_path/i append_path "/usr/local/cargo/bin"' /etc/profile
-RUN sed -i.bak '/export PATH/a export CARGO_HOME=/usr/local/cargo' '/etc/profile'
-RUN sed -i.bak '/export PATH/a export RUSTUP_HOME=/usr/local/rustup' '/etc/profile'
-RUN sed -i.bak '/export PATH/a export RUST_VERSION=1.66.0' '/etc/profile'
+COPY ubuntu/provision-env.ubuntu.sh /provision-env.sh
+RUN chmod +x /provision-env.sh
 
-RUN cargo new code --bin
+# Update default packages
+RUN apt-get update
+
+# Get Ubuntu packages
+RUN apt-get install -y \
+    build-essential \
+    curl socat util-linux openssh-server
+
+# Get Rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+
+RUN yes | unminimize
 
 WORKDIR code
-
-RUN echo "" > src/main.rs
-
-RUN cargo fetch
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=cargo >> /.dbkenv

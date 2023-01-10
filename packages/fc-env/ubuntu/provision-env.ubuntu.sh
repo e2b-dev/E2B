@@ -16,9 +16,14 @@ EOF
 # --- Enable systemd services --- #
 # Because this script runs in a container we can't use `systemctl`.
 # Containers don't run init daemons. We have to enable the runner service manually.
+mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -s /etc/systemd/system/devbookd.service /etc/systemd/system/multi-user.target.wants/devbookd.service
 # ------------------------------- #
 
+systemctl enable devbookd
+
+mkdir -p /etc/ssh
+touch /etc/ssh/sshd_config
 echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
