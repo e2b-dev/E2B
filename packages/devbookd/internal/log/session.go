@@ -26,7 +26,7 @@ type opts struct {
 }
 
 func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
-	var parsed map[string]interface{}
+	parsed := make(map[string]interface{})
 
 	json.Unmarshal(jsonLogs, &parsed)
 
@@ -42,8 +42,6 @@ func newSessionWriter() *sessionWriter {
 }
 
 func getMMDSToken(client http.Client) (string, error) {
-	fmt.Println("Retrieving MMDS token")
-
 	request, err := http.NewRequest("PUT", "http://"+mmdsDefaultAddress+"/latest/api/token", new(bytes.Buffer))
 	if err != nil {
 		return "", err
@@ -56,8 +54,6 @@ func getMMDSToken(client http.Client) (string, error) {
 		return "", err
 	}
 	defer response.Body.Close()
-
-	fmt.Printf("Reading mmds token response body")
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -74,8 +70,6 @@ func getMMDSToken(client http.Client) (string, error) {
 }
 
 func getMMDSOpts(client http.Client, token string) (*opts, error) {
-	fmt.Printf("Retrieving MMDS opts")
-
 	request, err := http.NewRequest("GET", "http://"+mmdsDefaultAddress, new(bytes.Buffer))
 	if err != nil {
 		return nil, err
@@ -89,21 +83,16 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 	}
 	defer response.Body.Close()
 
-	fmt.Printf("Reading mmds opts response body")
-
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("Unmarshalling body to json")
 	var opts opts
 	err = json.Unmarshal(body, &opts)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("MMDS opts body unmarshalled")
 
 	if opts.Address == "" {
 		return nil, fmt.Errorf("no 'address' in mmds opts")
@@ -121,8 +110,6 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 }
 
 func sendSessionLogs(client http.Client, logs []byte, address string) error {
-	fmt.Printf("Sending session logs")
-
 	request, err := http.NewRequest("POST", address, bytes.NewBuffer(logs))
 	if err != nil {
 		return err
@@ -134,8 +121,6 @@ func sendSessionLogs(client http.Client, logs []byte, address string) error {
 		return err
 	}
 	defer response.Body.Close()
-
-	fmt.Printf("Session logs sent")
 
 	return nil
 }
