@@ -142,8 +142,6 @@ func sendLogs(logs []byte) {
 		return
 	}
 
-	fmt.Printf("Logs identification: %+v", mmdsOpts)
-
 	sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
 	if err != nil {
 		fmt.Printf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
