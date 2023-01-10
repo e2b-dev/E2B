@@ -21,7 +21,7 @@ start-docker:
 	-p 9999:9999 \
 	--rm \
 	-it devbookd-debug \
-	/bin/ash
+	/bin/sh -l
 
 start-devbookd-docker:
 	docker run \
@@ -31,7 +31,7 @@ start-devbookd-docker:
 	-p 9999:9999 \
 	--rm \
 	-i devbookd-debug \
-	/usr/bin/devbookd -debug | jq .
+	/usr/bin/devbookd -debug
 
 start-debug-docker:
 	docker run \
