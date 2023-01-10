@@ -88,10 +88,6 @@ func (n *NomadClient) WaitForJob(job JobInfo, timeout time.Duration) (*api.Alloc
 						return
 					}
 
-					if alloc.EvalID != job.evalID {
-						continue
-					}
-
 					if alloc.TaskStates[fcTaskName] == nil {
 						continue
 					}
