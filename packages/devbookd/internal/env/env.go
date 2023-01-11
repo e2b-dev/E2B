@@ -94,7 +94,6 @@ func configureEnvForServerMode(env *Env) {
 	if !ok {
 		preferredShell = path.Join("/bin", "sh")
 	}
-	fmt.Printf("\n\n<<<shell %+v>>>>\n\n", os.Environ())
 	env.shell = preferredShell
 }
 

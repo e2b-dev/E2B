@@ -20,7 +20,10 @@ mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -s /etc/systemd/system/devbookd.service /etc/systemd/system/multi-user.target.wants/devbookd.service
 # ------------------------------- #
 
-systemctl enable devbookd
+echo "export SHELL='/bin/bash'" > /etc/profile.d/shell.sh
+echo "export PS1='\w \$ '" > /etc/profile.d/prompt.sh
+echo "export PS1='\w \$ '" >> "/etc/profile"
+echo "export PS1='\w \$ '" >> "/root/.bashrc"
 
 mkdir -p /etc/ssh
 touch /etc/ssh/sshd_config
@@ -34,8 +37,8 @@ passwd -d root
 # Add DNS.
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
-echo "export PS1='\w \$ '" > /etc/profile.d/prompt.sh
-echo "export SHELL='/bin/bash" > /etc/profile.d/shell.sh
+# Start systemd services
+systemctl enable devbookd
 
 # Delete itself once done.
 rm -- "$0"

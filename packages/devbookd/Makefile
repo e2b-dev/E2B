@@ -7,8 +7,11 @@ build:
 build-darwin:
 	GOOS=darwin go build -a -o bin/darwin/devbookd .
 
-build-debug-devbookd:
+build-debug-devbookd-race:
 	CGO_ENABLED=1 GOOS=linux go build -race -gcflags=all="-N -l" -o bin/debug/devbookd
+
+build-debug-devbookd:
+	GOOS=linux go build -gcflags=all="-N -l" -o bin/debug/devbookd
 
 build-docker:
 	DOCKER_BUILDKIT=1 docker build -t devbookd-debug . -f debug.Dockerfile
@@ -21,7 +24,7 @@ start-docker:
 	-p 9999:9999 \
 	--rm \
 	-it devbookd-debug \
-	/bin/bash -l
+	/bin/bash -l -i
 
 start-devbookd-docker:
 	docker run \

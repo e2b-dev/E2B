@@ -1,12 +1,9 @@
-# syntax = docker/dockerfile:1-experimental
+FROM ubuntu:20.04
 
-# This Dockerfile is for creating a testing environment for devbookd.
-
-FROM golang:1.19
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update
-RUN apt-get install vim -y
-
+RUN apt-get install vim golang-go -y
 
 
 # # RUN apk update && \
@@ -34,12 +31,12 @@ RUN apt-get install vim -y
 # # WORKDIR /code
 
 # Set env vars for devbook-daemon
-RUN echo RUN_CMD=bash >> /.dbkenv
+RUN echo RUN_CMD=cargo >> /.dbkenv
 # Format: RUN_ARGS=arg1 arg2 arg3
-RUN echo RUN_ARGS=index.sh >> /.dbkenv
+RUN echo RUN_ARGS=run >> /.dbkenv
 RUN echo WORKDIR=/code >> /.dbkenv
 # Relative to the WORKDIR env.
-RUN echo ENTRYPOINT=index.sh >> /.dbkenv
+RUN echo ENTRYPOINT=src/main.rs >> /.dbkenv
 
 WORKDIR /
 COPY go.mod go.sum /
@@ -54,8 +51,8 @@ RUN mv /bin/debug/devbookd /usr/bin/devbookd
 
 WORKDIR /
 
-RUN echo 'export PS1="\w \$ "' > /etc/profile.d/shell.sh
-RUN echo 'export SHELL="/bin/bash"' >> /etc/profile.d/shell.sh
+# RUN echo 'export PS1="\w \$ "' > /etc/profile.d/shell.sh
+# RUN echo 'export SHELL="/bin/bash"' >> /etc/profile.d/shell.sh
 
 RUN apt-get install systemd -y
 
@@ -80,7 +77,7 @@ Type=simple \n\
 Restart=always \n\
 User=root \n\
 Group=root \n\
-ExecStart=/usr/bin/devbookd \n\
+ExecStart=/bin/bash -l -c /usr/bin/devbookd \n\
 [Install] \n\
 WantedBy=multi-user.target \n\
 ' > /etc/systemd/system/devbookd.service
