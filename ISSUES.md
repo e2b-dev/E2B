@@ -97,10 +97,11 @@ The template field that each environment has will be used for composing the diff
 
 - How to turn this into serverless?
 
-# devbookd
-- change to sharded map
-  - the problem may not be the terminal
-- test the process deadlock
-
 # envs
 - How to manage envs with git workflow?
+- Add memory swap to Rust - OoM when compiling bigger programs
+  - https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-22-04
+- Should we use ubuntu 22 for envs?
+- Does ubuntu need the newer kernel?
+  - Using driver with multiple kernels
+- Cloud Hypervisor - https://github.com/cloud-hypervisor/cloud-hypervisor
