@@ -21,7 +21,7 @@ start-docker:
 	-p 9999:9999 \
 	--rm \
 	-it devbookd-debug \
-	/bin/sh -l
+	/bin/bash -l
 
 start-devbookd-docker:
 	docker run \
