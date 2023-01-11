@@ -114,7 +114,7 @@ function mkrootfs() {
   echo "===> Making rootfs..."
 
   local tag=rootfs-${RUN_UUID}
-  local free=1500000000 # 1500MB in B
+  local free=2200000000 # 2200MB in B
 
   cp $DEVBOOKD $SCRIPTDIR/devbookd
 
