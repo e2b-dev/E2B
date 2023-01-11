@@ -114,7 +114,12 @@ function mkrootfs() {
   echo "===> Making rootfs..."
 
   local tag=rootfs-${RUN_UUID}
-  local free=2200000000 # 2200MB in B
+
+  local free=1500000000 # 1500MB in B
+
+  if [ "$CODE_SNIPPET_ID" == "Rust" ]; then
+    free=3300000000 # 3300MB in B
+  fi  
 
   cp $DEVBOOKD $SCRIPTDIR/devbookd
 
