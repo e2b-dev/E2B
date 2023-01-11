@@ -4,7 +4,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 COPY ./devbookd /usr/bin/devbookd
 RUN chmod +x /usr/bin/devbookd
-COPY ubuntu/devbookd.service /etc/init.d/devbookd
+RUN mkdir -p /etc/systemd/system
+COPY ubuntu/devbookd.service /etc/systemd/system/devbookd.service
 
 RUN mkdir -p /etc/chrony
 RUN echo "refclock PHC /dev/ptp0 poll 3 dpoll -2 offset 0" > /etc/chrony/chrony.conf
