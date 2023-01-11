@@ -6,7 +6,7 @@ Type=simple
 Restart=always
 User=root
 Group=root
-ExecStart=/usr/bin/devbookd
+ExecStart=/usr/bin/bash -l -c "/usr/bin/devbookd"
 
 [Install]
 WantedBy=multi-user.target

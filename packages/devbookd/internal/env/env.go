@@ -89,7 +89,12 @@ func configureEnvForUserMode(env *Env) error {
 
 func configureEnvForServerMode(env *Env) {
 	env.logDir = path.Join("/var", "log")
-	env.shell = path.Join("/bin", "sh")
+
+	preferredShell, ok := os.LookupEnv("SHELL")
+	if !ok {
+		preferredShell = path.Join("/bin", "sh")
+	}
+	env.shell = preferredShell
 }
 
 func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error) {
