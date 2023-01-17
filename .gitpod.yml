@@ -23,9 +23,7 @@ tasks:
       cd ./packages/cluster-disk-image && make init
 
   - name: Init Styles
-    init: |-
-      snap install --edge vale
-      vale sync
+    init: vale sync
 
 github:
   prebuilds:
