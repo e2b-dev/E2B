@@ -45,10 +45,10 @@ export const useCommand = new commander.Command('use')
       }
 
       let env: sdk.components['schemas']['Environment'] | undefined
+      const envs = await listEnvironments({ apiKey })
       if (id) {
-        env = { id }
+        env = envs.find(e => e.id === id)
       } else {
-        const envs = await listEnvironments({ apiKey })
         env = await getPromptEnv(
           envs,
           `Select environment to create ${asLocalRelative(configPath)} config for`,
