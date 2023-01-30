@@ -1,0 +1,37 @@
+{
+  "env": {
+    "id": "Pc0L7UgBx62J",
+    "title": "migrations_enum_rename",
+    "template": "CsGJh04UAW07",
+    "filesystem": {
+      "local_root": "./files"
+    }
+  },
+  "guide": {
+    "order": 1,
+    "title": "Creating a column",
+    "environmentID": "CsGJh04UAW07"
+  },
+  "steps": [
+    {
+      "name": "devbookhq-example-guide-d3cf824939fb92ab111dde3d79ca6a83da3e5a96/devbook/migrations-column-create/intro.mdx",
+      "content": "---\ntitle: Create a column in a table\nimage: /img/create-column-table.svg\ntags: [Column, Create, Table]\n---\n\nIn this guide, you will learn how to:\n\n1. Create a column in a table\n1. Evolve your database schema using Prisma Migrate\n1. Query your database to validate your changes"
+    },
+    {
+      "name": "devbookhq-example-guide-d3cf824939fb92ab111dde3d79ca6a83da3e5a96/devbook/migrations-column-create/step-1.mdx",
+      "content": "---\ntitle: Update an existing model with a new yx-->cliqw field\nlayout:\n  type: Code\n  props:\n    tabs:\n      - path: /code/prisma/schema.prisma\n---\n\nWhen adding a new field to a model with existing data, you can either\n\n- Use the `?` operator to mark the field as nullable\n- Provide a default value using the `@default()` attribute function\n\n---\n\nOn the left is a Prisma schema (`prisma/schema.prisma`) file.\n\n<Check checkID=\"Add likes column\">\n\nUpdate the `Post` model by adding a `likes` field with a default value of 0.\n\n<CodeBlock\n  title=\"schema.prisma\"\n  lang=\"prisma\"\n>\n{`likes     Int      @default(0)`}\n</CodeBlock>\n\n> **HINT**: You can hit <kbd>CMD</kbd>/<kbd>CTRL</kbd> + <kbd>S</kbd> to invoke the auto formatting in the  Prisma schema.\n\nYour `Post` model should resemble the following after adding the `likes` field:\n\n<CodeBlock\n  title=\"schema.prisma\"\n  lang=\"prisma\"\n>\n{`model Post {\n  id        Int      @id @default(autoincrement())\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  title     String   @db.VarChar(255)\n  content   String?\n  published Boolean  @default(false)\n  likes     Int      @default(0)\n\n  authorId  Int?\n  author    User?     @relation(fields: [authorId], references: [id])\n}`}\n</CodeBlock>\n\n</Check>\n\n---\n\nOnce you're done, proceed to the next step to generate a migration."
+    },
+    {
+      "name": "devbookhq-example-guide-d3cf824939fb92ab111dde3d79ca6a83da3e5a96/devbook/migrations-column-create/step-2.mdx",
+      "content": "---\ntitle: Create a database migration\nlayout:\n  type: Code\n  props:\n    tabs:\n      - path: /code/prisma/schema.prisma\n---\n\nTo map the updated data model to the database schema you will use the `prisma migrate dev` command.\n\n<Check checkID=\"Run prisma migrate dev\">\nRun the following command on the terminal:\n\n<TerminalCommand\n  rootdir=\"/code\"\n  cmd=\"npx prisma migrate dev --name add-likes-column\"\n/>\n</Check>\n\n\nThis command does the following:\n\n1. It creates a new SQL migration file for this migration\n2. It runs the SQL migration file against the database\n\n### Explore the generated migration\n\nThe generated generated migration is saved in the `migrations` directory. \n\nYou can view the generated migration by clicking on the folder with the name you set in the previous step to expand on it and then  click on the `migration.sql` file. This will open the file on the editor to the left to view the generated migration.\n\n> **Note**: The `TIMESTAMP_init` migration represents the initial state of the database before you made the update.\n\n<Filetree\n  rootPath=\"/code/prisma/migrations\"\n  ignore={['/code/prisma/migrations/*.toml']}\n/>\n\nThe generated SQL migration describes the the changes you made to the Prisma schema.\n\n---\n\nOnce you're done, proceed to the next step."
+    },
+    {
+      "name": "devbookhq-example-guide-d3cf824939fb92ab111dde3d79ca6a83da3e5a96/devbook/migrations-column-create/step-3.mdx",
+      "content": "---\ntitle: Query the database with Prisma Client\nlayout:\n  type: Code\n  props:\n    tabs:\n      - path: /code/index.js\n---\n\nNow that you have added a new column in your table, you can validate it was added by using Prisma Client.\n\nOn the left is the `index.js` file that you will use to define queries to read and write to your database.\n\n<Check checkID=\"Copy Prisma Client query\">\n\nInside the `main` function, add the following query to read the `Post` records from the database and print the result:\n\n\n<CodeBlock lang=\"ts\">\n{`async function main() {\n  const post = await prisma.post.create({\n    data: {\n      title: \"Learn how to rename a table using Prisma\",\n      content: \"One command: prisma migrate dev\",\n      likes: 2,\n    }\n  })\n  console.log(post)\n}`}\n</CodeBlock>\n</Check>\n\nNow run the code with following command on the terminal:\n\n<Check checkID=\"Run Prisma Client query\">\n<TerminalCommand\n  rootdir=\"/code\"\n  cmd=\"npm run dev\"\n/>\n\nThis should output something similar to the snippet below:\n\n```\n{\n  id: 1,\n  createdAt: 2022-11-08T06:36:04.419Z,\n  updatedAt: 2022-11-08T06:36:04.419Z,\n  title: 'Learn how to rename a table using Prisma',\n  content: 'One command: prisma migrate dev',\n  published: false,\n  likes: 2,\n  authorId: null\n}\n```\n</Check>\n\n\nFeel free to explore the rest of the project and play around with it further.\n\n<Filetree\n  rootPath=\"/code\"\n  ignore={['/code/node_modules', '/code/package-lock.json', '*.sh', '*.env', '/code/.gitignore' ]}\n/>\n\n---\n\nCongratulations! 🎉\n\nIn this guide, you learned how to:\n\n1. Safely add a column to a table\n1. Evolve your database schema using Prisma Migrate\n1. Run a query against your database to validate your changes"
+    },
+    {
+      "name": "devbookhq-example-guide-d3cf824939fb92ab111dde3d79ca6a83da3e5a96/devbook/migrations-column-create/rating.mdx",
+      "content": "---\ntitle: How did you like this guide?\n---\n\nGive us rating!"
+    }
+  ]
+}
