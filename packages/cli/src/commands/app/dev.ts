@@ -2,12 +2,33 @@ import * as commander from 'commander'
 import * as express from 'express'
 import * as proxy from 'http-proxy-middleware'
 
-import { getGuideData } from 'src/app'
 import { pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
 import { asFormattedError } from 'src/utils/format'
 
 import test from './test.json'
+
+export interface GuideContentDBENtry {
+  env: {
+    id: string
+  }
+  guide: {
+    title: string
+  }
+  steps: {
+    name: string
+    content: string
+  }[]
+}
+
+export interface GuideDBEntry {
+  created_at?: string
+  project_id: string
+  slug: string
+  branch: string
+  repository_fullname: string
+  content?: GuideContentDBENtry
+}
 
 const defaultLocalPort = 3001
 const defaultDevEndpoint = 'https://3000-devbookhq-ui-bdurd1rl9pv.ws-eu84.gitpod.io'
@@ -53,7 +74,7 @@ function startDevelopmentServer({
     changeOrigin: true,
     onProxyReq(proxyReq, req, res) {
       if (req.path === '/_sites/dev') {
-        proxyReq.method = 'POST'
+        // proxyReq.method = 'GET'
         req.body = JSON.stringify(req.body)
         proxyReq.setHeader('Content-Type', 'application/json')
         proxyReq.setHeader('content-length', Buffer.byteLength(req.body))
@@ -69,9 +90,8 @@ function startDevelopmentServer({
   })
 
   const app = express.default()
-  // app.get('/', async (req, res, next) => {
   app.get('/_sites/dev', async (req, res, next) => {
-    const body = await loadAppProps()
+    const body = await loadAppDBEntry()
 
     req.body = body
     devEndpointProxy(req, res, next)
@@ -80,12 +100,12 @@ function startDevelopmentServer({
   app.listen(port)
 }
 
-async function loadAppProps() {
-  return getGuideData({
+async function loadAppDBEntry(): Promise<GuideDBEntry> {
+  return {
     branch: 'dev',
     project_id: 'test',
     repository_fullname: 'test',
     slug: '',
     content: test,
-  })
+  }
 }
