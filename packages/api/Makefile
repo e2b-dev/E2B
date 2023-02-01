@@ -23,6 +23,7 @@ run:
 	SUPABASE_URL=$(SUPABASE_URL) \
 	CONSUL_TOKEN=$(CONSUL_TOKEN) \
 	GOTRACEBACK=crash \
+	GODEBUG=madvdontneed=1 \
 	./bin/api --port 3000 -telemetry-api=$(telemetry-api)
 
 build-docker:
