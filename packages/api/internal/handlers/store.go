@@ -24,15 +24,17 @@ type APIStore struct {
 }
 
 func NewAPIStore() *APIStore {
-	fmt.Printf("Initializing API store")
+	fmt.Println("Initializing API store")
 
 	tracer := otel.Tracer("api")
 
 	nomadClient := nomad.InitNomadClient()
+	fmt.Println("Initialized Nomad client")
 	supabaseClient, err := supabase.NewClient()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Initialized Supabase client")
 
 	// TODO: Build only templates that changed
 	// go func() {
@@ -50,8 +52,7 @@ func NewAPIStore() *APIStore {
 	}
 
 	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
-
-	cache.KeepInSync(nomadClient)
+	// go cache.KeepInSync(nomadClient)
 
 	return &APIStore{
 		nomad:         nomadClient,

@@ -3,10 +3,10 @@ package nomad
 import (
 	"bytes"
 	"context"
+	"embed"
 	"fmt"
 	"net/http"
 	"os"
-	"path"
 	"text/template"
 	"time"
 
@@ -35,6 +35,10 @@ var (
 	consulToken      = os.Getenv("CONSUL_TOKEN")
 )
 
+//go:embed fc-sessions.hcl
+var fcSessionFile embed.FS
+var fcSessionTemplate = template.Must(template.ParseFS(fcSessionFile, "fc-sessions.hcl"))
+
 func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
 		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", sessionsJobNameWithSlash, fcTaskName, NomadTaskRunningState),
@@ -52,6 +56,7 @@ func (n *NomadClient) GetSessions() ([]*api.Session, *api.APIError) {
 		sessions = append(sessions, &api.Session{
 			ClientID:  alloc.NodeID[:shortNodeIDLength],
 			SessionID: alloc.JobID[len(sessionsJobNameWithSlash):],
+			// TODO: We need to retrieve the editEnabled field otherwise the edit sessions cannot be properly resumed and may rollback some changes.
 		})
 	}
 
@@ -66,20 +71,7 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 	)
 	defer childSpan.End()
 
-	tname := path.Join(templatesDir, sessionsJobFile)
-	sessionsJobTemp, err := template.ParseFiles(tname)
-	if err != nil {
-		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to parse template file '%s': %s", tname, err),
-			ClientMsg: "Cannot create a session right now",
-			Code:      http.StatusInternalServerError,
-		}
-	}
-
-	sessionsJobTemp = template.Must(sessionsJobTemp, err)
 	sessionID := sessionIDPrefix + genRandomSession(sessionIDRandomLength)
-	var evalID string
-	var job *nomadAPI.Job
 
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()
@@ -88,6 +80,53 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 		attribute.String("passed_trace_id_hex", string(traceID)),
 		attribute.String("passed_span_id_hex", string(spanID)),
 	)
+
+	var jobDef bytes.Buffer
+	jobVars := struct {
+		SpanID           string
+		ConsulToken      string
+		TraceID          string
+		CodeSnippetID    string
+		SessionID        string
+		LogsProxyAddress string
+		FCTaskName       string
+		JobName          string
+		FCEnvsDisk       string
+		EditEnabled      bool
+	}{
+		SpanID:           spanID,
+		TraceID:          traceID,
+		LogsProxyAddress: logsProxyAddress,
+		ConsulToken:      consulToken,
+		CodeSnippetID:    newSession.CodeSnippetID,
+		SessionID:        sessionID,
+		FCTaskName:       fcTaskName,
+		JobName:          sessionsJobName,
+		FCEnvsDisk:       fcEnvsDisk,
+		EditEnabled:      *newSession.EditEnabled,
+	}
+
+	err := fcSessionTemplate.Execute(&jobDef, jobVars)
+	if err != nil {
+		return nil, &api.APIError{
+			Msg:       fmt.Sprintf("failed to `sessionsJobTemp.Execute()`: %+v", err),
+			ClientMsg: "Cannot create a session right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
+
+	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
+	if err != nil {
+		return nil, &api.APIError{
+			Msg:       fmt.Sprintf("failed to parse the `%s` HCL job file: %+v", sessionsJobFile, err),
+			ClientMsg: "Cannot create a session right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
+
+	var evalID string
+	var index uint64
+	var meta nomadAPI.QueryMeta
 
 jobRegister:
 	for {
@@ -99,67 +138,28 @@ jobRegister:
 				Code:      http.StatusInternalServerError,
 			}
 		default:
-			var jobDef bytes.Buffer
-			jobVars := struct {
-				SpanID           string
-				ConsulToken      string
-				TraceID          string
-				CodeSnippetID    string
-				SessionID        string
-				LogsProxyAddress string
-				FCTaskName       string
-				JobName          string
-				FCEnvsDisk       string
-				EditEnabled      bool
-			}{
-				SpanID:           spanID,
-				TraceID:          traceID,
-				LogsProxyAddress: logsProxyAddress,
-				ConsulToken:      consulToken,
-				CodeSnippetID:    newSession.CodeSnippetID,
-				SessionID:        sessionID,
-				FCTaskName:       fcTaskName,
-				JobName:          sessionsJobName,
-				FCEnvsDisk:       fcEnvsDisk,
-				EditEnabled:      *newSession.EditEnabled,
-			}
-
-			err = sessionsJobTemp.Execute(&jobDef, jobVars)
-			if err != nil {
-				return nil, &api.APIError{
-					Msg:       fmt.Sprintf("failed to `sessionsJobTemp.Execute()`: %+v", err),
-					ClientMsg: "Cannot create a session right now",
-					Code:      http.StatusInternalServerError,
-				}
-			}
-
-			job, err = n.client.Jobs().ParseHCL(jobDef.String(), false)
-			if err != nil {
-				return nil, &api.APIError{
-					Msg:       fmt.Sprintf("failed to parse the `%s` HCL job file: %+v", sessionsJobFile, err),
-					ClientMsg: "Cannot create a session right now",
-					Code:      http.StatusInternalServerError,
-				}
-			}
-
 			res, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
 			if err != nil {
 				fmt.Printf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err)
 				continue
 			}
 
+			meta = res.QueryMeta
 			evalID = res.EvalID
+			index = res.JobModifyIndex
 			break jobRegister
 		}
 	}
 
 	alloc, err := n.WaitForJob(
+		ctx,
 		JobInfo{
 			name:   sessionsJobNameWithSlash + sessionID,
 			evalID: evalID,
-			index:  0,
+			index:  index,
 		},
 		allocationCheckTimeout,
+		meta,
 	)
 
 	if err != nil {
