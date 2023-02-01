@@ -11,14 +11,18 @@ generate:
 build:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/api .
 
+build-debug:
+	CGO_ENABLED=1 GOOS=linux go build -race -gcflags=all="-N -l" -o bin/api .
+
 run:
-	make build
+	make build-debug
 	API_ADMIN_KEY=test \
 	NOMAD_ADDRESS=http://34.149.1.201 \
 	NOMAD_TOKEN=$(NOMAD_TOKEN) \
 	SUPABASE_KEY=$(SUPABASE_KEY) \
 	SUPABASE_URL=$(SUPABASE_URL) \
 	CONSUL_TOKEN=$(CONSUL_TOKEN) \
+	GOTRACEBACK=crash \
 	./bin/api --port 3000 -telemetry-api=$(telemetry-api)
 
 build-docker:
@@ -26,3 +30,8 @@ build-docker:
 
 push-docker:
 	docker push us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE)
+
+# You run the parametrized command like this:
+# make metric=heap interval=90 profiler
+profiler:
+	go tool pprof -http :9991 http://localhost:3000/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
