@@ -2,7 +2,7 @@ import { Session } from '../dist/cjs/index.js'
 
 async function main() {
   const session = new Session({
-    id: 'Nodejs',
+    id: '5udkAFHBVrGz',
     debug: true,
     retry: true,
     // codeSnippet: {
@@ -33,23 +33,23 @@ async function main() {
   try {
     await session.open()
 
-    const cmd = 'npm i'
+    // const cmd = 'npm i'
 
     // await session.process.start({
     //   cmd,
     //   onStdout: o => console.log(o),
     // })
 
-    const term = await session.terminal.createSession({
-      onData: data => console.log(data),
-      onExit: () => console.log('exit'),
-      size: {
-        cols: 9,
-        rows: 9,
-      },
-      rootdir: '/code',
-      cmd: 'npm i',
-    })
+    // const term = await session.terminal.createSession({
+    //   onData: data => console.log(data),
+    //   onExit: () => console.log('exit'),
+    //   size: {
+    //     cols: 9,
+    //     rows: 9,
+    //   },
+    //   rootdir: '/code',
+    //   cmd: 'npm i',
+    // })
 
     // term.sendData(`${cmd}\n`)
 

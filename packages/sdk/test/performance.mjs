@@ -5,8 +5,8 @@ import { Session } from '../dist/cjs/index.js'
 const apiKey = process.env.API_KEY
 const reportSummaryFile = process.env.SUMMARY_FILE || './test.md'
 
-const codeSnippetIDs = ['Go', 'Nodejs']
-const samplePerID = 3
+const codeSnippetIDs = ['5udkAFHBVrGz']
+const samplePerID = 15
 const upperBoundary = 1000 // 1s
 
 async function spinSession(id, isEditSession) {
@@ -20,7 +20,7 @@ async function spinSession(id, isEditSession) {
       editEnabled: isEditSession,
       ...(isEditSession && { apiKey }),
     })
-    await session.open()
+    session.open()
 
     const endTime = performance.now()
     return endTime - startTime
@@ -32,7 +32,7 @@ async function spinSession(id, isEditSession) {
   } finally {
     ;(async () => {
       try {
-        await session?.close()
+        // await session?.close()
       } catch (e) {
         // Do nothing
       }
