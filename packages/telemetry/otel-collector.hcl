@@ -86,6 +86,7 @@ receivers:
     endpoint: 'http://localhost:3004/status'
     collection_interval: 10s
   hostmetrics:
+    collection_interval: 30s
     scrapers:
       cpu:
       disk:
@@ -95,6 +96,15 @@ receivers:
       network:
       paging:
       process:
+        metrics:
+          process.memory.physical_usage:
+            enabled: false
+          process.memory.virtual_usage:
+            enabled: false
+          process.memory.usage:
+            enabled: true
+          process.memory.virtual:
+            enabled: true
       processes:
   prometheus:
     config:
@@ -129,6 +139,13 @@ processors:
         action: upsert
   batch:
     timeout: 5s
+  resourcedetection:
+    detectors: [gcp]
+    timeout: 10s
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 65
+    spike_limit_percentage: 20
 
 extensions:
   health_check:
@@ -138,7 +155,14 @@ exporters:
     endpoint: ingest.lightstep.com:443
     headers:
       "lightstep-access-token": ${var.lightstep_api_key}
-
+  googlecloud:
+    # Google Cloud Monitoring returns an error if any of the points are invalid, but still accepts the valid points.
+    # Retrying successfully sent points is guaranteed to fail because the points were already written.
+    # This results in a loop of unnecessary retries.  For now, disable retry_on_failure.
+    retry_on_failure:
+      enabled: false
+    log:
+      default_log_name: opentelemetry.io/collector-exported-log
 service:
   extensions: [health_check]
   telemetry:
@@ -155,6 +179,12 @@ service:
       receivers:
         - nginx/session-proxy
       processors: [attributes/session-proxy, batch]
+      exporters:
+        - otlp/lightstep
+    metrics/gcp:
+      receivers: 
+        - hostmetrics
+      processors: [memory_limiter, batch]
       exporters:
         - otlp/lightstep
     metrics:
