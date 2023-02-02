@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -124,32 +125,19 @@ func (n *NomadClient) CreateSession(t trace.Tracer, ctx context.Context, newSess
 		}
 	}
 
-	var evalID string
-	var index uint64
-	var meta nomadAPI.QueryMeta
-
-jobRegister:
-	for {
-		select {
-		case <-time.After(jobRegisterTimeout):
-			return nil, &api.APIError{
-				Msg:       "failed to find empty sessionID",
-				ClientMsg: "Cannot create a session right now",
-				Code:      http.StatusInternalServerError,
-			}
-		default:
-			res, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
-			if err != nil {
-				fmt.Printf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err)
-				continue
-			}
-
-			meta = res.QueryMeta
-			evalID = res.EvalID
-			index = res.JobModifyIndex
-			break jobRegister
+	res, _, err := n.client.Jobs().Register(job, &nomadAPI.WriteOptions{})
+	if err != nil {
+		fmt.Printf("Failed to register '%s%s' job: %+v", sessionsJobNameWithSlash, jobVars.SessionID, err)
+		return nil, &api.APIError{
+			Msg:       err.Error(),
+			ClientMsg: "Cannot create a session right now",
+			Code:      http.StatusInternalServerError,
 		}
 	}
+
+	meta := res.QueryMeta
+	evalID := res.EvalID
+	index := res.JobModifyIndex
 
 	alloc, err := n.WaitForJob(
 		ctx,
@@ -180,9 +168,9 @@ jobRegister:
 	)
 
 	session := &api.Session{
-		ClientID:      alloc.NodeID[:shortNodeIDLength],
+		ClientID:      strings.Clone(alloc.NodeID[:shortNodeIDLength]),
 		SessionID:     sessionID,
-		CodeSnippetID: newSession.CodeSnippetID,
+		CodeSnippetID: strings.Clone(newSession.CodeSnippetID),
 		EditEnabled:   *newSession.EditEnabled,
 	}
 
