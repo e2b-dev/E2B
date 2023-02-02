@@ -87,9 +87,9 @@ func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api
 		cache: cache,
 	}
 
-	// for _, session := range initialSessions {
-	// 	sessionCache.Add(session)
-	// }
+	for _, session := range initialSessions {
+		sessionCache.Add(session)
+	}
 
 	go cache.Start()
 

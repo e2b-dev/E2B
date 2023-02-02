@@ -52,7 +52,7 @@ func NewAPIStore() *APIStore {
 	}
 
 	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
-	// go cache.KeepInSync(nomadClient)
+	go cache.KeepInSync(nomadClient)
 
 	return &APIStore{
 		nomad:         nomadClient,
