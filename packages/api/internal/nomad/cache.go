@@ -60,24 +60,9 @@ func (c *SessionCache) FindEditSession(codeSnippetID string) (*api.Session, erro
 }
 
 func (c *SessionCache) Sync(sessions []*api.Session) {
-	sessionsMap := make(map[string]*api.Session)
 	for _, session := range sessions {
-		sessionsMap[session.SessionID] = session
-	}
-
-	for _, cacheSession := range c.cache.Items() {
-		if cacheSession == nil {
-			continue
-		}
-
-		if cacheSession.Value() == nil {
-			c.cache.Delete(cacheSession.Key())
-			continue
-		}
-
-		if sessionsMap[cacheSession.Key()] == nil {
-			c.cache.Delete(cacheSession.Key())
-			continue
+		if !c.Exists(session.SessionID) {
+			c.Add(session)
 		}
 	}
 }
@@ -113,10 +98,8 @@ func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api
 
 // Sync the cache with the actual sessions in Nomad to handle sessions that died.
 func (c *SessionCache) KeepInSync(client *NomadClient) {
-	ticker := time.NewTicker(cacheSyncTime)
-	defer ticker.Stop()
-
-	for range ticker.C {
+	for {
+		time.Sleep(cacheSyncTime)
 		activeSessions, err := client.GetSessions()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
