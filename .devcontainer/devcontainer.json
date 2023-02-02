@@ -2,19 +2,13 @@
 	"image": "mcr.microsoft.com/devcontainers/universal:2",
 	"features": {
 		"ghcr.io/devcontainers/features/terraform:1": {},
-		"ghcr.io/devcontainers-contrib/features/packer-asdf:2": {},
-		"ghcr.io/devcontainers-contrib/features/pnpm:2": {},
-		"ghcr.io/devcontainers-contrib/features/nomad-asdf:2": {},
-		"ghcr.io/guiyomh/features/goreleaser:0": {},
-		"ghcr.io/shinepukur/devcontainer-features/vale:1": {}
+		"ghcr.io/dhoeric/features/google-cloud-cli:1": {}
 	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"dbaeumer.vscode-eslint",
 				"golang.go",
-				"hashicorp.terraform",
-				"4ops.packer"
+				"hashicorp.terraform"
 			]
 		}
 	}
