@@ -12,7 +12,9 @@
 		"vscode": {
 			"extensions": [
 				"dbaeumer.vscode-eslint",
-				"golang.go"
+				"golang.go",
+				"hashicorp.terraform",
+				"4ops.packer"
 			]
 		}
 	}
