@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -134,21 +133,20 @@ func (a *APIStore) PostSessions(
 		}
 	}
 
-	go func(ctx context.Context) {
-		if err := a.sessionsCache.Add(session); err != nil {
-			errMsg := fmt.Errorf("error when adding session to cache: %v", err)
-			ReportError(ctx, errMsg)
+	if err := a.sessionsCache.Add(session); err != nil {
+		errMsg := fmt.Errorf("error when adding session to cache: %v", err)
+		ReportError(ctx, errMsg)
 
-			delErr := a.nomad.DeleteSession(session.SessionID, true)
-			if delErr != nil {
-				errMsg := fmt.Errorf("couldn't delete session that couldn't be added to cache: %v", delErr)
-				ReportError(ctx, errMsg)
-			} else {
-				ReportEvent(ctx, "deleted session that couldn't be added to cache")
-			}
-			return
+		delErr := a.nomad.DeleteSession(session.SessionID, true)
+		if delErr != nil {
+			errMsg := fmt.Errorf("couldn't delete session that couldn't be added to cache: %v", delErr)
+			ReportError(ctx, errMsg)
+		} else {
+			ReportEvent(ctx, "deleted session that couldn't be added to cache")
 		}
-	}(ctx)
+		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a session right now")
+		return
+	}
 
 	SetAttributes(ctx,
 		attribute.String("session_id", session.SessionID),
