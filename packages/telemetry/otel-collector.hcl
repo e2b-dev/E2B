@@ -7,7 +7,7 @@ variable "lightstep_api_key" {
 }
 
 variables {
-  otel_image = "otel/opentelemetry-collector-contrib:0.59.0"
+  otel_image = "otel/opentelemetry-collector-contrib:0.70.0"
 }
 
 job "otel-collector" {
@@ -68,12 +68,13 @@ job "otel-collector" {
       }
 
       resources {
-        memory = 128
-        cpu    = 200
+        memory = 400
+        cpu    = 400
       }
 
       template {
         data = <<EOF
+# Ops agent uses some additional otel recivers like file, syslog, tcp.
 receivers:
   otlp:
     protocols:
@@ -96,15 +97,6 @@ receivers:
       network:
       paging:
       process:
-        metrics:
-          process.memory.physical_usage:
-            enabled: false
-          process.memory.virtual_usage:
-            enabled: false
-          process.memory.usage:
-            enabled: true
-          process.memory.virtual:
-            enabled: true
       processes:
   prometheus:
     config:
@@ -141,11 +133,17 @@ processors:
     timeout: 5s
   resourcedetection:
     detectors: [gcp]
-    timeout: 10s
-  memory_limiter:
-    check_interval: 1s
-    limit_percentage: 65
-    spike_limit_percentage: 20
+  metricstransform:
+    transforms:
+      - include: "host.name"
+        action: update
+        new_name: "hostname"
+      - include: "process.pid"
+        action: update
+        new_name: "pid"
+      - include: "process.executable.name"
+        action: update
+        new_name: "binary"
 
 extensions:
   health_check:
@@ -181,12 +179,12 @@ service:
       processors: [attributes/session-proxy, batch]
       exporters:
         - otlp/lightstep
-    metrics/gcp:
-      receivers: 
-        - hostmetrics
-      processors: [memory_limiter, batch]
-      exporters:
-        - otlp/lightstep
+    # metrics/gcp:
+    #   receivers: 
+    #     - hostmetrics
+    #   processors: [resourcedetection, metricstransform, batch]
+    #   exporters:
+    #     - googlecloud
     metrics:
       receivers: 
         - prometheus

@@ -107,7 +107,10 @@ resource "google_compute_instance_template" "client" {
   service_account {
     scopes = [
       "userinfo-email",
-      "compute-ro"
+      "compute-ro",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring.write",
+      "https://www.googleapis.com/auth/trace.append"
     ]
   }
 
