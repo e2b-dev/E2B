@@ -27,3 +27,20 @@ cp /etc/fstab /etc/fstab.backup
 UUID=$(blkid /dev/sdb | tr ' ' '\n' | grep UUID)
 
 echo "$UUID /mnt/disks/$mount_dir xfs defaults 0 0" >> /etc/fstab
+
+cat <<EOF >> /etc/google-cloud-ops-agent/config.yaml
+logging:
+  service:
+    pipelines:
+      default_pipeline:
+        receivers: []
+metrics:
+  receivers:
+    hostmetrics:
+      type: hostmetrics
+      collection_interval: 30s
+EOF
+
+# We should move this to agent policies in TF or to the disk building in Packer.
+curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+sudo bash add-google-cloud-ops-agent-repo.sh --also-install
