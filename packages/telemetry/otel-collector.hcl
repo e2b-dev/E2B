@@ -7,7 +7,7 @@ variable "lightstep_api_key" {
 }
 
 variables {
-  otel_image = "otel/opentelemetry-collector-contrib:0.59.0"
+  otel_image = "otel/opentelemetry-collector-contrib:0.70.0"
 }
 
 job "otel-collector" {
@@ -68,12 +68,13 @@ job "otel-collector" {
       }
 
       resources {
-        memory = 128
-        cpu    = 200
+        memory = 400
+        cpu    = 400
       }
 
       template {
         data = <<EOF
+# Ops agent uses some additional otel recivers like file, syslog, tcp.
 receivers:
   otlp:
     protocols:
@@ -86,6 +87,7 @@ receivers:
     endpoint: 'http://localhost:3004/status'
     collection_interval: 10s
   hostmetrics:
+    collection_interval: 30s
     scrapers:
       cpu:
       disk:
@@ -129,6 +131,19 @@ processors:
         action: upsert
   batch:
     timeout: 5s
+  resourcedetection:
+    detectors: [gcp]
+  metricstransform:
+    transforms:
+      - include: "host.name"
+        action: update
+        new_name: "hostname"
+      - include: "process.pid"
+        action: update
+        new_name: "pid"
+      - include: "process.executable.name"
+        action: update
+        new_name: "binary"
 
 extensions:
   health_check:
@@ -138,7 +153,14 @@ exporters:
     endpoint: ingest.lightstep.com:443
     headers:
       "lightstep-access-token": ${var.lightstep_api_key}
-
+  googlecloud:
+    # Google Cloud Monitoring returns an error if any of the points are invalid, but still accepts the valid points.
+    # Retrying successfully sent points is guaranteed to fail because the points were already written.
+    # This results in a loop of unnecessary retries.  For now, disable retry_on_failure.
+    retry_on_failure:
+      enabled: false
+    log:
+      default_log_name: opentelemetry.io/collector-exported-log
 service:
   extensions: [health_check]
   telemetry:
@@ -157,6 +179,12 @@ service:
       processors: [attributes/session-proxy, batch]
       exporters:
         - otlp/lightstep
+    # metrics/gcp:
+    #   receivers: 
+    #     - hostmetrics
+    #   processors: [resourcedetection, metricstransform, batch]
+    #   exporters:
+    #     - googlecloud
     metrics:
       receivers: 
         - prometheus

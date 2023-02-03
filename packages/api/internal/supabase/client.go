@@ -25,7 +25,6 @@ func NewClient() (*DB, error) {
 		*parsedURL,
 		postgrest.WithTokenAuth(supabaseKey),
 		func(c *postgrest.Client) {
-			c.Debug = true
 			c.AddHeader("apikey", supabaseKey)
 		},
 	)

@@ -12,7 +12,7 @@ import (
 
 const (
 	sessionExpiration = time.Second * 11
-	cacheSyncTime     = time.Second * 60
+	cacheSyncTime     = time.Second * 180
 )
 
 type SessionCache struct {
@@ -36,14 +36,12 @@ func (c *SessionCache) Refresh(sessionID string) error {
 	if item == nil {
 		return fmt.Errorf("session \"%s\" doesn't exist", sessionID)
 	}
-
 	return nil
 }
 
 // Check if the session exists in the cache
 func (c *SessionCache) Exists(sessionID string) bool {
 	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, *api.Session]())
-
 	return item != nil
 }
 
@@ -58,29 +56,13 @@ func (c *SessionCache) FindEditSession(codeSnippetID string) (*api.Session, erro
 			return item.Value(), nil
 		}
 	}
-
 	return nil, fmt.Errorf("error edit session for code snippet '%s' not found", codeSnippetID)
 }
 
 func (c *SessionCache) Sync(sessions []*api.Session) {
-	sessionsMap := make(map[string]*api.Session)
 	for _, session := range sessions {
-		sessionsMap[session.SessionID] = session
-	}
-
-	for _, cacheSession := range c.cache.Items() {
-		if cacheSession == nil {
-			continue
-		}
-
-		if cacheSession.Value() == nil {
-			c.cache.Delete(cacheSession.Key())
-			continue
-		}
-
-		if sessionsMap[cacheSession.Key()] == nil {
-			c.cache.Delete(cacheSession.Key())
-			continue
+		if !c.Exists(session.SessionID) {
+			c.Add(session)
 		}
 	}
 }
@@ -116,17 +98,13 @@ func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api
 
 // Sync the cache with the actual sessions in Nomad to handle sessions that died.
 func (c *SessionCache) KeepInSync(client *NomadClient) {
-	go func() {
-		ticker := time.NewTicker(cacheSyncTime)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			activeSessions, err := client.GetSessions()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
-			} else {
-				c.Sync(activeSessions)
-			}
+	for {
+		time.Sleep(cacheSyncTime)
+		activeSessions, err := client.GetSessions()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
+		} else {
+			c.Sync(activeSessions)
 		}
-	}()
+	}
 }

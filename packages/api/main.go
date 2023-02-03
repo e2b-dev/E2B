@@ -39,6 +39,8 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 
 	r := gin.New()
 
+	// pprof.Register(r, "debug/pprof")
+
 	// We use custom otelgin middleware because we want to log 4xx errors in the otel
 	otelMiddleware := customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), ignoreLoggingForPaths...)
 	r.Use(
@@ -71,12 +73,18 @@ func main() {
 	port := flag.Int("port", 80, "Port for test HTTP server")
 	flag.Parse()
 
+	debug := flag.String("true", "false", "is debug")
+
+	if *debug != "true" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	rand.Seed(time.Now().UnixNano())
 
 	if *telemetryAPIKey == "" {
 		otelLauncher := launcher.ConfigureOpentelemetry(
 			launcher.WithServiceName(serviceName),
-			launcher.WithMetricReportingPeriod(10*time.Second),
+			launcher.WithMetricReportingPeriod(20*time.Second),
 			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
 			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
 			launcher.WithMetricExporterInsecure(true),
@@ -97,6 +105,7 @@ func main() {
 	defer apiStore.Close()
 
 	s := NewGinServer(apiStore, *port)
+
 	// And we serve HTTP until the world ends.
 	log.Fatal(s.ListenAndServe())
 }

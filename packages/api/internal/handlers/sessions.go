@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
-	"github.com/devbookhq/devbook-api/packages/api/internal/utils"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -44,19 +43,12 @@ func (a *APIStore) GetSessions(
 	c.JSON(http.StatusOK, sessions)
 }
 
-var postSessionParallelLock = utils.CreateRequestLimitLock(utils.DefaultRequestLimit)
-
 func (a *APIStore) PostSessions(
 	c *gin.Context,
 	params api.PostSessionsParams,
 ) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
-
-	ReportEvent(ctx, "waiting for parallel lock")
-	unlock := postSessionParallelLock()
-	defer unlock()
-	ReportEvent(ctx, "parallel lock passed")
 
 	var newSession api.PostSessionsJSONRequestBody
 	if err := c.Bind(&newSession); err != nil {
@@ -152,7 +144,6 @@ func (a *APIStore) PostSessions(
 		} else {
 			ReportEvent(ctx, "deleted session that couldn't be added to cache")
 		}
-
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a session right now")
 		return
 	}
