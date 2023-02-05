@@ -1,56 +1,51 @@
 import * as commander from 'commander'
 import * as express from 'express'
 import * as proxy from 'http-proxy-middleware'
+import * as fsPromise from 'fs/promises'
 
+import { configName, loadConfig } from 'src/config'
 import { pathOption } from 'src/options'
-import { getRoot } from 'src/utils/filesystem'
-import { asFormattedError } from 'src/utils/format'
+import { getFiles, getRoot } from 'src/utils/filesystem'
+import { asFormattedError, asLocal } from 'src/utils/format'
 
-import test from './test.json'
-
-export interface GuideContentDBENtry {
+export interface AppContentJSON {
   env: {
     id: string
   }
-  guide: {
-    title: string
-  }
-  steps: {
+  mdx: {
     name: string
     content: string
   }[]
 }
 
-export interface GuideDBEntry {
-  created_at?: string
-  project_id: string
-  slug: string
-  branch: string
-  repository_fullname: string
-  content?: GuideContentDBENtry
-}
+export const hiddenAppRoute = '_apps'
 
 const defaultLocalPort = 3001
-const defaultDevEndpoint = 'https://3000-devbookhq-ui-bdurd1rl9pv.ws-eu84.gitpod.io'
+const defaultDevEndpoint = 'https://app.usedevbook.com'
 
 export const devCommand = new commander.Command('dev')
   .description('Start development server for Devbook application')
   .option(
     '-p, --port <port>',
-    'Use specified local port for the development server',
+    'Use port for local development server',
     defaultLocalPort.toString(),
+  )
+  .option(
+    '-e, --endpoint <endpoint>',
+    'Use remote endpoint for rendering apps',
+    defaultDevEndpoint,
   )
   .addOption(pathOption)
   .alias('dv')
   .action(async opts => {
     try {
       process.stdout.write('\n')
-      const watcherDir = getRoot(opts.path)
+      const rootDir = getRoot(opts.path)
 
       startDevelopmentServer({
         port: parseInt(opts.port),
-        endpoint: defaultDevEndpoint,
-        dir: watcherDir,
+        endpoint: opts.endpoint as string,
+        rootDir,
       })
     } catch (err: any) {
       console.error(asFormattedError(err.message))
@@ -61,11 +56,11 @@ export const devCommand = new commander.Command('dev')
 function startDevelopmentServer({
   port,
   endpoint,
-  dir,
+  rootDir,
 }: {
   port: number
   endpoint: string
-  dir: string
+  rootDir: string
 }) {
   const devEndpointProxy = proxy.createProxyMiddleware({
     target: endpoint,
@@ -73,7 +68,7 @@ function startDevelopmentServer({
     secure: true,
     changeOrigin: true,
     onProxyReq(proxyReq, req, res) {
-      if (req.path === '/_sites/dev') {
+      if (req.path === `/${hiddenAppRoute}/dev`) {
         // proxyReq.method = 'GET'
         req.body = JSON.stringify(req.body)
         proxyReq.setHeader('Content-Type', 'application/json')
@@ -90,9 +85,8 @@ function startDevelopmentServer({
   })
 
   const app = express.default()
-  app.get('/_sites/dev', async (req, res, next) => {
-    const body = await loadAppDBEntry()
-
+  app.get(`/${hiddenAppRoute}/dev`, async (req, res, next) => {
+    const body = await loadAppContent(rootDir)
     req.body = body
     devEndpointProxy(req, res, next)
   })
@@ -100,12 +94,33 @@ function startDevelopmentServer({
   app.listen(port)
 }
 
-async function loadAppDBEntry(): Promise<GuideDBEntry> {
+async function loadAppContent(rootDir: string): Promise<AppContentJSON> {
+  const envFiles = await getFiles(rootDir, {
+    name: configName,
+  })
+
+  if (envFiles.length !== 1)
+    throw new Error(
+      `Cannot find ${asLocal(configName)} in the ${asLocal(rootDir)} directory.`,
+    )
+
+  const env = await loadConfig(envFiles[0].rootPath)
+  const mdx = await Promise.all(
+    (
+      await getFiles(rootDir, {
+        extension: 'mdx',
+      })
+    ).map(async f => {
+      const content = await fsPromise.readFile(f.path, 'utf-8')
+      return {
+        name: f.name,
+        content,
+      }
+    }),
+  )
+
   return {
-    branch: 'dev',
-    project_id: 'test',
-    repository_fullname: 'test',
-    slug: '',
-    content: test,
+    env,
+    mdx,
   }
 }
