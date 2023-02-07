@@ -3,13 +3,12 @@ import * as express from 'express'
 import * as proxy from 'http-proxy-middleware'
 import * as fsPromise from 'fs/promises'
 
-import { configName, loadConfig } from 'src/config'
 import { pathOption } from 'src/options'
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import { asFormattedError, asLocal } from 'src/utils/format'
+import { asFormattedError } from 'src/utils/format'
 
 export interface AppContentJSON {
-  env: {
+  env?: {
     id: string
   }
   mdx: {
@@ -95,16 +94,16 @@ function startDevelopmentServer({
 }
 
 async function loadAppContent(rootDir: string): Promise<AppContentJSON> {
-  const envFiles = await getFiles(rootDir, {
-    name: configName,
-  })
+  // const envFiles = await getFiles(rootDir, {
+  //   name: configName,
+  // })
 
-  if (envFiles.length !== 1)
-    throw new Error(
-      `Cannot find ${asLocal(configName)} in the ${asLocal(rootDir)} directory.`,
-    )
+  // if (envFiles.length !== 1)
+  //   throw new Error(
+  //     `Cannot find ${asLocal(configName)} in the ${asLocal(rootDir)} directory.`,
+  // )
 
-  const env = await loadConfig(envFiles[0].rootPath)
+  // const env = await loadConfig(envFiles[0].rootPath)
   const mdx = await Promise.all(
     (
       await getFiles(rootDir, {
@@ -120,7 +119,7 @@ async function loadAppContent(rootDir: string): Promise<AppContentJSON> {
   )
 
   return {
-    env,
+    // env,
     mdx,
   }
 }
