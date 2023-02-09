@@ -32,7 +32,7 @@ variable "client_cluster_size" {
 
 variable "client_machine_type" {
   type    = string
-  default = "n1-custom-8-7424"
+  default = "n1-custom-10-11264"
 }
 
 variable "client_proxy_health_port" {
