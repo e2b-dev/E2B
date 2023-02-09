@@ -3,7 +3,6 @@ import * as express from 'express'
 import * as proxy from 'http-proxy-middleware'
 import * as fsPromise from 'fs/promises'
 
-import { pathOption } from 'src/options'
 import { getFiles, getRoot } from 'src/utils/filesystem'
 import { asFormattedError } from 'src/utils/format'
 
@@ -22,7 +21,7 @@ export const hiddenAppRoute = '_apps'
 const defaultLocalPort = 3001
 const defaultDevEndpoint = 'https://app.usedevbook.com'
 
-export const devCommand = new commander.Command('dev')
+export const devCommand = new commander.Command('develop')
   .description('Start development server for Devbook application')
   .option(
     '-p, --port <port>',
@@ -34,12 +33,11 @@ export const devCommand = new commander.Command('dev')
     'Use remote endpoint for rendering apps',
     defaultDevEndpoint,
   )
-  .addOption(pathOption)
-  .alias('dv')
+  .alias('dev')
   .action(async opts => {
     try {
       process.stdout.write('\n')
-      const rootDir = getRoot(opts.path)
+      const rootDir = getRoot()
 
       startDevelopmentServer({
         port: parseInt(opts.port),
@@ -67,7 +65,7 @@ function startDevelopmentServer({
     secure: true,
     changeOrigin: true,
     onProxyReq(proxyReq, req, res) {
-      if (req.path === `/${hiddenAppRoute}/dev`) {
+      if (req.path === '/') {
         // proxyReq.method = 'GET'
         req.body = JSON.stringify(req.body)
         proxyReq.setHeader('Content-Type', 'application/json')
@@ -75,16 +73,16 @@ function startDevelopmentServer({
         proxyReq.write(req.body)
       }
     },
-    // pathRewrite: async (path, req) => {
-    //   if (path === '/') {
-    //     return '/_sites/dev'
-    //   }
-    //   return path
-    // },
+    pathRewrite: async (path, req) => {
+      if (path === '/') {
+        return `/${hiddenAppRoute}/dev`
+      }
+      return path
+    },
   })
 
   const app = express.default()
-  app.get(`/${hiddenAppRoute}/dev`, async (req, res, next) => {
+  app.get('/', async (req, res, next) => {
     const body = await loadAppContent(rootDir)
     req.body = body
     devEndpointProxy(req, res, next)
