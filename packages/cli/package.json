@@ -12,7 +12,7 @@
   "bugs": "https://github.com/DevbookHQ/devbook-api/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DevbookHQ/devbook-api"
+    "url": "https://github.com/devbookhq/api/tree/master/packages/cli"
   },
   "publishConfig": {
     "access": "public"
@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^3.3.0",
+    "@types/express": "^4.17.16",
     "@types/inquirer": "^8.0.0",
     "@types/node": "16.11",
     "@types/update-notifier": "5.1.0",
@@ -61,6 +62,8 @@
     "chalk": "^5.1.2",
     "commander": "^9.4.1",
     "docker-names": "^1.2.1",
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6",
     "inquirer": "^8.0.0",
     "update-notifier": "5.1.0",
     "yup": "^0.32.11"
