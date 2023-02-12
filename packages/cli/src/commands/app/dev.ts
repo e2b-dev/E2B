@@ -3,9 +3,8 @@ import * as express from 'express'
 import * as proxy from 'http-proxy-middleware'
 import * as fsPromise from 'fs/promises'
 
-import { pathOption } from 'src/options'
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import { asFormattedError } from 'src/utils/format'
+import { asBold, asFormattedError } from 'src/utils/format'
 
 export interface AppContentJSON {
   env?: {
@@ -22,24 +21,23 @@ export const hiddenAppRoute = '_apps'
 const defaultLocalPort = 3001
 const defaultDevEndpoint = 'https://app.usedevbook.com'
 
-export const devCommand = new commander.Command('dev')
+export const devCommand = new commander.Command('develop')
   .description('Start development server for Devbook application')
   .option(
     '-p, --port <port>',
-    'Use port for local development server',
+    `Use ${asBold('<port>')} for local development server`,
     defaultLocalPort.toString(),
   )
   .option(
     '-e, --endpoint <endpoint>',
-    'Use remote endpoint for rendering apps',
+    `Use remote ${asBold('<endpoint>')} for rendering apps`,
     defaultDevEndpoint,
   )
-  .addOption(pathOption)
-  .alias('dv')
+  .alias('dev')
   .action(async opts => {
     try {
       process.stdout.write('\n')
-      const rootDir = getRoot(opts.path)
+      const rootDir = getRoot()
 
       startDevelopmentServer({
         port: parseInt(opts.port),
@@ -66,25 +64,26 @@ function startDevelopmentServer({
     logLevel: 'debug',
     secure: true,
     changeOrigin: true,
-    onProxyReq(proxyReq, req, res) {
+    onProxyReq(proxyReq, req) {
       if (req.path === `/${hiddenAppRoute}/dev`) {
         // proxyReq.method = 'GET'
+        console.log(req.body)
         req.body = JSON.stringify(req.body)
         proxyReq.setHeader('Content-Type', 'application/json')
         proxyReq.setHeader('content-length', Buffer.byteLength(req.body))
         proxyReq.write(req.body)
       }
     },
-    // pathRewrite: async (path, req) => {
-    //   if (path === '/') {
-    //     return '/_sites/dev'
-    //   }
-    //   return path
-    // },
+    pathRewrite: async path => {
+      if (path === '/') {
+        return `/${hiddenAppRoute}/dev`
+      }
+      return path
+    },
   })
 
   const app = express.default()
-  app.get(`/${hiddenAppRoute}/dev`, async (req, res, next) => {
+  app.get('/', async (req, res, next) => {
     const body = await loadAppContent(rootDir)
     req.body = body
     devEndpointProxy(req, res, next)
