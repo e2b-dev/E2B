@@ -4,7 +4,7 @@ import * as proxy from 'http-proxy-middleware'
 import * as fsPromise from 'fs/promises'
 
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import { asBold, asFormattedError } from 'src/utils/format'
+import { asBold, asEnv, asFormattedError, asLocal } from 'src/utils/format'
 
 export interface AppContentJSON {
   env?: {
@@ -61,13 +61,12 @@ function startDevelopmentServer({
 }) {
   const devEndpointProxy = proxy.createProxyMiddleware({
     target: endpoint,
-    logLevel: 'debug',
+    logLevel: 'error',
     secure: true,
     changeOrigin: true,
     onProxyReq(proxyReq, req) {
       if (req.path === `/${hiddenAppRoute}/dev`) {
         // proxyReq.method = 'GET'
-        console.log(req.body)
         req.body = JSON.stringify(req.body)
         proxyReq.setHeader('Content-Type', 'application/json')
         proxyReq.setHeader('content-length', Buffer.byteLength(req.body))
@@ -89,6 +88,7 @@ function startDevelopmentServer({
     devEndpointProxy(req, res, next)
   })
   app.use(devEndpointProxy)
+  console.log(`Devbook app from directory ${asLocal(rootDir)} available at url ${asEnv(`http://localhost:${port}`)}`)
   app.listen(port)
 }
 
