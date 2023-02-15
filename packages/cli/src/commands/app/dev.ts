@@ -14,6 +14,18 @@ export interface AppContentJSON {
     name: string
     content: string
   }[]
+  css?: {
+    name: string
+    content: string
+  }[]
+}
+
+export interface AppPageContent {
+  env?: {
+    id: string
+  }
+  mdx: string
+  css?: string
 }
 
 export const hiddenAppRoute = '_apps'
@@ -74,7 +86,7 @@ function startDevelopmentServer({
       }
     },
     pathRewrite: async path => {
-      if (path === '/') {
+      if (path === '/' || path.indexOf('.') === -1) {
         return `/${hiddenAppRoute}/dev`
       }
       return path
@@ -83,9 +95,25 @@ function startDevelopmentServer({
 
   const app = express.default()
   app.get('/', async (req, res, next) => {
-    const body = await loadAppContent(rootDir)
-    req.body = body
+    const content = await loadAppContent(rootDir)
+    req.body = {
+      mdx: content.mdx.find(m => m.name === 'index.mdx')?.content,
+      css: content.css?.find(c => c.name === 'index.css')?.content,
+    } as AppPageContent
     devEndpointProxy(req, res, next)
+  })
+  app.get('/*', async (req, res, next) => {
+    const p = (req.params as any)['0']
+    if (p.indexOf('.') === -1) {
+      const content = await loadAppContent(rootDir)
+      req.body = {
+        mdx: content.mdx.find(m => m.name === `${p}.mdx`)?.content,
+        css: content.css?.find(c => c.name === 'index.css')?.content,
+      } as AppPageContent
+      devEndpointProxy(req, res, next)
+    } else {
+      next()
+    }
   })
   app.use(devEndpointProxy)
   console.log(`Devbook app from directory ${asLocal(rootDir)} available at url ${asEnv(`http://localhost:${port}`)}`)
@@ -116,9 +144,23 @@ async function loadAppContent(rootDir: string): Promise<AppContentJSON> {
       }
     }),
   )
+  const css = await Promise.all(
+    (
+      await getFiles(rootDir, {
+        extension: 'css',
+      })
+    ).map(async f => {
+      const content = await fsPromise.readFile(f.path, 'utf-8')
+      return {
+        name: f.name,
+        content,
+      }
+    }),
+  )
 
   return {
     // env,
+    css,
     mdx,
   }
 }
