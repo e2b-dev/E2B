@@ -31,7 +31,7 @@ export interface AppPageContent {
 export const hiddenAppRoute = '_apps'
 
 const defaultLocalPort = 3001
-const defaultDevEndpoint = 'https://app.usedevbook.com'
+const defaultDevEndpoint = 'https://apps.usedevbook.com'
 
 export const devCommand = new commander.Command('develop')
   .description('Start development server for Devbook application')
