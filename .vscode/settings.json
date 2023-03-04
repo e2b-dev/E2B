@@ -1,0 +1,51 @@
+{
+  "search.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "lib/**": true,
+    ".next/**": true,
+    "**/.next/**": true,
+    "**/.turbo/**": true,
+    "**/.vercel/**": true,
+    ".vscode/**": true,
+    ".git/**": true,
+    "node_modules/**": true,
+    "package-lock.json": true,
+    "yarl.lock": true
+  },
+  "files.watcherExclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "lib/**": true,
+    "**/.turbo/**": true,
+    "**/.vercel/**": true,
+    "**/.next/**": true,
+    ".next/**": true,
+    ".vscode/**": true,
+    ".git/**": true,
+    "node_modules/**": true,
+    "package-lock.json": true,
+    "yarl.lock": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "css.validate": false,
+  "tailwindCSS.validate": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.validate": [
+    "javascript",
+    "typescript"
+  ],
+  "debug.javascript.codelens.npmScripts": "never",
+  "editor.codeLens": true,
+  "editor.suggest.localityBonus": true,
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
