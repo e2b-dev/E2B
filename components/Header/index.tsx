@@ -10,8 +10,21 @@ function Header({ }: Props) {
   const user = useUser()
 
   return (
-    <div className="flex items-center justify-between border-b bg-white border-slate-200 px-3">
-      <div className="flex items-center space-x-4">
+    <div className="
+        flex
+        items-center
+        justify-end
+        border-b
+        bg-white
+        border-slate-200
+        px-3
+        py-1.5
+      ">
+      <div className="
+        flex
+        items-center
+        space-x-4
+      ">
         <Link
           href={{
             pathname: '/settings',

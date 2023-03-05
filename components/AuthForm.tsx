@@ -80,7 +80,7 @@ function AuthForm({ authType }: Props) {
       setErrMessage('')
     }
 
-    router.replace('/projects')
+    router.replace('/')
     setIsLoading(false)
   }
 
