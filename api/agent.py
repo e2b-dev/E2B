@@ -39,9 +39,7 @@ class handler(BaseHTTPRequestHandler):
 # from langchain.agents.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 # from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 
-
 # os.environ["OPENAI_API_KEY"] =
-
 
 # PREFIX = """You are an agent designed to write code to answer questions.
 # You have access to a python REPL, which you can use to execute python code to make sure it's the correct code and runs without errors.
