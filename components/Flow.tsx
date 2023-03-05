@@ -1,5 +1,3 @@
-'use client'
-
 import ReactFlow, {
   Controls,
   MiniMap,
@@ -7,7 +5,7 @@ import ReactFlow, {
 } from 'reactflow'
 import { shallow } from 'zustand/shallow'
 
-import { createStore, State } from '@/state/store'
+import { createStore, State } from 'state/store'
 
 import 'reactflow/dist/style.css'
 
