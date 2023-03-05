@@ -1,9 +1,11 @@
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 import { prisma, api_deployments } from 'db/prisma'
-import { notEmpty } from '@/utils/notEmpty'
-import DeploymentEditor from '@/components/DeploymentEditor'
+import { notEmpty } from 'utils/notEmpty'
+import DeploymentEditor from 'components/Editor'
+import { StoreProvider } from 'state/StoreProvider'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx)
@@ -19,7 +21,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       },
     }
   }
-
 
   const user = await prisma.auth_users.findUniqueOrThrow({
     where: {
@@ -119,10 +120,15 @@ interface Props {
 }
 
 function ProjectPage({ deployment }: Props) {
+  const client = useSupabaseClient()
+
   return (
-    <DeploymentEditor
+    <StoreProvider
+      client={client}
       deployment={deployment}
-    />
+    >
+      <DeploymentEditor />
+    </StoreProvider>
   )
 }
 

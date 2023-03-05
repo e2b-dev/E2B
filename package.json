@@ -30,6 +30,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "server-only": "^0.0.1",
+    "sonner": "^0.1.6",
     "superjson": "^1.12.2",
     "swr": "^2.0.4",
     "tailwind-merge": "^1.10.0",

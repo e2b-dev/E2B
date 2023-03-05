@@ -114,7 +114,7 @@ function AuthForm({ authType }: Props) {
         items-center
         space-y-8
         self-start
-        rounded
+        rounded-md
         border
         border-slate-200
         bg-white
@@ -141,7 +141,7 @@ function AuthForm({ authType }: Props) {
                 'w-full',
                 'px-2.5',
                 'py-2',
-                'rounded',
+                'rounded-md',
                 'border',
                 'border-slate-200',
                 {
@@ -168,7 +168,7 @@ function AuthForm({ authType }: Props) {
               className={clsx(
                 'px-2.5',
                 'py-2',
-                'rounded',
+                'rounded-md',
                 'border',
                 'flex',
                 'min-w-0',

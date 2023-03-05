@@ -32,7 +32,7 @@ function SignIn() {
             flex-col
             items-center
             space-y-4
-            rounded
+            rounded-md
           "
         >
           {!isCreatingNewAccount && (

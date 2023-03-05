@@ -14,18 +14,10 @@ module.exports = {
       },
       height: { inherit: 'inherit' },
       colors: {
-        gray: {
-          100: '#FBFBFB',
-        },
         green: {
           400: '#E9F5E6',
           800: '#20BC69',
         },
-        cyan: {
-          100: '#b3d1fb',
-          200: '#AFCDF3',
-          500: '#5BA0FA',
-        }
       },
     },
   },

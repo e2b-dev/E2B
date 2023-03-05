@@ -2,29 +2,35 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { SupabaseClient } from '@supabase/supabase-js'
-import { apiDeploymentsTable } from '@/db/tables'
-import { Database } from '@/db/supabase'
+import { api_deployments } from '@prisma/client'
+
+import { apiDeploymentsTable } from 'db/tables'
+import { Database } from 'db/supabase'
+
+export interface Tool {
+  name: string
+}
 
 export interface Block {
-  type: string
-  code: string
+  tools?: Tool[]
+  prompt: string
 }
 
 export interface State {
   blocks: Block[]
   changeBlock: (index: number, block: Partial<Block>) => void
-  removeBlock: (index: number) => void
+  deleteBlock: (index: number) => void
   addBlock: (block: Block) => void
 }
 
-export function createStore(blocks: Block[], id: string, client: SupabaseClient<Database>) {
+export function createStore(deployment?: api_deployments, client?: SupabaseClient<Database>) {
   const immerStore = immer<State>((set) => ({
-    blocks,
+    blocks: (deployment?.data as any)?.state?.blocks || [],
     changeBlock: (index, block) =>
       set(state => {
         state.blocks[index] = { ...state.blocks[index], ...block }
       }),
-    removeBlock: (index) =>
+    deleteBlock: (index) =>
       set(state => {
         state.blocks.splice(index, 1)
       }),
@@ -34,29 +40,30 @@ export function createStore(blocks: Block[], id: string, client: SupabaseClient<
       }),
   }))
 
-  client.from('')
-
   const persistent = persist(immerStore, {
     name: 'supabase-storage',
-    partialize: (state) => state.blocks,
-    storage: {
+    partialize: (state) => state,
+    storage: client && deployment ? createJSONStorage(() => ({
       getItem: async (name) => {
-        const res = await client.from(apiDeploymentsTable).select('data').eq('id', id)
+        const res = await client.from(apiDeploymentsTable).select('data').eq('id', deployment.id).single()
         if (res.error) {
           throw res.error
         }
-        return res.data as Pick<State, 'blocks'>
+        return JSON.stringify(res.data.data)
       },
-      removeItem: () => {
-
+      removeItem: async () => {
+        const res = await client.from(apiDeploymentsTable).update({ data: {} }).eq('id', deployment.id).single()
+        if (res.error) {
+          throw res.error
+        }
       },
-      setItem: (name, value) => {
-
-
-        value.state
-
+      setItem: async (name, value) => {
+        const res = await client.from(apiDeploymentsTable).update({ data: JSON.parse(value) }).eq('id', deployment.id).single()
+        if (res.error) {
+          throw res.error
+        }
       },
-    }
+    })) : undefined,
   })
 
   const useStore = create<State, [["zustand/persist", unknown], ["zustand/immer", never]]>(persistent)

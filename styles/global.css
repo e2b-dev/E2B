@@ -16,14 +16,12 @@
   html,
   body {
     @apply h-full;
-    @apply bg-gray-100;
-    @apply text-slate-700 antialiased;
-
+    @apply bg-slate-50/20;
+    @apply text-slate-600 antialiased;
     text-rendering: optimizeLegibility;
   }
 
   #__next {
     @apply flex h-inherit flex-col items-center;
   }
-
 }

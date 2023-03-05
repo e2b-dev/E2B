@@ -6,7 +6,7 @@ import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 
 import Button from 'components/Button'
 import Text from 'components/typography/Text'
-import { Database } from '@/db/supabase'
+import { Database } from 'db/supabase'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient<Database>(ctx)
@@ -94,15 +94,6 @@ function Settings({ }: Props) {
             text={user?.email!}
           />
         </div>
-        <div
-          className="
-        flex
-        flex-col
-        space-y-1
-      "
-        >
-        </div>
-
         <div className="pt-2">
           <Button
             onClick={handleSignOut}

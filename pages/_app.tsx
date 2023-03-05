@@ -5,11 +5,13 @@ import { SessionContextProvider, Session } from '@supabase/auth-helpers-react'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import clsx from 'clsx'
+import { Toaster } from 'sonner'
+import { api_deployments } from '@prisma/client'
 
 import 'styles/global.css'
 
-import Header from '@/components/Header'
-import { Database } from '@/db/supabase'
+import Header from 'components/Header'
+import { Database } from 'db/supabase'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,7 +23,7 @@ const jetBrains = JetBrains_Mono({
   variable: '--font-jet-brains',
 })
 
-export default function App({ Component, pageProps }: AppProps<{ initialSession: Session }>) {
+export default function App({ Component, pageProps }: AppProps<{ initialSession: Session, deployment?: api_deployments }>) {
   const router = useRouter()
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>())
 
@@ -44,20 +46,11 @@ export default function App({ Component, pageProps }: AppProps<{ initialSession:
         supabaseClient={supabaseClient}
         initialSession={pageProps.initialSession}
       >
-
         {!isSignIn && !isSignUp &&
           <Header />
         }
-        <div
-          className="
-          flex
-          flex-1
-          flex-col
-          overflow-hidden
-        "
-        >
-          <Component {...pageProps} />
-        </div>
+        <Toaster />
+        <Component {...pageProps} />
       </SessionContextProvider>
     </main>
   )
