@@ -1,44 +1,64 @@
-import {
-  Edge,
-  OnNodesChange,
-  OnEdgesChange,
-  OnConnect,
-  NodeChange,
-  applyNodeChanges,
-  EdgeChange,
-  applyEdgeChanges,
-  Connection,
-  addEdge,
-  Node,
-} from 'reactflow'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { apiDeploymentsTable } from '@/db/tables'
+import { Database } from '@/db/supabase'
 
-export interface State {
-  nodes: Node[]
-  edges: Edge[]
-  onNodesChange: OnNodesChange
-  onEdgesChange: OnEdgesChange
-  onConnect: OnConnect
+export interface Block {
+  type: string
+  code: string
 }
 
-export function createStore(nodes: Node[], edges: Edge[]) {
+export interface State {
+  blocks: Block[]
+  changeBlock: (index: number, block: Partial<Block>) => void
+  removeBlock: (index: number) => void
+  addBlock: (block: Block) => void
+}
+
+export function createStore(blocks: Block[], id: string, client: SupabaseClient<Database>) {
   const immerStore = immer<State>((set) => ({
-    nodes,
-    edges,
-    onNodesChange: (changes: NodeChange[]) =>
+    blocks,
+    changeBlock: (index, block) =>
       set(state => {
-        state.nodes = applyNodeChanges(changes, state.nodes)
+        state.blocks[index] = { ...state.blocks[index], ...block }
       }),
-    onEdgesChange: (changes: EdgeChange[]) =>
+    removeBlock: (index) =>
       set(state => {
-        state.edges = applyEdgeChanges(changes, state.edges)
+        state.blocks.splice(index, 1)
       }),
-    onConnect: (connection: Connection) =>
+    addBlock: (block) =>
       set(state => {
-        state.edges = addEdge(connection, state.edges)
+        state.blocks.push(block)
       }),
   }))
-  const useStore = create<State, [['zustand/immer', never]]>(immerStore)
+
+  client.from('')
+
+  const persistent = persist(immerStore, {
+    name: 'supabase-storage',
+    partialize: (state) => state.blocks,
+    storage: {
+      getItem: async (name) => {
+        const res = await client.from(apiDeploymentsTable).select('data').eq('id', id)
+        if (res.error) {
+          throw res.error
+        }
+        return res.data as Pick<State, 'blocks'>
+      },
+      removeItem: () => {
+
+      },
+      setItem: (name, value) => {
+
+
+        value.state
+
+      },
+    }
+  })
+
+  const useStore = create<State, [["zustand/persist", unknown], ["zustand/immer", never]]>(persistent)
   return useStore
 }

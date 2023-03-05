@@ -6,9 +6,10 @@ import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 
 import Button from 'components/Button'
 import Text from 'components/typography/Text'
+import { Database } from '@/db/supabase'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-  const supabase = createServerSupabaseClient(ctx)
+  const supabase = createServerSupabaseClient<Database>(ctx)
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -34,7 +35,7 @@ function Settings({ }: Props) {
   const user = useUser()
   const router = useRouter()
 
-  const supabaseClient = useSupabaseClient()
+  const supabaseClient = useSupabaseClient<Database>()
 
   async function handleSignOut() {
     await supabaseClient.auth.signOut()

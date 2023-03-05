@@ -9,6 +9,7 @@ import clsx from 'clsx'
 import 'styles/global.css'
 
 import Header from '@/components/Header'
+import { Database } from '@/db/supabase'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,9 +21,9 @@ const jetBrains = JetBrains_Mono({
   variable: '--font-jet-brains',
 })
 
-export default function App(props: AppProps<{ initialSession: Session }>) {
+export default function App({ Component, pageProps }: AppProps<{ initialSession: Session }>) {
   const router = useRouter()
-  const [supabaseClient] = useState(() => createBrowserSupabaseClient())
+  const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>())
 
   const isSignIn = router.pathname === '/sign' && router.query.signup !== 'true'
   const isSignUp = router.pathname === '/sign' && router.query.signup === 'true'
@@ -41,7 +42,7 @@ export default function App(props: AppProps<{ initialSession: Session }>) {
     )}>
       <SessionContextProvider
         supabaseClient={supabaseClient}
-        initialSession={props.pageProps.initialSession}
+        initialSession={pageProps.initialSession}
       >
 
         {!isSignIn && !isSignUp &&
@@ -55,7 +56,7 @@ export default function App(props: AppProps<{ initialSession: Session }>) {
           overflow-hidden
         "
         >
-          <props.Component {...props.pageProps} />
+          <Component {...pageProps} />
         </div>
       </SessionContextProvider>
     </main>
