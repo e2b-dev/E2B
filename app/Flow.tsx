@@ -5,7 +5,7 @@ import ReactFlow, {
   MiniMap,
   Background,
 } from 'reactflow'
-import { shallow } from 'zustand/shallow';
+import { shallow } from 'zustand/shallow'
 
 import { createStore, State } from '@/state/store'
 
