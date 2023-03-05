@@ -1,0 +1,450 @@
+generator js {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema", "views"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SUPABASE_POSTGRES_POOL_URL")
+  schemas  = ["auth", "public"]
+}
+
+model audit_log_entries {
+  instance_id String?   @db.Uuid
+  id          String    @id @db.Uuid
+  payload     Json?     @db.Json
+  created_at  DateTime? @db.Timestamptz(6)
+  ip_address  String    @default("") @db.VarChar(64)
+
+  @@index([instance_id], map: "audit_logs_instance_id_idx")
+  @@schema("auth")
+}
+
+model identities {
+  id              String
+  user_id         String     @db.Uuid
+  identity_data   Json
+  provider        String
+  last_sign_in_at DateTime?  @db.Timestamptz(6)
+  created_at      DateTime?  @db.Timestamptz(6)
+  updated_at      DateTime?  @db.Timestamptz(6)
+  email           String?    @default(dbgenerated("lower((identity_data ->> 'email'::text))"))
+  users           auth_users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([provider, id])
+  @@index([user_id])
+  @@index([email])
+  @@schema("auth")
+}
+
+model instances {
+  id              String    @id @db.Uuid
+  uuid            String?   @db.Uuid
+  raw_base_config String?
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+
+  @@schema("auth")
+}
+
+model mfa_amr_claims {
+  session_id            String   @db.Uuid
+  created_at            DateTime @db.Timestamptz(6)
+  updated_at            DateTime @db.Timestamptz(6)
+  authentication_method String
+  id                    String   @id(map: "amr_id_pk") @db.Uuid
+  sessions              sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([session_id, authentication_method], map: "mfa_amr_claims_session_id_authentication_method_pkey")
+  @@schema("auth")
+}
+
+model mfa_challenges {
+  id          String      @id @db.Uuid
+  factor_id   String      @db.Uuid
+  created_at  DateTime    @db.Timestamptz(6)
+  verified_at DateTime?   @db.Timestamptz(6)
+  ip_address  String      @db.Inet
+  mfa_factors mfa_factors @relation(fields: [factor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "mfa_challenges_auth_factor_id_fkey")
+
+  @@schema("auth")
+}
+
+model mfa_factors {
+  id             String           @id @db.Uuid
+  user_id        String           @db.Uuid
+  friendly_name  String?
+  factor_type    factor_type
+  status         factor_status
+  created_at     DateTime         @db.Timestamptz(6)
+  updated_at     DateTime         @db.Timestamptz(6)
+  secret         String?
+  mfa_challenges mfa_challenges[]
+  users          auth_users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, created_at], map: "factor_id_created_at_idx")
+  @@schema("auth")
+}
+
+model refresh_tokens {
+  instance_id String?   @db.Uuid
+  id          BigInt    @id @default(autoincrement())
+  token       String?   @unique(map: "refresh_tokens_token_unique") @db.VarChar(255)
+  user_id     String?   @db.VarChar(255)
+  revoked     Boolean?
+  created_at  DateTime? @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+  parent      String?   @db.VarChar(255)
+  session_id  String?   @db.Uuid
+  sessions    sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([session_id], map: "refresh_token_session_id")
+  @@index([instance_id])
+  @@index([instance_id, user_id])
+  @@index([parent])
+  @@index([session_id, revoked])
+  @@index([token])
+  @@schema("auth")
+}
+
+model saml_providers {
+  id                String        @id @db.Uuid
+  sso_provider_id   String        @db.Uuid
+  entity_id         String        @unique
+  metadata_xml      String
+  metadata_url      String?
+  attribute_mapping Json?
+  created_at        DateTime?     @db.Timestamptz(6)
+  updated_at        DateTime?     @db.Timestamptz(6)
+  sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model saml_relay_states {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  request_id      String
+  for_email       String?
+  redirect_to     String?
+  from_ip_address String?       @db.Inet
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([for_email])
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model schema_migrations {
+  version String @id @db.VarChar(255)
+
+  @@schema("auth")
+}
+
+model sessions {
+  id             String           @id @db.Uuid
+  user_id        String           @db.Uuid
+  created_at     DateTime?        @db.Timestamptz(6)
+  updated_at     DateTime?        @db.Timestamptz(6)
+  factor_id      String?          @db.Uuid
+  aal            aal_level?
+  not_after      DateTime?        @db.Timestamptz(6)
+  mfa_amr_claims mfa_amr_claims[]
+  refresh_tokens refresh_tokens[]
+  users          auth_users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id])
+  @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@schema("auth")
+}
+
+model sso_domains {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  domain          String
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model sso_providers {
+  id                String              @id @db.Uuid
+  resource_id       String?
+  created_at        DateTime?           @db.Timestamptz(6)
+  updated_at        DateTime?           @db.Timestamptz(6)
+  saml_providers    saml_providers[]
+  saml_relay_states saml_relay_states[]
+  sso_domains       sso_domains[]
+
+  @@schema("auth")
+}
+
+model auth_users {
+  instance_id                 String?         @db.Uuid
+  id                          String          @id @db.Uuid
+  aud                         String?         @db.VarChar(255)
+  role                        String?         @db.VarChar(255)
+  email                       String?         @db.VarChar(255)
+  encrypted_password          String?         @db.VarChar(255)
+  email_confirmed_at          DateTime?       @db.Timestamptz(6)
+  invited_at                  DateTime?       @db.Timestamptz(6)
+  confirmation_token          String?         @db.VarChar(255)
+  confirmation_sent_at        DateTime?       @db.Timestamptz(6)
+  recovery_token              String?         @db.VarChar(255)
+  recovery_sent_at            DateTime?       @db.Timestamptz(6)
+  email_change_token_new      String?         @db.VarChar(255)
+  email_change                String?         @db.VarChar(255)
+  email_change_sent_at        DateTime?       @db.Timestamptz(6)
+  last_sign_in_at             DateTime?       @db.Timestamptz(6)
+  raw_app_meta_data           Json?
+  raw_user_meta_data          Json?
+  is_super_admin              Boolean?
+  created_at                  DateTime?       @db.Timestamptz(6)
+  updated_at                  DateTime?       @db.Timestamptz(6)
+  phone                       String?         @unique @db.VarChar(15)
+  phone_confirmed_at          DateTime?       @db.Timestamptz(6)
+  phone_change                String?         @default("") @db.VarChar(15)
+  phone_change_token          String?         @default("") @db.VarChar(255)
+  phone_change_sent_at        DateTime?       @db.Timestamptz(6)
+  confirmed_at                DateTime?       @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current  String?         @default("") @db.VarChar(255)
+  email_change_confirm_status Int?            @default(0) @db.SmallInt
+  banned_until                DateTime?       @db.Timestamptz(6)
+  reauthentication_token      String?         @default("") @db.VarChar(255)
+  reauthentication_sent_at    DateTime?       @db.Timestamptz(6)
+  is_sso_user                 Boolean         @default(false)
+  identities                  identities[]
+  mfa_factors                 mfa_factors[]
+  sessions                    sessions[]
+  api_keys                    api_keys[]
+  code_snippets               code_snippets[]
+  user_feedback               user_feedback[]
+  users                       public_users?
+  users_teams                 users_teams[]
+
+  @@index([instance_id])
+  @@map("users")
+  @@schema("auth")
+}
+
+model api_keys {
+  api_key  String     @id
+  owner_id String     @db.Uuid
+  users    auth_users @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model apps {
+  id                  String               @id
+  title               String?
+  created_at          DateTime             @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  repository_id       BigInt?
+  team_id             String?              @db.Uuid
+  repository_branch   String?
+  repository_path     String               @default("./")
+  subdomain           String?              @unique
+  github_repositories github_repositories? @relation(fields: [repository_id], references: [repository_id], onDelete: NoAction, onUpdate: NoAction)
+  teams               teams?               @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  apps_content        apps_content?
+
+  @@schema("public")
+}
+
+model apps_content {
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  content    Json?
+  app_id     String   @id
+  apps       apps     @relation(fields: [app_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model apps_feedback {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  appId      String
+  feedback   String?
+  properties Json?    @db.Json
+
+  @@schema("public")
+}
+
+model code_snippets {
+  id                      String                   @id
+  creator_id              String                   @db.Uuid
+  title                   String                   @default("\"\"")
+  code                    String?
+  created_at              DateTime                 @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  env_vars                Json                     @default("{}") @db.Json
+  template                String                   @default("Nodejs")
+  users                   auth_users               @relation(fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  envs                    envs[]
+  published_code_snippets published_code_snippets?
+
+  @@schema("public")
+}
+
+model envs {
+  id              String         @id
+  code_snippet_id String?
+  template        String?
+  deps            String[]
+  state           env_state?
+  code_snippets   code_snippets? @relation(fields: [code_snippet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model published_code_snippets {
+  code_snippet_id String        @unique
+  title           String        @default("")
+  code            String        @default("")
+  published_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  env_vars        Json          @default("{}") @db.Json
+  template        String        @default("Nodejs")
+  code_snippets   code_snippets @relation(fields: [code_snippet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model slack_installations {
+  id                String
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  devbook_app_id    String
+  installation_data Json
+
+  @@id([id, devbook_app_id])
+  @@schema("public")
+}
+
+model teams {
+  id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  name            String?
+  is_default      Boolean          @default(false)
+  api_deployments api_deployments?
+  apps            apps[]
+  users_teams     users_teams[]
+
+  @@schema("public")
+}
+
+model user_feedback {
+  id         BigInt      @id @default(autoincrement())
+  created_at DateTime?   @default(now()) @db.Timestamptz(6)
+  user_id    String?     @db.Uuid
+  feedback   String?
+  users      auth_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model public_users {
+  id         String     @id @db.Uuid
+  created_at DateTime?  @default(now()) @db.Timestamptz(6)
+  email      String?
+  users      auth_users @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("users")
+  @@schema("public")
+}
+
+model users_teams {
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  user_id    String     @db.Uuid
+  team_id    String     @db.Uuid
+  teams      teams      @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      auth_users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([user_id, team_id])
+  @@schema("public")
+}
+
+model github_repositories {
+  repository_id       BigInt   @id(map: "github_installations_pkey") @default(autoincrement())
+  installation_id     BigInt
+  installated_at      DateTime @default(now()) @db.Timestamptz(6)
+  repository_fullname String
+  apps                apps[]
+
+  @@schema("public")
+}
+
+model api_deployments {
+  id         BigInt    @id(map: "deployments_pkey") @default(autoincrement())
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  data       Json
+  team_id    String    @unique @db.Uuid
+  teams      teams     @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+enum aal_level {
+  aal1
+  aal2
+  aal3
+
+  @@schema("auth")
+}
+
+enum factor_status {
+  unverified
+  verified
+
+  @@schema("auth")
+}
+
+enum factor_type {
+  totp
+  webauthn
+
+  @@schema("auth")
+}
+
+enum env_state {
+  Building
+  Failed
+  Done
+  None
+
+  @@schema("public")
+}
+
+enum template {
+  Nodejs
+  Go
+  Bash
+  Python3
+  Java
+  Rust
+  Perl
+  PHP
+  Ansys
+  Typescript
+
+  @@schema("public")
+}
+
+enum template_old {
+  None
+  Nodejs
+  Go
+  Bash
+  Python
+  Java
+  Rust
+  Perl
+  PHP
+
+  @@schema("public")
+}
