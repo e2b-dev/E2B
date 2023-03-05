@@ -3,14 +3,18 @@
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime
 
-class handler(BaseHTTPRequestHandler):
+from code_generator.tools.javascript.eval import eval
 
-  def do_GET(self):
-    self.send_response(200)
-    self.send_header('Content-type', 'text/plain')
-    self.end_headers()
-    self.wfile.write(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')).encode())
-    return
+
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        eval('console.log(42)')
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(
+            str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')).encode())
+        return
 
 
 # import os

@@ -1,5 +1,6 @@
 {
   "name": "ai-api",
+  "type": "module",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -25,6 +26,7 @@
     "@types/node": "^18.14.6",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
+    "@vercel/node": "^2.9.10",
     "autoprefixer": "^10.4.13",
     "cssnano": "^5.1.15",
     "eslint": "^8.35.0",
