@@ -2,20 +2,32 @@
 
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime
+from langchain.llms.openai import OpenAI
 
-from code_generator.tools.javascript.eval import eval
+
+from langchain.llms.openai import OpenAI
+from code_generator.js_agent.base import create_js_agent
+from code_generator.tools.javascript.tool import JavascriptEvalTool
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        eval('console.log(42)')
+
+        executor = create_js_agent(
+            llm=OpenAI(temperature=0, max_tokens=1000),
+            tool=JavascriptEvalTool(),
+            verbose=True,
+        )
+        executor.run(
+            "Take the incoming POST request and extract the field 'email' from the request's JSON body and save it to a variable."
+        )
+
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
         self.wfile.write(
             str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')).encode())
         return
-
 
 
 # import os

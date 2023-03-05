@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/test_python/test_python/server/node_modules
 /.pnp
 .pnp.js
 

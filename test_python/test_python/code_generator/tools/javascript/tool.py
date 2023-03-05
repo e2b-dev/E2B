@@ -13,6 +13,10 @@ class JavascriptEvalTool(BaseTool):
     )
 
     def _run(self, query: str) -> str:
+        query = query.strip().strip('`')
+        print("=== Query ===")
+        print(query)
+        print("========")
         return js_eval(query)
 
     async def _arun(self, query: str) -> str:
