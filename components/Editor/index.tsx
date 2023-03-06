@@ -35,7 +35,7 @@ async function handlePostGenerate(url: string, { arg }: {
     method: 'POST',
     body: JSON.stringify({
       blocks: arg.blocks.map(b => b.prompt),
-      method: arg.method,
+      method: arg.method.toLowerCase(),
     }),
 
     headers: {
