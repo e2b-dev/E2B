@@ -85,13 +85,12 @@ export default function BodyBlock({ onChange, onDelete, block }: Props) {
           />
         </button>
       </div>
-      <input
+      <textarea
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
         name="block"
         placeholder="Prompt"
-        type="text"
         value={block.prompt}
         onChange={e => onChange({ ...block, prompt: e.target.value })}
         className={clsx(
@@ -99,8 +98,7 @@ export default function BodyBlock({ onChange, onDelete, block }: Props) {
           'px-4',
           'py-2',
           'rounded-lg',
-          'transition-all',
-          'focus:rounded-full',
+          'transition-colors',
           'border',
           'hover:border-green-800/40',
           'border-slate-200',
