@@ -101,6 +101,7 @@ export default function BlockEditor({
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
+        spellCheck="false"
         name="block"
         placeholder="Prompt"
         value={block.prompt}
