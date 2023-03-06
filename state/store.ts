@@ -52,6 +52,12 @@ export function createStore(deployment?: api_deployments, client?: SupabaseClien
     state.blocks.push(defaultBlock)
   }
 
+  state.blocks.forEach(s => {
+    if (!s.id) {
+      s.id = nanoid()
+    }
+  })
+
   const immerStore = immer<State>((set) => ({
     ...state,
     changeBlock: (index, block) =>
