@@ -26,8 +26,17 @@
   }
 
   .scroller {
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: transparent transparent;
     scrollbar-width: thin;
     scrollbar-gutter: stable both-edges;
   }
+
+  .no-scroller {
+    scrollbar-width: none;
+    resize: none;
+  }
+}
+
+.no-scroller::-webkit-scrollbar {
+  display: none;
 }
