@@ -73,7 +73,6 @@ export default function Editor({ }: Props) {
 
   return (
     <Hotkeys
-      allowRepeat
       keyName="command+enter,control+enter,shift+command+enter,shift+control+enter"
       onKeyDown={(s) => {
         if (s === 'command+enter' || s === 'control+enter') {
@@ -88,8 +87,9 @@ export default function Editor({ }: Props) {
         }
       }}
       filter={() => {
-        return true;
+        return true
       }}
+      allowRepeat
     >
       <div className="
       flex
@@ -123,7 +123,7 @@ export default function Editor({ }: Props) {
         items-center
         transition-all
         ">
-          {blocks.map((b, i, a) =>
+          {blocks.map((b, i) =>
             <Fragment
               key={b.id}
             >
