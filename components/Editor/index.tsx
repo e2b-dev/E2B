@@ -58,7 +58,7 @@ export default function Editor({ }: Props) {
     changeMethod,
   } = useStore(selector, shallow)
 
-  const [focusedBlock, setFocusedBlock] = useState(0)
+  const [focusedBlock, setFocusedBlock] = useState({ index: 0 })
 
   const { trigger: generate } = useSWRMutation('/api/generate', handlePostGenerate)
 
@@ -78,13 +78,13 @@ export default function Editor({ }: Props) {
       onKeyDown={(s) => {
         if (s === 'command+enter' || s === 'control+enter') {
           setFocusedBlock(b => {
-            if (blocks.length === 0 || b === blocks.length - 1) {
+            if (blocks.length === 0 || b.index === blocks.length - 1) {
               addBlock({ prompt: '', id: nanoid() })
             }
-            return b + 1
+            return { index: b.index + 1 }
           })
         } else if (s === 'shift+command+enter' || s === 'shift+control+enter') {
-          setFocusedBlock(b => b > 0 ? b - 1 : b)
+          setFocusedBlock(b => ({ index: b.index > 0 ? b.index - 1 : b.index }))
         }
       }}
       filter={() => {
@@ -130,18 +130,29 @@ export default function Editor({ }: Props) {
               <ConnectionLine className='h-4' />
               <BlockEditor
                 block={b}
-                onDelete={() => removeBlock(i)}
+                onDelete={() => {
+                  removeBlock(i)
+                  setTimeout(() => {
+                    if (i <= focusedBlock.index) {
+                      setFocusedBlock(b => ({ index: b.index - 1 }))
+                    } else {
+                      setFocusedBlock(b => ({ index: b.index }))
+                    }
+                  }, 0)
+                }}
                 onChange={(b) => changeBlock(i, b)}
-                isLast={i === a.length - 1}
-                isFirst={i === 0}
-                isFocused={i === focusedBlock}
-                onFocus={() => setFocusedBlock(i)}
+                index={i}
+                focus={focusedBlock}
+                onFocus={() => setFocusedBlock({ index: i })}
               />
             </Fragment>
           )}
         </div>
         <ConnectionLine className='h-4' />
-        <AddBlockButton addBlock={addBlock} />
+        <AddBlockButton addBlock={(block) => {
+          addBlock(block)
+          setTimeout(() => setFocusedBlock({ index: blocks.length }), 0)
+        }} />
         <div className="absolute right-4 top-4">
           <Button
             text="Deploy"

@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { Wrench } from 'lucide-react'
-import { useState, useEffect, MouseEvent, useRef } from 'react'
+import { useState, useLayoutEffect, useEffect, MouseEvent, useRef } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 
 import Text from 'components/typography/Text'
@@ -10,19 +10,17 @@ export interface Props {
   onChange: (block: Block) => void
   onDelete: () => void
   block: Block
-  isLast?: boolean
-  isFirst?: boolean
-  isFocused?: boolean
-  onFocus?: () => void
+  index: number,
+  focus: { index: number }
+  onFocus: () => void
 }
 
 export default function BlockEditor({
   onChange,
   onDelete,
   block,
-  isLast,
-  isFirst,
-  isFocused,
+  index,
+  focus,
   onFocus,
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -40,11 +38,11 @@ export default function BlockEditor({
     [confirmDelete],
   )
 
-  useEffect(function autofocus() {
-    if (isFocused) {
+  useLayoutEffect(function autofocus() {
+    if (focus.index === index) {
       ref.current?.focus()
     }
-  }, [isFocused])
+  }, [focus, index])
 
   function handleDelete(
     e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>,
