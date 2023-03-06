@@ -148,12 +148,12 @@ export default function Editor({ }: Props) {
             </Fragment>
           )}
         </div>
-        <ConnectionLine className='h-4' />
+        <ConnectionLine className='min-h-[16px]' />
         <AddBlockButton addBlock={(block) => {
           addBlock(block)
           setTimeout(() => setFocusedBlock({ index: blocks.length }), 0)
         }} />
-        <div className="absolute right-4 top-4">
+        <div className="fixed right-0 top-0">
           <Button
             text="Deploy"
             onClick={deploy}
