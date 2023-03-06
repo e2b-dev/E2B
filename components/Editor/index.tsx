@@ -153,7 +153,7 @@ export default function Editor({ }: Props) {
           addBlock(block)
           setTimeout(() => setFocusedBlock({ index: blocks.length }), 0)
         }} />
-        <div className="fixed right-0 top-0">
+        <div className="fixed right-3 top-12">
           <Button
             text="Deploy"
             onClick={deploy}
