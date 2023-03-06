@@ -1,6 +1,8 @@
 import { shallow } from 'zustand/shallow'
 import useSWRMutation from 'swr/mutation'
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
+import { toast } from 'sonner'
+import Hotkeys from 'react-hot-keys'
 
 import { State, Block, methods, Method } from 'state/store'
 import { getStoreContext } from 'state/StoreProvider'
@@ -11,7 +13,7 @@ import BlockEditor from './BlockEditor'
 import Button from '../Button'
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
-import { toast } from 'sonner'
+import { nanoid } from 'nanoid'
 
 const selector = (state: State) => ({
   blocks: state.blocks,
@@ -56,6 +58,8 @@ export default function Editor({ }: Props) {
     changeMethod,
   } = useStore(selector, shallow)
 
+  const [focusedBlock, setFocusedBlock] = useState(0)
+
   const { trigger: generate } = useSWRMutation('/api/generate', handlePostGenerate)
 
   async function deploy() {
@@ -68,7 +72,26 @@ export default function Editor({ }: Props) {
   }
 
   return (
-    <div className="
+    <Hotkeys
+      allowRepeat
+      keyName="command+enter,control+enter,shift+command+enter,shift+control+enter"
+      onKeyDown={(s) => {
+        if (s === 'command+enter' || s === 'control+enter') {
+          setFocusedBlock(b => {
+            if (blocks.length === 0 || b === blocks.length - 1) {
+              addBlock({ prompt: '', id: nanoid() })
+            }
+            return b + 1
+          })
+        } else if (s === 'shift+command+enter' || s === 'shift+control+enter') {
+          setFocusedBlock(b => b > 0 ? b - 1 : b)
+        }
+      }}
+      filter={() => {
+        return true;
+      }}
+    >
+      <div className="
       flex
       flex-1
       p-8
@@ -78,51 +101,55 @@ export default function Editor({ }: Props) {
       scroller
       relative
     ">
-      <div className="flex items-center space-x-2">
-        <Text
-          text="Incoming"
-          className='font-bold'
-        />
-        <Select
-          direction="left"
-          selectedValue={{ key: method, title: method }}
-          values={methods.map(m => ({ key: m, title: m }))}
-          onChange={m => changeMethod(m.title as Method)}
-        />
-        <Text
-          text="Request"
-          className='font-bold'
-        />
-      </div>
-      <div className="
+        <div className="flex items-center space-x-2">
+          <Text
+            text="Incoming"
+            className='font-bold'
+          />
+          <Select
+            direction="left"
+            selectedValue={{ key: method, title: method }}
+            values={methods.map(m => ({ key: m, title: m }))}
+            onChange={m => changeMethod(m.title as Method)}
+          />
+          <Text
+            text="Request"
+            className='font-bold'
+          />
+        </div>
+        <div className="
         flex
         flex-col
         items-center
         transition-all
         ">
-        {blocks.map((b, i, a) =>
-          <Fragment
-            key={b.id}
-          >
-            <ConnectionLine className='h-4' />
-            <BlockEditor
-              block={b}
-              onDelete={() => removeBlock(i)}
-              onChange={(b) => changeBlock(i, b)}
-              isLast={i === a.length - 1}
-            />
-          </Fragment>
-        )}
+          {blocks.map((b, i, a) =>
+            <Fragment
+              key={b.id}
+            >
+              <ConnectionLine className='h-4' />
+              <BlockEditor
+                block={b}
+                onDelete={() => removeBlock(i)}
+                onChange={(b) => changeBlock(i, b)}
+                isLast={i === a.length - 1}
+                isFirst={i === 0}
+                isFocused={i === focusedBlock}
+                onFocus={() => setFocusedBlock(i)}
+              />
+            </Fragment>
+          )}
+        </div>
+        <ConnectionLine className='h-4' />
+        <AddBlockButton addBlock={addBlock} />
+        <div className="absolute right-4 top-4">
+          <Button
+            text="Deploy"
+            onClick={deploy}
+            variant={Button.variant.Full}
+          />
+        </div>
       </div>
-      <ConnectionLine className='h-4' />
-      <AddBlockButton addBlock={addBlock} />
-      <div className="absolute right-4 top-4">
-        <Button
-          text="Deploy"
-          onClick={deploy}
-          variant={Button.variant.Full}
-        />
-      </div>
-    </div>
+    </Hotkeys>
   )
 }

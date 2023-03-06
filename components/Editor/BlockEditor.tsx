@@ -11,6 +11,9 @@ export interface Props {
   onDelete: () => void
   block: Block
   isLast?: boolean
+  isFirst?: boolean
+  isFocused?: boolean
+  onFocus?: () => void
 }
 
 export default function BlockEditor({
@@ -18,6 +21,9 @@ export default function BlockEditor({
   onDelete,
   block,
   isLast,
+  isFirst,
+  isFocused,
+  onFocus,
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -34,11 +40,11 @@ export default function BlockEditor({
     [confirmDelete],
   )
 
-  // useEffect(function autofocus() {
-  //   if (isLast) {
-  //     ref.current?.focus()
-  //   }
-  // }, [isLast])
+  useEffect(function autofocus() {
+    if (isFocused) {
+      ref.current?.focus()
+    }
+  }, [isFocused])
 
   function handleDelete(
     e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>,
@@ -106,6 +112,7 @@ export default function BlockEditor({
         placeholder="Prompt"
         value={block.prompt}
         onChange={e => onChange({ ...block, prompt: e.target.value })}
+        onFocus={onFocus}
         ref={ref}
         className={clsx(
           'w-full',
@@ -115,7 +122,6 @@ export default function BlockEditor({
           'leading-6',
           'tracking-wide',
           'font-sans',
-          'min-h-[42px]',
           'text-slate-500',
           'focus:text-slate-600',
           'no-scroller',
