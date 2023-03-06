@@ -34,11 +34,11 @@ export default function BlockEditor({
     [confirmDelete],
   )
 
-  useEffect(function autofocus() {
-    if (isLast) {
-      ref.current?.focus()
-    }
-  }, [isLast])
+  // useEffect(function autofocus() {
+  //   if (isLast) {
+  //     ref.current?.focus()
+  //   }
+  // }, [isLast])
 
   function handleDelete(
     e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>,
@@ -109,12 +109,13 @@ export default function BlockEditor({
         ref={ref}
         className={clsx(
           'w-full',
-          'px-4',
+          'px-2',
           'py-2',
           'rounded-lg',
           'leading-6',
           'tracking-wide',
           'font-sans',
+          'scroller',
           'text-slate-500',
           'focus:text-slate-600',
           'transition-all',

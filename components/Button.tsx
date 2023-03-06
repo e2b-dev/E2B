@@ -62,7 +62,7 @@ function Button({
       {iconPosition === IconPosition.Left && icon}
       {text && (
         <Text
-          size={Text.size.S3}
+          size={Text.size.S2}
           text={text}
         />
       )}
