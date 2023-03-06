@@ -1,7 +1,6 @@
 import { shallow } from 'zustand/shallow'
 import useSWRMutation from 'swr/mutation'
 import { Fragment, useState } from 'react'
-import { toast } from 'sonner'
 import Hotkeys from 'react-hot-keys'
 
 import { State, Block, methods, Method } from 'state/store'
@@ -32,13 +31,12 @@ async function handlePostGenerate(url: string, { arg }: {
     method: Method,
   }
 }) {
-  let prompt = ''
-  for (const block of arg.blocks) {
-    prompt += block.prompt
-  }
   return await fetch(url, {
     method: 'POST',
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({
+      blocks: arg.blocks.map(b => b.prompt),
+      method: arg.method,
+    }),
 
     headers: {
       'Content-Type': 'application/json',
@@ -67,7 +65,7 @@ export default function Editor({ }: Props) {
       blocks,
       method,
     })
-    toast(response)
+    // toast(response)
     console.log(response)
   }
 
