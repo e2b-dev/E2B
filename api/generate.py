@@ -15,10 +15,6 @@ class handler(BaseHTTPRequestHandler):
 
         blocks = data['blocks']
         method = data['method']
-        print('=== BLOCKS')
-        print(blocks)
-        print('=== METHOD')
-        print(method)
 
         final_prompt, js_code = generate_req_handler(blocks, method)
 
