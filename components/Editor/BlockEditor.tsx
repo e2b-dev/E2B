@@ -1,9 +1,9 @@
 import clsx from 'clsx'
 import { Wrench } from 'lucide-react'
 import { useState, useEffect, MouseEvent, useRef } from 'react'
+import TextareaAutosize from 'react-textarea-autosize'
 
 import Text from 'components/typography/Text'
-
 import { Block } from 'state/store'
 
 export interface Props {
@@ -97,7 +97,7 @@ export default function BlockEditor({
           />
         </button>
       </div>
-      <textarea
+      <TextareaAutosize
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
@@ -111,7 +111,15 @@ export default function BlockEditor({
           'px-4',
           'py-2',
           'rounded-lg',
+          'text-sm',
+          'leading-6',
+          'tracking-wide',
+          'font-sans',
+          'text-slate-500',
+          'focus:text-slate-600',
           'transition-colors',
+          'transition-shadow',
+          'focus:shadow',
           'border',
           'border-green-800/40',
           'bg-white',

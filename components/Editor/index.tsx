@@ -11,6 +11,7 @@ import BlockEditor from './BlockEditor'
 import Button from '../Button'
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
+import { toast } from 'sonner'
 
 const selector = (state: State) => ({
   blocks: state.blocks,
@@ -62,6 +63,7 @@ export default function Editor({ }: Props) {
       blocks,
       method,
     })
+    toast(response)
     console.log(response)
   }
 
