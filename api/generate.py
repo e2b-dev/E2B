@@ -1,12 +1,32 @@
 # https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python
 
+import simplejson
 from http.server import BaseHTTPRequestHandler
-from datetime import datetime
 
 from code_generator.base import generate
 
 
 class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        # Extract 'prompt' from the json body
+        self.data_string = self.rfile.read(int(self.headers['Content-Length']))
+
+        print(self.data_string)
+        print('===========')
+
+        data = simplejson.loads(self.data_string)
+        print(data)
+
+        js_code = generate(data['prompt']).strip('`').strip()
+        print('--------')
+        print(js_code)
+
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(js_code.encode())
+        return
+
     def do_GET(self):
         js_code = generate(
             """Write a body of an Express server function that handles incoming requests.

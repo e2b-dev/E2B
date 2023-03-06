@@ -1,2 +1,3 @@
+simplejson==3.18.3
 python-dotenv==1.0.0
 git+https://github.com/devbookhq/code_generator.git@master#egg=code_generator
