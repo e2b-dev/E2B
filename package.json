@@ -22,6 +22,7 @@
     "@supabase/supabase-js": "^2.10.0",
     "@types/randomcolor": "^0.5.7",
     "clsx": "^1.2.1",
+    "express": "^4.18.2",
     "immer": "^9.0.19",
     "lucide-react": "^0.122.0",
     "nanoid": "^4.0.1",

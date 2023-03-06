@@ -19,16 +19,16 @@ export interface Block {
 }
 
 export enum Method {
-  POST = 'POST',
-  GET = 'GET',
-  PUT = 'PUT',
-  DELETE = 'DELETE',
-  PATCH = 'PATCH',
+  POST = 'post',
+  GET = 'get',
+  PUT = 'put',
+  DELETE = 'delete',
+  PATCH = 'patch',
 }
 
 export const methods = Object.keys(Method).filter((item) => {
   return isNaN(Number(item))
-});
+})
 
 export interface State {
   blocks: Block[]
@@ -95,6 +95,6 @@ export function createStore(deployment?: api_deployments, client?: SupabaseClien
     } : undefined,
   })
 
-  const useStore = create<State, [["zustand/persist", unknown], ["zustand/immer", never]]>(persistent)
+  const useStore = create<State, [['zustand/persist', unknown], ['zustand/immer', never]]>(persistent)
   return useStore
 }
