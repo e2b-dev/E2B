@@ -44,9 +44,10 @@ export default function Editor({ }: Props) {
   const { trigger: generate } = useSWRMutation('/api/generate', handlePostGenerate)
 
   async function deploy() {
-    generate({
+    const response = await generate({
       blocks,
     })
+    console.log(response)
   }
 
   return (
@@ -61,7 +62,7 @@ export default function Editor({ }: Props) {
     ">
       <div className="flex">
         <Text
-          text="Request"
+          text="Incoming Request"
           className='font-bold'
         />
       </div>

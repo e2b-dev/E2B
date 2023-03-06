@@ -1,3 +1,2 @@
-Flask==2.2.2
-langchain==0.0.101
-openai==0.27.0
+python-dotenv==1.0.0
+git+https://github.com/devbookhq/code_generator.git@master#egg=code_generator
