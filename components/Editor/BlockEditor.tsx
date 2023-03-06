@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { Wrench } from 'lucide-react'
-import { useState, useLayoutEffect, useEffect, MouseEvent, useRef } from 'react'
+import { useState, useEffect, MouseEvent, useRef } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 
 import Text from 'components/typography/Text'
@@ -38,7 +38,7 @@ export default function BlockEditor({
     [confirmDelete],
   )
 
-  useLayoutEffect(function autofocus() {
+  useEffect(function autofocus() {
     if (focus.index === index) {
       ref.current?.focus()
     }
