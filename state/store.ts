@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { api_deployments } from '@prisma/client'
 
 import { apiDeploymentsTable } from 'db/tables'
 import { Database } from 'db/supabase'
+import { nanoid } from 'nanoid'
 
 export interface Tool {
   name: string
@@ -13,19 +14,46 @@ export interface Tool {
 
 export interface Block {
   tools?: Tool[]
+  id: string
   prompt: string
 }
 
+export enum Method {
+  POST = 'POST',
+  GET = 'GET',
+  PUT = 'PUT',
+  DELETE = 'DELETE',
+  PATCH = 'PATCH',
+}
+
+export const methods = Object.keys(Method).filter((item) => {
+  return isNaN(Number(item))
+});
+
 export interface State {
   blocks: Block[]
+  method: Method
   changeBlock: (index: number, block: Partial<Block>) => void
   deleteBlock: (index: number) => void
   addBlock: (block: Block) => void
+  changeMethod: (method: Method) => void
+}
+
+const defaultBlock: Block = { prompt: '', id: nanoid() }
+const defaultState: Pick<State, 'blocks' | 'method'> = {
+  blocks: [defaultBlock],
+  method: Method.POST,
 }
 
 export function createStore(deployment?: api_deployments, client?: SupabaseClient<Database>) {
+  const state = (deployment?.data as any).state as Pick<State, 'blocks' | 'method'> || defaultState
+
+  if (state.blocks.length === 0) {
+    state.blocks.push(defaultBlock)
+  }
+
   const immerStore = immer<State>((set) => ({
-    blocks: (deployment?.data as any)?.state?.blocks || [],
+    ...state,
     changeBlock: (index, block) =>
       set(state => {
         state.blocks[index] = { ...state.blocks[index], ...block }
@@ -38,18 +66,19 @@ export function createStore(deployment?: api_deployments, client?: SupabaseClien
       set(state => {
         state.blocks.push(block)
       }),
+    changeMethod: (method) =>
+      set(state => {
+        state.method = method
+      }),
   }))
 
   const persistent = persist(immerStore, {
     name: 'supabase-storage',
     partialize: (state) => state,
-    storage: client && deployment ? createJSONStorage(() => ({
+    storage: client && deployment ? {
       getItem: async (name) => {
-        const res = await client.from(apiDeploymentsTable).select('data').eq('id', deployment.id).single()
-        if (res.error) {
-          throw res.error
-        }
-        return JSON.stringify(res.data.data)
+        // We retrieve the data on the server
+        return null
       },
       removeItem: async () => {
         const res = await client.from(apiDeploymentsTable).update({ data: {} }).eq('id', deployment.id).single()
@@ -58,12 +87,12 @@ export function createStore(deployment?: api_deployments, client?: SupabaseClien
         }
       },
       setItem: async (name, value) => {
-        const res = await client.from(apiDeploymentsTable).update({ data: JSON.parse(value) }).eq('id', deployment.id).single()
+        const res = await client.from(apiDeploymentsTable).update({ data: value as any }).eq('id', deployment.id).single()
         if (res.error) {
           throw res.error
         }
       },
-    })) : undefined,
+    } : undefined,
   })
 
   const useStore = create<State, [["zustand/persist", unknown], ["zustand/immer", never]]>(persistent)

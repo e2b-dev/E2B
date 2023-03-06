@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { Wrench } from 'lucide-react'
-import { useState, useEffect, MouseEvent } from 'react'
+import { useState, useEffect, MouseEvent, useRef } from 'react'
 
 import Text from 'components/typography/Text'
 
@@ -10,10 +10,17 @@ export interface Props {
   onChange: (block: Block) => void
   onDelete: () => void
   block: Block
+  isLast?: boolean
 }
 
-export default function BodyBlock({ onChange, onDelete, block }: Props) {
+export default function BlockEditor({
+  onChange,
+  onDelete,
+  block,
+  isLast,
+}: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const ref = useRef<HTMLTextAreaElement>(null)
 
   useEffect(
     function expireConfirm() {
@@ -26,6 +33,12 @@ export default function BodyBlock({ onChange, onDelete, block }: Props) {
     },
     [confirmDelete],
   )
+
+  useEffect(function autofocus() {
+    if (isLast) {
+      ref.current?.focus()
+    }
+  }, [isLast])
 
   function handleDelete(
     e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>,
@@ -49,7 +62,6 @@ export default function BodyBlock({ onChange, onDelete, block }: Props) {
     <div className="
       flex
       relative
-      items-center
       w-[65ch]
     ">
       <div className="
@@ -93,6 +105,7 @@ export default function BodyBlock({ onChange, onDelete, block }: Props) {
         placeholder="Prompt"
         value={block.prompt}
         onChange={e => onChange({ ...block, prompt: e.target.value })}
+        ref={ref}
         className={clsx(
           'w-full',
           'px-4',
@@ -100,8 +113,7 @@ export default function BodyBlock({ onChange, onDelete, block }: Props) {
           'rounded-lg',
           'transition-colors',
           'border',
-          'hover:border-green-800/40',
-          'border-slate-200',
+          'border-green-800/40',
           'bg-white',
           'outline-none',
           'focus:border-green-800',

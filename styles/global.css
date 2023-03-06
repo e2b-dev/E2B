@@ -24,4 +24,10 @@
   #__next {
     @apply flex h-inherit flex-col items-center;
   }
+
+  .scroller {
+    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable both-edges;
+  }
 }

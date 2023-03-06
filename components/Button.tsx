@@ -43,7 +43,7 @@ function Button({
         'items-center',
         'justify-center',
         'transition-all',
-        'rounded-md',
+        'rounded-lg',
         'border',
         'space-x-1.5',
         'py-1.5',

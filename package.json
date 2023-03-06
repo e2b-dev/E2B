@@ -24,16 +24,16 @@
     "clsx": "^1.2.1",
     "immer": "^9.0.19",
     "lucide-react": "^0.122.0",
+    "nanoid": "^4.0.1",
     "next": "13.2.3",
     "next-superjson-plugin": "^0.5.6",
     "randomcolor": "^0.6.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "server-only": "^0.0.1",
     "sonner": "^0.1.6",
     "superjson": "^1.12.2",
     "swr": "^2.0.4",
-    "tailwind-merge": "^1.10.0",
+    "usehooks-ts": "^2.9.1",
     "zustand": "^4.3.5"
   },
   "devDependencies": {
