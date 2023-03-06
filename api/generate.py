@@ -22,9 +22,13 @@ class handler(BaseHTTPRequestHandler):
         print(js_code)
 
         self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
+        self.send_header('Content-Type', 'application/json')
         self.end_headers()
-        self.wfile.write(js_code.encode())
+        self.wfile.write(
+            simplejson.dumps(
+                {'code': js_code}
+            ).encode()
+        )
         return
 
     def do_GET(self):
