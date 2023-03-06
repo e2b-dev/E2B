@@ -30,9 +30,13 @@ async function handlePostGenerate(url: string, { arg }: {
     method: Method,
   }
 }) {
+  let prompt = ''
+  for (const block of arg.blocks) {
+    prompt += block.prompt
+  }
   return await fetch(url, {
     method: 'POST',
-    body: JSON.stringify(arg),
+    body: JSON.stringify({ prompt }),
 
     headers: {
       'Content-Type': 'application/json',
