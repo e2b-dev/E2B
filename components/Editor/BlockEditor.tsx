@@ -63,7 +63,6 @@ export default function BlockEditor({
       flex
       relative
       w-[65ch]
-      prose
     ">
       <div className="
         absolute
