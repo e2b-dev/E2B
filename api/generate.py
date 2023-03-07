@@ -9,7 +9,6 @@ from code_generator.base import generate_req_handler
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
-
         data = simplejson.loads(self.data_string)
 
         project_id = data['projectId']
