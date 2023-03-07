@@ -34,6 +34,7 @@ async function handlePostGenerate(url: string, { arg }: {
   return await fetch(url, {
     method: 'POST',
     body: JSON.stringify({
+      projectId: '460355b3',
       blocks: arg.blocks.map(b => b.prompt),
       method: arg.method.toLowerCase(),
     }),
