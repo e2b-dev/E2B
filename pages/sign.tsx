@@ -1,9 +1,9 @@
 import { useRouter } from 'next/router'
 import { useUser } from '@supabase/auth-helpers-react'
 
-import AuthForm from 'src/components/AuthForm'
-import TitleLink from 'src/components/TitleLink'
-import SpinnerIcon from 'src/components/icons/Spinner'
+import AuthForm from 'components/AuthForm'
+import TitleLink from 'components/TitleLink'
+import SpinnerIcon from 'components/Spinner'
 
 function SignIn() {
   const router = useRouter()

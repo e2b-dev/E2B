@@ -1,1 +1,2 @@
-export const apiDeploymentsTable = 'api_deployments'
+export const projectsTable = 'projects'
+export const deploymentsTable = 'deployments'

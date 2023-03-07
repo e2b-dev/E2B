@@ -6,7 +6,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import clsx from 'clsx'
 import { Toaster } from 'sonner'
-import { api_deployments } from '@prisma/client'
 
 import 'src/styles/global.css'
 
@@ -23,7 +22,7 @@ const jetBrains = JetBrains_Mono({
   variable: '--font-jet-brains',
 })
 
-export default function App({ Component, pageProps }: AppProps<{ initialSession: Session, deployment?: api_deployments }>) {
+export default function App({ Component, pageProps }: AppProps<{ initialSession: Session }>) {
   const router = useRouter()
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>())
 
@@ -33,8 +32,8 @@ export default function App({ Component, pageProps }: AppProps<{ initialSession:
   return (
     <main className={clsx(
       inter.variable,
-      'font-sans',
       jetBrains.variable,
+      'font-sans',
       'flex',
       'h-inherit',
       'w-full',
