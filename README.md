@@ -2,13 +2,17 @@
 
 ## Development
 ```sh
-yarn vercel
+yarn dev
 ```
 
-##  Code deployment
-https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/
-- Only enterprise
-- Normal workers have 500 script/account limit
-- Worker size	1 MB/5 MB (Paid)
-- Computation limits:
-- https://developers.cloudflare.com/workers/platform/limits/
+- repo GA env vars
+- vercel new env vars
+- local python deps
+- test cloud run deploy
+- test local dev
+- exec/js vs api service route -> connect?
+- python env vars .env
+- cloud run env vars
+- notify deploy+dev flow
+- python flask prod run
+- python 

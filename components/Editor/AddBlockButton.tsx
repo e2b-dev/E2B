@@ -2,13 +2,13 @@ import clsx from 'clsx'
 import { Plus } from 'lucide-react'
 import { nanoid } from 'nanoid'
 
-import { Block } from 'src/state/store'
+import { Block } from 'state/store'
 
 export interface Props {
   addBlock: (block: Block) => void
 }
 
-export default function AddBlockButton({ addBlock }: Props) {
+function AddBlockButton({ addBlock }: Props) {
   return (
     <button
       onMouseDown={() => addBlock({
@@ -32,3 +32,5 @@ export default function AddBlockButton({ addBlock }: Props) {
     </button>
   )
 }
+
+export default AddBlockButton

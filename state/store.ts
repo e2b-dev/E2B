@@ -2,11 +2,11 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { persist } from 'zustand/middleware'
 import { SupabaseClient } from '@supabase/supabase-js'
-import { api_deployments } from '@prisma/client'
 
-import { apiDeploymentsTable } from 'src/db/tables'
-import { Database } from 'src/db/supabase'
+import { Database } from 'db/supabase'
 import { nanoid } from 'nanoid'
+import { projects } from '@prisma/client'
+import { projectsTable } from 'db/tables'
 
 export interface Tool {
   name: string
@@ -45,8 +45,8 @@ const defaultState: Pick<State, 'blocks' | 'method'> = {
   method: Method.POST,
 }
 
-export function createStore(deployment?: api_deployments, client?: SupabaseClient<Database>) {
-  const state = (deployment?.data as any).state as Pick<State, 'blocks' | 'method'> || defaultState
+export function createStore(project?: projects, client?: SupabaseClient<Database>) {
+  const state = (project?.data as any)?.state as Pick<State, 'blocks' | 'method'> || defaultState
 
   if (state.blocks.length === 0) {
     state.blocks.push(defaultBlock)
@@ -81,19 +81,19 @@ export function createStore(deployment?: api_deployments, client?: SupabaseClien
   const persistent = persist(immerStore, {
     name: 'supabase-storage',
     partialize: (state) => state,
-    storage: client && deployment ? {
+    storage: client && project ? {
       getItem: async (name) => {
         // We retrieve the data on the server
         return null
       },
       removeItem: async () => {
-        const res = await client.from(apiDeploymentsTable).update({ data: {} }).eq('id', deployment.id).single()
+        const res = await client.from(projectsTable).update({ data: {} }).eq('id', project.id).single()
         if (res.error) {
           throw res.error
         }
       },
       setItem: async (name, value) => {
-        const res = await client.from(apiDeploymentsTable).update({ data: value as any }).eq('id', deployment.id).single()
+        const res = await client.from(projectsTable).update({ data: value as any }).eq('id', project.id)
         if (res.error) {
           throw res.error
         }

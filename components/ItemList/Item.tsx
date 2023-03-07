@@ -16,6 +16,7 @@ export interface ItemSetup {
   icon?: React.ReactNode
   path: string
   type: string
+  url: string
 }
 
 export interface Props {
@@ -68,7 +69,7 @@ function Item({ item, deleteItem }: Props) {
       href={{
         pathname: item.path,
         query: {
-          id: item.id,
+          projectID: item.id,
         },
       }}
     >
@@ -95,24 +96,18 @@ function Item({ item, deleteItem }: Props) {
         <div
           className="flex flex-col"
         >
-          <Text
-            className="text-slate-600 transition-all group-hover:text-green-800"
-            size={Text.size.S2}
-            text={item.title}
-          />
+          <div className="flex space-x-2 items-center">
+            <Text
+              className="text-slate-600 transition-all group-hover:text-green-800"
+              size={Text.size.S2}
+              text={item.title}
+            />
+          </div>
           <div className="flex space-x-1 text-slate-300 transition-all group-hover:text-slate-400">
             <Text
+              className="text-slate-300 transition-all group-hover:text-slate-400"
               size={Text.size.S3}
-              text={item.type}
-            />
-            <Text
-              size={Text.size.S3}
-              text="-"
-            />
-            <Text
-              size={Text.size.S3}
-              text={item.created_at.toLocaleString()}
-              suppressHydrationWarning
+              text={item.url}
             />
           </div>
         </div>

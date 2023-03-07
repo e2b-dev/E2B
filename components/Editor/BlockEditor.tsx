@@ -8,8 +8,8 @@ import {
 } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 
-import Text from 'src/components/Text'
-import { Block } from 'src/state/store'
+import Text from 'components/Text'
+import { Block } from 'state/store'
 
 export interface Props {
   onChange: (block: Block) => void
@@ -20,7 +20,7 @@ export interface Props {
   onFocus: () => void
 }
 
-export default function BlockEditor({
+function BlockEditor({
   onChange,
   onDelete,
   block,
@@ -169,3 +169,5 @@ export default function BlockEditor({
     </div>
   )
 }
+
+export default BlockEditor

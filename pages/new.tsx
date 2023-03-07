@@ -5,21 +5,37 @@ import {
   LayoutGrid,
 } from 'lucide-react'
 import { useRouter } from 'next/router'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
-import { nanoid } from 'nanoid'
+import humanId from 'human-id'
+import useSWRMutation from 'swr/mutation'
 
 import Text from 'components/Text'
 import Input from 'components/Input'
 import Button from 'components/Button'
 import SpinnerIcon from 'components/Spinner'
-import { projectsTable } from 'db/tables'
-import { Database } from 'db/supabase'
 
 const re = /[^a-zA-Z0-9\-]/
 
-export default function NewProject() {
+interface PostProjectBody {
+  id: string
+}
+
+async function handlePostProject(url: string, { arg }: { arg: PostProjectBody }) {
+  return await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(arg),
+
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then(r => r.json())
+}
+
+function NewProject() {
   const [isCreating, setIsCreating] = useState(false)
-  const [projectID, setProjectID] = useState(() => nanoid())
+  const [projectID, setProjectID] = useState(() => humanId({
+    separator: '-',
+    capitalize: false,
+  }))
 
   const trimmedID = projectID.trim()
   const validatedID = re.test(trimmedID)
@@ -28,8 +44,9 @@ export default function NewProject() {
   const router = useRouter()
 
 
-
-  const client = useSupabaseClient<Database>()
+  const {
+    trigger: createProject,
+  } = useSWRMutation('/api/project', handlePostProject)
 
   async function handleCreateProject() {
     setErr(undefined)
@@ -48,10 +65,12 @@ export default function NewProject() {
     }
 
     try {
-      const res = await client.from(projectsTable).insert({ id: trimmedID })
+      const project = await createProject({
+        id: trimmedID
+      })
 
-      if (res.error) {
-        setErr(res.statusText)
+      if (project && 'statusCode' in project) {
+        setErr(`Project with name "${trimmedID}" already exists`)
         setIsCreating(false)
         return
       }
@@ -147,3 +166,5 @@ export default function NewProject() {
     </div>
   )
 }
+
+export default NewProject

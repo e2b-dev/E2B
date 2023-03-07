@@ -7,10 +7,11 @@ import { useRouter } from 'next/router'
 import clsx from 'clsx'
 import { Toaster } from 'sonner'
 
-import 'src/styles/global.css'
+import 'styles/global.css'
 
-import Header from 'src/components/Header'
-import { Database } from 'src/db/supabase'
+import Header from 'components/Header'
+import { Database } from 'db/supabase'
+import { projects } from '@prisma/client'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -22,7 +23,7 @@ const jetBrains = JetBrains_Mono({
   variable: '--font-jet-brains',
 })
 
-export default function App({ Component, pageProps }: AppProps<{ initialSession: Session }>) {
+function App({ Component, pageProps }: AppProps<{ initialSession: Session, project?: projects }>) {
   const router = useRouter()
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>())
 
@@ -46,7 +47,7 @@ export default function App({ Component, pageProps }: AppProps<{ initialSession:
         initialSession={pageProps.initialSession}
       >
         {!isSignIn && !isSignUp &&
-          <Header />
+          <Header project={pageProps.project} />
         }
         <Toaster />
         <Component {...pageProps} />
@@ -54,3 +55,5 @@ export default function App({ Component, pageProps }: AppProps<{ initialSession:
     </main>
   )
 }
+
+export default App

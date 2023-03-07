@@ -1,3 +1,5 @@
 simplejson==3.18.3
 python-dotenv==1.0.0
 dbk-aicode==0.1.0
+Flask==2.2.3
+gunicorn==20.1.0

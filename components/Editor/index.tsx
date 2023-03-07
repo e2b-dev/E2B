@@ -4,9 +4,9 @@ import { Fragment, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
 import { projects } from '@prisma/client'
 
-import { State, Block, methods, Method } from 'src/state/store'
-import { getStoreContext } from 'src/state/StoreProvider'
-import Select from 'src/components/Select'
+import { State, Block, methods, Method } from 'state/store'
+import { getStoreContext } from 'state/StoreProvider'
+import Select from 'components/Select'
 import { nanoid } from 'nanoid'
 import Button from 'components/Button'
 import Text from 'components/Text'
@@ -53,7 +53,7 @@ async function handlePostGenerate(url: string, { arg }: {
   }).then(r => r.json())
 }
 
-export default function Editor({ project }: Props) {
+function Editor({ project }: Props) {
   const useStore = getStoreContext()
 
   const deployment = useLatestDeployment(project)
@@ -161,7 +161,7 @@ export default function Editor({ project }: Props) {
           addBlock(block)
           setTimeout(() => setFocusedBlock({ index: blocks.length }), 0)
         }} />
-        <div className="fixed right-3 top-12">
+        <div className="fixed right-3 top-14">
           <Button
             text="Deploy"
             onClick={deploy}
@@ -172,3 +172,5 @@ export default function Editor({ project }: Props) {
     </Hotkeys>
   )
 }
+
+export default Editor

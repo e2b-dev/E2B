@@ -7,7 +7,7 @@ import { useOnClickOutside } from 'usehooks-ts'
 import clsx from 'clsx'
 import { ChevronDown as ChevronDownIcon } from 'lucide-react'
 
-import Text from 'src/components/Text'
+import Text from 'components/Text'
 
 import SelectValue, { Value } from './SelectValue'
 

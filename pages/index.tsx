@@ -1,15 +1,14 @@
 import type { GetServerSideProps } from 'next'
+import useSWRMutation from 'swr/mutation'
 import { LayoutGrid, Plus } from 'lucide-react'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/router'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 import ItemList from 'components/ItemList'
 import Text from 'components/Text'
 import { prisma, projects } from 'db/prisma'
 import Button from 'components/Button'
-import { deploymentsTable, projectsTable } from 'db/tables'
-import { Database } from 'db/supabase'
+import { getProjectURL } from 'utils/getProjectURL'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx)
@@ -81,6 +80,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
 }
 
+interface DeleteProjectBody {
+  id: string
+}
+
+async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBody }) {
+  return await fetch(url, {
+    method: 'DELETE',
+    body: JSON.stringify(arg),
+
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then(r => r.json())
+}
+
 interface Props {
   projects: projects[]
 }
@@ -88,14 +102,14 @@ interface Props {
 function Home({ projects }: Props) {
   const router = useRouter()
 
-  const client = useSupabaseClient<Database>()
+  const {
+    trigger: deleteProject,
+  } = useSWRMutation('/api/project', handleDeleteProject)
 
   async function handleDelete(id: string) {
-    await client.from(deploymentsTable).delete().eq('project_id', id)
-    await client.from(projectsTable).delete().eq('id', id)
+    await deleteProject({ id })
     router.replace(router.asPath)
   }
-
   return (
     <div
       className="
@@ -143,8 +157,9 @@ function Home({ projects }: Props) {
             deleteItem={handleDelete}
             items={projects.map(i => ({
               ...i,
-              title: i.name || i.id,
-              path: '/[id]',
+              title: i.name,
+              url: getProjectURL(i.id),
+              path: '/[projectID]',
               type: 'Project',
               icon: <LayoutGrid size="22px" strokeWidth="1.7" />,
             }))}

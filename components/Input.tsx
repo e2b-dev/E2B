@@ -18,7 +18,7 @@ export interface Props {
   required?: boolean
 }
 
-export default function Input({
+function Input({
   value,
   required,
   pattern,
@@ -81,3 +81,5 @@ export default function Input({
     </div>
   )
 }
+
+export default Input

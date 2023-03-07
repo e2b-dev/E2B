@@ -1,25 +1,29 @@
 import Link from 'next/link'
 import { useUser } from '@supabase/auth-helpers-react'
+import { projects } from '@prisma/client'
 
-import UserPortrait from 'src/components/UserPortrait'
+import UserPortrait from 'components/UserPortrait'
+
+import Navigation from './Navigation'
 
 export interface Props {
+  project?: projects
 }
 
-function Header({ }: Props) {
+function Header({ project }: Props) {
   const user = useUser()
 
   return (
     <div className="
-        flex
-        items-center
-        justify-end
-        border-b
-        bg-white
-        border-slate-200
-        px-3
-        py-1.5
-      ">
+      flex
+      items-center
+      justify-between
+      border-b
+      bg-white
+      border-slate-200
+      px-3
+    ">
+      <Navigation project={project} />
       <div className="
         flex
         items-center
