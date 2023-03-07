@@ -5,7 +5,6 @@
 yarn dev
 ```
 
-- repo GA env vars
 - vercel new env vars
 - local python deps
 - test cloud run deploy
@@ -13,6 +12,6 @@ yarn dev
 - exec/js vs api service route -> connect?
 - python env vars .env
 - cloud run env vars
-- notify deploy+dev flow
+- notify deploy+dev flow, update env vars
+- actual python code
 - python flask prod run
-- python 
