@@ -3,7 +3,7 @@ import { useUser } from '@supabase/auth-helpers-react'
 
 import AuthForm from 'components/AuthForm'
 import TitleLink from 'components/TitleLink'
-import SpinnerIcon from 'components/icons/Spinner'
+import SpinnerIcon from 'components/Spinner'
 
 function SignIn() {
   const router = useRouter()

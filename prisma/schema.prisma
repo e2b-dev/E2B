@@ -266,10 +266,10 @@ model projects {
   id          String        @id(map: "ai_api_pkey") @default("")
   created_at  DateTime      @default(now()) @db.Timestamptz(6)
   data        Json?
-  team_id     String?       @db.Uuid
+  team_id     String        @db.Uuid
   name        String        @default("")
   deployments deployments[]
-  teams       teams?        @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  teams       teams         @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }

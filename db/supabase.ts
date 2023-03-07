@@ -38,21 +38,21 @@ export interface Database {
           data: Json | null
           id: string
           name: string
-          team_id: string | null
+          team_id: string
         }
         Insert: {
           created_at?: string
           data?: Json | null
           id?: string
           name?: string
-          team_id?: string | null
+          team_id: string
         }
         Update: {
           created_at?: string
           data?: Json | null
           id?: string
           name?: string
-          team_id?: string | null
+          team_id?: string
         }
       }
       teams: {

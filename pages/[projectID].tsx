@@ -6,6 +6,8 @@ import type { ParsedUrlQuery } from 'querystring'
 import { prisma, projects } from 'db/prisma'
 import Editor from 'components/Editor'
 import { StoreProvider } from 'state/StoreProvider'
+import { Database } from 'db/supabase'
+import { inspect } from 'util'
 
 interface PathProps extends ParsedUrlQuery {
   projectID: string
@@ -56,6 +58,9 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     },
   })
 
+
+
+  console.log(inspect(user, { depth: null }))
   const project = user
     ?.users_teams
     .flatMap(t => t.teams.projects)
@@ -79,7 +84,7 @@ interface Props {
 }
 
 function EditorPage({ project }: Props) {
-  const client = useSupabaseClient()
+  const client = useSupabaseClient<Database>()
 
   return (
     <StoreProvider

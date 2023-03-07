@@ -9,6 +9,7 @@ import Text from 'components/Text'
 import { prisma, projects } from 'db/prisma'
 import Button from 'components/Button'
 import { deploymentsTable, projectsTable } from 'db/tables'
+import { Database } from 'db/supabase'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx)
@@ -87,7 +88,7 @@ interface Props {
 function Home({ projects }: Props) {
   const router = useRouter()
 
-  const client = useSupabaseClient()
+  const client = useSupabaseClient<Database>()
 
   async function handleDelete(id: string) {
     await client.from(deploymentsTable).delete().eq('project_id', id)
@@ -124,7 +125,7 @@ function Home({ projects }: Props) {
           icon={<Plus size="16px" />}
           text="New"
           variant={Button.variant.Full}
-          onClick={() => router.push('/new/project')}
+          onClick={() => router.push('/new')}
         />
       </div>
 

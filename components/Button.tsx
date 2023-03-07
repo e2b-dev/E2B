@@ -1,5 +1,8 @@
 import clsx from 'clsx'
-import { MouseEvent, ReactNode } from 'react'
+import {
+  MouseEvent,
+  ReactNode,
+} from 'react'
 
 import Text from 'components/Text'
 

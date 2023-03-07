@@ -7,6 +7,6 @@ export interface Props {
 export default function Logs({ logs }: Props) {
 
   return (
-
+    <div></div>
   )
 }

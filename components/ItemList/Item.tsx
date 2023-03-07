@@ -1,8 +1,12 @@
 import clsx from 'clsx'
 import Link from 'next/link'
-import { MouseEvent, useEffect, useState } from 'react'
+import {
+  MouseEvent,
+  useEffect,
+  useState,
+} from 'react'
 
-import SpinnerIcon from 'components/icons/Spinner'
+import SpinnerIcon from 'components/Spinner'
 import Text from 'components/Text'
 
 export interface ItemSetup {

@@ -1,12 +1,13 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useRouter } from 'next/router'
 
 import Button from 'components/Button'
 import Text from 'components/Text'
+import { Database } from 'db/supabase'
 
-import SpinnerIcon from './icons/Spinner'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
-import { useRouter } from 'next/router'
+import SpinnerIcon from './Spinner'
 
 export enum AuthFormType {
   SignIn,
@@ -20,7 +21,7 @@ export interface Props {
 function AuthForm({ authType }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const [errMessage, setErrMessage] = useState('')
-  const supabaseClient = useSupabaseClient()
+  const supabaseClient = useSupabaseClient<Database>()
   const router = useRouter()
 
   const emailRef = useRef<HTMLInputElement>(null)
