@@ -2,7 +2,7 @@ import { shallow } from 'zustand/shallow'
 import useSWRMutation from 'swr/mutation'
 import { Fragment, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
-import { api_deployments } from '@prisma/client'
+import { projects } from '@prisma/client'
 
 import { State, Block, methods, Method } from 'state/store'
 import { getStoreContext } from 'state/StoreProvider'
@@ -10,6 +10,7 @@ import Select from 'components/Select'
 import { nanoid } from 'nanoid'
 import Button from 'components/Button'
 import Text from 'components/Text'
+import { useLatestDeployment } from 'hooks/useLatestDeployment'
 
 import BlockEditor from './BlockEditor'
 import ConnectionLine from './ConnectionLine'
@@ -24,15 +25,19 @@ const selector = (state: State) => ({
   changeMethod: state.changeMethod,
 })
 
+export interface Log {
+
+}
+
 export interface Props {
-  deployment: api_deployments
+  project: projects
 }
 
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
     blocks: Block[],
     method: Method,
-  }
+  },
 }) {
   return await fetch(url, {
     method: 'POST',
@@ -47,11 +52,11 @@ async function handlePostGenerate(url: string, { arg }: {
   }).then(r => r.json())
 }
 
-export default function Editor({ deployment }: Props) {
+export default function Editor({ project }: Props) {
   const useStore = getStoreContext()
 
-  const realtimeDeployment = useDeployment()
-
+  const deployment = useLatestDeployment(project)
+  const logs = deployment?.logs as Log[] | undefined
 
   const {
     addBlock,
@@ -63,7 +68,6 @@ export default function Editor({ deployment }: Props) {
   } = useStore(selector, shallow)
 
   const [focusedBlock, setFocusedBlock] = useState({ index: 0 })
-
   const { trigger: generate } = useSWRMutation('/api/generate', handlePostGenerate)
 
   async function deploy() {

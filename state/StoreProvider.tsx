@@ -5,24 +5,25 @@ import {
   useMemo
 } from 'react'
 import { SupabaseClient } from '@supabase/supabase-js'
-import { api_deployments } from '@prisma/client'
+import { projects } from '@prisma/client'
+
+import { Database } from 'db/supabase'
 
 import { createStore } from './store'
-import { Database } from 'db/supabase'
 
 const storeContext = createContext<ReturnType<typeof createStore> | null>(null)
 
 export interface Props extends PropsWithChildren {
-  deployment?: api_deployments
+  initialState?: projects
   client: SupabaseClient<Database>
 }
 
 export function StoreProvider({
-  deployment,
+  initialState,
   client,
   children,
 }: Props) {
-  const store = useMemo(() => createStore(deployment, client), [deployment, client])
+  const store = useMemo(() => createStore(initialState, client), [initialState, client])
 
   return (
     <storeContext.Provider value={store}>

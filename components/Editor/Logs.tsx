@@ -1,9 +1,12 @@
-import { useDeployment } from 'hooks/useDeployment';
+import { Log } from '.';
 
-export interface Logs {
-
+export interface Props {
+  logs: Log[]
 }
 
-function Logs() {
+export default function Logs({ logs }: Props) {
 
+  return (
+
+  )
 }

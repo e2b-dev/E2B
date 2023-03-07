@@ -1,13 +1,14 @@
 import type { GetServerSideProps } from 'next'
 import { LayoutGrid, Plus } from 'lucide-react'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import useSWRMutation from 'swr/mutation'
 import { useRouter } from 'next/router'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 import ItemList from 'components/ItemList'
 import Text from 'components/Text'
-import { api_deployments, prisma } from 'db/prisma'
+import { prisma, projects } from 'db/prisma'
 import Button from 'components/Button'
+import { deploymentsTable, projectsTable } from 'db/tables'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx)
@@ -33,11 +34,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         include: {
           teams: {
             include: {
-              api_deployments: true,
+              projects: true,
             },
-          }
-        }
-      }
+          },
+        },
+      },
     },
   })
 
@@ -59,55 +60,38 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
       },
       include: {
-        api_deployments: true
+        projects: true,
       },
     })
 
     return {
       props: {
-        deployments: team.api_deployments,
+        projects: team.projects,
       }
     }
   }
 
-  // Show deployments from all teams for now.
-  const deployments = user.users_teams.flatMap(t => t.teams.api_deployments)
+  // Show projects from all teams.
+  const projects = user.users_teams.flatMap(t => t.teams.projects)
   return {
     props: {
-      deployments,
+      projects,
     }
   }
 }
 
-// interface DeleteProjectBody {
-//   id: string
-// }
-
-// async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBody }) {
-//   return await fetch(url, {
-//     method: 'DELETE',
-//     body: JSON.stringify(arg),
-
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//   }).then(r => r.json())
-// }
-
-
 interface Props {
-  deployments: api_deployments[]
+  projects: projects[]
 }
 
-function Home({ deployments }: Props) {
+function Home({ projects }: Props) {
   const router = useRouter()
 
-  const {
-    trigger: deleteProject,
-  } = useSWRMutation('/api/project', handleDeleteProject)
+  const client = useSupabaseClient()
 
   async function handleDelete(id: string) {
-    await deleteProject({ id })
+    await client.from(deploymentsTable).delete().eq('project_id', id)
+    await client.from(projectsTable).delete().eq('id', id)
     router.replace(router.asPath)
   }
 
@@ -156,9 +140,9 @@ function Home({ deployments }: Props) {
         <div className="flex flex-1 justify-center overflow-hidden">
           <ItemList
             deleteItem={handleDelete}
-            items={deployments.map(i => ({
+            items={projects.map(i => ({
               ...i,
-              title: i.title || i.id,
+              title: i.name || i.id,
               path: '/[id]',
               type: 'Project',
               icon: <LayoutGrid size="22px" strokeWidth="1.7" />,

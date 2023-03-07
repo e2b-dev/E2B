@@ -12,73 +12,82 @@ export interface Database {
       deployments: {
         Row: {
           code: string | null
-          created_at: string | null
+          created_at: string
           id: string
           logs: Json[] | null
+          project_id: string
         }
         Insert: {
           code?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           logs?: Json[] | null
+          project_id: string
         }
         Update: {
           code?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           logs?: Json[] | null
+          project_id?: string
         }
       }
       projects: {
         Row: {
-          created_at: string | null
+          created_at: string
           data: Json | null
           id: string
+          name: string
+          team_id: string | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           data?: Json | null
           id?: string
+          name?: string
+          team_id?: string | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           data?: Json | null
           id?: string
+          name?: string
+          team_id?: string | null
         }
       }
       teams: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           is_default: boolean | null
-          name: string | null
+          name: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_default?: boolean | null
-          name?: string | null
+          name?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_default?: boolean | null
-          name?: string | null
+          name?: string
         }
       }
       users_teams: {
         Row: {
-          created_at: string | null
+          created_at: string
           team_id: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           team_id: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           team_id?: string
           user_id?: string
         }

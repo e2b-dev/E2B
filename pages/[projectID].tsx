@@ -3,19 +3,17 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { ParsedUrlQuery } from 'querystring'
 
-import { prisma, api_deployments } from 'db/prisma'
-import DeploymentEditor from 'components/Editor'
-import { StoreProvider } from 'state/StoreProvider'
+import { prisma, projects } from 'db/prisma'
 import Editor from 'components/Editor'
+import { StoreProvider } from 'state/StoreProvider'
 
 interface PathProps extends ParsedUrlQuery {
-  deploymentID: string
+  projectID: string
 }
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
-  const deploymentID = parseInt(ctx.params?.deploymentID || '')
-
-  if (!deploymentID) {
+  const projectID = ctx.params?.projectID
+  if (!projectID) {
     return {
       notFound: true,
     }
@@ -44,13 +42,13 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
         select: {
           teams: {
             include: {
-              api_deployments: {
+              projects: {
                 where: {
                   id: {
-                    equals: deploymentID,
+                    equals: projectID,
                   },
-                }
-              }
+                },
+              },
             },
           },
         },
@@ -58,8 +56,12 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     },
   })
 
-  const deployment = user?.users_teams.flatMap(t => t.teams.api_deployments).find(d => d.id === BigInt(deploymentID))
-  if (!deployment) {
+  const project = user
+    ?.users_teams
+    .flatMap(t => t.teams.projects)
+    .find(p => p.id === projectID)
+
+  if (!project) {
     return {
       notFound: true,
     }
@@ -67,24 +69,24 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
 
   return {
     props: {
-      deployment,
+      project,
     }
   }
 }
 
 interface Props {
-  deployment: api_deployments
+  project: projects
 }
 
-function EditorPage({ deployment }: Props) {
+function EditorPage({ project }: Props) {
   const client = useSupabaseClient()
 
   return (
     <StoreProvider
       client={client}
-      deployment={deployment}
+      initialState={project}
     >
-      <Editor />
+      <Editor project={project} />
     </StoreProvider>
   )
 }
