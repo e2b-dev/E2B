@@ -3,7 +3,7 @@
 import simplejson
 from http.server import BaseHTTPRequestHandler
 
-from code_generator.base import generate_req_handler
+from dbk_aicode.base import generate_req_handler
 
 
 class handler(BaseHTTPRequestHandler):
