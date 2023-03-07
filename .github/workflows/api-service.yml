@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 env:
-  IMAGE_TAG: us-central1-docker.pkg.dev/${{ secrets.GCE_PROJECT }}/ai-api/api-service:latest
+  IMAGE_TAG: us-central1-docker.pkg.dev/${{ secrets.GCE_PROJECT }}/services/ai-api-service:latest
 
 jobs:
   release:
