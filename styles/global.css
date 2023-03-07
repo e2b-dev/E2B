@@ -16,7 +16,7 @@
   html,
   body {
     @apply h-full;
-    @apply bg-slate-50/20;
+    @apply bg-slate-50;
     @apply text-slate-600 antialiased;
     text-rendering: optimizeLegibility;
   }
