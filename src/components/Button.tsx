@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { MouseEvent, ReactNode } from 'react'
 
-import Text from 'components/Text'
+import Text from 'src/components/Text'
 
 export enum Variant {
   Full,

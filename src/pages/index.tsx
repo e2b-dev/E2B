@@ -2,10 +2,10 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
-import { prisma, api_deployments } from 'db/prisma'
-import { notEmpty } from 'utils/notEmpty'
-import DeploymentEditor from 'components/Editor'
-import { StoreProvider } from 'state/StoreProvider'
+import { prisma, api_deployments } from 'src/db/prisma'
+import { notEmpty } from 'src/utils/notEmpty'
+import DeploymentEditor from 'src/components/Editor'
+import { StoreProvider } from 'src/state/StoreProvider'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx)

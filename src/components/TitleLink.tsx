@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ReactNode } from 'react'
 import { UrlObject } from 'url'
 
-import Text, { Size } from 'components/Text'
+import Text, { Size } from 'src/components/Text'
 
 export interface Props {
   className?: string

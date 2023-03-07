@@ -8,7 +8,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { api_deployments } from '@prisma/client'
 
 import { createStore } from './store'
-import { Database } from 'db/supabase'
+import { Database } from 'src/db/supabase'
 
 const storeContext = createContext<ReturnType<typeof createStore> | null>(null)
 

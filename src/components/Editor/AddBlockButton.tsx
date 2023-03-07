@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import { Plus } from 'lucide-react'
 import { nanoid } from 'nanoid'
 
-import { Block } from 'state/store'
+import { Block } from 'src/state/store'
 
 export interface Props {
   addBlock: (block: Block) => void

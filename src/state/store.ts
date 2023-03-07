@@ -4,8 +4,8 @@ import { persist } from 'zustand/middleware'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { api_deployments } from '@prisma/client'
 
-import { apiDeploymentsTable } from 'db/tables'
-import { Database } from 'db/supabase'
+import { apiDeploymentsTable } from 'src/db/tables'
+import { Database } from 'src/db/supabase'
 import { nanoid } from 'nanoid'
 
 export interface Tool {

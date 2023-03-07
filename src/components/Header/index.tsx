@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { useUser } from '@supabase/auth-helpers-react'
 
-import UserPortrait from 'components/UserPortrait'
+import UserPortrait from 'src/components/UserPortrait'
 
 export interface Props {
 }

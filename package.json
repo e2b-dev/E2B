@@ -12,7 +12,7 @@
     "dev:debug": "NODE_OPTIONS='--inspect' next dev",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
-    "supabase:generate": "supabase gen types typescript --project-id \"eazfkpnsvqrijiorxdbj\" --schema public > db/supabase.ts",
+    "supabase:generate": "supabase gen types typescript --project-id \"eazfkpnsvqrijiorxdbj\" --schema public > src/db/supabase.ts",
     "postinstall": "yarn db:generate"
   },
   "dependencies": {

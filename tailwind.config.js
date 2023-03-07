@@ -1,7 +1,11 @@
 const { fontFamily } = require('tailwindcss/defaultTheme')
 
 module.exports = {
-  content: ['./components/**/*.{js,ts,jsx,tsx,css}', './pages/**/*.{js,ts,jsx,tsx,css}', './styles/**/*.{js,ts,jsx,tsx,css}'],
+  content: [
+    'src/components/**/*.{js,ts,jsx,tsx,css}',
+    'src/pages/**/*.{js,ts,jsx,tsx,css}',
+    'src/styles/**/*.{js,ts,jsx,tsx,css}'
+  ],
   darkMode: 'class',
   theme: {
     extend: {

@@ -8,10 +8,10 @@ import clsx from 'clsx'
 import { Toaster } from 'sonner'
 import { api_deployments } from '@prisma/client'
 
-import 'styles/global.css'
+import 'src/styles/global.css'
 
-import Header from 'components/Header'
-import { Database } from 'db/supabase'
+import Header from 'src/components/Header'
+import { Database } from 'src/db/supabase'
 
 const inter = Inter({
   subsets: ['latin'],

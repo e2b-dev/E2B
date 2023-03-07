@@ -3,8 +3,8 @@ import { Wrench } from 'lucide-react'
 import { useState, useEffect, MouseEvent, useRef } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 
-import Text from 'components/Text'
-import { Block } from 'state/store'
+import Text from 'src/components/Text'
+import { Block } from 'src/state/store'
 
 export interface Props {
   onChange: (block: Block) => void

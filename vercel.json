@@ -4,7 +4,7 @@
   },
   "functions": {
     "api/**/*.py": {
-      "excludeFiles": "*/**.ts"
+      "excludeFiles": "src/**"
     }
   }
 }

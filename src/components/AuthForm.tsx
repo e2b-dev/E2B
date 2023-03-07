@@ -1,8 +1,8 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 
-import Button from 'components/Button'
-import Text from 'components/Text'
+import Button from 'src/components/Button'
+import Text from 'src/components/Text'
 
 import SpinnerIcon from './icons/Spinner'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
