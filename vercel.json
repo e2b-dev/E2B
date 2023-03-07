@@ -1,5 +1,19 @@
 {
   "github": {
     "silent": true
+  },
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": [
+        "components/**",
+        "db/**",
+        "pages/**",
+        "prisma/**",
+        "state/**",
+        "styles/**",
+        "utils/**",
+        "node_modules/**"
+      ]
+    }
   }
 }
