@@ -13,6 +13,7 @@ import Button from '../Button'
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
 import { nanoid } from 'nanoid'
+import { api_deployments } from '@prisma/client'
 
 const selector = (state: State) => ({
   blocks: state.blocks,
@@ -23,7 +24,9 @@ const selector = (state: State) => ({
   changeMethod: state.changeMethod,
 })
 
-export interface Props { }
+export interface Props {
+  deployment: api_deployments
+}
 
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
@@ -44,8 +47,11 @@ async function handlePostGenerate(url: string, { arg }: {
   }).then(r => r.json())
 }
 
-export default function Editor({ }: Props) {
+export default function Editor({ deployment }: Props) {
   const useStore = getStoreContext()
+
+  const realtimeDeployment = useDeployment()
+
 
   const {
     addBlock,

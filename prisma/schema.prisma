@@ -327,11 +327,11 @@ model slack_installations {
 }
 
 model teams {
-  id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
   name            String?
-  is_default      Boolean          @default(false)
-  api_deployments api_deployments?
+  is_default      Boolean           @default(false)
+  api_deployments api_deployments[]
   apps            apps[]
   users_teams     users_teams[]
 
@@ -383,8 +383,10 @@ model api_deployments {
   id         BigInt    @id(map: "deployments_pkey") @default(autoincrement())
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   data       Json
-  team_id    String    @unique @db.Uuid
-  teams      teams     @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  team_id    String?   @db.Uuid
+  code       Json?
+  logs       Json?
+  teams      teams?    @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }

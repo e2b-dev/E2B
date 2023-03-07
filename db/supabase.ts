@@ -11,21 +11,27 @@ export interface Database {
     Tables: {
       api_deployments: {
         Row: {
+          code: Json | null
           created_at: string | null
           data: Json
           id: number
+          logs: Json | null
           team_id: string | null
         }
         Insert: {
+          code?: Json | null
           created_at?: string | null
           data: Json
           id?: number
+          logs?: Json | null
           team_id?: string | null
         }
         Update: {
+          code?: Json | null
           created_at?: string | null
           data?: Json
           id?: number
+          logs?: Json | null
           team_id?: string | null
         }
       }

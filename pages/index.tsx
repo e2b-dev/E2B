@@ -1,11 +1,13 @@
 import type { GetServerSideProps } from 'next'
+import { LayoutGrid, Plus } from 'lucide-react'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import useSWRMutation from 'swr/mutation'
+import { useRouter } from 'next/router'
 
-import { prisma, api_deployments } from 'db/prisma'
-import { notEmpty } from 'utils/notEmpty'
-import DeploymentEditor from 'components/Editor'
-import { StoreProvider } from 'state/StoreProvider'
+import ItemList from 'components/ItemList'
+import Text from 'components/typography/Text'
+import { api_deployments, prisma } from 'db/prisma'
+import Button from 'components/Button'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx)
@@ -26,19 +28,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     where: {
       id: session.user.id,
     },
-    select: {
+    include: {
       users_teams: {
-        where: {
+        include: {
           teams: {
-            is_default: {
-              equals: true,
-            },
-          },
-        },
-        select: {
-          teams: {
-            select: {
-              id: true,
+            include: {
               api_deployments: true,
             },
           }
@@ -47,18 +41,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     },
   })
 
-  const hasDefaultTeam = user?.users_teams.some(t => t.teams)
+  const hasDefaultTeam = user?.users_teams.some(t => t.teams.is_default)
   if (!hasDefaultTeam) {
     // User is one of the old users without default team - create default team.
     const team = await prisma.teams.create({
       data: {
         name: session.user.email || session.user.id,
         is_default: true,
-        api_deployments: {
-          create: {
-            data: {},
-          },
-        },
         users_teams: {
           create: {
             users: {
@@ -74,62 +63,111 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       },
     })
 
-    if (!team.api_deployments) {
-      return {
-        notFound: true
-      }
-    }
-
     return {
       props: {
-        deployment: team.api_deployments,
+        deployments: team.api_deployments,
       }
     }
   }
 
-
-  const apiDeploymentsFromDefaultTeam = user
-    .users_teams
-    .flatMap(t => t.teams.api_deployments)
-    .filter(notEmpty)
-
-  if (apiDeploymentsFromDefaultTeam.length > 0) {
-    return {
-      props: {
-        deployment: apiDeploymentsFromDefaultTeam[0],
-      }
-    }
-  }
-
-  const defaultDeployment = await prisma.api_deployments.create({
-    data: {
-      data: {},
-      team_id: user.users_teams[0].teams.id,
-    },
-  })
-
+  // Show deployments from all teams for now.
+  const deployments = user.users_teams.flatMap(t => t.teams.api_deployments)
   return {
     props: {
-      deployment: defaultDeployment,
+      deployments,
     }
   }
 }
 
+// interface DeleteProjectBody {
+//   id: string
+// }
+
+// async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBody }) {
+//   return await fetch(url, {
+//     method: 'DELETE',
+//     body: JSON.stringify(arg),
+
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//   }).then(r => r.json())
+// }
+
+
 interface Props {
-  deployment: api_deployments
+  deployments: api_deployments[]
 }
 
-function ProjectPage({ deployment }: Props) {
-  const client = useSupabaseClient()
+function Home({ deployments }: Props) {
+  const router = useRouter()
+
+  const {
+    trigger: deleteProject,
+  } = useSWRMutation('/api/project', handleDeleteProject)
+
+  async function handleDelete(id: string) {
+    await deleteProject({ id })
+    router.replace(router.asPath)
+  }
 
   return (
-    <StoreProvider
-      client={client}
-      deployment={deployment}
+    <div
+      className="
+      flex
+      flex-1
+      flex-col
+      space-x-0
+      space-y-4
+      overflow-hidden
+      p-8
+      lg:flex-row
+      lg:space-y-0
+      lg:space-x-4
+      lg:p-12
+    "
     >
-      <DeploymentEditor />
-    </StoreProvider>
+      <div className="flex items-start space-x-4 lg:justify-start justify-between">
+        <div className="items-center flex space-x-2">
+          <LayoutGrid size="30px" strokeWidth="1.5" />
+          <Text
+            size={Text.size.S1}
+            text="Projects"
+          />
+        </div>
+
+        <Button
+          icon={<Plus size="16px" />}
+          text="New"
+          variant={Button.variant.Full}
+          onClick={() => router.push('/new/project')}
+        />
+      </div>
+
+      <div
+        className="
+        flex
+        flex-1
+        flex-col
+        items-stretch
+        overflow-hidden
+        "
+      >
+        <div className="flex flex-1 justify-center overflow-hidden">
+          <ItemList
+            deleteItem={handleDelete}
+            items={deployments.map(i => ({
+              ...i,
+              title: i.title || i.id,
+              path: '/[id]',
+              type: 'Project',
+              icon: <LayoutGrid size="22px" strokeWidth="1.7" />,
+            }))}
+          />
+        </div>
+      </div>
+    </div>
   )
 }
 
-export default ProjectPage
+export default Home
