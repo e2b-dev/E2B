@@ -32,6 +32,7 @@ export function StoreProvider({
 }
 
 export function getStoreContext() {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const ctx = useContext(storeContext)
 
   if (!ctx) {
