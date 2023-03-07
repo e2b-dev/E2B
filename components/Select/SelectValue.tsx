@@ -1,6 +1,6 @@
 import { Check as CheckIcon } from 'lucide-react'
 
-import Text from 'components/typography/Text'
+import Text from 'components/Text'
 import clsx from 'clsx'
 
 export interface Value {

@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 
 import Button from 'components/Button'
-import Text from 'components/typography/Text'
+import Text from 'components/Text'
 
 import SpinnerIcon from './icons/Spinner'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'

@@ -7,7 +7,7 @@ import { useOnClickOutside } from 'usehooks-ts'
 import clsx from 'clsx'
 import { ChevronDown as ChevronDownIcon } from 'lucide-react'
 
-import Text from 'components/typography/Text'
+import Text from 'components/Text'
 
 import SelectValue, { Value } from './SelectValue'
 
@@ -88,7 +88,7 @@ function Select({
             },
             `z-[999]
             top-[28px]
-            
+
             absolute
             p-1
             mt-0.5

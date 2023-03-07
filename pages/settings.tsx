@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 
 import Button from 'components/Button'
-import Text from 'components/typography/Text'
+import Text from 'components/Text'
 import { Database } from 'db/supabase'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {

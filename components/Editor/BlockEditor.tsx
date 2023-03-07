@@ -3,7 +3,7 @@ import { Wrench } from 'lucide-react'
 import { useState, useEffect, MouseEvent, useRef } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 
-import Text from 'components/typography/Text'
+import Text from 'components/Text'
 import { Block } from 'state/store'
 
 export interface Props {
