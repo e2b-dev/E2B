@@ -98,7 +98,6 @@ model refresh_tokens {
   session_id  String?   @db.Uuid
   sessions    sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([session_id], map: "refresh_token_session_id")
   @@index([instance_id])
   @@index([instance_id, user_id])
   @@index([parent])
@@ -186,46 +185,43 @@ model sso_providers {
 }
 
 model auth_users {
-  instance_id                 String?         @db.Uuid
-  id                          String          @id @db.Uuid
-  aud                         String?         @db.VarChar(255)
-  role                        String?         @db.VarChar(255)
-  email                       String?         @db.VarChar(255)
-  encrypted_password          String?         @db.VarChar(255)
-  email_confirmed_at          DateTime?       @db.Timestamptz(6)
-  invited_at                  DateTime?       @db.Timestamptz(6)
-  confirmation_token          String?         @db.VarChar(255)
-  confirmation_sent_at        DateTime?       @db.Timestamptz(6)
-  recovery_token              String?         @db.VarChar(255)
-  recovery_sent_at            DateTime?       @db.Timestamptz(6)
-  email_change_token_new      String?         @db.VarChar(255)
-  email_change                String?         @db.VarChar(255)
-  email_change_sent_at        DateTime?       @db.Timestamptz(6)
-  last_sign_in_at             DateTime?       @db.Timestamptz(6)
+  instance_id                 String?       @db.Uuid
+  id                          String        @id @db.Uuid
+  aud                         String?       @db.VarChar(255)
+  role                        String?       @db.VarChar(255)
+  email                       String?       @db.VarChar(255)
+  encrypted_password          String?       @db.VarChar(255)
+  email_confirmed_at          DateTime?     @db.Timestamptz(6)
+  invited_at                  DateTime?     @db.Timestamptz(6)
+  confirmation_token          String?       @db.VarChar(255)
+  confirmation_sent_at        DateTime?     @db.Timestamptz(6)
+  recovery_token              String?       @db.VarChar(255)
+  recovery_sent_at            DateTime?     @db.Timestamptz(6)
+  email_change_token_new      String?       @db.VarChar(255)
+  email_change                String?       @db.VarChar(255)
+  email_change_sent_at        DateTime?     @db.Timestamptz(6)
+  last_sign_in_at             DateTime?     @db.Timestamptz(6)
   raw_app_meta_data           Json?
   raw_user_meta_data          Json?
   is_super_admin              Boolean?
-  created_at                  DateTime?       @db.Timestamptz(6)
-  updated_at                  DateTime?       @db.Timestamptz(6)
-  phone                       String?         @unique @db.VarChar(15)
-  phone_confirmed_at          DateTime?       @db.Timestamptz(6)
-  phone_change                String?         @default("") @db.VarChar(15)
-  phone_change_token          String?         @default("") @db.VarChar(255)
-  phone_change_sent_at        DateTime?       @db.Timestamptz(6)
-  confirmed_at                DateTime?       @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
-  email_change_token_current  String?         @default("") @db.VarChar(255)
-  email_change_confirm_status Int?            @default(0) @db.SmallInt
-  banned_until                DateTime?       @db.Timestamptz(6)
-  reauthentication_token      String?         @default("") @db.VarChar(255)
-  reauthentication_sent_at    DateTime?       @db.Timestamptz(6)
-  is_sso_user                 Boolean         @default(false)
+  created_at                  DateTime?     @db.Timestamptz(6)
+  updated_at                  DateTime?     @db.Timestamptz(6)
+  phone                       String?       @unique
+  phone_confirmed_at          DateTime?     @db.Timestamptz(6)
+  phone_change                String?       @default("")
+  phone_change_token          String?       @default("") @db.VarChar(255)
+  phone_change_sent_at        DateTime?     @db.Timestamptz(6)
+  confirmed_at                DateTime?     @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current  String?       @default("") @db.VarChar(255)
+  email_change_confirm_status Int?          @default(0) @db.SmallInt
+  banned_until                DateTime?     @db.Timestamptz(6)
+  reauthentication_token      String?       @default("") @db.VarChar(255)
+  reauthentication_sent_at    DateTime?     @db.Timestamptz(6)
+  is_sso_user                 Boolean       @default(false)
+  deleted_at                  DateTime?     @db.Timestamptz(6)
   identities                  identities[]
   mfa_factors                 mfa_factors[]
   sessions                    sessions[]
-  api_keys                    api_keys[]
-  code_snippets               code_snippets[]
-  user_feedback               user_feedback[]
-  users                       public_users?
   users_teams                 users_teams[]
 
   @@index([instance_id])
@@ -233,134 +229,19 @@ model auth_users {
   @@schema("auth")
 }
 
-model api_keys {
-  api_key  String     @id
-  owner_id String     @db.Uuid
-  users    auth_users @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("public")
-}
-
-model apps {
-  id                  String               @id
-  title               String?
-  created_at          DateTime             @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  repository_id       BigInt?
-  team_id             String?              @db.Uuid
-  repository_branch   String?
-  repository_path     String               @default("./")
-  subdomain           String?              @unique
-  github_repositories github_repositories? @relation(fields: [repository_id], references: [repository_id], onDelete: NoAction, onUpdate: NoAction)
-  teams               teams?               @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  apps_content        apps_content?
-
-  @@schema("public")
-}
-
-model apps_content {
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-  content    Json?
-  app_id     String   @id
-  apps       apps     @relation(fields: [app_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("public")
-}
-
-model apps_feedback {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  appId      String
-  feedback   String?
-  properties Json?    @db.Json
-
-  @@schema("public")
-}
-
-model code_snippets {
-  id                      String                   @id
-  creator_id              String                   @db.Uuid
-  title                   String                   @default("\"\"")
-  code                    String?
-  created_at              DateTime                 @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  env_vars                Json                     @default("{}") @db.Json
-  template                String                   @default("Nodejs")
-  users                   auth_users               @relation(fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  envs                    envs[]
-  published_code_snippets published_code_snippets?
-
-  @@schema("public")
-}
-
-model envs {
-  id              String         @id
-  code_snippet_id String?
-  template        String?
-  deps            String[]
-  state           env_state?
-  code_snippets   code_snippets? @relation(fields: [code_snippet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("public")
-}
-
-model published_code_snippets {
-  code_snippet_id String        @unique
-  title           String        @default("")
-  code            String        @default("")
-  published_at    DateTime?     @default(now()) @db.Timestamptz(6)
-  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  env_vars        Json          @default("{}") @db.Json
-  template        String        @default("Nodejs")
-  code_snippets   code_snippets @relation(fields: [code_snippet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("public")
-}
-
-model slack_installations {
-  id                String
-  created_at        DateTime @default(now()) @db.Timestamptz(6)
-  devbook_app_id    String
-  installation_data Json
-
-  @@id([id, devbook_app_id])
-  @@schema("public")
-}
-
 model teams {
-  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at      DateTime          @default(now()) @db.Timestamptz(6)
-  name            String?
-  is_default      Boolean           @default(false)
-  api_deployments api_deployments[]
-  apps            apps[]
-  users_teams     users_teams[]
+  id          String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at  DateTime?     @default(now()) @db.Timestamptz(6)
+  is_default  Boolean?
+  name        String?
+  users_teams users_teams[]
 
-  @@schema("public")
-}
-
-model user_feedback {
-  id         BigInt      @id @default(autoincrement())
-  created_at DateTime?   @default(now()) @db.Timestamptz(6)
-  user_id    String?     @db.Uuid
-  feedback   String?
-  users      auth_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("public")
-}
-
-model public_users {
-  id         String     @id @db.Uuid
-  created_at DateTime?  @default(now()) @db.Timestamptz(6)
-  email      String?
-  users      auth_users @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@map("users")
   @@schema("public")
 }
 
 model users_teams {
-  created_at DateTime   @default(now()) @db.Timestamptz(6)
   user_id    String     @db.Uuid
+  created_at DateTime?  @default(now()) @db.Timestamptz(6)
   team_id    String     @db.Uuid
   teams      teams      @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users      auth_users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -369,24 +250,19 @@ model users_teams {
   @@schema("public")
 }
 
-model github_repositories {
-  repository_id       BigInt   @id(map: "github_installations_pkey") @default(autoincrement())
-  installation_id     BigInt
-  installated_at      DateTime @default(now()) @db.Timestamptz(6)
-  repository_fullname String
-  apps                apps[]
+model deployments {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  logs       Json[]
+  code       String?
 
   @@schema("public")
 }
 
-model api_deployments {
-  id         BigInt    @id(map: "deployments_pkey") @default(autoincrement())
+model projects {
+  id         String    @id(map: "ai_api_pkey") @default("")
   created_at DateTime? @default(now()) @db.Timestamptz(6)
-  data       Json
-  team_id    String?   @db.Uuid
-  code       Json?
-  logs       Json?
-  teams      teams?    @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  data       Json?
 
   @@schema("public")
 }
@@ -411,42 +287,4 @@ enum factor_type {
   webauthn
 
   @@schema("auth")
-}
-
-enum env_state {
-  Building
-  Failed
-  Done
-  None
-
-  @@schema("public")
-}
-
-enum template {
-  Nodejs
-  Go
-  Bash
-  Python3
-  Java
-  Rust
-  Perl
-  PHP
-  Ansys
-  Typescript
-
-  @@schema("public")
-}
-
-enum template_old {
-  None
-  Nodejs
-  Go
-  Bash
-  Python
-  Java
-  Rust
-  Perl
-  PHP
-
-  @@schema("public")
 }

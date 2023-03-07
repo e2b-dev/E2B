@@ -5,7 +5,7 @@ import useSWRMutation from 'swr/mutation'
 import { useRouter } from 'next/router'
 
 import ItemList from 'components/ItemList'
-import Text from 'components/typography/Text'
+import Text from 'components/Text'
 import { api_deployments, prisma } from 'db/prisma'
 import Button from 'components/Button'
 

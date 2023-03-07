@@ -2,18 +2,18 @@ import { shallow } from 'zustand/shallow'
 import useSWRMutation from 'swr/mutation'
 import { Fragment, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
+import { api_deployments } from '@prisma/client'
 
 import { State, Block, methods, Method } from 'state/store'
 import { getStoreContext } from 'state/StoreProvider'
 import Select from 'components/Select'
+import { nanoid } from 'nanoid'
+import Button from 'components/Button'
+import Text from 'components/Text'
 
-import Text from '../typography/Text'
 import BlockEditor from './BlockEditor'
-import Button from '../Button'
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
-import { nanoid } from 'nanoid'
-import { api_deployments } from '@prisma/client'
 
 const selector = (state: State) => ({
   blocks: state.blocks,
@@ -71,7 +71,6 @@ export default function Editor({ deployment }: Props) {
       blocks,
       method,
     })
-    // toast(response)
     console.log(response)
   }
 

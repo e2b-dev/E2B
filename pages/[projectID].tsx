@@ -6,6 +6,7 @@ import type { ParsedUrlQuery } from 'querystring'
 import { prisma, api_deployments } from 'db/prisma'
 import DeploymentEditor from 'components/Editor'
 import { StoreProvider } from 'state/StoreProvider'
+import Editor from 'components/Editor'
 
 interface PathProps extends ParsedUrlQuery {
   deploymentID: string
@@ -83,7 +84,7 @@ function EditorPage({ deployment }: Props) {
       client={client}
       deployment={deployment}
     >
-      <DeploymentEditor />
+      <Editor />
     </StoreProvider>
   )
 }
