@@ -9,9 +9,11 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=1.4.0
 
+ENV PIPENV_VENV_IN_PROJECT 1
 
 RUN pip install "poetry==$POETRY_VERSION"
-RUN poetry config virtualenvs.path /venv
+# RUN poetry config virtualenvs.path /venv
+RUN poetry config virtualenvs.in-project true
 
 WORKDIR /app
 
