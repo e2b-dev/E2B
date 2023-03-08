@@ -4,6 +4,10 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
+@app.route("/health", methods=['GET'])
+def health():
+    return "OK"
+
 @app.route("/generate", methods=['POST'])
 def generate():
     body = request.json
