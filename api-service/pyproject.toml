@@ -3,12 +3,9 @@ name = "codegen"
 version = "0.1.0"
 description = ""
 authors = ["Devbook <hello@usedevbook.com>"]
-packages = [{ include = "codegen" }]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-simplejson = "^3.18.3"
-python-dotenv = "^1.0.0"
 flask = "^2.2.3"
 gunicorn = "^20.1.0"
 openai = "^0.27.0"
