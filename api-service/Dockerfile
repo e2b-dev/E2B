@@ -1,10 +1,8 @@
-FROM python:3.10-slim as base
+FROM python:3.10-slim
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
     PYTHONUNBUFFERED=1
-
-WORKDIR /app
 
 ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -12,13 +10,11 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     POETRY_VERSION=1.4.0
 
 RUN pip install "poetry==$POETRY_VERSION"
-RUN python -m venv /venv
+
+WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-# RUN poetry export -f requirements.txt | /venv/bin/pip install -r /dev/stdin
-
-COPY . .
 RUN poetry install
-# RUN poetry build && /venv/bin/pip install dist/*.whl
+COPY . ./
 
-CMD exec poetry run gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
+CMD exec poetry run gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app
