@@ -81,7 +81,7 @@ function Editor({ project }: Props) {
       blocks,
       method,
     })
-    console.log(response)
+    console.log(response.code)
   }
 
   return (
