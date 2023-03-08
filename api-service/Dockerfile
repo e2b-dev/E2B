@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -9,7 +9,9 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=1.4.0
 
+
 RUN pip install "poetry==$POETRY_VERSION"
+RUN poetry config virtualenvs.path /venv
 
 WORKDIR /app
 
@@ -17,4 +19,5 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install
 COPY . ./
 
-CMD exec poetry run gunicorn --bind 0.0.0.0:8080 --workers 1 --threads 8 --timeout 0 app:app
+
+ENTRYPOINT ["poetry", "run", "gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1" ,"--threads", "8", "--timeout", "0", "app:app"]
