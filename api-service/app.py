@@ -20,12 +20,10 @@ def generate():
     blocks = body["blocks"]
     method = body["method"]
 
-    return {}
-
     final_prompt, js_code = generate_req_handler(
         project_id=project_id, blocks=blocks, method=method
     )
-    print(js_code)
+
     return {"code": js_code.strip("`").strip(), "prompt": final_prompt}
 
 
