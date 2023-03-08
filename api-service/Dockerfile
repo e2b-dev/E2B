@@ -15,7 +15,9 @@ RUN poetry config virtualenvs.in-project true
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --without dev --no-root --no-ansi
+RUN --mount=type=cache,target=/home/.cache/pypoetry/cache \
+    --mount=type=cache,target=/home/.cache/pypoetry/artifacts \
+    poetry install --without dev --no-root --no-ansi --no-interaction
 
 COPY . ./
 
