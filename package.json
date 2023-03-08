@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx concurrently \"next dev\" \"cd api-service && poetry run python main.py\"",
+    "dev": "npx concurrently \"next dev\" \"cd api-service && poetry run flask --app app.py --debug run\"",
     "build": "next build",
     "install:api": "cd api-service && poetry install",
     "start": "next start",
