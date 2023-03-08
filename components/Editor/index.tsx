@@ -17,8 +17,9 @@ import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
 
 // TODO: Prod api host
-console.log('NODE ENV', process.env.NODE_ENV)
-const apiHost = process.env.NODE_ENV === 'development' ? 'http://0.0.0.0:5000' : 'TODO'
+const apiHost = process.env.NODE_ENV === 'development' ?
+  'http://0.0.0.0:5000' :
+  'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
 
 const selector = (state: State) => ({
   blocks: state.blocks,
