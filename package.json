@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx concurrently \"next dev\" \"flask --app api-service/app.py --debug run\"",
+    "dev": "npx concurrently \"next dev\" \"flask --app api-service/main.py --debug run\"",
     "build": "next build",
     "install:api": "cd api-service && pip3 install -r requirements.txt",
     "start": "next start",
