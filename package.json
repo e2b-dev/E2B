@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx concurrently \"next dev\" \"flask --app api-service/main.py --debug run\"",
+    "dev": "npx concurrently \"next dev\" \"cd api-service && poetry run python main.py\"",
     "build": "next build",
-    "install:api": "cd api-service && pip3 install -r requirements.txt",
+    "install:api": "cd api-service && poetry install",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
