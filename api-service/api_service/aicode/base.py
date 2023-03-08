@@ -1,6 +1,5 @@
 from typing import List
 import uuid
-from dotenv import load_dotenv
 
 from langchain.llms.openai import OpenAIChat, OpenAI
 from api_service.aicode.tools.javascript.tool import JavascriptEvalTool
@@ -50,7 +49,6 @@ app.listen(8080, () => console.log('Listening on port 8080'));
 
 
 def generate_req_handler(project_id: str, blocks: List[str], method: str) -> str:
-    load_dotenv()
     run_id = str(uuid.uuid4())
 
     executor = create_js_agent(

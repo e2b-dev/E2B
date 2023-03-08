@@ -1,12 +1,8 @@
 import os
 from api_service.aicode.base import generate_req_handler
-# from api_service.aicode import generate_req_handler
 from flask import Flask, request
-from dotenv import load_dotenv
-load_dotenv()
 
 app = Flask(__name__)
-
 
 @app.route("/generate", methods=['POST'])
 def generate():
