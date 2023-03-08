@@ -1,8 +1,11 @@
 import requests
-import sys
+import os
 
-url = "http://localhost:3000/api/exec/js"
-# url = "https://ai-api-gray.vercel.app/api/exec/js"
+
+if os.environ.get("ENV") == "dev":
+    url = "http://localhost:3000/api/exec/js"
+else:
+    url = "https://ai-api-gray.vercel.app/api/exec/js"
 
 
 def eval(code: str):
