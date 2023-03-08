@@ -4,7 +4,6 @@ from api_service.aicode.base import generate_req_handler
 from flask import Flask, request
 from dotenv import load_dotenv
 load_dotenv()
-print(os.environ)
 
 app = Flask(__name__)
 
