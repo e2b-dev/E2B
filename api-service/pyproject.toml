@@ -3,7 +3,6 @@ name = "api-service"
 version = "0.1.0"
 description = ""
 authors = ["Vasek Mlejnsky <vasek.mlejnsky@gmail.com>"]
-readme = "README.md"
 packages = [{ include = "api_service" }]
 
 [tool.poetry.dependencies]
