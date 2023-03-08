@@ -40,6 +40,7 @@ export interface Props {
 
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
+    projectID: string,
     blocks: Block[],
     method: Method,
   },
@@ -47,7 +48,7 @@ async function handlePostGenerate(url: string, { arg }: {
   return await fetch(url, {
     method: 'POST',
     body: JSON.stringify({
-      projectId: '460355b3',
+      projectId: arg.projectID,
       blocks: arg.blocks.map(b => b.prompt),
       method: arg.method.toLowerCase(),
     }),
@@ -79,6 +80,7 @@ function Editor({ project }: Props) {
   async function deploy() {
     const response = await generate({
       blocks,
+      projectID: project.id,
       method,
     })
     console.log(response.code)
