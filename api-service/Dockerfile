@@ -17,4 +17,4 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install
 COPY . ./
 
-CMD exec poetry run gunicorn --bind 0.0.0.0:8080 --workers 1 --threads 8 --timeout 0 app:app
+CMD ["sh", "-c", "poetry", "run", "gunicorn", "--bind", "0.0.0.0:${PORT}", "--workers", "1" ,"--threads", "8", "--timeout", "0", "app:app"]
