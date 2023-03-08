@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10-slim
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -9,17 +9,16 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=1.4.0
 
-ENV PIPENV_VENV_IN_PROJECT 1
-
 RUN pip install "poetry==$POETRY_VERSION"
-# RUN poetry config virtualenvs.path /venv
 RUN poetry config virtualenvs.in-project true
 
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-RUN poetry install
+RUN --mount=type=cache,target=/home/.cache/pypoetry/cache \
+    --mount=type=cache,target=/home/.cache/pypoetry/artifacts \
+    poetry install --without dev --no-root --no-ansi --no-interaction
+
 COPY . ./
 
-
-ENTRYPOINT ["poetry", "run", "gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1" ,"--threads", "8", "--timeout", "0", "app:app"]
+CMD exec poetry run gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app

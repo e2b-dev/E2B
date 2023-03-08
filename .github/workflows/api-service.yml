@@ -2,6 +2,8 @@ name: API service
 
 on:
   push:
+    paths:
+      - 'api-service/**'
     branches:
       - master
 
