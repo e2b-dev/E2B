@@ -11,6 +11,7 @@ gunicorn = "^20.1.0"
 openai = "^0.27.0"
 langchain = "^0.0.102"
 supabase = "^1.0.1"
+flask-cors = "^3.0.10"
 
 
 [build-system]

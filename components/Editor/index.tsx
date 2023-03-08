@@ -16,6 +16,10 @@ import BlockEditor from './BlockEditor'
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
 
+// TODO: Prod api host
+console.log('NODE ENV', process.env.NODE_ENV)
+const apiHost = process.env.NODE_ENV === 'development' ? 'http://0.0.0.0:5000' : 'TODO'
+
 const selector = (state: State) => ({
   blocks: state.blocks,
   method: state.method,
@@ -69,7 +73,7 @@ function Editor({ project }: Props) {
   } = useStore(selector, shallow)
 
   const [focusedBlock, setFocusedBlock] = useState({ index: 0 })
-  const { trigger: generate } = useSWRMutation('/api/generate', handlePostGenerate)
+  const { trigger: generate } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
 
   async function deploy() {
     const response = await generate({

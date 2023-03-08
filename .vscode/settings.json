@@ -47,5 +47,6 @@
   "debug.javascript.codelens.npmScripts": "never",
   "editor.codeLens": true,
   "editor.suggest.localityBonus": true,
-  "typescript.enablePromptUseWorkspaceTsdk": true
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "python.formatting.provider": "black"
 }
