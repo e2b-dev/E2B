@@ -24,9 +24,17 @@ RUN poetry export -f requirements.txt | /venv/bin/pip install -r /dev/stdin
 COPY . .
 RUN poetry build && /venv/bin/pip install dist/*.whl
 
-FROM base as final
+# FROM base as final
 
-COPY --from=builder /venv /venv
+# ENV PIP_DEFAULT_TIMEOUT=100 \
+#     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+#     PIP_NO_CACHE_DIR=1 \
+#     POETRY_VERSION=1.4.0
+
+RUN pip install gunicorn
+# RUN pip install "poetry==$POETRY_VERSION"
+
+# COPY --from=builder /venv /venv
 # COPY docker-entrypoint.sh wsgi.py ./
 # CMD ["./docker-entrypoint.sh"]
 # Run the web service on container startup. Here we use the gunicorn
@@ -34,8 +42,13 @@ COPY --from=builder /venv /venv
 # For environments with multiple CPU cores, increase the number of workers
 # to be equal to the cores available.
 # Timeout is set to 0 to disable the timeouts of the workers to allow Cloud Run to handle instance scaling.
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
 
+WORKDIR /app
+# CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
+
+CMD poetry run gunicorn -b 0.0.0.0:8080 main:app  
+
+# CMD [ "poetry", "run", "gunicorn", "-b", "0.0.0.0:5000", "main:app" ]
 
 # ###########
 
