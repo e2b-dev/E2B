@@ -1,12 +1,14 @@
 import os
-from api_service.aicode.base import generate_req_handler
+from codegen.base import generate_req_handler
 from flask import Flask, request
 
 app = Flask(__name__)
 
+
 @app.route("/health", methods=['GET'])
 def health():
     return "OK"
+
 
 @app.route("/generate", methods=['POST'])
 def generate():

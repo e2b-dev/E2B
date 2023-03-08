@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "api-service"
+name = "codegen"
 version = "0.1.0"
 description = ""
-authors = ["Vasek Mlejnsky <vasek.mlejnsky@gmail.com>"]
-packages = [{ include = "api_service" }]
+authors = ["Devbook <hello@usedevbook.com>"]
+packages = [{ include = "codegen" }]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

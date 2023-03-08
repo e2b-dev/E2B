@@ -2,8 +2,8 @@ from typing import List
 import uuid
 
 from langchain.llms.openai import OpenAIChat, OpenAI
-from api_service.aicode.tools.javascript.tool import JavascriptEvalTool
-from api_service.aicode.js_agent.base import create_js_agent
+from codegen.tools.javascript.tool import JavascriptEvalTool
+from codegen.js_agent.base import create_js_agent
 
 
 # server_template = """

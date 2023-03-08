@@ -5,8 +5,8 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text, get_colored_text
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-# from api_service.aicode.db.base import push_logs
-from api_service.aicode.db.base import Database
+# from codegen.db.base import push_logs
+from codegen.db.base import Database
 
 
 class LoggerCallbackHandler(BaseCallbackHandler):

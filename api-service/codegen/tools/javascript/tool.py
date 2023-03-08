@@ -3,7 +3,7 @@
 from langchain.tools.base import BaseTool
 
 # from tools.javascript.eval import eval as js_eval
-from api_service.aicode.tools.javascript.eval import eval as js_eval
+from codegen.tools.javascript.eval import eval as js_eval
 
 
 class JavascriptEvalTool(BaseTool):
