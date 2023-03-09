@@ -87,7 +87,9 @@ function EditorPage({ project }: Props) {
       client={client}
       initialState={project}
     >
-      <Editor project={project} />
+      <Editor
+        project={project}
+      />
     </StoreProvider>
   )
 }

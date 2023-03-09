@@ -2,10 +2,10 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { persist } from 'zustand/middleware'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { nanoid } from 'nanoid'
+import { projects, Prisma } from '@prisma/client'
 
 import { Database } from 'db/supabase'
-import { nanoid } from 'nanoid'
-import { projects } from '@prisma/client'
 import { projectsTable } from 'db/tables'
 
 export interface Tool {
@@ -16,6 +16,13 @@ export interface Block {
   tools?: Tool[]
   id: string
   prompt: string
+}
+
+export interface Route {
+  blocks: Block[]
+  method: Method
+  route: string
+  id: string
 }
 
 export enum Method {
@@ -31,70 +38,114 @@ export const methods = Object
   .filter((item) => isNaN(Number(item)))
   .map(v => v.toLowerCase())
 
-export interface State {
-  blocks: Block[]
-  method: Method
-  changeBlock: (index: number, block: Partial<Block>) => void
-  deleteBlock: (index: number) => void
-  addBlock: (block: Block) => void
-  changeMethod: (method: Method) => void
+export interface SerializedState {
+  routes: Route[]
 }
 
-const defaultBlock: Block = { prompt: '', id: nanoid() }
-const defaultState: Pick<State, 'blocks' | 'method'> = {
-  blocks: [defaultBlock],
-  method: Method.POST,
+export interface State extends SerializedState {
+  changeBlock: (routeID: string, index: number, block: Partial<Omit<Block, 'id'>>) => void
+  deleteBlock: (routeID: string, index: number) => void
+  addBlock: (routeID: string, block?: Block) => void
+  changeRoute: (id: string, route: Partial<Omit<Route, 'id'>>) => void
+  deleteRoute: (id: string) => void
+  addRoute: (route?: Route) => void
 }
 
-export function createStore(project?: projects, client?: SupabaseClient<Database>) {
-  const state = (project?.data as any)?.state as Pick<State, 'blocks' | 'method'> || defaultState
-
-  if (state.blocks.length === 0) {
-    state.blocks.push(defaultBlock)
+function getDefaultBlock(): Block {
+  return {
+    prompt: '',
+    id: nanoid(),
   }
+}
 
-  state.blocks.forEach(s => {
-    if (!s.id) {
-      s.id = nanoid()
-    }
-  })
+function getDefaultRoute(): Route {
+  return {
+    blocks: [getDefaultBlock()],
+    method: Method.POST,
+    route: '/',
+    id: nanoid(),
+  }
+}
+
+function getDefaultState(): SerializedState {
+  return {
+    routes: [getDefaultRoute()],
+  }
+}
+
+export function getTypedState(data?: Prisma.JsonValue): SerializedState | undefined {
+  if (!data) return
+  if ('state' in (data as any)) {
+    return (data as any)['state'] as SerializedState
+  }
+}
+
+export function createStore(initialState?: projects, client?: SupabaseClient<Database>) {
+  const state = getTypedState(initialState?.data) || getDefaultState()
+
+  if (state.routes.length === 0) {
+    state.routes.push(getDefaultRoute())
+  }
 
   const immerStore = immer<State>((set) => ({
     ...state,
-    changeBlock: (index, block) =>
+    addRoute: (route = getDefaultRoute()) => {
+      state.routes.push(route)
+    },
+    deleteRoute: (id) => {
+      state.routes = state.routes.filter(r => r.id !== id)
+    },
+    changeRoute: (id, route) => {
+      const idx = state.routes.findIndex(r => r.id === id)
+      if (idx > -1) {
+        state.routes[idx] = {
+          ...state.routes[idx],
+          ...route,
+        }
+      }
+    },
+    changeBlock: (routeID, index, block) =>
       set(state => {
-        state.blocks[index] = { ...state.blocks[index], ...block }
+        const idx = state.routes.findIndex(r => r.id === routeID)
+        if (idx > -1) {
+          state.routes[idx].blocks[index] = {
+            ...state.routes[idx].blocks[index],
+            ...block,
+          }
+        }
       }),
-    deleteBlock: (index) =>
+    deleteBlock: (routeID, index) =>
       set(state => {
-        state.blocks.splice(index, 1)
+        const idx = state.routes.findIndex(r => r.id === routeID)
+        if (idx > -1) {
+          state.routes[idx].blocks.splice(index, 1)
+        }
       }),
-    addBlock: (block) =>
+    addBlock: (routeID, block = getDefaultBlock()) =>
       set(state => {
-        state.blocks.push(block)
-      }),
-    changeMethod: (method) =>
-      set(state => {
-        state.method = method
+        const idx = state.routes.findIndex(r => r.id === routeID)
+        if (idx > -1) {
+          state.routes[idx].blocks.push(block)
+        }
       }),
   }))
 
   const persistent = persist(immerStore, {
     name: 'supabase-storage',
     partialize: (state) => state,
-    storage: client && project ? {
+    storage: client && initialState ? {
       getItem: async (name) => {
         // We retrieve the data on the server
         return null
       },
       removeItem: async () => {
-        const res = await client.from(projectsTable).update({ data: {} }).eq('id', project.id).single()
+        const res = await client.from(projectsTable).update({ data: {} }).eq('project_id', initialState.id).single()
         if (res.error) {
           throw res.error
         }
       },
       setItem: async (name, value) => {
-        const res = await client.from(projectsTable).update({ data: value as any }).eq('id', project.id)
+        const res = await client.from(projectsTable).update({ data: value as any }).eq('project_id', initialState.id)
         if (res.error) {
           throw res.error
         }

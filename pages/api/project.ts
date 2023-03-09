@@ -113,7 +113,7 @@ async function deleteProject(req: NextApiRequest, res: NextApiResponse) {
 
     await prisma.deployments.deleteMany({
       where: {
-        project_id: project.id,
+        project_id: id,
       },
     })
 
