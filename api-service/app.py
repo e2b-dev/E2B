@@ -2,10 +2,11 @@ import os
 from codegen.base import generate_req_handler
 from flask import Flask, request
 from flask_cors import CORS
-import CloudFlare
-import json
-import requests
-import time
+import subprocess
+
+
+app = Flask(__name__)
+CORS(app)
 
 
 def dump(obj):
@@ -13,105 +14,11 @@ def dump(obj):
         print("obj.%s = %r" % (attr, getattr(obj, attr)))
 
 
-# cf_email = os.environ["CLOUDFLARE_EMAIL"]
-# cf_api_key = os.environ["CLOUDFLARE_API_KEY"]
-# cf_api_cert = os.environ["CLOUDFLARE_API_CERTKEY"]
-
-# cf = CloudFlare.CloudFlare(
-#     email=cf_email, key=cf_api_key, certtoken=cf_api_cert, debug=False
-# )
-
-# cf_token = os.environ.get("CLOUDFLARE_API_TOKEN")
-# cf = CloudFlare.CloudFlare(debug=True)
-
-# cf_acc_id = os.environ.get("CLOUDFLARE_ACC_ID")
-
-# ws = cf.accounts.workers.scripts.get(cf_acc_id)
-# print(ws)
-
-# js_code = str.encode(
-#     """
-# module.exports = {{
-#   async fetch(request) {{
-#     return new Response("Hello World!", {{ headers: {{'Content-Type': 'text/html'}} }});
-#   }},
-# }};
-# """
-# )
-
-# script_name = "my_script_new"
-
-# cf_url = "https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/services/{script_name}/environments/production".format(
-#     account_id=cf_acc_id, script_name=script_name
-# )
-# headers = {
-#     "X-Auth-Email": cf_email,
-#     "X-Auth-Key": cf_api_key,
-# }
-# >>>>>>>>> THIS WORKS
-# response = requests.put(
-#     cf_url,
-#     headers=headers,
-#     files={
-#         "worker.js": (
-#             "worker.js",
-#             open("worker.js", "rb"),
-#             "application/javascript+module",
-#         ),
-#         "package.json": (
-#             "package.json",
-#             open("package.json", "rb"),
-#             "application/json",
-#         ),
-#         "metadata": (
-#             None,
-#             str.encode('{"bindings": [], "main_module": "worker.js"}'),
-#             "application/json",
-#         ),
-#     },
-# )
-# response = requests.put(
-#     cf_url,
-#     headers=headers,
-#     files={
-#         "index.js": str.encode(
-#             """export default {{
-#   async fetch(request) {{
-#     return new Response("Hello World!");
-#   }},
-# }};"""
-#         )
-#     },
-# )
-# print("RESPONSE 1")
-# print(response.request.headers)
-# print(response.content)
-# print(response.json())
-
-# Enable subdomain, eg: https://my_script.devbook.workers.dev/
-# time.sleep(5)
-# zone_id = "72aff3fa4f548f5fc3bbcc223037f444"
-# cf_url = "https://api.cloudflare.com/client/v4/zones/{zone_id}/workers/routes".format(
-#     zone_id=zone_id
-# )
-# print(cf_url)
-# response = requests.post(
-#     cf_url,
-#     headers=headers,
-#     json={
-#         "pattern": "{script_name}.devbook.workers.dev".format(script_name=script_name),
-#         "script": script_name,
-#     },
-# )
-# # response = requests.post(cf_url, headers=headers, json={"enabled": "true"})
-# print("RESPONSE 2")
-# print(response.request.headers)
-# # print(response.content)
-# print(response.json())
-
-
-app = Flask(__name__)
-CORS(app)
+def replace_file_content(fp_in: str, fp_out: str, old: str, new: str) -> None:
+    with open(fp_in, "rt") as fin:
+        with open(fp_out, "wt") as fout:
+            for line in fin:
+                fout.write(line.replace(old, new))
 
 
 @app.route("/health", methods=["GET"])
@@ -131,7 +38,38 @@ def generate():
         project_id=project_id, blocks=blocks, method=method
     )
 
-    return {"code": js_code.strip("`").strip(), "prompt": final_prompt}
+    cf_worker_dir_path = (
+        os.path.abspath(os.path.dirname(__file__)) + "/cf-worker-template"
+    )
+    index_js_path = cf_worker_dir_path + "/index.js"
+    wrangler_template_path = cf_worker_dir_path + "/wrangler.template.toml"
+    wrangler_path = cf_worker_dir_path + "/wrangler.toml"
+
+    # TODO: Inject code to cf-worker-template/index.js
+    code = js_code.strip("`").strip()
+    with open(index_js_path, "w") as file:
+        file.write(code)
+
+    # TODO: Update name in cf-worker-template/wrangler.template.toml
+    replace_file_content(
+        wrangler_template_path,
+        wrangler_path,
+        "<NAME>",
+        f'"{project_id}"',
+    )
+
+    # TODO: Call npm run deploy
+    cmd = ["npm", "run", "deploy", "--prefix", cf_worker_dir_path]
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
+        print(proc.stdout.read().decode())
+
+    # TODO: Report back the URL of deployed API
+
+    return {
+        "code": js_code.strip("`").strip(),
+        "prompt": final_prompt,
+        "host": f"https://{project_id}.devbook.workers.dev",
+    }
 
 
 if __name__ == "__main__":
