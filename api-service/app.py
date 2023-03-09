@@ -30,12 +30,14 @@ def health():
 def generate():
     body = request.json
 
-    project_id = body["projectId"]
+    project_id = body["projectID"]
+    route_id = body["routeID"]
     blocks = body["blocks"]
     method = body["method"]
+    route = body["route"]
 
     final_prompt, js_code = generate_req_handler(
-        project_id=project_id, blocks=blocks, method=method
+        project_id=project_id, route_id=route_id, blocks=blocks, method=method
     )
 
     cf_worker_dir_path = (

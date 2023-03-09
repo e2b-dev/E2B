@@ -18,6 +18,7 @@ from codegen.js_agent.callbacks.log import LoggerCallbackHandler
 def create_js_agent(
     run_id: str,
     project_id: str,
+    route_id: str,
     llm: BaseLLM,
     tool: JavascriptEvalTool,
     callback_manager: Optional[BaseCallbackManager] = None,
@@ -42,7 +43,7 @@ def create_js_agent(
 
     cb_manager = SharedCallbackManager()
     cb_manager.set_handler(LoggerCallbackHandler(
-        run_id=run_id, project_id=project_id))
+        run_id=run_id, project_id=project_id, route_id=route_id))
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
