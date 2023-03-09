@@ -26,9 +26,10 @@ export enum Method {
   PATCH = 'patch',
 }
 
-export const methods = Object.keys(Method).filter((item) => {
-  return isNaN(Number(item))
-})
+export const methods = Object
+  .keys(Method)
+  .filter((item) => isNaN(Number(item)))
+  .map(v => v.toLowerCase())
 
 export interface State {
   blocks: Block[]
