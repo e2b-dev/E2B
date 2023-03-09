@@ -2,8 +2,9 @@ import useSWRMutation from 'swr/mutation'
 import { Fragment, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
 import { projects } from '@prisma/client'
+import { useRouter } from 'next/router'
 
-import { Block, methods, Method } from 'state/store'
+import { Route, methods, Method } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
 import Select from 'components/Select'
 import Button from 'components/Button'
@@ -15,7 +16,6 @@ import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
 import Logs from './Logs'
 import Routes from './Routes'
-import { useRouter } from 'next/router'
 
 // TODO: Prod API host
 const apiHost = process.env.NODE_ENV === 'development' ?
@@ -30,19 +30,18 @@ export interface Props {
 
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
-    projectID: string
-    blocks: Block[]
-    method: Method
-    route: string
-  },
+    projectID: string,
+    route: Route,
+  }
 }) {
   return await fetch(url, {
     method: 'POST',
     body: JSON.stringify({
       projectID: arg.projectID,
-      blocks: arg.blocks.map(b => b.prompt),
-      method: arg.method.toLowerCase(),
-      route: arg.route,
+      routeID: arg.route.id,
+      blocks: arg.route.blocks.map(b => b.prompt),
+      method: arg.route.method.toLowerCase(),
+      route: arg.route.route,
     }),
     headers: {
       'Content-Type': 'application/json',
@@ -63,6 +62,7 @@ function Editor({ project }: Props) {
   const selectedRoute =
     routes.find(r => r.id === router.query.route) ||
     (routes.length > 0 ? routes[0] : undefined)
+
   const deployment = useLatestDeployment(project, selectedRoute)
   const logs = deployment?.logs as Log[] | undefined
 
@@ -73,10 +73,8 @@ function Editor({ project }: Props) {
     if (!selectedRoute) return
 
     const response = await generate({
-      blocks: selectedRoute.blocks,
       projectID: project.id,
-      method: selectedRoute.method,
-      route: selectedRoute.route,
+      route: selectedRoute,
     })
     console.log(response.code)
     console.log(response.host)
