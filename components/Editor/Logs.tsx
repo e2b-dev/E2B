@@ -1,4 +1,4 @@
-import Ansi from "ansi-to-react"
+import Ansi from 'ansi-to-react'
 
 import { Log } from '.'
 import { Fragment } from 'react'
