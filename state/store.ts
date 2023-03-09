@@ -139,13 +139,13 @@ export function createStore(initialState?: projects, client?: SupabaseClient<Dat
         return null
       },
       removeItem: async () => {
-        const res = await client.from(projectsTable).update({ data: {} }).eq('project_id', initialState.id).single()
+        const res = await client.from(projectsTable).update({ data: {} }).eq('id', initialState.id).single()
         if (res.error) {
           throw res.error
         }
       },
       setItem: async (name, value) => {
-        const res = await client.from(projectsTable).update({ data: value as any }).eq('project_id', initialState.id)
+        const res = await client.from(projectsTable).update({ data: value as any }).eq('id', initialState.id)
         if (res.error) {
           throw res.error
         }

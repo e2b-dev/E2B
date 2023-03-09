@@ -11,25 +11,25 @@ export interface Database {
     Tables: {
       deployments: {
         Row: {
-          code: string | null
           created_at: string
           id: string
           logs: Json[] | null
           project_id: string
+          route_id: string | null
         }
         Insert: {
-          code?: string | null
           created_at?: string
           id?: string
           logs?: Json[] | null
           project_id: string
+          route_id?: string | null
         }
         Update: {
-          code?: string | null
           created_at?: string
           id?: string
           logs?: Json[] | null
           project_id?: string
+          route_id?: string | null
         }
       }
       projects: {
