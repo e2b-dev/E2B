@@ -1,0 +1,5 @@
+name = "cf-worker-template" # todo
+main = "./index.js"
+# route = ''
+compatibility_date = "2022-05-03"
+send_metrics = false

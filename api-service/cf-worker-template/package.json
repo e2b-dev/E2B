@@ -1,0 +1,16 @@
+{
+	"private": true,
+	"version": "0.0.0",
+	"scripts": {
+		"deploy": "wrangler publish index.js",
+		"dev": "wrangler dev index.js --local",
+		"test": "vitest"
+	},
+	"devDependencies": {
+		"vitest": "^0.24.5"
+	},
+	"dependencies": {
+		"wrangler": "^2.12.2",
+		"itty-router": "^3.0.11"
+	}
+}
