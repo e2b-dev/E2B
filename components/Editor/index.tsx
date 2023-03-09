@@ -84,6 +84,7 @@ function Editor({ project }: Props) {
       method,
     })
     console.log(response.code)
+    console.log(response.host)
   }
 
   return (

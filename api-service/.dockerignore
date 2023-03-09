@@ -7,3 +7,10 @@ __pycache__
 .pytest_cache
 dist
 .gitignore
+
+./cf-worker-template/node_modules
+./cf-worker-template/dist
+./cf-worker-template/README.md
+./cf-worker-template/.prettierrc
+./cf-worker-template/.editorconfig
+./cf-worker-template/.git

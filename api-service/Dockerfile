@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM nikolaik/python-nodejs
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -19,6 +19,16 @@ RUN --mount=type=cache,target=/home/.cache/pypoetry/cache \
     --mount=type=cache,target=/home/.cache/pypoetry/artifacts \
     poetry install --without dev --no-root --no-ansi --no-interaction
 
+# --mount requires DOCKER_BUILDKIT=1 -> didn't work locally for me (mlejva)
+# RUN target=/home/.cache/pypoetry/cache \
+#     target=/home/.cache/pypoetry/artifacts \
+#     poetry install --without dev --no-root --no-ansi --no-interaction
+
 COPY . ./
 
+
+WORKDIR /app/cf-worker-template
+RUN npm i --omit=dev
+
+WORKDIR /app
 CMD exec poetry run gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app
