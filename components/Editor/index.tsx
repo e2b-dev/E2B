@@ -57,7 +57,7 @@ function Editor({ project }: Props) {
   const changeRoute = store.use.changeRoute()
   const addRoute = store.use.addRoute()
 
-  const [deployedURL, setDeployedURL] = useState('')
+  const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
   const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
   const selectedRoute = routes.find(s => s.id === selectedRouteID)
 
@@ -83,13 +83,11 @@ function Editor({ project }: Props) {
 
   async function deploy() {
     if (!selectedRoute) return
-
-    const response = await generate({
+    setIsInitializingDeploy(true)
+    await generate({
       projectID: project.id,
       route: selectedRoute,
     })
-
-    setDeployedURL(response.url)
   }
 
   return (
@@ -190,24 +188,27 @@ function Editor({ project }: Props) {
                   setTimeout(() => setFocusedBlock({ index: selectedRoute.blocks.length }), 0)
                 }}
               />
-              <a
-                href={deployedURL}
-                className="
+              {deployment?.url &&
+                <a
+                  href={deployment.url}
+                  className="
                   mt-6
                   underline
                 "
-              >
-                <Text
-                  size={Text.size.S3}
-                  text={deployedURL.substring('https://'.length)}
-                />
-              </a>
+                >
+                  <Text
+                    text={deployment.url.substring('https://'.length)}
+                    size={Text.size.S3}
+                  />
+                </a>
+              }
             </div>
             <Logs
               deployStatus={deployment?.state}
+              isInitializingDeploy={isInitializingDeploy}
               logs={logs}
               deploy={deploy}
-              deployedURL={deployedURL}
+              deployedURL={deployment?.url}
             />
           </>
         }

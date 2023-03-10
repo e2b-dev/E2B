@@ -21,8 +21,6 @@ from codegen.db.base import Database
 def create_js_agent(
     db: Database,
     run_id: str,
-    project_id: str,
-    route_id: str,
     llm: BaseLLM,
     tools: List[BaseTool],
     callback_manager: Optional[BaseCallbackManager] = None,
@@ -43,7 +41,7 @@ def create_js_agent(
     cb_manager = SharedCallbackManager()
     cb_manager.set_handler(
         LoggerCallbackHandler(
-            db=db, run_id=run_id, project_id=project_id, route_id=route_id
+            db=db, run_id=run_id
         )
     )
     return AgentExecutor.from_agent_and_tools(

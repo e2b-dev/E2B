@@ -12,8 +12,9 @@ import DeployButton from './DeployButton'
 export interface Props {
   logs?: Log[]
   deploy: () => void
-  deployedURL: string
+  deployedURL?: string | null
   deployStatus?: deployment_state | null
+  isInitializingDeploy?: boolean
 }
 
 function Logs({
@@ -21,6 +22,7 @@ function Logs({
   deploy,
   deployedURL,
   deployStatus,
+  isInitializingDeploy,
 }: Props) {
 
   useEffect(function highlightCode() {
@@ -61,6 +63,7 @@ function Logs({
           />
           <DeployButton
             deploy={deploy}
+            isInitializingDeploy={isInitializingDeploy}
             deployStatus={deployStatus}
           />
         </div>

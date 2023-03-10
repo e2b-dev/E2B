@@ -11,16 +11,12 @@ from codegen.db.base import Database
 def generate_req_handler(
     db: Database,
     run_id: str,
-    project_id: str,
-    route_id: str,
     blocks: List[str],
     method: str,
 ) -> str:
     executor = create_js_agent(
         db=db,
         run_id=run_id,
-        project_id=project_id,
-        route_id=route_id,
         llm=OpenAI(temperature=0, max_tokens=1000),
         # llm=OpenAI(temperature=0, model_name='code-davinci-002', max_tokens=1000),
         # llm=OpenAIChat(temperature=0, max_tokens=1000),
