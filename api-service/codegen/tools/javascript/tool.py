@@ -5,7 +5,7 @@ from codegen.tools.javascript.eval import eval as js_eval
 
 
 class JavascriptEvalTool(BaseTool):
-    name = "JavaScript Code Execution"
+    name = "JavaScriptCodeExecution"
     description = (
         "JavaScript eval() function that can execute code. Use this to execute and evaluate javascript code. "
         "Input should be a valid javascript code. "

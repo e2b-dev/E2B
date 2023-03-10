@@ -19,6 +19,7 @@ function Sidebar({ children, side, className }: PropsWithChildren<Props>) {
         flex
         ${side === Side.Left ? 'w-[180px]' : 'w-[380px]'}
         border-slate-200
+        bg-white
         `,
         {
           'border-r': side === Side.Left,

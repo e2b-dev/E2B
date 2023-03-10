@@ -184,10 +184,24 @@ function Editor({ project }: Props) {
                 )}
               </div>
               <ConnectionLine className='min-h-[16px]' />
-              <AddBlockButton addBlock={() => {
-                addBlock(selectedRoute.id)
-                setTimeout(() => setFocusedBlock({ index: selectedRoute.blocks.length }), 0)
-              }} />
+              <AddBlockButton
+                addBlock={() => {
+                  addBlock(selectedRoute.id)
+                  setTimeout(() => setFocusedBlock({ index: selectedRoute.blocks.length }), 0)
+                }}
+              />
+              <a
+                href={deployedURL}
+                className="
+                  mt-6
+                  underline
+                "
+              >
+                <Text
+                  size={Text.size.S3}
+                  text={deployedURL.substring('https://'.length)}
+                />
+              </a>
             </div>
             <Logs
               deployStatus={deployment?.state}
