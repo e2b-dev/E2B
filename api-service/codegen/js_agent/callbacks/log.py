@@ -12,11 +12,13 @@ from codegen.db.base import Database
 class LoggerCallbackHandler(BaseCallbackHandler):
     """Callback Handler that prints to std out."""
 
-    def __init__(self, run_id: str, project_id: str, route_id: str, color: Optional[str] = None) -> None:
+    def __init__(
+        self, run_id: str, project_id: str, route_id: str, color: Optional[str] = None
+    ) -> None:
         """Initialize callback handler."""
 
-        url = os.environ.get('SUPABASE_URL')
-        key = os.environ.get('SUPABASE_KEY')
+        url = os.environ.get("SUPABASE_URL")
+        key = os.environ.get("SUPABASE_KEY")
         self.db = Database(url, key)
 
         self.run_id = run_id
@@ -28,8 +30,12 @@ class LoggerCallbackHandler(BaseCallbackHandler):
     def push_log(self, log: Optional[str]) -> None:
         if log is not None:
             self.logs.append(log)
-            self.db.push_logs(run_id=self.run_id,
-                              project_id=self.project_id, route_id=self.route_id, logs=self.logs)
+            self.db.push_logs(
+                run_id=self.run_id,
+                project_id=self.project_id,
+                route_id=self.route_id,
+                logs=self.logs,
+            )
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -56,14 +62,18 @@ class LoggerCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Print out that we are entering a chain."""
         class_name = serialized["name"]
+        db_log = f"**Entering new {class_name} chain...**"
+        self.push_log(db_log)
+
         log = f"\n\n\033[1m> Entering new {class_name} chain...\033[0m"
-        self.push_log(log)
         print(log)
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
+        db_log = "**Finished chain.**"
+        self.push_log(db_log)
+
         log = "\n\033[1m> Finished chain.\033[0m"
-        self.push_log(log)
         print(log)
 
     def on_chain_error(
@@ -85,9 +95,10 @@ class LoggerCallbackHandler(BaseCallbackHandler):
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
         """Run on agent action."""
+        db_log = action.log
+        self.push_log(db_log)
+
         c = color if color else self.color
-        log = get_colored_text(action.log, c)
-        self.push_log(log)
         print_text(action.log, color=c)
 
     def on_tool_end(
@@ -99,13 +110,13 @@ class LoggerCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
+
+        db_log = f"\n**{observation_prefix}**\n"
+        db_log += output
+        db_log += f"\n{llm_prefix}\n"
+        self.push_log(db_log)
+
         c = color if color else self.color
-
-        log = f"\n{observation_prefix}\n"
-        log += get_colored_text(output, c)
-        log += f"\n{llm_prefix}\n"
-        self.push_log(log)
-
         print_text(f"\n{observation_prefix}")
         print_text(output, color=c)
         print_text(f"\n{llm_prefix}")
@@ -124,20 +135,19 @@ class LoggerCallbackHandler(BaseCallbackHandler):
         **kwargs: Optional[str],
     ) -> None:
         """Run when agent ends."""
+
+        db_log = f"{text}\n{end}"
+        self.push_log(db_log)
+
         c = color if color else self.color
-
-        log = get_colored_text(text, c) + f"\n{end}"
-        self.push_log(log)
-
         print_text(text, color=c, end=end)
 
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Run on agent end."""
-        c = color if color else self.color
 
-        log = get_colored_text(finish.log, c) + "\n\n"
-        self.push_log(log)
+        db_log = f"{finish.log}\n\n"
+        self.push_log(db_log)
 
         print_text(finish.log, color=color if self.color else color, end="\n")

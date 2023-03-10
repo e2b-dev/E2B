@@ -7,6 +7,7 @@ import { useRouter } from 'next/router'
 import clsx from 'clsx'
 import { Toaster } from 'sonner'
 
+import 'highlight.js/styles/github-dark.css'
 import 'styles/global.css'
 
 import Header from 'components/Header'

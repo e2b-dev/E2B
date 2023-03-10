@@ -5,8 +5,8 @@ const router = Router()
 async function handlepostRequest(request) {
     const body = await request.json()
     const { email } = body
-    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    if (!emailRegex.test(email)) {
+    const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    if (!regex.test(String(email).toLowerCase())) {
         return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400 })
     }
     return new Response(JSON.stringify({ message: 'Ok' }))

@@ -1,4 +1,7 @@
-import Ansi from 'ansi-to-react'
+import { useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import hljs from 'highlight.js'
+// import Ansi from 'ansi-to-react'
 
 import { Log } from '.'
 import { Fragment } from 'react'
@@ -14,6 +17,11 @@ function Logs({
   logs,
   deploy,
 }: Props) {
+
+  useEffect(function highlightCode() {
+    hljs.highlightAll()
+  }, [logs])
+
   return (
     <Sidebar
       side={Sidebar.side.Right}
@@ -46,9 +54,10 @@ function Logs({
       ">
         {logs?.map((l, i) =>
           <Fragment key={i}>
-            <Ansi>
+            <ReactMarkdown>{l}</ReactMarkdown>
+            {/* <Ansi>
               {l}
-            </Ansi>
+            </Ansi> */}
             <hr />
           </Fragment>
         )}
