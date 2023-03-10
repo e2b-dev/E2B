@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import hljs from 'highlight.js'
-// import Ansi from 'ansi-to-react'
 
 import { Log } from '.'
 import { Fragment } from 'react'
@@ -60,10 +59,6 @@ function Logs({
             ">
               {l}
             </ReactMarkdown>
-            {/* <Ansi>
-              {l}
-            </Ansi> */}
-            {/* <hr /> */}
           </Fragment>
         )}
       </div>
