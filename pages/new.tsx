@@ -43,7 +43,6 @@ function NewProject() {
   const [err, setErr] = useState<string>()
   const router = useRouter()
 
-
   const {
     trigger: createProject,
   } = useSWRMutation('/api/project', handlePostProject)

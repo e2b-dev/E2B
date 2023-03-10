@@ -10,29 +10,33 @@ import { projects } from '@prisma/client'
 import { Database } from 'db/supabase'
 
 import { createStore } from './store'
+import { createSelectors } from './selectors'
 
-const storeContext = createContext<ReturnType<typeof createStore> | null>(null)
+type StoreType = ReturnType<typeof createStore>
+type SelectorsType = ReturnType<typeof createSelectors<StoreType>>
+
+const storeContext = createContext<SelectorsType | null>(null)
 
 export interface Props extends PropsWithChildren {
-  initialState?: projects
+  project: projects
   client: SupabaseClient<Database>
 }
 
 export function StoreProvider({
-  initialState,
+  project,
   client,
   children,
 }: Props) {
-  const store = useMemo(() => createStore(initialState, client), [initialState, client])
-
+  const store = useMemo(() => createStore(project, client), [project.id, project.data, client])
+  const selectors = createSelectors(store)
   return (
-    <storeContext.Provider value={store}>
+    <storeContext.Provider value={selectors}>
       {children}
     </storeContext.Provider>
   )
 }
 
-export function getStoreContext() {
+export function useStateStore() {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const ctx = useContext(storeContext)
 

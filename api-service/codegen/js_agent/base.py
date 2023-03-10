@@ -20,6 +20,7 @@ from codegen.js_agent.callbacks.log import LoggerCallbackHandler
 def create_js_agent(
     run_id: str,
     project_id: str,
+    route_id: str,
     llm: BaseLLM,
     tools: List[BaseTool],
     callback_manager: Optional[BaseCallbackManager] = None,
@@ -38,7 +39,9 @@ def create_js_agent(
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
 
     cb_manager = SharedCallbackManager()
-    cb_manager.set_handler(LoggerCallbackHandler(run_id=run_id, project_id=project_id))
+    cb_manager.set_handler(
+        LoggerCallbackHandler(run_id=run_id, project_id=project_id, route_id=route_id)
+    )
     return AgentExecutor.from_agent_and_tools(
         agent=agent, tools=tools, verbose=verbose, callback_manager=cb_manager
     )

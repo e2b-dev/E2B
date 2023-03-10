@@ -82,12 +82,15 @@ interface Props {
 function EditorPage({ project }: Props) {
   const client = useSupabaseClient<Database>()
 
+  console.log('rel2')
   return (
     <StoreProvider
       client={client}
-      initialState={project}
+      project={project}
     >
-      <Editor project={project} />
+      <Editor
+        project={project}
+      />
     </StoreProvider>
   )
 }

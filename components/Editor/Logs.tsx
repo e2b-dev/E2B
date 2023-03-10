@@ -1,13 +1,59 @@
+import Ansi from 'ansi-to-react'
+
 import { Log } from '.'
+import { Fragment } from 'react'
+import Button from 'components/Button'
+import Sidebar from 'components/Sidebar'
 
 export interface Props {
-  logs: Log[]
+  logs?: Log[]
+  deploy: () => void
 }
 
-function Logs({ logs }: Props) {
-
+function Logs({
+  logs,
+  deploy,
+}: Props) {
   return (
-    <div></div>
+    <Sidebar
+      side={Sidebar.side.Right}
+      className="
+        flex-col
+        min-h-0
+        flex
+        p-4
+        space-y-4
+        "
+    >
+      <div>
+        <Button
+          text="Deploy"
+          onClick={deploy}
+          variant={Button.variant.Full}
+        />
+
+      </div>
+      <div className="
+      flex
+      flex-col
+      flex-1
+      overflow-y-auto
+      text-xs
+      leading-4
+      break-words
+      whitespace-normal
+      space-y-2
+      ">
+        {logs?.map((l, i) =>
+          <Fragment key={i}>
+            <Ansi>
+              {l}
+            </Ansi>
+            <hr />
+          </Fragment>
+        )}
+      </div>
+    </Sidebar>
   )
 }
 

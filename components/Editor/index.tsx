@@ -1,38 +1,26 @@
-import { shallow } from 'zustand/shallow'
 import useSWRMutation from 'swr/mutation'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
 import { projects } from '@prisma/client'
 
-import { State, Block, methods, Method } from 'state/store'
-import { getStoreContext } from 'state/StoreProvider'
+import { Route, methods, Method } from 'state/store'
+import { useStateStore } from 'state/StoreProvider'
 import Select from 'components/Select'
-import { nanoid } from 'nanoid'
-import Button from 'components/Button'
 import Text from 'components/Text'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 
 import BlockEditor from './BlockEditor'
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
+import Logs from './Logs'
+import Routes from './Routes'
 
-// TODO: Prod api host
+// TODO: Prod API host
 const apiHost = process.env.NODE_ENV === 'development' ?
   'http://0.0.0.0:5000' :
   'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
 
-const selector = (state: State) => ({
-  blocks: state.blocks,
-  method: state.method,
-  addBlock: state.addBlock,
-  removeBlock: state.deleteBlock,
-  changeBlock: state.changeBlock,
-  changeMethod: state.changeMethod,
-})
-
-export interface Log {
-
-}
+export type Log = string
 
 export interface Props {
   project: projects
@@ -40,18 +28,19 @@ export interface Props {
 
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
-    blocks: Block[],
-    method: Method,
-  },
+    projectID: string,
+    route: Route,
+  }
 }) {
   return await fetch(url, {
     method: 'POST',
     body: JSON.stringify({
-      projectId: '460355b3',
-      blocks: arg.blocks.map(b => b.prompt),
-      method: arg.method.toLowerCase(),
+      projectID: arg.projectID,
+      routeID: arg.route.id,
+      blocks: arg.route.blocks.map(b => b.prompt),
+      method: arg.route.method.toLowerCase(),
+      route: arg.route.route,
     }),
-
     headers: {
       'Content-Type': 'application/json',
     },
@@ -59,27 +48,45 @@ async function handlePostGenerate(url: string, { arg }: {
 }
 
 function Editor({ project }: Props) {
-  const useStore = getStoreContext()
+  const store = useStateStore()
 
-  const deployment = useLatestDeployment(project)
+  const routes = store.use.routes()
+  const addBlock = store.use.addBlock()
+  const deleteBlock = store.use.deleteBlock()
+  const changeBlock = store.use.changeBlock()
+  const deleteRoute = store.use.deleteRoute()
+  const changeRoute = store.use.changeRoute()
+  const addRoute = store.use.addRoute()
+
+  const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
+  const selectedRoute = routes.find(s => s.id === selectedRouteID)
+
+  useEffect(function selectDefaultRoute() {
+    if (selectedRoute?.id || routes.length === 0) return
+    setSelectedRouteID(routes[0].id)
+  }, [routes, selectedRoute?.id])
+
+  function handleDeleteRoute(id: string) {
+    deleteRoute(id)
+    setSelectedRouteID(r => {
+      if (r === id) {
+        return routes.length > 0 ? routes[0].id : undefined
+      }
+    })
+  }
+
+  const deployment = useLatestDeployment(project, selectedRoute)
   const logs = deployment?.logs as Log[] | undefined
-
-  const {
-    addBlock,
-    blocks,
-    method,
-    changeBlock,
-    removeBlock,
-    changeMethod,
-  } = useStore(selector, shallow)
 
   const [focusedBlock, setFocusedBlock] = useState({ index: 0 })
   const { trigger: generate } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
 
   async function deploy() {
+    if (!selectedRoute) return
+
     const response = await generate({
-      blocks,
-      method,
+      projectID: project.id,
+      route: selectedRoute,
     })
     console.log(response.code)
     console.log(response.host)
@@ -90,9 +97,10 @@ function Editor({ project }: Props) {
       keyName="command+enter,control+enter,shift+command+enter,shift+control+enter"
       onKeyDown={(s) => {
         if (s === 'command+enter' || s === 'control+enter') {
+          if (!selectedRoute) return
           setFocusedBlock(b => {
-            if (blocks.length === 0 || b.index === blocks.length - 1) {
-              addBlock({ prompt: '', id: nanoid() })
+            if (selectedRoute.blocks.length === 0 || b.index === selectedRoute?.blocks.length - 1) {
+              addBlock(selectedRoute.id)
             }
             return { index: b.index + 1 }
           })
@@ -100,80 +108,93 @@ function Editor({ project }: Props) {
           setFocusedBlock(b => ({ index: b.index > 0 ? b.index - 1 : b.index }))
         }
       }}
-      filter={() => {
-        return true
-      }}
+      filter={() => true}
       allowRepeat
     >
       <div className="
-      flex
-      flex-1
-      p-8
-      flex-col
-      items-center
-      overflow-auto
-      scroller
-      relative
-    ">
-        <div className="flex items-center space-x-2">
-          <Text
-            text="Incoming"
-            className='font-bold'
-          />
-          <Select
-            direction="left"
-            selectedValue={{ key: method, title: method }}
-            values={methods.map(m => ({ key: m, title: m }))}
-            onChange={m => changeMethod(m.title as Method)}
-          />
-          <Text
-            text="Request"
-            className='font-bold'
-          />
-        </div>
-        <div className="
         flex
-        flex-col
-        items-center
-        transition-all
+        flex-row
+        overflow-hidden
+        flex-1
         ">
-          {blocks.map((b, i) =>
-            <Fragment
-              key={b.id}
-            >
-              <ConnectionLine className='h-4' />
-              <BlockEditor
-                block={b}
-                onDelete={() => {
-                  removeBlock(i)
-                  setTimeout(() => {
-                    if (i <= focusedBlock.index) {
-                      setFocusedBlock(b => ({ index: b.index - 1 }))
-                    } else {
-                      setFocusedBlock(b => ({ index: b.index }))
-                    }
-                  }, 0)
-                }}
-                onChange={(b) => changeBlock(i, b)}
-                index={i}
-                focus={focusedBlock}
-                onFocus={() => setFocusedBlock({ index: i })}
-              />
-            </Fragment>
-          )}
-        </div>
-        <ConnectionLine className='min-h-[16px]' />
-        <AddBlockButton addBlock={(block) => {
-          addBlock(block)
-          setTimeout(() => setFocusedBlock({ index: blocks.length }), 0)
-        }} />
-        <div className="fixed right-3 top-14">
-          <Button
-            text="Deploy"
-            onClick={deploy}
-            variant={Button.variant.Full}
-          />
-        </div>
+        <Routes
+          routes={routes}
+          selectRoute={setSelectedRouteID}
+          selectedRouteID={selectedRoute?.id}
+          deleteRoute={handleDeleteRoute}
+          addRoute={addRoute}
+        />
+        {selectedRoute &&
+          <>
+            <div className="
+              flex
+              flex-1
+              p-8
+              flex-col
+              items-center
+              overflow-auto
+              scroller
+              relative
+            ">
+              <div className="flex items-center space-x-2">
+                <Text
+                  text="Incoming"
+                  className='font-bold'
+                />
+                <Select
+                  direction="left"
+                  selectedValue={{ key: selectedRoute.method, title: selectedRoute.method.toUpperCase() }}
+                  values={methods.map(m => ({ key: m, title: m.toUpperCase() }))}
+                  onChange={m => changeRoute(selectedRoute.id, { method: m.key as Method })}
+                />
+                <Text
+                  text="Request"
+                  className='font-bold'
+                />
+              </div>
+              <div className="
+                flex
+                flex-col
+                items-center
+                transition-all
+                ">
+                {selectedRoute.blocks.map((b, i) =>
+                  <Fragment
+                    key={b.id}
+                  >
+                    <ConnectionLine className='h-4' />
+                    <BlockEditor
+                      block={b}
+                      onDelete={() => {
+                        deleteBlock(selectedRoute.id, i)
+                        setTimeout(() => {
+                          if (i <= focusedBlock.index) {
+                            setFocusedBlock(b => ({ index: b.index - 1 }))
+                          } else {
+                            setFocusedBlock(b => ({ index: b.index }))
+                          }
+                        }, 0)
+                      }}
+                      onChange={(b) => changeBlock(selectedRoute.id, i, b)}
+                      index={i}
+                      focus={focusedBlock}
+                      onFocus={() => setFocusedBlock({ index: i })}
+                    />
+                  </Fragment>
+                )}
+              </div>
+              <ConnectionLine className='min-h-[16px]' />
+              <AddBlockButton addBlock={() => {
+                addBlock(selectedRoute.id)
+                setTimeout(() => setFocusedBlock({ index: selectedRoute.blocks.length }), 0)
+              }} />
+            </div>
+            <Logs
+              logs={logs}
+              deploy={deploy}
+            />
+          </>
+        }
       </div>
     </Hotkeys>
   )

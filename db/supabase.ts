@@ -11,25 +11,28 @@ export interface Database {
     Tables: {
       deployments: {
         Row: {
-          code: string | null
           created_at: string
           id: string
           logs: Json[] | null
           project_id: string
+          route_id: string
+          state: Database["public"]["Enums"]["deployment_state"] | null
         }
         Insert: {
-          code?: string | null
           created_at?: string
           id?: string
           logs?: Json[] | null
           project_id: string
+          route_id: string
+          state?: Database["public"]["Enums"]["deployment_state"] | null
         }
         Update: {
-          code?: string | null
           created_at?: string
           id?: string
           logs?: Json[] | null
           project_id?: string
+          route_id?: string
+          state?: Database["public"]["Enums"]["deployment_state"] | null
         }
       }
       projects: {
@@ -100,7 +103,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      deployment_state: "generating" | "deploying" | "finished" | "error"
     }
     CompositeTypes: {
       [_ in never]: never

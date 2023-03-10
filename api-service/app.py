@@ -30,13 +30,19 @@ def health():
 def generate():
     body = request.json
 
-    project_id = body["projectId"]
+    project_id = body["projectID"]
+    route_id = body["routeID"]
     blocks = body["blocks"]
     method = body["method"]
+    route = body["route"]
 
     final_prompt, js_code = generate_req_handler(
-        project_id=project_id, blocks=blocks, method=method
+        project_id=project_id, route_id=route_id, blocks=blocks, method=method
     )
+
+    # TODO: Change deployments.state field in db to "deploying" 
+    # and after finishing deploying to "finished" (or "error")
+    # (use Database.update_state from codegen/db/base)
 
     cf_worker_dir_path = (
         os.path.abspath(os.path.dirname(__file__)) + "/cf-worker-template"
