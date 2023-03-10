@@ -1,9 +1,16 @@
 import os
-from codegen.base import generate_req_handler
-from flask import Flask, request
-from flask_cors import CORS
+import uuid
 import subprocess
 
+from flask import Flask, request
+from flask_cors import CORS
+
+from codegen.base import generate_req_handler
+from codegen.db.base import Database, DeploymentState
+
+url = os.environ.get("SUPABASE_URL")
+key = os.environ.get("SUPABASE_KEY")
+db = Database(url, key)
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +37,7 @@ def health():
 def generate():
     body = request.json
 
+    run_id = str(uuid.uuid4())
     project_id = body["projectID"]
     route_id = body["routeID"]
     blocks = body["blocks"]
@@ -37,12 +45,16 @@ def generate():
     route = body["route"]
 
     final_prompt, js_code = generate_req_handler(
-        project_id=project_id, route_id=route_id, blocks=blocks, method=method
+        run_id=run_id,
+        db=db,
+        project_id=project_id,
+        route_id=route_id,
+        blocks=blocks,
+        method=method,
     )
 
-    # TODO: Change deployments.state field in db to "deploying" 
-    # and after finishing deploying to "finished" (or "error")
-    # (use Database.update_state from codegen/db/base)
+    # TODO: Change deployments.state field in db to "deploying"
+    db.update_state(run_id=run_id, state=DeploymentState.Deploying)
 
     cf_worker_dir_path = (
         os.path.abspath(os.path.dirname(__file__)) + "/cf-worker-template"
@@ -69,12 +81,13 @@ def generate():
     with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
         print(proc.stdout.read().decode())
 
-    # TODO: Report back the URL of deployed API
+    db.update_state(run_id=run_id, state=DeploymentState.Finished)
 
+    # TODO: Report back the URL of deployed API
     return {
         "code": js_code.strip("`").strip(),
         "prompt": final_prompt,
-        "host": f"https://{project_id}.devbook.workers.dev",
+        "url": f"https://{project_id}.devbook.workers.dev",
     }
 
 

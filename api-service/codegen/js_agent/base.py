@@ -12,12 +12,14 @@ from langchain.tools.base import BaseTool
 
 # from codegen.tools.javascript.tool import JavascriptEvalTool
 from codegen.js_agent.callbacks.log import LoggerCallbackHandler
+from codegen.db.base import Database
 
 # from js_agent.prompt import PREFIX
 # from tools.javascript.tool import JavascriptEvalTool
 
 
 def create_js_agent(
+    db: Database,
     run_id: str,
     project_id: str,
     route_id: str,
@@ -40,7 +42,9 @@ def create_js_agent(
 
     cb_manager = SharedCallbackManager()
     cb_manager.set_handler(
-        LoggerCallbackHandler(run_id=run_id, project_id=project_id, route_id=route_id)
+        LoggerCallbackHandler(
+            db=db, run_id=run_id, project_id=project_id, route_id=route_id
+        )
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent, tools=tools, verbose=verbose, callback_manager=cb_manager
