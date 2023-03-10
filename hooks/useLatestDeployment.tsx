@@ -21,11 +21,12 @@ export function useLatestDeployment(project: projects, route?: Route) {
         .select('*')
         .eq('project_id', project.id)
         .eq('route_id', route.id)
-        .order('created_at')
+        .order('created_at', { ascending: false })
         .limit(1)
         .single()
 
       if (deployment.error) return
+      console.log(deployment.data)
       setInitDeployment(deployment.data as unknown as deployments)
     }())
   }, [client, project.id, route?.id])
