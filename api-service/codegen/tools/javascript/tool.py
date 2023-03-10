@@ -1,8 +1,6 @@
 """A tool for running javascript code in eval() on remote endpoint"""
 
 from langchain.tools.base import BaseTool
-
-# from tools.javascript.eval import eval as js_eval
 from codegen.tools.javascript.eval import eval as js_eval
 
 
@@ -14,7 +12,7 @@ class JavascriptEvalTool(BaseTool):
     )
 
     def _run(self, query: str) -> str:
-        query = query.strip().strip('`')
+        query = query.strip().strip("`")
         return js_eval(query)
 
     async def _arun(self, query: str) -> str:

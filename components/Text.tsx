@@ -22,7 +22,14 @@ const Sizes = {
   [Size.S3]: 'text-xs space-x-1',
 }
 
-function Text({ className, text, size = Size.S2, icon, onClick, suppressHydrationWarning }: Props) {
+function Text({
+  className,
+  text,
+  size = Size.S2,
+  icon,
+  onClick,
+  suppressHydrationWarning,
+}: Props) {
   const classes = clsx(
     'flex',
     'flex-row',
