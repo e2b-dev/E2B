@@ -1,17 +1,23 @@
 from typing import List
-import uuid
 
 from langchain.llms.openai import OpenAIChat, OpenAI
 from codegen.tools.javascript.tool import JavascriptEvalTool
 from codegen.tools.documentation.tool import ReadDocumentation
 from codegen.js_agent.base import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX
+from codegen.db.base import Database
 
 
-def generate_req_handler(project_id: str, route_id: str, blocks: List[str], method: str) -> str:
-    run_id = str(uuid.uuid4())
-
+def generate_req_handler(
+    db: Database,
+    run_id: str,
+    project_id: str,
+    route_id: str,
+    blocks: List[str],
+    method: str,
+) -> str:
     executor = create_js_agent(
+        db=db,
         run_id=run_id,
         project_id=project_id,
         route_id=route_id,

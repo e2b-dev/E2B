@@ -6,15 +6,18 @@ import { Log } from '.'
 import { Fragment } from 'react'
 import Button from 'components/Button'
 import Sidebar from 'components/Sidebar'
+import Text from 'components/Text'
 
 export interface Props {
   logs?: Log[]
   deploy: () => void
+  deployedURL: string
 }
 
 function Logs({
   logs,
   deploy,
+  deployedURL,
 }: Props) {
 
   useEffect(function highlightCode() {
@@ -32,13 +35,28 @@ function Logs({
         space-y-4
         "
     >
-      <div>
+      <div className="
+        flex
+        items-center
+        justify-start
+        space-x-2
+      ">
         <Button
           text="Deploy"
           onClick={deploy}
           variant={Button.variant.Full}
         />
-
+        <a
+          href={deployedURL}
+          className="
+            underline
+          "
+        >
+          <Text
+            size={Text.size.S3}
+            text={deployedURL.substring('https://'.length)}
+          />
+        </a>
       </div>
       <div className="
       max-w-full

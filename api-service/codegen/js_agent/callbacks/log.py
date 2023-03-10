@@ -1,5 +1,4 @@
 from typing import List, Dict, Optional, Any, Union
-import os
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text, get_colored_text
@@ -13,13 +12,16 @@ class LoggerCallbackHandler(BaseCallbackHandler):
     """Callback Handler that prints to std out."""
 
     def __init__(
-        self, run_id: str, project_id: str, route_id: str, color: Optional[str] = None
+        self,
+        db: Database,
+        run_id: str,
+        project_id: str,
+        route_id: str,
+        color: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
 
-        url = os.environ.get("SUPABASE_URL")
-        key = os.environ.get("SUPABASE_KEY")
-        self.db = Database(url, key)
+        self.db = db
 
         self.run_id = run_id
         self.route_id = route_id
@@ -62,7 +64,7 @@ class LoggerCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Print out that we are entering a chain."""
         class_name = serialized["name"]
-        db_log = f"**Entering new {class_name} chain...**\n\n---\n"
+        db_log = f"**Entering new {class_name} chain...**\n\n---"
         self.push_log(db_log)
 
         log = f"\n\n\033[1m> Entering new {class_name} chain...\033[0m"
@@ -111,16 +113,16 @@ class LoggerCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """If not the final action, print out observation."""
 
-        if output:
-            db_log = f"\n{observation_prefix}\n\n---"
-            db_log += f"\noutput\n\n---\n"
-            db_log += f"\n{llm_prefix}\n"
-            self.push_log(db_log)
+        db_log = f"\n{observation_prefix}\n\n---"
+        db_log += f"\n{output}\n\n---\n"
+        db_log += f"\n{llm_prefix}\n"
+        self.push_log(db_log)
 
-            c = color if color else self.color
-            print_text(f"\n{observation_prefix}")
-            print_text(output, color=c)
-            print_text(f"\n{llm_prefix}")
+        c = color if color else self.color
+        print_text(f"\n{observation_prefix}")
+        print_text(output, color=c)
+        print_text(f"\n{llm_prefix}")
+        # if output:
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -137,7 +139,7 @@ class LoggerCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when agent ends."""
 
-        db_log = f"{text}\n{end}\n\n---\n"
+        db_log = f"{text}\n{end}\n\n---"
         self.push_log(db_log)
 
         c = color if color else self.color
@@ -148,7 +150,7 @@ class LoggerCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run on agent end."""
 
-        db_log = f"{finish.log}\n\n---\n"
+        db_log = f"{finish.log}\n\n---"
         self.push_log(db_log)
 
         print_text(finish.log, color=color if self.color else color, end="\n")

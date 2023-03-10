@@ -58,6 +58,7 @@ function Editor({ project }: Props) {
   const changeRoute = store.use.changeRoute()
   const addRoute = store.use.addRoute()
 
+  const [deployedURL, setDeployedURL] = useState('')
   const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
   const selectedRoute = routes.find(s => s.id === selectedRouteID)
 
@@ -88,8 +89,8 @@ function Editor({ project }: Props) {
       projectID: project.id,
       route: selectedRoute,
     })
-    console.log(response.code)
-    console.log(response.host)
+
+    setDeployedURL(response.url)
   }
 
   return (
@@ -192,6 +193,7 @@ function Editor({ project }: Props) {
             <Logs
               logs={logs}
               deploy={deploy}
+              deployedURL={deployedURL}
             />
           </>
         }
