@@ -10,7 +10,7 @@ async function handlepostRequest(request) {
         return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400 })
     }
     // save email to Supabase DB
-    // respond with "Ok" message in JSON
+    // respond with "Ok" message
     return new Response(JSON.stringify({ message: 'Ok' }), { status: 200 })
 }
 
