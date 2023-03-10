@@ -3,15 +3,16 @@ import { Router } from 'itty-router'
 const router = Router()
 
 async function handlepostRequest(request) {
-    const body = await request.json()
-    const { email } = body
-    const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    if (!regex.test(String(email).toLowerCase())) {
-        return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400 })
+    const { value, from, to } = request.json();
+    const app_id = "79d294dc12da4ff4921bb943b1a7a45c";
+    const url = `https://openexchangerates.org/api/convert/${value}/${from}/${to}?app_id=${app_id}`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return new Response(JSON.stringify(data));
+    } catch (err) {
+        return new Response(JSON.stringify(err));
     }
-    // save email to Supabase DB
-    // respond with "Ok" message
-    return new Response(JSON.stringify({ message: 'Ok' }), { status: 200 })
 }
 
 router.post('/', handlepostRequest)

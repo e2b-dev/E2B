@@ -44,6 +44,8 @@ def generate():
     method = body["method"]
     route = body["route"]
 
+    db.update_state(run_id=run_id, state=DeploymentState.Generating)
+
     final_prompt, js_code = generate_req_handler(
         run_id=run_id,
         db=db,
@@ -83,11 +85,14 @@ def generate():
 
     db.update_state(run_id=run_id, state=DeploymentState.Finished)
 
+    api_url = f"https://{project_id}.devbook.workers.dev"
+    db.update_url(run_id=run_id, url=api_url)
+
     # TODO: Report back the URL of deployed API
     return {
         "code": js_code.strip("`").strip(),
         "prompt": final_prompt,
-        "url": f"https://{project_id}.devbook.workers.dev",
+        "url": api_url,
     }
 
 

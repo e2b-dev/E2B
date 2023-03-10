@@ -24,7 +24,6 @@ class Database:
                     "logs": logs,
                     "project_id": project_id,
                     "route_id": route_id,
-                    "state": DeploymentState.Generating.value,
                 },
             ).execute()
 
@@ -32,5 +31,12 @@ class Database:
         self.client.table("deployments").update(
             {
                 "state": state.value,
+            }
+        ).eq("id", run_id).execute()
+
+    def update_url(self, run_id: str, url: str) -> None:
+        self.client.table("deployments").update(
+            {
+                "url": url,
             }
         ).eq("id", run_id).execute()
