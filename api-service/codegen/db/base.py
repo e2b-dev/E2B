@@ -9,6 +9,7 @@ class DeploymentState(Enum):
     Finished = "finished"
     Error = "error"
 
+deploymentsTable = "deployments"
 
 class Database:
     def __init__(self, url: str, key: str):
@@ -18,7 +19,7 @@ class Database:
         self, run_id: str, project_id: str, route_id: str, logs: List[str]
     ) -> None:
         if len(logs) > 0:
-            self.client.table("deployments").upsert(
+            self.client.table(deploymentsTable).upsert(
                 json={
                     "id": run_id,
                     "logs": logs,
@@ -29,7 +30,7 @@ class Database:
             ).execute()
 
     def update_state(self, run_id: str, state: DeploymentState) -> None:
-        self.client.table("deployments").update(
+        self.client.table(deploymentsTable).update(
             {
                 "state": state.value,
             }
