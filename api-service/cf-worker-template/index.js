@@ -3,13 +3,11 @@ import { Router } from 'itty-router'
 const router = Router()
 
 async function handlepostRequest(request) {
-    const body = await request.json()
-    const { email } = body
-    const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    if (!regex.test(String(email).toLowerCase())) {
-        return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400 })
+    const { email } = await request.json();
+    if (!/^\S+@\S+$/.test(email)) {
+        return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400 });
     }
-    return new Response(JSON.stringify({ message: 'Ok' }))
+    return new Response(JSON.stringify({ message: 'Ok' }));
 }
 
 router.post('/', handlepostRequest)

@@ -58,7 +58,7 @@ function Logs({
             {/* <Ansi>
               {l}
             </Ansi> */}
-            <hr />
+            {/* <hr /> */}
           </Fragment>
         )}
       </div>
