@@ -44,18 +44,15 @@ def generate():
     method = body["method"]
     route = body["route"]
 
-    db.update_state(run_id=run_id, state=DeploymentState.Generating)
+    db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
 
     final_prompt, js_code = generate_req_handler(
         run_id=run_id,
         db=db,
-        project_id=project_id,
-        route_id=route_id,
         blocks=blocks,
         method=method,
     )
 
-    # TODO: Change deployments.state field in db to "deploying"
     db.update_state(run_id=run_id, state=DeploymentState.Deploying)
 
     cf_worker_dir_path = (

@@ -6,13 +6,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import clsx from 'clsx'
 import { Toaster } from 'sonner'
+import { projects } from '@prisma/client'
 
-import 'highlight.js/styles/github-dark.css'
 import 'styles/global.css'
 
 import Header from 'components/Header'
 import { Database } from 'db/supabase'
-import { projects } from '@prisma/client'
 
 const inter = Inter({
   subsets: ['latin'],

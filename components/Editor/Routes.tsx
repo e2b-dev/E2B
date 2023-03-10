@@ -1,10 +1,11 @@
+import clsx from 'clsx'
+import { Plus } from 'lucide-react'
 
 import { Route } from 'state/store'
 import Button from 'components/Button'
 import Sidebar from 'components/Sidebar'
 import Text from 'components/Text'
 import DeleteButton from 'components/DeleteButton'
-import clsx from 'clsx'
 
 export interface Props {
   routes: Route[]
@@ -28,15 +29,25 @@ function Routes({
         flex-col
         min-h-0
         flex
-        p-4
-        space-y-4
         "
     >
-      <div>
+      <div className="
+        flex
+        justify-between
+        py-2
+        px-4
+        border-b
+      ">
+        <Text
+          text="Routes"
+          className="font-medium"
+          size={Text.size.S2}
+        />
         <Button
-          text="New route"
+          text="New"
           onClick={addRoute}
-          variant={Button.variant.Full}
+          variant={Button.variant.Outline}
+          icon={<Plus size="16px" />}
         />
       </div>
       <div className="
@@ -44,9 +55,11 @@ function Routes({
       flex-col
       overflow-y-auto
       leading-4
+      px-4
+      py-2
       break-words
       whitespace-normal
-      space-y-2
+      space-y-0.5
       ">
         {routes.map(r =>
           <div

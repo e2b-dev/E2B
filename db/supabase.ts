@@ -17,6 +17,7 @@ export interface Database {
           project_id: string
           route_id: string
           state: Database["public"]["Enums"]["deployment_state"] | null
+          url: string | null
         }
         Insert: {
           created_at?: string
@@ -25,6 +26,7 @@ export interface Database {
           project_id: string
           route_id: string
           state?: Database["public"]["Enums"]["deployment_state"] | null
+          url?: string | null
         }
         Update: {
           created_at?: string
@@ -33,6 +35,7 @@ export interface Database {
           project_id?: string
           route_id?: string
           state?: Database["public"]["Enums"]["deployment_state"] | null
+          url?: string | null
         }
       }
       projects: {

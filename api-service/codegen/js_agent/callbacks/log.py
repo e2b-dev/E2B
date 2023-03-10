@@ -15,8 +15,6 @@ class LoggerCallbackHandler(BaseCallbackHandler):
         self,
         db: Database,
         run_id: str,
-        project_id: str,
-        route_id: str,
         color: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
@@ -24,8 +22,6 @@ class LoggerCallbackHandler(BaseCallbackHandler):
         self.db = db
 
         self.run_id = run_id
-        self.route_id = route_id
-        self.project_id = project_id
         self.color = color
         self.logs = []
 
@@ -34,8 +30,6 @@ class LoggerCallbackHandler(BaseCallbackHandler):
             self.logs.append(log)
             self.db.push_logs(
                 run_id=self.run_id,
-                project_id=self.project_id,
-                route_id=self.route_id,
                 logs=self.logs,
             )
 

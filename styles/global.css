@@ -1,3 +1,5 @@
+@import 'highlight.js/styles/a11y-dark.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,6 +21,7 @@
     @apply bg-slate-50;
     @apply text-slate-600 antialiased;
     text-rendering: optimizeLegibility;
+    overflow: overlay;
   }
 
   #__next {
@@ -35,8 +38,28 @@
     scrollbar-width: none;
     resize: none;
   }
+
+  code {
+    @apply rounded;
+    color-scheme: dark;
+  }
 }
 
 .no-scroller::-webkit-scrollbar {
   display: none;
+}
+
+code::-webkit-scrollbar {
+  /* display: none; */
+  scrollbar-track-color: transparent;
+  background-color: transparent;
+  width: 8px;
+  height: 8px;
+}
+
+code::-webkit-scrollbar-thumb {
+  @apply bg-gray-600;
+  width: 6px;
+  height: 6px;
+  @apply rounded-full;
 }
