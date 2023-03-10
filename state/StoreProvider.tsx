@@ -18,19 +18,17 @@ type SelectorsType = ReturnType<typeof createSelectors<StoreType>>
 const storeContext = createContext<SelectorsType | null>(null)
 
 export interface Props extends PropsWithChildren {
-  initialState?: projects
+  project: projects
   client: SupabaseClient<Database>
 }
 
 export function StoreProvider({
-  initialState,
+  project,
   client,
   children,
 }: Props) {
-  const store = useMemo(() => createStore(initialState, client), [initialState, client])
+  const store = useMemo(() => createStore(project, client), [project.id, project.data, client])
   const selectors = createSelectors(store)
-
-  const s = store(selectors.use.changeRoute)
   return (
     <storeContext.Provider value={selectors}>
       {children}

@@ -1,3 +1,3 @@
 export function getProjectURL(projectID: string) {
-  return `${projectID}.api.usedevbook.com`
+  return `${projectID}.devbook.workers.dev`
 }

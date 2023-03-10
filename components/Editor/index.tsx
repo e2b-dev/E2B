@@ -1,13 +1,11 @@
 import useSWRMutation from 'swr/mutation'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
 import { projects } from '@prisma/client'
-import { useRouter } from 'next/router'
 
 import { Route, methods, Method } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
 import Select from 'components/Select'
-import Button from 'components/Button'
 import Text from 'components/Text'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 
@@ -50,18 +48,32 @@ async function handlePostGenerate(url: string, { arg }: {
 }
 
 function Editor({ project }: Props) {
-  const router = useRouter()
   const store = useStateStore()
 
   const routes = store.use.routes()
   const addBlock = store.use.addBlock()
   const deleteBlock = store.use.deleteBlock()
   const changeBlock = store.use.changeBlock()
+  const deleteRoute = store.use.deleteRoute()
   const changeRoute = store.use.changeRoute()
+  const addRoute = store.use.addRoute()
 
-  const selectedRoute =
-    routes.find(r => r.id === router.query.route) ||
-    (routes.length > 0 ? routes[0] : undefined)
+  const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
+  const selectedRoute = routes.find(s => s.id === selectedRouteID)
+
+  useEffect(function selectDefaultRoute() {
+    if (selectedRoute?.id || routes.length === 0) return
+    setSelectedRouteID(routes[0].id)
+  }, [routes, selectedRoute?.id])
+
+  function handleDeleteRoute(id: string) {
+    deleteRoute(id)
+    setSelectedRouteID(r => {
+      if (r === id) {
+        return routes.length > 0 ? routes[0].id : undefined
+      }
+    })
+  }
 
   const deployment = useLatestDeployment(project, selectedRoute)
   const logs = deployment?.logs as Log[] | undefined
@@ -96,28 +108,34 @@ function Editor({ project }: Props) {
           setFocusedBlock(b => ({ index: b.index > 0 ? b.index - 1 : b.index }))
         }
       }}
-      filter={() => {
-        return true
-      }}
+      filter={() => true}
       allowRepeat
     >
-      <div className="flex flex-row flex-1 overflow-hidden">
+      <div className="
+        flex
+        flex-row
+        overflow-hidden
+        flex-1
+        ">
         <Routes
           routes={routes}
-          projectID={project.id}
+          selectRoute={setSelectedRouteID}
+          selectedRouteID={selectedRoute?.id}
+          deleteRoute={handleDeleteRoute}
+          addRoute={addRoute}
         />
         {selectedRoute &&
           <>
             <div className="
-      flex
-      flex-1
-      p-8
-      flex-col
-      items-center
-      overflow-auto
-      scroller
-      relative
-    ">
+              flex
+              flex-1
+              p-8
+              flex-col
+              items-center
+              overflow-auto
+              scroller
+              relative
+            ">
               <div className="flex items-center space-x-2">
                 <Text
                   text="Incoming"
@@ -135,11 +153,11 @@ function Editor({ project }: Props) {
                 />
               </div>
               <div className="
-        flex
-        flex-col
-        items-center
-        transition-all
-        ">
+                flex
+                flex-col
+                items-center
+                transition-all
+                ">
                 {selectedRoute.blocks.map((b, i) =>
                   <Fragment
                     key={b.id}
@@ -166,19 +184,15 @@ function Editor({ project }: Props) {
                 )}
               </div>
               <ConnectionLine className='min-h-[16px]' />
-              <AddBlockButton addBlock={(block) => {
-                addBlock(selectedRoute.id, block)
+              <AddBlockButton addBlock={() => {
+                addBlock(selectedRoute.id)
                 setTimeout(() => setFocusedBlock({ index: selectedRoute.blocks.length }), 0)
               }} />
-              <div className="fixed right-3 top-14">
-                <Button
-                  text="Deploy"
-                  onClick={deploy}
-                  variant={Button.variant.Full}
-                />
-              </div>
             </div>
-            {logs && <Logs logs={logs} />}
+            <Logs
+              logs={logs}
+              deploy={deploy}
+            />
           </>
         }
       </div>

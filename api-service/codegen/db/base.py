@@ -1,5 +1,12 @@
 from typing import List
+from enum import Enum
 from supabase import create_client
+
+class DeploymentState(Enum):
+    Generating = "generating"
+    Deploying = "deploying"
+    Finished = "finished"
+    Error = "error"
 
 class Database():
   def __init__(self, url: str, key: str):
@@ -13,5 +20,14 @@ class Database():
           'logs': logs,
           'project_id': project_id,
           'route_id': route_id,
+          'state': DeploymentState.Generating,
         },
       ).execute()
+
+  def update_state(self, run_id: str, state: DeploymentState) -> None:
+    self.client.table('deployments').update(
+      json={
+        'id': run_id,
+        'state': state,
+      },
+    ).execute()

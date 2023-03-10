@@ -1,81 +1,82 @@
-import Link from 'next/link'
-import { useRouter } from 'next/router'
-import useSWRMutation from 'swr/mutation'
 
 import { Route } from 'state/store'
 import Button from 'components/Button'
-
-interface PostRouteBody {
-  projectID: string
-}
-
-async function handlePostRoute(url: string, { arg }: { arg: PostRouteBody }) {
-  return await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(arg),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then(r => r.json())
-}
+import Sidebar from 'components/Sidebar'
+import Text from 'components/Text'
+import DeleteButton from 'components/DeleteButton'
+import clsx from 'clsx'
 
 export interface Props {
   routes: Route[]
-  projectID: string
+  selectRoute: (id: string) => void
+  selectedRouteID?: string
+  addRoute: () => void
+  deleteRoute: (id: string) => void
 }
 
-function Routes({ routes, projectID }: Props) {
-  const router = useRouter()
-
-  const {
-    trigger: createRoute,
-  } = useSWRMutation('/api/route', handlePostRoute)
-
-  async function handleCreateRoute() {
-    await createRoute({
-      projectID,
-    })
-  }
-
+function Routes({
+  routes,
+  selectedRouteID,
+  addRoute,
+  deleteRoute,
+  selectRoute,
+}: Props) {
   return (
-    <div>
-      <Button
-        text="New route"
-        onClick={handleCreateRoute}
-      />
+    <Sidebar
+      side={Sidebar.side.Left}
+      className="
+        flex-col
+        min-h-0
+        flex
+        p-4
+        space-y-4
+        "
+    >
+      <div>
+        <Button
+          text="New route"
+          onClick={addRoute}
+          variant={Button.variant.Full}
+        />
+      </div>
       <div className="
       flex
       flex-col
       overflow-y-auto
-      text-xs
       leading-4
       break-words
-      w-[250px]
       whitespace-normal
       space-y-2
-      p-4
-    ">
-        {routes.map(r => {
-          return <Link
+      ">
+        {routes.map(r =>
+          <div
             key={r.id}
-            href={{
-              pathname: router.pathname,
-              query: {
-                ...router.query,
-                route: r.id,
+            className={clsx(`
+              flex
+              items-center
+              justify-between
+              hover:text-green-800
+            `,
+              {
+                'text-green-800': selectedRouteID === r.id,
               }
-            }}
-            shallow
+            )}
           >
-            <div className="flex space-x-2 font-bold">
-              {r.method}
-              {r.route}
-            </div>
-          </Link>
-        }
+            <button
+              onClick={() => selectRoute(r.id)}
+            >
+              <Text
+                className="font-mono"
+                text={r.method.toUpperCase() + ' ' + r.route}
+              />
+            </button>
+            <DeleteButton
+              onDelete={() => deleteRoute(r.id)}
+            />
+          </div>
         )}
       </div>
-    </div>
+    </Sidebar>
   )
 }
 

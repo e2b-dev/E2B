@@ -252,12 +252,13 @@ model users_teams {
 }
 
 model deployments {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz(6)
+  id         String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime          @default(now()) @db.Timestamptz(6)
   logs       Json[]
   project_id String
-  route_id   String?
-  projects   projects @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  route_id   String
+  state      deployment_state?
+  projects   projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -294,4 +295,13 @@ enum factor_type {
   webauthn
 
   @@schema("auth")
+}
+
+enum deployment_state {
+  generating
+  deploying
+  finished
+  error
+
+  @@schema("public")
 }

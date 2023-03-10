@@ -1,20 +1,14 @@
 import clsx from 'clsx'
 import { Plus } from 'lucide-react'
-import { nanoid } from 'nanoid'
-
-import { Block } from 'state/store'
 
 export interface Props {
-  addBlock: (block: Block) => void
+  addBlock: () => void
 }
 
 function AddBlockButton({ addBlock }: Props) {
   return (
     <button
-      onMouseDown={() => addBlock({
-        prompt: '',
-        id: nanoid(),
-      })}
+      onMouseDown={addBlock}
       type="submit"
       className={clsx(
         'items-center',

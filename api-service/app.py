@@ -40,6 +40,10 @@ def generate():
         project_id=project_id, route_id=route_id, blocks=blocks, method=method
     )
 
+    # TODO: Change deployments.state field in db to "deploying" 
+    # and after finishing deploying to "finished" (or "error")
+    # (use Database.update_state from codegen/db/base)
+
     cf_worker_dir_path = (
         os.path.abspath(os.path.dirname(__file__)) + "/cf-worker-template"
     )
