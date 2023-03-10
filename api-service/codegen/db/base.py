@@ -20,7 +20,7 @@ class Database():
           'logs': logs,
           'project_id': project_id,
           'route_id': route_id,
-          'state': DeploymentState.Generating,
+          'state': DeploymentState.Generating.value,
         },
       ).execute()
 
@@ -28,6 +28,6 @@ class Database():
     self.client.table('deployments').update(
       json={
         'id': run_id,
-        'state': state,
+        'state': state.value,
       },
     ).execute()
