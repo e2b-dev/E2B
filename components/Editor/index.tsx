@@ -17,9 +17,9 @@ import Logs from './Logs'
 import Routes from './Routes'
 
 // TODO: Prod API host
-const apiHost = process.env.NODE_ENV === 'development' ?
-  'http://0.0.0.0:5000' :
-  'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
+const apiHost = process.env.NODE_ENV === 'development'
+  ? 'http://0.0.0.0:5000'
+  : 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
 
 export interface Props {
   project: projects

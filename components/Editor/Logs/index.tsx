@@ -41,9 +41,9 @@ function Logs({
         flex
         px-4
         py-2
-        items-center
         justify-start
         border-b
+        flex-col
       "
       >
         <div
@@ -64,17 +64,26 @@ function Logs({
             deployStatus={deployStatus}
           />
         </div>
-        <a
-          href={deployedURL}
-          className="
+        {deployedURL &&
+          <a
+            href={deployedURL}
+            className="
             underline
           "
-        >
+          >
+            <Text
+              size={Text.size.S3}
+              text={deployedURL.substring('https://'.length)}
+            />
+          </a>
+        }
+        {!deployedURL &&
           <Text
+            text="No deployment URL found"
             size={Text.size.S3}
-            text={deployedURL.substring('https://'.length)}
+            className="text-slate-400"
           />
-        </a>
+        }
       </div>
       <div
         className="
@@ -82,14 +91,14 @@ function Logs({
       flex
       flex-col
       flex-1
-      py-2
+      py-4
       px-4
       overflow-auto
       text-xs
       tracking-wide
       font-sans
       break-words
-      space-y-2
+      space-y-4
       ">
         {logs?.map((l, i) =>
           <ReactMarkdown key={i}>
