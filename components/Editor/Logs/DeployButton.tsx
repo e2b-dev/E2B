@@ -17,6 +17,13 @@ interface DeploymentRepresentation {
 }
 
 function getDeploymentRepresentation(deployStatus: deployment_state | null | undefined, isInitializingDeploy: boolean | undefined): DeploymentRepresentation {
+  if (isInitializingDeploy) {
+    return {
+      text: 'Initializing...',
+      icon: <Spinner />,
+    }
+  }
+
   switch (deployStatus) {
     case deployment_state.generating:
       return {
@@ -34,28 +41,14 @@ function getDeploymentRepresentation(deployStatus: deployment_state | null | und
         icon: null,
       }
     case deployment_state.finished:
-      if (isInitializingDeploy) {
-        return {
-          text: 'Deployed',
-          icon: <Check size="16px" />
-        }
-      } else {
-        return {
-          text: 'Deploy',
-          icon: null,
-        }
+      return {
+        text: 'Deployed',
+        icon: <Check size="16px" />
       }
     default:
-      if (isInitializingDeploy) {
-        return {
-          text: 'Initializing...',
-          icon: <Spinner />,
-        }
-      } else {
-        return {
-          text: 'Deploy',
-          icon: null,
-        }
+      return {
+        text: 'Deploy',
+        icon: null,
       }
   }
 }

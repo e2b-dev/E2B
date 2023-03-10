@@ -18,8 +18,8 @@ import Routes from './Routes'
 
 // TODO: Prod API host
 const apiHost = process.env.NODE_ENV === 'development'
-  ? 'http://0.0.0.0:5000'
-  : 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
+  ? 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
+  : 'http://0.0.0.0:5000'
 
 export interface Props {
   project: projects
@@ -77,6 +77,11 @@ function Editor({ project }: Props) {
 
   const deployment = useLatestDeployment(project, selectedRoute)
   const logs = deployment?.logs as Log[] | undefined
+
+  useEffect(function resetInitializing() {
+    if (!deployment) return
+    setIsInitializingDeploy(false)
+  }, [deployment])
 
   const [focusedBlock, setFocusedBlock] = useState({ index: 0 })
   const { trigger: generate } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
