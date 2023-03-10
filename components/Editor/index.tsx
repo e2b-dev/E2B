@@ -8,6 +8,7 @@ import { useStateStore } from 'state/StoreProvider'
 import Select from 'components/Select'
 import Text from 'components/Text'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
+import { Log } from 'db/types'
 
 import BlockEditor from './BlockEditor'
 import ConnectionLine from './ConnectionLine'
@@ -19,8 +20,6 @@ import Routes from './Routes'
 const apiHost = process.env.NODE_ENV === 'development' ?
   'http://0.0.0.0:5000' :
   'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
-
-export type Log = string
 
 export interface Props {
   project: projects
@@ -191,6 +190,7 @@ function Editor({ project }: Props) {
               }} />
             </div>
             <Logs
+              deployStatus={deployment?.state}
               logs={logs}
               deploy={deploy}
               deployedURL={deployedURL}

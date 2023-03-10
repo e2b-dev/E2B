@@ -1,3 +1,5 @@
+@import 'highlight.js/styles/a11y-dark.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,6 +36,11 @@
   .no-scroller {
     scrollbar-width: none;
     resize: none;
+  }
+
+  code {
+    @apply rounded;
+    color-scheme: dark;
   }
 }
 

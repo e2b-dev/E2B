@@ -1,23 +1,26 @@
 import { useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import hljs from 'highlight.js'
+import { deployment_state } from '@prisma/client'
 
-import { Log } from '.'
-import { Fragment } from 'react'
-import Button from 'components/Button'
+import { Log } from 'db/types'
 import Sidebar from 'components/Sidebar'
 import Text from 'components/Text'
+
+import DeployButton from './DeployButton'
 
 export interface Props {
   logs?: Log[]
   deploy: () => void
   deployedURL: string
+  deployStatus?: deployment_state | null
 }
 
 function Logs({
   logs,
   deploy,
   deployedURL,
+  deployStatus,
 }: Props) {
 
   useEffect(function highlightCode() {
@@ -31,21 +34,36 @@ function Logs({
         flex-col
         min-h-0
         flex
-        p-4
-        space-y-4
         "
     >
-      <div className="
+      <div
+        className="
         flex
+        px-4
+        py-2
         items-center
         justify-start
-        space-x-2
-      ">
-        <Button
-          text="Deploy"
-          onClick={deploy}
-          variant={Button.variant.Full}
-        />
+        border-b
+      "
+      >
+        <div
+          className="
+            flex
+            flex-1
+            items-center
+            justify-between
+          "
+        >
+          <Text
+            text="Deployment"
+            className="font-medium"
+            size={Text.size.S2}
+          />
+          <DeployButton
+            deploy={deploy}
+            deployStatus={deployStatus}
+          />
+        </div>
         <a
           href={deployedURL}
           className="
@@ -58,26 +76,25 @@ function Logs({
           />
         </a>
       </div>
-      <div className="
+      <div
+        className="
       max-w-full
       flex
       flex-col
       flex-1
-      overflow-y-auto
+      py-2
+      px-4
+      overflow-auto
       text-xs
-      leading-4
+      tracking-wide
+      font-sans
       break-words
       space-y-2
       ">
         {logs?.map((l, i) =>
-          <Fragment key={i}>
-            <ReactMarkdown className="
-              whitespace-pre-wrap
-              max-w-full
-            ">
-              {l}
-            </ReactMarkdown>
-          </Fragment>
+          <ReactMarkdown key={i}>
+            {l}
+          </ReactMarkdown>
         )}
       </div>
     </Sidebar>
