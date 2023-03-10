@@ -42,6 +42,7 @@ function Logs({
 
       </div>
       <div className="
+      max-w-full
       flex
       flex-col
       flex-1
@@ -49,12 +50,16 @@ function Logs({
       text-xs
       leading-4
       break-words
-      whitespace-normal
       space-y-2
       ">
         {logs?.map((l, i) =>
           <Fragment key={i}>
-            <ReactMarkdown className="whitespace-pre">{l}</ReactMarkdown>
+            <ReactMarkdown className="
+              whitespace-pre-wrap
+              max-w-full
+            ">
+              {l}
+            </ReactMarkdown>
             {/* <Ansi>
               {l}
             </Ansi> */}
