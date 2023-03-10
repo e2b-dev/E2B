@@ -54,7 +54,7 @@ function Logs({
       ">
         {logs?.map((l, i) =>
           <Fragment key={i}>
-            <ReactMarkdown>{l}</ReactMarkdown>
+            <ReactMarkdown className="whitespace-pre">{l}</ReactMarkdown>
             {/* <Ansi>
               {l}
             </Ansi> */}
