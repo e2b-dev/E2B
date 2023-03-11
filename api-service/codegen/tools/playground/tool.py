@@ -14,7 +14,6 @@ class PlaygroundTool(BaseTool):
     def __init__(self) -> None:
         super().__init__()
 
-
     def _run(self, query: str) -> str:
         query = query.strip().strip("`")
         return js_eval(query)

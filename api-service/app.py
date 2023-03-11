@@ -16,6 +16,7 @@ db = Database(url, key)
 app = Flask(__name__)
 CORS(app)
 
+
 def dump(obj):
     for attr in dir(obj):
         print("obj.%s = %r" % (attr, getattr(obj, attr)))
@@ -44,7 +45,8 @@ def generate():
     method = body["method"]
     route = body["route"]
 
-    db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
+    db.create_deployment(
+        run_id=run_id, project_id=project_id, route_id=route_id)
 
     playground = NodeJSPlayground()
 

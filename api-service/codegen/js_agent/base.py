@@ -36,7 +36,8 @@ def create_js_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+    agent = ZeroShotAgent(llm_chain=llm_chain,
+                          allowed_tools=tool_names, **kwargs)
 
     cb_manager = SharedCallbackManager()
     cb_manager.set_handler(

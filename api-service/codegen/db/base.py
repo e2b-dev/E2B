@@ -9,7 +9,9 @@ class DeploymentState(Enum):
     Finished = "finished"
     Error = "error"
 
+
 deploymentsTable = "deployments"
+
 
 class Database:
     def __init__(self, url: str, key: str):
