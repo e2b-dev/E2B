@@ -17,6 +17,7 @@ RUN yarn --frozen-lockfile
 
 COPY playground/tsconfig.json ./
 COPY playground/tsoa.json ./
+COPY playground/scripts/build.js ./scripts/build.js
 COPY playground/src ./src
 RUN yarn build
 
@@ -59,5 +60,5 @@ WORKDIR /app/cf-worker-template
 COPY --from=cf-worker-modules ./app/cf-worker-template ./
 
 WORKDIR /app
-CMD exec poetry run gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app
 
+CMD ./start.sh
