@@ -2,20 +2,27 @@ import { Router } from 'itty-router'
 
 const router = Router()
 
-async function handlegetRequest(request, env) {
-  const responseBody = {
-    API_KEY: env.API_KEY,
-    ANOTHER_KEY: env.ANOTHER_KEY
-  }
-
-  return new Response(JSON.stringify(responseBody), {
-    headers: {
-      'Content-Type': 'application/json'
+async function handlepostRequest(request, env) {
+    const body = await request.json()
+    const email = body.email
+    console.log('email', email)
+    if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+        return new Response(JSON.stringify({
+            error: 'Invalid email'
+        }), {
+            status: 400
+        })
     }
-  })
+    const db = new Supabase.DB(env.SUPABASE_URL)
+    await db.query('INSERT INTO users (email) VALUES ($1)', [email])
+    return new Response(JSON.stringify({
+        message: 'Ok'
+    }), {
+        status: 200
+    })
 }
 
-router.get('/', handlegetRequest)
+router.post('/', handlepostRequest)
 router.get('*', () => new Response('Not found', { status: 404 }))
 
 export default {
