@@ -43,6 +43,9 @@ def generate():
     blocks = body["blocks"]
     method = body["method"]
     route = body["route"]
+    envs = body["envs"]
+    print("ENVS")
+    print(envs)
 
     db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
 

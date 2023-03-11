@@ -1,6 +1,6 @@
 # This wrangler file will be injected withl values during runtime and saved as wrangler.toml
 
-name = "currency-conversion"
+name = "meteo"
 main = "./index.js"
 # route = ''
 compatibility_date = "2022-05-03"

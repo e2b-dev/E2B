@@ -1,4 +1,8 @@
-import { useEffect } from 'react'
+import {
+  useEffect,
+  useState,
+  useCallback,
+} from 'react'
 import ReactMarkdown from 'react-markdown'
 import hljs from 'highlight.js'
 import { deployment_state } from '@prisma/client'
@@ -6,6 +10,7 @@ import { deployment_state } from '@prisma/client'
 import { Log } from 'db/types'
 import Sidebar from 'components/Sidebar'
 import Text from 'components/Text'
+import Button from 'components/Button'
 
 import DeployButton from './DeployButton'
 
@@ -15,6 +20,7 @@ export interface Props {
   deployedURL?: string | null
   deployStatus?: deployment_state | null
   isInitializingDeploy?: boolean
+  onEnvsChange: (envs: { key: string, value: string }[]) => void
 }
 
 function Logs({
@@ -23,7 +29,43 @@ function Logs({
   deployedURL,
   deployStatus,
   isInitializingDeploy,
+  onEnvsChange,
 }: Props) {
+  const [envs, setEnvs] = useState<{ key: string, value: string }[]>([{ key: '', value: '' }])
+
+  const handleEnvKeyChange = useCallback((event: any, idx: number) => {
+    setEnvs(current => {
+      current[idx].key = event.target.value
+      const newEnvs = [...current]
+      onEnvsChange(newEnvs)
+      return newEnvs
+    })
+  }, [onEnvsChange])
+
+  const handleEnvValueChange = useCallback((event: any, idx: number) => {
+    setEnvs(current => {
+      current[idx].value = event.target.value
+      const newEnvs = [...current]
+      onEnvsChange(newEnvs)
+      return newEnvs
+    })
+  }, [onEnvsChange])
+
+  const addNewEnv = useCallback(() => {
+    setEnvs(current => {
+      const newEnvs = [...current, { key: '', value: '' }]
+      onEnvsChange(newEnvs)
+      return newEnvs
+    })
+  }, [onEnvsChange])
+
+  const deleteEnv = useCallback((delIdx: number) => {
+    setEnvs(current => {
+      const newEnvs = [...current.filter((_, idx) => idx !== delIdx)]
+      onEnvsChange(newEnvs)
+      return newEnvs
+    })
+  }, [onEnvsChange])
 
   useEffect(function highlightCode() {
     hljs.highlightAll()
@@ -91,6 +133,76 @@ function Logs({
             className="text-slate-400"
           />
         }
+      </div>
+      <div className="
+        max-w-full
+        flex
+        flex-col
+        border-b
+        p-4
+        space-y-4
+      ">
+        <Text
+          text="Envs"
+          size={Text.size.S2}
+          className="
+            uppercase
+            text-slate-400
+            font-semibold
+          "
+        />
+        {envs.map((env, idx) =>
+          <div
+            key={env.key}
+            className="
+              flex
+              items-center
+              justify-evenly
+              space-x-2
+            "
+          >
+            <input
+              className="
+                flex-1
+                p-1.5
+                text-xs
+                font-mono
+                rounded
+                border
+                outline-none
+                focus:border-green-600
+              "
+              placeholder="KEY"
+              value={env.key}
+              onChange={event => handleEnvKeyChange(event, idx)}
+            />
+            <input
+              className="
+                flex-1
+                p-1.5
+                text-xs
+                font-mono
+                rounded
+                border
+                outline-none
+                focus:border-green-600
+              "
+              placeholder="VALUE"
+              value={env.value}
+              onChange={event => handleEnvValueChange(event, idx)}
+            />
+            {envs.length > 1 &&
+              <Button
+                text="Delete"
+                onClick={() => deleteEnv(idx)}
+              />
+            }
+          </div>
+        )}
+        <Button
+          text="Add another"
+          onClick={addNewEnv}
+        />
       </div>
       <div className="
         max-w-full
