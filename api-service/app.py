@@ -1,3 +1,4 @@
+from typing import Dict
 import os
 import uuid
 import subprocess
@@ -22,11 +23,14 @@ def dump(obj):
         print("obj.%s = %r" % (attr, getattr(obj, attr)))
 
 
-def replace_file_content(fp_in: str, fp_out: str, old: str, new: str) -> None:
+def replace_file_content(fp_in: str, fp_out: str, pairs: Dict[str, str]) -> None:
     with open(fp_in, "rt") as fin:
         with open(fp_out, "wt") as fout:
             for line in fin:
-                fout.write(line.replace(old, new))
+                for old, new in pairs.items():
+                    if old in line:
+                        line = line.replace(old, new)
+                fout.write(line)
 
 
 @app.route("/health", methods=["GET"])
@@ -44,6 +48,7 @@ def generate():
     blocks = body["blocks"]
     method = body["method"]
     route = body["route"]
+    envs = body["envs"]
 
     db.create_deployment(
         run_id=run_id, project_id=project_id, route_id=route_id)
@@ -56,6 +61,7 @@ def generate():
         run_id=run_id,
         blocks=blocks,
         method=method,
+        envs=envs,
     )
 
     playground.close()
@@ -74,12 +80,18 @@ def generate():
     with open(index_js_path, "w") as file:
         file.write(code)
 
+    # Convert envs to the env vars string that looks like this:
+    # KEY_1 = VALUE_1
+    # KEY_2 = VALUE_2
+    envs_str = ""
+    for env in envs:
+        if env["key"]:
+            envs_str += f'{env["key"]} = "{env["value"]}"\n'
     # TODO: Update name in cf-worker-template/wrangler.template.toml
     replace_file_content(
         wrangler_template_path,
         wrangler_path,
-        "<NAME>",
-        f'"{project_id}"',
+        {"<NAME>": f'"{project_id}"', "<VARS>": envs_str},
     )
 
     # TODO: Call npm run deploy

@@ -29,6 +29,7 @@ async function handlePostGenerate(url: string, { arg }: {
   arg: {
     projectID: string,
     route: Route,
+    envs: { key: string, value: string }[],
   }
 }) {
   return await fetch(url, {
@@ -39,6 +40,7 @@ async function handlePostGenerate(url: string, { arg }: {
       blocks: arg.route.blocks.map(b => b.prompt),
       method: arg.route.method.toLowerCase(),
       route: arg.route.route,
+      envs: arg.envs,
     }),
     headers: {
       'Content-Type': 'application/json',
@@ -56,6 +58,7 @@ function Editor({ project }: Props) {
   const deleteRoute = store.use.deleteRoute()
   const changeRoute = store.use.changeRoute()
   const addRoute = store.use.addRoute()
+  const envs = store.use.envs()
 
   const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
   const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
@@ -92,6 +95,7 @@ function Editor({ project }: Props) {
     await generate({
       projectID: project.id,
       route: selectedRoute,
+      envs,
     })
   }
 

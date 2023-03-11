@@ -34,6 +34,7 @@ export const methods = Object
   .map(v => v.toLowerCase())
 
 export interface SerializedState {
+  envs: { key: string, value: string }[]
   routes: Route[]
 }
 
@@ -44,6 +45,8 @@ export interface State extends SerializedState {
   changeRoute: (id: string, route: Partial<Omit<Route, 'id'>>) => void
   deleteRoute: (id: string) => void
   addRoute: () => void
+  setEnvs: (envs: { key: string, value: string }[]) => void
+  changeEnv: (pair: { key: string, value: string }, idx: number) => void
 }
 
 function getDefaultBlock(): Block {
@@ -64,6 +67,7 @@ function getDefaultRoute(): Route {
 
 function getDefaultState(): SerializedState {
   return {
+    envs: [{ key: '', value: '' }],
     routes: [getDefaultRoute()],
   }
 }
@@ -80,6 +84,12 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
 
   if (initialState.routes.length === 0) {
     initialState.routes.push(getDefaultRoute())
+  }
+
+  if (!initialState.envs) {
+    initialState.envs = [{ key: '', value: '' }]
+  } else if (initialState.envs.length === 0) {
+    initialState.envs.push({ key: '', value: '' })
   }
 
   const immerStore = immer<State>((set) => ({
@@ -120,6 +130,12 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       if (idx !== -1) {
         state.routes[idx].blocks.push(getDefaultBlock())
       }
+    }),
+    setEnvs: (envs) => set(state => {
+      state.envs = envs
+    }),
+    changeEnv: (pair, idx) => set(state => {
+      state.envs[idx] = pair
     }),
   }))
 
