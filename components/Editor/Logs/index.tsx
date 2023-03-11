@@ -94,10 +94,10 @@ function Logs({
         }
       </div>
       <div className="
+        max-h-full
         max-w-full
         flex
         flex-col
-        flex-1
       ">
         <Text
           text="Logs"
@@ -112,13 +112,14 @@ function Logs({
         />
         <div
           className="
+            flex-1
             overflow-auto
             text-xs
             tracking-wide
             font-sans
             break-words
             space-y-4
-            px-4
+            p-4
         ">
           {logs?.map((l, i) =>
             <ReactMarkdown key={i}>
