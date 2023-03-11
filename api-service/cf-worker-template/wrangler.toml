@@ -1,7 +1,11 @@
 # This wrangler file will be injected withl values during runtime and saved as wrangler.toml
 
-name = "meteo"
+name = "meteo2"
 main = "./index.js"
 # route = ''
 compatibility_date = "2022-05-03"
 send_metrics = false
+
+[vars]
+API_KEY = "1234"
+

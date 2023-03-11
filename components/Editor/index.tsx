@@ -58,8 +58,8 @@ function Editor({ project }: Props) {
   const deleteRoute = store.use.deleteRoute()
   const changeRoute = store.use.changeRoute()
   const addRoute = store.use.addRoute()
+  const envs = store.use.envs()
 
-  const [envs, setEnvs] = useState<{ key: string, value: string }[]>([{ key: '', value: '' }])
   const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
   const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
   const selectedRoute = routes.find(s => s.id === selectedRouteID)
