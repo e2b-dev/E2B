@@ -1325,14 +1325,14 @@ files = [
 
 [[package]]
 name = "openai"
-version = "0.27.0"
+version = "0.27.2"
 description = "Python client library for the OpenAI API"
 category = "main"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-0.27.0-py3-none-any.whl", hash = "sha256:7d4066ea529658a1f1696a8766912b3f3b7139faca860dc530bf102f0b19d42c"},
-    {file = "openai-0.27.0.tar.gz", hash = "sha256:0efa486016283607cb72c23eac346ac739a22613ff4bff101df72a138cb2de60"},
+    {file = "openai-0.27.2-py3-none-any.whl", hash = "sha256:6df674cf257e9e0504f1fd191c333d3f6a2442b13218d0eccf06230eb24d320e"},
+    {file = "openai-0.27.2.tar.gz", hash = "sha256:5869fdfa34b0ec66c39afa22f4a0fb83a135dff81f6505f52834c6ab3113f762"},
 ]
 
 [package.dependencies]
@@ -1862,14 +1862,14 @@ sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
 name = "storage3"
-version = "0.5.1"
+version = "0.5.2"
 description = "Supabase Storage client for Python."
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "storage3-0.5.1-py3-none-any.whl", hash = "sha256:5b1863363767b5380d97f3532c2f670a7017d35582a7551a43d5fd5ffa7c6d12"},
-    {file = "storage3-0.5.1.tar.gz", hash = "sha256:324110c2cb2becd791ffe91a26c5366af62f190947938aefa9521649610f1425"},
+    {file = "storage3-0.5.2-py3-none-any.whl", hash = "sha256:3aaba8cebf89eef6b5fc48739b8c8c8539461f2eed9ea1dc4c763dea10c6d009"},
+    {file = "storage3-0.5.2.tar.gz", hash = "sha256:e9932fca869a8f9cdab9a20e5249439928cfe2d07c4524141b15fef1882a7f61"},
 ]
 
 [package.dependencies]
@@ -1896,14 +1896,14 @@ test = ["pylint", "pytest", "pytest-black", "pytest-cov", "pytest-pylint"]
 
 [[package]]
 name = "supabase"
-version = "1.0.1"
+version = "1.0.2"
 description = "Supabase client for Python."
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "supabase-1.0.1-py3-none-any.whl", hash = "sha256:5e4af5bc80088bc2b0832436fae5b7cc343c8760da5c52c956655a2120f10faa"},
-    {file = "supabase-1.0.1.tar.gz", hash = "sha256:dc1001370284cbd58b99db982a405217d2e0f12f85fbc23ff743647972332a92"},
+    {file = "supabase-1.0.2-py3-none-any.whl", hash = "sha256:ab53737898385b710fe6c3fea9c6d4fc98ebb4446d26333123f33842569622de"},
+    {file = "supabase-1.0.2.tar.gz", hash = "sha256:e9fa048188120b1e17dd6ac2054d3d2e64c486c6ba365a203ff5d585bc65fbf0"},
 ]
 
 [package.dependencies]
@@ -1912,7 +1912,7 @@ httpx = ">=0.23.0,<0.24.0"
 postgrest = ">=0.10.6,<0.11.0"
 python-semantic-release = "7.33.2"
 realtime = ">=1.0.0,<2.0.0"
-storage3 = "0.5.1"
+storage3 = ">=0.5.2,<0.6.0"
 supafunc = ">=0.2.2,<0.3.0"
 
 [[package]]
@@ -2032,14 +2032,14 @@ typing-extensions = ">=3.7.4"
 
 [[package]]
 name = "urllib3"
-version = "1.26.14"
+version = "1.26.15"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 files = [
-    {file = "urllib3-1.26.14-py2.py3-none-any.whl", hash = "sha256:75edcdc2f7d85b137124a6c3c9fc3933cdeaa12ecb9a6a959f22797a0feca7e1"},
-    {file = "urllib3-1.26.14.tar.gz", hash = "sha256:076907bf8fd355cde77728471316625a4d2f7e713c125f51953bb5b3eecf4f72"},
+    {file = "urllib3-1.26.15-py2.py3-none-any.whl", hash = "sha256:aa751d169e23c7479ce47a0cb0da579e3ede798f994f5816a74e4f4500dcea42"},
+    {file = "urllib3-1.26.15.tar.gz", hash = "sha256:8a388717b9476f934a21484e8c8e61875ab60644d29b9b39e11e4b9dc1c6b305"},
 ]
 
 [package.extras]
@@ -2278,4 +2278,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "dbabed4f5615d62895f870fa45ba0938837e648e494cfe860009ccb71fad535a"
+content-hash = "81ec377e282253dce652d91257d59b63ee8f5d401cdef4a09a02467a1330b709"
