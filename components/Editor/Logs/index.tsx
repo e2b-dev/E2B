@@ -116,7 +116,7 @@ function Logs({
             text-xs
             tracking-wide
             font-sans
-            break-words
+            whitespace-pre-wrap
             space-y-4
             p-4
         ">
