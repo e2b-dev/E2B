@@ -33,10 +33,11 @@ function Logs({
     <Sidebar
       side={Sidebar.side.Right}
       className="
+        flex
         flex-col
         min-h-0
         flex
-        "
+      "
     >
       <div
         className="
@@ -58,7 +59,11 @@ function Logs({
         >
           <Text
             text="Deployment"
-            className="font-medium"
+            className="
+              font-semibold
+              uppercase
+              text-slate-400
+            "
             size={Text.size.S2}
           />
           <DeployButton
@@ -88,26 +93,39 @@ function Logs({
           />
         }
       </div>
-      <div
-        className="
-      max-w-full
-      flex
-      flex-col
-      flex-1
-      py-4
-      px-4
-      overflow-auto
-      text-xs
-      tracking-wide
-      font-sans
-      break-words
-      space-y-4
+      <div className="
+        max-w-full
+        flex
+        flex-col
+        flex-1
       ">
-        {logs?.map((l, i) =>
-          <ReactMarkdown key={i}>
-            {l}
-          </ReactMarkdown>
-        )}
+        <Text
+          text="Logs"
+          size={Text.size.S2}
+          className="
+            uppercase
+            text-slate-400
+            font-semibold
+            px-4
+            py-2
+          "
+        />
+        <div
+          className="
+            overflow-auto
+            text-xs
+            tracking-wide
+            font-sans
+            break-words
+            space-y-4
+            px-4
+        ">
+          {logs?.map((l, i) =>
+            <ReactMarkdown key={i}>
+              {l}
+            </ReactMarkdown>
+          )}
+        </div>
       </div>
     </Sidebar>
   )
