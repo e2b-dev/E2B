@@ -57,7 +57,7 @@ function Logs({
           "
         >
           <Text
-            text="Deployment"
+            text="Latest Deployment"
             className="
               font-semibold
               uppercase
