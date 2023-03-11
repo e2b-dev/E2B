@@ -14,3 +14,8 @@ dist
 ./cf-worker-template/.prettierrc
 ./cf-worker-template/.editorconfig
 ./cf-worker-template/.git
+
+./playground/lib
+./playground/node_modules
+./.git
+./.git

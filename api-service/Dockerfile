@@ -1,3 +1,35 @@
+# This stage installs playground modules
+FROM node:18 as playground-modules
+
+WORKDIR /playground
+
+COPY playground/package.json playground/yarn.lock ./
+RUN yarn --production --frozen-lockfile
+
+
+# This stage builds playground code
+FROM node:18 as playground-build
+
+WORKDIR /playground
+
+COPY playground/package.json playground/yarn.lock ./
+RUN yarn --frozen-lockfile
+
+COPY playground/tsconfig.json ./
+COPY playground/tsoa.json ./
+COPY playground/src ./src
+RUN yarn build
+
+
+# This stage installs cf-worker-template modules
+FROM node:18 as cf-worker-modules
+
+WORKDIR /app/cf-worker-template
+COPY cf-worker-template/package.json cf-worker-template/package-lock.json ./
+RUN npm ci --omit=dev
+
+
+# This is the final image that also installs python deps
 FROM nikolaik/python-nodejs
 
 ENV PYTHONFAULTHANDLER=1 \
@@ -9,26 +41,23 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=1.4.0
 
-RUN pip install "poetry==$POETRY_VERSION"
 RUN poetry config virtualenvs.in-project true
 
 WORKDIR /app
-
 COPY pyproject.toml poetry.lock ./
 RUN --mount=type=cache,target=/home/.cache/pypoetry/cache \
     --mount=type=cache,target=/home/.cache/pypoetry/artifacts \
     poetry install --without dev --no-root --no-ansi --no-interaction
 
-# --mount requires DOCKER_BUILDKIT=1 -> didn't work locally for me (mlejva)
-# RUN target=/home/.cache/pypoetry/cache \
-#     target=/home/.cache/pypoetry/artifacts \
-#     poetry install --without dev --no-root --no-ansi --no-interaction
-
 COPY . ./
 
+WORKDIR /playground
+COPY --from=playground-modules ./playground/ ./
+COPY --from=playground-build ./playground/lib ./lib
 
 WORKDIR /app/cf-worker-template
-RUN npm i --omit=dev
+COPY --from=cf-worker-modules ./app/cf-worker-template ./
 
 WORKDIR /app
 CMD exec poetry run gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app
+
