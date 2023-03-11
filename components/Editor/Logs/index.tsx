@@ -36,7 +36,6 @@ function Logs({
         flex
         flex-col
         min-h-0
-        flex
       "
     >
       <div
@@ -94,10 +93,10 @@ function Logs({
         }
       </div>
       <div className="
-        max-h-full
         max-w-full
         flex
         flex-col
+        overflow-auto
       ">
         <Text
           text="Logs"
