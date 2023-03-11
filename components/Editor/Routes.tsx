@@ -40,7 +40,11 @@ function Routes({
       ">
         <Text
           text="Routes"
-          className="font-medium"
+          className="
+            font-semibold
+            uppercase
+            text-slate-400
+          "
           size={Text.size.S2}
         />
         <Button
