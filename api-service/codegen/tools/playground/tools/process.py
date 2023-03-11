@@ -1,5 +1,5 @@
 from .base import PlaygroundBaseTool
-from playground_client import NodeJSPlayground
+from playground_client.playground import NodeJSPlayground
 
 
 class PlaygroundProcessTool(PlaygroundBaseTool):

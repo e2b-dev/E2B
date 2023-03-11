@@ -1,6 +1,6 @@
 from typing import List
 from langchain.tools.base import BaseTool
-from playground_client import NodeJSPlayground
+from playground_client.playground import NodeJSPlayground
 
 from .tools.filesystem import PlaygroundFilesystemTool
 from .tools.dependencies import PlaygroundDependenciesTool

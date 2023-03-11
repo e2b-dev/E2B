@@ -1,10 +1,10 @@
-import openapi_client
-
 from enum import Enum
 from typing import TypedDict, Union
 
+from openapi_client import ApiClient, DefaultApi, Configuration
+from openapi_client import CreateSessionParams, RunProcessParams, WriteFilesystemFileParams
 
-configuration = openapi_client.Configuration(
+configuration = Configuration(
     host="https://localhost:9001",
 )
 
@@ -26,10 +26,10 @@ class CommandOutput(TypedDict):
 
 class Playground:
     def __init__(self, env_id: str):
-        self.client = openapi_client.ApiClient(configuration)
-        self.api = openapi_client.DefaultApi(self.client)
+        self.client = ApiClient(configuration)
+        self.api = DefaultApi(self.client)
         self.session = self.api.create_session(
-            openapi_client.CreateSessionParams(env_id)
+            CreateSessionParams(env_id)
         )
         self.is_closed = False
 
@@ -44,7 +44,7 @@ class Playground:
 
     def run_command(self, cmd: str):
         result = self.api.run_process(
-            self.session.id, openapi_client.RunProcessParams(cmd)
+            self.session.id, RunProcessParams(cmd)
         )
         err_lines = [err.line for err in result.stderr]
         out_lines = [out.line for out in result.stdout]
@@ -78,7 +78,7 @@ class Playground:
 
     def write_file(self, path: str, content: str):
         self.api.write_filesystem_file(
-            self.session.id, path, openapi_client.WriteFilesystemFileParams(content)
+            self.session.id, path, WriteFilesystemFileParams(content)
         )
 
     def make_dir(self, path: str):

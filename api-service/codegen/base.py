@@ -1,5 +1,5 @@
 from typing import List
-from playground_client import NodeJSPlayground
+from playground_client.playground import NodeJSPlayground
 
 from langchain.llms.openai import OpenAIChat, OpenAI
 from codegen.tools.documentation.tool import ReadDocumentation
