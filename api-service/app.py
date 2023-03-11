@@ -7,6 +7,7 @@ from flask_cors import CORS
 
 from codegen.base import generate_req_handler
 from codegen.db.base import Database, DeploymentState
+from playground_client.base import NodeJSPlayground
 
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
@@ -46,12 +47,16 @@ def generate():
 
     db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
 
+    playground = NodeJSPlayground()
+
     final_prompt, js_code = generate_req_handler(
         run_id=run_id,
         db=db,
         blocks=blocks,
         method=method,
     )
+
+    playground.close()
 
     db.update_state(run_id=run_id, state=DeploymentState.Deploying)
 

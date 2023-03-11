@@ -15,10 +15,16 @@ class Playground:
         self.client = openapi_client.ApiClient(configuration)
         self.api = openapi_client.DefaultApi(self.client)
         self.session = self.api.create_session(openapi_client.CreateSessionParams(env_id))
+        self.is_closed = False
 
     def __del__(self):
-        self.api.delete_session(self.session.id)
-        self.client.close()
+        self.close()
+
+    def close(self):
+        if not self.is_closed:
+            self.is_closed = True
+            self.api.delete_session(self.session.id)
+            self.client.close()
 
     def run_command(self, cmd: str):
         result = self.api.run_process(self.session.id, openapi_client.RunProcessParams(cmd))
