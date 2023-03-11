@@ -1,0 +1,468 @@
+{
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"EntryInfo": {
+				"properties": {
+					"isDir": {
+						"type": "boolean"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"isDir",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ListFilesystemDirResponse": {
+				"properties": {
+					"entries": {
+						"items": {
+							"$ref": "#/components/schemas/EntryInfo"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"entries"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReadFilesystemFileResponse": {
+				"properties": {
+					"content": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"content"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"WriteFilesystemFileParams": {
+				"properties": {
+					"content": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"content"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OutType.Stderr": {
+				"enum": [
+					"Stderr"
+				],
+				"type": "string"
+			},
+			"OutType": {
+				"enum": [
+					"Stdout",
+					"Stderr"
+				],
+				"type": "string"
+			},
+			"OutStderrResponse": {
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/OutType.Stderr"
+					},
+					"timestamp": {
+						"type": "number",
+						"format": "double"
+					},
+					"line": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"type",
+					"timestamp",
+					"line"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OutType.Stdout": {
+				"enum": [
+					"Stdout"
+				],
+				"type": "string"
+			},
+			"OutStdoutResponse": {
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/OutType.Stdout"
+					},
+					"timestamp": {
+						"type": "number",
+						"format": "double"
+					},
+					"line": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"type",
+					"timestamp",
+					"line"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RunProcessResponse": {
+				"properties": {
+					"stderr": {
+						"items": {
+							"$ref": "#/components/schemas/OutStderrResponse"
+						},
+						"type": "array"
+					},
+					"stdout": {
+						"items": {
+							"$ref": "#/components/schemas/OutStdoutResponse"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"stderr",
+					"stdout"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EnvVars": {
+				"properties": {},
+				"additionalProperties": {
+					"type": "string"
+				},
+				"type": "object"
+			},
+			"RunProcessParams": {
+				"properties": {
+					"cmd": {
+						"type": "string"
+					},
+					"envVars": {
+						"$ref": "#/components/schemas/EnvVars"
+					},
+					"rootdir": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"cmd"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateSessionResponse": {
+				"properties": {
+					"id": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateSessionParams": {
+				"properties": {
+					"envID": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"envID"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {}
+	},
+	"info": {
+		"title": "playground",
+		"version": "1.0.0",
+		"license": {
+			"name": "MIT"
+		},
+		"contact": {}
+	},
+	"openapi": "3.0.0",
+	"paths": {
+		"/sessions/{id}/filesystem/dir": {
+			"get": {
+				"operationId": "ListFilesystemDir",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ListFilesystemDirResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "MakeFilesystemDir",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/sessions/{id}/filesystem": {
+			"delete": {
+				"operationId": "DeleteFilesystemEntry",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/sessions/{id}/filesystem/file": {
+			"get": {
+				"operationId": "ReadFilesystemFile",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ReadFilesystemFileResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "WriteFilesystemFile",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/WriteFilesystemFileParams"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/sessions/{id}/process": {
+			"post": {
+				"operationId": "RunProcess",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RunProcessResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RunProcessParams"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/sessions": {
+			"post": {
+				"operationId": "CreateSession",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreateSessionResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateSessionParams"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/sessions/{id}": {
+			"delete": {
+				"operationId": "DeleteSession",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "https://localhost:9001/"
+		}
+	]
+}
