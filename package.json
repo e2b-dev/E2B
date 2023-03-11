@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx concurrently \"next dev\" \"cd api-service && PYTHONUNBUFFERED=1 poetry run flask --app app.py --debug run\"",
+    "dev": "npx concurrently \"next dev\" \"cd api-service && PYTHONUNBUFFERED=1 poetry run flask --app app.py --debug run\" \"cd api-service/playground && yarn dev\"",
     "dev:api": "cd api-service && poetry run flask --app app.py --debug run",
     "build": "next build",
     "install:api": "cd api-service && poetry install",
+    "install:playground": "cd api-service/playground && yarn",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
