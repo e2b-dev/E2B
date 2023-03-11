@@ -48,7 +48,6 @@ def generate():
     method = body["method"]
     route = body["route"]
     envs = body["envs"]
-    print(envs)
 
     db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
 
@@ -57,6 +56,7 @@ def generate():
         db=db,
         blocks=blocks,
         method=method,
+        envs=envs,
     )
 
     db.update_state(run_id=run_id, state=DeploymentState.Deploying)
@@ -78,14 +78,13 @@ def generate():
     # KEY_2 = VALUE_2
     envs_str = ""
     for env in envs:
-        print(env)
         if env["key"]:
             envs_str += f'{env["key"]} = "{env["value"]}"\n'
     # TODO: Update name in cf-worker-template/wrangler.template.toml
     replace_file_content(
         wrangler_template_path,
         wrangler_path,
-        {"<NAME>": f'"{project_id}2"', "<VARS>": envs_str},
+        {"<NAME>": f'"{project_id}"', "<VARS>": envs_str},
     )
 
     # TODO: Call npm run deploy

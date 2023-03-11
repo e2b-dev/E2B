@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from langchain.llms.openai import OpenAIChat, OpenAI
 from codegen.tools.javascript.tool import JavascriptEvalTool
@@ -13,6 +13,7 @@ def generate_req_handler(
     run_id: str,
     blocks: List[str],
     method: str,
+    envs: List[Dict[str, str]],
 ) -> str:
     executor = create_js_agent(
         db=db,
@@ -25,7 +26,10 @@ def generate_req_handler(
         verbose=True,
     )
 
-    prompt = PREFIX.format(method=method)
+    envs_str = ""
+    for env in envs:
+        envs_str += f'- `{env["key"]}`\n'
+    prompt = PREFIX.format(method=method, envs=envs_str)
 
     for idx, block in enumerate(blocks):
         prompt = prompt + "\n" + "{}. ".format(idx + 1) + block + "\n"

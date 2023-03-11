@@ -11,16 +11,19 @@
 # """
 
 PREFIX = """You are a skilled programmer that knows nodejs and javascript.
-You are building a serverless API with Cloudflare Workers using the 'itty-router' package (code and docs is here https://github.com/kwhitley/itty-router).
-You need to complete the `handle{method}Request` function that handles the incoming {method} requests.
+You are building a serverless API with Cloudflare Workers using the `itty-router` package.
+You need to complete the `handle{method}Request` function that handles the incoming {method} requests and return the whole completed code.
 
-Here is some already written code that handles the initialization. The function that you need to complete is marked with a TODO comment:
+You can access environment variables through the `env` parameter. You have access to the following environment variables:
+{envs}
+
+Here is the starting code that handles the initialization. The function that you need to complete is marked with a TODO comment:
 ```
 import {{ Router }} from 'itty-router'
 
 const router = Router()
 
-async function handle{method}Request(request) {{
+async function handle{method}Request(request, env) {{
     // TODO
 }}
 
