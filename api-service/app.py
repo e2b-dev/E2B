@@ -51,8 +51,9 @@ def generate():
     playground = NodeJSPlayground()
 
     final_prompt, js_code = generate_req_handler(
-        run_id=run_id,
         db=db,
+        playground=playground,
+        run_id=run_id,
         blocks=blocks,
         method=method,
     )

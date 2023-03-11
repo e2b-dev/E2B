@@ -1,15 +1,16 @@
 from typing import List
+from playground_client import NodeJSPlayground
 
 from langchain.llms.openai import OpenAIChat, OpenAI
-from codegen.tools.javascript.tool import JavascriptEvalTool
 from codegen.tools.documentation.tool import ReadDocumentation
 from codegen.js_agent.base import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX
 from codegen.db.base import Database
-
+from codegen.tools.playground import create_playground_tools
 
 def generate_req_handler(
     db: Database,
+    playground: NodeJSPlayground,
     run_id: str,
     blocks: List[str],
     method: str,
@@ -20,8 +21,10 @@ def generate_req_handler(
         llm=OpenAI(temperature=0, max_tokens=1000),
         # llm=OpenAI(temperature=0, model_name='code-davinci-002', max_tokens=1000),
         # llm=OpenAIChat(temperature=0, max_tokens=1000),
-        # tools=[JavascriptEvalTool(), ReadDocumentation()],
-        tools=[JavascriptEvalTool()],
+        tools=[
+            # ReadDocumentation()
+            *create_playground_tools(playground)
+        ],
         verbose=True,
     )
 
