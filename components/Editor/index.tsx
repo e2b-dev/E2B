@@ -218,7 +218,6 @@ function Editor({ project }: Props) {
               logs={logs}
               deploy={deploy}
               deployedURL={deployment?.url}
-              onEnvsChange={(envs) => setEnvs(envs)}
             />
           </>
         }

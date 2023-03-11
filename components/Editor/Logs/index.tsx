@@ -1,6 +1,6 @@
 import {
   useEffect,
-  useState,
+  // useState,
   useCallback,
 } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -8,6 +8,7 @@ import hljs from 'highlight.js'
 import { deployment_state } from '@prisma/client'
 
 import { Log } from 'db/types'
+import { useStateStore } from 'state/StoreProvider'
 import Sidebar from 'components/Sidebar'
 import Text from 'components/Text'
 import Button from 'components/Button'
@@ -20,7 +21,6 @@ export interface Props {
   deployedURL?: string | null
   deployStatus?: deployment_state | null
   isInitializingDeploy?: boolean
-  onEnvsChange: (envs: { key: string, value: string }[]) => void
 }
 
 function Logs({
@@ -29,43 +29,29 @@ function Logs({
   deployedURL,
   deployStatus,
   isInitializingDeploy,
-  onEnvsChange,
 }: Props) {
-  const [envs, setEnvs] = useState<{ key: string, value: string }[]>([{ key: '', value: '' }])
+  const store = useStateStore()
+
+  const envs = store.use.envs()
+  const setEnvs = store.use.setEnvs()
+  const changeEnv = store.use.changeEnv()
 
   const handleEnvKeyChange = useCallback((event: any, idx: number) => {
-    setEnvs(current => {
-      current[idx].key = event.target.value
-      const newEnvs = [...current]
-      onEnvsChange(newEnvs)
-      return newEnvs
-    })
-  }, [onEnvsChange])
+    changeEnv({ key: event.target.value.trim(), value: envs[idx].value }, idx)
+  }, [envs, changeEnv])
 
   const handleEnvValueChange = useCallback((event: any, idx: number) => {
-    setEnvs(current => {
-      current[idx].value = event.target.value
-      const newEnvs = [...current]
-      onEnvsChange(newEnvs)
-      return newEnvs
-    })
-  }, [onEnvsChange])
+    changeEnv({ key: envs[idx].key, value: event.target.value.trim() }, idx)
+  }, [envs, changeEnv])
 
   const addNewEnv = useCallback(() => {
-    setEnvs(current => {
-      const newEnvs = [...current, { key: '', value: '' }]
-      onEnvsChange(newEnvs)
-      return newEnvs
-    })
-  }, [onEnvsChange])
+    setEnvs([...envs, { key: '', value: '' }])
+  }, [envs, setEnvs])
 
   const deleteEnv = useCallback((delIdx: number) => {
-    setEnvs(current => {
-      const newEnvs = [...current.filter((_, idx) => idx !== delIdx)]
-      onEnvsChange(newEnvs)
-      return newEnvs
-    })
-  }, [onEnvsChange])
+    const newEnvs = [...envs.filter((_, idx) => idx !== delIdx)]
+    setEnvs(newEnvs)
+  }, [envs, setEnvs])
 
   useEffect(function highlightCode() {
     hljs.highlightAll()
@@ -153,7 +139,7 @@ function Logs({
         />
         {envs.map((env, idx) =>
           <div
-            key={env.key}
+            key={idx}
             className="
               flex
               items-center
