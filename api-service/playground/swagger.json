@@ -126,12 +126,16 @@
 					},
 					"processID": {
 						"type": "string"
+					},
+					"finished": {
+						"type": "boolean"
 					}
 				},
 				"required": [
 					"stderr",
 					"stdout",
-					"processID"
+					"processID",
+					"finished"
 				],
 				"type": "object",
 				"additionalProperties": false
