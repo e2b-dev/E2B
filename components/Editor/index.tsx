@@ -9,8 +9,9 @@ import Select from 'components/Select'
 import Text from 'components/Text'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { Log } from 'db/types'
+import Block from 'components/Block'
 
-import BlockEditor from './BlockEditor'
+
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
 import Logs from './Logs'
@@ -107,7 +108,7 @@ function Editor({ project }: Props) {
           if (!selectedRoute) return
           setFocusedBlock(b => {
             if (selectedRoute.blocks.length === 0 || b.index === selectedRoute?.blocks.length - 1) {
-              addBlock(selectedRoute.id)
+              addBlock(selectedRoute.id, 'Basic')
             }
             return { index: b.index + 1 }
           })
@@ -164,28 +165,33 @@ function Editor({ project }: Props) {
                 flex-col
                 items-center
                 transition-all
-                ">
+              ">
                 {selectedRoute.blocks.map((b, i) =>
                   <Fragment
                     key={b.id}
                   >
                     <ConnectionLine className='h-4' />
-                    <BlockEditor
-                      block={b}
-                      onDelete={() => {
-                        deleteBlock(selectedRoute.id, i)
-                        setTimeout(() => {
-                          if (i <= focusedBlock.index) {
-                            setFocusedBlock(b => ({ index: b.index - 1 }))
-                          } else {
-                            setFocusedBlock(b => ({ index: b.index }))
-                          }
-                        }, 0)
+                    <Block
+                      type={b.type}
+                      props={{
+                        block: b,
+                        onDelete() {
+                          deleteBlock(selectedRoute.id, i)
+                          setTimeout(() => {
+                            if (i <= focusedBlock.index) {
+                              setFocusedBlock(b => ({ index: b.index - 1 }))
+                            } else {
+                              setFocusedBlock(b => ({ index: b.index }))
+                            }
+                          }, 0)
+                        },
+                        onChange(b) {
+                          changeBlock(selectedRoute.id, i, b)
+                        },
+                        index: i,
+                        focus: focusedBlock,
+                        onFocus() { setFocusedBlock({ index: i }) }
                       }}
-                      onChange={(b) => changeBlock(selectedRoute.id, i, b)}
-                      index={i}
-                      focus={focusedBlock}
-                      onFocus={() => setFocusedBlock({ index: i })}
                     />
                   </Fragment>
                 )}
@@ -193,7 +199,7 @@ function Editor({ project }: Props) {
               <ConnectionLine className='min-h-[16px]' />
               <AddBlockButton
                 addBlock={() => {
-                  addBlock(selectedRoute.id)
+                  addBlock(selectedRoute.id, 'Basic')
                   setTimeout(() => setFocusedBlock({ index: selectedRoute.blocks.length }), 0)
                 }}
               />

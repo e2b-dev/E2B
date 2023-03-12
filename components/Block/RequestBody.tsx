@@ -36,43 +36,68 @@ function BlockEditor({
   return (
     <div className="
       flex
+      flex-col
+      items-start
       relative
       w-[65ch]
-      items-center
+      border
+      border-green-800/40
+      rounded-lg
     ">
+      <div className="
+        self-stretch
+        rounded-t-lg
+        py-1
+        px-4
+        font-mono
+        text-slate-400
+        text-sm
+        bg-gray-50
+      ">
+        {'{'}
+      </div>
       <TextareaAutosize
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
         spellCheck="false"
         name="block"
-        placeholder="Prompt"
+        placeholder="fieldName: Type,"
         value={block.prompt}
         onChange={e => onChange({ ...block, prompt: e.target.value })}
         onFocus={onFocus}
         ref={ref}
         className={clsx(
           'w-full',
+          'pl-8',
+          'pr-4',
           'py-2',
-          'px-4',
-          'rounded-lg',
           'leading-6',
           'tracking-wide',
-          'font-sans',
+          'font-mono',
           'text-slate-500',
           'focus:text-slate-600',
           'no-scroller',
           'transition-[shadow,colors]',
           'focus:shadow',
-          'border',
-          'border-green-800/40',
           'bg-white',
           'outline-none',
-          'focus:border-green-800',
           'text-sm',
           'placeholder:text-slate-300',
         )}
       />
+      <div className="
+        self-stretch
+        rounded-b-lg
+        py-1
+        px-4
+        font-mono
+        text-slate-400
+        text-sm
+        bg-gray-50
+      ">
+        {'}'}
+      </div>
       <div className="
         absolute
         translate-x-full
