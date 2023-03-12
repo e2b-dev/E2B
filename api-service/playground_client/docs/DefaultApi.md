@@ -516,7 +516,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **stop_process**
-> stop_process(id, process_id)
+> ProcessResponse stop_process(id, process_id, results=results)
 
 
 
@@ -542,9 +542,12 @@ with playground_client.ApiClient(configuration) as api_client:
     api_instance = playground_client.DefaultApi(api_client)
     id = 'id_example' # str | 
     process_id = 'process_id_example' # str | 
+    results = True # bool |  (optional)
 
     try:
-        api_instance.stop_process(id, process_id)
+        api_response = api_instance.stop_process(id, process_id, results=results)
+        print("The response of DefaultApi->stop_process:\n")
+        pprint(api_response)
     except Exception as e:
         print("Exception when calling DefaultApi->stop_process: %s\n" % e)
 ```
@@ -555,10 +558,11 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
  **process_id** | **str**|  | 
+ **results** | **bool**|  | [optional] 
 
 ### Return type
 
-void (empty response body)
+[**ProcessResponse**](ProcessResponse.md)
 
 ### Authorization
 
@@ -567,12 +571,12 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**204** | No content |  -  |
+**200** | Ok |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

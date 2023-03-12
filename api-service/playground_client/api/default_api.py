@@ -1230,19 +1230,21 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def stop_process(self, id : StrictStr, process_id : StrictStr, **kwargs) -> None:  # noqa: E501
+    def stop_process(self, id : StrictStr, process_id : StrictStr, results : Optional[StrictBool] = None, **kwargs) -> ProcessResponse:  # noqa: E501
         """stop_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.stop_process(id, process_id, async_req=True)
+        >>> thread = api.stop_process(id, process_id, results, async_req=True)
         >>> result = thread.get()
 
         :param id: (required)
         :type id: str
         :param process_id: (required)
         :type process_id: str
+        :param results:
+        :type results: bool
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
@@ -1256,25 +1258,27 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: None
+        :rtype: ProcessResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.stop_process_with_http_info(id, process_id, **kwargs)  # noqa: E501
+        return self.stop_process_with_http_info(id, process_id, results, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def stop_process_with_http_info(self, id : StrictStr, process_id : StrictStr, **kwargs):  # noqa: E501
+    def stop_process_with_http_info(self, id : StrictStr, process_id : StrictStr, results : Optional[StrictBool] = None, **kwargs):  # noqa: E501
         """stop_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.stop_process_with_http_info(id, process_id, async_req=True)
+        >>> thread = api.stop_process_with_http_info(id, process_id, results, async_req=True)
         >>> result = thread.get()
 
         :param id: (required)
         :type id: str
         :param process_id: (required)
         :type process_id: str
+        :param results:
+        :type results: bool
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
@@ -1296,14 +1300,15 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: None
+        :rtype: tuple(ProcessResponse, status_code(int), headers(HTTPHeaderDict))
         """
 
         _params = locals()
 
         _all_params = [
             'id',
-            'process_id'
+            'process_id',
+            'results'
         ]
         _all_params.extend(
             [
@@ -1338,6 +1343,8 @@ class DefaultApi(object):
 
         # process the query parameters
         _query_params = []
+        if _params.get('results') is not None:  # noqa: E501
+            _query_params.append(('results', _params['results']))
 
         # process the header parameters
         _header_params = dict(_params.get('_headers', {}))
@@ -1349,10 +1356,16 @@ class DefaultApi(object):
         # process the body parameter
         _body_params = None
 
+        # set the HTTP header `Accept`
+        _header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
         # authentication setting
         _auth_settings = []  # noqa: E501
 
-        _response_types_map = {}
+        _response_types_map = {
+            '200': "ProcessResponse",
+        }
 
         return self.api_client.call_api(
             '/sessions/{id}/process/{processID}', 'DELETE',
