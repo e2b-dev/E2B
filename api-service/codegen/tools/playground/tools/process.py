@@ -27,7 +27,7 @@ def encode_command_output(response: RunProcessResponse, only_errors: bool = Fals
 
 def create_process_tools(playground: NodeJSPlayground):
     # Ensure that the function is a generator even if no tools are yielded
-    yield from []
+    yield from ()
 
     # TODO: Escape command?
     @tool("RunTerminalCommand")

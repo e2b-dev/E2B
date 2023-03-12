@@ -9,7 +9,7 @@ def extract_code(code: str):
 
 def create_code_tools(playground: NodeJSPlayground):
     # Ensure that the function is a generator even if no tools are yielded
-    yield from []
+    yield from ()
 
     @tool("InstallNPMDependencies")
     def install_dependencies(dependencies: str) -> str:
