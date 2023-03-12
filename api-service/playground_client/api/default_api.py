@@ -17,14 +17,14 @@ import re  # noqa: F401
 from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
-from pydantic import StrictBool, StrictStr
+from pydantic import Field, StrictBool, StrictStr
 
 from playground_client.models.create_session_response import CreateSessionResponse
 from playground_client.models.create_sessions_request import CreateSessionsRequest
 from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse
+from playground_client.models.process_response import ProcessResponse
 from playground_client.models.read_filesystem_file_response import ReadFilesystemFileResponse
 from playground_client.models.run_process_params import RunProcessParams
-from playground_client.models.run_process_response import RunProcessResponse
 from playground_client.models.write_filesystem_file_request import WriteFilesystemFileRequest
 from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest
 
@@ -473,7 +473,7 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def get_process(self, id : StrictStr, process_id : StrictStr, wait : StrictBool, **kwargs) -> RunProcessResponse:  # noqa: E501
+    def get_process(self, id : StrictStr, process_id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], **kwargs) -> ProcessResponse:  # noqa: E501
         """get_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -486,7 +486,7 @@ class DefaultApi(object):
         :type id: str
         :param process_id: (required)
         :type process_id: str
-        :param wait: (required)
+        :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (required)
         :type wait: bool
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
@@ -501,13 +501,13 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: RunProcessResponse
+        :rtype: ProcessResponse
         """
         kwargs['_return_http_data_only'] = True
         return self.get_process_with_http_info(id, process_id, wait, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_process_with_http_info(self, id : StrictStr, process_id : StrictStr, wait : StrictBool, **kwargs):  # noqa: E501
+    def get_process_with_http_info(self, id : StrictStr, process_id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], **kwargs):  # noqa: E501
         """get_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -520,7 +520,7 @@ class DefaultApi(object):
         :type id: str
         :param process_id: (required)
         :type process_id: str
-        :param wait: (required)
+        :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (required)
         :type wait: bool
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
@@ -543,7 +543,7 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: tuple(RunProcessResponse, status_code(int), headers(HTTPHeaderDict))
+        :rtype: tuple(ProcessResponse, status_code(int), headers(HTTPHeaderDict))
         """
 
         _params = locals()
@@ -607,7 +607,7 @@ class DefaultApi(object):
         _auth_settings = []  # noqa: E501
 
         _response_types_map = {
-            '200': "RunProcessResponse",
+            '200': "ProcessResponse",
         }
 
         return self.api_client.call_api(
@@ -1066,7 +1066,7 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def start_process(self, id : StrictStr, wait : StrictBool, run_process_params : RunProcessParams, **kwargs) -> RunProcessResponse:  # noqa: E501
+    def start_process(self, id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], run_process_params : RunProcessParams, **kwargs) -> ProcessResponse:  # noqa: E501
         """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1077,7 +1077,7 @@ class DefaultApi(object):
 
         :param id: (required)
         :type id: str
-        :param wait: (required)
+        :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (required)
         :type wait: bool
         :param run_process_params: (required)
         :type run_process_params: RunProcessParams
@@ -1094,13 +1094,13 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: RunProcessResponse
+        :rtype: ProcessResponse
         """
         kwargs['_return_http_data_only'] = True
         return self.start_process_with_http_info(id, wait, run_process_params, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def start_process_with_http_info(self, id : StrictStr, wait : StrictBool, run_process_params : RunProcessParams, **kwargs):  # noqa: E501
+    def start_process_with_http_info(self, id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], run_process_params : RunProcessParams, **kwargs):  # noqa: E501
         """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1111,7 +1111,7 @@ class DefaultApi(object):
 
         :param id: (required)
         :type id: str
-        :param wait: (required)
+        :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (required)
         :type wait: bool
         :param run_process_params: (required)
         :type run_process_params: RunProcessParams
@@ -1136,7 +1136,7 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: tuple(RunProcessResponse, status_code(int), headers(HTTPHeaderDict))
+        :rtype: tuple(ProcessResponse, status_code(int), headers(HTTPHeaderDict))
         """
 
         _params = locals()
@@ -1207,7 +1207,7 @@ class DefaultApi(object):
         _auth_settings = []  # noqa: E501
 
         _response_types_map = {
-            '200': "RunProcessResponse",
+            '200': "ProcessResponse",
         }
 
         return self.api_client.call_api(

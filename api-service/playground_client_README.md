@@ -88,9 +88,9 @@ Class | Method | HTTP request | Description
  - [OutType](playground_client/docs/OutType.md)
  - [OutTypeStderr](playground_client/docs/OutTypeStderr.md)
  - [OutTypeStdout](playground_client/docs/OutTypeStdout.md)
+ - [ProcessResponse](playground_client/docs/ProcessResponse.md)
  - [ReadFilesystemFileResponse](playground_client/docs/ReadFilesystemFileResponse.md)
  - [RunProcessParams](playground_client/docs/RunProcessParams.md)
- - [RunProcessResponse](playground_client/docs/RunProcessResponse.md)
  - [WriteFilesystemFileRequest](playground_client/docs/WriteFilesystemFileRequest.md)
  - [WriteProcessStdinRequest](playground_client/docs/WriteProcessStdinRequest.md)
 

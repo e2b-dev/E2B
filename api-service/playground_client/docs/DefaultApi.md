@@ -199,7 +199,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_process**
-> RunProcessResponse get_process(id, process_id, wait)
+> ProcessResponse get_process(id, process_id, wait)
 
 
 
@@ -225,7 +225,7 @@ with playground_client.ApiClient(configuration) as api_client:
     api_instance = playground_client.DefaultApi(api_client)
     id = 'id_example' # str | 
     process_id = 'process_id_example' # str | 
-    wait = True # bool | 
+    wait = True # bool | if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
 
     try:
         api_response = api_instance.get_process(id, process_id, wait)
@@ -241,11 +241,11 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
  **process_id** | **str**|  | 
- **wait** | **bool**|  | 
+ **wait** | **bool**| if true the request will wait until the process ends and then return the &#x60;stdout&#x60;, &#x60;stderr&#x60; and &#x60;processID&#x60;. | 
 
 ### Return type
 
-[**RunProcessResponse**](RunProcessResponse.md)
+[**ProcessResponse**](ProcessResponse.md)
 
 ### Authorization
 
@@ -259,7 +259,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Ok |  -  |
+**200** | &#x60;processID&#x60; and all &#x60;stdout&#x60; and &#x60;stderr&#x60; that the process outputted until now. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -451,7 +451,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **start_process**
-> RunProcessResponse start_process(id, wait, run_process_params)
+> ProcessResponse start_process(id, wait, run_process_params)
 
 
 
@@ -476,7 +476,7 @@ with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
     id = 'id_example' # str | 
-    wait = True # bool | 
+    wait = True # bool | if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
     run_process_params = playground_client.RunProcessParams() # RunProcessParams | 
 
     try:
@@ -492,12 +492,12 @@ with playground_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
- **wait** | **bool**|  | 
+ **wait** | **bool**| if true the request will wait until the process ends and then return the &#x60;stdout&#x60;, &#x60;stderr&#x60; and &#x60;processID&#x60;. | 
  **run_process_params** | [**RunProcessParams**](RunProcessParams.md)|  | 
 
 ### Return type
 
-[**RunProcessResponse**](RunProcessResponse.md)
+[**ProcessResponse**](ProcessResponse.md)
 
 ### Authorization
 
@@ -511,7 +511,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Ok |  -  |
+**200** | &#x60;processID&#x60; and all &#x60;stdout&#x60; and &#x60;stderr&#x60; that the process outputted until now. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

@@ -16,11 +16,11 @@ import unittest
 import datetime
 
 import playground_client
-from playground_client.models.run_process_response import RunProcessResponse  # noqa: E501
+from playground_client.models.process_response import ProcessResponse  # noqa: E501
 from playground_client.rest import ApiException
 
-class TestRunProcessResponse(unittest.TestCase):
-    """RunProcessResponse unit test stubs"""
+class TestProcessResponse(unittest.TestCase):
+    """ProcessResponse unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,15 +29,15 @@ class TestRunProcessResponse(unittest.TestCase):
         pass
 
     def make_instance(self, include_optional):
-        """Test RunProcessResponse
+        """Test ProcessResponse
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `RunProcessResponse`
+        # uncomment below to create an instance of `ProcessResponse`
         """
-        model = playground_client.models.run_process_response.RunProcessResponse()  # noqa: E501
+        model = playground_client.models.process_response.ProcessResponse()  # noqa: E501
         if include_optional :
-            return RunProcessResponse(
+            return ProcessResponse(
                 stderr = [
                     playground_client.models.out_stderr_response.OutStderrResponse(
                         type = 'Stderr', 
@@ -53,7 +53,7 @@ class TestRunProcessResponse(unittest.TestCase):
                 process_id = ''
             )
         else :
-            return RunProcessResponse(
+            return ProcessResponse(
                 stderr = [
                     playground_client.models.out_stderr_response.OutStderrResponse(
                         type = 'Stderr', 
@@ -70,8 +70,8 @@ class TestRunProcessResponse(unittest.TestCase):
         )
         """
 
-    def testRunProcessResponse(self):
-        """Test RunProcessResponse"""
+    def testProcessResponse(self):
+        """Test ProcessResponse"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 
