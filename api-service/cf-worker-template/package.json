@@ -10,7 +10,9 @@
 		"vitest": "^0.24.5"
 	},
 	"dependencies": {
-		"wrangler": "^2.12.2",
-		"itty-router": "^3.0.11"
+		"@sagi.io/workers-slack": "^0.0.55",
+		"@slack/web-api": "^6.8.1",
+		"itty-router": "^3.0.11",
+		"wrangler": "^2.12.2"
 	}
 }

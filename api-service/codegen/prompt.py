@@ -11,11 +11,21 @@
 # """
 
 PREFIX = """You are a skilled programmer that knows nodejs and javascript.
-You are building a serverless API with Cloudflare Workers using the `itty-router` package.
+USE ONLY TOOLS THAT YOU HAVE ACCESS TO!
+You are building a serverless API with Cloudflare Workers using the `itty-router` package. The javascript code is in the form of ES modules.
 You need to complete the `handle{method}Request` function that handles the incoming {method} requests and return the whole completed code.
 
 You can access environment variables through the `env` parameter. You have access to the following environment variables:
 {envs}
+
+You can install any package that you might need.
+
+The incoming request content-type is application/json.
+
+The incoming request payload looks like this:
+```
+{request_body}
+```
 
 Here is the starting code that handles the initialization. The function that you need to complete is marked with a TODO comment:
 ```

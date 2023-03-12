@@ -5,6 +5,7 @@ main = "./index.js"
 # route = ''
 compatibility_date = "2022-05-03"
 send_metrics = false
+node_compat = true
 
 [vars]
 <VARS>

@@ -3,23 +3,14 @@ import { Router } from 'itty-router'
 const router = Router()
 
 async function handlepostRequest(request, env) {
-    const body = await request.json()
-    const email = body.email
-    console.log('email', email)
-    if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
-        return new Response(JSON.stringify({
-            error: 'Invalid email'
-        }), {
-            status: 400
-        })
-    }
-    const db = new Supabase.DB(env.SUPABASE_URL)
-    await db.query('INSERT INTO users (email) VALUES ($1)', [email])
-    return new Response(JSON.stringify({
-        message: 'Ok'
-    }), {
-        status: 200
-    })
+    const botAccessToken = env.SLACK_BOT_ACCESS_TOKEN;
+    const SlackREST = require('@sagi.io/workers-slack')
+    const SlackAPI = new SlackREST({ botAccessToken })
+
+    const data = { channel: 'general', text: `User '${request.email}' selected pricing '${request.selectedPricing.type}' for $${request.selectedPricing.cost}` }
+    const result = await SlackAPI.chat.postMessage(data)
+
+    return new Response('Ok', { status: 200 })
 }
 
 router.post('/', handlepostRequest)

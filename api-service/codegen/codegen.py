@@ -12,7 +12,7 @@ from database import Database
 def generate_req_handler(
     db: Database,
     run_id: str,
-    blocks: Dict,
+    blocks: List[Dict],
     method: str,
     envs: List[Dict[str, str]],
 ):
@@ -32,10 +32,21 @@ def generate_req_handler(
         verbose=True,
     )
 
+    # Convert description of the body block to a Typescript interface declaration.
+    body_block = next(block for block in blocks if block["type"] == "RequestBody")
+    req_body_str = f"""interface RequestBody {{
+        {body_block["prompt"]}
+    }}
+    """
+    print("REQ BODY BLOCK")
+    print(req_body_str)
+
+    # Convert env vars to a markdown list enumerating env names on separate lines.
     envs_str = ""
     for env in envs:
         envs_str += f'- `{env["key"]}`\n'
-    prompt = PREFIX.format(method=method, envs=envs_str)
+
+    prompt = PREFIX.format(method=method, envs=envs_str, request_body=req_body_str)
 
     for idx, block in enumerate(blocks):
         if block["type"] == "Basic":
@@ -45,6 +56,9 @@ def generate_req_handler(
 
     handler_code = executor.run(prompt).strip("`").strip()
 
+    content = playground.read_file('/code/package.json')
+    print('PACKAGE.JSON')
+    print(content)
     playground.close()
 
     return prompt, handler_code
