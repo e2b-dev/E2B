@@ -18,7 +18,7 @@ import json
 
 
 
-from pydantic import BaseModel, StrictFloat, StrictStr
+from pydantic import BaseModel, StrictStr
 from playground_client.models.out_type_stdout import OutTypeStdout
 
 class OutStdoutResponse(BaseModel):
@@ -28,7 +28,7 @@ class OutStdoutResponse(BaseModel):
     Do not edit the class manually.
     """
     type: OutTypeStdout = ...
-    timestamp: StrictFloat = ...
+    timestamp: float = ...
     line: StrictStr = ...
     __properties = ["type", "timestamp", "line"]
 
