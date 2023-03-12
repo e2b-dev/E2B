@@ -14,7 +14,7 @@ def create_playground_tools() -> tuple[List[Any], Playground]:
         for tools in (
             tool_factory(playground)
             for tool_factory in [
-                create_filesystem_tools,
+                # create_filesystem_tools,
                 create_process_tools,
                 create_code_tools,
             ]
