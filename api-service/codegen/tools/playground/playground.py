@@ -70,7 +70,7 @@ class NodeJSPlayground(Playground):
 
     def run_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
-        return self.run_command(f"ts-node {self.default_typescript_code_file}")
+        return self.run_command(f"ts-node -T {self.default_typescript_code_file}")
 
     def check_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
