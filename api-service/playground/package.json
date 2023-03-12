@@ -20,7 +20,7 @@
   "scripts": {
     "dev": "concurrently \"nodemon -q\" \"nodemon --config nodemon-tsoa.json \"",
     "generate": "tsoa spec-and-routes",
-    "check-types": "tsx --noEmit",
+    "check-types": "tsc --noEmit",
     "build": "./scripts/build.js",
     "start": "node lib/server.js"
   }

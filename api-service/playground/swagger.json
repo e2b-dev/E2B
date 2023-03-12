@@ -165,14 +165,42 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"CreateSessionResponse": {
+			"OpenPort": {
 				"properties": {
-					"id": {
+					"State": {
 						"type": "string"
+					},
+					"Ip": {
+						"type": "string"
+					},
+					"Port": {
+						"type": "number",
+						"format": "double"
 					}
 				},
 				"required": [
-					"id"
+					"State",
+					"Ip",
+					"Port"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SessionResponse": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"ports": {
+						"items": {
+							"$ref": "#/components/schemas/OpenPort"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"id",
+					"ports"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -363,7 +391,7 @@
 				}
 			}
 		},
-		"/sessions/{id}/process": {
+		"/sessions/{id}/processes": {
 			"post": {
 				"operationId": "StartProcess",
 				"responses": {
@@ -410,7 +438,7 @@
 				}
 			}
 		},
-		"/sessions/{id}/process/{processID}": {
+		"/sessions/{id}/processes/{processID}": {
 			"delete": {
 				"operationId": "StopProcess",
 				"responses": {
@@ -497,7 +525,7 @@
 				]
 			}
 		},
-		"/sessions/{id}/process/{processID}/stdin": {
+		"/sessions/{id}/processes/{processID}/stdin": {
 			"post": {
 				"operationId": "WriteProcessStdin",
 				"responses": {
@@ -553,7 +581,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/CreateSessionResponse"
+									"$ref": "#/components/schemas/SessionResponse"
 								}
 							}
 						}
@@ -587,6 +615,32 @@
 				"responses": {
 					"204": {
 						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"get": {
+				"operationId": "GetSession",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
 					}
 				},
 				"security": [],
