@@ -7,18 +7,19 @@ Method | HTTP request | Description
 [**create_sessions**](DefaultApi.md#create_sessions) | **POST** /sessions | 
 [**delete_filesystem_entry**](DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{id}/filesystem | 
 [**delete_session**](DefaultApi.md#delete_session) | **DELETE** /sessions/{id} | 
-[**get_process**](DefaultApi.md#get_process) | **GET** /sessions/{id}/process/{processID} | 
+[**get_process**](DefaultApi.md#get_process) | **GET** /sessions/{id}/processes/{processID} | 
+[**get_session**](DefaultApi.md#get_session) | **GET** /sessions/{id} | 
 [**list_filesystem_dir**](DefaultApi.md#list_filesystem_dir) | **GET** /sessions/{id}/filesystem/dir | 
 [**make_filesystem_dir**](DefaultApi.md#make_filesystem_dir) | **PUT** /sessions/{id}/filesystem/dir | 
 [**read_filesystem_file**](DefaultApi.md#read_filesystem_file) | **GET** /sessions/{id}/filesystem/file | 
-[**start_process**](DefaultApi.md#start_process) | **POST** /sessions/{id}/process | 
-[**stop_process**](DefaultApi.md#stop_process) | **DELETE** /sessions/{id}/process/{processID} | 
+[**start_process**](DefaultApi.md#start_process) | **POST** /sessions/{id}/processes | 
+[**stop_process**](DefaultApi.md#stop_process) | **DELETE** /sessions/{id}/processes/{processID} | 
 [**write_filesystem_file**](DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{id}/filesystem/file | 
-[**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{id}/process/{processID}/stdin | 
+[**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{id}/processes/{processID}/stdin | 
 
 
 # **create_sessions**
-> CreateSessionResponse create_sessions(create_sessions_request)
+> SessionResponse create_sessions(create_sessions_request)
 
 
 
@@ -60,7 +61,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**CreateSessionResponse**](CreateSessionResponse.md)
+[**SessionResponse**](SessionResponse.md)
 
 ### Authorization
 
@@ -260,6 +261,67 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | &#x60;processID&#x60; and all &#x60;stdout&#x60; and &#x60;stderr&#x60; that the process outputted until now. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_session**
+> SessionResponse get_session(id)
+
+
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import os
+import playground_client
+from playground_client.rest import ApiException
+from pprint import pprint
+# Defining the host is optional and defaults to https://localhost:9001
+# See configuration.py for a list of all supported configuration parameters.
+configuration = playground_client.Configuration(
+    host = "https://localhost:9001"
+)
+
+
+# Enter a context with an instance of the API client
+with playground_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = playground_client.DefaultApi(api_client)
+    id = 'id_example' # str | 
+
+    try:
+        api_response = api_instance.get_session(id)
+        print("The response of DefaultApi->get_session:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->get_session: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **str**|  | 
+
+### Return type
+
+[**SessionResponse**](SessionResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Ok |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

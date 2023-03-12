@@ -52,6 +52,12 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_get_session(self):
+        """Test case for get_session
+
+        """
+        pass
+
     def test_list_filesystem_dir(self):
         """Test case for list_filesystem_dir
 

@@ -16,11 +16,11 @@ import unittest
 import datetime
 
 import playground_client
-from playground_client.models.create_session_response import CreateSessionResponse  # noqa: E501
+from playground_client.models.open_port import OpenPort  # noqa: E501
 from playground_client.rest import ApiException
 
-class TestCreateSessionResponse(unittest.TestCase):
-    """CreateSessionResponse unit test stubs"""
+class TestOpenPort(unittest.TestCase):
+    """OpenPort unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,25 +29,29 @@ class TestCreateSessionResponse(unittest.TestCase):
         pass
 
     def make_instance(self, include_optional):
-        """Test CreateSessionResponse
+        """Test OpenPort
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `CreateSessionResponse`
+        # uncomment below to create an instance of `OpenPort`
         """
-        model = playground_client.models.create_session_response.CreateSessionResponse()  # noqa: E501
+        model = playground_client.models.open_port.OpenPort()  # noqa: E501
         if include_optional :
-            return CreateSessionResponse(
-                id = ''
+            return OpenPort(
+                state = '', 
+                ip = '', 
+                port = 1.337
             )
         else :
-            return CreateSessionResponse(
-                id = '',
+            return OpenPort(
+                state = '',
+                ip = '',
+                port = 1.337,
         )
         """
 
-    def testCreateSessionResponse(self):
-        """Test CreateSessionResponse"""
+    def testOpenPort(self):
+        """Test OpenPort"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 
