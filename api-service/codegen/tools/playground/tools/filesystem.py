@@ -10,6 +10,9 @@ def encode_directory_listing(entries: List[EntryInfo]) -> str:
 
 
 def create_filesystem_tools(playground: NodeJSPlayground):
+    # Ensure that the function is a generator even if no tools are yielded
+    yield from ()
+
     @tool("ReadFile")
     def read_file(path: str) -> str:
         """Read content of the file from filesystem."""
@@ -18,23 +21,23 @@ def create_filesystem_tools(playground: NodeJSPlayground):
     yield read_file
 
     # TODO: Escape file content?
-    @tool("WriteFile")
-    def write_file(input: str) -> str:
-        """Write content to a file in the filesystem.
+    @tool("SaveFile")
+    def save_file(input: str) -> str:
+        """Save content to a file in the filesystem.
         The input should be a path to a file followed by the content of the file.
         Separate the path and content by a newline character.
         """
         path, content = input.split("\n", 1)
         playground.write_file(path, content)
-        return ""
+        return "File saved"
 
-    yield write_file
+    yield save_file
 
     @tool("DeleteFile")
     def delete_file(path: str) -> str:
         """Delete the file."""
         playground.delete_file(path)
-        return ""
+        return "File deleted"
 
     yield delete_file
 
@@ -50,6 +53,6 @@ def create_filesystem_tools(playground: NodeJSPlayground):
     def delete_directory(path: str) -> str:
         """Delete the directory."""
         playground.delete_dir(path)
-        return ""
+        return "Directory deleted"
 
     yield delete_directory
