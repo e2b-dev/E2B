@@ -1,5 +1,6 @@
-import { Session } from '@devbookhq/sdk'
+import { OpenedPort as OpenPort, Session } from '@devbookhq/sdk'
 import NodeCache from 'node-cache'
+
 import { CachedProcess, RunProcessParams } from './process'
 
 export const sessionCache = new NodeCache({
@@ -20,7 +21,9 @@ sessionCache.on('expired', async function (_, cached: CachedSession) {
 export class CachedSession {
   private readonly cachedProcesses: CachedProcess[] = []
 
-  private id?: string
+  ports: OpenPort[] = []
+
+  id?: string
   session: Session
 
   /**
@@ -29,7 +32,17 @@ export class CachedSession {
    * @param envID 
    */
   constructor(envID: string) {
-    this.session = new Session({ id: envID })
+    this.session = new Session({
+      id: envID,
+      onClose: () => {
+        this.delete()
+      },
+      codeSnippet: {
+        onScanPorts: (ports) => {
+          this.ports = ports
+        },
+      },
+    })
   }
 
   async init() {
@@ -42,7 +55,7 @@ export class CachedSession {
     this.id = id
     sessionCache.set(id, this)
 
-    return id
+    return this
   }
 
   async delete() {
@@ -55,11 +68,16 @@ export class CachedSession {
   }
 
   async stopProcess(processID: string) {
-    await this.findProcess(processID)?.process?.kill()
+    const cachedProcess = this.findProcess(processID)
+    if (!cachedProcess) return
+
+    await cachedProcess.process?.kill()
     const idx = this.cachedProcesses.findIndex(p => p.process?.processID === processID)
     if (idx !== -1) {
       this.cachedProcesses.splice(idx, 1)
     }
+
+    return cachedProcess
   }
 
   findProcess(processID: string) {

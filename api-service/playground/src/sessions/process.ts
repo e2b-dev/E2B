@@ -3,7 +3,6 @@ import {
   OutStdoutResponse,
   ProcessManager,
   createSessionProcess,
-  Process,
 } from '@devbookhq/sdk'
 
 export interface RunProcessParams extends Pick<Parameters<ProcessManager['start']>[0], 'cmd' | 'envVars' | 'rootdir'> { }
@@ -13,8 +12,18 @@ export class CachedProcess {
   readonly stderr: OutStderrResponse[] = []
 
   private started = false
-  process?: Process
-  exited?: Promise<void>
+
+  finished = false
+  process?: Awaited<ReturnType<typeof createSessionProcess>>
+
+  get response() {
+    return {
+      stdout: this.stdout,
+      stderr: this.stderr,
+      finished: this.finished,
+      processID: this.process?.processID!,
+    }
+  }
 
   constructor(private readonly manager: ProcessManager) { }
 
@@ -30,6 +39,10 @@ export class CachedProcess {
       ...params,
       onStderr: stderr.push,
       onStdout: stdout.push,
+    })
+
+    process.exited.finally(() => {
+      this.finished = true
     })
 
     this.process = process
