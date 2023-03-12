@@ -17,7 +17,7 @@ import re  # noqa: F401
 from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
-from pydantic import StrictStr
+from pydantic import StrictBool, StrictStr
 
 from playground_client.models.create_session_response import CreateSessionResponse
 from playground_client.models.create_sessions_request import CreateSessionsRequest
@@ -26,6 +26,7 @@ from playground_client.models.read_filesystem_file_response import ReadFilesyste
 from playground_client.models.run_process_params import RunProcessParams
 from playground_client.models.run_process_response import RunProcessResponse
 from playground_client.models.write_filesystem_file_request import WriteFilesystemFileRequest
+from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest
 
 from playground_client.api_client import ApiClient
 from playground_client.exceptions import (  # noqa: F401
@@ -456,6 +457,161 @@ class DefaultApi(object):
 
         return self.api_client.call_api(
             '/sessions/{id}', 'DELETE',
+            _path_params,
+            _query_params,
+            _header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            response_types_map=_response_types_map,
+            auth_settings=_auth_settings,
+            async_req=_params.get('async_req'),
+            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=_params.get('_preload_content', True),
+            _request_timeout=_params.get('_request_timeout'),
+            collection_formats=_collection_formats,
+            _request_auth=_params.get('_request_auth'))
+
+    @validate_arguments
+    def get_process(self, id : StrictStr, process_id : StrictStr, wait : StrictBool, **kwargs) -> RunProcessResponse:  # noqa: E501
+        """get_process  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.get_process(id, process_id, wait, async_req=True)
+        >>> result = thread.get()
+
+        :param id: (required)
+        :type id: str
+        :param process_id: (required)
+        :type process_id: str
+        :param wait: (required)
+        :type wait: bool
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: RunProcessResponse
+        """
+        kwargs['_return_http_data_only'] = True
+        return self.get_process_with_http_info(id, process_id, wait, **kwargs)  # noqa: E501
+
+    @validate_arguments
+    def get_process_with_http_info(self, id : StrictStr, process_id : StrictStr, wait : StrictBool, **kwargs):  # noqa: E501
+        """get_process  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.get_process_with_http_info(id, process_id, wait, async_req=True)
+        >>> result = thread.get()
+
+        :param id: (required)
+        :type id: str
+        :param process_id: (required)
+        :type process_id: str
+        :param wait: (required)
+        :type wait: bool
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _return_http_data_only: response data without head status code
+                                       and headers
+        :type _return_http_data_only: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :type _content_type: string, optional: force content-type for the request
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: tuple(RunProcessResponse, status_code(int), headers(HTTPHeaderDict))
+        """
+
+        _params = locals()
+
+        _all_params = [
+            'id',
+            'process_id',
+            'wait'
+        ]
+        _all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth',
+                '_content_type',
+                '_headers'
+            ]
+        )
+
+        # validate the arguments
+        for _key, _val in _params['kwargs'].items():
+            if _key not in _all_params:
+                raise ApiTypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method get_process" % _key
+                )
+            _params[_key] = _val
+        del _params['kwargs']
+
+        _collection_formats = {}
+
+        # process the path parameters
+        _path_params = {}
+        if _params['id']:
+            _path_params['id'] = _params['id']
+        if _params['process_id']:
+            _path_params['processID'] = _params['process_id']
+
+        # process the query parameters
+        _query_params = []
+        if _params.get('wait') is not None:  # noqa: E501
+            _query_params.append(('wait', _params['wait']))
+
+        # process the header parameters
+        _header_params = dict(_params.get('_headers', {}))
+
+        # process the form parameters
+        _form_params = []
+        _files = {}
+
+        # process the body parameter
+        _body_params = None
+
+        # set the HTTP header `Accept`
+        _header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
+        # authentication setting
+        _auth_settings = []  # noqa: E501
+
+        _response_types_map = {
+            '200': "RunProcessResponse",
+        }
+
+        return self.api_client.call_api(
+            '/sessions/{id}/process/{processID}', 'GET',
             _path_params,
             _query_params,
             _header_params,
@@ -910,17 +1066,19 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def run_process(self, id : StrictStr, run_process_params : RunProcessParams, **kwargs) -> RunProcessResponse:  # noqa: E501
-        """run_process  # noqa: E501
+    def start_process(self, id : StrictStr, wait : StrictBool, run_process_params : RunProcessParams, **kwargs) -> RunProcessResponse:  # noqa: E501
+        """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.run_process(id, run_process_params, async_req=True)
+        >>> thread = api.start_process(id, wait, run_process_params, async_req=True)
         >>> result = thread.get()
 
         :param id: (required)
         :type id: str
+        :param wait: (required)
+        :type wait: bool
         :param run_process_params: (required)
         :type run_process_params: RunProcessParams
         :param async_req: Whether to execute the request asynchronously.
@@ -939,20 +1097,22 @@ class DefaultApi(object):
         :rtype: RunProcessResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.run_process_with_http_info(id, run_process_params, **kwargs)  # noqa: E501
+        return self.start_process_with_http_info(id, wait, run_process_params, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def run_process_with_http_info(self, id : StrictStr, run_process_params : RunProcessParams, **kwargs):  # noqa: E501
-        """run_process  # noqa: E501
+    def start_process_with_http_info(self, id : StrictStr, wait : StrictBool, run_process_params : RunProcessParams, **kwargs):  # noqa: E501
+        """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.run_process_with_http_info(id, run_process_params, async_req=True)
+        >>> thread = api.start_process_with_http_info(id, wait, run_process_params, async_req=True)
         >>> result = thread.get()
 
         :param id: (required)
         :type id: str
+        :param wait: (required)
+        :type wait: bool
         :param run_process_params: (required)
         :type run_process_params: RunProcessParams
         :param async_req: Whether to execute the request asynchronously.
@@ -983,6 +1143,7 @@ class DefaultApi(object):
 
         _all_params = [
             'id',
+            'wait',
             'run_process_params'
         ]
         _all_params.extend(
@@ -1002,7 +1163,7 @@ class DefaultApi(object):
             if _key not in _all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method run_process" % _key
+                    " to method start_process" % _key
                 )
             _params[_key] = _val
         del _params['kwargs']
@@ -1016,6 +1177,8 @@ class DefaultApi(object):
 
         # process the query parameters
         _query_params = []
+        if _params.get('wait') is not None:  # noqa: E501
+            _query_params.append(('wait', _params['wait']))
 
         # process the header parameters
         _header_params = dict(_params.get('_headers', {}))
@@ -1049,6 +1212,148 @@ class DefaultApi(object):
 
         return self.api_client.call_api(
             '/sessions/{id}/process', 'POST',
+            _path_params,
+            _query_params,
+            _header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            response_types_map=_response_types_map,
+            auth_settings=_auth_settings,
+            async_req=_params.get('async_req'),
+            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=_params.get('_preload_content', True),
+            _request_timeout=_params.get('_request_timeout'),
+            collection_formats=_collection_formats,
+            _request_auth=_params.get('_request_auth'))
+
+    @validate_arguments
+    def stop_process(self, id : StrictStr, process_id : StrictStr, **kwargs) -> None:  # noqa: E501
+        """stop_process  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.stop_process(id, process_id, async_req=True)
+        >>> result = thread.get()
+
+        :param id: (required)
+        :type id: str
+        :param process_id: (required)
+        :type process_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+        kwargs['_return_http_data_only'] = True
+        return self.stop_process_with_http_info(id, process_id, **kwargs)  # noqa: E501
+
+    @validate_arguments
+    def stop_process_with_http_info(self, id : StrictStr, process_id : StrictStr, **kwargs):  # noqa: E501
+        """stop_process  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.stop_process_with_http_info(id, process_id, async_req=True)
+        >>> result = thread.get()
+
+        :param id: (required)
+        :type id: str
+        :param process_id: (required)
+        :type process_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _return_http_data_only: response data without head status code
+                                       and headers
+        :type _return_http_data_only: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :type _content_type: string, optional: force content-type for the request
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+
+        _params = locals()
+
+        _all_params = [
+            'id',
+            'process_id'
+        ]
+        _all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth',
+                '_content_type',
+                '_headers'
+            ]
+        )
+
+        # validate the arguments
+        for _key, _val in _params['kwargs'].items():
+            if _key not in _all_params:
+                raise ApiTypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method stop_process" % _key
+                )
+            _params[_key] = _val
+        del _params['kwargs']
+
+        _collection_formats = {}
+
+        # process the path parameters
+        _path_params = {}
+        if _params['id']:
+            _path_params['id'] = _params['id']
+        if _params['process_id']:
+            _path_params['processID'] = _params['process_id']
+
+        # process the query parameters
+        _query_params = []
+
+        # process the header parameters
+        _header_params = dict(_params.get('_headers', {}))
+
+        # process the form parameters
+        _form_params = []
+        _files = {}
+
+        # process the body parameter
+        _body_params = None
+
+        # authentication setting
+        _auth_settings = []  # noqa: E501
+
+        _response_types_map = {}
+
+        return self.api_client.call_api(
+            '/sessions/{id}/process/{processID}', 'DELETE',
             _path_params,
             _query_params,
             _header_params,
@@ -1205,6 +1510,162 @@ class DefaultApi(object):
 
         return self.api_client.call_api(
             '/sessions/{id}/filesystem/file', 'PUT',
+            _path_params,
+            _query_params,
+            _header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            response_types_map=_response_types_map,
+            auth_settings=_auth_settings,
+            async_req=_params.get('async_req'),
+            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=_params.get('_preload_content', True),
+            _request_timeout=_params.get('_request_timeout'),
+            collection_formats=_collection_formats,
+            _request_auth=_params.get('_request_auth'))
+
+    @validate_arguments
+    def write_process_stdin(self, id : StrictStr, process_id : StrictStr, write_process_stdin_request : WriteProcessStdinRequest, **kwargs) -> None:  # noqa: E501
+        """write_process_stdin  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.write_process_stdin(id, process_id, write_process_stdin_request, async_req=True)
+        >>> result = thread.get()
+
+        :param id: (required)
+        :type id: str
+        :param process_id: (required)
+        :type process_id: str
+        :param write_process_stdin_request: (required)
+        :type write_process_stdin_request: WriteProcessStdinRequest
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+        kwargs['_return_http_data_only'] = True
+        return self.write_process_stdin_with_http_info(id, process_id, write_process_stdin_request, **kwargs)  # noqa: E501
+
+    @validate_arguments
+    def write_process_stdin_with_http_info(self, id : StrictStr, process_id : StrictStr, write_process_stdin_request : WriteProcessStdinRequest, **kwargs):  # noqa: E501
+        """write_process_stdin  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.write_process_stdin_with_http_info(id, process_id, write_process_stdin_request, async_req=True)
+        >>> result = thread.get()
+
+        :param id: (required)
+        :type id: str
+        :param process_id: (required)
+        :type process_id: str
+        :param write_process_stdin_request: (required)
+        :type write_process_stdin_request: WriteProcessStdinRequest
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _return_http_data_only: response data without head status code
+                                       and headers
+        :type _return_http_data_only: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :type _content_type: string, optional: force content-type for the request
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+
+        _params = locals()
+
+        _all_params = [
+            'id',
+            'process_id',
+            'write_process_stdin_request'
+        ]
+        _all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth',
+                '_content_type',
+                '_headers'
+            ]
+        )
+
+        # validate the arguments
+        for _key, _val in _params['kwargs'].items():
+            if _key not in _all_params:
+                raise ApiTypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method write_process_stdin" % _key
+                )
+            _params[_key] = _val
+        del _params['kwargs']
+
+        _collection_formats = {}
+
+        # process the path parameters
+        _path_params = {}
+        if _params['id']:
+            _path_params['id'] = _params['id']
+        if _params['process_id']:
+            _path_params['processID'] = _params['process_id']
+
+        # process the query parameters
+        _query_params = []
+
+        # process the header parameters
+        _header_params = dict(_params.get('_headers', {}))
+
+        # process the form parameters
+        _form_params = []
+        _files = {}
+
+        # process the body parameter
+        _body_params = None
+        if _params['write_process_stdin_request']:
+            _body_params = _params['write_process_stdin_request']
+
+        # set the HTTP header `Content-Type`
+        _content_types_list = _params.get('_content_type',
+            self.api_client.select_header_content_type(
+                ['application/json']))
+        if _content_types_list:
+                _header_params['Content-Type'] = _content_types_list
+
+        # authentication setting
+        _auth_settings = []  # noqa: E501
+
+        _response_types_map = {}
+
+        return self.api_client.call_api(
+            '/sessions/{id}/process/{processID}/stdin', 'POST',
             _path_params,
             _query_params,
             _header_params,

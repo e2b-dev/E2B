@@ -49,7 +49,8 @@ class TestRunProcessResponse(unittest.TestCase):
                         type = 'Stdout', 
                         timestamp = 1.337, 
                         line = '', )
-                    ]
+                    ], 
+                process_id = ''
             )
         else :
             return RunProcessResponse(
@@ -65,6 +66,7 @@ class TestRunProcessResponse(unittest.TestCase):
                         timestamp = 1.337, 
                         line = '', )
                     ],
+                process_id = '',
         )
         """
 

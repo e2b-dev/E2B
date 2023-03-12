@@ -18,7 +18,7 @@ import json
 
 
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, StrictStr
 from playground_client.models.out_stderr_response import OutStderrResponse
 from playground_client.models.out_stdout_response import OutStdoutResponse
 
@@ -30,7 +30,8 @@ class RunProcessResponse(BaseModel):
     """
     stderr: List[OutStderrResponse] = ...
     stdout: List[OutStdoutResponse] = ...
-    __properties = ["stderr", "stdout"]
+    process_id: StrictStr = Field(..., alias="processID")
+    __properties = ["stderr", "stdout", "processID"]
 
     class Config:
         allow_population_by_field_name = True
@@ -87,7 +88,8 @@ class RunProcessResponse(BaseModel):
 
         _obj = RunProcessResponse.parse_obj({
             "stderr": [OutStderrResponse.from_dict(_item) for _item in obj.get("stderr")] if obj.get("stderr") is not None else None,
-            "stdout": [OutStdoutResponse.from_dict(_item) for _item in obj.get("stdout")] if obj.get("stdout") is not None else None
+            "stdout": [OutStdoutResponse.from_dict(_item) for _item in obj.get("stdout")] if obj.get("stdout") is not None else None,
+            "process_id": obj.get("processID")
         })
         return _obj
 

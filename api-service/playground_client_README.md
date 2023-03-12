@@ -67,11 +67,14 @@ Class | Method | HTTP request | Description
 *DefaultApi* | [**create_sessions**](playground_client/docs/DefaultApi.md#create_sessions) | **POST** /sessions | 
 *DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{id}/filesystem | 
 *DefaultApi* | [**delete_session**](playground_client/docs/DefaultApi.md#delete_session) | **DELETE** /sessions/{id} | 
+*DefaultApi* | [**get_process**](playground_client/docs/DefaultApi.md#get_process) | **GET** /sessions/{id}/process/{processID} | 
 *DefaultApi* | [**list_filesystem_dir**](playground_client/docs/DefaultApi.md#list_filesystem_dir) | **GET** /sessions/{id}/filesystem/dir | 
 *DefaultApi* | [**make_filesystem_dir**](playground_client/docs/DefaultApi.md#make_filesystem_dir) | **PUT** /sessions/{id}/filesystem/dir | 
 *DefaultApi* | [**read_filesystem_file**](playground_client/docs/DefaultApi.md#read_filesystem_file) | **GET** /sessions/{id}/filesystem/file | 
-*DefaultApi* | [**run_process**](playground_client/docs/DefaultApi.md#run_process) | **POST** /sessions/{id}/process | 
+*DefaultApi* | [**start_process**](playground_client/docs/DefaultApi.md#start_process) | **POST** /sessions/{id}/process | 
+*DefaultApi* | [**stop_process**](playground_client/docs/DefaultApi.md#stop_process) | **DELETE** /sessions/{id}/process/{processID} | 
 *DefaultApi* | [**write_filesystem_file**](playground_client/docs/DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{id}/filesystem/file | 
+*DefaultApi* | [**write_process_stdin**](playground_client/docs/DefaultApi.md#write_process_stdin) | **POST** /sessions/{id}/process/{processID}/stdin | 
 
 
 ## Documentation For Models
@@ -89,6 +92,7 @@ Class | Method | HTTP request | Description
  - [RunProcessParams](playground_client/docs/RunProcessParams.md)
  - [RunProcessResponse](playground_client/docs/RunProcessResponse.md)
  - [WriteFilesystemFileRequest](playground_client/docs/WriteFilesystemFileRequest.md)
+ - [WriteProcessStdinRequest](playground_client/docs/WriteProcessStdinRequest.md)
 
 
 ## Documentation For Authorization

@@ -17,6 +17,7 @@ playground_client/docs/ReadFilesystemFileResponse.md
 playground_client/docs/RunProcessParams.md
 playground_client/docs/RunProcessResponse.md
 playground_client/docs/WriteFilesystemFileRequest.md
+playground_client/docs/WriteProcessStdinRequest.md
 playground_client/exceptions.py
 playground_client/models/__init__.py
 playground_client/models/create_session_response.py
@@ -32,6 +33,7 @@ playground_client/models/read_filesystem_file_response.py
 playground_client/models/run_process_params.py
 playground_client/models/run_process_response.py
 playground_client/models/write_filesystem_file_request.py
+playground_client/models/write_process_stdin_request.py
 playground_client/rest.py
 playground_client/test/__init__.py
 playground_client/test/test_create_session_response.py
@@ -48,4 +50,5 @@ playground_client/test/test_read_filesystem_file_response.py
 playground_client/test/test_run_process_params.py
 playground_client/test/test_run_process_response.py
 playground_client/test/test_write_filesystem_file_request.py
+playground_client/test/test_write_process_stdin_request.py
 playground_client_README.md

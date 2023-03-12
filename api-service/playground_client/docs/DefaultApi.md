@@ -7,11 +7,14 @@ Method | HTTP request | Description
 [**create_sessions**](DefaultApi.md#create_sessions) | **POST** /sessions | 
 [**delete_filesystem_entry**](DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{id}/filesystem | 
 [**delete_session**](DefaultApi.md#delete_session) | **DELETE** /sessions/{id} | 
+[**get_process**](DefaultApi.md#get_process) | **GET** /sessions/{id}/process/{processID} | 
 [**list_filesystem_dir**](DefaultApi.md#list_filesystem_dir) | **GET** /sessions/{id}/filesystem/dir | 
 [**make_filesystem_dir**](DefaultApi.md#make_filesystem_dir) | **PUT** /sessions/{id}/filesystem/dir | 
 [**read_filesystem_file**](DefaultApi.md#read_filesystem_file) | **GET** /sessions/{id}/filesystem/file | 
-[**run_process**](DefaultApi.md#run_process) | **POST** /sessions/{id}/process | 
+[**start_process**](DefaultApi.md#start_process) | **POST** /sessions/{id}/process | 
+[**stop_process**](DefaultApi.md#stop_process) | **DELETE** /sessions/{id}/process/{processID} | 
 [**write_filesystem_file**](DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{id}/filesystem/file | 
+[**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{id}/process/{processID}/stdin | 
 
 
 # **create_sessions**
@@ -192,6 +195,71 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **204** | No content |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_process**
+> RunProcessResponse get_process(id, process_id, wait)
+
+
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import os
+import playground_client
+from playground_client.rest import ApiException
+from pprint import pprint
+# Defining the host is optional and defaults to https://localhost:9001
+# See configuration.py for a list of all supported configuration parameters.
+configuration = playground_client.Configuration(
+    host = "https://localhost:9001"
+)
+
+
+# Enter a context with an instance of the API client
+with playground_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = playground_client.DefaultApi(api_client)
+    id = 'id_example' # str | 
+    process_id = 'process_id_example' # str | 
+    wait = True # bool | 
+
+    try:
+        api_response = api_instance.get_process(id, process_id, wait)
+        print("The response of DefaultApi->get_process:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->get_process: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **str**|  | 
+ **process_id** | **str**|  | 
+ **wait** | **bool**|  | 
+
+### Return type
+
+[**RunProcessResponse**](RunProcessResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Ok |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -382,8 +450,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **run_process**
-> RunProcessResponse run_process(id, run_process_params)
+# **start_process**
+> RunProcessResponse start_process(id, wait, run_process_params)
 
 
 
@@ -408,14 +476,15 @@ with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
     id = 'id_example' # str | 
+    wait = True # bool | 
     run_process_params = playground_client.RunProcessParams() # RunProcessParams | 
 
     try:
-        api_response = api_instance.run_process(id, run_process_params)
-        print("The response of DefaultApi->run_process:\n")
+        api_response = api_instance.start_process(id, wait, run_process_params)
+        print("The response of DefaultApi->start_process:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->run_process: %s\n" % e)
+        print("Exception when calling DefaultApi->start_process: %s\n" % e)
 ```
 
 ### Parameters
@@ -423,6 +492,7 @@ with playground_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
+ **wait** | **bool**|  | 
  **run_process_params** | [**RunProcessParams**](RunProcessParams.md)|  | 
 
 ### Return type
@@ -442,6 +512,67 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Ok |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **stop_process**
+> stop_process(id, process_id)
+
+
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import os
+import playground_client
+from playground_client.rest import ApiException
+from pprint import pprint
+# Defining the host is optional and defaults to https://localhost:9001
+# See configuration.py for a list of all supported configuration parameters.
+configuration = playground_client.Configuration(
+    host = "https://localhost:9001"
+)
+
+
+# Enter a context with an instance of the API client
+with playground_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = playground_client.DefaultApi(api_client)
+    id = 'id_example' # str | 
+    process_id = 'process_id_example' # str | 
+
+    try:
+        api_instance.stop_process(id, process_id)
+    except Exception as e:
+        print("Exception when calling DefaultApi->stop_process: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **str**|  | 
+ **process_id** | **str**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | No content |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -487,6 +618,69 @@ Name | Type | Description  | Notes
  **id** | **str**|  | 
  **path** | **str**|  | 
  **write_filesystem_file_request** | [**WriteFilesystemFileRequest**](WriteFilesystemFileRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | No content |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **write_process_stdin**
+> write_process_stdin(id, process_id, write_process_stdin_request)
+
+
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import os
+import playground_client
+from playground_client.rest import ApiException
+from pprint import pprint
+# Defining the host is optional and defaults to https://localhost:9001
+# See configuration.py for a list of all supported configuration parameters.
+configuration = playground_client.Configuration(
+    host = "https://localhost:9001"
+)
+
+
+# Enter a context with an instance of the API client
+with playground_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = playground_client.DefaultApi(api_client)
+    id = 'id_example' # str | 
+    process_id = 'process_id_example' # str | 
+    write_process_stdin_request = playground_client.WriteProcessStdinRequest() # WriteProcessStdinRequest | 
+
+    try:
+        api_instance.write_process_stdin(id, process_id, write_process_stdin_request)
+    except Exception as e:
+        print("Exception when calling DefaultApi->write_process_stdin: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **str**|  | 
+ **process_id** | **str**|  | 
+ **write_process_stdin_request** | [**WriteProcessStdinRequest**](WriteProcessStdinRequest.md)|  | 
 
 ### Return type
 
