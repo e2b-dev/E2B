@@ -1,29 +1,25 @@
 import {
-  Body,
   Controller,
   Delete,
   Path,
   Post,
+  BodyProp,
   Route,
 } from 'tsoa'
 
 import { closeSession, initSession } from './sessions'
-
-interface CreateSessionParams {
-  envID: string
-}
 
 interface CreateSessionResponse {
   id: string
 }
 
 @Route('sessions')
-export class UsersController extends Controller {
+export class SessionsController extends Controller {
   @Post()
-  public async createSession(
-    @Body() requestBody: CreateSessionParams,
+  public async createSessions(
+    @BodyProp('envID') envID: string,
   ): Promise<CreateSessionResponse> {
-    const id = await initSession(requestBody.envID)
+    const id = await initSession(envID)
     return { id }
   }
 

@@ -1,17 +1,18 @@
-from typing import Dict
 import os
 import uuid
 import subprocess
 
+from typing import Dict
 from flask import Flask, request
 from flask_cors import CORS
 
-from codegen.base import generate_req_handler
-from codegen.db.base import Database, DeploymentState
-from playground_client.playground import NodeJSPlayground
+from codegen import generate_req_handler
+from database import Database, DeploymentState
+from codegen.tools.playground.playground import NodeJSPlayground
 
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
+
 db = Database(url, key)
 
 app = Flask(__name__)
@@ -50,21 +51,15 @@ def generate():
     route = body["route"]
     envs = body["envs"]
 
-    db.create_deployment(
-        run_id=run_id, project_id=project_id, route_id=route_id)
-
-    playground = NodeJSPlayground()
+    db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
 
     final_prompt, js_code = generate_req_handler(
         db=db,
-        playground=playground,
         run_id=run_id,
         blocks=blocks,
         method=method,
         envs=envs,
     )
-
-    playground.close()
 
     db.update_state(run_id=run_id, state=DeploymentState.Deploying)
 

@@ -1,9 +1,19 @@
 import { Session } from '@devbookhq/sdk'
 import NodeCache from 'node-cache'
 
-const sessionCache = new NodeCache({
+export const sessionCache = new NodeCache({
   stdTTL: 60000,
   checkperiod: 5000,
+  useClones: false,
+  deleteOnExpire: true,
+})
+
+sessionCache.on('del', async function (_, session: Session) {
+  try {
+    await session.close()
+  } catch (err) {
+    console.error(err)
+  }
 })
 
 export async function initSession(envID: string) {

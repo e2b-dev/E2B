@@ -2,11 +2,11 @@ import {
   Controller,
   Path,
   Get,
-  Body,
   Delete,
   Put,
   Query,
   Route,
+  BodyProp,
 } from 'tsoa'
 import { FileInfo as EntryInfo } from '@devbookhq/sdk'
 
@@ -17,10 +17,6 @@ interface ListFilesystemDirResponse {
 }
 
 interface ReadFilesystemFileResponse {
-  content: string
-}
-
-interface WriteFilesystemFileParams {
   content: string
 }
 
@@ -72,9 +68,9 @@ export class FilesystemController extends Controller {
   public async writeFilesystemFile(
     @Path() id: string,
     @Query() path: string,
-    @Body() requestBody: WriteFilesystemFileParams,
+    @BodyProp('content') content: string,
   ) {
     const session = retrieveSession(id)
-    await session.filesystem!.write(path, requestBody.content)
+    await session.filesystem!.write(path, content)
   }
 }

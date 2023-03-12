@@ -18,7 +18,7 @@
   },
   "main": "lib/server.js",
   "scripts": {
-    "dev": "concurrently \"nodemon -q\" \"nodemon -x tsoa spec-and-routes\"",
+    "dev": "concurrently \"nodemon -q\" \"nodemon --config nodemon-tsoa.json \"",
     "generate": "tsoa spec-and-routes",
     "check-types": "tsx --noEmit",
     "build": "./scripts/build.js",

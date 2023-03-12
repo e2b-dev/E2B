@@ -1,36 +1,41 @@
-from .base import PlaygroundBaseTool
-from playground_client.playground import NodeJSPlayground
+from langchain.agents import tool
+
+from codegen.tools.playground.playground import NodeJSPlayground
+from codegen.tools.playground.tools.process import encode_command_output
 
 
-class PlaygroundJavaScriptTool(PlaygroundBaseTool):
-    # name = "JavaScriptCodeExecution"
-    # description = (
-    #     "JavaScript eval() function that can execute code. Use this to execute and evaluate javascript code. "
-    #     "Input should be a valid javascript code. "
-    # )
+def create_code_tools(playground: NodeJSPlayground):
+    @tool("InstallDependencies")
+    def install_dependencies(dependencies: str) -> str:
+        """Install specified dependecies with NPM and return errors."""
+        output = playground.install_dependencies(dependencies)
+        return encode_command_output(output, only_errors=True)
 
-    def __init__(self, playground: NodeJSPlayground) -> None:
-        super().__init__(playground)
+    yield install_dependencies
 
-    def _run(self, command: str) -> str:
-        self.playground.run_command(command)
+    # TODO: Escape code
+    @tool("RunTypeScriptCode")
+    def run_typescript_code(code: str) -> str:
+        """Run the specified TypeScript code and return errors and output."""
+        output = playground.run_typescript_code(code)
+        return encode_command_output(output)
 
-    async def _arun(self, command: str) -> str:
-        return NotImplementedError("JavascriptEval does not support async")
+    yield run_typescript_code
 
+    # TODO: Escape code
+    @tool("CheckTypeScriptTypes")
+    def check_typescript_types(code: str) -> str:
+        """Check TypeScript types in the specified code and return errors."""
+        output = playground.check_typescript_code(code)
+        return encode_command_output(output)
 
-class PlaygroundTypeScriptTool(PlaygroundBaseTool):
-    # name = "JavaScriptCodeExecution"
-    # description = (
-    #     "JavaScript eval() function that can execute code. Use this to execute and evaluate javascript code. "
-    #     "Input should be a valid javascript code. "
-    # )
+    yield check_typescript_types
 
-    def __init__(self, playground: NodeJSPlayground) -> None:
-        super().__init__(playground)
+    # TODO: Escape code
+    @tool("RunJavaScriptCode")
+    def run_javascript_code(code: str) -> str:
+        """Run the specified JavaScript code and return errors and output."""
+        output = playground.run_javascript_code(code)
+        return encode_command_output(output)
 
-    def _run(self, command: str) -> str:
-        self.playground.run_command(command)
-
-    async def _arun(self, command: str) -> str:
-        return NotImplementedError("JavascriptEval does not support async")
+    yield run_javascript_code

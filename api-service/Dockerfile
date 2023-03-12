@@ -51,6 +51,7 @@ RUN --mount=type=cache,target=/home/.cache/pypoetry/cache \
     poetry install --without dev --no-root --no-ansi --no-interaction
 
 COPY . ./
+RUN rm -rf ./playground
 
 WORKDIR /playground
 COPY --from=playground-modules ./playground/ ./

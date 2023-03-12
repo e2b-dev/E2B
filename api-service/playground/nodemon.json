@@ -2,9 +2,7 @@
   "watch": [
     "src"
   ],
-  "ignore": [
-    "src/generated/**/*"
-  ],
+  "ignore": [],
   "ext": ".ts",
   "exec": "export PORT=9001; export NODE_ENV=dev; ./scripts/build.js && node ./lib/server.js"
 }

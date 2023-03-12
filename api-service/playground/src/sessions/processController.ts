@@ -14,9 +14,7 @@ import {
 
 import { retrieveSession } from './sessions'
 
-interface RunProcessParams extends Pick<Parameters<ProcessManager['start']>[0], 'cmd' | 'envVars' | 'rootdir'> {
-
-}
+interface RunProcessParams extends Pick<Parameters<ProcessManager['start']>[0], 'cmd' | 'envVars' | 'rootdir'> { }
 
 interface RunProcessResponse {
   stderr: OutStderrResponse[]

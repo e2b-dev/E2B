@@ -1,11 +1,9 @@
 from typing import List, Dict, Optional, Any, Union
-
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text, get_colored_text
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-# from codegen.db.base import push_logs
-from codegen.db.base import Database
+from database import Database
 
 
 class LoggerCallbackHandler(BaseCallbackHandler):

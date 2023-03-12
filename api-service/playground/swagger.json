@@ -49,18 +49,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"WriteFilesystemFileParams": {
-				"properties": {
-					"content": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"content"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"OutType.Stderr": {
 				"enum": [
 					"Stderr"
@@ -177,18 +165,6 @@
 				},
 				"required": [
 					"id"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreateSessionParams": {
-				"properties": {
-					"envID": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"envID"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -364,7 +340,15 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/WriteFilesystemFileParams"
+								"properties": {
+									"content": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"content"
+								],
+								"type": "object"
 							}
 						}
 					}
@@ -411,7 +395,7 @@
 		},
 		"/sessions": {
 			"post": {
-				"operationId": "CreateSession",
+				"operationId": "CreateSessions",
 				"responses": {
 					"200": {
 						"description": "Ok",
@@ -431,7 +415,15 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/CreateSessionParams"
+								"properties": {
+									"envID": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"envID"
+								],
+								"type": "object"
 							}
 						}
 					}

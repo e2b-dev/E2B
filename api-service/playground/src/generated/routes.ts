@@ -7,7 +7,7 @@ import { FilesystemController } from './../sessions/filesystemController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ProcessController } from './../sessions/processController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { UsersController } from './../sessions/sessionsController';
+import { SessionsController } from './../sessions/sessionsController';
 import type { RequestHandler, Router } from 'express';
 
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -31,14 +31,6 @@ const models: TsoaRoute.Models = {
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ReadFilesystemFileResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "content": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "WriteFilesystemFileParams": {
         "dataType": "refObject",
         "properties": {
             "content": {"dataType":"string","required":true},
@@ -109,14 +101,6 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "id": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateSessionParams": {
-        "dataType": "refObject",
-        "properties": {
-            "envID": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -243,7 +227,7 @@ export function RegisterRoutes(app: Router) {
             const args = {
                     id: {"in":"path","name":"id","required":true,"dataType":"string"},
                     path: {"in":"query","name":"path","required":true,"dataType":"string"},
-                    requestBody: {"in":"body","name":"requestBody","required":true,"ref":"WriteFilesystemFileParams"},
+                    content: {"in":"body-prop","name":"content","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -289,12 +273,12 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/sessions',
-            ...(fetchMiddlewares<RequestHandler>(UsersController)),
-            ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.createSession)),
+            ...(fetchMiddlewares<RequestHandler>(SessionsController)),
+            ...(fetchMiddlewares<RequestHandler>(SessionsController.prototype.createSessions)),
 
-            function UsersController_createSession(request: any, response: any, next: any) {
+            function SessionsController_createSessions(request: any, response: any, next: any) {
             const args = {
-                    requestBody: {"in":"body","name":"requestBody","required":true,"ref":"CreateSessionParams"},
+                    envID: {"in":"body-prop","name":"envID","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -303,10 +287,10 @@ export function RegisterRoutes(app: Router) {
             try {
                 validatedArgs = getValidatedArgs(args, request, response);
 
-                const controller = new UsersController();
+                const controller = new SessionsController();
 
 
-              const promise = controller.createSession.apply(controller, validatedArgs as any);
+              const promise = controller.createSessions.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);
@@ -314,10 +298,10 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.delete('/sessions/:id',
-            ...(fetchMiddlewares<RequestHandler>(UsersController)),
-            ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.deleteSession)),
+            ...(fetchMiddlewares<RequestHandler>(SessionsController)),
+            ...(fetchMiddlewares<RequestHandler>(SessionsController.prototype.deleteSession)),
 
-            function UsersController_deleteSession(request: any, response: any, next: any) {
+            function SessionsController_deleteSession(request: any, response: any, next: any) {
             const args = {
                     id: {"in":"path","name":"id","required":true,"dataType":"string"},
             };
@@ -328,7 +312,7 @@ export function RegisterRoutes(app: Router) {
             try {
                 validatedArgs = getValidatedArgs(args, request, response);
 
-                const controller = new UsersController();
+                const controller = new SessionsController();
 
 
               const promise = controller.deleteSession.apply(controller, validatedArgs as any);

@@ -1,17 +1,25 @@
 from typing import List
 from langchain.tools.base import BaseTool
-from playground_client.playground import NodeJSPlayground
 
-from .tools.filesystem import PlaygroundFilesystemTool
-from .tools.dependencies import PlaygroundDependenciesTool
-from .tools.process import PlaygroundProcessTool
-from .tools.code import PlaygroundJavaScriptTool, PlaygroundTypeScriptTool
+from .playground import NodeJSPlayground, Playground
+from .tools.filesystem import create_filesystem_tools
+from .tools.process import create_process_tools
+from .tools.code import create_code_tools
 
-def create_playground_tools(playground: NodeJSPlayground) -> List[BaseTool]:
-    return [
-        PlaygroundTypeScriptTool(playground),
-        PlaygroundJavaScriptTool(playground),
-        PlaygroundFilesystemTool(playground),
-        PlaygroundDependenciesTool(playground),
-        PlaygroundProcessTool(playground),
+
+# TODO: Improve all descriptions of tools
+def create_playground_tools() -> tuple[List[BaseTool], Playground]:
+    playground = NodeJSPlayground()
+    subtools = [
+        tool
+        for tools in (
+            tool_factory(playground)
+            for tool_factory in [
+                create_filesystem_tools,
+                create_process_tools,
+                create_code_tools,
+            ]
+        )
+        for tool in tools
     ]
+    return playground, subtools

@@ -1,19 +1,23 @@
-from .base import PlaygroundBaseTool
-from playground_client.playground import NodeJSPlayground
+from langchain.agents import tool
+
+from codegen.tools.playground.playground import NodeJSPlayground, CommandOutput
 
 
-class PlaygroundProcessTool(PlaygroundBaseTool):
-    # name = "JavaScriptCodeExecution"
-    # description = (
-    #     "JavaScript eval() function that can execute code. Use this to execute and evaluate javascript code. "
-    #     "Input should be a valid javascript code. "
-    # )
+def encode_command_output(output: CommandOutput, only_errors: bool = False) -> str:
+    if only_errors:
+        if output.error is not None:
+            return f"Errors: {output.error}"
+        return ""
+    errors = f"Errors: {output.error}\n" if output.error is not None else ""
+    return errors + f"Output: {output.output}"
 
-    def __init__(self, playground: NodeJSPlayground) -> None:
-        super().__init__(playground)
 
-    def _run(self, command: str) -> str:
-        self.playground.run_command(command)
+def create_process_tools(playground: NodeJSPlayground):
+    # TODO: Escape command
+    @tool("RunCommand")
+    def run_command(command: str) -> str:
+        """Run specified command in the terminal and return output and errors."""
+        output = playground.run_command(command)
+        return encode_command_output(output)
 
-    async def _arun(self, command: str) -> str:
-        return NotImplementedError("JavascriptEval does not support async")
+    yield run_command
