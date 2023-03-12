@@ -1,7 +1,7 @@
 from typing import List, Dict
 from langchain.llms.openai import OpenAIChat, OpenAI
 
-from codegen.tools.documentation import ReadDocumentation
+# from codegen.tools.documentation import ReadDocumentation
 from codegen.js_agent import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX
 from codegen.tools.playground import create_playground_tools
@@ -15,8 +15,8 @@ def generate_req_handler(
     blocks: Dict,
     method: str,
     envs: List[Dict[str, str]],
-) -> str:
-    # playground, tools = create_playground_tools()
+):
+    playground_tools, playground = create_playground_tools()
 
     executor = create_js_agent(
         db=db,
@@ -26,8 +26,8 @@ def generate_req_handler(
         # llm=OpenAIChat(temperature=0, max_tokens=1000),
         tools=[
             # ReadDocumentation()
-            JavascriptEvalTool(),
-            # *playground_tools,
+            # JavascriptEvalTool(),
+            *playground_tools,
         ],
         verbose=True,
     )
@@ -45,7 +45,7 @@ def generate_req_handler(
 
     handler_code = executor.run(prompt).strip("`").strip()
 
-    # playground.close()
+    playground.close()
 
     return prompt, handler_code
     # server_code = server_template.replace('[HANDLER]', handler_code)

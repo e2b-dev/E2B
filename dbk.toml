@@ -1,0 +1,8 @@
+# This is a config for a Devbook environment
+
+title = "ai-api"
+template = "Nodejs"
+id = "QfqlXmCo5iKl"
+
+[filesystem]
+local_root = "./files"

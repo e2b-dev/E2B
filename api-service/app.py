@@ -8,7 +8,6 @@ from flask_cors import CORS
 
 from codegen import generate_req_handler
 from database import Database, DeploymentState
-from codegen.tools.playground.playground import NodeJSPlayground
 
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
