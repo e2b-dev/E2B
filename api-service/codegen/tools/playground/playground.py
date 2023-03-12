@@ -1,6 +1,3 @@
-from enum import Enum
-from typing import TypedDict, Union
-
 import playground_client
 
 
@@ -14,27 +11,12 @@ configuration.ssl_ca_cert = None
 configuration.cert_file = None
 
 
-class FilesystemEntryType(Enum):
-    FILE = "file"
-    DIR = "directory"
-
-
-class FilesystemEntry(TypedDict):
-    name: str
-    type: FilesystemEntryType
-
-
-class CommandOutput(TypedDict):
-    error: Union[str, None]
-    output: str
-
-
 class Playground:
     def __init__(self, env_id: str):
         self.client = playground_client.ApiClient(configuration)
         self.api = playground_client.DefaultApi(self.client)
         self.session = self.api.create_sessions(
-            playground_client.CreateSessionsRequest(env_id)
+            playground_client.CreateSessionsRequest(envID=env_id)
         )
         self.is_closed = False
 
@@ -47,33 +29,16 @@ class Playground:
             self.api.delete_session(self.session.id)
             self.client.close()
 
-    def run_command(self, cmd: str):
-        result = self.api.run_process(
-            self.session.id, playground_client.RunProcessParams(cmd)
-        )
-        err_lines = [err.line for err in result.stderr]
-        out_lines = [out.line for out in result.stdout]
-
-        return CommandOutput(
-            error=err_lines.join("\n") if len(err_lines) > 0 else None,
-            output="\n".join(out_lines),
+    def run_command(self, cmd: str, env_vars = {}):
+        return self.api.run_process(
+            self.session.id, playground_client.RunProcessParams(cmd=cmd, envVars=env_vars)
         )
 
     def read_file(self, path: str):
-        result = self.api.read_filesystem_file(self.session.id, path)
-        return result.content
+        return self.api.read_filesystem_file(self.session.id, path).content
 
     def list_dir(self, path: str):
-        result = self.api.list_filesystem_dir(self.session.id, path)
-        return [
-            FilesystemEntry(
-                name=entry.name,
-                type=FilesystemEntryType.DIR
-                if entry.is_dir
-                else FilesystemEntryType.FILE,
-            )
-            for entry in result.entries
-        ]
+        return self.api.list_filesystem_dir(self.session.id, path).entries
 
     def delete_file(self, path: str):
         self.api.delete_filesystem_entry(self.session.id, path)
@@ -83,7 +48,7 @@ class Playground:
 
     def write_file(self, path: str, content: str):
         self.api.write_filesystem_file(
-            self.session.id, path, playground_client.WriteFilesystemFileRequest(content)
+            self.session.id, path, playground_client.WriteFilesystemFileRequest(content=content)
         )
 
     def make_dir(self, path: str):
@@ -91,8 +56,7 @@ class Playground:
 
 
 class NodeJSPlayground(Playground):
-    # TODO: Check if node 18 is used
-    node_js_env_id = "rVGhg9SdIzZ2"
+    node_js_env_id = "KctyCCI7Ijf9"
 
     default_javascript_code_file = "index.js"
     default_typescript_code_file = "index.ts"
@@ -104,12 +68,10 @@ class NodeJSPlayground(Playground):
         self.write_file(self.default_javascript_code_file, code)
         return self.run_command(f"node {self.default_javascript_code_file}")
 
-    # TODO: Install `ts-node` in the env
     def run_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
         return self.run_command(f"ts-node {self.default_typescript_code_file}")
 
-    # TODO: Install `tsc` in the env
     def check_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
         return self.run_command(

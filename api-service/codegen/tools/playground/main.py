@@ -1,14 +1,13 @@
-from typing import List
-from langchain.tools.base import BaseTool
+from typing import List, Any
 
 from .playground import NodeJSPlayground, Playground
 from .tools.filesystem import create_filesystem_tools
 from .tools.process import create_process_tools
 from .tools.code import create_code_tools
 
-
-# TODO: Improve all descriptions of tools
-def create_playground_tools() -> tuple[List[BaseTool], Playground]:
+# TODO: Specify that the environmetn is persistent between tools' invocations?
+# TODO: Use ubuntu instead of alpine?
+def create_playground_tools() -> tuple[List[Any], Playground]:
     playground = NodeJSPlayground()
     subtools = [
         tool
@@ -22,4 +21,4 @@ def create_playground_tools() -> tuple[List[BaseTool], Playground]:
         )
         for tool in tools
     ]
-    return playground, subtools
+    return subtools, playground
