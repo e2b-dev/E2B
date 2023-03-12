@@ -6,4 +6,6 @@ generate-playground-client:
 	-o ./ \
 	--additional-properties=generateSourceCodeOnly=true \
 	--additional-properties=disallowAdditionalPropertiesIfNotPresent=false \
-	--additional-properties=packageName=playground_client
+	--additional-properties=packageName=playground_client \
+	--additional-properties=floatStrictType=false \
+	--additional-properties=allowStringInDateTimeParameters=true

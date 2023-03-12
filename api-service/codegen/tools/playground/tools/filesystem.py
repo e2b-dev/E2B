@@ -1,11 +1,12 @@
-from langchain.agents import tool
 from typing import List
+from langchain.agents import tool
 
-from codegen.tools.playground.playground import NodeJSPlayground, FilesystemEntry
+from codegen.tools.playground.playground import NodeJSPlayground
+from playground_client.models.entry_info import EntryInfo
 
 
-def encode_directory_listing(entries: List[FilesystemEntry]) -> str:
-    return "\n".join([f"{entry.name} {entry.type}" for entry in entries])
+def encode_directory_listing(entries: List[EntryInfo]) -> str:
+    return "\n".join([f"{entry.name} {'directory' if entry.is_dir else 'file'}" for entry in entries])
 
 
 def create_filesystem_tools(playground: NodeJSPlayground):
