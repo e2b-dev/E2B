@@ -414,8 +414,15 @@
 			"delete": {
 				"operationId": "StopProcess",
 				"responses": {
-					"204": {
-						"description": "No content"
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProcessResponse"
+								}
+							}
+						}
 					}
 				},
 				"security": [],
@@ -434,6 +441,14 @@
 						"required": true,
 						"schema": {
 							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "results",
+						"required": false,
+						"schema": {
+							"type": "boolean"
 						}
 					}
 				]
