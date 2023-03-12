@@ -1,10 +1,10 @@
 from langchain.agents import tool
 
 from codegen.tools.playground.playground import NodeJSPlayground
-from playground_client.models.run_process_response import RunProcessResponse
+from playground_client.models.process_response import ProcessResponse
 
 
-def encode_command_output(response: RunProcessResponse, only_errors: bool = False) -> str:
+def encode_command_output(response: ProcessResponse, only_errors: bool = False) -> str:
     result = ""
 
     err_lines = [err.line for err in response.stderr]
