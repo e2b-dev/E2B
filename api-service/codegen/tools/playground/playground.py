@@ -1,3 +1,5 @@
+import os
+
 import playground_client
 
 
@@ -29,9 +31,9 @@ class Playground:
             self.api.delete_session(self.session.id)
             self.client.close()
 
-    def run_command(self, cmd: str, env_vars = {}):
+    def run_command(self, cmd: str, rootdir: str = "/", env_vars = {}):
         return self.api.run_process(
-            self.session.id, playground_client.RunProcessParams(cmd=cmd, envVars=env_vars)
+            self.session.id, playground_client.RunProcessParams(cmd=cmd, envVars=env_vars, rootdir=rootdir)
         )
 
     def read_file(self, path: str):
@@ -56,30 +58,32 @@ class Playground:
 
 
 class NodeJSPlayground(Playground):
-    node_js_env_id = "KctyCCI7Ijf9"
+    node_js_env_id = "QfqlXmCo5iKl"
+    rootdir = "/code"
 
-    default_javascript_code_file = "index.js"
-    default_typescript_code_file = "index.ts"
+    default_javascript_code_file = os.path.join(rootdir, "index.js")
+    default_typescript_code_file = os.path.join(rootdir, "index.ts")
 
     def __init__(self):
         super().__init__(NodeJSPlayground.node_js_env_id)
 
     def run_javascript_code(self, code: str):
         self.write_file(self.default_javascript_code_file, code)
-        return self.run_command(f"node {self.default_javascript_code_file}")
+        return self.run_command(f"node {self.default_javascript_code_file}", rootdir=self.rootdir)
 
     def run_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
-        return self.run_command(f"ts-node -T {self.default_typescript_code_file}")
+        return self.run_command(f"ts-node -T {self.default_typescript_code_file}", rootdir=self.rootdir)
 
     def check_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
         return self.run_command(
-            f"tsc {self.default_typescript_code_file} --noEmit --skipLibCheck"
+            f"tsc {self.default_typescript_code_file} --noEmit --skipLibCheck",
+            rootdir=self.rootdir,
         )
 
     def install_dependencies(self, dependencies: str):
-        return self.run_command(f"npm install {dependencies}")
+        return self.run_command(f"npm install {dependencies}", rootdir=self.rootdir)
 
     # TODO: How to handle endless run_commands?
     # If we actually run express server, the process will never end.
