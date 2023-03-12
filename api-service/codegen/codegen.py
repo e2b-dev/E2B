@@ -12,7 +12,7 @@ from database import Database
 def generate_req_handler(
     db: Database,
     run_id: str,
-    blocks: List[str],
+    blocks: Dict,
     method: str,
     envs: List[Dict[str, str]],
 ) -> str:
@@ -38,7 +38,8 @@ def generate_req_handler(
     prompt = PREFIX.format(method=method, envs=envs_str)
 
     for idx, block in enumerate(blocks):
-        prompt = prompt + "\n" + "{}. ".format(idx + 1) + block + "\n"
+        if block["type"] == "Basic":
+            prompt = prompt + "\n" + "{}. ".format(idx + 1) + block["prompt"] + "\n"
 
     prompt = prompt + "\n" + SUFFIX.format(method=method)
 

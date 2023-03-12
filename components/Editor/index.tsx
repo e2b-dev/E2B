@@ -38,7 +38,7 @@ async function handlePostGenerate(url: string, { arg }: {
     body: JSON.stringify({
       projectID: arg.projectID,
       routeID: arg.route.id,
-      blocks: arg.route.blocks.map(b => b.prompt),
+      blocks: arg.route.blocks,
       method: arg.route.method.toLowerCase(),
       route: arg.route.route,
       envs: arg.envs,
