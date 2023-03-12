@@ -110,7 +110,7 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"RunProcessResponse": {
+			"ProcessResponse": {
 				"properties": {
 					"stderr": {
 						"items": {
@@ -364,11 +364,11 @@
 				"operationId": "StartProcess",
 				"responses": {
 					"200": {
-						"description": "Ok",
+						"description": "`processID` and all `stdout` and `stderr` that the process outputted until now.",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/RunProcessResponse"
+									"$ref": "#/components/schemas/ProcessResponse"
 								}
 							}
 						}
@@ -385,6 +385,7 @@
 						}
 					},
 					{
+						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
 						"in": "query",
 						"name": "wait",
 						"required": true,
@@ -437,11 +438,11 @@
 				"operationId": "GetProcess",
 				"responses": {
 					"200": {
-						"description": "Ok",
+						"description": "`processID` and all `stdout` and `stderr` that the process outputted until now.",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/RunProcessResponse"
+									"$ref": "#/components/schemas/ProcessResponse"
 								}
 							}
 						}
@@ -466,6 +467,7 @@
 						}
 					},
 					{
+						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
 						"in": "query",
 						"name": "wait",
 						"required": true,
