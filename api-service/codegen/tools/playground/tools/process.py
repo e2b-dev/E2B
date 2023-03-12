@@ -26,17 +26,20 @@ def encode_command_output(response: RunProcessResponse, only_errors: bool = Fals
 
 
 def create_process_tools(playground: NodeJSPlayground):
-    # TODO: Escape command
+    # Ensure that the function is a generator even if no tools are yielded
+    yield from []
+
+    # TODO: Escape command?
     @tool("RunTerminalCommand")
     def run_terminal_command(command: str) -> str:
         """
         Run specified command in the terminal and return output and errors.
         The input should be a a valid terminal command.
-        The environment where the command runs is Alpine Linux.
-        It has access to the internet and to basic utility tools like `curl`.
         The returned result will be the output and errors returned when running the command.
         """
         output = playground.run_command(command)
-        return encode_command_output(output)
+        result = encode_command_output(output)
 
-    yield run_terminal_command
+        return result if len(result) > 0 else "Process finished without error"
+
+    # yield run_terminal_commsand
