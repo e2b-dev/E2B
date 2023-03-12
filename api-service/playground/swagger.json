@@ -388,7 +388,7 @@
 						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
 						"in": "query",
 						"name": "wait",
-						"required": true,
+						"required": false,
 						"schema": {
 							"type": "boolean"
 						}
@@ -470,7 +470,7 @@
 						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
 						"in": "query",
 						"name": "wait",
-						"required": true,
+						"required": false,
 						"schema": {
 							"type": "boolean"
 						}
