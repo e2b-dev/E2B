@@ -1,4 +1,4 @@
-import { Session } from '@devbookhq/sdk'
+import { OutStderrResponse, OutStdoutResponse, Process, Session } from '@devbookhq/sdk'
 import NodeCache from 'node-cache'
 
 export const sessionCache = new NodeCache({
@@ -8,9 +8,20 @@ export const sessionCache = new NodeCache({
   deleteOnExpire: true,
 })
 
-sessionCache.on('del', async function (_, session: Session) {
+interface CachedProcess {
+  process: Process
+  stdout: OutStdoutResponse[]
+  stderr: OutStderrResponse[]
+}
+
+interface CacheEntry {
+  session: Session
+  processes?: CachedProcess[]
+}
+
+sessionCache.on('del', async function (_, entry: CacheEntry) {
   try {
-    await session.close()
+    await entry.session.close()
   } catch (err) {
     console.error(err)
   }
@@ -25,21 +36,26 @@ export async function initSession(envID: string) {
   if (!url) throw new Error('Cannot start session')
 
   const [id,] = url.split('.')
-  sessionCache.set(id, session)
+
+  const entry: CacheEntry = {
+    session,
+  }
+
+  sessionCache.set(id, entry)
   return id
 }
 
-export function retrieveSession(id: string) {
-  const session = sessionCache.get(id) as Session | undefined
-  if (!session) throw new Error('Session does not exist')
+export function retrieveEntry(id: string) {
+  const entry = sessionCache.get(id) as CacheEntry | undefined
+  if (!entry) throw new Error('Session does not exist')
 
-  return session
+  return entry
 }
 
 export async function closeSession(id: string) {
-  const session = retrieveSession(id)
-  if (session) {
-    await session.close()
+  const entry = retrieveEntry(id)
+  if (entry) {
+    await entry.session.close()
     sessionCache.del(id)
   }
 }

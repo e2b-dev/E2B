@@ -10,7 +10,7 @@ import {
 } from 'tsoa'
 import { FileInfo as EntryInfo } from '@devbookhq/sdk'
 
-import { retrieveSession } from './sessions'
+import { retrieveEntry } from './sessions'
 
 interface ListFilesystemDirResponse {
   entries: EntryInfo[]
@@ -27,7 +27,7 @@ export class FilesystemController extends Controller {
     @Path() id: string,
     @Query() path: string,
   ): Promise<ListFilesystemDirResponse> {
-    const session = retrieveSession(id)
+    const session = retrieveEntry(id)
     const entries = await session.filesystem!.list(path)
     return {
       entries,
@@ -39,7 +39,7 @@ export class FilesystemController extends Controller {
     @Path() id: string,
     @Query() path: string,
   ): Promise<void> {
-    const session = retrieveSession(id)
+    const session = retrieveEntry(id)
     await session.filesystem!.makeDir(path)
   }
 
@@ -48,7 +48,7 @@ export class FilesystemController extends Controller {
     @Path() id: string,
     @Query() path: string,
   ) {
-    const session = retrieveSession(id)
+    const session = retrieveEntry(id)
     await session.filesystem!.remove(path)
   }
 
@@ -57,7 +57,7 @@ export class FilesystemController extends Controller {
     @Path() id: string,
     @Query() path: string,
   ): Promise<ReadFilesystemFileResponse> {
-    const session = retrieveSession(id)
+    const session = retrieveEntry(id)
     const content = await session.filesystem!.read(path)
     return {
       content,
@@ -70,7 +70,7 @@ export class FilesystemController extends Controller {
     @Query() path: string,
     @BodyProp('content') content: string,
   ) {
-    const session = retrieveSession(id)
+    const session = retrieveEntry(id)
     await session.filesystem!.write(path, content)
   }
 }
