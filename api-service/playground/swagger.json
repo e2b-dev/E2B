@@ -110,7 +110,7 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"RunProcessResponse": {
+			"ProcessResponse": {
 				"properties": {
 					"stderr": {
 						"items": {
@@ -123,11 +123,19 @@
 							"$ref": "#/components/schemas/OutStdoutResponse"
 						},
 						"type": "array"
+					},
+					"processID": {
+						"type": "string"
+					},
+					"finished": {
+						"type": "boolean"
 					}
 				},
 				"required": [
 					"stderr",
-					"stdout"
+					"stdout",
+					"processID",
+					"finished"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -139,7 +147,7 @@
 				},
 				"type": "object"
 			},
-			"RunProcessParams": {
+			"StartProcessParams": {
 				"properties": {
 					"cmd": {
 						"type": "string"
@@ -357,14 +365,14 @@
 		},
 		"/sessions/{id}/process": {
 			"post": {
-				"operationId": "RunProcess",
+				"operationId": "StartProcess",
 				"responses": {
 					"200": {
-						"description": "Ok",
+						"description": "`processID` and all `stdout` and `stderr` that the process outputted until now.",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/RunProcessResponse"
+									"$ref": "#/components/schemas/ProcessResponse"
 								}
 							}
 						}
@@ -379,6 +387,15 @@
 						"schema": {
 							"type": "string"
 						}
+					},
+					{
+						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
+						"in": "query",
+						"name": "wait",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
 					}
 				],
 				"requestBody": {
@@ -386,7 +403,126 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/RunProcessParams"
+								"$ref": "#/components/schemas/StartProcessParams"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/sessions/{id}/process/{processID}": {
+			"delete": {
+				"operationId": "StopProcess",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "processID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"get": {
+				"operationId": "GetProcess",
+				"responses": {
+					"200": {
+						"description": "`processID` and all `stdout` and `stderr` that the process outputted until now.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProcessResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "processID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
+						"in": "query",
+						"name": "wait",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				]
+			}
+		},
+		"/sessions/{id}/process/{processID}/stdin": {
+			"post": {
+				"operationId": "WriteProcessStdin",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "processID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"stdin": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"stdin"
+								],
+								"type": "object"
 							}
 						}
 					}
