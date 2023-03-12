@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 **stderr** | [**List[OutStderrResponse]**](OutStderrResponse.md) |  | 
 **stdout** | [**List[OutStdoutResponse]**](OutStdoutResponse.md) |  | 
 **process_id** | **str** |  | 
+**finished** | **bool** |  | 
 
 ## Example
 

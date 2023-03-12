@@ -199,7 +199,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_process**
-> ProcessResponse get_process(id, process_id, wait)
+> ProcessResponse get_process(id, process_id, wait=wait)
 
 
 
@@ -225,10 +225,10 @@ with playground_client.ApiClient(configuration) as api_client:
     api_instance = playground_client.DefaultApi(api_client)
     id = 'id_example' # str | 
     process_id = 'process_id_example' # str | 
-    wait = True # bool | if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
+    wait = True # bool | if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (optional)
 
     try:
-        api_response = api_instance.get_process(id, process_id, wait)
+        api_response = api_instance.get_process(id, process_id, wait=wait)
         print("The response of DefaultApi->get_process:\n")
         pprint(api_response)
     except Exception as e:
@@ -241,7 +241,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
  **process_id** | **str**|  | 
- **wait** | **bool**| if true the request will wait until the process ends and then return the &#x60;stdout&#x60;, &#x60;stderr&#x60; and &#x60;processID&#x60;. | 
+ **wait** | **bool**| if true the request will wait until the process ends and then return the &#x60;stdout&#x60;, &#x60;stderr&#x60; and &#x60;processID&#x60;. | [optional] 
 
 ### Return type
 
@@ -451,7 +451,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **start_process**
-> ProcessResponse start_process(id, wait, start_process_params)
+> ProcessResponse start_process(id, start_process_params, wait=wait)
 
 
 
@@ -476,11 +476,11 @@ with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
     id = 'id_example' # str | 
-    wait = True # bool | if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
     start_process_params = playground_client.StartProcessParams() # StartProcessParams | 
+    wait = True # bool | if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (optional)
 
     try:
-        api_response = api_instance.start_process(id, wait, start_process_params)
+        api_response = api_instance.start_process(id, start_process_params, wait=wait)
         print("The response of DefaultApi->start_process:\n")
         pprint(api_response)
     except Exception as e:
@@ -492,8 +492,8 @@ with playground_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
- **wait** | **bool**| if true the request will wait until the process ends and then return the &#x60;stdout&#x60;, &#x60;stderr&#x60; and &#x60;processID&#x60;. | 
  **start_process_params** | [**StartProcessParams**](StartProcessParams.md)|  | 
+ **wait** | **bool**| if true the request will wait until the process ends and then return the &#x60;stdout&#x60;, &#x60;stderr&#x60; and &#x60;processID&#x60;. | [optional] 
 
 ### Return type
 

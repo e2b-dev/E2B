@@ -50,7 +50,8 @@ class TestProcessResponse(unittest.TestCase):
                         timestamp = 1.337, 
                         line = '', )
                     ], 
-                process_id = ''
+                process_id = '', 
+                finished = True
             )
         else :
             return ProcessResponse(
@@ -67,6 +68,7 @@ class TestProcessResponse(unittest.TestCase):
                         line = '', )
                     ],
                 process_id = '',
+                finished = True,
         )
         """
 
