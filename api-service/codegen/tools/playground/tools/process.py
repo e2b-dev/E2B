@@ -42,4 +42,4 @@ def create_process_tools(playground: NodeJSPlayground):
 
         return result if len(result) > 0 else "Process finished without error"
 
-    # yield run_terminal_commsand
+    # yield run_terminal_command
