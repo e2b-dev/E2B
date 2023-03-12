@@ -451,7 +451,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **start_process**
-> ProcessResponse start_process(id, wait, run_process_params)
+> ProcessResponse start_process(id, wait, start_process_params)
 
 
 
@@ -477,10 +477,10 @@ with playground_client.ApiClient(configuration) as api_client:
     api_instance = playground_client.DefaultApi(api_client)
     id = 'id_example' # str | 
     wait = True # bool | if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
-    run_process_params = playground_client.RunProcessParams() # RunProcessParams | 
+    start_process_params = playground_client.StartProcessParams() # StartProcessParams | 
 
     try:
-        api_response = api_instance.start_process(id, wait, run_process_params)
+        api_response = api_instance.start_process(id, wait, start_process_params)
         print("The response of DefaultApi->start_process:\n")
         pprint(api_response)
     except Exception as e:
@@ -493,7 +493,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
  **wait** | **bool**| if true the request will wait until the process ends and then return the &#x60;stdout&#x60;, &#x60;stderr&#x60; and &#x60;processID&#x60;. | 
- **run_process_params** | [**RunProcessParams**](RunProcessParams.md)|  | 
+ **start_process_params** | [**StartProcessParams**](StartProcessParams.md)|  | 
 
 ### Return type
 

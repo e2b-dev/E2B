@@ -16,11 +16,11 @@ import unittest
 import datetime
 
 import playground_client
-from playground_client.models.run_process_params import RunProcessParams  # noqa: E501
+from playground_client.models.start_process_params import StartProcessParams  # noqa: E501
 from playground_client.rest import ApiException
 
-class TestRunProcessParams(unittest.TestCase):
-    """RunProcessParams unit test stubs"""
+class TestStartProcessParams(unittest.TestCase):
+    """StartProcessParams unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,15 +29,15 @@ class TestRunProcessParams(unittest.TestCase):
         pass
 
     def make_instance(self, include_optional):
-        """Test RunProcessParams
+        """Test StartProcessParams
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `RunProcessParams`
+        # uncomment below to create an instance of `StartProcessParams`
         """
-        model = playground_client.models.run_process_params.RunProcessParams()  # noqa: E501
+        model = playground_client.models.start_process_params.StartProcessParams()  # noqa: E501
         if include_optional :
-            return RunProcessParams(
+            return StartProcessParams(
                 cmd = '', 
                 env_vars = {
                     'key' : ''
@@ -45,13 +45,13 @@ class TestRunProcessParams(unittest.TestCase):
                 rootdir = ''
             )
         else :
-            return RunProcessParams(
+            return StartProcessParams(
                 cmd = '',
         )
         """
 
-    def testRunProcessParams(self):
-        """Test RunProcessParams"""
+    def testStartProcessParams(self):
+        """Test StartProcessParams"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 

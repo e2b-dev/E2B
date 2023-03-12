@@ -24,7 +24,7 @@ from playground_client.models.create_sessions_request import CreateSessionsReque
 from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse
 from playground_client.models.process_response import ProcessResponse
 from playground_client.models.read_filesystem_file_response import ReadFilesystemFileResponse
-from playground_client.models.run_process_params import RunProcessParams
+from playground_client.models.start_process_params import StartProcessParams
 from playground_client.models.write_filesystem_file_request import WriteFilesystemFileRequest
 from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest
 
@@ -1066,21 +1066,21 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def start_process(self, id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], run_process_params : RunProcessParams, **kwargs) -> ProcessResponse:  # noqa: E501
+    def start_process(self, id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], start_process_params : StartProcessParams, **kwargs) -> ProcessResponse:  # noqa: E501
         """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.start_process(id, wait, run_process_params, async_req=True)
+        >>> thread = api.start_process(id, wait, start_process_params, async_req=True)
         >>> result = thread.get()
 
         :param id: (required)
         :type id: str
         :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (required)
         :type wait: bool
-        :param run_process_params: (required)
-        :type run_process_params: RunProcessParams
+        :param start_process_params: (required)
+        :type start_process_params: StartProcessParams
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
@@ -1097,24 +1097,24 @@ class DefaultApi(object):
         :rtype: ProcessResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.start_process_with_http_info(id, wait, run_process_params, **kwargs)  # noqa: E501
+        return self.start_process_with_http_info(id, wait, start_process_params, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def start_process_with_http_info(self, id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], run_process_params : RunProcessParams, **kwargs):  # noqa: E501
+    def start_process_with_http_info(self, id : StrictStr, wait : Annotated[StrictBool, Field(..., description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")], start_process_params : StartProcessParams, **kwargs):  # noqa: E501
         """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.start_process_with_http_info(id, wait, run_process_params, async_req=True)
+        >>> thread = api.start_process_with_http_info(id, wait, start_process_params, async_req=True)
         >>> result = thread.get()
 
         :param id: (required)
         :type id: str
         :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`. (required)
         :type wait: bool
-        :param run_process_params: (required)
-        :type run_process_params: RunProcessParams
+        :param start_process_params: (required)
+        :type start_process_params: StartProcessParams
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
@@ -1144,7 +1144,7 @@ class DefaultApi(object):
         _all_params = [
             'id',
             'wait',
-            'run_process_params'
+            'start_process_params'
         ]
         _all_params.extend(
             [
@@ -1189,8 +1189,8 @@ class DefaultApi(object):
 
         # process the body parameter
         _body_params = None
-        if _params['run_process_params']:
-            _body_params = _params['run_process_params']
+        if _params['start_process_params']:
+            _body_params = _params['start_process_params']
 
         # set the HTTP header `Accept`
         _header_params['Accept'] = self.api_client.select_header_accept(

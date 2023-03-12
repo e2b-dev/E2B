@@ -25,6 +25,6 @@ from playground_client.models.out_type_stderr import OutTypeStderr
 from playground_client.models.out_type_stdout import OutTypeStdout
 from playground_client.models.process_response import ProcessResponse
 from playground_client.models.read_filesystem_file_response import ReadFilesystemFileResponse
-from playground_client.models.run_process_params import RunProcessParams
+from playground_client.models.start_process_params import StartProcessParams
 from playground_client.models.write_filesystem_file_request import WriteFilesystemFileRequest
 from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest

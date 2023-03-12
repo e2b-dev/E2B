@@ -90,7 +90,7 @@ Class | Method | HTTP request | Description
  - [OutTypeStdout](playground_client/docs/OutTypeStdout.md)
  - [ProcessResponse](playground_client/docs/ProcessResponse.md)
  - [ReadFilesystemFileResponse](playground_client/docs/ReadFilesystemFileResponse.md)
- - [RunProcessParams](playground_client/docs/RunProcessParams.md)
+ - [StartProcessParams](playground_client/docs/StartProcessParams.md)
  - [WriteFilesystemFileRequest](playground_client/docs/WriteFilesystemFileRequest.md)
  - [WriteProcessStdinRequest](playground_client/docs/WriteProcessStdinRequest.md)
 
