@@ -31,20 +31,19 @@ export class CachedProcess {
     if (this.started) throw new Error('Process already started')
     this.started = true
 
-    const stderr: OutStderrResponse[] = []
-    const stdout: OutStdoutResponse[] = []
-
     const process = await createSessionProcess({
       manager: this.manager,
+      onStderr: (o) => this.stderr.push(o),
+      onStdout: (o) => this.stdout.push(o),
       ...params,
-      onStderr: (o) => stderr.push(o),
-      onStdout: (o) => stdout.push(o),
     })
 
     process.exited.finally(() => {
       this.finished = true
     })
 
+
+    await process.exited
     this.process = process
     return process
   }
