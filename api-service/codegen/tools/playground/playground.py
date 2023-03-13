@@ -127,7 +127,7 @@ class Playground:
         server_cmd: str,
         request_cmd: str,
         port: float,
-        rootdir: str,
+        rootdir: str = "/",
         env_vars: dict[str, str] = {},
     ):
         server_process_id = self.start_process(
@@ -171,6 +171,8 @@ class NodeJSPlayground(Playground):
 
     def run_typescript_code(self, code: str, typecheck: bool = False):
         self.write_file(self.default_typescript_code_file, code)
+
+        print(self.rootdir)
         return self.run_command(
             f"ts-node {'-T' if typecheck else ''} {self.default_typescript_code_file}",
             rootdir=self.rootdir,
@@ -193,6 +195,7 @@ class NodeJSPlayground(Playground):
         request_cmd: str,
         port: float,
     ):
+        print('ROOT')
         self.write_file(self.default_javascript_code_file, code)
         return self.run_server_with_request(
             server_cmd=f"node {self.default_javascript_code_file}",
