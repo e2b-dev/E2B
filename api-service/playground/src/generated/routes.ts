@@ -3,7 +3,7 @@
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { Controller, ValidationService, FieldErrors, ValidateError, TsoaRoute, HttpStatusCodeLiteral, TsoaResponse, fetchMiddlewares } from '@tsoa/runtime';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { SessionsController } from './../data/mockController';
+import { MockController } from './../data/mockController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { FilesystemController } from './../sessions/filesystemController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -23,7 +23,7 @@ const models: TsoaRoute.Models = {
     "MockDataResponse": {
         "dataType": "refObject",
         "properties": {
-            "mockData": {"dataType":"union","subSchemas":[{"dataType":"string"},{"ref":"Record_string-or-number.___"}],"required":true},
+            "bodyData": {"dataType":"union","subSchemas":[{"dataType":"string"},{"ref":"Record_string-or-number.___"}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -152,11 +152,11 @@ export function RegisterRoutes(app: Router) {
     //  NOTE: If you do not see routes for all of your controllers in this file, then you might not have informed tsoa of where to look
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
-        app.post('/data/mock',
-            ...(fetchMiddlewares<RequestHandler>(SessionsController)),
-            ...(fetchMiddlewares<RequestHandler>(SessionsController.prototype.createMockData)),
+        app.post('/mock/body',
+            ...(fetchMiddlewares<RequestHandler>(MockController)),
+            ...(fetchMiddlewares<RequestHandler>(MockController.prototype.createMockBodyData)),
 
-            function SessionsController_createMockData(request: any, response: any, next: any) {
+            function MockController_createMockBodyData(request: any, response: any, next: any) {
             const args = {
                     files: {"in":"body-prop","name":"files","required":true,"dataType":"array","array":{"dataType":"refObject","ref":"File"}},
                     targetInterface: {"in":"body-prop","name":"targetInterface","required":true,"dataType":"string"},
@@ -168,10 +168,10 @@ export function RegisterRoutes(app: Router) {
             try {
                 validatedArgs = getValidatedArgs(args, request, response);
 
-                const controller = new SessionsController();
+                const controller = new MockController();
 
 
-              const promise = controller.createMockData.apply(controller, validatedArgs as any);
+              const promise = controller.createMockBodyData.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);

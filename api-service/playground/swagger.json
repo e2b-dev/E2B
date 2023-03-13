@@ -13,7 +13,7 @@
 			},
 			"MockDataResponse": {
 				"properties": {
-					"mockData": {
+					"bodyData": {
 						"anyOf": [
 							{
 								"type": "string"
@@ -25,7 +25,7 @@
 					}
 				},
 				"required": [
-					"mockData"
+					"bodyData"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -258,9 +258,9 @@
 	},
 	"openapi": "3.0.0",
 	"paths": {
-		"/data/mock": {
+		"/mock/body": {
 			"post": {
-				"operationId": "CreateMockData",
+				"operationId": "CreateMockBodyData",
 				"responses": {
 					"200": {
 						"description": "Ok",

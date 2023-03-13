@@ -12,13 +12,13 @@ interface File {
 }
 
 interface MockDataResponse {
-  mockData: string | Record<string | number, {}>
+  bodyData: string | Record<string | number, {}>
 }
 
-@Route('data')
-export class SessionsController extends Controller {
-  @Post('mock')
-  public async createMockData(
+@Route('mock')
+export class MockController extends Controller {
+  @Post('body')
+  public async createMockBodyData(
     @BodyProp('files') files: File[],
     @BodyProp('targetInterface') targetInterface: string,
   ): Promise<MockDataResponse> {
@@ -30,7 +30,7 @@ export class SessionsController extends Controller {
     })
 
     return {
-      mockData: data,
+      bodyData: data,
     }
   }
 }
