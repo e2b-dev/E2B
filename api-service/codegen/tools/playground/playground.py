@@ -151,7 +151,7 @@ class Playground:
 
 
 class NodeJSPlayground(Playground):
-    node_js_env_id = "QfqlXmCo5iKl"
+    node_js_env_id = "dCeMnVVxu01L"
     rootdir = "/code"
 
     default_javascript_code_file = os.path.join(rootdir, "index.js")
