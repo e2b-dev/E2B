@@ -1,0 +1,2 @@
+class MockRequestFactory:
+    pass

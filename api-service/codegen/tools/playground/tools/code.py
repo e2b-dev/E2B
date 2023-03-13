@@ -1,5 +1,6 @@
 from langchain.agents import tool
 
+from codegen.tools.playground.mock.request import MockRequestFactory
 from codegen.tools.playground.playground import NodeJSPlayground
 from codegen.tools.playground.tools.process import encode_command_output
 
@@ -7,7 +8,8 @@ from codegen.tools.playground.tools.process import encode_command_output
 def extract_code(code: str):
     return code.strip().strip("`").strip()
 
-def create_code_tools(playground: NodeJSPlayground):
+
+def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
@@ -16,7 +18,6 @@ def create_code_tools(playground: NodeJSPlayground):
         """
         Install specified dependecies with NPM and return errors.
         The input should be a list of Node.js dependencies separated by spaces.
-        If you are using this tool to handle missing dependency error try to run the code again after the installation.
         """
         output = playground.install_dependencies(extract_code(dependencies))
         result = encode_command_output(output, only_errors=True)
@@ -36,7 +37,7 @@ def create_code_tools(playground: NodeJSPlayground):
 
         return result if len(result) > 0 else "Code execution finished without error"
 
-    yield run_typescript_code
+    # yield run_typescript_code
 
     @tool("CheckTypeScriptCodeTypes")
     def check_typescript_code_types(code: str) -> str:
@@ -48,12 +49,14 @@ def create_code_tools(playground: NodeJSPlayground):
 
         return result if len(result) > 0 else "Typechecking finished without error"
 
-    yield check_typescript_code_types
+    # yield check_typescript_code_types
 
+    # This tool is just for executing JavaScript without doing the request to server
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
         """
-        Run the specified JavaScript code and return errors and output.
+        Run JavaScript code and return errors and output.
+        Input should be a valid JavaScript code.
         """
         output = playground.run_javascript_code(extract_code(code))
         result = encode_command_output(output)
@@ -61,28 +64,25 @@ def create_code_tools(playground: NodeJSPlayground):
 
     yield run_javascript_code
 
-    @tool("TestJavaScriptServerCode")
-    def test_server_code(input: str) -> str:
-        """
-        Execute JavaScript code that should start a server and then executes a testing command that should test if the server correctly handles needed requests.
-        The server should run on http://localhost:3000 and the request should be made on http://localhost:3000 too.
-        The testing command should be a `curl` command.
-        The input to this tool should be the testing command followed by a newline then the server code wrapped in three backtics.
-        The returned result is a the testing command output followed by the server code output and errors.
-        """
+    # @tool("RunJavaScriptCode")
+    # def run_javascript_code(code: str) -> str:
+    #     """
+    #     Execute JavaScript code that should start a server then tests if server correctly handles needed requests.
+    #     The input should be a valid JavaScriptCode.
+    #     The server should run on http://localhost:3000.
+    #     The returned result is a the testing request output followed by the server code output and errors.
+    #     """
 
-        test_cmd, server_code = input.split("\n", 1)
-        code = extract_code(server_code)
+    #     mock_request = mock.requestComand()
 
-        port = 3000
-        test_output, server_output = playground.test_javascript_server_code(code=code, test_cmd=test_cmd, port=port)
+    #     port = 3000
+    #     test_output, server_output = playground.test_javascript_server_code(
+    #         code=code, test_cmd=mock_request.command, port=port
+    #     )
 
-        test_result = encode_command_output(test_output)
-        server_result = encode_command_output(server_output)
+    #     test_result = encode_command_output(test_output)
+    #     server_result = encode_command_output(server_output)
 
-        return f"Test command result:\n{test_result}\n\nServer result:\n{server_result}"
+    #     return f"Test request result:\n{test_result}\nCode execution result:\n{server_result}"
 
-
-    # yield test_server_code
-
-    # @tool("JavaScriptREPL/Shell")
+    # yield run_javascript_code

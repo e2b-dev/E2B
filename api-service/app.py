@@ -2,10 +2,11 @@ import os
 import uuid
 import subprocess
 
-from typing import Dict
-from flask import Flask, request
+from typing import Dict, List
+from flask import Flask, abort, request
 from flask_cors import CORS
 
+from codegen.env import EnvVar
 from codegen import generate_req_handler
 from database import Database, DeploymentState
 
@@ -42,13 +43,16 @@ def health():
 def generate():
     body = request.json
 
+    if body is None:
+        abort(400)
+
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
     route_id = body["routeID"]
     blocks = body["blocks"]
     method = body["method"]
     route = body["route"]
-    envs = body["envs"]
+    envs: List[EnvVar] = body["envs"]
 
     db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
 

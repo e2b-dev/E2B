@@ -2,6 +2,7 @@ from typing import List, Dict
 from langchain.llms.openai import OpenAIChat, OpenAI
 
 # from codegen.tools.documentation import ReadDocumentation
+from codegen.env import EnvVar
 from codegen.js_agent import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX
 from codegen.tools.playground import create_playground_tools
@@ -14,9 +15,9 @@ def generate_req_handler(
     run_id: str,
     blocks: List[Dict],
     method: str,
-    envs: List[Dict[str, str]],
+    envs: List[EnvVar],
 ):
-    playground_tools, playground = create_playground_tools()
+    playground_tools, playground = create_playground_tools(envs)
 
     executor = create_js_agent(
         db=db,

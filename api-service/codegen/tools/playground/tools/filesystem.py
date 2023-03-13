@@ -6,7 +6,9 @@ from playground_client.models.entry_info import EntryInfo
 
 
 def encode_directory_listing(entries: List[EntryInfo]) -> str:
-    return "\n".join([f"{entry.name} {'directory' if entry.is_dir else 'file'}" for entry in entries])
+    return "\n".join(
+        [f"{entry.name} {'directory' if entry.is_dir else 'file'}" for entry in entries]
+    )
 
 
 def create_filesystem_tools(playground: NodeJSPlayground):
