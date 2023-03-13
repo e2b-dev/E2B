@@ -140,8 +140,6 @@ class Playground:
             time.sleep(self.port_check_interval)
 
         request_result = self.run_command(cmd=request_cmd, rootdir=rootdir)
-        print('REQ')
-        print(request_result)
         server_result = self.stop_process(server_process_id)
         return request_result, server_result
 
@@ -171,8 +169,6 @@ class NodeJSPlayground(Playground):
 
     def run_typescript_code(self, code: str, typecheck: bool = False):
         self.write_file(self.default_typescript_code_file, code)
-
-        print(self.rootdir)
         return self.run_command(
             f"ts-node {'-T' if typecheck else ''} {self.default_typescript_code_file}",
             rootdir=self.rootdir,
@@ -195,7 +191,6 @@ class NodeJSPlayground(Playground):
         request_cmd: str,
         port: float,
     ):
-        print('ROOT')
         self.write_file(self.default_javascript_code_file, code)
         return self.run_server_with_request(
             server_cmd=f"node {self.default_javascript_code_file}",
