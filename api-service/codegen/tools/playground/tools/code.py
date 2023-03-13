@@ -25,17 +25,41 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
 
     yield install_dependencies
 
+    # This tool is just for executing TypeScript without doing the request to server
+    # @tool("RunTypeScriptCode")
+    # def run_typescript_code(code: str) -> str:
+    #     """
+    #     Run the specified TypeScript code and return errors and output.
+    #     The input should be a valid TypeScript code.
+    #     The returned result will be the output and errors returned when executing the code.
+    #     """
+    #     output = playground.run_typescript_code(extract_code(code))
+    #     result = encode_command_output(output)
+
+    #     return result if len(result) > 0 else "Code execution finished without error"
+
+    # # yield run_typescript_code
+
     @tool("RunTypeScriptCode")
     def run_typescript_code(code: str) -> str:
         """
-        Run the specified TypeScript code and return errors and output.
+        Execute TypeScript code and make a request to see if server correctly handles needed requests.
         The input should be a valid TypeScript code.
-        The returned result will be the output and errors returned when executing the code.
+        The server should run on http://localhost:3000.
+        The returned result is a the request's output followed by the server code output and errors.
         """
-        output = playground.run_typescript_code(extract_code(code))
-        result = encode_command_output(output)
+        mock_request_cmd = mock.terminal_command()
 
-        return result if len(result) > 0 else "Code execution finished without error"
+        port = 3000
+        request_output, server_output = playground.run_typescript_server_code_with_request(
+            code=code, request_cmd=mock_request_cmd, port=port,
+        )
+
+        request_result = encode_command_output(request_output)
+        server_result = encode_command_output(server_output)
+
+        return f"Request result:\n{request_result}\nCode execution result:\n{server_result}"
+
 
     # yield run_typescript_code
 
@@ -67,8 +91,8 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
         """
-        Execute JavaScript code that should start a server then makes a request to see if server correctly handles needed requests.
-        The input should be a valid JavaScriptCode.
+        Execute JavaScript code and make a request to see if server correctly handles needed requests.
+        The input should be a valid JavaScript code.
         The server should run on http://localhost:3000.
         The returned result is a the request's output followed by the server code output and errors.
         """

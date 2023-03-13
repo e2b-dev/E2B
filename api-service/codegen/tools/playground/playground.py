@@ -169,10 +169,10 @@ class NodeJSPlayground(Playground):
             env_vars=self.env_vars,
         )
 
-    def run_typescript_code(self, code: str):
+    def run_typescript_code(self, code: str, typecheck: bool = False):
         self.write_file(self.default_typescript_code_file, code)
         return self.run_command(
-            f"ts-node -T {self.default_typescript_code_file}",
+            f"ts-node {'-T' if typecheck else ''} {self.default_typescript_code_file}",
             rootdir=self.rootdir,
             env_vars=self.env_vars,
         )
@@ -196,6 +196,21 @@ class NodeJSPlayground(Playground):
         self.write_file(self.default_javascript_code_file, code)
         return self.run_server_with_request(
             server_cmd=f"node {self.default_javascript_code_file}",
+            request_cmd=request_cmd,
+            port=port,
+            rootdir=self.rootdir,
+            env_vars=self.env_vars,
+        )
+
+    def run_typescript_server_code_with_request(
+        self,
+        code: str,
+        request_cmd: str,
+        port: float,
+    ):
+        self.write_file(self.default_javascript_code_file, code)
+        return self.run_server_with_request(
+            server_cmd=f"ts-node {self.default_javascript_code_file}",
             request_cmd=request_cmd,
             port=port,
             rootdir=self.rootdir,
