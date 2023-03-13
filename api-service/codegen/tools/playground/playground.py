@@ -7,6 +7,7 @@ from typing import List
 from codegen.env import EnvVar
 
 import playground_client
+from playground_client.models.create_mock_data_request import CreateMockDataRequest
 
 
 configuration = playground_client.Configuration(
@@ -53,23 +54,31 @@ class Playground:
             for open_port in open_ports
         )
 
-    def run_command(self, cmd: str, rootdir: str = "/", env_vars: dict[str, str] = {}):
+    def run_command(
+        self,
+        cmd: str,
+        rootdir: str = "/",
+        env_vars: dict[str, str] = {},
+    ):
         return self.api.start_process(
             self.session.id,
             playground_client.StartProcessParams(
-                cmd=cmd, envVars=env_vars, rootdir=rootdir
+                cmd=cmd, env_vars=env_vars, rootdir=rootdir,
             ),
             wait=True,
         )
 
     def start_process(
-        self, cmd: str, rootdir: str = "/", env_vars: dict[str, str] = {}
+        self,
+        cmd: str,
+        rootdir: str = "/",
+        env_vars: dict[str, str] = {},
     ):
         """Start process and return the process ID."""
         response = self.api.start_process(
             self.session.id,
             playground_client.StartProcessParams(
-                cmd=cmd, envVars=env_vars, rootdir=rootdir
+                cmd=cmd, env_vars=env_vars, rootdir=rootdir
             ),
         )
         return response.process_id
@@ -90,6 +99,11 @@ class Playground:
     def delete_file(self, path: str):
         self.api.delete_filesystem_entry(self.session.id, path)
 
+    def mock_data(self, code: str, interface: str):
+        self.api.create_mock_data(
+            CreateMockDataRequest(targetInterface=interface,files=[])
+        )
+
     def delete_dir(self, path: str):
         self.api.delete_filesystem_entry(self.session.id, path)
 
@@ -103,10 +117,10 @@ class Playground:
     def make_dir(self, path: str):
         self.api.make_filesystem_dir(self.session.id, path)
 
-    def test_server_code(
+    def run_server_with_request(
         self,
         server_cmd: str,
-        test_cmd: str,
+        request_cmd: str,
         port: float,
         rootdir: str,
         env_vars: dict[str, str] = {},
@@ -120,9 +134,9 @@ class Playground:
                 break
             time.sleep(self.port_check_interval)
 
-        test_result = self.run_command(cmd=test_cmd, rootdir=rootdir)
+        request_result = self.run_command(cmd=request_cmd, rootdir=rootdir)
         server_result = self.stop_process(server_process_id)
-        return test_result, server_result
+        return request_result, server_result
 
     @staticmethod
     def format_env_vars(envs: List[EnvVar]):
@@ -166,11 +180,16 @@ class NodeJSPlayground(Playground):
     def install_dependencies(self, dependencies: str):
         return self.run_command(f"npm install {dependencies}", rootdir=self.rootdir)
 
-    def test_javascript_server_code(self, code: str, test_cmd: str, port: float):
+    def run_javascript_server_code_with_request(
+        self,
+        code: str,
+        request_cmd: str,
+        port: float,
+    ):
         self.write_file(self.default_javascript_code_file, code)
-        return self.test_server_code(
+        return self.run_server_with_request(
             server_cmd=f"node {self.default_javascript_code_file}",
-            test_cmd=test_cmd,
+            request_cmd=request_cmd,
             port=port,
             rootdir=self.rootdir,
             env_vars=self.env_vars,

@@ -17,7 +17,10 @@ def create_playground_tools(
 ) -> tuple[List[Any], Playground]:
     playground = NodeJSPlayground(envs)
     mock = MockRequestFactory(
-        method=method, route=route, body_template=request_body_template
+        method=method,
+        route=route,
+        body_template=request_body_template,
+        playground=playground,
     )
 
     subtools = [

@@ -67,22 +67,22 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
         """
-        Execute JavaScript code that should start a server then tests if server correctly handles needed requests.
+        Execute JavaScript code that should start a server then makes a request to see if server correctly handles needed requests.
         The input should be a valid JavaScriptCode.
         The server should run on http://localhost:3000.
-        The returned result is a the testing request output followed by the server code output and errors.
+        The returned result is a the request's output followed by the server code output and errors.
         """
 
-        mock_request_command = mock.terminal_command()
+        mock_request_cmd = mock.terminal_command()
 
         port = 3000
-        test_output, server_output = playground.test_javascript_server_code(
-            code=code, test_cmd=mock_request_command, port=port
+        request_output, server_output = playground.run_javascript_server_code_with_request(
+            code=code, request_cmd=mock_request_cmd, port=port,
         )
 
-        test_result = encode_command_output(test_output)
+        request_result = encode_command_output(request_output)
         server_result = encode_command_output(server_output)
 
-        return f"Test request result:\n{test_result}\nCode execution result:\n{server_result}"
+        return f"Request result:\n{request_result}\nCode execution result:\n{server_result}"
 
     yield run_javascript_code
