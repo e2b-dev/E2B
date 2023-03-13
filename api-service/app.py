@@ -61,6 +61,7 @@ def generate():
         run_id=run_id,
         blocks=blocks,
         method=method,
+        route=route,
         envs=envs,
     )
 

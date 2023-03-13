@@ -52,37 +52,37 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     # yield check_typescript_code_types
 
     # This tool is just for executing JavaScript without doing the request to server
-    @tool("RunJavaScriptCode")
-    def run_javascript_code(code: str) -> str:
-        """
-        Run JavaScript code and return errors and output.
-        Input should be a valid JavaScript code.
-        """
-        output = playground.run_javascript_code(extract_code(code))
-        result = encode_command_output(output)
-        return result if len(result) > 0 else "Code execution finished without error"
-
-    yield run_javascript_code
-
     # @tool("RunJavaScriptCode")
     # def run_javascript_code(code: str) -> str:
     #     """
-    #     Execute JavaScript code that should start a server then tests if server correctly handles needed requests.
-    #     The input should be a valid JavaScriptCode.
-    #     The server should run on http://localhost:3000.
-    #     The returned result is a the testing request output followed by the server code output and errors.
+    #     Run JavaScript code and return errors and output.
+    #     Input should be a valid JavaScript code.
     #     """
-
-    #     mock_request = mock.requestComand()
-
-    #     port = 3000
-    #     test_output, server_output = playground.test_javascript_server_code(
-    #         code=code, test_cmd=mock_request.command, port=port
-    #     )
-
-    #     test_result = encode_command_output(test_output)
-    #     server_result = encode_command_output(server_output)
-
-    #     return f"Test request result:\n{test_result}\nCode execution result:\n{server_result}"
+    #     output = playground.run_javascript_code(extract_code(code))
+    #     result = encode_command_output(output)
+    #     return result if len(result) > 0 else "Code execution finished without error"
 
     # yield run_javascript_code
+
+    @tool("RunJavaScriptCode")
+    def run_javascript_code(code: str) -> str:
+        """
+        Execute JavaScript code that should start a server then tests if server correctly handles needed requests.
+        The input should be a valid JavaScriptCode.
+        The server should run on http://localhost:3000.
+        The returned result is a the testing request output followed by the server code output and errors.
+        """
+
+        mock_request_command = mock.terminal_command()
+
+        port = 3000
+        test_output, server_output = playground.test_javascript_server_code(
+            code=code, test_cmd=mock_request_command, port=port
+        )
+
+        test_result = encode_command_output(test_output)
+        server_result = encode_command_output(server_output)
+
+        return f"Test request result:\n{test_result}\nCode execution result:\n{server_result}"
+
+    yield run_javascript_code

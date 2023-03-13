@@ -15,9 +15,19 @@ def generate_req_handler(
     run_id: str,
     blocks: List[Dict],
     method: str,
+    route: str,
     envs: List[EnvVar],
 ):
-    playground_tools, playground = create_playground_tools(envs)
+    request_body_template = next(
+        block for block in blocks if block["type"] == "RequestBody"
+    )["prompt"]
+
+    playground_tools, playground = create_playground_tools(
+        envs=envs,
+        route=route,
+        method=method,
+        request_body_template=request_body_template,
+    )
 
     executor = create_js_agent(
         db=db,
@@ -33,21 +43,14 @@ def generate_req_handler(
         verbose=True,
     )
 
-    # Convert description of the body block to a Typescript interface declaration.
-    body_block = next(block for block in blocks if block["type"] == "RequestBody")
-    req_body_str = f"""interface RequestBody {{
-        {body_block["prompt"]}
-    }}
-    """
-    print("REQ BODY BLOCK")
-    print(req_body_str)
-
     # Convert env vars to a markdown list enumerating env names on separate lines.
     envs_str = ""
     for env in envs:
         envs_str += f'- `{env["key"]}`\n'
 
-    prompt = PREFIX.format(method=method, envs=envs_str, request_body=req_body_str)
+    prompt = PREFIX.format(
+        method=method, envs=envs_str, request_body=request_body_template
+    )
 
     for idx, block in enumerate(blocks):
         if block["type"] == "Basic":
