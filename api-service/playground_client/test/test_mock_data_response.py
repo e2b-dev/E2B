@@ -38,11 +38,11 @@ class TestMockDataResponse(unittest.TestCase):
         model = playground_client.models.mock_data_response.MockDataResponse()  # noqa: E501
         if include_optional :
             return MockDataResponse(
-                body_data = None
+                body_data = ''
             )
         else :
             return MockDataResponse(
-                body_data = None,
+                body_data = '',
         )
         """
 

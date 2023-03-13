@@ -87,7 +87,6 @@ Class | Method | HTTP request | Description
  - [File](playground_client/docs/File.md)
  - [ListFilesystemDirResponse](playground_client/docs/ListFilesystemDirResponse.md)
  - [MockDataResponse](playground_client/docs/MockDataResponse.md)
- - [MockDataResponseBodyData](playground_client/docs/MockDataResponseBodyData.md)
  - [OpenPort](playground_client/docs/OpenPort.md)
  - [OutStderrResponse](playground_client/docs/OutStderrResponse.md)
  - [OutStdoutResponse](playground_client/docs/OutStdoutResponse.md)

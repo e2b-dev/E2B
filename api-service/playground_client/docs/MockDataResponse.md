@@ -4,7 +4,7 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**body_data** | [**MockDataResponseBodyData**](MockDataResponseBodyData.md) |  | 
+**body_data** | **str** |  | 
 
 ## Example
 
