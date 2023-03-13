@@ -23,7 +23,7 @@ class MockRequestFactory:
     def terminal_command(self) -> str:
         body = self.generate_body_data()
         route_separator = "/" if len(self.route) > 0 and not self.route == "/" else ""
-        return f"curl -X {self.method} {self.hostname}{route_separator}{self.route} -H 'Content-Type: application/json' -d {json.dumps(body)}"
+        return f"curl -X {self.method} {self.hostname}{route_separator}{self.route} --no-progress-meter -H 'Content-Type: application/json' -d {json.dumps(body)}"
 
     def generate_body_data(self):
         if self.body_template is None:
