@@ -18,10 +18,10 @@ def generate_req_handler(
     route: str,
     envs: List[EnvVar],
 ):
-    request_body_template = next(
-        block for block in blocks if block["type"] == "RequestBody"
-    )["prompt"]
-
+    request_body_blocks = [
+        block for block in blocks if block.get("type") == "RequestBody"
+    ]
+    request_body_template = request_body_blocks[0]["prompt"] if len(request_body_blocks) > 0 else None
     playground_tools, playground = create_playground_tools(
         envs=envs,
         route=route,
@@ -53,7 +53,7 @@ def generate_req_handler(
     )
 
     for idx, block in enumerate(blocks):
-        if block["type"] == "Basic":
+        if block.get("type") == "Basic":
             prompt = prompt + "\n" + "{}. ".format(idx + 1) + block["prompt"] + "\n"
 
     prompt = prompt + "\n" + SUFFIX.format(method=method)

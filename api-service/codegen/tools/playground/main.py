@@ -13,7 +13,7 @@ def create_playground_tools(
     envs: List[EnvVar],
     method: str,
     route: str,
-    request_body_template: str,
+    request_body_template: str | None,
 ) -> tuple[List[Any], Playground]:
     playground = NodeJSPlayground(envs)
     mock = MockRequestFactory(

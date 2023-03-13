@@ -10,7 +10,7 @@ class MockRequestFactory:
         self,
         method: str,
         route: str,
-        body_template: str,
+        body_template: str | None,
         playground: Playground,
         hostname: str = "http://localhost:3000",
     ) -> None:
@@ -26,10 +26,14 @@ class MockRequestFactory:
         return f"curl -X {self.method} {self.hostname}{route_separator}{self.route} -H 'Content-Type: application/json' -d {json.dumps(body)}"
 
     def generate_body_data(self):
+        if self.body_template is None:
+            return '{}'
+
         body_interface_name = "RequestBody"
         request_body_template = f"""interface {body_interface_name} {{
             {self.body_template}
         }}
         """
+
         body = json.loads(self.playground.mock_body_data(request_body_template, body_interface_name))[body_interface_name]
         return json.dumps(body)
