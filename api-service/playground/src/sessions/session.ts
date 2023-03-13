@@ -21,6 +21,8 @@ sessionCache.on('expired', async function (_, cached: CachedSession) {
 export class CachedSession {
   private readonly cachedProcesses: CachedProcess[] = []
 
+  private closed = false
+
   ports: OpenPort[] = []
 
   id?: string
@@ -60,11 +62,11 @@ export class CachedSession {
 
   async delete() {
     if (!this.id) return
+    if (this.closed) return
+    this.closed = true
 
     await this.session.close()
     sessionCache.del(this.id)
-
-    this.id = undefined
   }
 
   async stopProcess(processID: string) {
@@ -95,6 +97,7 @@ export class CachedSession {
   }
 
   static findSession(id: string) {
+
     const cachedSession = sessionCache.get(id) as CachedSession
     if (!cachedSession) throw new Error('Session does not exist')
     return cachedSession
