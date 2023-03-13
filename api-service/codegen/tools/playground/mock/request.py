@@ -1,10 +1,6 @@
 import json
 from codegen.tools.playground.playground import Playground
 
-# https://github.com/joke2k/faker
-# https://github.com/faker-js/faker
-# https://github.com/google/intermock
-
 class MockRequestFactory:
     def __init__(
         self,
