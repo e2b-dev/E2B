@@ -2,12 +2,12 @@ import os
 import time
 
 from functools import reduce
-
 from typing import List
-from codegen.env import EnvVar
 
 import playground_client
-from playground_client.models.create_mock_data_request import CreateMockDataRequest
+from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
+from playground_client.models.file import File
+from codegen.env import EnvVar
 
 
 configuration = playground_client.Configuration(
@@ -23,6 +23,8 @@ configuration.cert_file = None
 class Playground:
     port_check_interval = 1  # 1s
     max_port_checks = 10
+
+    mock_data_filename = "index.ts"
 
     def __init__(self, env_id: str):
         self.client = playground_client.ApiClient(configuration)
@@ -63,7 +65,7 @@ class Playground:
         return self.api.start_process(
             self.session.id,
             playground_client.StartProcessParams(
-                cmd=cmd, env_vars=env_vars, rootdir=rootdir,
+                cmd=cmd, envVars=env_vars, rootdir=rootdir,
             ),
             wait=True,
         )
@@ -78,7 +80,7 @@ class Playground:
         response = self.api.start_process(
             self.session.id,
             playground_client.StartProcessParams(
-                cmd=cmd, env_vars=env_vars, rootdir=rootdir
+                cmd=cmd, envVars=env_vars, rootdir=rootdir
             ),
         )
         return response.process_id
@@ -99,10 +101,13 @@ class Playground:
     def delete_file(self, path: str):
         self.api.delete_filesystem_entry(self.session.id, path)
 
-    def mock_data(self, code: str, interface: str):
-        self.api.create_mock_data(
-            CreateMockDataRequest(targetInterface=interface,files=[])
-        )
+    def mock_body_data(self, code: str, interface: str):
+        return self.api.create_mock_body_data(
+            CreateMockBodyDataRequest(
+                targetInterface=interface,
+                files=[File(name=self.mock_data_filename, content=code)],
+            )
+        ).body_data
 
     def delete_dir(self, path: str):
         self.api.delete_filesystem_entry(self.session.id, path)
@@ -126,7 +131,7 @@ class Playground:
         env_vars: dict[str, str] = {},
     ):
         server_process_id = self.start_process(
-            cmd=server_cmd, rootdir=rootdir, env_vars=env_vars
+            cmd=server_cmd, rootdir=rootdir, env_vars=env_vars,
         )
 
         for _ in range(self.max_port_checks):
@@ -135,6 +140,8 @@ class Playground:
             time.sleep(self.port_check_interval)
 
         request_result = self.run_command(cmd=request_cmd, rootdir=rootdir)
+        print('REQ')
+        print(request_result)
         server_result = self.stop_process(server_process_id)
         return request_result, server_result
 
