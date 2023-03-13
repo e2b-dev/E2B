@@ -16,4 +16,4 @@ class JavascriptEvalTool(BaseTool):
         return js_eval(query)
 
     async def _arun(self, query: str) -> str:
-        return NotImplementedError("JavascriptEval does not support async")
+        raise NotImplementedError("JavascriptEval does not support async")

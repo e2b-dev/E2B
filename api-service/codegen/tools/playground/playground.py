@@ -3,8 +3,8 @@ import time
 
 from functools import reduce
 
-from typing import Dict, List
-from codegen.codegen import EnvVar
+from typing import List
+from codegen.env import EnvVar
 
 import playground_client
 

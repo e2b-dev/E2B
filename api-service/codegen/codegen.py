@@ -1,18 +1,13 @@
 from typing import List, Dict
 from langchain.llms.openai import OpenAIChat, OpenAI
-from typing import TypedDict
 
 # from codegen.tools.documentation import ReadDocumentation
+from codegen.env import EnvVar
 from codegen.js_agent import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX
 from codegen.tools.playground import create_playground_tools
 from codegen.tools.javascript import JavascriptEvalTool
 from database import Database
-
-
-class EnvVar(TypedDict):
-    key: str
-    value: str
 
 
 def generate_req_handler(
