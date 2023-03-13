@@ -61,6 +61,28 @@ def create_code_tools(playground: NodeJSPlayground):
 
     yield run_javascript_code
 
+    @tool("TestJavaScriptServerCode")
+    def test_server_code(input: str) -> str:
+        """
+        Execute JavaScript code that should start a server and then executes a testing command that should test if the server correctly handles needed requests.
+        The server should run on http://localhost:3000 and the request should be made on http://localhost:3000 too.
+        The testing command should be a `curl` command.
+        The input to this tool should be the testing command followed by a newline then the server code wrapped in three backtics.
+        The returned result is a the testing command output followed by the server code output and errors.
+        """
+
+        test_cmd, server_code = input.split("\n", 1)
+        code = extract_code(server_code)
+
+        port = 3000
+        test_output, server_output = playground.test_javascript_server_code(code=code, test_cmd=test_cmd, port=port)
+
+        test_result = encode_command_output(test_output)
+        server_result = encode_command_output(server_output)
+
+        return f"Test command result:\n{test_result}\n\nServer result:\n{server_result}"
+
+
+    # yield test_server_code
+
     # @tool("JavaScriptREPL/Shell")
-    # @tool("ServerRequestTest")
-    # @tool("ServerRequestTest")

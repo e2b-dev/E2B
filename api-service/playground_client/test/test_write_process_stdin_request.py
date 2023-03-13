@@ -16,11 +16,11 @@ import unittest
 import datetime
 
 import playground_client
-from playground_client.models.run_process_params import RunProcessParams  # noqa: E501
+from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest  # noqa: E501
 from playground_client.rest import ApiException
 
-class TestRunProcessParams(unittest.TestCase):
-    """RunProcessParams unit test stubs"""
+class TestWriteProcessStdinRequest(unittest.TestCase):
+    """WriteProcessStdinRequest unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,29 +29,25 @@ class TestRunProcessParams(unittest.TestCase):
         pass
 
     def make_instance(self, include_optional):
-        """Test RunProcessParams
+        """Test WriteProcessStdinRequest
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `RunProcessParams`
+        # uncomment below to create an instance of `WriteProcessStdinRequest`
         """
-        model = playground_client.models.run_process_params.RunProcessParams()  # noqa: E501
+        model = playground_client.models.write_process_stdin_request.WriteProcessStdinRequest()  # noqa: E501
         if include_optional :
-            return RunProcessParams(
-                cmd = '', 
-                env_vars = {
-                    'key' : ''
-                    }, 
-                rootdir = ''
+            return WriteProcessStdinRequest(
+                stdin = ''
             )
         else :
-            return RunProcessParams(
-                cmd = '',
+            return WriteProcessStdinRequest(
+                stdin = '',
         )
         """
 
-    def testRunProcessParams(self):
-        """Test RunProcessParams"""
+    def testWriteProcessStdinRequest(self):
+        """Test WriteProcessStdinRequest"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 

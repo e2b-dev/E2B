@@ -46,6 +46,18 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_get_process(self):
+        """Test case for get_process
+
+        """
+        pass
+
+    def test_get_session(self):
+        """Test case for get_session
+
+        """
+        pass
+
     def test_list_filesystem_dir(self):
         """Test case for list_filesystem_dir
 
@@ -64,14 +76,26 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
-    def test_run_process(self):
-        """Test case for run_process
+    def test_start_process(self):
+        """Test case for start_process
+
+        """
+        pass
+
+    def test_stop_process(self):
+        """Test case for stop_process
 
         """
         pass
 
     def test_write_filesystem_file(self):
         """Test case for write_filesystem_file
+
+        """
+        pass
+
+    def test_write_process_stdin(self):
+        """Test case for write_process_stdin
 
         """
         pass

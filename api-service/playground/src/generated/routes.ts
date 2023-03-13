@@ -5,7 +5,7 @@ import { Controller, ValidationService, FieldErrors, ValidateError, TsoaRoute, H
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { FilesystemController } from './../sessions/filesystemController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { ProcessController } from './../sessions/processController';
+import { ProcessController } from './../sessions/processesController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SessionsController } from './../sessions/sessionsController';
 import type { RequestHandler, Router } from 'express';
@@ -73,11 +73,13 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "RunProcessResponse": {
+    "ProcessResponse": {
         "dataType": "refObject",
         "properties": {
             "stderr": {"dataType":"array","array":{"dataType":"refObject","ref":"OutStderrResponse"},"required":true},
             "stdout": {"dataType":"array","array":{"dataType":"refObject","ref":"OutStdoutResponse"},"required":true},
+            "processID": {"dataType":"string","required":true},
+            "finished": {"dataType":"boolean","required":true},
         },
         "additionalProperties": false,
     },
@@ -87,7 +89,7 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"string"},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "RunProcessParams": {
+    "StartProcessParams": {
         "dataType": "refObject",
         "properties": {
             "cmd": {"dataType":"string","required":true},
@@ -97,10 +99,21 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateSessionResponse": {
+    "OpenPort": {
+        "dataType": "refObject",
+        "properties": {
+            "State": {"dataType":"string","required":true},
+            "Ip": {"dataType":"string","required":true},
+            "Port": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SessionResponse": {
         "dataType": "refObject",
         "properties": {
             "id": {"dataType":"string","required":true},
+            "ports": {"dataType":"array","array":{"dataType":"refObject","ref":"OpenPort"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -246,14 +259,15 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.post('/sessions/:id/process',
+        app.post('/sessions/:id/processes',
             ...(fetchMiddlewares<RequestHandler>(ProcessController)),
-            ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.runProcess)),
+            ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.startProcess)),
 
-            function ProcessController_runProcess(request: any, response: any, next: any) {
+            function ProcessController_startProcess(request: any, response: any, next: any) {
             const args = {
                     id: {"in":"path","name":"id","required":true,"dataType":"string"},
-                    requestBody: {"in":"body","name":"requestBody","required":true,"ref":"RunProcessParams"},
+                    requestBody: {"in":"body","name":"requestBody","required":true,"ref":"StartProcessParams"},
+                    wait: {"in":"query","name":"wait","dataType":"boolean"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -265,7 +279,88 @@ export function RegisterRoutes(app: Router) {
                 const controller = new ProcessController();
 
 
-              const promise = controller.runProcess.apply(controller, validatedArgs as any);
+              const promise = controller.startProcess.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.delete('/sessions/:id/processes/:processID',
+            ...(fetchMiddlewares<RequestHandler>(ProcessController)),
+            ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.stopProcess)),
+
+            function ProcessController_stopProcess(request: any, response: any, next: any) {
+            const args = {
+                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    processID: {"in":"path","name":"processID","required":true,"dataType":"string"},
+                    results: {"in":"query","name":"results","dataType":"boolean"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new ProcessController();
+
+
+              const promise = controller.stopProcess.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.post('/sessions/:id/processes/:processID/stdin',
+            ...(fetchMiddlewares<RequestHandler>(ProcessController)),
+            ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.writeProcessStdin)),
+
+            function ProcessController_writeProcessStdin(request: any, response: any, next: any) {
+            const args = {
+                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    processID: {"in":"path","name":"processID","required":true,"dataType":"string"},
+                    stdin: {"in":"body-prop","name":"stdin","required":true,"dataType":"string"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new ProcessController();
+
+
+              const promise = controller.writeProcessStdin.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/sessions/:id/processes/:processID',
+            ...(fetchMiddlewares<RequestHandler>(ProcessController)),
+            ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.getProcess)),
+
+            function ProcessController_getProcess(request: any, response: any, next: any) {
+            const args = {
+                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    processID: {"in":"path","name":"processID","required":true,"dataType":"string"},
+                    wait: {"in":"query","name":"wait","dataType":"boolean"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new ProcessController();
+
+
+              const promise = controller.getProcess.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);
@@ -316,6 +411,31 @@ export function RegisterRoutes(app: Router) {
 
 
               const promise = controller.deleteSession.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/sessions/:id',
+            ...(fetchMiddlewares<RequestHandler>(SessionsController)),
+            ...(fetchMiddlewares<RequestHandler>(SessionsController.prototype.getSession)),
+
+            function SessionsController_getSession(request: any, response: any, next: any) {
+            const args = {
+                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new SessionsController();
+
+
+              const promise = controller.getSession.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);

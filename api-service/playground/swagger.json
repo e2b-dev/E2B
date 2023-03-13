@@ -110,7 +110,7 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"RunProcessResponse": {
+			"ProcessResponse": {
 				"properties": {
 					"stderr": {
 						"items": {
@@ -123,11 +123,19 @@
 							"$ref": "#/components/schemas/OutStdoutResponse"
 						},
 						"type": "array"
+					},
+					"processID": {
+						"type": "string"
+					},
+					"finished": {
+						"type": "boolean"
 					}
 				},
 				"required": [
 					"stderr",
-					"stdout"
+					"stdout",
+					"processID",
+					"finished"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -139,7 +147,7 @@
 				},
 				"type": "object"
 			},
-			"RunProcessParams": {
+			"StartProcessParams": {
 				"properties": {
 					"cmd": {
 						"type": "string"
@@ -157,14 +165,42 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"CreateSessionResponse": {
+			"OpenPort": {
 				"properties": {
-					"id": {
+					"State": {
 						"type": "string"
+					},
+					"Ip": {
+						"type": "string"
+					},
+					"Port": {
+						"type": "number",
+						"format": "double"
 					}
 				},
 				"required": [
-					"id"
+					"State",
+					"Ip",
+					"Port"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SessionResponse": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"ports": {
+						"items": {
+							"$ref": "#/components/schemas/OpenPort"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"id",
+					"ports"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -355,16 +391,16 @@
 				}
 			}
 		},
-		"/sessions/{id}/process": {
+		"/sessions/{id}/processes": {
 			"post": {
-				"operationId": "RunProcess",
+				"operationId": "StartProcess",
 				"responses": {
 					"200": {
-						"description": "Ok",
+						"description": "`processID` and all `stdout` and `stderr` that the process outputted until now.",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/RunProcessResponse"
+									"$ref": "#/components/schemas/ProcessResponse"
 								}
 							}
 						}
@@ -379,6 +415,15 @@
 						"schema": {
 							"type": "string"
 						}
+					},
+					{
+						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
+						"in": "query",
+						"name": "wait",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
 					}
 				],
 				"requestBody": {
@@ -386,7 +431,141 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/RunProcessParams"
+								"$ref": "#/components/schemas/StartProcessParams"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/sessions/{id}/processes/{processID}": {
+			"delete": {
+				"operationId": "StopProcess",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProcessResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "processID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "results",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				]
+			},
+			"get": {
+				"operationId": "GetProcess",
+				"responses": {
+					"200": {
+						"description": "`processID` and all `stdout` and `stderr` that the process outputted until now.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProcessResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "processID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.",
+						"in": "query",
+						"name": "wait",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				]
+			}
+		},
+		"/sessions/{id}/processes/{processID}/stdin": {
+			"post": {
+				"operationId": "WriteProcessStdin",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "processID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"stdin": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"stdin"
+								],
+								"type": "object"
 							}
 						}
 					}
@@ -402,7 +581,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/CreateSessionResponse"
+									"$ref": "#/components/schemas/SessionResponse"
 								}
 							}
 						}
@@ -436,6 +615,32 @@
 				"responses": {
 					"204": {
 						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"get": {
+				"operationId": "GetSession",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
 					}
 				},
 				"security": [],
