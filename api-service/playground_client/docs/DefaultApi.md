@@ -4,7 +4,7 @@ All URIs are relative to *https://localhost:9001*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**create_mock_data**](DefaultApi.md#create_mock_data) | **POST** /data/mock | 
+[**create_mock_body_data**](DefaultApi.md#create_mock_body_data) | **POST** /mock/body | 
 [**create_sessions**](DefaultApi.md#create_sessions) | **POST** /sessions | 
 [**delete_filesystem_entry**](DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{id}/filesystem | 
 [**delete_session**](DefaultApi.md#delete_session) | **DELETE** /sessions/{id} | 
@@ -19,8 +19,8 @@ Method | HTTP request | Description
 [**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{id}/processes/{processID}/stdin | 
 
 
-# **create_mock_data**
-> MockDataResponse create_mock_data(create_mock_data_request)
+# **create_mock_body_data**
+> MockDataResponse create_mock_body_data(create_mock_body_data_request)
 
 
 
@@ -44,21 +44,21 @@ configuration = playground_client.Configuration(
 with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
-    create_mock_data_request = playground_client.CreateMockDataRequest() # CreateMockDataRequest | 
+    create_mock_body_data_request = playground_client.CreateMockBodyDataRequest() # CreateMockBodyDataRequest | 
 
     try:
-        api_response = api_instance.create_mock_data(create_mock_data_request)
-        print("The response of DefaultApi->create_mock_data:\n")
+        api_response = api_instance.create_mock_body_data(create_mock_body_data_request)
+        print("The response of DefaultApi->create_mock_body_data:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->create_mock_data: %s\n" % e)
+        print("Exception when calling DefaultApi->create_mock_body_data: %s\n" % e)
 ```
 
 ### Parameters
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **create_mock_data_request** | [**CreateMockDataRequest**](CreateMockDataRequest.md)|  | 
+ **create_mock_body_data_request** | [**CreateMockBodyDataRequest**](CreateMockBodyDataRequest.md)|  | 
 
 ### Return type
 

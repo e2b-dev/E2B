@@ -16,11 +16,11 @@ import unittest
 import datetime
 
 import playground_client
-from playground_client.models.mock_data_response_mock_data import MockDataResponseMockData  # noqa: E501
+from playground_client.models.mock_data_response_body_data import MockDataResponseBodyData  # noqa: E501
 from playground_client.rest import ApiException
 
-class TestMockDataResponseMockData(unittest.TestCase):
-    """MockDataResponseMockData unit test stubs"""
+class TestMockDataResponseBodyData(unittest.TestCase):
+    """MockDataResponseBodyData unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,23 +29,23 @@ class TestMockDataResponseMockData(unittest.TestCase):
         pass
 
     def make_instance(self, include_optional):
-        """Test MockDataResponseMockData
+        """Test MockDataResponseBodyData
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `MockDataResponseMockData`
+        # uncomment below to create an instance of `MockDataResponseBodyData`
         """
-        model = playground_client.models.mock_data_response_mock_data.MockDataResponseMockData()  # noqa: E501
+        model = playground_client.models.mock_data_response_body_data.MockDataResponseBodyData()  # noqa: E501
         if include_optional :
-            return MockDataResponseMockData(
+            return MockDataResponseBodyData(
             )
         else :
-            return MockDataResponseMockData(
+            return MockDataResponseBodyData(
         )
         """
 
-    def testMockDataResponseMockData(self):
-        """Test MockDataResponseMockData"""
+    def testMockDataResponseBodyData(self):
+        """Test MockDataResponseBodyData"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 

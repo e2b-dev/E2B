@@ -16,11 +16,11 @@ import unittest
 import datetime
 
 import playground_client
-from playground_client.models.create_mock_data_request import CreateMockDataRequest  # noqa: E501
+from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest  # noqa: E501
 from playground_client.rest import ApiException
 
-class TestCreateMockDataRequest(unittest.TestCase):
-    """CreateMockDataRequest unit test stubs"""
+class TestCreateMockBodyDataRequest(unittest.TestCase):
+    """CreateMockBodyDataRequest unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,15 +29,15 @@ class TestCreateMockDataRequest(unittest.TestCase):
         pass
 
     def make_instance(self, include_optional):
-        """Test CreateMockDataRequest
+        """Test CreateMockBodyDataRequest
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `CreateMockDataRequest`
+        # uncomment below to create an instance of `CreateMockBodyDataRequest`
         """
-        model = playground_client.models.create_mock_data_request.CreateMockDataRequest()  # noqa: E501
+        model = playground_client.models.create_mock_body_data_request.CreateMockBodyDataRequest()  # noqa: E501
         if include_optional :
-            return CreateMockDataRequest(
+            return CreateMockBodyDataRequest(
                 files = [
                     playground_client.models.file.File(
                         name = '', 
@@ -46,7 +46,7 @@ class TestCreateMockDataRequest(unittest.TestCase):
                 target_interface = ''
             )
         else :
-            return CreateMockDataRequest(
+            return CreateMockBodyDataRequest(
                 files = [
                     playground_client.models.file.File(
                         name = '', 
@@ -56,8 +56,8 @@ class TestCreateMockDataRequest(unittest.TestCase):
         )
         """
 
-    def testCreateMockDataRequest(self):
-        """Test CreateMockDataRequest"""
+    def testCreateMockBodyDataRequest(self):
+        """Test CreateMockBodyDataRequest"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 

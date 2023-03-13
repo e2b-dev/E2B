@@ -21,7 +21,7 @@ from pydantic import Field, StrictBool, StrictStr
 
 from typing import Optional
 
-from playground_client.models.create_mock_data_request import CreateMockDataRequest
+from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
 from playground_client.models.create_sessions_request import CreateSessionsRequest
 from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse
 from playground_client.models.mock_data_response import MockDataResponse
@@ -52,17 +52,17 @@ class DefaultApi(object):
         self.api_client = api_client
 
     @validate_arguments
-    def create_mock_data(self, create_mock_data_request : CreateMockDataRequest, **kwargs) -> MockDataResponse:  # noqa: E501
-        """create_mock_data  # noqa: E501
+    def create_mock_body_data(self, create_mock_body_data_request : CreateMockBodyDataRequest, **kwargs) -> MockDataResponse:  # noqa: E501
+        """create_mock_body_data  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.create_mock_data(create_mock_data_request, async_req=True)
+        >>> thread = api.create_mock_body_data(create_mock_body_data_request, async_req=True)
         >>> result = thread.get()
 
-        :param create_mock_data_request: (required)
-        :type create_mock_data_request: CreateMockDataRequest
+        :param create_mock_body_data_request: (required)
+        :type create_mock_body_data_request: CreateMockBodyDataRequest
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
@@ -79,20 +79,20 @@ class DefaultApi(object):
         :rtype: MockDataResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.create_mock_data_with_http_info(create_mock_data_request, **kwargs)  # noqa: E501
+        return self.create_mock_body_data_with_http_info(create_mock_body_data_request, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def create_mock_data_with_http_info(self, create_mock_data_request : CreateMockDataRequest, **kwargs):  # noqa: E501
-        """create_mock_data  # noqa: E501
+    def create_mock_body_data_with_http_info(self, create_mock_body_data_request : CreateMockBodyDataRequest, **kwargs):  # noqa: E501
+        """create_mock_body_data  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.create_mock_data_with_http_info(create_mock_data_request, async_req=True)
+        >>> thread = api.create_mock_body_data_with_http_info(create_mock_body_data_request, async_req=True)
         >>> result = thread.get()
 
-        :param create_mock_data_request: (required)
-        :type create_mock_data_request: CreateMockDataRequest
+        :param create_mock_body_data_request: (required)
+        :type create_mock_body_data_request: CreateMockBodyDataRequest
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
@@ -120,7 +120,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'create_mock_data_request'
+            'create_mock_body_data_request'
         ]
         _all_params.extend(
             [
@@ -139,7 +139,7 @@ class DefaultApi(object):
             if _key not in _all_params:
                 raise ApiTypeError(
                     "Got an unexpected keyword argument '%s'"
-                    " to method create_mock_data" % _key
+                    " to method create_mock_body_data" % _key
                 )
             _params[_key] = _val
         del _params['kwargs']
@@ -161,8 +161,8 @@ class DefaultApi(object):
 
         # process the body parameter
         _body_params = None
-        if _params['create_mock_data_request']:
-            _body_params = _params['create_mock_data_request']
+        if _params['create_mock_body_data_request']:
+            _body_params = _params['create_mock_body_data_request']
 
         # set the HTTP header `Accept`
         _header_params['Accept'] = self.api_client.select_header_accept(
@@ -183,7 +183,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/data/mock', 'POST',
+            '/mock/body', 'POST',
             _path_params,
             _query_params,
             _header_params,
