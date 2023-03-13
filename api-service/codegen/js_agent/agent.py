@@ -29,6 +29,7 @@ def create_js_agent(
     prompt = ZeroShotAgent.create_prompt(tools=tools, prefix=prefix)
     llm_chain = LLMChain(
         llm=llm,
+        verbose=verbose,
         prompt=prompt,
         callback_manager=callback_manager,
     )

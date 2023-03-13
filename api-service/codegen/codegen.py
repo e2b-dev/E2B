@@ -43,10 +43,10 @@ def generate_req_handler(
         verbose=True,
     )
 
-    # Convert env vars to a markdown list enumerating env names on separate lines.
+    # Convert env vars to Javascript comments, each on its on line for each env var.
     envs_str = ""
     for env in envs:
-        envs_str += f'- `{env["key"]}`\n'
+        envs_str += f'// const {env["key"]} = `env.{env["key"]}`\n'
 
     prompt = PREFIX.format(
         method=method, envs=envs_str, request_body=request_body_template
@@ -60,11 +60,6 @@ def generate_req_handler(
 
     handler_code = executor.run(prompt).strip("`").strip()
 
-    content = playground.read_file("/code/package.json")
-    print("PACKAGE.JSON")
-    print(content)
     playground.close()
 
     return prompt, handler_code
-    # server_code = server_template.replace('[HANDLER]', handler_code)
-    # return server_code
