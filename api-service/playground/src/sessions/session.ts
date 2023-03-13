@@ -41,7 +41,13 @@ export class CachedSession {
       },
       codeSnippet: {
         onScanPorts: (ports) => {
-          this.ports = ports
+          // We need to remap the ports because there is a lot of hidden properties
+          // that breaks the generated API between client and server.
+          this.ports = ports.map(p => ({
+            Ip: p.Ip,
+            Port: p.Port,
+            State: p.State,
+          }))
         },
       },
     })
