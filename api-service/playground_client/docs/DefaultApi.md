@@ -4,6 +4,7 @@ All URIs are relative to *https://localhost:9001*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**create_mock_data**](DefaultApi.md#create_mock_data) | **POST** /data/mock | 
 [**create_sessions**](DefaultApi.md#create_sessions) | **POST** /sessions | 
 [**delete_filesystem_entry**](DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{id}/filesystem | 
 [**delete_session**](DefaultApi.md#delete_session) | **DELETE** /sessions/{id} | 
@@ -17,6 +18,67 @@ Method | HTTP request | Description
 [**write_filesystem_file**](DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{id}/filesystem/file | 
 [**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{id}/processes/{processID}/stdin | 
 
+
+# **create_mock_data**
+> MockDataResponse create_mock_data(create_mock_data_request)
+
+
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import os
+import playground_client
+from playground_client.rest import ApiException
+from pprint import pprint
+# Defining the host is optional and defaults to https://localhost:9001
+# See configuration.py for a list of all supported configuration parameters.
+configuration = playground_client.Configuration(
+    host = "https://localhost:9001"
+)
+
+
+# Enter a context with an instance of the API client
+with playground_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = playground_client.DefaultApi(api_client)
+    create_mock_data_request = playground_client.CreateMockDataRequest() # CreateMockDataRequest | 
+
+    try:
+        api_response = api_instance.create_mock_data(create_mock_data_request)
+        print("The response of DefaultApi->create_mock_data:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->create_mock_data: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **create_mock_data_request** | [**CreateMockDataRequest**](CreateMockDataRequest.md)|  | 
+
+### Return type
+
+[**MockDataResponse**](MockDataResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Ok |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **create_sessions**
 > SessionResponse create_sessions(create_sessions_request)

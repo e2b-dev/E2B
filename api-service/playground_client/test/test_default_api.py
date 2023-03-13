@@ -28,6 +28,12 @@ class TestDefaultApi(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_create_mock_data(self):
+        """Test case for create_mock_data
+
+        """
+        pass
+
     def test_create_sessions(self):
         """Test case for create_sessions
 

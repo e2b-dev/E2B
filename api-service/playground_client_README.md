@@ -47,14 +47,14 @@ configuration = playground_client.Configuration(
 with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
-    create_sessions_request = playground_client.CreateSessionsRequest() # CreateSessionsRequest | 
+    create_mock_data_request = playground_client.CreateMockDataRequest() # CreateMockDataRequest | 
 
     try:
-        api_response = api_instance.create_sessions(create_sessions_request)
-        print("The response of DefaultApi->create_sessions:\n")
+        api_response = api_instance.create_mock_data(create_mock_data_request)
+        print("The response of DefaultApi->create_mock_data:\n")
         pprint(api_response)
     except ApiException as e:
-        print("Exception when calling DefaultApi->create_sessions: %s\n" % e)
+        print("Exception when calling DefaultApi->create_mock_data: %s\n" % e)
 
 ```
 
@@ -64,6 +64,7 @@ All URIs are relative to *https://localhost:9001*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*DefaultApi* | [**create_mock_data**](playground_client/docs/DefaultApi.md#create_mock_data) | **POST** /data/mock | 
 *DefaultApi* | [**create_sessions**](playground_client/docs/DefaultApi.md#create_sessions) | **POST** /sessions | 
 *DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{id}/filesystem | 
 *DefaultApi* | [**delete_session**](playground_client/docs/DefaultApi.md#delete_session) | **DELETE** /sessions/{id} | 
@@ -80,9 +81,13 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [CreateMockDataRequest](playground_client/docs/CreateMockDataRequest.md)
  - [CreateSessionsRequest](playground_client/docs/CreateSessionsRequest.md)
  - [EntryInfo](playground_client/docs/EntryInfo.md)
+ - [File](playground_client/docs/File.md)
  - [ListFilesystemDirResponse](playground_client/docs/ListFilesystemDirResponse.md)
+ - [MockDataResponse](playground_client/docs/MockDataResponse.md)
+ - [MockDataResponseMockData](playground_client/docs/MockDataResponseMockData.md)
  - [OpenPort](playground_client/docs/OpenPort.md)
  - [OutStderrResponse](playground_client/docs/OutStderrResponse.md)
  - [OutStdoutResponse](playground_client/docs/OutStdoutResponse.md)
