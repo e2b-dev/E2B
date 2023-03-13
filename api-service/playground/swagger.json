@@ -6,22 +6,10 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
-			"Record_string-or-number.___": {
-				"properties": {},
-				"type": "object",
-				"description": "Construct a type with a set of properties K of type T"
-			},
 			"MockDataResponse": {
 				"properties": {
 					"bodyData": {
-						"anyOf": [
-							{
-								"type": "string"
-							},
-							{
-								"$ref": "#/components/schemas/Record_string-or-number.___"
-							}
-						]
+						"type": "string"
 					}
 				},
 				"required": [

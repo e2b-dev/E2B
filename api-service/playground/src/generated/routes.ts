@@ -15,15 +15,10 @@ import type { RequestHandler, Router } from 'express';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
 const models: TsoaRoute.Models = {
-    "Record_string-or-number.___": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MockDataResponse": {
         "dataType": "refObject",
         "properties": {
-            "bodyData": {"dataType":"union","subSchemas":[{"dataType":"string"},{"ref":"Record_string-or-number.___"}],"required":true},
+            "bodyData": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },

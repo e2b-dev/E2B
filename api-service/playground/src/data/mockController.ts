@@ -12,7 +12,7 @@ interface File {
 }
 
 interface MockDataResponse {
-  bodyData: string | Record<string | number, {}>
+  bodyData: string
 }
 
 @Route('mock')
@@ -25,12 +25,12 @@ export class MockController extends Controller {
 
     const data = mock({
       files: files.map(f => [f.name, f.content]),
-      output: 'json',
+      output: 'string',
       interfaces: [targetInterface],
     })
 
     return {
-      bodyData: data,
+      bodyData: data as string,
     }
   }
 }
