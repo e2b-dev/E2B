@@ -25,7 +25,7 @@ export class MockController extends Controller {
 
     const data = mock({
       files: files.map(f => [f.name, f.content]),
-      output: 'string',
+      output: 'json',
       interfaces: [targetInterface],
     })
 
