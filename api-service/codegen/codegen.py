@@ -56,11 +56,6 @@ def generate_req_handler(
 
     handler_code = executor.run(prompt).strip("`").strip()
 
-    content = playground.read_file("/code/package.json")
-    print("PACKAGE.JSON")
-    print(content)
     playground.close()
 
     return prompt, handler_code
-    # server_code = server_template.replace('[HANDLER]', handler_code)
-    # return server_code
