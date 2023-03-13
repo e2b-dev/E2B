@@ -7,6 +7,7 @@ from codegen.tools.playground.tools.process import encode_command_output
 def extract_code(code: str):
     return code.strip().strip("`").strip()
 
+
 def create_code_tools(playground: NodeJSPlayground):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
@@ -75,13 +76,14 @@ def create_code_tools(playground: NodeJSPlayground):
         code = extract_code(server_code)
 
         port = 3000
-        test_output, server_output = playground.test_javascript_server_code(code=code, test_cmd=test_cmd, port=port)
+        test_output, server_output = playground.test_javascript_server_code(
+            code=code, test_cmd=test_cmd, port=port
+        )
 
         test_result = encode_command_output(test_output)
         server_result = encode_command_output(server_output)
 
         return f"Test command result:\n{test_result}\n\nServer result:\n{server_result}"
-
 
     # yield test_server_code
 

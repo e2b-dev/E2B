@@ -1,5 +1,6 @@
 from typing import List, Dict
 from langchain.llms.openai import OpenAIChat, OpenAI
+from typing import TypedDict
 
 # from codegen.tools.documentation import ReadDocumentation
 from codegen.js_agent import create_js_agent
@@ -9,14 +10,19 @@ from codegen.tools.javascript import JavascriptEvalTool
 from database import Database
 
 
+class EnvVar(TypedDict):
+    key: str
+    value: str
+
+
 def generate_req_handler(
     db: Database,
     run_id: str,
     blocks: List[Dict],
     method: str,
-    envs: List[Dict[str, str]],
+    envs: List[EnvVar],
 ):
-    playground_tools, playground = create_playground_tools()
+    playground_tools, playground = create_playground_tools(envs)
 
     executor = create_js_agent(
         db=db,
@@ -56,8 +62,8 @@ def generate_req_handler(
 
     handler_code = executor.run(prompt).strip("`").strip()
 
-    content = playground.read_file('/code/package.json')
-    print('PACKAGE.JSON')
+    content = playground.read_file("/code/package.json")
+    print("PACKAGE.JSON")
     print(content)
     playground.close()
 

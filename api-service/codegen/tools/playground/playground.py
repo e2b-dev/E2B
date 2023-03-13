@@ -1,6 +1,11 @@
 import os
 import time
 
+from functools import reduce
+
+from typing import Dict, List
+from codegen.codegen import EnvVar
+
 import playground_client
 
 
@@ -15,7 +20,7 @@ configuration.cert_file = None
 
 
 class Playground:
-    port_check_interval = 1 # 1s
+    port_check_interval = 1  # 1s
     max_port_checks = 10
 
     def __init__(self, env_id: str):
@@ -43,20 +48,29 @@ class Playground:
 
     def is_port_open(self, port: float):
         open_ports = self.get_open_ports()
-        return any(open_port.port == port and open_port.state == "LISTEN" for open_port in open_ports)
-
-    def run_command(self, cmd: str, rootdir: str = "/", env_vars = {}):
-        return self.api.start_process(
-            self.session.id,
-            playground_client.StartProcessParams(cmd=cmd, envVars=env_vars, rootdir=rootdir),
-            wait=True
+        return any(
+            open_port.port == port and open_port.state == "LISTEN"
+            for open_port in open_ports
         )
 
-    def start_process(self, cmd: str, rootdir: str = "/", env_vars = {}):
+    def run_command(self, cmd: str, rootdir: str = "/", env_vars: dict[str, str] = {}):
+        return self.api.start_process(
+            self.session.id,
+            playground_client.StartProcessParams(
+                cmd=cmd, envVars=env_vars, rootdir=rootdir
+            ),
+            wait=True,
+        )
+
+    def start_process(
+        self, cmd: str, rootdir: str = "/", env_vars: dict[str, str] = {}
+    ):
         """Start process and return the process ID."""
         response = self.api.start_process(
             self.session.id,
-            playground_client.StartProcessParams(cmd=cmd, envVars=env_vars, rootdir=rootdir),
+            playground_client.StartProcessParams(
+                cmd=cmd, envVars=env_vars, rootdir=rootdir
+            ),
         )
         return response.process_id
 
@@ -81,14 +95,25 @@ class Playground:
 
     def write_file(self, path: str, content: str):
         self.api.write_filesystem_file(
-            self.session.id, path, playground_client.WriteFilesystemFileRequest(content=content)
+            self.session.id,
+            path,
+            playground_client.WriteFilesystemFileRequest(content=content),
         )
 
     def make_dir(self, path: str):
         self.api.make_filesystem_dir(self.session.id, path)
 
-    def test_server_code(self, server_cmd: str, test_cmd: str, port: float, rootdir: str):
-        server_process_id = self.start_process(cmd=server_cmd, rootdir=rootdir)
+    def test_server_code(
+        self,
+        server_cmd: str,
+        test_cmd: str,
+        port: float,
+        rootdir: str,
+        env_vars: dict[str, str] = {},
+    ):
+        server_process_id = self.start_process(
+            cmd=server_cmd, rootdir=rootdir, env_vars=env_vars
+        )
 
         for _ in range(self.max_port_checks):
             if self.is_port_open(port):
@@ -99,6 +124,10 @@ class Playground:
         server_result = self.stop_process(server_process_id)
         return test_result, server_result
 
+    @staticmethod
+    def format_env_vars(envs: List[EnvVar]):
+        return reduce(lambda acc, env: {**acc, **{env["key"]: env["value"]}}, envs, {})
+
 
 class NodeJSPlayground(Playground):
     node_js_env_id = "QfqlXmCo5iKl"
@@ -107,16 +136,25 @@ class NodeJSPlayground(Playground):
     default_javascript_code_file = os.path.join(rootdir, "index.js")
     default_typescript_code_file = os.path.join(rootdir, "index.ts")
 
-    def __init__(self):
+    def __init__(self, envs: List[EnvVar]):
         super().__init__(NodeJSPlayground.node_js_env_id)
+        self.env_vars = self.format_env_vars(envs)
 
     def run_javascript_code(self, code: str):
         self.write_file(self.default_javascript_code_file, code)
-        return self.run_command(f"node {self.default_javascript_code_file}", rootdir=self.rootdir)
+        return self.run_command(
+            f"node {self.default_javascript_code_file}",
+            rootdir=self.rootdir,
+            env_vars=self.env_vars,
+        )
 
     def run_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
-        return self.run_command(f"ts-node -T {self.default_typescript_code_file}", rootdir=self.rootdir)
+        return self.run_command(
+            f"ts-node -T {self.default_typescript_code_file}",
+            rootdir=self.rootdir,
+            env_vars=self.env_vars,
+        )
 
     def check_typescript_code(self, code: str):
         self.write_file(self.default_typescript_code_file, code)
@@ -128,7 +166,12 @@ class NodeJSPlayground(Playground):
     def install_dependencies(self, dependencies: str):
         return self.run_command(f"npm install {dependencies}", rootdir=self.rootdir)
 
-
     def test_javascript_server_code(self, code: str, test_cmd: str, port: float):
         self.write_file(self.default_javascript_code_file, code)
-        return self.test_server_code(server_cmd=f"node {self.default_javascript_code_file}", test_cmd=test_cmd, port=port, rootdir=self.rootdir)
+        return self.test_server_code(
+            server_cmd=f"node {self.default_javascript_code_file}",
+            test_cmd=test_cmd,
+            port=port,
+            rootdir=self.rootdir,
+            env_vars=self.env_vars,
+        )
