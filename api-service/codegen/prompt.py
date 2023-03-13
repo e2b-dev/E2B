@@ -15,12 +15,7 @@ USE ONLY TOOLS THAT YOU HAVE ACCESS TO!
 You are building a serverless API with Cloudflare Workers using the `itty-router` package. The javascript code is in the form of ES modules.
 You need to complete the `handle{method}Request` function that handles the incoming {method} requests and return the whole completed code.
 
-You can access environment variables through the `env` parameter. You have access to the following environment variables:
-{envs}
-
 You can install any package that you might need.
-
-The incoming request content-type is application/json.
 
 The incoming request payload looks like this:
 ```
@@ -33,8 +28,14 @@ import {{ Router }} from 'itty-router'
 
 const router = Router()
 
-async function handle{method}Request(request, env) {{
-    // TODO
+async function handle{method}Request(req, env) {{
+  // DO NOT USE `process.env` TO ACCES ENVIRONMENT VARIABLES. Instead, you access environment variables through the `env` parameter like this: `const myEnv = env.MY_ENV`.
+  // You have access to the following environment variables:
+  {envs}
+
+  // The incoming request content-type is application/json. Make sure to correctly retrieve it.
+  const requestBody = req.json()
+  // TODO
 }}
 
 router.{method}('/', handle{method}Request)
