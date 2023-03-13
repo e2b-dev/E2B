@@ -6,6 +6,46 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
+			"Record_string-or-number.___": {
+				"properties": {},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"MockDataResponse": {
+				"properties": {
+					"mockData": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"$ref": "#/components/schemas/Record_string-or-number.___"
+							}
+						]
+					}
+				},
+				"required": [
+					"mockData"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"File": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"content": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"name",
+					"content"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"EntryInfo": {
 				"properties": {
 					"isDir": {
@@ -218,6 +258,50 @@
 	},
 	"openapi": "3.0.0",
 	"paths": {
+		"/data/mock": {
+			"post": {
+				"operationId": "CreateMockData",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MockDataResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"files": {
+										"items": {
+											"$ref": "#/components/schemas/File"
+										},
+										"type": "array"
+									},
+									"targetInterface": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"files",
+									"targetInterface"
+								],
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/sessions/{id}/filesystem/dir": {
 			"get": {
 				"operationId": "ListFilesystemDir",
