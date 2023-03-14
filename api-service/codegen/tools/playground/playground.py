@@ -5,7 +5,9 @@ from functools import reduce
 from typing import List
 
 import playground_client
-from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
+from playground_client.models.create_mock_body_data_request import (
+    CreateMockBodyDataRequest,
+)
 from playground_client.models.file import File
 from codegen.env import EnvVar
 
@@ -65,7 +67,9 @@ class Playground:
         return self.api.start_process(
             self.session.id,
             playground_client.StartProcessParams(
-                cmd=cmd, envVars=env_vars, rootdir=rootdir,
+                cmd=cmd,
+                envVars=env_vars,
+                rootdir=rootdir,
             ),
             wait=True,
         )
@@ -131,7 +135,9 @@ class Playground:
         env_vars: dict[str, str] = {},
     ):
         server_process_id = self.start_process(
-            cmd=server_cmd, rootdir=rootdir, env_vars=env_vars,
+            cmd=server_cmd,
+            rootdir=rootdir,
+            env_vars=env_vars,
         )
 
         for _ in range(self.max_port_checks):
@@ -191,14 +197,17 @@ class NodeJSPlayground(Playground):
         request_cmd: str,
         port: float,
     ):
+        print("CALLING", code)
         self.write_file(self.default_javascript_code_file, code)
-        return self.run_server_with_request(
+        result = self.run_server_with_request(
             server_cmd=f"node {self.default_javascript_code_file}",
             request_cmd=request_cmd,
             port=port,
             rootdir=self.rootdir,
             env_vars=self.env_vars,
         )
+        print(result)
+        return result
 
     def run_typescript_server_code_with_request(
         self,
