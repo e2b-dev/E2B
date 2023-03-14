@@ -177,21 +177,21 @@ ae.run(
 
 ##############
 
-chat_messages = prompt.format_prompt(
-    agent_scratchpad="",
-    input="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
-// 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
-""",
-    method="post",
-    instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
-// 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
-""",
-).to_messages()
+# chat_messages = prompt.format_prompt(
+#     agent_scratchpad="",
+#     input="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
+# // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
+# """,
+#     method="post",
+#     instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
+# // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
+# """,
+# ).to_messages()
 
-instruct1 = "1. Check if the incoming request is POST request. If not, respond with an adequate error"
-instruct1_prompt = HumanMessage(content=instruct1)
+# instruct1 = "1. Check if the incoming request is POST request. If not, respond with an adequate error"
+# instruct1_prompt = HumanMessage(content=instruct1)
 
-# chat([*chat_messages, instruct1_prompt])
+# # chat([*chat_messages, instruct1_prompt])
 
 
 playground.close()
