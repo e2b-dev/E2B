@@ -27,7 +27,6 @@ class WriteProcessStdinRequest(BaseModel):
     Do not edit the class manually.
     """
     stdin: StrictStr = ...
-    additional_properties: Dict[str, Any] = {}
     __properties = ["stdin"]
 
     class Config:
@@ -51,14 +50,8 @@ class WriteProcessStdinRequest(BaseModel):
         """Returns the dictionary representation of the model using alias"""
         _dict = self.dict(by_alias=True,
                           exclude={
-                            "additional_properties"
                           },
                           exclude_none=True)
-        # puts key-value pairs in additional_properties in the top level
-        if self.additional_properties is not None:
-            for _key, _value in self.additional_properties.items():
-                _dict[_key] = _value
-
         return _dict
 
     @classmethod
@@ -70,13 +63,13 @@ class WriteProcessStdinRequest(BaseModel):
         if type(obj) is not dict:
             return WriteProcessStdinRequest.parse_obj(obj)
 
+        # raise errors for additional fields in the input
+        for _key in obj.keys():
+            if _key not in cls.__properties:
+                raise ValueError("Error due to additional fields (not defined in WriteProcessStdinRequest) in the input: " + obj)
+
         _obj = WriteProcessStdinRequest.parse_obj({
             "stdin": obj.get("stdin")
         })
-        # store additional fields in additional_properties
-        for _key in obj.keys():
-            if _key not in cls.__properties:
-                _obj.additional_properties[_key] = obj.get(_key)
-
         return _obj
 
