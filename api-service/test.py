@@ -26,12 +26,10 @@ app.use(express.json());
 // The function we need to implement that must handle the {method} requests.
 // We can make the function async if needed.
 function handle{method}Request(req, res) {{
-  // TODO: Implement the function based on the instructions from your boss:
-  {instructions}
+  // TODO: Implement the function based on the instructions from your boss
 }}
 
 app.{method}('/', handle{method}Request);
-
 
 // Start the server
 app.listen(3000, () => console.log('Listening on port 3000'));
@@ -47,7 +45,7 @@ The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of mult
   "action_input": $INPUT
 }}}}
 ```
-ALWAYS use the following format:
+ALWAYS use the following format and don't add additional empty new lines:
 
 
 Instruction: the input instruction from your boss you must implement
@@ -70,11 +68,12 @@ chat = ChatOpenAI(
     openai_api_key=OPENAI_API_KEY,
     streaming=True,
     temperature=0,
-    max_tokens=1000,
+    max_tokens=2056,
     verbose=True,
     callback_manager=cm,
 )
 
+# Initialize playground
 playground_tools, playground = create_playground_tools(
     envs=[],
     route="/",
@@ -82,11 +81,12 @@ playground_tools, playground = create_playground_tools(
     request_body_template="email: string",
 )
 
+# Create prompt
 input_variables = [
     "input",
     "agent_scratchpad",
     "method",
-    "instructions",
+    # "instructions",
 ]
 prompt = ChatAgent.create_prompt(
     tools=[
@@ -98,6 +98,7 @@ prompt = ChatAgent.create_prompt(
     input_variables=input_variables,
 )
 
+# Create agent and it's executor
 agent = ChatAgent.from_llm_and_tools(
     llm=chat,
     tools=playground_tools,
@@ -107,37 +108,50 @@ agent = ChatAgent.from_llm_and_tools(
     input_variables=input_variables,
     verbose=True,
 )
-agent_exec = initialize_agent(
-    tools=playground_tools,
-    llm=chat,
-    agent="chat-zero-shot-react-description",
-    agent_kwargs={
-        "prefix": PREFIX,
-        "suffix": SUFFIX,
-        "format_instructions": FORMAT_INSTRUCTIONS,
-        "input_variables": input_variables,
-        "verbose": True,
-    },
-    verbose=True,
-)
 ae = AgentExecutor.from_agent_and_tools(agent=agent, tools=playground_tools)
+# Run
 ae.run(
     # "1. Check if the incoming request is POST request. If not, respond with an adequate error",
     agent_scratchpad="",
-    input="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
-// 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
-""",
+    input="""Here are the instructions from your boss:
+1. Check if the incoming request is POST request. If not, respond with an adequate error.
+2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.""",
     method="post",
-    instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
-    // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
-    """,
+    # instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
+    # // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
+    # """,
 )
+
+
+# agent_exec = initialize_agent(
+#     tools=playground_tools,
+#     llm=chat,
+#     agent="chat-zero-shot-react-description",
+#     agent_kwargs={
+#         "prefix": PREFIX,
+#         "suffix": SUFFIX,
+#         "format_instructions": FORMAT_INSTRUCTIONS,
+#         "input_variables": input_variables,
+#         "verbose": True,
+#     },
+#     verbose=True,
+# )
+# agent_exec.run(
+#     input="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
+# // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
+# """,
+#     agent_scratchpad="",
+#     method="post",
+#     instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
+#     // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
+#     """,
+# )
+
 
 # pprint(prompt.messages[0].prompt.template)
 # print('++++++++')
 # pprint(prompt.messages[1].prompt.template)
 
-# chain = LLMChain(llm=chat, prompt=prompt, verbose=True)
 # prompts, _ = chain.prep_prompts(
 #     [
 #         {
@@ -151,7 +165,7 @@ ae.run(
 #     ]
 # )
 # print(prompts)
-# chain.predict(
+# chain.run(
 #     input="",
 #     agent_scratchpad="",
 #     method="post",
