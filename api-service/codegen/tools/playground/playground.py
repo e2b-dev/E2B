@@ -166,12 +166,14 @@ class NodeJSPlayground(Playground):
         self.env_vars = self.format_env_vars(envs)
 
     def run_javascript_code(self, code: str):
+        print(f"Running javascript code: {code}")
         self.write_file(self.default_javascript_code_file, code)
-        return self.run_command(
+        res = self.run_command(
             f"node {self.default_javascript_code_file}",
             rootdir=self.rootdir,
             env_vars=self.env_vars,
         )
+        print(res)
 
     def run_typescript_code(self, code: str, typecheck: bool = False):
         self.write_file(self.default_typescript_code_file, code)
