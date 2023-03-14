@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx concurrently \"next dev\" \"yarn start:api\" \"yarn start:playground\"",
+    "dev": "npx concurrently -p none \"next dev\" \"yarn start:api\" \"yarn start:playground\"",
     "dev:api-service": "npx concurrently \"yarn start:api\" \"yarn start:playground\"",
     "build": "next build",
     "start:api": "cd api-service && PYTHONUNBUFFERED=1 poetry run flask --app app.py --debug run",
