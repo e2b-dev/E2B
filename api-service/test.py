@@ -61,12 +61,13 @@ FORMAT_INSTRUCTIONS = """"""
 
 ##########
 
+# - Think step-by-step. Use each step to describe your plan on how you will go about implementing the required instructions.
 PREFIX = """You are an AI JavaScript/Nodejs assistant.
-- Follow the user's requirements carefully & to the letter.
-- Think step-by-step. Use each step to describe your plan on how you will go about implementing the required instructions.
+- Follow the user's instructions carefully & to the letter.
 - Minimize any other prose.
 - You are building an Express server that handles your REST API and you are required to complete the code based on the provided instructions.
-- Start with the following code snippet that runs the server
+- You are working with an ES module so don't use `require` use `import` instead.
+- Start with the following code snippet that starts the server
 ```
 import express from 'express';
 const app = express();
@@ -184,7 +185,9 @@ try:
         input="""Here are the instructions:
 1. Check if the incoming request is POST request. If not, respond with an adequate error.
 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
-3. Before you provide the final answer, generate the full server code and make sure it runs without any errors""",
+3. Generate the full required server code and make sure it starts without any errors.
+4. Test that the generated server from the previous step behaves as is required by making mock `curl` requests to the server.
+Once all works without any bugs and errors, provide the final answer""",
         method="post",
         # instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
         # // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
