@@ -80,6 +80,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     # yield check_typescript_code_types
 
     last_javascript_code: str | None
+    # TODO: Add timeout that stops the code execution if it doesn't stop after some time
     # This tool is just for executing JavaScript without doing the request to server
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
