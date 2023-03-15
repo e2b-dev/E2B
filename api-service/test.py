@@ -53,13 +53,13 @@ app.{method}('/', handle{method}Request);
 // Start the server
 app.listen(3000, () => console.log('Listening on port 3000'));
 ```
-- ALWAYS INCLUDE THE ABOVE CODE SNIPPET IN YOUR ANSWERS AND MAKE SURE IT'S JSON ESCAPED.
+- Make sure any code you generate is JSON escaped
 - You have access to the following tools:
 """
 
 FORMAT_INSTRUCTIONS = """"The way you use the tools is by specifying a json blob.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
-THE ONLY VALUES THAT SHOULD BE INT HE "action" FIELD ARE: {tool_names}. NO OTHER VALUES ARE ALLOWED.
+THE ONLY VALUES THAT SHOULD BE IN THE "action" FIELD ARE: {tool_names}. NO OTHER VALUES ARE ALLOWED.
 The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
 ```
 {{{{
