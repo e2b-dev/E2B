@@ -122,7 +122,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
             f"Curl result:\n{request_result}\nCode execution result:\n{server_result}"
         )
 
-    # yield run_javascript_code
+    yield curl_javascript_server
 
     # @tool("RunJavaScriptCode")
     # def run_javascript_code(code: str) -> str:
