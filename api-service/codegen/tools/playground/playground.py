@@ -158,6 +158,8 @@ class NodeJSPlayground(Playground):
     node_js_env_id = "dCeMnVVxu01L"
     rootdir = "/code"
 
+    run_code_timeout = 5  # 5s
+
     default_javascript_code_file = os.path.join(rootdir, "index.js")
     default_typescript_code_file = os.path.join(rootdir, "index.ts")
 
@@ -165,14 +167,29 @@ class NodeJSPlayground(Playground):
         super().__init__(NodeJSPlayground.node_js_env_id)
         self.env_vars = self.format_env_vars(envs)
 
-    def run_javascript_code(self, code: str):
+    def run_javascript_code(self, code: str, timeout: float = run_code_timeout):
         print(f"Running javascript code: {code}")
         self.write_file(self.default_javascript_code_file, code)
+<<<<<<< HEAD
         return self.run_command(
+=======
+
+        process_id = self.start_process(
+>>>>>>> 6d5d90a03e7d1dcf76849c1ac93a269b1d9600da
             f"node {self.default_javascript_code_file}",
             rootdir=self.rootdir,
             env_vars=self.env_vars,
         )
+<<<<<<< HEAD
+=======
+
+        # For now we always wait the full timeout interval
+        time.sleep(timeout)
+
+        result = self.stop_process(process_id)
+        print(result)
+        return result
+>>>>>>> 6d5d90a03e7d1dcf76849c1ac93a269b1d9600da
 
     def run_typescript_code(self, code: str, typecheck: bool = False):
         self.write_file(self.default_typescript_code_file, code)
