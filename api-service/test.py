@@ -5,6 +5,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
 from langchain.schema import HumanMessage
@@ -12,7 +14,21 @@ from langchain.schema import HumanMessage
 from codegen.tools.playground import create_playground_tools
 
 
+def create_prompt() -> ChatPromptTemplate:
+    pass
+
+
 OPENAI_API_KEY = "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"
+
+PREFIX = """You are an AI programming assistant.
+
+
+
+You have access to the following tools:"""
+
+FORMAT_INSTRUCTIONS = """"""
+
+##########
 
 PREFIX = """You are a senior JavaScript/Nodejs developer. You are building an Express server that handles your REST API and you are required to complete the code function `handle{method}Request` based on the provided instructions from your boss. You have access to the following tools:
 You are starting with the following code snippet.
@@ -33,7 +49,10 @@ app.{method}('/', handle{method}Request);
 
 // Start the server
 app.listen(3000, () => console.log('Listening on port 3000'));
-```"""
+```
+
+Please follow the template by including the above snippet with escaped new lines in your answers.
+"""
 
 FORMAT_INSTRUCTIONS = """"The way you use the tools is by specifying a json blob.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
@@ -97,6 +116,7 @@ prompt = ChatAgent.create_prompt(
     format_instructions=FORMAT_INSTRUCTIONS,
     input_variables=input_variables,
 )
+
 
 # Create agent and it's executor
 agent = ChatAgent.from_llm_and_tools(
