@@ -6,6 +6,7 @@
     "@devbookhq/sdk": "^2.6.74",
     "express": "^4.18.2",
     "intermock": "^0.2.5",
+    "morgan": "^1.10.0",
     "node-cache": "^5.1.2",
     "tsoa": "^5.1.1"
   },
