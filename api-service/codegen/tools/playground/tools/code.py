@@ -16,7 +16,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     @tool("InstallNPMDependencies")
     def install_dependencies(dependencies: str) -> str:
         """
-        Install specified dependecies with NPM and return errors.
+        Install dependecies with NPM.
         The input should be a list of Node.js dependencies separated by spaces.
         """
         output = playground.install_dependencies(extract_code(dependencies))
@@ -43,9 +43,10 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     yield run_javascript_code
 
     @tool("CurlJavaScriptServer")
-    def curl_javascript_server() -> str:
+    def curl_javascript_server(empty: str) -> str:
         """
         Make a request to check if the previously run JavaScript code is a server that can handle the needed request.
+        Use this tool before returning the final answer.
         """
         if last_javascript_code is None:
             return "No JavaScript code was previously run"
@@ -69,4 +70,4 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
             f"Curl result:\n{request_result}\nCode execution result:\n{server_result}"
         )
 
-    # yield curl_javascript_server
+    yield curl_javascript_server
