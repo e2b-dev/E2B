@@ -23,7 +23,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         result = encode_command_output(output, only_errors=True)
         return result if len(result) > 0 else "All dependencies installed"
 
-    yield install_dependencies
+    # yield install_dependencies
 
     # This tool is just for executing TypeScript without doing the request to server
     # @tool("RunTypeScriptCode")
@@ -79,6 +79,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
 
     # yield check_typescript_code_types
 
+    last_javascript_code: str | None
     # This tool is just for executing JavaScript without doing the request to server
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
@@ -86,11 +87,39 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         Run JavaScript code and return errors and output.
         Input should be a valid JavaScript code.
         """
+        last_javascript_code = code
         output = playground.run_javascript_code(extract_code(code))
         result = encode_command_output(output)
         return result if len(result) > 0 else "Code execution finished without error"
 
     yield run_javascript_code
+
+    @tool("TryJavaScriptServer")
+    def try_javascript_server(empty: str) -> str:
+        """
+        Make a request to check if the last JavaScript code is a server that can handle the request.
+        """
+        if last_javascript_code is None:
+            return "No JavaScript code was previously run"
+
+        mock_request_cmd = mock.terminal_command()
+
+        port = 3000
+        (
+            request_output,
+            server_output,
+        ) = playground.run_javascript_server_code_with_request(
+            code=last_javascript_code,
+            request_cmd=mock_request_cmd,
+            port=port,
+        )
+
+        request_result = encode_command_output(request_output)
+        server_result = encode_command_output(server_output)
+
+        return f"Request result:\n{request_result}\nCode execution result:\n{server_result}"
+
+    # yield run_javascript_code
 
     # @tool("RunJavaScriptCode")
     # def run_javascript_code(code: str) -> str:

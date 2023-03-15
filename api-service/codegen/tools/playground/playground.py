@@ -174,6 +174,7 @@ class NodeJSPlayground(Playground):
             env_vars=self.env_vars,
         )
         print(res)
+        return res
 
     def run_typescript_code(self, code: str, typecheck: bool = False):
         self.write_file(self.default_typescript_code_file, code)
@@ -199,6 +200,7 @@ class NodeJSPlayground(Playground):
         request_cmd: str,
         port: float,
     ):
+
         print("CALLING", code)
         self.write_file(self.default_javascript_code_file, code)
         result = self.run_server_with_request(

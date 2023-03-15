@@ -48,7 +48,6 @@ export class ProcessController extends Controller {
     if (wait) {
       await cachedProcess.process?.exited
     }
-
     return cachedProcess.response
   }
 

@@ -103,7 +103,6 @@ export class CachedSession {
   }
 
   static findSession(id: string) {
-
     const cachedSession = sessionCache.get(id) as CachedSession
     if (!cachedSession) throw new Error('Session does not exist')
     return cachedSession
