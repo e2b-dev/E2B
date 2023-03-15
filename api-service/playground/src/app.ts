@@ -6,7 +6,7 @@ import express, {
   NextFunction,
 } from 'express'
 import { ValidateError } from 'tsoa'
-
+import morgan from 'morgan'
 import { RegisterRoutes } from './generated/routes'
 
 export const app = express()
@@ -14,7 +14,8 @@ export const app = express()
 app.use(
   urlencoded({
     extended: true,
-  })
+  }),
+  morgan('tiny')
 )
 
 app.use(json())

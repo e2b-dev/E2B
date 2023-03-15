@@ -6,7 +6,6 @@ from codegen.env import EnvVar
 from codegen.js_agent import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX, FORMAT_INSTRUCTIONS
 from codegen.tools.playground import create_playground_tools
-from codegen.tools.javascript import JavascriptEvalTool
 from database import Database
 
 
@@ -53,7 +52,6 @@ def generate_req_handler(
         # llm=OpenAIChat(temperature=0, max_tokens=1000),
         tools=[
             # ReadDocumentation()
-            # JavascriptEvalTool(),
             *playground_tools,
         ],
         verbose=True,

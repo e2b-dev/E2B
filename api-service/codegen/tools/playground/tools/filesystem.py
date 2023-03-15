@@ -7,7 +7,10 @@ from playground_client.models.entry_info import EntryInfo
 
 def encode_directory_listing(entries: List[EntryInfo]) -> str:
     return "\n".join(
-        [f"{entry.name} {'directory' if entry.is_dir else 'file'}" for entry in entries]
+        [
+            f"{entry.name} - {'directory' if entry.is_dir else 'file'}"
+            for entry in entries
+        ]
     )
 
 
@@ -22,7 +25,6 @@ def create_filesystem_tools(playground: NodeJSPlayground):
 
     yield read_file
 
-    # TODO: Escape file content?
     @tool("SaveFile")
     def save_file(input: str) -> str:
         """Save content to a file in the filesystem.

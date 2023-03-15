@@ -42,8 +42,6 @@ export class CachedProcess {
       this.finished = true
     })
 
-
-    await process.exited
     this.process = process
     return process
   }

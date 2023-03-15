@@ -11,16 +11,17 @@ def encode_command_output(response: ProcessResponse, only_errors: bool = False) 
     errors = "\n".join(err_lines)
 
     if len(errors) > 0:
-        result += f"Errors: {errors}"
+        result += f"Errors:\n{errors}\n"
 
     if only_errors:
         return result
+
     print(errors)
     out_lines = [out.line for out in response.stdout]
     output = "\n".join(out_lines)
 
     if len(output) > 0:
-        result += f"Output: {output}"
+        result += f"Output:\n{output}"
 
     return result
 

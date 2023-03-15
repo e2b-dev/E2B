@@ -1,5 +1,7 @@
 import os
 import time
+import math
+import pprint
 
 from functools import reduce
 from typing import List
@@ -25,6 +27,8 @@ configuration.cert_file = None
 class Playground:
     port_check_interval = 1  # 1s
     max_port_checks = 10
+
+    run_command_timeout_frequency = 2  # in Hz
 
     mock_data_filename = "index.ts"
 
@@ -61,9 +65,49 @@ class Playground:
     def run_command(
         self,
         cmd: str,
-        rootdir: str = "/",
-        env_vars: dict[str, str] = {},
+        env_vars={},
+        rootdir="/",
+        timeout: float | None = None,
     ):
+        response = self.api.start_process(
+            self.session.id,
+            playground_client.StartProcessParams(
+                cmd=cmd,
+                envVars=env_vars,
+                rootdir=rootdir,
+            ),
+            wait=True if timeout is None else False,
+        )
+
+        if timeout is None or response.finished:
+            return response
+
+        # Multiply the timeout by the frequency so when we sleep for the 1/frequency the total time sleeping will be the timeout.
+        for _ in range(math.ceil(timeout * self.run_command_timeout_frequency)):
+            response = self.api.get_process(
+                self.session.id,
+                process_id=response.process_id,
+            )
+            if response.finished:
+                return response
+            time.sleep(1 / self.run_command_timeout_frequency)
+
+        if not response.finished:
+            self.api.stop_process(
+                self.session.id,
+                process_id=response.process_id,
+                results=False,
+            )
+
+        return response
+
+    def start_process(
+        self,
+        cmd: str,
+        rootdir="/",
+        env_vars={},
+    ):
+        """Start process and return the process ID."""
         return self.api.start_process(
             self.session.id,
             playground_client.StartProcessParams(
@@ -71,23 +115,7 @@ class Playground:
                 envVars=env_vars,
                 rootdir=rootdir,
             ),
-            wait=True,
-        )
-
-    def start_process(
-        self,
-        cmd: str,
-        rootdir: str = "/",
-        env_vars: dict[str, str] = {},
-    ):
-        """Start process and return the process ID."""
-        response = self.api.start_process(
-            self.session.id,
-            playground_client.StartProcessParams(
-                cmd=cmd, envVars=env_vars, rootdir=rootdir
-            ),
-        )
-        return response.process_id
+        ).process_id
 
     def stop_process(self, process_id: str):
         return self.api.stop_process(
@@ -131,8 +159,8 @@ class Playground:
         server_cmd: str,
         request_cmd: str,
         port: float,
-        rootdir: str = "/",
-        env_vars: dict[str, str] = {},
+        rootdir="/",
+        env_vars={},
     ):
         server_process_id = self.start_process(
             cmd=server_cmd,
@@ -157,50 +185,30 @@ class Playground:
 class NodeJSPlayground(Playground):
     node_js_env_id = "dCeMnVVxu01L"
     rootdir = "/code"
-
-    run_code_timeout = 5  # 5s
-
     default_javascript_code_file = os.path.join(rootdir, "index.js")
-    default_typescript_code_file = os.path.join(rootdir, "index.ts")
+    run_code_timeout = 5  # 5s
 
     def __init__(self, envs: List[EnvVar]):
         super().__init__(NodeJSPlayground.node_js_env_id)
         self.env_vars = self.format_env_vars(envs)
 
-    def run_javascript_code(self, code: str, timeout: float = run_code_timeout):
+    def run_javascript_code(self, code: str):
         print(f"Running javascript code: {code}")
         self.write_file(self.default_javascript_code_file, code)
-
-        process_id = self.start_process(
+        result = self.run_command(
             f"node {self.default_javascript_code_file}",
             rootdir=self.rootdir,
             env_vars=self.env_vars,
+            timeout=self.run_code_timeout,
         )
-
-        # For now we always wait the full timeout interval
-        time.sleep(timeout)
-
-        result = self.stop_process(process_id)
-        print(result)
+        pprint.pprint(f"Result: {result}")
         return result
 
-    def run_typescript_code(self, code: str, typecheck: bool = False):
-        self.write_file(self.default_typescript_code_file, code)
-        return self.run_command(
-            f"ts-node {'-T' if typecheck else ''} {self.default_typescript_code_file}",
-            rootdir=self.rootdir,
-            env_vars=self.env_vars,
-        )
-
-    def check_typescript_code(self, code: str):
-        self.write_file(self.default_typescript_code_file, code)
-        return self.run_command(
-            f"tsc {self.default_typescript_code_file} --noEmit --skipLibCheck",
-            rootdir=self.rootdir,
-        )
-
     def install_dependencies(self, dependencies: str):
-        return self.run_command(f"npm install {dependencies}", rootdir=self.rootdir)
+        print(f"Installing dependencies: {dependencies}")
+        result = self.run_command(f"npm install {dependencies}", rootdir=self.rootdir)
+        pprint.pprint(f"Result: {result}")
+        return result
 
     def run_javascript_server_code_with_request(
         self,
@@ -208,7 +216,7 @@ class NodeJSPlayground(Playground):
         request_cmd: str,
         port: float,
     ):
-        print("CALLING", code)
+        print(f"Running curl {request_cmd} for code: {code}")
         self.write_file(self.default_javascript_code_file, code)
         result = self.run_server_with_request(
             server_cmd=f"node {self.default_javascript_code_file}",
@@ -217,20 +225,5 @@ class NodeJSPlayground(Playground):
             rootdir=self.rootdir,
             env_vars=self.env_vars,
         )
-        print(result)
+        pprint.pprint(f"Result: {result}")
         return result
-
-    def run_typescript_server_code_with_request(
-        self,
-        code: str,
-        request_cmd: str,
-        port: float,
-    ):
-        self.write_file(self.default_javascript_code_file, code)
-        return self.run_server_with_request(
-            server_cmd=f"ts-node {self.default_javascript_code_file}",
-            request_cmd=request_cmd,
-            port=port,
-            rootdir=self.rootdir,
-            env_vars=self.env_vars,
-        )
