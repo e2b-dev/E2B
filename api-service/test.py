@@ -1,4 +1,8 @@
+from typing import Optional, Tuple
+import json
+
 from langchain import LLMChain
+from langchain.tools import BaseTool
 from langchain.agents import initialize_agent, AgentExecutor
 from langchain.agents.chat.base import ChatAgent
 from langchain.chat_models import ChatOpenAI
@@ -14,8 +18,35 @@ from langchain.schema import HumanMessage
 from codegen.tools.playground import create_playground_tools
 
 
-def create_prompt() -> ChatPromptTemplate:
-    pass
+class InvalidTool(BaseTool):
+    name = "InvalidTool"
+    description = "indicates that the last selected tool was an invalid tool"
+
+    def _run(self, err: str) -> str:
+        return err
+
+    async def _arun(self, err: str) -> str:
+        return err
+
+
+FINAL_ANSWER_ACTION = "Final Answer:"
+
+
+class CustomChatAgent(ChatAgent):
+    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
+        if FINAL_ANSWER_ACTION in text:
+            return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
+        _, action, _ = text.split("```")
+        try:
+            response = json.loads(action.strip())
+            return response["action"], response["action_input"]
+        except Exception as e:
+            # input = response["action_input"]
+            return (
+                "InvalidTool",
+                f"I just ran your response via json.loads and received this error\n{str(e)}\nPlease try again",
+            )
+            # raise ValueError(f"Could not parse LLM output: {text}")
 
 
 OPENAI_API_KEY = "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"
@@ -32,9 +63,10 @@ FORMAT_INSTRUCTIONS = """"""
 
 PREFIX = """You are an AI JavaScript/Nodejs assistant.
 - Follow the user's requirements carefully & to the letter.
+- Think step-by-step. Use each step to describe your plan on how you will go about implementing the required instructions.
 - Minimize any other prose.
 - You are building an Express server that handles your REST API and you are required to complete the code based on the provided instructions.
-- You are starting with the following code snippet:
+- Start with the following code snippet that runs the server
 ```
 import express from 'express';
 const app = express();
@@ -67,14 +99,17 @@ The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of mult
   "action_input": $INPUT
 }}}}
 ```
-ALWAYS use the following format and don't add additional empty new lines:
+ALWAYS use the following format:
 
 
 Instructions: the input instructions you must implement
 Thought: you should always think about what to do
 Action:
 ```
-$JSON_BLOB
+{{{{
+  "action": $TOOL_NAME,
+  "action_input": $INPUT
+}}}}
 ```
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
@@ -110,7 +145,8 @@ input_variables = [
     "method",
     # "instructions",
 ]
-prompt = ChatAgent.create_prompt(
+# prompt = ChatAgent.create_prompt(
+prompt = CustomChatAgent.create_prompt(
     tools=[
         *playground_tools,
     ],
@@ -121,30 +157,49 @@ prompt = ChatAgent.create_prompt(
 )
 
 
+invalid_tool = InvalidTool()
 # Create agent and it's executor
-agent = ChatAgent.from_llm_and_tools(
+# agent = ChatAgent.from_llm_and_tools(
+agent = CustomChatAgent.from_llm_and_tools(
     llm=chat,
-    tools=playground_tools,
+    tools=[
+        *playground_tools,
+        invalid_tool,
+    ],
     prefix=PREFIX,
     suffix=SUFFIX,
     format_instructions=FORMAT_INSTRUCTIONS,
     input_variables=input_variables,
     verbose=True,
 )
-ae = AgentExecutor.from_agent_and_tools(agent=agent, tools=playground_tools)
-# Run
-ae.run(
-    # "1. Check if the incoming request is POST request. If not, respond with an adequate error",
-    agent_scratchpad="",
-    input="""Here are the instructions from your boss:
-1. Check if the incoming request is POST request. If not, respond with an adequate error.
-2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.""",
-    method="post",
-    # instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
-    # // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
-    # """,
+ae = AgentExecutor.from_agent_and_tools(
+    agent=agent, tools=[*playground_tools, invalid_tool]
 )
 
+try:
+    # Run
+    ae.run(
+        # "1. Check if the incoming request is POST request. If not, respond with an adequate error",
+        agent_scratchpad="",
+        input="""Here are the instructions:
+1. Check if the incoming request is POST request. If not, respond with an adequate error.
+2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
+3. Before you provide the final answer, generate the full server code and make sure it runs without any errors""",
+        method="post",
+        # instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
+        # // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
+        # """,
+    )
+
+except ValueError as e:
+    if "Could not parse LLM output" in str(e):
+        # Here we want to remind LLM that it's not properly formatting its output.
+        # https://twitter.com/zachtratar/status/1633376345995739136
+        # eg:
+        # I just ran your response via json.loads and received this error:
+        # {error}
+        # Please try again
+        print("FAILED TO PARSE LLM")
 
 # agent_exec = initialize_agent(
 #     tools=playground_tools,

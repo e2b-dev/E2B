@@ -8,7 +8,6 @@ authors = ["Devbook <hello@usedevbook.com>"]
 python = ">=3.8.1,<4.0"
 flask = "^2.2.3"
 gunicorn = "^20.1.0"
-openai = "^0.27.0"
 langchain = "^0.0.112"
 supabase = "^1.0.1"
 flask-cors = "^3.0.10"
@@ -17,6 +16,7 @@ urllib3 = "^1.26.14"
 pydantic = "^1.10.6"
 aenum = "^3.1.11"
 python-dotenv = "^1.0.0"
+openai = "^0.27.0"
 
 [build-system]
 requires = ["poetry-core>=1.3.0"]
