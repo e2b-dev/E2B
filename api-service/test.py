@@ -30,10 +30,13 @@ FORMAT_INSTRUCTIONS = """"""
 
 ##########
 
-PREFIX = """You are a senior JavaScript/Nodejs developer. You are building an Express server that handles your REST API and you are required to complete the code function `handle{method}Request` based on the provided instructions from your boss. You have access to the following tools:
-You are starting with the following code snippet.
+PREFIX = """You are an AI JavaScript/Nodejs assistant.
+- Follow the user's requirements carefully & to the letter.
+- Minimize any other prose.
+- You are building an Express server that handles your REST API and you are required to complete the code based on the provided instructions.
+- You are starting with the following code snippet:
 ```
-const express = require('express');
+import express from 'express';
 const app = express();
 
 // All incoming requests have payload in the JSON format.
@@ -42,7 +45,7 @@ app.use(express.json());
 // The function we need to implement that must handle the {method} requests.
 // We can make the function async if needed.
 function handle{method}Request(req, res) {{
-  // TODO: Implement the function based on the instructions from your boss
+  // TODO: Complete the function based on the instructions
 }}
 
 app.{method}('/', handle{method}Request);
@@ -50,13 +53,13 @@ app.{method}('/', handle{method}Request);
 // Start the server
 app.listen(3000, () => console.log('Listening on port 3000'));
 ```
-
-Please follow the template by including the above snippet with escaped new lines in your answers.
+- ALWAYS INCLUDE THE ABOVE CODE SNIPPET IN YOUR ANSWERS AND MAKE SURE IT'S JSON ESCAPED.
+- You have access to the following tools:
 """
 
 FORMAT_INSTRUCTIONS = """"The way you use the tools is by specifying a json blob.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
-The only values that should be in the "action" field are: {tool_names}
+THE ONLY VALUES THAT SHOULD BE INT HE "action" FIELD ARE: {tool_names}. NO OTHER VALUES ARE ALLOWED.
 The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
 ```
 {{{{
@@ -67,7 +70,7 @@ The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of mult
 ALWAYS use the following format and don't add additional empty new lines:
 
 
-Instruction: the input instruction from your boss you must implement
+Instructions: the input instructions you must implement
 Thought: you should always think about what to do
 Action:
 ```
@@ -76,7 +79,7 @@ $JSON_BLOB
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final answer
-Final Answer: the final answer to the original input question"""
+Final Answer: the final code that satisfies all the input instructions. THE FINAL ANSWER IT MUST BE JUST THE CODE."""
 
 SUFFIX = """Begin! Reminder to NEVER use tools you don't have access to and ALWAYS use the exact characters `Final Answer` when responding."""
 

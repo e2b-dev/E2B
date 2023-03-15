@@ -15,7 +15,7 @@ def encode_command_output(response: ProcessResponse, only_errors: bool = False) 
 
     if only_errors:
         return result
-
+    print(errors)
     out_lines = [out.line for out in response.stdout]
     output = "\n".join(out_lines)
 
