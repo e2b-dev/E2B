@@ -23,7 +23,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         result = encode_command_output(output, only_errors=True)
         return result if len(result) > 0 else "All dependencies installed"
 
-    # yield install_dependencies
+    yield install_dependencies
 
     # This tool is just for executing TypeScript without doing the request to server
     # @tool("RunTypeScriptCode")
@@ -95,10 +95,10 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
 
     yield run_javascript_code
 
-    @tool("TryJavaScriptServer")
-    def try_javascript_server(empty: str) -> str:
+    @tool("CurlJavaScriptServer")
+    def curl_javascript_server() -> str:
         """
-        Make a request to check if the last JavaScript code is a server that can handle the request.
+        Make a request to check if the previously run JavaScript code is a server that can handle the needed request.
         """
         if last_javascript_code is None:
             return "No JavaScript code was previously run"
@@ -118,7 +118,9 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         request_result = encode_command_output(request_output)
         server_result = encode_command_output(server_output)
 
-        return f"Request result:\n{request_result}\nCode execution result:\n{server_result}"
+        return (
+            f"Curl result:\n{request_result}\nCode execution result:\n{server_result}"
+        )
 
     # yield run_javascript_code
 
