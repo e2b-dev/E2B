@@ -114,9 +114,12 @@ class CustomChatAgent(ChatAgent):
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         _, action, _ = text.split("```")
         try:
+            # TODO: Here we can change the JSON formated `action` + `action_input` to something
+            # more suited to our use-case so the model doesn't need to escape the generated code.
             response = json.loads(action.strip())
             return response["action"], response["action_input"]
         except Exception as e:
+            # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
             print(
                 f"====== Got exception '{str(e)}' when parsing json:\n{action.strip()}"
             )
