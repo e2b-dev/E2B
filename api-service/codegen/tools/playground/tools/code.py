@@ -15,10 +15,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
 
     @tool("InstallNPMDependencies")
     def install_dependencies(dependencies: str) -> str:
-        """
-        Install dependecies with NPM.
-        The input should be a list of Node.js dependencies separated by spaces.
-        """
+        """Install dependecies with NPM"""
         output = playground.install_dependencies(extract_code(dependencies))
         result = encode_command_output(output, only_errors=True)
         return result if len(result) > 0 else "All dependencies installed"
@@ -30,7 +27,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
         """
-        Run JavaScript code and return errors and output.
+        Run JavaScript code and return output.
         Input should be a valid JavaScript code.
         """
         nonlocal last_javascript_code
@@ -46,7 +43,6 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     def curl_javascript_server(empty: str) -> str:
         """
         Make a request to check if the previously run JavaScript code is a server that can handle the needed request.
-        Use this tool before returning the final answer.
         """
         if last_javascript_code is None:
             return "No JavaScript code was previously run"

@@ -1,7 +1,7 @@
 import os
 import uuid
-import subprocess
 
+from deployment import Deployment
 from typing import Dict, List
 from flask import Flask, abort, request
 from flask_cors import CORS
@@ -67,17 +67,7 @@ def generate():
 
     db.update_state(run_id=run_id, state=DeploymentState.Deploying)
 
-    cf_worker_dir_path = (
-        os.path.abspath(os.path.dirname(__file__)) + "/cf-worker-template"
-    )
-    index_js_path = cf_worker_dir_path + "/index.js"
-    wrangler_template_path = cf_worker_dir_path + "/wrangler.template.toml"
-    wrangler_path = cf_worker_dir_path + "/wrangler.toml"
-
-    # TODO: Inject code to cf-worker-template/index.js
     code = js_code.strip("`").strip()
-    with open(index_js_path, "w") as file:
-        file.write(code)
 
     # Convert envs to the env vars string that looks like this:
     # KEY_1 = VALUE_1
@@ -86,21 +76,12 @@ def generate():
     for env in envs:
         if env["key"]:
             envs_str += f'{env["key"]} = "{env["value"]}"\n'
-    # TODO: Update name in cf-worker-template/wrangler.template.toml
-    replace_file_content(
-        wrangler_template_path,
-        wrangler_path,
-        {"<NAME>": f'"{project_id}"', "<VARS>": envs_str},
-    )
 
-    # TODO: Call npm run deploy
-    cmd = ["npm", "run", "deploy", "--prefix", cf_worker_dir_path]
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
-        print(proc.stdout.read().decode())
+    deployment = Deployment()
+
+    deployment.deploy(project_id=project_id,)
 
     db.update_state(run_id=run_id, state=DeploymentState.Finished)
-
-    api_url = f"https://{project_id}.devbook.workers.dev"
     db.update_url(run_id=run_id, url=api_url)
 
     # TODO: Report back the URL of deployed API

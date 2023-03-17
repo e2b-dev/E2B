@@ -34,6 +34,13 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"EnvVars": {
+				"properties": {},
+				"additionalProperties": {
+					"type": "string"
+				},
+				"type": "object"
+			},
 			"EntryInfo": {
 				"properties": {
 					"isDir": {
@@ -168,13 +175,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"EnvVars": {
-				"properties": {},
-				"additionalProperties": {
-					"type": "string"
-				},
-				"type": "object"
-			},
 			"StartProcessParams": {
 				"properties": {
 					"cmd": {
@@ -282,6 +282,48 @@
 								"required": [
 									"files",
 									"targetInterface"
+								],
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/deployments": {
+			"post": {
+				"operationId": "CreateSessions",
+				"responses": {
+					"204": {
+						"description": "No content"
+					}
+				},
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"projectID": {
+										"type": "string"
+									},
+									"code": {
+										"type": "string"
+									},
+									"packageJSON": {
+										"type": "string"
+									},
+									"envVars": {
+										"$ref": "#/components/schemas/EnvVars"
+									}
+								},
+								"required": [
+									"projectID",
+									"code",
+									"packageJSON",
+									"envVars"
 								],
 								"type": "object"
 							}

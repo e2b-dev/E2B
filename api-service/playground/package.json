@@ -4,6 +4,8 @@
   "license": "MIT",
   "dependencies": {
     "@devbookhq/sdk": "^2.6.74",
+    "@netlify/zip-it-and-ship-it": "^8.9.0",
+    "aws-sdk": "^2.1336.0",
     "express": "^4.18.2",
     "intermock": "^0.2.5",
     "morgan": "^1.10.0",
