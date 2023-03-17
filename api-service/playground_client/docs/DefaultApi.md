@@ -4,7 +4,7 @@ All URIs are relative to *https://localhost:9001*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**create_deployment**](DefaultApi.md#create_deployment) | **PUT** /sessions/{sessionID}/deployments | 
+[**create_deployment**](DefaultApi.md#create_deployment) | **PUT** /deployments/{projectID} | 
 [**create_mock_body_data**](DefaultApi.md#create_mock_body_data) | **POST** /mock/body | 
 [**create_sessions**](DefaultApi.md#create_sessions) | **POST** /sessions | 
 [**delete_filesystem_entry**](DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{sessionID}/filesystem | 
@@ -21,7 +21,7 @@ Method | HTTP request | Description
 
 
 # **create_deployment**
-> create_deployment(session_id, create_deployment_request)
+> create_deployment(project_id, session_id, create_deployment_request, update=update)
 
 
 
@@ -45,11 +45,13 @@ configuration = playground_client.Configuration(
 with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
-    session_id = 'session_id_example' # str | 
+    project_id = 'project_id_example' # str | 
+    session_id = 'session_id_example' # str | active session to use for deployment
     create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
+    update = True # bool |  (optional)
 
     try:
-        api_instance.create_deployment(session_id, create_deployment_request)
+        api_instance.create_deployment(project_id, session_id, create_deployment_request, update=update)
     except Exception as e:
         print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
 ```
@@ -58,8 +60,10 @@ with playground_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **session_id** | **str**|  | 
+ **project_id** | **str**|  | 
+ **session_id** | **str**| active session to use for deployment | 
  **create_deployment_request** | [**CreateDeploymentRequest**](CreateDeploymentRequest.md)|  | 
+ **update** | **bool**|  | [optional] 
 
 ### Return type
 

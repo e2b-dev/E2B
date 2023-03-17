@@ -1,30 +1,17 @@
-import os
 import time
 import math
-import pprint
 
-from functools import reduce
-from typing import List
+from session.session import Session
+from session.api import API
 
 import playground_client
 from playground_client.models.create_mock_body_data_request import (
     CreateMockBodyDataRequest,
 )
 from playground_client.models.file import File
-from codegen.env import EnvVar
 
 
-configuration = playground_client.Configuration(
-    host="http://localhost:9001",
-)
-
-# Configuration for local server
-configuration.verify_ssl = False
-configuration.ssl_ca_cert = None
-configuration.cert_file = None
-
-
-class Playground:
+class Playground(API):
     port_check_interval = 1  # 1s
     max_port_checks = 10
 
@@ -33,21 +20,9 @@ class Playground:
     mock_data_filename = "index.ts"
 
     def __init__(self, env_id: str):
-        self.client = playground_client.ApiClient(configuration)
-        self.api = playground_client.DefaultApi(self.client)
-        self.session = self.api.create_sessions(
-            playground_client.CreateSessionsRequest(envID=env_id)
-        )
+        super().__init__()
+        self.session = Session(env_id)
         self.is_closed = False
-
-    def __del__(self):
-        self.close()
-
-    def close(self):
-        if not self.is_closed:
-            self.is_closed = True
-            self.api.delete_session(self.session.id)
-            self.client.close()
 
     def get_open_ports(self):
         response = self.api.get_session(self.session.id)
@@ -174,55 +149,3 @@ class Playground:
         request_result = self.run_command(cmd=request_cmd, rootdir=rootdir)
         server_result = self.stop_process(server_process_id)
         return request_result, server_result
-
-    @staticmethod
-    def format_env_vars(envs: List[EnvVar]):
-        return reduce(lambda acc, env: {**acc, **{env["key"]: env["value"]}}, envs, {})
-
-
-class NodeJSPlayground(Playground):
-    node_js_env_id = "dCeMnVVxu01L"
-    rootdir = "/code"
-    default_javascript_code_file = os.path.join(rootdir, "index.js")
-    run_code_timeout = 5  # 5s
-
-    def __init__(self, envs: List[EnvVar]):
-        super().__init__(NodeJSPlayground.node_js_env_id)
-        self.env_vars = self.format_env_vars(envs)
-
-    def run_javascript_code(self, code: str):
-        # print(f"Running javascript code: {code}")
-        print(f"Running javascript code...")
-        self.write_file(self.default_javascript_code_file, code)
-        result = self.run_command(
-            f"node {self.default_javascript_code_file}",
-            rootdir=self.rootdir,
-            env_vars=self.env_vars,
-            timeout=self.run_code_timeout,
-        )
-        pprint.pprint(f"Result: {result}")
-        return result
-
-    def install_dependencies(self, dependencies: str):
-        print(f"Installing dependencies: {dependencies}")
-        result = self.run_command(f"npm install {dependencies}", rootdir=self.rootdir)
-        pprint.pprint(f"Result: {result}")
-        return result
-
-    def run_javascript_server_code_with_request(
-        self,
-        code: str,
-        request_cmd: str,
-        port: float,
-    ):
-        print(f"Running '{request_cmd}' for code:\n{code}")
-        self.write_file(self.default_javascript_code_file, code)
-        result = self.run_server_with_request(
-            server_cmd=f"node {self.default_javascript_code_file}",
-            request_cmd=request_cmd,
-            port=port,
-            rootdir=self.rootdir,
-            env_vars=self.env_vars,
-        )
-        pprint.pprint(f"Result: {result}")
-        return result

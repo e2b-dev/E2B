@@ -82,7 +82,7 @@ export class FilesystemController extends Controller {
   public async writeFilesystemFile(
     @Path() sessionID: string,
     @Query() path: string,
-    @BodyProp('content') content: string,
+    @BodyProp() content: string,
   ) {
     await CachedSession
       .findSession(sessionID)

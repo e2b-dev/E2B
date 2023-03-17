@@ -1,7 +1,7 @@
 from typing import List
 from langchain.agents import tool
 
-from codegen.tools.playground.playground import NodeJSPlayground
+from session.playground import NodeJSPlayground
 from playground_client.models.entry_info import EntryInfo
 
 

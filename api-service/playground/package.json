@@ -23,7 +23,7 @@
   },
   "main": "lib/server.js",
   "scripts": {
-    "dev": "concurrently \"nodemon -q --delay 400ms\" \"nodemon --config nodemon-tsoa.json \"",
+    "dev": "concurrently \"nodemon -q\" \"nodemon --config nodemon-tsoa.json \"",
     "generate": "tsoa spec-and-routes",
     "check-types": "tsc --noEmit",
     "build": "./scripts/build.js",

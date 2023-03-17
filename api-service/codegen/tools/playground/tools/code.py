@@ -1,7 +1,7 @@
 from langchain.agents import tool
 
 from codegen.tools.playground.mock.request import MockRequestFactory
-from codegen.tools.playground.playground import NodeJSPlayground
+from session.playground import NodeJSPlayground
 from codegen.tools.playground.tools.process import encode_command_output
 
 

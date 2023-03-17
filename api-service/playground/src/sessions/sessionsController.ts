@@ -20,7 +20,7 @@ interface SessionResponse {
 export class SessionsController extends Controller {
   @Post()
   public async createSessions(
-    @BodyProp('envID') envID: string,
+    @BodyProp() envID: string,
   ): Promise<SessionResponse> {
     const cachedSession = await new CachedSession(envID).init()
 

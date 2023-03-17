@@ -5,7 +5,7 @@ import { Controller, ValidationService, FieldErrors, ValidateError, TsoaRoute, H
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MockController } from './../data/mockController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { DeploymentsController } from './../sessions/deploymentsController';
+import { DeploymentsController } from './../deployments/deploymentsController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { FilesystemController } from './../sessions/filesystemController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -175,16 +175,17 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.put('/sessions/:sessionID/deployments',
+        app.put('/deployments/:projectID',
             ...(fetchMiddlewares<RequestHandler>(DeploymentsController)),
             ...(fetchMiddlewares<RequestHandler>(DeploymentsController.prototype.createDeployment)),
 
             function DeploymentsController_createDeployment(request: any, response: any, next: any) {
             const args = {
-                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
-                    projectID: {"in":"body-prop","name":"projectID","required":true,"dataType":"string"},
+                    projectID: {"in":"path","name":"projectID","required":true,"dataType":"string"},
+                    sessionID: {"in":"query","name":"sessionID","required":true,"dataType":"string"},
                     code: {"in":"body-prop","name":"code","required":true,"dataType":"string"},
                     envVars: {"default":{},"in":"body-prop","name":"envVars","ref":"EnvVars"},
+                    update: {"in":"query","name":"update","dataType":"boolean"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

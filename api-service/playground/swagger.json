@@ -290,7 +290,7 @@
 				}
 			}
 		},
-		"/sessions/{sessionID}/deployments": {
+		"/deployments/{projectID}": {
 			"put": {
 				"operationId": "CreateDeployment",
 				"responses": {
@@ -302,10 +302,27 @@
 				"parameters": [
 					{
 						"in": "path",
+						"name": "projectID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "active session to use for deployment",
+						"in": "query",
 						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "update",
+						"required": false,
+						"schema": {
+							"type": "boolean"
 						}
 					}
 				],
@@ -315,9 +332,6 @@
 						"application/json": {
 							"schema": {
 								"properties": {
-									"projectID": {
-										"type": "string"
-									},
 									"code": {
 										"type": "string"
 									},
@@ -326,7 +340,6 @@
 									}
 								},
 								"required": [
-									"projectID",
 									"code"
 								],
 								"type": "object"

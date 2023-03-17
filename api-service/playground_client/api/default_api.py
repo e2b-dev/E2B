@@ -53,19 +53,23 @@ class DefaultApi(object):
         self.api_client = api_client
 
     @validate_arguments
-    def create_deployment(self, session_id : StrictStr, create_deployment_request : CreateDeploymentRequest, **kwargs) -> None:  # noqa: E501
+    def create_deployment(self, project_id : StrictStr, session_id : Annotated[StrictStr, Field(..., description="active session to use for deployment")], create_deployment_request : CreateDeploymentRequest, update : Optional[StrictBool] = None, **kwargs) -> None:  # noqa: E501
         """create_deployment  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.create_deployment(session_id, create_deployment_request, async_req=True)
+        >>> thread = api.create_deployment(project_id, session_id, create_deployment_request, update, async_req=True)
         >>> result = thread.get()
 
-        :param session_id: (required)
+        :param project_id: (required)
+        :type project_id: str
+        :param session_id: active session to use for deployment (required)
         :type session_id: str
         :param create_deployment_request: (required)
         :type create_deployment_request: CreateDeploymentRequest
+        :param update:
+        :type update: bool
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
@@ -82,22 +86,26 @@ class DefaultApi(object):
         :rtype: None
         """
         kwargs['_return_http_data_only'] = True
-        return self.create_deployment_with_http_info(session_id, create_deployment_request, **kwargs)  # noqa: E501
+        return self.create_deployment_with_http_info(project_id, session_id, create_deployment_request, update, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def create_deployment_with_http_info(self, session_id : StrictStr, create_deployment_request : CreateDeploymentRequest, **kwargs):  # noqa: E501
+    def create_deployment_with_http_info(self, project_id : StrictStr, session_id : Annotated[StrictStr, Field(..., description="active session to use for deployment")], create_deployment_request : CreateDeploymentRequest, update : Optional[StrictBool] = None, **kwargs):  # noqa: E501
         """create_deployment  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.create_deployment_with_http_info(session_id, create_deployment_request, async_req=True)
+        >>> thread = api.create_deployment_with_http_info(project_id, session_id, create_deployment_request, update, async_req=True)
         >>> result = thread.get()
 
-        :param session_id: (required)
+        :param project_id: (required)
+        :type project_id: str
+        :param session_id: active session to use for deployment (required)
         :type session_id: str
         :param create_deployment_request: (required)
         :type create_deployment_request: CreateDeploymentRequest
+        :param update:
+        :type update: bool
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
@@ -125,8 +133,10 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
+            'project_id',
             'session_id',
-            'create_deployment_request'
+            'create_deployment_request',
+            'update'
         ]
         _all_params.extend(
             [
@@ -154,11 +164,15 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['session_id']:
-            _path_params['sessionID'] = _params['session_id']
+        if _params['project_id']:
+            _path_params['projectID'] = _params['project_id']
 
         # process the query parameters
         _query_params = []
+        if _params.get('session_id') is not None:  # noqa: E501
+            _query_params.append(('sessionID', _params['session_id']))
+        if _params.get('update') is not None:  # noqa: E501
+            _query_params.append(('update', _params['update']))
 
         # process the header parameters
         _header_params = dict(_params.get('_headers', {}))
@@ -185,7 +199,7 @@ class DefaultApi(object):
         _response_types_map = {}
 
         return self.api_client.call_api(
-            '/sessions/{sessionID}/deployments', 'PUT',
+            '/deployments/{projectID}', 'PUT',
             _path_params,
             _query_params,
             _header_params,

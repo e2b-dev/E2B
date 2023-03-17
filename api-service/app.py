@@ -6,7 +6,7 @@ from typing import Dict, List
 from flask import Flask, abort, request
 from flask_cors import CORS
 
-from codegen.env import EnvVar
+from session.env import EnvVar
 from codegen import generate_req_handler
 from database import Database, DeploymentState
 

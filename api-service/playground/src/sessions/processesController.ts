@@ -55,7 +55,7 @@ export class ProcessController extends Controller {
   public async stopProcess(
     @Path() sessionID: string,
     @Path() processID: string,
-    @Query('results') results?: boolean
+    @Query() results?: boolean
   ): Promise<ProcessResponse | undefined> {
     const cachedProcess = await CachedSession
       .findSession(sessionID)
@@ -70,7 +70,7 @@ export class ProcessController extends Controller {
   public async writeProcessStdin(
     @Path() sessionID: string,
     @Path() processID: string,
-    @BodyProp('stdin') stdin: string,
+    @BodyProp() stdin: string,
   ): Promise<void> {
     await CachedSession
       .findSession(sessionID)

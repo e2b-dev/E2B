@@ -47,11 +47,13 @@ configuration = playground_client.Configuration(
 with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
-    session_id = 'session_id_example' # str | 
+    project_id = 'project_id_example' # str | 
+    session_id = 'session_id_example' # str | active session to use for deployment
     create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
+    update = True # bool |  (optional)
 
     try:
-        api_instance.create_deployment(session_id, create_deployment_request)
+        api_instance.create_deployment(project_id, session_id, create_deployment_request, update=update)
     except ApiException as e:
         print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
 
@@ -63,7 +65,7 @@ All URIs are relative to *https://localhost:9001*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**create_deployment**](playground_client/docs/DefaultApi.md#create_deployment) | **PUT** /sessions/{sessionID}/deployments | 
+*DefaultApi* | [**create_deployment**](playground_client/docs/DefaultApi.md#create_deployment) | **PUT** /deployments/{projectID} | 
 *DefaultApi* | [**create_mock_body_data**](playground_client/docs/DefaultApi.md#create_mock_body_data) | **POST** /mock/body | 
 *DefaultApi* | [**create_sessions**](playground_client/docs/DefaultApi.md#create_sessions) | **POST** /sessions | 
 *DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{sessionID}/filesystem | 

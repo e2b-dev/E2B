@@ -1,6 +1,6 @@
 from langchain.agents import tool
 
-from codegen.tools.playground.playground import NodeJSPlayground
+from session.playground import NodeJSPlayground
 from playground_client.models.process_response import ProcessResponse
 
 

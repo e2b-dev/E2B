@@ -1,5 +1,5 @@
 import json
-from codegen.tools.playground.playground import Playground
+from session.playground import Playground
 
 class MockRequestFactory:
     def __init__(

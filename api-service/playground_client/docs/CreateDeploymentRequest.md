@@ -4,7 +4,6 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**project_id** | **str** |  | 
 **code** | **str** |  | 
 **env_vars** | **Dict[str, str]** |  | [optional] 
 

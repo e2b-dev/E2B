@@ -26,10 +26,9 @@ class CreateDeploymentRequest(BaseModel):
 
     Do not edit the class manually.
     """
-    project_id: StrictStr = Field(..., alias="projectID")
     code: StrictStr = ...
     env_vars: Optional[Dict[str, StrictStr]] = Field(None, alias="envVars")
-    __properties = ["projectID", "code", "envVars"]
+    __properties = ["code", "envVars"]
 
     class Config:
         allow_population_by_field_name = True
@@ -71,7 +70,6 @@ class CreateDeploymentRequest(BaseModel):
                 raise ValueError("Error due to additional fields (not defined in CreateDeploymentRequest) in the input: " + obj)
 
         _obj = CreateDeploymentRequest.parse_obj({
-            "project_id": obj.get("projectID"),
             "code": obj.get("code"),
             "env_vars": obj.get("envVars")
         })

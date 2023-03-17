@@ -8,7 +8,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.agents import AgentExecutor
 
 # from codegen.tools.documentation import ReadDocumentation
-from codegen.env import EnvVar
+from session.env import EnvVar
 from codegen.js_agent import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX, FORMAT_INSTRUCTIONS
 from codegen.tools.playground import create_playground_tools
