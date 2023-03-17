@@ -1,5 +1,11 @@
-from typing import List, Dict
+from typing import List, Tuple, List, Any, Dict
+
+from pydantic import BaseModel
 from langchain.llms.openai import OpenAIChat, OpenAI
+from langchain.chat_models import ChatOpenAI
+from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.agents import AgentExecutor
 
 # from codegen.tools.documentation import ReadDocumentation
 from codegen.env import EnvVar
@@ -7,6 +13,72 @@ from codegen.js_agent import create_js_agent
 from codegen.prompt import PREFIX, SUFFIX, FORMAT_INSTRUCTIONS
 from codegen.tools.playground import create_playground_tools
 from database import Database
+
+from codegen.tools.playground import create_playground_tools
+from codegen.agent import CodegenAgent
+from codegen.prompt import PREFIX, SUFFIX, FORMAT_INSTRUCTIONS
+
+
+class Codegen(BaseModel):
+    agent: CodegenAgent
+    agent_executor: AgentExecutor
+    llm = ChatOpenAI(
+        streaming=True,
+        temperature=0,
+        max_tokens=2056,
+        verbose=True,
+        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+    )
+    input_variables = ["input", "agent_scratchpad", "method"]
+    tools = []
+
+    @classmethod
+    def from_playground_tools(cls, playground_tools: Tuple[List[Any]]):
+        c = cls()
+        print(c.input_variables)
+        print(c.tools)
+
+        # Create prompt
+        prompt = CodegenAgent.create_prompt(
+            tools=[
+                *playground_tools,
+                *c.tools,
+            ],
+            prefix=PREFIX,
+            suffix=SUFFIX,
+            format_instructions=FORMAT_INSTRUCTIONS,
+            input_variables=c.input_variables,
+        )
+
+        # Create CodegenAgent and its executor
+        c.agent = CodegenAgent.from_llm_and_tools(
+            llm=c.llm,
+            tools=[
+                *playground_tools,
+                *c.tools,
+            ],
+            prefix=PREFIX,
+            suffix=SUFFIX,
+            format_instructions=FORMAT_INSTRUCTIONS,
+            input_variables=c.input_variables,
+        )
+        c.agent_executor = AgentExecutor.from_agent_and_tools(
+            agent=c.agent,
+            tools=[
+                *playground_tools,
+                *c.tools,
+            ],
+            verbose=True,
+        )
+
+        return c
+
+    def generate():
+        # TODO
+        pass
+
+
+cg = Codegen()
 
 
 def generate_req_handler(
