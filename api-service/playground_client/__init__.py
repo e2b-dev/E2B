@@ -29,6 +29,7 @@ from playground_client.exceptions import ApiKeyError
 from playground_client.exceptions import ApiAttributeError
 from playground_client.exceptions import ApiException
 # import models into sdk package
+from playground_client.models.create_deployment_request import CreateDeploymentRequest
 from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
 from playground_client.models.create_sessions_request import CreateSessionsRequest
 from playground_client.models.entry_info import EntryInfo

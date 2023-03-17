@@ -21,6 +21,7 @@ from pydantic import Field, StrictBool, StrictStr
 
 from typing import Optional
 
+from playground_client.models.create_deployment_request import CreateDeploymentRequest
 from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
 from playground_client.models.create_sessions_request import CreateSessionsRequest
 from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse
@@ -50,6 +51,155 @@ class DefaultApi(object):
         if api_client is None:
             api_client = ApiClient.get_default()
         self.api_client = api_client
+
+    @validate_arguments
+    def create_deployment(self, session_id : StrictStr, create_deployment_request : CreateDeploymentRequest, **kwargs) -> None:  # noqa: E501
+        """create_deployment  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.create_deployment(session_id, create_deployment_request, async_req=True)
+        >>> result = thread.get()
+
+        :param session_id: (required)
+        :type session_id: str
+        :param create_deployment_request: (required)
+        :type create_deployment_request: CreateDeploymentRequest
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+        kwargs['_return_http_data_only'] = True
+        return self.create_deployment_with_http_info(session_id, create_deployment_request, **kwargs)  # noqa: E501
+
+    @validate_arguments
+    def create_deployment_with_http_info(self, session_id : StrictStr, create_deployment_request : CreateDeploymentRequest, **kwargs):  # noqa: E501
+        """create_deployment  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.create_deployment_with_http_info(session_id, create_deployment_request, async_req=True)
+        >>> result = thread.get()
+
+        :param session_id: (required)
+        :type session_id: str
+        :param create_deployment_request: (required)
+        :type create_deployment_request: CreateDeploymentRequest
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _return_http_data_only: response data without head status code
+                                       and headers
+        :type _return_http_data_only: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :type _content_type: string, optional: force content-type for the request
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: None
+        """
+
+        _params = locals()
+
+        _all_params = [
+            'session_id',
+            'create_deployment_request'
+        ]
+        _all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth',
+                '_content_type',
+                '_headers'
+            ]
+        )
+
+        # validate the arguments
+        for _key, _val in _params['kwargs'].items():
+            if _key not in _all_params:
+                raise ApiTypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method create_deployment" % _key
+                )
+            _params[_key] = _val
+        del _params['kwargs']
+
+        _collection_formats = {}
+
+        # process the path parameters
+        _path_params = {}
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
+
+        # process the query parameters
+        _query_params = []
+
+        # process the header parameters
+        _header_params = dict(_params.get('_headers', {}))
+
+        # process the form parameters
+        _form_params = []
+        _files = {}
+
+        # process the body parameter
+        _body_params = None
+        if _params['create_deployment_request']:
+            _body_params = _params['create_deployment_request']
+
+        # set the HTTP header `Content-Type`
+        _content_types_list = _params.get('_content_type',
+            self.api_client.select_header_content_type(
+                ['application/json']))
+        if _content_types_list:
+                _header_params['Content-Type'] = _content_types_list
+
+        # authentication setting
+        _auth_settings = []  # noqa: E501
+
+        _response_types_map = {}
+
+        return self.api_client.call_api(
+            '/sessions/{sessionID}/deployments', 'PUT',
+            _path_params,
+            _query_params,
+            _header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            response_types_map=_response_types_map,
+            auth_settings=_auth_settings,
+            async_req=_params.get('async_req'),
+            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=_params.get('_preload_content', True),
+            _request_timeout=_params.get('_request_timeout'),
+            collection_formats=_collection_formats,
+            _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
     def create_mock_body_data(self, create_mock_body_data_request : CreateMockBodyDataRequest, **kwargs) -> MockDataResponse:  # noqa: E501
@@ -348,17 +498,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def delete_filesystem_entry(self, id : StrictStr, path : StrictStr, **kwargs) -> None:  # noqa: E501
+    def delete_filesystem_entry(self, session_id : StrictStr, path : StrictStr, **kwargs) -> None:  # noqa: E501
         """delete_filesystem_entry  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.delete_filesystem_entry(id, path, async_req=True)
+        >>> thread = api.delete_filesystem_entry(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -377,20 +527,20 @@ class DefaultApi(object):
         :rtype: None
         """
         kwargs['_return_http_data_only'] = True
-        return self.delete_filesystem_entry_with_http_info(id, path, **kwargs)  # noqa: E501
+        return self.delete_filesystem_entry_with_http_info(session_id, path, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def delete_filesystem_entry_with_http_info(self, id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
+    def delete_filesystem_entry_with_http_info(self, session_id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
         """delete_filesystem_entry  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.delete_filesystem_entry_with_http_info(id, path, async_req=True)
+        >>> thread = api.delete_filesystem_entry_with_http_info(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -420,7 +570,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'path'
         ]
         _all_params.extend(
@@ -449,8 +599,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -473,7 +623,7 @@ class DefaultApi(object):
         _response_types_map = {}
 
         return self.api_client.call_api(
-            '/sessions/{id}/filesystem', 'DELETE',
+            '/sessions/{sessionID}/filesystem', 'DELETE',
             _path_params,
             _query_params,
             _header_params,
@@ -490,17 +640,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def delete_session(self, id : StrictStr, **kwargs) -> None:  # noqa: E501
+    def delete_session(self, session_id : StrictStr, **kwargs) -> None:  # noqa: E501
         """delete_session  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.delete_session(id, async_req=True)
+        >>> thread = api.delete_session(session_id, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
@@ -517,20 +667,20 @@ class DefaultApi(object):
         :rtype: None
         """
         kwargs['_return_http_data_only'] = True
-        return self.delete_session_with_http_info(id, **kwargs)  # noqa: E501
+        return self.delete_session_with_http_info(session_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def delete_session_with_http_info(self, id : StrictStr, **kwargs):  # noqa: E501
+    def delete_session_with_http_info(self, session_id : StrictStr, **kwargs):  # noqa: E501
         """delete_session  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.delete_session_with_http_info(id, async_req=True)
+        >>> thread = api.delete_session_with_http_info(session_id, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
@@ -558,7 +708,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id'
+            'session_id'
         ]
         _all_params.extend(
             [
@@ -586,8 +736,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -608,7 +758,7 @@ class DefaultApi(object):
         _response_types_map = {}
 
         return self.api_client.call_api(
-            '/sessions/{id}', 'DELETE',
+            '/sessions/{sessionID}', 'DELETE',
             _path_params,
             _query_params,
             _header_params,
@@ -625,17 +775,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def get_process(self, id : StrictStr, process_id : StrictStr, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs) -> ProcessResponse:  # noqa: E501
+    def get_process(self, session_id : StrictStr, process_id : StrictStr, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs) -> ProcessResponse:  # noqa: E501
         """get_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.get_process(id, process_id, wait, async_req=True)
+        >>> thread = api.get_process(session_id, process_id, wait, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param process_id: (required)
         :type process_id: str
         :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
@@ -656,20 +806,20 @@ class DefaultApi(object):
         :rtype: ProcessResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.get_process_with_http_info(id, process_id, wait, **kwargs)  # noqa: E501
+        return self.get_process_with_http_info(session_id, process_id, wait, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_process_with_http_info(self, id : StrictStr, process_id : StrictStr, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs):  # noqa: E501
+    def get_process_with_http_info(self, session_id : StrictStr, process_id : StrictStr, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs):  # noqa: E501
         """get_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.get_process_with_http_info(id, process_id, wait, async_req=True)
+        >>> thread = api.get_process_with_http_info(session_id, process_id, wait, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param process_id: (required)
         :type process_id: str
         :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
@@ -701,7 +851,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'process_id',
             'wait'
         ]
@@ -731,8 +881,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
         if _params['process_id']:
             _path_params['processID'] = _params['process_id']
 
@@ -763,7 +913,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/sessions/{id}/processes/{processID}', 'GET',
+            '/sessions/{sessionID}/processes/{processID}', 'GET',
             _path_params,
             _query_params,
             _header_params,
@@ -780,17 +930,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def get_session(self, id : StrictStr, **kwargs) -> SessionResponse:  # noqa: E501
+    def get_session(self, session_id : StrictStr, **kwargs) -> SessionResponse:  # noqa: E501
         """get_session  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.get_session(id, async_req=True)
+        >>> thread = api.get_session(session_id, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
@@ -807,20 +957,20 @@ class DefaultApi(object):
         :rtype: SessionResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.get_session_with_http_info(id, **kwargs)  # noqa: E501
+        return self.get_session_with_http_info(session_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_session_with_http_info(self, id : StrictStr, **kwargs):  # noqa: E501
+    def get_session_with_http_info(self, session_id : StrictStr, **kwargs):  # noqa: E501
         """get_session  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.get_session_with_http_info(id, async_req=True)
+        >>> thread = api.get_session_with_http_info(session_id, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
@@ -848,7 +998,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id'
+            'session_id'
         ]
         _all_params.extend(
             [
@@ -876,8 +1026,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -904,7 +1054,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/sessions/{id}', 'GET',
+            '/sessions/{sessionID}', 'GET',
             _path_params,
             _query_params,
             _header_params,
@@ -921,17 +1071,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def list_filesystem_dir(self, id : StrictStr, path : StrictStr, **kwargs) -> ListFilesystemDirResponse:  # noqa: E501
+    def list_filesystem_dir(self, session_id : StrictStr, path : StrictStr, **kwargs) -> ListFilesystemDirResponse:  # noqa: E501
         """list_filesystem_dir  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.list_filesystem_dir(id, path, async_req=True)
+        >>> thread = api.list_filesystem_dir(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -950,20 +1100,20 @@ class DefaultApi(object):
         :rtype: ListFilesystemDirResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.list_filesystem_dir_with_http_info(id, path, **kwargs)  # noqa: E501
+        return self.list_filesystem_dir_with_http_info(session_id, path, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_filesystem_dir_with_http_info(self, id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
+    def list_filesystem_dir_with_http_info(self, session_id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
         """list_filesystem_dir  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.list_filesystem_dir_with_http_info(id, path, async_req=True)
+        >>> thread = api.list_filesystem_dir_with_http_info(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -993,7 +1143,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'path'
         ]
         _all_params.extend(
@@ -1022,8 +1172,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -1052,7 +1202,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/sessions/{id}/filesystem/dir', 'GET',
+            '/sessions/{sessionID}/filesystem/dir', 'GET',
             _path_params,
             _query_params,
             _header_params,
@@ -1069,17 +1219,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def make_filesystem_dir(self, id : StrictStr, path : StrictStr, **kwargs) -> None:  # noqa: E501
+    def make_filesystem_dir(self, session_id : StrictStr, path : StrictStr, **kwargs) -> None:  # noqa: E501
         """make_filesystem_dir  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.make_filesystem_dir(id, path, async_req=True)
+        >>> thread = api.make_filesystem_dir(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -1098,20 +1248,20 @@ class DefaultApi(object):
         :rtype: None
         """
         kwargs['_return_http_data_only'] = True
-        return self.make_filesystem_dir_with_http_info(id, path, **kwargs)  # noqa: E501
+        return self.make_filesystem_dir_with_http_info(session_id, path, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def make_filesystem_dir_with_http_info(self, id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
+    def make_filesystem_dir_with_http_info(self, session_id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
         """make_filesystem_dir  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.make_filesystem_dir_with_http_info(id, path, async_req=True)
+        >>> thread = api.make_filesystem_dir_with_http_info(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -1141,7 +1291,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'path'
         ]
         _all_params.extend(
@@ -1170,8 +1320,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -1194,7 +1344,7 @@ class DefaultApi(object):
         _response_types_map = {}
 
         return self.api_client.call_api(
-            '/sessions/{id}/filesystem/dir', 'PUT',
+            '/sessions/{sessionID}/filesystem/dir', 'PUT',
             _path_params,
             _query_params,
             _header_params,
@@ -1211,17 +1361,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def read_filesystem_file(self, id : StrictStr, path : StrictStr, **kwargs) -> ReadFilesystemFileResponse:  # noqa: E501
+    def read_filesystem_file(self, session_id : StrictStr, path : StrictStr, **kwargs) -> ReadFilesystemFileResponse:  # noqa: E501
         """read_filesystem_file  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.read_filesystem_file(id, path, async_req=True)
+        >>> thread = api.read_filesystem_file(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -1240,20 +1390,20 @@ class DefaultApi(object):
         :rtype: ReadFilesystemFileResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.read_filesystem_file_with_http_info(id, path, **kwargs)  # noqa: E501
+        return self.read_filesystem_file_with_http_info(session_id, path, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def read_filesystem_file_with_http_info(self, id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
+    def read_filesystem_file_with_http_info(self, session_id : StrictStr, path : StrictStr, **kwargs):  # noqa: E501
         """read_filesystem_file  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.read_filesystem_file_with_http_info(id, path, async_req=True)
+        >>> thread = api.read_filesystem_file_with_http_info(session_id, path, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param async_req: Whether to execute the request asynchronously.
@@ -1283,7 +1433,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'path'
         ]
         _all_params.extend(
@@ -1312,8 +1462,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -1342,7 +1492,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/sessions/{id}/filesystem/file', 'GET',
+            '/sessions/{sessionID}/filesystem/file', 'GET',
             _path_params,
             _query_params,
             _header_params,
@@ -1359,17 +1509,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def start_process(self, id : StrictStr, start_process_params : StartProcessParams, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs) -> ProcessResponse:  # noqa: E501
+    def start_process(self, session_id : StrictStr, start_process_params : StartProcessParams, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs) -> ProcessResponse:  # noqa: E501
         """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.start_process(id, start_process_params, wait, async_req=True)
+        >>> thread = api.start_process(session_id, start_process_params, wait, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param start_process_params: (required)
         :type start_process_params: StartProcessParams
         :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
@@ -1390,20 +1540,20 @@ class DefaultApi(object):
         :rtype: ProcessResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.start_process_with_http_info(id, start_process_params, wait, **kwargs)  # noqa: E501
+        return self.start_process_with_http_info(session_id, start_process_params, wait, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def start_process_with_http_info(self, id : StrictStr, start_process_params : StartProcessParams, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs):  # noqa: E501
+    def start_process_with_http_info(self, session_id : StrictStr, start_process_params : StartProcessParams, wait : Annotated[Optional[StrictBool], Field(description="if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.")] = None, **kwargs):  # noqa: E501
         """start_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.start_process_with_http_info(id, start_process_params, wait, async_req=True)
+        >>> thread = api.start_process_with_http_info(session_id, start_process_params, wait, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param start_process_params: (required)
         :type start_process_params: StartProcessParams
         :param wait: if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
@@ -1435,7 +1585,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'start_process_params',
             'wait'
         ]
@@ -1465,8 +1615,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -1504,7 +1654,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/sessions/{id}/processes', 'POST',
+            '/sessions/{sessionID}/processes', 'POST',
             _path_params,
             _query_params,
             _header_params,
@@ -1521,17 +1671,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def stop_process(self, id : StrictStr, process_id : StrictStr, results : Optional[StrictBool] = None, **kwargs) -> ProcessResponse:  # noqa: E501
+    def stop_process(self, session_id : StrictStr, process_id : StrictStr, results : Optional[StrictBool] = None, **kwargs) -> ProcessResponse:  # noqa: E501
         """stop_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.stop_process(id, process_id, results, async_req=True)
+        >>> thread = api.stop_process(session_id, process_id, results, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param process_id: (required)
         :type process_id: str
         :param results:
@@ -1552,20 +1702,20 @@ class DefaultApi(object):
         :rtype: ProcessResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.stop_process_with_http_info(id, process_id, results, **kwargs)  # noqa: E501
+        return self.stop_process_with_http_info(session_id, process_id, results, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def stop_process_with_http_info(self, id : StrictStr, process_id : StrictStr, results : Optional[StrictBool] = None, **kwargs):  # noqa: E501
+    def stop_process_with_http_info(self, session_id : StrictStr, process_id : StrictStr, results : Optional[StrictBool] = None, **kwargs):  # noqa: E501
         """stop_process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.stop_process_with_http_info(id, process_id, results, async_req=True)
+        >>> thread = api.stop_process_with_http_info(session_id, process_id, results, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param process_id: (required)
         :type process_id: str
         :param results:
@@ -1597,7 +1747,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'process_id',
             'results'
         ]
@@ -1627,8 +1777,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
         if _params['process_id']:
             _path_params['processID'] = _params['process_id']
 
@@ -1659,7 +1809,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/sessions/{id}/processes/{processID}', 'DELETE',
+            '/sessions/{sessionID}/processes/{processID}', 'DELETE',
             _path_params,
             _query_params,
             _header_params,
@@ -1676,17 +1826,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def write_filesystem_file(self, id : StrictStr, path : StrictStr, write_filesystem_file_request : WriteFilesystemFileRequest, **kwargs) -> None:  # noqa: E501
+    def write_filesystem_file(self, session_id : StrictStr, path : StrictStr, write_filesystem_file_request : WriteFilesystemFileRequest, **kwargs) -> None:  # noqa: E501
         """write_filesystem_file  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.write_filesystem_file(id, path, write_filesystem_file_request, async_req=True)
+        >>> thread = api.write_filesystem_file(session_id, path, write_filesystem_file_request, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param write_filesystem_file_request: (required)
@@ -1707,20 +1857,20 @@ class DefaultApi(object):
         :rtype: None
         """
         kwargs['_return_http_data_only'] = True
-        return self.write_filesystem_file_with_http_info(id, path, write_filesystem_file_request, **kwargs)  # noqa: E501
+        return self.write_filesystem_file_with_http_info(session_id, path, write_filesystem_file_request, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def write_filesystem_file_with_http_info(self, id : StrictStr, path : StrictStr, write_filesystem_file_request : WriteFilesystemFileRequest, **kwargs):  # noqa: E501
+    def write_filesystem_file_with_http_info(self, session_id : StrictStr, path : StrictStr, write_filesystem_file_request : WriteFilesystemFileRequest, **kwargs):  # noqa: E501
         """write_filesystem_file  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.write_filesystem_file_with_http_info(id, path, write_filesystem_file_request, async_req=True)
+        >>> thread = api.write_filesystem_file_with_http_info(session_id, path, write_filesystem_file_request, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param path: (required)
         :type path: str
         :param write_filesystem_file_request: (required)
@@ -1752,7 +1902,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'path',
             'write_filesystem_file_request'
         ]
@@ -1782,8 +1932,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
 
         # process the query parameters
         _query_params = []
@@ -1815,7 +1965,7 @@ class DefaultApi(object):
         _response_types_map = {}
 
         return self.api_client.call_api(
-            '/sessions/{id}/filesystem/file', 'PUT',
+            '/sessions/{sessionID}/filesystem/file', 'PUT',
             _path_params,
             _query_params,
             _header_params,
@@ -1832,17 +1982,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def write_process_stdin(self, id : StrictStr, process_id : StrictStr, write_process_stdin_request : WriteProcessStdinRequest, **kwargs) -> None:  # noqa: E501
+    def write_process_stdin(self, session_id : StrictStr, process_id : StrictStr, write_process_stdin_request : WriteProcessStdinRequest, **kwargs) -> None:  # noqa: E501
         """write_process_stdin  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.write_process_stdin(id, process_id, write_process_stdin_request, async_req=True)
+        >>> thread = api.write_process_stdin(session_id, process_id, write_process_stdin_request, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param process_id: (required)
         :type process_id: str
         :param write_process_stdin_request: (required)
@@ -1863,20 +2013,20 @@ class DefaultApi(object):
         :rtype: None
         """
         kwargs['_return_http_data_only'] = True
-        return self.write_process_stdin_with_http_info(id, process_id, write_process_stdin_request, **kwargs)  # noqa: E501
+        return self.write_process_stdin_with_http_info(session_id, process_id, write_process_stdin_request, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def write_process_stdin_with_http_info(self, id : StrictStr, process_id : StrictStr, write_process_stdin_request : WriteProcessStdinRequest, **kwargs):  # noqa: E501
+    def write_process_stdin_with_http_info(self, session_id : StrictStr, process_id : StrictStr, write_process_stdin_request : WriteProcessStdinRequest, **kwargs):  # noqa: E501
         """write_process_stdin  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.write_process_stdin_with_http_info(id, process_id, write_process_stdin_request, async_req=True)
+        >>> thread = api.write_process_stdin_with_http_info(session_id, process_id, write_process_stdin_request, async_req=True)
         >>> result = thread.get()
 
-        :param id: (required)
-        :type id: str
+        :param session_id: (required)
+        :type session_id: str
         :param process_id: (required)
         :type process_id: str
         :param write_process_stdin_request: (required)
@@ -1908,7 +2058,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'id',
+            'session_id',
             'process_id',
             'write_process_stdin_request'
         ]
@@ -1938,8 +2088,8 @@ class DefaultApi(object):
 
         # process the path parameters
         _path_params = {}
-        if _params['id']:
-            _path_params['id'] = _params['id']
+        if _params['session_id']:
+            _path_params['sessionID'] = _params['session_id']
         if _params['process_id']:
             _path_params['processID'] = _params['process_id']
 
@@ -1971,7 +2121,7 @@ class DefaultApi(object):
         _response_types_map = {}
 
         return self.api_client.call_api(
-            '/sessions/{id}/processes/{processID}/stdin', 'POST',
+            '/sessions/{sessionID}/processes/{processID}/stdin', 'POST',
             _path_params,
             _query_params,
             _header_params,

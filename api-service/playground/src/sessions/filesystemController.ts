@@ -22,13 +22,13 @@ interface ReadFilesystemFileResponse {
 
 @Route('sessions')
 export class FilesystemController extends Controller {
-  @Get('{id}/filesystem/dir')
+  @Get('{sessionID}/filesystem/dir')
   public async listFilesystemDir(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Query() path: string,
   ): Promise<ListFilesystemDirResponse> {
     const entries = await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .session
       .filesystem!
       .list(path)
@@ -38,37 +38,37 @@ export class FilesystemController extends Controller {
     }
   }
 
-  @Put('{id}/filesystem/dir')
+  @Put('{sessionID}/filesystem/dir')
   public async makeFilesystemDir(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Query() path: string,
   ): Promise<void> {
     await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .session
       .filesystem
       ?.makeDir(path)
   }
 
-  @Delete('{id}/filesystem')
+  @Delete('{sessionID}/filesystem')
   public async deleteFilesystemEntry(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Query() path: string,
   ) {
     await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .session
       .filesystem!
       .remove(path)
   }
 
-  @Get('{id}/filesystem/file')
+  @Get('{sessionID}/filesystem/file')
   public async readFilesystemFile(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Query() path: string,
   ): Promise<ReadFilesystemFileResponse> {
     const content = await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .session
       .filesystem!
       .read(path)
@@ -78,14 +78,14 @@ export class FilesystemController extends Controller {
     }
   }
 
-  @Put('{id}/filesystem/file')
+  @Put('{sessionID}/filesystem/file')
   public async writeFilesystemFile(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Query() path: string,
     @BodyProp('content') content: string,
   ) {
     await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .session
       .filesystem!
       .write(path, content)

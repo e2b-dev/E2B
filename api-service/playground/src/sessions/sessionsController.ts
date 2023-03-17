@@ -7,9 +7,9 @@ import {
   BodyProp,
   Route,
 } from 'tsoa'
+import { OpenedPort as OpenPort } from '@devbookhq/sdk'
 
 import { CachedSession } from './session'
-import { OpenedPort as OpenPort } from '@devbookhq/sdk'
 
 interface SessionResponse {
   id: string
@@ -30,20 +30,20 @@ export class SessionsController extends Controller {
     }
   }
 
-  @Delete('{id}')
+  @Delete('{sessionID}')
   public async deleteSession(
-    @Path() id: string,
+    @Path() sessionID: string,
   ): Promise<void> {
     await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .delete()
   }
 
-  @Get('{id}')
+  @Get('{sessionID}')
   public async getSession(
-    @Path() id: string,
+    @Path() sessionID: string,
   ): Promise<SessionResponse> {
-    const cachedSession = CachedSession.findSession(id)
+    const cachedSession = CachedSession.findSession(sessionID)
 
     return {
       id: cachedSession.id!,

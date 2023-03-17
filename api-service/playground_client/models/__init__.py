@@ -14,6 +14,7 @@
 from __future__ import absolute_import
 
 # import models into model package
+from playground_client.models.create_deployment_request import CreateDeploymentRequest
 from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
 from playground_client.models.create_sessions_request import CreateSessionsRequest
 from playground_client.models.entry_info import EntryInfo

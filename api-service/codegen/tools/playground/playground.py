@@ -50,9 +50,7 @@ class Playground:
             self.client.close()
 
     def get_open_ports(self):
-        response = self.api.get_session(
-            id=self.session.id,
-        )
+        response = self.api.get_session(self.session.id)
         return response.ports
 
     def is_port_open(self, port: float):

@@ -3,6 +3,7 @@ playground_client/api/__init__.py
 playground_client/api/default_api.py
 playground_client/api_client.py
 playground_client/configuration.py
+playground_client/docs/CreateDeploymentRequest.md
 playground_client/docs/CreateMockBodyDataRequest.md
 playground_client/docs/CreateSessionsRequest.md
 playground_client/docs/DefaultApi.md
@@ -24,6 +25,7 @@ playground_client/docs/WriteFilesystemFileRequest.md
 playground_client/docs/WriteProcessStdinRequest.md
 playground_client/exceptions.py
 playground_client/models/__init__.py
+playground_client/models/create_deployment_request.py
 playground_client/models/create_mock_body_data_request.py
 playground_client/models/create_sessions_request.py
 playground_client/models/entry_info.py
@@ -44,6 +46,7 @@ playground_client/models/write_filesystem_file_request.py
 playground_client/models/write_process_stdin_request.py
 playground_client/rest.py
 playground_client/test/__init__.py
+playground_client/test/test_create_deployment_request.py
 playground_client/test/test_create_mock_body_data_request.py
 playground_client/test/test_create_sessions_request.py
 playground_client/test/test_default_api.py

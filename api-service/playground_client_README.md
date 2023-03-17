@@ -47,14 +47,13 @@ configuration = playground_client.Configuration(
 with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
-    create_mock_body_data_request = playground_client.CreateMockBodyDataRequest() # CreateMockBodyDataRequest | 
+    session_id = 'session_id_example' # str | 
+    create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
 
     try:
-        api_response = api_instance.create_mock_body_data(create_mock_body_data_request)
-        print("The response of DefaultApi->create_mock_body_data:\n")
-        pprint(api_response)
+        api_instance.create_deployment(session_id, create_deployment_request)
     except ApiException as e:
-        print("Exception when calling DefaultApi->create_mock_body_data: %s\n" % e)
+        print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
 
 ```
 
@@ -64,23 +63,25 @@ All URIs are relative to *https://localhost:9001*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*DefaultApi* | [**create_deployment**](playground_client/docs/DefaultApi.md#create_deployment) | **PUT** /sessions/{sessionID}/deployments | 
 *DefaultApi* | [**create_mock_body_data**](playground_client/docs/DefaultApi.md#create_mock_body_data) | **POST** /mock/body | 
 *DefaultApi* | [**create_sessions**](playground_client/docs/DefaultApi.md#create_sessions) | **POST** /sessions | 
-*DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{id}/filesystem | 
-*DefaultApi* | [**delete_session**](playground_client/docs/DefaultApi.md#delete_session) | **DELETE** /sessions/{id} | 
-*DefaultApi* | [**get_process**](playground_client/docs/DefaultApi.md#get_process) | **GET** /sessions/{id}/processes/{processID} | 
-*DefaultApi* | [**get_session**](playground_client/docs/DefaultApi.md#get_session) | **GET** /sessions/{id} | 
-*DefaultApi* | [**list_filesystem_dir**](playground_client/docs/DefaultApi.md#list_filesystem_dir) | **GET** /sessions/{id}/filesystem/dir | 
-*DefaultApi* | [**make_filesystem_dir**](playground_client/docs/DefaultApi.md#make_filesystem_dir) | **PUT** /sessions/{id}/filesystem/dir | 
-*DefaultApi* | [**read_filesystem_file**](playground_client/docs/DefaultApi.md#read_filesystem_file) | **GET** /sessions/{id}/filesystem/file | 
-*DefaultApi* | [**start_process**](playground_client/docs/DefaultApi.md#start_process) | **POST** /sessions/{id}/processes | 
-*DefaultApi* | [**stop_process**](playground_client/docs/DefaultApi.md#stop_process) | **DELETE** /sessions/{id}/processes/{processID} | 
-*DefaultApi* | [**write_filesystem_file**](playground_client/docs/DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{id}/filesystem/file | 
-*DefaultApi* | [**write_process_stdin**](playground_client/docs/DefaultApi.md#write_process_stdin) | **POST** /sessions/{id}/processes/{processID}/stdin | 
+*DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{sessionID}/filesystem | 
+*DefaultApi* | [**delete_session**](playground_client/docs/DefaultApi.md#delete_session) | **DELETE** /sessions/{sessionID} | 
+*DefaultApi* | [**get_process**](playground_client/docs/DefaultApi.md#get_process) | **GET** /sessions/{sessionID}/processes/{processID} | 
+*DefaultApi* | [**get_session**](playground_client/docs/DefaultApi.md#get_session) | **GET** /sessions/{sessionID} | 
+*DefaultApi* | [**list_filesystem_dir**](playground_client/docs/DefaultApi.md#list_filesystem_dir) | **GET** /sessions/{sessionID}/filesystem/dir | 
+*DefaultApi* | [**make_filesystem_dir**](playground_client/docs/DefaultApi.md#make_filesystem_dir) | **PUT** /sessions/{sessionID}/filesystem/dir | 
+*DefaultApi* | [**read_filesystem_file**](playground_client/docs/DefaultApi.md#read_filesystem_file) | **GET** /sessions/{sessionID}/filesystem/file | 
+*DefaultApi* | [**start_process**](playground_client/docs/DefaultApi.md#start_process) | **POST** /sessions/{sessionID}/processes | 
+*DefaultApi* | [**stop_process**](playground_client/docs/DefaultApi.md#stop_process) | **DELETE** /sessions/{sessionID}/processes/{processID} | 
+*DefaultApi* | [**write_filesystem_file**](playground_client/docs/DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{sessionID}/filesystem/file | 
+*DefaultApi* | [**write_process_stdin**](playground_client/docs/DefaultApi.md#write_process_stdin) | **POST** /sessions/{sessionID}/processes/{processID}/stdin | 
 
 
 ## Documentation For Models
 
+ - [CreateDeploymentRequest](playground_client/docs/CreateDeploymentRequest.md)
  - [CreateMockBodyDataRequest](playground_client/docs/CreateMockBodyDataRequest.md)
  - [CreateSessionsRequest](playground_client/docs/CreateSessionsRequest.md)
  - [EntryInfo](playground_client/docs/EntryInfo.md)

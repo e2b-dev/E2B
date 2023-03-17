@@ -290,16 +290,25 @@
 				}
 			}
 		},
-		"/deployments": {
-			"post": {
-				"operationId": "CreateSessions",
+		"/sessions/{sessionID}/deployments": {
+			"put": {
+				"operationId": "CreateDeployment",
 				"responses": {
 					"204": {
 						"description": "No content"
 					}
 				},
 				"security": [],
-				"parameters": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "sessionID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
 				"requestBody": {
 					"required": true,
 					"content": {
@@ -312,18 +321,13 @@
 									"code": {
 										"type": "string"
 									},
-									"packageJSON": {
-										"type": "string"
-									},
 									"envVars": {
 										"$ref": "#/components/schemas/EnvVars"
 									}
 								},
 								"required": [
 									"projectID",
-									"code",
-									"packageJSON",
-									"envVars"
+									"code"
 								],
 								"type": "object"
 							}
@@ -332,7 +336,7 @@
 				}
 			}
 		},
-		"/sessions/{id}/filesystem/dir": {
+		"/sessions/{sessionID}/filesystem/dir": {
 			"get": {
 				"operationId": "ListFilesystemDir",
 				"responses": {
@@ -351,7 +355,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -378,7 +382,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -395,7 +399,7 @@
 				]
 			}
 		},
-		"/sessions/{id}/filesystem": {
+		"/sessions/{sessionID}/filesystem": {
 			"delete": {
 				"operationId": "DeleteFilesystemEntry",
 				"responses": {
@@ -407,7 +411,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -424,7 +428,7 @@
 				]
 			}
 		},
-		"/sessions/{id}/filesystem/file": {
+		"/sessions/{sessionID}/filesystem/file": {
 			"get": {
 				"operationId": "ReadFilesystemFile",
 				"responses": {
@@ -443,7 +447,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -470,7 +474,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -505,7 +509,7 @@
 				}
 			}
 		},
-		"/sessions/{id}/processes": {
+		"/sessions/{sessionID}/processes": {
 			"post": {
 				"operationId": "StartProcess",
 				"responses": {
@@ -524,7 +528,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -552,7 +556,7 @@
 				}
 			}
 		},
-		"/sessions/{id}/processes/{processID}": {
+		"/sessions/{sessionID}/processes/{processID}": {
 			"delete": {
 				"operationId": "StopProcess",
 				"responses": {
@@ -571,7 +575,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -613,7 +617,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -639,7 +643,7 @@
 				]
 			}
 		},
-		"/sessions/{id}/processes/{processID}/stdin": {
+		"/sessions/{sessionID}/processes/{processID}/stdin": {
 			"post": {
 				"operationId": "WriteProcessStdin",
 				"responses": {
@@ -651,7 +655,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -723,7 +727,7 @@
 				}
 			}
 		},
-		"/sessions/{id}": {
+		"/sessions/{sessionID}": {
 			"delete": {
 				"operationId": "DeleteSession",
 				"responses": {
@@ -735,7 +739,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -761,7 +765,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
