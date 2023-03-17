@@ -26,6 +26,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     yield install_dependencies
 
     last_javascript_code: str | None
+
     # This tool is just for executing JavaScript without doing the request to server
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
@@ -33,10 +34,16 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         Run JavaScript code and return errors and output.
         Input should be a valid JavaScript code.
         """
-        nonlocal last_javascript_code
-        last_javascript_code = code
 
-        output = playground.run_javascript_code(extract_code(code))
+        with_require = f"""
+        import {{ createRequire }} from "module";
+        const require = createRequire(import.meta.url);
+        {extract_code(code)}
+        """
+        nonlocal last_javascript_code
+        last_javascript_code = with_require
+
+        output = playground.run_javascript_code(with_require)
         result = encode_command_output(output)
         return result if len(result) > 0 else "Code execution finished without error"
 

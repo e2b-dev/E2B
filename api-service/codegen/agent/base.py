@@ -39,20 +39,19 @@ class CodegenAgent(ChatAgent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
-        _, action, _ = text.split("```")
         try:
             # TODO: Here we can change the JSON formated `action` + `action_input` to something
             # more suited to our use-case so the model doesn't need to escape the generated code.
+            _, action, _ = text.split("```")
             response = json.loads(action.strip())
             return response["action"], response["action_input"]
         except Exception as e:
             # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
-            print(
-                f"====== Got exception '{str(e)}' when parsing json:\n{action.strip()}"
-            )
+            print(f"====== Got exception '{str(e)}'\n text:\n{text}")
             # input = response["action_input"]
             return (
                 "InvalidTool",
-                f"I just ran your response via json.loads and received this error\n{str(e)}\nPlease try again",
+                f"[{text[:50]}...]",
+                # f"You are not following the response format as I told you. I just ran your response via json.loads and received this error\n{str(e)}\nPlease try again and change your response.",
             )
             # raise ValueError(f"Could not parse LLM output: {text}")
