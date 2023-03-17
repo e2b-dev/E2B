@@ -12,36 +12,33 @@ PREFIX = """You are an AI JavaScript/Nodejs assistant.
 #   "action_input": $INPUT
 # }}}}
 FORMAT_INSTRUCTIONS = """"The way you use the tools is by specifying a XML snippet.
-Specifically, this XML snippet should have a `<Action>$TOOL_NAME</Action>` element (with the name of the tool to use inside) and a `<ActionInput>$INPUT</ActionInput>` element (with the input to the tool going here).
-The XML code snippet should only contain a SINGLE action, do NOT use multiple actions at once. Here is an example of a valid XML code snippet:
+Specifically, this XML snippet MUST have a `<action tool="$TOOL_NAME">$INPUT</action>` element (with the name of the tool in the `tool` attribute and input for the tool inside the XML tag).
+The XML snippect CANNOT HAVE MORE THAN ONE ACTION. Do NOT use multiple actions at once. Here is an example of a valid XML code snippet:
 ```
-<Action>
-$TOOL_NAME
-</Action>
-<ActionInput>
+<action tool="$TOOL_NAME">
 $INPUT
-</ActionInput>
+</action>
 ```
-ALWAYS use the following format:
+ALWAYS use the following format and NEVER specify more than ONE ACTION AT THE TIME:
 
 
 Instructions: the input instructions you must implement
 Thought: you should always think about what to do
 Action:
 ```
-<Action>
-$TOOL_NAME
-</Action>
-<ActionInput>
+<action tool="$TOOL_NAME">
 $INPUT
-</ActionInput>
+</action>
 ```
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final server code and can show it.
 Final Answer: the final server code"""
 
-SUFFIX = """Begin! Reminder to NEVER use tools you don't have access to and ALWAYS use the exact the action `OutputFinalCode` when you know the final server code."""
+SUFFIX = """Begin! Reminder to NEVER use tools you don't have access to and ALWAYS use the exact the action `Final Answer` when you know the final server code.
+Thought: Here is the plan of what I will do based on the instructions I got:
+1.
+"""
 
 HUMAN_INSTRUCTIONS_PREFIX = [
     {
@@ -72,6 +69,7 @@ app.listen(port, () => {{
 ]
 
 HUMAN_INSTRUCTIONS_SUFFIX = [
+    "Always use run the code before you write it to a file or deploy it",
     "Generate the full required server code and make sure it starts without any errors.",
     "Test that the generated server from the previous step behaves as is required by making mock `curl` requests to the server.",
     "Once all works without any bugs and errors, write the code to the file.",

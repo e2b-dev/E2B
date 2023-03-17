@@ -25,7 +25,7 @@ from langchain.tools import BaseTool
 
 # from codegen.tools.playground import create_playground_tools
 from codegen.env import EnvVar
-from codegen.agent import CodegenAgent
+from codegen.agent import CodegenAgent, CodegenAgentExecutor
 from codegen.prompt import (
     PREFIX,
     SUFFIX,
@@ -33,17 +33,6 @@ from codegen.prompt import (
     HUMAN_INSTRUCTIONS_PREFIX,
     HUMAN_INSTRUCTIONS_SUFFIX,
 )
-
-
-class InvalidTool(BaseTool):
-    name = "InvalidTool"
-    description = "Do not use this tool! It is for human system admin only!"
-
-    def _run(self, err: str) -> str:
-        return err
-
-    async def _arun(self, err: str) -> str:
-        return err
 
 
 class OutputFinalCode(BaseTool):
@@ -119,7 +108,7 @@ class DeployCode(BaseTool):
 # """
 class Codegen(BaseModel):
     agent: Optional[CodegenAgent]
-    agent_executor: Optional[AgentExecutor]
+    agent_executor: Optional[CodegenAgentExecutor]
     llm = ChatOpenAI(
         streaming=True,
         temperature=0,
@@ -151,7 +140,7 @@ class Codegen(BaseModel):
             format_instructions=FORMAT_INSTRUCTIONS,
             input_variables=c.input_variables,
         )
-        c.agent_executor = AgentExecutor.from_agent_and_tools(
+        c.agent_executor = CodegenAgentExecutor.from_agent_and_tools(
             agent=c.agent,
             tools=[
                 *playground_tools,
