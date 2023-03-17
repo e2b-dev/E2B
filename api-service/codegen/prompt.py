@@ -38,13 +38,29 @@ SUFFIX = """Begin! Reminder to NEVER use tools you don't have access to and ALWA
 HUMAN_INSTRUCTIONS_PREFIX = [
     {
         "variables": ["method"],
+        "content": """Use this starting template:
+```
+import express from 'express';
+const app = express();
+const port = 3000;
+
+app.use(express.json())
+
+// TODO: Implement the {0} handlers here
+
+app.listen(port, () => {{
+  console.log(`Server listening on port ${{port}}`)
+}})
+```""",
+    },
+    {
+        "variables": ["method"],
         "content": """The HTTP request handler is of type {0}""",
     },
     {
         "variables": ["route"],
         "content": """The request handler MUST be on the route `{0}`""",
     },
-    # """The request handler must be on the route `{route}`""",
 ]
 
 HUMAN_INSTRUCTIONS_SUFFIX = [

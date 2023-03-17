@@ -50,8 +50,8 @@ class CodegenAgent(ChatAgent):
             print(f"====== Got exception '{str(e)}'\n text:\n{text}")
             # input = response["action_input"]
             return (
-                "InvalidTool",
                 f"[{text[:50]}...]",
+                "",
                 # f"You are not following the response format as I told you. I just ran your response via json.loads and received this error\n{str(e)}\nPlease try again and change your response.",
             )
             # raise ValueError(f"Could not parse LLM output: {text}")
