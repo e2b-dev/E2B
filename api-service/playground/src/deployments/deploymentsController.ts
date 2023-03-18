@@ -3,6 +3,7 @@ import {
   BodyProp,
   Put,
   Path,
+  Patch,
   Route,
   Query,
 } from 'tsoa'
@@ -23,31 +24,43 @@ export class DeploymentsController extends Controller {
    * @param sessionID active session to use for deployment
    * @param code 
    * @param envVars 
-   */
+  */
   @Put('{projectID}')
   public async createDeployment(
     @Path() projectID: string,
     @Query() sessionID: string,
     @BodyProp() code: string,
     @BodyProp() envVars: EnvVars = {},
-    @Query() update?: boolean,
   ): Promise<void> {
     const cachedSession = CachedSession.findSession(sessionID)
+    await createDeploymentInSession(
+      cachedSession.session,
+      projectID,
+      code,
+      envVars,
+    )
+  }
 
-    if (update) {
-      await updateDeploymentInSession(
-        cachedSession.session,
-        projectID,
-        code,
-        envVars,
-      )
-    } else {
-      await createDeploymentInSession(
-        cachedSession.session,
-        projectID,
-        code,
-        envVars,
-      )
-    }
+  /**
+   * 
+   * @param projectID 
+   * @param sessionID active session to use for deployment
+   * @param code 
+   * @param envVars 
+   */
+  @Patch('{projectID}')
+  public async updateDeployment(
+    @Path() projectID: string,
+    @Query() sessionID: string,
+    @BodyProp() envVars?: EnvVars,
+    @BodyProp() code?: string,
+  ): Promise<void> {
+    const cachedSession = CachedSession.findSession(sessionID)
+    await updateDeploymentInSession(
+      cachedSession.session,
+      projectID,
+      code,
+      envVars,
+    )
   }
 }

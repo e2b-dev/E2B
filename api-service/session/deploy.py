@@ -25,15 +25,14 @@ class Deployment(API):
 
         return code.replace("app.listen(", "; ({})?.listen?.(")
 
-    def update(self, project_id: str, code: str, env_vars: List[EnvVar]):
-        self.api.create_deployment(
+    def update(self, project_id: str, code: str | None = None, env_vars: List[EnvVar] | None = None):
+        self.api.update_deployment(
             project_id,
             session_id=self.session.id,
-            create_deployment_request=playground_client.CreateDeploymentRequest(
-                envVars=format_env_vars(env_vars),
-                code=Deployment.modify_code(code),
+            update_deployment_request=playground_client.UpdateDeploymentRequest(
+                envVars=format_env_vars(env_vars) if env_vars is not None else None,
+                code=Deployment.modify_code(code) if code is not None else None,
             ),
-            update=True,
         )
 
     def new(self, project_id: str, code: str, env_vars: List[EnvVar]):

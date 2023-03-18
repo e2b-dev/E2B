@@ -1,0 +1,145 @@
+import {
+  LambdaClient,
+  CreateFunctionCommand,
+  UpdateFunctionCodeCommand,
+  UpdateFunctionConfigurationCommand,
+  CreateFunctionUrlConfigCommand,
+  waitUntilFunctionUpdatedV2,
+  AddPermissionCommand,
+  Cors,
+} from '@aws-sdk/client-lambda'
+import {
+  APIGatewayClient,
+} from '@aws-sdk/client-api-gateway'
+import {
+  EnvVars,
+  Session,
+} from '@devbookhq/sdk'
+
+import { packageFunction } from './packaging'
+
+// TODO: Env var for aws initialization
+// TODO: lambda.destroy() on quit?
+const lambda = new LambdaClient({
+  region: 'us-east-1',
+  credentials: {
+    accessKeyId: '',
+    secretAccessKey: '',
+  },
+})
+
+const gateway = new APIGatewayClient({
+  region: 'us-east-1',
+  credentials: {
+    accessKeyId: '',
+    secretAccessKey: '',
+  },
+})
+
+const deploymentParams = {
+  Runtime: 'nodejs16.x',
+  // TODO: Replace lambda role with valid role
+  Role: 'arn:aws:iam::066766119186:role/service-role/test-1-role-lgud7u7z',
+  Handler: 'index.handler',
+}
+
+async function waitForUpdate(projectID: string) {
+  await waitUntilFunctionUpdatedV2({
+    client: lambda,
+    maxWaitTime: 30,
+  }, {
+    FunctionName: projectID,
+  })
+}
+
+export async function createDeploymentInSession(
+  session: Session,
+  projectID: string,
+  code: string,
+  envVars: EnvVars,
+) {
+  const zip = await packageFunction(session, code)
+
+  try {
+    await lambda.send(new CreateFunctionCommand({
+      ...deploymentParams,
+      FunctionName: projectID,
+      Code: {
+        ZipFile: zip,
+      },
+      Environment: {
+        Variables: envVars,
+      }
+    })).catch(err => console.error(err))
+    await waitForUpdate(projectID)
+
+    await lambda.send(new CreateFunctionUrlConfigCommand({
+      FunctionName: projectID,
+      AuthType: 'NONE',
+      Cors: {},
+    })).catch(err => console.error(err))
+    await waitForUpdate(projectID)
+
+    await lambda.send(new AddPermissionCommand({
+      Action: 'lambda:InvokeFunctionUrl',
+      FunctionName: projectID,
+      Principal: '*',
+      StatementId: `${projectID}-url-permission`,
+      FunctionUrlAuthType: 'NONE',
+    })).catch(err => console.error(err))
+    await waitForUpdate(projectID)
+
+    // TODO: Configure the Gateway to handle custom domain wildcards
+  } catch (err: any) {
+    if (err.name === 'ResourceConflictException') {
+      await lambda.send(new UpdateFunctionConfigurationCommand({
+        ...deploymentParams,
+        FunctionName: projectID,
+        Environment: {
+          Variables: envVars,
+        }
+      }))
+      await waitForUpdate(projectID)
+
+      await lambda.send(new UpdateFunctionCodeCommand({
+        FunctionName: projectID,
+        ZipFile: zip,
+      }))
+      await waitForUpdate(projectID)
+
+      return
+    } else {
+      throw err
+    }
+  }
+}
+
+export async function updateDeploymentInSession(
+  session: Session,
+  projectID: string,
+  code?: string,
+  envVars?: EnvVars,
+) {
+  const zipPromise = code ? packageFunction(session, code) : Promise.resolve(undefined)
+
+  if (envVars) {
+    await lambda.send(new UpdateFunctionConfigurationCommand({
+      ...deploymentParams,
+      FunctionName: projectID,
+      Environment: {
+        Variables: envVars,
+      }
+    }))
+    await waitForUpdate(projectID)
+  }
+
+  const zip = await zipPromise
+
+  if (zip) {
+    await lambda.send(new UpdateFunctionCodeCommand({
+      FunctionName: projectID,
+      ZipFile: zip,
+    }))
+    await waitForUpdate(projectID)
+  }
+}

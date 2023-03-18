@@ -15,8 +15,14 @@ const bundleDir = 'bundles'
 
 const rootfilePath = path.join(rootdir, functionsDir, 'index.mjs')
 const bundlePath = path.join(rootdir, bundleDir, 'index.zip')
+const dumpPath = path.join(rootdir, bundleDir, 'base')
 
-
+/**
+ * 
+ * TODO: Configure esbuild to use Nodejs 18 and to minify the output.
+ * TODO: Explore .js/.mjs bundling differences.
+ * 
+ */
 export async function packageFunction(session: Session, code: string) {
   const stderr: OutStderrResponse[] = []
 
@@ -25,37 +31,38 @@ export async function packageFunction(session: Session, code: string) {
     manager: session.process,
     cmd: `zip-it-and-ship-it ${functionsDir} ${bundleDir}`,
     rootdir,
-    onStderr: stderr.push,
+    onStderr: o => stderr.push(o),
   })
   await bundling.exited
 
   if (stderr.length > 0) {
-    console.error(stderr)
+    console.error(stderr.map(o => o.line).join('\n'))
   }
 
-  const zip = await readFileAsBase64(session.process!, bundlePath)
+  const zip = await readFileAsBase64(session, bundlePath)
   return Buffer.from(zip, 'base64')
 }
 
 /**
  * TODO: Implement binary file reading in devbookd so we don't have to send data via base64 (cca 25% overhead) and process stdout.
  */
-async function readFileAsBase64(manager: ProcessManager, filepath: string) {
-  const stderr: OutStderrResponse[] = []
-  const stdout: OutStdoutResponse[] = []
+async function readFileAsBase64(session: Session, filepath: string) {
+  if (!session.filesystem || !session.process) {
+    throw new Error('Session is not active')
+  }
 
-  const process = await createSessionProcess({
-    manager,
-    onStderr: stderr.push,
-    onStdout: stdout.push,
-    cmd: `base64 -w 0 ${filepath}`,
+  const stderr: OutStderrResponse[] = []
+  const dumpToBase64 = await createSessionProcess({
+    manager: session.process,
+    onStderr: o => stderr.push(o),
+    cmd: `base64 -w 0 ${filepath} > ${dumpPath}`,
   })
 
-  await process.exited
+  await dumpToBase64.exited
 
   if (stderr.length > 0) {
     throw new Error(`Error reading file ${stderr.map(o => o.line).join('\n')}`)
   }
 
-  return stdout.map(o => o.line).join('\n')
+  return await session.filesystem.read(dumpPath)
 }

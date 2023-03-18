@@ -21,4 +21,4 @@ app.listen(3000, () =>
 # console.log('')
 # """
 
-deployment.new("test-project", code, [])
+deployment.new("te-ddx", code, [])

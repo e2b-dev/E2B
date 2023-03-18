@@ -185,7 +185,6 @@ export function RegisterRoutes(app: Router) {
                     sessionID: {"in":"query","name":"sessionID","required":true,"dataType":"string"},
                     code: {"in":"body-prop","name":"code","required":true,"dataType":"string"},
                     envVars: {"default":{},"in":"body-prop","name":"envVars","ref":"EnvVars"},
-                    update: {"in":"query","name":"update","dataType":"boolean"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -198,6 +197,34 @@ export function RegisterRoutes(app: Router) {
 
 
               const promise = controller.createDeployment.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.patch('/deployments/:projectID',
+            ...(fetchMiddlewares<RequestHandler>(DeploymentsController)),
+            ...(fetchMiddlewares<RequestHandler>(DeploymentsController.prototype.updateDeployment)),
+
+            function DeploymentsController_updateDeployment(request: any, response: any, next: any) {
+            const args = {
+                    projectID: {"in":"path","name":"projectID","required":true,"dataType":"string"},
+                    sessionID: {"in":"query","name":"sessionID","required":true,"dataType":"string"},
+                    envVars: {"in":"body-prop","name":"envVars","ref":"EnvVars"},
+                    code: {"in":"body-prop","name":"code","dataType":"string"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new DeploymentsController();
+
+
+              const promise = controller.updateDeployment.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);

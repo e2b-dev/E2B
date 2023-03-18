@@ -16,12 +16,13 @@ Method | HTTP request | Description
 [**read_filesystem_file**](DefaultApi.md#read_filesystem_file) | **GET** /sessions/{sessionID}/filesystem/file | 
 [**start_process**](DefaultApi.md#start_process) | **POST** /sessions/{sessionID}/processes | 
 [**stop_process**](DefaultApi.md#stop_process) | **DELETE** /sessions/{sessionID}/processes/{processID} | 
+[**update_deployment**](DefaultApi.md#update_deployment) | **PATCH** /deployments/{projectID} | 
 [**write_filesystem_file**](DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{sessionID}/filesystem/file | 
 [**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{sessionID}/processes/{processID}/stdin | 
 
 
 # **create_deployment**
-> create_deployment(project_id, session_id, create_deployment_request, update=update)
+> create_deployment(project_id, session_id, create_deployment_request)
 
 
 
@@ -48,10 +49,9 @@ with playground_client.ApiClient(configuration) as api_client:
     project_id = 'project_id_example' # str | 
     session_id = 'session_id_example' # str | active session to use for deployment
     create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
-    update = True # bool |  (optional)
 
     try:
-        api_instance.create_deployment(project_id, session_id, create_deployment_request, update=update)
+        api_instance.create_deployment(project_id, session_id, create_deployment_request)
     except Exception as e:
         print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
 ```
@@ -63,7 +63,6 @@ Name | Type | Description  | Notes
  **project_id** | **str**|  | 
  **session_id** | **str**| active session to use for deployment | 
  **create_deployment_request** | [**CreateDeploymentRequest**](CreateDeploymentRequest.md)|  | 
- **update** | **bool**|  | [optional] 
 
 ### Return type
 
@@ -767,6 +766,69 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Ok |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **update_deployment**
+> update_deployment(project_id, session_id, update_deployment_request)
+
+
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import os
+import playground_client
+from playground_client.rest import ApiException
+from pprint import pprint
+# Defining the host is optional and defaults to https://localhost:9001
+# See configuration.py for a list of all supported configuration parameters.
+configuration = playground_client.Configuration(
+    host = "https://localhost:9001"
+)
+
+
+# Enter a context with an instance of the API client
+with playground_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = playground_client.DefaultApi(api_client)
+    project_id = 'project_id_example' # str | 
+    session_id = 'session_id_example' # str | active session to use for deployment
+    update_deployment_request = playground_client.UpdateDeploymentRequest() # UpdateDeploymentRequest | 
+
+    try:
+        api_instance.update_deployment(project_id, session_id, update_deployment_request)
+    except Exception as e:
+        print("Exception when calling DefaultApi->update_deployment: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **project_id** | **str**|  | 
+ **session_id** | **str**| active session to use for deployment | 
+ **update_deployment_request** | [**UpdateDeploymentRequest**](UpdateDeploymentRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | No content |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
