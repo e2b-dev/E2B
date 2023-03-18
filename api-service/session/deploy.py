@@ -18,10 +18,10 @@ class Deployment(API):
 
         if ecma_script:
             code = 'import serverless from "serverless-http;"\n' + code
-            code = code + "\nexport default serverless(app);"
+            code = code + "\nexport const handler = serverless(app);"
         else:
             code = "const serverless = require('serverless-http');\n" + code
-            code = code + "\nmodule.exports = serverless(app);"
+            code = code + "\nexports.handler = serverless(app);"
 
         return code.replace("app.listen(", "; ({})?.listen?.(")
 
