@@ -22,7 +22,8 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
 
     yield install_dependencies
 
-    last_javascript_code: str | None
+    last_javascript_code: str | None = None
+
     # This tool is just for executing JavaScript without doing the request to server
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
@@ -30,10 +31,16 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         Run JavaScript code and return output.
         Input should be a valid JavaScript code.
         """
-        nonlocal last_javascript_code
-        last_javascript_code = code
 
-        output = playground.run_javascript_code(extract_code(code))
+        with_require = f"""
+        import {{ createRequire }} from "module";
+        const require = createRequire(import.meta.url);
+        {extract_code(code)}
+        """
+        nonlocal last_javascript_code
+        last_javascript_code = with_require
+
+        output = playground.run_javascript_code(with_require)
         result = encode_command_output(output)
         return result if len(result) > 0 else "Code execution finished without error"
 
@@ -44,8 +51,9 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         """
         Make a request to check if the previously run JavaScript code is a server that can handle the needed request.
         """
+        nonlocal last_javascript_code
         if last_javascript_code is None:
-            return "No JavaScript code was previously run"
+            return "Cannot curl, you need to run code first"
 
         mock_request_cmd = mock.terminal_command()
 

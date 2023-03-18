@@ -1,6 +1,7 @@
 import json
 from session.playground import Playground
 
+
 class MockRequestFactory:
     def __init__(
         self,
@@ -23,7 +24,7 @@ class MockRequestFactory:
 
     def generate_body_data(self):
         if self.body_template is None:
-            return '{}'
+            return "{}"
 
         body_interface_name = "RequestBody"
         request_body_template = f"""interface {body_interface_name} {{
@@ -31,5 +32,7 @@ class MockRequestFactory:
         }}
         """
 
-        body = json.loads(self.playground.mock_body_data(request_body_template, body_interface_name))[body_interface_name]
+        body = json.loads(
+            self.playground.mock_body_data(request_body_template, body_interface_name)
+        )[body_interface_name]
         return json.dumps(body)

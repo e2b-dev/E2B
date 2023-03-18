@@ -7,7 +7,9 @@ from playground_client.models.process_response import ProcessResponse
 def encode_command_output(response: ProcessResponse, only_errors: bool = False) -> str:
     result = ""
 
-    err_lines = [err.line for err in response.stderr]
+    err_lines = [err.line for err in response.stderr if "Error:" in err.line]
+    # err_lines = [err.line for err in response.stderr]
+
     errors = "\n".join(err_lines)
 
     if len(errors) > 0:

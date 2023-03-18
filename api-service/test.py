@@ -84,7 +84,9 @@ class CustomChatAgent(ChatAgent):
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> str:
-        # print("CONSTRUCTING SCRATCHPAD before:")
+        print(
+            "CONSTRUCTING SCRATCHPAD len(intermediate_steps):", len(intermediate_steps)
+        )
         # print(len(intermediate_steps))
 
         # Leave only the latest element in the `intermediate_steps` list
@@ -109,26 +111,26 @@ class CustomChatAgent(ChatAgent):
         else:
             return agent_scratchpad
 
-    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
-        if FINAL_ANSWER_ACTION in text:
-            return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
-        _, action, _ = text.split("```")
-        try:
-            # TODO: Here we can change the JSON formated `action` + `action_input` to something
-            # more suited to our use-case so the model doesn't need to escape the generated code.
-            response = json.loads(action.strip())
-            return response["action"], response["action_input"]
-        except Exception as e:
-            # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
-            print(
-                f"====== Got exception '{str(e)}' when parsing json:\n{action.strip()}"
-            )
-            # input = response["action_input"]
-            return (
-                "InvalidTool",
-                f"I just ran your response via json.loads and received this error\n{str(e)}\nPlease try again",
-            )
-            # raise ValueError(f"Could not parse LLM output: {text}")
+    # def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
+    #     if FINAL_ANSWER_ACTION in text:
+    #         return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
+    #     _, action, _ = text.split("```")
+    #     try:
+    #         # TODO: Here we can change the JSON formated `action` + `action_input` to something
+    #         # more suited to our use-case so the model doesn't need to escape the generated code.
+    #         response = json.loads(action.strip())
+    #         return response["action"], response["action_input"]
+    #     except Exception as e:
+    #         # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
+    #         print(
+    #             f"====== Got exception '{str(e)}' when parsing json:\n{action.strip()}"
+    #         )
+    #         # input = response["action_input"]
+    #         return (
+    #             "InvalidTool",
+    #             f"I just ran your response via json.loads and received this error\n{str(e)}\nPlease try again",
+    #         )
+    #         # raise ValueError(f"Could not parse LLM output: {text}")
 
 
 OPENAI_API_KEY = "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"
@@ -246,6 +248,7 @@ prompt = CustomChatAgent.create_prompt(
 invalid_tool = InvalidTool()
 # Create agent and it's executor
 # agent = ChatAgent.from_llm_and_tools(
+memory = ConversationBufferWindowMemory(k=1, return_messages=True)
 agent = CustomChatAgent.from_llm_and_tools(
     llm=chat,
     tools=[
@@ -260,6 +263,7 @@ agent = CustomChatAgent.from_llm_and_tools(
     input_variables=input_variables,
     # verbose=True,
     # memory=ConversationBufferWindowMemory(k=2),
+    memory=memory,
 )
 ae = AgentExecutor.from_agent_and_tools(
     agent=agent,
@@ -269,7 +273,7 @@ ae = AgentExecutor.from_agent_and_tools(
         WriteCodeToFile(),
         DeployCode(),
     ],
-    # memory=ConversationBufferWindowMemory(k=2),
+    memory=memory,
     verbose=True,
 )
 
@@ -387,5 +391,8 @@ except ValueError as e:
 
 # # chat([*chat_messages, instruct1_prompt])
 
+print("=========== MEMORY")
+for message in memory.buffer:
+    print(message.content)
 
 playground.close()
