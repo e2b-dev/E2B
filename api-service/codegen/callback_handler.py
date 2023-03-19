@@ -5,6 +5,18 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
+class bcolors:
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
+
 class CustomCallbackHandler(BaseCallbackHandler):
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -46,7 +58,10 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        print("[+CustomCallbackHandler] TOOL START", flush=True)
+        print(
+            f"{bcolors.BOLD}{bcolors.OKBLUE}[+CustomCallbackHandler] TOOL START{bcolors.ENDC}{bcolors.OKBLUE}",
+            flush=True,
+        )
         print(serialized)
         print(input_str)
         print("[-CustomCallbackHandler]")

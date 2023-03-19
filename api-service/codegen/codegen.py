@@ -162,6 +162,7 @@ class Codegen(BaseModel):
             suffix=SUFFIX,
             format_instructions=FORMAT_INSTRUCTIONS,
             input_variables=c.input_variables,
+            callback_manager=cm,
         )
         c.agent_executor = CodegenAgentExecutor.from_agent_and_tools(
             agent=c.agent,
@@ -170,6 +171,7 @@ class Codegen(BaseModel):
                 *c.tools,
             ],
             verbose=True,
+            callback_manager=cm,
         )
 
         return c
