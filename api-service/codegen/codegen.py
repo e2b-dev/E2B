@@ -182,7 +182,7 @@ class Codegen(BaseModel):
             *playground_tools,
             AskHuman(callback_manager=callback_manager),
             WriteCodeToFile(callback_manager=callback_manager),
-            DeployCode(callback_manager=callback_manager),
+            # DeployCode(callback_manager=callback_manager),
         ]
 
         # Create the LLM

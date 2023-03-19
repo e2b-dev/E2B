@@ -82,6 +82,7 @@ function Editor({ project }: Props) {
 
   const deployment = useLatestDeployment(project, selectedRoute)
   const logs = deployment?.logs as Log[] | undefined
+  const logsRaw = deployment?.logs_raw as string | undefined
 
   useEffect(function resetInitializing() {
     if (!deployment) return
@@ -224,6 +225,7 @@ function Editor({ project }: Props) {
               deployStatus={deployment?.state}
               isInitializingDeploy={isInitializingDeploy}
               logs={logs}
+              logsRaw={logsRaw}
               deploy={deploy}
               deployedURL={deployment?.url}
             />

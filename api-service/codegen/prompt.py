@@ -35,9 +35,9 @@ $INPUT
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final server code and can show it.
-Final Answer: the final server code"""
+Final Answer: the final answer"""
 
-SUFFIX = """Begin! Reminder to NEVER use tools you don't have access. Reminder to ALWAYS use the exact the action `Final Answer` when you know the final server code."""
+SUFFIX = """Begin! Reminder to NEVER use tools you don't have access. Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer."""
 
 HUMAN_INSTRUCTIONS_PREFIX = [
     {
@@ -76,7 +76,6 @@ HUMAN_INSTRUCTIONS_SUFFIX = [
     "Generate the full required server code and make sure it starts without any errors.",
     "Test that the generated server from the previous step behaves as is required by making mock `curl` requests to the server.",
     "Once all works without any bugs and errors, write the code to the file.",
-    "Deploy the code.",
-    """Thought: Here is the plan of what I will do based on the instructions I got:
-1.""",
+    # "Deploy the code.",
+    "Thought: Here is the plan of what I will do based on the instructions I got:\n1.",
 ]
