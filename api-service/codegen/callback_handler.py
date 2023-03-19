@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Any, List, Union, Optional
 
 # import sys
@@ -24,13 +25,11 @@ from database import Database
 
 
 class CustomCallbackHandler(BaseCallbackHandler):
-    _file = open(
-        "/Users/vasekmlejnsky/Developer/ai-api/api-service/codegen/out.txt", "a"
-    )
     _logs: List[Dict[str, str]] = []
     _current_action_id: Optional[str] = None
     _database: Database = PrivateAttr()
     _run_id: str = PrivateAttr()
+    _file = open("out.txt", "w+")
 
     def __init__(self, database: Database, run_id: str, **kwargs: Any):
         super().__init__(**kwargs)
