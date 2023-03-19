@@ -3,7 +3,6 @@ import { ReactNode } from 'react'
 
 import Button from 'components/Button'
 import Spinner from 'components/Spinner'
-import { Check } from 'lucide-react'
 
 export interface Props {
   deploy: () => void
