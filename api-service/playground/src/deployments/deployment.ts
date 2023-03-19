@@ -29,6 +29,7 @@ if (!credentials.accessKeyId || !credentials.secretAccessKey) {
 }
 
 const region = 'us-east-1'
+const architecture = 'arm64'
 
 // TODO: Devbook Acc env var for aws initialization
 // TODO: lambda.destroy() on quit?
@@ -120,6 +121,7 @@ export async function createDeploymentInSession(
           Environment: {
             Variables: envVars,
           },
+          Architectures: [architecture],
         })
       )
     await waitForUpdate(projectID)
@@ -172,6 +174,7 @@ export async function createDeploymentInSession(
     new UpdateFunctionCodeCommand({
       FunctionName: projectID,
       ZipFile: zip,
+      Architectures: [architecture],
     })
   )
   await waitForUpdate(projectID)
