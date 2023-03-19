@@ -67,6 +67,7 @@ def generate():
         )
 
         # Generate the code
+        print("Generating...", flush=True)
         cg.generate(
             run_id=run_id,
             route=route,

@@ -259,6 +259,7 @@ model deployments {
   route_id   String
   state      deployment_state?
   url        String?
+  logs_raw   String?           @default("")
   projects   projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")

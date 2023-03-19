@@ -64,9 +64,7 @@ class CodegenAgent(ChatAgent):
             # follow the format.
             return (
                 MALFORMED_ANSWER,
-                """I just tried to parse your last reponse and received this error:
-            {e}
-            Reminder, that you should follow the format I told you!""",
+                f"Wrong format! Follow the format! Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer. I just tried to parse your last reponse and received this error:\n{e}Reminder, that you should follow the format I told you!",
             )
             # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
             print(f"====== Got exception '{str(e)}'\n text:\n{text}")

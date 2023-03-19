@@ -3,8 +3,8 @@ import {
   // useState,
   useCallback,
 } from 'react'
-import ReactMarkdown from 'react-markdown'
 import hljs from 'highlight.js'
+import ReactMarkdown from 'react-markdown'
 import { deployment_state } from '@prisma/client'
 
 import { Log } from 'db/types'
@@ -17,6 +17,7 @@ import DeployButton from './DeployButton'
 
 export interface Props {
   logs?: Log[]
+  logsRaw?: string
   deploy: () => void
   deployedURL?: string | null
   deployStatus?: deployment_state | null
@@ -25,6 +26,7 @@ export interface Props {
 
 function Logs({
   logs,
+  logsRaw,
   deploy,
   deployedURL,
   deployStatus,
@@ -218,11 +220,16 @@ function Logs({
             space-y-4
             p-4
         ">
-          {logs?.map((l, i) =>
+          {logsRaw &&
+            <ReactMarkdown>
+              {logsRaw}
+            </ReactMarkdown>
+          }
+          {/* {logs?.map((l, i) =>
             <ReactMarkdown key={i}>
               {l}
             </ReactMarkdown>
-          )}
+          )} */}
         </div>
       </div>
     </Sidebar>
