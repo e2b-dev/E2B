@@ -15,6 +15,8 @@ class Playground(Session):
     port_check_interval = 1  # 1s
     max_port_checks = 10
 
+    rootdir = "/"
+
     run_command_timeout_frequency = 2  # in Hz
 
     mock_data_filename = "index.ts"
@@ -37,7 +39,7 @@ class Playground(Session):
     def run_command(
         self,
         cmd: str,
-        rootdir="/",
+        rootdir=rootdir,
         timeout: float | None = None,
     ):
         response = self.api.start_process(
@@ -75,7 +77,7 @@ class Playground(Session):
     def start_process(
         self,
         cmd: str,
-        rootdir="/",
+        rootdir=rootdir,
     ):
         """Start process and return the process ID."""
         return self.api.start_process(
@@ -129,7 +131,7 @@ class Playground(Session):
         server_cmd: str,
         request_cmd: str,
         port: float,
-        rootdir="/",
+        rootdir=rootdir,
     ):
         server_process_id = self.start_process(
             cmd=server_cmd,
