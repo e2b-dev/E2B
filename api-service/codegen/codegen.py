@@ -7,13 +7,12 @@ from typing import (
     Optional,
 )
 import subprocess
+from time import sleep
 
 from pydantic import BaseModel
-from langchain.llms.openai import OpenAIChat, OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.agents import AgentExecutor
 from langchain.tools import BaseTool
 
 # from codegen.tools.documentation import ReadDocumentation
@@ -33,17 +32,36 @@ from codegen.prompt import (
     HUMAN_INSTRUCTIONS_PREFIX,
     HUMAN_INSTRUCTIONS_SUFFIX,
 )
+from .callback_handler import CustomCallbackHandler
 
 
-class OutputFinalCode(BaseTool):
-    name = "OutputFinalCode"
-    description = "This is the last tool you would use. You use it when you know the final server code and you want to output it. The input should be the final server code that does what the user required."
+class AskHuman(BaseTool):
+    name = "AskHuman"
+    description = "You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human."
 
-    def _run(self, final_code: str) -> str:
-        return final_code
+    def _run(self, question: str) -> str:
+        print(question)
+        sleep(60)
+        with open(
+            "/Users/vasekmlejnsky/Developer/ai-api/api-service/codegen/human_input.txt"
+        ) as f:
+            human_input = f.read()
+        print("human_input:", human_input)
+        return human_input
 
-    async def _arun(self, final_code: str) -> str:
-        return NotImplementedError("OutputFinalCode does not support async")
+    async def _arun(self, question: str) -> str:
+        return NotImplementedError("AskHuman does not support async")
+
+
+# class OutputFinalCode(BaseTool):
+#     name = "OutputFinalCode"
+#     description = "This is the last tool you would use. You use it when you know the final server code and you want to output it. The input should be the final server code that does what the user required."
+
+#     def _run(self, final_code: str) -> str:
+#         return final_code
+
+#     async def _arun(self, final_code: str) -> str:
+#         return NotImplementedError("OutputFinalCode does not support async")
 
 
 class WriteCodeToFile(BaseTool):
@@ -106,6 +124,9 @@ class DeployCode(BaseTool):
 # 6. Once all works without any bugs and errors, write the code to the file.
 # 7. Deploy the code.
 # """
+cm = CallbackManager([StreamingStdOutCallbackHandler(), CustomCallbackHandler()])
+
+
 class Codegen(BaseModel):
     agent: Optional[CodegenAgent]
     agent_executor: Optional[CodegenAgentExecutor]
@@ -114,12 +135,14 @@ class Codegen(BaseModel):
         temperature=0,
         max_tokens=2056,
         verbose=True,
-        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        callback_manager=cm,
+        # callback_manager=CallbackManager([CustomCallbackHandler()]),
     )
     input_variables = ["input", "agent_scratchpad", "method"]
     tools = [
         # InvalidTool(),
         # OutputFinalCode(),
+        AskHuman(),
         WriteCodeToFile(),
         DeployCode(),
     ]

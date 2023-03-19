@@ -1,5 +1,4 @@
 from typing import Optional, Tuple, List, Dict, Union
-import json
 import xml.etree.ElementTree as ET
 
 from langchain.agents.tools import InvalidTool
@@ -9,7 +8,8 @@ from langchain.schema import AgentAction, AgentFinish
 from langchain.tools.base import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
-
+ACTIONS_QUEUE = "action_queue"
+MALFORMED_ANSWER = "malformed_answer"
 
 # class ActionRouter(BaseTool):
 #     name = "action_router"
@@ -17,51 +17,57 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 
 
 class CodegenAgent(ChatAgent):
-    def _construct_scratchpad(
-        self, intermediate_steps: List[Tuple[AgentAction, str]]
-    ) -> str:
-        # print("CONSTRUCTING SCRATCHPAD before:")
-        # print(len(intermediate_steps))
+    # def _construct_scratchpad(
+    #     self, intermediate_steps: List[Tuple[AgentAction, str]]
+    # ) -> str:
+    #     # print("CONSTRUCTING SCRATCHPAD before:")
+    #     # print(len(intermediate_steps))
 
-        # Leave only the latest element in the `intermediate_steps` list
-        # if len(intermediate_steps) > 4:
-        #     intermediate_steps = intermediate_steps[len(intermediate_steps) - 2 :]
-        #     print(intermediate_steps)
+    #     # Leave only the latest element in the `intermediate_steps` list
+    #     # if len(intermediate_steps) > 4:
+    #     #     intermediate_steps = intermediate_steps[len(intermediate_steps) - 2 :]
+    #     #     print(intermediate_steps)
 
-        # print("CONSTRUCTING SCRATCHPAD after:")
-        # print(len(intermediate_steps))
+    #     # print("CONSTRUCTING SCRATCHPAD after:")
+    #     # print(len(intermediate_steps))
 
-        agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
-        # print("=======================SCRATCHPAD:", agent_scratchpad)
-        # print("=======================")
-        if not isinstance(agent_scratchpad, str):
-            raise ValueError("agent_scratchpad should be of type string.")
-        if agent_scratchpad:
-            return (
-                f"This was your previous work "
-                f"(but I haven't seen any of it! I only see what "
-                f"you return as final answer):\n{agent_scratchpad}"
-            )
-        else:
-            return agent_scratchpad
+    #     agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
+    #     # print("=======================SCRATCHPAD:", agent_scratchpad)
+    #     # print("=======================")
+    #     if not isinstance(agent_scratchpad, str):
+    #         raise ValueError("agent_scratchpad should be of type string.")
+    #     if agent_scratchpad:
+    #         return (
+    #             f"This was your previous work "
+    #             f"(but I haven't seen any of it! I only see what "
+    #             f"you return as final answer):\n{agent_scratchpad}"
+    #         )
+    #     else:
+    #         return agent_scratchpad
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         try:
-            # TODO: Here we can change the JSON formated `action` + `action_input` to something
-            # more suited to our use-case so the model doesn't need to escape the generated code.
             _, action, _ = text.split("```")
             root = ET.fromstring(f"<root>{action.strip()}</root>")
             actions = root.findall("action")
+
+            # We handle the case when the LLM starts specifying multiple actions in a single response.
             if len(actions) > 1:
-                return "action_router", action.strip()
+                return ACTIONS_QUEUE, action.strip()
             else:
                 return actions[0].attrib["tool"], actions[0].text
-
-            # response = json.loads(action.strip())
-            # return response["action"], response["action_input"]
         except Exception as e:
+            # Sometimes the agent just completely messed up the output format.
+            # We want to remind it that the last answer was wrong and it should
+            # follow the format.
+            return (
+                MALFORMED_ANSWER,
+                """I just tried to parse your last reponse and received this error:
+            {e}
+            Reminder, that you should follow the format I told you!""",
+            )
             # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
             print(f"====== Got exception '{str(e)}'\n text:\n{text}")
             # input = response["action_input"]
@@ -122,6 +128,8 @@ class CodegenAgentExecutor(AgentExecutor):
         if isinstance(output, AgentFinish):
             return output
         # Sometimes the LLM decides to pass the value of `FINAL_ANSWER_ACTION` as a tool name.
+        # Instead of trying to "force" the LLM to don't do that, we can just write a bit of
+        # code and handle this case.
         elif output.tool == FINAL_ANSWER_ACTION:
             return AgentFinish({"output": action.tool_input}, action.log)
 
@@ -129,8 +137,16 @@ class CodegenAgentExecutor(AgentExecutor):
             output, verbose=self.verbose, color="green"
         )
 
-        #
-        if output.tool == "action_router":
+        # Sometimes the agent just completely messed up the output format.
+        # We want to remind it that the last answer was wrong and it should
+        # follow the format.
+        if output.tool == MALFORMED_ANSWER:
+            return output, output.tool_input
+
+        # The `ACTIONS_QUEUE` isn't really a name of a tool.
+        # It's a way for us to specify that the LLM passed multiple actions in a single response.
+        # We handle this case by running each action one by one.
+        if output.tool == ACTIONS_QUEUE:
             observation = ""
             # The `output.tool_input` is a XML tree with multiple actions
             # Go through each action and run it.
