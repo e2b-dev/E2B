@@ -6,8 +6,10 @@ import {
   CreateFunctionUrlConfigCommand,
   waitUntilFunctionUpdatedV2,
   AddPermissionCommand,
+  GetFunctionCommand,
+  GetFunctionUrlConfigCommand,
 } from '@aws-sdk/client-lambda'
-import { APIGatewayClient } from '@aws-sdk/client-api-gateway'
+// import { APIGatewayClient } from '@aws-sdk/client-api-gateway'
 import { EnvVars, Session } from '@devbookhq/sdk'
 
 import { packageFunction } from './packaging'
@@ -31,10 +33,10 @@ const lambda = new LambdaClient({
 })
 
 // TODO: gateway.destroy() on quit?
-const gateway = new APIGatewayClient({
-  region,
-  credentials,
-})
+// const gateway = new APIGatewayClient({
+//   region,
+//   credentials,
+// })
 
 const deploymentParams = {
   Runtime: 'nodejs16.x',
@@ -56,15 +58,51 @@ async function waitForUpdate(projectID: string) {
   )
 }
 
+async function getIsFunctionDeployed(projectID: string) {
+  try {
+    await lambda.send(
+      new GetFunctionCommand(
+        { FunctionName: projectID }
+      )
+    )
+    return true
+  } catch (err: any) {
+    if (err.name === 'ResourceNotFoundException') {
+      return false
+    }
+    throw err
+  }
+}
+
+async function getFunctionURL(projectID: string) {
+  try {
+    const func = await lambda.send(
+      new GetFunctionUrlConfigCommand(
+        { FunctionName: projectID }
+      )
+    )
+    return func.FunctionUrl
+  } catch (err: any) {
+    if (err.name === 'ResourceNotFoundException') {
+      return undefined
+    }
+    throw err
+  }
+}
+
 export async function createDeploymentInSession(
   session: Session,
   projectID: string,
-  code: string,
-  envVars: EnvVars
+  envVars?: EnvVars
 ) {
-  const zip = await packageFunction(session, code)
+  // Start packaging function in session
+  const zipping = packageFunction(session)
+  const gettingURL = getFunctionURL(projectID)
+  const isFunctionDeployed = await getIsFunctionDeployed(projectID)
 
-  try {
+  // Deploy function
+  if (!isFunctionDeployed) {
+    const zip = await zipping
     await lambda
       .send(
         new CreateFunctionCommand({
@@ -104,44 +142,9 @@ export async function createDeploymentInSession(
 
     // TODO: Configure the Gateway to handle custom domain wildcards
     return urlResult.FunctionUrl
-  } catch (err: any) {
-    if (err.name === 'ResourceConflictException') {
-      await lambda.send(
-        new UpdateFunctionConfigurationCommand({
-          ...deploymentParams,
-          FunctionName: projectID,
-          Environment: {
-            Variables: envVars,
-          },
-        })
-      )
-      await waitForUpdate(projectID)
-
-      await lambda.send(
-        new UpdateFunctionCodeCommand({
-          FunctionName: projectID,
-          ZipFile: zip,
-        })
-      )
-      await waitForUpdate(projectID)
-
-      return
-    } else {
-      throw err
-    }
   }
-}
 
-export async function updateDeploymentInSession(
-  session: Session,
-  projectID: string,
-  code?: string,
-  envVars?: EnvVars
-) {
-  const zipPromise = code
-    ? packageFunction(session, code)
-    : Promise.resolve(undefined)
-
+  // Update function
   if (envVars) {
     await lambda.send(
       new UpdateFunctionConfigurationCommand({
@@ -155,15 +158,15 @@ export async function updateDeploymentInSession(
     await waitForUpdate(projectID)
   }
 
-  const zip = await zipPromise
+  const zip = await zipping
 
-  if (zip) {
-    await lambda.send(
-      new UpdateFunctionCodeCommand({
-        FunctionName: projectID,
-        ZipFile: zip,
-      })
-    )
-    await waitForUpdate(projectID)
-  }
+  await lambda.send(
+    new UpdateFunctionCodeCommand({
+      FunctionName: projectID,
+      ZipFile: zip,
+    })
+  )
+  await waitForUpdate(projectID)
+
+  return await gettingURL
 }

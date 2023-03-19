@@ -4,7 +4,7 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**url** | **str** |  | [optional] 
+**url** | **str** | If the function is deployed for the first time the url will be defined. | [optional] 
 
 ## Example
 

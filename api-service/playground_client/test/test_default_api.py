@@ -100,12 +100,6 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
-    def test_update_deployment(self):
-        """Test case for update_deployment
-
-        """
-        pass
-
     def test_write_filesystem_file(self):
         """Test case for write_filesystem_file
 

@@ -1,4 +1,5 @@
 import {
+  FilesystemManager,
   OutStderrResponse,
   Session,
   createSessionProcess
@@ -7,13 +8,45 @@ import path from 'path'
 
 
 const rootdir = '/code'
+const bundleDir = '/bundles'
 
-const functionsDir = 'funcs'
-const bundleDir = 'bundles'
+const mjsRootPath = path.join(rootdir, 'index.mjs')
+const jsRootPath = path.join(rootdir, 'index.js')
+const bundlePath = path.join(bundleDir, 'index.zip')
+const dumpPath = path.join(bundleDir, 'base')
 
-const rootfilePath = path.join(rootdir, functionsDir, 'index.mjs')
-const bundlePath = path.join(rootdir, bundleDir, 'index.zip')
-const dumpPath = path.join(rootdir, bundleDir, 'base')
+const possibleRootfiles = [
+  jsRootPath,
+  mjsRootPath,
+]
+
+async function getRootFile(filesystem: FilesystemManager) {
+  const rootResults = await Promise.allSettled(possibleRootfiles.map(async r => ({
+    path: r,
+    content: await filesystem.read(r),
+  })))
+
+  for (const root of rootResults) {
+    if (root.status === 'fulfilled') {
+      return root.value
+    }
+  }
+}
+
+function addAWSLambdaHandlers(code: string) {
+  const isECMA = !code.includes('require')
+
+  if (isECMA) {
+    code = 'import serverless from "serverless-http;"\n' + code
+    code = code + "\nexport const handler = serverless(app);"
+  } else {
+    code = "const serverless = require('serverless-http');\n" + code
+    code = code + "\nexports.handler = serverless(app);"
+  }
+
+  return code.replace("app.listen(", "; ({})?.listen?.(")
+}
+
 
 /**
  * 
@@ -22,17 +55,24 @@ const dumpPath = path.join(rootdir, bundleDir, 'base')
  * TODO: Implement binary file reading in devbookd so we don't have to send data via base64 (cca 25% overhead) and process stdout.
  * 
  */
-export async function packageFunction(session: Session, code: string) {
+export async function packageFunction(session: Session) {
   if (!session.filesystem || !session.process) {
     throw new Error('Session is not active')
   }
   const stderr: OutStderrResponse[] = []
 
-  await session.filesystem?.write(rootfilePath, code)
+  const rootFile = await getRootFile(session.filesystem)
+  if (!rootFile) {
+    throw new Error(`Cannot find rootfile matching ${possibleRootfiles.join(', ')}`)
+  }
+
+  const rootFileWithLambdaHandlers = addAWSLambdaHandlers(rootFile.content)
+
+  await session.filesystem.write(rootFile.path, rootFileWithLambdaHandlers)
   // Bundle the code and dependencies via https://github.com/netlify/zip-it-and-ship-it and dump the base64 string representationto a separate file.
   const bundling = await createSessionProcess({
     manager: session.process,
-    cmd: `zip-it-and-ship-it ${functionsDir} ${bundleDir} && base64 -w 0 ${bundlePath} > ${dumpPath}`,
+    cmd: `zip-it-and-ship-it ${rootdir} ${bundleDir} && base64 -w 0 ${bundlePath} > ${dumpPath}`,
     rootdir,
     onStderr: o => stderr.push(o),
   })

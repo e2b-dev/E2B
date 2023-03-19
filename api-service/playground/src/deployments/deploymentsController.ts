@@ -9,17 +9,15 @@ import {
 } from 'tsoa'
 import { EnvVars } from '@devbookhq/sdk'
 
-import {
-  createDeploymentInSession,
-  updateDeploymentInSession,
-} from './deployment'
+import { createDeploymentInSession } from './deployment'
 import { CachedSession } from '../sessions/session'
 
-
 interface DeploymentResponse {
+  /**
+   * If the function is deployed for the first time the url will be defined.
+   */
   url?: string
 }
-
 
 @Route('deployments')
 export class DeploymentsController extends Controller {
@@ -27,49 +25,23 @@ export class DeploymentsController extends Controller {
    * 
    * @param projectID 
    * @param sessionID active session to use for deployment
-   * @param code 
    * @param envVars 
   */
   @Put('{projectID}')
   public async createDeployment(
     @Path() projectID: string,
     @Query() sessionID: string,
-    @BodyProp() code: string,
-    @BodyProp() envVars: EnvVars = {},
+    @BodyProp() envVars?: EnvVars,
   ): Promise<DeploymentResponse> {
     const cachedSession = CachedSession.findSession(sessionID)
     const url = await createDeploymentInSession(
       cachedSession.session,
       projectID,
-      code,
       envVars,
     )
 
     return {
       url,
     }
-  }
-
-  /**
-   * 
-   * @param projectID 
-   * @param sessionID active session to use for deployment
-   * @param code 
-   * @param envVars 
-   */
-  @Patch('{projectID}')
-  public async updateDeployment(
-    @Path() projectID: string,
-    @Query() sessionID: string,
-    @BodyProp() envVars?: EnvVars,
-    @BodyProp() code?: string,
-  ): Promise<void> {
-    const cachedSession = CachedSession.findSession(sessionID)
-    await updateDeploymentInSession(
-      cachedSession.session,
-      projectID,
-      code,
-      envVars,
-    )
   }
 }

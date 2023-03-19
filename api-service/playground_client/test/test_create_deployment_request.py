@@ -38,14 +38,12 @@ class TestCreateDeploymentRequest(unittest.TestCase):
         model = playground_client.models.create_deployment_request.CreateDeploymentRequest()  # noqa: E501
         if include_optional :
             return CreateDeploymentRequest(
-                code = '', 
                 env_vars = {
                     'key' : ''
                     }
             )
         else :
             return CreateDeploymentRequest(
-                code = '',
         )
         """
 

@@ -4,7 +4,6 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**code** | **str** |  | 
 **env_vars** | **Dict[str, str]** |  | [optional] 
 
 ## Example

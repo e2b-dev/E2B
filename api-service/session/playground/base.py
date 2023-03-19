@@ -2,16 +2,14 @@ import time
 import math
 
 from session.session import Session
-from session.api import API
-
-import playground_client
 from playground_client.models.create_mock_body_data_request import (
     CreateMockBodyDataRequest,
 )
+import playground_client
 from playground_client.models.file import File
 
 
-class Playground(API):
+class Playground(Session):
     port_check_interval = 1  # 1s
     max_port_checks = 10
 
@@ -20,18 +18,11 @@ class Playground(API):
     mock_data_filename = "index.ts"
 
     def __init__(self, env_id: str):
-        super().__init__()
-        self.session = Session(env_id)
+        super().__init__(env_id)
         self.is_closed = False
 
-    def __del__(self):
-        super().__del__()
-
-    def close(self):
-        self.session.close()
-
     def get_open_ports(self):
-        response = self.api.get_session(self.session.id)
+        response = self.api.get_session(self.id)
         return response.ports
 
     def is_port_open(self, port: float):
@@ -49,7 +40,7 @@ class Playground(API):
         timeout: float | None = None,
     ):
         response = self.api.start_process(
-            self.session.id,
+            self.id,
             playground_client.StartProcessParams(
                 cmd=cmd,
                 envVars=env_vars,
@@ -64,7 +55,7 @@ class Playground(API):
         # Multiply the timeout by the frequency so when we sleep for the 1/frequency the total time sleeping will be the timeout.
         for _ in range(math.ceil(timeout * self.run_command_timeout_frequency)):
             response = self.api.get_process(
-                self.session.id,
+                self.id,
                 process_id=response.process_id,
             )
             if response.finished:
@@ -73,7 +64,7 @@ class Playground(API):
 
         if not response.finished:
             self.api.stop_process(
-                self.session.id,
+                self.id,
                 process_id=response.process_id,
                 results=False,
             )
@@ -88,7 +79,7 @@ class Playground(API):
     ):
         """Start process and return the process ID."""
         return self.api.start_process(
-            self.session.id,
+            self.id,
             playground_client.StartProcessParams(
                 cmd=cmd,
                 envVars=env_vars,
@@ -98,19 +89,19 @@ class Playground(API):
 
     def stop_process(self, process_id: str):
         return self.api.stop_process(
-            self.session.id,
+            self.id,
             process_id=process_id,
             results=True,
         )
 
     def read_file(self, path: str):
-        return self.api.read_filesystem_file(self.session.id, path).content
+        return self.api.read_filesystem_file(self.id, path).content
 
     def list_dir(self, path: str):
-        return self.api.list_filesystem_dir(self.session.id, path).entries
+        return self.api.list_filesystem_dir(self.id, path).entries
 
     def delete_file(self, path: str):
-        self.api.delete_filesystem_entry(self.session.id, path)
+        self.api.delete_filesystem_entry(self.id, path)
 
     def mock_body_data(self, code: str, interface: str):
         return self.api.create_mock_body_data(
@@ -121,17 +112,17 @@ class Playground(API):
         ).body_data
 
     def delete_dir(self, path: str):
-        self.api.delete_filesystem_entry(self.session.id, path)
+        self.api.delete_filesystem_entry(self.id, path)
 
     def write_file(self, path: str, content: str):
         self.api.write_filesystem_file(
-            self.session.id,
+            self.id,
             path,
             playground_client.WriteFilesystemFileRequest(content=content),
         )
 
     def make_dir(self, path: str):
-        self.api.make_filesystem_dir(self.session.id, path)
+        self.api.make_filesystem_dir(self.id, path)
 
     def run_server_with_request(
         self,

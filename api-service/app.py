@@ -4,7 +4,7 @@ from session.deploy import Deployment
 
 from session.env import EnvVar
 
-from typing import Dict, List
+from typing import List
 from flask import Flask, abort, request
 from flask_cors import CORS
 
@@ -21,19 +21,14 @@ app = Flask(__name__)
 CORS(app)
 
 
-def dump(obj):
-    for attr in dir(obj):
-        print("obj.%s = %r" % (attr, getattr(obj, attr)))
-
-
-def replace_file_content(fp_in: str, fp_out: str, pairs: Dict[str, str]) -> None:
-    with open(fp_in, "rt") as fin:
-        with open(fp_out, "wt") as fout:
-            for line in fin:
-                for old, new in pairs.items():
-                    if old in line:
-                        line = line.replace(old, new)
-                fout.write(line)
+def get_request_body_template(blocks: List[dict[str, str]]):
+    request_body_blocks = [
+        block for block in blocks if block.get("type") == "RequestBody"
+    ]
+    request_body_template = (
+        request_body_blocks[0]["prompt"] if len(request_body_blocks) > 0 else None
+    )
+    return request_body_template
 
 
 @app.route("/health", methods=["GET"])
@@ -57,14 +52,7 @@ def generate():
     envs: List[EnvVar] = body["envs"]
     url: str | None = body["url"]
 
-    code = ""
-
-    request_body_blocks = [
-        block for block in blocks if block.get("type") == "RequestBody"
-    ]
-    request_body_template = (
-        request_body_blocks[0]["prompt"] if len(request_body_blocks) > 0 else None
-    )
+    request_body_template = get_request_body_template(blocks)
 
     db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     try:
@@ -87,18 +75,19 @@ def generate():
         deployment = Deployment(playground.session, project_id)
 
         if url is None:
-            url = deployment.new(code=code, envs=envs)
+            url = deployment.new(envs=envs)
         else:
-            deployment.update(code=code, envs=envs)
+            deployment.update(envs=envs)
 
         db.finish_deployment(run_id=run_id, url=url)
 
         return {
-            "code": code,
+            "code": "",
             "prompt": "",
             "url": url,
         }
     except:
+        db.update_state(run_id=run_id, state=DeploymentState.Error)
         raise
 
 

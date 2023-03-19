@@ -37,7 +37,8 @@
 			"DeploymentResponse": {
 				"properties": {
 					"url": {
-						"type": "string"
+						"type": "string",
+						"description": "If the function is deployed for the first time the url will be defined."
 					}
 				},
 				"type": "object",
@@ -340,60 +341,8 @@
 						"application/json": {
 							"schema": {
 								"properties": {
-									"code": {
-										"type": "string"
-									},
 									"envVars": {
 										"$ref": "#/components/schemas/EnvVars"
-									}
-								},
-								"required": [
-									"code"
-								],
-								"type": "object"
-							}
-						}
-					}
-				}
-			},
-			"patch": {
-				"operationId": "UpdateDeployment",
-				"responses": {
-					"204": {
-						"description": "No content"
-					}
-				},
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "projectID",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"description": "active session to use for deployment",
-						"in": "query",
-						"name": "sessionID",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"envVars": {
-										"$ref": "#/components/schemas/EnvVars"
-									},
-									"code": {
-										"type": "string"
 									}
 								},
 								"type": "object"
