@@ -1,8 +1,8 @@
 import time
 import math
 from typing import List
-from session.env import EnvVar, format_env_vars
 
+from session.env import EnvVar, format_env_vars
 from session.session import Session
 from playground_client.models.create_mock_body_data_request import (
     CreateMockBodyDataRequest,
@@ -29,7 +29,7 @@ class Playground(Session):
         response = self.api.get_session(self.id)
         return response.ports
 
-    def is_port_open(self, port: float):
+    def is_port_open(self, port: float) -> bool:
         open_ports = self.get_open_ports()
         return any(
             open_port.port == port and open_port.state == "LISTEN"
