@@ -74,7 +74,7 @@ export async function packageFunction(session: Session) {
   // Bundle the code and dependencies via https://github.com/netlify/zip-it-and-ship-it and dump the base64 string representationto a separate file.
   const bundling = await createSessionProcess({
     manager: session.process,
-    cmd: `esbuild ${rootFile.path} --bundle --target=node18 --platform=node --minify --outfile=${outfilePath} && zip ${zipName} ${outfileName} && base64 -w 0 ${zipName} > ${dumpPath}`,
+    cmd: `esbuild ${rootFile.path} --bundle --target=node18 --legal-comments=none --platform=node --minify --outfile=${outfilePath} && zip ${zipName} ${outfileName} && base64 -w 0 ${zipName} > ${dumpPath}`,
     rootdir: bundleDir,
     onStderr: o => out.push(o),
     onStdout: o => out.push(o),
