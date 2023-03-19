@@ -3,7 +3,7 @@ import os
 
 from typing import List
 
-from session.env import EnvVar, format_env_vars
+from session.env import EnvVar
 from session.playground import Playground
 
 
@@ -23,7 +23,6 @@ class NodeJSPlayground(Playground):
         result = self.run_command(
             f"node {self.default_javascript_code_file}",
             rootdir=self.rootdir,
-            env_vars=self.env_vars,
             timeout=self.run_code_timeout,
         )
         pprint.pprint(f"Result: {result}")
@@ -48,7 +47,6 @@ class NodeJSPlayground(Playground):
             request_cmd=request_cmd,
             port=port,
             rootdir=self.rootdir,
-            env_vars=self.env_vars,
         )
         pprint.pprint(f"Result: {result}")
         return result

@@ -49,10 +49,9 @@ def generate():
     route = body["route"]
     envs: List[EnvVar] = body["envs"]
 
-    request_body_template = get_request_body_template(blocks)
-
     db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     try:
+        request_body_template = get_request_body_template(blocks)
         playground_tools, playground = create_playground_tools(
             envs=envs,
             route=route,

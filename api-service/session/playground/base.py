@@ -37,7 +37,6 @@ class Playground(Session):
     def run_command(
         self,
         cmd: str,
-        env_vars={},
         rootdir="/",
         timeout: float | None = None,
     ):
@@ -45,7 +44,7 @@ class Playground(Session):
             self.id,
             playground_client.StartProcessParams(
                 cmd=cmd,
-                envVars=env_vars,
+                envVars=self.env_vars,
                 rootdir=rootdir,
             ),
             wait=True if timeout is None else False,
@@ -77,14 +76,13 @@ class Playground(Session):
         self,
         cmd: str,
         rootdir="/",
-        env_vars={},
     ):
         """Start process and return the process ID."""
         return self.api.start_process(
             self.id,
             playground_client.StartProcessParams(
                 cmd=cmd,
-                envVars=env_vars,
+                envVars=self.env_vars,
                 rootdir=rootdir,
             ),
         ).process_id
@@ -132,12 +130,10 @@ class Playground(Session):
         request_cmd: str,
         port: float,
         rootdir="/",
-        env_vars={},
     ):
         server_process_id = self.start_process(
             cmd=server_cmd,
             rootdir=rootdir,
-            env_vars=env_vars,
         )
 
         for _ in range(self.max_port_checks):
