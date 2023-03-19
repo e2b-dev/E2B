@@ -5,11 +5,12 @@ from typing import (
     Any,
     Dict,
     Optional,
+    ClassVar,
 )
 import subprocess
 from time import sleep
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -23,6 +24,7 @@ from langchain.tools import BaseTool
 # from database import Database
 
 # from codegen.tools.playground import create_playground_tools
+from database import Database
 from codegen.env import EnvVar
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
 from codegen.prompt import (
@@ -69,7 +71,6 @@ class WriteCodeToFile(BaseTool):
     description = """Writes code to the index.js file. The input should be the code to be written."""
 
     def _run(self, code: str) -> str:
-        print(f"Writing code to file: \n{code}")
         with open(
             "/Users/vasekmlejnsky/Developer/nodejs-express-server/index.js", "w"
         ) as f:
@@ -90,7 +91,6 @@ class DeployCode(BaseTool):
     description = """Deploys the code."""
 
     def _run(self, empty: str) -> str:
-        print("Deploying...")
         p = subprocess.Popen(
             ["git", "add", "."],
             cwd="/Users/vasekmlejnsky/Developer/nodejs-express-server",
@@ -124,65 +124,107 @@ class DeployCode(BaseTool):
 # 6. Once all works without any bugs and errors, write the code to the file.
 # 7. Deploy the code.
 # """
-cm = CallbackManager([StreamingStdOutCallbackHandler(), CustomCallbackHandler()])
 
 
 class Codegen(BaseModel):
-    agent: Optional[CodegenAgent]
-    agent_executor: Optional[CodegenAgentExecutor]
-    llm = ChatOpenAI(
-        streaming=True,
-        temperature=0,
-        max_tokens=2056,
-        verbose=True,
-        callback_manager=cm,
-        # callback_manager=CallbackManager([CustomCallbackHandler()]),
-    )
-    input_variables = ["input", "agent_scratchpad", "method"]
-    tools = [
-        # InvalidTool(),
-        # OutputFinalCode(),
-        AskHuman(),
-        WriteCodeToFile(),
-        DeployCode(),
-    ]
+    input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad", "method"]
+    _agent: CodegenAgent = PrivateAttr()
+    _agent_executor: CodegenAgentExecutor = PrivateAttr()
+    _tools: List[BaseTool] = PrivateAttr()
+    _llm: ChatOpenAI = PrivateAttr()
+    _database: Database = PrivateAttr()
+    _callback_manager: CallbackManager = PrivateAttr()
+
+    def __init__(
+        self,
+        database: Database,
+        callback_manager: CallbackManager,
+        tools: List[BaseTool],
+        llm: ChatOpenAI,
+        agent: CodegenAgent,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._database = database
+        self._callback_manager = callback_manager
+        self._tools = tools
+        self._llm = llm
+        self._agent = agent
+
+        self._agent_executor = CodegenAgentExecutor.from_agent_and_tools(
+            agent=self._agent,
+            tools=self._tools,
+            verbose=True,
+            callback_manager=self._callback_manager,
+        )
 
     @classmethod
-    def from_playground_tools(cls, playground_tools: Tuple[List[Any]]):
-        c = cls()
+    def from_playground_and_database(
+        cls,
+        playground_tools: List[BaseTool],
+        database: Database,
+    ):
+        callback_manager = CallbackManager(
+            [
+                # StreamingStdOutCallbackHandler(),
+                # CustomCallbackHandler(database=database),
+            ]
+        )
 
-        # Create CodegenAgent and its executor
-        c.agent = CodegenAgent.from_llm_and_tools(
-            llm=c.llm,
-            tools=[
-                *playground_tools,
-                *c.tools,
-            ],
+        # Assign custom callback manager to all playground tools
+        for tool in playground_tools:
+            tool.callback_manager = callback_manager
+
+        # Prepare tools for Codegen
+        tools = [
+            # InvalidTool(),
+            # OutputFinalCode(),
+            *playground_tools,
+            AskHuman(callback_manager=callback_manager),
+            WriteCodeToFile(callback_manager=callback_manager),
+            DeployCode(callback_manager=callback_manager),
+        ]
+
+        # Create the LLM
+        llm = ChatOpenAI(
+            streaming=True,
+            temperature=0,
+            max_tokens=2056,
+            verbose=True,
+            callback_manager=callback_manager,
+        )
+
+        # Create CodegenAgent
+        agent = CodegenAgent.from_llm_and_tools(
+            llm=llm,
+            tools=tools,
             prefix=PREFIX,
             suffix=SUFFIX,
             format_instructions=FORMAT_INSTRUCTIONS,
-            input_variables=c.input_variables,
-            callback_manager=cm,
-        )
-        c.agent_executor = CodegenAgentExecutor.from_agent_and_tools(
-            agent=c.agent,
-            tools=[
-                *playground_tools,
-                *c.tools,
-            ],
-            verbose=True,
-            callback_manager=cm,
+            input_variables=Codegen.input_variables,
+            callback_manager=callback_manager,
         )
 
-        return c
+        return cls(
+            database=database,
+            callback_manager=callback_manager,
+            tools=tools,
+            llm=llm,
+            agent=agent,
+        )
 
     def generate(
         self,
         envs: List[EnvVar],
+        run_id: str,
         route: str,
         method: str,
         blocks: List[Dict],
     ):
+        self._callback_manager.add_handler(
+            CustomCallbackHandler(database=self._database, run_id=run_id)
+        )
+
         input_vars = {
             "route": route,
             "method": method,
@@ -214,7 +256,7 @@ class Codegen(BaseModel):
             inst_idx += 1
             instructions = instructions + "\n" + f"{inst_idx}. {inst}"
 
-        self.agent_executor.run(
+        self._agent_executor.run(
             agent_scratchpad="",
             # input=testing_instructions
             input=instructions,

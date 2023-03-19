@@ -58,6 +58,8 @@ def generate():
     route = body["route"]
     envs: List[EnvVar] = body["envs"]
 
+    db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
+
     request_body_blocks = [
         block for block in blocks if block.get("type") == "RequestBody"
     ]
@@ -65,6 +67,7 @@ def generate():
         request_body_blocks[0]["prompt"] if len(request_body_blocks) > 0 else None
     )
 
+    # Create playground for the LLM
     playground_tools, playground = create_playground_tools(
         envs=envs,
         route=route,
@@ -72,13 +75,22 @@ def generate():
         request_body_template=request_body_template,
     )
 
-    cg = Codegen.from_playground_tools(playground_tools)
+    # Create a new instance of code generator
+    cg = Codegen.from_playground_and_database(
+        playground_tools=playground_tools,
+        database=db,
+    )
+
+    # Generate the code
     cg.generate(
+        run_id=run_id,
         route=route,
         envs=envs,
         method=method,
         blocks=blocks,
     )
+
+    db.update_state(run_id=run_id, state=DeploymentState.Finished)
 
     playground.close()
 

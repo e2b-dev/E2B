@@ -165,15 +165,15 @@ FORMAT_INSTRUCTIONS = """"""
 # // Start the server
 # app.listen(3000, () => console.log('Listening on port 3000'));
 # ```
-PREFIX = """You are an AI JavaScript/Nodejs assistant.
-- Follow the user's instructions carefully & to the letter:
+PREFIX = """You are an AI JavaScript backend developer.
+- Follow the user's instructions carefully & to the letter.
 - Minimize any other prose.
-- You are building an Express server that handles REST API.
-- ALWAYS use `import` to import packages.
-- Make sure any code you generate is JSON escaped
-- You have access to the following tools:"""
+- You are using existing tools to figure out how to do your job better.
+You have access to the following set of primitive tools:"""
 
-FORMAT_INSTRUCTIONS = """"The way you use the tools is by specifying a json blob.
+FORMAT_INSTRUCTIONS = """"Your goal is to use existing tools to come up with a new set of tools that you, as an AI JavaScript backend developer, would use to do your job most effectively.
+The new set of tools MUST be based on the primitive tools you already have access to. The new tools should make a job of JavaScript backend developer easier by being a higher-level abstraction of the primitive tools you already have access to.
+Use the existing tools to build the new tools. The way you use the tools is by specifying a json blob.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
 THE ONLY VALUES THAT SHOULD BE IN THE "action" FIELD ARE: {tool_names}. NO OTHER VALUES ARE ALLOWED.
 The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
@@ -198,9 +198,9 @@ Action:
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final answer
-Final Answer: the final code that satisfies all the input instructions. THE FINAL ANSWER IT MUST BE JUST THE CODE."""
+Final Answer: the final answer."""
 
-SUFFIX = """Begin! Reminder to NEVER use tools you don't have access to and ALWAYS use the exact characters `Final Answer` when responding."""
+SUFFIX = """Begin! Reminder to always use the exact characters `Final Answer` when responding."""
 
 
 # Create model
@@ -208,19 +208,19 @@ cm = CallbackManager([StreamingStdOutCallbackHandler()])
 chat = ChatOpenAI(
     openai_api_key=OPENAI_API_KEY,
     streaming=True,
-    temperature=0,
+    temperature=0.0,
     max_tokens=2056,
     verbose=True,
     callback_manager=cm,
 )
 
 # Initialize playground
-playground_tools, playground = create_playground_tools(
-    envs=[],
-    route="/",
-    method="post",
-    request_body_template="email: string",
-)
+# playground_tools, playground = create_playground_tools(
+#     envs=[],
+#     route="/",
+#     method="post",
+#     request_body_template="email: string",
+# )
 
 # Create prompt
 input_variables = [
@@ -230,50 +230,91 @@ input_variables = [
     # "instructions",
 ]
 # prompt = ChatAgent.create_prompt(
-prompt = CustomChatAgent.create_prompt(
-    tools=[
-        *playground_tools,
-        WriteCodeToFile(),
-        DeployCode(),
-    ],
-    prefix=PREFIX,
-    suffix=SUFFIX,
-    format_instructions=FORMAT_INSTRUCTIONS,
-    input_variables=input_variables,
-)
+# prompt = CustomChatAgent.create_prompt(
+#     tools=[
+#         *playground_tools,
+#         WriteCodeToFile(),
+#         DeployCode(),
+#     ],
+#     prefix=PREFIX,
+#     suffix=SUFFIX,
+#     format_instructions=FORMAT_INSTRUCTIONS,
+#     input_variables=input_variables,
+# )
 # print(prompt.messages[0].prompt.template)
 # exit()
+
+
+class WriteToFile(BaseTool):
+    name = "WriteToFile"
+    description = "Write content to file on path. The input is in the format of `$PATH_TO_FILE $CONTENT`"
+
+    def _run(self, query: str) -> str:
+        return "Successfully wrote to file"
+
+    def _arun(self, tool_input: str) -> str:
+        NotImplementedError("Not implemented")
+
+
+class ReadFromFile(BaseTool):
+    name = "ReadFromFile"
+    description = (
+        "Read content from file on path. The input is in the format of `$PATH_TO_FILE`"
+    )
+
+    def _run(self, query: str) -> str:
+        return "Successfully read from file"
+
+    def _arun(self, tool_input: str) -> str:
+        NotImplementedError("Not implemented")
+
+
+class RunShellCommand(BaseTool):
+    name = "RunShellCommand"
+    description = "Run shell command. The input is in the format of `$COMMAND`"
+
+    def _run(self, tool_input: str) -> str:
+        return "Successfully ran shell command"
+
+    def _arun(self, tool_input: str) -> str:
+        NotImplementedError("Not implemented")
 
 
 invalid_tool = InvalidTool()
 # Create agent and it's executor
 # agent = ChatAgent.from_llm_and_tools(
 memory = ConversationBufferWindowMemory(k=1, return_messages=True)
-agent = CustomChatAgent.from_llm_and_tools(
+agent = ChatAgent.from_llm_and_tools(
     llm=chat,
     tools=[
-        *playground_tools,
-        invalid_tool,
-        WriteCodeToFile(),
-        DeployCode(),
+        # *playground_tools,
+        # invalid_tool,
+        # WriteCodeToFile(),
+        # DeployCode(),
+        WriteToFile(),
+        ReadFromFile(),
+        RunShellCommand(),
     ],
     prefix=PREFIX,
     suffix=SUFFIX,
     format_instructions=FORMAT_INSTRUCTIONS,
     input_variables=input_variables,
-    # verbose=True,
+    verbose=True,
     # memory=ConversationBufferWindowMemory(k=2),
-    memory=memory,
+    # memory=memory,
 )
 ae = AgentExecutor.from_agent_and_tools(
     agent=agent,
     tools=[
-        *playground_tools,
-        invalid_tool,
-        WriteCodeToFile(),
-        DeployCode(),
+        # *playground_tools,
+        # invalid_tool,
+        # WriteCodeToFile(),
+        # DeployCode(),
+        WriteToFile(),
+        ReadFromFile(),
+        RunShellCommand(),
     ],
-    memory=memory,
+    # memory=memory,
     verbose=True,
 )
 
@@ -303,7 +344,9 @@ try:
     ae.run(
         # "1. Check if the incoming request is POST request. If not, respond with an adequate error",
         agent_scratchpad="",
-        input=f"Here are the instructions:\n{user_input}",
+        # input=f"Here are the instructions:\n{user_input}",
+        # input="Given the tools you already have access to, what would be the ideal tools you need to make your job as a JavaScript backend developer most effectively?",
+        input="What new tools do you need?",
         method="post",
         # instructions="""// 1. Check if the incoming request is POST request. If not, respond with an adequate error.
         # // 2. Retrieve email from the request payload and check if it's a valid email. Respond with 'Ok' if it is, otherwise respond with the adequate error.
@@ -391,8 +434,8 @@ except ValueError as e:
 
 # # chat([*chat_messages, instruct1_prompt])
 
-print("=========== MEMORY")
-for message in memory.buffer:
-    print(message.content)
+# print("=========== MEMORY")
+# for message in memory.buffer:
+#     print(message.content)
 
-playground.close()
+# playground.close()

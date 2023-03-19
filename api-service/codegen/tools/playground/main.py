@@ -1,5 +1,7 @@
 from typing import List, Any, Tuple
 
+from langchain.tools import BaseTool
+
 from codegen.env import EnvVar
 from codegen.tools.playground.mock.request import MockRequestFactory
 
@@ -14,7 +16,7 @@ def create_playground_tools(
     method: str,
     route: str,
     request_body_template: str | None,
-) -> Tuple[List[Any], NodeJSPlayground]:
+) -> Tuple[List[BaseTool], NodeJSPlayground]:
     playground = NodeJSPlayground(envs)
     mock = MockRequestFactory(
         method=method,

@@ -193,8 +193,7 @@ class NodeJSPlayground(Playground):
         self.env_vars = self.format_env_vars(envs)
 
     def run_javascript_code(self, code: str):
-        # print(f"Running javascript code: {code}")
-        print(f"Running javascript code...")
+        # print(f"Running javascript code...")
         self.write_file(self.default_javascript_code_file, code)
         result = self.run_command(
             f"node {self.default_javascript_code_file}",
@@ -202,13 +201,13 @@ class NodeJSPlayground(Playground):
             env_vars=self.env_vars,
             timeout=self.run_code_timeout,
         )
-        pprint.pprint(f"Result: {result}")
+        # pprint.pprint(f"Result: {result}")
         return result
 
     def install_dependencies(self, dependencies: str):
-        print(f"Installing dependencies: {dependencies}")
+        # print(f"Installing dependencies: {dependencies}")
         result = self.run_command(f"npm install {dependencies}", rootdir=self.rootdir)
-        pprint.pprint(f"Result: {result}")
+        # pprint.pprint(f"Result: {result}")
         return result
 
     def run_javascript_server_code_with_request(
@@ -217,7 +216,7 @@ class NodeJSPlayground(Playground):
         request_cmd: str,
         port: float,
     ):
-        print(f"Running '{request_cmd}' for code:\n{code}")
+        # print(f"Running '{request_cmd}' for code:\n{code}")
         self.write_file(self.default_javascript_code_file, code)
         result = self.run_server_with_request(
             server_cmd=f"node {self.default_javascript_code_file}",
@@ -226,5 +225,5 @@ class NodeJSPlayground(Playground):
             rootdir=self.rootdir,
             env_vars=self.env_vars,
         )
-        pprint.pprint(f"Result: {result}")
+        # pprint.pprint(f"Result: {result}")
         return result

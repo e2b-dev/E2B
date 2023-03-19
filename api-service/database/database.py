@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from enum import Enum
 from supabase import create_client
 
@@ -27,7 +27,7 @@ class Database:
             },
         ).execute()
 
-    def push_logs(self, run_id: str, logs: List[str]) -> None:
+    def push_logs(self, run_id: str, logs: List[Dict[str, str]]) -> None:
         if len(logs) > 0:
             self.client.table(deploymentsTable).update(
                 {
