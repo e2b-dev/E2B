@@ -102,6 +102,7 @@ export async function createDeploymentInSession(
 ) {
   // Start packaging function in session
   const zipping = packageFunction(session)
+  // TODO: Can we skip getting url?
   const gettingURL = getFunctionURL(projectID)
   const isFunctionDeployed = await getIsFunctionDeployed(projectID)
 
@@ -123,6 +124,7 @@ export async function createDeploymentInSession(
       )
     await waitForUpdate(projectID)
 
+    // TODO: Can we paralellize url setup or predeploy the function when user creates the project?
     const urlResult = await lambda
       .send(
         new CreateFunctionUrlConfigCommand({
@@ -151,6 +153,7 @@ export async function createDeploymentInSession(
 
   // Update function
   if (envVars) {
+    // TODO: Can we paralellize env + code update?
     await lambda.send(
       new UpdateFunctionConfigurationCommand({
         ...deploymentParams,
