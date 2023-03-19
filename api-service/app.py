@@ -80,7 +80,7 @@ def generate():
         url = playground.deploy(project_id, envs)
 
         db.finish_deployment(run_id=run_id, url=url)
-        return "", 204
+        return {}
     except:
         db.update_state(run_id=run_id, state=DeploymentState.Error)
         raise
