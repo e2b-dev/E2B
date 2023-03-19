@@ -13,7 +13,12 @@ import { EnvVars, Session } from '@devbookhq/sdk'
 import { packageFunction } from './packaging'
 
 const credentials = {
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+}
 
+if (!credentials.accessKeyId || !credentials.secretAccessKey) {
+  throw new Error('AWS credentials not found')
 }
 
 const region = 'us-east-1'
