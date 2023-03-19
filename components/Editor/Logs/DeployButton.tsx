@@ -36,15 +36,7 @@ function getDeploymentRepresentation(deployStatus: deployment_state | null | und
         icon: <Spinner />,
       }
     case deployment_state.error:
-      return {
-        text: 'Failed',
-        icon: null,
-      }
     case deployment_state.finished:
-      return {
-        text: 'Deployed',
-        icon: <Check size="16px" />
-      }
     default:
       return {
         text: 'Deploy',
