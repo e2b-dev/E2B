@@ -1,7 +1,9 @@
-from typing import List, Any, Tuple
+from typing import Any, List, Tuple
+
+from langchain.tools import BaseTool
 
 from session.env import EnvVar
-from session.playground import NodeJSPlayground
+from session.playground.nodejs import NodeJSPlayground
 from codegen.tools.playground.mock.request import MockRequestFactory
 
 from .tools.filesystem import create_filesystem_tools
@@ -14,7 +16,7 @@ def create_playground_tools(
     method: str,
     route: str,
     request_body_template: str | None,
-) -> Tuple[List[Any], NodeJSPlayground]:
+) -> Tuple[List[BaseTool], NodeJSPlayground]:
     playground = NodeJSPlayground(envs)
 
     mock = MockRequestFactory(
@@ -24,7 +26,7 @@ def create_playground_tools(
         playground=playground,
     )
 
-    subtools = [
+    subtools: List[Any] = [
         tool
         for tools in (
             tool_factory(playground=playground, mock=mock)

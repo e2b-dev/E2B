@@ -1,11 +1,42 @@
-from typing import Dict, Any, List, Union
-import sys
+from typing import Dict, Any, List, Union, Optional
 
+# import sys
+import uuid
+from pprint import pprint
+
+from pydantic import PrivateAttr
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
+from database import Database
+
+
+# class bcolors:
+#     HEADER = "\033[95m"
+#     OKBLUE = "\033[94m"
+#     OKCYAN = "\033[96m"
+#     OKGREEN = "\033[92m"
+#     WARNING = "\033[93m"
+#     FAIL = "\033[91m"
+#     ENDC = "\033[0m"
+#     BOLD = "\033[1m"
+#     UNDERLINE = "\033[4m"
+
 
 class CustomCallbackHandler(BaseCallbackHandler):
+    _file = open(
+        "/Users/vasekmlejnsky/Developer/ai-api/api-service/codegen/out.txt", "a"
+    )
+    _logs: List[Dict[str, str]] = []
+    _current_action_id: Optional[str] = None
+    _database: Database = PrivateAttr()
+    _run_id: str = PrivateAttr()
+
+    def __init__(self, database: Database, run_id: str, **kwargs: Any):
+        super().__init__(**kwargs)
+        self._database = database
+        self._run_id = run_id
+
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
@@ -34,7 +65,8 @@ class CustomCallbackHandler(BaseCallbackHandler):
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
-        pass
+        self._file.close()
+        # pass
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -46,36 +78,65 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        print("[+CustomCallbackHandler] TOOL START", flush=True)
-        print(serialized)
-        print(input_str)
-        print("[-CustomCallbackHandler]")
-        sys.stdout.flush()
+        self._file.write(
+            "\n[+CustomCallbackHandler] TOOL START\n",
+        )
+        self._file.write("serialized:")
+        for k, v in serialized.items():
+            self._file.write(f"\t{k}: {str(v)}")
+        self._file.write(f"\n{input_str}\n")
+        self._file.write("[-CustomCallbackHandler]\n")
+        self._file.flush()
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
-        print("[+CustomCallbackHandler] TOOL END", flush=True)
-        print(output)
-        print("[-CustomCallbackHandler]")
-        sys.stdout.flush()
+
+        # Update the correct action in the list with the new output
+        action = next(a for a in self._logs if a["id"] == self._current_action_id)
+        action["output"] = output
+        # TODO: Push logs to the database
+        self._database.push_logs(
+            run_id=self._run_id,
+            logs=self._logs,
+        )
+
+        self._file.write("\n[+CustomCallbackHandler] TOOL END\n")
+        self._file.write(f"\n{output}\n")
+        self._file.write("[-CustomCallbackHandler]\n")
+        self._file.flush()
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
-        print("[+CustomCallbackHandler] TOOL ERROR")
-        print(error)
-        print("[-CustomCallbackHandler]")
-        sys.stdout.flush()
+        self._file.write("\n[+CustomCallbackHandler] TOOL ERROR\n")
+        self._file.write(f"\n{str(error)}\n")
+        self._file.write("[-CustomCallbackHandler]\n")
+        self._file.flush()
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
-        print("[+CustomCallbackHandler] AGENT ACTION", flush=True)
-        print(action.tool)
-        print(action.log)
-        print(action.tool_input)
-        print("[-CustomCallbackHandler]")
-        sys.stdout.flush()
+        self._current_action_id = str(uuid.uuid4())
+        self._logs.append(
+            {
+                "id": self._current_action_id,
+                "tool": action.tool,
+                "input": action.tool_input,
+                "output": "",
+            }
+        )
+        # TODO: Push logs to the database
+        self._database.push_logs(
+            run_id=self._run_id,
+            logs=self._logs,
+        )
+
+        self._file.write("\n[+CustomCallbackHandler] AGENT ACTION\n")
+        self._file.write(f"{action.tool}\n")
+        self._file.write(f"{action.log}\n")
+        self._file.write(f"{action.tool_input}\n")
+        self._file.write("[-CustomCallbackHandler]\n")
+        self._file.flush()
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on arbitrary text."""

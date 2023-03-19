@@ -50,17 +50,25 @@ def generate():
     envs: List[EnvVar] = body["envs"]
 
     db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
+    playground = None
     try:
-        request_body_template = get_request_body_template(blocks)
+        # Create playground for the LLM
         playground_tools, playground = create_playground_tools(
             envs=envs,
             route=route,
             method=method,
-            request_body_template=request_body_template,
+            request_body_template=get_request_body_template(blocks),
         )
 
-        cg = Codegen.from_playground_tools(playground_tools)
+        # Create a new instance of code generator
+        cg = Codegen.from_playground_and_database(
+            playground_tools=playground_tools,
+            database=db,
+        )
+
+        # Generate the code
         cg.generate(
+            run_id=run_id,
             route=route,
             envs=envs,
             method=method,
@@ -69,12 +77,15 @@ def generate():
 
         db.update_state(run_id=run_id, state=DeploymentState.Deploying)
         url = playground.deploy(project_id, envs)
-        db.finish_deployment(run_id=run_id, url=url)
 
-        return {"url": url}
+        db.finish_deployment(run_id=run_id, url=url)
+        return "", 204
     except:
         db.update_state(run_id=run_id, state=DeploymentState.Error)
         raise
+    finally:
+        if playground is not None:
+            playground.close()
 
 
 if __name__ == "__main__":
