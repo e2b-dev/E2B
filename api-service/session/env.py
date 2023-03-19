@@ -8,4 +8,11 @@ class EnvVar(TypedDict):
 
 
 def format_env_vars(envs: List[EnvVar]):
-    return reduce(lambda acc, env: {**acc, **{env["key"]: env["value"]}}, envs, {})
+    return reduce(
+        lambda acc, env: {
+            **acc,
+            **({env["key"]: env["value"]} if env["key"] else {}),
+        },
+        envs,
+        {},
+    )
