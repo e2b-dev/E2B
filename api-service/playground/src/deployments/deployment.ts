@@ -11,8 +11,13 @@ import {
 } from '@aws-sdk/client-lambda'
 // import { APIGatewayClient } from '@aws-sdk/client-api-gateway'
 import { EnvVars, Session } from '@devbookhq/sdk'
+import * as dotenv from 'dotenv'
 
 import { packageFunction } from './packaging'
+
+dotenv.config({
+  path: '../../.env',
+})
 
 const credentials = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID!,

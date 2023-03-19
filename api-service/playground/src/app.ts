@@ -7,11 +7,8 @@ import express, {
 } from 'express'
 import { ValidateError } from 'tsoa'
 import morgan from 'morgan'
-import * as dotenv from 'dotenv'
 
 import { RegisterRoutes } from './generated/routes'
-
-dotenv.config()
 
 export const app = express()
 
