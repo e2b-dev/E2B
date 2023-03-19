@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Any, List, Union, Optional
 import datetime
 import uuid
@@ -55,6 +56,7 @@ class CustomCallbackHandler(BaseCallbackHandler):
     _current_action_id: Optional[str] = None
     _database: Database = PrivateAttr()
     _run_id: str = PrivateAttr()
+    _file = open("out.txt", "w+")
 
     _raw_logs: str = ""
 

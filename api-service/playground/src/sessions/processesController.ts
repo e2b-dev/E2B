@@ -30,19 +30,19 @@ interface ProcessResponse {
 export class ProcessController extends Controller {
   /**
    * 
-   * @param id 
+   * @param sessionID
    * @param wait if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
    * @param requestBody 
    * @returns `processID` and all `stdout` and `stderr` that the process outputted until now.
    */
-  @Post('{id}/processes')
+  @Post('{sessionID}/processes')
   public async startProcess(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Body() requestBody: StartProcessParams,
     @Query() wait?: boolean,
   ): Promise<ProcessResponse> {
     const cachedProcess = await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .startProcess(requestBody)
 
     if (wait) {
@@ -51,14 +51,14 @@ export class ProcessController extends Controller {
     return cachedProcess.response
   }
 
-  @Delete('{id}/processes/{processID}')
+  @Delete('{sessionID}/processes/{processID}')
   public async stopProcess(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Path() processID: string,
-    @Query('results') results?: boolean
+    @Query() results?: boolean
   ): Promise<ProcessResponse | undefined> {
     const cachedProcess = await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .stopProcess(processID)
 
     if (cachedProcess && results) {
@@ -66,14 +66,14 @@ export class ProcessController extends Controller {
     }
   }
 
-  @Post('{id}/processes/{processID}/stdin')
+  @Post('{sessionID}/processes/{processID}/stdin')
   public async writeProcessStdin(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Path() processID: string,
-    @BodyProp('stdin') stdin: string,
+    @BodyProp() stdin: string,
   ): Promise<void> {
     await CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .findProcess(processID)
       ?.process
       ?.sendStdin(stdin)
@@ -81,19 +81,19 @@ export class ProcessController extends Controller {
 
   /**
    * 
-   * @param id 
+   * @param sessioniD
    * @param processID 
    * @param wait if true the request will wait until the process ends and then return the `stdout`, `stderr` and `processID`.
    * @returns `processID` and all `stdout` and `stderr` that the process outputted until now.
    */
-  @Get('{id}/processes/{processID}')
+  @Get('{sessionID}/processes/{processID}')
   public async getProcess(
-    @Path() id: string,
+    @Path() sessionID: string,
     @Path() processID: string,
     @Query() wait?: boolean,
   ): Promise<ProcessResponse> {
     const cachedProcess = CachedSession
-      .findSession(id)
+      .findSession(sessionID)
       .findProcess(processID)
 
     if (wait) {

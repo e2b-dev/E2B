@@ -22,14 +22,6 @@ COPY playground/src ./src
 RUN yarn build
 
 
-# This stage installs cf-worker-template modules
-FROM node:18 as cf-worker-modules
-
-WORKDIR /app/cf-worker-template
-COPY cf-worker-template/package.json cf-worker-template/package-lock.json ./
-RUN npm ci --omit=dev
-
-
 # This is the final image that also installs python deps
 FROM nikolaik/python-nodejs
 
@@ -56,9 +48,6 @@ RUN rm -rf ./playground
 WORKDIR /playground
 COPY --from=playground-modules ./playground/ ./
 COPY --from=playground-build ./playground/lib ./lib
-
-WORKDIR /app/cf-worker-template
-COPY --from=cf-worker-modules ./app/cf-worker-template ./
 
 WORKDIR /app
 

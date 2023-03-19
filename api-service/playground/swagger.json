@@ -34,6 +34,23 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DeploymentResponse": {
+				"properties": {
+					"url": {
+						"type": "string",
+						"description": "If the function is deployed for the first time the url will be defined."
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EnvVars": {
+				"properties": {},
+				"additionalProperties": {
+					"type": "string"
+				},
+				"type": "object"
+			},
 			"EntryInfo": {
 				"properties": {
 					"isDir": {
@@ -168,13 +185,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"EnvVars": {
-				"properties": {},
-				"additionalProperties": {
-					"type": "string"
-				},
-				"type": "object"
-			},
 			"StartProcessParams": {
 				"properties": {
 					"cmd": {
@@ -290,7 +300,59 @@
 				}
 			}
 		},
-		"/sessions/{id}/filesystem/dir": {
+		"/deployments/{projectID}": {
+			"put": {
+				"operationId": "CreateDeployment",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DeploymentResponse"
+								}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "projectID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "active session to use for deployment",
+						"in": "query",
+						"name": "sessionID",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"envVars": {
+										"$ref": "#/components/schemas/EnvVars"
+									}
+								},
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/sessions/{sessionID}/filesystem/dir": {
 			"get": {
 				"operationId": "ListFilesystemDir",
 				"responses": {
@@ -309,7 +371,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -336,7 +398,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -353,7 +415,7 @@
 				]
 			}
 		},
-		"/sessions/{id}/filesystem": {
+		"/sessions/{sessionID}/filesystem": {
 			"delete": {
 				"operationId": "DeleteFilesystemEntry",
 				"responses": {
@@ -365,7 +427,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -382,7 +444,7 @@
 				]
 			}
 		},
-		"/sessions/{id}/filesystem/file": {
+		"/sessions/{sessionID}/filesystem/file": {
 			"get": {
 				"operationId": "ReadFilesystemFile",
 				"responses": {
@@ -401,7 +463,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -428,7 +490,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -463,7 +525,7 @@
 				}
 			}
 		},
-		"/sessions/{id}/processes": {
+		"/sessions/{sessionID}/processes": {
 			"post": {
 				"operationId": "StartProcess",
 				"responses": {
@@ -482,7 +544,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -510,7 +572,7 @@
 				}
 			}
 		},
-		"/sessions/{id}/processes/{processID}": {
+		"/sessions/{sessionID}/processes/{processID}": {
 			"delete": {
 				"operationId": "StopProcess",
 				"responses": {
@@ -529,7 +591,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -571,7 +633,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -597,7 +659,7 @@
 				]
 			}
 		},
-		"/sessions/{id}/processes/{processID}/stdin": {
+		"/sessions/{sessionID}/processes/{processID}/stdin": {
 			"post": {
 				"operationId": "WriteProcessStdin",
 				"responses": {
@@ -609,7 +671,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -681,7 +743,7 @@
 				}
 			}
 		},
-		"/sessions/{id}": {
+		"/sessions/{sessionID}": {
 			"delete": {
 				"operationId": "DeleteSession",
 				"responses": {
@@ -693,7 +755,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"
@@ -719,7 +781,7 @@
 				"parameters": [
 					{
 						"in": "path",
-						"name": "id",
+						"name": "sessionID",
 						"required": true,
 						"schema": {
 							"type": "string"

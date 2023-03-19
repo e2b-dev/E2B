@@ -5,6 +5,8 @@ import { Controller, ValidationService, FieldErrors, ValidateError, TsoaRoute, H
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MockController } from './../data/mockController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { DeploymentsController } from './../deployments/deploymentsController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { FilesystemController } from './../sessions/filesystemController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ProcessController } from './../sessions/processesController';
@@ -30,6 +32,19 @@ const models: TsoaRoute.Models = {
             "content": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DeploymentResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "url": {"dataType":"string"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EnvVars": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"string"},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "EntryInfo": {
@@ -103,11 +118,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "EnvVars": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"string"},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "StartProcessParams": {
         "dataType": "refObject",
         "properties": {
@@ -173,13 +183,40 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/sessions/:id/filesystem/dir',
+        app.put('/deployments/:projectID',
+            ...(fetchMiddlewares<RequestHandler>(DeploymentsController)),
+            ...(fetchMiddlewares<RequestHandler>(DeploymentsController.prototype.createDeployment)),
+
+            function DeploymentsController_createDeployment(request: any, response: any, next: any) {
+            const args = {
+                    projectID: {"in":"path","name":"projectID","required":true,"dataType":"string"},
+                    sessionID: {"in":"query","name":"sessionID","required":true,"dataType":"string"},
+                    envVars: {"in":"body-prop","name":"envVars","ref":"EnvVars"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new DeploymentsController();
+
+
+              const promise = controller.createDeployment.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/sessions/:sessionID/filesystem/dir',
             ...(fetchMiddlewares<RequestHandler>(FilesystemController)),
             ...(fetchMiddlewares<RequestHandler>(FilesystemController.prototype.listFilesystemDir)),
 
             function FilesystemController_listFilesystemDir(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     path: {"in":"query","name":"path","required":true,"dataType":"string"},
             };
 
@@ -199,13 +236,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.put('/sessions/:id/filesystem/dir',
+        app.put('/sessions/:sessionID/filesystem/dir',
             ...(fetchMiddlewares<RequestHandler>(FilesystemController)),
             ...(fetchMiddlewares<RequestHandler>(FilesystemController.prototype.makeFilesystemDir)),
 
             function FilesystemController_makeFilesystemDir(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     path: {"in":"query","name":"path","required":true,"dataType":"string"},
             };
 
@@ -225,13 +262,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.delete('/sessions/:id/filesystem',
+        app.delete('/sessions/:sessionID/filesystem',
             ...(fetchMiddlewares<RequestHandler>(FilesystemController)),
             ...(fetchMiddlewares<RequestHandler>(FilesystemController.prototype.deleteFilesystemEntry)),
 
             function FilesystemController_deleteFilesystemEntry(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     path: {"in":"query","name":"path","required":true,"dataType":"string"},
             };
 
@@ -251,13 +288,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/sessions/:id/filesystem/file',
+        app.get('/sessions/:sessionID/filesystem/file',
             ...(fetchMiddlewares<RequestHandler>(FilesystemController)),
             ...(fetchMiddlewares<RequestHandler>(FilesystemController.prototype.readFilesystemFile)),
 
             function FilesystemController_readFilesystemFile(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     path: {"in":"query","name":"path","required":true,"dataType":"string"},
             };
 
@@ -277,13 +314,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.put('/sessions/:id/filesystem/file',
+        app.put('/sessions/:sessionID/filesystem/file',
             ...(fetchMiddlewares<RequestHandler>(FilesystemController)),
             ...(fetchMiddlewares<RequestHandler>(FilesystemController.prototype.writeFilesystemFile)),
 
             function FilesystemController_writeFilesystemFile(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     path: {"in":"query","name":"path","required":true,"dataType":"string"},
                     content: {"in":"body-prop","name":"content","required":true,"dataType":"string"},
             };
@@ -304,13 +341,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.post('/sessions/:id/processes',
+        app.post('/sessions/:sessionID/processes',
             ...(fetchMiddlewares<RequestHandler>(ProcessController)),
             ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.startProcess)),
 
             function ProcessController_startProcess(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     requestBody: {"in":"body","name":"requestBody","required":true,"ref":"StartProcessParams"},
                     wait: {"in":"query","name":"wait","dataType":"boolean"},
             };
@@ -331,13 +368,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.delete('/sessions/:id/processes/:processID',
+        app.delete('/sessions/:sessionID/processes/:processID',
             ...(fetchMiddlewares<RequestHandler>(ProcessController)),
             ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.stopProcess)),
 
             function ProcessController_stopProcess(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     processID: {"in":"path","name":"processID","required":true,"dataType":"string"},
                     results: {"in":"query","name":"results","dataType":"boolean"},
             };
@@ -358,13 +395,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.post('/sessions/:id/processes/:processID/stdin',
+        app.post('/sessions/:sessionID/processes/:processID/stdin',
             ...(fetchMiddlewares<RequestHandler>(ProcessController)),
             ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.writeProcessStdin)),
 
             function ProcessController_writeProcessStdin(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     processID: {"in":"path","name":"processID","required":true,"dataType":"string"},
                     stdin: {"in":"body-prop","name":"stdin","required":true,"dataType":"string"},
             };
@@ -385,13 +422,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/sessions/:id/processes/:processID',
+        app.get('/sessions/:sessionID/processes/:processID',
             ...(fetchMiddlewares<RequestHandler>(ProcessController)),
             ...(fetchMiddlewares<RequestHandler>(ProcessController.prototype.getProcess)),
 
             function ProcessController_getProcess(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
                     processID: {"in":"path","name":"processID","required":true,"dataType":"string"},
                     wait: {"in":"query","name":"wait","dataType":"boolean"},
             };
@@ -437,13 +474,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.delete('/sessions/:id',
+        app.delete('/sessions/:sessionID',
             ...(fetchMiddlewares<RequestHandler>(SessionsController)),
             ...(fetchMiddlewares<RequestHandler>(SessionsController.prototype.deleteSession)),
 
             function SessionsController_deleteSession(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -462,13 +499,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/sessions/:id',
+        app.get('/sessions/:sessionID',
             ...(fetchMiddlewares<RequestHandler>(SessionsController)),
             ...(fetchMiddlewares<RequestHandler>(SessionsController.prototype.getSession)),
 
             function SessionsController_getSession(request: any, response: any, next: any) {
             const args = {
-                    id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                    sessionID: {"in":"path","name":"sessionID","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

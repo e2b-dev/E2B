@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-api-gateway": "^3.293.0",
+    "@aws-sdk/client-lambda": "^3.293.0",
     "@devbookhq/sdk": "^2.6.74",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "intermock": "^0.2.5",
     "morgan": "^1.10.0",
@@ -12,6 +15,7 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
+    "@types/morgan": "^1.9.4",
     "@types/node": "^18.15.0",
     "concurrently": "^7.6.0",
     "esbuild": "^0.17.11",

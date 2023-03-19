@@ -7,6 +7,7 @@ import express, {
 } from 'express'
 import { ValidateError } from 'tsoa'
 import morgan from 'morgan'
+
 import { RegisterRoutes } from './generated/routes'
 
 export const app = express()
