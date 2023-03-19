@@ -14,6 +14,7 @@ import Text from 'components/Text'
 import Button from 'components/Button'
 
 import DeployButton from './DeployButton'
+import Link from 'next/link'
 
 export interface Props {
   logs?: Log[]
@@ -100,17 +101,16 @@ function Logs({
           />
         </div>
         {deployedURL &&
-          <a
+          <Link
             href={deployedURL}
-            className="
-            underline
-          "
+            className="underline"
+            target="_blank" rel="noopener noreferrer"
           >
             <Text
               size={Text.size.S3}
               text={deployedURL.substring('https://'.length)}
             />
-          </a>
+          </Link>
         }
         {!deployedURL &&
           <Text

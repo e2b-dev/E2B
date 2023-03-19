@@ -16,6 +16,7 @@ import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
 import Logs from './Logs'
 import Routes from './Routes'
+import Link from 'next/link'
 
 // TODO: Prod API host
 const apiHost = process.env.NODE_ENV === 'development'
@@ -204,18 +205,19 @@ function Editor({ project }: Props) {
                 }}
               />
               {deployment?.url &&
-                <a
+                <Link
                   href={deployment.url}
                   className="
                   mt-6
                   underline
                 "
+                  target="_blank" rel="noopener noreferrer"
                 >
                   <Text
                     text={deployment.url.substring('https://'.length)}
                     size={Text.size.S3}
                   />
-                </a>
+                </Link>
               }
             </div>
             <Logs
