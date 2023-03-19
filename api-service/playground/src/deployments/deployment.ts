@@ -6,38 +6,38 @@ import {
   CreateFunctionUrlConfigCommand,
   waitUntilFunctionUpdatedV2,
   AddPermissionCommand,
-} from "@aws-sdk/client-lambda";
-import { APIGatewayClient } from "@aws-sdk/client-api-gateway";
-import { EnvVars, Session } from "@devbookhq/sdk";
+} from '@aws-sdk/client-lambda'
+import { APIGatewayClient } from '@aws-sdk/client-api-gateway'
+import { EnvVars, Session } from '@devbookhq/sdk'
 
-import { packageFunction } from "./packaging";
+import { packageFunction } from './packaging'
 
 const credentials = {
 
 }
 
-const region = "us-east-1";
+const region = 'us-east-1'
 
 // TODO: Devbook Acc env var for aws initialization
 // TODO: lambda.destroy() on quit?
 const lambda = new LambdaClient({
   region,
   credentials,
-});
+})
 
 // TODO: gateway.destroy() on quit?
 const gateway = new APIGatewayClient({
   region,
   credentials,
-});
+})
 
 const deploymentParams = {
-  Runtime: "nodejs16.x",
+  Runtime: 'nodejs16.x',
   // TODO: Replace lambda role with valid role in Devbook Acc
-  Role: "arn:aws:iam::066766119186:role/service-role/test-1-role-lgud7u7z",
-  Handler: "index.handler",
+  Role: 'arn:aws:iam::066766119186:role/service-role/test-1-role-lgud7u7z',
+  Handler: 'index.handler',
   // TODO: Experiment with ARM vs x86_64
-};
+}
 
 async function waitForUpdate(projectID: string) {
   await waitUntilFunctionUpdatedV2(
@@ -48,7 +48,7 @@ async function waitForUpdate(projectID: string) {
     {
       FunctionName: projectID,
     }
-  );
+  )
 }
 
 export async function createDeploymentInSession(
@@ -57,7 +57,7 @@ export async function createDeploymentInSession(
   code: string,
   envVars: EnvVars
 ) {
-  const zip = await packageFunction(session, code);
+  const zip = await packageFunction(session, code)
 
   try {
     await lambda
@@ -73,36 +73,36 @@ export async function createDeploymentInSession(
           },
         })
       )
-      .catch((err) => console.error(err));
-    await waitForUpdate(projectID);
+      .catch((err) => console.error(err))
+    await waitForUpdate(projectID)
 
     await lambda
       .send(
         new CreateFunctionUrlConfigCommand({
           FunctionName: projectID,
-          AuthType: "NONE",
+          AuthType: 'NONE',
           Cors: {},
         })
       )
-      .catch((err) => console.error(err));
-    await waitForUpdate(projectID);
+      .catch((err) => console.error(err))
+    await waitForUpdate(projectID)
 
     await lambda
       .send(
         new AddPermissionCommand({
-          Action: "lambda:InvokeFunctionUrl",
+          Action: 'lambda:InvokeFunctionUrl',
           FunctionName: projectID,
-          Principal: "*",
+          Principal: '*',
           StatementId: `${projectID}-url-permission`,
-          FunctionUrlAuthType: "NONE",
+          FunctionUrlAuthType: 'NONE',
         })
       )
-      .catch((err) => console.error(err));
-    await waitForUpdate(projectID);
+      .catch((err) => console.error(err))
+    await waitForUpdate(projectID)
 
     // TODO: Configure the Gateway to handle custom domain wildcards
   } catch (err: any) {
-    if (err.name === "ResourceConflictException") {
+    if (err.name === 'ResourceConflictException') {
       await lambda.send(
         new UpdateFunctionConfigurationCommand({
           ...deploymentParams,
@@ -111,20 +111,20 @@ export async function createDeploymentInSession(
             Variables: envVars,
           },
         })
-      );
-      await waitForUpdate(projectID);
+      )
+      await waitForUpdate(projectID)
 
       await lambda.send(
         new UpdateFunctionCodeCommand({
           FunctionName: projectID,
           ZipFile: zip,
         })
-      );
-      await waitForUpdate(projectID);
+      )
+      await waitForUpdate(projectID)
 
-      return;
+      return
     } else {
-      throw err;
+      throw err
     }
   }
 }
@@ -137,7 +137,7 @@ export async function updateDeploymentInSession(
 ) {
   const zipPromise = code
     ? packageFunction(session, code)
-    : Promise.resolve(undefined);
+    : Promise.resolve(undefined)
 
   if (envVars) {
     await lambda.send(
@@ -148,11 +148,11 @@ export async function updateDeploymentInSession(
           Variables: envVars,
         },
       })
-    );
-    await waitForUpdate(projectID);
+    )
+    await waitForUpdate(projectID)
   }
 
-  const zip = await zipPromise;
+  const zip = await zipPromise
 
   if (zip) {
     await lambda.send(
@@ -160,7 +160,7 @@ export async function updateDeploymentInSession(
         FunctionName: projectID,
         ZipFile: zip,
       })
-    );
-    await waitForUpdate(projectID);
+    )
+    await waitForUpdate(projectID)
   }
 }
