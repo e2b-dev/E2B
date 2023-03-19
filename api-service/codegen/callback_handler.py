@@ -1,8 +1,6 @@
 from typing import Dict, Any, List, Union, Optional
-
-# import sys
+import datetime
 import uuid
-from pprint import pprint
 
 from pydantic import PrivateAttr
 from langchain.callbacks.base import BaseCallbackHandler
@@ -23,19 +21,54 @@ from database import Database
 #     UNDERLINE = "\033[4m"
 
 
+from threading import Timer
+
+
+class RepeatedTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer = None
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.is_running = False
+        self.start()
+
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
+
+
 class CustomCallbackHandler(BaseCallbackHandler):
-    _file = open(
-        "/Users/vasekmlejnsky/Developer/ai-api/api-service/codegen/out.txt", "a"
-    )
     _logs: List[Dict[str, str]] = []
     _current_action_id: Optional[str] = None
     _database: Database = PrivateAttr()
     _run_id: str = PrivateAttr()
 
+    _raw_logs: str = ""
+
+    _rt: RepeatedTimer = PrivateAttr()
+
     def __init__(self, database: Database, run_id: str, **kwargs: Any):
         super().__init__(**kwargs)
         self._database = database
         self._run_id = run_id
+        self._rt = RepeatedTimer(1, self._push_raw_logs)
+
+    def _push_raw_logs(self) -> None:
+        if self._raw_logs:
+            self._database.push_raw_logs(self._run_id, self._raw_logs)
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -45,7 +78,7 @@ class CustomCallbackHandler(BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
-        pass
+        self._raw_logs += token
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -65,8 +98,7 @@ class CustomCallbackHandler(BaseCallbackHandler):
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
-        self._file.close()
-        # pass
+        pass
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -78,41 +110,24 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        self._file.write(
-            "\n[+CustomCallbackHandler] TOOL START\n",
-        )
-        self._file.write("serialized:")
-        for k, v in serialized.items():
-            self._file.write(f"\t{k}: {str(v)}")
-        self._file.write(f"\n{input_str}\n")
-        self._file.write("[-CustomCallbackHandler]\n")
-        self._file.flush()
+        pass
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
 
         # Update the correct action in the list with the new output
         action = next(a for a in self._logs if a["id"] == self._current_action_id)
+        action["finish_at"] = str(datetime.datetime.now())
         action["output"] = output
-        # TODO: Push logs to the database
         self._database.push_logs(
             run_id=self._run_id,
             logs=self._logs,
         )
 
-        self._file.write("\n[+CustomCallbackHandler] TOOL END\n")
-        self._file.write(f"\n{output}\n")
-        self._file.write("[-CustomCallbackHandler]\n")
-        self._file.flush()
-
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
-        self._file.write("\n[+CustomCallbackHandler] TOOL ERROR\n")
-        self._file.write(f"\n{str(error)}\n")
-        self._file.write("[-CustomCallbackHandler]\n")
-        self._file.flush()
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
@@ -120,23 +135,18 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self._logs.append(
             {
                 "id": self._current_action_id,
-                "tool": action.tool,
+                "type": "tool",
+                "name": action.tool,
                 "input": action.tool_input,
+                "start_at": str(datetime.datetime.now()),
+                "finish_at": "",
                 "output": "",
             }
         )
-        # TODO: Push logs to the database
         self._database.push_logs(
             run_id=self._run_id,
             logs=self._logs,
         )
-
-        self._file.write("\n[+CustomCallbackHandler] AGENT ACTION\n")
-        self._file.write(f"{action.tool}\n")
-        self._file.write(f"{action.log}\n")
-        self._file.write(f"{action.tool_input}\n")
-        self._file.write("[-CustomCallbackHandler]\n")
-        self._file.flush()
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on arbitrary text."""

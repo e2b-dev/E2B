@@ -35,6 +35,14 @@ class Database:
                 }
             ).eq("id", run_id).execute()
 
+    def push_raw_logs(self, run_id: str, logs_raw: str) -> None:
+        if logs_raw:
+            self.client.table(deploymentsTable).update(
+                {
+                    "logs_raw": logs_raw,
+                }
+            ).eq("id", run_id).execute()
+
     def update_state(self, run_id: str, state: DeploymentState) -> None:
         self.client.table(deploymentsTable).update(
             {
@@ -43,7 +51,7 @@ class Database:
         ).eq("id", run_id).execute()
 
     def update_url(self, run_id: str, url: str) -> None:
-        self.client.table("deployments").update(
+        self.client.table(deploymentsTable).update(
             {
                 "url": url,
             }

@@ -37,12 +37,13 @@ Observation: the result of the action
 Thought: I now know the final server code and can show it.
 Final Answer: the final server code"""
 
-SUFFIX = """Begin! Reminder to NEVER use tools you don't have access to and ALWAYS use the exact the action `Final Answer` when you know the final server code.
-Thought: Here is the plan of what I will do based on the instructions I got:
-1.
-"""
+SUFFIX = """Begin! Reminder to NEVER use tools you don't have access. Reminder to ALWAYS use the exact the action `Final Answer` when you know the final server code."""
 
 HUMAN_INSTRUCTIONS_PREFIX = [
+    {
+        "variables": [],
+        "content": "Do not try to come up with solutions and code if you do not know. Instead, ask the human for help.",
+    },
     {
         "variables": ["method"],
         "content": """Use this starting template:
@@ -76,4 +77,6 @@ HUMAN_INSTRUCTIONS_SUFFIX = [
     "Test that the generated server from the previous step behaves as is required by making mock `curl` requests to the server.",
     "Once all works without any bugs and errors, write the code to the file.",
     "Deploy the code.",
+    """Thought: Here is the plan of what I will do based on the instructions I got:
+1.""",
 ]

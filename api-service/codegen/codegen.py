@@ -166,7 +166,7 @@ class Codegen(BaseModel):
     ):
         callback_manager = CallbackManager(
             [
-                # StreamingStdOutCallbackHandler(),
+                StreamingStdOutCallbackHandler(),
                 # CustomCallbackHandler(database=database),
             ]
         )
