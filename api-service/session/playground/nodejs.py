@@ -14,8 +14,7 @@ class NodeJSPlayground(Playground):
     run_code_timeout = 5  # 5s
 
     def __init__(self, envs: List[EnvVar]):
-        super().__init__(NodeJSPlayground.node_js_env_id)
-        self.env_vars = format_env_vars(envs)
+        super().__init__(NodeJSPlayground.node_js_env_id, envs)
 
     def run_javascript_code(self, code: str):
         # print(f"Running javascript code: {code}")

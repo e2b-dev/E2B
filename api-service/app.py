@@ -1,13 +1,11 @@
 import os
 import uuid
-from session.deploy import Deployment
-
-from session.env import EnvVar
 
 from typing import List
 from flask import Flask, abort, request
 from flask_cors import CORS
 
+from session.env import EnvVar
 from codegen import Codegen
 from codegen.tools.playground import create_playground_tools
 from database import Database, DeploymentState
@@ -50,7 +48,6 @@ def generate():
     method = body["method"]
     route = body["route"]
     envs: List[EnvVar] = body["envs"]
-    url: str | None = body["url"]
 
     request_body_template = get_request_body_template(blocks)
 
@@ -70,22 +67,12 @@ def generate():
             method=method,
             blocks=blocks,
         )
+
         db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-
-        deployment = Deployment(playground.session, project_id)
-
-        if url is None:
-            url = deployment.new(envs=envs)
-        else:
-            deployment.update(envs=envs)
-
+        url = playground.deploy(project_id, envs)
         db.finish_deployment(run_id=run_id, url=url)
 
-        return {
-            "code": "",
-            "prompt": "",
-            "url": url,
-        }
+        return {"url": url}
     except:
         db.update_state(run_id=run_id, state=DeploymentState.Error)
         raise
