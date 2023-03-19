@@ -34,6 +34,15 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DeploymentResponse": {
+				"properties": {
+					"url": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
 			"EnvVars": {
 				"properties": {},
 				"additionalProperties": {
@@ -294,8 +303,15 @@
 			"put": {
 				"operationId": "CreateDeployment",
 				"responses": {
-					"204": {
-						"description": "No content"
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DeploymentResponse"
+								}
+							}
+						}
 					}
 				},
 				"security": [],

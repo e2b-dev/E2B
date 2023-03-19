@@ -8,9 +8,10 @@ from session.session import Session
 
 
 class Deployment(API):
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, project_id: str):
         super().__init__()
         self.session = session
+        self.project_id = project_id
 
     @staticmethod
     def modify_code(code: str, ecma_script=False):
@@ -25,24 +26,22 @@ class Deployment(API):
 
         return code.replace("app.listen(", "; ({})?.listen?.(")
 
-    def update(self, project_id: str, code: str | None = None, env_vars: List[EnvVar] | None = None):
+    def update(self, code: str | None = None, envs: List[EnvVar] | None = None):
         self.api.update_deployment(
-            project_id,
+            self.project_id,
             session_id=self.session.id,
             update_deployment_request=playground_client.UpdateDeploymentRequest(
-                envVars=format_env_vars(env_vars) if env_vars is not None else None,
+                envVars=format_env_vars(envs) if envs is not None else None,
                 code=Deployment.modify_code(code) if code is not None else None,
             ),
         )
 
-    def new(self, project_id: str, code: str, env_vars: List[EnvVar]):
-        print("deploying")
+    def new(self, code: str, envs: List[EnvVar]):
         self.api.create_deployment(
-            project_id,
+            self.project_id,
             session_id=self.session.id,
             create_deployment_request=playground_client.CreateDeploymentRequest(
-                envVars=format_env_vars(env_vars),
+                envVars=format_env_vars(envs),
                 code=Deployment.modify_code(code),
             ),
         )
-        print("deployed")

@@ -24,6 +24,12 @@ class Playground(API):
         self.session = Session(env_id)
         self.is_closed = False
 
+    def __del__(self):
+        super().__del__()
+
+    def close(self):
+        self.session.close()
+
     def get_open_ports(self):
         response = self.api.get_session(self.session.id)
         return response.ports

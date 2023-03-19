@@ -23,7 +23,7 @@ from langchain.tools import BaseTool
 # from database import Database
 
 # from codegen.tools.playground import create_playground_tools
-from codegen.env import EnvVar
+from session.env import EnvVar
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
 from codegen.prompt import (
     PREFIX,
@@ -148,7 +148,7 @@ class Codegen(BaseModel):
     ]
 
     @classmethod
-    def from_playground_tools(cls, playground_tools: Tuple[List[Any]]):
+    def from_playground_tools(cls, playground_tools: List[Any]):
         c = cls()
 
         # Create CodegenAgent and its executor

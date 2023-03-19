@@ -16,6 +16,11 @@ import {
 import { CachedSession } from '../sessions/session'
 
 
+interface DeploymentResponse {
+  url?: string
+}
+
+
 @Route('deployments')
 export class DeploymentsController extends Controller {
   /**
@@ -31,14 +36,18 @@ export class DeploymentsController extends Controller {
     @Query() sessionID: string,
     @BodyProp() code: string,
     @BodyProp() envVars: EnvVars = {},
-  ): Promise<void> {
+  ): Promise<DeploymentResponse> {
     const cachedSession = CachedSession.findSession(sessionID)
-    await createDeploymentInSession(
+    const url = await createDeploymentInSession(
       cachedSession.session,
       projectID,
       code,
       envVars,
     )
+
+    return {
+      url,
+    }
   }
 
   /**

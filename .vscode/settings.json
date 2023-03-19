@@ -59,7 +59,7 @@
     "./**",
     "./api-service/.venv/bin/python",
   ],
-  "python.defaultInterpreterPath": "api-service/.venv/bin/python",
+  "python.defaultInterpreterPath": "./api-service/.venv/bin/python",
   "python.analysis.extraPaths": [
     "./**",
     "./api-service/.venv/bin/python"

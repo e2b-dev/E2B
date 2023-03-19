@@ -24,6 +24,7 @@ from typing import Optional
 from playground_client.models.create_deployment_request import CreateDeploymentRequest
 from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
 from playground_client.models.create_sessions_request import CreateSessionsRequest
+from playground_client.models.deployment_response import DeploymentResponse
 from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse
 from playground_client.models.mock_data_response import MockDataResponse
 from playground_client.models.process_response import ProcessResponse
@@ -54,7 +55,7 @@ class DefaultApi(object):
         self.api_client = api_client
 
     @validate_arguments
-    def create_deployment(self, project_id : StrictStr, session_id : Annotated[StrictStr, Field(..., description="active session to use for deployment")], create_deployment_request : CreateDeploymentRequest, **kwargs) -> None:  # noqa: E501
+    def create_deployment(self, project_id : StrictStr, session_id : Annotated[StrictStr, Field(..., description="active session to use for deployment")], create_deployment_request : CreateDeploymentRequest, **kwargs) -> DeploymentResponse:  # noqa: E501
         """create_deployment  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -82,7 +83,7 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: None
+        :rtype: DeploymentResponse
         """
         kwargs['_return_http_data_only'] = True
         return self.create_deployment_with_http_info(project_id, session_id, create_deployment_request, **kwargs)  # noqa: E501
@@ -124,7 +125,7 @@ class DefaultApi(object):
         :return: Returns the result object.
                  If the method is called asynchronously,
                  returns the request thread.
-        :rtype: None
+        :rtype: tuple(DeploymentResponse, status_code(int), headers(HTTPHeaderDict))
         """
 
         _params = locals()
@@ -180,6 +181,10 @@ class DefaultApi(object):
         if _params['create_deployment_request']:
             _body_params = _params['create_deployment_request']
 
+        # set the HTTP header `Accept`
+        _header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
         # set the HTTP header `Content-Type`
         _content_types_list = _params.get('_content_type',
             self.api_client.select_header_content_type(
@@ -190,7 +195,9 @@ class DefaultApi(object):
         # authentication setting
         _auth_settings = []  # noqa: E501
 
-        _response_types_map = {}
+        _response_types_map = {
+            '200': "DeploymentResponse",
+        }
 
         return self.api_client.call_api(
             '/deployments/{projectID}', 'PUT',

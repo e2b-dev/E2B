@@ -32,6 +32,7 @@ from playground_client.exceptions import ApiException
 from playground_client.models.create_deployment_request import CreateDeploymentRequest
 from playground_client.models.create_mock_body_data_request import CreateMockBodyDataRequest
 from playground_client.models.create_sessions_request import CreateSessionsRequest
+from playground_client.models.deployment_response import DeploymentResponse
 from playground_client.models.entry_info import EntryInfo
 from playground_client.models.file import File
 from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse

@@ -22,7 +22,7 @@ Method | HTTP request | Description
 
 
 # **create_deployment**
-> create_deployment(project_id, session_id, create_deployment_request)
+> DeploymentResponse create_deployment(project_id, session_id, create_deployment_request)
 
 
 
@@ -51,7 +51,9 @@ with playground_client.ApiClient(configuration) as api_client:
     create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
 
     try:
-        api_instance.create_deployment(project_id, session_id, create_deployment_request)
+        api_response = api_instance.create_deployment(project_id, session_id, create_deployment_request)
+        print("The response of DefaultApi->create_deployment:\n")
+        pprint(api_response)
     except Exception as e:
         print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
 ```
@@ -66,7 +68,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+[**DeploymentResponse**](DeploymentResponse.md)
 
 ### Authorization
 
@@ -75,12 +77,12 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**204** | No content |  -  |
+**200** | Ok |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

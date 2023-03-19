@@ -78,10 +78,9 @@ export async function createDeploymentInSession(
           },
         })
       )
-      .catch((err) => console.error(err))
     await waitForUpdate(projectID)
 
-    await lambda
+    const urlResult = await lambda
       .send(
         new CreateFunctionUrlConfigCommand({
           FunctionName: projectID,
@@ -89,7 +88,6 @@ export async function createDeploymentInSession(
           Cors: {},
         })
       )
-      .catch((err) => console.error(err))
     await waitForUpdate(projectID)
 
     await lambda
@@ -102,10 +100,10 @@ export async function createDeploymentInSession(
           FunctionUrlAuthType: 'NONE',
         })
       )
-      .catch((err) => console.error(err))
     await waitForUpdate(projectID)
 
     // TODO: Configure the Gateway to handle custom domain wildcards
+    return urlResult.FunctionUrl
   } catch (err: any) {
     if (err.name === 'ResourceConflictException') {
       await lambda.send(

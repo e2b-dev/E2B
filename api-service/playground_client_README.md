@@ -52,7 +52,9 @@ with playground_client.ApiClient(configuration) as api_client:
     create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
 
     try:
-        api_instance.create_deployment(project_id, session_id, create_deployment_request)
+        api_response = api_instance.create_deployment(project_id, session_id, create_deployment_request)
+        print("The response of DefaultApi->create_deployment:\n")
+        pprint(api_response)
     except ApiException as e:
         print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
 
@@ -86,6 +88,7 @@ Class | Method | HTTP request | Description
  - [CreateDeploymentRequest](playground_client/docs/CreateDeploymentRequest.md)
  - [CreateMockBodyDataRequest](playground_client/docs/CreateMockBodyDataRequest.md)
  - [CreateSessionsRequest](playground_client/docs/CreateSessionsRequest.md)
+ - [DeploymentResponse](playground_client/docs/DeploymentResponse.md)
  - [EntryInfo](playground_client/docs/EntryInfo.md)
  - [File](playground_client/docs/File.md)
  - [ListFilesystemDirResponse](playground_client/docs/ListFilesystemDirResponse.md)

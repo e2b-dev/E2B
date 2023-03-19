@@ -13,8 +13,8 @@ class Session(API):
         self.is_closed = False
 
     def __del__(self):
-        super().__del__()
         self.close()
+        super().__del__()
 
     def close(self):
         if not self.is_closed:
