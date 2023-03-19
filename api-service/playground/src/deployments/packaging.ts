@@ -1,18 +1,21 @@
 import {
   FilesystemManager,
   OutStderrResponse,
+  OutStdoutResponse,
   Session,
   createSessionProcess
 } from '@devbookhq/sdk'
 import path from 'path'
-
 
 const rootdir = '/code'
 const bundleDir = '/bundles'
 
 const mjsRootPath = path.join(rootdir, 'index.mjs')
 const jsRootPath = path.join(rootdir, 'index.js')
-const bundlePath = path.join(bundleDir, 'index.zip')
+
+const outfileName = 'index.js'
+const zipName = 'index.zip'
+const outfilePath = path.join(bundleDir, outfileName)
 const dumpPath = path.join(bundleDir, 'base')
 
 const possibleRootfiles = [
@@ -50,16 +53,15 @@ function addAWSLambdaHandlers(code: string) {
 
 /**
  * 
- * TODO: Configure esbuild to use Nodejs 18 and to minify the output.
- * TODO: Explore .js/.mjs bundling differences.
  * TODO: Implement binary file reading in devbookd so we don't have to send data via base64 (cca 25% overhead) and process stdout.
+ * TODO: Pipe the output from esbuild -> zip -> base64
  * 
- */
+*/
 export async function packageFunction(session: Session) {
   if (!session.filesystem || !session.process) {
     throw new Error('Session is not active')
   }
-  const stderr: OutStderrResponse[] = []
+  const out: (OutStderrResponse | OutStdoutResponse)[] = []
 
   const rootFile = await getRootFile(session.filesystem)
   if (!rootFile) {
@@ -72,14 +74,15 @@ export async function packageFunction(session: Session) {
   // Bundle the code and dependencies via https://github.com/netlify/zip-it-and-ship-it and dump the base64 string representationto a separate file.
   const bundling = await createSessionProcess({
     manager: session.process,
-    cmd: `zip-it-and-ship-it ${rootdir} ${bundleDir} && base64 -w 0 ${bundlePath} > ${dumpPath}`,
-    rootdir,
-    onStderr: o => stderr.push(o),
+    cmd: `esbuild ${rootFile.path} --bundle --target=node18 --platform=node --minify --outfile=${outfilePath} && zip ${zipName} ${outfileName} && base64 -w 0 ${zipName} > ${dumpPath}`,
+    rootdir: bundleDir,
+    onStderr: o => out.push(o),
+    onStdout: o => out.push(o),
   })
   await bundling.exited
 
-  if (stderr.length > 0) {
-    console.error(stderr.map(o => o.line).join('\n'))
+  if (out.length > 0) {
+    console.error(out.map(o => o.line).join('\n'))
   }
 
   // Read the base64 representation as string. Because our filesystem.read reads file as UTF-8, we cannot read binary files this way without corrupting them.

@@ -44,7 +44,7 @@ const lambda = new LambdaClient({
 // })
 
 const deploymentParams = {
-  Runtime: 'nodejs16.x',
+  Runtime: 'nodejs18.x',
   // TODO: Replace lambda role with valid role in Devbook Acc
   Role: 'arn:aws:iam::066766119186:role/service-role/test-1-role-lgud7u7z',
   Handler: 'index.handler',
