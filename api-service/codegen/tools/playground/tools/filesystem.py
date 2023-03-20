@@ -31,7 +31,8 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
         The input should be a path to a file followed by the content of the file.
         Separate the path and content by a newline character.
         """
-        path, content = input.split("\n", 1)
+        path, content = input.lstrip().split("\n", 1)
+
         playground.write_file(path, content)
         return "File saved"
 
