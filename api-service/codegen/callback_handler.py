@@ -112,10 +112,11 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        pass
+        print("Starting tool")
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        print("Finished tool")
 
         # Update the correct action in the list with the new output
         action = next(a for a in self._logs if a["id"] == self._current_action_id)
@@ -130,6 +131,7 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
+        print("Tool error", error)
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""

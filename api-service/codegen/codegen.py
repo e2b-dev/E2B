@@ -180,8 +180,8 @@ class Codegen(BaseModel):
             # InvalidTool(),
             # OutputFinalCode(),
             *playground_tools,
-            AskHuman(callback_manager=callback_manager),
-            WriteCodeToFile(callback_manager=callback_manager),
+            # AskHuman(callback_manager=callback_manager),
+            # WriteCodeToFile(callback_manager=callback_manager),
             # DeployCode(callback_manager=callback_manager),
         ]
 
@@ -221,6 +221,7 @@ class Codegen(BaseModel):
         method: str,
         blocks: List[Dict],
     ):
+        print("Added handler")
         self._callback_manager.add_handler(
             CustomCallbackHandler(database=self._database, run_id=run_id)
         )
@@ -256,6 +257,9 @@ class Codegen(BaseModel):
             inst_idx += 1
             instructions = instructions + "\n" + f"{inst_idx}. {inst}"
 
+        print("Instructions:\n", instructions)
+
+        print("Running executor...")
         self._agent_executor.run(
             agent_scratchpad="",
             # input=testing_instructions
