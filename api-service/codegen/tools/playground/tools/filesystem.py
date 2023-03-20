@@ -14,7 +14,7 @@ def encode_directory_listing(entries: List[EntryInfo]) -> str:
     )
 
 
-def create_filesystem_tools(playground: NodeJSPlayground):
+def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 

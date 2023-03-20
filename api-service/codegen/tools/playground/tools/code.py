@@ -9,7 +9,7 @@ def extract_code(code: str):
     return code.strip().strip("`").strip()
 
 
-def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
+def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **kwargs):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
@@ -70,8 +70,6 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         request_result = encode_command_output(request_output)
         server_result = encode_command_output(server_output)
 
-        return (
-            f"Curl result:\n{request_result}\nCode execution result:\n{server_result}"
-        )
+        return f"Curl output:\n{request_result}\nServer output:\n{server_result}"
 
     yield curl_javascript_server

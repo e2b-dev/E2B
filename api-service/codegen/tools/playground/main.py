@@ -31,8 +31,8 @@ def create_playground_tools(
         for tools in (
             tool_factory(playground=playground, mock=mock)
             for tool_factory in [
-                # create_filesystem_tools,
-                # create_process_tools,
+                create_filesystem_tools,
+                create_process_tools,
                 create_code_tools,
             ]
         )
