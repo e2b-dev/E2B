@@ -67,17 +67,28 @@ class CodegenAgent(ChatAgent):
 
             # The action is in the XML format, we need to try to a XML escape
             # the body of an XML element. We'll use a bit of heuristics here.
-            # # We assume the action looks like this:
+            # We assume the action looks like this:
             # <action tool="...">
             # action_text_content
             # </action>
-            # We escape all but the first and the last line.
+            # In this case, we escape all but the first and the last line.
+            # However!
+            # What happens sometimes is that the model outputs multiple actions
+            # in sequence like this:
+            # <action tool="...">
+            # action_text_content
+            # </action>
+            # <action tool="...">
+            # action_text_content
+            # </action>
+            # So we should really escape everyline that DOES NOT start with either
+            # <action or with </action.
 
             # Split the action into a list of lines.
             lines = action.strip().splitlines()
-            # Escape all but the first and the last lines - the XML element's body.
+            # Escape all but the lines the start or end the XML element.
             for idx, line in enumerate(lines):
-                if (idx == 0) or (idx == len(lines) - 1):
+                if line.startswith("<action") or line.startswith("</action"):
                     continue
                 lines[idx] = xml_escape(line)
 
