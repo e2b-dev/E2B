@@ -16,6 +16,7 @@ Method | HTTP request | Description
 [**read_filesystem_file**](DefaultApi.md#read_filesystem_file) | **GET** /sessions/{sessionID}/filesystem/file | 
 [**start_process**](DefaultApi.md#start_process) | **POST** /sessions/{sessionID}/processes | 
 [**stop_process**](DefaultApi.md#stop_process) | **DELETE** /sessions/{sessionID}/processes/{processID} | 
+[**wait_for_human_response**](DefaultApi.md#wait_for_human_response) | **GET** /tools/humanResponse | 
 [**write_filesystem_file**](DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{sessionID}/filesystem/file | 
 [**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{sessionID}/processes/{processID}/stdin | 
 
@@ -753,6 +754,67 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**ProcessResponse**](ProcessResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Ok |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **wait_for_human_response**
+> ToolsHumanResponse wait_for_human_response(run_id)
+
+
+
+### Example
+
+```python
+from __future__ import print_function
+import time
+import os
+import playground_client
+from playground_client.rest import ApiException
+from pprint import pprint
+# Defining the host is optional and defaults to https://localhost:9001
+# See configuration.py for a list of all supported configuration parameters.
+configuration = playground_client.Configuration(
+    host = "https://localhost:9001"
+)
+
+
+# Enter a context with an instance of the API client
+with playground_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = playground_client.DefaultApi(api_client)
+    run_id = 'run_id_example' # str | 
+
+    try:
+        api_response = api_instance.wait_for_human_response(run_id)
+        print("The response of DefaultApi->wait_for_human_response:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->wait_for_human_response: %s\n" % e)
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **run_id** | **str**|  | 
+
+### Return type
+
+[**ToolsHumanResponse**](ToolsHumanResponse.md)
 
 ### Authorization
 

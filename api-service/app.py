@@ -64,6 +64,8 @@ def generate():
         cg = Codegen.from_playground_and_database(
             playground_tools=playground_tools,
             database=db,
+            run_id=run_id,
+            playground=playground,
         )
 
         # Generate the code

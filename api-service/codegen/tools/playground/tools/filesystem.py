@@ -14,7 +14,7 @@ def encode_directory_listing(entries: List[EntryInfo]) -> str:
     )
 
 
-def create_filesystem_tools(playground: NodeJSPlayground):
+def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
@@ -31,7 +31,8 @@ def create_filesystem_tools(playground: NodeJSPlayground):
         The input should be a path to a file followed by the content of the file.
         Separate the path and content by a newline character.
         """
-        path, content = input.split("\n", 1)
+        path, content = input.lstrip().split("\n", 1)
+
         playground.write_file(path, content)
         return "File saved"
 

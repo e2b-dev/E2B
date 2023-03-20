@@ -1,29 +1,19 @@
 from typing import (
     List,
-    Tuple,
     List,
     Any,
     Dict,
-    Optional,
     ClassVar,
 )
-import subprocess
-from time import sleep
-
+from codegen.tools.human.ask import create_ask_human_tool
+from langchain.agents import AgentExecutor
 from pydantic import BaseModel, PrivateAttr
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
-# from codegen.tools.documentation import ReadDocumentation
-# from codegen.env import EnvVar
-# from codegen.js_agent import create_js_agent
-# from codegen.prompt import PREFIX, SUFFIX, FORMAT_INSTRUCTIONS
-# from codegen.tools.playground import create_playground_tools
-# from database import Database
-
-# from codegen.tools.playground import create_playground_tools
+from session.playground import NodeJSPlayground
 from session.env import EnvVar
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
@@ -36,25 +26,6 @@ from codegen.prompt import (
 )
 from codegen.callbacks.logs import LogsCallbackHandler
 
-
-class AskHuman(BaseTool):
-    name = "AskHuman"
-    description = "You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human."
-
-    def _run(self, question: str) -> str:
-        print(question)
-        sleep(60)
-        with open(
-            "/Users/vasekmlejnsky/Developer/ai-api/api-service/codegen/human_input.txt"
-        ) as f:
-            human_input = f.read()
-        print("human_input:", human_input)
-        return human_input
-
-    async def _arun(self, question: str) -> str:
-        return NotImplementedError("AskHuman does not support async")
-
-
 # class OutputFinalCode(BaseTool):
 #     name = "OutputFinalCode"
 #     description = "This is the last tool you would use. You use it when you know the final server code and you want to output it. The input should be the final server code that does what the user required."
@@ -63,56 +34,7 @@ class AskHuman(BaseTool):
 #         return final_code
 
 #     async def _arun(self, final_code: str) -> str:
-#         return NotImplementedError("OutputFinalCode does not support async")
-
-
-class WriteCodeToFile(BaseTool):
-    name = "WriteCodeToFile"
-    description = """Writes code to the index.js file. The input should be the code to be written."""
-
-    def _run(self, code: str) -> str:
-        with open(
-            "/Users/vasekmlejnsky/Developer/nodejs-express-server/index.js", "w"
-        ) as f:
-            f.write(
-                f"""
-            import {{ createRequire }} from "module";
-            const require = createRequire(import.meta.url);
-            {code}"""
-            )
-        return "wrote code to index.js"
-
-    async def _arun(self, err: str) -> str:
-        return NotImplementedError("WriteCodeToFile does not support async")
-
-
-class DeployCode(BaseTool):
-    name = "DeployCode"
-    description = """Deploys the code."""
-
-    def _run(self, empty: str) -> str:
-        p = subprocess.Popen(
-            ["git", "add", "."],
-            cwd="/Users/vasekmlejnsky/Developer/nodejs-express-server",
-        )
-        p.wait()
-        p = subprocess.Popen(
-            ["git", "commit", "-m", "Deploy"],
-            cwd="/Users/vasekmlejnsky/Developer/nodejs-express-server",
-        )
-        p.wait()
-        p = subprocess.Popen(
-            [
-                "git",
-                "push",
-            ],
-            cwd="/Users/vasekmlejnsky/Developer/nodejs-express-server",
-        )
-        p.wait()
-        return f"deployed server"
-
-    async def _arun(self, empty: str) -> str:
-        return NotImplementedError("DeployCode does not support async")
+#         raise NotImplementedError("OutputFinalCode does not support async")
 
 
 #     testing_instructions = """Here are your instructions:
@@ -129,7 +51,7 @@ class DeployCode(BaseTool):
 class Codegen(BaseModel):
     input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad", "method"]
     _agent: CodegenAgent = PrivateAttr()
-    _agent_executor: CodegenAgentExecutor = PrivateAttr()
+    _agent_executor: AgentExecutor = PrivateAttr()
     _tools: List[BaseTool] = PrivateAttr()
     _llm: ChatOpenAI = PrivateAttr()
     _database: Database = PrivateAttr()
@@ -163,6 +85,8 @@ class Codegen(BaseModel):
         cls,
         playground_tools: List[BaseTool],
         database: Database,
+        run_id: str,
+        playground: NodeJSPlayground,
     ):
         callback_manager = CallbackManager(
             [
@@ -180,7 +104,11 @@ class Codegen(BaseModel):
             # InvalidTool(),
             # OutputFinalCode(),
             *playground_tools,
-            # AskHuman(callback_manager=callback_manager),
+            # create_ask_human_tool(
+            #     run_id=run_id,
+            #     playground=playground,
+            #     callback_manager=callback_manager,
+            # ),
             # WriteCodeToFile(callback_manager=callback_manager),
             # DeployCode(callback_manager=callback_manager),
         ]

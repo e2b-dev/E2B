@@ -10,7 +10,7 @@ from session.playground import Playground
 class NodeJSPlayground(Playground):
     node_js_env_id = "dCeMnVVxu01L"
     rootdir = "/code"
-    default_javascript_code_file = os.path.join(rootdir, "index.js")
+    default_javascript_code_file = os.path.join(rootdir, "index.mjs")
     run_code_timeout = 5  # 5s
 
     def __init__(self, envs: List[EnvVar]):

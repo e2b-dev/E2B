@@ -9,7 +9,7 @@ def extract_code(code: str):
     return code.strip().strip("`").strip()
 
 
-def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
+def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **kwargs):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
@@ -33,19 +33,19 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
         """
-        Run JavaScript code and return output.
+        Run JavaScript code as ECMAScript module and return output.
         Input should be a valid JavaScript code.
         """
 
-        with_require = f"""
-        import {{ createRequire }} from "module";
-        const require = createRequire(import.meta.url);
-        {extract_code(code)}
-        """
+        # with_require = f"""
+        # import {{ createRequire }} from "module";
+        # const require = createRequire(import.meta.url);
+        # {extract_code(code)}
+        # """
         nonlocal last_javascript_code
-        last_javascript_code = with_require
+        last_javascript_code = code
 
-        output = playground.run_javascript_code(with_require)
+        output = playground.run_javascript_code(code)
         result = encode_command_output(output)
         return result if len(result) > 0 else "Code execution finished without error"
 
@@ -75,8 +75,6 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory):
         request_result = encode_command_output(request_output)
         server_result = encode_command_output(server_output)
 
-        return (
-            f"Curl result:\n{request_result}\nCode execution result:\n{server_result}"
-        )
+        return f"Curl output:\n{request_result}\nServer output:\n{server_result}"
 
     yield curl_javascript_server

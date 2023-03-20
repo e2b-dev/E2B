@@ -7,7 +7,7 @@ class EnvVar(TypedDict):
     value: str
 
 
-def format_env_vars(envs: List[EnvVar]):
+def format_env_vars(envs: List[EnvVar]) -> dict[str, str]:
     return reduce(
         lambda acc, env: {
             **acc,
