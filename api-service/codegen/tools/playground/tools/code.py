@@ -34,8 +34,12 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     def run_javascript_code(code: str) -> str:
         """
         Run JavaScript code as ECMAScript module and return output.
-        Input should be a valid JavaScript code.
-        """
+        Input should be a valid JavaScript code. Example usage:
+        ```
+        <action tool="RunJavaScriptCode">
+        console.log('hello world')
+        </action>
+        ```"""
 
         # with_require = f"""
         # import {{ createRequire }} from "module";
@@ -54,8 +58,11 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     @tool("CurlJavaScriptServer")
     def curl_javascript_server(empty: str) -> str:
         """
-        Make a request to check if the previously run JavaScript code is a server that can handle the needed request.
-        """
+        Make a request to check if the previously run JavaScript code is a server that can handle the needed request. Example usage:
+        ```
+        <action tool="CurlJavaScriptServer">
+        </action>
+        ```"""
         nonlocal last_javascript_code
         if last_javascript_code is None:
             return "Cannot curl, you need to run code first"
