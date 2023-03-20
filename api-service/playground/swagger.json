@@ -312,7 +312,7 @@
 				}
 			}
 		},
-		"/tools": {
+		"/tools/humanResponse": {
 			"get": {
 				"operationId": "WaitForHumanResponse",
 				"responses": {
@@ -332,22 +332,6 @@
 					{
 						"in": "query",
 						"name": "runID",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"in": "query",
-						"name": "projectID",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"in": "query",
-						"name": "routeID",
 						"required": true,
 						"schema": {
 							"type": "string"

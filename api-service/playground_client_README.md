@@ -78,7 +78,7 @@ Class | Method | HTTP request | Description
 *DefaultApi* | [**read_filesystem_file**](playground_client/docs/DefaultApi.md#read_filesystem_file) | **GET** /sessions/{sessionID}/filesystem/file | 
 *DefaultApi* | [**start_process**](playground_client/docs/DefaultApi.md#start_process) | **POST** /sessions/{sessionID}/processes | 
 *DefaultApi* | [**stop_process**](playground_client/docs/DefaultApi.md#stop_process) | **DELETE** /sessions/{sessionID}/processes/{processID} | 
-*DefaultApi* | [**wait_for_human_response**](playground_client/docs/DefaultApi.md#wait_for_human_response) | **GET** /tools | 
+*DefaultApi* | [**wait_for_human_response**](playground_client/docs/DefaultApi.md#wait_for_human_response) | **GET** /tools/humanResponse | 
 *DefaultApi* | [**write_filesystem_file**](playground_client/docs/DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{sessionID}/filesystem/file | 
 *DefaultApi* | [**write_process_stdin**](playground_client/docs/DefaultApi.md#write_process_stdin) | **POST** /sessions/{sessionID}/processes/{processID}/stdin | 
 

@@ -16,7 +16,7 @@ Method | HTTP request | Description
 [**read_filesystem_file**](DefaultApi.md#read_filesystem_file) | **GET** /sessions/{sessionID}/filesystem/file | 
 [**start_process**](DefaultApi.md#start_process) | **POST** /sessions/{sessionID}/processes | 
 [**stop_process**](DefaultApi.md#stop_process) | **DELETE** /sessions/{sessionID}/processes/{processID} | 
-[**wait_for_human_response**](DefaultApi.md#wait_for_human_response) | **GET** /tools | 
+[**wait_for_human_response**](DefaultApi.md#wait_for_human_response) | **GET** /tools/humanResponse | 
 [**write_filesystem_file**](DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{sessionID}/filesystem/file | 
 [**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{sessionID}/processes/{processID}/stdin | 
 
@@ -772,7 +772,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **wait_for_human_response**
-> ToolsHumanResponse wait_for_human_response(run_id, project_id, route_id)
+> ToolsHumanResponse wait_for_human_response(run_id)
 
 
 
@@ -797,11 +797,9 @@ with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
     run_id = 'run_id_example' # str | 
-    project_id = 'project_id_example' # str | 
-    route_id = 'route_id_example' # str | 
 
     try:
-        api_response = api_instance.wait_for_human_response(run_id, project_id, route_id)
+        api_response = api_instance.wait_for_human_response(run_id)
         print("The response of DefaultApi->wait_for_human_response:\n")
         pprint(api_response)
     except Exception as e:
@@ -813,8 +811,6 @@ with playground_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **run_id** | **str**|  | 
- **project_id** | **str**|  | 
- **route_id** | **str**|  | 
 
 ### Return type
 

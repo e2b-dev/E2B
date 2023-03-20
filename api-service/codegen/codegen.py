@@ -86,8 +86,6 @@ class Codegen(BaseModel):
         playground_tools: List[BaseTool],
         database: Database,
         run_id: str,
-        project_id,
-        route_id: str,
         playground: NodeJSPlayground,
     ):
         callback_manager = CallbackManager(
@@ -106,15 +104,13 @@ class Codegen(BaseModel):
             # InvalidTool(),
             # OutputFinalCode(),
             *playground_tools,
-            AskHuman(
-                callback_manager=callback_manager,
-                run_id=run_id,
-                project_id=project_id,
-                route_id=route_id,
-                playground=playground,
-                name="AskHuman",
-                description="You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human.",
-            ),
+            # AskHuman(
+            #     callback_manager=callback_manager,
+            #     run_id=run_id,
+            #     playground=playground,
+            #     name="AskHuman",
+            #     description="You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human.",
+            # ),
             # WriteCodeToFile(callback_manager=callback_manager),
             # DeployCode(callback_manager=callback_manager),
         ]

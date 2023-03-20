@@ -193,15 +193,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/tools',
+        app.get('/tools/humanResponse',
             ...(fetchMiddlewares<RequestHandler>(ToolsController)),
             ...(fetchMiddlewares<RequestHandler>(ToolsController.prototype.waitForHumanResponse)),
 
             function ToolsController_waitForHumanResponse(request: any, response: any, next: any) {
             const args = {
                     runID: {"in":"query","name":"runID","required":true,"dataType":"string"},
-                    projectID: {"in":"query","name":"projectID","required":true,"dataType":"string"},
-                    routeID: {"in":"query","name":"routeID","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

@@ -1841,21 +1841,17 @@ class DefaultApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
-    def wait_for_human_response(self, run_id : StrictStr, project_id : StrictStr, route_id : StrictStr, **kwargs) -> ToolsHumanResponse:  # noqa: E501
+    def wait_for_human_response(self, run_id : StrictStr, **kwargs) -> ToolsHumanResponse:  # noqa: E501
         """wait_for_human_response  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.wait_for_human_response(run_id, project_id, route_id, async_req=True)
+        >>> thread = api.wait_for_human_response(run_id, async_req=True)
         >>> result = thread.get()
 
         :param run_id: (required)
         :type run_id: str
-        :param project_id: (required)
-        :type project_id: str
-        :param route_id: (required)
-        :type route_id: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _preload_content: if False, the urllib3.HTTPResponse object will
@@ -1872,24 +1868,20 @@ class DefaultApi(object):
         :rtype: ToolsHumanResponse
         """
         kwargs['_return_http_data_only'] = True
-        return self.wait_for_human_response_with_http_info(run_id, project_id, route_id, **kwargs)  # noqa: E501
+        return self.wait_for_human_response_with_http_info(run_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def wait_for_human_response_with_http_info(self, run_id : StrictStr, project_id : StrictStr, route_id : StrictStr, **kwargs):  # noqa: E501
+    def wait_for_human_response_with_http_info(self, run_id : StrictStr, **kwargs):  # noqa: E501
         """wait_for_human_response  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.wait_for_human_response_with_http_info(run_id, project_id, route_id, async_req=True)
+        >>> thread = api.wait_for_human_response_with_http_info(run_id, async_req=True)
         >>> result = thread.get()
 
         :param run_id: (required)
         :type run_id: str
-        :param project_id: (required)
-        :type project_id: str
-        :param route_id: (required)
-        :type route_id: str
         :param async_req: Whether to execute the request asynchronously.
         :type async_req: bool, optional
         :param _return_http_data_only: response data without head status code
@@ -1917,9 +1909,7 @@ class DefaultApi(object):
         _params = locals()
 
         _all_params = [
-            'run_id',
-            'project_id',
-            'route_id'
+            'run_id'
         ]
         _all_params.extend(
             [
@@ -1952,10 +1942,6 @@ class DefaultApi(object):
         _query_params = []
         if _params.get('run_id') is not None:  # noqa: E501
             _query_params.append(('runID', _params['run_id']))
-        if _params.get('project_id') is not None:  # noqa: E501
-            _query_params.append(('projectID', _params['project_id']))
-        if _params.get('route_id') is not None:  # noqa: E501
-            _query_params.append(('routeID', _params['route_id']))
 
         # process the header parameters
         _header_params = dict(_params.get('_headers', {}))
@@ -1979,7 +1965,7 @@ class DefaultApi(object):
         }
 
         return self.api_client.call_api(
-            '/tools', 'GET',
+            '/tools/humanResponse', 'GET',
             _path_params,
             _query_params,
             _header_params,

@@ -12,11 +12,9 @@ interface ToolsHumanResponse {
 
 @Route('tools')
 export class ToolsController extends Controller {
-  @Get()
+  @Get('humanResponse')
   public async waitForHumanResponse(
     @Query() runID: string,
-    @Query() projectID: string,
-    @Query() routeID: string,
   ): Promise<ToolsHumanResponse> {
     const response = await waitForHumanResponse({
       runID,
