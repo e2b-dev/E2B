@@ -17,4 +17,4 @@ class ReadDocumentation(BaseTool):
         return f.read()
 
     async def _arun(self, query: str) -> str:
-        return NotImplementedError("ReadDocumentation does not support async")
+        raise NotImplementedError("ReadDocumentation does not support async")

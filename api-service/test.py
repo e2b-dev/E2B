@@ -44,7 +44,7 @@ class WriteCodeToFile(BaseTool):
         return "wrote code to index.js"
 
     async def _arun(self, err: str) -> str:
-        return NotImplementedError("WriteCodeToFile does not support async")
+        raise NotImplementedError("WriteCodeToFile does not support async")
 
 
 class DeployCode(BaseTool):
@@ -74,7 +74,7 @@ class DeployCode(BaseTool):
         return f"deployed server"
 
     async def _arun(self, empty: str) -> str:
-        return NotImplementedError("DeployCode does not support async")
+        raise NotImplementedError("DeployCode does not support async")
 
 
 FINAL_ANSWER_ACTION = "Final Answer:"

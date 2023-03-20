@@ -1,29 +1,18 @@
 from typing import (
     List,
-    Tuple,
     List,
     Any,
     Dict,
-    Optional,
     ClassVar,
 )
-import subprocess
-from time import sleep
-
+from codegen.tools.human.ask import AskHuman
+from langchain.agents import AgentExecutor
 from pydantic import BaseModel, PrivateAttr
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
-# from codegen.tools.documentation import ReadDocumentation
-# from codegen.env import EnvVar
-# from codegen.js_agent import create_js_agent
-# from codegen.prompt import PREFIX, SUFFIX, FORMAT_INSTRUCTIONS
-# from codegen.tools.playground import create_playground_tools
-# from database import Database
-
-# from codegen.tools.playground import create_playground_tools
 from session.env import EnvVar
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
@@ -36,25 +25,6 @@ from codegen.prompt import (
 )
 from .callback_handler import CustomCallbackHandler
 
-
-class AskHuman(BaseTool):
-    name = "AskHuman"
-    description = "You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human."
-
-    def _run(self, question: str) -> str:
-        print(question)
-        sleep(60)
-        with open(
-            "/Users/vasekmlejnsky/Developer/ai-api/api-service/codegen/human_input.txt"
-        ) as f:
-            human_input = f.read()
-        print("human_input:", human_input)
-        return human_input
-
-    async def _arun(self, question: str) -> str:
-        return NotImplementedError("AskHuman does not support async")
-
-
 # class OutputFinalCode(BaseTool):
 #     name = "OutputFinalCode"
 #     description = "This is the last tool you would use. You use it when you know the final server code and you want to output it. The input should be the final server code that does what the user required."
@@ -63,56 +33,7 @@ class AskHuman(BaseTool):
 #         return final_code
 
 #     async def _arun(self, final_code: str) -> str:
-#         return NotImplementedError("OutputFinalCode does not support async")
-
-
-class WriteCodeToFile(BaseTool):
-    name = "WriteCodeToFile"
-    description = """Writes code to the index.js file. The input should be the code to be written."""
-
-    def _run(self, code: str) -> str:
-        with open(
-            "/Users/vasekmlejnsky/Developer/nodejs-express-server/index.js", "w"
-        ) as f:
-            f.write(
-                f"""
-            import {{ createRequire }} from "module";
-            const require = createRequire(import.meta.url);
-            {code}"""
-            )
-        return "wrote code to index.js"
-
-    async def _arun(self, err: str) -> str:
-        return NotImplementedError("WriteCodeToFile does not support async")
-
-
-class DeployCode(BaseTool):
-    name = "DeployCode"
-    description = """Deploys the code."""
-
-    def _run(self, empty: str) -> str:
-        p = subprocess.Popen(
-            ["git", "add", "."],
-            cwd="/Users/vasekmlejnsky/Developer/nodejs-express-server",
-        )
-        p.wait()
-        p = subprocess.Popen(
-            ["git", "commit", "-m", "Deploy"],
-            cwd="/Users/vasekmlejnsky/Developer/nodejs-express-server",
-        )
-        p.wait()
-        p = subprocess.Popen(
-            [
-                "git",
-                "push",
-            ],
-            cwd="/Users/vasekmlejnsky/Developer/nodejs-express-server",
-        )
-        p.wait()
-        return f"deployed server"
-
-    async def _arun(self, empty: str) -> str:
-        return NotImplementedError("DeployCode does not support async")
+#         raise NotImplementedError("OutputFinalCode does not support async")
 
 
 #     testing_instructions = """Here are your instructions:
@@ -129,7 +50,7 @@ class DeployCode(BaseTool):
 class Codegen(BaseModel):
     input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad", "method"]
     _agent: CodegenAgent = PrivateAttr()
-    _agent_executor: CodegenAgentExecutor = PrivateAttr()
+    _agent_executor: AgentExecutor = PrivateAttr()
     _tools: List[BaseTool] = PrivateAttr()
     _llm: ChatOpenAI = PrivateAttr()
     _database: Database = PrivateAttr()
@@ -163,6 +84,7 @@ class Codegen(BaseModel):
         cls,
         playground_tools: List[BaseTool],
         database: Database,
+        run_id: str
     ):
         callback_manager = CallbackManager(
             [
@@ -180,8 +102,8 @@ class Codegen(BaseModel):
             # InvalidTool(),
             # OutputFinalCode(),
             *playground_tools,
-            AskHuman(callback_manager=callback_manager),
-            WriteCodeToFile(callback_manager=callback_manager),
+            AskHuman(callback_manager=callback_manager, run_id=run_id),
+            # WriteCodeToFile(callback_manager=callback_manager),
             # DeployCode(callback_manager=callback_manager),
         ]
 
@@ -262,78 +184,3 @@ class Codegen(BaseModel):
             input=instructions,
             method=method,
         )
-
-
-# def generate_req_handler(
-#     db: Database,
-#     run_id: str,
-#     blocks: List[Dict],
-#     method: str,
-#     route: str,
-#     envs: List[EnvVar],
-# ):
-#     request_body_blocks = [
-#         block for block in blocks if block.get("type") == "RequestBody"
-#     ]
-#     request_body_template = (
-#         request_body_blocks[0]["prompt"] if len(request_body_blocks) > 0 else None
-#     )
-#     playground_tools, playground = create_playground_tools(
-#         envs=envs,
-#         route=route,
-#         method=method,
-#         request_body_template=request_body_template,
-#     )
-
-#     steps = ""
-#     for idx, block in enumerate(blocks):
-#         if block.get("type") == "Basic":
-#             steps = steps + "\n" + "{}. ".format(idx + 1) + block["prompt"] + "\n"
-#     tool_names = ["InstallNPMDependencies", "RunJavaScriptCode"]
-#     prefix = PREFIX.format(
-#         method=method,
-#         tool_names=tool_names,
-#         steps=steps,
-#         request_body=request_body_template,
-#     )
-#     format_instructions = FORMAT_INSTRUCTIONS.format(
-#         tool_names=tool_names,
-#     )
-#     executor = create_js_agent(
-#         db=db,
-#         run_id=run_id,
-#         llm=OpenAI(temperature=0, max_tokens=1000),
-#         # llm=OpenAI(temperature=0, model_name='code-davinci-002', max_tokens=1000),
-#         # llm=OpenAIChat(temperature=0, max_tokens=1000),
-#         tools=[
-#             # ReadDocumentation()
-#             *playground_tools,
-#         ],
-#         verbose=True,
-#         prefix=prefix,
-#         format_instructions=format_instructions,
-#     )
-
-#     # Convert env vars to Javascript comments, each on its on line for each env var.
-#     # envs_str = ""
-#     # for env in envs:
-#     #     envs_str += f'// const {env["key"]} = `env.{env["key"]}`\n'
-
-#     # prompt = PREFIX.format(
-#     #     method=method, envs=envs_str, request_body=request_body_template
-#     # )
-
-#     # for idx, block in enumerate(blocks):
-#     #     if block.get("type") == "Basic":
-#     #         prompt = prompt + "\n" + "{}. ".format(idx + 1) + block["prompt"] + "\n"
-
-#     # prompt = prompt + "\n" + SUFFIX.format(method=method)
-
-#     # handler_code = executor.run(prompt).strip("`").strip()
-#     handler_code = executor.run(f"Requirement:").strip("`").strip()
-#     print("CODE")
-#     print(handler_code)
-
-#     playground.close()
-
-#     return "", handler_code
