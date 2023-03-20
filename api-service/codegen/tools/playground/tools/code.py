@@ -33,19 +33,19 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     @tool("RunJavaScriptCode")
     def run_javascript_code(code: str) -> str:
         """
-        Run JavaScript code and return output.
+        Run JavaScript code as ECMAScript module and return output.
         Input should be a valid JavaScript code.
         """
 
-        with_require = f"""
-        import {{ createRequire }} from "module";
-        const require = createRequire(import.meta.url);
-        {extract_code(code)}
-        """
+        # with_require = f"""
+        # import {{ createRequire }} from "module";
+        # const require = createRequire(import.meta.url);
+        # {extract_code(code)}
+        # """
         nonlocal last_javascript_code
-        last_javascript_code = with_require
+        last_javascript_code = code
 
-        output = playground.run_javascript_code(with_require)
+        output = playground.run_javascript_code(code)
         result = encode_command_output(output)
         return result if len(result) > 0 else "Code execution finished without error"
 

@@ -5,7 +5,7 @@ from typing import (
     Dict,
     ClassVar,
 )
-from codegen.tools.human.ask import AskHuman
+from codegen.tools.human.ask import create_ask_human_tool
 from langchain.agents import AgentExecutor
 from pydantic import BaseModel, PrivateAttr
 from langchain.chat_models import ChatOpenAI
@@ -104,12 +104,10 @@ class Codegen(BaseModel):
             # InvalidTool(),
             # OutputFinalCode(),
             *playground_tools,
-            # AskHuman(
-            #     callback_manager=callback_manager,
+            # create_ask_human_tool(
             #     run_id=run_id,
             #     playground=playground,
-            #     name="AskHuman",
-            #     description="You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human.",
+            #     callback_manager=callback_manager,
             # ),
             # WriteCodeToFile(callback_manager=callback_manager),
             # DeployCode(callback_manager=callback_manager),
