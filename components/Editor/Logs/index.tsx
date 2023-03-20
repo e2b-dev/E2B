@@ -15,7 +15,6 @@ import Button from 'components/Button'
 
 import DeployButton from './DeployButton'
 import Link from 'next/link'
-import { Check, X } from 'lucide-react'
 
 export interface Props {
   logs?: Log[]
@@ -88,23 +87,15 @@ function Logs({
             justify-between
           "
         >
-          <div className="
-          space-x-1
-          flex
-          items-center
-          ">
-            <Text
-              text="Latest Deployment"
-              className="
+          <Text
+            text="Latest Deployment"
+            className="
               font-semibold
               uppercase
               text-slate-400
             "
-              size={Text.size.S2}
-            />
-            {deployStatus === deployment_state.finished && <Check className="text-green-800" size="18px" />}
-            {deployStatus === deployment_state.error && <X className="text-red-600" size="18px" />}
-          </div>
+            size={Text.size.S2}
+          />
           <DeployButton
             deploy={deploy}
             isInitializingDeploy={isInitializingDeploy}
