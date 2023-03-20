@@ -72,7 +72,7 @@ def parse_action_string(action_string: str):
                 escaped_content = (
                     xml_escape(action_content) if action_content else action_content
                 )
-                # Assemble the action with escaped content back togeter.
+                # Assemble the action with escaped content back together.
                 parts[idx] = f'<action tool="{action_name}">{escaped_content}</action>'
 
         escaped_xml_string = "\n".join(parts)
