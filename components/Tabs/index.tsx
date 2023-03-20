@@ -155,7 +155,7 @@ function Tab({
         "
         style={hoverStyles}
       />
-      <div
+      {/* <div
         className="
           absolute
           z-10
@@ -165,7 +165,7 @@ function Tab({
           bg-green-800
         "
         style={selectStyles}
-      />
+      /> */}
     </nav>
   )
 }
