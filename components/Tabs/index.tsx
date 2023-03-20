@@ -100,7 +100,6 @@ function Tab({
         items-center
         relative
         z-0
-        py-2
       "
       onPointerLeave={onLeaveTabs}
     >
@@ -110,24 +109,29 @@ function Tab({
             key={i}
             className={clsx(
               `text-sm
-               relative
-               rounded-md
-               flex
-               items-center
-               h-8
-               px-2
-               lg:px-4
-               z-20
-               bg-transparent
-               text-sm
-               font-medium
-               text-gray-600/80
-               cursor-pointer
-               select-none
-               transition-colors
+              relative
+              rounded-md
+              flex
+              items-center
+              justify-center
+              h-8
+              px-2
+              lg:px-4
+              z-20
+              bg-transparent
+              text-sm
+              font-medium
+              cursor-pointer
+              select-none
+              transition-colors
+              border-green-800
+              w-[80px]
               `,
               {
-                'text-[#8C24D5]': hoveredTabIndex === i || selectedTabIndex === i,
+                'text-slate-400': hoveredTabIndex !== i && selectedTabIndex !== i,
+              },
+              {
+                'text-green-800': hoveredTabIndex === i || selectedTabIndex === i,
               }
             )}
             ref={(el) => (buttonRefs[i] = el)}
@@ -146,7 +150,7 @@ function Tab({
           top-0
           left-0
           rounded-md
-          bg-gray-200
+          bg-green-400
           transition-[width]
         "
         style={hoverStyles}
@@ -158,7 +162,7 @@ function Tab({
           bottom-0
           left-0
           h-0.5
-          bg-slate-500
+          bg-green-800
         "
         style={selectStyles}
       /> */}

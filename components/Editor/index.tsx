@@ -14,7 +14,7 @@ import Block from 'components/Block'
 
 import ConnectionLine from './ConnectionLine'
 import AddBlockButton from './AddBlockButton'
-import Logs from './Logs'
+import RightSidebar from './RightSidebar'
 import Routes from './Routes'
 import Link from 'next/link'
 
@@ -221,7 +221,7 @@ function Editor({ project }: Props) {
                 </Link>
               }
             </div>
-            <Logs
+            <RightSidebar
               deployStatus={deployment?.state}
               isInitializingDeploy={isInitializingDeploy}
               logs={logs}
