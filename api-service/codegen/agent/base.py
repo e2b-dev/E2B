@@ -11,7 +11,6 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 ACTIONS_QUEUE = "action_queue"
 MALFORMED_ANSWER = "malformed_answer"
 
-
 xml_escape_dict = {
     '"': "&quot;",
     "'": "&apos;",
