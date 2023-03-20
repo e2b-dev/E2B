@@ -1,11 +1,9 @@
 import {
-  useEffect,
-  // useState,
   useCallback,
 } from 'react'
-import hljs from 'highlight.js'
-import ReactMarkdown from 'react-markdown'
 import { deployment_state } from '@prisma/client'
+import Link from 'next/link'
+import { Check, X } from 'lucide-react'
 
 import { Log } from 'db/types'
 import { useStateStore } from 'state/StoreProvider'
@@ -14,8 +12,7 @@ import Text from 'components/Text'
 import Button from 'components/Button'
 
 import DeployButton from './DeployButton'
-import Link from 'next/link'
-import { Check, X } from 'lucide-react'
+import Logs from './Logs'
 
 export interface Props {
   logs?: Log[]
@@ -26,7 +23,7 @@ export interface Props {
   isInitializingDeploy?: boolean
 }
 
-function Logs({
+function RightSidebar({
   logs,
   logsRaw,
   deploy,
@@ -57,9 +54,6 @@ function Logs({
     setEnvs(newEnvs)
   }, [envs, setEnvs])
 
-  useEffect(function highlightCode() {
-    hljs.highlightAll()
-  }, [logs])
 
   return (
     <Sidebar
@@ -201,48 +195,12 @@ function Logs({
           onClick={addNewEnv}
         />
       </div>
-      <div className="
-        max-w-full
-        flex
-        flex-col
-        overflow-auto
-      ">
-        <Text
-          text="Logs"
-          size={Text.size.S2}
-          className="
-            uppercase
-            text-slate-400
-            font-semibold
-            px-4
-            py-2
-          "
-        />
-        <div
-          className="
-            flex-1
-            overflow-auto
-            text-xs
-            tracking-wide
-            font-sans
-            whitespace-pre-wrap
-            space-y-4
-            p-4
-        ">
-          {logsRaw &&
-            <ReactMarkdown>
-              {logsRaw}
-            </ReactMarkdown>
-          }
-          {/* {logs?.map((l, i) =>
-            <ReactMarkdown key={i}>
-              {l}
-            </ReactMarkdown>
-          )} */}
-        </div>
-      </div>
+      <Logs
+        logs={logs}
+        logsRaw={logsRaw}
+      />
     </Sidebar>
   )
 }
 
-export default Logs
+export default RightSidebar
