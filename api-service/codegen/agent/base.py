@@ -1,4 +1,5 @@
 from typing import Optional, Tuple, List, Dict, Union
+from html import unescape
 import xml.etree.ElementTree as ET
 
 from langchain.agents.tools import InvalidTool
@@ -24,6 +25,9 @@ def xml_escape(text: str) -> str:
     for k, v in xml_escape_dict.items():
         text = text.replace(k, v)
     return text
+
+
+# def xml_unescape(xml: str) -> str:
 
 
 class CodegenAgent(ChatAgent):
@@ -83,9 +87,14 @@ class CodegenAgent(ChatAgent):
             root = ET.fromstring(f"<root>{escaped}</root>")
             actions = root.findall("action")
 
+            # Because we XML-escaped action element's body (= tool input) so we could XML parse it,
+            # we need to unescape it now to get the actual tool input.
+            for a in actions:
+                a.text = unescape(a.text)
+
             # We handle the case when the LLM starts specifying multiple actions in a single response.
             if len(actions) > 1:
-                return ACTIONS_QUEUE, action.strip()
+                return ACTIONS_QUEUE, actions.strip()
             else:
                 return actions[0].attrib["tool"], actions[0].text
         except Exception as e:
@@ -97,7 +106,6 @@ class CodegenAgent(ChatAgent):
                 MALFORMED_ANSWER,
                 f"Wrong format! Follow the format! Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer. I just tried to parse your last reponse with `xml.etree.ElementTree.fromstring()` and received this error:\n{e}Reminder, that you should follow the format I told you!",
             )
-            # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
             print(f"====== Got exception '{str(e)}'\n text:\n{text}")
             # input = response["action_input"]
             return (
@@ -153,6 +161,7 @@ class CodegenAgentExecutor(AgentExecutor):
         """
         # Call the LLM to see what to do.
         output = self.agent.plan(intermediate_steps, **inputs)
+
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
