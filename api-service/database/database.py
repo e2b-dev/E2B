@@ -61,4 +61,4 @@ class Database:
         if url is not None:
             update["url"] = url
 
-        self.client.table("deployments").update(update).eq("id", run_id).execute()
+        self.client.table(deploymentsTable).update(update).eq("id", run_id).execute()

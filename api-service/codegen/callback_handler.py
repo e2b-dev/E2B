@@ -53,20 +53,16 @@ class RepeatedTimer(object):
 
 class CustomCallbackHandler(BaseCallbackHandler):
     _logs: List[Dict[str, str]] = []
+    _raw_logs: str = ""
     _current_action_id: Optional[str] = None
     _database: Database = PrivateAttr()
     _run_id: str = PrivateAttr()
     _file = open("out.txt", "w+")
 
-    _raw_logs: str = ""
-
-    _rt: RepeatedTimer = PrivateAttr()
-
     def __init__(self, database: Database, run_id: str, **kwargs: Any):
         super().__init__(**kwargs)
         self._database = database
         self._run_id = run_id
-        self._rt = RepeatedTimer(1, self._push_raw_logs)
 
     def _push_raw_logs(self) -> None:
         if self._raw_logs:
@@ -81,6 +77,7 @@ class CustomCallbackHandler(BaseCallbackHandler):
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         self._raw_logs += token
+        self._push_raw_logs()
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -112,10 +109,14 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
-        pass
+        print("Starting tool")
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        print("Finished tool")
+
+        self._raw_logs += f"\n{output}\n"
+        self._push_raw_logs()
 
         # Update the correct action in the list with the new output
         action = next(a for a in self._logs if a["id"] == self._current_action_id)
@@ -130,6 +131,7 @@ class CustomCallbackHandler(BaseCallbackHandler):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Run when tool errors."""
+        print("Tool error", error)
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""

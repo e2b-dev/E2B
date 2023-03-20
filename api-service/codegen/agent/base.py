@@ -1,4 +1,5 @@
 from typing import Optional, Tuple, List, Dict, Union
+from html import unescape
 import xml.etree.ElementTree as ET
 
 from langchain.agents.tools import InvalidTool
@@ -11,9 +12,22 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 ACTIONS_QUEUE = "action_queue"
 MALFORMED_ANSWER = "malformed_answer"
 
-# class ActionRouter(BaseTool):
-#     name = "action_router"
-#     description = "Use this tool when you want to use multiple actions at once"
+xml_escape_dict = {
+    '"': "&quot;",
+    "'": "&apos;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "&": "&amp;",
+}
+
+
+def xml_escape(text: str) -> str:
+    for k, v in xml_escape_dict.items():
+        text = text.replace(k, v)
+    return text
+
+
+# def xml_unescape(xml: str) -> str:
 
 
 class CodegenAgent(ChatAgent):
@@ -50,23 +64,59 @@ class CodegenAgent(ChatAgent):
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         try:
             _, action, _ = text.split("```")
-            root = ET.fromstring(f"<root>{action.strip()}</root>")
+
+            # The action is in the XML format, we need to try to a XML escape
+            # the body of an XML element. We'll use a bit of heuristics here.
+            # We assume the action looks like this:
+            # <action tool="...">
+            # action_text_content
+            # </action>
+            # In this case, we escape all but the first and the last line.
+            # However!
+            # What happens sometimes is that the model outputs multiple actions
+            # in sequence like this:
+            # <action tool="...">
+            # action_text_content
+            # </action>
+            # <action tool="...">
+            # action_text_content
+            # </action>
+            # So we should really escape everyline that DOES NOT start with either
+            # <action or with </action.
+
+            # Split the action into a list of lines.
+            lines = action.strip().splitlines()
+            # Escape all but the lines the start or end the XML element.
+            for idx, line in enumerate(lines):
+                if line.startswith("<action") or line.startswith("</action"):
+                    continue
+                lines[idx] = xml_escape(line)
+
+            # Join the lines back into a single string.
+            escaped = "\n".join(lines)
+
+            root = ET.fromstring(f"<root>{escaped}</root>")
             actions = root.findall("action")
+
+            # Because we XML-escaped action element's body (= tool input) so we could XML parse it,
+            # we need to unescape it now to get the actual tool input.
+            for a in actions:
+                a.text = unescape(a.text)
 
             # We handle the case when the LLM starts specifying multiple actions in a single response.
             if len(actions) > 1:
-                return ACTIONS_QUEUE, action.strip()
+                return ACTIONS_QUEUE, actions.strip()
             else:
                 return actions[0].attrib["tool"], actions[0].text
         except Exception as e:
+            print("Got exception in `_extract_tool_and_input:\n", e)
             # Sometimes the agent just completely messed up the output format.
             # We want to remind it that the last answer was wrong and it should
             # follow the format.
             return (
                 MALFORMED_ANSWER,
-                f"Wrong format! Follow the format! Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer. I just tried to parse your last reponse and received this error:\n{e}Reminder, that you should follow the format I told you!",
+                f"Wrong format! Follow the format! Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer. I just tried to parse your last reponse with `xml.etree.ElementTree.fromstring()` and received this error:\n{e}Reminder, that you should follow the format I told you!",
             )
-            # TODO: I think this is buggy. I haven't really had a chance to properly test it and debug the model's behavior.
             print(f"====== Got exception '{str(e)}'\n text:\n{text}")
             # input = response["action_input"]
             return (
@@ -122,6 +172,7 @@ class CodegenAgentExecutor(AgentExecutor):
         """
         # Call the LLM to see what to do.
         output = self.agent.plan(intermediate_steps, **inputs)
+
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output

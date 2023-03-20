@@ -15,7 +15,12 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
 
     @tool("InstallNPMDependencies")
     def install_dependencies(dependencies: str) -> str:
-        """Install dependecies with NPM"""
+        """Install JavaScript packages with NPM. The input should be valid names of NPM packages. Example usage:
+        ```
+        <action tool="InstallNPMDependencies">
+        package_name_1 package_name_2
+        </action>
+        ```"""
         output = playground.install_dependencies(extract_code(dependencies))
         result = encode_command_output(output, only_errors=True)
         return result if len(result) > 0 else "All dependencies installed"
