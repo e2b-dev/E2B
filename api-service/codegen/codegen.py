@@ -13,6 +13,7 @@ from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
+from session.playground import NodeJSPlayground
 from session.env import EnvVar
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
@@ -84,7 +85,10 @@ class Codegen(BaseModel):
         cls,
         playground_tools: List[BaseTool],
         database: Database,
-        run_id: str
+        run_id: str,
+        project_id,
+        route_id: str,
+        playground: NodeJSPlayground,
     ):
         callback_manager = CallbackManager(
             [
@@ -102,7 +106,15 @@ class Codegen(BaseModel):
             # InvalidTool(),
             # OutputFinalCode(),
             *playground_tools,
-            AskHuman(callback_manager=callback_manager, run_id=run_id),
+            AskHuman(
+                callback_manager=callback_manager,
+                run_id=run_id,
+                project_id=project_id,
+                route_id=route_id,
+                playground=playground,
+                name="AskHuman",
+                description="You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human.",
+            ),
             # WriteCodeToFile(callback_manager=callback_manager),
             # DeployCode(callback_manager=callback_manager),
         ]

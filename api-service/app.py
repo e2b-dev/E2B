@@ -65,6 +65,9 @@ def generate():
             playground_tools=playground_tools,
             database=db,
             run_id=run_id,
+            project_id=project_id,
+            route_id=route_id,
+            playground=playground,
         )
 
         # Generate the code

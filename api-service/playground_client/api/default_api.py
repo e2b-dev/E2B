@@ -31,6 +31,7 @@ from playground_client.models.process_response import ProcessResponse
 from playground_client.models.read_filesystem_file_response import ReadFilesystemFileResponse
 from playground_client.models.session_response import SessionResponse
 from playground_client.models.start_process_params import StartProcessParams
+from playground_client.models.tools_human_response import ToolsHumanResponse
 from playground_client.models.write_filesystem_file_request import WriteFilesystemFileRequest
 from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest
 
@@ -1824,6 +1825,161 @@ class DefaultApi(object):
 
         return self.api_client.call_api(
             '/sessions/{sessionID}/processes/{processID}', 'DELETE',
+            _path_params,
+            _query_params,
+            _header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            response_types_map=_response_types_map,
+            auth_settings=_auth_settings,
+            async_req=_params.get('async_req'),
+            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=_params.get('_preload_content', True),
+            _request_timeout=_params.get('_request_timeout'),
+            collection_formats=_collection_formats,
+            _request_auth=_params.get('_request_auth'))
+
+    @validate_arguments
+    def wait_for_human_response(self, run_id : StrictStr, project_id : StrictStr, route_id : StrictStr, **kwargs) -> ToolsHumanResponse:  # noqa: E501
+        """wait_for_human_response  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.wait_for_human_response(run_id, project_id, route_id, async_req=True)
+        >>> result = thread.get()
+
+        :param run_id: (required)
+        :type run_id: str
+        :param project_id: (required)
+        :type project_id: str
+        :param route_id: (required)
+        :type route_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: ToolsHumanResponse
+        """
+        kwargs['_return_http_data_only'] = True
+        return self.wait_for_human_response_with_http_info(run_id, project_id, route_id, **kwargs)  # noqa: E501
+
+    @validate_arguments
+    def wait_for_human_response_with_http_info(self, run_id : StrictStr, project_id : StrictStr, route_id : StrictStr, **kwargs):  # noqa: E501
+        """wait_for_human_response  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.wait_for_human_response_with_http_info(run_id, project_id, route_id, async_req=True)
+        >>> result = thread.get()
+
+        :param run_id: (required)
+        :type run_id: str
+        :param project_id: (required)
+        :type project_id: str
+        :param route_id: (required)
+        :type route_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _return_http_data_only: response data without head status code
+                                       and headers
+        :type _return_http_data_only: bool, optional
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :type _preload_content: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :type _content_type: string, optional: force content-type for the request
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: tuple(ToolsHumanResponse, status_code(int), headers(HTTPHeaderDict))
+        """
+
+        _params = locals()
+
+        _all_params = [
+            'run_id',
+            'project_id',
+            'route_id'
+        ]
+        _all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth',
+                '_content_type',
+                '_headers'
+            ]
+        )
+
+        # validate the arguments
+        for _key, _val in _params['kwargs'].items():
+            if _key not in _all_params:
+                raise ApiTypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method wait_for_human_response" % _key
+                )
+            _params[_key] = _val
+        del _params['kwargs']
+
+        _collection_formats = {}
+
+        # process the path parameters
+        _path_params = {}
+
+        # process the query parameters
+        _query_params = []
+        if _params.get('run_id') is not None:  # noqa: E501
+            _query_params.append(('runID', _params['run_id']))
+        if _params.get('project_id') is not None:  # noqa: E501
+            _query_params.append(('projectID', _params['project_id']))
+        if _params.get('route_id') is not None:  # noqa: E501
+            _query_params.append(('routeID', _params['route_id']))
+
+        # process the header parameters
+        _header_params = dict(_params.get('_headers', {}))
+
+        # process the form parameters
+        _form_params = []
+        _files = {}
+
+        # process the body parameter
+        _body_params = None
+
+        # set the HTTP header `Accept`
+        _header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
+        # authentication setting
+        _auth_settings = []  # noqa: E501
+
+        _response_types_map = {
+            '200': "ToolsHumanResponse",
+        }
+
+        return self.api_client.call_api(
+            '/tools', 'GET',
             _path_params,
             _query_params,
             _header_params,

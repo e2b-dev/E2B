@@ -47,5 +47,6 @@ from playground_client.models.process_response import ProcessResponse
 from playground_client.models.read_filesystem_file_response import ReadFilesystemFileResponse
 from playground_client.models.session_response import SessionResponse
 from playground_client.models.start_process_params import StartProcessParams
+from playground_client.models.tools_human_response import ToolsHumanResponse
 from playground_client.models.write_filesystem_file_request import WriteFilesystemFileRequest
 from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest

@@ -100,6 +100,12 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_wait_for_human_response(self):
+        """Test case for wait_for_human_response
+
+        """
+        pass
+
     def test_write_filesystem_file(self):
         """Test case for write_filesystem_file
 

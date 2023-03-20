@@ -5,6 +5,8 @@ import { Controller, ValidationService, FieldErrors, ValidateError, TsoaRoute, H
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MockController } from './../data/mockController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ToolsController } from './../data/toolsController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DeploymentsController } from './../deployments/deploymentsController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { FilesystemController } from './../sessions/filesystemController';
@@ -30,6 +32,14 @@ const models: TsoaRoute.Models = {
         "properties": {
             "name": {"dataType":"string","required":true},
             "content": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ToolsHumanResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "response": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -177,6 +187,33 @@ export function RegisterRoutes(app: Router) {
 
 
               const promise = controller.createMockBodyData.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/tools',
+            ...(fetchMiddlewares<RequestHandler>(ToolsController)),
+            ...(fetchMiddlewares<RequestHandler>(ToolsController.prototype.waitForHumanResponse)),
+
+            function ToolsController_waitForHumanResponse(request: any, response: any, next: any) {
+            const args = {
+                    runID: {"in":"query","name":"runID","required":true,"dataType":"string"},
+                    projectID: {"in":"query","name":"projectID","required":true,"dataType":"string"},
+                    routeID: {"in":"query","name":"routeID","required":true,"dataType":"string"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new ToolsController();
+
+
+              const promise = controller.waitForHumanResponse.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);

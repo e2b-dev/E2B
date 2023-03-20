@@ -28,6 +28,7 @@ class Database:
         ).execute()
 
     def push_logs(self, run_id: str, logs: List[Dict[str, str]]) -> None:
+        print("LOGS")
         if len(logs) > 0:
             self.client.table(deploymentsTable).update(
                 {
@@ -36,6 +37,7 @@ class Database:
             ).eq("id", run_id).execute()
 
     def push_raw_logs(self, run_id: str, logs_raw: str) -> None:
+        print("RAW LOGS")
         if logs_raw:
             self.client.table(deploymentsTable).update(
                 {
