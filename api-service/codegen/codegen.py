@@ -24,7 +24,7 @@ from codegen.prompt import (
     HUMAN_INSTRUCTIONS_PREFIX,
     HUMAN_INSTRUCTIONS_SUFFIX,
 )
-from .callback_handler import CustomCallbackHandler
+from codegen.callbacks.logs import LogsCallbackHandler
 
 # class OutputFinalCode(BaseTool):
 #     name = "OutputFinalCode"
@@ -153,7 +153,7 @@ class Codegen(BaseModel):
     ):
         print("Added handler")
         self._callback_manager.add_handler(
-            CustomCallbackHandler(database=self._database, run_id=run_id)
+            LogsCallbackHandler(database=self._database, run_id=run_id)
         )
 
         input_vars = {
