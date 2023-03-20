@@ -89,9 +89,11 @@ function Logs({
         {selectedTab === 0 && (
           <>
             {logs?.map((l, i) =>
-              <ReactMarkdown key={i}>
-                {l}
-              </ReactMarkdown>
+              <>
+                {l.type === 'thought' && <div key={l.id}>{l.content}</div>}
+                {l.type === 'tool' && !l.output && <div key={l.id}>{l.name}</div>}
+                {l.type === 'tool' && l.output && <div key={l.id}>{l.name}{': '}{l.output}</div>}
+              </>
             )}
           </>
         )}

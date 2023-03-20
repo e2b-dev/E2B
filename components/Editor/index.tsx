@@ -209,9 +209,9 @@ function Editor({ project }: Props) {
                 <Link
                   href={deployment.url}
                   className="
-                  mt-6
-                  underline
-                "
+                    mt-6
+                    underline
+                  "
                   target="_blank" rel="noopener noreferrer"
                 >
                   <Text
