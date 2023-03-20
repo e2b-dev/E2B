@@ -4,7 +4,7 @@ export interface Props {
 
 function ConnectionLine({ className }: Props) {
   return (
-    <div className={`${className} border-l my-2 rounded border-slate-200`} />
+    <div className={`${className} border-l my-2 border-slate-200`} />
   )
 }
 

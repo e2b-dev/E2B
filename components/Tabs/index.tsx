@@ -108,8 +108,7 @@ function Tab({
           <button
             key={i}
             className={clsx(
-              `text-sm
-              relative
+              `relative
               rounded-md
               flex
               items-center

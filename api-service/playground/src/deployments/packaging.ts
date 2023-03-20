@@ -40,7 +40,7 @@ function addAWSLambdaHandlers(code: string) {
   const isECMA = !code.includes('require')
 
   if (isECMA) {
-    code = 'import serverless from "serverless-http;"\n' + code
+    code = 'import serverless from "serverless-http";\n' + code
     code = code + "\nexport const handler = serverless(app);"
   } else {
     code = "const serverless = require('serverless-http');\n" + code

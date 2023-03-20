@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useState,
 } from 'react'
@@ -9,6 +10,8 @@ import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
 import Tabs from 'components/Tabs'
 import { Log } from 'db/types'
+import LogEntry from './LogEntry'
+import ConnectionLine from 'components/Editor/ConnectionLine'
 
 export interface Props {
   logs?: Log[]
@@ -54,6 +57,7 @@ function Logs({
         justify-between
         border-b
         py-2
+        pr-4
       ">
         <Text
           text="Logs"
@@ -83,19 +87,20 @@ function Logs({
           tracking-wide
           font-sans
           whitespace-pre-wrap
-          space-y-4
           p-4
       ">
-        {selectedTab === 0 && (
-          <>
-            {logs?.map((l, i) =>
-              <>
-                {l.type === 'thought' && <div key={l.id}>{l.content}</div>}
-                {l.type === 'tool' && !l.output && <div key={l.id}>{l.name}</div>}
-                {l.type === 'tool' && l.output && <div key={l.id}>{l.name}{': '}{l.output}</div>}
-              </>
-            )}
-          </>
+        {selectedTab === 0 && logs?.map((l, i, a) =>
+          <Fragment key={i}>
+            <LogEntry
+              log={l}
+              key={i}
+            />
+            {i < a.length - 1 &&
+              <div className="flex items-center flex-col">
+                <ConnectionLine className="h-4" />
+              </div>
+            }
+          </Fragment>
         )}
         {selectedTab === 1 && (
           <>
