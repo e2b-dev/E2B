@@ -68,6 +68,8 @@ class LogsCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when tool starts running."""
         print("Starting tool")
+        self._raw_logs += "Starting tool..."
+        self._push_raw_logs()
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -90,6 +92,8 @@ class LogsCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when tool errors."""
         print("Tool error", error)
+        self._raw_logs += f"Tool error:\n{error}\n"
+        self._push_raw_logs()
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""

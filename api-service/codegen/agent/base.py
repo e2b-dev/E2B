@@ -27,7 +27,46 @@ def xml_escape(text: str) -> str:
     return text
 
 
-# def xml_unescape(xml: str) -> str:
+def parse_action_string(action_string: str):
+    # The action is in the XML format, we need to try to a XML escape
+    # the body of an XML element. We'll use a bit of heuristics here.
+    # We assume the action looks like this:
+    # <action tool="...">
+    # action_text_content
+    # </action>
+    # In this case, we escape all but the first and the last line.
+    # However!
+    # What happens sometimes is that the model outputs multiple actions
+    # in sequence like this:
+    # <action tool="...">
+    # action_text_content
+    # </action>
+    # <action tool="...">
+    # action_text_content
+    # </action>
+    # So we should really escape everyline that DOES NOT start with either
+    # <action or with </action.
+    # Split the action into a list of lines.
+
+    lines = action_string.strip().splitlines()
+    # Escape all but the lines the start or end the XML element.
+    for idx, line in enumerate(lines):
+        if line.startswith("<action") or line.startswith("</action"):
+            continue
+        lines[idx] = xml_escape(line)
+
+    # Join the lines back into a single string.
+    escaped = "\n".join(lines)
+
+    # Parse the escaped string as a XML tree.
+    root = ET.fromstring(f"<root>{escaped}</root>")
+    actions = root.findall("action")
+
+    # Because we XML-escaped action element's body (= tool input) so we could XML parse it,
+    # we need to unescape it now to get the actual tool input.
+    for a in actions:
+        a.text = unescape(a.text)
+    return actions
 
 
 class CodegenAgent(ChatAgent):
@@ -63,49 +102,15 @@ class CodegenAgent(ChatAgent):
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         try:
-            _, action, _ = text.split("```")
+            _, action_string, _ = text.split("```")
 
-            # The action is in the XML format, we need to try to a XML escape
-            # the body of an XML element. We'll use a bit of heuristics here.
-            # We assume the action looks like this:
-            # <action tool="...">
-            # action_text_content
-            # </action>
-            # In this case, we escape all but the first and the last line.
-            # However!
-            # What happens sometimes is that the model outputs multiple actions
-            # in sequence like this:
-            # <action tool="...">
-            # action_text_content
-            # </action>
-            # <action tool="...">
-            # action_text_content
-            # </action>
-            # So we should really escape everyline that DOES NOT start with either
-            # <action or with </action.
-
-            # Split the action into a list of lines.
-            lines = action.strip().splitlines()
-            # Escape all but the lines the start or end the XML element.
-            for idx, line in enumerate(lines):
-                if line.startswith("<action") or line.startswith("</action"):
-                    continue
-                lines[idx] = xml_escape(line)
-
-            # Join the lines back into a single string.
-            escaped = "\n".join(lines)
-
-            root = ET.fromstring(f"<root>{escaped}</root>")
-            actions = root.findall("action")
-
-            # Because we XML-escaped action element's body (= tool input) so we could XML parse it,
-            # we need to unescape it now to get the actual tool input.
-            for a in actions:
-                a.text = unescape(a.text)
+            # A list of XML elements that represents actions.
+            actions = parse_action_string(action_string)
 
             # We handle the case when the LLM starts specifying multiple actions in a single response.
+            # Return a special `ACTIONS_QUEUE` identifier and the raw action string.
             if len(actions) > 1:
-                return ACTIONS_QUEUE, actions.strip()
+                return ACTIONS_QUEUE, action_string
             else:
                 return actions[0].attrib["tool"], actions[0].text
         except Exception as e:
@@ -197,11 +202,12 @@ class CodegenAgentExecutor(AgentExecutor):
         # We handle this case by running each action one by one.
         if output.tool == ACTIONS_QUEUE:
             observation = ""
-            # The `output.tool_input` is a XML tree with multiple actions
+
+            # The `output.tool_input` is a raw action string
+            actions = parse_action_string(output.tool_input)
+
             # Go through each action and run it.
             # Collect outputs from each action.
-            root = ET.fromstring(f"<root>{output.tool_input.strip()}</root>")
-            actions = root.findall("action")
             for action in actions:
                 tool_name = action.attrib["tool"]
                 tool_input = action.text
