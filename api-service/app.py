@@ -77,7 +77,7 @@ def generate():
         )
 
         db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-        url = playground.deploy(project_id, envs)
+        # url = playground.deploy(project_id, envs)
 
         db.finish_deployment(run_id=run_id, url=url)
         return {}

@@ -43,16 +43,16 @@ HUMAN_INSTRUCTIONS_PREFIX = [
     {
         "variables": ["method"],
         "content": """Use this starting template:
-    ```
-    import express from 'express';
-    const app = express();
-    const port = 3000;
-    app.use(express.json())
-    // TODO: Implement the {0} handlers here
-    app.listen(port, () => {{
-      console.log(`Server listening on port ${{port}}`)
-    }})
-    ```""",
+```
+import express from 'express';
+const app = express();
+const port = 3000;
+app.use(express.json())
+// TODO: Implement the {0} handlers here
+app.listen(port, () => {{
+    console.log(`Server listening on port ${{port}}`)
+}})
+```""",
     },
     {
         "variables": ["method"],

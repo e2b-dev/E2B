@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Union, Optional
 import datetime
 import uuid
+from pprint import pprint
 
 from pydantic import PrivateAttr
 from langchain.callbacks.base import BaseCallbackHandler
@@ -97,6 +98,31 @@ class LogsCallbackHandler(BaseCallbackHandler):
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
+
+        # First parse the thought
+        # The `action.log` should look like this:
+        #
+        # Thought: Lorem ipsum ...
+        # Action:
+        # ```
+        # <action tool="$TOOL_NAME">
+        # $INPUT
+        # </action>
+        # ```
+        thought, _ = action.log.split("Action:")
+        thought = thought.removeprefix("Thought:")
+        thought = thought.strip()
+        self._logs.append(
+            {
+                "id": str(uuid.uuid4()),
+                "type": "thought",
+                "content": thought,
+                "created_at": str(datetime.datetime.now()),
+            }
+        )
+
+        # We save the UUID for this action so we can later
+        # update this action with its output.
         self._current_action_id = str(uuid.uuid4())
         self._logs.append(
             {
@@ -109,6 +135,7 @@ class LogsCallbackHandler(BaseCallbackHandler):
                 "output": "",
             }
         )
+
         self._database.push_logs(
             run_id=self._run_id,
             logs=self._logs,

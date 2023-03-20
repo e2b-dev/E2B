@@ -28,6 +28,18 @@ def xml_escape(text: str) -> str:
 
 
 def parse_action_string(action_string: str):
+    lines = action_string.strip().splitlines()
+
+    if len(lines) == 0:
+        # TODO: What to do here?
+        pass
+
+    if len(lines) == 1:
+        # Possible format: <action tool="">content</action><action tool="">content</action>
+        line = lines[0]
+        # TODO
+        pass
+
     # The action is in the XML format, we need to try to a XML escape
     # the body of an XML element. We'll use a bit of heuristics here.
     # We assume the action looks like this:
@@ -48,7 +60,6 @@ def parse_action_string(action_string: str):
     # <action or with </action.
     # Split the action into a list of lines.
 
-    lines = action_string.strip().splitlines()
     # Escape all but the lines the start or end the XML element.
     for idx, line in enumerate(lines):
         if line.startswith("<action") or line.startswith("</action"):
@@ -122,14 +133,6 @@ class CodegenAgent(ChatAgent):
                 MALFORMED_ANSWER,
                 f"Wrong format! Follow the format! Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer. I just tried to parse your last reponse with `xml.etree.ElementTree.fromstring()` and received this error:\n{e}Reminder, that you should follow the format I told you!",
             )
-            print(f"====== Got exception '{str(e)}'\n text:\n{text}")
-            # input = response["action_input"]
-            return (
-                f"[{text[:50]}...]",
-                "",
-                # f"You are not following the response format as I told you. I just ran your response via json.loads and received this error\n{str(e)}\nPlease try again and change your response.",
-            )
-            # raise ValueError(f"Could not parse LLM output: {text}")
 
 
 class CodegenAgentExecutor(AgentExecutor):
