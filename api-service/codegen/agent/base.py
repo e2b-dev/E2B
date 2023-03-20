@@ -2,6 +2,9 @@ from typing import Optional, Tuple, List, Dict, Union
 from html import unescape
 import xml.etree.ElementTree as ET
 import re
+import traceback
+import sys
+
 
 from langchain.agents.tools import InvalidTool
 from langchain.agents import AgentExecutor
@@ -37,7 +40,10 @@ def actions_from_xml_string(xml_string: str) -> str:
     # Because we XML-escaped action element's body (= tool input) so we could XML-parse it,
     # we need to unescape it now to get the actual tool input.
     for a in actions:
-        a.text = unescape(a.text)
+        if a.text:
+            a.text = unescape(a.text)
+        else:
+            a.text = ""
     return actions
 
 
@@ -54,32 +60,26 @@ def parse_action_string(action_string: str):
         # We assume that the XML is in valid format, just on a single line.
         # Possible format: <action tool="name">content</action><action tool="name">content</action>
         line = lines[0]
+        parts = line.split("</action>")
+        # We have an array that looks like this:
+        # ['<action tool="name">content', '<action tool="name">content', ..., '']
+        # We will use regex to match content after the `<action tool="name">` part.
+        for idx, part in enumerate(parts):
+            if part:
+                action_name, action_content = re.search(
+                    r"<action tool=\"(.*)\">(.*)$", part
+                ).groups()
+                escaped_content = (
+                    xml_escape(action_content) if action_content else action_content
+                )
+                # Assemble the action with escaped content back togeter.
+                parts[idx] = f'<action tool="{action_name}">{escaped_content}</action>'
 
-        action_count = line.count("</action>")
-        if action_count == 0:
-            # TODO: What to do here?
-            pass
-        else:
-            parts = line.split("</action>")
-            # We have an array that looks like this:
-            # ['<action tool="name">content', '<action tool="name">content', ..., '']
-            # We will use regex to match content after the `<action tool="name">` part.
-            for idx, part in enumerate(parts):
-                if part:
-                    action_name, action_content = re.search(
-                        r"<action tool=\"(.*)\">(.*)$", part
-                    ).groups()
-                    escaped_content = xml_escape(action_content)
-                    # Assemble the action with escaped content back togeter.
-                    parts[
-                        idx
-                    ] = f'<action tool="{action_name}">{escaped_content}</action>'
+        escaped_xml_string = "\n".join(parts)
 
-            escaped_xml_string = "\n".join(parts)
-
-            # Parse the escaped string as an XML tree.
-            actions = actions_from_xml_string(escaped_xml_string)
-            return actions
+        # Parse the escaped string as an XML tree.
+        actions = actions_from_xml_string(escaped_xml_string)
+        return actions
 
     # === MULTI-LINE CASE
     #
@@ -162,6 +162,7 @@ class CodegenAgent(ChatAgent):
             else:
                 return actions[0].attrib["tool"], actions[0].text
         except Exception as e:
+            print(traceback.format_exc())
             print("Got exception in `_extract_tool_and_input:\n", e)
             # Sometimes the agent just completely messed up the output format.
             # We want to remind it that the last answer was wrong and it should
