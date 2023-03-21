@@ -2,15 +2,16 @@ import {
   useEffect,
 } from 'react'
 import hljs from 'highlight.js'
+import { Log } from 'db/types'
 import {
   Code2,
   Package,
   TerminalSquare,
   Wrench,
+  Loader,
 } from 'lucide-react'
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown'
 
-import { Log } from 'db/types'
 
 function getToolIcon(toolName: string) {
   switch (toolName) {
@@ -55,13 +56,22 @@ function LogEntry({ log }: Props) {
         <>
           <div className="
             flex
+            justify-between
+            items-center
+          ">
+            <div className="
+            flex
             items-center
             space-x-2
           ">
-            {getToolIcon(log.name)}
-            <div className="font-medium">
-              {log.name}
+              {getToolIcon(log.name)}
+              <div className="font-medium">
+                {log.name}
+              </div>
             </div>
+            {log.output === undefined &&
+              <Loader size="16px" className="text-slate-400 animate-spin" />
+            }
           </div>
           {log.input.trim() &&
             <div className="
@@ -70,9 +80,11 @@ function LogEntry({ log }: Props) {
               pt-2
             "
             >
-              <ReactMarkdown>
-                {'```' + log.input + '```'}
-              </ReactMarkdown>
+              <pre>
+                <ReactMarkdown>
+                  {log.input}
+                </ReactMarkdown>
+              </pre>
             </div>
           }
           {log.output?.trim() &&
