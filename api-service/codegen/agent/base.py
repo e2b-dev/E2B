@@ -31,7 +31,7 @@ def xml_escape(text: str) -> str:
     return text
 
 
-def actions_from_xml_string(xml_string: str) -> str:
+def actions_from_xml_string(xml_string: str):
     """The `xml_string` must be escaped"""
     # Parse the escaped string as an XML tree.
     root = ET.fromstring(f"<root>{xml_string}</root>")
@@ -146,7 +146,7 @@ class CodegenAgent(ChatAgent):
     #     else:
     #         return agent_scratchpad
 
-    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
+    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str | None]]:
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         try:
