@@ -17,7 +17,7 @@ python-dotenv = "^1.0.0"
 openai = "^0.27.0"
 pytest = "^7.2.2"
 lxml = "^4.9.2"
-flask = "^2.2.3"
+flask = {extras = ["async"], version = "^2.2.3"}
 asyncio = "^3.4.3"
 postgrest = "^0.10.6"
 
