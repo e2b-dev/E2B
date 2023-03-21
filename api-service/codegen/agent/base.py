@@ -1,16 +1,16 @@
-from typing import Optional, Tuple, List, Dict, Union
-from html import unescape
 import xml.etree.ElementTree as ET
 import re
 import traceback
-from lxml import etree
-import cchardet
 
+from typing import Optional, Tuple, List, Dict, Union
+from html import unescape
+from lxml import etree
 from langchain.agents.tools import InvalidTool
 from langchain.agents import AgentExecutor
 from langchain.agents.chat.base import ChatAgent
 from langchain.schema import AgentAction, AgentFinish
 from langchain.tools.base import BaseTool
+
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 ACTIONS_QUEUE = "action_queue"

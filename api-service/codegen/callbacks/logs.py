@@ -1,6 +1,5 @@
-from typing import Dict, Any, List, Union
 import datetime
-
+from typing import Dict, Any, List, Union
 from pydantic import PrivateAttr
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -36,7 +35,7 @@ class LogStreamParser:
         )
         self._parse()
 
-        # If we received output for the last tool we save the buffered logs to logs and reset all buffers.
+        # If we received output for the last tool in the buffered logs we save the buffered logs to logs and reset all buffers.
         # We know this is is the output for the last tool if the number of tool logs in buffered logs is equal to the number of buffered outputs.
         if len(self._tools_output_buffer) == len(
             [log for log in self._logs_buffer if log["type"] == "tool"]
