@@ -3,8 +3,8 @@ from html import unescape
 import xml.etree.ElementTree as ET
 import re
 import traceback
-import sys
-
+from lxml import etree
+import cchardet
 
 from langchain.agents.tools import InvalidTool
 from langchain.agents import AgentExecutor
@@ -31,10 +31,15 @@ def xml_escape(text: str) -> str:
     return text
 
 
-def actions_from_xml_string(xml_string: str) -> str:
+def actions_from_xml_string(xml_string: str):
     """The `xml_string` must be escaped"""
+
     # Parse the escaped string as an XML tree.
-    root = ET.fromstring(f"<root>{xml_string}</root>")
+    root = ET.fromstring(
+        f"<root>{xml_string}</root>",
+        # Use Parser with C binding for libxml2+libxslt, with recovery mode that allows to parse incomplete XML.
+        etree.XMLParser(recover=True),
+    )
     actions = root.findall("action")
 
     # Because we XML-escaped action element's body (= tool input) so we could XML-parse it,
@@ -66,9 +71,13 @@ def parse_action_string(action_string: str):
         # We will use regex to match content after the `<action tool="name">` part.
         for idx, part in enumerate(parts):
             if part:
-                action_name, action_content = re.search(
+                match = re.search(
                     r"<action tool=\"(.*)\">(.*)$", part
-                ).groups()
+                )
+                if not match:
+                    return []
+
+                action_name, action_content = match.groups()
                 escaped_content = (
                     xml_escape(action_content) if action_content else action_content
                 )
