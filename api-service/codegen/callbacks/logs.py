@@ -10,27 +10,41 @@ from database import Database
 
 
 class LogStreamParser:
-    _token_buffer: str = ""
-    _logs_buffer: List[Dict[str, str]] = []
-    _tools_outputs_buffer: List[Dict[str, str]] = []
+    def __init__(self) -> None:
+        # All "finished" logs that the parser saved.
+        self._logs: List[Dict[str, str]] = []
 
-    _logs: List[Dict[str, str]] = []
+        self._token_buffer: str = ""
+        # These logs can be partially parsed or they can have missing outputs.
+        self._logs_buffer: List[Dict[str, str]] = []
+        # This is a list of tools' outputs that corresponds to the tool logs in the self._logs.buffer.
+        self._tools_output_buffer: List[Dict[str, str]] = []
 
     def ingest_token(self, token: str):
+        """Ingest token and update the logs."""
         self._token_buffer += token
         self._parse()
-
         return self
 
     def ingest_tool_output(self, output: str):
-        self._tools_outputs_buffer.append(
+        """Ingest output from tool and update logs."""
+        self._tools_output_buffer.append(
             {
                 "finish_at": str(datetime.datetime.now()),
                 "output": output,
             }
         )
         self._parse()
-        self._flush_buffers()
+
+        # If we received output for the last tool we save the buffered logs to logs and reset all buffers.
+        # We know this is is the output for the last tool if the number of tool logs in buffered logs is equal to the number of buffered outputs.
+        if len(self._tools_output_buffer) == len(
+            [log for log in self._logs_buffer if log["type"] == "tool"]
+        ):
+            self._logs.extend(self._logs_buffer)
+            self._token_buffer = ""
+            self._logs_buffer = []
+            self._tools_output_buffer = []
 
         return self
 
@@ -40,36 +54,23 @@ class LogStreamParser:
             *self._logs_buffer,
         ]
 
-    def _flush_buffers(self):
-        if len(self._tools_outputs_buffer) == len(
-            [log for log in self._logs_buffer if log["type"] == "tool"]
-        ):
-            self._logs.extend(self._logs_buffer)
-            self._token_buffer = ""
-            self._logs_buffer = []
-            self._tools_outputs_buffer = []
-
     def _parse(self):
-        thought, *action_string = separate_thought_and_action(self._token_buffer)
-
-        actions = (
-            parse_action_string("".join(action_string))
-            if len(action_string) > 0
-            else []
-        )
-
+        """This function should be called only after ingesting new token or tool output to update the buffered logs."""
+        thought, action_string = separate_thought_and_action(self._token_buffer)
         action_logs = [
             {"type": "tool", "name": action.attrib["tool"], "input": action.text or ""}
-            for action in actions
+            for action in parse_action_string(action_string)
         ]
 
-        for i in range(len(self._tools_outputs_buffer)):
+        # Update action logs with the information from ingested tools' outputs.
+        for i in range(len(self._tools_output_buffer)):
             action_logs[i] = {
-                # TODO: Handle out of range error if the parsing of actions failed.
                 **action_logs[i],
-                **self._tools_outputs_buffer[i],
+                **self._tools_output_buffer[i],
             }
 
+        # We overwrite the current buffered logs with their newer version.
+        # If you ingested token or tool output this will save the change so you can call self.get_logs and get the new logs.
         self._logs_buffer = [
             {
                 "type": "thought",
@@ -84,7 +85,6 @@ class LogStreamParser:
 class LogsCallbackHandler(BaseCallbackHandler):
     _database: Database = PrivateAttr()
     _run_id: str = PrivateAttr()
-
     _raw_logs: str = ""
 
     def __init__(self, database: Database, run_id: str, **kwargs: Any):
