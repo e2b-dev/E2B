@@ -41,8 +41,9 @@ class LogStreamParser:
         ]
 
     def _flush_buffers(self):
-        active_tools_logs = [log for log in self._logs_buffer if log["type"] == "tool"]
-        if len(self._tools_outputs_buffer) == len(active_tools_logs):
+        if len(self._tools_outputs_buffer) == len(
+            [log for log in self._logs_buffer if log["type"] == "tool"]
+        ):
             self._logs.extend(self._logs_buffer)
             self._token_buffer = ""
             self._logs_buffer = []
@@ -64,7 +65,7 @@ class LogStreamParser:
 
         for i in range(len(self._tools_outputs_buffer)):
             action_logs[i] = {
-                # TODO: Out of range error if the parsing of actions failed.
+                # TODO: Handle out of range error if the parsing of actions failed.
                 **action_logs[i],
                 **self._tools_outputs_buffer[i],
             }
