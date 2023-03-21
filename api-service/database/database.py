@@ -3,7 +3,7 @@ from enum import Enum
 
 # from supabase.client import create_client
 
-from database.client import create_client
+from database.client import Client
 
 
 class DeploymentState(Enum):
@@ -17,8 +17,8 @@ deploymentsTable = "deployments"
 
 
 class Database:
-    def __init__(self, url: str, key: str):
-        self.client = create_client(url, key)
+    def __init__(self, supabase_url: str, supabase_key: str) -> None:
+        self.client = Client(supabase_url=supabase_url, supabase_key=supabase_key)
 
     async def create_deployment(
         self, run_id: str, project_id: str, route_id: str
