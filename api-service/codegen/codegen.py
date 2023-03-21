@@ -9,7 +9,11 @@ from typing import (
 from langchain.agents import AgentExecutor
 from pydantic import BaseModel, PrivateAttr
 from langchain.chat_models import ChatOpenAI
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.base import (
+    CallbackManager,
+    AsyncCallbackManager,
+    BaseCallbackManager,
+)
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
@@ -56,12 +60,12 @@ class Codegen(BaseModel):
     _tools: List[BaseTool] = PrivateAttr()
     _llm: ChatOpenAI = PrivateAttr()
     _database: Database = PrivateAttr()
-    _callback_manager: CallbackManager = PrivateAttr()
+    _callback_manager: BaseCallbackManager = PrivateAttr()
 
     def __init__(
         self,
         database: Database,
-        callback_manager: CallbackManager,
+        callback_manager: BaseCallbackManager,
         tools: List[BaseTool],
         llm: ChatOpenAI,
         agent: CodegenAgent,
@@ -89,7 +93,7 @@ class Codegen(BaseModel):
         run_id: str,
         playground: NodeJSPlayground,
     ):
-        callback_manager = CallbackManager(
+        callback_manager = AsyncCallbackManager(
             [
                 StreamingStdOutCallbackHandler(),
                 # CustomCallbackHandler(database=database),
@@ -142,7 +146,7 @@ class Codegen(BaseModel):
             agent=agent,
         )
 
-    def generate(
+    async def generate(
         self,
         envs: List[EnvVar],
         run_id: str,
@@ -189,7 +193,7 @@ class Codegen(BaseModel):
         print("Instructions:\n", instructions)
 
         print("Running executor...")
-        self._agent_executor.run(
+        await self._agent_executor.arun(
             agent_scratchpad="",
             # input=testing_instructions
             input=instructions,

@@ -34,7 +34,7 @@ def health():
 
 
 @app.route("/generate", methods=["POST"])
-def generate():
+async def generate():
     body = request.json
 
     if body is None:
@@ -48,7 +48,7 @@ def generate():
     route = body["route"]
     envs: List[EnvVar] = body["envs"]
 
-    db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
+    await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
     try:
         # Create playground for the LLM
@@ -69,7 +69,7 @@ def generate():
 
         # Generate the code
         print("Generating...", flush=True)
-        cg.generate(
+        await cg.generate(
             run_id=run_id,
             route=route,
             envs=envs,
@@ -77,13 +77,13 @@ def generate():
             blocks=blocks,
         )
 
-        db.update_state(run_id=run_id, state=DeploymentState.Deploying)
+        await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
         url = playground.deploy(project_id, envs)
 
-        db.finish_deployment(run_id=run_id, url=url)
+        await db.finish_deployment(run_id=run_id, url=url)
         return {}
     except:
-        db.update_state(run_id=run_id, state=DeploymentState.Error)
+        await db.update_state(run_id=run_id, state=DeploymentState.Error)
         raise
     finally:
         if playground is not None:
