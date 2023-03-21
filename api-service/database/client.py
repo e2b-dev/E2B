@@ -18,9 +18,7 @@ class Client(SyncClient):
         options: ClientOptions = ClientOptions(),
     ):
         super().__init__(
-            supabase_url=supabase_url,
-            supabase_key=supabase_key,
-            # options=options
+            supabase_url=supabase_url, supabase_key=supabase_key, options=options
         )
         self.postgrest: AsyncPostgrestClient = self._init_postgrest_client(
             rest_url=self.rest_url,
