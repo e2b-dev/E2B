@@ -61,6 +61,8 @@ def create_client(
         client.rest_url, headers=options.headers, schema=options.schema
     )
 
+    client.postgrest.auth(token=supabase_key)
+
     def from_(table_name: str) -> AsyncRequestBuilder:
         return client.postgrest.from_(table_name)
 
