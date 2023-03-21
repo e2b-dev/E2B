@@ -15,43 +15,10 @@ class LogStreamParser:
 
         self._token_buffer: str = ""
         # These logs can be partially parsed or they can have missing outputs.
+        # They are flushed to self._logs after outputs for all tools in self._logs.buffer are ingested.
         self._logs_buffer: List[Dict[str, str]] = []
         # This is a list of tools' outputs that corresponds to the tool logs in the self._logs.buffer.
         self._tools_output_buffer: List[Dict[str, str]] = []
-
-    def ingest_token(self, token: str):
-        """Ingest token and update the logs."""
-        self._token_buffer += token
-        self._parse()
-        return self
-
-    def ingest_tool_output(self, output: str):
-        """Ingest output from tool and update logs."""
-        self._tools_output_buffer.append(
-            {
-                "finish_at": str(datetime.datetime.now()),
-                "output": output,
-            }
-        )
-        self._parse()
-
-        # If we received output for the last tool in the buffered logs we save the buffered logs to logs and reset all buffers.
-        # We know this is is the output for the last tool if the number of tool logs in buffered logs is equal to the number of buffered outputs.
-        if len(self._tools_output_buffer) == len(
-            [log for log in self._logs_buffer if log["type"] == "tool"]
-        ):
-            self._logs.extend(self._logs_buffer)
-            self._token_buffer = ""
-            self._logs_buffer = []
-            self._tools_output_buffer = []
-
-        return self
-
-    def get_logs(self):
-        return [
-            *self._logs,
-            *self._logs_buffer,
-        ]
 
     def _parse(self):
         """This function should be called only after ingesting new token or tool output to update the buffered logs."""
@@ -78,6 +45,40 @@ class LogStreamParser:
                 .strip(),
             },
             *action_logs,
+        ]
+
+    def ingest_token(self, token: str):
+        """Ingest token and update the logs."""
+        self._token_buffer += token
+        self._parse()
+        return self
+
+    def ingest_tool_output(self, output: str):
+        """Ingest output from tool and update the logs."""
+        self._tools_output_buffer.append(
+            {
+                "finish_at": str(datetime.datetime.now()),
+                "output": output,
+            }
+        )
+        self._parse()
+
+        # If we received output for the last tool in the buffered logs we save the buffered logs to logs and reset all buffers.
+        # We know this is is the output for the last tool if the number of tool logs in buffered logs is equal to the number of buffered outputs.
+        if len(self._tools_output_buffer) == len(
+            [log for log in self._logs_buffer if log["type"] == "tool"]
+        ):
+            self._logs.extend(self._logs_buffer)
+            self._token_buffer = ""
+            self._logs_buffer = []
+            self._tools_output_buffer = []
+
+        return self
+
+    def get_logs(self):
+        return [
+            *self._logs,
+            *self._logs_buffer,
         ]
 
 
