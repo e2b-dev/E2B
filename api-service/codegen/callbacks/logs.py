@@ -28,8 +28,7 @@ class LogsCallbackHandler(BaseCallbackHandler):
 
     def _push_raw_logs(self) -> None:
         if self._raw_logs:
-            pass
-            # self._database.push_raw_logs(self._run_id, self._raw_logs)
+            self._database.push_raw_logs(self._run_id, self._raw_logs)
 
     def _parse_token_buffer(self, token: str):
         self._token_buffer += token
