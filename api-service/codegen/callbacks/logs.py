@@ -5,35 +5,56 @@ from pydantic import PrivateAttr
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-from codegen.agent.base import parse_action_string
+from codegen.agent.base import parse_action_string, separate_thought_and_action
 from database import Database
 
 
-class LogsCallbackHandler(BaseCallbackHandler):
-    _database: Database = PrivateAttr()
-    _run_id: str = PrivateAttr()
-
-    _raw_logs: str = ""
+class LogStreamParser:
     _token_buffer: str = ""
+    _logs_buffer: List[Dict[str, str]] = []
+    _tools_outputs_buffer: List[Dict[str, str]] = []
+
     _logs: List[Dict[str, str]] = []
-    _active_logs: List[Dict[str, str]] = []
-    _active_action_outputs: List[Dict[str, str]] = []
 
-    def __init__(self, database: Database, run_id: str, **kwargs: Any):
-        super().__init__(**kwargs)
-        self._database = database
-        self._run_id = run_id
-
-    def _push_raw_logs(self) -> None:
-        if self._raw_logs:
-            self._database.push_raw_logs(self._run_id, self._raw_logs)
-
-    def _parse_token_buffer(self, token: str):
+    def ingest_token(self, token: str):
         self._token_buffer += token
-        thought, *action_string = self._token_buffer.split("```")
+        self._parse()
+
+        return self
+
+    def ingest_tool_output(self, output: str):
+        self._tools_outputs_buffer.append(
+            {
+                "finish_at": str(datetime.datetime.now()),
+                "output": output,
+            }
+        )
+        self._parse()
+        self._flush_buffers()
+
+        return self
+
+    def get_logs(self):
+        return [
+            *self._logs,
+            *self._logs_buffer,
+        ]
+
+    def _flush_buffers(self):
+        active_tools_logs = [log for log in self._logs_buffer if log["type"] == "tool"]
+        if len(self._tools_outputs_buffer) == len(active_tools_logs):
+            self._logs.extend(self._logs_buffer)
+            self._token_buffer = ""
+            self._logs_buffer = []
+            self._tools_outputs_buffer = []
+
+    def _parse(self):
+        thought, *action_string = separate_thought_and_action(self._token_buffer)
 
         actions = (
-            parse_action_string(action_string[0]) if len(action_string) > 0 else []
+            parse_action_string("".join(action_string))
+            if len(action_string) > 0
+            else []
         )
 
         action_logs = [
@@ -41,13 +62,14 @@ class LogsCallbackHandler(BaseCallbackHandler):
             for action in actions
         ]
 
-        for i in range(len(self._active_action_outputs)):
+        for i in range(len(self._tools_outputs_buffer)):
             action_logs[i] = {
+                # TODO: Out of range error if the parsing of actions failed.
                 **action_logs[i],
-                **self._active_action_outputs[i],
+                **self._tools_outputs_buffer[i],
             }
 
-        self._active_logs = [
+        self._logs_buffer = [
             {
                 "type": "thought",
                 "content": thought.removeprefix("Thought:")
@@ -57,13 +79,25 @@ class LogsCallbackHandler(BaseCallbackHandler):
             *action_logs,
         ]
 
-        self._database.push_logs(
-            run_id=self._run_id,
-            logs=[
-                *self._logs,
-                *self._active_logs,
-            ],
-        )
+
+class LogsCallbackHandler(BaseCallbackHandler):
+    _database: Database = PrivateAttr()
+    _run_id: str = PrivateAttr()
+
+    _raw_logs: str = ""
+
+    def __init__(self, database: Database, run_id: str, **kwargs: Any):
+        super().__init__(**kwargs)
+        self._database = database
+        self._run_id = run_id
+        self._parser = LogStreamParser()
+
+    def _push_raw_logs(self) -> None:
+        if self._raw_logs:
+            self._database.push_raw_logs(self._run_id, self._raw_logs)
+
+    def _push_logs(self, logs: List[Dict[str, str]]) -> None:
+        self._database.push_logs(self._run_id, logs)
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -73,7 +107,8 @@ class LogsCallbackHandler(BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
-        self._parse_token_buffer(token)
+        logs = self._parser.ingest_token(token).get_logs()
+        self._push_logs(logs)
 
         self._raw_logs += token
         self._push_raw_logs()
@@ -116,26 +151,11 @@ class LogsCallbackHandler(BaseCallbackHandler):
         """Run when tool ends running."""
         print("Finished tool")
 
+        logs = self._parser.ingest_tool_output(output).get_logs()
+        self._push_logs(logs)
+
         self._raw_logs += f"\n{output}\n"
         self._push_raw_logs()
-
-        self._active_action_outputs.append(
-            {
-                "finish_at": str(datetime.datetime.now()),
-                "output": output,
-            }
-        )
-
-        active_tools_logs = [log for log in self._active_logs if log["type"] == "tool"]
-
-        if len(self._active_action_outputs) == len(active_tools_logs):
-            self._parse_token_buffer("")
-
-            self._logs.extend(self._active_logs)
-
-            self._token_buffer = ""
-            self._active_logs = []
-            self._active_action_outputs = []
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
