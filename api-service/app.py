@@ -12,7 +12,6 @@ from database import Database, DeploymentState
 
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
-
 db = Database(url, key)
 
 app = Flask(__name__)
@@ -79,7 +78,7 @@ def generate():
         )
 
         db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-        # url = playground.deploy(project_id, envs)
+        url = playground.deploy(project_id, envs)
 
         db.finish_deployment(run_id=run_id, url=url)
         return {}

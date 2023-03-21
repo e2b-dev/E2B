@@ -1,6 +1,9 @@
 from typing import List, Dict
 from enum import Enum
-from supabase.client import create_client
+
+# from supabase.client import create_client
+
+from database.client import create_client
 
 
 class DeploymentState(Enum):

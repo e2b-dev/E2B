@@ -5,7 +5,7 @@ from typing import (
     Dict,
     ClassVar,
 )
-from codegen.tools.human.ask import create_ask_human_tool
+
 from langchain.agents import AgentExecutor
 from pydantic import BaseModel, PrivateAttr
 from langchain.chat_models import ChatOpenAI
@@ -13,10 +13,12 @@ from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
+from codegen.tools.human.ask import create_ask_human_tool
 from session.playground import NodeJSPlayground
 from session.env import EnvVar
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
+from codegen.callbacks.logs import LogsCallbackHandler
 from codegen.prompt import (
     PREFIX,
     SUFFIX,
@@ -24,7 +26,6 @@ from codegen.prompt import (
     HUMAN_INSTRUCTIONS_PREFIX,
     HUMAN_INSTRUCTIONS_SUFFIX,
 )
-from codegen.callbacks.logs import LogsCallbackHandler
 
 # class OutputFinalCode(BaseTool):
 #     name = "OutputFinalCode"
@@ -149,7 +150,6 @@ class Codegen(BaseModel):
         method: str,
         blocks: List[Dict],
     ):
-        print("Added handler")
         self._callback_manager.add_handler(
             LogsCallbackHandler(database=self._database, run_id=run_id)
         )
