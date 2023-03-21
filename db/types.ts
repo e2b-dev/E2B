@@ -1,5 +1,4 @@
 export interface ThoughtLog {
-  id: string
   type: 'thought'
   content: string
 }
