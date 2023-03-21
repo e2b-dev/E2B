@@ -1,3 +1,4 @@
+from codegen.tools.playground.async_tool import async_tool
 from langchain.agents import tool
 
 from codegen.tools.playground.mock.request import MockRequestFactory
@@ -13,8 +14,8 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
-    @tool("InstallNPMDependencies")
-    def install_dependencies(dependencies: str) -> str:
+    @async_tool("InstallNPMDependencies")
+    async def install_dependencies(dependencies: str) -> str:
         """Install JavaScript packages with NPM. The input should be valid names of NPM packages. Example usage:
         ```
         <action tool="InstallNPMDependencies">
@@ -30,8 +31,8 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     last_javascript_code: str | None = None
 
     # This tool is just for executing JavaScript without doing the request to server
-    @tool("RunJavaScriptCode")
-    def run_javascript_code(code: str) -> str:
+    @async_tool("RunJavaScriptCode")
+    async def run_javascript_code(code: str) -> str:
         """
         Run JavaScript code as ECMAScript module and return output.
         Input should be a valid JavaScript code. Example usage:
@@ -55,8 +56,8 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
 
     yield run_javascript_code
 
-    @tool("CurlJavaScriptServer")
-    def curl_javascript_server(empty: str) -> str:
+    @async_tool("CurlJavaScriptServer")
+    async def curl_javascript_server(empty: str) -> str:
         """
         Make a request to check if the previously run JavaScript code is a server that can handle the needed request. Example usage:
         ```

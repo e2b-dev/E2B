@@ -1,4 +1,4 @@
-from langchain.agents import tool
+from codegen.tools.playground.async_tool import async_tool
 
 from session.playground import NodeJSPlayground
 from playground_client.models.process_response import ProcessResponse
@@ -32,9 +32,8 @@ def create_process_tools(playground: NodeJSPlayground, **kwargs):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
-    # TODO: Escape command?
-    @tool("RunTerminalCommand")
-    def run_terminal_command(command: str) -> str:
+    @async_tool("RunTerminalCommand")
+    async def run_terminal_command(command: str) -> str:
         """
         Run specified command in the terminal and return output and errors.
         The input should be a a valid terminal command.

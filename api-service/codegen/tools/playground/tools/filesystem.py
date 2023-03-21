@@ -1,6 +1,6 @@
 from typing import List
-from langchain.agents import tool
 
+from codegen.tools.playground.async_tool import async_tool
 from session.playground import NodeJSPlayground
 from playground_client.models.entry_info import EntryInfo
 
@@ -18,15 +18,15 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
-    @tool("ReadFile")
-    def read_file(path: str) -> str:
+    @async_tool("ReadFile")
+    async def read_file(path: str) -> str:
         """Read content of the file from filesystem."""
         return playground.read_file(path)
 
     yield read_file
 
-    @tool("SaveFile")
-    def save_file(input: str) -> str:
+    @async_tool("SaveFile")
+    async def save_file(input: str) -> str:
         """Save content to a file in the filesystem.
         The input should be a path to a file followed by the content of the file.
         Separate the path and content by a newline character.
@@ -38,24 +38,24 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
 
     yield save_file
 
-    @tool("DeleteFile")
-    def delete_file(path: str) -> str:
+    @async_tool("DeleteFile")
+    async def delete_file(path: str) -> str:
         """Delete the file."""
         playground.delete_file(path)
         return "File deleted"
 
     yield delete_file
 
-    @tool("ListDirectory")
-    def list_directory(path: str) -> str:
+    @async_tool("ListDirectory")
+    async def list_directory(path: str) -> str:
         """List all files and subdirectories from the directory."""
         entries = playground.list_dir(path)
         return encode_directory_listing(entries)
 
     yield list_directory
 
-    @tool("DeleteDirectory")
-    def delete_directory(path: str) -> str:
+    @async_tool("DeleteDirectory")
+    async def delete_directory(path: str) -> str:
         """Delete the directory."""
         playground.delete_dir(path)
         return "Directory deleted"
