@@ -60,10 +60,10 @@ def parse_action_string(action_string: str):
         pass
 
     # === SINGLE-LINE CASE
+    # <action tool="name">content</action><action tool="name">content</action>
     #
     if len(lines) == 1:
         # We assume that the XML is in valid format, just on a single line.
-        # Possible format: <action tool="name">content</action><action tool="name">content</action>
         line = lines[0]
         parts = line.split("</action>")
         # We have an array that looks like this:
@@ -71,9 +71,7 @@ def parse_action_string(action_string: str):
         # We will use regex to match content after the `<action tool="name">` part.
         for idx, part in enumerate(parts):
             if part:
-                match = re.search(
-                    r"<action tool=\"(.*)\">(.*)$", part
-                )
+                match = re.search(r"<action tool=\"(.*)\">(.*)$", part)
                 if not match:
                     return []
 
@@ -126,6 +124,12 @@ def parse_action_string(action_string: str):
     return actions
 
 
+def separate_thought_and_action(llm_input: str) -> Tuple[str, str]:
+    thought, *actions = llm_input.split("```")
+    action_str = "\n".join(actions).strip()
+    return thought, action_str
+
+
 class CodegenAgent(ChatAgent):
     # def _construct_scratchpad(
     #     self, intermediate_steps: List[Tuple[AgentAction, str]]
@@ -159,18 +163,10 @@ class CodegenAgent(ChatAgent):
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         try:
-            print("+++ _extract_tool_and_input TEXT")
-            print(text)
-            print("--- _extract_tool_and_input TEXT")
-            _, action_string, _ = text.split("```")
-            print("+++ _extract_tool_and_input action_string")
-            print(action_string)
-            print("--- _extract_tool_and_input action_string")
+            _, action_string = separate_thought_and_action(text)
 
             # A list of XML elements that represents actions.
             actions = parse_action_string(action_string)
-            print("ACTIONS")
-            print(actions)
 
             # We handle the case when the LLM starts specifying multiple actions in a single response.
             # Return a special `ACTIONS_QUEUE` identifier and the raw action string.

@@ -172,9 +172,13 @@ def test_parsing_llm_action_output():
     """Test LLM action parsing."""
 
     output = llm_outputs[len(llm_outputs) - 1]
-    parts = output["llm_output"].split("```")
-    for part in parts:
-        print(part)
-        print("======")
+    thought, *actions = output["llm_output"].split("```")
+    print(thought)
+    print("??????")
+    for action in actions:
+        a = action.strip()
+        if a:
+            print(a)
+            print("======")
 
     assert 1 == 1

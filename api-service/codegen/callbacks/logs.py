@@ -1,13 +1,11 @@
-from typing import Dict, Any, List, Union, Optional
+from typing import Dict, Any, List, Union
 import datetime
-import uuid
-from codegen.agent.base import parse_action_string
-
 
 from pydantic import PrivateAttr
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
+from codegen.agent.base import parse_action_string
 from database import Database
 
 
