@@ -65,10 +65,12 @@ app.listen(port, () => {{
 ]
 
 HUMAN_INSTRUCTIONS_SUFFIX = [
-    "Always use run the code before you write it to a file or deploy it",
-    "Generate the full required server code and make sure it starts without any errors.",
-    "Test that the generated server from the previous step behaves as is required by making mock `curl` requests to the server.",
-    # "Once all works without any bugs and errors, write the code to the file.",
-    # "Deploy the code.",
-    "Thought: Here is the plan of what I will do based on the instructions I got:\n1.",
+    "Think about it and plan your work first",
+    "Always use run the code before you submit the answer",
+    "Generate the full required server code and and make sure it starts without any errors",
+    "Test that the generated server from the previous step works as required by making mock `curl` requests to the server",
+    # "Once all works without any bugs and errors, write the code to the file",
+    # "Deploy the code",
+    "Once you know the final code, output it as the 'Final answer:'",
+    # "Thought: Here is the plan of how I will go about solving this based on the instructions I got:\n1.",
 ]

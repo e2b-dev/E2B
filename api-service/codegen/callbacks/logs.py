@@ -109,6 +109,12 @@ class LogsCallbackHandler(BaseCallbackHandler):
         # $INPUT
         # </action>
         # ```
+        print("+++ AGENT ACTION LOG")
+        print(action.log)
+        print("SPLIT:")
+        print(action.log.split("Action:"))
+        print("--- AGENT ACTION LOG")
+
         thought, _ = action.log.split("Action:")
         thought = thought.removeprefix("Thought:")
         thought = thought.strip()
