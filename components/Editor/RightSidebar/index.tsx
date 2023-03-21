@@ -20,11 +20,13 @@ export interface Props {
   deployedURL?: string | null
   deployStatus?: deployment_state | null
   isInitializingDeploy?: boolean
+  isDeployRequestRunning?: boolean
 }
 
 function RightSidebar({
   logs,
   logsRaw,
+  isDeployRequestRunning,
   deploy,
   deployedURL,
   deployStatus,
@@ -92,6 +94,7 @@ function RightSidebar({
           />
           <DeployButton
             deploy={deploy}
+            isDeployRequestRunning={isDeployRequestRunning}
             isInitializingDeploy={isInitializingDeploy}
             deployStatus={deployStatus}
           />

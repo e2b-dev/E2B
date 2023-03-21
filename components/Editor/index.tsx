@@ -90,7 +90,11 @@ function Editor({ project }: Props) {
   }, [deployment])
 
   const [focusedBlock, setFocusedBlock] = useState({ index: 0 })
-  const { trigger: generate } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
+  const {
+    trigger: generate,
+    isMutating: isDeployRequestRunning,
+    error,
+  } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
 
   async function deploy() {
     if (!selectedRoute) return
@@ -225,6 +229,7 @@ function Editor({ project }: Props) {
               deployStatus={deployment?.state}
               isInitializingDeploy={isInitializingDeploy}
               logs={logs}
+              isDeployRequestRunning={isDeployRequestRunning}
               logsRaw={logsRaw}
               deploy={deploy}
               deployedURL={deployment?.url}

@@ -1,5 +1,3 @@
-
-
 import {
   Code2,
   Package,
@@ -7,7 +5,9 @@ import {
   Wrench,
   Loader,
 } from 'lucide-react'
-import { ReactMarkdown } from 'react-markdown/lib/react-markdown'
+import ReactMarkdown from 'react-markdown'
+import hljs from 'highlight.js'
+import { useEffect } from 'react'
 
 import { Log } from 'db/types'
 
@@ -30,11 +30,11 @@ export interface Props {
 }
 
 function LogEntry({ log }: Props) {
-  // useEffect(function highlightCode() {
-  //   if (log.type === 'tool' && log.name === 'RunJavaScriptCode') {
-  //     hljs.highlightAll()
-  //   }
-  // }, [log])
+  useEffect(function highlightCode() {
+    if (log.type === 'tool' && log.name === 'RunJavaScriptCode') {
+      hljs.highlightAll()
+    }
+  }, [log])
   return (
     <div className="
       rounded-lg
@@ -74,16 +74,19 @@ function LogEntry({ log }: Props) {
           </div>
           {log.input.trim() &&
             <div className="
-              border-t
-              mt-2
               pt-2
             "
             >
-              <pre>
+              {log.name === 'RunJavaScriptCode' &&
+                <ReactMarkdown>
+                  {'```\n' + log.input.trim() + '\n```'}
+                </ReactMarkdown>
+              }
+              {log.name !== 'RunJavaScriptCode' &&
                 <ReactMarkdown>
                   {log.input}
                 </ReactMarkdown>
-              </pre>
+              }
             </div>
           }
           {log.output?.trim() &&

@@ -8,6 +8,7 @@ export interface Props {
   deploy: () => void
   deployStatus?: deployment_state | null
   isInitializingDeploy?: boolean
+  isDeployRequestRunning?: boolean
 }
 
 interface DeploymentRepresentation {
@@ -47,12 +48,14 @@ function getDeploymentRepresentation(deployStatus: deployment_state | null | und
 function DeployButton({
   deploy,
   deployStatus,
+  isDeployRequestRunning,
   isInitializingDeploy,
 }: Props) {
   const representation = getDeploymentRepresentation(deployStatus, isInitializingDeploy)
 
   return (
     <Button
+      isDisabled={isDeployRequestRunning}
       text={representation.text}
       onClick={deploy}
       variant={Button.variant.Full}
