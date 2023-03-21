@@ -68,7 +68,7 @@ def create_client(
         return from_(table_name)
 
     def rpc(
-        self, fn: str, params: Dict[Any, Any]
+        fn: str, params: Dict[Any, Any]
     ) -> Coroutine[None, None, AsyncFilterRequestBuilder]:
         return client.postgrest.rpc(fn, params)
 
