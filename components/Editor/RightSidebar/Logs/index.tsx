@@ -90,10 +90,9 @@ function Logs({
           p-4
       ">
         {selectedTab === 0 && logs?.map((l, i, a) =>
-          <Fragment key={l.id}>
+          <Fragment key={i}>
             <LogEntry
               log={l}
-              key={l.id}
             />
             {i < a.length - 1 &&
               <div className="flex items-center flex-col">
