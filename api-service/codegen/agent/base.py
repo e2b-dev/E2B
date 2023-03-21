@@ -159,10 +159,18 @@ class CodegenAgent(ChatAgent):
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         try:
+            print("+++ _extract_tool_and_input TEXT")
+            print(text)
+            print("--- _extract_tool_and_input TEXT")
             _, action_string, _ = text.split("```")
+            print("+++ _extract_tool_and_input action_string")
+            print(action_string)
+            print("--- _extract_tool_and_input action_string")
 
             # A list of XML elements that represents actions.
             actions = parse_action_string(action_string)
+            print("ACTIONS")
+            print(actions)
 
             # We handle the case when the LLM starts specifying multiple actions in a single response.
             # Return a special `ACTIONS_QUEUE` identifier and the raw action string.
