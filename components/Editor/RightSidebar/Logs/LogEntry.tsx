@@ -1,6 +1,16 @@
-import { Log } from 'db/types'
-import { Code2, Package, TerminalSquare, Wrench } from 'lucide-react'
+import {
+  useEffect,
+} from 'react'
+import hljs from 'highlight.js'
+import {
+  Code2,
+  Package,
+  TerminalSquare,
+  Wrench,
+} from 'lucide-react'
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown'
+
+import { Log } from 'db/types'
 
 function getToolIcon(toolName: string) {
   switch (toolName) {
@@ -20,12 +30,16 @@ export interface Props {
 }
 
 function LogEntry({ log }: Props) {
+  useEffect(function highlightCode() {
+    if (log.type === 'tool' && log.name === 'RunJavaScriptCode') {
+      hljs.highlightAll()
+    }
+  }, [log])
   return (
     <div className="
       rounded-lg
       p-3
       border
-      border-slate
     ">
       {log.type === 'thought' &&
         <div className="
