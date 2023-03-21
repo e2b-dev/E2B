@@ -1,6 +1,6 @@
 import datetime
 
-# import asyncio
+import asyncio
 from typing import Dict, Any, List, Union
 from pydantic import PrivateAttr
 from langchain.callbacks.base import AsyncCallbackHandler
@@ -101,13 +101,15 @@ class LogsCallbackHandler(AsyncCallbackHandler):
     async def _push_raw_logs(self) -> None:
         if self._raw_logs:
             # loop = asyncio.get_event_loop()
-            # asyncio.run(self._database.push_raw_logs(self._run_id, self._raw_logs))
-            await self._database.push_raw_logs(self._run_id, self._raw_logs)
+            asyncio.ensure_future(
+                self._database.push_raw_logs(self._run_id, self._raw_logs)
+            )
+            # await self._database.push_raw_logs(self._run_id, self._raw_logs)
 
     async def _push_logs(self, logs: List[Dict[str, str]]) -> None:
         # loop = asyncio.get_event_loop()
-        # asyncio.run(self._database.push_logs(self._run_id, logs))
-        await self._database.push_logs(self._run_id, logs)
+        asyncio.ensure_future(self._database.push_logs(self._run_id, logs))
+        # await self._database.push_logs(self._run_id, logs)
 
     async def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
