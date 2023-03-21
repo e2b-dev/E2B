@@ -3,7 +3,10 @@
 # import pytest
 
 from typing import Dict, List, NamedTuple
-from codegen.agent.base import parse_action_string
+from codegen.agent.base import (
+    separate_thought_and_action,
+    parse_action_string,
+)
 
 
 class Action(NamedTuple):
@@ -171,14 +174,12 @@ app.listen(port, () => {
 def test_parsing_llm_action_output():
     """Test LLM action parsing."""
 
-    output = llm_outputs[len(llm_outputs) - 1]
-    thought, *actions = output["llm_output"].split("```")
-    print(thought)
-    print("??????")
-    for action in actions:
-        a = action.strip()
-        if a:
-            print(a)
-            print("======")
+    for output in llm_outputs:
+        _, action_string = separate_thought_and_action(output["llm_output"])
+        parsed_actions = parse_action_string(action_string)
 
-    assert 1 == 1
+        for parsed_action, expected_action in zip(
+            parsed_actions, output["expected_actions"]
+        ):
+            assert parsed_action.attrib["tool"] == expected_action.tool
+            assert parsed_action.text.strip() == expected_action.input.strip()
