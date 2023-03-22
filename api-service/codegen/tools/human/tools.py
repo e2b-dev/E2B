@@ -18,7 +18,7 @@ def create_human_tools(
         """You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human. Example usage:
         ```
         <action tool="AskHuman">
-        I'm not sure what to
+        I'm not sure what to do, can you specify what should the request handle?
         </action>
         ```"""
         print("Asking about")
