@@ -46,10 +46,10 @@ function Button({
         'items-center',
         'justify-center',
         'transition-all',
-        'rounded-lg',
+        'rounded',
         'border',
-        'space-x-1.5',
-        'py-1.5',
+        'space-x-2',
+        'py-1',
         'px-3',
         {
           'cursor-not-allowed opacity-70': isDisabled,

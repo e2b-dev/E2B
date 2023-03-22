@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 import ConnectionLine from 'components/Editor/ConnectionLine'
-import { Log } from 'db/types'
+import { Log, } from 'db/types'
 
 import LogEntry from './LogEntry'
 
@@ -13,6 +13,17 @@ export interface Props {
 
 function LogStream({ logs, rawLogs }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+
+  // logs = [
+  //   {
+  //     id: 'id',
+  //     type: LogType.Tool,
+  //     created_at: new Date(),
+  //     tool_name: ToolName.AskHuman,
+  //     tool_input: 'What should I do?',
+  //     tool_output: '',
+  //   }
+  // ]
 
   useEffect(function scrollLogs() {
     if (!ref.current) return
