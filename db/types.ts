@@ -12,6 +12,7 @@ export enum LogName {
 interface BaseLog {
   id: string
   type: LogType
+  created_at: Date
 }
 
 export interface ThoughtLog extends BaseLog {
