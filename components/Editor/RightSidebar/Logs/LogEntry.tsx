@@ -35,13 +35,16 @@ function LogEntry({ log }: Props) {
       border
     ">
       {log.type === 'thought' &&
+
         <div className="
         italic
+        leading-[21px]
+        tracking-normal
+        font-sans
+        text-xs
         text-slate-400
         ">
-          <ReactMarkdown>
-            {log.content}
-          </ReactMarkdown>
+          {log.content}
         </div>
       }
       {log.type === 'tool' &&
@@ -89,9 +92,9 @@ function LogEntry({ log }: Props) {
               pt-2
             "
             >
-              <ReactMarkdown>
+              <pre>
                 {log.tool_output}
-              </ReactMarkdown>
+              </pre>
             </div>
           }
         </>
