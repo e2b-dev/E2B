@@ -29,8 +29,6 @@ function RightSidebar({
   setDeployURL,
 }: Props) {
   const deployment = useLatestDeployment(project, route)
-  const logs = deployment?.logs as Log[] | undefined
-  const logsRaw = deployment?.logs_raw as string | undefined
 
   useEffect(function updateURL() {
     setDeployURL(deployment?.url ? deployment.url : undefined)
@@ -114,8 +112,7 @@ function RightSidebar({
       </div>
       <Envs />
       <Logs
-        logs={logs}
-        logsRaw={logsRaw}
+        deployment={deployment}
       />
     </Sidebar>
   )
