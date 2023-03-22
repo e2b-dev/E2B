@@ -38,7 +38,6 @@ function Logs({
   //   }
   // }, [logs, selectedTab])
 
-
   return (
     <div className="
       max-w-full

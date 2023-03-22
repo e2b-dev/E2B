@@ -2,7 +2,6 @@ import { projects } from '@prisma/client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-import { Log } from 'db/types'
 import Sidebar from 'components/Sidebar'
 import Text from 'components/Text'
 import { Route } from 'state/store'
