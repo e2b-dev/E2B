@@ -28,14 +28,13 @@ export const routesTable = 'routes'
 //   # },
 
 function checkForResponse(payloadList: any[]): string | null {
-  console.log('payload', payloadList)
   const payload = payloadList.length > 0 ? payloadList[payloadList.length - 1] : undefined
 
   if (!payload) {
     return null
   }
 
-  if (payload.type === 'tool' && payload.name === 'AskHuman' && payload.output) {
+  if (payload.type === 'tool' && payload.tool_name === 'AskHuman' && payload.output) {
     return payload.output
   }
   return null
@@ -61,7 +60,6 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
           filter: `id=eq.${runID}`,
         }, payload => {
           const response = checkForResponse(payload.new.logs as any)
-          console.log('updat')
           if (response) {
             resolve(response)
           }
