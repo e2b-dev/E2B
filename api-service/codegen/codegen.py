@@ -24,9 +24,9 @@ from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
 from codegen.callbacks.logs import LogsCallbackHandler
 from codegen.prompt import (
-    PREFIX,
-    SUFFIX,
-    FORMAT_INSTRUCTIONS,
+    SYSTEM_PREFIX,
+    SYSTEM_SUFFIX,
+    SYSTEM_FORMAT_INSTRUCTIONS,
     HUMAN_INSTRUCTIONS_PREFIX,
     HUMAN_INSTRUCTIONS_SUFFIX,
 )
@@ -131,9 +131,9 @@ class Codegen(BaseModel):
         agent = CodegenAgent.from_llm_and_tools(
             llm=llm,
             tools=tools,
-            prefix=PREFIX,
-            suffix=SUFFIX,
-            format_instructions=FORMAT_INSTRUCTIONS,
+            prefix=SYSTEM_PREFIX,
+            suffix=SYSTEM_SUFFIX,
+            format_instructions=SYSTEM_FORMAT_INSTRUCTIONS,
             input_variables=Codegen.input_variables,
             callback_manager=callback_manager,
         )

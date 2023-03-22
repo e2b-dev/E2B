@@ -1,5 +1,6 @@
 import { ToolLog, ToolName } from 'db/types'
 
+import AskHuman from './AskHuman'
 import CurlServer from './CurlServer'
 import InstallNPMDeps from './InstallNPMDeps'
 import RunCode from './RunCode'
@@ -18,6 +19,8 @@ function Tool({
       return <InstallNPMDeps log={log} />
     case ToolName.RunJavaScriptCode:
       return <RunCode log={log} />
+    case ToolName.AskHuman:
+      return <AskHuman log={log} />
     default:
       throw new Error(`'${log.tool_name}': Unknown tool log`)
   }

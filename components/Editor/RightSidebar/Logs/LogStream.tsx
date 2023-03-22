@@ -22,18 +22,18 @@ function LogStream({ logs, rawLogs }: Props) {
   return (
     <div
       className="
-      flex-1
-      overflow-auto
-      text-xs
-      tracking-wide
-      font-sans
-      scroller
-      whitespace-pre-wrap
-      py-4
-      flex
-      flex-col
-      px-2
-  ">
+        flex-1
+        overflow-auto
+        text-xs
+        tracking-wide
+        font-sans
+        scroller
+        whitespace-pre-wrap
+        py-4
+        flex
+        flex-col
+        px-2
+    ">
       {rawLogs &&
         <ReactMarkdown>
           {rawLogs}

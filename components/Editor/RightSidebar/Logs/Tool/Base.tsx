@@ -20,11 +20,17 @@ function BaseTool({
   if (log.type !== LogType.Tool) throw new Error(`'${log.type}': This component supports only logs of type  '${log.type}'`)
 
   return (
-    <div>
+    <div className="
+      flex
+      flex-col
+      items-stretch
+      space-y-1
+    ">
       <div className="
         flex
         justify-between
         items-center
+        pb-2
       ">
         <div className="
           flex
@@ -49,7 +55,6 @@ function BaseTool({
       {log.tool_output?.trim() &&
         <div className="
           border-t
-          mt-2
           pt-2
         ">
           <ReactMarkdown>
