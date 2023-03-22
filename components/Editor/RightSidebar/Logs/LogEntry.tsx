@@ -70,12 +70,12 @@ function LogEntry({ log }: Props) {
               pt-2
             "
             >
-              {log.name === 'RunJavaScriptCode' &&
-                <ReactMarkdown>
-                  {'```\n' + log.input.trim() + '\n```'}
-                </ReactMarkdown>
+              {(log.name === 'RunJavaScriptCode' || log.name === 'InstallNPMDependencies') &&
+                <pre>
+                  {log.input.trim()}
+                </pre>
               }
-              {log.name !== 'RunJavaScriptCode' &&
+              {log.name !== 'RunJavaScriptCode' && log.name !== 'InstallNPMDependencies' &&
                 <ReactMarkdown>
                   {log.input}
                 </ReactMarkdown>
