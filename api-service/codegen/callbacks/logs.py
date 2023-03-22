@@ -3,7 +3,7 @@ import datetime
 import asyncio
 from asyncio import Queue, ensure_future
 from typing import Coroutine, Dict, Any, List, Union
-from pydantic import PrivateAttr
+from pydantic import PrivateAttr, BaseModel
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
@@ -11,7 +11,7 @@ from codegen.agent.base import parse_action_string, separate_thought_and_action
 from database import Database
 
 
-class LogStreamParser:
+class LogStreamParser(BaseModel):
     def __init__(self) -> None:
         # All "finished" logs that the parser saved.
         self._logs: List[Dict[str, str]] = []
@@ -85,7 +85,7 @@ class LogStreamParser:
         ]
 
 
-class LogQueue:
+class LogQueue(BaseModel):
     def __init__(self) -> None:
         self.queue: Queue[Coroutine] = asyncio.Queue()
         self.work = ensure_future(self.worker())
