@@ -42,11 +42,6 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
         </action>
         ```"""
 
-        # with_require = f"""
-        # import {{ createRequire }} from "module";
-        # const require = createRequire(import.meta.url);
-        # {extract_code(code)}
-        # """
         nonlocal last_javascript_code
         last_javascript_code = code
 
