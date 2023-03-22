@@ -36,7 +36,7 @@ def actions_from_xml_string(xml_string: str):
 
     # Parse the escaped string as an XML tree.
     root = ET.fromstring(
-        # Wrapping the XML in a fully formed root tag while some inner tags can be incomplete seems to be causing some small parsing errors ("</" added as a tag content)
+        # Wrapping the XML in a fully formed root tag while some inner tags can be incomplete doesn't make sense.
         f"<root>{xml_string}",
         # Use Parser with C binding for libxml2+libxslt, with recovery mode that allows to parse incomplete XML.
         etree.XMLParser(recover=True),
