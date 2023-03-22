@@ -56,33 +56,33 @@ function LogEntry({ log }: Props) {
             items-center
             space-x-2
           ">
-              {getToolIcon(log.name)}
+              {getToolIcon(log.tool_name)}
               <div className="font-medium">
-                {log.name}
+                {log.tool_name}
               </div>
             </div>
-            {log.output === undefined &&
+            {log.tool_output === undefined &&
               <Loader size="16px" className="text-slate-400 animate-spin" />
             }
           </div>
-          {log.input.trim() &&
+          {log.tool_input.trim() &&
             <div className="
               pt-2
             "
             >
-              {(log.name === 'RunJavaScriptCode' || log.name === 'InstallNPMDependencies') &&
+              {(log.tool_name === 'RunJavaScriptCode' || log.tool_name === 'InstallNPMDependencies') &&
                 <pre>
-                  {log.input.trim()}
+                  {log.tool_input.trim()}
                 </pre>
               }
-              {log.name !== 'RunJavaScriptCode' && log.name !== 'InstallNPMDependencies' &&
+              {log.tool_name !== 'RunJavaScriptCode' && log.tool_name !== 'InstallNPMDependencies' &&
                 <ReactMarkdown>
-                  {log.input}
+                  {log.tool_input}
                 </ReactMarkdown>
               }
             </div>
           }
-          {log.output?.trim() &&
+          {log.tool_output?.trim() &&
             <div className="
               border-t
               mt-2
@@ -90,7 +90,7 @@ function LogEntry({ log }: Props) {
             "
             >
               <ReactMarkdown>
-                {log.output}
+                {log.tool_output}
               </ReactMarkdown>
             </div>
           }

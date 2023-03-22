@@ -55,6 +55,7 @@ export function useLatestDeployment(project: projects, route?: Route) {
           filter: `project_id=eq.${project.id}`,
         }, payload => {
           if (payload.new.route_id === route.id) {
+            console.log('PAYLOAD', payload)
             setDeployment(payload.new as deployments)
           }
         })

@@ -7,7 +7,7 @@ export interface Props {
 function RunCode({
   log,
 }: Props) {
-  if (log.name !== ToolName.RunJavaScriptCode) throw new Error(`'${log.name}': This component supports only logs for 'RunJavaScriptCode' tool`)
+  if (log.tool_name !== ToolName.RunJavaScriptCode) throw new Error(`'${log.tool_name}': This component supports only logs for 'RunJavaScriptCode' tool`)
 
   return (
 

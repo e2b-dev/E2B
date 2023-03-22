@@ -22,10 +22,10 @@ export interface ThoughtLog extends BaseLog {
 
 export interface ToolLog extends BaseLog {
   type: LogType.Tool
-  name: ToolName
-  input: string
+  tool_name: ToolName
+  tool_input: string
+  tool_output?: string
   finish_at?: Date
-  output?: string
 }
 
 export type Log = ThoughtLog | ToolLog

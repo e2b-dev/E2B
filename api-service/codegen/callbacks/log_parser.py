@@ -8,8 +8,15 @@ from codegen.agent.base import parse_action_string, separate_thought_and_action
 
 class LogStreamParser:
     """
+    We receive a stream of tokens and want to parse this stream of tokens to
+
+    // Example
+    Thought
+
+
+
     To allow continuous streaming of partially finished logs we parse the logs every time we receive new token or tool output.
-    We reparse only the tokens that corresponds to the buffered logs and not all the tokens that we have ever received.
+    We parse only the tokens that corresponds to the buffered logs and not all the tokens that we have ever received.
 
     Buffered logs are partially finished logs that are either unfinished (still being streamed)
     or they are tools' logs for which we haven't received outputs yet.
@@ -41,7 +48,11 @@ class LogStreamParser:
         """This function should be called only after ingesting new token or tool output to update the buffered logs."""
         thought, action_string = separate_thought_and_action(self._token_buffer)
         tools_logs = [
-            {"type": "tool", "name": action.attrib["tool"], "input": action.text or ""}
+            {
+                "type": "tool",
+                "tool_name": action.attrib["tool"],
+                "tool_input": action.text or "",
+            }
             for action in parse_action_string(action_string)
         ]
 
@@ -101,7 +112,7 @@ class LogStreamParser:
         self._tools_output_buffer.append(
             {
                 "finish_at": str(datetime.datetime.now()),
-                "output": output,
+                "tool_output": output,
             }
         )
         self._parse()
