@@ -147,5 +147,3 @@ def test_parsing_llm_action_output():
         ):
             assert parsed_action.attrib["tool"] == expected_action.tool
             assert parsed_action.text.strip() == expected_action.input.strip()
-
-        break
