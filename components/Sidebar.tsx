@@ -17,7 +17,7 @@ function Sidebar({ children, side, className }: PropsWithChildren<Props>) {
       className={clsx(
         `
         flex
-        ${side === Side.Left ? 'w-[200px]' : 'w-[480px]'}
+        ${side === Side.Left ? 'w-[200px]' : 'w-[550px]'}
         border-slate-200
         bg-white
         `,
