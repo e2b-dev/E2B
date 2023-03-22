@@ -1,14 +1,12 @@
 import useSWRMutation from 'swr/mutation'
 import { Fragment, useEffect, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
-import { deployment_state, projects } from '@prisma/client'
+import { projects } from '@prisma/client'
 
 import { Route, methods, Method } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
 import Select from 'components/Select'
 import Text from 'components/Text'
-import { useLatestDeployment } from 'hooks/useLatestDeployment'
-import { Log } from 'db/types'
 import Block from 'components/Block'
 
 
