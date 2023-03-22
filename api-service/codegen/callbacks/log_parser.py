@@ -8,22 +8,46 @@ from codegen.agent.base import parse_action_string, separate_thought_and_action
 
 class LogStreamParser:
     """
-    We receive a stream of tokens and want to parse this stream of tokens to
+    We receive a stream of tokens and want to parse this stream of tokens to thought and tool logs
+    even if we haven't yet received all tokens we need to execute the action.
 
-    // Example
-    Thought
+    We call the self._parse every time we receive new token or tool output.
+    This method takes the token buffer and tries to transform it to thought and tool logs.
+    It can also create tool logs even if we haven't received all the tokens we need to execute the action yet.
 
+    // Example token buffer content:
+    Thought:
+    This is a thought
 
+    Action:
+    ```
+    <action type="CurlJavaScriptServer">
+    </ac
+    ```
+    // End of example
 
-    To allow continuous streaming of partially finished logs we parse the logs every time we receive new token or tool output.
-    We parse only the tokens that corresponds to the buffered logs and not all the tokens that we have ever received.
+    This is parsed as following buffered logs:
+    [
+        {
+            "id": "id1",
+            "created_at": "2023-03-22 13:46:52.561854",
+            "type": "thought",
+            "content": "This is a thought",
+        },
+        {
+            "id": "id2",
+            "created_at": "2023-03-22 13:46:52.561854",
+            "type": "tool",
+            "tool_name": "CurlJavaScriptServer,
+            "tool_input": "",
+        }
+    ]
 
-    Buffered logs are partially finished logs that are either unfinished (still being streamed)
-    or they are tools' logs for which we haven't received outputs yet.
+    Buffered logs are thought logs or tool logs for which we haven't received outputs yet.
+
     We can keep track of the buffered logs because there will always be more tool logs than tool outputs - we must parse the actions from tokens before they executed.
-    Because of that all buffered logs can be flushed to finished logs when we receive output for the last tool in the buffered logs.
-
-    We are matching the tools' logs and tools' outputs by the order in which they are parsed and ingested - if we need to support asynchronous execution of tools we need to change this matching.
+    We are matching the tools' logs and tools' outputs by the order in which they are parsed and ingested (if we need to support asynchronous execution of tools we need to change this matching)
+    and the buffered can be flushed to finished logs when we receive output for the last tool in the buffered logs.
     """
 
     def __init__(self) -> None:
