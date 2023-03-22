@@ -130,17 +130,10 @@ class LogsCallbackHandler(AsyncCallbackHandler):
             asyncio.ensure_future(
                 self._database.push_raw_logs(self._run_id, self._raw_logs)
             )
-            # await self._database.push_raw_logs(self._run_id, self._raw_logs)
 
     def _push_logs(self, logs: List[Dict[str, str]]) -> None:
-        # pass
-        # loop = asyncio.get_event_loop()
-        # asyncio.ensure_future(
-        #     )
         coro = self._database.push_logs(self._run_id, logs)
         self._log_queue.queue.put_nowait(coro)
-
-    # await self._database.push_logs(self._run_id, logs)
 
     async def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
