@@ -11,7 +11,7 @@ class NodeJSPlayground(Playground):
     node_js_env_id = "dCeMnVVxu01L"
     rootdir = "/code"
     default_javascript_code_file = os.path.join(rootdir, "index.mjs")
-    run_code_timeout = 5  # 5s
+    run_code_timeout = 3  # 3s
 
     def __init__(self, envs: List[EnvVar]):
         super().__init__(NodeJSPlayground.node_js_env_id, envs)

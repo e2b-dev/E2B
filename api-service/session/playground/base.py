@@ -12,7 +12,7 @@ from playground_client.models.file import File
 
 
 class Playground(Session):
-    port_check_interval = 1  # 1s
+    port_check_interval = 0.5  # 500ms
     max_port_checks = 10
 
     rootdir = "/"

@@ -1,7 +1,8 @@
 import datetime
 
 import asyncio
-from typing import Dict, Any, List, Union
+from asyncio import Queue, ensure_future
+from typing import Coroutine, Dict, Any, List, Union
 from pydantic import PrivateAttr
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -84,32 +85,62 @@ class LogStreamParser:
         ]
 
 
+class LogQueue:
+    def __init__(self) -> None:
+        self.queue: Queue[Coroutine] = asyncio.Queue()
+        self.work = ensure_future(self.worker())
+
+    async def worker(self):
+        while True:
+            for _ in range(self.queue.qsize() - 1):
+                old_coro = self.queue.get_nowait()
+                try:
+                    old_coro.close()
+                except Exception as e:
+                    print(e)
+
+            task = await self.queue.get()
+            try:
+                await ensure_future(task)
+                self.queue.task_done()
+            except Exception as e:
+                print(e)
+
+    def close(self):
+        self.work.cancel()
+
+
 class LogsCallbackHandler(AsyncCallbackHandler):
     _database: Database = PrivateAttr()
     _run_id: str = PrivateAttr()
-    # _loop: AbstractEventLoop = PrivateAttr()
     _raw_logs: str = ""
 
     def __init__(self, database: Database, run_id: str, **kwargs: Any):
         super().__init__(**kwargs)
-        # self._loop = asyncio.new_event_loop()
-
         self._database = database
         self._run_id = run_id
         self._parser = LogStreamParser()
+        self._log_queue = LogQueue()
 
-    async def _push_raw_logs(self) -> None:
+    def __del__(self):
+        self._log_queue.close()
+
+    def _push_raw_logs(self) -> None:
         if self._raw_logs:
-            # loop = asyncio.get_event_loop()
             asyncio.ensure_future(
                 self._database.push_raw_logs(self._run_id, self._raw_logs)
             )
             # await self._database.push_raw_logs(self._run_id, self._raw_logs)
 
-    async def _push_logs(self, logs: List[Dict[str, str]]) -> None:
+    def _push_logs(self, logs: List[Dict[str, str]]) -> None:
+        # pass
         # loop = asyncio.get_event_loop()
-        asyncio.ensure_future(self._database.push_logs(self._run_id, logs))
-        # await self._database.push_logs(self._run_id, logs)
+        # asyncio.ensure_future(
+        #     )
+        coro = self._database.push_logs(self._run_id, logs)
+        self._log_queue.queue.put_nowait(coro)
+
+    # await self._database.push_logs(self._run_id, logs)
 
     async def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -120,10 +151,10 @@ class LogsCallbackHandler(AsyncCallbackHandler):
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         logs = self._parser.ingest_token(token).get_logs()
-        await self._push_logs(logs)
+        self._push_logs(logs)
 
         self._raw_logs += token
-        await self._push_raw_logs()
+        self._push_raw_logs()
 
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -157,17 +188,17 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         """Run when tool starts running."""
         print("Starting tool")
         self._raw_logs += "Starting tool..."
-        await self._push_raw_logs()
+        self._push_raw_logs()
 
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
         print("Finished tool")
 
         logs = self._parser.ingest_tool_output(output).get_logs()
-        await self._push_logs(logs)
+        self._push_logs(logs)
 
         self._raw_logs += f"\n{output}\n"
-        await self._push_raw_logs()
+        self._push_raw_logs()
 
     async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
@@ -179,7 +210,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         """Run when tool errors."""
         print("Tool error", error)
         self._raw_logs += f"Tool error:\n{error}\n"
-        await self._push_raw_logs()
+        self._push_raw_logs()
 
     async def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on arbitrary text."""
