@@ -13,6 +13,19 @@ import { Database, Json } from 'db/supabase'
 import { deploymentsTable } from 'db/tables'
 import produce from 'immer'
 
+const tabsProps = {
+  tabs: [
+    {
+      label: 'Pretty',
+      id: 'pretty',
+    },
+    {
+      label: 'Raw',
+      id: 'raw',
+    },
+  ]
+}
+
 export interface Props {
   deployment?: deployments
 }
@@ -21,18 +34,6 @@ function Logs({
   deployment,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
-  const [tabsProps] = useState({
-    tabs: [
-      {
-        label: 'Pretty',
-        id: 'pretty',
-      },
-      {
-        label: 'Raw',
-        id: 'raw',
-      },
-    ]
-  })
   const client = useSupabaseClient<Database>()
   const tabsCss = useTabs(tabsProps)
 

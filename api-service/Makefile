@@ -8,4 +8,5 @@ generate-playground-client:
 	--additional-properties=disallowAdditionalPropertiesIfNotPresent=true \
 	--additional-properties=packageName=playground_client \
 	--additional-properties=floatStrictType=false \
+	--additional-properties=library=asyncio \
 	--additional-properties=allowStringInDateTimeParameters=false
