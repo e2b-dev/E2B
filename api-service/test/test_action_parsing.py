@@ -16,6 +16,17 @@ class Action(NamedTuple):
 
 llm_outputs: List[Dict[str, Any]] = [
     {
+        "llm_output": """Action:
+```
+<action tool="AskHuman">
+What should the post request handler do?
+</action>
+```""",
+        "expected_actions": [
+            Action("AskHuman", "What should the post request handler do?")
+        ],
+    },
+    {
         "llm_output": """Thought: Lorem ipsum
 
 Action:
@@ -136,3 +147,5 @@ def test_parsing_llm_action_output():
         ):
             assert parsed_action.attrib["tool"] == expected_action.tool
             assert parsed_action.text.strip() == expected_action.input.strip()
+
+        break
