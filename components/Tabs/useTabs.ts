@@ -1,24 +1,17 @@
-import {useState } from 'react'
+import { useMemo, useState } from 'react'
 
-// type Tab = { label: string; id: string; children: ReactNode }
 type Tab = { label: string; id: string; }
 
 export function useTabs({
   tabs,
-  // initialTabId,
   onChange,
 }: {
   tabs: Tab[];
-  // initialTabId: string;
   onChange?: (id: string) => void
 }) {
   const [selectedTabIndex, setSelectedTab] = useState(-1)
-  // const [selectedTabIndex, setSelectedTab] = useState(() => {
-  //   const indexOfInitialTab = tabs.findIndex((tab) => tab.id === initialTabId)
-  //   return indexOfInitialTab === -1 ? 0 : indexOfInitialTab
-  // })
 
-  return {
+  return useMemo(() => ({
     tabProps: {
       tabs,
       selectedTabIndex,
@@ -26,5 +19,5 @@ export function useTabs({
       setSelectedTab,
     },
     selectedTab: tabs[selectedTabIndex],
-  }
+  }), [selectedTabIndex])
 }

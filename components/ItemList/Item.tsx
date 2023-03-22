@@ -107,6 +107,7 @@ function Item({ item, deleteItem }: Props) {
               className="text-slate-300 transition-all group-hover:text-slate-400"
               size={Text.size.S3}
               text={item.created_at.toLocaleString()}
+              suppressHydrationWarning
             />
           </div>
         </div>

@@ -1,28 +1,20 @@
-import {
-  Fragment,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useState } from 'react'
 // import hljs from 'highlight.js'
-import ReactMarkdown from 'react-markdown'
+import { deployments } from '@prisma/client'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
 import Tabs from 'components/Tabs'
 import { Log } from 'db/types'
-import ConnectionLine from 'components/Editor/ConnectionLine'
 
-import LogEntry from './LogEntry'
+import LogStream from './LogStream'
 
 export interface Props {
-  logs?: Log[]
-  logsRaw?: string
+  deployment?: deployments
 }
 
 function Logs({
-  logs,
-  logsRaw,
+  deployment,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
   const [tabsProps] = useState({
@@ -37,7 +29,7 @@ function Logs({
       },
     ]
   })
-  const ref = useRef<HTMLDivElement>(null)
+
   const tabsCss = useTabs(tabsProps)
 
   // useEffect(function highlightCode() {
@@ -45,11 +37,6 @@ function Logs({
   //     hljs.highlightAll()
   //   }
   // }, [logs, selectedTab])
-
-  useEffect(function scrollLogs() {
-    if (!ref.current) return
-    ref.current.scrollIntoView({ behavior: 'smooth' })
-  }, [logs])
 
   return (
     <div className="
@@ -85,44 +72,16 @@ function Logs({
           />
         )}
       </div>
-
-      <div
-        className="
-          flex-1
-          overflow-auto
-          text-xs
-          tracking-wide
-          font-sans
-          scroller
-          whitespace-pre-wrap
-          py-4
-          flex
-          flex-col
-          px-2
-      ">
-        {selectedTab === 0 && logs?.map((l, i, a) =>
-          <Fragment key={i}>
-            <LogEntry
-              log={l}
-            />
-            {i < a.length - 1 &&
-              <div className="flex items-center flex-col">
-                <ConnectionLine className="h-4" />
-              </div>
-            }
-          </Fragment>
-        )}
-        {selectedTab === 1 && (
-          <>
-            {logsRaw &&
-              <ReactMarkdown>
-                {logsRaw}
-              </ReactMarkdown>
-            }
-          </>
-        )}
-        <div ref={ref} />
-      </div>
+      {selectedTab === 0 &&
+        <LogStream
+          logs={deployment?.logs as Log[] | undefined}
+        />
+      }
+      {selectedTab === 1 &&
+        <LogStream
+          rawLogs={deployment?.logs_raw}
+        />
+      }
     </div>
   )
 }
