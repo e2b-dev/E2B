@@ -7,10 +7,12 @@ import RunCode from './RunCode'
 
 export interface Props {
   log: ToolLog
+  onAnswer?: (logID: string, answer: string) => void
 }
 
 function Tool({
-  log
+  log,
+  onAnswer,
 }: Props) {
   switch (log.tool_name) {
     case ToolName.CurlJavaScriptServer:
@@ -20,7 +22,7 @@ function Tool({
     case ToolName.RunJavaScriptCode:
       return <RunCode log={log} />
     case ToolName.AskHuman:
-      return <AskHuman log={log} />
+      return <AskHuman log={log} onAnswer={onAnswer} />
     default:
       throw new Error(`'${log.tool_name}': Unknown tool log`)
   }

@@ -5,9 +5,10 @@ import Tool from './Tool'
 
 export interface Props {
   log: Log
+  onAnswer?: (logID: string, answer: string) => void
 }
 
-function LogEntry({ log }: Props) {
+function LogEntry({ log, onAnswer }: Props) {
   return (
     <div className="
       rounded-lg
@@ -22,6 +23,7 @@ function LogEntry({ log }: Props) {
       {log.type === LogType.Tool &&
         <Tool
           log={log}
+          onAnswer={onAnswer}
         />
       }
     </div>

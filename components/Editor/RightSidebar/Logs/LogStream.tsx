@@ -9,9 +9,10 @@ import LogEntry from './LogEntry'
 export interface Props {
   logs?: Log[]
   rawLogs?: string | null
+  onAnswer?: (logID: string, answer: string) => void
 }
 
-function LogStream({ logs, rawLogs }: Props) {
+function LogStream({ logs, rawLogs, onAnswer }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   // logs = [
@@ -53,6 +54,7 @@ function LogStream({ logs, rawLogs }: Props) {
       {logs && logs.map((l, i, a) =>
         <Fragment key={i}>
           <LogEntry
+            onAnswer={onAnswer}
             log={l}
           />
           {i < a.length - 1 &&
