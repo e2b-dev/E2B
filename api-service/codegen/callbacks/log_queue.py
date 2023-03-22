@@ -3,10 +3,9 @@ from typing import Coroutine
 
 
 class LogQueue:
-    def __init__(self, sleep_time=0.15) -> None:
+    def __init__(self) -> None:
         self.queue: Queue[Coroutine] = Queue()
         self.work = ensure_future(self.worker())
-        self.sleep_time = sleep_time
 
     async def worker(self):
         while True:

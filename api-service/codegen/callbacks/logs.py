@@ -19,7 +19,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         self._run_id = run_id
         self._parser = LogStreamParser()
         self._log_queue = LogQueue()
-        self._raw_log_queue = LogQueue(1)
+        self._raw_log_queue = LogQueue()
 
     def __del__(self):
         self._log_queue.close()
