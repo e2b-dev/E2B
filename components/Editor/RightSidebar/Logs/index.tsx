@@ -54,7 +54,7 @@ function Logs({
     })
 
     await client.from(deploymentsTable).update({ logs: logs as unknown as Json[] }).eq('id', deployment.id).single()
-  }, [deployment?.logs, deployment?.id, client])
+  }, [deployment, client])
 
   return (
     <div className="
