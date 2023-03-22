@@ -1,5 +1,5 @@
 import { deployment_state } from '@prisma/client'
-import { ReactNode } from 'react'
+import { ReactNode, memo } from 'react'
 
 import Button from 'components/Button'
 import Spinner from 'components/Spinner'
@@ -64,4 +64,4 @@ function DeployButton({
   )
 }
 
-export default DeployButton
+export default memo(DeployButton)

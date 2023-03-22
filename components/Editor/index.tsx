@@ -1,7 +1,7 @@
 import useSWRMutation from 'swr/mutation'
 import { Fragment, useEffect, useState } from 'react'
 import Hotkeys from 'react-hot-keys'
-import { projects } from '@prisma/client'
+import { deployment_state, projects } from '@prisma/client'
 
 import { Route, methods, Method } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
@@ -62,9 +62,9 @@ function Editor({ project }: Props) {
   const addRoute = store.use.addRoute()
   const envs = store.use.envs()
 
-  const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
   const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
   const selectedRoute = routes.find(s => s.id === selectedRouteID)
+  const [deploymentURL, setDeploymentURL] = useState<string>()
 
   useEffect(function selectDefaultRoute() {
     if (selectedRoute?.id || routes.length === 0) return
@@ -80,25 +80,14 @@ function Editor({ project }: Props) {
     })
   }
 
-  const deployment = useLatestDeployment(project, selectedRoute)
-  const logs = deployment?.logs as Log[] | undefined
-  const logsRaw = deployment?.logs_raw as string | undefined
-
-  useEffect(function resetInitializing() {
-    if (!deployment) return
-    setIsInitializingDeploy(false)
-  }, [deployment])
-
   const [focusedBlock, setFocusedBlock] = useState({ index: 0 })
   const {
     trigger: generate,
     isMutating: isDeployRequestRunning,
-    error,
   } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
 
   async function deploy() {
     if (!selectedRoute) return
-    setIsInitializingDeploy(true)
     await generate({
       projectID: project.id,
       route: selectedRoute,
@@ -209,9 +198,9 @@ function Editor({ project }: Props) {
                   setTimeout(() => setFocusedBlock({ index: selectedRoute.blocks.length }), 0)
                 }}
               />
-              {deployment?.url &&
+              {deploymentURL &&
                 <Link
-                  href={deployment.url}
+                  href={deploymentURL}
                   className="
                     mt-6
                     underline
@@ -219,20 +208,18 @@ function Editor({ project }: Props) {
                   target="_blank" rel="noopener noreferrer"
                 >
                   <Text
-                    text={deployment.url.substring('https://'.length)}
+                    text={deploymentURL.substring('https://'.length)}
                     size={Text.size.S3}
                   />
                 </Link>
               }
             </div>
             <RightSidebar
-              deployStatus={deployment?.state}
-              isInitializingDeploy={isInitializingDeploy}
-              logs={logs}
+              project={project}
+              route={selectedRoute}
               isDeployRequestRunning={isDeployRequestRunning}
-              logsRaw={logsRaw}
               deploy={deploy}
-              deployedURL={deployment?.url}
+              setDeployURL={setDeploymentURL}
             />
           </>
         }

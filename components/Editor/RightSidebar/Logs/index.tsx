@@ -1,6 +1,8 @@
 import {
   Fragment,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
 } from 'react'
 import hljs from 'highlight.js'
@@ -10,8 +12,9 @@ import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
 import Tabs from 'components/Tabs'
 import { Log } from 'db/types'
-import LogEntry from './LogEntry'
 import ConnectionLine from 'components/Editor/ConnectionLine'
+
+import LogEntry from './LogEntry'
 
 export interface Props {
   logs?: Log[]
@@ -35,21 +38,27 @@ function Logs({
       },
     ]
   })
-
+  const ref = useRef<HTMLDivElement>(null)
   const tabsCss = useTabs(tabsProps)
 
-  useEffect(function highlightCode() {
-    if (selectedTab === 1) {
-      hljs.highlightAll()
-    }
-  }, [logs, selectedTab])
+  // useEffect(function highlightCode() {
+  //   if (selectedTab === 1) {
+  //     hljs.highlightAll()
+  //   }
+  // }, [logs, selectedTab])
+
+
+  useEffect(function scrollLogs() {
+    if (!ref.current) return
+    ref.current.scrollIntoView({ behavior: 'smooth' })
+  }, [logs])
 
   return (
     <div className="
       max-w-full
       flex
       flex-col
-      overflow-auto
+      overflow-hidden
     ">
       <div className="
         flex
@@ -80,14 +89,17 @@ function Logs({
       </div>
 
       <div
+        ref={ref}
         className="
           flex-1
           overflow-auto
           text-xs
           tracking-wide
           font-sans
+          scroller
           whitespace-pre-wrap
-          p-4
+          py-4
+          px-2
       ">
         {selectedTab === 0 && logs?.map((l, i, a) =>
           <Fragment key={i}>
@@ -110,6 +122,7 @@ function Logs({
             }
           </>
         )}
+        <div ref={ref} />
       </div>
     </div>
   )

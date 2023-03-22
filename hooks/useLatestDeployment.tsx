@@ -26,7 +26,6 @@ export function useLatestDeployment(project: projects, route?: Route) {
         .single()
 
       if (deployment.error) return
-      console.log(deployment.data)
       setInitDeployment(deployment.data as unknown as deployments)
     }())
   }, [client, project.id, route?.id])

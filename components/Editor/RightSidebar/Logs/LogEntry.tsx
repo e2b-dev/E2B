@@ -6,8 +6,6 @@ import {
   Loader,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import hljs from 'highlight.js'
-import { useEffect } from 'react'
 
 import { Log } from 'db/types'
 
@@ -30,11 +28,6 @@ export interface Props {
 }
 
 function LogEntry({ log }: Props) {
-  useEffect(function highlightCode() {
-    if (log.type === 'tool' && log.name === 'RunJavaScriptCode') {
-      hljs.highlightAll()
-    }
-  }, [log])
   return (
     <div className="
       rounded-lg

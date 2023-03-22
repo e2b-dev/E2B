@@ -63,3 +63,16 @@ code::-webkit-scrollbar-thumb {
   height: 6px;
   @apply rounded-full;
 }
+
+.scroller::-webkit-scrollbar {
+  /* display: none; */
+  scrollbar-track-color: transparent;
+  background-color: transparent;
+  width: 8px;
+  height: 8px;
+}
+
+.scroller::-webkit-scrollbar-thumb {
+  @apply bg-slate-300;
+  @apply rounded-full;
+}
