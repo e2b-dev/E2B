@@ -38,7 +38,7 @@ SYSTEM_SUFFIX = """Begin! Reminder to NEVER use tools you don't have access. Rem
 HUMAN_INSTRUCTIONS_PREFIX = [
     {
         "variables": [],
-        "content": "Do not try to come up with solutions and code if you do not know. Instead, ask the human for help.",
+        "content": "Do not try to come up with solutions and code if you do not know. Instead, use the tool `AskHuman` to ask for help.",
     },
     {
         "variables": ["method"],
@@ -66,7 +66,7 @@ app.listen(port, () => {{
 
 HUMAN_INSTRUCTIONS_SUFFIX = [
     "Think about it and plan your work first",
-    "Always use run the code before you submit the answer",
+    "Always run the code before you submit the answer",
     "Generate the full required server code and and make sure it starts without any errors",
     "Test that the generated server from the previous step works as required by making mock `curl` requests to the server",
     # "Once all works without any bugs and errors, write the code to the file",
