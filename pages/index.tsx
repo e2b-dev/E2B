@@ -8,7 +8,6 @@ import ItemList from 'components/ItemList'
 import Text from 'components/Text'
 import { prisma, projects } from 'db/prisma'
 import Button from 'components/Button'
-import { getProjectURL } from 'utils/getProjectURL'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx)
@@ -158,7 +157,6 @@ function Home({ projects }: Props) {
             items={projects.map(i => ({
               ...i,
               title: i.name,
-              url: getProjectURL(i.id),
               path: '/[projectID]',
               type: 'Project',
               icon: <LayoutGrid size="22px" strokeWidth="1.7" />,

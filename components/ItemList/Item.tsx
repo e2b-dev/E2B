@@ -16,7 +16,6 @@ export interface ItemSetup {
   icon?: React.ReactNode
   path: string
   type: string
-  url: string
 }
 
 export interface Props {
@@ -103,11 +102,11 @@ function Item({ item, deleteItem }: Props) {
               text={item.title}
             />
           </div>
-          <div className="flex space-x-1 text-slate-300 transition-all group-hover:text-slate-400">
+          <div className="flex space-x-1">
             <Text
               className="text-slate-300 transition-all group-hover:text-slate-400"
               size={Text.size.S3}
-              text={item.url}
+              text={item.created_at.toLocaleString()}
             />
           </div>
         </div>
