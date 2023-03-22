@@ -18,9 +18,12 @@ class LogStreamParser:
         self._logs: List[Dict[str, str]] = []
 
         self._token_buffer: str = ""
+
+        # Logs have both `thought` logs and `tool` logs.
         # These logs can be partially parsed or they can have missing outputs.
         # They are flushed to self._logs after outputs for all tools in self._logs.buffer are ingested.
         self._logs_buffer: List[Dict[str, str]] = []
+
         # This is a list of tools' outputs that corresponds to the tool logs in the self._logs.buffer.
         self._tools_output_buffer: List[Dict[str, str]] = []
         self._id_buffer: List[str] = []
