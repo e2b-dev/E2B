@@ -78,6 +78,7 @@ class LogStreamParser:
                 "tool_input": action.text or "",
             }
             for action in parse_action_string(action_string)
+            if action.attrib.get("tool", False)
         ]
 
         # Update tools' logs with the information from ingested tools' outputs.
