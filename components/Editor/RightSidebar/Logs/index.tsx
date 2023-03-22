@@ -51,8 +51,6 @@ function Logs({
     ref.current.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
 
-  console.log(logs)
-
   return (
     <div className="
       max-w-full
