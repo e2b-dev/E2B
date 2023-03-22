@@ -1,11 +1,27 @@
-export interface ThoughtLog {
-  type: 'thought'
-  content: string
+export enum LogType {
+  Thought = 'thought',
+  Tool = 'tool',
 }
 
-export interface ToolLog {
-  type: 'tool'
-  name: string
+export enum LogName {
+  InstallNPMDependencies = 'InstallNPMDependencies',
+  RunJavaScriptCode = 'RunJavaScriptCode',
+  CurlJavaScriptServer = 'CurlJavaScriptServer',
+}
+
+interface BaseLog {
+  id: string
+  type: LogType
+}
+
+export interface ThoughtLog extends BaseLog {
+  content: string
+  type: LogType.Thought,
+}
+
+export interface ToolLog extends BaseLog {
+  type: LogType.Tool
+  name: LogName
   input: string
   finish_at?: Date
   output?: string
