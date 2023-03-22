@@ -1,11 +1,10 @@
 import {
   Fragment,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
-import hljs from 'highlight.js'
+// import hljs from 'highlight.js'
 import ReactMarkdown from 'react-markdown'
 
 import Text from 'components/Text'
@@ -46,7 +45,6 @@ function Logs({
   //     hljs.highlightAll()
   //   }
   // }, [logs, selectedTab])
-
 
   useEffect(function scrollLogs() {
     if (!ref.current) return
@@ -89,7 +87,6 @@ function Logs({
       </div>
 
       <div
-        ref={ref}
         className="
           flex-1
           overflow-auto
@@ -99,6 +96,8 @@ function Logs({
           scroller
           whitespace-pre-wrap
           py-4
+          flex
+          flex-col
           px-2
       ">
         {selectedTab === 0 && logs?.map((l, i, a) =>
