@@ -17,9 +17,9 @@ def create_human_tools(
     async def ask_human(question: str) -> str:
         """You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question for the human. Example usage:
         ```
-        <action tool="Ask human">
-        What should I do?
-        <action/>
+        <action tool="AskHuman">
+        I'm not sure what to
+        </action>
         ```"""
         print("Asking about")
         response = playground.api.wait_for_human_response(
@@ -28,4 +28,4 @@ def create_human_tools(
         print("HUMAN RESPONSE", response.response)
         return response.response
 
-    # yield ask_human
+    yield ask_human
