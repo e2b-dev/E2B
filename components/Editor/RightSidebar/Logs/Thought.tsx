@@ -1,7 +1,5 @@
 import { ThoughtLog } from 'db/types'
 
-import ReactMarkdown from 'react-markdown'
-
 export interface Props {
   log: ThoughtLog
 }
@@ -12,11 +10,13 @@ function Thought({
   return (
     <div className="
       italic
+      leading-[21px]
+      tracking-normal
+      font-sans
+      text-xs
       text-slate-400
     ">
-      <ReactMarkdown>
-        {log.content}
-      </ReactMarkdown>
+      {log.content}
     </div>
   )
 }
