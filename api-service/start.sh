@@ -4,7 +4,7 @@
 cd /playground && node lib/server.js &
   
 # Start python app
-cd /app && exec poetry run gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app &
+cd /app && exec poetry run gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app -k uvicorn.workers.UvicornWorker &
   
 # Wait for any process to exit
 wait -n

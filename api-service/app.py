@@ -1,21 +1,24 @@
 import os
 import uuid
 
+from dotenv import load_dotenv
 from typing import List
-from flask import Flask, abort, request
-from flask_cors import CORS
+from quart import Quart, request
+from quart_cors import cors
 
 from session.env import EnvVar
 from codegen import Codegen
 from codegen.tools.playground import create_playground_tools
 from database import Database, DeploymentState
 
+load_dotenv()
+
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 db = Database(url, key)
 
-app = Flask(__name__)
-CORS(app)
+app = Quart(__name__)
+app = cors(app, allow_origin="*")
 
 
 def get_request_body_template(blocks: List[dict[str, str]]):
@@ -29,16 +32,13 @@ def get_request_body_template(blocks: List[dict[str, str]]):
 
 
 @app.route("/health", methods=["GET"])
-def health():
+async def health():
     return "OK"
 
 
 @app.route("/generate", methods=["POST"])
 async def generate():
-    body = request.json
-
-    if body is None:
-        abort(400)
+    body = await request.json
 
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
