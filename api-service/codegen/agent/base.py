@@ -181,6 +181,7 @@ class CodegenAgent(ChatAgent):
             # Sometimes the agent just completely messed up the output format.
             # We want to remind it that the last answer was wrong and it should
             # follow the format.
+            # TODO: This doesn't work
             return (
                 MALFORMED_ANSWER,
                 f"Wrong format! Follow the format! Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer. I just tried to parse your last reponse with `xml.etree.ElementTree.fromstring()` and received this error:\n{e}Reminder, that you should follow the format I told you!",

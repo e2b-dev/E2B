@@ -15,17 +15,6 @@ export interface Props {
 function LogStream({ logs, rawLogs, onAnswer }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
-  // logs = [
-  //   {
-  //     id: 'id',
-  //     type: LogType.Tool,
-  //     created_at: new Date(),
-  //     tool_name: ToolName.AskHuman,
-  //     tool_input: 'What should I do?',
-  //     tool_output: '',
-  //   }
-  // ]
-
   useEffect(function scrollLogs() {
     if (!ref.current) return
     ref.current.scrollIntoView({ behavior: 'smooth' })
