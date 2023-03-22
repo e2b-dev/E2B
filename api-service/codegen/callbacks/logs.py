@@ -1,5 +1,6 @@
 import datetime
 
+import uuid
 import asyncio
 from asyncio import Queue, ensure_future
 from typing import Coroutine, Dict, Any, List, Union
@@ -11,7 +12,7 @@ from codegen.agent.base import parse_action_string, separate_thought_and_action
 from database import Database
 
 
-class LogStreamParser(BaseModel):
+class LogStreamParser:
     def __init__(self) -> None:
         # All "finished" logs that the parser saved.
         self._logs: List[Dict[str, str]] = []
@@ -22,6 +23,7 @@ class LogStreamParser(BaseModel):
         self._logs_buffer: List[Dict[str, str]] = []
         # This is a list of tools' outputs that corresponds to the tool logs in the self._logs.buffer.
         self._tools_output_buffer: List[Dict[str, str]] = []
+        self._id_buffer: List[str] = []
 
     def _parse(self):
         """This function should be called only after ingesting new token or tool output to update the buffered logs."""
@@ -50,6 +52,8 @@ class LogStreamParser(BaseModel):
             *action_logs,
         ]
 
+        # self._id_buffer.extend([str(uuid.uuid4()) for a in range(1)])
+
     def ingest_token(self, token: str):
         """Ingest token and update the logs."""
         self._token_buffer += token
@@ -75,6 +79,7 @@ class LogStreamParser(BaseModel):
             self._token_buffer = ""
             self._logs_buffer = []
             self._tools_output_buffer = []
+            self._id_buffer = []
 
         return self
 
@@ -85,7 +90,7 @@ class LogStreamParser(BaseModel):
         ]
 
 
-class LogQueue(BaseModel):
+class LogQueue:
     def __init__(self) -> None:
         self.queue: Queue[Coroutine] = asyncio.Queue()
         self.work = ensure_future(self.worker())
