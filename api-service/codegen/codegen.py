@@ -10,15 +10,12 @@ from langchain.agents import AgentExecutor
 from pydantic import BaseModel, PrivateAttr
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import (
-    CallbackManager,
     AsyncCallbackManager,
     BaseCallbackManager,
 )
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
-from codegen.tools.human.ask import create_ask_human_tool
-from session.playground import NodeJSPlayground
 from session.env import EnvVar
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
@@ -89,9 +86,8 @@ class Codegen(BaseModel):
     def from_playground_and_database(
         cls,
         playground_tools: List[BaseTool],
+        human_tools: List[BaseTool],
         database: Database,
-        run_id: str,
-        playground: NodeJSPlayground,
     ):
         callback_manager = AsyncCallbackManager(
             [
@@ -104,16 +100,16 @@ class Codegen(BaseModel):
         for tool in playground_tools:
             tool.callback_manager = callback_manager
 
+        # Assign custom callback manager to all human tools
+        for tool in human_tools:
+            tool.callback_manager = callback_manager
+
         # Prepare tools for Codegen
         tools = [
             # InvalidTool(),
             # OutputFinalCode(),
             *playground_tools,
-            # create_ask_human_tool(
-            #     run_id=run_id,
-            #     playground=playground,
-            #     callback_manager=callback_manager,
-            # ),
+            *human_tools,
             # WriteCodeToFile(callback_manager=callback_manager),
             # DeployCode(callback_manager=callback_manager),
         ]

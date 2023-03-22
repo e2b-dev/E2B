@@ -1,5 +1,3 @@
-import asyncio
-
 from typing import Dict, Any, List, Union
 from codegen.callbacks.log_queue import LogQueue
 from langchain.callbacks.base import AsyncCallbackHandler
@@ -21,15 +19,17 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         self._run_id = run_id
         self._parser = LogStreamParser()
         self._log_queue = LogQueue()
+        self._raw_log_queue = LogQueue(1)
 
     def __del__(self):
         self._log_queue.close()
+        self._raw_log_queue.close()
 
-    def _push_raw_logs(self) -> None:
+    def _add_and_push_raw_logs(self, new_raw_log: str) -> None:
+        self._raw_logs += new_raw_log
         if self._raw_logs:
-            asyncio.ensure_future(
-                self._database.push_raw_logs(self._run_id, self._raw_logs)
-            )
+            coro = self._database.push_raw_logs(self._run_id, self._raw_logs)
+            self._raw_log_queue.queue.put_nowait(coro)
 
     def _push_logs(self, logs: List[Dict[str, str]]) -> None:
         coro = self._database.push_logs(self._run_id, logs)
@@ -46,8 +46,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         logs = self._parser.ingest_token(token).get_logs()
         self._push_logs(logs)
 
-        self._raw_logs += token
-        self._push_raw_logs()
+        self._add_and_push_raw_logs(token)
 
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -80,8 +79,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
     ) -> None:
         """Run when tool starts running."""
         print("Starting tool")
-        self._raw_logs += "Starting tool..."
-        self._push_raw_logs()
+        self._add_and_push_raw_logs("Starting tool...")
 
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -90,8 +88,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         logs = self._parser.ingest_tool_output(output).get_logs()
         self._push_logs(logs)
 
-        self._raw_logs += f"\n{output}\n"
-        self._push_raw_logs()
+        self._add_and_push_raw_logs(f"\n{output}\n")
 
     async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
@@ -102,8 +99,8 @@ class LogsCallbackHandler(AsyncCallbackHandler):
     ) -> None:
         """Run when tool errors."""
         print("Tool error", error)
-        self._raw_logs += f"Tool error:\n{error}\n"
-        self._push_raw_logs()
+
+        self._add_and_push_raw_logs(f"Tool error:\n{error}\n")
 
     async def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on arbitrary text."""

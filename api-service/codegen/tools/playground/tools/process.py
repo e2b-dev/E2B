@@ -1,5 +1,4 @@
-from codegen.tools.playground.async_tool import async_tool
-
+from codegen.tools.async_tool import async_tool
 from session.playground import NodeJSPlayground
 from playground_client.models.process_response import ProcessResponse
 

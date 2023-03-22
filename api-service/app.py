@@ -1,5 +1,6 @@
 import os
 import uuid
+from codegen.tools.human.tools import create_human_tools
 
 from dotenv import load_dotenv
 from typing import List
@@ -59,12 +60,13 @@ async def generate():
             request_body_template=get_request_body_template(blocks),
         )
 
+        human_tools = list(create_human_tools(run_id=run_id, playground=playground))
+
         # Create a new instance of code generator
         cg = Codegen.from_playground_and_database(
             playground_tools=playground_tools,
+            human_tools=human_tools,
             database=db,
-            run_id=run_id,
-            playground=playground,
         )
 
         # Generate the code
