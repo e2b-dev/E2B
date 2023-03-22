@@ -3,7 +3,7 @@ export enum LogType {
   Tool = 'tool',
 }
 
-export enum LogName {
+export enum ToolName {
   InstallNPMDependencies = 'InstallNPMDependencies',
   RunJavaScriptCode = 'RunJavaScriptCode',
   CurlJavaScriptServer = 'CurlJavaScriptServer',
@@ -22,7 +22,7 @@ export interface ThoughtLog extends BaseLog {
 
 export interface ToolLog extends BaseLog {
   type: LogType.Tool
-  name: LogName
+  name: ToolName
   input: string
   finish_at?: Date
   output?: string
