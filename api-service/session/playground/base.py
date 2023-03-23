@@ -1,5 +1,6 @@
 import time
 import math
+from session.env import cmd_with_env_vars
 
 from session.session import GetEnvs, Session
 from playground_client.models.create_mock_body_data_request import (
@@ -7,7 +8,6 @@ from playground_client.models.create_mock_body_data_request import (
 )
 import playground_client
 from playground_client.models.file import File
-
 
 class Playground(Session):
     port_check_interval = 0.5  # 500ms
@@ -42,7 +42,8 @@ class Playground(Session):
         response = self.api.start_process(
             self.id,
             playground_client.StartProcessParams(
-                cmd=cmd,
+                cmd=cmd_with_env_vars(cmd, self.env_vars),
+                # TODO: Env vars are not correctly passed to the devbookd process - that's why we add them with cmd_with_env_vars.
                 envVars=self.env_vars,
                 rootdir=rootdir,
             ),
@@ -80,7 +81,8 @@ class Playground(Session):
         return self.api.start_process(
             self.id,
             playground_client.StartProcessParams(
-                cmd=cmd,
+                cmd=cmd_with_env_vars(cmd, self.env_vars),
+                # TODO: Env vars are not correctly passed to the devbookd process - that's why we add them with cmd_with_env_vars.
                 envVars=self.env_vars,
                 rootdir=rootdir,
             ),
