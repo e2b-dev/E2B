@@ -31,7 +31,6 @@ if (!credentials.accessKeyId || !credentials.secretAccessKey) {
 const region = 'us-east-1'
 const architecture = 'arm64'
 
-// TODO: Devbook Acc env var for aws initialization
 // TODO: lambda.destroy() on quit?
 const lambda = new LambdaClient({
   region,
@@ -46,10 +45,8 @@ const lambda = new LambdaClient({
 
 const deploymentParams = {
   Runtime: 'nodejs18.x',
-  // TODO: Replace lambda role with valid role in Devbook Acc
-  Role: 'arn:aws:iam::066766119186:role/service-role/test-1-role-lgud7u7z',
+  Role: 'arn:aws:iam::458837768593:role/service-role/ai-api-deploy',
   Handler: 'index.handler',
-  // TODO: Experiment with ARM vs x86_64
 }
 
 async function waitForUpdate(projectID: string) {
