@@ -52,7 +52,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     @async_tool("CurlJavaScriptServer")
     async def curl_javascript_server(empty: str) -> str:
         """
-        Make a request to check if the previously run JavaScript code is a server that can handle the needed request. Example usage:
+        Make a request to check if the previously run JavaScript code is a server that can handle the needed request. This tool has no input. Example usage:
         ```
         <action tool="CurlJavaScriptServer">
         </action>
