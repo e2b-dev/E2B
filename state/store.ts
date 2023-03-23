@@ -152,12 +152,14 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
         return null
       },
       removeItem: async () => {
+        // TODO: SECURITY - Enable row security for all tables and configure access to projects.
         const res = await client.from(projectsTable).update({ data: {} }).eq('id', project.id).single()
         if (res.error) {
           throw res.error
         }
       },
       setItem: async (name, value) => {
+        // TODO: SECURITY - Enable row security for all tables and configure access to projects.
         const res = await client.from(projectsTable).update({ data: value as any }).eq('id', project.id)
         if (res.error) {
           throw res.error

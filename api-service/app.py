@@ -37,6 +37,7 @@ async def health():
     return "OK"
 
 
+# TODO: SECURITY - Check if user invoking this request has permission to generate and deploy to this project
 @app.route("/generate", methods=["POST"])
 async def generate():
     body = await request.json

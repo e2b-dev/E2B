@@ -16,7 +16,6 @@ import RightSidebar from './RightSidebar'
 import Routes from './Routes'
 import Link from 'next/link'
 
-// TODO: Prod API host
 const apiHost = process.env.NODE_ENV === 'development'
   ? 'http://0.0.0.0:5000'
   : 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
