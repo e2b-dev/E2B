@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start playground api
-cd /playground && node lib/server.js &
+cd /playground && exec node lib/server.js &
   
 # Start python app
 # TODO: Start the server on the $PORT port instead of the fixed port.
