@@ -37,7 +37,9 @@ async function getRootFile(filesystem: FilesystemManager) {
 }
 
 function addAWSLambdaHandlers(code: string) {
-  const isECMA = !code.includes('require')
+  const isECMA = true
+  // TODO: Check if the module is ECMAScript module
+  // const isECMA = !code.includes('= require(')
 
   if (isECMA) {
     code = 'import serverless from "serverless-http";\n' + code
@@ -49,7 +51,6 @@ function addAWSLambdaHandlers(code: string) {
 
   return code.replace("app.listen(", "; ({})?.listen?.(")
 }
-
 
 /**
  * 
