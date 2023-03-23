@@ -49,12 +49,12 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
 
     yield run_javascript_code
 
-    @async_tool("CurlJavascriptServer")
+    @async_tool("CurlJavaScriptServer")
     async def curl_javascript_server(curl_command: str) -> str:
         """
         Make a curl request. The input should be the `curl` command. Example usage:
         ```
-        <action tool="CurlJavascriptServer">
+        <action tool="CurlJavaScriptServer">
         curl --no-progress-meter -X POST -H "Content-Type: application/json" -d '{{"key": "value"}}' http://localhost:3000/
         </action>
         ```"""
