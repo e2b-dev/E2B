@@ -86,7 +86,7 @@ class Codegen(BaseModel):
         return [tool.name for tool in self._tools]
 
     @classmethod
-    def from_playground_and_database(
+    def from_tools_and_database(
         cls,
         custom_tools: List[BaseTool],
         database: Database,

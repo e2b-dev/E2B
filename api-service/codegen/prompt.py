@@ -66,6 +66,7 @@ app.listen(port, () => {{
 
 HUMAN_INSTRUCTIONS_SUFFIX = [
     "Think about it and plan your work first",
+    "If you are not sure what to do or something is not working and you do not know why, use the tool `AskHuman` to ask for help",
     "Always run the code before you submit the answer",
     "Generate the full required server code and and make sure it starts without any errors",
     "Test that the generated server from the previous step works as required by making mock `curl` requests to the server",

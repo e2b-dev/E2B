@@ -47,7 +47,6 @@ async def generate():
     method = body["method"]
     route = body["route"]
 
-
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
 
@@ -63,7 +62,7 @@ async def generate():
         human_tools = list(create_human_tools(run_id=run_id, playground=playground))
 
         # Create a new instance of code generator
-        cg = Codegen.from_playground_and_database(
+        cg = Codegen.from_tools_and_database(
             # The order in which we pass tools HAS an effect on the LLM behaviour.
             custom_tools=[
                 *playground_tools,
