@@ -41,21 +41,21 @@ function addAWSLambdaHandlers(code: string) {
 
   if (isECMA) {
     code = 'import serverless from "serverless-http";\n' + code
-    code = code + "\nexport const handler = serverless(app);"
+    code = code + '\nexport const handler = serverless(app);'
   } else {
     code = "const serverless = require('serverless-http');\n" + code
-    code = code + "\nexports.handler = serverless(app);"
+    code = code + '\nexports.handler = serverless(app);'
   }
 
-  return code.replace("app.listen(", "; ({})?.listen?.(")
+  return code.replace('app.listen(', '; ({})?.listen?.(')
 }
 
 
 /**
- * 
+ *
  * TODO: Implement binary file reading in devbookd so we don't have to send data via base64 (cca 25% overhead) and process stdout.
  * TODO: Pipe the output from esbuild -> zip -> base64
- * 
+ *
 */
 export async function packageFunction(session: Session) {
   if (!session.filesystem || !session.process) {
