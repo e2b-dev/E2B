@@ -48,17 +48,12 @@ async def generate():
     method = body["method"]
     route = body["route"]
 
-    # TODO: STOP SENDING ENVS FROM FRONTEND BECAUSE WE FETCH THEM FROM DB
-    envs: List[EnvVar] = body["envs"]
-
-    # `get_env_vars()` returns a list of dicts. See the docstring comment inside `get_env_vars`
-    env = await db.get_env_vars(project_id)
-    # TODO: ------------------
 
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
     try:
         # Create playground for the LLM
+        envs = await db.get_env_vars(project_id)
         playground_tools, playground = create_playground_tools(
             envs=envs,
             route=route,

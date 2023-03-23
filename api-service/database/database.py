@@ -4,6 +4,7 @@ from enum import Enum
 # from supabase.client import create_client
 
 from database.client import Client
+from session.env import EnvVar
 
 
 class DeploymentState(Enum):
@@ -69,7 +70,7 @@ class Database:
             "id", run_id
         ).execute()
 
-    async def get_env_vars(self, project_id: str) -> List[Dict[str, str]]:
+    async def get_env_vars(self, project_id: str) -> List[EnvVar]:
         """The return value is a list of dicts with the following keys:
         - key: The name of an env var
         - value: The value of an env var
