@@ -16,20 +16,61 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 ACTIONS_QUEUE = "action_queue"
 MALFORMED_ANSWER = "malformed_answer"
 
-xml_escape_dict = {
-    '"': "&quot;",
-    "'": "&apos;",
+escape_table = str.maketrans({
     "<": "&lt;",
     ">": "&gt;",
     "&": "&amp;",
-}
+    "'": "&apos;",
+    '"': "&quot;",
+})
 
+def xml_escape(txt: str):
+    return txt.translate(escape_table)
 
-def xml_escape(text: str) -> str:
-    for k, v in xml_escape_dict.items():
-        text = text.replace(k, v)
-    return text
+action_tag_open = "<action\\s+tool=\".+?\"\\s*\\/?>?"
+action_tag_close = "</\\s*action>"
 
+action_tag_check_pattern = re.compile(f"{action_tag_open}|{action_tag_close}")
+action_tag_split_pattern = re.compile(f"({action_tag_open}.*?{action_tag_close})|(.+)")
+
+def parse_text(text: str):
+    escaped = "".join(
+        # If the text part is not action tag escape it.
+        part if action_tag_check_pattern.match(part) else xml_escape(part)
+        for part
+        # Split the text by action opening and closing tags.
+        in re.split(action_tag_split_pattern, text)
+        if part
+    )
+
+    root = ET.fromstring(
+        # Wrapping the XML in a fully formed root tag while some inner tags can be incomplete doesn't make sense.
+        f"<root>{escaped}",
+        # Use Parser with C binding for libxml2+libxslt, with recovery mode that allows to parse incomplete XML.
+        etree.XMLParser(recover=True),
+    )
+
+    if root.text:
+        yield {
+            "type": "thought",
+            "content": root.text,
+        }
+
+    for action in root.findall("action"):
+        tool_name = action.attrib.get("tool", "")
+        if tool_name:
+            yield {
+                "type": "tool",
+                "tool_name": tool_name,
+                "tool_input": action.text or "",
+            }
+
+        # Create thoughts from text between and after actions.
+        if action.tail:
+            yield {
+                "type": "thought",
+                "content": action.tail,
+            }
 
 def actions_from_xml_string(xml_string: str):
     """The `xml_string` must be escaped"""
