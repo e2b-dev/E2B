@@ -9,12 +9,10 @@ function Thought({
 }: Props) {
   return (
     <div className="
-      italic
-      leading-[21px]
+      leading-[24px]
       tracking-normal
       font-sans
-      text-xs
-      text-slate-400
+      text-slate-500
     ">
       {log.content}
     </div>

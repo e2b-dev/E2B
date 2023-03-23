@@ -10,11 +10,12 @@ export interface Props {
 
 function LogEntry({ log, onAnswer }: Props) {
   return (
-    <div className="
+    <div className={`
       rounded-lg
       p-3
       border
-    ">
+      ${log.type === LogType.Tool ? 'border-green-300' : 'border-blue-300'}
+    `}>
       {log.type === 'thought' &&
         <Thought
           log={log}
