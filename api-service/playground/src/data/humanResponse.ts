@@ -16,17 +16,6 @@ export const projectsTable = 'projects'
 export const deploymentsTable = 'deployments'
 export const routesTable = 'routes'
 
-
-// # {
-//   #     "id": "52b2b157-132f-47c6-be1e-3c203034fdfb",
-//   #     "name": "InstallNPMDependencies",
-//   #     "type": "tool",
-//   #     "input": "\nexpress\n",
-//   #     "output": "All dependencies installed",
-//   #     "start_at": "2023-03-19 23:49:23.079327",
-//   #     "finish_at": "2023-03-19 23:49:26.002323"
-//   # },
-
 function checkForResponse(payloadList: any[]): string | null {
   const payload = payloadList.length > 0 ? payloadList[payloadList.length - 1] : undefined
 
@@ -34,8 +23,8 @@ function checkForResponse(payloadList: any[]): string | null {
     return null
   }
 
-  if (payload.type === 'tool' && payload.tool_name === 'AskHuman' && payload.output) {
-    return payload.output
+  if (payload.type === 'tool' && payload.tool_name === 'AskHuman' && payload.tool_output) {
+    return payload.tool_output
   }
   return null
 }

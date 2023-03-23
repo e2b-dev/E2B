@@ -52,6 +52,7 @@ function AskHuman({
           space-x-2
         ">
           <Input
+            isDisabled={!!log.tool_output}
             placeholder="What do you think the AI should do?"
             onChange={val => setAnswer(val)}
             value={answer}
