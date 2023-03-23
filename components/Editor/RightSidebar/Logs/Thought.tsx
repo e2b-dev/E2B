@@ -12,6 +12,7 @@ function Thought({
       leading-[24px]
       tracking-normal
       font-sans
+      text-sm
       text-slate-500
     ">
       {log.content}
