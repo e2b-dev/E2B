@@ -64,8 +64,11 @@ async def generate():
 
         # Create a new instance of code generator
         cg = Codegen.from_playground_and_database(
-            playground_tools=playground_tools,
-            human_tools=human_tools,
+            # The order in which we pass tools HAS an effect on the LLM behaviour.
+            custom_tools=[
+                *playground_tools,
+                *human_tools,
+            ],
             database=db,
         )
 
@@ -74,7 +77,6 @@ async def generate():
         await cg.generate(
             run_id=run_id,
             route=route,
-            envs=envs,
             method=method,
             blocks=blocks,
         )
