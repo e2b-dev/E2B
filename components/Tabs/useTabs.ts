@@ -4,10 +4,8 @@ type Tab = { label: string; id: string; }
 
 export function useTabs({
   tabs,
-  onChange,
 }: {
   tabs: Tab[];
-  onChange?: (id: string) => void
 }) {
   const [selectedTabIndex, setSelectedTab] = useState(-1)
 
@@ -15,9 +13,8 @@ export function useTabs({
     tabProps: {
       tabs,
       selectedTabIndex,
-      onChange,
       setSelectedTab,
     },
     selectedTab: tabs[selectedTabIndex],
-  }), [selectedTabIndex])
+  }), [selectedTabIndex, tabs])
 }

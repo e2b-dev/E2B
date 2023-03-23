@@ -46,6 +46,11 @@ export function useLatestDeployment(project: projects, route?: Route) {
           }
         })
       .subscribe()
+
+    // Sometimes a large field from realtime server can be missing because of the internal POSTGRES/TOAST workings.
+    // We changed the table replication to full with `ALTER TABLE events REPLICA IDENTITY FULL;` to fix this. 
+    // https://github.com/supabase/realtime/issues/223 mentioned that we may need to check the `old_record` field of the payload for the actual value,
+    // but so far it seems we don't have to.
     const updateSub = client.channel('any')
       .on('postgres_changes',
         {

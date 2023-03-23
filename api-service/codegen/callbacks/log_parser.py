@@ -5,7 +5,6 @@ from typing import Dict, List
 
 from codegen.agent.base import parse_action_string, separate_thought_and_action
 
-
 class LogStreamParser:
     """
     We receive a stream of tokens and want to parse this stream of tokens to thought and tool logs
@@ -50,7 +49,9 @@ class LogStreamParser:
     and the buffered can be flushed to finished logs when we receive output for the last tool in the buffered logs.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, tool_names: List[str]) -> None:
+        self._tool_names = tool_names
+
         # All "finished" logs that the parser saved.
         self._logs: List[Dict[str, str]] = []
 
@@ -78,7 +79,7 @@ class LogStreamParser:
                 "tool_input": action.text or "",
             }
             for action in parse_action_string(action_string)
-            if action.attrib.get("tool", False)
+            if action.attrib.get("tool", None) in self._tool_names
         ]
 
         # Update tools' logs with the information from ingested tools' outputs.

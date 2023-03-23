@@ -52,4 +52,4 @@ COPY --from=playground-build ./playground/lib ./lib
 
 WORKDIR /app
 
-CMD ./start.sh
+CMD exec ./start.sh

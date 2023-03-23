@@ -13,11 +13,11 @@ class LogsCallbackHandler(AsyncCallbackHandler):
     _run_id: str = PrivateAttr()
     _raw_logs: str = ""
 
-    def __init__(self, database: Database, run_id: str, **kwargs: Any):
+    def __init__(self, database: Database, run_id: str, tool_names: List[str], **kwargs: Any):
         super().__init__(**kwargs)
         self._database = database
         self._run_id = run_id
-        self._parser = LogStreamParser()
+        self._parser = LogStreamParser(tool_names=tool_names)
         self._log_queue = LogQueue()
         self._raw_log_queue = LogQueue()
 

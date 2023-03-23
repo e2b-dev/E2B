@@ -82,11 +82,13 @@ class Codegen(BaseModel):
             callback_manager=self._callback_manager,
         )
 
+    def tool_names(self):
+        return [tool.name for tool in self._tools]
+
     @classmethod
     def from_playground_and_database(
         cls,
-        playground_tools: List[BaseTool],
-        human_tools: List[BaseTool],
+        custom_tools: List[BaseTool],
         database: Database,
     ):
         callback_manager = AsyncCallbackManager(
@@ -96,23 +98,10 @@ class Codegen(BaseModel):
             ]
         )
 
-        # Assign custom callback manager to all playground tools
-        for tool in playground_tools:
+        # Assign custom callback manager to custom tools
+        for tool in custom_tools:
             tool.callback_manager = callback_manager
 
-        # Assign custom callback manager to all human tools
-        for tool in human_tools:
-            tool.callback_manager = callback_manager
-
-        # Prepare tools for Codegen
-        tools = [
-            # InvalidTool(),
-            # OutputFinalCode(),
-            *playground_tools,
-            *human_tools,
-            # WriteCodeToFile(callback_manager=callback_manager),
-            # DeployCode(callback_manager=callback_manager),
-        ]
 
         # Create the LLM
         llm = ChatOpenAI(
@@ -126,7 +115,7 @@ class Codegen(BaseModel):
         # Create CodegenAgent
         agent = CodegenAgent.from_llm_and_tools(
             llm=llm,
-            tools=tools,
+            tools=custom_tools,
             prefix=SYSTEM_PREFIX,
             suffix=SYSTEM_SUFFIX,
             format_instructions=SYSTEM_FORMAT_INSTRUCTIONS,
@@ -137,21 +126,20 @@ class Codegen(BaseModel):
         return cls(
             database=database,
             callback_manager=callback_manager,
-            tools=tools,
+            tools=custom_tools,
             llm=llm,
             agent=agent,
         )
 
     async def generate(
         self,
-        envs: List[EnvVar],
         run_id: str,
         route: str,
         method: str,
         blocks: List[Dict],
     ):
         self._callback_manager.add_handler(
-            LogsCallbackHandler(database=self._database, run_id=run_id)
+            LogsCallbackHandler(database=self._database, run_id=run_id, tool_names=self.tool_names())
         )
 
         input_vars = {
