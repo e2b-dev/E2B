@@ -16,10 +16,12 @@ export interface Props {
   pattern?: string
   title?: string
   required?: boolean
+  isDisabled?: boolean
 }
 
 function Input({
   value,
+  isDisabled,
   required,
   pattern,
   title,
@@ -60,6 +62,7 @@ function Input({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         ref={ref}
+        disabled={isDisabled}
         pattern={pattern}
         type="text"
         className={clsx(
