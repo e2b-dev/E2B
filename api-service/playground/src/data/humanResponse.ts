@@ -39,7 +39,6 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
       resolve('Timeout')
     }, 3600000)
 
-    console.log('runID', runID)
     updateSub = client.channel('any-server')
       .on('postgres_changes',
         {

@@ -21,11 +21,9 @@ def create_human_tools(
         I'm not sure what to do, can you specify what should to do next?
         </action>
         ```"""
-        print("Asking about")
         response = playground.api.wait_for_human_response(
             run_id=run_id,
         )
-        print("HUMAN RESPONSE", response.response)
         return response.response
 
     yield ask_human
