@@ -81,7 +81,6 @@ async def generate():
         # Generate the code
         print("Generating...", flush=True)
         await cg.generate(
-            project_id=project_id,
             run_id=run_id,
             route=route,
             method=method,
