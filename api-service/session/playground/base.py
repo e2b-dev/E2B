@@ -39,7 +39,6 @@ class Playground(Session):
         rootdir=rootdir,
         timeout: float | None = None,
     ):
-        print("NEW ENV VARS", self.env_vars)
         response = self.api.start_process(
             self.id,
             playground_client.StartProcessParams(
