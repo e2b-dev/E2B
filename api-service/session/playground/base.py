@@ -1,9 +1,7 @@
 import time
 import math
-from typing import List
 
-from session.env import EnvVar, format_env_vars
-from session.session import Session
+from session.session import GetEnvs, Session
 from playground_client.models.create_mock_body_data_request import (
     CreateMockBodyDataRequest,
 )
@@ -21,9 +19,8 @@ class Playground(Session):
 
     mock_data_filename = "index.ts"
 
-    def __init__(self, env_id: str, envs: List[EnvVar]):
-        super().__init__(env_id)
-        self.env_vars = format_env_vars(envs)
+    def __init__(self, env_id: str, get_envs: GetEnvs):
+        super().__init__(env_id, get_envs)
 
     def get_open_ports(self):
         response = self.api.get_session(self.id)
@@ -42,6 +39,7 @@ class Playground(Session):
         rootdir=rootdir,
         timeout: float | None = None,
     ):
+        print("NEW ENV VARS", self.env_vars)
         response = self.api.start_process(
             self.id,
             playground_client.StartProcessParams(

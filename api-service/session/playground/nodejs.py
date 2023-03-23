@@ -1,10 +1,7 @@
-import pprint
 import os
 
-from typing import List
-
-from session.env import EnvVar
 from session.playground import Playground
+from session.session import GetEnvs
 
 
 class NodeJSPlayground(Playground):
@@ -13,8 +10,8 @@ class NodeJSPlayground(Playground):
     default_javascript_code_file = os.path.join(rootdir, "index.mjs")
     run_code_timeout = 3  # 3s
 
-    def __init__(self, envs: List[EnvVar]):
-        super().__init__(NodeJSPlayground.node_js_env_id, envs)
+    def __init__(self, get_envs: GetEnvs):
+        super().__init__(NodeJSPlayground.node_js_env_id, get_envs)
 
     def run_javascript_code(self, code: str):
         # print(f"Running javascript code...")

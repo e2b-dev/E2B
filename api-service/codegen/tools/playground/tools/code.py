@@ -39,6 +39,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
         console.log('hello world')
         </action>
         ```"""
+        await playground.update_envs()
 
         nonlocal last_javascript_code
         last_javascript_code = code
@@ -64,6 +65,8 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
         # <action tool="CurlJavaScriptServer">
         # </action>
         # ```"""
+        await playground.update_envs()
+
         nonlocal last_javascript_code
         if last_javascript_code is None:
             return "Cannot curl, you need to run code first"

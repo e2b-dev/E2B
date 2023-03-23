@@ -38,6 +38,7 @@ def create_process_tools(playground: NodeJSPlayground, **kwargs):
         The input should be a a valid terminal command.
         The returned result will be the output and errors returned when running the command.
         """
+        await playground.update_envs()
         output = playground.run_command(command)
         result = encode_command_output(output)
 

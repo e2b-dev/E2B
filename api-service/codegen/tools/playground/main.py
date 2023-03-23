@@ -1,10 +1,9 @@
 from typing import Any, List, Tuple
-
 from langchain.tools import BaseTool
 
-from session.env import EnvVar
 from session.playground.nodejs import NodeJSPlayground
 from codegen.tools.playground.mock.request import MockRequestFactory
+from session.session import GetEnvs
 
 from .tools.filesystem import create_filesystem_tools
 from .tools.process import create_process_tools
@@ -12,12 +11,12 @@ from .tools.code import create_code_tools
 
 
 def create_playground_tools(
-    envs: List[EnvVar],
     method: str,
     route: str,
     request_body_template: str | None,
+    get_envs: GetEnvs,
 ) -> Tuple[List[BaseTool], NodeJSPlayground]:
-    playground = NodeJSPlayground(envs)
+    playground = NodeJSPlayground(get_envs)
 
     mock = MockRequestFactory(
         method=method,

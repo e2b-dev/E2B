@@ -1,16 +1,15 @@
 import os
 import uuid
-from codegen.tools.human.tools import create_human_tools
 
 from dotenv import load_dotenv
 from typing import List
 from quart import Quart, request
 from quart_cors import cors
 
-from session.env import EnvVar
 from codegen import Codegen
 from codegen.tools.playground import create_playground_tools
 from database import Database, DeploymentState
+from codegen.tools.human.tools import create_human_tools
 
 load_dotenv()
 
@@ -51,11 +50,11 @@ async def generate():
 
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
+
     try:
         # Create playground for the LLM
-        envs = await db.get_env_vars(project_id)
         playground_tools, playground = create_playground_tools(
-            envs=envs,
+            get_envs=lambda:db.get_env_vars(project_id),
             route=route,
             method=method,
             request_body_template=get_request_body_template(blocks),
@@ -83,7 +82,7 @@ async def generate():
         )
 
         await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-        url = playground.deploy(project_id, envs)
+        url = playground.deploy(project_id)
 
         await db.finish_deployment(run_id=run_id, url=url)
         return {}
