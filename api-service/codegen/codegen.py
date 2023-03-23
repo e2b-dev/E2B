@@ -102,7 +102,6 @@ class Codegen(BaseModel):
         for tool in custom_tools:
             tool.callback_manager = callback_manager
 
-
         # Create the LLM
         llm = ChatOpenAI(
             streaming=True,
@@ -139,7 +138,9 @@ class Codegen(BaseModel):
         blocks: List[Dict],
     ):
         self._callback_manager.add_handler(
-            LogsCallbackHandler(database=self._database, run_id=run_id, tool_names=self.tool_names())
+            LogsCallbackHandler(
+                database=self._database, run_id=run_id, tool_names=self.tool_names()
+            )
         )
 
         input_vars = {

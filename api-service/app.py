@@ -47,7 +47,13 @@ async def generate():
     blocks = body["blocks"]
     method = body["method"]
     route = body["route"]
+
+    # TODO: STOP SENDING ENVS FROM FRONTEND BECAUSE WE FETCH THEM FROM DB
     envs: List[EnvVar] = body["envs"]
+
+    # `get_env_vars()` returns a list of dicts. See the docstring comment inside `get_env_vars`
+    env = await db.get_env_vars(project_id)
+    # TODO: ------------------
 
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
@@ -75,6 +81,7 @@ async def generate():
         # Generate the code
         print("Generating...", flush=True)
         await cg.generate(
+            project_id=project_id,
             run_id=run_id,
             route=route,
             method=method,

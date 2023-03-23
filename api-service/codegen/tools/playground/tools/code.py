@@ -49,19 +49,26 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
 
     yield run_javascript_code
 
-    @async_tool("CurlJavaScriptServer")
-    async def curl_javascript_server(empty: str) -> str:
+    @async_tool("CurlJavascriptServer")
+    async def curl_javascript_server(curl_command: str) -> str:
         """
-        Make a request to check if the previously run JavaScript code is a server that can handle the needed request. This tool has no input. Example usage:
+        Make a curl request. The input should be the `curl` command. Example usage:
         ```
-        <action tool="CurlJavaScriptServer">
+        <action tool="CurlJavascriptServer">
+        curl --no-progress-meter -X POST -H "Content-Type: application/json" -d '{{"key": "value"}}' http://localhost:3000/
         </action>
         ```"""
+        # """
+        # Make a request to check if the previously run JavaScript code is a server that can handle the needed request. This tool has no input. Example usage:
+        # ```
+        # <action tool="CurlJavaScriptServer">
+        # </action>
+        # ```"""
         nonlocal last_javascript_code
         if last_javascript_code is None:
             return "Cannot curl, you need to run code first"
 
-        mock_request_cmd = mock.terminal_command()
+        # mock_request_cmd = mock.terminal_command()
 
         port = 3000
         (
@@ -69,7 +76,8 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
             server_output,
         ) = playground.run_javascript_server_code_with_request(
             code=last_javascript_code,
-            request_cmd=mock_request_cmd,
+            # request_cmd=mock_request_cmd,
+            request_cmd=curl_command.strip(),
             port=port,
         )
 
