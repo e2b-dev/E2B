@@ -3,9 +3,10 @@ from typing import Coroutine
 
 
 class LogQueue:
-    def __init__(self) -> None:
+    def __init__(self, interval: float = 0.05) -> None:
         self.queue: Queue[Coroutine] = Queue()
         self.work = ensure_future(self.worker())
+        self.interval = interval
 
     async def worker(self):
         while True:
@@ -22,6 +23,7 @@ class LogQueue:
                 self.queue.task_done()
             except Exception as e:
                 print(e)
+            await sleep(self.interval)
 
     def close(self):
         self.work.cancel()

@@ -1,9 +1,8 @@
 import xml.etree.ElementTree as ET
 import re
 import traceback
-
-from enum import Enum
 from typing_extensions import NotRequired
+from typing import List, TypedDict
 from typing import Literal, Optional, Tuple, List, Dict, Union, cast
 from lxml import etree
 from langchain.agents.tools import InvalidTool
@@ -11,7 +10,6 @@ from langchain.agents import AgentExecutor
 from langchain.agents.chat.base import ChatAgent
 from langchain.schema import AgentAction, AgentFinish
 from langchain.tools.base import BaseTool
-from typing import List, TypedDict
 
 
 FINAL_ANSWER_ACTION = "Final Answer:"

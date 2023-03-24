@@ -2,6 +2,7 @@ from collections.abc import Generator
 from typing import Any
 
 from codegen.tools.async_tool import async_tool
+from playground_client.models.tools_human_response import ToolsHumanResponse
 from session.playground.base import Playground
 
 
@@ -19,9 +20,12 @@ def create_human_tools(
         <action tool="AskHuman">
         I'm not sure what to do, can you specify what should to do next?
         </action>"""
-        response = playground.api.wait_for_human_response(
+        thread: Any = playground.api.wait_for_human_response(
             run_id=run_id,
+            async_req=True,
         )
+
+        response: ToolsHumanResponse = thread.get()
         return response.response
 
     yield ask_human
