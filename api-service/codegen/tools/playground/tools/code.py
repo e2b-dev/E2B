@@ -19,7 +19,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
         package_name_1 package_name_2
         </action>
         """
-        output = playground.install_dependencies(extract_code(dependencies))
+        output = await playground.install_dependencies(extract_code(dependencies))
         result = encode_command_output(output, only_errors=True)
         return result if len(result) > 0 else "All dependencies installed"
 
@@ -42,7 +42,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
         nonlocal last_javascript_code
         last_javascript_code = code
 
-        output = playground.run_javascript_code(code)
+        output = await playground.run_javascript_code(code)
         result = encode_command_output(output)
         return result if len(result) > 0 else "Code execution finished without error"
 
@@ -74,7 +74,7 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
         (
             request_output,
             server_output,
-        ) = playground.run_javascript_server_code_with_request(
+        ) = await playground.run_javascript_server_code_with_request(
             code=last_javascript_code,
             # request_cmd=mock_request_cmd,
             request_cmd=curl_command.strip(),
