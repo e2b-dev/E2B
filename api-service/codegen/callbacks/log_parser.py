@@ -3,7 +3,7 @@ import uuid
 
 from typing import List, TypedDict
 
-from codegen.agent.parsing import ThoughtLog, ToolLog, merge_logs, parse_text
+from codegen.agent.parsing import ThoughtLog, ToolLog, merge_logs, parse_thoughts_and_actions
 
 class ToolOutput(TypedDict):
     finish_at: str
@@ -78,7 +78,7 @@ class LogStreamParser:
         # If you ingested token or tool output this will save the change so you can call self.get_logs and get the new logs.
         self._logs_buffer = [
             log for log
-            in parse_text(self._token_buffer)
+            in parse_thoughts_and_actions(self._token_buffer)
             if log["type"] == "thought"
             or log["type"] == "tool" and log.get("tool_name") in self._tool_names
         ]

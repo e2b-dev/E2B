@@ -14,8 +14,8 @@ escape_table = str.maketrans({
     '"': "&quot;",
 })
 
-def xml_escape(txt: str):
-    return txt.translate(escape_table)
+def xml_escape(text: str):
+    return text.translate(escape_table)
 
 
 class Log(TypedDict):
@@ -32,8 +32,8 @@ class ToolLog(Log):
     tool_output: NotRequired[str]
     finish_at: NotRequired[str]
 
-def merge_logs(t: TypedDict, o: TypedDict):
-    t.update(o)
+def merge_logs(log: TypedDict, other: TypedDict):
+    log.update(other)
 
 
 action_tag_open = "<action(\\s+tool=\".+?\")?\\s*\\/?>?"
@@ -42,7 +42,7 @@ action_tag_close = "</\\s*action\\s*>?"
 action_tag_split_pattern = re.compile(f"({action_tag_open}.*?{action_tag_close})|(.+)")
 action_tag_check_pattern = re.compile(f"{action_tag_open}|{action_tag_close}")
 
-def parse_text(text: str):
+def parse_thoughts_and_actions(text: str):
     escaped = "".join(
         # If the text part is not action tag escape it.
         part if action_tag_check_pattern.match(part) else xml_escape(part)

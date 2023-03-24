@@ -4,7 +4,7 @@
 
 from typing import Dict, List, NamedTuple, Any
 from codegen.agent.base import (
-    parse_text,
+    parse_thoughts_and_actions,
     separate_thought_and_action,
     parse_action_string,
 )
@@ -90,7 +90,7 @@ def test_parsing_llm_simple_format_action_output():
         # _, action_string = separate_thought_and_action(output["llm_output"])
         # parsed_actions = parse_action_string(output["llm_output"])
         
-        thought, parsed_actions = parse_text(output["llm_output"])
+        thought, parsed_actions = parse_thoughts_and_actions(output["llm_output"])
 
         # print("Thought", thought)
 

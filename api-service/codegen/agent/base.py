@@ -7,7 +7,7 @@ from langchain.agents.chat.base import ChatAgent
 from langchain.schema import AgentAction, AgentFinish
 from langchain.tools.base import BaseTool
 
-from codegen.agent.parsing import parse_text, ToolLog
+from codegen.agent.parsing import parse_thoughts_and_actions, ToolLog
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 ACTIONS_QUEUE = "action_queue"
@@ -109,7 +109,7 @@ class CodegenAgentExecutor(AgentExecutor):
 
             # Go through each action and run it.
             # Collect outputs from each action.
-            for action in (cast(ToolLog, action) for action in parse_text(output.tool_input) if action["type"] == "tool"):
+            for action in (cast(ToolLog, action) for action in parse_thoughts_and_actions(output.tool_input) if action["type"] == "tool"):
                 observation = await self._arun_tool(
                     tool_name=action["tool_name"],
                     tool_input=action["tool_input"],
