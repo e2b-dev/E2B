@@ -1,6 +1,7 @@
 from typing import Callable, Coroutine, List, Any
 
 import playground_client
+from playground_client.models.deployment_response import DeploymentResponse
 
 from session.env import EnvVar, format_env_vars
 
@@ -46,11 +47,15 @@ class Session:
             self.is_closed = True
             self.client.close()
 
-    def deploy(self, project_id: str):
-        return self.api.create_deployment(
+    async def deploy(self, project_id: str):
+        thread: Any = self.api.create_deployment(
             project_id=project_id,
             session_id=self.id,
             create_deployment_request=playground_client.CreateDeploymentRequest(
                 envVars=self.env_vars,
             ),
-        ).url
+            async_req=True,
+        )
+
+        response: DeploymentResponse = thread.get()
+        return response.url

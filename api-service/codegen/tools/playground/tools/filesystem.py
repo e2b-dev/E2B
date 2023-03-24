@@ -21,7 +21,7 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
     @async_tool("ReadFile")
     async def read_file(path: str) -> str:
         """Read content of the file from filesystem."""
-        return playground.read_file(path)
+        return await playground.read_file(path)
 
     yield read_file
 
@@ -33,7 +33,7 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
         """
         path, content = input.lstrip().split("\n", 1)
 
-        playground.write_file(path, content)
+        await playground.write_file(path, content)
         return "File saved"
 
     yield save_file
@@ -41,7 +41,7 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
     @async_tool("DeleteFile")
     async def delete_file(path: str) -> str:
         """Delete the file."""
-        playground.delete_file(path)
+        await playground.delete_file(path)
         return "File deleted"
 
     yield delete_file
@@ -49,7 +49,7 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
     @async_tool("ListDirectory")
     async def list_directory(path: str) -> str:
         """List all files and subdirectories from the directory."""
-        entries = playground.list_dir(path)
+        entries = await playground.list_dir(path)
         return encode_directory_listing(entries)
 
     yield list_directory
@@ -57,7 +57,7 @@ def create_filesystem_tools(playground: NodeJSPlayground, **kwargs):
     @async_tool("DeleteDirectory")
     async def delete_directory(path: str) -> str:
         """Delete the directory."""
-        playground.delete_dir(path)
+        await playground.delete_dir(path)
         return "Directory deleted"
 
     yield delete_directory

@@ -39,7 +39,7 @@ def create_process_tools(playground: NodeJSPlayground, **kwargs):
         The returned result will be the output and errors returned when running the command.
         """
         await playground.update_envs()
-        output = playground.run_command(command)
+        output = await playground.run_command(command)
         result = encode_command_output(output)
 
         return result if len(result) > 0 else "Process finished without error"
