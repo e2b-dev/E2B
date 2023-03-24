@@ -51,6 +51,7 @@
     "autoprefixer": "^10.4.13",
     "concurrently": "^7.6.0",
     "cssnano": "^5.1.15",
+    "date-fns": "^2.29.3",
     "eslint": "^8.35.0",
     "eslint-config-next": "^13.2.3",
     "eslint-plugin-react": "^7.32.2",

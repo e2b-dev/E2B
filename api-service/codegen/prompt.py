@@ -12,22 +12,19 @@ SYSTEM_FORMAT_INSTRUCTIONS = """"The way you use the tools is by specifying a XM
 Specifically, this XML snippet MUST have a `<action tool="$TOOL_NAME">$INPUT</action>` element with the name of the tool in the `tool` attribute and input for the tool inside the XML tag.
 
 Here is an example of a valid XML code snippet:
-```
 <action tool="$TOOL_NAME">
 $INPUT
 </action>
-```
+
 ALWAYS use the following format:
 
 
 Instructions: the input instructions you must implement
 Thought: you should always think about what to do
 Action:
-```
 <action tool="$TOOL_NAME">
 $INPUT
 </action>
-```
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final server code and can show it.

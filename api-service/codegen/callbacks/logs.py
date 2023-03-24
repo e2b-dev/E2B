@@ -1,4 +1,5 @@
 from typing import Dict, Any, List, Union
+from codegen.agent.base import ThoughtLog, ToolLog
 from codegen.callbacks.log_queue import LogQueue
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -31,7 +32,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
             coro = self._database.push_raw_logs(self._run_id, self._raw_logs)
             self._raw_log_queue.queue.put_nowait(coro)
 
-    def _push_logs(self, logs: List[Dict[str, str]]) -> None:
+    def _push_logs(self, logs: list[ToolLog | ThoughtLog]) -> None:
         coro = self._database.push_logs(self._run_id, logs)
         self._log_queue.queue.put_nowait(coro)
 

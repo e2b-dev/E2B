@@ -1,8 +1,7 @@
-from typing import List, Dict
+from typing import List
 from enum import Enum
 
-# from supabase.client import create_client
-
+from codegen.agent.base import ThoughtLog, ToolLog
 from database.client import Client
 from session.env import EnvVar
 
@@ -16,7 +15,6 @@ class DeploymentState(Enum):
 
 tableDeployments = "deployments"
 tableProjects = "projects"
-
 
 class Database:
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
@@ -34,7 +32,7 @@ class Database:
             },
         ).execute()
 
-    async def push_logs(self, run_id: str, logs: List[Dict[str, str]]) -> None:
+    async def push_logs(self, run_id: str, logs: list[ToolLog | ThoughtLog]) -> None:
         if len(logs) > 0:
             await self.client.table(tableDeployments).update(
                 {

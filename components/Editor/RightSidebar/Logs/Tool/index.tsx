@@ -24,7 +24,7 @@ function Tool({
     case ToolName.AskHuman:
       return <AskHuman log={log} onAnswer={onAnswer} />
     default:
-      throw new Error(`'${log.tool_name}': Unknown tool log`)
+      return <div>Unknown tool {log.tool_name}</div>
   }
 }
 
