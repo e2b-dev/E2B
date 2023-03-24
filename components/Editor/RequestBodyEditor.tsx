@@ -6,20 +6,17 @@ import {
 import TextareaAutosize from 'react-textarea-autosize'
 
 import { Block } from 'state/store'
-import DeleteButton from 'components/DeleteButton'
 
 export interface Props {
   onChange: (block: Block) => void
-  onDelete: () => void
   block: Block
   index: number,
   focus: { index: number }
   onFocus: () => void
 }
 
-function BlockEditor({
+function RequestBodyEditor({
   onChange,
-  onDelete,
   block,
   index,
   focus,
@@ -38,7 +35,6 @@ function BlockEditor({
       flex
       flex-col
       items-start
-      relative
       w-[65ch]
       border
       border-green-800/40
@@ -98,18 +94,8 @@ function BlockEditor({
       ">
         {'}'}
       </div>
-      <div className="
-        absolute
-        translate-x-full
-        right-0
-        pl-1
-        ">
-        <DeleteButton
-          onDelete={onDelete}
-        />
-      </div>
     </div>
   )
 }
 
-export default BlockEditor
+export default RequestBodyEditor
