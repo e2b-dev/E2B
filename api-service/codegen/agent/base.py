@@ -45,7 +45,7 @@ def merge_dict(t: TypedDict, o: TypedDict):
     t.update(o)
 
 action_tag_open = "<action(\\s+tool=\".+?\")?\\s*\\/?>?"
-action_tag_close = "</\\s*action>?"
+action_tag_close = "</\\s*action\\s*>?"
 
 action_tag_check_pattern = re.compile(f"{action_tag_open}|{action_tag_close}")
 action_tag_split_pattern = re.compile(f"({action_tag_open}.*?{action_tag_close})|(.+)")
