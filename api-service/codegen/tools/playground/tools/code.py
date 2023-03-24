@@ -15,11 +15,10 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     @async_tool("InstallNPMDependencies")
     async def install_dependencies(dependencies: str) -> str:
         """Install JavaScript packages with NPM. The input should be valid names of NPM packages. Example usage:
-        ```
         <action tool="InstallNPMDependencies">
         package_name_1 package_name_2
         </action>
-        ```"""
+        """
         output = playground.install_dependencies(extract_code(dependencies))
         result = encode_command_output(output, only_errors=True)
         return result if len(result) > 0 else "All dependencies installed"
@@ -34,11 +33,10 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
         """
         Run JavaScript code as ECMAScript module and return output.
         Input should be a valid JavaScript code. Example usage:
-        ```
         <action tool="RunJavaScriptCode">
         console.log('hello world')
         </action>
-        ```"""
+        """
         await playground.update_envs()
 
         nonlocal last_javascript_code
@@ -54,11 +52,10 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
     async def curl_javascript_server(curl_command: str) -> str:
         """
         Make a curl request. The input should be the `curl` command. Example usage:
-        ```
         <action tool="CurlJavaScriptServer">
         curl --no-progress-meter -X POST -H "Content-Type: application/json" -d '{{"key": "value"}}' http://localhost:3000/
         </action>
-        ```"""
+        """
         # """
         # Make a request to check if the previously run JavaScript code is a server that can handle the needed request. This tool has no input. Example usage:
         # ```

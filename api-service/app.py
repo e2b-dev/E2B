@@ -3,6 +3,7 @@ import uuid
 
 from dotenv import load_dotenv
 from typing import List
+from playground_client.exceptions import NotFoundException
 from quart import Quart, request
 from quart_cors import cors
 
@@ -15,6 +16,10 @@ load_dotenv()
 
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_SECRET_KEY")
+
+if not url or not key:
+    raise NotFoundException("Suapbase credentials not found")
+
 db = Database(url, key)
 
 app = Quart(__name__)

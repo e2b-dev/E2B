@@ -1,9 +1,17 @@
 import datetime
 import uuid
 
-from typing import Dict, List
+from typing import List, TypedDict
 
-from codegen.agent.base import parse_action_string, separate_thought_and_action
+from codegen.agent.base import ThoughtLog, ToolLog, merge_dict, parse_text
+
+class ToolOutput(TypedDict):
+    finish_at: str
+    tool_output: str
+
+class LogMeta(TypedDict):
+    id: str
+    created_at: str
 
 class LogStreamParser:
     """
@@ -19,10 +27,8 @@ class LogStreamParser:
     This is a thought
 
     Action:
-    ```
     <action type="CurlJavaScriptServer">
     </ac
-    ```
     // End of example
 
     This is parsed as following buffered logs:
@@ -53,79 +59,48 @@ class LogStreamParser:
         self._tool_names = tool_names
 
         # All "finished" logs that the parser saved.
-        self._logs: List[Dict[str, str]] = []
+        self._logs: List[ToolLog | ThoughtLog] = []
 
         self._token_buffer: str = ""
 
         # Logs have both `thought` logs and `tool` logs.
         # These logs can be partially parsed or they can have missing outputs.
         # They are flushed to self._logs after outputs for all tools in self._logs.buffer are ingested.
-        self._logs_buffer: List[Dict[str, str]] = []
+        self._logs_buffer: List[ToolLog | ThoughtLog] = []
+        self._logs_meta_buffer: List[LogMeta] = []
 
         # This is a list of tools' outputs that corresponds to the tool logs in the self._logs.buffer.
-        self._tools_output_buffer: List[Dict[str, str]] = []
-        # List of ids corresponding to the buffered logs.
-        self._id_buffer: List[str] = []
-        # List of timestamps corresponding to the buffered logs.
-        self._start_timestamp_buffer: List[str] = []
+        self._tools_output_buffer: List[ToolOutput] = []
 
     def _parse(self):
         """This function should be called only after ingesting new token or tool output to update the buffered logs."""
-        thought, action_string = separate_thought_and_action(self._token_buffer)
-        tools_logs = [
-            {
-                "type": "tool",
-                "tool_name": action.attrib["tool"],
-                "tool_input": action.text or "",
-            }
-            for action in parse_action_string(action_string)
-            if action.attrib.get("tool", None) in self._tool_names
-        ]
-
-        # Update tools' logs with the information from ingested tools' outputs.
-        for i in range(len(self._tools_output_buffer)):
-            tools_logs[i] = {
-                **tools_logs[i],
-                **self._tools_output_buffer[i],
-            }
-
         # We overwrite the current buffered logs with their newer version.
         # If you ingested token or tool output this will save the change so you can call self.get_logs and get the new logs.
         self._logs_buffer = [
-            {
-                "type": "thought",
-                "content": thought.removeprefix("Thought:")
-                .replace("Action:", "")
-                .strip(),
-            },
-            *tools_logs,
+            log for log
+            in parse_text(self._token_buffer)
+            if log["type"] == "thought"
+            or log["type"] == "tool" and log.get("tool_name") in self._tool_names
         ]
-
+        
         # Add a new uuids to id buffer if we have less ids that there are logs in the logs buffer.
-        self._id_buffer.extend(
+        self._logs_meta_buffer.extend(
             (
-                str(uuid.uuid4())
-                for _ in range(len(self._logs_buffer) - len(self._id_buffer))
+                LogMeta(id=str(uuid.uuid4()), created_at=str(datetime.datetime.now()))
+                for _ in range(len(self._logs_buffer) - len(self._logs_meta_buffer))
             )
         )
 
-        # Assign the stable ids to logs
-        for log, id in zip(self._logs_buffer, self._id_buffer):
-            log["id"] = id
+        # Assign the stable ids and timestamps to logs
+        for log, meta in zip(self._logs_buffer, self._logs_meta_buffer):
+            merge_dict(log, meta)
 
-        # Add a new timestamps to timestamps buffer if we have less timestamps that there are logs in the logs buffer.
-        self._start_timestamp_buffer.extend(
-            (
-                str(datetime.datetime.now())
-                for _ in range(
-                    len(self._logs_buffer) - len(self._start_timestamp_buffer)
-                )
-            )
-        )
-
-        # Assign the corresponding timestamps to logs
-        for log, timestamp in zip(self._logs_buffer, self._start_timestamp_buffer):
-            log["created_at"] = timestamp
+        # Update tools' logs with the information from ingested tools' outputs.
+        for tool_log, output in zip(
+            (tool_log for tool_log in self._logs_buffer if tool_log["type"] == "tool"),
+            self._tools_output_buffer
+        ):
+            merge_dict(tool_log, output)
 
     def ingest_token(self, token: str):
         """Ingest token and update the logs."""
@@ -156,8 +131,5 @@ class LogStreamParser:
 
         return self
 
-    def get_logs(self):
-        return [
-            *self._logs,
-            *self._logs_buffer,
-        ]
+    def get_logs(self) -> list[ToolLog | ThoughtLog]:
+        return [*self._logs, *self._logs_buffer]
