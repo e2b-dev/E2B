@@ -1,10 +1,10 @@
 from typing import Dict, Any, List, Union
-from codegen.agent.base import ThoughtLog, ToolLog
-from codegen.callbacks.log_queue import LogQueue
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from pydantic import PrivateAttr
 
+from codegen.callbacks.log_queue import LogQueue
+from codegen.agent.parsing import ToolLog, ThoughtLog
 from codegen.callbacks.log_parser import LogStreamParser
 from database import Database
 

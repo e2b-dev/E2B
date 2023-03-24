@@ -1,85 +1,17 @@
-import xml.etree.ElementTree as ET
-import re
 import traceback
-from typing_extensions import NotRequired
-from typing import List, TypedDict
-from typing import Literal, Optional, Tuple, List, Dict, Union, cast
-from lxml import etree
+
+from typing import Optional, Tuple, List, Dict, Union, cast
 from langchain.agents.tools import InvalidTool
 from langchain.agents import AgentExecutor
 from langchain.agents.chat.base import ChatAgent
 from langchain.schema import AgentAction, AgentFinish
 from langchain.tools.base import BaseTool
 
+from codegen.agent.parsing import parse_text, ToolLog
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 ACTIONS_QUEUE = "action_queue"
 MALFORMED_ANSWER = "malformed_answer"
-
-escape_table = str.maketrans({
-    "<": "&lt;",
-    ">": "&gt;",
-    "&": "&amp;",
-    "'": "&apos;",
-    '"': "&quot;",
-})
-
-def xml_escape(txt: str):
-    return txt.translate(escape_table)
-
-class Log(TypedDict):
-    id: NotRequired[str]
-    type: Literal["thought"] | Literal["tool"]
-    created_at: NotRequired[str]
-
-class ThoughtLog(Log):
-    content: str
-
-class ToolLog(Log):
-    tool_name: str
-    tool_input: str
-    tool_output: NotRequired[str]
-    finish_at: NotRequired[str]
-
-def merge_dict(t: TypedDict, o: TypedDict):
-    t.update(o)
-
-action_tag_open = "<action(\\s+tool=\".+?\")?\\s*\\/?>?"
-action_tag_close = "</\\s*action\\s*>?"
-
-action_tag_check_pattern = re.compile(f"{action_tag_open}|{action_tag_close}")
-action_tag_split_pattern = re.compile(f"({action_tag_open}.*?{action_tag_close})|(.+)")
-
-def parse_text(text: str):
-    escaped = "".join(
-        # If the text part is not action tag escape it.
-        part if action_tag_check_pattern.match(part) else xml_escape(part)
-        for part
-        # Split the text by action opening and closing tags.
-        in re.split(action_tag_split_pattern, text)
-        if part
-    )
-
-    root = ET.fromstring(
-        # Wrapping the XML in a fully formed root tag while some inner tags can be incomplete doesn't make sense.
-        f"<root>{escaped}",
-        # Use Parser with C binding for libxml2+libxslt, with recovery mode that allows to parse incomplete XML.
-        etree.XMLParser(recover=True),
-    )
-
-    leading_thought = root.text.strip() if root.text else None
-    if leading_thought:
-        yield ThoughtLog(type="thought", content=leading_thought)
-
-    for action in root.findall("action"):
-        tool_name = action.attrib.get("tool", "")
-        if tool_name:
-            yield ToolLog(type="tool", tool_name=tool_name, tool_input=action.text or "")
-
-        # Create thoughts from text between and after actions.
-        trailing_thought = action.tail.strip() if action.tail else None
-        if trailing_thought:
-            yield ThoughtLog(type="thought", content=trailing_thought)
 
 class CodegenAgent(ChatAgent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str | None]]:
@@ -101,37 +33,6 @@ class CodegenAgent(ChatAgent):
 
 
 class CodegenAgentExecutor(AgentExecutor):
-    def _run_tool(
-        self,
-        tool_name: str,
-        tool_input: str,
-        color_mapping: Dict[str, str],
-        name_to_tool_map: Dict[str, BaseTool],
-    ) -> str:
-        # Otherwise we lookup the tool
-        if tool_name in name_to_tool_map:
-            tool = name_to_tool_map[tool_name]
-            return_direct = tool.return_direct
-            color = color_mapping[tool_name]
-            llm_prefix = "" if return_direct else self.agent.llm_prefix
-            # We then call the tool on the tool input to get an observation
-            observation = tool.run(
-                tool_input,
-                verbose=self.verbose,
-                color=color,
-                llm_prefix=llm_prefix,
-                observation_prefix=self.agent.observation_prefix,
-            )
-        else:
-            observation = InvalidTool().run(
-                tool_name,
-                verbose=self.verbose,
-                color=None,
-                llm_prefix="",
-                observation_prefix=self.agent.observation_prefix,
-            )
-        return observation
-
     async def _arun_tool(
         self,
         tool_name: str,
@@ -154,7 +55,7 @@ class CodegenAgentExecutor(AgentExecutor):
                 observation_prefix=self.agent.observation_prefix,
             )
         else:
-            observation = await InvalidTool().arun(
+            observation = await InvalidTool().arun( # type: ignore
                 tool_name,
                 verbose=self.verbose,
                 color=None,

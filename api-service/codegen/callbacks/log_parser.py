@@ -3,7 +3,7 @@ import uuid
 
 from typing import List, TypedDict
 
-from codegen.agent.base import ThoughtLog, ToolLog, merge_dict, parse_text
+from codegen.agent.parsing import ThoughtLog, ToolLog, merge_logs, parse_text
 
 class ToolOutput(TypedDict):
     finish_at: str
@@ -93,14 +93,14 @@ class LogStreamParser:
 
         # Assign the stable ids and timestamps to logs
         for log, meta in zip(self._logs_buffer, self._logs_meta_buffer):
-            merge_dict(log, meta)
+            merge_logs(log, meta)
 
         # Update tools' logs with the information from ingested tools' outputs.
         for tool_log, output in zip(
             (tool_log for tool_log in self._logs_buffer if tool_log["type"] == "tool"),
             self._tools_output_buffer
         ):
-            merge_dict(tool_log, output)
+            merge_logs(tool_log, output)
 
     def ingest_token(self, token: str):
         """Ingest token and update the logs."""
