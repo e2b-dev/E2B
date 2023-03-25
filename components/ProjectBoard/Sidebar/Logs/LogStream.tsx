@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 
-import ConnectionLine from 'components/Editor/ConnectionLine'
 import { Log, } from 'db/types'
 
+import ConnectionLine from './ConnectionLine'
 import LogEntry from './LogEntry'
 
 export interface Props {
