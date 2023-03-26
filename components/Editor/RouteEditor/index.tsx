@@ -24,10 +24,16 @@ function RouteEditor({ route }: Props) {
       flex
       flex-1
       items-start
+      justify-center
       overflow-hidden
     ">
       {!route &&
-        <div>No route selected</div>
+        <div className="
+          text-slate-400
+          self-center
+          ">
+          No route selected
+        </div>
       }
       {route &&
         <>

@@ -36,6 +36,7 @@ function Routes({
           text="Routes"
           className="
           font-semibold
+          py-3.5
           uppercase
           text-slate-400
         "
@@ -52,7 +53,8 @@ function Routes({
       flex-col
       overflow-y-auto
       leading-4
-      p-2
+      py-1.5
+      px-2
       break-words
       whitespace-normal
       space-y-0.5

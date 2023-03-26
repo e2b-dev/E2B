@@ -1,5 +1,6 @@
-import { ThoughtLog } from 'db/types'
 import { useMemo } from 'react'
+
+import { ThoughtLog } from 'db/types'
 
 export interface Props {
   log: ThoughtLog
@@ -12,7 +13,6 @@ function Thought({
     return log.content
       .replaceAll('\nAction:', '')
       .replaceAll('Thought:', '')
-      .replaceAll('Final Answer:', '')
       .trim()
   }, [log.content])
 
