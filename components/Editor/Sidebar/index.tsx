@@ -100,7 +100,7 @@ function Sidebar({
       flex
       bg-white
       flex
-      flex-1
+      w-full
       flex-col
       min-h-0
       `,

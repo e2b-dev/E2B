@@ -50,14 +50,16 @@ function BaseTool({
         }
       </div>
 
-      <div className="
+      {body &&
+        <div className="
         py-6
         max-w-full
         overflow-x-auto
         scroller
       ">
-        {body}
-      </div>
+          {body}
+        </div>
+      }
 
       {log.tool_output?.trim() &&
         <div className="
