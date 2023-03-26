@@ -8,7 +8,13 @@ import { projects, Prisma } from '@prisma/client'
 import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
-export type BlockType = 'Basic' | 'RequestBody' | 'StructuredProse'
+export type BlockType =
+  // Raw text
+  'Basic' |
+  // Code that looks like TypeScript interface definition without the outer parenthesses.
+  'RequestBody' |
+  // ProseMirror XML
+  'StructuredProse'
 
 export interface Block {
   id: string
