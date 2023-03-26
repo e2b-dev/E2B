@@ -164,6 +164,9 @@ class Codegen(BaseModel):
             inst = instruction["content"].format(*values)
             instructions = instructions + "\n" + f"{inst_idx}. {inst}"
 
+        print("+++ BLOCKS")
+        print(blocks)
+        print("--- BLOCKS")
         for block in blocks:
             if block.get("type") == "Basic":
                 inst_idx += 1

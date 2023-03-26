@@ -2,7 +2,7 @@ import {
   ReactNode
 } from 'react'
 import {
-  Terminal,
+  FileEdit,
 } from 'lucide-react'
 
 import { ToolName, ToolLog } from 'db/types'
@@ -14,10 +14,10 @@ export interface Props {
   log: ToolLog
 }
 
-function Curl({
+function WriteCode({
   log,
 }: Props) {
-  if (log.tool_name !== ToolName.Curl) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.Curl}' tool`)
+  if (log.tool_name !== ToolName.WriteJavaScriptCode) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.WriteJavaScriptCode}' tool`)
 
   let body: ReactNode = null
   if (log.tool_input.trim()) {
@@ -35,10 +35,10 @@ function Curl({
   return (
     <Base
       log={log}
-      icon={<Terminal size="16px" />}
+      icon={<FileEdit size="16px" />}
       body={body}
     />
   )
 }
 
-export default Curl
+export default WriteCode

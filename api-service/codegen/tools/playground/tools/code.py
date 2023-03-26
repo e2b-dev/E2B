@@ -9,6 +9,8 @@ def extract_code(code: str):
 
 
 def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **kwargs):
+    last_javascript_code: str | None = None
+
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 
@@ -25,50 +27,69 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
 
     yield install_dependencies
 
-    last_javascript_code: str | None = None
-
-    # This tool is just for executing JavaScript without doing the request to server
-    @async_tool("RunJavaScriptCode")
-    async def run_javascript_code(code: str) -> str:
-        """
-        Run JavaScript code as ECMAScript module and return output.
-        Input should be a valid JavaScript code. Example usage:
-        <action tool="RunJavaScriptCode">
-        console.log('hello world')
+    # A tool for executing index.mjs file
+    @async_tool("RunSavedCode")
+    async def run_saved_code(empty: str) -> str:
+        """Run JavaScript code that is inside the index.mjs. The tool takes no input. Example usage:
+        <action tool="RunSavedCode">
         </action>
         """
-        await playground.update_envs()
+        output = await playground.run_saved_javascript_code()
+        return encode_command_output(output)
 
+    yield run_saved_code
+
+    # A tool for writing JavaScript code specifically to the index.mjs file
+    @async_tool("WriteJavaScriptCode")
+    async def write_javascript_code(code: str) -> str:
+        """Write JavaScript code to the index.mjs file. The input should be valid JavaScript code. Example usage:
+        <action tool="WriteJavaScriptCode">
+        import process from 'process'
+        console.log(process.env)
+        </action>
+        """
         nonlocal last_javascript_code
         last_javascript_code = code
 
-        output = await playground.run_javascript_code(code)
-        result = encode_command_output(output)
-        return result if len(result) > 0 else "Code execution finished without error"
+        await playground.write_javascript_code(extract_code(code))
+        return "Code written to index.mjs"
 
-    yield run_javascript_code
+    yield write_javascript_code
 
-    @async_tool("CurlJavaScriptServer")
-    async def curl_javascript_server(curl_command: str) -> str:
+    # # This tool is just for executing JavaScript without doing the request to server
+    # @async_tool("RunJavaScriptCode")
+    # async def run_javascript_code(code: str) -> str:
+    #     """
+    #     Run JavaScript code as ECMAScript module and return output.
+    #     Input should be a valid JavaScript code. Example usage:
+    #     <action tool="RunJavaScriptCode">
+    #     console.log('hello world')
+    #     </action>
+    #     """
+    #     await playground.update_envs()
+
+    #     nonlocal last_javascript_code
+    #     last_javascript_code = code
+
+    #     output = await playground.run_javascript_code(code)
+    #     result = encode_command_output(output)
+    #     return result if len(result) > 0 else "Code execution finished without error"
+
+    # yield run_javascript_code
+
+    @async_tool("Curl")
+    async def curl(curl_command: str) -> str:
         """
         Make a curl request. The input should be the `curl` command. Example usage:
         <action tool="CurlJavaScriptServer">
         curl --no-progress-meter -X POST -H "Content-Type: application/json" -d '{{"key": "value"}}' http://localhost:3000/
         </action>
         """
-        # """
-        # Make a request to check if the previously run JavaScript code is a server that can handle the needed request. This tool has no input. Example usage:
-        # ```
-        # <action tool="CurlJavaScriptServer">
-        # </action>
-        # ```"""
         await playground.update_envs()
 
         nonlocal last_javascript_code
         if last_javascript_code is None:
-            return "Cannot curl, you need to run code first"
-
-        # mock_request_cmd = mock.terminal_command()
+            return "Cannot curl, you need to write code first"
 
         port = 3000
         (
@@ -86,4 +107,44 @@ def create_code_tools(playground: NodeJSPlayground, mock: MockRequestFactory, **
 
         return f"Curl output:\n{request_result}\nServer output:\n{server_result}"
 
-    yield curl_javascript_server
+    yield curl
+
+    # @async_tool("CurlJavaScriptServer")
+    # async def curl_javascript_server(curl_command: str) -> str:
+    #     """
+    #     Make a curl request. The input should be the `curl` command. Example usage:
+    #     <action tool="CurlJavaScriptServer">
+    #     curl --no-progress-meter -X POST -H "Content-Type: application/json" -d '{{"key": "value"}}' http://localhost:3000/
+    #     </action>
+    #     """
+    #     # """
+    #     # Make a request to check if the previously run JavaScript code is a server that can handle the needed request. This tool has no input. Example usage:
+    #     # ```
+    #     # <action tool="CurlJavaScriptServer">
+    #     # </action>
+    #     # ```"""
+    #     await playground.update_envs()
+
+    #     nonlocal last_javascript_code
+    #     if last_javascript_code is None:
+    #         return "Cannot curl, you need to run code first"
+
+    #     # mock_request_cmd = mock.terminal_command()
+
+    #     port = 3000
+    #     (
+    #         request_output,
+    #         server_output,
+    #     ) = await playground.run_javascript_server_code_with_request(
+    #         code=last_javascript_code,
+    #         # request_cmd=mock_request_cmd,
+    #         request_cmd=curl_command.strip(),
+    #         port=port,
+    #     )
+
+    #     request_result = encode_command_output(request_output)
+    #     server_result = encode_command_output(server_output)
+
+    #     return f"Curl output:\n{request_result}\nServer output:\n{server_result}"
+
+    # yield curl_javascript_server
