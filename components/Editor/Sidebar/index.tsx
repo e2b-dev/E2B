@@ -99,7 +99,6 @@ function Sidebar({
       className={clsx(`
       flex
       bg-white
-      flex
       w-full
       flex-col
       min-h-0
@@ -164,6 +163,7 @@ function Sidebar({
       <Envs />
       <Logs
         deployment={deployment}
+        isDeployRequestRunning={isDeployRequestRunning}
       />
     </div>
   )

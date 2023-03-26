@@ -10,15 +10,30 @@ export interface Props {
   logs?: Log[]
   rawLogs?: string | null
   onAnswer?: (logID: string, answer: string) => void
+  isDeployRequestRunning?: boolean
 }
 
-function LogStream({ logs, rawLogs, onAnswer }: Props) {
+function LogStream({
+  logs,
+  rawLogs,
+  onAnswer,
+  isDeployRequestRunning,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(function scrollLogs() {
     if (!ref.current) return
+    if (!isDeployRequestRunning) return
+
     ref.current.scrollIntoView({ behavior: 'smooth' })
-  }, [logs])
+  }, [logs, isDeployRequestRunning])
+
+  useEffect(function scrollLogs() {
+    if (!ref.current) return
+    if (isDeployRequestRunning) return
+
+    ref.current.scrollIntoView({ behavior: 'auto' })
+  }, [logs, isDeployRequestRunning])
 
   return (
     <div

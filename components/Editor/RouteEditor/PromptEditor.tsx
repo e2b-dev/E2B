@@ -24,7 +24,11 @@ function PromptEditor({ onChange, block }: Props) {
     ">
       <EditorContent
         editor={editor}
-        className="w-full h-full outline-none"
+        className="
+          w-full
+          h-full
+          outline-none
+        "
       />
     </div>
   )

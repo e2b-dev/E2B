@@ -28,10 +28,12 @@ const tabsProps = {
 
 export interface Props {
   deployment?: deployments
+  isDeployRequestRunning?: boolean
 }
 
 function Logs({
   deployment,
+  isDeployRequestRunning,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
   const client = useSupabaseClient<Database>()
@@ -95,11 +97,13 @@ function Logs({
         <LogStream
           logs={deployment?.logs as Log[] | undefined}
           onAnswer={saveAnswer}
+          isDeployRequestRunning={isDeployRequestRunning}
         />
       }
       {selectedTab === 1 &&
         <LogStream
           rawLogs={deployment?.logs_raw}
+          isDeployRequestRunning={isDeployRequestRunning}
         />
       }
     </div>
