@@ -27,7 +27,7 @@ const extensions = [
     orderedList: false,
   }),
   Placeholder.configure({
-    placeholder: "Type '/' for commands",
+    placeholder: "All You Need Is English",
   }),
   SlashCommand,
 ]

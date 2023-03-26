@@ -55,8 +55,6 @@ function RequestBodyEditor({
           'text-slate-500',
           'focus:text-slate-600',
           'no-scroller',
-          'transition-[shadow,colors]',
-          'focus:shadow',
           'bg-white',
           'outline-none',
           'text-sm',

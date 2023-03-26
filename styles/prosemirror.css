@@ -1,0 +1,73 @@
+.ProseMirror {
+  @apply whitespace-pre-wrap prose prose-sm;
+  @apply max-w-[50rem];
+  @apply whitespace-pre-wrap;
+
+  /*
+   * NOTE: Disabling overflow anchor fixes a code cell scrolling bug
+   * that happens in Chrome:
+   * If you have a code cell with `BottomResizer`, resize the code cell
+   * so that it has a scrollbar, scroll at the bottom and start deleting
+   * new lines, the outer scrollbar of ProseMirror starts moving with
+   * every deleted new-line which then moves the whole document page.
+   *
+   * I'm currently not sure how to fix the bug in any other way. Maybe
+   * some enclosing elemens have their height incorrectly calculated?
+   *
+   * More info and solution might be found here:
+   * - https://discuss.prosemirror.net/t/undesired-scrolling-on-updatestate/2066
+   * - https://github.com/ProseMirror/prosemirror/issues/933
+   */
+  overflow-anchor: none;
+}
+
+.ProseMirror:focus {
+  @apply outline-none;
+}
+
+.ProseMirror p,
+.ProseMirror li,
+.ProseMirror ul,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  @apply max-w-full;
+}
+
+.ProseMirror h1,
+.ProseMirror h2 {
+  @apply py-2;
+  @apply border-b border-gray-400;
+}
+
+.ProseMirror p {
+  @apply mx-0 my-1;
+  @apply whitespace-pre-wrap break-words;
+}
+
+/* Placeholder (on every new line) */
+.ProseMirror p.is-empty::before {
+  @apply float-left h-0 select-none text-slate-300;
+  content: attr(data-placeholder);
+}
+
+.ProseMirror li {
+  @apply relative;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  @apply pl-8;
+}
+
+.ProseMirror code {
+  @apply px-1.5 py-1;
+  @apply font-normal;
+  @apply rounded bg-gray-300;
+}
+
+@keyframes ProseMirror-cursor-blink {
+  to {
+    visibility: hidden;
+  }
+}

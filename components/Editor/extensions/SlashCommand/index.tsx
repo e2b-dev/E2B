@@ -7,7 +7,6 @@ import {
 import { ChainedCommands } from '@tiptap/core'
 
 import { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
-import { Lang } from 'editor/extensions/codeCell/language'
 
 import Item from './Item'
 
@@ -21,54 +20,11 @@ const items: CommandItem[] = [
     title: 'Next.js Code Cell',
     extendCommand: (cmd) => {
       return cmd
-        .setCodeCell({
-          templateID: 'nextjs-v11-components',
-          language: Lang.tsx,
-        })
-    },
-  },
-  {
-    title: 'Node.js Code Cell',
-    extendCommand: (cmd) => {
-      return cmd
-        .setCodeCell({
-          templateID: 'nodejs-v16',
-          language: Lang.ts,
-        })
-    },
-  },
-  {
-    title: 'Shell Command (Next.js)',
-    extendCommand: (last) => {
-      return last.setCodeCell({
-        templateID: 'nextjs-v11-components',
-        language: Lang.sh,
-      })
-    },
-  },
-  {
-    title: 'Shell Command (Node.js)',
-    extendCommand: (last) => {
-      return last.setCodeCell({
-        templateID: 'nodejs-v16',
-        language: Lang.sh,
-      })
-    }
-  },
-  {
-    title: 'Iframe Cell',
-    extendCommand: (cmd) => {
-      return cmd
-        .focus()
-        .setIframe({ src: 'https://usedevbook.com' })
-    },
-  },
-  {
-    title: 'Console Cell',
-    extendCommand: (cmd) => {
-      return cmd
-        .focus()
-        .setConsoleCell()
+      // return cmd.set
+      //   .setCodeCell({
+      //     templateID: 'nextjs-v11-components',
+      //     language: Lang.tsx,
+      //   })
     },
   },
 ]

@@ -18,7 +18,6 @@ function Editor({ project }: Props) {
 
   // TODO: Handle editor state differently so we don't rerender this component on each editor edit.
   const routes = store.use.routes()
-  const addRoute = store.use.addRoute()
   const deleteRoute = store.use.deleteRoute()
 
   const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
@@ -69,7 +68,6 @@ function Editor({ project }: Props) {
             selectRoute={setSelectedRouteID}
             selectedRouteID={selectedRoute?.id}
             deleteRoute={handleDeleteRoute}
-            addRoute={addRoute}
           />
           <RouteEditor
             route={selectedRoute}

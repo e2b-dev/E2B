@@ -17,10 +17,12 @@ export interface Props {
   onChange: (v: Value) => void
   // Where to align the modal
   direction: 'left' | 'right'
+  isSelected?: boolean
 }
 
 function Select({
   values,
+  isSelected,
   selectedValue,
   onChange,
   direction,
@@ -56,16 +58,15 @@ function Select({
             `transition-all
             cursor-pointer
             flex
-            hover:text-green-600
+            hover:text-green-800
             items-center
             justify-between
             space-x-1`,
             {
-              'text-green-600': isOpened,
-              'text-green-500': !isOpened,
+              'text-green-800': isSelected,
+              'text-slate-300': !isSelected,
             }
           )}
-          onClick={() => setIsOpened(val => !val)}
         >
           <Text
             className="font-mono"
@@ -74,9 +75,9 @@ function Select({
           <ChevronDownIcon
             className="self-center"
             size={14}
+            onClick={() => setIsOpened(val => !val)}
           />
         </div>
-
         {/* Modal */}
         {isOpened && (
           <div className={clsx(

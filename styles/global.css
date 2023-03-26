@@ -1,4 +1,5 @@
 @import 'highlight.js/styles/a11y-dark.css';
+@import './prosemirror.css';
 
 @tailwind base;
 @tailwind components;

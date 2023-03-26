@@ -17,10 +17,10 @@ function PromptEditor({ onChange, block }: Props) {
   return (
     <div className="
     flex
-    bg-white
-    p-2
     min-w-full
     rounded
+    border
+    bg-slate-300
     ">
       <EditorContent
         editor={editor}

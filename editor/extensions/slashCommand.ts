@@ -1,4 +1,4 @@
-import SlashCommand from 'src/components/Editor/extensions/SlashCommand'
+import SlashCommand from 'components/Editor/extensions/SlashCommand'
 
 import { Command } from './command'
 
@@ -11,6 +11,6 @@ export default Command(SlashCommand)
   .configure({
     suggestion: {
       char: '/',
-      startOfLine: true,
+      startOfLine: false,
     },
   })

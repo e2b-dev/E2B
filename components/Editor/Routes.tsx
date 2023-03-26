@@ -1,26 +1,31 @@
 import clsx from 'clsx'
 import { Plus } from 'lucide-react'
 
-import { Route } from 'state/store'
+import { Method, methods, Route } from 'state/store'
 import Button from 'components/Button'
 import Text from 'components/Text'
 import DeleteButton from 'components/DeleteButton'
+import Select from 'components/Select'
+import { useStateStore } from 'state/StoreProvider'
 
 export interface Props {
   routes: Route[]
   selectRoute: (id: string) => void
   selectedRouteID?: string
-  addRoute: () => void
   deleteRoute: (id: string) => void
 }
 
 function Routes({
   routes,
   selectedRouteID,
-  addRoute,
   deleteRoute,
   selectRoute,
 }: Props) {
+  const store = useStateStore()
+
+  const addRoute = store.use.addRoute()
+  const changeRoute = store.use.changeRoute()
+
   return (
     <div>
       <div
@@ -50,14 +55,12 @@ function Routes({
         />
         <div className="
       flex
-      flex-col
       overflow-y-auto
       leading-4
       py-1.5
       px-2
       break-words
       whitespace-normal
-      space-y-0.5
       ">
           {routes.map(r =>
             <div
@@ -67,21 +70,35 @@ function Routes({
               items-center
               justify-between
               hover:text-green-800
-              rounded
               px-2
             `,
                 {
-                  'text-green-800': selectedRouteID === r.id,
+                  'text-green-800 group': selectedRouteID === r.id,
+                  'text-slate-300': selectedRouteID !== r.id,
                 }
               )}
             >
               <button
                 onClick={() => selectRoute(r.id)}
+                className="
+                flex
+                space-x-1
+                "
               >
                 <Text
                   className="font-mono"
-                  text={r.method.toUpperCase() + ' ' + r.route}
+                  text={r.route}
                 />
+                <div className="flex items-center space-x-2">
+                  <Select
+                    direction="left"
+                    selectedValue={{ key: r.method, title: r.method.toUpperCase() }}
+                    values={methods.map(m => ({ key: m, title: m.toUpperCase() }))}
+                    onChange={m => changeRoute(r.id, { method: m.key as Method })}
+                    isSelected={r.id === selectedRouteID}
+                  />
+                </div>
+
               </button>
               <DeleteButton
                 onDelete={() => deleteRoute(r.id)}

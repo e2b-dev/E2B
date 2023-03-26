@@ -23,6 +23,7 @@ function RouteEditor({ route }: Props) {
       px-4
       flex
       flex-1
+    bg-white
       items-start
       justify-center
       overflow-hidden
@@ -37,19 +38,12 @@ function RouteEditor({ route }: Props) {
       }
       {route &&
         <>
-          <div className="flex items-center space-x-2">
-            <Select
-              direction="left"
-              selectedValue={{ key: route?.method, title: route.method.toUpperCase() }}
-              values={methods.map(m => ({ key: m, title: m.toUpperCase() }))}
-              onChange={m => changeRoute(route.id, { method: m.key as Method })}
-            />
-          </div>
           <div className="
           flex
           flex-1
           flex-col
-          items-start
+          items-center
+          max-w-[65ch]
           overflow-auto
           scroller
           space-y-2
