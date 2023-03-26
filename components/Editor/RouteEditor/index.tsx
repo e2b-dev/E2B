@@ -24,6 +24,7 @@ function RouteEditor({ route }: Props) {
       flex
       flex-1
       items-start
+      overflow-hidden
     ">
       {!route &&
         <div>No route selected</div>
@@ -42,32 +43,23 @@ function RouteEditor({ route }: Props) {
           flex
           flex-1
           flex-col
-          items-center
+          items-start
           overflow-auto
           scroller
-          bg-white
-          relative
+          space-y-2
         ">
-            <div className="
-            flex
-            flex-col
-            items-center
-            transition-all
-            flex-1
-          ">
-              {requestBodyBlock &&
-                <RequestBodyEditor
-                  block={requestBodyBlock}
-                  onChange={updateRequestBodyBlock}
-                />
-              }
-              {promptBlock &&
-                <PromptEditor
-                  block={promptBlock}
-                  onChange={updatePromptBlock}
-                />
-              }
-            </div>
+            {requestBodyBlock &&
+              <RequestBodyEditor
+                block={requestBodyBlock}
+                onChange={updateRequestBodyBlock}
+              />
+            }
+            {promptBlock &&
+              <PromptEditor
+                block={promptBlock}
+                onChange={updatePromptBlock}
+              />
+            }
           </div>
         </>
       }

@@ -76,3 +76,7 @@ code::-webkit-scrollbar-thumb {
   @apply bg-slate-300;
   @apply rounded-full;
 }
+
+.ProseMirror:focus {
+  outline: none;
+}

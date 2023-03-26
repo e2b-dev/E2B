@@ -17,13 +17,14 @@ function PromptEditor({ onChange, block }: Props) {
   return (
     <div className="
     flex
-    flex-1
-    bg-slate-100
+    bg-white
+    p-2
     min-w-full
+    rounded
     ">
       <EditorContent
         editor={editor}
-        className="w-full h-full"
+        className="w-full h-full outline-none"
       />
     </div>
   )
