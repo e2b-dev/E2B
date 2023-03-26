@@ -33,10 +33,10 @@ Final Answer: the final answer"""
 SYSTEM_SUFFIX = """Begin! Reminder to NEVER use tools you don't have access. Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer."""
 
 HUMAN_INSTRUCTIONS_PREFIX = [
-    {
-        "variables": [],
-        "content": "You are building a slack bot that sends a message to channel every time it gets a new request. You have access to the folling environment variables: `SLACK_BOT_ACCESS_TOKEN`",
-    },
+    # {
+    #     "variables": [],
+    #     "content": "You are building a slack bot that sends a message to channel every time it gets a new request. You have access to the folling environment variables: `SLACK_BOT_ACCESS_TOKEN`",
+    # },
     {
         "variables": [],
         "content": "Do not try to come up with solutions and code if you do not know. Instead, use the tool `AskHuman` to ask for help.",
