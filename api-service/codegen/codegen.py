@@ -174,7 +174,8 @@ class Codegen(BaseModel):
             inst_idx += 1
             instructions = instructions + "\n" + f"{inst_idx}. {inst}"
 
-        instructions += "\nThought: Here is the plan of how I will go about solving this based on the instructions I got:\n1."
+        # instructions += "\nThought: Here is the plan of how I will go about solving this based on the instructions I got:\n1."
+        # instructions += "\nThought:"
         print("Instructions:\n", instructions)
 
         print("Running executor...")

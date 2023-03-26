@@ -88,6 +88,7 @@ function Envs({ }: Props) {
             focus:border-green-600
           "
             placeholder="VALUE"
+            type="password"
             value={env.value}
             onChange={event => handleEnvValueChange(event, idx)}
           />

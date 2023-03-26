@@ -10,6 +10,7 @@ from langchain.tools.base import BaseTool
 from codegen.agent.parsing import parse_thoughts_and_actions, ToolLog
 
 FINAL_ANSWER_ACTION = "Final Answer:"
+FINAL_ANSWER_ACTION_NO_WHITESPACE = "FinalAnswer"
 ACTIONS_QUEUE = "action_queue"
 MALFORMED_ANSWER = "malformed_answer"
 
@@ -83,7 +84,10 @@ class CodegenAgentExecutor(AgentExecutor):
         # Sometimes the LLM decides to pass the value of `FINAL_ANSWER_ACTION` as a tool name.
         # Instead of trying to "force" the LLM to don't do that, we can just write a bit of
         # code and handle this case.
-        elif output.tool == FINAL_ANSWER_ACTION:
+        elif (
+            output.tool == FINAL_ANSWER_ACTION
+            or output.tool == FINAL_ANSWER_ACTION_NO_WHITESPACE
+        ):
             return AgentFinish({"output": output.tool_input}, output.log)
 
         # Sometimes the agent just completely messed up the output format.
