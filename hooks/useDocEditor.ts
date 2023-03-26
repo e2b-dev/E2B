@@ -8,7 +8,7 @@ import { StarterKit } from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { keymap } from 'prosemirror-keymap'
 
-// import SlashCommand from 'src/editor/extensions/slashCommand'
+import SlashCommand from 'editor/extensions/slashCommand'
 
 const extensions = [
   StarterKit.configure({
@@ -29,7 +29,7 @@ const extensions = [
   Placeholder.configure({
     placeholder: "Type '/' for commands",
   }),
-  // SlashCommand,
+  SlashCommand,
 ]
 
 const schema = getSchema(extensions)
