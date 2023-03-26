@@ -3,13 +3,13 @@ import {
   useState,
 } from 'react'
 import { Editor } from '@tiptap/react'
+import { StarterKit } from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { keymap } from 'prosemirror-keymap'
 
+// import SlashCommand from 'src/editor/extensions/slashCommand'
 
-import SlashCommand from 'src/editor/extensions/slashCommand'
-
-function useDocumentEditor({
+function useDocEditor({
   initialContent,
   onContentChange,
 }: {
@@ -20,19 +20,29 @@ function useDocumentEditor({
 
   useEffect(function initialize() {
     const extensions = [
-      Document,
-      Paragraph,
-      Text,
+      StarterKit.configure({
+        blockquote: false,
+        bold: false,
+        bulletList: false,
+        code: false,
+        codeBlock: false,
+        dropcursor: false,
+        hardBreak: false,
+        heading: false,
+        horizontalRule: false,
+        italic: false,
+        listItem: false,
+        strike: false,
+        orderedList: false,
+      }),
       Placeholder.configure({
         placeholder: "Type '/' for commands",
       }),
-      SlashCommand,
+      // SlashCommand,
     ]
 
-    // Transform content
-
     const instance = new Editor({
-      content,
+      content: initialContent,
       parseOptions: {
         preserveWhitespace: 'full',
       },
@@ -40,7 +50,7 @@ function useDocumentEditor({
       editorProps: {
         attributes: {
           'data-gramm': 'false',
-          'spellcheck': 'false',
+          // 'spellcheck': 'false',
         },
       },
       extensions,
@@ -55,9 +65,7 @@ function useDocumentEditor({
 
     instance.on('update', u => {
       if (u.transaction.docChanged) {
-        // TODO: Handle prompt extraction
-        const prompt = u.transaction.doc.text
-        onContentChange(prompt)
+        onContentChange(u.transaction.doc.toJSON())
       }
     })
 
@@ -68,11 +76,10 @@ function useDocumentEditor({
       setEditor(undefined)
     }
   }, [
-    initialContent,
     onContentChange,
   ])
 
   return editor
 }
 
-export default useDocumentEditor
+export default useDocEditor

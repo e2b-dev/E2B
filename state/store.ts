@@ -8,7 +8,7 @@ import { projects, Prisma } from '@prisma/client'
 import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
-export type BlockType = 'Basic' | 'RequestBody'
+export type BlockType = 'Basic' | 'RequestBody' | 'StructuredProse'
 
 export interface Block {
   id: string
@@ -43,8 +43,6 @@ export interface SerializedState {
 
 export interface State extends SerializedState {
   changeBlock: (routeID: string, index: number, block: Partial<Omit<Block, 'id'>>) => void
-  deleteBlock: (routeID: string, index: number) => void
-  addBlock: (routeID: string, type: BlockType) => void
   changeRoute: (id: string, route: Partial<Omit<Route, 'id'>>) => void
   deleteRoute: (id: string) => void
   addRoute: () => void
@@ -62,7 +60,7 @@ function createBlock(type: BlockType): Block {
 
 function getDefaultRoute(): Route {
   return {
-    blocks: [createBlock('RequestBody')],
+    blocks: [createBlock('RequestBody'), createBlock('StructuredProse')],
     method: Method.POST,
     route: '/',
     id: nanoid(),
@@ -123,18 +121,6 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
         }
       }
     }),
-    deleteBlock: (routeID, index) => set(state => {
-      const idx = state.routes.findIndex(r => r.id === routeID)
-      if (idx !== -1) {
-        state.routes[idx].blocks.splice(index, 1)
-      }
-    }),
-    addBlock: (routeID) => set(state => {
-      const idx = state.routes.findIndex(r => r.id === routeID)
-      if (idx !== -1) {
-        state.routes[idx].blocks.push(createBlock('Basic'))
-      }
-    }),
     setEnvs: (envs) => set(state => {
       state.envs = envs
     }),
@@ -144,7 +130,7 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
   }))
 
   const persistent = persist(immerStore, {
-    name: 'supabase-storage',
+    name: 'supabase-persistence',
     partialize: (state) => state,
     storage: client ? {
       getItem: async (name) => {

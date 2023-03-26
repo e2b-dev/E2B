@@ -119,7 +119,6 @@ function Tab({
               z-20
               bg-transparent
               text-sm
-              font-medium
               cursor-pointer
               select-none
               transition-colors

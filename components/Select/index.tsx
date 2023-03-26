@@ -56,15 +56,13 @@ function Select({
             `transition-all
             cursor-pointer
             flex
-            hover:border-green-600
             hover:text-green-600
-            border-b-4
             items-center
             justify-between
             space-x-1`,
             {
-              'text-green-600 border-green-600': isOpened,
-              'text-green-500 border-green-500': !isOpened,
+              'text-green-600': isOpened,
+              'text-green-500': !isOpened,
             }
           )}
           onClick={() => setIsOpened(val => !val)}

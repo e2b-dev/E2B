@@ -2,20 +2,18 @@ import { projects } from '@prisma/client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
+import useSWRMutation from 'swr/mutation'
 
 import Text from 'components/Text'
 import { Route } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
+import { useStateStore } from 'state/StoreProvider'
 
 import DeployButton from './DeployButton'
 import Logs from './Logs'
 import Envs from './Envs'
 
 export interface Props {
-  deploy: () => void
-  isDeployRequestRunning?: boolean
-  setDeployURL: (url: string | undefined) => void
-
   project: projects
   route?: Route
 }
@@ -24,35 +22,32 @@ const apiHost = process.env.NODE_ENV === 'development'
   ? 'http://0.0.0.0:5000'
   : 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
 
-  async function handlePostGenerate(url: string, { arg }: {
-    arg: {
-      projectID: string,
-      route: Route,
-      envs: { key: string, value: string }[],
-    }
-  }) {
-    return await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify({
-        projectID: arg.projectID,
-        routeID: arg.route.id,
-        blocks: arg.route.blocks,
-        method: arg.route.method.toLowerCase(),
-        route: arg.route.route,
-        envs: arg.envs,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }).then(r => r.json())
+async function handlePostGenerate(url: string, { arg }: {
+  arg: {
+    projectID: string,
+    route: Route,
+    envs: { key: string, value: string }[],
   }
-  
+}) {
+  return await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify({
+      projectID: arg.projectID,
+      routeID: arg.route.id,
+      blocks: arg.route.blocks,
+      method: arg.route.method.toLowerCase(),
+      route: arg.route.route,
+      envs: arg.envs,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then(r => r.json())
+}
 
 function Sidebar({
-  isDeployRequestRunning,
   project,
   route,
-  setDeployURL,
 }: Props) {
   const deployment = useLatestDeployment(project, route)
 
@@ -64,19 +59,14 @@ function Sidebar({
   const store = useStateStore()
   const envs = store.use.envs()
 
-
   async function deploy() {
-    if (!selectedRoute) return
+    if (!route) return
     await generate({
       projectID: project.id,
-      route: selectedRoute,
+      route,
       envs,
     })
   }
-
-  useEffect(function updateURL() {
-    setDeployURL(deployment?.url ? deployment.url : undefined)
-  }, [deployment?.url, setDeployURL])
 
   const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
 
@@ -92,13 +82,11 @@ function Sidebar({
 
   return (
     <div
-      className={clsx(
-        `
+      className={clsx(`
       flex
-      border-slate-200
       bg-white
-      border-l
       flex
+      flex-1
       flex-col
       min-h-0
       `,

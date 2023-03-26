@@ -1,8 +1,4 @@
 import clsx from 'clsx'
-import {
-  useEffect,
-  useRef,
-} from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 
 import { Block } from 'state/store'
@@ -10,32 +6,19 @@ import { Block } from 'state/store'
 export interface Props {
   onChange: (block: Block) => void
   block: Block
-  index: number,
-  focus: { index: number }
-  onFocus: () => void
 }
 
 function RequestBodyEditor({
   onChange,
   block,
-  index,
-  focus,
-  onFocus,
 }: Props) {
-  const ref = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(function autofocus() {
-    if (focus.index === index) {
-      ref.current?.focus()
-    }
-  }, [focus, index])
-
   return (
     <div className="
       flex
       flex-col
       items-start
-      w-[65ch]
+      max-w-[65ch]
+      flex-1
       border
       border-green-800/40
       rounded-lg
@@ -61,8 +44,6 @@ function RequestBodyEditor({
         placeholder="fieldName: Type,"
         value={block.prompt}
         onChange={e => onChange({ ...block, prompt: e.target.value })}
-        onFocus={onFocus}
-        ref={ref}
         className={clsx(
           'w-full',
           'pl-8',

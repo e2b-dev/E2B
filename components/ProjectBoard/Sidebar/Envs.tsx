@@ -4,11 +4,7 @@ import Button from 'components/Button'
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
 
-export interface Props {
-
-}
-
-function Envs({ }: Props) {
+function Envs() {
   const store = useStateStore()
 
   const envs = store.use.envs()
@@ -31,7 +27,6 @@ function Envs({ }: Props) {
     const newEnvs = [...envs.filter((_, idx) => idx !== delIdx)]
     setEnvs(newEnvs)
   }, [envs, setEnvs])
-
 
   return (
     <div className="
@@ -70,8 +65,13 @@ function Envs({ }: Props) {
             rounded
             border
             outline-none
-            focus:border-green-600
-          "
+            focus:border-green-800
+            "
+            type="text"
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck="false"
             placeholder="KEY"
             value={env.key}
             onChange={event => handleEnvKeyChange(event, idx)}
@@ -85,10 +85,14 @@ function Envs({ }: Props) {
             rounded
             border
             outline-none
-            focus:border-green-600
+            focus:border-green-800
           "
             placeholder="VALUE"
-            type="password"
+            type="text"
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck="false"
             value={env.value}
             onChange={event => handleEnvValueChange(event, idx)}
           />

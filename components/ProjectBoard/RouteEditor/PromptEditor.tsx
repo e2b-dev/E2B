@@ -1,17 +1,26 @@
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
+import { EditorContent } from '@tiptap/react'
 
-const Tiptap = () => {
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-    ],
-    content: '<p>Hello World! 🌎️</p>',
+import useDocEditor from 'hooks/useDocEditor'
+
+export interface Props {
+  initialContent: string
+  onContentChange: (content: string) => void
+}
+
+function PromptEditor({ initialContent, onContentChange }: Props) {
+  const editor = useDocEditor({
+    initialContent,
+    onContentChange,
   })
 
   return (
-    <EditorContent editor={editor} />
+    <div className="
+    flex
+    flex-1
+    ">
+      <EditorContent editor={editor || null} />
+    </div>
   )
 }
 
-export default Tiptap
+export default PromptEditor
