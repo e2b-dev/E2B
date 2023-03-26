@@ -2,7 +2,7 @@ import {
   ReactNode
 } from 'react'
 import {
-  TerminalSquare,
+  Terminal,
 } from 'lucide-react'
 
 import { ToolName, ToolLog } from 'db/types'
@@ -14,10 +14,10 @@ export interface Props {
   log: ToolLog
 }
 
-function CurlServer({
+function Curl({
   log,
 }: Props) {
-  if (log.tool_name !== ToolName.CurlJavaScriptServer) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.CurlJavaScriptServer}' tool`)
+  if (log.tool_name !== ToolName.Curl) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.Curl}' tool`)
 
   let body: ReactNode = null
   if (log.tool_input.trim()) {
@@ -35,10 +35,10 @@ function CurlServer({
   return (
     <Base
       log={log}
-      icon={<TerminalSquare size="16px" />}
+      icon={<Terminal size="16px" />}
       body={body}
     />
   )
 }
 
-export default CurlServer
+export default Curl

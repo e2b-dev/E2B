@@ -6,8 +6,9 @@ export enum LogType {
 export enum ToolName {
   AskHuman = 'AskHuman',
   InstallNPMDependencies = 'InstallNPMDependencies',
-  RunJavaScriptCode = 'RunJavaScriptCode',
-  CurlJavaScriptServer = 'CurlJavaScriptServer',
+  WriteJavaScriptCode = 'WriteJavaScriptCode',
+  RunSavedCode = 'RunSavedCode',
+  Curl = 'Curl',
 }
 
 interface BaseLog {

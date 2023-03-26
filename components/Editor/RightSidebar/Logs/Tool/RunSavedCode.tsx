@@ -14,10 +14,10 @@ export interface Props {
   log: ToolLog
 }
 
-function RunCode({
+function RunSavedCode({
   log,
 }: Props) {
-  if (log.tool_name !== ToolName.RunJavaScriptCode) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.RunJavaScriptCode}' tool`)
+  if (log.tool_name !== ToolName.RunSavedCode) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.WriteJavaScriptCode}' tool`)
 
   let body: ReactNode = null
   if (log.tool_input.trim()) {
@@ -41,4 +41,4 @@ function RunCode({
   )
 }
 
-export default RunCode
+export default RunSavedCode
