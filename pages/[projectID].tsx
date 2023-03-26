@@ -4,7 +4,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { ParsedUrlQuery } from 'querystring'
 
 import { prisma, projects } from 'db/prisma'
-import Editor from 'components/ProjectBoard'
+import Editor from 'components/Editor'
 import { StoreProvider } from 'state/StoreProvider'
 import { Database } from 'db/supabase'
 
