@@ -1,4 +1,5 @@
 import { ThoughtLog } from 'db/types'
+import { useMemo } from 'react'
 
 export interface Props {
   log: ThoughtLog
@@ -7,6 +8,14 @@ export interface Props {
 function Thought({
   log,
 }: Props) {
+  const content = useMemo(() => {
+    return log.content
+      .replaceAll('\nAction:', '')
+      .replaceAll('Thought:', '')
+      .replaceAll('\nFinal Answer:', '')
+      .trim()
+  }, [log.content])
+
   return (
     <div className="
       leading-[24px]
@@ -15,7 +24,7 @@ function Thought({
       text-sm
       text-slate-500
     ">
-      {log.content}
+      {content}
     </div>
   )
 }

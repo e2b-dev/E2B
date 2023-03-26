@@ -23,7 +23,6 @@ function WriteCode({
   if (log.tool_input.trim()) {
     body = (
       <div className="
-        pt-2
       ">
         <pre>
           {log.tool_input.trim()}
