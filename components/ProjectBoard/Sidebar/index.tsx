@@ -5,13 +5,14 @@ import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 
 import Text from 'components/Text'
-import { Route } from 'state/store'
+import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 
 import DeployButton from './DeployButton'
 import Logs from './Logs'
 import Envs from './Envs'
+import { getPromptText } from 'hooks/useDocEditor'
 
 export interface Props {
   project: projects
@@ -34,7 +35,20 @@ async function handlePostGenerate(url: string, { arg }: {
     body: JSON.stringify({
       projectID: arg.projectID,
       routeID: arg.route.id,
-      blocks: arg.route.blocks,
+      // Transform block with structured prose into block with plain prompt text.
+      blocks: arg.route.blocks.map(b => {
+        switch (b.type) {
+          case 'StructuredProse':
+            const block: Block = {
+              ...b,
+              type: 'Basic',
+              prompt: getPromptText(b.prompt),
+            }
+            return block
+          default:
+            return b
+        }
+      }),
       method: arg.route.method.toLowerCase(),
       route: arg.route.route,
       envs: arg.envs,

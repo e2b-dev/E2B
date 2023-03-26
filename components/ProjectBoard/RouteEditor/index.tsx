@@ -1,11 +1,10 @@
-import { Fragment } from 'react'
-
 import Select from 'components/Select'
 import { methods, Method, Route } from 'state/store'
+import { useStateStore } from 'state/StoreProvider'
+import useBlock from 'hooks/useBlock'
 
 import PromptEditor from './PromptEditor'
 import RequestBodyEditor from './RequestBodyEditor'
-import { useStateStore } from 'state/StoreProvider'
 
 export interface Props {
   route?: Route
@@ -13,9 +12,10 @@ export interface Props {
 
 function RouteEditor({ route }: Props) {
   const store = useStateStore()
-
   const changeRoute = store.use.changeRoute()
-  const changeBlock = store.use.changeBlock()
+
+  const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', route)
+  const [promptBlock, updatePromptBlock] = useBlock('StructuredProse', route)
 
   return (
     <div className="
@@ -55,29 +55,23 @@ function RouteEditor({ route }: Props) {
             transition-all
             flex-1
           ">
-              {route.blocks.map((b, i) =>
-                <Fragment
-                  key={b.id}
-                >
-                  {b.type === 'RequestBody' &&
-                    <RequestBodyEditor
-                      block={b}
-                      onChange={b => changeBlock(route.id, i, b)}
-                    />
-                  }
-                  {b.type === 'StructuredProse' &&
-                    <PromptEditor
-                      initialContent={b.prompt}
-                      onContentChange={c => changeBlock(route.id, i, { ...b, prompt: c })}
-                    />
-                  }
-                </Fragment>
-              )}
+              {requestBodyBlock &&
+                <RequestBodyEditor
+                  block={requestBodyBlock}
+                  onChange={updateRequestBodyBlock}
+                />
+              }
+              {promptBlock &&
+                <PromptEditor
+                  block={promptBlock}
+                  onChange={updatePromptBlock}
+                />
+              }
             </div>
           </div>
         </>
       }
-    </div>
+    </div >
   )
 }
 

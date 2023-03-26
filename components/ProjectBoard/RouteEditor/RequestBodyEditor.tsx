@@ -4,7 +4,7 @@ import TextareaAutosize from 'react-textarea-autosize'
 import { Block } from 'state/store'
 
 export interface Props {
-  onChange: (block: Block) => void
+  onChange: (value: string) => void
   block: Block
 }
 
@@ -43,7 +43,7 @@ function RequestBodyEditor({
         name="block"
         placeholder="fieldName: Type,"
         value={block.prompt}
-        onChange={e => onChange({ ...block, prompt: e.target.value })}
+        onChange={e => onChange(e.target.value)}
         className={clsx(
           'w-full',
           'pl-8',

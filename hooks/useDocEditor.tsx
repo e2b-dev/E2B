@@ -1,13 +1,50 @@
 import {
   useEffect,
+  useReducer,
   useState,
 } from 'react'
-import { Editor } from '@tiptap/react'
+import { createDocument, Editor, getSchema } from '@tiptap/react'
 import { StarterKit } from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { keymap } from 'prosemirror-keymap'
 
 // import SlashCommand from 'src/editor/extensions/slashCommand'
+
+const extensions = [
+  StarterKit.configure({
+    blockquote: false,
+    bold: false,
+    bulletList: false,
+    code: false,
+    codeBlock: false,
+    dropcursor: false,
+    hardBreak: false,
+    heading: false,
+    horizontalRule: false,
+    italic: false,
+    listItem: false,
+    strike: false,
+    orderedList: false,
+  }),
+  Placeholder.configure({
+    placeholder: "Type '/' for commands",
+  }),
+  // SlashCommand,
+]
+
+const schema = getSchema(extensions)
+
+export function getPromptText(structuredProse: string) {
+  const node = createDocument(structuredProse, schema)
+
+  let text = ''
+
+  node.descendants(n => {
+    text += n.content
+  })
+
+  return text
+}
 
 function useDocEditor({
   initialContent,
@@ -16,31 +53,11 @@ function useDocEditor({
   initialContent: string,
   onContentChange: (content: string) => void,
 }) {
-  const [editor, setEditor] = useState<Editor>()
+  const [editor, setEditor] = useState<Editor | null>(null)
+
+  const forceUpdate = useReducer(() => ({}), {})[1]
 
   useEffect(function initialize() {
-    const extensions = [
-      StarterKit.configure({
-        blockquote: false,
-        bold: false,
-        bulletList: false,
-        code: false,
-        codeBlock: false,
-        dropcursor: false,
-        hardBreak: false,
-        heading: false,
-        horizontalRule: false,
-        italic: false,
-        listItem: false,
-        strike: false,
-        orderedList: false,
-      }),
-      Placeholder.configure({
-        placeholder: "Type '/' for commands",
-      }),
-      // SlashCommand,
-    ]
-
     const instance = new Editor({
       content: initialContent,
       parseOptions: {
@@ -63,20 +80,28 @@ function useDocEditor({
       },
     }))
 
-    instance.on('update', u => {
-      if (u.transaction.docChanged) {
-        onContentChange(u.transaction.doc.toJSON())
+    console.log('reinit')
+    instance.on('transaction', t => {
+      if (t.transaction.docChanged) {
+        onContentChange(t.transaction.doc.toJSON())
       }
+
+      // requestAnimationFrame(() => {
+      //   requestAnimationFrame(() => {
+      //     forceUpdate()
+      //   })
+      // })
     })
 
     setEditor(instance)
 
     return () => {
       instance.destroy()
-      setEditor(undefined)
+      setEditor(null)
     }
   }, [
     onContentChange,
+    forceUpdate,
   ])
 
   return editor
