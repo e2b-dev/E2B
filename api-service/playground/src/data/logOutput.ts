@@ -30,7 +30,7 @@ function checkForResponse(payloadList: any[]): string | null {
   return null
 }
 
-export async function waitForHumanResponse({ runID }: { runID: string }) {
+export async function waitForLogOutput({ runID }: { runID: string }) {
   const { resolve, promise } = createDeferredPromise<string>()
 
   let updateSub: RealtimeChannel | undefined
@@ -38,7 +38,7 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
   try {
     setTimeout(() => {
       resolve('Timeout')
-    }, 3600000)
+    }, 3600000) // 1 hour
 
     // Subscribe to the changes in the deployment.
     updateSub = client.channel('any-server')
@@ -50,6 +50,7 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
           filter: `id=eq.${runID}`,
         }, payload => {
           const response = checkForResponse(payload.new.logs as any)
+          console.log('Wait for log output', response)
           if (response) {
             resolve(response)
           }
@@ -70,8 +71,7 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
       resolve(response)
     }
   } catch (err) {
-    resolve('Error retrieving human response')
-  } finally {
+    resolve('Error retrieving log output')
   }
   const response = await promise
   updateSub?.unsubscribe()

@@ -22,7 +22,7 @@ function LogEntry({ log, onAnswer }: Props) {
         />
       }
       {log.type === LogType.Tool &&
-        <Tool
+        <Tool 
           log={log}
           onAnswer={onAnswer}
         />

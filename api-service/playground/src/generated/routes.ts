@@ -36,7 +36,7 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ToolsHumanResponse": {
+    "ToolsLogOutput": {
         "dataType": "refObject",
         "properties": {
             "response": {"dataType":"string","required":true},
@@ -193,11 +193,11 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/tools/humanResponse',
+        app.get('/tools/logOutput',
             ...(fetchMiddlewares<RequestHandler>(ToolsController)),
-            ...(fetchMiddlewares<RequestHandler>(ToolsController.prototype.waitForHumanResponse)),
+            ...(fetchMiddlewares<RequestHandler>(ToolsController.prototype.waitForLogOutput)),
 
-            function ToolsController_waitForHumanResponse(request: any, response: any, next: any) {
+            function ToolsController_waitForLogOutput(request: any, response: any, next: any) {
             const args = {
                     runID: {"in":"query","name":"runID","required":true,"dataType":"string"},
             };
@@ -211,7 +211,7 @@ export function RegisterRoutes(app: Router) {
                 const controller = new ToolsController();
 
 
-              const promise = controller.waitForHumanResponse.apply(controller, validatedArgs as any);
+              const promise = controller.waitForLogOutput.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);

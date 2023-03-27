@@ -8,6 +8,7 @@ export enum ToolName {
   InstallNPMDependencies = 'InstallNPMDependencies',
   WriteJavaScriptCode = 'WriteJavaScriptCode',
   RunSavedCode = 'RunSavedCode',
+  LetHumanChoose = 'LetHumanChoose',
   Curl = 'Curl',
 }
 

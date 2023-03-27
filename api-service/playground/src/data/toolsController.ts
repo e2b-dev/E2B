@@ -4,19 +4,19 @@ import {
   Route,
   Query,
 } from 'tsoa'
-import { waitForHumanResponse } from './humanResponse'
+import { waitForLogOutput } from './logOutput'
 
-interface ToolsHumanResponse {
+interface ToolsLogOutput {
   response: string
 }
 
 @Route('tools')
 export class ToolsController extends Controller {
-  @Get('humanResponse')
-  public async waitForHumanResponse(
+  @Get('logOutput')
+  public async waitForLogOutput(
     @Query() runID: string,
-  ): Promise<ToolsHumanResponse> {
-    const response = await waitForHumanResponse({
+  ): Promise<ToolsLogOutput> {
+    const response = await waitForLogOutput({
       runID,
     })
 

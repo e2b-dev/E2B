@@ -9,16 +9,26 @@ from langchain.tools.base import BaseTool
 
 from codegen.agent.parsing import parse_thoughts_and_actions, ToolLog
 
+# FINAL_ANSWER_TRIGGERS = ["Final Answer:", "FinalAnswer", "Final Answer"]
+
 FINAL_ANSWER_ACTION = "Final Answer:"
 FINAL_ANSWER_ACTION_NO_WHITESPACE = "FinalAnswer"
-ACTIONS_QUEUE = "action_queue"
+
+ACTIONS_QUEUE = "actions_queue"
 MALFORMED_ANSWER = "malformed_answer"
+
 
 class CodegenAgent(ChatAgent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str | None]]:
+        # if any(trigger in text for trigger in FINAL_ANSWER_TRIGGERS):
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         try:
+            # `ACTIONS_QUEUE` is not a real tool. The original implementation of `extract_tool_and_input` parses LLM's output. Our override doesn't do that.
+            # Instead, we parse the LLM's output inside the `_atake_next_step` of the AgentExecutor. We do that because sometimes the LLM malforms
+            # the desired format we specified in the prompt and puts <action> tags in the wrong place.
+            # We say "the raw LLM's output is an input of ACTIONS_QUEUE tool" and parse the ACTIONS_QUEUE "tool" in the `_atake_next_step` while trying to be more resilient towards
+            # malforrmed input and <action> tags in unexpected places.
             return ACTIONS_QUEUE, text
         except Exception as e:
             print(traceback.format_exc())
@@ -26,7 +36,7 @@ class CodegenAgent(ChatAgent):
             # Sometimes the agent just completely messed up the output format.
             # We want to remind it that the last answer was wrong and it should
             # follow the format.
-            # TODO: This doesn't work
+            # TODO: Improve, it doesn't always need to be malformed answer.
             return (
                 MALFORMED_ANSWER,
                 f"Wrong format! Follow the format! Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer. I just tried to parse your last reponse with `xml.etree.ElementTree.fromstring()` and received this error:\n{e}Reminder, that you should follow the format I told you!",
@@ -56,7 +66,7 @@ class CodegenAgentExecutor(AgentExecutor):
                 observation_prefix=self.agent.observation_prefix,
             )
         else:
-            observation = await InvalidTool().arun( # type: ignore
+            observation = await InvalidTool().arun(  # type: ignore
                 tool_name,
                 verbose=self.verbose,
                 color=None,
@@ -105,15 +115,16 @@ class CodegenAgentExecutor(AgentExecutor):
                 output, verbose=self.verbose, color="green"
             )
 
-        # The `ACTIONS_QUEUE` isn't really a name of a tool.
-        # It's a way for us to specify that the LLM passed multiple actions in a single response.
-        # We handle this case by running each action one by one.
         if output.tool == ACTIONS_QUEUE:
+            # TODO: Assign observations to each tool separately. Currently we return observation only from the last tool in the list.
             observation = ""
-
             # Go through each action and run it.
             # Collect outputs from each action.
-            for action in (cast(ToolLog, action) for action in parse_thoughts_and_actions(output.tool_input) if action["type"] == "tool"):
+            for action in (
+                cast(ToolLog, action)
+                for action in parse_thoughts_and_actions(output.tool_input)
+                if action["type"] == "tool"
+            ):
                 observation = await self._arun_tool(
                     tool_name=action["tool_name"],
                     tool_input=action["tool_input"],
@@ -131,12 +142,6 @@ class CodegenAgentExecutor(AgentExecutor):
                 #     )
                 #     + "==="
                 # )
-
         else:
-            observation = await self._arun_tool(
-                tool_name=output.tool,
-                tool_input=output.tool_input,
-                name_to_tool_map=name_to_tool_map,
-                color_mapping=color_mapping,
-            )
+            raise ValueError("Unknown tool:", output.tool)
         return output, observation

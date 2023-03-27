@@ -16,7 +16,7 @@ Method | HTTP request | Description
 [**read_filesystem_file**](DefaultApi.md#read_filesystem_file) | **GET** /sessions/{sessionID}/filesystem/file | 
 [**start_process**](DefaultApi.md#start_process) | **POST** /sessions/{sessionID}/processes | 
 [**stop_process**](DefaultApi.md#stop_process) | **DELETE** /sessions/{sessionID}/processes/{processID} | 
-[**wait_for_human_response**](DefaultApi.md#wait_for_human_response) | **GET** /tools/humanResponse | 
+[**wait_for_log_output**](DefaultApi.md#wait_for_log_output) | **GET** /tools/logOutput | 
 [**write_filesystem_file**](DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{sessionID}/filesystem/file | 
 [**write_process_stdin**](DefaultApi.md#write_process_stdin) | **POST** /sessions/{sessionID}/processes/{processID}/stdin | 
 
@@ -771,8 +771,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **wait_for_human_response**
-> ToolsHumanResponse wait_for_human_response(run_id)
+# **wait_for_log_output**
+> ToolsLogOutput wait_for_log_output(run_id)
 
 
 
@@ -799,11 +799,11 @@ with playground_client.ApiClient(configuration) as api_client:
     run_id = 'run_id_example' # str | 
 
     try:
-        api_response = api_instance.wait_for_human_response(run_id)
-        print("The response of DefaultApi->wait_for_human_response:\n")
+        api_response = api_instance.wait_for_log_output(run_id)
+        print("The response of DefaultApi->wait_for_log_output:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling DefaultApi->wait_for_human_response: %s\n" % e)
+        print("Exception when calling DefaultApi->wait_for_log_output: %s\n" % e)
 ```
 
 ### Parameters
@@ -814,7 +814,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ToolsHumanResponse**](ToolsHumanResponse.md)
+[**ToolsLogOutput**](ToolsLogOutput.md)
 
 ### Authorization
 

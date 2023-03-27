@@ -4,26 +4,41 @@ from typing import Coroutine
 
 class LogQueue:
     def __init__(self, interval: float = 0.05) -> None:
-        self.queue: Queue[Coroutine] = Queue()
-        self.work = ensure_future(self.worker())
-        self.interval = interval
+        self._interval = interval
+        self._queue: Queue[Coroutine] = Queue()
+        # Start the worker that saves logs from queue to the db.
+        self._worker = ensure_future(self._start())
 
-    async def worker(self):
-        while True:
-            for _ in range(self.queue.qsize() - 1):
-                old_coro = self.queue.get_nowait()
-                try:
-                    old_coro.close()
-                except Exception as e:
-                    print(e)
-
-            task = await self.queue.get()
+    async def _work(self):
+        # Remove all logs except the newest one from the queue.
+        for _ in range(self._queue.qsize() - 1):
+            old_coro = self._queue.get_nowait()
             try:
-                await ensure_future(task)
-                self.queue.task_done()
+                old_coro.close()
             except Exception as e:
                 print(e)
-            await sleep(self.interval)
+            finally:
+                self._queue.task_done()
+
+        # Save the newest log to the db or wait until a log is pushed to the queue.
+        task = await self._queue.get()
+        try:
+            await ensure_future(task)
+        except Exception as e:
+            print(e)
+        finally:
+            self._queue.task_done()
+
+    async def _start(self):
+        while True:
+            await self._work()
+            await sleep(self._interval)
+
+    async def flush(self):
+        await self._queue.join()
+
+    def add(self, log: Coroutine):
+        self._queue.put_nowait(log)
 
     def close(self):
-        self.work.cancel()
+        self._worker.cancel()

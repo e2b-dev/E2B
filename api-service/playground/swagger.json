@@ -34,7 +34,7 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"ToolsHumanResponse": {
+			"ToolsLogOutput": {
 				"properties": {
 					"response": {
 						"type": "string"
@@ -312,16 +312,16 @@
 				}
 			}
 		},
-		"/tools/humanResponse": {
+		"/tools/logOutput": {
 			"get": {
-				"operationId": "WaitForHumanResponse",
+				"operationId": "WaitForLogOutput",
 				"responses": {
 					"200": {
 						"description": "Ok",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/ToolsHumanResponse"
+									"$ref": "#/components/schemas/ToolsLogOutput"
 								}
 							}
 						}
