@@ -19,12 +19,16 @@ function PromptEditor({ onChange, block }: Props) {
     flex
     w-full
     h-full
+    pt-6
+    border-t
+    border-slate-200
     ">
       <EditorContent
         editor={editor}
         className="
           flex-1
           flex
+          w-[65ch]
           flex-col
         "
       />

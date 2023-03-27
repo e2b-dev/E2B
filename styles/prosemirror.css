@@ -1,8 +1,6 @@
 .ProseMirror {
-  @apply whitespace-pre-wrap prose prose-sm;
-  @apply max-w-[50rem];
-  @apply whitespace-pre-wrap;
-
+  @apply prose prose-base text-slate-600;
+  @apply pb-40;
   /*
    * NOTE: Disabling overflow anchor fixes a code cell scrolling bug
    * that happens in Chrome:
@@ -25,23 +23,8 @@
   @apply outline-none;
 }
 
-.ProseMirror p,
-.ProseMirror li,
-.ProseMirror ul,
-.ProseMirror h1,
-.ProseMirror h2,
-.ProseMirror h3 {
-  @apply max-w-full;
-}
-
-.ProseMirror h1,
-.ProseMirror h2 {
-  @apply py-2;
-  @apply border-b border-gray-400;
-}
-
 .ProseMirror p {
-  @apply mx-0 my-1;
+  @apply mx-0 my-0 py-0 leading-6;
   @apply whitespace-pre-wrap break-words;
 }
 
@@ -49,21 +32,6 @@
 .ProseMirror p.is-empty::before {
   @apply float-left h-0 select-none text-slate-300;
   content: attr(data-placeholder);
-}
-
-.ProseMirror li {
-  @apply relative;
-}
-
-.ProseMirror ul,
-.ProseMirror ol {
-  @apply pl-8;
-}
-
-.ProseMirror code {
-  @apply px-1.5 py-1;
-  @apply font-normal;
-  @apply rounded bg-gray-300;
 }
 
 @keyframes ProseMirror-cursor-blink {

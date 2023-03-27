@@ -11,21 +11,19 @@ export interface Props {
 }
 
 function RouteEditor({ route }: Props) {
-  const store = useStateStore()
-  const changeRoute = store.use.changeRoute()
-
   const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', route)
   const [promptBlock, updatePromptBlock] = useBlock('StructuredProse', route)
 
   return (
     <div className="
-      py-2
+      py-8
       px-4
       flex
       flex-1
       bg-white
       justify-center
-      overflow-hidden
+      overflow-auto
+      scroller
     ">
       {!route &&
         <div className="
@@ -38,15 +36,9 @@ function RouteEditor({ route }: Props) {
       {route &&
         <div className="
           flex
-          flex-1
           flex-col
-          bg-slate-400
-          items-center
-          max-w-[65ch]
-          min-h-0
-          overflow-auto
-          scroller
-          space-y-2
+          items-start
+          space-y-8
         ">
           {requestBodyBlock &&
             <RequestBodyEditor
