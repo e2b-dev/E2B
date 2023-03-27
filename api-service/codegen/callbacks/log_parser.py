@@ -94,10 +94,8 @@ class LogStreamParser:
 
         # Add a new uuids to id buffer if we have less ids that there are logs in the logs buffer.
         self._logs_meta_buffer.extend(
-            (
-                LogMeta(id=str(uuid.uuid4()), created_at=str(datetime.datetime.now()))
-                for _ in range(len(self._logs_buffer) - len(self._logs_meta_buffer))
-            )
+            LogMeta(id=str(uuid.uuid4()), created_at=str(datetime.datetime.now()))
+            for _ in range(len(self._logs_buffer) - len(self._logs_meta_buffer))
         )
 
         # Assign the stable ids and timestamps to logs
