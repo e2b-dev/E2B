@@ -17,6 +17,7 @@ export const deploymentsTable = 'deployments'
 export const routesTable = 'routes'
 
 function checkForResponse(payloadList: any[]): string | null {
+  // Get the last log from the deployment logs.
   const payload = payloadList.length > 0 ? payloadList[payloadList.length - 1] : undefined
 
   if (!payload) {
@@ -39,6 +40,7 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
       resolve('Timeout')
     }, 3600000)
 
+    // Subscribe to the changes in the deployment.
     updateSub = client.channel('any-server')
       .on('postgres_changes',
         {
@@ -54,7 +56,8 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
         })
       .subscribe()
 
-
+    // We fetch the deployment and check if the response is already there
+    // because it may arrive before we subscribed and that would mean the subscribe would never trigger.
     const deployment = await client
       .from(deploymentsTable)
       .select('*')
