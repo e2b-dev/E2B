@@ -28,7 +28,7 @@ function Tool({
     case ToolName.AskHuman:
       return <AskHuman log={log} onAnswer={onAnswer} />
     case ToolName.LetHumanChoose:
-      return <LetHumanChoose log={log} />
+      return <LetHumanChoose log={log} onAnswer={onAnswer} />
     default:
       return <div>Cannot render frontend component - unknown tol {log.tool_name}</div>
   }

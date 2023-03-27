@@ -12,6 +12,7 @@ function Thought({
   const content = useMemo(() => {
     return log.content
       .replaceAll('\nAction:', '')
+      .replaceAll('Action:', '')
       .replaceAll('Thought:', '')
       .trim()
   }, [log.content])

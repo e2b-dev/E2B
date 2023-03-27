@@ -29,9 +29,14 @@ def create_human_tools(
         print("+++ OPTIONS")
         print(options)
         print("--- OPTIONS")
-        sleep(60)
-        return "Spotify API"
-        # output = await playground.let_human_choose(extract_code(options))
+
+        thread: Any = playground.api.wait_for_log_output(
+            run_id=run_id,
+            async_req=True,
+        )
+
+        response: ToolsLogOutput = thread.get()
+        return response.response
 
     yield let_human_choose
 

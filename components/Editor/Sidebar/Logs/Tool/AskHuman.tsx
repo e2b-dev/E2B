@@ -36,7 +36,6 @@ function AskHuman({
   if (log.tool_input.trim()) {
     body = (
       <div className="
-        pt-2
         flex
         flex-col
         items-stretch
