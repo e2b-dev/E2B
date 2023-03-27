@@ -23,8 +23,7 @@ function RouteEditor({ route }: Props) {
       px-4
       flex
       flex-1
-    bg-white
-      items-start
+      bg-white
       justify-center
       overflow-hidden
     ">
@@ -37,31 +36,31 @@ function RouteEditor({ route }: Props) {
         </div>
       }
       {route &&
-        <>
-          <div className="
+        <div className="
           flex
           flex-1
           flex-col
+          bg-slate-400
           items-center
           max-w-[65ch]
+          min-h-0
           overflow-auto
           scroller
           space-y-2
         ">
-            {requestBodyBlock &&
-              <RequestBodyEditor
-                block={requestBodyBlock}
-                onChange={updateRequestBodyBlock}
-              />
-            }
-            {promptBlock &&
-              <PromptEditor
-                block={promptBlock}
-                onChange={updatePromptBlock}
-              />
-            }
-          </div>
-        </>
+          {requestBodyBlock &&
+            <RequestBodyEditor
+              block={requestBodyBlock}
+              onChange={updateRequestBodyBlock}
+            />
+          }
+          {promptBlock &&
+            <PromptEditor
+              block={promptBlock}
+              onChange={updatePromptBlock}
+            />
+          }
+        </div>
       }
     </div >
   )

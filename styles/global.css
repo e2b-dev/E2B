@@ -81,3 +81,7 @@ code::-webkit-scrollbar-thumb {
 .ProseMirror:focus {
   outline: none;
 }
+
+.ProseMirror {
+  @apply h-full w-full;
+}
