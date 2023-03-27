@@ -20,7 +20,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         self._run_id = run_id
         self._parser = LogStreamParser(tool_names=tool_names)
         self._log_queue = LogQueue()
-        self._raw_log_queue = LogQueue(3)
+        self._raw_log_queue = LogQueue(1.5)
 
     def __del__(self):
         self._log_queue.close()
@@ -28,13 +28,14 @@ class LogsCallbackHandler(AsyncCallbackHandler):
 
     def _add_and_push_raw_logs(self, new_raw_log: str) -> None:
         self._raw_logs += new_raw_log
-        if self._raw_logs:
-            coro = self._database.push_raw_logs(self._run_id, self._raw_logs)
-            self._raw_log_queue.queue.put_nowait(coro)
+        self._raw_log_queue.add(
+            self._database.push_raw_logs(self._run_id, self._raw_logs),
+        )
 
     def _push_logs(self, logs: list[ToolLog | ThoughtLog]) -> None:
-        coro = self._database.push_logs(self._run_id, logs)
-        self._log_queue.queue.put_nowait(coro)
+        self._log_queue.add(
+            self._database.push_logs(self._run_id, logs),
+        )
 
     async def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -81,6 +82,10 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         """Run when tool starts running."""
         print("Starting tool")
         self._add_and_push_raw_logs("Starting tool...")
+
+        await self._log_queue.flush()
+        await self._raw_log_queue.flush()
+
 
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
