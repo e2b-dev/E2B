@@ -45,8 +45,7 @@ function Logs({
   //   }
   // }, [logs, selectedTab])
 
-
-  const saveAnswer = useCallback(async (logID: string, answer: string) => {
+  async function saveAnswer(logID: string, answer: string) {
     console.log('BEFORE', { logID, answer })
     if (!deployment) return
 
@@ -64,7 +63,7 @@ function Logs({
     console.log('LOGS', logs)
 
     await client.from(deploymentsTable).update({ logs: logs as unknown as Json[] }).eq('id', deployment.id).single()
-  }, [deployment, client])
+  }
 
   return (
     <div className="
