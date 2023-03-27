@@ -39,7 +39,7 @@ function Item({
         'overflow-ellipsis',
         'overflow-hidden',
         'cursor-pointer',
-        { 'bg-gray-100 dark:bg-black-900': isSelected },
+        { 'bg-slate-300': isSelected },
       )}
       onMouseDown={selectItem}
     >

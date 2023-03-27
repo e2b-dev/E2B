@@ -3,9 +3,9 @@ import { Route, BlockType, Block } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
 
 function useBlock(blockType: BlockType, route?: Route): [Block | undefined, (prompt: string) => void] {
-  const store = useStateStore()
+  const [selectors] = useStateStore()
 
-  const changeBlock = store.use.changeBlock()
+  const changeBlock = selectors.use.changeBlock()
 
   const blockIdx = route?.blocks.findIndex(r => r.type === blockType)
   const block = blockIdx !== undefined &&

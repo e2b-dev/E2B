@@ -14,13 +14,12 @@ export interface Props {
 }
 
 function Editor({ project }: Props) {
-  const store = useStateStore()
+  const [selectors] = useStateStore()
   const ref = useRef<HTMLDivElement | null>(null)
 
-
   // TODO: Handle editor state differently so we don't rerender this component on each editor edit.
-  const routes = store.use.routes()
-  const deleteRoute = store.use.deleteRoute()
+  const routes = selectors.use.routes()
+  const deleteRoute = selectors.use.deleteRoute()
 
   const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
   const selectedRoute = routes.find(s => s.id === selectedRouteID)
@@ -38,7 +37,7 @@ function Editor({ project }: Props) {
       }
     })
   }
-
+  
   const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [60, 40])
   const handleResize = useCallback((_: number, newSizes: number[]) => {
     setSizes(newSizes)

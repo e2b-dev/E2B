@@ -15,7 +15,7 @@ import { createSelectors } from './selectors'
 type StoreType = ReturnType<typeof createStore>
 type SelectorsType = ReturnType<typeof createSelectors<StoreType>>
 
-const storeContext = createContext<SelectorsType | null>(null)
+const storeContext = createContext<[SelectorsType, StoreType] | null>(null)
 
 export interface Props extends PropsWithChildren {
   project: projects
@@ -28,9 +28,9 @@ export function StoreProvider({
   children,
 }: Props) {
   const store = useMemo(() => createStore(project, client), [project.id, project.data, client])
-  const selectors = createSelectors(store)
+  const selectors = createSelectors(store,)
   return (
-    <storeContext.Provider value={selectors}>
+    <storeContext.Provider value={[selectors, store]}>
       {children}
     </storeContext.Provider>
   )

@@ -6,6 +6,7 @@ import {
 } from 'react'
 import { ChainedCommands } from '@tiptap/core'
 
+
 import { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
 
 import Item from './Item'
@@ -17,7 +18,7 @@ interface CommandItem {
 
 const items: CommandItem[] = [
   {
-    title: 'Next.js Code Cell',
+    title: '@slack/web-api',
     extendCommand: (cmd) => {
       return cmd
       // return cmd.set
@@ -73,7 +74,7 @@ const SlashCommand: CommandList = forwardRef(({
   return (
     <div
       className="
-        p-1.5
+        p-2
         w-56
         max-h-56
 
@@ -87,13 +88,9 @@ const SlashCommand: CommandList = forwardRef(({
         rounded
 
         border
-        dark:border-black-600
-        border-gray-500
+        border-slate-400
 
-        bg-gray-300
-        dark:bg-black-650
-
-        shadow-lg
+        bg-white
       "
     >
       {items.map((item, index) => (

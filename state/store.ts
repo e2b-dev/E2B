@@ -100,7 +100,7 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     initialState.envs.push({ key: '', value: '' })
   }
 
-  const immerStore = immer<State>((set) => ({
+  const immerStore = immer<State>((set, get) => ({
     ...initialState,
     addRoute: () => set(state => {
       state.routes.push(getDefaultRoute())

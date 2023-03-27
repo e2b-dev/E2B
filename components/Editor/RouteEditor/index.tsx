@@ -1,6 +1,4 @@
-import Select from 'components/Select'
-import { methods, Method, Route } from 'state/store'
-import { useStateStore } from 'state/StoreProvider'
+import { Route } from 'state/store'
 import useBlock from 'hooks/useBlock'
 
 import PromptEditor from './PromptEditor'

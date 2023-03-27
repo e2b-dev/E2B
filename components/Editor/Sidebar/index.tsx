@@ -70,8 +70,8 @@ function Sidebar({
     isMutating: isDeployRequestRunning,
   } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
 
-  const store = useStateStore()
-  const envs = store.use.envs()
+  const [selectors] = useStateStore()
+  const envs = selectors.use.envs()
 
   async function deploy() {
     if (!route) return

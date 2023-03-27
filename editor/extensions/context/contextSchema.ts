@@ -18,13 +18,14 @@ export default Node.create({
 
   addAttributes() {
     return {
+      ...attributeHandler({ htmlPrefix: HTML_ATTR_PREFIX, nodeAttribute: constants.NODE_ATTR_CELL_RUN_ON_START }),
     }
   },
 
   parseHTML() {
     return [
       {
-        tag: 'pre',
+        tag: 'context',
         preserveWhitespace: 'full',
       },
     ]

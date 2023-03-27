@@ -1,6 +1,7 @@
 import { Editor, Range } from '@tiptap/core'
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
+
 import { findSuggestionMatch } from './findSuggestionMatch'
 
 export interface SuggestionOptions<Item = unknown> {

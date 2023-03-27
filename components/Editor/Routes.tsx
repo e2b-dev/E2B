@@ -21,10 +21,10 @@ function Routes({
   deleteRoute,
   selectRoute,
 }: Props) {
-  const store = useStateStore()
+  const [selectors] = useStateStore()
 
-  const addRoute = store.use.addRoute()
-  const changeRoute = store.use.changeRoute()
+  const addRoute = selectors.use.addRoute()
+  const changeRoute = selectors.use.changeRoute()
 
   return (
     <div>

@@ -36,6 +36,8 @@
     "nanoid": "^4.0.1",
     "next": "13.2.3",
     "next-superjson-plugin": "^0.5.6",
+    "prosemirror-state": "^1.4.2",
+    "prosemirror-view": "^1.30.2",
     "randomcolor": "^0.6.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -44,6 +46,7 @@
     "sonner": "^0.1.6",
     "superjson": "^1.12.2",
     "swr": "^2.0.4",
+    "tippy.js": "^6.3.7",
     "usehooks-ts": "^2.9.1",
     "zustand": "^4.3.5"
   },
