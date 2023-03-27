@@ -48,7 +48,6 @@ function Select({
     ">
       <div
         className="
-          relative
           select-none
         "
         ref={ref}
@@ -58,7 +57,6 @@ function Select({
             `transition-all
             cursor-pointer
             flex
-            hover:text-green-800
             items-center
             justify-between
             space-x-1`,
@@ -69,46 +67,50 @@ function Select({
           )}
         >
           <Text
-            className="font-mono"
+            className="font-mono hover:text-green-800"
             text={selectedValue.title}
           />
           <ChevronDownIcon
-            className="self-center"
+            className="self-center text-slate-300 hover:text-green-800"
             size={14}
-            onClick={() => setIsOpened(val => !val)}
+            onClick={e => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsOpened(val => !val)
+            }}
           />
         </div>
         {/* Modal */}
         {isOpened && (
-          <div className={clsx(
-            {
-              'left-0': direction === 'left',
-              'right-0': direction === 'right',
-            },
-            `z-[999]
+          <div className="absolute">
+            <div className={clsx(
+              {
+                'left-0': direction === 'left',
+                'right-0': direction === 'right',
+              },
+              `z-[999]
             top-[28px]
-
-            absolute
             p-1
             mt-0.5
             border border-green-500
             rounded
             bg-white
             space-y-2`
-          )}>
-            <div className="
+            )}>
+              <div className="
               flex
               flex-col
               space-y-1
             ">
-              {values.map(val => (
-                <SelectValue
-                  isSelected={val.key === selectedValue.key}
-                  key={val.key}
-                  value={val}
-                  onSelect={handleValueSelect}
-                />
-              ))}
+                {values.map(val => (
+                  <SelectValue
+                    isSelected={val.key === selectedValue.key}
+                    key={val.key}
+                    value={val}
+                    onSelect={handleValueSelect}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}

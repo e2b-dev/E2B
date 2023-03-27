@@ -85,10 +85,6 @@ function Routes({
                 space-x-1
                 "
               >
-                <Text
-                  className="font-mono"
-                  text={r.route}
-                />
                 <div className="flex items-center space-x-2">
                   <Select
                     direction="left"

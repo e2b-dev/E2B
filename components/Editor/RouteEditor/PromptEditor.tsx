@@ -19,7 +19,6 @@ function PromptEditor({ onChange, block }: Props) {
     flex
     min-w-full
     rounded
-    border
     bg-slate-300
     ">
       <EditorContent
