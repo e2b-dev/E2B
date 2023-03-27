@@ -67,7 +67,7 @@ function useDocEditor({
       editorProps: {
         attributes: {
           'data-gramm': 'false',
-          // 'spellcheck': 'false',
+          'spellcheck': 'false',
         },
       },
       extensions,
@@ -80,7 +80,6 @@ function useDocEditor({
       },
     }))
 
-    console.log('reinit')
     instance.on('transaction', t => {
       if (t.transaction.docChanged) {
         onContentChange(t.transaction.doc.toJSON())
