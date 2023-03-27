@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 // import hljs from 'highlight.js'
 import { deployments } from '@prisma/client'
 
@@ -45,22 +45,19 @@ function Logs({
   //   }
   // }, [logs, selectedTab])
 
-  async function saveAnswer(logID: string, answer: string) {
-    console.log('BEFORE', { logID, answer })
+  async function saveAnswer({
+    logID,
+    answer,
+    toolName,
+  }: { logID: string, answer: string, toolName: ToolName }) {
     if (!deployment) return
 
-    console.log('SAVE ANSWER', { logID, answer })
-
     const logs = produce(deployment.logs as unknown as Log[], ls => {
-      console.log('LOGS', { logs: ls, logID, })
       const log = ls.find(l => l.id === logID)
-      console.log('FOUND LOG', { ...log })
-      if (log && log.type === LogType.Tool && log.tool_name === ToolName.AskHuman) {
-        console.log('ANSWER', { log, answer })
+      if (log && log.type === LogType.Tool && log.tool_name === toolName) {
         log.tool_output = answer
       }
     })
-    console.log('LOGS', logs)
 
     await client.from(deploymentsTable).update({ logs: logs as unknown as Json[] }).eq('id', deployment.id).single()
   }

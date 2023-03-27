@@ -17,7 +17,7 @@ import Base from './Base'
 
 export interface Props {
   log: ToolLog
-  onAnswer?: (logID: string, answer: string) => void
+  onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
 }
 
 function AskHuman({
@@ -29,14 +29,13 @@ function AskHuman({
 
   const handleAnswer = useCallback(() => {
     if (log.tool_output) return
-    onAnswer?.(log.id, answer)
+    onAnswer?.({ logID: log.id, answer, toolName: ToolName.AskHuman })
   }, [answer, onAnswer, log.id, log.tool_output])
 
   let body: ReactNode = null
   if (log.tool_input.trim()) {
     body = (
       <div className="
-        pt-2
         flex
         flex-col
         items-stretch

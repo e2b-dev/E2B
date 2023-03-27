@@ -1,11 +1,15 @@
-import { Log, LogType } from 'db/types'
+import {
+  Log,
+  LogType,
+  ToolName,
+} from 'db/types'
 
 import Thought from './Thought'
 import Tool from './Tool'
 
 export interface Props {
   log: Log
-  onAnswer?: (logID: string, answer: string) => void
+  onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
 }
 
 function LogEntry({ log, onAnswer }: Props) {
@@ -22,7 +26,7 @@ function LogEntry({ log, onAnswer }: Props) {
         />
       }
       {log.type === LogType.Tool &&
-        <Tool 
+        <Tool
           log={log}
           onAnswer={onAnswer}
         />

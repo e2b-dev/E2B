@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 
-import { Log, } from 'db/types'
+import { Log, ToolName, } from 'db/types'
 
 import ConnectionLine from './ConnectionLine'
 import LogEntry from './LogEntry'
@@ -9,7 +9,7 @@ import LogEntry from './LogEntry'
 export interface Props {
   logs?: Log[]
   rawLogs?: string | null
-  onAnswer?: (logID: string, answer: string) => void
+  onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
   isDeployRequestRunning?: boolean
 }
 
