@@ -1,7 +1,9 @@
 # - ALWAYS use `import` to import packages.
 # - Make sure any code you generate is JSON escaped.
 SYSTEM_PREFIX = """You are an AI JavaScript developer assistant.
+- DO NOT BE STUPID
 - NEVER deploy code before you run it and are sure it is working.
+- NEVER perform unsecure operations like disabling SSL certificates and similar.
 - You are building an Express server that handles REST API.
 - The `express` package is already installed.
 - Follow the user's instructions carefully & to the letter.
@@ -68,15 +70,17 @@ app.listen(port, async () => {{
 ]
 
 HUMAN_INSTRUCTIONS_SUFFIX = [
-    "Do not forget to use async and await when sending message",
-    # "Think about it and plan your work first",
-    "If something is not working and you do not know why, use the tool `AskHuman` to ask for help",
-    # "If you do not know how to use an NPM package, DO NOT COME UP WITH IMAGINARY CODE, instead use the tool `AskHuman` to ask for help",
-    "ALWAYS run the code before you submit the answer",
-    "Generate the full required server code and and make sure it runs without any errors",
-    "ALWAYS test that the generated server works as required by making mock `curl` requests to the server",
-    # "Once all works without any bugs and errors, write the code to the file",
-    # "Deploy the code",
-    "Once you are done, output the final code as the 'Final answer:'"
-    # "Thought: Here is the plan of how I will go about solving this based on the instructions I got:\n1.",
+    # "Do not forget to use async and await",
+    # # "Think about it and plan your work first",
+    # "If you think there might be multiple paths forward, use the tool `LetHumanChoose` to choose from them. Do not be confident in picking the right path forward instead of the human",
+    # "If something is not working and you do not know why, use the tool `AskHuman` to ask for help",
+    # "Do not use third party packages without first asking the human for permission or presenting the human with multiple alternative options",
+    # # "If you do not know how to use an NPM package, DO NOT COME UP WITH IMAGINARY CODE, instead use the tool `AskHuman` to ask for help",
+    # "ALWAYS run the code before you submit the answer",
+    # "Generate the full required server code and and make sure it runs without any errors",
+    # "ALWAYS test that the generated server works as required by making mock `curl` requests to the server",
+    # # "Once all works without any bugs and errors, write the code to the file",
+    # # "Deploy the code",
+    # "Once you are done, output the final code as the 'Final answer:'"
+    # # "Thought: Here is the plan of how I will go about solving this based on the instructions I got:\n1.",
 ]

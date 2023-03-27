@@ -100,8 +100,8 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
-    def test_wait_for_human_response(self):
-        """Test case for wait_for_human_response
+    def test_wait_for_log_output(self):
+        """Test case for wait_for_log_output
 
         """
         pass

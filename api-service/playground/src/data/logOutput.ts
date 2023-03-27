@@ -17,6 +17,7 @@ export const deploymentsTable = 'deployments'
 export const routesTable = 'routes'
 
 function checkForResponse(payloadList: any[]): string | null {
+  // Get the last log from the deployment logs.
   const payload = payloadList.length > 0 ? payloadList[payloadList.length - 1] : undefined
 
   if (!payload) {
@@ -29,7 +30,7 @@ function checkForResponse(payloadList: any[]): string | null {
   return null
 }
 
-export async function waitForHumanResponse({ runID }: { runID: string }) {
+export async function waitForLogOutput({ runID }: { runID: string }) {
   const { resolve, promise } = createDeferredPromise<string>()
 
   let updateSub: RealtimeChannel | undefined
@@ -37,8 +38,9 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
   try {
     setTimeout(() => {
       resolve('Timeout')
-    }, 3600000)
+    }, 3600000) // 1 hour
 
+    // Subscribe to the changes in the deployment.
     updateSub = client.channel('any-server')
       .on('postgres_changes',
         {
@@ -48,13 +50,15 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
           filter: `id=eq.${runID}`,
         }, payload => {
           const response = checkForResponse(payload.new.logs as any)
+          console.log('Wait for log output', response)
           if (response) {
             resolve(response)
           }
         })
       .subscribe()
 
-
+    // We fetch the deployment and check if the response is already there
+    // because it may arrive before we subscribed and that would mean the subscribe would never trigger.
     const deployment = await client
       .from(deploymentsTable)
       .select('*')
@@ -67,8 +71,7 @@ export async function waitForHumanResponse({ runID }: { runID: string }) {
       resolve(response)
     }
   } catch (err) {
-    resolve('Error retrieving human response')
-  } finally {
+    resolve('Error retrieving log output')
   }
   const response = await promise
   updateSub?.unsubscribe()

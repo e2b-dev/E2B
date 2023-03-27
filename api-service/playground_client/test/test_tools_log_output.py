@@ -16,11 +16,11 @@ import unittest
 import datetime
 
 import playground_client
-from playground_client.models.tools_human_response import ToolsHumanResponse  # noqa: E501
+from playground_client.models.tools_log_output import ToolsLogOutput  # noqa: E501
 from playground_client.rest import ApiException
 
-class TestToolsHumanResponse(unittest.TestCase):
-    """ToolsHumanResponse unit test stubs"""
+class TestToolsLogOutput(unittest.TestCase):
+    """ToolsLogOutput unit test stubs"""
 
     def setUp(self):
         pass
@@ -29,25 +29,25 @@ class TestToolsHumanResponse(unittest.TestCase):
         pass
 
     def make_instance(self, include_optional):
-        """Test ToolsHumanResponse
+        """Test ToolsLogOutput
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # uncomment below to create an instance of `ToolsHumanResponse`
+        # uncomment below to create an instance of `ToolsLogOutput`
         """
-        model = playground_client.models.tools_human_response.ToolsHumanResponse()  # noqa: E501
+        model = playground_client.models.tools_log_output.ToolsLogOutput()  # noqa: E501
         if include_optional :
-            return ToolsHumanResponse(
+            return ToolsLogOutput(
                 response = ''
             )
         else :
-            return ToolsHumanResponse(
+            return ToolsLogOutput(
                 response = '',
         )
         """
 
-    def testToolsHumanResponse(self):
-        """Test ToolsHumanResponse"""
+    def testToolsLogOutput(self):
+        """Test ToolsLogOutput"""
         # inst_req_only = self.make_instance(include_optional=False)
         # inst_req_and_optional = self.make_instance(include_optional=True)
 
