@@ -9,7 +9,7 @@ import LetHumanChoose from './LetHumanChoose'
 
 export interface Props {
   log: ToolLog
-  onAnswer?: (logID: string, answer: string) => void
+  onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
 }
 
 function Tool({

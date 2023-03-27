@@ -25,8 +25,7 @@ function checkForResponse(payloadList: any[]): string | null {
   }
 
   if (payload.type === 'tool' &&
-    payload.tool_name === 'AskHuman' &&
-    payload.tool_name === 'LetHumanChoose' &&
+    (payload.tool_name === 'AskHuman' || payload.tool_name === 'LetHumanChoose') &&
     payload.tool_output
   ) {
     return payload.tool_output

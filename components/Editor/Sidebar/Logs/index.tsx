@@ -45,12 +45,16 @@ function Logs({
   //   }
   // }, [logs, selectedTab])
 
-  async function saveAnswer(logID: string, answer: string) {
+  async function saveAnswer({
+    logID,
+    answer,
+    toolName,
+  }: { logID: string, answer: string, toolName: ToolName }) {
     if (!deployment) return
 
     const logs = produce(deployment.logs as unknown as Log[], ls => {
       const log = ls.find(l => l.id === logID)
-      if (log && log.type === LogType.Tool && log.tool_name === ToolName.AskHuman) {
+      if (log && log.type === LogType.Tool && log.tool_name === toolName) {
         log.tool_output = answer
       }
     })

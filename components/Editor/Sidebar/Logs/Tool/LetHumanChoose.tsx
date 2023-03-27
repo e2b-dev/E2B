@@ -18,7 +18,7 @@ import Base from './Base'
 
 export interface Props {
   log: ToolLog
-  onAnswer?: (logID: string, answer: string) => void
+  onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
 }
 
 function LetHumanChoose({
@@ -26,7 +26,6 @@ function LetHumanChoose({
   onAnswer,
 }: Props) {
   if (log.tool_name !== ToolName.LetHumanChoose) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.LetHumanChoose}' tool`)
-
   const [body, setBody] = useState<ReactNode>()
 
   useEffect(function createBody() {
@@ -79,15 +78,16 @@ function LetHumanChoose({
                 {(option.textContent !== null && option.textContent) ? (
                   <div
                     key={idx}
-                    className="
+                    className={`
                       border
                       hover:border-green-600
+                      ${log.tool_output === option.textContent ? 'border-green-600' : ''}
                       transition-all
                       rounded
                       p-2
                       cursor-pointer
-                    "
-                    onClick={() => onAnswer?.(log.id, option.textContent!)}
+                    `}
+                    onClick={() => onAnswer?.({ logID: log.id, answer: option.textContent!, toolName: ToolName.LetHumanChoose })}
                   >
                     <Text
                       text={option.textContent}
