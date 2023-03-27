@@ -1,7 +1,7 @@
 import { Check as CheckIcon } from 'lucide-react'
+import clsx from 'clsx'
 
 import Text from 'components/Text'
-import clsx from 'clsx'
 
 export interface Value {
   title: string
