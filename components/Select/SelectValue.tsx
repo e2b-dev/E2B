@@ -34,7 +34,10 @@ function SelectValue({
         space-x-2
         py-1
         `,
-        { 'text-green-500': isSelected },
+        {
+          'text-green-500': isSelected,
+          'text-slate-500': !isSelected,
+        },
       )}
       onClick={() => onSelect(value)}
     >
