@@ -20,7 +20,7 @@ class LogQueue:
             finally:
                 self._queue.task_done()
 
-        # Save the newest log to the db or wait until a log is pushed to the queue.
+        # Save the newest log to the db or wait until a log is pushed to the queue and then save it to the db.
         task = await self._queue.get()
         try:
             await ensure_future(task)
