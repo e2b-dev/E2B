@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
@@ -15,6 +15,8 @@ export interface Props {
 
 function Editor({ project }: Props) {
   const store = useStateStore()
+  const ref = useRef<HTMLDivElement | null>(null)
+
 
   // TODO: Handle editor state differently so we don't rerender this component on each editor edit.
   const routes = store.use.routes()
@@ -40,7 +42,16 @@ function Editor({ project }: Props) {
   const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [60, 40])
   const handleResize = useCallback((_: number, newSizes: number[]) => {
     setSizes(newSizes)
+    if (ref.current) {
+      ref.current.style.pointerEvents = 'auto'
+    }
   }, [setSizes])
+
+  const onResizeStart = useCallback(() => {
+    if (ref.current) {
+      ref.current.style.pointerEvents = 'none'
+    }
+  }, [])
 
   return (
     <div className="
@@ -55,10 +66,13 @@ function Editor({ project }: Props) {
         initialSizes={sizes}
         classes={['flex', 'flex']}
         onResizeFinished={handleResize}
+        onResizeStarted={onResizeStart}
         gutterClassName='bg-slate-200'
         draggerClassName='bg-slate-400'
       >
-        <div className="
+        <div
+          ref={ref}
+          className="
           flex
           flex-col
           flex-1
