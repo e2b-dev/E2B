@@ -3,15 +3,23 @@ import uuid
 
 from typing import List, TypedDict
 
-from codegen.agent.parsing import ThoughtLog, ToolLog, merge_logs, parse_thoughts_and_actions
+from codegen.agent.parsing import (
+    ThoughtLog,
+    ToolLog,
+    merge_logs,
+    parse_thoughts_and_actions,
+)
+
 
 class ToolOutput(TypedDict):
     finish_at: str
     tool_output: str
 
+
 class LogMeta(TypedDict):
     id: str
     created_at: str
+
 
 class LogStreamParser:
     """
@@ -77,12 +85,13 @@ class LogStreamParser:
         # We overwrite the current buffered logs with their newer version.
         # If you ingested token or tool output this will save the change so you can call self.get_logs and get the new logs.
         self._logs_buffer = [
-            log for log
-            in parse_thoughts_and_actions(self._token_buffer)
+            log
+            for log in parse_thoughts_and_actions(self._token_buffer)
             if log["type"] == "thought"
-            or log["type"] == "tool" and log.get("tool_name") in self._tool_names
+            or log["type"] == "tool"
+            and log.get("tool_name") in self._tool_names
         ]
-        
+
         # Add a new uuids to id buffer if we have less ids that there are logs in the logs buffer.
         self._logs_meta_buffer.extend(
             (
@@ -98,7 +107,7 @@ class LogStreamParser:
         # Update tools' logs with the information from ingested tools' outputs.
         for tool_log, output in zip(
             (tool_log for tool_log in self._logs_buffer if tool_log["type"] == "tool"),
-            self._tools_output_buffer
+            self._tools_output_buffer,
         ):
             merge_logs(tool_log, output)
 
@@ -127,7 +136,7 @@ class LogStreamParser:
             self._token_buffer = ""
             self._logs_buffer = []
             self._tools_output_buffer = []
-            self._id_buffer = []
+            self._logs_meta_buffer = []
 
         return self
 
