@@ -30,7 +30,7 @@ function useBlock(blockType: BlockType, position: number, route?: Route): [Block
     if (route?.id && blockIdx !== undefined && blockIdx !== -1) {
       changeBlock(route.id, blockIdx, { prompt })
     }
-  }, [blockIdx, route?.id])
+  }, [blockIdx, route?.id, changeBlock])
 
   return [block, setBlock]
 }

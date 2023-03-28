@@ -29,7 +29,7 @@ function RouteEditor({ route }: Props) {
         <div className="
           text-slate-400
           self-center
-          ">
+        ">
           No route selected
         </div>
       }
@@ -40,28 +40,26 @@ function RouteEditor({ route }: Props) {
           items-start
           space-y-8
         ">
+          {promptBlock1 &&
+            <PromptEditor
+              title="What will this route do?"
+              placeholder="This is an API endpoint that ..."
+              block={promptBlock1}
+              onChange={updatePromptBlock1}
+            />
+          }
           {requestBodyBlock &&
             <RequestBodyEditor
               block={requestBodyBlock}
               onChange={updateRequestBodyBlock}
             />
           }
-          {promptBlock1 &&
-            <PromptEditor
-              block={promptBlock1}
-              onChange={updatePromptBlock1}
-            />
-          }
           {promptBlock2 &&
             <PromptEditor
+              title="Step-by-step implementation"
+              placeholder="1. Check if the incoming `email` is not empty ..."
               block={promptBlock2}
               onChange={updatePromptBlock2}
-            />
-          }
-          {promptBlock3 &&
-            <PromptEditor
-              block={promptBlock3}
-              onChange={updatePromptBlock3}
             />
           }
         </div>

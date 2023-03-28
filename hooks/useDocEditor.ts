@@ -19,15 +19,12 @@ const extensions = [
     codeBlock: false,
     dropcursor: false,
     hardBreak: false,
-    heading: false,
+    // heading: false,
     horizontalRule: false,
     italic: false,
-    listItem: false,
+    // listItem: false,
     strike: false,
-    orderedList: false,
-  }),
-  Placeholder.configure({
-    placeholder: "All You Need Is English",
+    // orderedList: false,
   }),
   SlashCommand,
 ]
@@ -49,9 +46,11 @@ export function getPromptText(structuredProse: string) {
 function useDocEditor({
   initialContent,
   onContentChange,
+  placeholder,
 }: {
   initialContent: string,
   onContentChange: (content: string) => void,
+  placeholder?: string
 }) {
   const [editor, setEditor] = useState<Editor | null>(null)
 
@@ -70,7 +69,17 @@ function useDocEditor({
           'spellcheck': 'false',
         },
       },
-      extensions,
+      extensions: [
+        ...extensions,
+        Placeholder.configure({
+          placeholder: ({ editor }) => {
+            if (!editor.getText()) {
+              return placeholder || ''
+            }
+            return ''
+          }
+        }),
+      ],
     })
 
     // Override default browser Ctrl/Cmd+S shortcut.

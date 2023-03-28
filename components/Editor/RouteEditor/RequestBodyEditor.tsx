@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import TextareaAutosize from 'react-textarea-autosize'
 
 import { Block } from 'state/store'
+import Text from 'components/Text'
 
 export interface Props {
   onChange: (value: string) => void
@@ -14,17 +15,26 @@ function RequestBodyEditor({
 }: Props) {
   return (
     <div className="
+      self-stretch
       flex
       flex-col
       items-start
+      pb-6
+      border-b
+      border-slate-200
     ">
+      <Text
+        className="mb-2 font-semibold text-slate-400"
+        size={Text.size.S1}
+        text="Define the incoming request payload"
+      />
       <div className="
         self-stretch
         rounded-t-lg
         font-mono
         select-none
         text-slate-300
-        text-xs
+        text-sm
       ">
         {'{'}
       </div>
@@ -34,7 +44,7 @@ function RequestBodyEditor({
         autoCorrect="off"
         spellCheck="false"
         name="block"
-        placeholder="fieldName: Type"
+        placeholder="email: string"
         value={block.prompt}
         onChange={e => onChange(e.target.value)}
         className={clsx(
@@ -59,7 +69,7 @@ function RequestBodyEditor({
         font-mono
         select-none
         text-slate-300
-        text-xs
+        text-sm
       ">
         {'}'}
       </div>
