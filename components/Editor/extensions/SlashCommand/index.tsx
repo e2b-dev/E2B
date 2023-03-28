@@ -7,6 +7,7 @@ import {
 import { ChainedCommands } from '@tiptap/core'
 
 import { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
+import contextSchema from 'editor/extensions/context/contextSchema'
 
 import Item from './Item'
 
@@ -15,18 +16,37 @@ interface CommandItem {
   extendCommand: (cmd: ChainedCommands) => ChainedCommands
 }
 
-const items: CommandItem[] = [
+export enum InlineContextType {
+  NPMPackage = 'NPM_PACKAGE'
+}
+
+export interface InlineContext {
+  type: InlineContextType
+  value: string
+}
+
+const inlineContextItems: InlineContext[] = [
   {
-    title: '@slack/web-api',
+    type: InlineContextType.NPMPackage,
+    value: '@slack/web-api',
+  },
+]
+
+function createCommandItem(context: InlineContext): CommandItem {
+  return {
+    title: context.value,
     extendCommand: (cmd) => {
       return cmd
-      // return cmd.set
-      //   .setCodeCell({
-      //     templateID: 'nextjs-v11-components',
-      //     language: Lang.tsx,
-      //   })
-    },
-  },
+        .setNode(contextSchema.name, {
+          type: context.type,
+          value: context.value,
+        })
+    }
+  }
+}
+
+const items: CommandItem[] = [
+  ...inlineContextItems.map(createCommandItem),
 ]
 
 const SlashCommand: CommandList = forwardRef(({
