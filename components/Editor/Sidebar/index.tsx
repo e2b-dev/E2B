@@ -5,7 +5,7 @@ import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 
 import Text from 'components/Text'
-import { Route } from 'state/store'
+import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { html2markdown } from 'hooks/useDocEditor'
@@ -30,39 +30,33 @@ async function handlePostGenerate(url: string, { arg }: {
     envs: { key: string, value: string }[],
   }
 }) {
-  arg.route.blocks.forEach(b => {
-    console.log(b)
-    if (b.type === 'StructuredProse') {
-      html2markdown(b.content)
-    }
-  })
-
-  // return await fetch(url, {
-  //   method: 'POST',
-  //   body: JSON.stringify({
-  //     projectID: arg.projectID,
-  //     routeID: arg.route.id,
-  //     // Transform block with structured prose into block with plain prompt text.
-  //     blocks: arg.route.blocks.map(b => {
-  //       switch (b.type) {
-  //         case 'StructuredProse':
-  //           const block: Block = {
-  //             ...b,
-  //             content: html2markdown(b.content),
-  //           }
-  //           return block
-  //         default:
-  //           return b
-  //       }
-  //     }),
-  //     method: arg.route.method.toLowerCase(),
-  //     route: arg.route.route,
-  //     envs: arg.envs,
-  //   }),
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  // }).then(r => r.json())
+  return await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify({
+      projectID: arg.projectID,
+      routeID: arg.route.id,
+      // Transform block with structured prose into block with plain prompt text.
+      blocks: arg.route.blocks.map(b => {
+        switch (b.type) {
+          case 'Description':
+          case 'Instructions':
+            const block: Block = {
+              ...b,
+              content: html2markdown(b.content),
+            }
+            return block
+          default:
+            return b
+        }
+      }),
+      method: arg.route.method.toLowerCase(),
+      route: arg.route.route,
+      envs: arg.envs,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then(r => r.json())
 }
 
 function Sidebar({

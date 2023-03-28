@@ -143,16 +143,33 @@ class Codegen(BaseModel):
             )
         )
 
+        # Retrieve the description block.
+        description_block: Dict[str, str] = next(
+            b for b in blocks if b.get("type") == "Description"
+        )
+
+        # Retrueve the block describing the incoming request payload.
+        incoming_request_block: Dict[str, str] = next(
+            b for b in blocks if b.get("type") == "RequestBody"
+        )
+
+        # Retrieve the instructions block.
+        instructions_block: Dict[str, str] = next(
+            b for b in blocks if b.get("type") == "Instructions"
+        )
+
         input_vars = {
+            "description": description_block["content"],
+            "request_body": f"{{\n{incoming_request_block['content']}\n}}",
             "route": route,
             "method": method,
         }
         instructions = "Here are the instructions:"
-        inst_idx = 0
+        # inst_idx = 0
 
         # Append the premade prefix instructions.
         for instruction in HUMAN_INSTRUCTIONS_PREFIX:
-            inst_idx += 1
+            # inst_idx += 1
 
             values = []
             # Extract the correct values from `input_vars` based on the keys.
@@ -162,24 +179,36 @@ class Codegen(BaseModel):
 
             # Use the values to format the instruction string.
             inst = instruction["content"].format(*values)
-            instructions = instructions + "\n" + f"{inst_idx}. {inst}"
+            # instructions = instructions + "\n" + f"{inst_idx}. {inst}"
+            instructions = instructions + "\n" + f"- {inst}"
 
-        print("+++ BLOCKS")
-        print(blocks)
-        print("--- BLOCKS")
-        for block in blocks:
-            if block.get("type") == "Basic":
-                inst_idx += 1
-                instructions = instructions + "\n" + f"{inst_idx}. " + block["prompt"]
+        # Append the use instructions
+        instructions = (
+            instructions
+            + "\nHere are the required implementation instructions:\n"
+            + instructions_block["content"]
+        )
 
-        # Append the premade suffix instructions.
-        for inst in HUMAN_INSTRUCTIONS_SUFFIX:
-            inst_idx += 1
-            instructions = instructions + "\n" + f"{inst_idx}. {inst}"
-
-        # instructions += "\nThought: Here is the plan of how I will go about solving this based on the instructions I got:\n1."
-        # instructions += "\nThought:"
         print("Instructions:\n", instructions)
+
+        ######## +++++ OLD
+        # print("+++ BLOCKS")
+        # print(blocks)
+        # print("--- BLOCKS")
+        # for block in blocks:
+        #     if block.get("type") == "Basic":
+        #         inst_idx += 1
+        #         instructions = instructions + "\n" + f"{inst_idx}. " + block["prompt"]
+
+        # # Append the premade suffix instructions.
+        # for inst in HUMAN_INSTRUCTIONS_SUFFIX:
+        #     inst_idx += 1
+        #     instructions = instructions + "\n" + f"{inst_idx}. {inst}"
+
+        # # instructions += "\nThought: Here is the plan of how I will go about solving this based on the instructions I got:\n1."
+        # # instructions += "\nThought:"
+        # print("Instructions:\n", instructions)
+        ######## ----- OLD
 
         print("Running executor...")
         await self._agent_executor.arun(
