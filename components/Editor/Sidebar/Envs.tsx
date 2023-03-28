@@ -5,11 +5,11 @@ import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
 
 function Envs() {
-  const store = useStateStore()
+  const [selector] = useStateStore()
 
-  const envs = store.use.envs()
-  const setEnvs = store.use.setEnvs()
-  const changeEnv = store.use.changeEnv()
+  const envs = selector.use.envs()
+  const setEnvs = selector.use.setEnvs()
+  const changeEnv = selector.use.changeEnv()
 
   const handleEnvKeyChange = useCallback((event: any, idx: number) => {
     changeEnv({ key: event.target.value.trim(), value: envs[idx].value }, idx)

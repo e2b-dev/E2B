@@ -1,5 +1,4 @@
 import clsx from 'clsx'
-import { Trash2, X } from 'lucide-react'
 import { useState, useEffect, MouseEvent } from 'react'
 
 import Text from './Text'
