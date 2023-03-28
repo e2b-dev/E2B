@@ -6,7 +6,10 @@ import { createDocument, Editor, getSchema } from '@tiptap/react'
 import { StarterKit } from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { keymap } from 'prosemirror-keymap'
-import { defaultMarkdownSerializer } from 'prosemirror-markdown'
+import { MarkdownSerializer, defaultMarkdownSerializer } from 'prosemirror-markdown'
+import BulletList from '@tiptap/extension-bullet-list'
+import ListItem from '@tiptap/extension-list-item'
+import OrderedList from '@tiptap/extension-ordered-list'
 
 import ContextAutocomplete from 'editor/extensions/contextAutocomplete'
 
@@ -14,7 +17,6 @@ const extensions = [
   StarterKit.configure({
     blockquote: false,
     bold: false,
-    bulletList: false,
     // code: false,
     // codeBlock: false,
     dropcursor: false,
@@ -22,18 +24,33 @@ const extensions = [
     // heading: false,
     horizontalRule: false,
     italic: false,
-    // listItem: false,
     strike: false,
-    // orderedList: false,
+
+    // We use the Ordered List, Bullet List and List item from explicit packages 
+    // so we can use their names in the markdown serializer.
+    bulletList: false,
+    listItem: false,
+    orderedList: false,
   }),
+  OrderedList,
+  ListItem,
+  BulletList,
   ContextAutocomplete,
 ]
 
 const schema = getSchema(extensions)
 
+const serializer = new MarkdownSerializer({
+  ...defaultMarkdownSerializer.nodes,
+  [OrderedList.name]: defaultMarkdownSerializer.nodes.ordered_list,
+  [ListItem.name]: defaultMarkdownSerializer.nodes.list_item,
+  [BulletList.name]: defaultMarkdownSerializer.nodes.bullet_list,
+}, defaultMarkdownSerializer.marks)
+
+
 export function html2markdown(html: string) {
   const node = createDocument(html, schema)
-  const markdown = defaultMarkdownSerializer.serialize(node)
+  const markdown = serializer.serialize(node)
   console.log(markdown)
   return markdown
 }
