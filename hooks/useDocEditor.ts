@@ -19,7 +19,6 @@ const extensions = [
     blockquote: false,
     bold: false,
     // code: false,
-    // codeBlock: false,
     dropcursor: false,
     hardBreak: false,
     // heading: false,
@@ -29,10 +28,12 @@ const extensions = [
 
     // We use the Ordered List, Bullet List and List item from explicit packages
     // so we can use their names in the markdown serializer.
+    codeBlock: false,
     bulletList: false,
     listItem: false,
     orderedList: false,
   }),
+  CodeBlock,
   OrderedList,
   ListItem,
   BulletList,
