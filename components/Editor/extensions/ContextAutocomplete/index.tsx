@@ -49,7 +49,7 @@ const items: CommandItem[] = [
   ...inlineContextItems.map(createCommandItem),
 ]
 
-const SlashCommand: CommandList = forwardRef(({
+const ContextAutocomplete: CommandList = forwardRef(({
   editor,
   range,
 }, ref) => {
@@ -124,6 +124,6 @@ const SlashCommand: CommandList = forwardRef(({
   )
 })
 
-SlashCommand.displayName = 'SlashCommand'
+ContextAutocomplete.displayName = 'ContextAutocomplete'
 
-export default SlashCommand
+export default ContextAutocomplete

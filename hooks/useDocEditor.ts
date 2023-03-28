@@ -8,7 +8,7 @@ import { StarterKit } from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { keymap } from 'prosemirror-keymap'
 
-import SlashCommand from 'editor/extensions/slashCommand'
+import ContextAutocomplete from 'editor/extensions/contextAutocomplete'
 
 const extensions = [
   StarterKit.configure({
@@ -29,7 +29,7 @@ const extensions = [
   Placeholder.configure({
     placeholder: 'All You Need Is English',
   }),
-  SlashCommand,
+  ContextAutocomplete,
 ]
 
 const schema = getSchema(extensions)
