@@ -60,7 +60,16 @@ export function Suggestion<Item = unknown>({
 
   const allowSpaces = false
 
-  return new Plugin({
+  return new Plugin<{
+    active: boolean
+    range?: {
+      from: number
+      to: number
+    }
+    query: string | null
+    text: string | null
+    wasCharTyped: boolean
+  }>({
     key: new PluginKey('suggestion'),
 
     view() {
@@ -130,7 +139,6 @@ export function Suggestion<Item = unknown>({
       init() {
         return {
           active: false,
-          range: {},
           query: null,
           text: null,
           wasCharTyped: false,
@@ -190,6 +198,8 @@ export function Suggestion<Item = unknown>({
     props: {
       handleTextInput(view, from, to, text) {
         const state = this.getState(view.state)
+        if (!state) return
+
         const preceedingChar = view.state.doc.textBetween(from - 1, from)
 
         if (text === char && (preceedingChar === ' ' || !preceedingChar)) {
@@ -200,7 +210,10 @@ export function Suggestion<Item = unknown>({
       },
       // Call the keydown hook if suggestion is active.
       handleKeyDown(view, event) {
-        const { active, range } = this.getState(view.state)
+        const state = this.getState(view.state)
+        if (!state) return
+
+        const { active, range } = state
 
         if (!active) {
           return false

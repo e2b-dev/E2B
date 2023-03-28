@@ -6,7 +6,6 @@ import {
 } from 'react'
 import { ChainedCommands } from '@tiptap/core'
 
-
 import { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
 
 import Item from './Item'
@@ -80,7 +79,7 @@ const SlashCommand: CommandList = forwardRef(({
 
         flex
         flex-col
-        flex-shrink-0
+        shrink-0
 
         overflow-y-auto
         overscroll-none
