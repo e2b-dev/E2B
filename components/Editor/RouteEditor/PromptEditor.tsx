@@ -18,7 +18,7 @@ function PromptEditor({
   placeholder,
 }: Props) {
   const editor = useDocEditor({
-    initialContent: block.prompt,
+    initialContent: block.content,
     onContentChange: onChange,
     placeholder,
   })

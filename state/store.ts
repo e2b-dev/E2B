@@ -13,13 +13,14 @@ export type BlockType =
   'Basic' |
   // Code that looks like TypeScript interface definition without the outer parenthesses.
   'RequestBody' |
-  // ProseMirror XML
+  // ProseMirror HTML
   'StructuredProse'
 
 export interface Block {
   id: string
   type: BlockType
-  prompt: string
+  // `content` is HTML when `type` is `StructuredProse`
+  content: string
 }
 
 export interface Route {
@@ -59,7 +60,7 @@ export interface State extends SerializedState {
 function createBlock(type: BlockType): Block {
   return {
     type,
-    prompt: '',
+    content: '',
     id: nanoid(),
   }
 }

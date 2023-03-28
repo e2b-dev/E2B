@@ -45,7 +45,7 @@ function RequestBodyEditor({
         spellCheck="false"
         name="block"
         placeholder="email: string"
-        value={block.prompt}
+        value={block.content}
         onChange={e => onChange(e.target.value)}
         className={clsx(
           'w-full',

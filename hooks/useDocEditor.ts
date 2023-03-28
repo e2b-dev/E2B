@@ -31,8 +31,8 @@ const extensions = [
 
 const schema = getSchema(extensions)
 
-export function getPromptText(structuredProse: string) {
-  const node = createDocument(structuredProse, schema)
+export function html2markdown(html: string) {
+  const node = createDocument(html, schema)
   const markdown = defaultMarkdownSerializer.serialize(node)
   console.log(markdown)
   return markdown
@@ -84,7 +84,6 @@ function useDocEditor({
 
     instance.on('transaction', t => {
       if (t.transaction.docChanged) {
-        // onContentChange(t.transaction.doc.toJSON())
         onContentChange(t.editor.getHTML())
       }
     })
@@ -98,7 +97,6 @@ function useDocEditor({
   }, [
     onContentChange,
     // We don't want the initialContent in the dependencies because that would reload the editor when we type.
-    //  initialContent
   ])
 
   return editor
