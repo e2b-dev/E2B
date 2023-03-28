@@ -2,10 +2,10 @@ import { Range } from '@tiptap/core'
 import { ResolvedPos } from 'prosemirror-model'
 
 export interface Trigger {
-  char: string,
-  allowSpaces: boolean,
-  startOfLine: boolean,
-  $position: ResolvedPos,
+  char?: string
+  allowSpaces: boolean
+  startOfLine: boolean
+  $position: ResolvedPos
 }
 
 export type SuggestionMatch = {
@@ -16,7 +16,7 @@ export type SuggestionMatch = {
 
 export function findSuggestionMatch(config: Trigger): SuggestionMatch {
   const {
-    char,
+    char = '',
     allowSpaces,
     startOfLine,
     $position,

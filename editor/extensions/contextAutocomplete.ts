@@ -10,7 +10,7 @@ export default Command(ContextAutocomplete)
   })
   .configure({
     suggestion: {
-      char: '/',
       startOfLine: false,
+      char: '/',
     },
   })

@@ -45,9 +45,22 @@ export interface SuggestionKeyDownProps {
   range: Range,
 }
 
+
+interface SuggestionPluginState {
+  active: boolean
+  range?: {
+    from: number
+    to: number
+  }
+  decorationID?: string
+  query: string | null
+  text: string | null
+  wasCharTyped: boolean
+}
+
 export function Suggestion<Item = unknown>({
   editor,
-  char = '@',
+  char,
   startOfLine = false,
   decorationTag = 'span',
   decorationClass = 'suggestion',
@@ -60,16 +73,7 @@ export function Suggestion<Item = unknown>({
 
   const allowSpaces = false
 
-  return new Plugin<{
-    active: boolean
-    range?: {
-      from: number
-      to: number
-    }
-    query: string | null
-    text: string | null
-    wasCharTyped: boolean
-  }>({
+  return new Plugin<SuggestionPluginState>({
     key: new PluginKey('suggestion'),
 
     view() {
@@ -155,7 +159,7 @@ export function Suggestion<Item = unknown>({
           next.active = false
         } else if (selection.from === selection.to) {
           // Reset active state if we just left the previous suggestion range
-          if (selection.from < prev.range.from || selection.from > prev.range.to) {
+          if (prev.range && (selection.from < prev.range?.from || selection.from > prev.range?.to)) {
             next.active = false
           }
 
@@ -166,12 +170,12 @@ export function Suggestion<Item = unknown>({
             startOfLine,
             $position: selection.$from,
           })
-          const decorationId = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`
+          const decorationID = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`
 
           // If we found a match, update the current state to show it
           if (match && allow({ editor, range: match.range })) {
             next.active = true
-            next.decorationId = prev.decorationId ? prev.decorationId : decorationId
+            next.decorationID = prev.decorationID ? prev.decorationID : decorationID
             next.range = match.range
             next.query = match.query
             next.text = match.text
@@ -185,8 +189,8 @@ export function Suggestion<Item = unknown>({
         // Make sure to empty the range if suggestion is inactive
         if (!next.active) {
           next.wasCharTyped = false
-          next.decorationId = null
-          next.range = {}
+          next.decorationID = undefined
+          next.range = undefined
           next.query = null
           next.text = null
         }
@@ -219,12 +223,20 @@ export function Suggestion<Item = unknown>({
           return false
         }
 
+        if (!range) {
+          return false
+        }
+
         return renderer?.onKeyDown?.({ view, event, range }) || false
       },
 
       // Setup decorator on the currently active suggestion.
       decorations(state) {
-        const { active, range, decorationId } = this.getState(state)
+        const { active, range, decorationID } = this.getState(state) as SuggestionPluginState
+
+        if (!range) {
+          return null
+        }
 
         if (!active) {
           return null
@@ -234,7 +246,7 @@ export function Suggestion<Item = unknown>({
           Decoration.inline(range.from, range.to, {
             nodeName: decorationTag,
             class: decorationClass,
-            'data-decoration-id': decorationId,
+            'data-decoration-id': decorationID,
           }),
         ])
       },

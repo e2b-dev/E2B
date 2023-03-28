@@ -7,7 +7,7 @@ import {
 import { ChainedCommands } from '@tiptap/core'
 
 import { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
-import contextSchema from 'editor/extensions/context/contextSchema'
+import { PromptContext, promptContextItems } from 'editor/extensions/promptContext'
 
 import Item from './Item'
 
@@ -16,32 +16,10 @@ interface CommandItem {
   extendCommand: (cmd: ChainedCommands) => ChainedCommands
 }
 
-export enum PromptContextType {
-  NPMPackage = 'NPM_PACKAGE'
-}
-
-export interface PromptContext {
-  type: PromptContextType
-  value: string
-}
-
-const promptContextItems: PromptContext[] = [
-  {
-    type: PromptContextType.NPMPackage,
-    value: '@slack/web-api',
-  },
-]
-
 function createCommandItem(context: PromptContext): CommandItem {
   return {
     title: context.value,
-    extendCommand: (cmd) => {
-      return cmd
-        .setNode(contextSchema.name, {
-          type: context.type,
-          value: context.value,
-        })
-    }
+    extendCommand: (cmd) => cmd.setPromptContext(context)
   }
 }
 
@@ -93,7 +71,6 @@ const ContextAutocomplete: CommandList = forwardRef(({
   return (
     <div
       className="
-        p-2
         w-56
         max-h-56
 
@@ -103,11 +80,10 @@ const ContextAutocomplete: CommandList = forwardRef(({
 
         overflow-y-auto
         overscroll-none
-
         rounded
 
         border
-        border-slate-400
+        border-indigo-400
 
         bg-white
       "

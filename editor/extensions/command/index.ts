@@ -28,7 +28,8 @@ export const Command = (component: CommandList) => Node.create<CommandOptions>({
     return {
       suggestion: {
         // Check if the cursor is in a paragraph.
-        allow: ({ editor: { state: { doc, selection } } }) => doc.resolve(selection.anchor)?.parent?.type.name === 'paragraph',
+        allow: ({ editor: { state: { doc, selection } } }) =>
+          doc.resolve(selection.anchor)?.parent?.type.name === 'paragraph',
         render: () => {
           let reactRenderer: any
           let popup: Instance<Props> | undefined

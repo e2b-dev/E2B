@@ -13,6 +13,7 @@ import OrderedList from '@tiptap/extension-ordered-list'
 import CodeBlock from '@tiptap/extension-code-block'
 
 import ContextAutocomplete from 'editor/extensions/contextAutocomplete'
+import PromptContext from 'editor/extensions/promptContext'
 
 const extensions = [
   StarterKit.configure({
@@ -38,7 +39,9 @@ const extensions = [
   ListItem,
   BulletList,
   ContextAutocomplete,
+  PromptContext,
 ]
+
 
 const schema = getSchema(extensions)
 
@@ -104,6 +107,7 @@ function useDocEditor({
 
     instance.on('transaction', t => {
       if (t.transaction.docChanged) {
+        console.log(t.editor.getHTML())
         onContentChange(t.editor.getHTML())
       }
     })

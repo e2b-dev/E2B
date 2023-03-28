@@ -29,17 +29,19 @@ function Item({
     <div
       ref={setScrollRef}
       className={cn(
-        'px-1.5',
-        'py-0.5',
-        'flex-shrink-0',
+        'px-4',
+        'py-1',
+        'shrink-0',
         'flex',
-        'rounded',
+        'font-sans',
         'items-center',
         'group',
         'overflow-ellipsis',
         'overflow-hidden',
         'cursor-pointer',
-        { 'bg-slate-300': isSelected },
+        {
+          'bg-indigo-50': isSelected,
+        },
       )}
       onMouseDown={selectItem}
     >

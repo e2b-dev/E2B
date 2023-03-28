@@ -1,5 +1,5 @@
 .ProseMirror {
-  @apply prose prose-base text-slate-600;
+  @apply prose prose-base text-slate-600 whitespace-pre-wrap;
   /*
    * NOTE: Disabling overflow anchor fixes a code cell scrolling bug
    * that happens in Chrome:
