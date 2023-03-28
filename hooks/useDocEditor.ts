@@ -15,8 +15,8 @@ const extensions = [
     blockquote: false,
     bold: false,
     bulletList: false,
-    code: false,
-    codeBlock: false,
+    // code: false,
+    // codeBlock: false,
     dropcursor: false,
     hardBreak: false,
     // heading: false,
@@ -91,7 +91,8 @@ function useDocEditor({
 
     instance.on('transaction', t => {
       if (t.transaction.docChanged) {
-        onContentChange(t.transaction.doc.toJSON())
+        // onContentChange(t.transaction.doc.toJSON())
+        onContentChange(t.editor.getHTML())
       }
 
       // requestAnimationFrame(() => {
