@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useReducer,
   useState,
 } from 'react'
 import { createDocument, Editor, getSchema } from '@tiptap/react'
@@ -55,8 +54,6 @@ function useDocEditor({
 }) {
   const [editor, setEditor] = useState<Editor | null>(null)
 
-  const forceUpdate = useReducer(() => ({}), {})[1]
-
   useEffect(function initialize() {
     const instance = new Editor({
       content: initialContent,
@@ -84,12 +81,6 @@ function useDocEditor({
       if (t.transaction.docChanged) {
         onContentChange(t.transaction.doc.toJSON())
       }
-
-      // requestAnimationFrame(() => {
-      //   requestAnimationFrame(() => {
-      //     forceUpdate()
-      //   })
-      // })
     })
 
     setEditor(instance)
@@ -100,7 +91,6 @@ function useDocEditor({
     }
   }, [
     onContentChange,
-    forceUpdate,
     // We don't want the initialContent in the dependencies because that would reload the editor when we type.
     //  initialContent
   ])
