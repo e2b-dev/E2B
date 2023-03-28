@@ -16,23 +16,23 @@ interface CommandItem {
   extendCommand: (cmd: ChainedCommands) => ChainedCommands
 }
 
-export enum InlineContextType {
+export enum PromptContextType {
   NPMPackage = 'NPM_PACKAGE'
 }
 
-export interface InlineContext {
-  type: InlineContextType
+export interface PromptContext {
+  type: PromptContextType
   value: string
 }
 
-const inlineContextItems: InlineContext[] = [
+const promptContextItems: PromptContext[] = [
   {
-    type: InlineContextType.NPMPackage,
+    type: PromptContextType.NPMPackage,
     value: '@slack/web-api',
   },
 ]
 
-function createCommandItem(context: InlineContext): CommandItem {
+function createCommandItem(context: PromptContext): CommandItem {
   return {
     title: context.value,
     extendCommand: (cmd) => {
@@ -46,7 +46,7 @@ function createCommandItem(context: InlineContext): CommandItem {
 }
 
 const items: CommandItem[] = [
-  ...inlineContextItems.map(createCommandItem),
+  ...promptContextItems.map(createCommandItem),
 ]
 
 const ContextAutocomplete: CommandList = forwardRef(({
