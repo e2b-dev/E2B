@@ -17,7 +17,6 @@ function RequestBodyEditor({
       flex
       flex-col
       items-start
-      flex-1
     ">
       <div className="
         self-stretch
