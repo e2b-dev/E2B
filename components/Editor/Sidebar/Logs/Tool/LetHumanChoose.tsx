@@ -106,7 +106,7 @@ function LetHumanChoose({
       console.log({ log })
       return
     }
-  }, [log])
+  }, [log, onAnswer])
 
   return (
     <Base
