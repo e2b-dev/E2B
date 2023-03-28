@@ -32,7 +32,7 @@ def get_request_body_template(blocks: List[dict[str, str]]):
         block for block in blocks if block.get("type") == "RequestBody"
     ]
     request_body_template = (
-        request_body_blocks[0]["prompt"] if len(request_body_blocks) > 0 else None
+        request_body_blocks[0]["content"] if len(request_body_blocks) > 0 else None
     )
     return request_body_template
 
@@ -54,8 +54,9 @@ async def generate():
     method = body["method"]
     route = body["route"]
 
+    pprint("+++ Blocks:")
     pprint(blocks)
-    return {}
+    pprint("--- Blocks:")
 
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None

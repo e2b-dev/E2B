@@ -1,7 +1,6 @@
 # - ALWAYS use `import` to import packages.
 # - Make sure any code you generate is JSON escaped.
 SYSTEM_PREFIX = """You are an AI JavaScript developer assistant.
-- DO NOT BE STUPID
 - NEVER deploy code before you run it and are sure it is working.
 - NEVER perform unsecure operations like disabling SSL certificates and similar.
 - You are building an Express server that handles REST API.
@@ -35,13 +34,21 @@ Final Answer: the final answer"""
 SYSTEM_SUFFIX = """Begin! Reminder to NEVER use tools you don't have access. Reminder to ALWAYS use the exact the action `Final Answer` when you know the final answer."""
 
 HUMAN_INSTRUCTIONS_PREFIX = [
-    # {
-    #     "variables": [],
-    #     "content": "You are building a slack bot that sends a message to channel every time it gets a new request. You have access to the folling environment variables: `SLACK_BOT_ACCESS_TOKEN`",
-    # },
+    {
+        "variables": ["description"],
+        "content": """The handler you are building should do the following: {0}""",
+    },
     {
         "variables": [],
-        "content": "Do not try to come up with solutions and code if you do not know. Instead, use the tool `AskHuman` to ask for help.",
+        "content": """Do not try to come up with solutions and code if you do not know. Instead, use the tool `AskHuman` to ask for help.""",
+    },
+    {
+        "variables": [],
+        "content": """If you think there might be multiple paths forward, use the tool `LetHumanChoose` to choose from them.""",
+    },
+    {
+        "variables": ["request_body"],
+        "content": """The incoming request body is JSON that looks like this:\n{0}""",
     },
     {
         "variables": ["method"],
@@ -66,6 +73,18 @@ app.listen(port, async () => {{
     {
         "variables": ["route"],
         "content": """The request handler MUST be on the route `{0}`""",
+    },
+    {
+        "variables": [],
+        "content": """Do not forget to use async and await""",
+    },
+    {
+        "variables": [],
+        "content": """ALWAYS test that the generated server works as required by making mock `curl` requests to the server""",
+    },
+    {
+        "variables": [],
+        "content": """Generate the full required server code and and make sure it runs without any errors""",
     },
 ]
 
