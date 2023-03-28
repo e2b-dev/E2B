@@ -27,7 +27,7 @@ const extensions = [
     orderedList: false,
   }),
   Placeholder.configure({
-    placeholder: "All You Need Is English",
+    placeholder: 'All You Need Is English',
   }),
   SlashCommand,
 ]
@@ -101,6 +101,8 @@ function useDocEditor({
   }, [
     onContentChange,
     forceUpdate,
+    // We don't want the initialContent in the dependencies because that would reload the editor when we type.
+    //  initialContent
   ])
 
   return editor
