@@ -6,6 +6,7 @@ import { createDocument, Editor, getSchema } from '@tiptap/react'
 import { StarterKit } from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { keymap } from 'prosemirror-keymap'
+import { defaultMarkdownSerializer } from 'prosemirror-markdown'
 
 import ContextAutocomplete from 'editor/extensions/contextAutocomplete'
 
@@ -35,14 +36,9 @@ const schema = getSchema(extensions)
 
 export function getPromptText(structuredProse: string) {
   const node = createDocument(structuredProse, schema)
-
-  let text = ''
-
-  node.descendants(n => {
-    text += n.content
-  })
-
-  return text
+  const markdown = defaultMarkdownSerializer.serialize(node)
+  console.log(markdown)
+  return markdown
 }
 
 function useDocEditor({
