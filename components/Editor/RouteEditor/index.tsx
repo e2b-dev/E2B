@@ -9,8 +9,10 @@ export interface Props {
 }
 
 function RouteEditor({ route }: Props) {
-  const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', route)
-  const [promptBlock, updatePromptBlock] = useBlock('StructuredProse', route)
+  const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', 1, route)
+  const [promptBlock1, updatePromptBlock1] = useBlock('StructuredProse', 1, route)
+  const [promptBlock2, updatePromptBlock2] = useBlock('StructuredProse', 2, route)
+  const [promptBlock3, updatePromptBlock3] = useBlock('StructuredProse', 3, route)
 
   return (
     <div className="
@@ -44,10 +46,22 @@ function RouteEditor({ route }: Props) {
               onChange={updateRequestBodyBlock}
             />
           }
-          {promptBlock &&
+          {promptBlock1 &&
             <PromptEditor
-              block={promptBlock}
-              onChange={updatePromptBlock}
+              block={promptBlock1}
+              onChange={updatePromptBlock1}
+            />
+          }
+          {promptBlock2 &&
+            <PromptEditor
+              block={promptBlock2}
+              onChange={updatePromptBlock2}
+            />
+          }
+          {promptBlock3 &&
+            <PromptEditor
+              block={promptBlock3}
+              onChange={updatePromptBlock3}
             />
           }
         </div>

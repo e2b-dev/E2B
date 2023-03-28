@@ -16,7 +16,7 @@ app.use(
   urlencoded({
     extended: true,
   }),
-  morgan('tiny')
+  morgan('tiny'),
 )
 
 app.use(json())

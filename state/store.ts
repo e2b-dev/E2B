@@ -66,7 +66,12 @@ function createBlock(type: BlockType): Block {
 
 function getDefaultRoute(): Route {
   return {
-    blocks: [createBlock('RequestBody'), createBlock('StructuredProse')],
+    blocks: [
+      createBlock('RequestBody'),
+      createBlock('StructuredProse'),
+      createBlock('StructuredProse'),
+      createBlock('StructuredProse'),
+    ],
     method: Method.POST,
     route: '/',
     id: nanoid(),
