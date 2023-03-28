@@ -1,7 +1,19 @@
 import { useCallback, useMemo } from 'react'
+
 import { Route, BlockType, Block } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
 
+/**
+ * 
+ * For example, if there are two block for type `RequestBody` and we call `useBlock('RequestBody`, 2, route)`,
+ * the hook will return the value and change handler for the second `RequestBody` block from the array of all blocks in the `route`.
+ * 
+ * @param blockType type of block to filter
+ * @param position which block from all the blocks with type `blockType` should this hook use. 
+ * The position starts from "1". 
+ * @param route 
+ * @returns 
+ */
 function useBlock(blockType: BlockType, position: number, route?: Route): [Block | undefined, (prompt: string) => void] {
   const [selectors] = useStateStore()
 
@@ -10,7 +22,6 @@ function useBlock(blockType: BlockType, position: number, route?: Route): [Block
   const blockIdx = useMemo(() => {
     let count = 0
     return route?.blocks.findIndex((r, i) => {
-      console.log(blockType, position, count, r.type)
       if (r.type === blockType) {
         count++
         return count === position
