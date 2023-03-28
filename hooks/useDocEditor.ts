@@ -53,7 +53,6 @@ const serializer = new MarkdownSerializer({
 export function html2markdown(html: string) {
   const node = createDocument(html, schema)
   const markdown = serializer.serialize(node)
-  console.log(markdown)
   return markdown
 }
 

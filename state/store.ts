@@ -13,13 +13,13 @@ export type BlockType =
   'Basic' |
   // Code that looks like TypeScript interface definition without the outer parenthesses.
   'RequestBody' |
-  // ProseMirror HTML
-  'StructuredProse'
+  'Description' |
+  'Instructions'
 
 export interface Block {
   id: string
   type: BlockType
-  // `content` is HTML when `type` is `StructuredProse`
+  // `content` must be valid HTML when `type` is `Description` or `Instructions`
   content: string
 }
 
@@ -69,8 +69,8 @@ function getDefaultRoute(): Route {
   return {
     blocks: [
       createBlock('RequestBody'),
-      createBlock('StructuredProse'),
-      createBlock('StructuredProse'),
+      createBlock('Description'),
+      createBlock('Instructions'),
     ],
     method: Method.POST,
     route: '/',

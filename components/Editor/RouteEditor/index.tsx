@@ -10,8 +10,8 @@ export interface Props {
 
 function RouteEditor({ route }: Props) {
   const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', 1, route)
-  const [descriptionBlock, updateDescriptionBlock] = useBlock('StructuredProse', 1, route)
-  const [instructionsBlock, updateInstructionsBlock] = useBlock('StructuredProse', 2, route)
+  const [descriptionBlock, updateDescriptionBlock] = useBlock('Description', 1, route)
+  const [instructionsBlock, updateInstructionsBlock] = useBlock('Instructions', 1, route)
 
   return (
     <div className="
@@ -41,7 +41,7 @@ function RouteEditor({ route }: Props) {
         ">
           {descriptionBlock &&
             <PromptEditor
-              title="What will this route do?"
+              title="What should this route do?"
               placeholder="This is an API endpoint that ..."
               block={descriptionBlock}
               onChange={updateDescriptionBlock}
