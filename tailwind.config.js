@@ -8,7 +8,6 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['var(--font-inter)', ...fontFamily.sans],
-        mono: ['var(--font-jet-brains)', ...fontFamily.mono],
       },
       spacing: {
         120: '30rem',

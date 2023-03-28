@@ -15,19 +15,16 @@ const extensions = [
     blockquote: false,
     bold: false,
     bulletList: false,
-    code: false,
-    codeBlock: false,
+    // code: false,
+    // codeBlock: false,
     dropcursor: false,
     hardBreak: false,
-    heading: false,
+    // heading: false,
     horizontalRule: false,
     italic: false,
-    listItem: false,
+    // listItem: false,
     strike: false,
-    orderedList: false,
-  }),
-  Placeholder.configure({
-    placeholder: 'All You Need Is English',
+    // orderedList: false,
   }),
   ContextAutocomplete,
 ]
@@ -44,9 +41,11 @@ export function getPromptText(structuredProse: string) {
 function useDocEditor({
   initialContent,
   onContentChange,
+  placeholder,
 }: {
   initialContent: string,
   onContentChange: (content: string) => void,
+  placeholder?: string
 }) {
   const [editor, setEditor] = useState<Editor | null>(null)
 
@@ -63,7 +62,17 @@ function useDocEditor({
           'spellcheck': 'false',
         },
       },
-      extensions,
+      extensions: [
+        ...extensions,
+        Placeholder.configure({
+          placeholder: ({ editor }) => {
+            if (!editor.getText()) {
+              return placeholder || ''
+            }
+            return ''
+          }
+        }),
+      ],
     })
 
     // Override default browser Ctrl/Cmd+S shortcut.
@@ -75,7 +84,8 @@ function useDocEditor({
 
     instance.on('transaction', t => {
       if (t.transaction.docChanged) {
-        onContentChange(t.transaction.doc.toJSON())
+        // onContentChange(t.transaction.doc.toJSON())
+        onContentChange(t.editor.getHTML())
       }
     })
 

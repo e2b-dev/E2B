@@ -1,27 +1,45 @@
 import { EditorContent } from '@tiptap/react'
 
+import Text from 'components/Text'
 import { Block } from 'state/store'
 import useDocEditor from 'hooks/useDocEditor'
 
 export interface Props {
+  title?: string
+  placeholder?: string
   onChange: (value: string) => void
   block: Block
 }
 
-function PromptEditor({ onChange, block }: Props) {
+function PromptEditor({
+  title,
+  onChange,
+  block,
+  placeholder,
+}: Props) {
   const editor = useDocEditor({
     initialContent: block.prompt,
     onContentChange: onChange,
+    placeholder,
   })
 
   return (
     <div className="
-    flex
-    w-full
-    pt-6
-    border-t
-    border-slate-200
+      flex
+      flex-col
+      space-y-2
+      self-stretch
+      pb-6
+      border-b
+      border-slate-200
     ">
+      {title &&
+        <Text
+          className="font-semibold text-slate-400"
+          size={Text.size.S1}
+          text={title}
+        />
+      }
       <EditorContent
         editor={editor}
         className="

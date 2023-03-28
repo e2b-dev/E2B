@@ -27,10 +27,11 @@ function useBlock(blockType: BlockType, position: number, route?: Route): [Block
     : undefined
 
   const setBlock = useCallback((prompt: string) => {
+    console.log('SET BLOCK', prompt)
     if (route?.id && blockIdx !== undefined && blockIdx !== -1) {
       changeBlock(route.id, blockIdx, { prompt })
     }
-  }, [blockIdx, route?.id])
+  }, [blockIdx, route?.id, changeBlock])
 
   return [block, setBlock]
 }

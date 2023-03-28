@@ -1,5 +1,5 @@
 import type { AppProps } from 'next/app'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { SessionContextProvider, Session } from '@supabase/auth-helpers-react'
 import { useState } from 'react'
@@ -18,11 +18,6 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const jetBrains = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jet-brains',
-})
-
 function App({ Component, pageProps }: AppProps<{ initialSession: Session, project?: projects }>) {
   const router = useRouter()
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>())
@@ -33,10 +28,9 @@ function App({ Component, pageProps }: AppProps<{ initialSession: Session, proje
   return (
     <main className={clsx(
       inter.variable,
-      jetBrains.variable,
       'font-sans',
       'flex',
-      'h-inherit',
+      'h-full',
       'w-full',
       'flex-1',
       'flex-col',

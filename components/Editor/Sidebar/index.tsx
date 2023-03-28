@@ -8,11 +8,11 @@ import Text from 'components/Text'
 import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
+import { getPromptText } from 'hooks/useDocEditor'
 
 import DeployButton from './DeployButton'
 import Logs from './Logs'
 import Envs from './Envs'
-import { getPromptText } from 'hooks/useDocEditor'
 
 export interface Props {
   project: projects
@@ -30,6 +30,7 @@ async function handlePostGenerate(url: string, { arg }: {
     envs: { key: string, value: string }[],
   }
 }) {
+  console.log(arg.route.blocks)
   return await fetch(url, {
     method: 'POST',
     body: JSON.stringify({

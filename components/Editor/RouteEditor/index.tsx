@@ -10,9 +10,8 @@ export interface Props {
 
 function RouteEditor({ route }: Props) {
   const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', 1, route)
-  const [promptBlock1, updatePromptBlock1] = useBlock('StructuredProse', 1, route)
-  const [promptBlock2, updatePromptBlock2] = useBlock('StructuredProse', 2, route)
-  const [promptBlock3, updatePromptBlock3] = useBlock('StructuredProse', 3, route)
+  const [descriptionBlock, updateDescriptionBlock] = useBlock('StructuredProse', 1, route)
+  const [instructionsBlock, updateInstructionsBlock] = useBlock('StructuredProse', 2, route)
 
   return (
     <div className="
@@ -29,7 +28,7 @@ function RouteEditor({ route }: Props) {
         <div className="
           text-slate-400
           self-center
-          ">
+        ">
           No route selected
         </div>
       }
@@ -40,28 +39,26 @@ function RouteEditor({ route }: Props) {
           items-start
           space-y-8
         ">
+          {descriptionBlock &&
+            <PromptEditor
+              title="What will this route do?"
+              placeholder="This is an API endpoint that ..."
+              block={descriptionBlock}
+              onChange={updateDescriptionBlock}
+            />
+          }
           {requestBodyBlock &&
             <RequestBodyEditor
               block={requestBodyBlock}
               onChange={updateRequestBodyBlock}
             />
           }
-          {promptBlock1 &&
+          {instructionsBlock &&
             <PromptEditor
-              block={promptBlock1}
-              onChange={updatePromptBlock1}
-            />
-          }
-          {promptBlock2 &&
-            <PromptEditor
-              block={promptBlock2}
-              onChange={updatePromptBlock2}
-            />
-          }
-          {promptBlock3 &&
-            <PromptEditor
-              block={promptBlock3}
-              onChange={updatePromptBlock3}
+              title="Step-by-step instructions"
+              placeholder="1. Check if the incoming `email` is not empty ..."
+              block={instructionsBlock}
+              onChange={updateInstructionsBlock}
             />
           }
         </div>
