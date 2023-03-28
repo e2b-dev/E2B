@@ -25,6 +25,7 @@
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.10.0",
     "@tiptap/extension-bullet-list": "^2.0.0-beta.220",
+    "@tiptap/extension-code-block": "^2.0.0-beta.220",
     "@tiptap/extension-list-item": "^2.0.0-beta.220",
     "@tiptap/extension-ordered-list": "^2.0.0-beta.220",
     "@tiptap/extension-placeholder": "^2.0.0-beta.220",

@@ -10,6 +10,7 @@ import { MarkdownSerializer, defaultMarkdownSerializer } from 'prosemirror-markd
 import BulletList from '@tiptap/extension-bullet-list'
 import ListItem from '@tiptap/extension-list-item'
 import OrderedList from '@tiptap/extension-ordered-list'
+import CodeBlock from '@tiptap/extension-code-block'
 
 import ContextAutocomplete from 'editor/extensions/contextAutocomplete'
 
@@ -26,7 +27,7 @@ const extensions = [
     italic: false,
     strike: false,
 
-    // We use the Ordered List, Bullet List and List item from explicit packages 
+    // We use the Ordered List, Bullet List and List item from explicit packages
     // so we can use their names in the markdown serializer.
     bulletList: false,
     listItem: false,
@@ -45,6 +46,7 @@ const serializer = new MarkdownSerializer({
   [OrderedList.name]: defaultMarkdownSerializer.nodes.ordered_list,
   [ListItem.name]: defaultMarkdownSerializer.nodes.list_item,
   [BulletList.name]: defaultMarkdownSerializer.nodes.bullet_list,
+  [CodeBlock.name]: defaultMarkdownSerializer.nodes.code_block,
 }, defaultMarkdownSerializer.marks)
 
 

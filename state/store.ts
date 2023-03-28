@@ -71,7 +71,6 @@ function getDefaultRoute(): Route {
       createBlock('RequestBody'),
       createBlock('StructuredProse'),
       createBlock('StructuredProse'),
-      createBlock('StructuredProse'),
     ],
     method: Method.POST,
     route: '/',
