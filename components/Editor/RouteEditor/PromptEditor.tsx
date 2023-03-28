@@ -18,7 +18,6 @@ function PromptEditor({ onChange, block }: Props) {
     <div className="
     flex
     w-full
-    h-full
     pt-6
     border-t
     border-slate-200

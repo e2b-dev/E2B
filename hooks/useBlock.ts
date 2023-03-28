@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Route, BlockType, Block } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
 
@@ -7,13 +7,17 @@ function useBlock(blockType: BlockType, position: number, route?: Route): [Block
 
   const changeBlock = selectors.use.changeBlock()
 
-  let count = 0
-  const blockIdx = route?.blocks.findIndex(r => {
-    if (r.type === blockType) {
-      count++
-      return count = position
-    }
-  })
+  const blockIdx = useMemo(() => {
+    let count = 0
+    return route?.blocks.findIndex((r, i) => {
+      console.log(blockType, position, count, r.type)
+      if (r.type === blockType) {
+        count++
+        return count === position
+      }
+      return false
+    })
+  }, [route, position, blockType])
 
   const block = blockIdx !== undefined &&
     blockIdx !== -1 &&
