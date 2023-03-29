@@ -1,20 +1,15 @@
 import {
-  useState,
-  useEffect,
-  ReactNode,
   Fragment,
+  useMemo,
 } from 'react'
 import {
   HelpCircle,
 } from 'lucide-react'
 
 import Text from 'components/Text'
-// import Input from 'components/Input'
-// import Button from 'components/Button'
 import { ToolName, ToolLog } from 'db/types'
 
 import Base from './Base'
-
 
 export interface Props {
   log: ToolLog
@@ -26,13 +21,11 @@ function LetHumanChoose({
   onAnswer,
 }: Props) {
   if (log.tool_name !== ToolName.LetHumanChoose) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.LetHumanChoose}' tool`)
-  const [body, setBody] = useState<ReactNode>()
 
-  useEffect(function createBody() {
+  const body = useMemo(() => {
     const xmlString = log.tool_input.trim()
     if (!xmlString) {
       console.error('LetHumanChoose: Tool input is empty')
-      console.log({ log })
       return
     }
 
@@ -50,8 +43,7 @@ function LetHumanChoose({
         throw new Error('LetHumanChoose: No options found')
       }
 
-      console.log({ question })
-      const b = (
+      return (
         <div className="
           flex
           flex-col
@@ -100,13 +92,15 @@ function LetHumanChoose({
           </div>
         </div>
       )
-      setBody(b)
     } catch (err) {
       console.error('LetHumanChoose: Error parsing XML:', err)
-      console.log({ log })
-      return
+      return null
     }
-  }, [log, onAnswer])
+  }, [
+    log.id,
+    log.tool_input,
+    log.tool_output, onAnswer,
+  ])
 
   return (
     <Base

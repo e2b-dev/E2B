@@ -1,7 +1,4 @@
 import {
-  ReactNode
-} from 'react'
-import {
   Package,
 } from 'lucide-react'
 
@@ -19,18 +16,18 @@ function InstallNPMDeps({
 }: Props) {
   if (log.tool_name !== ToolName.InstallNPMDependencies) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.InstallNPMDependencies}' tool`)
 
-  let body: ReactNode = null
-  if (log.tool_input.trim()) {
-    body = (
+  const body = log.tool_input.trim()
+    ? (
       <div className="
         pt-2
-      ">
+        ">
         <pre>
           {log.tool_input.trim()}
         </pre>
       </div>
     )
-  }
+    : null
+
 
   return (
     <Base

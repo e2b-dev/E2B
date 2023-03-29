@@ -1,14 +1,10 @@
 import {
-  ReactNode
-} from 'react'
-import {
   FileEdit,
 } from 'lucide-react'
 
 import { ToolName, ToolLog } from 'db/types'
 
 import Base from './Base'
-
 
 export interface Props {
   log: ToolLog
@@ -19,17 +15,15 @@ function WriteCode({
 }: Props) {
   if (log.tool_name !== ToolName.WriteJavaScriptCode) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.WriteJavaScriptCode}' tool`)
 
-  let body: ReactNode = null
-  if (log.tool_input.trim()) {
-    body = (
-      <div className="
-      ">
+  const body = log.tool_input.trim()
+    ? (
+      <div className="">
         <pre>
           {log.tool_input.trim()}
         </pre>
       </div>
     )
-  }
+    : null
 
   return (
     <Base
