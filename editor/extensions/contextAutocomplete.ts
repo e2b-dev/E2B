@@ -11,6 +11,5 @@ export default Command(ContextAutocomplete)
   .configure({
     suggestion: {
       startOfLine: false,
-      char: '/',
     },
   })

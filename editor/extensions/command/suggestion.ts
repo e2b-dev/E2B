@@ -45,7 +45,6 @@ export interface SuggestionKeyDownProps {
   range: Range,
 }
 
-
 interface SuggestionPluginState {
   active: boolean
   range?: {
@@ -60,7 +59,7 @@ interface SuggestionPluginState {
 
 export function Suggestion<Item = unknown>({
   editor,
-  char,
+  char = '/',
   startOfLine = false,
   decorationTag = 'span',
   decorationClass = 'suggestion',

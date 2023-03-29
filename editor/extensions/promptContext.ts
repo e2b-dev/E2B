@@ -44,17 +44,17 @@ export type MentionOptions = {
   suggestion: Omit<SuggestionOptions, 'editor'>
 }
 
-export const PromptContextPluginKey = new PluginKey('promptContext')
+export const NODE_NAME = 'promptContext'
+export const PromptContextPluginKey = new PluginKey(NODE_NAME)
 
 export default Node.create<MentionOptions>({
-  name: 'promptContext',
-
+  name: NODE_NAME,
   addOptions() {
     return {
       HTMLAttributes: {
         class: 'prompt-context',
       },
-      renderLabel({ options, node }) {
+      renderLabel({ node }) {
         return `${node.attrs[CONTEXT_VALUE_ATTRIBUTE_NAME]}`
       },
       suggestion: {
