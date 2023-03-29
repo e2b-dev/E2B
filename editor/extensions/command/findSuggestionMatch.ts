@@ -16,7 +16,7 @@ export type SuggestionMatch = {
 
 export function findSuggestionMatch(config: Trigger): SuggestionMatch {
   const {
-    char = '',
+    char = '/',
     allowSpaces,
     startOfLine,
     $position,
@@ -33,6 +33,7 @@ export function findSuggestionMatch(config: Trigger): SuggestionMatch {
     .split('')
     .map(c => `\\${c}`)
     .join('')
+
   const suffix = new RegExp(`\\s${escapedChar}$`)
   const prefix = startOfLine ? '^' : ''
   const regexp = allowSpaces
@@ -43,6 +44,7 @@ export function findSuggestionMatch(config: Trigger): SuggestionMatch {
   const textFrom = isTopLevelNode
     ? 0
     : $position.before()
+
   const textTo = $position.pos
   const text = $position.doc.textBetween(textFrom, textTo, '\0', '\0') + textAfterAnchorUntilWhitespace
   const match = Array.from(text.matchAll(regexp)).pop()

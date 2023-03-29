@@ -10,9 +10,9 @@ import tippy, {
 import { ComponentClass } from 'react'
 
 import { destroyOnEsc } from 'editor/tippyPlugins'
+import CommandListWrapper, { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
 
 import { Suggestion, SuggestionOptions } from './suggestion'
-import CommandListWrapper, { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
 
 export * from './findSuggestionMatch'
 export * from './suggestion'

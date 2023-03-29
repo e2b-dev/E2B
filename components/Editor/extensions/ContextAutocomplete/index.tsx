@@ -42,6 +42,7 @@ const ContextAutocomplete: CommandList = forwardRef(({
       .extendCommand(cmd)
       .setTextSelection(0)
       .run()
+
   }, [
     range,
     editor,
@@ -83,7 +84,7 @@ const ContextAutocomplete: CommandList = forwardRef(({
         rounded
 
         border
-        border-indigo-400
+        border-indigo-300
 
         bg-white
       "

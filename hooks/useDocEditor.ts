@@ -13,7 +13,7 @@ import OrderedList from '@tiptap/extension-ordered-list'
 import CodeBlock from '@tiptap/extension-code-block'
 
 import ContextAutocomplete from 'editor/extensions/contextAutocomplete'
-import PromptContext from 'editor/extensions/promptContext'
+import Context, { CONTEXT_TYPE_ATTRIBUTE_NAME, CONTEXT_VALUE_ATTRIBUTE_NAME, PromptContext } from 'editor/extensions/promptContext'
 
 const extensions = [
   StarterKit.configure({
@@ -27,7 +27,7 @@ const extensions = [
     italic: false,
     strike: false,
 
-    // We use the Ordered List, Bullet List and List item from explicit packages
+    // We use the Ordered List, Code block, Bullet List and List item from explicit packages
     // so we can use their names in the markdown serializer.
     codeBlock: false,
     bulletList: false,
@@ -39,9 +39,8 @@ const extensions = [
   ListItem,
   BulletList,
   ContextAutocomplete,
-  PromptContext,
+  Context,
 ]
-
 
 const schema = getSchema(extensions)
 
@@ -51,13 +50,27 @@ const serializer = new MarkdownSerializer({
   [ListItem.name]: defaultMarkdownSerializer.nodes.list_item,
   [BulletList.name]: defaultMarkdownSerializer.nodes.bullet_list,
   [CodeBlock.name]: defaultMarkdownSerializer.nodes.code_block,
-}, defaultMarkdownSerializer.marks)
+  [Context.name]: (state, node, parent, index) => {
+    state.text(node.attrs[CONTEXT_VALUE_ATTRIBUTE_NAME])
+  },
+}, {
+  ...defaultMarkdownSerializer.marks,
+})
 
-
-export function html2markdown(html: string) {
+export function html2markdown(html: string): [string, PromptContext[]] {
   const node = createDocument(html, schema)
   const markdown = serializer.serialize(node)
-  return markdown
+  const context: PromptContext[] = []
+  node.descendants(n => {
+    if (n.type.name === Context.name) {
+      context.push({
+        type: n.attrs[CONTEXT_TYPE_ATTRIBUTE_NAME],
+        value: n.attrs[CONTEXT_VALUE_ATTRIBUTE_NAME],
+      })
+    }
+  })
+
+  return [markdown, context]
 }
 
 function useDocEditor({
@@ -106,7 +119,6 @@ function useDocEditor({
 
     instance.on('transaction', t => {
       if (t.transaction.docChanged) {
-        console.log(t.editor.getHTML())
         onContentChange(t.editor.getHTML())
       }
     })

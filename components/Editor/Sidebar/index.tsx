@@ -40,9 +40,10 @@ async function handlePostGenerate(url: string, { arg }: {
         switch (b.type) {
           case 'Description':
           case 'Instructions':
+            const [markdown, context] = html2markdown(b.content)
             const block: Block = {
               ...b,
-              content: html2markdown(b.content),
+              content: markdown,
             }
             return block
           default:

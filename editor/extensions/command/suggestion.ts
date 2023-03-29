@@ -154,6 +154,8 @@ export function Suggestion<Item = unknown>({
         const { selection } = transaction
         const next = { ...prev }
 
+        console.log('apply--', prev.wasCharTyped)
+
         // We can only be suggesting if there is no selection
         if (!prev.wasCharTyped) {
           next.active = false
@@ -204,11 +206,15 @@ export function Suggestion<Item = unknown>({
         const state = this.getState(view.state)
         if (!state) return
 
-        const preceedingChar = view.state.doc.textBetween(from - 1, from)
+        // const preceedingChar = view.state.doc.textBetween(from - 1, from)
 
-        if (text === char && (preceedingChar === ' ' || !preceedingChar)) {
+        if (text) {
           state.wasCharTyped = true
+          console.log('char yes')
         }
+
+        // if (text === char && (preceedingChar === ' ' || !preceedingChar)) {
+        // }
 
         return false
       },

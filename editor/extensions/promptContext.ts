@@ -1,6 +1,7 @@
 import { mergeAttributes, Node } from '@tiptap/core'
 import { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { PluginKey } from '@tiptap/pm/state'
+
 import attributeHandler from 'utils/attributeHandler'
 
 import { Suggestion, SuggestionOptions } from './command'
@@ -22,6 +23,9 @@ declare module '@tiptap/core' {
     }
   }
 }
+
+export const CONTEXT_VALUE_ATTRIBUTE_NAME = 'context-value'
+export const CONTEXT_TYPE_ATTRIBUTE_NAME = 'context-type'
 
 export const promptContextItems: PromptContext[] = [
   {
@@ -47,13 +51,16 @@ export default Node.create<MentionOptions>({
 
   addOptions() {
     return {
-      HTMLAttributes: {},
+      HTMLAttributes: {
+        class: 'prompt-context',
+      },
       renderLabel({ options, node }) {
-        return `${node.attrs.value}`
+        return `${node.attrs[CONTEXT_VALUE_ATTRIBUTE_NAME]}`
       },
       suggestion: {
         pluginKey: PromptContextPluginKey,
         command: ({ editor, range, props }) => {
+          console.log('Command >>>')
           // increase range.to by one when the next node is of type "text"
           // and starts with a space character
           const nodeAfter = editor.view.state.selection.$to.nodeAfter
@@ -98,8 +105,8 @@ export default Node.create<MentionOptions>({
 
   addAttributes() {
     return {
-      ...attributeHandler({ htmlPrefix: 'value', nodeAttribute: 'value' }),
-      ...attributeHandler({ htmlPrefix: 'type', nodeAttribute: 'type' }),
+      ...attributeHandler({ nodeAttribute: CONTEXT_VALUE_ATTRIBUTE_NAME }),
+      ...attributeHandler({ nodeAttribute: CONTEXT_TYPE_ATTRIBUTE_NAME }),
     }
   },
 
@@ -162,20 +169,26 @@ export default Node.create<MentionOptions>({
       }),
     ]
   },
-}).extend({
-  addCommands() {
-    return {
-      setPromptContext: (context) => ({ commands }) => {
-        return commands.insertContent([
-          {
-            type: this.name,
-            attrs: {
-              ['type']: context.type,
-              ['value']: context.value,
-            },
-          },
-        ])
-      },
-    }
-  },
 })
+  .extend({
+    addCommands() {
+      return {
+        setPromptContext: (context) => ({ commands, state }) => {
+          return commands
+            .setContent([
+              {
+                type: this.name,
+                attrs: {
+                  [CONTEXT_TYPE_ATTRIBUTE_NAME]: context.type,
+                  [CONTEXT_VALUE_ATTRIBUTE_NAME]: context.value,
+                },
+              },
+              {
+                type: 'text',
+                text: ' ',
+              },
+            ])
+        },
+      }
+    },
+  })

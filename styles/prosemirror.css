@@ -24,7 +24,6 @@
 
 .ProseMirror p {
   @apply mx-0 my-0 py-0 leading-6;
-  @apply whitespace-pre-wrap break-words;
 }
 
 /* Placeholder (on every new line) */
@@ -37,4 +36,9 @@
   to {
     visibility: hidden;
   }
+}
+
+.prompt-context {
+  @apply py-0.5 text-indigo-400 font-semibold font-mono;
+  box-decoration-break: clone;
 }

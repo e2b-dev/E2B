@@ -33,7 +33,7 @@ function Item({
         'py-1',
         'shrink-0',
         'flex',
-        'font-sans',
+        'font-mono',
         'items-center',
         'group',
         'overflow-ellipsis',
