@@ -4,7 +4,6 @@ import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
 import type { Reference } from 'editor/referenceType'
 
-import { findSuggestionMatch } from './findSuggestionMatch'
 
 export interface SuggestionOptions<Item = Reference> {
   editor: Editor,
@@ -165,16 +164,35 @@ export function Suggestion<Item = Reference>({
 
           console.log('apply', {
             position: selection.$from,
-
           })
+
+
+          const text = selection.$from.node().text
+
+          if (text) {
+            const prefix = text.slice(0, selection.$from.textOffset)
+            const lastWord = /\\b(\w+)$\\/
+
+            const prefixWord = lastWord.exec(prefix)
+            if (prefixWord) {
+              const match = prefixWord[0]
+              // Calculate range
+              // Update state
+            }
+          }
+
+
+
+
+
 
           // Try to match against where our cursor currently is
-          const match = findSuggestionMatch({
-            char,
-            allowSpaces,
-            startOfLine,
-            $position: selection.$from,
-          })
+          // const match = findSuggestionMatch({
+          //   char,
+          //   allowSpaces,
+          //   startOfLine,
+          //   $position: selection.$from,
+          // })
           const decorationID = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`
 
           // If we found a match, update the current state to show it
