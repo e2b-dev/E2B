@@ -4,43 +4,14 @@ import {
   forwardRef,
   useCallback,
 } from 'react'
-import { ChainedCommands } from '@tiptap/core'
-
-import { Reference, ReferenceType } from 'editor/referenceType'
-
 import Item from './Item'
 import { AutocompleteList } from './ListWrapper'
-
-interface AutocompleteItem {
-  title: string
-  extendCommand: (cmd: ChainedCommands) => ChainedCommands
-}
-
-function createAutocompleteItem(reference: Reference): AutocompleteItem {
-  return {
-    title: reference.value,
-    extendCommand: (cmd) => cmd.setReference(reference)
-  }
-}
-
-export const referenceItems: Reference[] = [
-  {
-    type: ReferenceType.NPMPackage,
-    value: '@slack/web-api',
-  },
-  {
-    type: ReferenceType.DEPLOYMENT,
-    value: 'AWS Lambda',
-  },
-]
-
-const items: AutocompleteItem[] = [
-  ...referenceItems.map(createAutocompleteItem),
-]
 
 const Autocomplete: AutocompleteList = forwardRef(({
   editor,
   range,
+  items,
+  command,
 }, ref) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -49,14 +20,18 @@ const Autocomplete: AutocompleteList = forwardRef(({
       .chain()
       .deleteRange(range)
 
-    items[index]
-      .extendCommand(cmd)
-      .setTextSelection(0)
-      .run()
+    command(items[index])
+
+    // items[index]
+    //   .extendCommand(cmd)
+    //   .setTextSelection(0)
+    //   .run()
 
   }, [
     range,
+    command,
     editor,
+    items,
   ])
 
   useImperativeHandle(ref, () => ({
@@ -78,6 +53,7 @@ const Autocomplete: AutocompleteList = forwardRef(({
   }), [
     selectedIndex,
     selectItem,
+    items.length,
   ])
 
   return (
@@ -101,8 +77,8 @@ const Autocomplete: AutocompleteList = forwardRef(({
     >
       {items.map((item, index) => (
         <Item
-          key={item.title}
-          title={item.title}
+          key={item.value}
+          title={item.value}
           isSelected={index === selectedIndex}
           selectItem={() => selectItem(index)}
         />

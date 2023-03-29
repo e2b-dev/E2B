@@ -2,9 +2,11 @@ import { Editor, Range } from '@tiptap/core'
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
+import type { Reference } from 'editor/referenceType'
+
 import { findSuggestionMatch } from './findSuggestionMatch'
 
-export interface SuggestionOptions<Item = unknown> {
+export interface SuggestionOptions<Item = Reference> {
   editor: Editor,
   char?: string,
   startOfLine?: boolean,
@@ -28,7 +30,7 @@ export interface SuggestionOptions<Item = unknown> {
   }) => boolean,
 }
 
-export interface SuggestionProps<Item = unknown> {
+export interface SuggestionProps<Item = Reference> {
   editor: Editor,
   range: Range,
   query: string,
@@ -57,7 +59,7 @@ interface SuggestionPluginState {
   wasCharTyped: boolean
 }
 
-export function Suggestion<Item = unknown>({
+export function Suggestion<Item = Reference>({
   editor,
   char = '/',
   startOfLine = false,
@@ -107,13 +109,11 @@ export function Suggestion<Item = unknown>({
             items: (handleChange || handleStart)
               ? await items(state.query)
               : [],
-            command: commandProps => {
-              command({
-                editor,
-                range: state.range,
-                props: commandProps,
-              })
-            },
+            command: commandProps => command({
+              editor,
+              range: state.range,
+              props: commandProps,
+            }),
             decorationNode,
             // virtual node for popper.js or tippy.js
             // this can be used for building popups without a DOM node
@@ -153,7 +153,6 @@ export function Suggestion<Item = unknown>({
         const { selection } = transaction
         const next = { ...prev }
 
-        console.log('apply--', prev.wasCharTyped)
 
         // We can only be suggesting if there is no selection
         if (!prev.wasCharTyped) {
@@ -163,6 +162,11 @@ export function Suggestion<Item = unknown>({
           if (prev.range && (selection.from < prev.range?.from || selection.from > prev.range?.to)) {
             next.active = false
           }
+
+          console.log('apply', {
+            position: selection.$from,
+
+          })
 
           // Try to match against where our cursor currently is
           const match = findSuggestionMatch({
@@ -209,7 +213,6 @@ export function Suggestion<Item = unknown>({
 
         if (text) {
           state.wasCharTyped = true
-          console.log('char yes')
         }
 
         // if (text === char && (preceedingChar === ' ' || !preceedingChar)) {

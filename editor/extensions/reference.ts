@@ -41,7 +41,6 @@ export default Node.create<ReferenceOptions>({
       suggestion: {
         pluginKey: ReferencePluginKey,
         command: ({ editor, range, props }) => {
-          console.log('Command >>>')
           // increase range.to by one when the next node is of type "text"
           // and starts with a space character
           const nodeAfter = editor.view.state.selection.$to.nodeAfter
@@ -57,7 +56,10 @@ export default Node.create<ReferenceOptions>({
             .insertContentAt(range, [
               {
                 type: this.name,
-                attrs: props,
+                attrs: {
+                  [REFERENCE_VALUE_ATTRIBUTE_NAME]: props.value,
+                  [REFERENCE_TYPE_ATTRIBUTE_NAME]: props.type,
+                },
               },
               {
                 type: 'text',

@@ -14,6 +14,7 @@ import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/Rou
 
 import { Suggestion, SuggestionOptions } from './suggestion'
 import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
+import reference from '../reference'
 
 export * from './suggestion'
 
@@ -101,6 +102,7 @@ export default Node.create<AutocompleteOptions>({
       Suggestion({
         editor: this.editor,
         startOfLine: false,
+        ...reference.options.suggestion,
         ...this.options.suggestion,
       }),
     ]
