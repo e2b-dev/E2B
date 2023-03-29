@@ -3,62 +3,43 @@ import { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { PluginKey } from '@tiptap/pm/state'
 
 import attributeHandler from 'utils/attributeHandler'
+import { Reference } from 'editor/referenceType'
 
-import { Suggestion, SuggestionOptions } from './command'
+import { Suggestion, SuggestionOptions } from './autocomplete'
 
-export enum PromptContextType {
-  NPMPackage = 'NPM_PACKAGE',
-  DEPLOYMENT = 'DEPLOYMENT_SERVICE',
-}
-
-export interface PromptContext {
-  type: PromptContextType
-  value: string
-}
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
-    promptContext: {
-      setPromptContext: (context: PromptContext) => ReturnType,
+    reference: {
+      setReference: (reference: Reference) => ReturnType,
     }
   }
 }
 
-export const CONTEXT_VALUE_ATTRIBUTE_NAME = 'context-value'
-export const CONTEXT_TYPE_ATTRIBUTE_NAME = 'context-type'
+export const REFERENCE_TYPE_ATTRIBUTE_NAME = 'reference-type'
+export const REFERENCE_VALUE_ATTRIBUTE_NAME = 'reference-value'
 
-export const promptContextItems: PromptContext[] = [
-  {
-    type: PromptContextType.NPMPackage,
-    value: '@slack/web-api',
-  },
-  {
-    type: PromptContextType.DEPLOYMENT,
-    value: 'AWS Lambda',
-  },
-]
-
-export type MentionOptions = {
+export type ReferenceOptions = {
   HTMLAttributes: Record<string, any>
-  renderLabel: (props: { options: MentionOptions; node: ProseMirrorNode }) => string
+  renderLabel: (props: { options: ReferenceOptions; node: ProseMirrorNode }) => string
   suggestion: Omit<SuggestionOptions, 'editor'>
 }
 
-export const NODE_NAME = 'promptContext'
-export const PromptContextPluginKey = new PluginKey(NODE_NAME)
+export const NODE_NAME = 'reference'
+export const ReferencePluginKey = new PluginKey(NODE_NAME)
 
-export default Node.create<MentionOptions>({
+export default Node.create<ReferenceOptions>({
   name: NODE_NAME,
   addOptions() {
     return {
       HTMLAttributes: {
-        class: 'prompt-context',
+        class: NODE_NAME,
       },
       renderLabel({ node }) {
-        return `${node.attrs[CONTEXT_VALUE_ATTRIBUTE_NAME]}`
+        return `${node.attrs[REFERENCE_VALUE_ATTRIBUTE_NAME]}`
       },
       suggestion: {
-        pluginKey: PromptContextPluginKey,
+        pluginKey: ReferencePluginKey,
         command: ({ editor, range, props }) => {
           console.log('Command >>>')
           // increase range.to by one when the next node is of type "text"
@@ -105,8 +86,8 @@ export default Node.create<MentionOptions>({
 
   addAttributes() {
     return {
-      ...attributeHandler({ nodeAttribute: CONTEXT_VALUE_ATTRIBUTE_NAME }),
-      ...attributeHandler({ nodeAttribute: CONTEXT_TYPE_ATTRIBUTE_NAME }),
+      ...attributeHandler({ nodeAttribute: REFERENCE_VALUE_ATTRIBUTE_NAME }),
+      ...attributeHandler({ nodeAttribute: REFERENCE_TYPE_ATTRIBUTE_NAME }),
     }
   },
 
@@ -173,14 +154,14 @@ export default Node.create<MentionOptions>({
   .extend({
     addCommands() {
       return {
-        setPromptContext: (context) => ({ commands, state }) => {
+        setReference: (reference) => ({ commands, state }) => {
           return commands
             .setContent([
               {
                 type: this.name,
                 attrs: {
-                  [CONTEXT_TYPE_ATTRIBUTE_NAME]: context.type,
-                  [CONTEXT_VALUE_ATTRIBUTE_NAME]: context.value,
+                  [REFERENCE_TYPE_ATTRIBUTE_NAME]: reference.type,
+                  [REFERENCE_VALUE_ATTRIBUTE_NAME]: reference.value,
                 },
               },
               {

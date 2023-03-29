@@ -6,28 +6,39 @@ import {
 } from 'react'
 import { ChainedCommands } from '@tiptap/core'
 
-import { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
-import { PromptContext, promptContextItems } from 'editor/extensions/promptContext'
+import { Reference, ReferenceType } from 'editor/referenceType'
 
 import Item from './Item'
+import { AutocompleteList } from './ListWrapper'
 
-interface CommandItem {
+interface AutocompleteItem {
   title: string
   extendCommand: (cmd: ChainedCommands) => ChainedCommands
 }
 
-function createCommandItem(context: PromptContext): CommandItem {
+function createAutocompleteItem(reference: Reference): AutocompleteItem {
   return {
-    title: context.value,
-    extendCommand: (cmd) => cmd.setPromptContext(context)
+    title: reference.value,
+    extendCommand: (cmd) => cmd.setReference(reference)
   }
 }
 
-const items: CommandItem[] = [
-  ...promptContextItems.map(createCommandItem),
+export const referenceItems: Reference[] = [
+  {
+    type: ReferenceType.NPMPackage,
+    value: '@slack/web-api',
+  },
+  {
+    type: ReferenceType.DEPLOYMENT,
+    value: 'AWS Lambda',
+  },
 ]
 
-const ContextAutocomplete: CommandList = forwardRef(({
+const items: AutocompleteItem[] = [
+  ...referenceItems.map(createAutocompleteItem),
+]
+
+const Autocomplete: AutocompleteList = forwardRef(({
   editor,
   range,
 }, ref) => {
@@ -101,6 +112,6 @@ const ContextAutocomplete: CommandList = forwardRef(({
   )
 })
 
-ContextAutocomplete.displayName = 'ContextAutocomplete'
+Autocomplete.displayName = 'Autocomplete'
 
-export default ContextAutocomplete
+export default Autocomplete

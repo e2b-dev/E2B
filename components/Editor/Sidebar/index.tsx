@@ -8,7 +8,7 @@ import Text from 'components/Text'
 import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
-import { html2markdown } from 'hooks/useDocEditor'
+import { html2markdown } from 'editor/schema'
 
 import DeployButton from './DeployButton'
 import Logs from './Logs'
@@ -40,7 +40,7 @@ async function handlePostGenerate(url: string, { arg }: {
         switch (b.type) {
           case 'Description':
           case 'Instructions':
-            const [markdown, context] = html2markdown(b.content)
+            const [markdown, references] = html2markdown(b.content)
             const block: Block = {
               ...b,
               content: markdown,
