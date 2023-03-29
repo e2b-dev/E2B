@@ -93,11 +93,10 @@ const Autocomplete: AutocompleteList = forwardRef(({
         overflow-y-auto
         overscroll-none
         rounded
-
         border
-        border-indigo-300
-
-        bg-white
+        border-slate-300
+        bg-slate-50
+        shadow-md
       "
     >
       {items.map((item, index) => (

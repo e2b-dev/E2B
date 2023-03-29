@@ -15,7 +15,6 @@ import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/Rou
 import { Suggestion, SuggestionOptions } from './suggestion'
 import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
 
-export * from './findSuggestionMatch'
 export * from './suggestion'
 
 export type AutocompleteOptions = {

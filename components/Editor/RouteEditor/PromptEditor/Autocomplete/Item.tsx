@@ -29,18 +29,21 @@ function Item({
     <div
       ref={setScrollRef}
       className={cn(
-        'px-4',
-        'py-1',
+        'px-6',
+        'py-0.5',
         'shrink-0',
         'flex',
         'font-mono',
         'items-center',
+        'text-sm',
         'group',
+
         'overflow-ellipsis',
         'overflow-hidden',
         'cursor-pointer',
         {
-          'bg-indigo-50': isSelected,
+          'text-slate-600': !isSelected,
+          'bg-indigo-100 text-indigo-400': isSelected,
         },
       )}
       onMouseDown={selectItem}
@@ -48,7 +51,7 @@ function Item({
       <Text
         text={title}
       />
-    </div>
+    </div >
   )
 }
 

@@ -39,6 +39,6 @@
 }
 
 .reference {
-  @apply py-0.5 text-indigo-400 font-semibold font-mono;
+  @apply text-indigo-400 font-semibold font-mono;
   box-decoration-break: clone;
 }
