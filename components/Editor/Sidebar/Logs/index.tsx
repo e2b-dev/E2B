@@ -78,7 +78,7 @@ function Logs({
         pr-4
       ">
         <Text
-          text="Logs"
+          text="Agent"
           size={Text.size.S2}
           className="
             uppercase

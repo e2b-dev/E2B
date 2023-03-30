@@ -37,8 +37,8 @@ function Editor({ project }: Props) {
       }
     })
   }
-  
-  const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [60, 40])
+
+  const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [50, 50])
   const handleResize = useCallback((_: number, newSizes: number[]) => {
     setSizes(newSizes)
     if (ref.current) {
@@ -72,9 +72,9 @@ function Editor({ project }: Props) {
         <div
           ref={ref}
           className="
-          flex
-          flex-col
-          flex-1
+            flex
+            flex-col
+            flex-1
         ">
           <Routes
             routes={routes}
