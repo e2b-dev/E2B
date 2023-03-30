@@ -122,7 +122,7 @@ export default Node.create<ReferenceOptions>({
   addKeyboardShortcuts() {
     return {
       Backspace: () => this.editor.commands.command(({ tr, state }) => {
-        let isMention = false
+        let isReference = false
         const { selection } = state
         const { empty, anchor } = selection
 
@@ -132,14 +132,14 @@ export default Node.create<ReferenceOptions>({
 
         state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
           if (node.type.name === this.name) {
-            isMention = true
+            isReference = true
             tr.insertText(this.options.suggestion.char || '', pos, pos + node.nodeSize)
 
             return false
           }
         })
 
-        return isMention
+        return isReference
       }),
     }
   },
@@ -153,25 +153,3 @@ export default Node.create<ReferenceOptions>({
     ]
   },
 })
-  .extend({
-    addCommands() {
-      return {
-        setReference: (reference) => ({ commands, state }) => {
-          return commands
-            .setContent([
-              {
-                type: this.name,
-                attrs: {
-                  [REFERENCE_TYPE_ATTRIBUTE_NAME]: reference.type,
-                  [REFERENCE_VALUE_ATTRIBUTE_NAME]: reference.value,
-                },
-              },
-              {
-                type: 'text',
-                text: ' ',
-              },
-            ])
-        },
-      }
-    },
-  })

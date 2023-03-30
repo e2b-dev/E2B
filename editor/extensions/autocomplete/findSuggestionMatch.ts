@@ -1,68 +1,56 @@
-import { Range } from '@tiptap/core'
-import { ResolvedPos } from 'prosemirror-model'
+import { escapeForRegEx, Range } from '@tiptap/core'
+import { ResolvedPos } from '@tiptap/pm/model'
 
 export interface Trigger {
   char: string
   allowSpaces: boolean
+  allowedPrefixes: string[] | null
   startOfLine: boolean
   $position: ResolvedPos
 }
 
 export type SuggestionMatch = {
-  range: Range,
-  query: string,
-  text: string,
+  range: Range
+  query: string
+  text: string
 } | null
 
 export function findSuggestionMatch(config: Trigger): SuggestionMatch {
   const {
-    char,
-    allowSpaces,
-    startOfLine,
-    $position,
+    char, allowSpaces, allowedPrefixes, startOfLine, $position,
   } = config
 
-  const textAfterAnchor = $position.nodeAfter?.textContent || ''
-  const whitespaceAfterAnchorIndex = textAfterAnchor.indexOf(' ')
-  const textAfterAnchorUntilWhitespace = whitespaceAfterAnchorIndex < 0
-    ? textAfterAnchor
-    : textAfterAnchor.slice(0, whitespaceAfterAnchorIndex + 1)
-
-  // Matching expressions used for later
-  const escapedChar = char
-    .split('')
-    .map(c => `\\${c}`)
-    .join('')
-
+  const escapedChar = escapeForRegEx(char)
   const suffix = new RegExp(`\\s${escapedChar}$`)
   const prefix = startOfLine ? '^' : ''
   const regexp = allowSpaces
     ? new RegExp(`${prefix}${escapedChar}.*?(?=\\s${escapedChar}|$)`, 'gm')
     : new RegExp(`${prefix}(?:^)?${escapedChar}[^\\s${escapedChar}]*`, 'gm')
 
-  const isTopLevelNode = $position.depth <= 0
-  const textFrom = isTopLevelNode
-    ? 0
-    : $position.before()
+  const text = $position.nodeBefore?.isText && $position.nodeBefore.text
 
-  const textTo = $position.pos
-  const text = $position.doc.textBetween(textFrom, textTo, '\0', '\0') + textAfterAnchorUntilWhitespace
+  if (!text) {
+    return null
+  }
+
+  const textFrom = $position.pos - text.length
   const match = Array.from(text.matchAll(regexp)).pop()
 
   if (!match || match.input === undefined || match.index === undefined) {
     return null
   }
 
-  // JavaScript doesn't have lookbehinds; this hacks a check that first character is " "
-  // or the line beginning
+  // JavaScript doesn't have lookbehinds. This hacks a check that first character
+  // is a space or the start of the line
   const matchPrefix = match.input.slice(Math.max(0, match.index - 1), match.index)
+  const matchPrefixIsAllowed = new RegExp(`^[${allowedPrefixes?.join('')}\0]?$`).test(matchPrefix)
 
-  if (!/^[\s\0]?$/.test(matchPrefix)) {
+  if (allowedPrefixes !== null && !matchPrefixIsAllowed) {
     return null
   }
 
   // The absolute position of the match in the document
-  const from = match.index + $position.start()
+  const from = textFrom + match.index
   let to = from + match[0].length
 
   // Edge case handling; if spaces are allowed and we're directly in between
