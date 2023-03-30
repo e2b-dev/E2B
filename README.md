@@ -4,9 +4,9 @@
 
 ![Screen Shot 2023-03-30 at 8 56 18 PM](https://user-images.githubusercontent.com/5136688/228936729-c1ae45b0-9199-4aae-bb3b-837b97e8176a.png)
 
-We're building a new kind of IDE powered by OpenAI where you "code" by providing technical spec or documentation in plain english and AI agent does the rest.
+We're building a new kind of IDE powered by OpenAI where you "code" by providing technical spec or documentation in plain English and AI agent does the rest.
 The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure
-sandboxed cloued environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/).
+sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/).
 
 
 The project is heavily work in progress. You can follow progress on [Twitter](https://twitter.com/mlejva).
