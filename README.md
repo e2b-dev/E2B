@@ -1,6 +1,7 @@
 # Next-gen IDE (name about to change)
 
-** Develop in a brand new programming language - plain English **
+**Develop in a brand new programming language - plain English**
+
 ![Screen Shot 2023-03-30 at 8 56 18 PM](https://user-images.githubusercontent.com/5136688/228936729-c1ae45b0-9199-4aae-bb3b-837b97e8176a.png)
 
 We're building a new kind of IDE powered by OpenAI where you "code" by providing technical spec or documentation in plain english and AI agent does the rest.
