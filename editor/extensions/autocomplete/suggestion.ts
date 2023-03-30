@@ -187,6 +187,7 @@ export function Suggestion<Item = Reference>({
           const match = findSuggestionMatch({
             char,
             allowSpaces,
+            allowedPrefixes: [],
             startOfLine,
             $position: selection.$from,
           })
