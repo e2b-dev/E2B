@@ -119,28 +119,28 @@ export default Node.create<ReferenceOptions>({
     })
   },
 
-  addKeyboardShortcuts() {
-    return {
-      Backspace: () => this.editor.commands.command(({ tr, state }) => {
-        let isReference = false
-        const { selection } = state
-        const { empty, anchor } = selection
+  // addKeyboardShortcuts() {
+  //   return {
+  //     Backspace: () => this.editor.commands.command(({ tr, state }) => {
+  //       let isReference = false
+  //       const { selection } = state
+  //       const { empty, anchor } = selection
 
-        if (!empty) {
-          return false
-        }
+  //       if (!empty) {
+  //         return false
+  //       }
 
-        state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
-          if (node.type.name === this.name) {
-            isReference = true
-            tr.insertText(this.options.suggestion.char || '', pos, pos + node.nodeSize)
+  //       state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
+  //         if (node.type.name === this.name) {
+  //           isReference = true
+  //           tr.insertText(this.options.suggestion.char || '', pos, pos + node.nodeSize)
 
-            return false
-          }
-        })
+  //           return false
+  //         }
+  //       })
 
-        return isReference
-      }),
-    }
-  },
+  //       return isReference
+  //     }),
+  //   }
+  // },
 })

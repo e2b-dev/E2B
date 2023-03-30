@@ -12,6 +12,7 @@ import ReferenceExtension, {
   REFERENCE_VALUE_ATTRIBUTE_NAME,
 } from 'editor/extensions/reference'
 import AutocompleteExtension from 'editor/extensions/autocomplete'
+import CustomKeymap from 'editor/extensions/keymap'
 
 export enum ReferenceType {
   NPMPackage = 'NPM_PACKAGE',
@@ -59,12 +60,13 @@ export const extensions = [
   OrderedList,
   ListItem,
   BulletList,
+  ReferenceExtension,
   AutocompleteExtension.configure({
     suggestion: {
       items: (query) => searchEngine.search(query).map(q => q.item),
     },
   }),
-  ReferenceExtension,
+  CustomKeymap,
 ]
 
 const schema = getSchema(extensions)
