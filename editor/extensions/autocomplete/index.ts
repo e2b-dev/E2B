@@ -10,17 +10,16 @@ import tippy, {
 
 import { destroyOnEsc } from 'editor/tippyPlugins'
 import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/RouteEditor/PromptEditor/Autocomplete/ListWrapper'
+import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
 
 import { Suggestion, SuggestionOptions, SuggestionProps } from './suggestion'
-import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
 import reference from '../reference'
-
-export * from './suggestion'
 
 /**
  * Create bounding rect that starts at the caret position.
  */
 function getReferenceClientRect(props: SuggestionProps): () => DOMRect {
+  // TODO: Can we use props.decorationNode to simplify getting the rect
   return () => {
     const selection = props.editor.view.state.selection
     const anchor = props.editor.view.domAtPos(selection.anchor)

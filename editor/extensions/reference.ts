@@ -5,7 +5,7 @@ import { PluginKey } from '@tiptap/pm/state'
 import attributeHandler from 'utils/attributeHandler'
 import { Reference } from 'editor/referenceType'
 
-import { SuggestionOptions } from './autocomplete'
+import { SuggestionOptions } from './autocomplete/suggestion'
 
 
 declare module '@tiptap/core' {
