@@ -41,7 +41,7 @@ export type AutocompleteOptions = {
   suggestion: Omit<SuggestionOptions, 'editor'>
 }
 
-export default Node.create<AutocompleteOptions>({
+const autocomplete = Node.create<AutocompleteOptions>({
   name: 'autocomplete',
   addOptions() {
     return {
@@ -128,3 +128,5 @@ export default Node.create<AutocompleteOptions>({
     ]
   },
 })
+
+export default autocomplete
