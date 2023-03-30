@@ -14,10 +14,10 @@ function useDocEditor({
 }) {
   const editor = useEditor({
     content: initialContent,
-    // parseOptions: {
-    //   preserveWhitespace: 'full',
-    // },
-    // injectCSS: false,
+    parseOptions: {
+      preserveWhitespace: 'full',
+    },
+    injectCSS: false,
     editorProps: {
       attributes: {
         'data-gramm': 'false',
