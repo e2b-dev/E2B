@@ -5,7 +5,7 @@ import { PluginKey } from '@tiptap/pm/state'
 import attributeHandler from 'utils/attributeHandler'
 import { Reference } from 'editor/referenceType'
 
-import { Suggestion, SuggestionOptions } from './autocomplete'
+import { SuggestionOptions } from './autocomplete'
 
 
 declare module '@tiptap/core' {
@@ -142,14 +142,5 @@ export default Node.create<ReferenceOptions>({
         return isReference
       }),
     }
-  },
-
-  addProseMirrorPlugins() {
-    return [
-      Suggestion({
-        editor: this.editor,
-        ...this.options.suggestion,
-      }),
-    ]
   },
 })
