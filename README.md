@@ -8,6 +8,7 @@ We're building a new kind of IDE powered by OpenAI where you "code" by providing
 The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure
 sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/).
 
+One of our core ideas is to allow anybody to use their own models and to customize the prompts and tools. 
 
 The project is heavily work in progress. You can follow progress on [Twitter](https://twitter.com/mlejva).
 
