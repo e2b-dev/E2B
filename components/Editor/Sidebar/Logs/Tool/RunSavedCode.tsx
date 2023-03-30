@@ -1,7 +1,4 @@
 import {
-  ReactNode
-} from 'react'
-import {
   Code2,
 } from 'lucide-react'
 
@@ -19,9 +16,8 @@ function RunSavedCode({
 }: Props) {
   if (log.tool_name !== ToolName.RunSavedCode) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.WriteJavaScriptCode}' tool`)
 
-  let body: ReactNode = null
-  if (log.tool_input.trim()) {
-    body = (
+  const body = log.tool_input.trim()
+    ? (
       <div className="
         pt-2
       ">
@@ -30,7 +26,7 @@ function RunSavedCode({
         </pre>
       </div>
     )
-  }
+    : null
 
   return (
     <Base

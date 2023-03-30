@@ -10,25 +10,27 @@ import tippy, {
 import { ComponentClass } from 'react'
 
 import { destroyOnEsc } from 'editor/tippyPlugins'
+import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/RouteEditor/PromptEditor/Autocomplete/ListWrapper'
 
 import { Suggestion, SuggestionOptions } from './suggestion'
-import CommandListWrapper, { CommandList } from 'components/Editor/extensions/command/CommandListWrapper'
+import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
+import reference from '../reference'
 
-export * from './findSuggestionMatch'
 export * from './suggestion'
 
-export type CommandOptions = {
-  list?: CommandList
+export type AutocompleteOptions = {
+  list?: AutocompleteList
   suggestion: Omit<SuggestionOptions, 'editor'>
 }
 
-export const Command = (component: CommandList) => Node.create<CommandOptions>({
-  name: 'command',
+export default Node.create<AutocompleteOptions>({
+  name: 'autocomplete',
   addOptions() {
     return {
       suggestion: {
         // Check if the cursor is in a paragraph.
-        allow: ({ editor: { state: { doc, selection } } }) => doc.resolve(selection.anchor)?.parent?.type.name === 'paragraph',
+        allow: ({ editor: { state: { doc, selection } } }) =>
+          doc.resolve(selection.anchor)?.parent?.type.name === 'paragraph',
         render: () => {
           let reactRenderer: any
           let popup: Instance<Props> | undefined
@@ -37,11 +39,11 @@ export const Command = (component: CommandList) => Node.create<CommandOptions>({
           return {
             onStart: props => {
               disabled = false
-              reactRenderer = new ReactRenderer(CommandListWrapper as unknown as ComponentClass, {
+              reactRenderer = new ReactRenderer(AutocompleteListWrapper as unknown as ComponentClass, {
                 editor: props.editor as ReactEditor,
                 props: {
                   ...props,
-                  list: component,
+                  list: Autocomplete,
                 },
               })
 
@@ -99,6 +101,8 @@ export const Command = (component: CommandList) => Node.create<CommandOptions>({
     return [
       Suggestion({
         editor: this.editor,
+        startOfLine: false,
+        ...reference.options.suggestion,
         ...this.options.suggestion,
       }),
     ]

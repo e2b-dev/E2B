@@ -10,9 +10,7 @@ function attributeHandler({
   return {
     [nodeAttribute]: {
       default: undefined,
-      parseHTML: (element: HTMLElement) => ({
-        [nodeAttribute]: element.getAttribute(htmlAttribute),
-      }),
+      parseHTML: (element: HTMLElement) => element.getAttribute(htmlAttribute),
       renderHTML: (attributes: Record<string, any>) => ({
         ...attributes[nodeAttribute] && { [htmlAttribute]: attributes[nodeAttribute] },
       }),

@@ -2,9 +2,11 @@ import { Editor, Range } from '@tiptap/core'
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
+import type { Reference } from 'editor/referenceType'
 import { findSuggestionMatch } from './findSuggestionMatch'
 
-export interface SuggestionOptions<Item = unknown> {
+
+export interface SuggestionOptions<Item = Reference> {
   editor: Editor,
   char?: string,
   startOfLine?: boolean,
@@ -28,7 +30,7 @@ export interface SuggestionOptions<Item = unknown> {
   }) => boolean,
 }
 
-export interface SuggestionProps<Item = unknown> {
+export interface SuggestionProps<Item = Reference> {
   editor: Editor,
   range: Range,
   query: string,
@@ -45,9 +47,21 @@ export interface SuggestionKeyDownProps {
   range: Range,
 }
 
-export function Suggestion<Item = unknown>({
+interface SuggestionPluginState {
+  active: boolean
+  range?: {
+    from: number
+    to: number
+  }
+  decorationID?: string
+  query: string | null
+  text: string | null
+  wasCharTyped: boolean
+}
+
+export function Suggestion<Item = Reference>({
   editor,
-  char = '@',
+  char = '/',
   startOfLine = false,
   decorationTag = 'span',
   decorationClass = 'suggestion',
@@ -60,16 +74,7 @@ export function Suggestion<Item = unknown>({
 
   const allowSpaces = false
 
-  return new Plugin<{
-    active: boolean
-    range?: {
-      from: number
-      to: number
-    }
-    query: string | null
-    text: string | null
-    wasCharTyped: boolean
-  }>({
+  return new Plugin<SuggestionPluginState>({
     key: new PluginKey('suggestion'),
 
     view() {
@@ -104,13 +109,11 @@ export function Suggestion<Item = unknown>({
             items: (handleChange || handleStart)
               ? await items(state.query)
               : [],
-            command: commandProps => {
-              command({
-                editor,
-                range: state.range,
-                props: commandProps,
-              })
-            },
+            command: commandProps => command({
+              editor,
+              range: state.range,
+              props: commandProps,
+            }),
             decorationNode,
             // virtual node for popper.js or tippy.js
             // this can be used for building popups without a DOM node
@@ -150,14 +153,35 @@ export function Suggestion<Item = unknown>({
         const { selection } = transaction
         const next = { ...prev }
 
+
         // We can only be suggesting if there is no selection
         if (!prev.wasCharTyped) {
           next.active = false
         } else if (selection.from === selection.to) {
           // Reset active state if we just left the previous suggestion range
-          if (selection.from < prev.range.from || selection.from > prev.range.to) {
+          if (prev.range && (selection.from < prev.range?.from || selection.from > prev.range?.to)) {
             next.active = false
           }
+
+          console.log('apply', {
+            position: selection.$from,
+          })
+
+
+          // const text = selection.$from.node().text
+
+          // if (text) {
+          //   const prefix = text.slice(0, selection.$from.textOffset)
+          //   const lastWord = /\\b(\w+)$\\/
+
+          //   const prefixWord = lastWord.exec(prefix)
+          //   if (prefixWord) {
+          //     const match = prefixWord[0]
+          //     // Calculate range
+          //     // Update state
+          //   }
+          // }
+
 
           // Try to match against where our cursor currently is
           const match = findSuggestionMatch({
@@ -166,12 +190,12 @@ export function Suggestion<Item = unknown>({
             startOfLine,
             $position: selection.$from,
           })
-          const decorationId = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`
+          const decorationID = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`
 
           // If we found a match, update the current state to show it
           if (match && allow({ editor, range: match.range })) {
             next.active = true
-            next.decorationId = prev.decorationId ? prev.decorationId : decorationId
+            next.decorationID = prev.decorationID ? prev.decorationID : decorationID
             next.range = match.range
             next.query = match.query
             next.text = match.text
@@ -185,8 +209,8 @@ export function Suggestion<Item = unknown>({
         // Make sure to empty the range if suggestion is inactive
         if (!next.active) {
           next.wasCharTyped = false
-          next.decorationId = null
-          next.range = {}
+          next.decorationID = undefined
+          next.range = undefined
           next.query = null
           next.text = null
         }
@@ -200,11 +224,14 @@ export function Suggestion<Item = unknown>({
         const state = this.getState(view.state)
         if (!state) return
 
-        const preceedingChar = view.state.doc.textBetween(from - 1, from)
+        // const preceedingChar = view.state.doc.textBetween(from - 1, from)
 
-        if (text === char && (preceedingChar === ' ' || !preceedingChar)) {
+        if (text) {
           state.wasCharTyped = true
         }
+
+        // if (text === char && (preceedingChar === ' ' || !preceedingChar)) {
+        // }
 
         return false
       },
@@ -219,12 +246,20 @@ export function Suggestion<Item = unknown>({
           return false
         }
 
+        if (!range) {
+          return false
+        }
+
         return renderer?.onKeyDown?.({ view, event, range }) || false
       },
 
       // Setup decorator on the currently active suggestion.
       decorations(state) {
-        const { active, range, decorationId } = this.getState(state)
+        const { active, range, decorationID } = this.getState(state) as SuggestionPluginState
+
+        if (!range) {
+          return null
+        }
 
         if (!active) {
           return null
@@ -234,7 +269,7 @@ export function Suggestion<Item = unknown>({
           Decoration.inline(range.from, range.to, {
             nodeName: decorationTag,
             class: decorationClass,
-            'data-decoration-id': decorationId,
+            'data-decoration-id': decorationID,
           }),
         ])
       },

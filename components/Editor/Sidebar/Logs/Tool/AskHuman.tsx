@@ -1,5 +1,4 @@
 import {
-  ReactNode,
   useCallback,
   useState,
 } from 'react'
@@ -32,9 +31,8 @@ function AskHuman({
     onAnswer?.({ logID: log.id, answer, toolName: ToolName.AskHuman })
   }, [answer, onAnswer, log.id, log.tool_output])
 
-  let body: ReactNode = null
-  if (log.tool_input.trim()) {
-    body = (
+  const body = log.tool_input.trim()
+    ? (
       <div className="
         flex
         flex-col
@@ -64,7 +62,7 @@ function AskHuman({
         </div>
       </div>
     )
-  }
+    : null
 
   return (
     <Base

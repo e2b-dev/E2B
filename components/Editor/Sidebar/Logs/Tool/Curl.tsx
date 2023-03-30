@@ -1,7 +1,4 @@
 import {
-  ReactNode
-} from 'react'
-import {
   Terminal,
 } from 'lucide-react'
 
@@ -19,17 +16,15 @@ function Curl({
 }: Props) {
   if (log.tool_name !== ToolName.Curl) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.Curl}' tool`)
 
-  let body: ReactNode = null
-  if (log.tool_input.trim()) {
-    body = (
-      <div className="
-      ">
+  const body = log.tool_input.trim()
+    ? (
+      <div className="">
         <pre>
           {log.tool_input.trim()}
         </pre>
       </div>
     )
-  }
+    : null
 
   return (
     <Base
