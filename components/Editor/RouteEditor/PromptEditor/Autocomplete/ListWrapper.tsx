@@ -28,7 +28,6 @@ class AutocompleteListWrapper extends Component<AutocompleteListWrapperProps, {}
   constructor(public props: AutocompleteListWrapperProps) {
     super(props)
     this.childRef = createRef<AutocompleteListRef>()
-    props.list.name
   }
 
   onKeyDown(props: SuggestionKeyDownProps) {
