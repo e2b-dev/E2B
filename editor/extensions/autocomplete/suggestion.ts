@@ -187,8 +187,7 @@ export function Suggestion<Item = Reference>({
           const match = findSuggestionMatch({
             char,
             allowSpaces,
-            allowedPrefixes: [],
-            startOfLine,
+            startOfLine: false,
             $position: selection.$from,
           })
           const decorationID = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`

@@ -42,7 +42,6 @@ function Item({
     <div
       ref={setScrollRef}
       className={cn(
-        'py-0.5',
         'px-2',
         'py-1',
         'space-x-2',

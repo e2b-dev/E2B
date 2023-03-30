@@ -7,16 +7,34 @@ import tippy, {
   Instance,
   Props,
 } from 'tippy.js'
-import { ComponentClass } from 'react'
 
 import { destroyOnEsc } from 'editor/tippyPlugins'
 import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/RouteEditor/PromptEditor/Autocomplete/ListWrapper'
 
-import { Suggestion, SuggestionOptions } from './suggestion'
+import { Suggestion, SuggestionOptions, SuggestionProps } from './suggestion'
 import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
 import reference from '../reference'
 
 export * from './suggestion'
+
+/**
+ * Create bounding rect that starts at the caret position.
+ */
+function getReferenceClientRect(props: SuggestionProps): () => DOMRect {
+  return () => {
+    const selection = props.editor.view.state.selection
+    const anchor = props.editor.view.domAtPos(selection.anchor)
+    const coords = props.editor.view.coordsAtPos(selection.anchor)
+
+    const range = document.createRange()
+    range.selectNodeContents(anchor.node)
+    const rect = range.getBoundingClientRect()
+
+    rect.x = coords.left
+
+    return rect
+  }
+}
 
 export type AutocompleteOptions = {
   list?: AutocompleteList
@@ -39,7 +57,7 @@ export default Node.create<AutocompleteOptions>({
           return {
             onStart: props => {
               disabled = false
-              reactRenderer = new ReactRenderer(AutocompleteListWrapper as unknown as ComponentClass, {
+              reactRenderer = new ReactRenderer(AutocompleteListWrapper, {
                 editor: props.editor as ReactEditor,
                 props: {
                   ...props,
@@ -50,14 +68,16 @@ export default Node.create<AutocompleteOptions>({
               const editorElement = props.editor.options.element
 
               popup = tippy(editorElement, {
-                getReferenceClientRect: props.clientRect,
+                getReferenceClientRect: getReferenceClientRect(props),
                 appendTo: () => document.body,
                 content: reactRenderer.element,
                 showOnCreate: true,
                 interactive: true,
                 hideOnClick: true,
+                duration: 1,
                 maxWidth: 'none',
                 trigger: 'manual',
+                offset: [1, 2],
                 animation: false,
                 placement: 'bottom-start',
                 onHide() {
@@ -76,7 +96,7 @@ export default Node.create<AutocompleteOptions>({
               reactRenderer.updateProps(props)
 
               popup?.setProps({
-                getReferenceClientRect: props.clientRect,
+                getReferenceClientRect: getReferenceClientRect(props),
               })
             },
             onKeyDown(props) {
