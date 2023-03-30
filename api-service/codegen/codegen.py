@@ -94,7 +94,6 @@ class Codegen(BaseModel):
         callback_manager = AsyncCallbackManager(
             [
                 StreamingStdOutCallbackHandler(),
-                # CustomCallbackHandler(database=database),
             ]
         )
 
@@ -104,6 +103,7 @@ class Codegen(BaseModel):
 
         # Create the LLM
         llm = ChatOpenAI(
+            model_name="gpt-4",
             streaming=True,
             temperature=0,
             max_tokens=2056,
