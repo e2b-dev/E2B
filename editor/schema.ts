@@ -87,7 +87,9 @@ const serializer = new MarkdownSerializer({
 export function html2markdown(html: string): [string, Reference[]] {
   const node = createDocument(html, schema)
   const markdown = serializer.serialize(node)
+
   const references: Reference[] = []
+
   node.descendants(n => {
     if (n.type.name === ReferenceExtension.name) {
       references.push({
@@ -97,5 +99,11 @@ export function html2markdown(html: string): [string, Reference[]] {
     }
   })
 
-  return [markdown, references]
+  const uniqueReferences = references.filter((reference, index, self) =>
+    index === self.findIndex((r) => (
+      r.type === reference.type && r.value === reference.value
+    ))
+  )
+
+  return [markdown, uniqueReferences]
 }
