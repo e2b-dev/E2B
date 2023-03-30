@@ -3,8 +3,6 @@ import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
 import type { Reference } from 'editor/referenceType'
-import { findSuggestionMatch } from './findSuggestionMatch'
-
 
 export interface SuggestionOptions<Item = Reference> {
   editor: Editor,
@@ -163,44 +161,39 @@ export function Suggestion<Item = Reference>({
             next.active = false
           }
 
-          console.log('apply', {
-            position: selection.$from,
-          })
+          const $position = selection.$from
 
+          const isTopLevelNode = $position.depth <= 0
+          const textFrom = isTopLevelNode
+            ? 0
+            : $position.before()
 
-          // const text = selection.$from.node().text
+          const textTo = $position.pos
+          const text = $position.doc.textBetween(textFrom, textTo, '\0', '\0')
 
-          // if (text) {
-          //   const prefix = text.slice(0, selection.$from.textOffset)
-          //   const lastWord = /\\b(\w+)$\\/
+          if (text) {
+            const lastWord = /(\S+)$/
+            const prefixWord = lastWord.exec(text)
+            if (prefixWord) {
+              const match = prefixWord[0]
+              const range = {
+                from: text.length - match.length + 1,
+                to: text.length + 1,
+              }
 
-          //   const prefixWord = lastWord.exec(prefix)
-          //   if (prefixWord) {
-          //     const match = prefixWord[0]
-          //     // Calculate range
-          //     // Update state
-          //   }
-          // }
-
-
-          // Try to match against where our cursor currently is
-          const match = findSuggestionMatch({
-            char,
-            allowSpaces,
-            startOfLine: false,
-            $position: selection.$from,
-          })
-          const decorationID = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`
-
-          // If we found a match, update the current state to show it
-          if (match && allow({ editor, range: match.range })) {
-            next.active = true
-            next.decorationID = prev.decorationID ? prev.decorationID : decorationID
-            next.range = match.range
-            next.query = match.query
-            next.text = match.text
-          } else {
-            next.active = false
+              if (allow({ editor, range })) {
+                const decorationID = `id_${Math.floor(Math.random() * 0xFFFFFFFF)}`
+                next.active = true
+                next.decorationID = prev.decorationID ? prev.decorationID : decorationID
+                next.range = range
+                next.text = match
+                next.query = match
+              } else {
+                next.active = false
+              }
+            } else {
+              next.active = false
+            }
           }
         } else {
           next.active = false

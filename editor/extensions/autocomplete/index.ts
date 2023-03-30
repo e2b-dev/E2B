@@ -8,7 +8,7 @@ import tippy, {
   Props,
 } from 'tippy.js'
 
-import { destroyOnEsc } from 'editor/tippyPlugins'
+import { destroyOnBackspace, destroyOnEsc } from 'editor/tippyPlugins'
 import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/RouteEditor/PromptEditor/Autocomplete/ListWrapper'
 import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
 
@@ -73,7 +73,7 @@ const autocomplete = Node.create<AutocompleteOptions>({
                 showOnCreate: true,
                 interactive: true,
                 hideOnClick: true,
-                duration: 1,
+                delay: 160,
                 maxWidth: 'none',
                 trigger: 'manual',
                 offset: [1, 2],
@@ -87,7 +87,7 @@ const autocomplete = Node.create<AutocompleteOptions>({
                   disabled = true
                   reactRenderer.destroy()
                 },
-                plugins: [destroyOnEsc],
+                plugins: [destroyOnEsc, destroyOnBackspace],
               })
             },
             onUpdate(props) {

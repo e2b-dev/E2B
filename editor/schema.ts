@@ -35,7 +35,7 @@ export const referenceItems: Reference[] = [
   },
 ]
 
-const searchEngine = new Fuse(referenceItems, { keys: ['value'] })
+const searchEngine = new Fuse(referenceItems, { keys: ['value'], threshold: 0.3 })
 
 export const extensions = [
   StarterKit.configure({
