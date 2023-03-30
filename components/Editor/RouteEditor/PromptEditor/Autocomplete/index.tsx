@@ -8,29 +8,13 @@ import Item from './Item'
 import { AutocompleteList } from './ListWrapper'
 
 const Autocomplete: AutocompleteList = forwardRef(({
-  editor,
-  range,
   items,
   command,
 }, ref) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
-  const selectItem = useCallback((index: number) => {
-    const cmd = editor
-      .chain()
-      .deleteRange(range)
-
-    command(items[index])
-
-    // items[index]
-    //   .extendCommand(cmd)
-    //   .setTextSelection(0)
-    //   .run()
-
-  }, [
-    range,
+  const selectItem = useCallback((index: number) => command(items[index]), [
     command,
-    editor,
     items,
   ])
 
@@ -56,6 +40,10 @@ const Autocomplete: AutocompleteList = forwardRef(({
     items.length,
   ])
 
+  if (items.length === 0) {
+    return null
+  }
+
   return (
     <div
       className="
@@ -78,7 +66,7 @@ const Autocomplete: AutocompleteList = forwardRef(({
       {items.map((item, index) => (
         <Item
           key={item.value}
-          title={item.value}
+          item={item}
           isSelected={index === selectedIndex}
           selectItem={() => selectItem(index)}
         />

@@ -61,9 +61,7 @@ export const extensions = [
   BulletList,
   AutocompleteExtension.configure({
     suggestion: {
-      items: (query) => {
-        return searchEngine.search(query).map(q => q.item)
-      },
+      items: (query) => searchEngine.search(query).map(q => q.item),
     },
   }),
   ReferenceExtension,

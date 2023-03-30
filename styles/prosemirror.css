@@ -39,6 +39,6 @@
 }
 
 .reference {
-  @apply text-slate-600 font-semibold font-mono;
+  @apply text-slate-600 font-mono font-semibold;
   box-decoration-break: clone;
 }
