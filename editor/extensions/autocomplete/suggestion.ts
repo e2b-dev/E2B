@@ -177,8 +177,8 @@ export function Suggestion<Item = Reference>({
             if (prefixWord) {
               const match = prefixWord[0]
               const range = {
-                from: text.length - match.length + 1,
-                to: text.length + 1,
+                from: textFrom + text.length - match.length + 1,
+                to: textFrom + text.length + 1,
               }
 
               if (allow({ editor, range })) {
