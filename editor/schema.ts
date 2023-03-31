@@ -56,7 +56,7 @@ const serializer = new MarkdownSerializer({
   [BulletList.name]: defaultMarkdownSerializer.nodes.bullet_list,
   [CodeBlock.name]: defaultMarkdownSerializer.nodes.code_block,
   [ReferenceExtension.name]: (state, node) => {
-    state.text(node.attrs[REFERENCE_VALUE_ATTRIBUTE_NAME])
+    state.text(' `' + node.attrs[REFERENCE_VALUE_ATTRIBUTE_NAME] + '` ')
   },
 }, {
   ...defaultMarkdownSerializer.marks,
