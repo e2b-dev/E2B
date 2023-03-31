@@ -4,8 +4,6 @@ import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
 import type { ResultType } from 'editor/referenceType'
 
-
-
 export interface SuggestionOptions<Item = ResultType> {
   editor: Editor,
   char?: string,
