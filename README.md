@@ -1,22 +1,24 @@
 # Next-gen IDE (name about to change)
 
-**Develop in a brand new programming language - plain English**
-
 ![Screen Shot 2023-03-30 at 8 56 18 PM](https://user-images.githubusercontent.com/5136688/228936729-c1ae45b0-9199-4aae-bb3b-837b97e8176a.png)
 
-We're building a new kind of IDE powered by OpenAI where you "code" by providing technical spec or documentation in plain English and AI agent does the rest.
-The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure
-sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/).
+<NAME> is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. The developer writes a short documentation or a technical spec in plan English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you.
 
-One of our core ideas is to ultimately allow anybody to use their models and customize the prompts and tools.
+## Current state
+<NAME> is a work in progress and a lot will surely change. The `developer <---> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation should looke so things can change significantly in the short-term.
 
-The project is heavily work in progress. You can follow progress on [Twitter](https://twitter.com/mlejva).
+## Building in public
+One of our core ideas is to allow anybody to bring their models, customize the prompts, and develop custom tools for agents. We will also offer a hosted cloud version though.
 
+## Business model
+You will always be able to self-host <NAME> for free. The current idea is to offer the base cloud version for free while having some features for individuals behind a subscription. We'll share more on pricing for companies and enterprises in the future.
+
+## Follow progress
+- [Twitter](https://twitter.com/mlejva)
 
 ## Early demos
 - [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
 - [Build your custom "Just-In-Time" UI](https://twitter.com/mlejva/status/1641151421830529042)
 - [Agent coded a full Stripe customer checkout by following a technical spec provided by user](https://twitter.com/mlejva/status/1641072535163875330)
-
 
 ### Instructions on how to set it up locally coming soon
