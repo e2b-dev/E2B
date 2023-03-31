@@ -3,6 +3,7 @@ import useBlock from 'hooks/useBlock'
 
 import PromptEditor from './PromptEditor'
 import RequestBodyEditor from './RequestBodyEditor'
+import useReferences from 'hooks/useReferences'
 
 export interface Props {
   route?: Route
@@ -12,6 +13,8 @@ function RouteEditor({ route }: Props) {
   const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', 1, route)
   const [descriptionBlock, updateDescriptionBlock] = useBlock('Description', 1, route)
   const [instructionsBlock, updateInstructionsBlock] = useBlock('Instructions', 1, route)
+
+  const [referenceSearch] = useReferences()
 
   return (
     <div className="
@@ -41,6 +44,7 @@ function RouteEditor({ route }: Props) {
         ">
           {descriptionBlock &&
             <PromptEditor
+              referenceSearch={referenceSearch}
               title="What should this route do?"
               placeholder="This is an API endpoint that ..."
               block={descriptionBlock}
@@ -55,6 +59,7 @@ function RouteEditor({ route }: Props) {
           }
           {instructionsBlock &&
             <PromptEditor
+              referenceSearch={referenceSearch}
               title="Step-by-step instructions"
               placeholder="1. Check if the incoming `email` is not empty ..."
               block={instructionsBlock}

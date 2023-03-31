@@ -29,20 +29,20 @@ export interface SuggestionOptions<Item = Reference> {
 }
 
 export interface SuggestionProps<Item = Reference> {
-  editor: Editor,
-  range: Range,
-  query: string,
-  text: string,
-  items: Item[],
-  command: (props: Item) => void,
-  decorationNode: Element | null,
-  clientRect: (() => DOMRect) | null,
+  editor: Editor
+  range: Range
+  query: string
+  text: string
+  items: Item[]
+  command: (props: Item) => void
+  decorationNode: Element | null
+  clientRect: (() => DOMRect) | null
 }
 
 export interface SuggestionKeyDownProps {
-  view: EditorView,
-  event: KeyboardEvent,
-  range: Range,
+  view: EditorView
+  event: KeyboardEvent
+  range: Range
 }
 
 interface SuggestionPluginState {
@@ -217,14 +217,9 @@ export function Suggestion<Item = Reference>({
         const state = this.getState(view.state)
         if (!state) return
 
-        // const preceedingChar = view.state.doc.textBetween(from - 1, from)
-
         if (text) {
           state.wasCharTyped = true
         }
-
-        // if (text === char && (preceedingChar === ' ' || !preceedingChar)) {
-        // }
 
         return false
       },

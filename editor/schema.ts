@@ -5,13 +5,11 @@ import BulletList from '@tiptap/extension-bullet-list'
 import ListItem from '@tiptap/extension-list-item'
 import OrderedList from '@tiptap/extension-ordered-list'
 import CodeBlock from '@tiptap/extension-code-block'
-import Fuse from 'fuse.js'
 
 import ReferenceExtension, {
   REFERENCE_TYPE_ATTRIBUTE_NAME,
   REFERENCE_VALUE_ATTRIBUTE_NAME,
 } from 'editor/extensions/reference'
-import AutocompleteExtension from 'editor/extensions/autocomplete'
 import CustomKeymap from 'editor/extensions/keymap'
 
 export enum ReferenceType {
@@ -23,19 +21,6 @@ export interface Reference {
   type: ReferenceType
   value: string
 }
-
-export const referenceItems: Reference[] = [
-  {
-    type: ReferenceType.NPMPackage,
-    value: '@slack/web-api',
-  },
-  {
-    type: ReferenceType.DEPLOYMENT,
-    value: 'AWS Lambda',
-  },
-]
-
-const searchEngine = new Fuse(referenceItems, { keys: ['value'], threshold: 0.3 })
 
 export const extensions = [
   StarterKit.configure({
@@ -61,11 +46,6 @@ export const extensions = [
   ListItem,
   BulletList,
   ReferenceExtension,
-  AutocompleteExtension.configure({
-    suggestion: {
-      items: (query) => searchEngine.search(query).map(q => q.item),
-    },
-  }),
   CustomKeymap,
 ]
 
