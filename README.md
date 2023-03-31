@@ -24,10 +24,7 @@ You will always be able to self-host $NAME for free. The current idea is to offe
 ## Roadmap
 Short-term goals, in no particular order.
 
-[] Name this project
-[] Clean up codebase and provide instructions on how to run it locally
-[] Set up a website
-[] Launch the initial version
-
-
-### Instructions on how to set it up locally coming soon
+- Come up with the name
+- Clean up codebase and provide instructions on how to run it locally
+- Set up a website
+- Launch the initial version
