@@ -10,7 +10,6 @@ import ReferenceExtension, {
   REFERENCE_TYPE_ATTRIBUTE_NAME,
   REFERENCE_VALUE_ATTRIBUTE_NAME,
 } from 'editor/extensions/reference'
-import CustomKeymap from 'editor/extensions/keymap'
 
 export enum ReferenceType {
   NPMPackage = 'NPM_PACKAGE',
@@ -46,7 +45,6 @@ export const extensions = [
   ListItem,
   BulletList,
   ReferenceExtension,
-  CustomKeymap,
 ]
 
 const schema = getSchema(extensions)

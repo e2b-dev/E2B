@@ -5,6 +5,7 @@ import Fuse from 'fuse.js'
 import { Reference } from 'editor/referenceType'
 import AutocompleteExtension from 'editor/extensions/autocomplete'
 import { extensions } from 'editor/schema'
+import CustomKeymap from 'editor/extensions/keymap'
 
 function useDocEditor({
   initialContent,
@@ -30,6 +31,7 @@ function useDocEditor({
     },
     extensions: [
       ...extensions,
+      CustomKeymap,
       AutocompleteExtension.configure({
         suggestion: {
           items: query => referenceSearch.search(query),

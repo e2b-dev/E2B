@@ -42,6 +42,8 @@ function RouteEditor({ route }: Props) {
           flex-col
           items-start
           space-y-6
+          max-w-[65ch]
+          grow
         ">
           {descriptionBlock &&
             <PromptEditor

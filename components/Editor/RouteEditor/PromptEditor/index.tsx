@@ -47,11 +47,6 @@ function PromptEditor({
       }
       <EditorContent
         editor={editor}
-        className="
-          flex-1
-          flex
-          flex-col
-        "
       />
     </div>
   )
