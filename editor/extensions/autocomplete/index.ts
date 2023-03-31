@@ -30,7 +30,7 @@ function getReferenceClientRect(props: SuggestionProps): () => DOMRect {
     const rect = range.getBoundingClientRect()
 
     rect.x = coords.left
-    rect.y = coords.top - rect.height + coords.bottom - coords.top
+    rect.y = coords.bottom - rect.height
 
     return rect
   }
@@ -74,7 +74,7 @@ const autocomplete = Node.create<AutocompleteOptions>({
                 showOnCreate: true,
                 interactive: true,
                 hideOnClick: true,
-                delay: 150,
+                delay: 120,
                 maxWidth: 'none',
                 trigger: 'manual',
                 offset: [0, 1],

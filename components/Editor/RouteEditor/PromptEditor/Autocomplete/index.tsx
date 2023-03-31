@@ -61,6 +61,7 @@ const Autocomplete: AutocompleteList = forwardRef(({
         border
         bg-slate-50
         shadow-md
+        no-scroller
       "
     >
       {items.map((item, index) => (
