@@ -194,6 +194,8 @@ export function Suggestion<Item = ResultType>({
             } else {
               next.active = false
             }
+          } else {
+            next.active = false
           }
         } else {
           next.active = false

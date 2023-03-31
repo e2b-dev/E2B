@@ -62,6 +62,7 @@ const serializer = new MarkdownSerializer({
   ...defaultMarkdownSerializer.marks,
 })
 
+
 export function html2markdown(html: string): [string, Reference[]] {
   const node = createDocument(html, schema)
   const markdown = serializer.serialize(node)
