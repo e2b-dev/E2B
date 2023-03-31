@@ -92,12 +92,15 @@ const autocomplete = Node.create<AutocompleteOptions>({
               })
             },
             onUpdate(props) {
-              if (disabled) return
-              reactRenderer.updateProps(props)
+              if (disabled) {
+                this.onStart?.(props)
+              } else {
+                reactRenderer.updateProps(props)
 
-              popup?.setProps({
-                getReferenceClientRect: getReferenceClientRect(props),
-              })
+                popup?.setProps({
+                  getReferenceClientRect: getReferenceClientRect(props),
+                })
+              }
             },
             onKeyDown(props) {
               if (disabled) return false
