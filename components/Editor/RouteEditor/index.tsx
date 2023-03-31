@@ -18,7 +18,8 @@ function RouteEditor({ route }: Props) {
 
   return (
     <div className="
-      py-8
+      pt-16
+      pb-8
       px-4
       flex
       flex-1
@@ -40,7 +41,7 @@ function RouteEditor({ route }: Props) {
           flex
           flex-col
           items-start
-          space-y-8
+          space-y-6
         ">
           {descriptionBlock &&
             <PromptEditor
