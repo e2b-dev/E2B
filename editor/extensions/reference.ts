@@ -57,8 +57,8 @@ export default Node.create<ReferenceOptions>({
               {
                 type: this.name,
                 attrs: {
-                  [REFERENCE_VALUE_ATTRIBUTE_NAME]: props.value,
-                  [REFERENCE_TYPE_ATTRIBUTE_NAME]: props.type,
+                  [REFERENCE_VALUE_ATTRIBUTE_NAME]: props.item.value,
+                  [REFERENCE_TYPE_ATTRIBUTE_NAME]: props.item.type,
                 },
               },
               {

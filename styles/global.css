@@ -45,6 +45,15 @@
     @apply rounded;
     color-scheme: dark;
   }
+
+  .match {
+    @apply text-indigo-400 font-bold;
+  }
+
+  .reference {
+    @apply text-slate-600 font-mono font-semibold border-b border-slate-600;
+    box-decoration-break: clone;
+  }  
 }
 
 .no-scroller::-webkit-scrollbar {

@@ -2,9 +2,11 @@ import { Editor, Range } from '@tiptap/core'
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view'
 
-import type { Reference } from 'editor/referenceType'
+import type { ResultType } from 'editor/referenceType'
 
-export interface SuggestionOptions<Item = Reference> {
+
+
+export interface SuggestionOptions<Item = ResultType> {
   editor: Editor,
   char?: string,
   startOfLine?: boolean,
@@ -28,7 +30,7 @@ export interface SuggestionOptions<Item = Reference> {
   }) => boolean,
 }
 
-export interface SuggestionProps<Item = Reference> {
+export interface SuggestionProps<Item = ResultType> {
   editor: Editor
   range: Range
   query: string
@@ -57,7 +59,7 @@ interface SuggestionPluginState {
   wasCharTyped: boolean
 }
 
-export function Suggestion<Item = Reference>({
+export function Suggestion<Item = ResultType>({
   editor,
   char = '/',
   startOfLine = false,

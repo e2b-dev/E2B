@@ -8,7 +8,7 @@ import tippy, {
   Props,
 } from 'tippy.js'
 
-import { destroyOnBackspace, destroyOnEsc } from 'editor/tippyPlugins'
+import { destroyOnEsc } from 'editor/tippyPlugins'
 import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/RouteEditor/PromptEditor/Autocomplete/ListWrapper'
 import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
 
@@ -30,6 +30,7 @@ function getReferenceClientRect(props: SuggestionProps): () => DOMRect {
     const rect = range.getBoundingClientRect()
 
     rect.x = coords.left
+    rect.y = coords.top - rect.height + coords.bottom - coords.top
 
     return rect
   }
@@ -73,10 +74,10 @@ const autocomplete = Node.create<AutocompleteOptions>({
                 showOnCreate: true,
                 interactive: true,
                 hideOnClick: true,
-                delay: 160,
+                delay: 150,
                 maxWidth: 'none',
                 trigger: 'manual',
-                offset: [1, 2],
+                offset: [0, 1],
                 animation: false,
                 placement: 'bottom-start',
                 onHide() {
@@ -87,7 +88,7 @@ const autocomplete = Node.create<AutocompleteOptions>({
                   disabled = true
                   reactRenderer.destroy()
                 },
-                plugins: [destroyOnEsc, destroyOnBackspace],
+                plugins: [destroyOnEsc],
               })
             },
             onUpdate(props) {

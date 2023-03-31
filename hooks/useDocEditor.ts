@@ -32,7 +32,7 @@ function useDocEditor({
       ...extensions,
       AutocompleteExtension.configure({
         suggestion: {
-          items: query => referenceSearch.search(query).map(r => r.item),
+          items: query => referenceSearch.search(query),
         },
       }),
       Placeholder.configure({

@@ -11,14 +11,14 @@ import {
   SuggestionProps,
   SuggestionKeyDownProps,
 } from 'editor/extensions/autocomplete/suggestion'
-import { Reference } from 'editor/referenceType'
+import { ResultType } from 'editor/referenceType'
 
 type AutocompleteListRef = Partial<HTMLDivElement> & { onKeyDown: (props: SuggestionKeyDownProps) => boolean }
-export interface AutocompleteListProps extends SuggestionProps<Reference> { }
+export interface AutocompleteListProps extends SuggestionProps<ResultType> { }
 
 export type AutocompleteList = ForwardRefExoticComponent<AutocompleteListProps & RefAttributes<AutocompleteListRef>>
 
-export interface AutocompleteListWrapperProps extends SuggestionProps<Reference> {
+export interface AutocompleteListWrapperProps extends SuggestionProps<ResultType> {
   list: AutocompleteList
 }
 

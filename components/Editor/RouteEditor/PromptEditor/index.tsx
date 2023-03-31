@@ -50,7 +50,6 @@ function PromptEditor({
         className="
           flex-1
           flex
-          max-w-[65ch]
           flex-col
         "
       />

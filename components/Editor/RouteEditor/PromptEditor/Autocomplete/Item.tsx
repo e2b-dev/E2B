@@ -3,13 +3,13 @@ import cn from 'clsx'
 import { Package, Server } from 'lucide-react'
 
 import useElement from 'hooks/useElement'
-import Text from 'components/Text'
-import { Reference, ReferenceType } from 'editor/referenceType'
+import { Reference, ResultType, ReferenceType } from 'editor/referenceType'
+import HighlightedText from './HighlightedText'
 
 export interface Props {
   selectItem: () => void
   isSelected: boolean
-  item: Reference,
+  result: ResultType
 }
 
 function getReferenceIcon(reference: Reference) {
@@ -26,7 +26,7 @@ function getReferenceIcon(reference: Reference) {
 function Item({
   selectItem,
   isSelected,
-  item,
+  result,
 }: Props) {
   const [scrollEl, setScrollRef] = useElement<HTMLDivElement>()
 
@@ -47,23 +47,25 @@ function Item({
         'space-x-2',
         'shrink-0',
         'flex',
+        'text-sm',
         'font-mono',
         'items-center',
         'group',
-        'hover:text-slate-800',
+        'hover:bg-indigo-100',
         'overflow-ellipsis',
         'overflow-hidden',
+        'text-slate-600',
         'cursor-pointer',
         {
-          'text-slate-500': !isSelected,
-          'bg-indigo-100 text-slate-800': isSelected,
+          'bg-indigo-100': isSelected,
         },
       )}
       onMouseDown={selectItem}
     >
-      {getReferenceIcon(item)}
-      <Text
-        text={item.value}
+      {getReferenceIcon(result.item)}
+      <HighlightedText
+        text={result.item.value}
+        ranges={result.matches?.flatMap(i => i.indices)}
       />
     </div >
   )

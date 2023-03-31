@@ -17,7 +17,12 @@ function useReferences(): [Fuse<Reference>, Reference[]] {
     },
   ], [])
 
-  const engine = useMemo(() => new Fuse(references, { keys: ['value'], threshold: 0.3 }), [references])
+  const engine = useMemo(() => new Fuse(references, {
+    keys: ['value'],
+    threshold: 0.3,
+    includeMatches: true,
+    useExtendedSearch: true,
+  }), [references])
 
   return [engine, references]
 }
