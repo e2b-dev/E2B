@@ -1,4 +1,4 @@
-# Next-gen IDE (name about to change)
+# $NAME (this is a placeholder name, it will change)
 
 ![Screen Shot 2023-03-30 at 8 56 18 PM](https://user-images.githubusercontent.com/5136688/228936729-c1ae45b0-9199-4aae-bb3b-837b97e8176a.png)
 
