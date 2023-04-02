@@ -24,7 +24,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  const user = await prisma.auth_users.findUniqueOrThrow({
+  const user = await prisma.auth_users.findUnique({
     where: {
       id: session.user.id,
     },
@@ -40,6 +40,16 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       },
     },
   })
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: '/sign',
+        permanent: false,
+      }
+    }
+  }
+
 
   const hasDefaultTeam = user?.users_teams.some(t => t.teams.is_default)
   if (!hasDefaultTeam) {

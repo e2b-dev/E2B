@@ -68,5 +68,5 @@ Then open the page on `http://localhost:3000`.
 
 ### 5. Sign in
 Use the testing account with following credentials to sign in:
-Email: `i@i.i`
-Password: `i@i.i`
+Email: `admin@admin.com`
+Password: `admin@admin.com`
