@@ -9,6 +9,7 @@
     "start:api": "cd api-service && PYTHONUNBUFFERED=1 exec poetry run python app.py",
     "start:playground": "cd api-service/playground && yarn dev",
     "install:api-service": "cd api-service && poetry install && cd playground && yarn",
+    "install:all": "yarn && yarn install:api-service",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
