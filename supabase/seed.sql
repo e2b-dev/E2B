@@ -1,0 +1,6 @@
+
+
+
+
+
+ALTER TABLE deployments REPLICA IDENTITY FULL;
