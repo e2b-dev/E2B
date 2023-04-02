@@ -60,6 +60,7 @@ Copy [`.env.example`](.env.example) to [`.env`](.env) and fill the following var
 ```
 yarn dev
 ```
+Then open the page on `http://localhost:3000`.
 
 ### *5. Sign in*
 Use the testing account with following credentials to sign in:
