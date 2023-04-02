@@ -5,7 +5,7 @@ generator js {
 
 datasource db {
   provider = "postgresql"
-  url      = env("SUPABASE_POSTGRES_POOL_URL")
+  url      = env("SUPABASE_POSTGRES_URL")
   schemas  = ["auth", "public"]
 }
 

@@ -57,7 +57,7 @@ cp .env.example .env
 ```
 and the following variables:
 - `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
-- `SUPABASE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
 
 ### 4. Start the IDE
