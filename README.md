@@ -51,11 +51,11 @@ yarn db:start
 > Local Supabase runs in the background - to stop it you have to run `yarn db:stop`.
 
 ### 3. Add env vars
-Create `.env` file by copying the [`.env.example`](.env.example):
+Create `.env` file by copying the [`.env.example`](.env.example)
 ```
 cp .env.example .env
 ```
-and the following variables:
+and fill inn the following variables:
 - `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
@@ -68,5 +68,11 @@ Then open the page on `http://localhost:3000`.
 
 ### 5. Sign in
 Use the testing account with following credentials to sign in:
-Email: `admin@admin.com`
-Password: `admin@admin.com`
+
+Email: 
+
+`admin@admin.com`
+
+Password:
+
+`admin@admin.com`
