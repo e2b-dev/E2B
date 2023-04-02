@@ -51,10 +51,10 @@ yarn supabase start
 > Local Supabase runs in the background - to stop in you have to run `yarn supabase stop`.
 
 ### 3. Add env vars
-Copy [`.env.example`](.env.example) file to [`.env`](.env) in the top directory and fill the following variables:
+Copy [`.env.example`](.env.example) to [`.env`](.env) and fill the following variables:
 - `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
-- `SUPABASE_KEY` - service role key for Supabase that you got from the previous step as "service_role key: eyJh......"
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - anonymous key for Supabase that you got from the previous step as "anon key: eyJh......"
+- `SUPABASE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
 
 ### 4. Start the IDE
 ```
