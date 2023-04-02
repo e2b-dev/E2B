@@ -76,12 +76,12 @@ function AuthForm({ authType }: Props) {
     if (error) {
       emailRef.current?.focus()
       setErrMessage(error.message)
-      console.error(error.message)
+      console.error(error)
     } else {
       setErrMessage('')
+      router.replace('/')
     }
 
-    router.replace('/')
     setIsLoading(false)
   }
 
