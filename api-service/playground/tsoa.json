@@ -7,7 +7,7 @@
   "spec": {
     "outputDirectory": "./",
     "specVersion": 3,
-    "host": "localhost:9001"
+    "host": "localhost:49160"
   },
   "routes": {
     "routesDir": "src/generated"

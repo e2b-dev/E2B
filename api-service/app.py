@@ -93,7 +93,9 @@ async def generate():
 
         url: str | None = None
         # Disable deployment if there AWS creds are not present
-        if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
+        if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get(
+            "AWS_SECRET_ACCESS_KEY"
+        ):
             await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
             url = await playground.deploy(project_id)
 
@@ -105,7 +107,3 @@ async def generate():
     finally:
         if playground is not None:
             playground.close()
-
-
-if __name__ == "__main__":
-    app.run(debug=True, use_reloader=True)

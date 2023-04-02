@@ -7,7 +7,7 @@ from session.env import EnvVar, format_env_vars
 
 
 configuration = playground_client.Configuration(
-    host="http://localhost:9001",
+    host="http://localhost:49160",
 )
 
 # Configuration for local server
@@ -16,6 +16,7 @@ configuration.ssl_ca_cert = None
 configuration.cert_file = None
 
 GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
+
 
 class Session:
     def __init__(self, env_id: str, get_envs: GetEnvs):

@@ -1,9 +1,9 @@
-import { projects } from '@prisma/client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 
+import { projects } from '@prisma/client'
 import Text from 'components/Text'
 import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
@@ -20,7 +20,7 @@ export interface Props {
 }
 
 const apiHost = process.env.NODE_ENV === 'development'
-  ? 'http://0.0.0.0:5000'
+  ? 'http://localhost:49155'
   : 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
 
 async function handlePostGenerate(url: string, { arg }: {

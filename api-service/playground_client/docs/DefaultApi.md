@@ -1,6 +1,6 @@
 # playground_client.DefaultApi
 
-All URIs are relative to *https://localhost:9001*
+All URIs are relative to *https://localhost:49160*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -35,10 +35,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -100,10 +100,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -161,10 +161,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -222,10 +222,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -283,10 +283,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -342,10 +342,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -407,10 +407,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -468,10 +468,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -531,10 +531,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -592,10 +592,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -655,10 +655,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -720,10 +720,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -785,10 +785,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -846,10 +846,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
@@ -909,10 +909,10 @@ import os
 import playground_client
 from playground_client.rest import ApiException
 from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:9001
+# Defining the host is optional and defaults to https://localhost:49160
 # See configuration.py for a list of all supported configuration parameters.
 configuration = playground_client.Configuration(
-    host = "https://localhost:9001"
+    host = "https://localhost:49160"
 )
 
 
