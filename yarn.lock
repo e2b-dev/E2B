@@ -3912,10 +3912,10 @@ stylehacks@^5.1.1:
     browserslist "^4.21.4"
     postcss-selector-parser "^6.0.4"
 
-supabase@^1.41.6:
-  version "1.41.6"
-  resolved "https://registry.yarnpkg.com/supabase/-/supabase-1.41.6.tgz#cd1a488c19a0fc17b859c6cc33bbe916d4d70acd"
-  integrity sha512-vHsHpdDCsEpvyqScynIBR0FabTL/1lAT6QGVkMIFyZWngYIYLdCbA13gMVI9im7pMqutgxrzbOLJVYpGa/xg4g==
+supabase@^1.46.5:
+  version "1.46.5"
+  resolved "https://registry.yarnpkg.com/supabase/-/supabase-1.46.5.tgz#6f01fcfccabc443678b8882590b4bb34c1dfd305"
+  integrity sha512-N1BObR6JYubMqjacpvJ9/WixEBsPS6KSCqVxg4D+X3SLcqP3p05ppjF2he/m9b48KwNgohZ2eno5Hes8GxtNtg==
   dependencies:
     bin-links "^4.0.1"
     node-fetch "^3.2.10"
