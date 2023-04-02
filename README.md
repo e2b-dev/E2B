@@ -31,8 +31,14 @@ Short-term goals, in no particular order.
 
 
 ## How to run it locally
+Requirements:
+- Docker
+- Node.js *18+*
+- Yarn
+- Python *3.9+*
+- Poetry *1.3.2+*
 
-### 1. Install deps
+### 1. Install dependencies
 ```
 yarn install:all
 ```
@@ -41,6 +47,8 @@ yarn install:all
 ```
 yarn supabase start
 ```
+
+> Local Supabase runs in the background - to stop in you have to run `yarn supabase stop`.
 
 ### 3. Add env vars
 Copy [`.env.example`](.env.example) file to [`.env`](.env) in the top directory and fill the following variables:
