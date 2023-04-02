@@ -17,7 +17,9 @@
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
     "supabase:generate": "supabase gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
-    "postinstall": "yarn db:generate"
+    "postinstall": "yarn db:generate",
+    "db:start": "supabase start -x studio,imgproxy,storage-api",
+    "db:stop": "supabase stop"
   },
   "dependencies": {
     "@devbookhq/splitter": "^1.4.0",

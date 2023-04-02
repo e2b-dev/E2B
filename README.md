@@ -45,10 +45,10 @@ yarn install:all
 
 ### 2. Start local Supabase
 ```
-yarn supabase start
+yarn db:start
 ```
 
-> Local Supabase runs in the background - to stop it you have to run `yarn supabase stop`.
+> Local Supabase runs in the background - to stop it you have to run `yarn db:stop`.
 
 ### 3. Add env vars
 Copy [`.env.example`](.env.example) to [`.env`](.env) and fill the following variables:
@@ -60,3 +60,8 @@ Copy [`.env.example`](.env.example) to [`.env`](.env) and fill the following var
 ```
 yarn dev
 ```
+
+### *5. Sign in*
+Use the testing account with following credentials to sign in:
+Email: `i@i.i`
+Password: `i@i.i`
