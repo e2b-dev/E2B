@@ -35,7 +35,7 @@ You will need:
 - Docker
 - Node.js *18+*
 - Yarn
-- Python *3.9+*
+- Python *3.10+*
 - Poetry *1.3.2+*
 
 ### 1. Install dependencies
@@ -51,11 +51,11 @@ yarn db:start
 > Local Supabase runs in the background - to stop it you have to run `yarn db:stop`.
 
 ### 3. Add env vars
-Create [`.env`](.env)
+Create `.env` file by copying the [`.env.example`](.env.example):
 ```
 cp .env.example .env
 ```
-and fill the following variables:
+and the following variables:
 - `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
 - `SUPABASE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
