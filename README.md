@@ -8,7 +8,7 @@
 ## Get started
 You will need:
 - Docker
-- Node.js *18+*
+- Node.js *16+*
 - Yarn
 - Python *3.10+*
 - Poetry *1.3.2+*
