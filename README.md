@@ -39,7 +39,7 @@ and fill in the following variables:
 ```
 yarn dev
 ```
-Then open the page on `http://localhost:3000` and sign in with the testign credentials:
+Then open the page on [http://localhost:3000](http://localhost:3000) and sign in with the testing credentials:
 
 **Email**
 
