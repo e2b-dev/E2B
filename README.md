@@ -28,3 +28,27 @@ Short-term goals, in no particular order.
 - Clean up codebase and provide instructions on how to run it locally
 - Set up a website
 - Launch the initial version
+
+
+## How to run it locally
+
+### 1. Install deps
+```
+yarn install:all
+```
+
+### 2. Start local Supabase
+```
+yarn supabase start
+```
+
+### 3. Add env vars
+Copy [`.env.example`](.env.example) file to [`.env`](.env) in the top directory and fill the following variables:
+- `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
+- `SUPABASE_KEY` - service role key for Supabase that you got from the previous step as "service_role key: eyJh......"
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - anonymous key for Supabase that you got from the previous step as "anon key: eyJh......"
+
+### 4. Start the IDE
+```
+yarn dev
+```
