@@ -91,8 +91,10 @@ CREATE TABLE "public"."deployments" (
     "logs_raw" "text" DEFAULT ''::"text"
 );
 
-ALTER TABLE ONLY "public"."deployments" REPLICA IDENTITY FULL;
+ALTER publication supabase_realtime
+ADD TABLE "public"."deployments";
 
+ALTER TABLE ONLY "public"."deployments" REPLICA IDENTITY FULL;
 
 ALTER TABLE "public"."deployments" OWNER TO "postgres";
 
