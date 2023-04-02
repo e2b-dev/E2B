@@ -9,7 +9,6 @@ import {
   GetFunctionCommand,
   GetFunctionUrlConfigCommand,
 } from '@aws-sdk/client-lambda'
-// import { APIGatewayClient } from '@aws-sdk/client-api-gateway'
 import { EnvVars, Session } from '@devbookhq/sdk'
 import * as dotenv from 'dotenv'
 
@@ -19,29 +18,20 @@ dotenv.config({
   path: '../../.env',
 })
 
-const credentials = {
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-}
-
-if (!credentials.accessKeyId || !credentials.secretAccessKey) {
-  throw new Error('AWS credentials not found')
-}
+const credentials = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+  ? {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  }
+  : undefined
 
 const region = 'us-east-1'
 const architecture = 'arm64'
 
-// TODO: lambda.destroy() on quit?
 const lambda = new LambdaClient({
   region,
   credentials,
 })
-
-// TODO: gateway.destroy() on quit?
-// const gateway = new APIGatewayClient({
-//   region,
-//   credentials,
-// })
 
 const deploymentParams = {
   Runtime: 'nodejs18.x',

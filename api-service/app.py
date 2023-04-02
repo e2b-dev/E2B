@@ -15,8 +15,8 @@ from codegen.tools.human.tools import create_human_tools
 
 load_dotenv()
 
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_SECRET_KEY")
+url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+key = os.environ.get("SUPABASE_KEY")
 
 if not url or not key:
     raise NotFoundException("Suapbase credentials not found")
@@ -91,8 +91,11 @@ async def generate():
             blocks=blocks,
         )
 
-        await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-        url = await playground.deploy(project_id)
+        url: str | None = None
+        # Disable deployment if there AWS creds are not present
+        if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
+            await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
+            url = await playground.deploy(project_id)
 
         await db.finish_deployment(run_id=run_id, url=url)
         return {}

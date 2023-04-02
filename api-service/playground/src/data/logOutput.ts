@@ -9,8 +9,7 @@ dotenv.config({
   path: '../../.env',
 })
 
-const client = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!)
-
+const client = createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_KEY!)
 
 export const projectsTable = 'projects'
 export const deploymentsTable = 'deployments'

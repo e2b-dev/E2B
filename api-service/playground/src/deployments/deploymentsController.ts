@@ -3,7 +3,6 @@ import {
   BodyProp,
   Put,
   Path,
-  Patch,
   Route,
   Query,
 } from 'tsoa'

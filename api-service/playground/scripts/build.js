@@ -4,7 +4,7 @@
 const esbuild = require('esbuild')
 const path = require('path')
 
-const isDev = process.env.NODE_ENV === 'dev'
+const isDev = process.env.NODE_ENV === 'development'
 
 const makeAllPackagesExternalPlugin = {
   name: 'make-all-packages-external',
