@@ -48,7 +48,7 @@ yarn install:all
 yarn supabase start
 ```
 
-> Local Supabase runs in the background - to stop in you have to run `yarn supabase stop`.
+> Local Supabase runs in the background - to stop it you have to run `yarn supabase stop`.
 
 ### 3. Add env vars
 Copy [`.env.example`](.env.example) to [`.env`](.env) and fill the following variables:
