@@ -3,7 +3,7 @@
   <img width="200" src="img/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<p align="center">Open-source IDE powered by AI agents that use tools to do the work for you</p>
+<p align="center">Open-source IDE powered by AI agents that do the work for you</p>
 
 <h4 align="center">
   <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
