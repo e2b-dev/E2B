@@ -3,7 +3,7 @@
   <img width="300" src="img/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<p align="center">New kind of development environment powered by AI.</p>
+<p align="center">Open-source IDE powered by AI agents that can use tools to do the work for you.</p>
 
 ![Screen Shot 2023-03-30 at 8 56 18 PM](https://user-images.githubusercontent.com/5136688/228936729-c1ae45b0-9199-4aae-bb3b-837b97e8176a.png)
 
