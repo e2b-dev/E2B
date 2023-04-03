@@ -12,7 +12,7 @@
 
 <h4 align="center">
   <a href="https://discord.gg/U7KEcGErtQ">
-    <img src="https://img.shields.io/badge/chat-on%20Discord-blueviolet" alt="Discord community server" />
+    <img src="https://img.shields.io/badge/chat-on%20Discord-blue" alt="Discord community server" />
   </a>
   <a href="https://twitter.com/e2b_dev">
     <img src="https://img.shields.io/twitter/follow/infisical?label=Follow" alt="e2b Twitter" />
