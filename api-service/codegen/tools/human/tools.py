@@ -1,6 +1,5 @@
 from collections.abc import Generator
 from typing import Any
-from time import sleep
 
 from codegen.tools.async_tool import async_tool
 from playground_client.models.tools_log_output import ToolsLogOutput
@@ -10,7 +9,6 @@ from session.playground.base import Playground
 def create_human_tools(
     run_id: str,
     playground: Playground,
-    **kwargs,
 ) -> Generator[Any, None, None]:
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()

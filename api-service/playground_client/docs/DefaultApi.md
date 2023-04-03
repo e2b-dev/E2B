@@ -5,7 +5,6 @@ All URIs are relative to *https://localhost:49160*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**create_deployment**](DefaultApi.md#create_deployment) | **PUT** /deployments/{projectID} | 
-[**create_mock_body_data**](DefaultApi.md#create_mock_body_data) | **POST** /mock/body | 
 [**create_sessions**](DefaultApi.md#create_sessions) | **POST** /sessions | 
 [**delete_filesystem_entry**](DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{sessionID}/filesystem | 
 [**delete_session**](DefaultApi.md#delete_session) | **DELETE** /sessions/{sessionID} | 
@@ -69,67 +68,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**DeploymentResponse**](DeploymentResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | Ok |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **create_mock_body_data**
-> MockDataResponse create_mock_body_data(create_mock_body_data_request)
-
-
-
-### Example
-
-```python
-from __future__ import print_function
-import time
-import os
-import playground_client
-from playground_client.rest import ApiException
-from pprint import pprint
-# Defining the host is optional and defaults to https://localhost:49160
-# See configuration.py for a list of all supported configuration parameters.
-configuration = playground_client.Configuration(
-    host = "https://localhost:49160"
-)
-
-
-# Enter a context with an instance of the API client
-with playground_client.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = playground_client.DefaultApi(api_client)
-    create_mock_body_data_request = playground_client.CreateMockBodyDataRequest() # CreateMockBodyDataRequest | 
-
-    try:
-        api_response = api_instance.create_mock_body_data(create_mock_body_data_request)
-        print("The response of DefaultApi->create_mock_body_data:\n")
-        pprint(api_response)
-    except Exception as e:
-        print("Exception when calling DefaultApi->create_mock_body_data: %s\n" % e)
-```
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **create_mock_body_data_request** | [**CreateMockBodyDataRequest**](CreateMockBodyDataRequest.md)|  | 
-
-### Return type
-
-[**MockDataResponse**](MockDataResponse.md)
 
 ### Authorization
 

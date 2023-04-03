@@ -67,7 +67,6 @@ All URIs are relative to *https://localhost:49160*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *DefaultApi* | [**create_deployment**](playground_client/docs/DefaultApi.md#create_deployment) | **PUT** /deployments/{projectID} | 
-*DefaultApi* | [**create_mock_body_data**](playground_client/docs/DefaultApi.md#create_mock_body_data) | **POST** /mock/body | 
 *DefaultApi* | [**create_sessions**](playground_client/docs/DefaultApi.md#create_sessions) | **POST** /sessions | 
 *DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{sessionID}/filesystem | 
 *DefaultApi* | [**delete_session**](playground_client/docs/DefaultApi.md#delete_session) | **DELETE** /sessions/{sessionID} | 
@@ -86,13 +85,10 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [CreateDeploymentRequest](playground_client/docs/CreateDeploymentRequest.md)
- - [CreateMockBodyDataRequest](playground_client/docs/CreateMockBodyDataRequest.md)
  - [CreateSessionsRequest](playground_client/docs/CreateSessionsRequest.md)
  - [DeploymentResponse](playground_client/docs/DeploymentResponse.md)
  - [EntryInfo](playground_client/docs/EntryInfo.md)
- - [File](playground_client/docs/File.md)
  - [ListFilesystemDirResponse](playground_client/docs/ListFilesystemDirResponse.md)
- - [MockDataResponse](playground_client/docs/MockDataResponse.md)
  - [OpenPort](playground_client/docs/OpenPort.md)
  - [OutStderrResponse](playground_client/docs/OutStderrResponse.md)
  - [OutStdoutResponse](playground_client/docs/OutStdoutResponse.md)
