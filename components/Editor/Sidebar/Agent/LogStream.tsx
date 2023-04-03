@@ -1,10 +1,11 @@
-import { Fragment, useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 
-import { Log, ToolName, } from 'db/types'
+import { Log, LogType, ToolName, } from 'db/types'
+import { notEmpty } from 'utils/notEmpty'
 
-import ConnectionLine from './ConnectionLine'
 import LogEntry from './LogEntry'
+import Text from 'components/Text'
 
 export interface Props {
   logs?: Log[]
@@ -35,6 +36,29 @@ function LogStream({
     ref.current.scrollIntoView({ behavior: 'auto' })
   }, [logs, isDeployRequestRunning])
 
+  const trimmedLogs = useMemo(() => {
+    return logs
+      ?.map(l => {
+        switch (l.type) {
+          case LogType.Thought:
+            const content = l.content
+              .replaceAll('\nAction:', '')
+              .replaceAll('Action:', '')
+              .replaceAll('Thought:', '')
+              .trim()
+            return content
+              ? {
+                ...l,
+                content,
+              }
+              : undefined
+          default:
+            return l
+        }
+      })
+      .filter(notEmpty)
+  }, [logs])
+
   return (
     <div
       className="
@@ -48,6 +72,8 @@ function LogStream({
         py-4
         flex
         flex-col
+        bg-slate-50
+        space-y-4
         px-2
     ">
       {rawLogs &&
@@ -55,18 +81,21 @@ function LogStream({
           {rawLogs}
         </ReactMarkdown>
       }
-      {logs && logs.map((l, i, a) =>
-        <Fragment key={i}>
+      {trimmedLogs && trimmedLogs.map((l, i) =>
+        <div
+          key={i}
+          className="flex flex-col space-y-1"
+        >
+          <Text
+            size={Text.size.S3}
+            className="text-slate-400"
+            text={`Step ${i + 1}`}
+          />
           <LogEntry
             onAnswer={onAnswer}
             log={l}
           />
-          {i < a.length - 1 &&
-            <div className="flex items-center flex-col">
-              <ConnectionLine className="h-4" />
-            </div>
-          }
-        </Fragment>
+        </div>
       )}
       <div ref={ref} />
     </div>

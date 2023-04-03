@@ -10,13 +10,21 @@ import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { html2markdown } from 'editor/schema'
 
-import DeployButton from './DeployButton'
-import Logs from './Logs'
+import Agent from './Agent'
 import Envs from './Envs'
+import Context from './Context'
 
 export interface Props {
   project: projects
   route?: Route
+  activeMenuSection?: MenuSection
+}
+
+export enum MenuSection {
+  Agent = 'Agent',
+  Envs = 'Envs',
+  Context = 'Context',
+  Deploy = 'Deploy',
 }
 
 const apiHost = process.env.NODE_ENV === 'development'
@@ -63,6 +71,7 @@ async function handlePostGenerate(url: string, { arg }: {
 function Sidebar({
   project,
   route,
+  activeMenuSection,
 }: Props) {
   const deployment = useLatestDeployment(project, route)
 
@@ -106,8 +115,9 @@ function Sidebar({
       `,
       )}
     >
-      <div
-        className="
+      {activeMenuSection === MenuSection.Deploy &&
+        <div
+          className="
         flex
         px-4
         py-2
@@ -115,59 +125,62 @@ function Sidebar({
         border-b
         flex-col
       "
-      >
-        <div
-          className="
+        >
+          <div
+            className="
             flex
             flex-1
             items-center
             justify-between
           "
-        >
-          <Text
-            text="Latest Deployment"
-            className="
+          >
+            <Text
+              text="Latest Deployment"
+              className="
               font-semibold
               uppercase
               text-slate-400
             "
-            size={Text.size.S2}
-          />
-          <DeployButton
-            deploy={deploy}
-            isDeployRequestRunning={isDeployRequestRunning}
-            isInitializingDeploy={isInitializingDeploy}
-            deployStatus={deployment?.state}
-          />
-        </div>
-        {deployment?.url &&
-          <Link
-            href={deployment.url}
-            className="underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Text
-              size={Text.size.S3}
-              text={deployment.url.substring('https://'.length)}
+              size={Text.size.S2}
             />
-          </Link>
-        }
-        {!deployment?.url &&
-          <Text
-            text="No deployment URL found"
-            size={Text.size.S3}
-            className="text-slate-400"
-          />
-        }
-      </div>
-      <Envs />
-      <Logs
-        deployment={deployment}
-        isDeployRequestRunning={isDeployRequestRunning}
-      />
+          </div>
+          {deployment?.url &&
+            <Link
+              href={deployment.url}
+              className="underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Text
+                size={Text.size.S3}
+                text={deployment.url.substring('https://'.length)}
+              />
+            </Link>
+          }
+          {!deployment?.url &&
+            <Text
+              text="No deployment URL found"
+              size={Text.size.S3}
+              className="text-slate-400"
+            />
+          }
+        </div>
+      }
+      {activeMenuSection === MenuSection.Context &&
+        <Context />
+      }
+      {activeMenuSection === MenuSection.Envs &&
+        <Envs />
+      }
+      {activeMenuSection === MenuSection.Agent &&
+        <Agent
+          deploy={deploy}
+          isDeployRequestRunning={isDeployRequestRunning}
+          isInitializingDeploy={isInitializingDeploy}
+          deployment={deployment}
+        />
+      }
     </div>
   )
 }
-
 export default Sidebar

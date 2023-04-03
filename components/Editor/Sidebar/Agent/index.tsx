@@ -1,6 +1,6 @@
 import { useState } from 'react'
 // import hljs from 'highlight.js'
-import { deployments } from '@prisma/client'
+import { deployment_state, deployments } from '@prisma/client'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
@@ -12,6 +12,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { Database, Json } from 'db/supabase'
 import { deploymentsTable } from 'db/tables'
 import produce from 'immer'
+import RunButton from '../RunButton'
 
 const tabsProps = {
   tabs: [
@@ -29,11 +30,16 @@ const tabsProps = {
 export interface Props {
   deployment?: deployments
   isDeployRequestRunning?: boolean
+  deploy: () => void
+  deployStatus?: deployment_state | null
+  isInitializingDeploy?: boolean
 }
 
-function Logs({
+function Agent({
   deployment,
   isDeployRequestRunning,
+  deploy,
+  isInitializingDeploy,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
   const client = useSupabaseClient<Database>()
@@ -67,6 +73,7 @@ function Logs({
       max-w-full
       flex
       flex-col
+      bg-slate-50
       overflow-hidden
     ">
       <div className="
@@ -95,6 +102,12 @@ function Logs({
             setSelectedTab={setSelectedTab}
           />
         )}
+        <RunButton
+          deploy={deploy}
+          isDeployRequestRunning={isDeployRequestRunning}
+          isInitializingDeploy={isInitializingDeploy}
+          deployStatus={deployment?.state}
+        />
       </div>
       {selectedTab === 0 &&
         <LogStream
@@ -113,4 +126,4 @@ function Logs({
   )
 }
 
-export default Logs
+export default Agent

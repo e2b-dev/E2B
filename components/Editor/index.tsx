@@ -6,7 +6,7 @@ import { useLocalStorage } from 'usehooks-ts'
 import { useStateStore } from 'state/StoreProvider'
 
 import Routes from './Routes'
-import Sidebar from './Sidebar'
+import Sidebar, { MenuSection } from './Sidebar'
 import RouteEditor from './RouteEditor'
 
 export interface Props {
@@ -16,6 +16,8 @@ export interface Props {
 function Editor({ project }: Props) {
   const [selectors] = useStateStore()
   const ref = useRef<HTMLDivElement | null>(null)
+
+  const [selectedMenuSection, setSelectedMenuSection] = useState(MenuSection.Agent)
 
   // TODO: Handle editor state differently so we don't rerender this component on each editor edit.
   const routes = selectors.use.routes()
@@ -87,10 +89,32 @@ function Editor({ project }: Props) {
           />
         </div>
         <Sidebar
+          activeMenuSection={selectedMenuSection}
           project={project}
           route={selectedRoute}
         />
       </Splitter>
+      <div className="
+        w-16
+        flex
+        py-4
+        text-sm
+        border-l
+        bg-white
+        flex-col
+        space-y-2
+        items-center
+      "
+      >
+        {Object.values(MenuSection).map(m =>
+          <button
+            key={m}
+            onClick={() => setSelectedMenuSection(m)}
+          >
+            {m.toString()}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
