@@ -5,7 +5,7 @@ description = ""
 authors = ["Devbook <hello@usedevbook.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.10,<4.0"
 gunicorn = "^20.1.0"
 langchain = "^0.0.125"
 python-dateutil = "^2.8.2"
