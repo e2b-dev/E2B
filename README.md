@@ -8,7 +8,7 @@
 ## BYOM, BYOP, BYOT
 - **BYOM** - Bring Your Own Model
 - **BYOP** - Bring Your Own Prompt
-- **BYOM** - Bring Your Own Tools
+- **BYOT** - Bring Your Own Tools
 
 We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
 
