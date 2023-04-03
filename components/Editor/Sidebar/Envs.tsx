@@ -33,31 +33,47 @@ function Envs() {
     max-w-full
     flex
     flex-col
-    border-b
-    p-4
     space-y-4
   ">
-      <Text
-        text="Envs"
-        size={Text.size.S2}
-        className="
-        uppercase
-        text-slate-400
-        font-semibold
-      "
-      />
-      {envs.map((env, idx) =>
-        <div
-          key={idx}
+      <div className="
+        flex
+        bg-slate-50
+        items-center
+        justify-between
+        border-b
+        py-3.5
+        pr-4
+      ">
+        <Text
+          text="Envs"
+          size={Text.size.S2}
           className="
+            uppercase
+            text-slate-400
+            font-semibold
+            px-4
+          "
+        />
+      </div>
+      <div className="
+      flex
+      flex-col
+      p-4
+      space-y-4
+      "
+      >
+        {envs.map((env, idx) =>
+          <div
+            key={idx}
+            className="
           flex
           items-center
           justify-evenly
           space-x-2
         "
-        >
-          <input
-            className="
+          >
+            <input
+              className="
             flex-1
             p-1.5
             text-xs
@@ -67,17 +83,17 @@ function Envs() {
             outline-none
             focus:border-green-800
             "
-            type="text"
-            autoCapitalize="off"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck="false"
-            placeholder="KEY"
-            value={env.key}
-            onChange={event => handleEnvKeyChange(event, idx)}
-          />
-          <input
-            className="
+              type="text"
+              autoCapitalize="off"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck="false"
+              placeholder="KEY"
+              value={env.key}
+              onChange={event => handleEnvKeyChange(event, idx)}
+            />
+            <input
+              className="
             flex-1
             p-1.5
             text-xs
@@ -87,27 +103,28 @@ function Envs() {
             outline-none
             focus:border-green-800
           "
-            placeholder="VALUE"
-            type="text"
-            autoCapitalize="off"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck="false"
-            value={env.value}
-            onChange={event => handleEnvValueChange(event, idx)}
-          />
-          {envs.length > 1 &&
-            <Button
-              text="Delete"
-              onClick={() => deleteEnv(idx)}
+              placeholder="VALUE"
+              type="text"
+              autoCapitalize="off"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck="false"
+              value={env.value}
+              onChange={event => handleEnvValueChange(event, idx)}
             />
-          }
-        </div>
-      )}
-      <Button
-        text="Add another"
-        onClick={addNewEnv}
-      />
+            {envs.length > 1 &&
+              <Button
+                text="Delete"
+                onClick={() => deleteEnv(idx)}
+              />
+            }
+          </div>
+        )}
+        <Button
+          text="Add another"
+          onClick={addNewEnv}
+        />
+      </div>
     </div>
   )
 }

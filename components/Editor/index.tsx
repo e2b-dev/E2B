@@ -2,12 +2,29 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
+import { Code, Box, Server, Lock } from 'lucide-react'
 
 import { useStateStore } from 'state/StoreProvider'
 
 import Routes from './Routes'
 import Sidebar, { MenuSection } from './Sidebar'
 import RouteEditor from './RouteEditor'
+import clsx from 'clsx'
+
+
+const menuIconSize = '18px'
+function getMenuSelectionIcon(selection: MenuSection) {
+  switch (selection) {
+    case MenuSection.Agent:
+      return <Code size={menuIconSize} />
+    case MenuSection.Context:
+      return <Box size={menuIconSize} />
+    case MenuSection.Deploy:
+      return <Server size={menuIconSize} />
+    case MenuSection.Envs:
+      return <Lock size={menuIconSize} />
+  }
+}
 
 export interface Props {
   project: projects
@@ -95,23 +112,41 @@ function Editor({ project }: Props) {
         />
       </Splitter>
       <div className="
-        w-16
+        w-14
         flex
-        py-4
+        py-2
         text-sm
         border-l
         bg-white
         flex-col
-        space-y-2
+        space-y-4
         items-center
       "
       >
         {Object.values(MenuSection).map(m =>
           <button
             key={m}
+            className={clsx(`
+            hover:text-slate-600
+            transition-all
+            text-xs
+            items-center
+            justify-center
+            flex
+            flex-col
+            space-y-1
+            `,
+              {
+                'text-slate-400': selectedMenuSection !== m,
+                'text-slate-600': selectedMenuSection === m,
+              }
+            )}
             onClick={() => setSelectedMenuSection(m)}
           >
-            {m.toString()}
+            {getMenuSelectionIcon(m)}
+            <span>
+              {m.toString()}
+            </span>
           </button>
         )}
       </div>
