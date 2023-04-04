@@ -13,7 +13,13 @@ const Autocomplete: AutocompleteList = forwardRef(({
 }, ref) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
-  const selectItem = useCallback((index: number) => command(items[index]), [
+  const selectItem = useCallback((index: number) => {
+    if (items.length > index) {
+      command(items[index])
+      return true
+    }
+    return false
+  }, [
     command,
     items,
   ])
@@ -21,16 +27,21 @@ const Autocomplete: AutocompleteList = forwardRef(({
   useImperativeHandle(ref, () => ({
     onKeyDown({ event }) {
       if (event.key === 'ArrowUp') {
-        setSelectedIndex(i => ((i + items.length) - 1) % items.length)
-        return true
+        if (items.length > 0) {
+          setSelectedIndex(i => ((i + items.length) - 1) % items.length)
+          return true
+        }
+        return false
       }
       if (event.key === 'ArrowDown') {
-        setSelectedIndex(i => (i + 1) % items.length)
-        return true
+        if (items.length > 0) {
+          setSelectedIndex(i => (i + 1) % items.length)
+          return true
+        }
+        return false
       }
       if (event.key === 'Enter') {
-        selectItem(selectedIndex)
-        return true
+        return selectItem(selectedIndex)
       }
       return false
     },
