@@ -23,9 +23,8 @@ class Helpers:
             ):
                 assert action["tool_name"] == expected_action["tool_name"]
                 assert (
-                    action.get("tool_input", "")
-                    .strip()
-                    .startswith(expected_action.get("tool_input").strip())
+                    action["tool_input"].strip()
+                    == expected_action["tool_input"].strip()
                 )
 
             print("-----------")
