@@ -1,17 +1,8 @@
 """Test LLM action parsing"""
 
-# import pytest
+from typing import Dict, List, Any
 
-from typing import Dict, List, NamedTuple, Any
-from codegen.agent.base import (
-    separate_thought_and_action,
-    parse_action_string,
-)
-
-
-class Action(NamedTuple):
-    tool: str
-    input: str
+from codegen.agent.parsing import ToolLog
 
 
 llm_outputs: List[Dict[str, Any]] = [
@@ -23,7 +14,11 @@ What should the post request handler do?
 </action>
 ```""",
         "expected_actions": [
-            Action("AskHuman", "What should the post request handler do?")
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What should the post request handler do?",
+            ),
         ],
     },
     {
@@ -35,7 +30,13 @@ Action:
 action input
 </action>
 ```""",
-        "expected_actions": [Action("Name", "action input")],
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="Name",
+                tool_input="action input",
+            ),
+        ],
     },
     {
         "llm_output": """Thought: Lorem ipsum
@@ -50,8 +51,16 @@ action input 2
 </action>
 ```""",
         "expected_actions": [
-            Action("Name", "action input"),
-            Action("Name 2", "action input 2"),
+            ToolLog(
+                type="tool",
+                tool_name="Name",
+                tool_input="action input",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="Name 2",
+                tool_input="action input 2",
+            ),
         ],
     },
     {
@@ -64,9 +73,21 @@ Action:
 ```
 """,
         "expected_actions": [
-            Action(tool="Name1", input="content"),
-            Action(tool="Name2", input="content 2"),
-            Action(tool="Name3", input="content 3"),
+            ToolLog(
+                type="tool",
+                tool_name="Name1",
+                tool_input="content",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="Name2",
+                tool_input="content 2",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="Name3",
+                tool_input="content 3",
+            ),
         ],
     },
     {
@@ -106,10 +127,15 @@ app.listen(port, () => {
 
 """,
         "expected_actions": [
-            Action(tool="InstallNPMDependencies", input="email-validator"),
-            Action(
-                tool="RunJavaScriptCode",
-                input="""import express from 'express';
+            ToolLog(
+                type="tool",
+                tool_name="InstallNPMDependencies",
+                tool_input="email-validator",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="RunJavaScriptCode",
+                tool_input="""import express from 'express';
 import validator from 'email-validator';
 
 const app = express();
@@ -135,15 +161,6 @@ app.listen(port, () => {
 ]
 
 
-def test_parsing_llm_action_output():
+def test_parsing_llm_action_output(helpers):
     """Test LLM action parsing."""
-
-    for output in llm_outputs:
-        _, action_string = separate_thought_and_action(output["llm_output"])
-        parsed_actions = parse_action_string(action_string)
-
-        for parsed_action, expected_action in zip(
-            parsed_actions, output["expected_actions"]
-        ):
-            assert parsed_action.attrib["tool"] == expected_action.tool
-            assert parsed_action.text.strip() == expected_action.input.strip()
+    helpers.test_llm_outputs_parsing(llm_outputs)

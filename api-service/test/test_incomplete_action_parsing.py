@@ -1,18 +1,8 @@
 """Test LLM incomplete action parsing"""
 
-# import pytest
+from typing import Dict, List, Any
 
-from typing import Dict, List, NamedTuple, Any
-from codegen.agent.base import (
-    separate_thought_and_action,
-    parse_action_string,
-)
-
-
-class Action(NamedTuple):
-    tool: str
-    input: str
-
+from codegen.agent.parsing import ToolLog
 
 llm_outputs: List[Dict[str, Any]] = [
     {
@@ -23,21 +13,16 @@ What should the post request handler do?
 </
 ```""",
         "expected_actions": [
-            Action("AskHuman", "What should the post request handler do?")
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What should the post request handler do?",
+            )
         ],
     },
 ]
 
 
-def test_parsing_llm_incomplete_action_output():
+def test_parsing_llm_incomplete_action_output(helpers):
     """Test LLM action parsing."""
-
-    for output in llm_outputs:
-        _, action_string = separate_thought_and_action(output["llm_output"])
-        parsed_actions = parse_action_string(action_string)
-
-        for parsed_action, expected_action in zip(
-            parsed_actions, output["expected_actions"]
-        ):
-            assert parsed_action.attrib["tool"] == expected_action.tool
-            assert parsed_action.text.strip() == expected_action.input.strip()
+    helpers.test_llm_outputs_parsing(llm_outputs)
