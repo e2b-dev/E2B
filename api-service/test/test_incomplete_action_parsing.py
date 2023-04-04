@@ -7,16 +7,28 @@ from codegen.agent.parsing import ToolLog
 llm_outputs: List[Dict[str, Any]] = [
     {
         "llm_output": """Action:
-```
 <action tool="AskHuman">
 What should the post request handler do?
-</
-```""",
+</action
+""",
         "expected_actions": [
             ToolLog(
                 type="tool",
                 tool_name="AskHuman",
                 tool_input="What should the post request handler do?",
+            )
+        ],
+    },
+    {
+        "llm_output": """Action:
+<action tool="AskHuman">
+What should the post request handler do?
+</""",
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What should the post request handler do?\n</",
             )
         ],
     },

@@ -8,9 +8,10 @@ from codegen.agent.parsing import ToolLog
 llm_outputs: List[Dict[str, Any]] = [
     {
         "llm_output": """Install JavaScript packages with NPM. The input should be valid names of NPM packages. Example usage:
-        <action tool="InstallNPMDependencies">
-        package_name_1 package_name_2
-        </action>""",
+    <action tool="InstallNPMDependencies">
+    package_name_1 package_name_2
+    </action>
+    """,
         "expected_actions": [
             ToolLog(
                 type="tool",
@@ -21,11 +22,10 @@ llm_outputs: List[Dict[str, Any]] = [
     },
     {
         "llm_output": """Action:
-```
 <action tool="AskHuman">
 What should the post request handler do?
 </action>
-```""",
+""",
         "expected_actions": [
             ToolLog(
                 type="tool",
@@ -38,11 +38,10 @@ What should the post request handler do?
         "llm_output": """Thought: Lorem ipsum
 
 Action:
-```
 <action tool="Name">
 action input
 </action>
-```""",
+""",
         "expected_actions": [
             ToolLog(
                 type="tool",
@@ -55,14 +54,13 @@ action input
         "llm_output": """Thought: Lorem ipsum
 
 Action:
-```
 <action tool="Name">
 action input
 </action>
 <action tool="Name 2">
 action input 2
 </action>
-```""",
+""",
         "expected_actions": [
             ToolLog(
                 type="tool",
@@ -81,9 +79,8 @@ action input 2
 Thought: lorem ipsum
 
 Action:
-```
 <action tool="Name1">content</action 1><action tool="Name2">content 2</action><action tool="Name3">content 3</action>'
-```
+
 """,
         "expected_actions": [
             ToolLog(
@@ -107,13 +104,10 @@ Action:
         "llm_output": """Thought: I need to install the `email-validator` package using `InstallNPMDependencies`. Then, I need to write the post handler function that checks if the email is valid and sends the appropriate response. Finally, I need to add the post handler to the Express app and start the server using `app.listen()`.
 
 Action:
-```
 <action tool="InstallNPMDependencies">
 email-validator
 </action>
-```
 
-```
 <action tool="RunJavaScriptCode">
 import express from 'express';
 import validator from 'email-validator';
@@ -136,7 +130,7 @@ app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 </action>
-```
+
 
 """,
         "expected_actions": [
