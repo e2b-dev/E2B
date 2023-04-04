@@ -1,10 +1,8 @@
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 
 import { projects } from '@prisma/client'
-import Text from 'components/Text'
 import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
@@ -13,6 +11,7 @@ import { html2markdown } from 'editor/schema'
 import Agent from './Agent'
 import Envs from './Envs'
 import Context from './Context'
+import Deploy from './Deploy'
 
 export interface Props {
   project: projects
@@ -26,8 +25,6 @@ export enum MenuSection {
   Context = 'Context',
   Deploy = 'Deploy',
 }
-
-
 
 const apiHost = process.env.NODE_ENV === 'development'
   ? 'http://localhost:49155'
@@ -118,55 +115,7 @@ function Sidebar({
       )}
     >
       {activeMenuSection === MenuSection.Deploy &&
-        <div
-          className="
-        flex
-        px-4
-        py-2
-        justify-start
-        border-b
-        flex-col
-      "
-        >
-          <div
-            className="
-            flex
-            flex-1
-            items-center
-            justify-between
-          "
-          >
-            <Text
-              text="Latest Deployment"
-              className="
-              font-semibold
-              uppercase
-              text-slate-400
-            "
-              size={Text.size.S2}
-            />
-          </div>
-          {deployment?.url &&
-            <Link
-              href={deployment.url}
-              className="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Text
-                size={Text.size.S3}
-                text={deployment.url.substring('https://'.length)}
-              />
-            </Link>
-          }
-          {!deployment?.url &&
-            <Text
-              text="No deployment URL found"
-              size={Text.size.S3}
-              className="text-slate-400"
-            />
-          }
-        </div>
+        <Deploy />
       }
       {activeMenuSection === MenuSection.Context &&
         <Context />

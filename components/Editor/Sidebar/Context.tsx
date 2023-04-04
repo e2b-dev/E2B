@@ -26,7 +26,6 @@ function Context({
 
   return (
     <div className="
-      max-w-full
       flex
       flex-col
       overflow-hidden

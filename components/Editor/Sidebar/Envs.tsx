@@ -30,10 +30,8 @@ function Envs() {
 
   return (
     <div className="
-    max-w-full
     flex
     flex-col
-    space-y-4
   ">
       <div className="
         flex

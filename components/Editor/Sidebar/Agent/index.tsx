@@ -70,10 +70,10 @@ function Agent({
 
   return (
     <div className="
-      max-w-full
       flex
       flex-col
       bg-slate-50
+      flex-1
       overflow-hidden
     ">
       <div className="
@@ -109,14 +109,28 @@ function Agent({
           deployStatus={deployment?.state}
         />
       </div>
-      {selectedTab === 0 &&
+      {!deployment &&
+        <div
+          className="
+          self-center
+          flex
+          flex-1
+        "
+        >
+          <Text
+            className="text-slate-400"
+            text="No agent run found"
+          />
+        </div>
+      }
+      {selectedTab === 0 && deployment &&
         <LogStream
-          logs={deployment?.logs as Log[] | undefined}
+          logs={deployment.logs as unknown as Log[] | undefined}
           onAnswer={saveAnswer}
           isDeployRequestRunning={isDeployRequestRunning}
         />
       }
-      {selectedTab === 1 &&
+      {selectedTab === 1 && deployment &&
         <LogStream
           rawLogs={deployment?.logs_raw}
           isDeployRequestRunning={isDeployRequestRunning}
