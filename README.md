@@ -6,6 +6,7 @@
 <p align="center">Open-source IDE powered by AI agents that do the work for you</p>
 
 <h4 align="center">
+  <a href="https://e2b.dev">Website</a> |
   <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
   <a href="https://twitter.com/e2b_dev">Twitter</a>
 </h4>
