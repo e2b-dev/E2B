@@ -10,11 +10,13 @@ class Helpers:
         """Test LLM action parsing."""
 
         for output in llm_outputs:
-            actions = (
+            actions = [
                 cast(ToolLog, action)
                 for action in parse_thoughts_and_actions(output["llm_output"])
                 if action["type"] == "tool"
-            )
+            ]
+
+            assert len(actions) == len(output["expected_actions"])
 
             for action, expected_action in zip(
                 actions, cast(List[ToolLog], output["expected_actions"])
