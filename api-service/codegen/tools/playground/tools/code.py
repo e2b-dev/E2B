@@ -80,7 +80,7 @@ def create_code_tools(playground: NodeJSPlayground):
     async def curl(curl_command: str) -> str:
         """
         Make a curl request. The input should be the `curl` command. Example usage:
-        <action tool="CurlJavaScriptServer">
+        <action tool="Curl">
         curl --no-progress-meter -X POST -H "Content-Type: application/json" -d '{{"key": "value"}}' http://localhost:3000/
         </action>
         """
