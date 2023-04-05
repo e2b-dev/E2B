@@ -52,6 +52,7 @@ async def generate():
     route_id = body["routeID"]
     blocks = body["blocks"]
     method = body["method"]
+    model_name = body["model"]
     route = body["route"]
 
     pprint("+++ Blocks:")
@@ -76,6 +77,7 @@ async def generate():
                 *playground_tools,
                 *human_tools,
             ],
+            model_name=model_name,
             database=db,
         )
 

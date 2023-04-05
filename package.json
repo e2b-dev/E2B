@@ -24,6 +24,7 @@
   "dependencies": {
     "@devbookhq/splitter": "^1.4.0",
     "@prisma/client": "^4.11.0",
+    "@radix-ui/react-radio-group": "^1.1.2",
     "@supabase/auth-helpers-nextjs": "^0.5.5",
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.10.0",

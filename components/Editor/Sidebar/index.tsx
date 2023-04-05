@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 
 import { projects } from '@prisma/client'
-import { Route, Block } from 'state/store'
+import { Route, Block, ModelName } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { html2markdown } from 'editor/schema'
@@ -12,6 +12,7 @@ import Agent from './Agent'
 import Envs from './Envs'
 import Context from './Context'
 import Deploy from './Deploy'
+import Model from './Model'
 
 export interface Props {
   project: projects
@@ -24,6 +25,7 @@ export enum MenuSection {
   Envs = 'Envs',
   Context = 'Context',
   Deploy = 'Deploy',
+  Model = 'Model',
 }
 
 const apiHost = process.env.NODE_ENV === 'development'
@@ -34,6 +36,7 @@ async function handlePostGenerate(url: string, { arg }: {
   arg: {
     projectID: string,
     route: Route,
+    model: ModelName,
     envs: { key: string, value: string }[],
   }
 }) {
@@ -57,6 +60,7 @@ async function handlePostGenerate(url: string, { arg }: {
             return b
         }
       }),
+      model: arg.model,
       method: arg.route.method.toLowerCase(),
       route: arg.route.route,
       envs: arg.envs,
@@ -81,6 +85,7 @@ function Sidebar({
 
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
+  const model = selectors.use.model()
 
   async function deploy() {
     if (!route) return
@@ -88,6 +93,7 @@ function Sidebar({
       projectID: project.id,
       route,
       envs,
+      model,
     })
   }
 
@@ -122,6 +128,9 @@ function Sidebar({
       }
       {activeMenuSection === MenuSection.Envs &&
         <Envs />
+      }
+      {activeMenuSection === MenuSection.Model &&
+        <Model />
       }
       {activeMenuSection === MenuSection.Agent &&
         <Agent

@@ -89,6 +89,7 @@ class Codegen(BaseModel):
     def from_tools_and_database(
         cls,
         custom_tools: List[BaseTool],
+        model_name: str,
         database: Database,
     ):
         callback_manager = AsyncCallbackManager(
@@ -103,7 +104,7 @@ class Codegen(BaseModel):
 
         # Create the LLM
         llm = ChatOpenAI(
-            model_name="gpt-4",
+            model_name=model_name,
             streaming=True,
             temperature=0,
             max_tokens=2056,

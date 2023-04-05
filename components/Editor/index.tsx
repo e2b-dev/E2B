@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
-import { Code, Box, Server, Lock } from 'lucide-react'
+import { Code, Box, Server, Lock, Component } from 'lucide-react'
 
 import { useStateStore } from 'state/StoreProvider'
 
@@ -23,6 +23,8 @@ function getMenuSelectionIcon(selection: MenuSection) {
       return <Server size={menuIconSize} />
     case MenuSection.Envs:
       return <Lock size={menuIconSize} />
+    case MenuSection.Model:
+      return <Component size={menuIconSize} />
   }
 }
 
