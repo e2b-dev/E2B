@@ -53,7 +53,6 @@ function BaseTool({
       {body &&
         <div className="
         py-4
-        max-w-full
         overflow-x-auto
         scroller
       ">

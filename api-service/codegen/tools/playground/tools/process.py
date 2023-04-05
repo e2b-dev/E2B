@@ -27,7 +27,7 @@ def encode_command_output(response: ProcessResponse, only_errors: bool = False) 
     return result
 
 
-def create_process_tools(playground: NodeJSPlayground, **kwargs):
+def create_process_tools(playground: NodeJSPlayground):
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
 

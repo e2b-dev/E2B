@@ -1,19 +1,19 @@
 import time
 import math
 from typing import Any
-from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse
-from playground_client.models.mock_data_response import MockDataResponse
-from playground_client.models.process_response import ProcessResponse
-from playground_client.models.read_filesystem_file_response import ReadFilesystemFileResponse
-from playground_client.models.session_response import SessionResponse
-from session.env import cmd_with_env_vars
 
-from session.session import GetEnvs, Session
-from playground_client.models.create_mock_body_data_request import (
-    CreateMockBodyDataRequest,
+from playground_client.models.list_filesystem_dir_response import (
+    ListFilesystemDirResponse,
 )
+from playground_client.models.process_response import ProcessResponse
+from playground_client.models.read_filesystem_file_response import (
+    ReadFilesystemFileResponse,
+)
+from playground_client.models.session_response import SessionResponse
 import playground_client
-from playground_client.models.file import File
+from session.env import cmd_with_env_vars
+from session.session import GetEnvs, Session
+
 
 class Playground(Session):
     port_check_interval = 0.5  # 500ms
@@ -23,13 +23,11 @@ class Playground(Session):
 
     run_command_timeout_frequency = 2  # in Hz
 
-    mock_data_filename = "index.ts"
-
     def __init__(self, env_id: str, get_envs: GetEnvs):
         super().__init__(env_id, get_envs)
 
     async def get_open_ports(self):
-        thread: Any = self.api.get_session(self.id,  async_req=True)
+        thread: Any = self.api.get_session(self.id, async_req=True)
         response: SessionResponse = thread.get()
         return response.ports
 
@@ -133,18 +131,6 @@ class Playground(Session):
         thread: Any = self.api.delete_filesystem_entry(self.id, path, async_req=True)
         thread.get()
 
-    async def mock_body_data(self, code: str, interface: str):
-        thread: Any = self.api.create_mock_body_data(
-            CreateMockBodyDataRequest(
-                targetInterface=interface,
-                files=[File(name=self.mock_data_filename, content=code)],
-            ),
-            async_req=True,
-        )
-
-        response: MockDataResponse = thread.get()
-        return response.body_data
-
     async def delete_dir(self, path: str):
         thread: Any = self.api.delete_filesystem_entry(self.id, path, async_req=True)
         thread.get()
@@ -154,7 +140,7 @@ class Playground(Session):
             self.id,
             path,
             playground_client.WriteFilesystemFileRequest(content=content),
-            async_req=True
+            async_req=True,
         )
         thread.get()
 

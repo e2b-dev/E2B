@@ -1,6 +1,5 @@
 from collections.abc import Generator
 from typing import Any
-from time import sleep
 
 from codegen.tools.async_tool import async_tool
 from playground_client.models.tools_log_output import ToolsLogOutput
@@ -10,7 +9,6 @@ from session.playground.base import Playground
 def create_human_tools(
     run_id: str,
     playground: Playground,
-    **kwargs,
 ) -> Generator[Any, None, None]:
     # Ensure that the function is a generator even if no tools are yielded
     yield from ()
@@ -38,14 +36,11 @@ def create_human_tools(
         response: ToolsLogOutput = thread.get()
         return response.response
 
-    yield let_human_choose
+    # yield let_human_choose
 
     @async_tool("AskHuman")
     async def ask_human(question: str) -> str:
-        """You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question. Example usage:
-        <action tool="AskHuman">
-        I'm not sure what to do, can you specify what should to do next?
-        </action>"""
+        """You can ask a human for guidance when you think you got stuck or you are not sure what to do next. The input should be a question."""
         thread: Any = playground.api.wait_for_log_output(
             run_id=run_id,
             async_req=True,

@@ -65,12 +65,9 @@ async def generate():
         # Create playground for the LLM
         playground_tools, playground = create_playground_tools(
             get_envs=lambda: db.get_env_vars(project_id),
-            route=route,
-            method=method,
-            request_body_template=get_request_body_template(blocks),
         )
 
-        human_tools = list(create_human_tools(run_id=run_id, playground=playground))
+        human_tools = create_human_tools(run_id=run_id, playground=playground)
 
         # Create a new instance of code generator
         cg = Codegen.from_tools_and_database(

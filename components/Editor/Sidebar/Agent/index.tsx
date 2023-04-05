@@ -1,6 +1,6 @@
 import { useState } from 'react'
 // import hljs from 'highlight.js'
-import { deployments } from '@prisma/client'
+import { deployment_state, deployments } from '@prisma/client'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
@@ -12,6 +12,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { Database, Json } from 'db/supabase'
 import { deploymentsTable } from 'db/tables'
 import produce from 'immer'
+import RunButton from '../RunButton'
 
 const tabsProps = {
   tabs: [
@@ -29,11 +30,16 @@ const tabsProps = {
 export interface Props {
   deployment?: deployments
   isDeployRequestRunning?: boolean
+  deploy: () => void
+  deployStatus?: deployment_state | null
+  isInitializingDeploy?: boolean
 }
 
-function Logs({
+function Agent({
   deployment,
   isDeployRequestRunning,
+  deploy,
+  isInitializingDeploy,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
   const client = useSupabaseClient<Database>()
@@ -64,9 +70,10 @@ function Logs({
 
   return (
     <div className="
-      max-w-full
       flex
       flex-col
+      bg-slate-50
+      flex-1
       overflow-hidden
     ">
       <div className="
@@ -95,15 +102,35 @@ function Logs({
             setSelectedTab={setSelectedTab}
           />
         )}
+        <RunButton
+          deploy={deploy}
+          isDeployRequestRunning={isDeployRequestRunning}
+          isInitializingDeploy={isInitializingDeploy}
+          deployStatus={deployment?.state}
+        />
       </div>
-      {selectedTab === 0 &&
+      {!deployment &&
+        <div
+          className="
+          self-center
+          flex
+          flex-1
+        "
+        >
+          <Text
+            className="text-slate-400"
+            text="No agent run found"
+          />
+        </div>
+      }
+      {selectedTab === 0 && deployment &&
         <LogStream
-          logs={deployment?.logs as Log[] | undefined}
+          logs={deployment.logs as unknown as Log[] | undefined}
           onAnswer={saveAnswer}
           isDeployRequestRunning={isDeployRequestRunning}
         />
       }
-      {selectedTab === 1 &&
+      {selectedTab === 1 && deployment &&
         <LogStream
           rawLogs={deployment?.logs_raw}
           isDeployRequestRunning={isDeployRequestRunning}
@@ -113,4 +140,4 @@ function Logs({
   )
 }
 
-export default Logs
+export default Agent

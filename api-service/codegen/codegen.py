@@ -24,8 +24,8 @@ from codegen.prompt import (
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
     SYSTEM_FORMAT_INSTRUCTIONS,
-    HUMAN_INSTRUCTIONS_PREFIX,
     HUMAN_INSTRUCTIONS_SUFFIX,
+    get_human_instructions_prefix,
 )
 
 # class OutputFinalCode(BaseTool):
@@ -149,18 +149,22 @@ class Codegen(BaseModel):
         )
 
         # Retrueve the block describing the incoming request payload.
-        incoming_request_block: Dict[str, str] = next(
-            b for b in blocks if b.get("type") == "RequestBody"
+        incoming_request_block: Dict[str, str] | None = next(
+            (b for b in blocks if b.get("type") == "RequestBody" and b.get("content")),
+            None,
         )
 
         # Retrieve the instructions block.
-        instructions_block: Dict[str, str] = next(
-            b for b in blocks if b.get("type") == "Instructions"
+        instructions_block: Dict[str, str] | None = next(
+            (b for b in blocks if b.get("type") == "Instructions" and b.get("content")),
+            None,
         )
 
         input_vars = {
             "description": description_block["content"],
-            "request_body": f"{{\n{incoming_request_block['content']}\n}}",
+            "request_body": f"{{\n{incoming_request_block['content']}\n}}"
+            if incoming_request_block
+            else None,
             "route": route,
             "method": method,
         }
@@ -168,7 +172,9 @@ class Codegen(BaseModel):
         # inst_idx = 0
 
         # Append the premade prefix instructions.
-        for instruction in HUMAN_INSTRUCTIONS_PREFIX:
+        for instruction in get_human_instructions_prefix(
+            has_request_body=bool(incoming_request_block)
+        ):
             # inst_idx += 1
 
             values = []
@@ -183,11 +189,12 @@ class Codegen(BaseModel):
             instructions = instructions + "\n" + f"- {inst}"
 
         # Append the use instructions
-        instructions = (
-            instructions
-            + "\nHere are the required implementation instructions:\n"
-            + instructions_block["content"]
-        )
+        if instructions_block:
+            instructions = (
+                instructions
+                + "\nHere are the required implementation instructions:\n"
+                + instructions_block["content"]
+            )
 
         print("Instructions:\n", instructions)
 
@@ -200,10 +207,9 @@ class Codegen(BaseModel):
         #         inst_idx += 1
         #         instructions = instructions + "\n" + f"{inst_idx}. " + block["prompt"]
 
-        # # Append the premade suffix instructions.
-        # for inst in HUMAN_INSTRUCTIONS_SUFFIX:
-        #     inst_idx += 1
-        #     instructions = instructions + "\n" + f"{inst_idx}. {inst}"
+        # Append the premade suffix instructions.
+        for inst in HUMAN_INSTRUCTIONS_SUFFIX:
+            instructions = instructions + f"\n{inst}"
 
         # # instructions += "\nThought: Here is the plan of how I will go about solving this based on the instructions I got:\n1."
         # # instructions += "\nThought:"

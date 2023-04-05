@@ -15,12 +15,14 @@ export interface Props {
 function LogEntry({ log, onAnswer }: Props) {
   return (
     <div className={`
-      rounded-lg
       p-3
-      border
+      border-l-4
+      rounded
+      shadow-sm
+      bg-white
       ${log.type === LogType.Tool ? 'border-green-300' : 'border-blue-300'}
     `}>
-      {log.type === 'thought' &&
+      {log.type === 'thought' && log.content.trim() &&
         <Thought
           log={log}
         />

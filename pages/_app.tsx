@@ -5,7 +5,6 @@ import { SessionContextProvider, Session } from '@supabase/auth-helpers-react'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import clsx from 'clsx'
-import { Toaster } from 'sonner'
 import { projects } from '@prisma/client'
 
 import 'styles/global.css'
@@ -43,7 +42,6 @@ function App({ Component, pageProps }: AppProps<{ initialSession: Session, proje
         {!isSignIn && !isSignUp &&
           <Header project={pageProps.project} />
         }
-        <Toaster />
         <Component {...pageProps} />
       </SessionContextProvider>
     </main>

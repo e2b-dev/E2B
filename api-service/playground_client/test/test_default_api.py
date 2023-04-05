@@ -34,12 +34,6 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
-    def test_create_mock_body_data(self):
-        """Test case for create_mock_body_data
-
-        """
-        pass
-
     def test_create_sessions(self):
         """Test case for create_sessions
 

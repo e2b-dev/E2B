@@ -39,7 +39,7 @@ function getDeploymentRepresentation(deployStatus: deployment_state | null | und
     case deployment_state.finished:
     default:
       return {
-        text: 'Deploy',
+        text: 'Run',
         icon: null,
       }
   }

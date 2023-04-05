@@ -1,57 +1,77 @@
 """Test LLM action parsing"""
 
-# import pytest
+from typing import Dict, List, Any
 
-from typing import Dict, List, NamedTuple, Any
-from codegen.agent.base import (
-    separate_thought_and_action,
-    parse_action_string,
-)
-
-
-class Action(NamedTuple):
-    tool: str
-    input: str
+from codegen.agent.parsing import ToolLog
 
 
 llm_outputs: List[Dict[str, Any]] = [
     {
+        "llm_output": """Install JavaScript packages with NPM. The input should be valid names of NPM packages. Example usage:
+    <action tool="InstallNPMDependencies">
+    package_name_1 package_name_2
+    </action>
+    """,
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="InstallNPMDependencies",
+                tool_input="package_name_1 package_name_2",
+            ),
+        ],
+    },
+    {
         "llm_output": """Action:
-```
 <action tool="AskHuman">
 What should the post request handler do?
 </action>
-```""",
+""",
         "expected_actions": [
-            Action("AskHuman", "What should the post request handler do?")
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What should the post request handler do?",
+            ),
         ],
     },
     {
         "llm_output": """Thought: Lorem ipsum
 
 Action:
-```
 <action tool="Name">
 action input
 </action>
-```""",
-        "expected_actions": [Action("Name", "action input")],
+""",
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="Name",
+                tool_input="action input",
+            ),
+        ],
     },
     {
         "llm_output": """Thought: Lorem ipsum
 
 Action:
-```
 <action tool="Name">
 action input
 </action>
 <action tool="Name 2">
 action input 2
 </action>
-```""",
+""",
         "expected_actions": [
-            Action("Name", "action input"),
-            Action("Name 2", "action input 2"),
+            ToolLog(
+                type="tool",
+                tool_name="Name",
+                tool_input="action input",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="Name 2",
+                tool_input="action input 2",
+            ),
         ],
     },
     {
@@ -59,27 +79,35 @@ action input 2
 Thought: lorem ipsum
 
 Action:
-```
 <action tool="Name1">content</action 1><action tool="Name2">content 2</action><action tool="Name3">content 3</action>'
-```
+
 """,
         "expected_actions": [
-            Action(tool="Name1", input="content"),
-            Action(tool="Name2", input="content 2"),
-            Action(tool="Name3", input="content 3"),
+            ToolLog(
+                type="tool",
+                tool_name="Name1",
+                tool_input="content",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="Name2",
+                tool_input="content 2",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="Name3",
+                tool_input="content 3",
+            ),
         ],
     },
     {
         "llm_output": """Thought: I need to install the `email-validator` package using `InstallNPMDependencies`. Then, I need to write the post handler function that checks if the email is valid and sends the appropriate response. Finally, I need to add the post handler to the Express app and start the server using `app.listen()`.
 
 Action:
-```
 <action tool="InstallNPMDependencies">
 email-validator
 </action>
-```
 
-```
 <action tool="RunJavaScriptCode">
 import express from 'express';
 import validator from 'email-validator';
@@ -102,14 +130,19 @@ app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 </action>
-```
+
 
 """,
         "expected_actions": [
-            Action(tool="InstallNPMDependencies", input="email-validator"),
-            Action(
-                tool="RunJavaScriptCode",
-                input="""import express from 'express';
+            ToolLog(
+                type="tool",
+                tool_name="InstallNPMDependencies",
+                tool_input="email-validator",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="RunJavaScriptCode",
+                tool_input="""import express from 'express';
 import validator from 'email-validator';
 
 const app = express();
@@ -132,18 +165,95 @@ app.listen(port, () => {
             ),
         ],
     },
+    {
+        "llm_output": """
+        <action tool="InstallNPMDependencies">
+        package_name_1 package_name_2
+        </action>
+""",
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="InstallNPMDependencies",
+                tool_input="package_name_1 package_name_2",
+            ),
+        ],
+    },
+    {
+        "llm_output": """
+<action tool="AskHuman">
+What should the post request handler do?
+</action>
+This is a thought:        
+Action:
+""",
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What should the post request handler do?",
+            ),
+        ],
+    },
+    {
+        "llm_output": """
+<action tool="AskHuman">
+What should the post request handler do?
+</action>
+This is a thought:        
+
+<?
+<action tool="AskHuman">
+What
+</action>
+
+This is a thought:        
+
+<?
+""",
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What should the post request handler do?",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What",
+            ),
+        ],
+    },
+    {
+        "llm_output": """
+This is a thought
+Greater <?
+And action:
+
+<action tool="AskHuman">
+What should the post request handler do?
+</action>
+<action tool="AskHuman">
+What
+</action>
+thought after?
+""",
+        "expected_actions": [
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What should the post request handler do?",
+            ),
+            ToolLog(
+                type="tool",
+                tool_name="AskHuman",
+                tool_input="What",
+            ),
+        ],
+    },
 ]
 
 
-def test_parsing_llm_action_output():
+def test_parsing_llm_action_output(helpers):
     """Test LLM action parsing."""
-
-    for output in llm_outputs:
-        _, action_string = separate_thought_and_action(output["llm_output"])
-        parsed_actions = parse_action_string(action_string)
-
-        for parsed_action, expected_action in zip(
-            parsed_actions, output["expected_actions"]
-        ):
-            assert parsed_action.attrib["tool"] == expected_action.tool
-            assert parsed_action.text.strip() == expected_action.input.strip()
+    helpers.test_llm_outputs_parsing(llm_outputs)

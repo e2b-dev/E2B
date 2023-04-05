@@ -5,7 +5,6 @@ from typing import TypedDict
 from typing import Literal
 from lxml import etree
 
-
 escape_table = str.maketrans({
     "<": "&lt;",
     ">": "&gt;",
@@ -36,10 +35,10 @@ def merge_logs(log: TypedDict, other: TypedDict):
     log.update(other)
 
 
-action_tag_open = "<action(\\s+tool=\".+?\")?\\s*/?>?"
+action_tag_open = "<action(?:\\s+tool=\".+?\")?\\s*/?>?"
 action_tag_close = "</\\s*action\\s*>?"
 
-action_tag_split_pattern = re.compile(f"({action_tag_open}.*?{action_tag_close})|(.+)")
+action_tag_split_pattern = re.compile(f"({action_tag_open})|({action_tag_close})|(.+?)")
 action_tag_check_pattern = re.compile(f"{action_tag_open}|{action_tag_close}")
 
 def parse_thoughts_and_actions(text: str):

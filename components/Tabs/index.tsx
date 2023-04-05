@@ -114,16 +114,14 @@ function Tab({
               items-center
               justify-center
               h-8
-              px-2
-              lg:px-4
               z-20
               bg-transparent
-              text-sm
+              text-xs
               cursor-pointer
               select-none
               transition-colors
               border-green-800
-              w-[80px]
+              px-2
               `,
               {
                 'text-slate-400': hoveredTabIndex !== i && selectedTabIndex !== i,
@@ -149,7 +147,6 @@ function Tab({
           left-0
           rounded-md
           bg-green-400
-          transition-[width]
         "
         style={hoverStyles}
       />

@@ -6,34 +6,6 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
-			"MockDataResponse": {
-				"properties": {
-					"bodyData": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"bodyData"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"File": {
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"content": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"name",
-					"content"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"ToolsLogOutput": {
 				"properties": {
 					"response": {
@@ -268,50 +240,6 @@
 	},
 	"openapi": "3.0.0",
 	"paths": {
-		"/mock/body": {
-			"post": {
-				"operationId": "CreateMockBodyData",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MockDataResponse"
-								}
-							}
-						}
-					}
-				},
-				"security": [],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"files": {
-										"items": {
-											"$ref": "#/components/schemas/File"
-										},
-										"type": "array"
-									},
-									"targetInterface": {
-										"type": "string"
-									}
-								},
-								"required": [
-									"files",
-									"targetInterface"
-								],
-								"type": "object"
-							}
-						}
-					}
-				}
-			}
-		},
 		"/tools/logOutput": {
 			"get": {
 				"operationId": "WaitForLogOutput",
