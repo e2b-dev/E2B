@@ -35,7 +35,7 @@ def merge_logs(log: TypedDict, other: TypedDict):
     log.update(other)
 
 
-action_tag_open = "<action(?:\\s+tool=\".+?\")\\s*/?>?"
+action_tag_open = "<action(?:\\s+tool=\".+?\")?\\s*/?>?"
 action_tag_close = "</\\s*action\\s*>?"
 
 action_tag_split_pattern = re.compile(f"({action_tag_open})|({action_tag_close})|(.+?)")
