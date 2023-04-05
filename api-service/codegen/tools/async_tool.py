@@ -29,8 +29,6 @@ def async_tool(name: str | None = None) -> Callable:
             None,
         )
 
-        print("example", tool_example)
-
         if tool_example and not name and tool_example["tool_name"]:
             name = tool_example["tool_name"]
 
