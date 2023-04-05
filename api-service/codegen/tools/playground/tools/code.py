@@ -15,11 +15,7 @@ def create_code_tools(playground: NodeJSPlayground):
 
     @async_tool("InstallNPMDependencies")
     async def install_dependencies(dependencies: str) -> str:
-        """Install JavaScript packages with NPM. The input should be valid names of NPM packages. Example usage:
-        <action tool="InstallNPMDependencies">
-        package_name_1 package_name_2
-        </action>
-        """
+        """Install JavaScript packages with NPM. The input should be valid names of NPM packages."""
         output = await playground.install_dependencies(extract_code(dependencies))
         result = encode_command_output(output, only_errors=True)
         return result if len(result) > 0 else "All dependencies installed"
@@ -29,10 +25,7 @@ def create_code_tools(playground: NodeJSPlayground):
     # A tool for executing index.mjs file
     @async_tool("RunSavedCode")
     async def run_saved_code(empty: str) -> str:
-        """Run JavaScript code that is inside the index.mjs. The tool takes no input. Example usage:
-        <action tool="RunSavedCode">
-        </action>
-        """
+        """Run JavaScript code that is inside the index.mjs. The tool takes no input."""
         output = await playground.run_saved_javascript_code()
         return encode_command_output(output)
 
@@ -41,12 +34,7 @@ def create_code_tools(playground: NodeJSPlayground):
     # A tool for writing JavaScript code specifically to the index.mjs file
     @async_tool("WriteJavaScriptCode")
     async def write_javascript_code(code: str) -> str:
-        """Write JavaScript code to the index.mjs file. The input should be valid JavaScript code. Example usage:
-        <action tool="WriteJavaScriptCode">
-        import process from 'process'
-        console.log(process.env)
-        </action>
-        """
+        """Write JavaScript code to the index.mjs file. The input should be valid JavaScript code."""
         nonlocal last_javascript_code
         last_javascript_code = code
 
@@ -78,12 +66,7 @@ def create_code_tools(playground: NodeJSPlayground):
 
     @async_tool("Curl")
     async def curl(curl_command: str) -> str:
-        """
-        Make a curl request. The input should be the `curl` command. Example usage:
-        <action tool="Curl">
-        curl --no-progress-meter -X POST -H "Content-Type: application/json" -d '{{"key": "value"}}' http://localhost:3000/
-        </action>
-        """
+        """Make a curl request. The input should be the `curl` command."""
         await playground.update_envs()
 
         nonlocal last_javascript_code
