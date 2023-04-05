@@ -1,7 +1,0 @@
-{
-  "watch": [
-    "src/**/*Controller.ts"
-  ],
-  "ext": ".ts",
-  "exec": "tsoa spec-and-routes"
-}

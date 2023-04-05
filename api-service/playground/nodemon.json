@@ -2,7 +2,14 @@
   "watch": [
     "src"
   ],
-  "ignore": [],
+  "events": {
+    "restart": "kill-port 49160",
+    "crash": "kill-port 49160"
+  },
+  "ignore": [
+    "src/generated/**/*"
+  ],
   "ext": ".ts",
-  "exec": "export NODE_ENV=dev; ./scripts/build.js && node ./lib/server.js"
+  "delay": 200,
+  "exec": "export NODE_ENV=dev; tsoa spec-and-routes && ./scripts/build.js && node ./lib/server.js"
 }

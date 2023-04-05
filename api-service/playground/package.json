@@ -18,12 +18,13 @@
     "@types/node": "^18.15.0",
     "concurrently": "^7.6.0",
     "esbuild": "^0.17.11",
+    "kill-port": "^2.0.1",
     "nodemon": "^2.0.21",
     "typescript": "^4.9.5"
   },
   "main": "lib/server.js",
   "scripts": {
-    "dev": "concurrently \"nodemon -q\" \"nodemon --config nodemon-tsoa.json \"",
+    "dev": "nodemon -q",
     "generate": "tsoa spec-and-routes",
     "check-types": "tsc --noEmit",
     "build": "./scripts/build.js",
