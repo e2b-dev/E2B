@@ -18,7 +18,6 @@ $INPUT
 ALWAYS use the following format:
 
 
-Instructions: the input instructions you must implement
 Thought: you should always think about what to do
 Action:
 <action tool="$TOOL_NAME">
@@ -97,7 +96,7 @@ app.listen(port, async () => {{
 
 HUMAN_INSTRUCTIONS_SUFFIX = [
     # "Do not forget to use async and await",
-    "Think about it and plan your work first.",
+    # "Think about it and plan your work first.",
     # "If you think there might be multiple paths forward, use the tool `LetHumanChoose` to choose from them. Do not be confident in picking the right path forward instead of the human",
     # "If something is not working and you do not know why, use the tool `AskHuman` to ask for help",
     # "Do not use third party packages without first asking the human for permission or presenting the human with multiple alternative options",
@@ -108,5 +107,5 @@ HUMAN_INSTRUCTIONS_SUFFIX = [
     # # "Once all works without any bugs and errors, write the code to the file",
     # # "Deploy the code",
     # "Once you are done, output the final code as the 'Final answer:'"
-    "Thought: Here is the plan of how I will go about solving this based on the instructions I got:\n1.",
+    "Thought: Here is the plan of how I will go about solving this:\n",
 ]
