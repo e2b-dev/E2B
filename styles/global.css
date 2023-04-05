@@ -1,7 +1,6 @@
 /* @import 'highlight.js/styles/a11y-dark.css'; */
 
 @import './prosemirror.css';
-@import './radio.css';
 
 @tailwind base;
 @tailwind components;
