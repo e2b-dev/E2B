@@ -26,6 +26,9 @@ def create_code_tools(playground: NodeJSPlayground):
     @async_tool("RunSavedCode")
     async def run_saved_code(empty: str) -> str:
         """Run JavaScript code that is inside the index.mjs. The tool takes no input."""
+
+        await playground.update_envs()
+
         output = await playground.run_saved_javascript_code()
         return encode_command_output(output)
 
