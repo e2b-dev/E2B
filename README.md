@@ -34,7 +34,7 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 
 ## Get started
 You will need:
-- GPT-4 access (we will add support for custom models later)
+- GPT-4 access (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
 - Yarn
@@ -94,5 +94,5 @@ Short-term goals, in no particular order.
 
 - ~Come up with the name~
 - ~Clean up codebase and provide instructions on how to run it locally~
-- Set up a website
+- ~Set up a website~
 - Launch the initial version
