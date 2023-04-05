@@ -44,7 +44,7 @@ function RequestBodyEditor({
         autoCorrect="off"
         spellCheck="false"
         name="block"
-        placeholder="email: string"
+        placeholder="email: string // Optionally add comments to explain what the field is for"
         value={block.content}
         onChange={e => onChange(e.target.value)}
         className={clsx(
