@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  api:
+    image: gcr.io/e2b/api:latest
+    build:
+      context: ./api-service
+    environment:
+      - PORT=49155
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    expose:
+      - 49155
+    networks:
+      - supabase-local-net
+      - api-net
+
+  app-dev:
+    image: gcr.io/e2b/app-dev:latest
+    build:
+      context: ./
+    depends_on:
+      - api
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_POSTGRES_POOL_URL=${SUPABASE_POSTGRES_POOL_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    ports:
+      - 3000:3000
+    networks:
+      - supabase-local-net
+      - api-net
+
+networks:
+  api-net:
+    driver: bridge
+  supabase-local-net:
+    # This name identified the network -
+    name: supabase_network_workspace
+    external: true
