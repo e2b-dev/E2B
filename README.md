@@ -40,7 +40,7 @@ You will need:
 - GPT-4 access (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
-- Yarn
+- Yarn *1.22.19 (Classic Stable)*
 - Python *3.10+*
 - Poetry *1.3.2+*
 
