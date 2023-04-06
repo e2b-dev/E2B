@@ -27,6 +27,8 @@
 e2b or etob (*english2bits*) is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. The developer writes a short documentation or a technical spec in plain English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you. Like [this example](https://twitter.com/mlejva/status/1641072535163875330) of an AI agent coding Stripe customer checkout based on a technical spec.
 
 ## BYOM, BYOP, BYOT
+
+While e2b will offer the "batteries-included" solution, our goal is to let users:
 - **BYOM** - Bring Your Own Model
 - **BYOP** - Bring Your Own Prompt
 - **BYOT** - Bring Your Own Tools
