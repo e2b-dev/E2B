@@ -10,7 +10,8 @@
     "start:playground": "cd api-service/playground && yarn dev",
     "install:api-service": "cd api-service && poetry install && cd playground && yarn",
     "install:all": "yarn && yarn install:api-service",
-    "start": "next start",
+    "start": "yarn db:start && docker compose up",
+    "stop": "docker compose down && yarn db:stop",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "dev:debug": "NODE_OPTIONS='--inspect' next dev",
@@ -18,8 +19,8 @@
     "db:pull": "prisma db pull",
     "supabase:generate": "supabase gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
     "postinstall": "yarn db:generate",
-    "db:start": "supabase start -x imgproxy,storage-api,studio",
-    "db:stop": "supabase stop"
+    "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio",
+    "db:stop": "npx --yes supabase stop"
   },
   "dependencies": {
     "@devbookhq/splitter": "^1.4.0",
