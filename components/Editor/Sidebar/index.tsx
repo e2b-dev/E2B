@@ -10,8 +10,6 @@ import { html2markdown } from 'editor/schema'
 
 import Agent from './Agent'
 import Envs from './Envs'
-import Context from './Context'
-import Deploy from './Deploy'
 
 export interface Props {
   project: projects
@@ -114,12 +112,12 @@ function Sidebar({
       `,
       )}
     >
-      {activeMenuSection === MenuSection.Deploy &&
+      {/* {activeMenuSection === MenuSection.Deploy &&
         <Deploy />
       }
       {activeMenuSection === MenuSection.Context &&
         <Context />
-      }
+      } */}
       {activeMenuSection === MenuSection.Envs &&
         <Envs />
       }
