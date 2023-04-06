@@ -43,12 +43,12 @@ You will need:
 - Docker
 - Node.js *16+*
 
-### 1. Add env vars
+### 1. Add env var
 Create `.env` file by copying the [`.env.example`](.env.example)
 ```
 cp .env.example .env
 ```
-and fill in the following variables:
+and fill in the following variable:
 - `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
 
 ### 2. Start the app
@@ -57,7 +57,7 @@ yarn start
 ```
 or 
 ```
-npm run start
+npm start
 ```
 Then open the page on [http://localhost:3000](http://localhost:3000).
 
