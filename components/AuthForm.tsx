@@ -72,7 +72,6 @@ function AuthForm({ authType }: Props) {
 
   useEffect(function autoSignIn() {
     if (process.env.NEXT_PUBLIC_SIGN_IN_EMAIL && process.env.NEXT_PUBLIC_SIGN_IN_PASSWORD) {
-      console.log(process.env.NEXT_PUBLIC_SIGN_IN_PASSWORD)
       authWithEmail(process.env.NEXT_PUBLIC_SIGN_IN_EMAIL, process.env.NEXT_PUBLIC_SIGN_IN_PASSWORD)
     }
   }, [authWithEmail])

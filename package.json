@@ -10,7 +10,7 @@
     "start:playground": "cd api-service/playground && yarn dev",
     "install:api-service": "cd api-service && poetry install && cd playground && yarn",
     "install:all": "yarn && yarn install:api-service",
-    "start": "yarn db:start && docker compose up --build",
+    "start": "docker compose build && yarn db:start && docker compose up",
     "stop": "docker compose down && yarn db:stop",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

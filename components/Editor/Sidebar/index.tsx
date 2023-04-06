@@ -24,8 +24,7 @@ export enum MenuSection {
   // Deploy = 'Deploy',
 }
 
-const apiHost = process.env.API_URL
-  || process.env.NODE_ENV === 'development'
+const apiHost = process.env.NODE_ENV === 'development'
   ? 'http://localhost:49155'
   : 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
 
