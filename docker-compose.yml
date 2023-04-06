@@ -7,37 +7,43 @@ services:
       context: ./api-service
     environment:
       - PORT=49155
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_URL=http://supabase_kong_workspace:8000
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     expose:
       - 49155
+    external_links:
+      - supabase_kong_workspace
+      - supabase_db_workspace
     networks:
       - supabase-local-net
-      - api-net
 
   app-dev:
     image: gcr.io/e2b/app-dev:latest
     build:
       context: ./
+    external_links:
+      - supabase_kong_workspace
+      - supabase_db_workspace
     depends_on:
       - api
     environment:
+      - NEXT_PUBLIC_SIGN_IN_EMAIL=admin@admin.com
+      - NEXT_PUBLIC_SIGN_IN_PASSWORD=admin@admin.com
       - NODE_ENV=development
+      - API_URL=http://api:49155
+      - SUPABASE_URL=http://supabase_kong_workspace:8000
+      - SUPABASE_POSTGRES_URL=postgresql://postgres:postgres@supabase_db_workspace:5432/postgres
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - SUPABASE_POSTGRES_POOL_URL=${SUPABASE_POSTGRES_POOL_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     ports:
       - 3000:3000
     networks:
       - supabase-local-net
-      - api-net
 
 networks:
-  api-net:
-    driver: bridge
   supabase-local-net:
-    # This name identified the network -
+    # This name identified the network with supabase containers started with `supabase start`.
     name: supabase_network_workspace
     external: true
