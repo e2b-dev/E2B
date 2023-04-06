@@ -63,7 +63,7 @@ Then open the page on [http://localhost:3000](http://localhost:3000).
 
 > `yarn start` starts local Supabase in the background - to stop it you have to run `yarn stop`.
 
-> If you want run the project without using containers use the [guide here](#development). This is useful if you want to leverage hot reloading and develop the project.
+> If you want run the project without using containers use the [steps here](#development). This is useful if you want to leverage hot reloading and develop the project.
 
 ## Current state
 e2b is a work in progress. The `developer <--> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation with the agents should look like. The app will surely go through a lot of changes in the short and medium term.
@@ -87,7 +87,7 @@ Short-term goals, in no particular order.
 - Launch the initial version
 
 ## Development
-For developing and contributing to the project you may want to run the app locally without Docker Compose (`yarn start` command). Here are the steps for how to it.
+For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`yarn start` command). Here are the steps for how to do it.
 
 You will need:
 - GPT-4 access (support for more and custom models coming soon)
