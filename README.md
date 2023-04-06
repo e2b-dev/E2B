@@ -36,6 +36,59 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
 
 ## Get started
+If you want to to try the IDE locally the fastest way is doing the following steps which starts the app in Docker.
+
+You will need:
+- GPT-4 access (support for more and custom models coming soon)
+- Docker
+- Node.js *16+*
+
+### 1. Add env vars
+Create `.env` file by copying the [`.env.example`](.env.example)
+```
+cp .env.example .env
+```
+and fill in the following variables:
+- `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
+
+### 2. Start the app
+```
+yarn start
+```
+or 
+```
+npm run start
+```
+Then open the page on [http://localhost:3000](http://localhost:3000).
+
+> `yarn start` starts local Supabase in the background - to stop it you have to run `yarn stop`.
+
+> If you want run the project without using containers use the [guide here](#development). This is useful if you want to leverage hot reloading and develop the project.
+
+## Current state
+e2b is a work in progress. The `developer <--> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation with the agents should look like. The app will surely go through a lot of changes in the short and medium term.
+
+e2b currently support building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
+
+## How are we going to make money?
+You will always be able to self-host e2b for free. We will also offer a cloud version. The current idea is to offer the base cloud version for free while having some features for individuals behind a subscription. We'll share more on pricing for companies and enterprises in the future.
+
+## Early demos
+- [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
+- [Build your custom "Just-In-Time" UI](https://twitter.com/mlejva/status/1641151421830529042)
+- [Agent coded a full Stripe customer checkout by following a technical spec provided by user](https://twitter.com/mlejva/status/1641072535163875330)
+
+## Roadmap
+Short-term goals, in no particular order.
+
+- ~Come up with the name~
+- ~Clean up codebase and provide instructions on how to run it locally~
+- ~Set up a website~
+- Launch the initial version
+
+## Development
+For developing and contributing to the project you may want to run the app locally without Docker Compose (`yarn start` command). Here are the steps for how to it.
+
 You will need:
 - GPT-4 access (support for more and custom models coming soon)
 - Docker
@@ -79,25 +132,3 @@ Then open the page on [http://localhost:3000](http://localhost:3000) and sign in
 **Password**
 
 `admin@admin.com`
-
-
-## Current state
-e2b is a work in progress. The `developer <--> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation with the agents should look like. The app will surely go through a lot of changes in the short and medium term.
-
-e2b currently support building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
-
-## How are we going to make money?
-You will always be able to self-host e2b for free. We will also offer a cloud version. The current idea is to offer the base cloud version for free while having some features for individuals behind a subscription. We'll share more on pricing for companies and enterprises in the future.
-
-## Early demos
-- [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
-- [Build your custom "Just-In-Time" UI](https://twitter.com/mlejva/status/1641151421830529042)
-- [Agent coded a full Stripe customer checkout by following a technical spec provided by user](https://twitter.com/mlejva/status/1641072535163875330)
-
-## Roadmap
-Short-term goals, in no particular order.
-
-- ~Come up with the name~
-- ~Clean up codebase and provide instructions on how to run it locally~
-- ~Set up a website~
-- Launch the initial version
