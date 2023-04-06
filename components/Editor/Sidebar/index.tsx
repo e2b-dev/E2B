@@ -22,8 +22,8 @@ export interface Props {
 export enum MenuSection {
   Agent = 'Agent',
   Envs = 'Envs',
-  Context = 'Context',
-  Deploy = 'Deploy',
+  // Context = 'Context',
+  // Deploy = 'Deploy',
 }
 
 const apiHost = process.env.NODE_ENV === 'development'
