@@ -1,4 +1,4 @@
-import * as RadioGroup from '@radix-ui/react-radio-group';
+import * as RadioGroup from '@radix-ui/react-radio-group'
 
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
@@ -60,9 +60,9 @@ function Context({
         />
         <RadioGroup.Root
           className="flex flex-col gap-2.5"
-          defaultChecked
           value={model}
           onValueChange={(v) => setModel(v as ModelName)}
+          defaultChecked
         >
           {Object.values(ModelName).map(v =>
             <div
