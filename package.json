@@ -19,7 +19,7 @@
     "db:pull": "prisma db pull",
     "supabase:generate": "supabase gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
     "postinstall": "yarn db:generate",
-    "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio",
+    "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta",
     "db:stop": "npx --yes supabase stop"
   },
   "dependencies": {
