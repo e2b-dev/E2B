@@ -62,7 +62,7 @@ Then open the page on [http://localhost:3000](http://localhost:3000).
 
 > `npm run start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
 
-> If you want run the project without using containers use the [steps here](#development). This is useful if you want to leverage hot reloading and develop the project.
+> If you want to run the project without using containers use the [steps here](#development). This is useful if you want to leverage hot reloading and develop the project.
 
 ## Current state
 e2b is a work in progress. The `developer <--> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation with the agents should look like. The app will surely go through a lot of changes in the short and medium term.
