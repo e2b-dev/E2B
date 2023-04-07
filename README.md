@@ -44,6 +44,8 @@ You will need:
 - Node.js *16+*
 - Free ports 3000, 49155, 54321, 54322
 
+> The first start of the Dockerized app is slower because it downloads and builds all the necessary containers. On a 2CPU 4GB RAM machine it takes cca. 6 minutes and doesn't require any interaction. The subsequent starts are way faster.
+
 ### 1. Add env var
 Create `.env` file by copying the [`.env.example`](.env.example)
 ```
