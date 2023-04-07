@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   api:
-    image: us-central1-docker.pkg.dev/devbookhq/services/ai-api-service:latest
+    image: e2b/api:latest
     build:
       context: ./api-service
     environment:
@@ -19,7 +19,7 @@ services:
       - supabase-local-net
 
   app-dev:
-    image: gcr.io/e2b/app-dev:latest
+    image: e2b/app-dev:latest
     build:
       context: ./
     external_links:
