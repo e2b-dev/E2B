@@ -35,11 +35,15 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 
 We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
 
+### Supported models
+Right now we support only OpenAI GPT-4 and GPT-3.5 [models](./state/store.ts#L16).
+By default the IDE uses GPT-3.5 but you can change it from the "Model" tab in the right sidebar menu.
+
 ## Get started
 If you want to to try the IDE locally the fastest way is doing the following steps which starts the app in Docker.
 
 You will need:
-- GPT-4 access (support for more and custom models coming soon)
+- OpenAI API key (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
 - Free ports 3000, 49155, 54321, 54322
@@ -89,7 +93,7 @@ Short-term goals, in no particular order.
 For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`npm run start` command). Here are the steps for how to do it.
 
 You will need:
-- GPT-4 access (support for more and custom models coming soon)
+- OpenAI API key (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
 - Python *3.10+*
