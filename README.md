@@ -42,6 +42,7 @@ You will need:
 - GPT-4 access (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
+- Free ports 3000, 49155, 54321, 54322
 
 ### 1. Add env var
 Create `.env` file by copying the [`.env.example`](.env.example)
@@ -53,15 +54,11 @@ and fill in the following variable:
 
 ### 2. Start the app
 ```
-yarn start
-```
-or 
-```
 npm start
-```
+``` 
 Then open the page on [http://localhost:3000](http://localhost:3000).
 
-> `yarn start` starts local Supabase in the background - to stop it you have to run `yarn stop`.
+> `npm run start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
 
 > If you want run the project without using containers use the [steps here](#development). This is useful if you want to leverage hot reloading and develop the project.
 
@@ -87,27 +84,27 @@ Short-term goals, in no particular order.
 - Launch the initial version
 
 ## Development
-For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`yarn start` command). Here are the steps for how to do it.
+For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`npm run start` command). Here are the steps for how to do it.
 
 You will need:
 - GPT-4 access (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
-- Yarn *1.22.19 (Classic Stable)*
 - Python *3.10+*
 - Poetry *1.3.2+*
+- Free ports 3000, 49155, 49160, 54321, 54322
 
 ### 1. Install dependencies
 ```
-yarn install:all
+npm run install:all
 ```
 
 ### 2. Start local Supabase
 ```
-yarn db:start
+npm run db:start
 ```
 
-> Local Supabase runs in the background - to stop it you have to run `yarn db:stop`.
+> Local Supabase runs in the background - to stop it you have to run `npm run db:stop`.
 
 ### 3. Add env vars
 Create `.env` file by copying the [`.env.example`](.env.example)
@@ -121,7 +118,7 @@ and fill in the following variables:
 
 ### 4. Start the app
 ```
-yarn dev
+npm run dev
 ```
 Then open the page on [http://localhost:3000](http://localhost:3000) and sign in with the testing credentials:
 

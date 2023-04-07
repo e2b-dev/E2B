@@ -1,5 +1,5 @@
 generate-playground-client:
-	yarn --cwd ./playground generate
+	npm run --prefix ./playground generate
 	rm -rf ./playground_client
 	npx @openapitools/openapi-generator-cli generate \
 	-i ./playground/swagger.json  \
