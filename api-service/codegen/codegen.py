@@ -90,6 +90,7 @@ class Codegen(BaseModel):
         cls,
         custom_tools: List[BaseTool],
         model_name: str,
+        max_tokens: int,
         database: Database,
     ):
         callback_manager = AsyncCallbackManager(
@@ -107,7 +108,7 @@ class Codegen(BaseModel):
             model_name=model_name,
             streaming=True,
             temperature=0,
-            max_tokens=2056,
+            max_tokens=max_tokens,
             verbose=True,
             callback_manager=callback_manager,
         )

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev:next": "next dev",
     "dev": "npx concurrently -p none \"next dev\" \"npm run start:api\" \"npm run start:playground\"",
     "dev:api-service": "npx concurrently \"npm run start:api\" \"npm run start:playground\"",
     "build": "next build",
@@ -24,8 +25,8 @@
   },
   "dependencies": {
     "@devbookhq/splitter": "^1.4.0",
+    "@headlessui/react": "^1.7.13",
     "@prisma/client": "^4.11.0",
-    "@radix-ui/react-radio-group": "^1.1.2",
     "@supabase/auth-helpers-nextjs": "^0.5.5",
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.10.0",
@@ -42,7 +43,7 @@
     "fuse.js": "^6.6.2",
     "human-id": "^4.0.0",
     "immer": "^9.0.19",
-    "lucide-react": "^0.122.0",
+    "lucide-react": "^0.130.1",
     "nanoid": "^4.0.1",
     "next": "13.2.3",
     "next-superjson-plugin": "^0.5.6",
