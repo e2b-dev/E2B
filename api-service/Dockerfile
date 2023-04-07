@@ -1,25 +1,16 @@
-# This stage installs playground modules
-FROM node:18 as playground-modules
+# This stage builds playground
+FROM node:18 as playground
 
 WORKDIR /playground
 
-COPY playground/package.json playground/yarn.lock ./
-RUN yarn --production --frozen-lockfile
-
-
-# This stage builds playground code
-FROM node:18 as playground-build
-
-WORKDIR /playground
-
-COPY playground/package.json playground/yarn.lock ./
-RUN yarn --frozen-lockfile
+COPY playground/package.json playground/package-lock.json ./
+RUN npm ci
 
 COPY playground/tsconfig.json ./
 COPY playground/tsoa.json ./
 COPY playground/scripts/build.js ./scripts/build.js
 COPY playground/src ./src
-RUN yarn build
+RUN npm run build
 
 
 # This is the final image that also installs python deps
@@ -33,7 +24,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-RUN pip install poetry==1.3.2
+# RUN pip install poetry==1.3.2
 
 RUN poetry config virtualenvs.in-project true
 
@@ -47,8 +38,8 @@ COPY . ./
 RUN rm -rf ./playground
 
 WORKDIR /playground
-COPY --from=playground-modules ./playground/ ./
-COPY --from=playground-build ./playground/lib ./lib
+COPY --from=playground ./playground/node_modules ./node_modules
+COPY --from=playground ./playground/lib ./lib
 
 WORKDIR /app
 

@@ -10,8 +10,6 @@ import { html2markdown } from 'editor/schema'
 
 import Agent from './Agent'
 import Envs from './Envs'
-import Context from './Context'
-import Deploy from './Deploy'
 import Model from './Model'
 
 export interface Props {
@@ -23,9 +21,9 @@ export interface Props {
 export enum MenuSection {
   Agent = 'Agent',
   Envs = 'Envs',
-  Context = 'Context',
-  Deploy = 'Deploy',
   Model = 'Model',
+  // Context = 'Context',
+  // Deploy = 'Deploy',
 }
 
 const apiHost = process.env.NODE_ENV === 'development'
@@ -120,12 +118,12 @@ function Sidebar({
       `,
       )}
     >
-      {activeMenuSection === MenuSection.Deploy &&
+      {/* {activeMenuSection === MenuSection.Deploy &&
         <Deploy />
       }
       {activeMenuSection === MenuSection.Context &&
         <Context />
-      }
+      } */}
       {activeMenuSection === MenuSection.Envs &&
         <Envs />
       }

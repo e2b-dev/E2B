@@ -1,0 +1,14 @@
+Dockerfile
+.dockerignore
+node_modules
+.codesandbox
+.next
+.vscode
+api-service
+.env.example
+.python-version
+csb.nix
+npm-debug.log
+README.md
+docker
+.git

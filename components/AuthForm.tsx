@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
 
@@ -27,26 +27,11 @@ function AuthForm({ authType }: Props) {
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
 
-  useEffect(
-    function autofocusEmailInput() {
-      if (isLoading) return
-
-      if (!emailRef.current?.value) {
-        emailRef.current?.focus()
-      } else if (!passwordRef.current?.value) {
-        passwordRef.current?.focus()
-      } else {
-        emailRef.current?.focus()
-      }
-    },
-    [isLoading],
-  )
-
-  async function authWithEmail() {
+  const authWithEmail = useCallback(async (email?: string, password?: string) => {
     setIsLoading(true)
 
-    const email = emailRef.current?.value
-    const password = passwordRef.current?.value
+    email = email || emailRef.current?.value
+    password = password || passwordRef.current?.value
 
     if (!email) {
       setErrMessage('Email must not be empty')
@@ -83,7 +68,29 @@ function AuthForm({ authType }: Props) {
     }
 
     setIsLoading(false)
-  }
+  }, [supabaseClient, router, authType])
+
+  useEffect(function autoSignIn() {
+    if (process.env.NEXT_PUBLIC_SIGN_IN_EMAIL && process.env.NEXT_PUBLIC_SIGN_IN_PASSWORD) {
+      authWithEmail(process.env.NEXT_PUBLIC_SIGN_IN_EMAIL, process.env.NEXT_PUBLIC_SIGN_IN_PASSWORD)
+    }
+  }, [authWithEmail])
+
+  useEffect(
+    function autofocusEmailInput() {
+      if (isLoading) return
+
+      if (!emailRef.current?.value) {
+        emailRef.current?.focus()
+      } else if (!passwordRef.current?.value) {
+        passwordRef.current?.focus()
+      } else {
+        emailRef.current?.focus()
+      }
+    },
+    [isLoading],
+  )
+
 
   const title = authType === AuthFormType.SignUp ? 'Create a new account' : 'Sign in'
 
