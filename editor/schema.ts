@@ -13,7 +13,6 @@ import ReferenceExtension, {
 
 export enum ReferenceType {
   NPMPackage = 'NPM_PACKAGE',
-  DEPLOYMENT = 'DEPLOYMENT_SERVICE',
 }
 
 export interface Reference {

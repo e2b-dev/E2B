@@ -10,6 +10,8 @@ import { html2markdown } from 'editor/schema'
 
 import Agent from './Agent'
 import Envs from './Envs'
+import Model from './Model'
+// import Deploy from './Deploy'
 
 export interface Props {
   project: projects
@@ -20,6 +22,7 @@ export interface Props {
 export enum MenuSection {
   Agent = 'Agent',
   Envs = 'Envs',
+  Model = 'Model',
   // Context = 'Context',
   // Deploy = 'Deploy',
 }
@@ -32,6 +35,7 @@ async function handlePostGenerate(url: string, { arg }: {
   arg: {
     projectID: string,
     route: Route,
+    model: string,
     envs: { key: string, value: string }[],
   }
 }) {
@@ -55,6 +59,8 @@ async function handlePostGenerate(url: string, { arg }: {
             return b
         }
       }),
+      maxTokens: 2056,
+      model: arg.model,
       method: arg.route.method.toLowerCase(),
       route: arg.route.route,
       envs: arg.envs,
@@ -79,6 +85,7 @@ function Sidebar({
 
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
+  const model = selectors.use.model()
 
   async function deploy() {
     if (!route) return
@@ -86,6 +93,7 @@ function Sidebar({
       projectID: project.id,
       route,
       envs,
+      model,
     })
   }
 
@@ -114,12 +122,15 @@ function Sidebar({
     >
       {/* {activeMenuSection === MenuSection.Deploy &&
         <Deploy />
-      }
-      {activeMenuSection === MenuSection.Context &&
+      } */}
+      {/* {activeMenuSection === MenuSection.Context &&
         <Context />
       } */}
       {activeMenuSection === MenuSection.Envs &&
         <Envs />
+      }
+      {activeMenuSection === MenuSection.Model &&
+        <Model />
       }
       {activeMenuSection === MenuSection.Agent &&
         <Agent

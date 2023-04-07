@@ -2,15 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
-import { Code, Lock } from 'lucide-react'
+import clsx from 'clsx'
+import { Code, Lock, BrainCircuit } from 'lucide-react'
 
 import { useStateStore } from 'state/StoreProvider'
 
 import Routes from './Routes'
 import Sidebar, { MenuSection } from './Sidebar'
 import RouteEditor from './RouteEditor'
-import clsx from 'clsx'
-
 
 const menuIconSize = '18px'
 function getMenuSelectionIcon(selection: MenuSection) {
@@ -23,6 +22,8 @@ function getMenuSelectionIcon(selection: MenuSection) {
     //   return <Server size={menuIconSize} />
     case MenuSection.Envs:
       return <Lock size={menuIconSize} />
+    case MenuSection.Model:
+      return <BrainCircuit size={menuIconSize} />
   }
 }
 
