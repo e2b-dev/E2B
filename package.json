@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev:next": "next dev",
+    "start:next": "next start",
     "dev": "npx concurrently -p none \"next dev\" \"npm run start:api\" \"npm run start:playground\"",
     "dev:api-service": "npx concurrently \"npm run start:api\" \"npm run start:playground\"",
     "build": "next build",
