@@ -10,8 +10,8 @@ services:
       - NEXT_PUBLIC_SUPABASE_URL=http://supabase_kong_workspace:8000
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-    ports:
-      - 49155:49155
+    expose:
+      - 49155
     external_links:
       - supabase_kong_workspace
       - supabase_db_workspace
@@ -30,8 +30,8 @@ services:
       - NEXT_PUBLIC_SIGN_IN_PASSWORD=admin@admin.com
       - NODE_ENV=development
       - SUPABASE_URL=http://supabase_kong_workspace:8000
+      - API_URL=http://supabase_db_workspace:49155
       - SUPABASE_POSTGRES_URL=postgresql://postgres:postgres@supabase_db_workspace:5432/postgres
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     ports:
