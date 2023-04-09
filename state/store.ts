@@ -8,10 +8,21 @@ import { projects, Prisma } from '@prisma/client'
 import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
-export enum ModelName {
-  'GPT-4' = 'gpt-4',
-  'GPT-3.5' = 'gpt-3.5-turbo',
+export interface ModelInfo {
+  name: string
+  label: string
 }
+
+export const models: ModelInfo[] = [
+  {
+    name: 'gpt-4',
+    label: 'GPT-4',
+  },
+  {
+    name: 'gpt-3.5-turbo',
+    label: 'GPT-3.5',
+  },
+]
 
 export type BlockType =
   // Raw text
@@ -51,7 +62,7 @@ export const methods = Object
 export interface SerializedState {
   envs: { key: string, value: string }[]
   routes: Route[]
-  model: ModelName
+  model: string
 }
 
 export interface State extends SerializedState {
@@ -61,7 +72,7 @@ export interface State extends SerializedState {
   addRoute: () => void
   setEnvs: (envs: { key: string, value: string }[]) => void
   changeEnv: (pair: { key: string, value: string }, idx: number) => void
-  setModel: (model: ModelName) => void
+  setModel: (model: string) => void
 }
 
 function createBlock(type: BlockType): Block {
@@ -89,7 +100,7 @@ function getDefaultState(): SerializedState {
   return {
     envs: [{ key: '', value: '' }],
     routes: [getDefaultRoute()],
-    model: ModelName['GPT-3.5'],
+    model: 'gpt-3.5-turbo',
   }
 }
 
@@ -114,7 +125,7 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
   }
 
   if (!initialState.model) {
-    initialState.model = ModelName['GPT-3.5']
+    initialState.model = 'gpt-3.5-turbo'
   }
 
   const immerStore = immer<State>((set, get) => ({

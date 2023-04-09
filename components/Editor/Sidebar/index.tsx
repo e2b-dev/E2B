@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 
 import { projects } from '@prisma/client'
-import { Route, Block, ModelName } from 'state/store'
+import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { html2markdown } from 'editor/schema'
@@ -11,6 +11,7 @@ import { html2markdown } from 'editor/schema'
 import Agent from './Agent'
 import Envs from './Envs'
 import Model from './Model'
+// import Deploy from './Deploy'
 
 export interface Props {
   project: projects
@@ -34,7 +35,7 @@ async function handlePostGenerate(url: string, { arg }: {
   arg: {
     projectID: string,
     route: Route,
-    model: ModelName,
+    model: string,
     envs: { key: string, value: string }[],
   }
 }) {
@@ -58,6 +59,7 @@ async function handlePostGenerate(url: string, { arg }: {
             return b
         }
       }),
+      maxTokens: 2056,
       model: arg.model,
       method: arg.route.method.toLowerCase(),
       route: arg.route.route,
@@ -120,8 +122,8 @@ function Sidebar({
     >
       {/* {activeMenuSection === MenuSection.Deploy &&
         <Deploy />
-      }
-      {activeMenuSection === MenuSection.Context &&
+      } */}
+      {/* {activeMenuSection === MenuSection.Context &&
         <Context />
       } */}
       {activeMenuSection === MenuSection.Envs &&

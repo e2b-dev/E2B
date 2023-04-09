@@ -54,6 +54,7 @@ async def generate():
     method = body["method"]
     model_name = body["model"]
     route = body["route"]
+    max_tokens = body["maxTokens"]
 
     pprint("+++ Blocks:")
     pprint(blocks)
@@ -78,6 +79,7 @@ async def generate():
                 *human_tools,
             ],
             model_name=model_name,
+            max_tokens=max_tokens,
             database=db,
         )
 
