@@ -23,24 +23,20 @@
 ![e2b-editor](img/e2b.png)
 *Example of AI agent building Stripe checkout. Left - technical specification written by human. Right - steps that the AI agent took and tools that it used to build the server route required by the specification.*
 
-## What is e2b and how does it work?
-e2b or etob (*english2bits*) is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. The developer writes a short documentation or a technical spec in plain English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you. Like [this example](https://twitter.com/mlejva/status/1641072535163875330) of an AI agent coding Stripe customer checkout based on a technical spec.
+[e2b](https://e2b.dev) or etob (*english2bits*) is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. The developer writes a short documentation or a technical spec in plain English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you. Like [this example](https://twitter.com/mlejva/status/1641072535163875330) of an AI agent coding Stripe customer checkout based on a technical spec.
 
-## BYOM, BYOP, BYOT
+### Current state of e2b
+e2b currently support building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
 
-While e2b will offer the "batteries-included" solution, our goal is to let users:
-- **BYOM** - Bring Your Own Model
-- **BYOP** - Bring Your Own Prompt
-- **BYOT** - Bring Your Own Tools
+e2b is a work in progress. The `developer <--> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation with the agents should look like. The app will surely go through a lot of changes in the short and medium term.
 
-We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
+### Early demos
+- [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
+- [Build your custom "Just-In-Time" UI](https://twitter.com/mlejva/status/1641151421830529042)
+- [Agent coded a full Stripe customer checkout by following a technical spec provided by user](https://twitter.com/mlejva/status/1641072535163875330)
 
-### Supported models
-Right now we support only OpenAI GPT-4 and GPT-3.5 [models](./state/store.ts#L16).
-By default the IDE uses GPT-3.5 but you can change it from the "Model" tab in the right sidebar menu.
-
-## Get started
-If you want to to try the IDE locally the fastest way is doing the following steps which starts the app in Docker.
+## 🚀 Get started
+We're working on the cloud-hosted version. In the meantime, the fastest way try out e2b is to run it locally via Docker.
 
 You will need:
 - OpenAI API key (support for more and custom models coming soon)
@@ -61,27 +57,33 @@ and fill in the following variable:
 ### 2. Start the app
 ```
 npm start
-``` 
+```
 Then open the page on [http://localhost:3000](http://localhost:3000).
 
 > `npm run start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
 
 > If you want to run the project without using containers use the [steps here](#development). This is useful if you want to leverage hot reloading and develop the project.
 
-## Current state
-e2b is a work in progress. The `developer <--> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation with the agents should look like. The app will surely go through a lot of changes in the short and medium term.
+## 🛠 Bring your own X
 
-e2b currently support building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
+While e2b will offer the "batteries-included" solution, our goal is to let users:
+- **BYOM** - Bring Your Own Model
+- **BYOP** - Bring Your Own Prompt
+- **BYOT** - Bring Your Own Tools
 
-## How are we going to make money?
-You will always be able to self-host e2b for free. We will also offer a cloud version. The current idea is to offer the base cloud version for free while having some features for individuals behind a subscription. We'll share more on pricing for companies and enterprises in the future.
+We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
 
-## Early demos
-- [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
-- [Build your custom "Just-In-Time" UI](https://twitter.com/mlejva/status/1641151421830529042)
-- [Agent coded a full Stripe customer checkout by following a technical spec provided by user](https://twitter.com/mlejva/status/1641072535163875330)
+## 🤖 Supported models
+- GPT-4
+- GPT-3.5
 
-## Roadmap
+More coming soon.
+
+### **Model you like isn't supported?**
+
+👉 Please open the ["New model request" issue](https://github.com/e2b-dev/e2b/issues/new?assignees=&labels=new+model+request&template=new-model-request.md&title=). 👈
+
+## 📆 Roadmap
 Short-term goals, in no particular order.
 
 - ~Come up with the name~
@@ -89,7 +91,7 @@ Short-term goals, in no particular order.
 - ~Set up a website~
 - Launch the initial version
 
-## Development
+## 💻 Development
 For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`npm run start` command). Here are the steps for how to do it.
 
 You will need:
