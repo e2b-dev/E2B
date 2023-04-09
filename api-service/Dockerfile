@@ -1,5 +1,5 @@
 # This stage builds playground
-FROM node:18 as playground
+FROM node:lts-slim as playground
 
 WORKDIR /playground
 
@@ -14,7 +14,7 @@ RUN npm run build
 
 
 # This is the final image that also installs python deps
-FROM nikolaik/python-nodejs
+FROM nikolaik/python-nodejs:python3.10-nodejs18-slim
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -23,8 +23,6 @@ ENV PYTHONFAULTHANDLER=1 \
 ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
-
-# RUN pip install poetry==1.3.2
 
 RUN poetry config virtualenvs.in-project true
 
