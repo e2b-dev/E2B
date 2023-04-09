@@ -9,6 +9,12 @@ const fastDockerBuild = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  output: 'standalone',
+  experimental: {
+    turbotrace: {
+      memoryLimit: 1000,
+    },
+  },
 }
 
 /** @type {import('next').NextConfig} */
