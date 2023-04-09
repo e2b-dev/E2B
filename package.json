@@ -41,7 +41,7 @@
     "@tiptap/starter-kit": "^2.0.0-beta.220",
     "clsx": "^1.2.1",
     "fuse.js": "^6.6.2",
-    "http-proxy": "^1.18.1",
+    "http-proxy-middleware": "^2.0.6",
     "human-id": "^4.0.0",
     "immer": "^9.0.19",
     "lucide-react": "^0.130.1",
@@ -64,7 +64,6 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.9",
-    "@types/http-proxy": "^1.17.10",
     "@types/node": "^18.14.6",
     "@types/randomcolor": "^0.5.7",
     "@types/react": "^18.0.28",

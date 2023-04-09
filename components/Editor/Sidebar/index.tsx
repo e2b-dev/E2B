@@ -27,10 +27,6 @@ export enum MenuSection {
   // Deploy = 'Deploy',
 }
 
-const apiHost = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:49155'
-  : 'https://ai-api-service-7d2cl2hooq-uc.a.run.app'
-
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
     projectID: string,
@@ -81,7 +77,7 @@ function Sidebar({
   const {
     trigger: generate,
     isMutating: isDeployRequestRunning,
-  } = useSWRMutation('/api/generate', handlePostGenerate)
+  } = useSWRMutation('/api/service/generate', handlePostGenerate)
 
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
