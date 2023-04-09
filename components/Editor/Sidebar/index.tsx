@@ -79,7 +79,7 @@ function Sidebar({
   const {
     trigger: generate,
     isMutating: isDeployRequestRunning,
-  } = useSWRMutation(`${apiHost}/generate`, handlePostGenerate)
+  } = useSWRMutation('/api/generate', handlePostGenerate)
 
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
