@@ -22,18 +22,19 @@ services:
     image: e2b/app-dev:latest
     build:
       context: ./
+      args:
+        NEXT_PUBLIC_SIGN_IN_EMAIL: admin@admin.com
+        NEXT_PUBLIC_SIGN_IN_PASSWORD: admin@admin.com
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     external_links:
       - supabase_kong_workspace
       - supabase_db_workspace
     environment:
-      - NEXT_PUBLIC_SIGN_IN_EMAIL=admin@admin.com
-      - NEXT_PUBLIC_SIGN_IN_PASSWORD=admin@admin.com
       - NODE_ENV=development
       - SUPABASE_URL=http://supabase_kong_workspace:8000
       - API_URL=http://api:49155
       - SUPABASE_POSTGRES_URL=postgresql://postgres:postgres@supabase_db_workspace:5432/postgres
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     ports:
       - 3000:3000
     networks:

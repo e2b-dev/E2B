@@ -11,7 +11,7 @@ import 'styles/global.css'
 
 import Header from 'components/Header'
 import { Database } from 'db/supabase'
-import { credentials } from 'db/credentials'
+import { clientCreds } from 'db/credentials'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,7 +20,7 @@ const inter = Inter({
 
 function App({ Component, pageProps }: AppProps<{ initialSession: Session, project?: projects }>) {
   const router = useRouter()
-  const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(credentials))
+  const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
 
   const isSignIn = router.pathname === '/sign' && router.query.signup !== 'true'
   const isSignUp = router.pathname === '/sign' && router.query.signup === 'true'
