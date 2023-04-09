@@ -36,6 +36,7 @@ export function useLatestDeployment(project: projects, route?: Route) {
   // https://github.com/supabase/realtime/issues/223 mentioned that we may need to check the `old_record` field of the payload for the actual value,
   // but so far it seems we don't have to.
   useEffect(function subscribe() {
+    console.log('client', client)
     if (!route?.id) return
 
     // TODO: SECURITY - Enable row security for all tables and configure access to deployments.

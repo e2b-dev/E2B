@@ -7,7 +7,7 @@ services:
       context: ./api-service
     environment:
       - PORT=49155
-      - NEXT_PUBLIC_SUPABASE_URL=http://supabase_kong_workspace:8000
+      - SUPABASE_URL=http://supabase_kong_workspace:8000
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     expose:
