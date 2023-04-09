@@ -95,7 +95,7 @@ For developing with hot reloading and contributing to the project you may want t
 You will need:
 - OpenAI API key (support for more and custom models coming soon)
 - Docker
-- Node.js *16.x+*
+- Node.js *16.x*
 - Python *3.10+*
 - Poetry *1.3.2+*
 - Free ports 3000, 49155, 49160, 54321, 54322
