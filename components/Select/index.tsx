@@ -88,10 +88,10 @@ function Select({
                 'left-0': direction === 'left',
                 'right-0': direction === 'right',
               },
-              `z-[999]
-            top-[28px]
+              `z-40
             p-1
             mt-0.5
+            relative
             border border-green-500
             rounded
             bg-white
