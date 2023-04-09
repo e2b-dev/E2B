@@ -25,6 +25,8 @@
 
 [e2b](https://e2b.dev) or etob (*english2bits*) is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. The developer writes a short documentation or a technical spec in plain English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you. Like [this example](https://twitter.com/mlejva/status/1641072535163875330) of an AI agent coding Stripe customer checkout based on a technical spec.
 
+e2b currently supports building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
+
 # 🚀 Get started
 We're working on the cloud-hosted version. In the meantime, the fastest way try out e2b is to run it locally via Docker.
 
@@ -74,14 +76,7 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 
 👉 Please open the ["New model request" issue](https://github.com/e2b-dev/e2b/issues/new?assignees=&labels=new+model+request&template=new-model-request.md&title=). 👈
 
----
-
-### Current state of e2b
-e2b currently support building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
-
-e2b is a work in progress. The `developer <--> AI agent` cooperation creates completely new paradigms. We're exploring how the ideal UX, UI, and cooperation with the agents should look like. The app will surely go through a lot of changes in the short and medium term.
-
-### Early demos
+### 👀 Early demos
 - [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
 - [Build your custom "Just-In-Time" UI](https://twitter.com/mlejva/status/1641151421830529042)
 - [Agent coded a full Stripe customer checkout by following a technical spec provided by user](https://twitter.com/mlejva/status/1641072535163875330)
