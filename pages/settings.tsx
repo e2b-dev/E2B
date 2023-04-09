@@ -7,10 +7,10 @@ import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 import Button from 'components/Button'
 import Text from 'components/Text'
 import { Database } from 'db/supabase'
-import { credentials } from 'db/credentials'
+import { serverCreds } from 'db/credentials'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-  const supabase = createServerSupabaseClient<Database>(ctx, credentials)
+  const supabase = createServerSupabaseClient<Database>(ctx, serverCreds)
   const {
     data: { session },
   } = await supabase.auth.getSession()
