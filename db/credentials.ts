@@ -1,4 +1,4 @@
-const baseURL = typeof window !== undefined
+const baseURL = typeof window !== 'undefined'
   ? `${window.location.protocol}//${window.location.host}`
   : '<THIS-SHOULD-BE-URL>'
 
