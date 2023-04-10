@@ -7,8 +7,8 @@ from typing import (
 )
 
 from langchain.agents import AgentExecutor
+from langchain.schema import BaseLanguageModel
 from pydantic import BaseModel, PrivateAttr
-from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import (
     AsyncCallbackManager,
     BaseCallbackManager,
@@ -16,7 +16,7 @@ from langchain.callbacks.base import (
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
-from session.env import EnvVar
+from models import get_model, ModelConfig
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
 from codegen.callbacks.logs import LogsCallbackHandler
@@ -55,7 +55,7 @@ class Codegen(BaseModel):
     _agent: CodegenAgent = PrivateAttr()
     _agent_executor: AgentExecutor = PrivateAttr()
     _tools: List[BaseTool] = PrivateAttr()
-    _llm: ChatOpenAI = PrivateAttr()
+    _llm: BaseLanguageModel = PrivateAttr()
     _database: Database = PrivateAttr()
     _callback_manager: BaseCallbackManager = PrivateAttr()
 
@@ -64,7 +64,7 @@ class Codegen(BaseModel):
         database: Database,
         callback_manager: BaseCallbackManager,
         tools: List[BaseTool],
-        llm: ChatOpenAI,
+        llm: BaseLanguageModel,
         agent: CodegenAgent,
         **kwargs: Any,
     ) -> None:
@@ -89,8 +89,7 @@ class Codegen(BaseModel):
     def from_tools_and_database(
         cls,
         custom_tools: List[BaseTool],
-        model_name: str,
-        max_tokens: int,
+        model_config: ModelConfig,
         database: Database,
     ):
         callback_manager = AsyncCallbackManager(
@@ -104,14 +103,7 @@ class Codegen(BaseModel):
             tool.callback_manager = callback_manager
 
         # Create the LLM
-        llm = ChatOpenAI(
-            model_name=model_name,
-            streaming=True,
-            temperature=0,
-            max_tokens=max_tokens,
-            verbose=True,
-            callback_manager=callback_manager,
-        )
+        llm = get_model(model_config, callback_manager)
 
         # Create CodegenAgent
         agent = CodegenAgent.from_llm_and_tools(

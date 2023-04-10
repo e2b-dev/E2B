@@ -51,7 +51,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-
   const hasDefaultTeam = user?.users_teams.some(t => t.teams.is_default)
   if (!hasDefaultTeam) {
     // User is one of the old users without default team - create default team.
