@@ -17,6 +17,7 @@ const isSecure = target.startsWith('https://')
 
 const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({
   target,
+  pathFilter: '**',
   // ws: true,
   secure: !isSecure,
   changeOrigin: true,
