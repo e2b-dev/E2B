@@ -34,7 +34,7 @@ You will need:
 - OpenAI API key (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
-- Free ports 3000 (Next.js app), 54321 (Supabase API Gateway), 54322 (Supabase Databae)
+- Free ports 3000 (Next.js app), 54321 (Supabase API Gateway), 54322 (Supabase Database)
 
 > The first start of the Dockerized app is slower because it downloads and builds all the necessary containers. On a 2CPU 4GB RAM machine it takes cca. 6 minutes and doesn't require any interaction. The subsequent starts are way faster.
 
