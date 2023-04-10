@@ -1,4 +1,4 @@
-FROM node:lts-slim AS builder
+FROM --platform=linux/amd64 node:lts-slim AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ ENV BUILD docker
 RUN npm run build
 
 
-FROM node:lts-slim AS runner
+FROM --platform=linux/amd64 node:lts-slim AS runner
 WORKDIR /app
 
 
