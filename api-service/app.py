@@ -5,7 +5,7 @@ from pprint import pprint
 from dotenv import load_dotenv
 from typing import List
 from playground_client.exceptions import NotFoundException
-from quart import Quart, request
+from quart import Quart, make_response, request
 from quart_cors import cors
 
 from codegen import Codegen
@@ -46,6 +46,10 @@ async def health():
 @app.route("/generate", methods=["POST"])
 async def generate():
     body = await request.json
+
+    response = await make_response()
+    response.timeout = None # type: ignore
+    # response.timeout = 1 # type: ignore
 
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
