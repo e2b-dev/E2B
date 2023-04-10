@@ -7,6 +7,7 @@ import { prisma, projects } from 'db/prisma'
 import Editor from 'components/Editor'
 import { StoreProvider } from 'state/StoreProvider'
 import { Database } from 'db/supabase'
+import { serverCreds } from 'db/credentials'
 
 interface PathProps extends ParsedUrlQuery {
   projectID: string
@@ -20,7 +21,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     }
   }
 
-  const supabase = createServerSupabaseClient(ctx)
+  const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
     data: { session },
   } = await supabase.auth.getSession()

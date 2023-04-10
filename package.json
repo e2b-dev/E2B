@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev:next": "next dev",
+    "start:next": "next start",
     "dev": "npx concurrently -p none \"next dev\" \"npm run start:api\" \"npm run start:playground\"",
     "dev:api-service": "npx concurrently \"npm run start:api\" \"npm run start:playground\"",
     "build": "next build",
@@ -20,7 +21,7 @@
     "db:pull": "prisma db pull",
     "supabase:generate": "supabase gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
     "postinstall": "npm run db:generate",
-    "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta,deno-relay,pgadmin-schema-diff",
+    "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta,deno-relay,pgadmin-schema-diff,vector,migra",
     "db:stop": "npx --yes supabase stop"
   },
   "dependencies": {
@@ -41,6 +42,7 @@
     "@tiptap/starter-kit": "^2.0.0-beta.220",
     "clsx": "^1.2.1",
     "fuse.js": "^6.6.2",
+    "http-proxy-middleware": "^3.0.0-beta.1",
     "human-id": "^4.0.0",
     "immer": "^9.0.19",
     "lucide-react": "^0.130.1",

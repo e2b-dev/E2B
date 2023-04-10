@@ -8,9 +8,10 @@ import ItemList from 'components/ItemList'
 import Text from 'components/Text'
 import { prisma, projects } from 'db/prisma'
 import Button from 'components/Button'
+import { serverCreds } from 'db/credentials'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-  const supabase = createServerSupabaseClient(ctx)
+  const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
     data: { session },
   } = await supabase.auth.getSession()

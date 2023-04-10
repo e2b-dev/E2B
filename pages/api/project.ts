@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
 
 import { prisma } from 'db/prisma'
+import { serverCreds } from 'db/credentials'
 
 export interface PostProjectBody {
   id: string
@@ -13,7 +14,7 @@ async function postProject(req: NextApiRequest, res: NextApiResponse) {
   } = req.body as PostProjectBody
 
   try {
-    const supabase = createServerSupabaseClient({ req, res })
+    const supabase = createServerSupabaseClient({ req, res }, serverCreds)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       return res.status(401).json({
@@ -74,7 +75,7 @@ async function deleteProject(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.body as PostProjectBody
 
   try {
-    const supabase = createServerSupabaseClient({ req, res })
+    const supabase = createServerSupabaseClient({ req, res }, serverCreds)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       return res.status(401).json({

@@ -15,7 +15,7 @@ from codegen.tools.human.tools import create_human_tools
 
 load_dotenv()
 
-url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
 if not url or not key:
