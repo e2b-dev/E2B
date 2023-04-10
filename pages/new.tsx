@@ -1,5 +1,7 @@
 import {
   useState,
+  Reducer,
+  useReducer,
 } from 'react'
 import {
   LayoutGrid,
@@ -9,15 +11,37 @@ import humanId from 'human-id'
 import useSWRMutation from 'swr/mutation'
 
 import Text from 'components/Text'
-import Input from 'components/Input'
-import Button from 'components/Button'
-import SpinnerIcon from 'components/Spinner'
+import NewProjectIDForm from 'components/NewProjectIDForm'
+import NewProjectTemplateForm from 'components/NewProjectTemplateForm'
+import {
+  CreationState,
+  CreationEvent,
+} from 'utils/newProjectState'
 
-const re = /[^a-zA-Z0-9\-]/
+const invalidChars = /[^a-zA-Z0-9\-]/
 
 interface PostProjectBody {
   id: string
 }
+
+const reducer: Reducer<CreationState, CreationEvent> = (state, event) => {
+  switch (state) {
+    case CreationState.SelectingID:
+      if (event === CreationEvent.ConfirmID) return CreationState.SelectingTemplate
+      if (event === CreationEvent.Fail) return CreationState.Faulted
+      break
+    case CreationState.SelectingTemplate:
+      if (event === CreationEvent.Back) return CreationState.SelectingID
+      if (event === CreationEvent.Fail) return CreationState.Faulted
+      if (event === CreationEvent.ConfirmTemplate) return CreationState.CreatingProject
+      break
+    case CreationState.CreatingProject:
+      if (event === CreationEvent.Fail) return CreationState.Faulted
+      break
+  }
+  return state
+}
+
 
 async function handlePostProject(url: string, { arg }: { arg: PostProjectBody }) {
   return await fetch(url, {
@@ -31,37 +55,26 @@ async function handlePostProject(url: string, { arg }: { arg: PostProjectBody })
 }
 
 function NewProject() {
-  const [isCreating, setIsCreating] = useState(false)
+  const [state, dispatch] = useReducer(reducer, CreationState.SelectingID)
+  const [err, setErr] = useState<string>()
+
+
   const [projectID, setProjectID] = useState(() => humanId({
     separator: '-',
     capitalize: false,
   }))
 
   const trimmedID = projectID.trim()
-  const validatedID = re.test(trimmedID)
+  const hasInvalidChar = invalidChars.test(trimmedID)
 
-  const [err, setErr] = useState<string>()
   const router = useRouter()
 
   const {
     trigger: createProject,
   } = useSWRMutation('/api/project', handlePostProject)
 
-  async function handleCreateProject() {
-    setErr(undefined)
-    setIsCreating(true)
-
-    if (validatedID) {
-      setErr('Project name must be a combination of letters, numbers and dashes')
-      setIsCreating(false)
-      return
-    }
-
-    if (trimmedID.length > 63) {
-      setErr('Project name is too long. It must have 63 or less characters')
-      setIsCreating(false)
-      return
-    }
+  async function confirmTemplate() {
+    dispatch(CreationEvent.ConfirmTemplate)
 
     try {
       const project = await createProject({
@@ -70,7 +83,7 @@ function NewProject() {
 
       if (project && 'statusCode' in project) {
         setErr(`Project with name "${trimmedID}" already exists`)
-        setIsCreating(false)
+        dispatch(CreationEvent.Fail)
         return
       }
 
@@ -80,25 +93,42 @@ function NewProject() {
           projectID: trimmedID,
         },
       })
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      setIsCreating(false)
+      setErr(err)
+      dispatch(CreationEvent.Fail)
     }
   }
 
+  async function confirmProjectID() {
+    setErr(undefined)
+
+    if (hasInvalidChar) {
+      setErr('Project name must be a combination of letters, numbers and dashes')
+      dispatch(CreationEvent.Fail)
+      return
+    }
+
+    if (trimmedID.length > 63) {
+      setErr('Project name is too long. It must have 63 or less characters')
+      dispatch(CreationEvent.Fail)
+      return
+    }
+
+    dispatch(CreationEvent.ConfirmID)
+  }
+
   return (
-    <div
-      className="
-    flex
-    flex-1
-    flex-col
-    space-x-0
-    space-y-8
-    overflow-hidden
-    p-8
-    lg:p-12
-  "
-    >
+    <div className="
+      flex
+      flex-1
+      flex-col
+      space-x-0
+      space-y-8
+      overflow-hidden
+      p-8
+      lg:p-12
+    ">
       <div className="flex">
         <div className="items-center flex space-x-2">
           <LayoutGrid size="30px" strokeWidth="1.5" />
@@ -113,53 +143,37 @@ function NewProject() {
         <div className="w-[450px] max-h-[600px] flex flex-col space-y-2 overflow-hidden">
           <div className="flex space-x-2 items-center transition-all">
             <Text
-              text="Configure project"
+              text="Configure New Project"
               className="text-base"
             />
           </div>
-          <div className="space-y-2 flex-1 flex flex-col">
-            <div
-              className="space-y-6 rounded border p-8 flex flex-col bg-white"
-            >
-              <div className="flex flex-col space-y-6">
-                <div className="flex flex-col flex-1 space-y-1">
-                  <Input
-                    title="Must be a combination of letters, numbers and dashes"
-                    pattern="[^a-zA-Z0-9\-]"
-                    label="Project name"
-                    placeholder="Project name"
-                    value={projectID}
-                    onChange={v => setProjectID(v)}
-                    required
-                    autofocus
-                  />
-                  <Text
-                    text="Combination of letters, numbers and dashes"
-                    size={Text.size.S3}
-                    className="text-slate-400"
-                  />
-                </div>
-
-              </div>
-              <div className="flex justify-center flex-col space-y-4">
-                <Button
-                  isDisabled={!projectID || isCreating || validatedID}
-                  onClick={handleCreateProject}
-                  text={isCreating ? 'Creating...' : 'Create project'}
-                  variant={Button.variant.Full}
-                  className="self-center whitespace-nowrap"
-                  icon={isCreating ? <SpinnerIcon className="text-white" /> : null}
-                />
-                {!isCreating && err && (
-                  <Text
-                    className="self-center text-red-500"
-                    size={Text.size.S3}
-                    text={err}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
+          {state === CreationState.SelectingID &&
+            <NewProjectIDForm
+              value={projectID}
+              onChange={v => setProjectID(v)}
+              error={err}
+              isNextDisabled={!projectID || hasInvalidChar}
+              onNext={confirmProjectID}
+            />
+          }
+          {(state === CreationState.SelectingTemplate || state === CreationState.CreatingProject) &&
+            <NewProjectTemplateForm
+              onBack={() => dispatch(CreationEvent.Back)}
+              onCreate={confirmTemplate}
+              state={state}
+            />
+          }
+          {err &&
+            <Text
+              className="
+                self-center
+                text-red-500
+                font-medium
+              "
+              size={Text.size.S2}
+              text={err}
+            />
+          }
         </div>
       </div>
     </div>
