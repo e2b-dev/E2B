@@ -65,4 +65,5 @@
     "./api-service/.venv/bin/python"
   ],
   "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
 }
