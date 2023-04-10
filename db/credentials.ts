@@ -8,6 +8,6 @@ const baseURL = typeof window !== 'undefined'
 
 // The SUPABASE_URL is actually not used but we need a valid URL for the SSR render.
 export const clientCreds = {
-  supabaseUrl: baseURL ? `${baseURL}/api/supabase` : process.env.SUPABASE_URL,
+  supabaseUrl: baseURL ? `${baseURL}/api/supabase` : 'http://localhost:3000/api/supabase',
   supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 }
