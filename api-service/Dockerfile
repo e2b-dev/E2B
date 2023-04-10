@@ -1,5 +1,5 @@
 # This stage builds playground
-FROM node:lts-slim as playground
+FROM --platform=linux/amd64 node:lts-slim as playground
 
 WORKDIR /playground
 
@@ -14,7 +14,7 @@ RUN npm run build
 
 
 # This is the final image that also installs python deps
-FROM nikolaik/python-nodejs:python3.10-nodejs18-slim
+FROM --platform=linux/amd64 nikolaik/python-nodejs:python3.10-nodejs18-slim
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
