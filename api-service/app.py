@@ -5,13 +5,15 @@ from pprint import pprint
 from dotenv import load_dotenv
 from typing import List
 from playground_client.exceptions import NotFoundException
-from quart import Quart, config, request
+from quart import Quart, request, abort
 from quart_cors import cors
+from logging.config import dictConfig
 
 from codegen import Codegen
 from codegen.tools.playground import create_playground_tools
 from database import Database, DeploymentState
 from codegen.tools.human.tools import create_human_tools
+from werkzeug.exceptions import HTTPException
 
 load_dotenv()
 
@@ -27,6 +29,17 @@ app = Quart(__name__)
 app.config.from_prefixed_env()
 app = cors(app, allow_origin="*")
 
+dictConfig({
+    'version': 1,
+    'loggers': {
+        'quart.app': {
+            'level': 'INFO',
+        },
+        'quart.serving': {
+            'level': 'INFO',
+        },
+    },
+})
 
 def get_request_body_template(blocks: List[dict[str, str]]):
     request_body_blocks = [
@@ -37,6 +50,16 @@ def get_request_body_template(blocks: List[dict[str, str]]):
     )
     return request_body_template
 
+
+@app.errorhandler(TimeoutError)
+def timeout_handler(e):
+    return abort(408, e)
+
+@app.errorhandler(Exception)
+def exception_handler(e):
+    if isinstance(e, HTTPException):
+        return e
+    return abort(500, str(e))
 
 @app.route("/health", methods=["GET"])
 async def health():
@@ -84,14 +107,18 @@ async def generate():
             database=db,
         )
 
-        # Generate the code
-        print("Generating...", flush=True)
-        await cg.generate(
-            run_id=run_id,
-            route=route,
-            method=method,
-            blocks=blocks,
-        )
+        try:
+            # Generate the code
+            print("Generating...", flush=True)
+            await cg.generate(
+                run_id=run_id,
+                route=route,
+                method=method,
+                blocks=blocks,
+            )
+        except Exception as e:
+            print('Error while generating code:', e)
+            raise e
 
         url: str | None = None
         # Disable deployment if there AWS creds are not present
