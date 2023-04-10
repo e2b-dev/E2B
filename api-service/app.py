@@ -29,18 +29,6 @@ app = Quart(__name__)
 app.config.from_prefixed_env()
 app = cors(app, allow_origin="*")
 
-dictConfig({
-    'version': 1,
-    'loggers': {
-        'quart.app': {
-            'level': 'INFO',
-        },
-        'quart.serving': {
-            'level': 'INFO',
-        },
-    },
-})
-
 def get_request_body_template(blocks: List[dict[str, str]]):
     request_body_blocks = [
         block for block in blocks if block.get("type") == "RequestBody"
