@@ -3,7 +3,7 @@ import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
 import clsx from 'clsx'
-import { Code, Lock, BrainCircuit } from 'lucide-react'
+import { Code, Lock, Cpu } from 'lucide-react'
 
 import { useStateStore } from 'state/StoreProvider'
 
@@ -23,7 +23,7 @@ function getMenuSelectionIcon(selection: MenuSection) {
     case MenuSection.Envs:
       return <Lock size={menuIconSize} />
     case MenuSection.Model:
-      return <BrainCircuit size={menuIconSize} />
+      return <Cpu size={menuIconSize} />
   }
 }
 
