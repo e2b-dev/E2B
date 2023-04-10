@@ -16,5 +16,5 @@ INSERT INTO "public"."teams" (id, created_at, name, is_default)
 INSERT INTO "public"."users_teams" (user_id, created_at, team_id)
 VALUES ('5899f99d-a449-4bfa-8769-19c097aaf1f5', NOW(), '21d2e330-95fa-4b78-b677-47d0713de3da');
 
-INSERT INTO "public"."projects" (id, created_at, data, team_id, name)
-VALUES ('default_project', NOW(), '{}', '21d2e330-95fa-4b78-b677-47d0713de3da', 'Default Project');
+-- INSERT INTO "public"."projects" (id, created_at, data, team_id, name)
+-- VALUES ('default_project', NOW(), '{}', '21d2e330-95fa-4b78-b677-47d0713de3da', 'Default Project');

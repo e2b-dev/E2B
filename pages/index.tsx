@@ -75,14 +75,25 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     })
 
     return {
-      props: {
-        projects: team.projects,
-      }
+      redirect: {
+        permanent: false,
+        destination: '/new',
+      },
     }
   }
 
   // Show projects from all teams.
   const projects = user.users_teams.flatMap(t => t.teams.projects)
+
+  if (projects.length === 0) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: '/new',
+      },
+    }
+  }
+
   return {
     props: {
       projects,
