@@ -92,6 +92,8 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 1. Make sure people can run e2b locally without issues and the DX is smooth.
 1. Add support for more models.
     - Let users request new models. Laterm create a system that will let users use any model.
+1. Improve model's understanding of the context based on the instructions
+1. Support for more tools
 1. Improve the dashboard UI
 1. Let users edit prompt
 1. Let users customize tools and build custom workflows for the agent
