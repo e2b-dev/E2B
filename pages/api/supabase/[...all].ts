@@ -1,4 +1,5 @@
 import { createProxyMiddleware } from 'http-proxy-middleware'
+import type { NextApiRequest, NextApiResponse } from 'next'
 
 export const config = {
   api: {
@@ -16,10 +17,18 @@ const pathPrefix = '/api/supabase'
 const target = process.env.SUPABASE_URL!
 const isSecure = target.startsWith('https://')
 
-export default createProxyMiddleware(`${pathPrefix}/**`, {
+const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({
   target,
   ws: true,
   secure: !isSecure,
   changeOrigin: true,
   pathRewrite: { [`^${pathPrefix}`]: '' }, // remove prefix
 })
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  proxy(req, res, (result: unknown) => {
+    if (result instanceof Error) {
+      throw result
+    }
+  })
+}

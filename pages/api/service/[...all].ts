@@ -1,4 +1,5 @@
 import { createProxyMiddleware } from 'http-proxy-middleware'
+import type { NextApiRequest, NextApiResponse } from 'next'
 
 export const config = {
   api: {
@@ -11,15 +12,21 @@ export const config = {
   },
 }
 
-const pathPrefix = '/api/service'
-
 const target = process.env.API_URL!
 const isSecure = target.startsWith('https://')
 
-export default createProxyMiddleware(`${pathPrefix}/**`, {
+const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({
   target,
   // ws: true,
   secure: !isSecure,
   changeOrigin: true,
-  pathRewrite: { [`^${pathPrefix}`]: '' }, // remove prefix
+  pathRewrite: { '^/api/service': '' }, // remove prefix
 })
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  proxy(req, res, (result: unknown) => {
+    if (result instanceof Error) {
+      throw result
+    }
+  })
+}
