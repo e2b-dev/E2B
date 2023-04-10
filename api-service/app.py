@@ -7,12 +7,11 @@ from typing import List
 from playground_client.exceptions import NotFoundException
 from quart import Quart, request, abort
 from quart_cors import cors
-from logging.config import dictConfig
 
 from codegen import Codegen
 from codegen.tools.playground import create_playground_tools
-from database import Database, DeploymentState
 from codegen.tools.human.tools import create_human_tools
+from database import Database, DeploymentState
 from werkzeug.exceptions import HTTPException
 
 load_dotenv()
@@ -38,7 +37,6 @@ def get_request_body_template(blocks: List[dict[str, str]]):
     )
     return request_body_template
 
-
 @app.errorhandler(TimeoutError)
 def timeout_handler(e):
     return abort(408, e)
@@ -54,6 +52,7 @@ async def health():
     return "OK"
 
 
+
 # TODO: SECURITY - Check if user invoking this request has permission to generate and deploy to this project
 @app.route("/generate", methods=["POST"])
 async def generate():
@@ -64,9 +63,9 @@ async def generate():
     route_id = body["routeID"]
     blocks = body["blocks"]
     method = body["method"]
-    model_name = body["model"]
     route = body["route"]
-    max_tokens = body["maxTokens"]
+
+    model_config = body["modelConfig"]
 
     pprint("+++ Blocks:")
     pprint(blocks)
@@ -90,8 +89,7 @@ async def generate():
                 *playground_tools,
                 *human_tools,
             ],
-            model_name=model_name,
-            max_tokens=max_tokens,
+            model_config=model_config,
             database=db,
         )
 
