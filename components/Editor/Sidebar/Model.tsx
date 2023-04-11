@@ -1,13 +1,11 @@
 import Radio from 'components/Radio'
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
-import { models } from 'state/store'
-
+import { models } from 'state/model'
 
 export interface Props { }
 
-function Context({
-}: Props) {
+function Context({ }: Props) {
   const [selector] = useStateStore()
 
   const model = selector.use.model()
@@ -49,29 +47,35 @@ function Context({
         items-stretch
       "
       >
-        <Text
-          text="OpenAI"
-          className="
-          font-semibold
-          uppercase
-          text-slate-400
-        "
-          size={Text.size.S3}
-        />
-        <div className="
-          flex
-          items-start
-          flex-1
-          py-1
-        "
-        >
-          <Radio
-            items={models.map(m => m.name)}
-            getLabel={item => models.find(m => m.name === item)?.label}
-            select={setModel}
-            selected={model}
-          />
-        </div>
+        {Object.entries(models).map(([provider, value]) =>
+          <div
+            key={provider}
+          >
+            <Text
+              text={provider}
+              className="
+              font-semibold
+              uppercase
+              text-slate-400
+            "
+              size={Text.size.S3}
+            />
+            <div className="
+              flex
+              items-start
+              flex-1
+              py-1
+            "
+            >
+              <Radio
+                items={value.models.map(m => m.name)}
+                getLabel={item => value.models.find(m => m.name === item)?.name}
+                select={setModel}
+                selected={model}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

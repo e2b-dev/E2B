@@ -8,21 +8,12 @@ import { projects, Prisma } from '@prisma/client'
 import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
-export interface ModelInfo {
-  name: string
-  label: string
-}
+import { EvaluatedArgs, ModelProvider } from './model'
 
-export const models: ModelInfo[] = [
-  {
-    name: 'gpt-4',
-    label: 'GPT-4',
-  },
-  {
-    name: 'gpt-3.5-turbo',
-    label: 'GPT-3.5',
-  },
-]
+export interface ModelInfo {
+  provider: ModelProvider
+  userArgs: EvaluatedArgs
+}
 
 export type BlockType =
   // Raw text
@@ -62,7 +53,10 @@ export const methods = Object
 export interface SerializedState {
   envs: { key: string, value: string }[]
   routes: Route[]
-  model: string
+  model: {
+    provider: ModelProvider
+    userArgs?: EvaluatedArgs
+  }
 }
 
 export interface State extends SerializedState {
@@ -72,7 +66,7 @@ export interface State extends SerializedState {
   addRoute: () => void
   setEnvs: (envs: { key: string, value: string }[]) => void
   changeEnv: (pair: { key: string, value: string }, idx: number) => void
-  setModel: (model: string) => void
+  setModel: (model: ModelInfo) => void
 }
 
 function createBlock(type: BlockType): Block {
@@ -96,11 +90,20 @@ function getDefaultRoute(): Route {
   }
 }
 
+function getDefaultModel(): ModelInfo {
+  return {
+    provider: ModelProvider.OpenAI,
+    userArgs: {
+      model_name: 'gpt-3.5-turbo',
+    },
+  }
+}
+
 function getDefaultState(): SerializedState {
   return {
     envs: [{ key: '', value: '' }],
     routes: [getDefaultRoute()],
-    model: 'gpt-3.5-turbo',
+    model: getDefaultModel(),
   }
 }
 
@@ -124,8 +127,9 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     initialState.envs.push({ key: '', value: '' })
   }
 
-  if (!initialState.model) {
-    initialState.model = 'gpt-3.5-turbo'
+  // TEMPORARY: We are checking .model === string for backwards compatibility.
+  if (!initialState.model || typeof initialState.model === 'string') {
+    initialState.model = getDefaultModel()
   }
 
   const immerStore = immer<State>((set, get) => ({
@@ -191,6 +195,5 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     } : undefined,
   })
 
-  const useStore = create<State, [['zustand/persist', unknown], ['zustand/immer', never]]>(persistent)
-  return useStore
+  return create<State, [['zustand/persist', unknown], ['zustand/immer', never]]>(persistent)
 }
