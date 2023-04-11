@@ -2,8 +2,8 @@ import os
 import uuid
 
 from pprint import pprint
-from dotenv import load_dotenv
 from typing import List
+from dotenv import load_dotenv
 from playground_client.exceptions import NotFoundException
 from quart import Quart, request, abort
 from quart_cors import cors
@@ -106,15 +106,15 @@ async def generate():
             print('Error while generating code:', e)
             raise e
 
-        url: str | None = None
+        deploy_url: str | None = None
         # Disable deployment if there AWS creds are not present
         if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get(
             "AWS_SECRET_ACCESS_KEY"
         ):
             await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-            url = await playground.deploy(project_id)
+            deploy_url = await playground.deploy(project_id)
 
-        await db.finish_deployment(run_id=run_id, url=url)
+        await db.finish_deployment(run_id=run_id, url=deploy_url)
         return {}
     except:
         await db.update_state(run_id=run_id, state=DeploymentState.Error)

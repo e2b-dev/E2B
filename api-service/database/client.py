@@ -7,7 +7,6 @@ from postgrest._async.request_builder import (
     AsyncRequestBuilder,
 )
 
-
 class Client(BaseModel):
     _supabase_url: str = PrivateAttr()
     _supabase_key: str = PrivateAttr()

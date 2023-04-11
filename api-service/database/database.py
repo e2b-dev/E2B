@@ -13,8 +13,8 @@ class DeploymentState(Enum):
     Error = "error"
 
 
-tableDeployments = "deployments"
-tableProjects = "projects"
+TABLE_DEPLOYMENTS = "deployments"
+TABLE_PROJECTS = "projects"
 
 class Database:
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
@@ -23,7 +23,7 @@ class Database:
     async def create_deployment(
         self, run_id: str, project_id: str, route_id: str
     ) -> None:
-        await self.client.table(tableDeployments).insert(
+        await self.client.table(TABLE_DEPLOYMENTS).insert(
             {
                 "id": run_id,
                 "project_id": project_id,
@@ -34,7 +34,7 @@ class Database:
 
     async def push_logs(self, run_id: str, logs: list[ToolLog | ThoughtLog]) -> None:
         if len(logs) > 0:
-            await self.client.table(tableDeployments).update(
+            await self.client.table(TABLE_DEPLOYMENTS).update(
                 {
                     "logs": logs,
                 }
@@ -42,14 +42,14 @@ class Database:
 
     async def push_raw_logs(self, run_id: str, logs_raw: str) -> None:
         if logs_raw:
-            await self.client.table(tableDeployments).update(
+            await self.client.table(TABLE_DEPLOYMENTS).update(
                 {
                     "logs_raw": logs_raw,
                 }
             ).eq("id", run_id).execute()
 
     async def update_state(self, run_id: str, state: DeploymentState) -> None:
-        await self.client.table(tableDeployments).update(
+        await self.client.table(TABLE_DEPLOYMENTS).update(
             {
                 "state": state.value,
             }
@@ -64,7 +64,7 @@ class Database:
         if url is not None:
             update["url"] = url
 
-        await self.client.table(tableDeployments).update(update).eq(
+        await self.client.table(TABLE_DEPLOYMENTS).update(update).eq(
             "id", run_id
         ).execute()
 
@@ -86,7 +86,7 @@ class Database:
         ]
         """
         result = (
-            await self.client.table(tableProjects)
+            await self.client.table(TABLE_PROJECTS)
             .select("data")
             .eq("id", project_id)
             .execute()
