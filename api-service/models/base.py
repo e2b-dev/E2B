@@ -13,7 +13,8 @@ class ModelProvider(Enum):
 
 
 class ModelConfig(TypedDict):
-    provider: ModelProvider
+    # Provider is string and not ModelProvider because we deserialize it form request's JSON body
+    provider: str
     args: Dict[str, Any]
 
 
@@ -22,16 +23,20 @@ def get_model(
     callback_manager: BaseCallbackManager,
 ) -> BaseLanguageModel:
     match config["provider"]:
-        case ModelProvider.OpenAI:
+        case ModelProvider.OpenAI.value:
+            print("pack")
             return ChatOpenAI(
                 **config["args"],
+                request_timeout=3600,
                 verbose=True,
                 streaming=True,
                 callback_manager=callback_manager,
             )
-        case ModelProvider.Replicate:
+        case ModelProvider.Replicate.value:
             return Replicate(
                 **config["args"],
                 verbose=True,
                 callback_manager=callback_manager,
             )
+        case _:
+            raise ValueError(f"Provider {config['provider']} no found.")

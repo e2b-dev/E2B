@@ -55,24 +55,24 @@ class CodegenAgentExecutor(AgentExecutor):
         # Otherwise we lookup the tool
         if tool_name in name_to_tool_map:
             tool = name_to_tool_map[tool_name]
-            return_direct = tool.return_direct
+            # return_direct = tool.return_direct
             color = color_mapping[tool_name]
-            llm_prefix = "" if return_direct else self.agent.llm_prefix
+            # llm_prefix = "" if return_direct else self.agent.llm_prefix
             # We then call the tool on the tool input to get an observation
             observation = await tool.arun(
                 tool_input,
                 verbose=self.verbose,
                 color=color,
-                llm_prefix=llm_prefix,
-                observation_prefix=self.agent.observation_prefix,
+                # llm_prefix=llm_prefix,
+                # observation_prefix=self.agent.observation_prefix,
             )
         else:
             observation = await InvalidTool().arun(  # type: ignore
                 tool_name,
                 verbose=self.verbose,
                 color=None,
-                llm_prefix="",
-                observation_prefix=self.agent.observation_prefix,
+                # llm_prefix="",
+                # observation_prefix=self.agent.observation_prefix,
             )
         return observation
 

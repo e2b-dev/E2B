@@ -6,7 +6,7 @@ from typing import (
     ClassVar,
 )
 
-from langchain.agents import AgentExecutor
+from langchain.agents import AgentExecutor, Agent
 from langchain.schema import BaseLanguageModel
 from pydantic import BaseModel, PrivateAttr
 from langchain.callbacks.base import (
@@ -52,7 +52,7 @@ from codegen.prompt import (
 
 class Codegen(BaseModel):
     input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad", "method"]
-    _agent: CodegenAgent = PrivateAttr()
+    _agent: Agent = PrivateAttr()
     _agent_executor: AgentExecutor = PrivateAttr()
     _tools: List[BaseTool] = PrivateAttr()
     _llm: BaseLanguageModel = PrivateAttr()
@@ -65,7 +65,7 @@ class Codegen(BaseModel):
         callback_manager: BaseCallbackManager,
         tools: List[BaseTool],
         llm: BaseLanguageModel,
-        agent: CodegenAgent,
+        agent: Agent,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -105,6 +105,7 @@ class Codegen(BaseModel):
         # Create the LLM
         llm = get_model(model_config, callback_manager)
 
+        print("LLM >>>>>>>>>>>>>>>>>>>", bool(llm))
         # Create CodegenAgent
         agent = CodegenAgent.from_llm_and_tools(
             llm=llm,
