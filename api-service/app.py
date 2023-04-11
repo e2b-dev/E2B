@@ -28,6 +28,7 @@ app = Quart(__name__)
 app.config.from_prefixed_env()
 app = cors(app, allow_origin="*")
 
+
 def get_request_body_template(blocks: List[dict[str, str]]):
     request_body_blocks = [
         block for block in blocks if block.get("type") == "RequestBody"
@@ -37,9 +38,11 @@ def get_request_body_template(blocks: List[dict[str, str]]):
     )
     return request_body_template
 
+
 @app.errorhandler(TimeoutError)
 def timeout_handler(e):
     return abort(408, e)
+
 
 @app.errorhandler(Exception)
 def exception_handler(e):
@@ -47,10 +50,10 @@ def exception_handler(e):
         return e
     return abort(500, str(e))
 
+
 @app.route("/health", methods=["GET"])
 async def health():
     return "OK"
-
 
 
 # TODO: SECURITY - Check if user invoking this request has permission to generate and deploy to this project
@@ -103,7 +106,7 @@ async def generate():
                 blocks=blocks,
             )
         except Exception as e:
-            print('Error while generating code:', e)
+            print("Error while generating code:", e)
             raise e
 
         deploy_url: str | None = None

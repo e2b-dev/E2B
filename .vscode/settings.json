@@ -65,8 +65,7 @@
   "python.defaultInterpreterPath": "./api-service/.venv/bin/python",
   "python.analysis.extraPaths": [
     "./**",
-    "./api-service/.venv/bin/python",
-    "./api-service/.venv"
+    "./api-service/.venv/bin/python"
   ],
   // Disable Pylint and use just Pylance
   "python.linting.enabled": false,
