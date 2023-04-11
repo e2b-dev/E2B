@@ -6,9 +6,11 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-python.pylint",
+				"dbaeumer.vscode-eslint",
 				"ms-python.black-formatter",
-				"ms-python.python"
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"bradlc.vscode-tailwindcss"
 			]
 		}
 	}

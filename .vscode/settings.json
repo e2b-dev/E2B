@@ -55,6 +55,9 @@
   "editor.suggest.localityBonus": true,
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "python.formatting.provider": "black",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+},
   "python.autoComplete.extraPaths": [
     "./**",
     "./api-service/.venv/bin/python",
@@ -62,8 +65,16 @@
   "python.defaultInterpreterPath": "./api-service/.venv/bin/python",
   "python.analysis.extraPaths": [
     "./**",
-    "./api-service/.venv/bin/python"
+    "./api-service/.venv/bin/python",
+    "./api-service/.venv"
   ],
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": true,
+  // Disable Pylint and use just Pylance
+  "python.linting.enabled": false,
+  "python.analysis.typeCheckingMode": "basic",
+  // "python.analysis.pylanceLspClientEnabled": true,
+  // "python.analysis.inlayHints.functionReturnTypes": true,
+  // "python.analysis.inlayHints.pytestParameters": true,
+  // "python.analysis.inlayHints.variableTypes": true,
+  // "python.analysis.autoImportCompletions": true,
+  // "python.analysis.completeFunctionParens": true
 }
