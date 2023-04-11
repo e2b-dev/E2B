@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
-
 import { projects } from '@prisma/client'
-import { Route, Block } from 'state/store'
-import { useLatestDeployment } from 'hooks/useLatestDeployment'
-import { useStateStore } from 'state/StoreProvider'
-import { html2markdown } from 'editor/schema'
 
 import Agent from './Agent'
 import Envs from './Envs'
 import Model from './Model'
+
+import { Route, Block } from 'state/store'
+import { useLatestDeployment } from 'hooks/useLatestDeployment'
+import { useStateStore } from 'state/StoreProvider'
+import { html2markdown } from 'editor/schema'
+import { EvaluatedModelConfig, evaluateModelConfig } from 'state/model'
+import useModelProviderCreds from 'hooks/useModelProviderCreds'
 // import Deploy from './Deploy'
 
 export interface Props {
@@ -31,7 +33,7 @@ async function handlePostGenerate(url: string, { arg }: {
   arg: {
     projectID: string,
     route: Route,
-    model: string,
+    modelConfig: EvaluatedModelConfig,
     envs: { key: string, value: string }[],
   }
 }) {
@@ -55,8 +57,7 @@ async function handlePostGenerate(url: string, { arg }: {
             return b
         }
       }),
-      maxTokens: 2056,
-      model: arg.model,
+      modelConfig: arg.modelConfig,
       method: arg.route.method.toLowerCase(),
       route: arg.route.route,
       envs: arg.envs,
@@ -83,13 +84,22 @@ function Sidebar({
   const envs = selectors.use.envs()
   const model = selectors.use.model()
 
+
+  const [creds] = useModelProviderCreds()
+
   async function deploy() {
     if (!route) return
+    const config = evaluateModelConfig(model, creds)
+    if (!config) {
+      console.error('Cannot get model config')
+      return
+    }
+
     await generate({
       projectID: project.id,
       route,
       envs,
-      model,
+      modelConfig: config,
     })
   }
 

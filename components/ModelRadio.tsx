@@ -1,25 +1,25 @@
 import { RadioGroup } from '@headlessui/react'
 import { Check } from 'lucide-react'
 
-export type Item = string
+import { ModelConfig } from 'state/model'
+
+export type Item = Omit<ModelConfig, 'provider'>
 
 export interface Props {
   selected: Item
   select: (item: Item) => void
   items: Item[]
-  getLabel: (item: Item) => string | undefined
 }
 
-function Radio<T>({ selected, items, select, getLabel }: Props) {
+function Radio<T>({ selected, items, select }: Props) {
   return (
     <div className="mx-auto w-full">
       <RadioGroup value={selected} onChange={select}>
-        <RadioGroup.Label className="sr-only">Server size</RadioGroup.Label>
         <div className="space-y-2">
           {items.map((item) => (
             <RadioGroup.Option
-              key={item}
-              value={item}
+              key={item.name}
+              value={item.name}
               className={({ active, checked }) =>
                 `
                   ${checked ? 'border-green-800' : 'bg-white border-slate-300'
@@ -37,7 +37,7 @@ function Radio<T>({ selected, items, select, getLabel }: Props) {
                           className={`font-medium  ${checked ? 'text-slate-600' : 'text-slate-500'
                             }`}
                         >
-                          {getLabel(item)}
+                          {item.name}
                         </RadioGroup.Label>
                         <RadioGroup.Description
                           as="span"
@@ -45,7 +45,7 @@ function Radio<T>({ selected, items, select, getLabel }: Props) {
                             }`}
                         >
                           <span className="font-mono">
-                            {item}
+                            {item.name}
                           </span>
                         </RadioGroup.Description>
                       </div>

@@ -10,16 +10,15 @@ export type Creds = {
   }
 }
 
-function useModelProviderCreds() {
+export interface MergeCreds {
+  (provider: ModelProvider, key: string, value?: ArgValue): void
+}
+
+function useModelProviderCreds(): [Creds, MergeCreds] {
   const [creds, setCreds] = useLocalStorage<Creds>('e2b-model-creds', {})
 
-  const mergeCreds = useCallback((provider: ModelProvider, key: string, value?: ArgValue) => {
+  const mergeCreds = useCallback<MergeCreds>((provider, key, value) => {
     setCreds(produce(creds, d => {
-      if (!value) {
-        delete d[provider]?.creds?.[key]
-        return
-      }
-
       if (!d[provider]?.creds) {
         d[provider] = { creds: { [key]: value } }
         return

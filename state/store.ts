@@ -13,6 +13,7 @@ import { EvaluatedArgs, ModelProvider } from './model'
 export interface ModelInfo {
   provider: ModelProvider
   userArgs: EvaluatedArgs
+  name: string
 }
 
 export type BlockType =
@@ -53,10 +54,7 @@ export const methods = Object
 export interface SerializedState {
   envs: { key: string, value: string }[]
   routes: Route[]
-  model: {
-    provider: ModelProvider
-    userArgs?: EvaluatedArgs
-  }
+  model: ModelInfo
 }
 
 export interface State extends SerializedState {
@@ -93,9 +91,8 @@ function getDefaultRoute(): Route {
 function getDefaultModel(): ModelInfo {
   return {
     provider: ModelProvider.OpenAI,
-    userArgs: {
-      model_name: 'gpt-3.5-turbo',
-    },
+    name: 'GPT 3.5 Turbo',
+    userArgs: {},
   }
 }
 

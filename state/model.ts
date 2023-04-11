@@ -1,4 +1,5 @@
 import { Creds } from 'hooks/useModelProviderCreds'
+import { ModelInfo } from './store'
 
 export enum ModelProvider {
   OpenAI = 'OpenAI',
@@ -8,7 +9,7 @@ export enum ModelProvider {
 export type ArgValue = string | number
 
 export interface EvaluatedArgs {
-  [arg: string]: ArgValue
+  [arg: string]: ArgValue | undefined
 }
 
 export interface ModelArg {
@@ -108,34 +109,38 @@ export const models: {
   },
 }
 
-interface EvaluatedModelConfig extends Omit<ModelConfig, 'args' | 'name'> {
+export interface EvaluatedModelConfig extends Omit<ModelConfig, 'args' | 'name'> {
   args: EvaluatedArgs
 }
 
 export function evaluateModelConfig(
-  provider: ModelProvider,
-  name: string,
+  config: ModelInfo,
   creds: Creds,
-  userArgs: EvaluatedArgs,
 ): EvaluatedModelConfig | undefined {
-  const model = models[provider].models.find(m => m.name === name)
+  const model = models[config.provider].models.find(m => m.name === config.name)
   if (!model) return
 
   const defaultArgs = Object
     .entries(model.args || {})
     .reduce<EvaluatedArgs>((prev, [key, info]) => {
-      if (info.value) {
+      if (info.value !== undefined) {
         prev[key] = info.value
       }
       return prev
     }, {})
 
   return {
-    provider,
+    provider: config.provider,
     args: {
       ...defaultArgs,
-      ...creds[provider]?.creds,
-      ...userArgs,
+      ...creds[config.provider]?.creds,
+      ...config.userArgs,
     }
   }
+}
+
+export function allCredsOk(provider: ModelProvider, creds: Creds) {
+  return Object
+    .entries(models[provider]?.creds || {})
+    .every(([key, val]) => creds[provider]?.creds?.[key] !== undefined)
 }
