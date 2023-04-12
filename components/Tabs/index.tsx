@@ -121,7 +121,7 @@ function Tab({
               select-none
               transition-colors
               border-green-800
-              px-2
+              px-1
               `,
               {
                 'text-slate-400': hoveredTabIndex !== i && selectedTabIndex !== i,
@@ -150,17 +150,6 @@ function Tab({
         "
         style={hoverStyles}
       />
-      {/* <div
-        className="
-          absolute
-          z-10
-          bottom-0
-          left-0
-          h-0.5
-          bg-green-800
-        "
-        style={selectStyles}
-      /> */}
     </nav>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { deployment_state, deployments } from '@prisma/client'
 import produce from 'immer'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useRouter } from 'next/router'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
@@ -12,6 +13,7 @@ import { deploymentsTable } from 'db/tables'
 import useModelProviderCreds from 'hooks/useModelProviderCreds'
 import { getMissingCreds } from 'state/model'
 import { useStateStore } from 'state/StoreProvider'
+import Button from 'components/Button'
 
 import LogStream from './LogStream'
 import RunButton from '../RunButton'
@@ -47,6 +49,7 @@ function Agent({
   const client = useSupabaseClient<Database>()
   const tabsCss = useTabs(tabsProps)
   const [selector] = useStateStore()
+  const router = useRouter()
 
   const [creds,] = useModelProviderCreds()
   const model = selector.use.model()
@@ -80,49 +83,59 @@ function Agent({
       <div className="
         flex
         items-center
-        justify-between
         border-b
         py-2
         pr-4
+        justify-between
       ">
-        <Text
-          text="Agent"
-          size={Text.size.S2}
-          className="
+        <div className="
+          flex
+          space-x-2
+        ">
+          <Text
+            text="Agent"
+            size={Text.size.S2}
+            className="
             uppercase
             text-slate-400
             font-semibold
-            px-4
-          "
-        />
-
-        {process.env.NODE_ENV === 'development' && (
-          <Tabs
-            {...tabsCss.tabProps}
-            selectedTabIndex={selectedTab}
-            setSelectedTab={setSelectedTab}
+            pl-4
+            "
           />
-        )}
+
+          {process.env.NODE_ENV === 'development' && (
+            <Tabs
+              {...tabsCss.tabProps}
+              selectedTabIndex={selectedTab}
+              setSelectedTab={setSelectedTab}
+            />
+          )}
+        </div>
         <div className="
           flex
           space-x-2
         "
         >
           {missingCreds.length > 0 &&
-            <Text
-              text={`Missing key "${missingCreds[0][1].label || missingCreds[0][0]}"`}
-              size={Text.size.S3}
-              className="text-red-400"
-            />
+            <>
+              <Text
+                text={`Missing key "${missingCreds[0][1].label || missingCreds[0][0]}"`}
+                size={Text.size.S3}
+                className="text-red-400"
+              />
+              <Button
+                text="Set keys"
+                onClick={() => router.push('/settings')}
+              />
+            </>
           }
-          {<RunButton
+          <RunButton
             disabled={missingCreds.length !== 0}
             deploy={deploy}
             isDeployRequestRunning={isDeployRequestRunning}
             isInitializingDeploy={isInitializingDeploy}
             deployStatus={deployment?.state}
           />
-          }
         </div>
       </div>
       {!deployment &&

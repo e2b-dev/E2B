@@ -130,6 +130,7 @@ function Home({ projects }: Props) {
     await deleteProject({ id })
     router.replace(router.asPath)
   }
+
   return (
     <div
       className="

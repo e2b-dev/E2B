@@ -36,15 +36,14 @@ interface Props { }
 function Settings({ }: Props) {
   const user = useUser()
   const router = useRouter()
-
   const supabaseClient = useSupabaseClient<Database>()
+
+  const [creds, mergeCreds] = useModelProviderCreds()
 
   async function handleSignOut() {
     await supabaseClient.auth.signOut()
     router.push('/')
   }
-
-  const [creds, mergeCreds] = useModelProviderCreds()
 
   return (
     <div

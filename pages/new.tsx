@@ -42,7 +42,6 @@ const reducer: Reducer<CreationState, CreationEvent> = (state, event) => {
   return state
 }
 
-
 async function handlePostProject(url: string, { arg }: { arg: PostProjectBody }) {
   return await fetch(url, {
     method: 'POST',
