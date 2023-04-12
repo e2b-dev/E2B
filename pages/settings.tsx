@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon } from 'lucide-react'
+import { Key, Mail, Settings as SettingsIcon } from 'lucide-react'
 import { useRouter } from 'next/router'
 import { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
@@ -87,11 +87,18 @@ function Settings({ }: Props) {
         space-y-1
       "
         >
-          <Text
-            className="text-slate-400"
-            size={Text.size.S2}
-            text="Email"
-          />
+          <div className="
+            flex
+            space-x-2
+            text-slate-400
+            items-center
+          ">
+            <Mail size="16px" />
+            <Text
+              size={Text.size.S2}
+              text="Email"
+            />
+          </div>
           <Text
             size={Text.size.S2}
             text={user?.email!}
@@ -104,11 +111,18 @@ function Settings({ }: Props) {
         space-y-1
       "
         >
-          <Text
-            className="text-slate-400"
-            size={Text.size.S2}
-            text="Keys"
-          />
+          <div className="
+            flex
+            space-x-2
+            text-slate-400
+            items-center
+          ">
+            <Key size="16px" />
+            <Text
+              size={Text.size.S2}
+              text="Keys"
+            />
+          </div>
           <div
             className="
                 flex

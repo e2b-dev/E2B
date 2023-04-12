@@ -24,7 +24,6 @@ def get_model(
 ) -> BaseLanguageModel:
     match config["provider"]:
         case ModelProvider.OpenAI.value:
-            print("pack")
             return ChatOpenAI(
                 **config["args"],
                 request_timeout=3600,

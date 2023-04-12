@@ -45,11 +45,12 @@ export const models: {
     },
     models: [
       {
-        name: 'Custom model',
+        name: 'Deployed model',
         args: {
           model_name: {
             editable: true,
             type: 'string',
+            label: 'Model name'
           },
           max_tokens: {
             type: 'number',

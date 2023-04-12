@@ -3,6 +3,7 @@ import { deployment_state, deployments } from '@prisma/client'
 import produce from 'immer'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
+import { Key } from 'lucide-react'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
@@ -51,7 +52,7 @@ function Agent({
   const [selector] = useStateStore()
   const router = useRouter()
 
-  const [creds,] = useModelProviderCreds()
+  const [creds] = useModelProviderCreds()
   const model = selector.use.model()
   const missingCreds = getMissingCreds(model.provider, creds)
 
@@ -124,7 +125,11 @@ function Agent({
                 className="text-red-600"
               />
               <Button
+                className="whitespace-pre-wrap"
                 text="Set keys"
+                icon={
+                  <Key size="16px" />
+                }
                 onClick={() => router.push('/settings')}
               />
             </>

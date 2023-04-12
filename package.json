@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@devbookhq/splitter": "^1.4.0",
-    "@headlessui/react": "^1.7.13",
     "@prisma/client": "^4.11.0",
     "@supabase/auth-helpers-nextjs": "^0.5.5",
     "@supabase/auth-helpers-react": "^0.3.1",

@@ -59,7 +59,7 @@ export class CachedSession {
     const url = this.session.getHostname()
     if (!url) throw new Error('Cannot start session')
 
-    const [id,] = url.split('.')
+    const [id] = url.split('.')
     this.id = id
     sessionCache.set(id, this)
 
