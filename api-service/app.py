@@ -5,7 +5,7 @@ from pprint import pprint
 from typing import List
 from dotenv import load_dotenv
 from playground_client.exceptions import NotFoundException
-from quart import Quart, request, abort
+from quart import Quart, request, abort, Response
 from quart_cors import cors
 
 from codegen import Codegen
@@ -39,16 +39,12 @@ def get_request_body_template(blocks: List[dict[str, str]]):
     return request_body_template
 
 
-@app.errorhandler(TimeoutError)
-def timeout_handler(e):
-    return abort(408, e)
-
-
 @app.errorhandler(Exception)
 def exception_handler(e):
+    print("Handling error", e)
     if isinstance(e, HTTPException):
         return e
-    return abort(500, str(e))
+    return Response(str(e), status=500)
 
 
 @app.route("/health", methods=["GET"])
@@ -96,18 +92,14 @@ async def generate():
             database=db,
         )
 
-        try:
-            # Generate the code
-            print("Generating...", flush=True)
-            await cg.generate(
-                run_id=run_id,
-                route=route,
-                method=method,
-                blocks=blocks,
-            )
-        except Exception as e:
-            print("Error while generating code:", e)
-            raise e
+        # Generate the code
+        print("Generating...", flush=True)
+        await cg.generate(
+            run_id=run_id,
+            route=route,
+            method=method,
+            blocks=blocks,
+        )
 
         deploy_url: str | None = None
         # Disable deployment if there AWS creds are not present

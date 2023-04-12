@@ -105,7 +105,10 @@ class Codegen(BaseModel):
         # Create the LLM
         llm = get_model(model_config, callback_manager)
 
-        print("LLM >>>>>>>>>>>>>>>>>>>", bool(llm))
+        print(
+            f"Using LLM '{model_config['provider']}' with args:\n{model_config['args']}"
+        )
+
         # Create CodegenAgent
         agent = CodegenAgent.from_llm_and_tools(
             llm=llm,

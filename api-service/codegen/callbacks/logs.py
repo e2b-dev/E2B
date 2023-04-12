@@ -14,7 +14,9 @@ class LogsCallbackHandler(AsyncCallbackHandler):
     _run_id: str = PrivateAttr()
     _raw_logs: str = ""
 
-    def __init__(self, database: Database, run_id: str, tool_names: List[str], **kwargs: Any):
+    def __init__(
+        self, database: Database, run_id: str, tool_names: List[str], **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self._database = database
         self._run_id = run_id
@@ -85,7 +87,6 @@ class LogsCallbackHandler(AsyncCallbackHandler):
 
         await self._log_queue.flush()
         await self._raw_log_queue.flush()
-
 
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
