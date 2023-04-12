@@ -52,7 +52,6 @@
     "prosemirror-markdown": "^1.10.1",
     "prosemirror-state": "^1.4.2",
     "prosemirror-view": "^1.30.2",
-    "randomcolor": "^0.6.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-markdown": "^8.0.5",
