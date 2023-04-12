@@ -87,10 +87,10 @@ function ModelCard({
                     >
                       <Input
                         value={modelInfo?.userArgs[key]?.toString() || ''}
-                        onChange={(v) => select({
+                        onChange={v => select({
                           userArgs: {
                             ...modelInfo?.userArgs,
-                            [key]: v,
+                            [key]: value.type === 'number' ? parseFloat(v) : v,
                           }
                         })}
                         label={value.label || key}
