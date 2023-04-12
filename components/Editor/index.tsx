@@ -128,7 +128,7 @@ function Editor({ project }: Props) {
           <button
             key={m}
             className={clsx(`
-            hover:text-slate-600
+            hover:text-green-800
             transition-all
             text-xs
             items-center

@@ -40,7 +40,7 @@ function TitleLink({
           'whitespace-nowrap',
           'transition-all',
           'space-x-2',
-          active ? 'text-green-800' : 'text-slate-400 hover:text-green-800',
+          active ? 'text-slate-600' : 'text-slate-400 hover:text-green-800',
           className,
         )}
       />
