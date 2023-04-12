@@ -1,7 +1,7 @@
 from typing import TypedDict, Dict, Any
 from enum import Enum
 
-from langchain.llms import Replicate, GPT4All
+from langchain.llms import Replicate
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager

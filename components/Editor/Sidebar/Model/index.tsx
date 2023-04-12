@@ -79,28 +79,31 @@ function Model({ }: Props) {
             "
                 size={Text.size.S2}
               />
-              <div
-                className="
+              {value.creds &&
+                <div
+                  className="
                   space-x-2
                   flex
                 "
-              >
-                <Text
-                  text={getMissingCreds(provider as ModelProvider, creds).length === 0 ? '' : 'Missing keys'}
-                  className="
+                >
+
+                  <Text
+                    text={getMissingCreds(provider as ModelProvider, creds).length === 0 ? '' : 'Missing keys'}
+                    className="
                   text-red-600
                   "
-                  size={Text.size.S3}
-                />
-                <Button
-                  icon={
-                    <Key size="16px" />
-                  }
-                  text="Set keys"
-                  className="whitespace-pre-wrap"
-                  onClick={() => router.push('/settings')}
-                />
-              </div>
+                    size={Text.size.S3}
+                  />
+                  <Button
+                    icon={
+                      <Key size="16px" />
+                    }
+                    text="Set keys"
+                    className="whitespace-pre-wrap"
+                    onClick={() => router.push('/settings')}
+                  />
+                </div>
+              }
             </div>
             <div className="
               flex
