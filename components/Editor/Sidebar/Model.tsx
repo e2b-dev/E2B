@@ -1,9 +1,11 @@
+import { useRouter } from 'next/router'
+
 import Radio from 'components/ModelRadio'
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
-import { allCredsOk, ModelProvider, models } from 'state/model'
+import { getMissingCreds, ModelProvider, models } from 'state/model'
 import useModelProviderCreds from 'hooks/useModelProviderCreds'
-import { useRouter } from 'next/router'
+import Button from 'components/Button'
 
 export interface Props { }
 
@@ -14,7 +16,7 @@ function Context({ }: Props) {
   const model = selector.use.model()
   const setModel = selector.use.setModel()
 
-  const [creds, mergeCreds] = useModelProviderCreds()
+  const [creds,] = useModelProviderCreds()
 
   return (
     <div className="
@@ -59,28 +61,34 @@ function Context({ }: Props) {
             <div className="
               flex
               justify-between
-              space-x-2
             "
             >
               <Text
                 text={provider}
                 className="
-                  font-semibold
-                  uppercase
-                  text-slate-400
-              "
+                font-semibold
+                text-slate-400
+            "
                 size={Text.size.S2}
               />
-              <Text
-                text={allCredsOk(provider as ModelProvider, creds) ? 'Credentials found' : 'Credentials missing'}
+              <div
                 className="
-                  text-slate-400
-                  cursor-pointer
-                  hover:text-slate-500
+                  space-x-2
+                  flex
                 "
-                size={Text.size.S3}
-                onClick={() => router.push('/settings')}
-              />
+              >
+                <Text
+                  text={getMissingCreds(provider as ModelProvider, creds).length === 0 ? '' : 'Missing keys'}
+                  className="
+                  text-red-400
+                  "
+                  size={Text.size.S3}
+                />
+                <Button
+                  text="Set keys"
+                  onClick={() => router.push('/settings')}
+                />
+              </div>
             </div>
             <div className="
               flex

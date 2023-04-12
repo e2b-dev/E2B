@@ -24,7 +24,7 @@ function Radio<T>({ selected, items, select }: Props) {
                 `
                   ${checked ? 'border-green-800' : 'bg-white border-slate-300'
                 }
-                    relative flex cursor-pointer rounded-lg px-2 py-1 border hover:border-green-800 transition-all`
+                    relative flex cursor-pointer rounded px-2 py-1 border hover:border-green-800 transition-all`
               }
             >
               {({ active, checked }) => (

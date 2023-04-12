@@ -1,8 +1,10 @@
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+
 export const config = {
   api: {
+    responseLimit: false,
     // Proxy middleware will handle requests itself, so Next.js should 
     // ignore that our handler doesn't directly return a response
     externalResolver: true,
@@ -12,16 +14,17 @@ export const config = {
   },
 }
 
+const pathPrefix = '/api/service'
+
 const target = process.env.API_URL!
 const isSecure = target.startsWith('https://')
 
 const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({
   target,
-  pathFilter: '**',
   // ws: true,
   secure: !isSecure,
   changeOrigin: true,
-  pathRewrite: { '^/api/service': '' }, // remove prefix
+  pathRewrite: { [`^${pathPrefix}`]: '' }, // remove prefix
 })
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {

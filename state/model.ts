@@ -139,8 +139,10 @@ export function evaluateModelConfig(
   }
 }
 
-export function allCredsOk(provider: ModelProvider, creds: Creds) {
-  return Object
+export function getMissingCreds(provider: ModelProvider, creds: Creds) {
+  const missing = Object
     .entries(models[provider]?.creds || {})
-    .every(([key, val]) => creds[provider]?.creds?.[key] !== undefined)
+    .filter(([key, val]) => creds[provider]?.creds?.[key] === undefined)
+
+  return missing
 }

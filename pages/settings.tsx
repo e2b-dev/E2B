@@ -27,13 +27,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
 
   return {
-    props: {
-    },
+    props: {},
   }
 }
 
-interface Props {
-}
+interface Props { }
 
 function Settings({ }: Props) {
   const user = useUser()
@@ -80,7 +78,7 @@ function Settings({ }: Props) {
         flex-1
         flex-col
         items-start
-        space-y-4
+        space-y-6
         "
       >
         <div
@@ -92,7 +90,7 @@ function Settings({ }: Props) {
         >
           <Text
             className="text-slate-400"
-            size={Text.size.S3}
+            size={Text.size.S2}
             text="Email"
           />
           <Text
@@ -110,7 +108,7 @@ function Settings({ }: Props) {
           <Text
             className="text-slate-400"
             size={Text.size.S2}
-            text="Credentials"
+            text="Keys"
           />
           <div
             className="

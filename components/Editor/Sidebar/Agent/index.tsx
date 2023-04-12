@@ -1,17 +1,19 @@
 import { useState } from 'react'
-// import hljs from 'highlight.js'
 import { deployment_state, deployments } from '@prisma/client'
+import produce from 'immer'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
 import Tabs from 'components/Tabs'
 import { Log, LogType, ToolName } from 'db/types'
-
-import LogStream from './LogStream'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { Database, Json } from 'db/supabase'
 import { deploymentsTable } from 'db/tables'
-import produce from 'immer'
+import useModelProviderCreds from 'hooks/useModelProviderCreds'
+import { getMissingCreds } from 'state/model'
+import { useStateStore } from 'state/StoreProvider'
+
+import LogStream from './LogStream'
 import RunButton from '../RunButton'
 
 const tabsProps = {
@@ -44,12 +46,11 @@ function Agent({
   const [selectedTab, setSelectedTab] = useState(0)
   const client = useSupabaseClient<Database>()
   const tabsCss = useTabs(tabsProps)
+  const [selector] = useStateStore()
 
-  // useEffect(function highlightCode() {
-  //   if (selectedTab === 1) {
-  //     hljs.highlightAll()
-  //   }
-  // }, [logs, selectedTab])
+  const [creds,] = useModelProviderCreds()
+  const model = selector.use.model()
+  const missingCreds = getMissingCreds(model.provider, creds)
 
   async function saveAnswer({
     logID,
@@ -102,12 +103,27 @@ function Agent({
             setSelectedTab={setSelectedTab}
           />
         )}
-        <RunButton
-          deploy={deploy}
-          isDeployRequestRunning={isDeployRequestRunning}
-          isInitializingDeploy={isInitializingDeploy}
-          deployStatus={deployment?.state}
-        />
+        <div className="
+          flex
+          space-x-2
+        "
+        >
+          {missingCreds.length > 0 &&
+            <Text
+              text={`Missing key "${missingCreds[0][1].label || missingCreds[0][0]}"`}
+              size={Text.size.S3}
+              className="text-red-400"
+            />
+          }
+          {<RunButton
+            disabled={missingCreds.length !== 0}
+            deploy={deploy}
+            isDeployRequestRunning={isDeployRequestRunning}
+            isInitializingDeploy={isInitializingDeploy}
+            deployStatus={deployment?.state}
+          />
+          }
+        </div>
       </div>
       {!deployment &&
         <div
