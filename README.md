@@ -31,28 +31,20 @@ e2b currently supports building only REST servers in Node.js. Specifically using
 We're working on the cloud-hosted version. In the meantime, the fastest way try out e2b is to run it locally via Docker.
 
 You will need:
-- OpenAI API key (support for more and custom models coming soon)
+- [OpenAI API key](https://platform.openai.com/account/api-keys) (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
 - Free ports 3000 (Next.js app), 54321 (Supabase API Gateway), 54322 (Supabase Database)
 
 > The first start of the Dockerized app is slower because it downloads and builds all the necessary containers. On a 2CPU 4GB RAM machine it takes cca. 6 minutes and doesn't require any interaction. The subsequent starts are way faster.
 
-## 1. Add env var
-Create `.env` file by copying the [`.env.example`](.env.example)
-```
-cp .env.example .env
-```
-and fill in the following variable:
-- `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
-
-## 2. Start the app
+## 1. Start the app
 ```
 npm start
 ```
 Then open the page on [http://localhost:3000](http://localhost:3000).
 
-> `npm run start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
+> `npm start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
 
 > If you want to run the project without using containers use the [steps here](#development). This is useful if you want to leverage hot reloading and develop the project.
 
@@ -101,7 +93,7 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 
 
 # 💻 Development
-For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`npm run start` command). Here are the steps for how to do it.
+For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`npm start` command). Here are the steps for how to do it.
 
 You will need:
 - OpenAI API key (support for more and custom models coming soon)
