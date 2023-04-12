@@ -1,6 +1,7 @@
 import SpinnerIcon from 'components/Spinner'
 import Text from 'components/Text'
 import Button from 'components/Button'
+import NodejsIcon from 'components/icons/Nodejs'
 import {
   CreationState,
 } from 'utils/newProjectState'
@@ -41,18 +42,44 @@ function NewProjectTemplateForm({
           gap-2
         ">
           <div className="
-            px-4
             py-2
+            px-4
             bg-transparent
             cursor-pointer
             border
             border-green-800
             rounded
           ">
-            <Text
-              className="font-medium"
-              text="REST API Server"
-            />
+            <div className="
+              flex
+              space-x-6
+              items-center
+            ">
+              <NodejsIcon
+                className="text-3xl"
+              />
+              <div className="
+                flex
+                flex-col
+                items-start
+                space-y-0.5
+              ">
+                <Text
+                  className="
+                    font-semibold
+                    text-slate-700
+                  "
+                  text="REST API Server"
+                />
+                <Text
+                  size={Text.size.S3}
+                  className="
+                    text-slate-500
+                  "
+                  text="JavaScript + Express"
+                />
+              </div>
+            </div>
           </div>
 
           <Text
