@@ -80,7 +80,7 @@ function Context({ }: Props) {
                 <Text
                   text={getMissingCreds(provider as ModelProvider, creds).length === 0 ? '' : 'Missing keys'}
                   className="
-                  text-red-400
+                  text-red-600
                   "
                   size={Text.size.S3}
                 />

@@ -166,7 +166,7 @@ function NewProject() {
             <Text
               className="
                 self-center
-                text-red-500
+                text-red-600
                 font-medium
               "
               size={Text.size.S2}

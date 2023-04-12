@@ -207,7 +207,7 @@ function AuthForm({ authType }: Props) {
             />
             {!isLoading && !!errMessage && (
               <Text
-                className="self-center text-red-500"
+                className="self-center text-red-600"
                 size={Text.size.S3}
                 text={errMessage}
               />
