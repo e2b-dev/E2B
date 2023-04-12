@@ -2,12 +2,14 @@ import clsx from 'clsx'
 import { UrlObject } from 'url'
 
 import TitleLink from 'components/TitleLink'
+import { ReactNode } from 'react'
 
 export interface Props {
   active: boolean
   title: string
   href: UrlObject | string
   shallow?: boolean
+  icon?: ReactNode
 }
 
 function HeaderLink({
@@ -15,10 +17,12 @@ function HeaderLink({
   title,
   href,
   shallow,
+  icon,
 }: Props) {
   return (
     <div className="relative flex flex-col">
       <TitleLink
+        icon={icon}
         active={active}
         className="px-1 py-3"
         href={href}

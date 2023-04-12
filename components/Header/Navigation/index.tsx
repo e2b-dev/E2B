@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, LayoutGrid } from 'lucide-react'
 import { useRouter } from 'next/router'
 
 import HeaderLink from './HeaderLink'
@@ -17,6 +17,7 @@ function Navigation({ project }: Props) {
         active={router.pathname === '/'}
         href="/"
         title="Projects"
+        icon={<LayoutGrid size="18px" />}
       />
       {project && (
         <>

@@ -1,17 +1,16 @@
-import Link from 'next/link'
-import { useUser } from '@supabase/auth-helpers-react'
 import { projects } from '@prisma/client'
 
-import UserPortrait from 'components/UserPortrait'
-
 import Navigation from './Navigation'
+import { Settings } from 'lucide-react'
+import { useRouter } from 'next/router'
+import HeaderLink from './Navigation/HeaderLink'
 
 export interface Props {
   project?: projects
 }
 
 function Header({ project }: Props) {
-  const user = useUser()
+  const router = useRouter()
 
   return (
     <div className="
@@ -27,15 +26,18 @@ function Header({ project }: Props) {
       <div className="
         flex
         items-center
-        space-x-4
       ">
-        <Link
-          href={{
-            pathname: '/settings',
-          }}
-        >
-          <UserPortrait username={user?.email} />
-        </Link>
+        <HeaderLink
+          active={router.pathname === '/settings'}
+          href="/settings"
+          title="Settings"
+          icon={<Settings size="18px" />}
+        />
+        {/* <Button
+          icon={<LayoutGrid size="18px" />}
+          text="Settings"
+          onClick={() => router.push('/settings')}
+        /> */}
       </div>
     </div>
   )
