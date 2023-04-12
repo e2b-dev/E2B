@@ -47,7 +47,7 @@ export const models: {
       {
         name: 'Deployed model',
         args: {
-          model_name: {
+          model: {
             editable: true,
             type: 'string',
             label: 'Model name'

@@ -90,7 +90,7 @@ function Model({ }: Props) {
                   <Text
                     text={getMissingCreds(provider as ModelProvider, creds).length === 0 ? '' : 'Missing keys'}
                     className="
-                  text-red-600
+                  text-slate-400
                   "
                     size={Text.size.S3}
                   />

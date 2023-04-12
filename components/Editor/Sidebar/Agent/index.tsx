@@ -122,7 +122,7 @@ function Agent({
               <Text
                 text={`Missing key "${missingCreds[0][1].label || missingCreds[0][0]}"`}
                 size={Text.size.S3}
-                className="text-red-600"
+                className="text-slate-400"
               />
               <Button
                 className="whitespace-pre-wrap"
