@@ -28,27 +28,6 @@ from codegen.prompt import (
     get_human_instructions_prefix,
 )
 
-# class OutputFinalCode(BaseTool):
-#     name = "OutputFinalCode"
-#     description = "This is the last tool you would use. You use it when you know the final server code and you want to output it. The input should be the final server code that does what the user required."
-
-#     def _run(self, final_code: str) -> str:
-#         return final_code
-
-#     async def _arun(self, final_code: str) -> str:
-#         raise NotImplementedError("OutputFinalCode does not support async")
-
-
-#     testing_instructions = """Here are your instructions:
-# 1. Extract `email` from the incoming POST request.
-# 2. If there's no email, respond back with an error.
-# 3. Otherwise, respond back with the part of the email before the '@' sign.
-# 4. Generate the full required server code and make sure it starts without any errors.
-# 5. Test that the generated server from the previous step behaves as is required by making mock `curl` requests to the server.
-# 6. Once all works without any bugs and errors, write the code to the file.
-# 7. Deploy the code.
-# """
-
 
 class Codegen(BaseModel):
     input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad", "method"]
