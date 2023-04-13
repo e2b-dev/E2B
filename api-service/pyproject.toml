@@ -18,6 +18,7 @@ quart-cors = "^0.6.0"
 langchain = "^0.0.132"
 quart = "^0.18.4"
 replicate = "^0.8.1"
+huggingface-hub = "^0.13.4"
 
 [tool.poetry.group.dev]
 optional = true

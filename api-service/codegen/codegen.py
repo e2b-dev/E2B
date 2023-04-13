@@ -86,7 +86,7 @@ class Codegen(BaseModel):
         return [tool.name for tool in self._tools]
 
     @classmethod
-    def from_tools_and_database(
+    async def from_tools_and_database(
         cls,
         custom_tools: List[BaseTool],
         model_config: ModelConfig,
@@ -103,7 +103,7 @@ class Codegen(BaseModel):
             tool.callback_manager = callback_manager
 
         # Create the LLM
-        llm = get_model(model_config, callback_manager)
+        llm = await get_model(model_config, callback_manager)
 
         print(
             f"Using LLM '{model_config['provider']}' with args:\n{model_config['args']}"

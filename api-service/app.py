@@ -16,7 +16,7 @@ from werkzeug.exceptions import HTTPException
 
 load_dotenv()
 
-url = os.environ.get("SUPABASE_URL")
+url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
 key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
 if not url or not key:
@@ -37,14 +37,6 @@ def get_request_body_template(blocks: List[dict[str, str]]):
         request_body_blocks[0]["content"] if len(request_body_blocks) > 0 else None
     )
     return request_body_template
-
-
-@app.errorhandler(Exception)
-def exception_handler(e):
-    print("Handling error", e)
-    if isinstance(e, HTTPException):
-        return e
-    return Response(str(e), status=500)
 
 
 @app.route("/health", methods=["GET"])
@@ -82,7 +74,7 @@ async def generate():
         human_tools = create_human_tools(run_id=run_id, playground=playground)
 
         # Create a new instance of code generator
-        cg = Codegen.from_tools_and_database(
+        cg = await Codegen.from_tools_and_database(
             # The order in which we pass tools HAS an effect on the LLM behaviour.
             custom_tools=[
                 *playground_tools,
