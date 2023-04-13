@@ -118,8 +118,11 @@ function Model({ }: Props) {
                 <ModelCard
                   key={m.name}
                   modelTemplate={m}
-                  selectedModel={m.name === model.name ? model : undefined}
-                  isSelected={m.name === model.name}
+                  selectedModel={
+                    m.name === model.name && provider === model.provider
+                      ? model
+                      : undefined}
+                  isSelected={m.name === model.name && provider === model.provider}
                   updateSelectedModel={i => setModel({
                     name: m.name,
                     provider: provider as ModelProvider,
