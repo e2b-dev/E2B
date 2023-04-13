@@ -1,13 +1,15 @@
 export const serverCreds = {
-  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 }
 
-const baseURL = typeof window !== 'undefined'
-  && `${window.location.protocol}//${window.location.host}`
+const supabaseURL = typeof window !== 'undefined'
+  ? `${window.location.protocol}//${window.location.host}`
+  : 'http://localhost:3000'
 
-// The SUPABASE_URL is actually not used but we need a valid URL for the SSR render.
 export const clientCreds = {
-  supabaseUrl: baseURL ? `${baseURL}/api/supabase` : 'http://localhost:3000/api/supabase',
+  supabaseUrl: process.env.NEXT_PUBLIC_PROXY
+    ? `${supabaseURL}/api/supabase`
+    : process.env.NEXT_PUBLIC_SUPABASE_URL,
   supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 }
