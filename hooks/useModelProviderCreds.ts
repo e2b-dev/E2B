@@ -2,11 +2,11 @@ import { useCallback } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import produce from 'immer'
 
-import { ArgValue, EvaluatedArgs, ModelProvider } from 'state/model'
+import { ArgValue, ModelArgs, ModelProvider } from 'state/model'
 
 export type Creds = {
   [model in keyof typeof ModelProvider]?: {
-    creds?: EvaluatedArgs
+    creds?: ModelArgs
   }
 }
 

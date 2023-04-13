@@ -8,11 +8,11 @@ import { projects, Prisma } from '@prisma/client'
 import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
-import { EvaluatedArgs, ModelProvider } from './model'
+import { ModelArgs, ModelProvider } from './model'
 
-export interface ModelInfo {
+export interface SelectedModel {
   provider: ModelProvider
-  userArgs: EvaluatedArgs
+  args: ModelArgs
   name: string
 }
 
@@ -54,7 +54,7 @@ export const methods = Object
 export interface SerializedState {
   envs: { key: string, value: string }[]
   routes: Route[]
-  model: ModelInfo
+  model: SelectedModel
 }
 
 export interface State extends SerializedState {
@@ -64,7 +64,7 @@ export interface State extends SerializedState {
   addRoute: () => void
   setEnvs: (envs: { key: string, value: string }[]) => void
   changeEnv: (pair: { key: string, value: string }, idx: number) => void
-  setModel: (model: ModelInfo) => void
+  setModel: (model: SelectedModel) => void
 }
 
 function createBlock(type: BlockType): Block {
@@ -88,11 +88,11 @@ function getDefaultRoute(): Route {
   }
 }
 
-function getDefaultModel(): ModelInfo {
+function getDefaultModel(): SelectedModel {
   return {
     provider: ModelProvider.OpenAI,
     name: 'GPT 3.5 Turbo',
-    userArgs: {},
+    args: {},
   }
 }
 

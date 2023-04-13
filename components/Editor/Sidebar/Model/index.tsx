@@ -117,10 +117,10 @@ function Model({ }: Props) {
               {value.models.map(m =>
                 <ModelCard
                   key={m.name}
-                  model={m}
-                  modelInfo={m.name === model.name ? model : undefined}
+                  modelTemplate={m}
+                  selectedModel={m.name === model.name ? model : undefined}
                   isSelected={m.name === model.name}
-                  select={i => setModel({
+                  updateSelectedModel={i => setModel({
                     name: m.name,
                     provider: provider as ModelProvider,
                     ...i,

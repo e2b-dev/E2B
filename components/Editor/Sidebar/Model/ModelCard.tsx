@@ -4,21 +4,21 @@ import Text from 'components/Text'
 import { Check, Wrench } from 'lucide-react'
 import React from 'react'
 
-import { ModelConfig } from 'state/model'
-import { ModelInfo } from 'state/store'
+import { ModelConfigTemplate } from 'state/model'
+import { SelectedModel } from 'state/store'
 
 interface Props {
   isSelected?: boolean
-  select: (config: Omit<ModelInfo, 'name' | 'provider'>) => void
-  model: Omit<ModelConfig, 'provider'>
-  modelInfo?: ModelInfo
+  updateSelectedModel: (config: Omit<SelectedModel, 'name' | 'provider'>) => void
+  modelTemplate: Omit<ModelConfigTemplate, 'provider'>
+  selectedModel?: SelectedModel
 }
 
 function ModelCard({
   isSelected,
-  select,
-  model,
-  modelInfo,
+  updateSelectedModel,
+  modelTemplate,
+  selectedModel,
 }: Props) {
   return (
     <div
@@ -38,9 +38,9 @@ function ModelCard({
         hover:text-slate-600
         hover:border-green-800
         `)}
-      onClick={() => select({
-        userArgs: {
-          ...modelInfo?.userArgs,
+      onClick={() => updateSelectedModel({
+        args: {
+          ...selectedModel?.args,
         }
       })}
     >
@@ -61,10 +61,10 @@ function ModelCard({
             items-center
             font-medium
           ">
-            {model.name}
+            {modelTemplate.name}
           </div>
           {Object
-            .entries(model.args || {})
+            .entries(modelTemplate.args || {})
             .filter(([, value]) => value.editable).length > 0 &&
             <>
               <Text
@@ -79,17 +79,17 @@ function ModelCard({
               space-y-2
             "
               >
-                {Object.entries(model.args || {})
+                {Object.entries(modelTemplate.args || {})
                   .filter(([, value]) => value.editable)
                   .map(([key, value]) =>
                     <div
                       key={key}
                     >
                       <Input
-                        value={modelInfo?.userArgs[key]?.toString() || ''}
-                        onChange={v => select({
-                          userArgs: {
-                            ...modelInfo?.userArgs,
+                        value={selectedModel?.args[key]?.toString() || ''}
+                        onChange={v => updateSelectedModel({
+                          args: {
+                            ...selectedModel?.args,
                             [key]: value.type === 'number' ? parseFloat(v) : v,
                           }
                         })}

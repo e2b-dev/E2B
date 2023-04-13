@@ -1,5 +1,5 @@
 import { Creds } from 'hooks/useModelProviderCreds'
-import { ModelInfo } from './store'
+import { SelectedModel } from './store'
 
 export enum ModelProvider {
   OpenAI = 'OpenAI',
@@ -8,11 +8,11 @@ export enum ModelProvider {
 
 export type ArgValue = string | number
 
-export interface EvaluatedArgs {
+export interface ModelArgs {
   [arg: string]: ArgValue | undefined
 }
 
-export interface ModelArg {
+export interface ModelArgTemplate {
   label?: string
   editable?: boolean
   type: 'string' | 'number'
@@ -20,20 +20,20 @@ export interface ModelArg {
   value?: ArgValue
 }
 
-export interface ModelConfig {
+export interface ModelConfigTemplate {
   provider: ModelProvider
   name: string
   /**
    * Args should be exactly the same as the args to the langchain's model class in Python.
    */
-  args?: { [arg: string]: ModelArg }
+  args?: { [arg: string]: ModelArgTemplate }
 }
 
 export const models: {
   [model in keyof typeof ModelProvider]: {
     // These creds are merged with the model args then send to the API.
-    creds?: { [key: string]: Omit<ModelArg, 'editable' | 'value'> }
-    models: Omit<ModelConfig, 'provider'>[]
+    creds?: { [key: string]: Omit<ModelArgTemplate, 'editable' | 'value'> }
+    models: Omit<ModelConfigTemplate, 'provider'>[]
   }
 } = {
   [ModelProvider.Replicate]: {
@@ -110,20 +110,20 @@ export const models: {
   },
 }
 
-export interface EvaluatedModelConfig extends Omit<ModelConfig, 'args' | 'name'> {
-  args: EvaluatedArgs
+export interface ModelConfig extends Omit<ModelConfigTemplate, 'args' | 'name'> {
+  args: ModelArgs
 }
 
-export function evaluateModelConfig(
-  config: ModelInfo,
+export function getModelConfig(
+  config: SelectedModel,
   creds: Creds,
-): EvaluatedModelConfig | undefined {
+): ModelConfig | undefined {
   const model = models[config.provider].models.find(m => m.name === config.name)
   if (!model) return
 
   const defaultArgs = Object
     .entries(model.args || {})
-    .reduce<EvaluatedArgs>((prev, [key, info]) => {
+    .reduce<ModelArgs>((prev, [key, info]) => {
       if (info.value !== undefined) {
         prev[key] = info.value
       }
@@ -135,7 +135,7 @@ export function evaluateModelConfig(
     args: {
       ...defaultArgs,
       ...creds[config.provider]?.creds,
-      ...config.userArgs,
+      ...config.args,
     }
   }
 }

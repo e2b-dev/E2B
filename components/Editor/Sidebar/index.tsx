@@ -11,7 +11,7 @@ import { Route, Block } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { html2markdown } from 'editor/schema'
-import { EvaluatedModelConfig, evaluateModelConfig } from 'state/model'
+import { ModelConfig, getModelConfig } from 'state/model'
 import useModelProviderCreds from 'hooks/useModelProviderCreds'
 // import Deploy from './Deploy'
 
@@ -33,7 +33,7 @@ async function handlePostGenerate(url: string, { arg }: {
   arg: {
     projectID: string,
     route: Route,
-    modelConfig: EvaluatedModelConfig,
+    modelConfig: ModelConfig,
     envs: { key: string, value: string }[],
   }
 }) {
@@ -84,12 +84,11 @@ function Sidebar({
   const envs = selectors.use.envs()
   const model = selectors.use.model()
 
-
   const [creds] = useModelProviderCreds()
 
   async function deploy() {
     if (!route) return
-    const config = evaluateModelConfig(model, creds)
+    const config = getModelConfig(model, creds)
     if (!config) {
       console.error('Cannot get model config')
       return
