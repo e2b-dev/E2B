@@ -66,7 +66,7 @@ export const models: {
     },
     models: [
       {
-        name: 'Deployed model',
+        name: 'Deployed model [Work in Progress]',
         args: {
           model: {
             editable: true,
