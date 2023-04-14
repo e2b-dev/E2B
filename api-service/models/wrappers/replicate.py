@@ -1,3 +1,4 @@
+from asyncio import sleep
 from typing import Dict, List, Optional
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import Replicate
@@ -45,6 +46,8 @@ class ReplicateFix(Replicate):
                 await self.callback_manager.on_llm_new_token(
                     token,
                     verbose=self.verbose,
+                    # We explicitly flush the logs in log queue because the calls to this model are not actually async so they block.
+                    flush=True,
                 )
             else:
                 self.callback_manager.on_llm_new_token(

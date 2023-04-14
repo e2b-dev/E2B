@@ -34,10 +34,14 @@ class LogsCallbackHandler(AsyncCallbackHandler):
             self._database.push_raw_logs(self._run_id, self._raw_logs),
         )
 
-    def _push_logs(self, logs: list[ToolLog | ThoughtLog]) -> None:
+    async def _push_logs(
+        self, logs: list[ToolLog | ThoughtLog], flush: bool = False
+    ) -> None:
         self._log_queue.add(
             self._database.push_logs(self._run_id, logs),
         )
+        if flush:
+            await self._log_queue.flush()
 
     async def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -48,7 +52,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         logs = self._parser.ingest_token(token).get_logs()
-        self._push_logs(logs)
+        await self._push_logs(logs, kwargs.get("flush", False))
 
         self._add_and_push_raw_logs(token)
 
@@ -93,7 +97,7 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         print("Finished tool")
 
         logs = self._parser.ingest_tool_output(output).get_logs()
-        self._push_logs(logs)
+        await self._push_logs(logs)
 
         self._add_and_push_raw_logs(f"\n{output}\n")
 
