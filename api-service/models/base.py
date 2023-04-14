@@ -33,12 +33,13 @@ def get_model(
                 callback_manager=callback_manager,
             )
         case ModelProvider.Replicate.value:
-            model = ReplicateFix(
-                **config["args"],
+            return ReplicateFix(
+                model=config["args"]["model"],
+                replicate_api_token=config["args"]["replicate_api_token"],
+                model_kwargs=config["args"],
                 verbose=True,
                 callback_manager=callback_manager,
             )
-            return model
         # case ModelProvider.HuggingFace.value:
         #     return HuggingFaceEndpointFix(
         #         **config["args"],

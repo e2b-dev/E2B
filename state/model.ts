@@ -73,6 +73,22 @@ export const models: {
             type: 'string',
             label: 'Model name'
           },
+          max_length: {
+            type: 'number',
+            value: 5000,
+          },
+          temperature: {
+            type: 'number',
+            value: 0.4,
+          },
+          top_p: {
+            type: 'number',
+            value: 0.9,
+          },
+          repetition_penalty: {
+            type: 'number',
+            value: 1.1,
+          },
         },
       },
     ],

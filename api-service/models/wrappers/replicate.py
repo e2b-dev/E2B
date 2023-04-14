@@ -1,25 +1,18 @@
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
+from langchain.chat_models import ChatOpenAI
 from langchain.llms import Replicate
-from langchain.schema import Generation, LLMResult
 from pydantic import root_validator
+import replicate as replicate_python
 
 
 class ReplicateFix(Replicate):
+    # Override checks for the env vars
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         return values
 
     async def _acall(self, prompt: str, stop: Optional[List[str]] = None):
         """Call to replicate endpoint."""
-        print("ACALL")
-        # raise Exception("TT")
-        try:
-            import replicate as replicate_python
-        except ImportError:
-            raise ValueError(
-                "Could not import replicate python package. "
-                "Please install it with `pip install replicate`."
-            )
         # get the model and version
         model_str, version_str = self.model.split(":")
 
@@ -37,11 +30,16 @@ class ReplicateFix(Replicate):
         first_input_name = input_properties[0][0]
 
         inputs = {first_input_name: prompt, **self.input}
-        outputs = client.run(self.model, input={**inputs})
+        outputs = client.run(
+            self.model,
+            input={
+                **inputs,
+                **self.model_kwargs,
+            },
+        )
 
         text = ""
         for token in outputs:
-            print("token", token)
             text += token
             if self.callback_manager.is_async:
                 await self.callback_manager.on_llm_new_token(
