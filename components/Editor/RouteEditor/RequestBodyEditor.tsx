@@ -25,7 +25,7 @@ function RequestBodyEditor({
     ">
       <Text
         className="mb-2 font-semibold text-slate-400"
-        size={Text.size.S1}
+        size={Text.size.S2}
         text="Define the incoming request payload"
       />
       <div className="
@@ -49,10 +49,9 @@ function RequestBodyEditor({
         onChange={e => onChange(e.target.value)}
         className={clsx(
           'w-full',
-          'pl-8',
-          'pr-4',
+          'pl-6',
+          'pr-3',
           'py-1',
-          'leading-6',
           'tracking-wide',
           'font-mono',
           'text-slate-500',

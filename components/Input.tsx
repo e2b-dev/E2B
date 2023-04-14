@@ -22,6 +22,7 @@ export interface Props {
   min?: number
   max?: number
   step?: number
+  onClick?: () => void
 }
 
 function Input({
@@ -38,6 +39,7 @@ function Input({
   min,
   max,
   step,
+  onClick,
   type = 'text',
 }: Props) {
   const ref = useRef<HTMLInputElement>(null)
@@ -56,43 +58,53 @@ function Input({
       flex-col
       space-y-1
       flex-1
-      ">
+      "
+    >
       {label &&
         <Text text={label} size={Text.size.S3} />
       }
-      <input
-        min={min?.toString()}
-        max={max?.toString()}
-        step={step?.toString()}
-        required={required}
-        autoCapitalize="off"
-        autoCorrect="off"
-        autoComplete="off"
-        spellCheck="false"
-        title={title}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        ref={ref}
-        disabled={isDisabled}
-        pattern={pattern}
-        type={type}
-        className={clsx(
-          { 'bg-transparent': isTransparent },
-          'w-full',
-          'px-2',
-          'focus:bg-white',
-          'py-1',
-          'rounded',
-          'border',
-          'border-slate-200',
-          'hover:border-slate-300',
-          'outline-none',
-          'focus:border-green-800',
-          'text-sm',
-          'placeholder:text-slate-300',
-        )}
-      />
+      <div
+        onClick={() => {
+          if (!ref.current) return
+          onClick?.()
+          ref.current.disabled = false
+          ref.current.focus()
+        }}
+      >
+        <input
+          min={min?.toString()}
+          max={max?.toString()}
+          step={step?.toString()}
+          required={required}
+          autoCapitalize="off"
+          autoCorrect="off"
+          autoComplete="off"
+          spellCheck="false"
+          title={title}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          ref={ref}
+          disabled={isDisabled}
+          pattern={pattern}
+          type={type}
+          className={clsx(
+            { 'bg-transparent': isTransparent },
+            'w-full',
+            'px-2',
+            'focus:bg-white',
+            'py-1',
+            'rounded',
+            'border',
+            'border-slate-200',
+            'hover:border-slate-300',
+            'outline-none',
+            'focus:border-green-800',
+            'text-sm',
+            'placeholder:text-slate-300',
+          )}
+        />
+      </div>
     </div>
   )
 }

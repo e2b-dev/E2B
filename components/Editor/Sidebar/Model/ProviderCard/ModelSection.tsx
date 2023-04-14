@@ -87,6 +87,7 @@ function ModelSection({
         >
           {requiredParams.map(([arg, template]) =>
             <ArgHandler
+              selectModel={selectModel}
               updateSelectedModel={updateSelectedModel}
               arg={arg}
               key={arg}
@@ -123,6 +124,7 @@ function ModelSection({
                     })}
                   />
                   <Text
+                    className="select-none"
                     size={Text.size.S3}
                     text="Configure"
                   />
@@ -132,6 +134,7 @@ function ModelSection({
                 <div>
                   {defaultedArgs.map(([arg, template]) =>
                     <ArgHandler
+                      selectModel={selectModel}
                       updateSelectedModel={updateSelectedModel}
                       arg={arg}
                       key={arg}

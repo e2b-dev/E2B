@@ -9,6 +9,7 @@ export interface Props {
   selectedModel?: SelectedModel
   arg: string
   isSelected?: boolean
+  selectModel?: () => void
 }
 
 function ArgHandler({
@@ -17,6 +18,7 @@ function ArgHandler({
   updateSelectedModel,
   argTemplate,
   selectedModel,
+  selectModel,
 }: Props) {
   return (
     <Input
@@ -30,9 +32,10 @@ function ArgHandler({
       })}
       isDisabled={!isSelected}
       max={argTemplate.max}
+      onClick={selectModel}
       min={argTemplate.min}
       step={argTemplate.step}
-      placeholder={argTemplate.value?.toString()}
+      placeholder={argTemplate.value?.toString() || argTemplate.placeholder}
       label={argTemplate.label || arg}
     />
   )

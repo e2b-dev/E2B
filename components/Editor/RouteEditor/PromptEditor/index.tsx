@@ -40,8 +40,8 @@ function PromptEditor({
     ">
       {title &&
         <Text
-          className="font-semibold text-slate-400"
-          size={Text.size.S1}
+          className="font-bold text-slate-400"
+          size={Text.size.S2}
           text={title}
         />
       }

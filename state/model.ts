@@ -24,6 +24,7 @@ export interface ModelArgTemplate {
   min?: number
   max?: number
   step?: number
+  placeholder?: string
 }
 
 export interface ProviderCredsTemplate {
@@ -176,9 +177,10 @@ export const modelTemplates: {
     },
     models: [
       {
-        name: 'Custom model',
+        name: 'Hosted model',
         args: {
           model: {
+            placeholder: 'owner-name/model-name:version',
             editable: true,
             type: 'string',
             label: 'Model'
