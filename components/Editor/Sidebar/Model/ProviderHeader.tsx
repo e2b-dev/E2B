@@ -1,13 +1,6 @@
 import Text from 'components/Text'
+import { providerIcons } from 'components/icons/ProviderIcon'
 import { ModelProvider } from 'state/model'
-import OpenAIIcon from 'components/icons/OpenAI'
-import ReplicateIcon from 'components/icons/Replicate'
-
-
-const providerIcons = {
-  [ModelProvider.OpenAI]: <OpenAIIcon />,
-  [ModelProvider.Replicate]: <ReplicateIcon />,
-}
 
 export interface Props {
   provider: ModelProvider
@@ -26,7 +19,7 @@ function ProviderHeader({
         items-center
         space-x-2
       ">
-        {providerIcons[provider as ModelProvider]}
+        {providerIcons[provider]}
         <Text
           text={provider}
           className="

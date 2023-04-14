@@ -83,6 +83,7 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 - [] [Self-hosted via Runhouse](https://github.com/run-house/runhouse)
 - [] [StochasticAI](https://www.stochastic.ai/)
 - [] [Writer](https://writer.com/)
+- [] [Paperspace](https://www.paperspace.com/)
 
 ### **Model you like isn't supported?**
 
@@ -102,14 +103,14 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 # 📆 Roadmap
 
 1. Make sure people can run e2b locally without issues and the DX is smooth.
-1. Add support for more models.
+2. Add support for more models.
     - Let users request new models. Laterm create a system that will let users use any model.
-1. Improve model's understanding of the context based on the instructions
-1. Support for more tools
-1. Improve the dashboard UI
-1. Let users edit prompt
-1. Let users customize tools and build custom workflows for the agent
-1. Release cloud version
+3. Improve model's understanding of the context based on the instructions
+4. Support for more tools
+5. Improve the dashboard UI
+6. Let users edit prompt
+7. Let users customize tools and build custom workflows for the agent
+8. Release cloud version
 
 
 # 💻 Development
@@ -141,7 +142,6 @@ Create `.env` file by copying the [`.env.example`](.env.example)
 cp .env.example .env
 ```
 and fill in the following variables:
-- `OPENAI_API_KEY` - your [OpenAI key](https://platform.openai.com/account/api-keys)
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
 

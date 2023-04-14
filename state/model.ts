@@ -1,10 +1,11 @@
 import { Creds } from 'hooks/useModelProviderCreds'
+
 import { SelectedModel } from './store'
 
 export enum ModelProvider {
   OpenAI = 'OpenAI',
   Replicate = 'Replicate',
-  // HuggingFace = 'HuggingFace',
+  HuggingFace = 'HuggingFace',
 }
 
 export type ArgValue = string | number
@@ -40,26 +41,26 @@ export const models: {
     models: Omit<ModelConfigTemplate, 'provider'>[]
   }
 } = {
-  // [ModelProvider.HuggingFace]: {
-  //   creds: {
-  //     huggingfacehub_api_token: {
-  //       label: 'Hugging Face API Key',
-  //       type: 'string',
-  //     },
-  //   },
-  //   models: [
-  //     {
-  //       name: 'Deployed model',
-  //       args: {
-  //         endpoint_url: {
-  //           editable: true,
-  //           type: 'string',
-  //           label: 'Endpoint URL'
-  //         },
-  //       },
-  //     },
-  //   ],
-  // },
+  [ModelProvider.HuggingFace]: {
+    creds: {
+      huggingfacehub_api_token: {
+        label: 'Hugging Face API Key',
+        type: 'string',
+      },
+    },
+    models: [
+      {
+        name: 'Deployed model',
+        args: {
+          endpoint_url: {
+            editable: true,
+            type: 'string',
+            label: 'Endpoint URL'
+          },
+        },
+      },
+    ],
+  },
   [ModelProvider.Replicate]: {
     creds: {
       replicate_api_token: {

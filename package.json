@@ -56,6 +56,7 @@
     "react-dom": "18.2.0",
     "react-markdown": "^8.0.5",
     "react-textarea-autosize": "^8.4.0",
+    "sharp": "^0.32.0",
     "superjson": "^1.12.2",
     "swr": "^2.0.4",
     "tippy.js": "^6.3.7",

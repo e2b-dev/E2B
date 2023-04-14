@@ -6,16 +6,10 @@ import { useStateStore } from 'state/StoreProvider'
 import { getMissingCreds, ModelProvider, models } from 'state/model'
 import useModelProviderCreds from 'hooks/useModelProviderCreds'
 import Button from 'components/Button'
-import OpenAIIcon from 'components/icons/OpenAI'
-import ReplicateIcon from 'components/icons/Replicate'
 
 import ModelCard from './ModelCard'
 import ProviderHeader from './ProviderHeader'
-
-const providerIcons = {
-  [ModelProvider.OpenAI]: <OpenAIIcon />,
-  [ModelProvider.Replicate]: <ReplicateIcon />,
-}
+import { providerIcons } from 'components/icons/ProviderIcon'
 
 export interface Props { }
 
@@ -135,18 +129,12 @@ function Model({ }: Props) {
               {value.models.map(m =>
                 <ModelCard
                   key={m.name}
-<<<<<<< HEAD
                   modelTemplate={{ ...m, provider: provider as ModelProvider }}
-                  selectedModel={m.name === model.name ? model : undefined}
-                  isSelected={m.name === model.name}
-=======
-                  modelTemplate={m}
                   selectedModel={
                     m.name === model.name && provider === model.provider
                       ? model
                       : undefined}
                   isSelected={m.name === model.name && provider === model.provider}
->>>>>>> 3fb657a674d7cd96185da6021957cfc1a770d27a
                   updateSelectedModel={i => setModel({
                     name: m.name,
                     provider: provider as ModelProvider,

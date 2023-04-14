@@ -1,6 +1,7 @@
 from typing import TypedDict, Dict, Any
 from enum import Enum
 from langchain.chat_models import ChatOpenAI
+from langchain.llms import HuggingFaceHub
 from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 
@@ -10,7 +11,7 @@ from .wrappers.replicate import ReplicateFix
 class ModelProvider(Enum):
     OpenAI = "OpenAI"
     Replicate = "Replicate"
-    # HuggingFace = "HuggingFace"
+    HuggingFace = "HuggingFace"
 
 
 class ModelConfig(TypedDict):
@@ -40,11 +41,11 @@ def get_model(
                 verbose=True,
                 callback_manager=callback_manager,
             )
-        # case ModelProvider.HuggingFace.value:
-        #     return HuggingFaceEndpointFix(
-        #         **config["args"],
-        #         verbose=True,
-        #         callback_manager=callback_manager,
-        #     )
+        case ModelProvider.HuggingFace.value:
+            return HuggingFaceHub(
+                **config["args"],
+                verbose=True,
+                callback_manager=callback_manager,
+            )
         case _:
             raise ValueError(f"Provider {config['provider']} no found.")
