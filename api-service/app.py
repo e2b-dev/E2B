@@ -5,14 +5,13 @@ from pprint import pprint
 from typing import List
 from dotenv import load_dotenv
 from playground_client.exceptions import NotFoundException
-from quart import Quart, request, abort, Response
+from quart import Quart, request
 from quart_cors import cors
 
 from codegen import Codegen
 from codegen.tools.playground import create_playground_tools
 from codegen.tools.human.tools import create_human_tools
 from database import Database, DeploymentState
-from werkzeug.exceptions import HTTPException
 
 load_dotenv()
 
