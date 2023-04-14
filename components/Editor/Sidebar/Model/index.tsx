@@ -6,8 +6,16 @@ import { useStateStore } from 'state/StoreProvider'
 import { getMissingCreds, ModelProvider, models } from 'state/model'
 import useModelProviderCreds from 'hooks/useModelProviderCreds'
 import Button from 'components/Button'
+import OpenAIIcon from 'components/icons/OpenAI'
+import ReplicateIcon from 'components/icons/Replicate'
 
 import ModelCard from './ModelCard'
+import ProviderHeader from './ProviderHeader'
+
+const providerIcons = {
+  [ModelProvider.OpenAI]: <OpenAIIcon />,
+  [ModelProvider.Replicate]: <ReplicateIcon />,
+}
 
 export interface Props { }
 
@@ -48,13 +56,13 @@ function Model({ }: Props) {
       </div>
       <div
         className="
-        flex
-        flex-1
-        space-y-2
-        p-4
-        flex-col
-        items-stretch
-      "
+          flex
+          flex-1
+          space-y-2
+          p-4
+          flex-col
+          items-stretch
+        "
       >
         {Object.entries(models).map(([provider, value]) =>
           <div
@@ -65,20 +73,30 @@ function Model({ }: Props) {
               flex-col
             "
           >
+            <ProviderHeader
+              provider={provider as ModelProvider}
+            />
             <div className="
               flex
               space-y-1
               justify-between
             "
             >
-              <Text
-                text={provider}
-                className="
-                font-semibold
-                text-slate-400
-            "
-                size={Text.size.S2}
-              />
+              <div className="
+                flex
+                items-center
+                space-x-2
+              ">
+                {providerIcons[provider as ModelProvider]}
+                <Text
+                  text={provider}
+                  className="
+                    font-medium
+                    text-slate-400
+                  "
+                  size={Text.size.S2}
+                />
+              </div>
               {value.creds &&
                 <div
                   className="
@@ -90,8 +108,8 @@ function Model({ }: Props) {
                   <Text
                     text={getMissingCreds(provider as ModelProvider, creds).length === 0 ? '' : 'Missing keys'}
                     className="
-                  text-slate-400
-                  "
+                      text-slate-400
+                    "
                     size={Text.size.S3}
                   />
                   <Button
@@ -117,7 +135,7 @@ function Model({ }: Props) {
               {value.models.map(m =>
                 <ModelCard
                   key={m.name}
-                  modelTemplate={m}
+                  modelTemplate={{ ...m, provider: provider as ModelProvider }}
                   selectedModel={m.name === model.name ? model : undefined}
                   isSelected={m.name === model.name}
                   updateSelectedModel={i => setModel({

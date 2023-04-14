@@ -1,16 +1,16 @@
-import clsx from 'clsx'
-import Input from 'components/Input'
-import Text from 'components/Text'
 import { Check, Wrench } from 'lucide-react'
 import React from 'react'
+import clsx from 'clsx'
 
+import Input from 'components/Input'
+import Text from 'components/Text'
 import { ModelConfigTemplate } from 'state/model'
 import { SelectedModel } from 'state/store'
 
 interface Props {
   isSelected?: boolean
   updateSelectedModel: (config: Omit<SelectedModel, 'name' | 'provider'>) => void
-  modelTemplate: Omit<ModelConfigTemplate, 'provider'>
+  modelTemplate: ModelConfigTemplate
   selectedModel?: SelectedModel
 }
 
@@ -21,12 +21,20 @@ function ModelCard({
   selectedModel,
 }: Props) {
   return (
+    <div className={clsx(
+      `
+
+      `
+    )}>
+    </div>
+  )
+  return (
     <div
       className={clsx(
-        {
-          'border-green-800 text-slate-600 shadow-sm': isSelected,
-          'bg-white border-slate-300 text-slate-400': !isSelected,
-        },
+        // {
+        //   'border-green-800 text-slate-600 shadow-sm': isSelected,
+        //   'bg-white border-slate-300 text-slate-400': !isSelected,
+        // },
         `
         relative
         flex
@@ -37,7 +45,8 @@ function ModelCard({
         border
         hover:text-slate-600
         hover:border-green-800
-        `)}
+        bg-green-800
+      `)}
       onClick={() => updateSelectedModel({
         args: {
           ...selectedModel?.args,
