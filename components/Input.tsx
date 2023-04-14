@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import {
+  HTMLInputTypeAttribute,
   useEffect,
   useRef,
 } from 'react'
@@ -17,6 +18,10 @@ export interface Props {
   title?: string
   required?: boolean
   isDisabled?: boolean
+  type?: HTMLInputTypeAttribute
+  min?: number
+  max?: number
+  step?: number
 }
 
 function Input({
@@ -30,6 +35,10 @@ function Input({
   onChange,
   placeholder,
   label,
+  min,
+  max,
+  step,
+  type = 'text',
 }: Props) {
   const ref = useRef<HTMLInputElement>(null)
 
@@ -52,6 +61,9 @@ function Input({
         <Text text={label} size={Text.size.S3} />
       }
       <input
+        min={min?.toString()}
+        max={max?.toString()}
+        step={step?.toString()}
         required={required}
         autoCapitalize="off"
         autoCorrect="off"
@@ -64,7 +76,7 @@ function Input({
         ref={ref}
         disabled={isDisabled}
         pattern={pattern}
-        type="text"
+        type={type}
         className={clsx(
           { 'bg-transparent': isTransparent },
           'w-full',

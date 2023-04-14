@@ -19,6 +19,9 @@ export interface ModelArgTemplate {
   type: 'string' | 'number'
   // If this property is defined it is used as a default value.
   value?: ArgValue
+  min?: number
+  max?: number
+  step?: number
 }
 
 export interface ModelConfigTemplate {
@@ -71,23 +74,40 @@ export const models: {
           model: {
             editable: true,
             type: 'string',
-            label: 'Model name'
+            label: 'Model'
           },
           max_length: {
             type: 'number',
-            value: 5000,
+            value: 4096,
+            step: 1,
+            min: 1,
           },
           temperature: {
+            label: 'Temperature',
+            editable: true,
             type: 'number',
             value: 0.4,
+            min: 0.01,
+            max: 5,
+            step: 0.01,
           },
           top_p: {
+            label: 'Top P',
+            editable: true,
             type: 'number',
             value: 0.9,
+            min: 0.01,
+            max: 1,
+            step: 0.01,
           },
           repetition_penalty: {
+            label: 'Repetition penalty',
+            editable: true,
             type: 'number',
             value: 1.1,
+            min: 0.01,
+            max: 5,
+            step: 0.01,
           },
         },
       },
