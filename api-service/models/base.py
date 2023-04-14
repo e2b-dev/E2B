@@ -19,7 +19,7 @@ class ModelConfig(TypedDict):
     args: Dict[str, Any]
 
 
-async def get_model(
+def get_model(
     config: ModelConfig,
     callback_manager: BaseCallbackManager,
 ) -> BaseLanguageModel:
