@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+      {
+          "name": "Quart: Debug Server",
+          "type": "python",
+          "request": "launch",
+          "module": "quart",
+          "args": ["--debug", "run", "--no-reload", "--port", "49155",  "--host", "0.0.0.0"],
+          "console": "integratedTerminal",
+          "cwd": "${workspaceFolder}/api-service"
+      }
+  ]
+}

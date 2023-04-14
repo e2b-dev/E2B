@@ -15,7 +15,7 @@ export const config = {
 
 const pathPrefix = '/api/supabase'
 
-const target = process.env.SUPABASE_URL!
+const target = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const isSecure = target.startsWith('https://')
 
 const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({

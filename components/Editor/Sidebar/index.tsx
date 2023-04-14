@@ -68,6 +68,10 @@ async function handlePostGenerate(url: string, { arg }: {
   }).then(r => r.json())
 }
 
+const apiURL = process.env.NEXT_PUBLIC_PROXY
+  ? '/api/service'
+  : process.env.NEXT_PUBLIC_API_URL
+
 function Sidebar({
   project,
   route,
@@ -78,7 +82,7 @@ function Sidebar({
   const {
     trigger: generate,
     isMutating: isDeployRequestRunning,
-  } = useSWRMutation('/api/service/generate', handlePostGenerate)
+  } = useSWRMutation(`${apiURL}/generate`, handlePostGenerate)
 
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()

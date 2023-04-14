@@ -16,7 +16,7 @@ export const config = {
 
 const pathPrefix = '/api/service'
 
-const target = process.env.API_URL!
+const target = process.env.NEXT_PUBLIC_API_URL!
 const isSecure = target.startsWith('https://')
 
 const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({

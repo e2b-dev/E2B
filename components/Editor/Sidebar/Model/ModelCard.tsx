@@ -6,6 +6,7 @@ import Input from 'components/Input'
 import Text from 'components/Text'
 import { ModelConfigTemplate } from 'state/model'
 import { SelectedModel } from 'state/store'
+import { parseInput } from 'utils/parseInput'
 
 interface Props {
   isSelected?: boolean
@@ -96,12 +97,17 @@ function ModelCard({
                     >
                       <Input
                         value={selectedModel?.args[key]?.toString() || ''}
+                        type={value.type === 'number' ? 'number' : 'text'}
                         onChange={v => updateSelectedModel({
                           args: {
                             ...selectedModel?.args,
-                            [key]: value.type === 'number' ? parseFloat(v) : v,
+                            [key]: parseInput(value, v),
                           }
                         })}
+                        max={value.max}
+                        min={value.min}
+                        step={value.step}
+                        placeholder={value.value?.toString()}
                         label={value.label || key}
                       />
                     </div>

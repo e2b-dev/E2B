@@ -60,9 +60,29 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
 
 ## 🤖 Supported models
-- GPT-4
-- GPT-3.5
-- More coming soon.
+- [x] [OpenAI](https://openai.com/)
+  - [x] GPT-4
+  - [x] GTP-3.5
+- [x] [Replicate](https://replicate.com/)
+- [] [HuggingFace](https://huggingface.co/)
+- [] [AI21](https://www.ai21.com/)
+- [] [Aleph Alpha](https://www.aleph-alpha.com/)
+- [] [Anthropic](https://anthropic.com/)
+  - [] Claude
+- [] [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service)
+- [] [Banana](https://www.banana.dev/)
+- [] [CerebriumAI](https://www.cerebrium.ai/)
+- [] [Cohere](https://cohere.ai/)
+- [] [DeepInfra](https://deepinfra.com/)
+- [] [ForefrontAI](https://www.forefront.ai/)
+- [] [GooseAI](https://goose.ai/)
+- [] [Modal](https://modal.com/)
+- [] [Petals](https://petals.ml/)
+- [] [SageMaker](https://aws.amazon.com/sagemaker/)
+- [] [Self-hosted Llama-cpp API](https://github.com/ggerganov/llama.cpp)
+- [] [Self-hosted via Runhouse](https://github.com/run-house/runhouse)
+- [] [StochasticAI](https://www.stochastic.ai/)
+- [] [Writer](https://writer.com/)
 
 ### **Model you like isn't supported?**
 
