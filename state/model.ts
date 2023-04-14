@@ -186,7 +186,7 @@ export const modelTemplates: {
           max_length: {
             type: 'number',
             editable: true,
-            value: 4096,
+            value: 2500,
             step: 1,
             min: 1,
           },

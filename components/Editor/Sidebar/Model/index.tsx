@@ -42,7 +42,7 @@ function Model({ }: Props) {
         className="
           flex
           flex-1
-          space-y-6
+          space-y-4
           p-4
           flex-col
           overflow-auto
@@ -50,29 +50,32 @@ function Model({ }: Props) {
           scroller
         "
       >
-        {Object.entries(modelTemplates).map(([provider, value], i, a) =>
-          <div
-            key={provider}
-            className="
+        {Object.entries(modelTemplates)
+          .slice()
+          .sort((t1, t2) => t1[0].localeCompare(t2[0]))
+          .map(([provider, template], i, a) =>
+            <div
+              key={provider}
+              className="
               flex
               flex-col
             "
-          >
-            <ProviderCard
-              selectedModel={model}
-              creds={creds}
-              template={value}
-              provider={provider as ModelProvider}
-            />
-            {i !== a.length - 1 &&
-              <div className="
+            >
+              <ProviderCard
+                selectedModel={model}
+                creds={creds}
+                template={template}
+                provider={provider as ModelProvider}
+              />
+              {i !== a.length - 1 &&
+                <div className="
                 w-full
                 border-b
                 border-slate-300
-                pt-4
+                pt-2
               " />}
-          </div>
-        )}
+            </div>
+          )}
       </div>
     </div>
   )

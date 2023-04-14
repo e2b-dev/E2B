@@ -35,6 +35,7 @@ function ProviderCard({
       flex-1
       flex-col
       space-y-2
+      py-2
       items-stretch
     ">
       <div className="
@@ -107,7 +108,7 @@ function ProviderCard({
               items-stretch
               flex-col
               flex-1
-              space-y-1
+              pt-2
             "
       >
         {template.models.map(m =>

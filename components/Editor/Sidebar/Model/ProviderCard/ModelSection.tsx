@@ -1,12 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-import Input from 'components/Input'
 import { ModelConfigTemplate } from 'state/model'
 import { SelectedModel } from 'state/store'
-import { parseInput } from 'utils/parseInput'
 import Text from 'components/Text'
-import { CheckSquare, Square } from 'lucide-react'
+import { CheckSquare, ChevronDown, Square } from 'lucide-react'
 import clsx from 'clsx'
+import ArgHandler from './ArgHandler'
 
 interface Props {
   isSelected?: boolean
@@ -21,6 +20,8 @@ function ModelSection({
   modelTemplate,
   selectedModel,
 }: Props) {
+  const [isDefaultArgsOpen, setIsDefaultArgsOpen] = useState(false)
+
   function selectModel() {
     updateSelectedModel({
       args: {
@@ -33,10 +34,12 @@ function ModelSection({
     .entries(modelTemplate.args || {})
     .filter(([, value]) => value.editable)
 
+  const requiredParams = editableArgs.filter(a => a[1].value === undefined)
+  const defaultedArgs = editableArgs.filter(a => a[1].value !== undefined)
+
   return (
     <div className="
         flex
-        py-1
         items-stretch
         ">
       <div className="
@@ -44,7 +47,8 @@ function ModelSection({
           flex-1
           items-stretch
           flex-col
-          space-y-2
+          py-1
+          space-y-1
           ">
         <div className="
             items-center
@@ -81,25 +85,65 @@ function ModelSection({
               space-y-2
             "
         >
-          {isSelected && editableArgs.map(([key, value]) =>
-            <Input
-              value={selectedModel?.args[key]?.toString() || ''}
-              type={value.type === 'number' ? 'number' : 'text'}
-              onChange={v => updateSelectedModel({
-                args: {
-                  ...selectedModel?.args,
-                  [key]: parseInput(value, v),
-                }
-              })}
-              key={key}
-              isDisabled={!isSelected}
-              max={value.max}
-              min={value.min}
-              step={value.step}
-              placeholder={value.value?.toString()}
-              label={value.label || key}
+          {requiredParams.map(([arg, template]) =>
+            <ArgHandler
+              updateSelectedModel={updateSelectedModel}
+              arg={arg}
+              key={arg}
+              argTemplate={template}
+              isSelected={isSelected}
+              selectedModel={selectedModel}
             />
           )}
+          {defaultedArgs.length > 0 &&
+            <div className="
+              flex
+              space-y-1
+              flex-col
+            ">
+              <div className="flex">
+                <div
+                  onClick={() => setIsDefaultArgsOpen(a => !a)}
+                  className="
+                  flex
+                  items-center
+                  space-x-1
+                  cursor-pointer
+                  text-slate-400
+                  hover:text-slate-600
+                  transition-colors
+                  "
+                >
+                  <ChevronDown
+                    size="16px"
+                    className={clsx(`
+                  transition-transform
+                `, {
+                      '-rotate-90': !isDefaultArgsOpen,
+                    })}
+                  />
+                  <Text
+                    size={Text.size.S3}
+                    text="Configure"
+                  />
+                </div>
+              </div>
+              {isDefaultArgsOpen &&
+                <div>
+                  {defaultedArgs.map(([arg, template]) =>
+                    <ArgHandler
+                      updateSelectedModel={updateSelectedModel}
+                      arg={arg}
+                      key={arg}
+                      argTemplate={template}
+                      isSelected={isSelected}
+                      selectedModel={selectedModel}
+                    />
+                  )}
+                </div>
+              }
+            </div>
+          }
         </div>
       </div>
     </div >
