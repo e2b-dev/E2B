@@ -71,102 +71,102 @@ export const modelTemplates: {
   //     },
   //   ],
   // },
-  // [ModelProvider.Anthropic]: {
-  //   creds: {
-  //     anthropic_api_key: {
-  //       label: 'Anthropic API Key',
-  //       type: 'string',
-  //     },
-  //   },
-  //   models: [
-  //     {
-  //       name: 'Claude v1.3',
-  //       args: {
-  //         model: {
-  //           value: 'claude-v1.3',
-  //           type: 'string',
-  //         },
-  //         max_tokens_to_sample: {
-  //           type: 'number',
-  //           editable: true,
-  //           label: 'Max tokens to sample',
-  //           value: 2048,
-  //           step: 1,
-  //           min: 1,
-  //         },
-  //         temperature: {
-  //           label: 'Temperature',
-  //           editable: true,
-  //           type: 'number',
-  //           value: 0.4,
-  //           min: 0.01,
-  //           max: 1,
-  //           step: 0.01,
-  //         },
-  //         top_p: {
-  //           label: 'top-p',
-  //           editable: true,
-  //           type: 'number',
-  //           value: -1,
-  //           min: 0.01,
-  //           max: 1,
-  //           step: 0.01,
-  //         },
-  //         top_k: {
-  //           label: 'top-k',
-  //           editable: true,
-  //           type: 'number',
-  //           value: -1,
-  //           min: 0,
-  //           step: 1,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       name: 'Claude Instant v1',
-  //       args: {
-  //         model: {
-  //           value: 'claude-instant-v1',
-  //           type: 'string',
-  //         },
-  //         max_tokens_to_sample: {
-  //           type: 'number',
-  //           editable: true,
-  //           label: 'Max tokens to sample',
-  //           value: 2048,
-  //           step: 1,
-  //           min: 1,
-  //         },
-  //         temperature: {
-  //           label: 'Temperature',
-  //           editable: true,
-  //           type: 'number',
-  //           value: 0.4,
-  //           min: 0.01,
-  //           max: 1,
-  //           step: 0.01,
-  //         },
-  //         top_p: {
-  //           label: 'top-p',
-  //           editable: true,
-  //           type: 'number',
-  //           value: -1,
-  //           min: 0.01,
-  //           max: 1,
-  //           step: 0.01,
-  //         },
-  //         top_k: {
-  //           label: 'top-k',
-  //           editable: true,
-  //           type: 'number',
-  //           value: -1,
-  //           min: 0,
-  //           step: 1,
-  //         },
-  //       },
-  //     },
-  //   ],
-  // },
+  [ModelProvider.Anthropic]: {
+    creds: {
+      anthropic_api_key: {
+        label: 'Anthropic API Key',
+        type: 'string',
+      },
+    },
+    models: [
+      {
+        name: 'Claude v1.3',
+        args: {
+          model: {
+            value: 'claude-v1.3',
+            type: 'string',
+          },
+          max_tokens_to_sample: {
+            type: 'number',
+            editable: true,
+            label: 'Max tokens to sample',
+            value: 2048,
+            step: 1,
+            min: 1,
+          },
+          temperature: {
+            label: 'Temperature',
+            editable: true,
+            type: 'number',
+            value: 0.4,
+            min: 0.01,
+            max: 1,
+            step: 0.01,
+          },
+          top_p: {
+            label: 'top-p',
+            editable: true,
+            type: 'number',
+            value: -1,
+            min: 0.01,
+            max: 1,
+            step: 0.01,
+          },
+          top_k: {
+            label: 'top-k',
+            editable: true,
+            type: 'number',
+            value: -1,
+            min: 0,
+            step: 1,
+          },
+        },
+      },
+      {
+        name: 'Claude Instant v1',
+        args: {
+          model: {
+            value: 'claude-instant-v1',
+            type: 'string',
+          },
+          max_tokens_to_sample: {
+            type: 'number',
+            editable: true,
+            label: 'Max tokens to sample',
+            value: 2048,
+            step: 1,
+            min: 1,
+          },
+          temperature: {
+            label: 'Temperature',
+            editable: true,
+            type: 'number',
+            value: 0.4,
+            min: 0.01,
+            max: 1,
+            step: 0.01,
+          },
+          top_p: {
+            label: 'top-p',
+            editable: true,
+            type: 'number',
+            value: -1,
+            min: 0.01,
+            max: 1,
+            step: 0.01,
+          },
+          top_k: {
+            label: 'top-k',
+            editable: true,
+            type: 'number',
+            value: -1,
+            min: 0,
+            step: 1,
+          },
+        },
+      },
+    ],
+  },
   [ModelProvider.Replicate]: {
     link: 'https://replicate.com',
     creds: {

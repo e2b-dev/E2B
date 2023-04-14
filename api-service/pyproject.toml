@@ -19,6 +19,7 @@ quart = "^0.18.4"
 replicate = "^0.8.1"
 huggingface-hub = "^0.13.4"
 langchain = "^0.0.139"
+anthropic = "^0.2.6"
 
 [tool.poetry.group.dev]
 optional = true
