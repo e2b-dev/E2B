@@ -12,7 +12,7 @@ import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { html2markdown } from 'editor/schema'
 import { ModelConfig, getModelConfig } from 'state/model'
-import useModelProviderCreds from 'hooks/useModelProviderCreds'
+import useModelProviderArgs from 'hooks/useModelProviderArgs'
 // import Deploy from './Deploy'
 
 export interface Props {
@@ -88,7 +88,7 @@ function Sidebar({
   const envs = selectors.use.envs()
   const model = selectors.use.model()
 
-  const [creds] = useModelProviderCreds()
+  const [creds] = useModelProviderArgs()
 
   async function deploy() {
     if (!route) return

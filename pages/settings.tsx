@@ -8,8 +8,8 @@ import Button from 'components/Button'
 import Text from 'components/Text'
 import { Database } from 'db/supabase'
 import { serverCreds } from 'db/credentials'
-import useModelProviderCreds from 'hooks/useModelProviderCreds'
-import { models, ModelProvider } from 'state/model'
+import useModelProviderArgs from 'hooks/useModelProviderArgs'
+import { modelTemplates, ModelProvider } from 'state/model'
 import Input from 'components/Input'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
@@ -38,7 +38,7 @@ function Settings({ }: Props) {
   const router = useRouter()
   const supabaseClient = useSupabaseClient<Database>()
 
-  const [creds, mergeCreds] = useModelProviderCreds()
+  const [creds, mergeCreds] = useModelProviderArgs()
 
   async function handleSignOut() {
     await supabaseClient.auth.signOut()
@@ -133,7 +133,7 @@ function Settings({ }: Props) {
                 w-[450px]
               "
           >
-            {Object.entries(models).map(([provider, value]) =>
+            {Object.entries(modelTemplates).map(([provider, value]) =>
               <div
                 key={provider}
               >

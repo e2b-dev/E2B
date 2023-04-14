@@ -1,26 +1,16 @@
-import { useRouter } from 'next/router'
-import { Key } from 'lucide-react'
-
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
-import { getMissingCreds, ModelProvider, models } from 'state/model'
-import useModelProviderCreds from 'hooks/useModelProviderCreds'
-import Button from 'components/Button'
+import { ModelProvider, modelTemplates } from 'state/model'
+import useModelProviderArgs from 'hooks/useModelProviderArgs'
 
-import ModelCard from './ModelCard'
-import ProviderHeader from './ProviderHeader'
-import { providerIcons } from 'components/icons/ProviderIcon'
+import ProviderCard from './ProviderCard'
 
 export interface Props { }
 
 function Model({ }: Props) {
   const [selector] = useStateStore()
-  const router = useRouter()
-
   const model = selector.use.model()
-  const setModel = selector.use.setModel()
-
-  const [creds] = useModelProviderCreds()
+  const [creds] = useModelProviderArgs()
 
   return (
     <div className="
@@ -52,97 +42,35 @@ function Model({ }: Props) {
         className="
           flex
           flex-1
-          space-y-2
+          space-y-6
           p-4
           flex-col
+          overflow-auto
           items-stretch
+          scroller
         "
       >
-        {Object.entries(models).map(([provider, value]) =>
+        {Object.entries(modelTemplates).map(([provider, value], i, a) =>
           <div
             key={provider}
             className="
               flex
-              space-y-1
               flex-col
             "
           >
-            <ProviderHeader
+            <ProviderCard
+              selectedModel={model}
+              creds={creds}
+              template={value}
               provider={provider as ModelProvider}
             />
-            <div className="
-              flex
-              space-y-1
-              justify-between
-            "
-            >
+            {i !== a.length - 1 &&
               <div className="
-                flex
-                items-center
-                space-x-2
-              ">
-                {providerIcons[provider as ModelProvider]}
-                <Text
-                  text={provider}
-                  className="
-                    font-medium
-                    text-slate-400
-                  "
-                  size={Text.size.S2}
-                />
-              </div>
-              {value.creds &&
-                <div
-                  className="
-                  space-x-2
-                  flex
-                "
-                >
-
-                  <Text
-                    text={getMissingCreds(provider as ModelProvider, creds).length === 0 ? '' : 'Missing keys'}
-                    className="
-                      text-slate-400
-                    "
-                    size={Text.size.S3}
-                  />
-                  <Button
-                    icon={
-                      <Key size="16px" />
-                    }
-                    text="Set keys"
-                    className="whitespace-pre-wrap"
-                    onClick={() => router.push('/settings')}
-                  />
-                </div>
-              }
-            </div>
-            <div className="
-              flex
-              items-stretch
-              flex-col
-              flex-1
-              py-1
-              space-y-2
-            "
-            >
-              {value.models.map(m =>
-                <ModelCard
-                  key={m.name}
-                  modelTemplate={{ ...m, provider: provider as ModelProvider }}
-                  selectedModel={
-                    m.name === model.name && provider === model.provider
-                      ? model
-                      : undefined}
-                  isSelected={m.name === model.name && provider === model.provider}
-                  updateSelectedModel={i => setModel({
-                    name: m.name,
-                    provider: provider as ModelProvider,
-                    ...i,
-                  })}
-                />
-              )}
-            </div>
+                w-full
+                border-b
+                border-slate-300
+                pt-4
+              " />}
           </div>
         )}
       </div>

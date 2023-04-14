@@ -9,6 +9,7 @@ const iconPaths: {
   [ModelProvider.HuggingFace]: '/huggingface.png',
   [ModelProvider.OpenAI]: '/open-ai.png',
   [ModelProvider.Replicate]: '/replicate.png',
+  [ModelProvider.Anthropic]: '/anthropic.png',
 }
 
 export const providerIcons: {
@@ -17,8 +18,8 @@ export const providerIcons: {
   [ModelProvider.HuggingFace]: <ProviderIcon provider={ModelProvider.HuggingFace} />,
   [ModelProvider.OpenAI]: <ProviderIcon provider={ModelProvider.OpenAI} />,
   [ModelProvider.Replicate]: <ProviderIcon provider={ModelProvider.Replicate} />,
+  [ModelProvider.Anthropic]: <ProviderIcon provider={ModelProvider.Anthropic} />,
 }
-
 
 export interface Props {
   provider: ModelProvider

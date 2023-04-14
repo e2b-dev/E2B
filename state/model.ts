@@ -1,11 +1,12 @@
-import { Creds } from 'hooks/useModelProviderCreds'
+import { Creds } from 'hooks/useModelProviderArgs'
 
 import { SelectedModel } from './store'
 
 export enum ModelProvider {
+  HuggingFace = 'HuggingFace',
   OpenAI = 'OpenAI',
   Replicate = 'Replicate',
-  HuggingFace = 'HuggingFace',
+  Anthropic = 'Anthropic',
 }
 
 export type ArgValue = string | number
@@ -25,6 +26,10 @@ export interface ModelArgTemplate {
   step?: number
 }
 
+export interface ProviderCredsTemplate {
+  [key: string]: Omit<ModelArgTemplate, 'editable' | 'value'>
+}
+
 export interface ModelConfigTemplate {
   provider: ModelProvider
   name: string
@@ -34,34 +39,135 @@ export interface ModelConfigTemplate {
   args?: { [arg: string]: ModelArgTemplate }
 }
 
-export const models: {
-  [provider in keyof typeof ModelProvider]: {
-    // These creds are merged with the model args then send to the API.
-    creds?: { [key: string]: Omit<ModelArgTemplate, 'editable' | 'value'> }
-    models: Omit<ModelConfigTemplate, 'provider'>[]
-  }
+export interface ProviderTemplate {
+  // These creds are merged with the model args then send to the API.
+  creds?: ProviderCredsTemplate
+  models: Omit<ModelConfigTemplate, 'provider'>[]
+  link?: string
+}
+
+export const modelTemplates: {
+  [provider in keyof typeof ModelProvider]?: ProviderTemplate
 } = {
-  [ModelProvider.HuggingFace]: {
-    creds: {
-      huggingfacehub_api_token: {
-        label: 'Hugging Face API Key',
-        type: 'string',
-      },
-    },
-    models: [
-      {
-        name: 'Deployed model',
-        args: {
-          endpoint_url: {
-            editable: true,
-            type: 'string',
-            label: 'Endpoint URL'
-          },
-        },
-      },
-    ],
-  },
+  // [ModelProvider.HuggingFace]: {
+  //   link: 'https://huggingface.co',
+  //   creds: {
+  //     huggingfacehub_api_token: {
+  //       label: 'Hugging Face API Key',
+  //       type: 'string',
+  //     },
+  //   },
+  //   models: [
+  //     {
+  //       name: 'Custom model',
+  //       args: {
+  //         endpoint_url: {
+  //           editable: true,
+  //           type: 'string',
+  //           label: 'Endpoint URL'
+  //         },
+  //       },
+  //     },
+  //   ],
+  // },
+  // [ModelProvider.Anthropic]: {
+  //   creds: {
+  //     anthropic_api_key: {
+  //       label: 'Anthropic API Key',
+  //       type: 'string',
+  //     },
+  //   },
+  //   models: [
+  //     {
+  //       name: 'Claude v1.3',
+  //       args: {
+  //         model: {
+  //           value: 'claude-v1.3',
+  //           type: 'string',
+  //         },
+  //         max_tokens_to_sample: {
+  //           type: 'number',
+  //           editable: true,
+  //           label: 'Max tokens to sample',
+  //           value: 2048,
+  //           step: 1,
+  //           min: 1,
+  //         },
+  //         temperature: {
+  //           label: 'Temperature',
+  //           editable: true,
+  //           type: 'number',
+  //           value: 0.4,
+  //           min: 0.01,
+  //           max: 1,
+  //           step: 0.01,
+  //         },
+  //         top_p: {
+  //           label: 'top-p',
+  //           editable: true,
+  //           type: 'number',
+  //           value: -1,
+  //           min: 0.01,
+  //           max: 1,
+  //           step: 0.01,
+  //         },
+  //         top_k: {
+  //           label: 'top-k',
+  //           editable: true,
+  //           type: 'number',
+  //           value: -1,
+  //           min: 0,
+  //           step: 1,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       name: 'Claude Instant v1',
+  //       args: {
+  //         model: {
+  //           value: 'claude-instant-v1',
+  //           type: 'string',
+  //         },
+  //         max_tokens_to_sample: {
+  //           type: 'number',
+  //           editable: true,
+  //           label: 'Max tokens to sample',
+  //           value: 2048,
+  //           step: 1,
+  //           min: 1,
+  //         },
+  //         temperature: {
+  //           label: 'Temperature',
+  //           editable: true,
+  //           type: 'number',
+  //           value: 0.4,
+  //           min: 0.01,
+  //           max: 1,
+  //           step: 0.01,
+  //         },
+  //         top_p: {
+  //           label: 'top-p',
+  //           editable: true,
+  //           type: 'number',
+  //           value: -1,
+  //           min: 0.01,
+  //           max: 1,
+  //           step: 0.01,
+  //         },
+  //         top_k: {
+  //           label: 'top-k',
+  //           editable: true,
+  //           type: 'number',
+  //           value: -1,
+  //           min: 0,
+  //           step: 1,
+  //         },
+  //       },
+  //     },
+  //   ],
+  // },
   [ModelProvider.Replicate]: {
+    link: 'https://replicate.com',
     creds: {
       replicate_api_token: {
         label: 'Replicate API Key',
@@ -70,7 +176,7 @@ export const models: {
     },
     models: [
       {
-        name: 'Deployed model [Work in Progress]',
+        name: 'Custom model',
         args: {
           model: {
             editable: true,
@@ -79,35 +185,38 @@ export const models: {
           },
           max_length: {
             type: 'number',
+            editable: true,
             value: 4096,
             step: 1,
             min: 1,
           },
           temperature: {
-            label: 'Temperature',
             editable: true,
             type: 'number',
-            value: 0.4,
-            min: 0.01,
-            max: 5,
+            value: 0.5,
+            min: 0,
             step: 0.01,
           },
           top_p: {
-            label: 'Top P',
             editable: true,
             type: 'number',
             value: 0.9,
-            min: 0.01,
+            min: 0,
             max: 1,
             step: 0.01,
           },
-          repetition_penalty: {
-            label: 'Repetition penalty',
+          top_k: {
             editable: true,
             type: 'number',
-            value: 1.1,
-            min: 0.01,
-            max: 5,
+            value: 0,
+            min: 0,
+            step: 0.01,
+          },
+          repetition_penalty: {
+            editable: true,
+            type: 'number',
+            value: 1,
+            min: 0,
             step: 0.01,
           },
         },
@@ -132,10 +241,12 @@ export const models: {
           max_tokens: {
             type: 'number',
             value: 2048,
+            editable: true,
           },
           temperature: {
             type: 'number',
             value: 0,
+            editable: true,
           },
         },
       },
@@ -149,10 +260,12 @@ export const models: {
           max_tokens: {
             type: 'number',
             value: 2048,
+            editable: true,
           },
           temperature: {
             type: 'number',
             value: 0,
+            editable: true,
           },
         },
       },
@@ -168,7 +281,7 @@ export function getModelConfig(
   config: SelectedModel,
   creds: Creds,
 ): ModelConfig | undefined {
-  const model = models[config.provider].models.find(m => m.name === config.name)
+  const model = modelTemplates[config.provider]?.models.find(m => m.name === config.name)
   if (!model) return
 
   const defaultArgs = Object
@@ -192,8 +305,8 @@ export function getModelConfig(
 
 export function getMissingCreds(provider: ModelProvider, creds: Creds) {
   const missing = Object
-    .entries(models[provider]?.creds || {})
-    .filter(([key, val]) => creds[provider]?.creds?.[key] === undefined)
+    .entries(modelTemplates[provider]?.creds || {})
+    .filter(([key,]) => creds[provider]?.creds?.[key] === undefined)
 
   return missing
 }

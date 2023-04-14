@@ -1,7 +1,7 @@
 from typing import TypedDict, Dict, Any
 from enum import Enum
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import HuggingFaceHub
+from langchain.llms import HuggingFaceHub, Anthropic
 from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 
@@ -12,6 +12,7 @@ class ModelProvider(Enum):
     OpenAI = "OpenAI"
     Replicate = "Replicate"
     HuggingFace = "HuggingFace"
+    Anthropic = "Anthropic"
 
 
 class ModelConfig(TypedDict):
@@ -25,6 +26,13 @@ def get_model(
     callback_manager: BaseCallbackManager,
 ) -> BaseLanguageModel:
     match config["provider"]:
+        case ModelProvider.Anthropic.value:
+            return Anthropic(
+                **config["args"],
+                verbose=True,
+                streaming=True,
+                callback_manager=callback_manager,
+            )
         case ModelProvider.OpenAI.value:
             return ChatOpenAI(
                 **config["args"],
