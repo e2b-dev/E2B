@@ -2,7 +2,6 @@ import Fuse from 'fuse.js'
 
 export enum ReferenceType {
   NPMPackage = 'NPM_PACKAGE',
-  DEPLOYMENT = 'DEPLOYMENT_SERVICE',
 }
 
 export interface Reference {
