@@ -38,7 +38,7 @@ You will need:
 
 > The first start of the Dockerized app is slower because it downloads and builds all the necessary containers. On a 2CPU 4GB RAM machine it takes cca. 6 minutes and doesn't require any interaction. The subsequent starts are way faster.
 
-## 1. Start the app
+## Start the app
 ```
 npm start
 ```
@@ -87,7 +87,6 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 - [ ] [Paperspace](https://www.paperspace.com/)
 
 
-
 ### **Model you like isn't supported?**
 
 👉 Please open the ["New model request" issue](https://github.com/e2b-dev/e2b/issues/new?assignees=&labels=new+model+request&template=new-model-request.md&title=). 👈
@@ -104,7 +103,6 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 - [Twitter](https://twitter.com/e2b_dev) - to stay up to date
 
 # 📆 Roadmap
-
 1. Make sure people can run e2b locally without issues and the DX is smooth.
 2. Add support for more models.
     - Let users request new models. Laterm create a system that will let users use any model.
