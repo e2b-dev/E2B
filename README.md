@@ -63,29 +63,11 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 - [x] [OpenAI](https://openai.com/)
   - [x] GPT-4
   - [x] GTP-3.5
-- [ ] [Replicate](https://replicate.com/)
-- [ ] [HuggingFace](https://huggingface.co/)
-- [ ] [AI21](https://www.ai21.com/)
-- [ ] [Aleph Alpha](https://www.aleph-alpha.com/)
-- [ ] [Anthropic](https://anthropic.com/)
+- [ ] [Replicate](https://replicate.com/) 🚧
+- [ ] [HuggingFace](https://huggingface.co/) 🚧
+- [ ] [Anthropic](https://anthropic.com/) 🚧
   - [ ] Claude v1.3
   - [ ] Claude Instant v1
-- [ ] [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service)
-- [ ] [Banana](https://www.banana.dev/)
-- [ ] [CerebriumAI](https://www.cerebrium.ai/)
-- [ ] [Cohere](https://cohere.ai/)
-- [ ] [DeepInfra](https://deepinfra.com/)
-- [ ] [ForefrontAI](https://www.forefront.ai/)
-- [ ] [GooseAI](https://goose.ai/)
-- [ ] [Modal](https://modal.com/)
-- [ ] [Petals](https://petals.ml/)
-- [ ] [SageMaker](https://aws.amazon.com/sagemaker/)
-- [ ] [Self-hosted Llama-cpp API](https://github.com/ggerganov/llama.cpp)
-- [ ] [Self-hosted via Runhouse](https://github.com/run-house/runhouse)
-- [ ] [StochasticAI](https://www.stochastic.ai/)
-- [ ] [Writer](https://writer.com/)
-- [ ] [Paperspace](https://www.paperspace.com/)
-
 
 ### **Model you like isn't supported?**
 
