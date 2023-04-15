@@ -30,13 +30,12 @@ function ProviderIcon({ provider }: Props) {
     <div className="
       w-[30px]
       h-[30px]
-      rounded
       relative
     ">
       <Image
         className="
-        rounded
-      "
+          rounded
+        "
         alt={`${provider} logo`}
         src={iconPaths[provider]}
         fill
