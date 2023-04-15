@@ -6,19 +6,13 @@ import ListItem from '@tiptap/extension-list-item'
 import OrderedList from '@tiptap/extension-ordered-list'
 import CodeBlock from '@tiptap/extension-code-block'
 
+import { Reference } from './referenceType'
+
 import ReferenceExtension, {
   REFERENCE_TYPE_ATTRIBUTE_NAME,
   REFERENCE_VALUE_ATTRIBUTE_NAME,
 } from 'editor/extensions/reference'
 
-export enum ReferenceType {
-  NPMPackage = 'NPM_PACKAGE',
-}
-
-export interface Reference {
-  type: ReferenceType
-  value: string
-}
 
 export const extensions = [
   StarterKit.configure({

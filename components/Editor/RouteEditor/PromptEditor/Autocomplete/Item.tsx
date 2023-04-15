@@ -1,6 +1,6 @@
 import { useLayoutEffect } from 'react'
 import cn from 'clsx'
-import { Package, Server } from 'lucide-react'
+import { Package } from 'lucide-react'
 
 import useElement from 'hooks/useElement'
 import { Reference, ResultType, ReferenceType } from 'editor/referenceType'
@@ -14,8 +14,6 @@ export interface Props {
 
 function getReferenceIcon(reference: Reference) {
   switch (reference.type) {
-    case ReferenceType.DEPLOYMENT:
-      return <Server size="16px" />
     case ReferenceType.NPMPackage:
       return <Package size="16px" />
     default:
