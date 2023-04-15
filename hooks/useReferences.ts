@@ -23,7 +23,7 @@ const packageReferences: Reference[] = [
 function useReferences(): [Fuse<Reference>, Reference[]] {
   const references = useMemo<Reference[]>(() => [
     // TODO: Package search is synchronous and even with just 10k packages it freezes the whole app.
-    ...packageReferences,
+    // ...packageReferences,
   ], [])
 
   const engine = useMemo(() => new Fuse(references, {
