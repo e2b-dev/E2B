@@ -40,6 +40,7 @@ function ProviderIcon({ provider }: Props) {
         alt={`${provider} logo`}
         src={iconPaths[provider]}
         fill
+        priority
       />
     </div>
   )
