@@ -87,7 +87,7 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 # 📆 Roadmap
 1. Make sure people can run e2b locally without issues and the DX is smooth.
 2. Add support for more models.
-    - Let users request new models. Laterm create a system that will let users use any model.
+    - Let users request new models. Later create a system that will let users use any model.
 3. Improve model's understanding of the context based on the instructions
 4. Support for more tools
 5. Improve the dashboard UI
