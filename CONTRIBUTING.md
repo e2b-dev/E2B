@@ -1,101 +1,44 @@
 # Contributing
 If you want to contribute open a PR, issue, or start a discussion on our [Discord](https://discord.gg/dSBY3ms2Qr).
 
-## Adding new models or new model hosting providers
-If you want to add a new model (like OpenAI's GPT-4) or a new model hosting provider (like HuggingFace where you can host your models) complete the following steps and create a PR.
+# 🤖 Adding a new model provider
+If you want to add a new model provider (like OpenAI or HuggingFace) complete the following steps and create a PR.
 
-1. Add model on **frontend**
-    - Add a model name to `enum ModelProvider` in [state/model.ts](state/model.ts)
-    - Add model template to `const modelTemplates` in [state/model.ts](state/model.ts)
-      > `creds` and `args` defined in the `modelTemplates` are accessible on backend in `get_model` under their exact names in `config["args"]` object.
-    - Add the model's PNG icon image to `public/`
-    - Add a new model icon path to `const iconPaths` in [components/icons/ProviderIcon.tsx](components/icons/ProviderIcon.tsx)
+When you add a provider you can also add a specific models (like OpenAI's GPT-4) under that provider.
 
-2. Add model on **backend** in [api-service/models/base.py](api-service/models/base.py)
-    - Add model name to enum `ModelProvider`
-    - Add model integration (implementing langchain's `BaseLanguageModel`) to `def get_model`. You can often use the [langchain's](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integrations.
-      > Sometimes we need to modify integrations provided by langchain (to ignore env vars, etc.). If you modify the integrations add them like [this](api-service/models/wrappers/replicate.py).
+Here is an [example code for adding a new provider](./NEW_PROVIDER_EXAMPLE.md).
 
-3. Test if the new model works by starting the app, configuring the model, and trying to "Run" it. Add a screenshot of the results to the PR if you can.
+## ☑️ 1. Add provider to **frontend**
+- Add provider name to `ModelProvider` enum in [state/model.ts](state/model.ts)
+- Add provider and models template to `modelTemplates` object in [state/model.ts](state/model.ts)
+  - `creds` and `args` defined in the `modelTemplates` are accessible on backend in `get_model` under their exact names in `config["args"]` object.
+- Add provider's PNG icon image to `public/`
+- Add provider's icon path to `iconPaths` object in [components/icons/ProviderIcon.tsx](components/icons/ProviderIcon.tsx)
 
-### Example of adding a new model/model hosting provider
-#### **Frontend**
-[state/model.ts](state/model.ts)
-```ts
-export enum ModelProvider {
-  ...
-  NewModel = 'NewModel',
-  ...
-}
+## ☑️ 2. Add provider to **backend** ([api-service/models/base.py](api-service/models/base.py))
+- Add provider name to `ModelProvider` enum
+- Add provider integration (implementing langchain's `BaseLanguageModel`) to `get_model` function. You can either use an existing integration from langchain or crate a new integration from scratch.
 
-export const modelTemplates: {
-  [provider in keyof typeof ModelProvider]?: ProviderTemplate
-} = {
-  ...
-  [ModelProvider.NewModel]: {
-    creds: {
-      new_model_api_token: { // <----- this will be accessible as `config["args"]["new_model_api_token"]` on backend
-        label: 'New Model API Key',
-        type: 'string',
-      },
-    },
-    models: [
-      {
-        name: '<Model name>',
-        args: {
-          temperature: { // <----- this will be accessible as `config["args"]["temperature"]` on backend
-            label: 'Temperature',
-            editable: true,
-            type: 'number',
-            value: 0.4,
-            min: 0.01,
-            max: 1,
-            step: 0.01,
-          },
-        },
-      },
-    ],
-  },
-  ...
-}
-```
+### **Provider integration with existing [langchain](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integrations**
+You can often use existing langchain integrations to add new model providers to e2b with just a few modifications.
 
-[components/icons/ProviderIcon.tsx](components/icons/ProviderIcon.tsx)
-```ts
-const iconPaths: {
-  [provider in keyof typeof ModelProvider]: string
-} = {
-  ...
-  [ModelProvider.NewModel]: '/new-model.png',
-  ...
-}
-```
+[Here](api-service/models/wrappers/replicate.py) is an example of modified [Replicate](https://replicate.com/) integration. We had to add `_acall` method to support async execution and override `validate_environment` to prevent checking if the Replicate API key env var is set up because we pass the env var via a normal parameter.
 
-#### **Backend**
-[api-service/models/base.py](api-service/models/base.py)
-```py
-class ModelProvider(Enum):
-    ...
-    NewModel = "NewModel"
-    ...
+If you are modifying existing langchain integration add it to `api-service/models/providers/<provider>.py`.
 
-def get_model(
-    config: ModelConfig,
-    callback_manager: BaseCallbackManager,
-) -> BaseLanguageModel:
-    match config["provider"]:
-        ...
-        case ModelProvider.NewModel.value:
-            return NewModelIntegration( # <----- class implementing `BaseLanguageModel`
-                **config["args"], # <----- args passed from frontend (`new_model_api_token`, `temperature`)
-                verbose=True,
-                streaming=True,
-                callback_manager=callback_manager,
-            )
-        ...
-```
+### **Provider integration from scratch**
+You can follow the [langchain's guide](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html) to implement the `LLM` class (it inherits from `BaseLanguageModel`). Here is an [example of provider integration](./NEW_PROVIDER_EXAMPLE.md#custom-provider-integration-api-servicemodelsprovidersnew_model_providerpy-with-streaming). You really only need to implement the `_acall` method.
 
-## 💻 Development setup
+If you are creating new provider integration add it to `api-service/models/providers/<provider>.py`.
+
+
+## ☑️ 3. Test
+Test if the provider works by starting the app, selecting the provider and model in the "Model" sidebar menu and trying to "Run" it.
+
+Add a screenshot of the results to the PR if you can.
+
+
+# 💻 Development setup
 For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`npm start` command). Here are the steps for how to do it.
 
 You will need:
@@ -106,19 +49,19 @@ You will need:
 - Poetry *1.3.2+*
 - Free ports 3000, 49155, 49160, 54321, 54322
 
-### 1. Install dependencies
+## 1. Install dependencies
 ```
 npm run install:all
 ```
 
-### 2. Start local Supabase
+## 2. Start local Supabase
 ```
 npm run db:start
 ```
 
 > Local Supabase runs in the background - to stop it you have to run `npm run db:stop`.
 
-### 3. Add env vars
+## 3. Add env vars
 Create `.env` file by copying the [`.env.example`](.env.example)
 ```
 cp .env.example .env
@@ -127,7 +70,7 @@ and fill in the following variables:
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
 
-### 4. Start the app
+## 4. Start the app
 ```
 npm run dev
 ```

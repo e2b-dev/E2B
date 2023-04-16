@@ -5,7 +5,7 @@ from langchain.llms import HuggingFaceHub, Anthropic
 from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 
-from .wrappers.replicate import ReplicateFix
+from .providers.replicate import ReplicateFix
 
 
 class ModelProvider(Enum):

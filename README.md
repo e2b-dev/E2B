@@ -23,7 +23,11 @@
 ![e2b-editor](img/e2b.png)
 *Example of AI agent building Stripe checkout. Left - technical specification written by human. Right - steps that the AI agent took and tools that it used to build the server route required by the specification.*
 
-[e2b](https://e2b.dev) or etob (*english2bits*) is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. The developer writes a short documentation or a technical spec in plain English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. Agents operate in a secure sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you. Like [this example](https://twitter.com/mlejva/status/1641072535163875330) of an AI agent coding Stripe customer checkout based on a technical spec.
+[e2b](https://e2b.dev) or etob (*english2bits*) is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. 
+
+The developer writes a short documentation or a technical spec in plain English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. 
+
+Agents operate in a secure sandboxed cloud environment that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you. Like [this example](https://twitter.com/mlejva/status/1641072535163875330) of an AI agent coding Stripe customer checkout based on a technical spec.
 
 e2b currently supports building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
 
@@ -46,7 +50,7 @@ Then open the page on [http://localhost:3000](http://localhost:3000).
 
 > `npm start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
 
-> If you want to run the project without using containers use the [steps here](./CONTRIBUTING.md#💻-development-setup). This is useful if you want to leverage hot reloading and develop the project.
+> If you want to run non-containerize version of e2b use the [development setup here](CONTRIBUTING.md#💻-development-setup). This is useful if you want to leverage hot reloading and develop the project.
 
 # Features
 
@@ -59,7 +63,7 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 
 We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
 
-## 🤖 Supported models and hosting providers
+## 🤖 Supported models and model hosting providers
 - [x] [OpenAI](https://openai.com/)
   - [x] GPT-4
   - [x] GTP-3.5
@@ -69,11 +73,11 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
   - [ ] Claude v1.3
   - [ ] Claude Instant v1
 
-### **Model you like isn't supported?**
+### **Model or provider you like isn't supported?**
 
 👉 Please open the ["New model request" issue](https://github.com/e2b-dev/e2b/issues/new?assignees=&labels=new+model+request&template=new-model-request.md&title=) 👈
 
-👉 Or open a PR and [start contributing](./CONTRIBUTING.md#adding-new-models-or-new-model-hosting-providers) 👈
+👉 Or open a PR and [start contributing](./CONTRIBUTING.md#🤖-adding-a-new-model-provider) 👈
 
 ## 👀 Early demos
 - [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
