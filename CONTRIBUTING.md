@@ -21,17 +21,17 @@ Here is an [example code for adding a new provider](./NEW_PROVIDER_EXAMPLE.md).
 
 The new provider integrations should be placed in `api-service/models/providers/`.
 
-### Provider integrations
+## Provider integrations
 We use [LangChain](https://github.com/hwchase17/langchain) under the hood so if you are adding a new integration you have to implement the `BaseLanguageModel` class. That basically means just implementing the `_acall` which is an async method that calls the model with prompt and returns the output.
 
-#### **Using [LangChain](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integration**
+### **Using [LangChain](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integration**
 You can often use existing LangChain integrations to add new model providers to e2b with just a few modifications.
 
 [Here](api-service/models/providers/replicate.py) is an example of modified [Replicate](https://replicate.com/) integration. We had to add `_acall` method to support async execution and override `validate_environment` to prevent checking if the Replicate API key env var is set up because we pass the env var via a normal parameter.
 
 If you are modifying existing LangChain integration add it to `api-service/models/providers/<provider>.py`.
 
-#### **From scratch**
+### **From scratch**
 You can follow the [langchain's guide](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html) to implement the `LLM` class (it inherits from `BaseLanguageModel`).
 
 Here is an example of the implementation:
