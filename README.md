@@ -34,28 +34,71 @@ e2b currently supports building only REST servers in Node.js. Specifically using
 # 🚀 Get started
 We're working on the cloud-hosted version. In the meantime, the fastest way try out e2b is to run it locally via Docker.
 
+## 🐳 Start e2b with Docker
 You will need:
 - [OpenAI API key](https://platform.openai.com/account/api-keys) (support for more and custom models coming soon)
 - Docker
 - Node.js *16+*
 - Free ports 3000 (Next.js app), 54321 (Supabase API Gateway), 54322 (Supabase Database)
 
-> The first start of the Dockerized app is slower because it downloads and builds all the necessary containers. On a 2CPU 4GB RAM machine it takes cca. 6 minutes and doesn't require any interaction. The subsequent starts are way faster.
-
-## Start the app
+To start e2b run:
 ```
 npm start
 ```
-Then open the page on [http://localhost:3000](http://localhost:3000).
 
-> `npm start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
+Then open page on [http://localhost:3000](http://localhost:3000).
 
-> If you want to run non-containerize version of e2b use the [development setup here](CONTRIBUTING.md#💻-development-setup). This is useful if you want to leverage hot reloading and develop the project.
+`npm start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
+
+## 💻 Or start in development setup
+For developing with hot reloading and contributing to the project you may want to run the app locally without Docker (`npm start` command). Here are the steps for how to do it.
+
+You will need:
+- OpenAI API key (support for more and custom models coming soon)
+- Docker (For starting the Supabase DB locally)
+- Node.js *16+*
+- Python *3.10+*
+- Poetry *1.3.2+*
+- Free ports 3000, 49155, 49160, 54321, 54322
+
+### 1. Install dependencies
+```
+npm run install:all
+```
+
+### 2. Start local Supabase
+```
+npm run db:start
+```
+
+Local Supabase runs in the background - to stop it you have to run `npm run db:stop`.
+
+### 3. Add env vars
+Create `.env` file by copying the [`.env.example`](.env.example)
+```
+cp .env.example .env
+```
+and fill in the following variables:
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
+
+### 4. Start the app
+```
+npm run dev
+```
+Then open page on [http://localhost:3000](http://localhost:3000) and sign in with the testing credentials:
+
+**Email**
+
+`admin@admin.com`
+
+**Password**
+
+`admin@admin.com`
+
 
 # Features
-
 ## 🛠 Bring your own X
-
 While e2b will offer the "batteries-included" solution, our goal is to let users:
 - **BYOM** - Bring Your Own Model
 - **BYOP** - Bring Your Own Prompt
@@ -73,7 +116,7 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
   - [ ] Claude v1.3
   - [ ] Claude Instant v1
 
-### **Model or provider you like isn't supported?**
+### **Model or model hosting provider you like isn't supported?**
 
 👉 Please open the ["New model request" issue](https://github.com/e2b-dev/e2b/issues/new?assignees=&labels=new+model+request&template=new-model-request.md&title=) 👈
 
