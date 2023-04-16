@@ -87,7 +87,7 @@ def get_model(
         ...
         case ModelProvider.NewModel.value:
             return NewModelIntegration( # <----- class implementing `BaseLanguageModel`
-                **config["args"], # <----- args passed from frontend
+                **config["args"], # <----- args passed from frontend (`new_model_api_token`, `temperature`)
                 verbose=True,
                 streaming=True,
                 callback_manager=callback_manager,
