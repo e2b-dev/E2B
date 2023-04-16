@@ -34,7 +34,7 @@ export const modelTemplates: {
   ...
   [ModelProvider.NewModel]: {
     creds: {
-      new_model_api_token: { // <---------------- this will be accessible as `config["args"]["new_model_api_token"]` on backend
+      new_model_api_token: { // <----- this will be accessible as `config["args"]["new_model_api_token"]` on backend
         label: 'New Model API Key',
         type: 'string',
       },
@@ -43,7 +43,7 @@ export const modelTemplates: {
       {
         name: '<Model name>',
         args: {
-          temperature: { // <---------------- this will be accessible as `config["args"]["temperature"]` on backend
+          temperature: { // <----- this will be accessible as `config["args"]["temperature"]` on backend
             label: 'Temperature',
             editable: true,
             type: 'number',
@@ -86,8 +86,8 @@ def get_model(
     match config["provider"]:
         ...
         case ModelProvider.NewModel.value:
-            return NewModelIntegration( # <---------------- class implementing `BaseLanguageModel`
-                **config["args"], # <---------------- args passed from frontend
+            return NewModelIntegration( # <----- class implementing `BaseLanguageModel`
+                **config["args"], # <----- args passed from frontend
                 verbose=True,
                 streaming=True,
                 callback_manager=callback_manager,
