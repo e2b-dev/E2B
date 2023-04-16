@@ -1,6 +1,6 @@
 <h1 align="center">
-  <img width="200" src="img/logoname-black.svg#gh-light-mode-only" alt="e2b">
-  <img width="200" src="img/logoname-white.svg#gh-dark-mode-only" alt="e2b">
+  <img width="200" src="docs-assets/logoname-black.svg#gh-light-mode-only" alt="e2b">
+  <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
 <p align="center">Open-source IDE powered by AI agents that do the work for you</p>
@@ -20,7 +20,7 @@
   </a>
 </h4>
 
-![e2b-editor](img/e2b.png)
+![e2b-editor](docs-assets/e2b.png)
 *Example of AI agent building Stripe checkout. Left - technical specification written by human. Right - steps that the AI agent took and tools that it used to build the server route required by the specification.*
 
 [e2b](https://e2b.dev) or etob (*english2bits*) is a new kind of development environment powered by AI. The main idea is that developers have access to AI agents that can use tools. 

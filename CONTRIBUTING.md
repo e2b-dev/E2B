@@ -69,6 +69,6 @@ class NewModelProviderWithStreaming(LLM):
 ## 3. Test
 Test if the provider works by starting the app, selecting the provider and model in the "Model" sidebar menu and trying to "Run" it. 
 
-![](gifs/change-model.gif)
+![](docs-assets/change-model.gif)
 
 Then add a screenshot of agent's steps to the PR.
