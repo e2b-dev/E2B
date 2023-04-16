@@ -3,15 +3,15 @@ import uuid
 
 from pprint import pprint
 from typing import List
+from codegen.tools.base import create_tools
 from dotenv import load_dotenv
 from playground_client.exceptions import NotFoundException
 from quart import Quart, request
 from quart_cors import cors
 
 from codegen import Codegen
-from codegen.tools.playground import create_playground_tools
-from codegen.tools.human.tools import create_human_tools
 from database import Database, DeploymentState
+from session.playground.nodejs import NodeJSPlayground
 
 load_dotenv()
 
@@ -54,8 +54,8 @@ async def generate():
     blocks = body["blocks"]
     method = body["method"]
     route = body["route"]
-
     model_config = body["modelConfig"]
+    prompt = body["prompt"]
 
     pprint("+++ Blocks:")
     pprint(blocks)
@@ -66,19 +66,18 @@ async def generate():
 
     try:
         # Create playground for the LLM
-        playground_tools, playground = create_playground_tools(
-            get_envs=lambda: db.get_env_vars(project_id),
-        )
+        playground = NodeJSPlayground(get_envs=lambda: db.get_env_vars(project_id))
 
-        human_tools = create_human_tools(run_id=run_id, playground=playground)
+        # Create tools
+        tools = create_tools(
+            run_id=run_id,
+            playground=playground,
+        )
 
         # Create a new instance of code generator
         cg = Codegen.from_tools_and_database(
             # The order in which we pass tools HAS an effect on the LLM behaviour.
-            custom_tools=[
-                *playground_tools,
-                *human_tools,
-            ],
+            tools=list(tools),
             model_config=model_config,
             database=db,
         )

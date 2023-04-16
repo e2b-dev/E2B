@@ -35,28 +35,23 @@ SYSTEM_SUFFIX = ""
 def get_human_instructions_prefix(has_request_body: bool = False):
     yield from [
         {
-            "variables": ["description"],
-            "content": """The handler you are building should do the following: {0}""",
+            "content": """The handler you are building should do the following: {description}""",
         },
         # {
-        #     "variables": [],
         #     "content": """Do not try to come up with solutions and code if you do not know. Instead, use the tool `AskHuman` to ask for help.""",
         # },
         # {
-        #     "variables": [],
         #     "content": """If you think there might be multiple paths forward, use the tool `LetHumanChoose` to choose from them.""",
         # },
     ]
 
     if has_request_body:
         yield {
-            "variables": ["request_body"],
-            "content": """The incoming request body is JSON that looks like this:\n{0}""",
+            "content": """The incoming request body is JSON that looks like this:\n{request_body}""",
         }
 
     yield from [
         {
-            "variables": ["method"],
             "content": """Use this starting template:
 ```
 import express from 'express';
@@ -64,7 +59,7 @@ const app = express();
 const port = 3000;
 app.use(express.json())
 
-// TODO: Implement the {0} handler here
+// TODO: Implement the {method} handler here
 
 app.listen(port, async () => {{
     console.log(`Server listening on port ${{port}}`)
@@ -72,23 +67,18 @@ app.listen(port, async () => {{
 ```""",
         },
         {
-            "variables": ["method"],
-            "content": """The HTTP request handler is of type {0}""",
+            "content": """The HTTP request handler is of type {method}""",
         },
         {
-            "variables": ["route"],
-            "content": """The request handler MUST be on the route `{0}`""",
+            "content": """The request handler MUST be on the route `{route}`""",
         },
         {
-            "variables": [],
             "content": """Do not forget to use async and await""",
         },
         {
-            "variables": [],
             "content": """Always test that the generated server works without bugs and errors as required by running the code and making mock `curl` requests to the server""",
         },
         {
-            "variables": [],
             "content": """Generate the full required server code""",
         },
     ]

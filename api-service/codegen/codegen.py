@@ -4,8 +4,9 @@ from typing import (
     Any,
     Dict,
     ClassVar,
+    Sequence,
 )
-
+from codegen.callbacks.logs import LogsCallbackHandler
 from langchain.agents import AgentExecutor, Agent
 from langchain.schema import BaseLanguageModel
 from pydantic import BaseModel, PrivateAttr
@@ -19,7 +20,6 @@ from langchain.tools import BaseTool
 from models import get_model, ModelConfig
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
-from codegen.callbacks.logs import LogsCallbackHandler
 from codegen.prompt import (
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
@@ -33,7 +33,7 @@ class Codegen(BaseModel):
     input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad", "method"]
     _agent: Agent = PrivateAttr()
     _agent_executor: AgentExecutor = PrivateAttr()
-    _tools: List[BaseTool] = PrivateAttr()
+    _tools: Sequence[BaseTool] = PrivateAttr()
     _llm: BaseLanguageModel = PrivateAttr()
     _database: Database = PrivateAttr()
     _callback_manager: BaseCallbackManager = PrivateAttr()
@@ -42,7 +42,7 @@ class Codegen(BaseModel):
         self,
         database: Database,
         callback_manager: BaseCallbackManager,
-        tools: List[BaseTool],
+        tools: Sequence[BaseTool],
         llm: BaseLanguageModel,
         agent: Agent,
         **kwargs: Any,
@@ -67,7 +67,7 @@ class Codegen(BaseModel):
     @classmethod
     def from_tools_and_database(
         cls,
-        custom_tools: List[BaseTool],
+        tools: Sequence[BaseTool],
         model_config: ModelConfig,
         database: Database,
     ):
@@ -78,7 +78,7 @@ class Codegen(BaseModel):
         )
 
         # Assign custom callback manager to custom tools
-        for tool in custom_tools:
+        for tool in tools:
             tool.callback_manager = callback_manager
 
         # Create the LLM
@@ -91,7 +91,7 @@ class Codegen(BaseModel):
         # Create CodegenAgent
         agent = CodegenAgent.from_llm_and_tools(
             llm=llm,
-            tools=custom_tools,
+            tools=tools,
             prefix=SYSTEM_PREFIX,
             suffix=SYSTEM_SUFFIX,
             format_instructions=SYSTEM_FORMAT_INSTRUCTIONS,
@@ -102,7 +102,7 @@ class Codegen(BaseModel):
         return cls(
             database=database,
             callback_manager=callback_manager,
-            tools=custom_tools,
+            tools=tools,
             llm=llm,
             agent=agent,
         )
@@ -116,7 +116,9 @@ class Codegen(BaseModel):
     ):
         self._callback_manager.add_handler(
             LogsCallbackHandler(
-                database=self._database, run_id=run_id, tool_names=self.tool_names()
+                database=self._database,
+                run_id=run_id,
+                tool_names=self.tool_names(),
             )
         )
 
@@ -145,58 +147,33 @@ class Codegen(BaseModel):
             "route": route,
             "method": method,
         }
+
         instructions = "Here are the instructions:"
-        # inst_idx = 0
 
         # Append the premade prefix instructions.
         for instruction in get_human_instructions_prefix(
             has_request_body=bool(incoming_request_block)
         ):
-            # inst_idx += 1
-
-            values = []
-            # Extract the correct values from `input_vars` based on the keys.
-            for k, v in input_vars.items():
-                if k in instruction["variables"]:
-                    values.append(v)
-
-            # Use the values to format the instruction string.
-            inst = instruction["content"].format(*values)
-            # instructions = instructions + "\n" + f"{inst_idx}. {inst}"
-            instructions = instructions + "\n" + f"- {inst}"
+            instructions += "\n" + f"\n- {instruction['content']}"
 
         # Append the use instructions
         if instructions_block:
-            instructions = (
-                instructions
+            instructions += (
                 + "\nHere are the required implementation instructions:\n"
                 + instructions_block["content"]
             )
 
-        print("Instructions:\n", instructions)
+        # Use the values to format the instruction string.
+        instructions = instructions.format(**input_vars)
 
-        ######## +++++ OLD
-        # print("+++ BLOCKS")
-        # print(blocks)
-        # print("--- BLOCKS")
-        # for block in blocks:
-        #     if block.get("type") == "Basic":
-        #         inst_idx += 1
-        #         instructions = instructions + "\n" + f"{inst_idx}. " + block["prompt"]
+        print("Instructions:\n", instructions)
 
         # Append the premade suffix instructions.
         for inst in HUMAN_INSTRUCTIONS_SUFFIX:
-            instructions = instructions + f"\n{inst}"
-
-        # # instructions += "\nThought: Here is the plan of how I will go about solving this based on the instructions I got:\n1."
-        # # instructions += "\nThought:"
-        # print("Instructions:\n", instructions)
-        ######## ----- OLD
+            instructions += f"\n{inst}"
 
         print("Running executor...")
         await self._agent_executor.arun(
             agent_scratchpad="",
-            # input=testing_instructions
             input=instructions,
-            method=method,
         )
