@@ -4,7 +4,6 @@ import { SelectedModel } from './store'
 
 export enum ModelProvider {
   OpenAI = 'OpenAI',
-  // HuggingFace = 'HuggingFace',
   // Replicate = 'Replicate',
   // Anthropic = 'Anthropic',
 }
@@ -50,27 +49,6 @@ export interface ProviderTemplate {
 export const modelTemplates: {
   [provider in keyof typeof ModelProvider]?: ProviderTemplate
 } = {
-  // [ModelProvider.HuggingFace]: {
-  //   link: 'https://huggingface.co',
-  //   creds: {
-  //     huggingfacehub_api_token: {
-  //       label: 'Hugging Face API Key',
-  //       type: 'string',
-  //     },
-  //   },
-  //   models: [
-  //     {
-  //       name: 'Custom model',
-  //       args: {
-  //         endpoint_url: {
-  //           editable: true,
-  //           type: 'string',
-  //           label: 'Endpoint URL'
-  //         },
-  //       },
-  //     },
-  //   ],
-  // },
   // [ModelProvider.Anthropic]: {
   //   creds: {
   //     anthropic_api_key: {
@@ -249,7 +227,7 @@ export const modelTemplates: {
           temperature: {
             type: 'number',
             label: 'Temperature',
-            value: 0,
+            value: 0.0,
             min: 0,
             step: 0.01,
             max: 2,
@@ -258,7 +236,7 @@ export const modelTemplates: {
           presence_penalty: {
             type: 'number',
             label: 'Presence penalty',
-            value: 0,
+            value: 0.0,
             min: -2,
             step: 0.01,
             max: 2,
@@ -267,7 +245,7 @@ export const modelTemplates: {
           frequency_penalty: {
             type: 'number',
             label: 'Frequency penalty',
-            value: 0,
+            value: 0.0,
             min: -2,
             step: 0.01,
             max: 2,
@@ -277,7 +255,7 @@ export const modelTemplates: {
             label: 'Top-p',
             type: 'number',
             value: 1,
-            min: 0,
+            min: 0.0,
             max: 1,
             step: 0.01,
             editable: true,
@@ -301,7 +279,7 @@ export const modelTemplates: {
             type: 'number',
             label: 'Temperature',
             value: 0,
-            min: 0,
+            min: 0.0,
             step: 0.01,
             max: 2,
             editable: true,
@@ -309,7 +287,7 @@ export const modelTemplates: {
           presence_penalty: {
             type: 'number',
             label: 'Presence penalty',
-            value: 0,
+            value: 0.0,
             min: -2,
             step: 0.01,
             max: 2,
@@ -318,7 +296,7 @@ export const modelTemplates: {
           frequency_penalty: {
             type: 'number',
             label: 'Frequency penalty',
-            value: 0,
+            value: 0.0,
             min: -2,
             step: 0.01,
             max: 2,
@@ -327,7 +305,7 @@ export const modelTemplates: {
           top_p: {
             label: 'Top-p',
             type: 'number',
-            value: 1,
+            value: 1.0,
             min: 0,
             max: 1,
             step: 0.01,

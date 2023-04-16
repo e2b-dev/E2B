@@ -109,6 +109,12 @@ class LogStreamParser:
         ):
             merge_logs(tool_log, output)
 
+    def ingest_complete_llm_output(self, output: str):
+        """Ingest whole output of an LLM overwriting the current buffer."""
+        self._token_buffer = output
+        self._parse()
+        return self
+
     def ingest_token(self, token: str):
         """Ingest token and update the logs."""
         self._token_buffer += token

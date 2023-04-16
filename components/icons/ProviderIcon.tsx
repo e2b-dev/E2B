@@ -6,7 +6,6 @@ import { ModelProvider } from 'state/model'
 const iconPaths: {
   [provider in keyof typeof ModelProvider]: string
 } = {
-  // [ModelProvider.HuggingFace]: '/huggingface.png',
   [ModelProvider.OpenAI]: '/open-ai.png',
   // [ModelProvider.Replicate]: '/replicate.png',
   // [ModelProvider.Anthropic]: '/anthropic.png',
