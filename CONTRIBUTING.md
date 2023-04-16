@@ -8,31 +8,65 @@ When you add a provider you can also add a specific models (like OpenAI's GPT-4)
 
 Here is an [example code for adding a new provider](./NEW_PROVIDER_EXAMPLE.md).
 
-## ☑️ 1. Add provider to **frontend**
+## 1. Add provider to **frontend**
 - Add provider name to `ModelProvider` enum in [state/model.ts](state/model.ts)
 - Add provider and models template to `modelTemplates` object in [state/model.ts](state/model.ts)
   - `creds` and `args` defined in the `modelTemplates` are accessible on backend in `get_model` under their exact names in `config["args"]` object.
 - Add provider's PNG icon image to `public/`
 - Add provider's icon path to `iconPaths` object in [components/icons/ProviderIcon.tsx](components/icons/ProviderIcon.tsx)
 
-## ☑️ 2. Add provider to **backend** ([api-service/models/base.py](api-service/models/base.py))
+## 2. Add provider to **backend** ([api-service/models/base.py](api-service/models/base.py))
 - Add provider name to `ModelProvider` enum
-- Add provider integration (implementing langchain's `BaseLanguageModel`) to `get_model` function. You can either use an existing integration from langchain or crate a new integration from scratch.
+- Add provider integration (implementing LangChain's `BaseLanguageModel`) to `get_model` function. You can use an existing integration from LangChain or crate a new integration from scratch.
 
-### **Provider integration with existing [langchain](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integrations**
-You can often use existing langchain integrations to add new model providers to e2b with just a few modifications.
+The new provider integrations should be placed in `api-service/models/providers/`.
 
-[Here](api-service/models/wrappers/replicate.py) is an example of modified [Replicate](https://replicate.com/) integration. We had to add `_acall` method to support async execution and override `validate_environment` to prevent checking if the Replicate API key env var is set up because we pass the env var via a normal parameter.
+### Provider integrations
+We use [LangChain](https://github.com/hwchase17/langchain) under the hood so if you are adding a new integration you have to implement the `BaseLanguageModel` class. That basically means just implementing the `_acall` which is an async method that calls the model with prompt and returns the output.
 
-If you are modifying existing langchain integration add it to `api-service/models/providers/<provider>.py`.
+#### **Using [LangChain](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integration**
+You can often use existing LangChain integrations to add new model providers to e2b with just a few modifications.
 
-### **Provider integration from scratch**
-You can follow the [langchain's guide](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html) to implement the `LLM` class (it inherits from `BaseLanguageModel`). Here is an [example of provider integration](./NEW_PROVIDER_EXAMPLE.md#custom-provider-integration-api-servicemodelsprovidersnew_model_providerpy-with-streaming). You really only need to implement the `_acall` method.
+[Here](api-service/models/providers/replicate.py) is an example of modified [Replicate](https://replicate.com/) integration. We had to add `_acall` method to support async execution and override `validate_environment` to prevent checking if the Replicate API key env var is set up because we pass the env var via a normal parameter.
 
-If you are creating new provider integration add it to `api-service/models/providers/<provider>.py`.
+If you are modifying existing LangChain integration add it to `api-service/models/providers/<provider>.py`.
 
+#### **From scratch**
+You can follow the [langchain's guide](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html) to implement the `LLM` class (it inherits from `BaseLanguageModel`).
 
-## ☑️ 3. Test
+Here is an example of the implementation:
+
+```py
+from typing import List, Optional
+from langchain.llms.base import LLM
+
+class NewModelProviderWithStreaming(LLM):
+    temperature: str
+    new_provider_api_token: str
+
+    # You only need to implement the `_acall` method
+    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        # Call the model and get outputs
+        # You can use `temperature` and `new_provider_api_token` args
+        text = ""
+        for token in outputs:
+            text += token
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_new_token(
+                    token,
+                    verbose=self.verbose,
+                    # We explicitly flush the logs in log queue because the calls to this model are not actually async so they block.
+                    flush=True,
+                )
+            else:
+                self.callback_manager.on_llm_new_token(
+                    token,
+                    verbose=self.verbose,
+                )
+        return text
+```
+
+## 3. Test
 Test if the provider works by starting the app, selecting the provider and model in the "Model" sidebar menu and trying to "Run" it.
 
 Add a screenshot of the results to the PR if you can.
