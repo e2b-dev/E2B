@@ -22,7 +22,7 @@ Here is an [example code for adding a new provider](./NEW_PROVIDER_EXAMPLE.md).
 The new provider integrations should be placed in `api-service/models/providers/`.
 
 ## Provider integrations
-We use [LangChain](https://github.com/hwchase17/langchain) under the hood, so if you are adding a new integration you have to implement the `BaseLanguageModel` class. That means just implementing the `_acall` async method that calls the model with a prompt and returns the output.
+We use [LangChain](https://github.com/hwchase17/langchain) under the hood, so if you are adding a new integration you have to implement the `BaseLanguageModel` class. That means implementing the `_acall` async method that calls the model with a prompt and returns the output. We then use this method for calling the model.
 
 ### **Using [LangChain](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integration**
 You can often use existing LangChain integrations to add new model providers to e2b with just a few modifications.
@@ -67,4 +67,8 @@ class NewModelProviderWithStreaming(LLM):
 ```
 
 ## 3. Test
-Test if the provider works by starting the app, selecting the provider and model in the "Model" sidebar menu and trying to "Run" it. Then add a screenshot of agent steps to the PR.
+Test if the provider works by starting the app, selecting the provider and model in the "Model" sidebar menu and trying to "Run" it. 
+
+![](gifs/change-model.gif)
+
+Then add a screenshot of agent's steps to the PR.
