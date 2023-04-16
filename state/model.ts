@@ -3,8 +3,8 @@ import { Creds } from 'hooks/useModelProviderArgs'
 import { SelectedModel } from './store'
 
 export enum ModelProvider {
-  // HuggingFace = 'HuggingFace',
   OpenAI = 'OpenAI',
+  // HuggingFace = 'HuggingFace',
   // Replicate = 'Replicate',
   // Anthropic = 'Anthropic',
 }

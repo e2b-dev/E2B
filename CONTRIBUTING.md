@@ -66,7 +66,7 @@ const iconPaths: {
   [provider in keyof typeof ModelProvider]: string
 } = {
   ...
-  [ModelProvider.HuggingFace]: '/new-model.png',
+  [ModelProvider.NewModel]: '/new-model.png',
   ...
 }
 ```
