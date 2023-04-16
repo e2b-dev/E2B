@@ -46,7 +46,7 @@ Then open the page on [http://localhost:3000](http://localhost:3000).
 
 > `npm start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
 
-> If you want to run the project without using containers use the [steps here](./CONTRIBUTING.md#development). This is useful if you want to leverage hot reloading and develop the project.
+> If you want to run the project without using containers use the [steps here](./CONTRIBUTING.md#💻-development-setup). This is useful if you want to leverage hot reloading and develop the project.
 
 # Features
 

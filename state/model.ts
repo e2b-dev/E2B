@@ -3,10 +3,10 @@ import { Creds } from 'hooks/useModelProviderArgs'
 import { SelectedModel } from './store'
 
 export enum ModelProvider {
-  HuggingFace = 'HuggingFace',
+  // HuggingFace = 'HuggingFace',
   OpenAI = 'OpenAI',
-  Replicate = 'Replicate',
-  Anthropic = 'Anthropic',
+  // Replicate = 'Replicate',
+  // Anthropic = 'Anthropic',
 }
 
 export type ArgValue = string | number

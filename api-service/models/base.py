@@ -10,9 +10,9 @@ from .wrappers.replicate import ReplicateFix
 
 class ModelProvider(Enum):
     OpenAI = "OpenAI"
-    Replicate = "Replicate"
-    HuggingFace = "HuggingFace"
-    Anthropic = "Anthropic"
+    # Replicate = "Replicate"
+    # HuggingFace = "HuggingFace"
+    # Anthropic = "Anthropic"
 
 
 class ModelConfig(TypedDict):
@@ -26,13 +26,13 @@ def get_model(
     callback_manager: BaseCallbackManager,
 ) -> BaseLanguageModel:
     match config["provider"]:
-        case ModelProvider.Anthropic.value:
-            return Anthropic(
-                **config["args"],
-                verbose=True,
-                streaming=True,
-                callback_manager=callback_manager,
-            )
+        # case ModelProvider.Anthropic.value:
+        #     return Anthropic(
+        #         **config["args"],
+        #         verbose=True,
+        #         streaming=True,
+        #         callback_manager=callback_manager,
+        #     )
         case ModelProvider.OpenAI.value:
             return ChatOpenAI(
                 **config["args"],
@@ -41,19 +41,19 @@ def get_model(
                 streaming=True,
                 callback_manager=callback_manager,
             )
-        case ModelProvider.Replicate.value:
-            return ReplicateFix(
-                model=config["args"]["model"],
-                replicate_api_token=config["args"]["replicate_api_token"],
-                model_kwargs=config["args"],
-                verbose=True,
-                callback_manager=callback_manager,
-            )
-        case ModelProvider.HuggingFace.value:
-            return HuggingFaceHub(
-                **config["args"],
-                verbose=True,
-                callback_manager=callback_manager,
-            )
+        # case ModelProvider.Replicate.value:
+        #     return ReplicateFix(
+        #         model=config["args"]["model"],
+        #         replicate_api_token=config["args"]["replicate_api_token"],
+        #         model_kwargs=config["args"],
+        #         verbose=True,
+        #         callback_manager=callback_manager,
+        #     )
+        # case ModelProvider.HuggingFace.value:
+        #     return HuggingFaceHub(
+        #         **config["args"],
+        #         verbose=True,
+        #         callback_manager=callback_manager,
+        #     )
         case _:
             raise ValueError(f"Provider {config['provider']} no found.")
