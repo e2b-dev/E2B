@@ -12,7 +12,7 @@ Here is an [example code for adding a new provider](./NEW_PROVIDER_EXAMPLE.md).
 - Add provider name to `ModelProvider` enum in [state/model.ts](state/model.ts)
 - Add provider and models template to `modelTemplates` object in [state/model.ts](state/model.ts)
   - `creds` and `args` defined in the `modelTemplates` are accessible on backend in `get_model` under their exact names in `config["args"]` object.
-- Add provider's PNG icon image to `public/`
+- Add provider's PNG icon image to [`public/`](public/open-ai.png) in a resolution that is bigger than 30x30 px.
 - Add provider's icon path to `iconPaths` object in [components/icons/ProviderIcon.tsx](components/icons/ProviderIcon.tsx)
 
 ## 2. Add provider to **backend** ([api-service/models/base.py](api-service/models/base.py))
@@ -22,7 +22,7 @@ Here is an [example code for adding a new provider](./NEW_PROVIDER_EXAMPLE.md).
 The new provider integrations should be placed in `api-service/models/providers/`.
 
 ## Provider integrations
-We use [LangChain](https://github.com/hwchase17/langchain) under the hood, so if you are adding a new integration you have to implement the `BaseLanguageModel` class. That means implementing the `_acall` async method that calls the model with a prompt and returns the output. We then use this method for calling the model.
+We use [LangChain](https://github.com/hwchase17/langchain) under the hood, so if you are adding a new integration you have to implement the `BaseLanguageModel` class. That means implementing the `_acall` async method that calls the model with a prompt and returns the output and also calling `self.callback_manager.on_llm_new_token` from inside the `_acall` method to diggest the output.
 
 ### **Using [LangChain](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) integration**
 You can often use existing LangChain integrations to add new model providers to e2b with just a few modifications.
