@@ -46,7 +46,7 @@ Then open the page on [http://localhost:3000](http://localhost:3000).
 
 > `npm start` starts local Supabase in the background - to stop it you have to run `npm run stop`.
 
-> If you want to run the project without using containers use the [steps here](#development). This is useful if you want to leverage hot reloading and develop the project.
+> If you want to run the project without using containers use the [steps here](./CONTRIBUTING.md#development). This is useful if you want to leverage hot reloading and develop the project.
 
 # Features
 
@@ -71,13 +71,14 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 
 ### **Model you like isn't supported?**
 
-👉 Please open the ["New model request" issue](https://github.com/e2b-dev/e2b/issues/new?assignees=&labels=new+model+request&template=new-model-request.md&title=). 👈
+👉 Please open the ["New model request" issue](https://github.com/e2b-dev/e2b/issues/new?assignees=&labels=new+model+request&template=new-model-request.md&title=) 👈
 
-### 👀 Early demos
+👉 Or open a PR and [start contributing](./CONTRIBUTING.md#adding-new-models-or-new-model-hosting-providers) 👈
+
+## 👀 Early demos
 - [AI Agent using coding tools](https://twitter.com/mlejva/status/1636103084802822151)
 - [Build your custom "Just-In-Time" UI](https://twitter.com/mlejva/status/1641151421830529042)
 - [Agent coded a full Stripe customer checkout by following a technical spec provided by user](https://twitter.com/mlejva/status/1641072535163875330)
-
 
 # ℹ️ Community & Support
 - [Discord](https://discord.gg/U7KEcGErtQ) - live discussion and support
@@ -94,50 +95,3 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 6. Let users edit prompt
 7. Let users customize tools and build custom workflows for the agent
 8. Release cloud version
-
-
-# 💻 Development
-For developing with hot reloading and contributing to the project you may want to run the app locally without Docker Compose (`npm start` command). Here are the steps for how to do it.
-
-You will need:
-- OpenAI API key (support for more and custom models coming soon)
-- Docker
-- Node.js *16+*
-- Python *3.10+*
-- Poetry *1.3.2+*
-- Free ports 3000, 49155, 49160, 54321, 54322
-
-## 1. Install dependencies
-```
-npm run install:all
-```
-
-## 2. Start local Supabase
-```
-npm run db:start
-```
-
-> Local Supabase runs in the background - to stop it you have to run `npm run db:stop`.
-
-## 3. Add env vars
-Create `.env` file by copying the [`.env.example`](.env.example)
-```
-cp .env.example .env
-```
-and fill in the following variables:
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key you got in the previous step as `service_role key: eyJh......`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key you got in the previous step as `anon key: eyJh......`
-
-## 4. Start the app
-```
-npm run dev
-```
-Then open the page on [http://localhost:3000](http://localhost:3000) and sign in with the testing credentials:
-
-**Email**
-
-`admin@admin.com`
-
-**Password**
-
-`admin@admin.com`
