@@ -1,8 +1,8 @@
 from typing import (
     List,
-    List,
+    Literal,
+    TypedDict,
     Any,
-    Dict,
     ClassVar,
     Sequence,
 )
@@ -20,39 +20,62 @@ from langchain.tools import BaseTool
 from models import get_model, ModelConfig
 from database import Database
 from codegen.agent import CodegenAgent, CodegenAgentExecutor
-from codegen.prompt import (
-    SYSTEM_PREFIX,
-    SYSTEM_SUFFIX,
-    SYSTEM_FORMAT_INSTRUCTIONS,
-    HUMAN_INSTRUCTIONS_SUFFIX,
-    get_human_instructions_prefix,
-)
+
+
+class PromptPart(TypedDict):
+    role: Literal["user", "system"]
+    type: str
+    content: str
 
 
 class Codegen(BaseModel):
-    input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad", "method"]
+    input_variables: ClassVar[List[str]] = ["input", "agent_scratchpad"]
     _agent: Agent = PrivateAttr()
     _agent_executor: AgentExecutor = PrivateAttr()
     _tools: Sequence[BaseTool] = PrivateAttr()
     _llm: BaseLanguageModel = PrivateAttr()
     _database: Database = PrivateAttr()
+    _prompt: List[PromptPart] = PrivateAttr()
     _callback_manager: BaseCallbackManager = PrivateAttr()
 
     def __init__(
         self,
         database: Database,
-        callback_manager: BaseCallbackManager,
         tools: Sequence[BaseTool],
-        llm: BaseLanguageModel,
-        agent: Agent,
+        model_config: ModelConfig,
+        prompt: List[PromptPart],
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self._database = database
-        self._callback_manager = callback_manager
         self._tools = tools
-        self._llm = llm
-        self._agent = agent
+        self._prompt = prompt
+
+        self._callback_manager = AsyncCallbackManager(
+            [StreamingStdOutCallbackHandler()]
+        )
+
+        # Assign custom callback manager to tools
+        for tool in tools:
+            tool.callback_manager = self._callback_manager
+
+        # Create the LLM
+        self._llm = get_model(model_config, self._callback_manager)
+
+        print(
+            f"Using LLM '{model_config['provider']}' with args:\n{model_config['args']}"
+        )
+
+        # Create CodegenAgent
+        self._agent = CodegenAgent.from_llm_and_tools(
+            llm=self._llm,
+            tools=tools,
+            prefix=self.get_prompt_part("system", "prefix"),
+            format_instructions=self.get_prompt_part("system", "formatInstructions"),
+            suffix=self.get_prompt_part("system", "suffix"),
+            input_variables=Codegen.input_variables,
+            callback_manager=self._callback_manager,
+        )
 
         self._agent_executor = CodegenAgentExecutor.from_agent_and_tools(
             agent=self._agent,
@@ -64,56 +87,16 @@ class Codegen(BaseModel):
     def tool_names(self):
         return [tool.name for tool in self._tools]
 
-    @classmethod
-    def from_tools_and_database(
-        cls,
-        tools: Sequence[BaseTool],
-        model_config: ModelConfig,
-        database: Database,
-    ):
-        callback_manager = AsyncCallbackManager(
-            [
-                StreamingStdOutCallbackHandler(),
-            ]
-        )
+    def get_prompt_part(self, role: Literal["user", "system"], type: str):
+        return next(
+            (
+                prompt
+                for prompt in self._prompt
+                if prompt["role"] == role and prompt["type"] == type
+            ),
+        )["content"]
 
-        # Assign custom callback manager to custom tools
-        for tool in tools:
-            tool.callback_manager = callback_manager
-
-        # Create the LLM
-        llm = get_model(model_config, callback_manager)
-
-        print(
-            f"Using LLM '{model_config['provider']}' with args:\n{model_config['args']}"
-        )
-
-        # Create CodegenAgent
-        agent = CodegenAgent.from_llm_and_tools(
-            llm=llm,
-            tools=tools,
-            prefix=SYSTEM_PREFIX,
-            suffix=SYSTEM_SUFFIX,
-            format_instructions=SYSTEM_FORMAT_INSTRUCTIONS,
-            input_variables=Codegen.input_variables,
-            callback_manager=callback_manager,
-        )
-
-        return cls(
-            database=database,
-            callback_manager=callback_manager,
-            tools=tools,
-            llm=llm,
-            agent=agent,
-        )
-
-    async def generate(
-        self,
-        run_id: str,
-        route: str,
-        method: str,
-        blocks: List[Dict],
-    ):
+    async def generate(self, run_id: str):
         self._callback_manager.add_handler(
             LogsCallbackHandler(
                 database=self._database,
@@ -122,58 +105,12 @@ class Codegen(BaseModel):
             )
         )
 
-        # Retrieve the description block.
-        description_block: Dict[str, str] = next(
-            b for b in blocks if b.get("type") == "Description"
-        )
+        # TODO: Extract input instructions from prompt var
 
-        # Retrueve the block describing the incoming request payload.
-        incoming_request_block: Dict[str, str] | None = next(
-            (b for b in blocks if b.get("type") == "RequestBody" and b.get("content")),
-            None,
-        )
-
-        # Retrieve the instructions block.
-        instructions_block: Dict[str, str] | None = next(
-            (b for b in blocks if b.get("type") == "Instructions" and b.get("content")),
-            None,
-        )
-
-        input_vars = {
-            "description": description_block["content"],
-            "request_body": f"{{\n{incoming_request_block['content']}\n}}"
-            if incoming_request_block
-            else None,
-            "route": route,
-            "method": method,
-        }
-
-        instructions = "Here are the instructions:"
-
-        # Append the premade prefix instructions.
-        for instruction in get_human_instructions_prefix(
-            has_request_body=bool(incoming_request_block)
-        ):
-            instructions += "\n" + f"\n- {instruction['content']}"
-
-        # Append the use instructions
-        if instructions_block:
-            instructions += (
-                + "\nHere are the required implementation instructions:\n"
-                + instructions_block["content"]
-            )
-
-        # Use the values to format the instruction string.
-        instructions = instructions.format(**input_vars)
-
-        print("Instructions:\n", instructions)
-
-        # Append the premade suffix instructions.
-        for inst in HUMAN_INSTRUCTIONS_SUFFIX:
-            instructions += f"\n{inst}"
+        self._prompt
 
         print("Running executor...")
         await self._agent_executor.arun(
             agent_scratchpad="",
-            input=instructions,
+            input=self.get_prompt_part("user", "prefix"),
         )

@@ -27,6 +27,7 @@
     "vale:sync": "vale sync"
   },
   "dependencies": {
+    "@devbookhq/code-editor": "^0.1.29",
     "@devbookhq/splitter": "^1.4.0",
     "@prisma/client": "^4.12.0",
     "@supabase/auth-helpers-nextjs": "^0.5.5",
@@ -43,11 +44,11 @@
     "@tiptap/starter-kit": "^2.0.0-beta.220",
     "clsx": "^1.2.1",
     "fuse.js": "^6.6.2",
-    "handlebars": "^4.7.7",
     "http-proxy-middleware": "^3.0.0-beta.1",
     "human-id": "^4.0.0",
     "immer": "^9.0.19",
-    "lucide-react": "^0.130.1",
+    "lucide-react": "^0.161.0",
+    "mustache": "^4.2.0",
     "nanoid": "^4.0.1",
     "next": "13.2.3",
     "next-superjson-plugin": "^0.5.6",
@@ -67,6 +68,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.9",
+    "@types/mustache": "^4.2.2",
     "@types/node": "^18.14.6",
     "@types/randomcolor": "^0.5.7",
     "@types/react": "^18.0.28",

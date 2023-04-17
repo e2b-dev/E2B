@@ -51,15 +51,12 @@ async def generate():
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
     route_id = body["routeID"]
-    blocks = body["blocks"]
-    method = body["method"]
-    route = body["route"]
     model_config = body["modelConfig"]
     prompt = body["prompt"]
 
-    pprint("+++ Blocks:")
-    pprint(blocks)
-    pprint("--- Blocks:")
+    pprint("+++ Prompt:")
+    pprint(prompt)
+    pprint("--- Prompt:")
 
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
@@ -75,21 +72,17 @@ async def generate():
         )
 
         # Create a new instance of code generator
-        cg = Codegen.from_tools_and_database(
+        cg = Codegen(
             # The order in which we pass tools HAS an effect on the LLM behaviour.
             tools=list(tools),
             model_config=model_config,
             database=db,
+            prompt=prompt,
         )
 
         # Generate the code
         print("Generating...", flush=True)
-        await cg.generate(
-            run_id=run_id,
-            route=route,
-            method=method,
-            blocks=blocks,
-        )
+        await cg.generate(run_id=run_id)
 
         deploy_url: str | None = None
         # Disable deployment if there AWS creds are not present
