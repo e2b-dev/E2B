@@ -71,7 +71,7 @@ class Codegen(BaseModel):
             llm=self._llm,
             tools=tools,
             prefix=self.get_prompt_part("system", "prefix"),
-            format_instructions=self.get_prompt_part("system", "formatInstructions"),
+            format_instructions=self.get_prompt_part("system", "instructionsFormat"),
             suffix=self.get_prompt_part("system", "suffix"),
             input_variables=Codegen.input_variables,
             callback_manager=self._callback_manager,
@@ -88,6 +88,7 @@ class Codegen(BaseModel):
         return [tool.name for tool in self._tools]
 
     def get_prompt_part(self, role: Literal["user", "system"], type: str):
+        print("get prompt", role, type)
         return next(
             (
                 prompt
@@ -104,10 +105,6 @@ class Codegen(BaseModel):
                 tool_names=self.tool_names(),
             )
         )
-
-        # TODO: Extract input instructions from prompt var
-
-        self._prompt
 
         print("Running executor...")
         await self._agent_executor.arun(

@@ -1,9 +1,11 @@
-import { CodeEditor, LanguageSetup } from '@devbookhq/code-editor'
+import { LanguageSetup } from '@devbookhq/code-editor'
 import type { Extension } from '@codemirror/state'
 
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
 import { defaultPromptTemplate } from 'state/prompt'
+import { defaultTemplateID } from 'state/store'
+import PromptEditor from '../RouteEditor/PromptEditor'
 
 export interface Props {
 
@@ -17,20 +19,20 @@ function Prompt({
 }: Props) {
   const [selectors] = useStateStore()
   const model = selectors.use.model()
-  const prompt = selectors.use.prompts().find(p =>
-    p.templateID === 'NodeJSServer' &&
+  const setPrompt = selectors.use.setPrompt()
+  const modelSetup = selectors.use.modelSetups().find(p =>
+    p.templateID === defaultTemplateID &&
     p.provider === model.provider &&
     p.modelName === model.name
   )
-
-  const promptParts = prompt?.prompt || defaultPromptTemplate
-
-  const setPrompt = selectors.use.setPrompt()
+  const prompt = modelSetup?.prompt || defaultPromptTemplate
 
   return (
     <div className="
     flex
     flex-col
+    flex-1
+    overflow-hidden
   ">
       <div className="
         flex
@@ -56,9 +58,10 @@ function Prompt({
         flex
         flex-col
         scroller
-        overflow-auto
+        flex-1
+        overflow-y-auto
       ">
-        {promptParts.map((p, i) =>
+        {prompt.map((p, i) =>
           <div
             key={i}
             className="
@@ -66,35 +69,32 @@ function Prompt({
             flex-col
           "
           >
-            <div className="
-            flex
-            space-x-2
-          ">
-              <Text
-                text={p.role}
-                className="font-bold"
-                size={Text.size.S3}
-              />
-              <Text
-                text={p.type}
-                className="font-bold"
-                size={Text.size.S3}
-              />
-            </div>
-            <CodeEditor
+            <PromptEditor
+              title={p.role + ' ' + p.type}
+              placeholder={`Specify ${p.role} ${p.type} prompt here`}
+              content={p.content}
+              onChange={(content) => {
+                if (modelSetup) {
+                  const p = modelSetup.prompt[i]
+                  p.content = content
+                  setPrompt(defaultTemplateID, model.provider, model.name, modelSetup.prompt)
+                }
+              }}
+            />
+
+            {/* <CodeEditor
               content={p.content}
               supportedLanguages={supportedLanguages}
               filename="prompt"
               theme={theme}
               onContentChange={(content) => {
-                if (prompt) {
-                  const p = prompt.prompt[i]
+                if (modelSetup) {
+                  const p = modelSetup.prompt[i]
                   p.content = content
-
-                  setPrompt('NodeJSServer', model.provider, model.name, prompt.prompt)
+                  setPrompt(defaultTemplateID, model.provider, model.name, modelSetup.prompt)
                 }
               }}
-            />
+            /> */}
           </div>
         )}
       </div>

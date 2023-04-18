@@ -7,7 +7,7 @@ import Agent from './Agent'
 import Envs from './Envs'
 import Model from './Model'
 
-import { PromptPart, Route } from 'state/store'
+import { defaultTemplateID, PromptPart, Route } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { ModelConfig, getModelConfig } from 'state/model'
@@ -81,8 +81,8 @@ function Sidebar({
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
   const model = selectors.use.model()
-  const prompt = selectors.use.prompts().find(p =>
-    p.templateID === 'NodeJSServer' &&
+  const prompt = selectors.use.modelSetups().find(p =>
+    p.templateID === defaultTemplateID &&
     p.provider === model.provider &&
     p.modelName === model.name
   )?.prompt || defaultPromptTemplate

@@ -46,7 +46,7 @@ Final Answer: the final answer
   },
   {
     role: 'user',
-    type: 'userPrefix',
+    type: 'prefix',
     content: `The handler you are building should do the following:
 {{Description}}
 

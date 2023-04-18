@@ -17,6 +17,9 @@ export interface SelectedModel {
   name: string
 }
 
+export const defaultTemplateID = 'NodeJSServer'
+export const defaultModelName: 'GPT 3.5 Turbo' = 'GPT 3.5 Turbo'
+
 export type BlockType =
   // Raw text
   'Basic' |
@@ -45,7 +48,7 @@ export interface PromptPart {
   content: string
 }
 
-export interface ModelPrompt {
+export interface ModelSetup {
   templateID: string
   provider: ModelProvider
   modelName: string
@@ -69,7 +72,7 @@ export interface SerializedState {
   envs: { key: string, value: string }[]
   routes: Route[]
   model: SelectedModel
-  prompts: ModelPrompt[]
+  modelSetups: ModelSetup[]
 }
 
 export interface State extends SerializedState {
@@ -107,16 +110,16 @@ function getDefaultRoute(): Route {
 function getDefaultModel(): SelectedModel {
   return {
     provider: ModelProvider.OpenAI,
-    name: 'GPT 3.5 Turbo',
+    name: defaultModelName,
     args: {},
   }
 }
 
-function getDefaultPrompts(): ModelPrompt[] {
+function getDefaultPrompts(): ModelSetup[] {
   return [{
     provider: ModelProvider.OpenAI,
-    modelName: 'GPT 3.5 Turbo',
-    templateID: 'NodeJSServer',
+    modelName: defaultModelName,
+    templateID: defaultTemplateID,
     prompt: defaultPromptTemplate,
   }]
 }
@@ -126,7 +129,7 @@ function getDefaultState(): SerializedState {
     envs: [{ key: '', value: '' }],
     routes: [getDefaultRoute()],
     model: getDefaultModel(),
-    prompts: getDefaultPrompts(),
+    modelSetups: getDefaultPrompts(),
   }
 }
 
@@ -150,8 +153,8 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     initialState.envs.push({ key: '', value: '' })
   }
 
-  if (!initialState.prompts) {
-    initialState.prompts = []
+  if (!initialState.modelSetups || !Array.isArray(initialState.modelSetups)) {
+    initialState.modelSetups = getDefaultPrompts()
   }
 
   // TEMPORARY: We are checking .model === string for backwards compatibility.
@@ -196,16 +199,16 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       state.envs[idx] = pair
     }),
     setPrompt: (templateID, provider, modelName, prompt) => set(state => {
-      const promptIdx = state.prompts.findIndex(p =>
+      const promptIdx = state.modelSetups.findIndex(p =>
         p.templateID === templateID &&
         p.provider === provider &&
         p.modelName === modelName
       )
 
       if (promptIdx !== -1) {
-        state.prompts[promptIdx].prompt = prompt
+        state.modelSetups[promptIdx].prompt = prompt
       } else {
-        state.prompts.push({
+        state.modelSetups.push({
           templateID,
           prompt,
           modelName,

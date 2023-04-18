@@ -13,7 +13,7 @@ function useDocEditor({
   placeholder,
   referenceSearch,
 }: {
-  referenceSearch: Fuse<Reference>
+  referenceSearch?: Fuse<Reference>
   initialContent: string,
   onContentChange: (content: string) => void,
   placeholder?: string
@@ -32,11 +32,11 @@ function useDocEditor({
     extensions: [
       ...extensions,
       CustomKeymap,
-      AutocompleteExtension.configure({
+      ...referenceSearch ? [AutocompleteExtension.configure({
         suggestion: {
           items: query => referenceSearch.search(query),
         },
-      }),
+      })] : [],
       Placeholder.configure({
         placeholder: ({ editor }) => {
           if (!editor.getText()) {

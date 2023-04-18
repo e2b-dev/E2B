@@ -50,7 +50,7 @@ function RouteEditor({ route }: Props) {
               referenceSearch={referenceSearch}
               title="What should this route do?"
               placeholder="This is an API endpoint that ..."
-              block={descriptionBlock}
+              content={descriptionBlock.content}
               onChange={updateDescriptionBlock}
             />
           }
@@ -65,7 +65,7 @@ function RouteEditor({ route }: Props) {
               referenceSearch={referenceSearch}
               title="Step-by-step instructions"
               placeholder="1. Check if the incoming `email` is not empty ..."
-              block={instructionsBlock}
+              content={instructionsBlock.content}
               onChange={updateInstructionsBlock}
             />
           }
