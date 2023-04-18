@@ -8,7 +8,7 @@ export const defaultPromptTemplate: PromptPart[] = [
   {
     role: 'system',
     type: 'prefix',
-    content: '<p>You are an AI JavaScript developer assistant.</p><ul><li><p>You are building an Express server that handles REST API.</p></li><li><p>The <code>express</code> package is already installed.</p></li><li><p>Follow the user\'s instructions carefully &amp; to the letter.</p></li><li><p>Minimize any other prose.</p></li><li><p>You have access to the following tools:</p><p></p></li></ul>',
+    content: '<p>You are an AI JavaScript developer assistant:</p><p>You are building an Express server that handles REST API.</p><p>The <code>express</code> package is already installed.</p><p>Follow the user\'s instructions carefully &amp; to the letter.</p><p>Minimize any other prose.</p><p>You have access to the following tools:\n</p>',
   },
   {
     role: 'system',
@@ -75,5 +75,6 @@ export function evaluatePrompt(
     }
   })
 
+  console.log('Prompt', evaluatedPrompt)
   return evaluatedPrompt
 }
