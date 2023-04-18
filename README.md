@@ -66,7 +66,6 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
   - [x] GTP-3.5
 - [ ] [Replicate](https://replicate.com/) 🚧
 - [ ] [HuggingFace](https://huggingface.co/) 🚧
-- [ ] [Banana](https://www.banana.dev/) 🚧
 - [ ] [Anthropic](https://anthropic.com/) 🚧
   - [ ] Claude v1.3
   - [ ] Claude Instant v1
