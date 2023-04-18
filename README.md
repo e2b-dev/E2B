@@ -64,11 +64,12 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 - [x] [OpenAI](https://openai.com/)
   - [x] GPT-4
   - [x] GTP-3.5
-- [ ] [Replicate](https://replicate.com/) 🚧
-- [ ] [HuggingFace](https://huggingface.co/) 🚧
-- [x] [Anthropic](https://anthropic.com/) 🚧
+- [x] [Anthropic](https://anthropic.com/)
   - [x] Claude v1.3
   - [x] Claude Instant v1
+- [ ] [Replicate](https://replicate.com/) 🚧
+- [ ] [HuggingFace](https://huggingface.co/) 🚧
+- [ ] [Banana](https://www.banana.dev/) 🚧
 
 ### **Model or model hosting provider you like isn't supported?**
 
