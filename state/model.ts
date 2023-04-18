@@ -145,64 +145,64 @@ export const modelTemplates: {
       },
     ],
   },
-  [ModelProvider.Replicate]: {
-    link: 'https://replicate.com',
-    creds: {
-      replicate_api_token: {
-        label: 'Replicate API Key',
-        type: 'string',
-      },
-    },
-    models: [
-      {
-        name: 'Hosted model',
-        args: {
-          model: {
-            placeholder: 'owner-name/model-name:version',
-            editable: true,
-            type: 'string',
-            label: 'Model'
-          },
-          max_length: {
-            type: 'number',
-            editable: true,
-            value: 2500,
-            step: 1,
-            min: 1,
-          },
-          temperature: {
-            editable: true,
-            type: 'number',
-            value: 0.5,
-            min: 0,
-            step: 0.01,
-          },
-          top_p: {
-            editable: true,
-            type: 'number',
-            value: 0.9,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          top_k: {
-            editable: true,
-            type: 'number',
-            value: 0,
-            min: 0,
-            step: 0.01,
-          },
-          repetition_penalty: {
-            editable: true,
-            type: 'number',
-            value: 1,
-            min: 0,
-            step: 0.01,
-          },
-        },
-      },
-    ],
-  },
+  // [ModelProvider.Replicate]: {
+  //   link: 'https://replicate.com',
+  //   creds: {
+  //     replicate_api_token: {
+  //       label: 'Replicate API Key',
+  //       type: 'string',
+  //     },
+  //   },
+  //   models: [
+  //     {
+  //       name: 'Hosted model',
+  //       args: {
+  //         model: {
+  //           placeholder: 'owner-name/model-name:version',
+  //           editable: true,
+  //           type: 'string',
+  //           label: 'Model'
+  //         },
+  //         max_length: {
+  //           type: 'number',
+  //           editable: true,
+  //           value: 2500,
+  //           step: 1,
+  //           min: 1,
+  //         },
+  //         temperature: {
+  //           editable: true,
+  //           type: 'number',
+  //           value: 0.5,
+  //           min: 0,
+  //           step: 0.01,
+  //         },
+  //         top_p: {
+  //           editable: true,
+  //           type: 'number',
+  //           value: 0.9,
+  //           min: 0,
+  //           max: 1,
+  //           step: 0.01,
+  //         },
+  //         top_k: {
+  //           editable: true,
+  //           type: 'number',
+  //           value: 0,
+  //           min: 0,
+  //           step: 0.01,
+  //         },
+  //         repetition_penalty: {
+  //           editable: true,
+  //           type: 'number',
+  //           value: 1,
+  //           min: 0,
+  //           step: 0.01,
+  //         },
+  //       },
+  //     },
+  //   ],
+  // },
   [ModelProvider.OpenAI]: {
     creds: {
       openai_api_key: {
