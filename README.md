@@ -60,8 +60,6 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 - **BYOP** - Bring Your Own Prompt
 - **BYOT** - Bring Your Own Tools
 
-We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
-
 ## 🤖 Supported models and model hosting providers
 - [x] [OpenAI](https://openai.com/)
   - [x] GPT-4
@@ -91,13 +89,13 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 # 🤝 Contributing
 We welcome any contributions! If you want to contribute to the project check out the [contibution guide](CONTRIBUTING.md) and join our [Discord](https://discord.gg/dSBY3ms2Qr).
 
-# 📆 Roadmap
-1. Make sure people can run e2b locally without issues and the DX is smooth.
-2. Add support for more models.
+# 📆 Short-term Roadmap
+1. ✅ ~~Make sure people can run e2b locally without issues and the DX is smooth.~~
+2. 🚧 Add support for more models.
     - Let users request new models. Later create a system that will let users use any model.
 3. Improve model's understanding of the context based on the instructions
 4. Support for more tools
 5. Improve the dashboard UI
-6. Let users edit prompt
+6. 🚧 Let users edit prompt
 7. Let users customize tools and build custom workflows for the agent
 8. Release cloud version
