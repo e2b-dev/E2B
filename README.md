@@ -3,7 +3,7 @@
   <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<p align="center">Open-source IDE powered by AI agents that do the work for you</p>
+<p align="center">Open-source platform for building AI-powered virtual software developers</p>
 
 <h4 align="center">
   <a href="https://e2b.dev">Website</a> |
@@ -23,13 +23,11 @@
 ![e2b-editor](docs-assets/e2b.png)
 *Example of AI agent building Stripe checkout. Left - technical specification written by human. Right - steps that the AI agent took and tools that it used to build the server route required by the specification.*
 
-[e2b](https://e2b.dev) or etob (*english2bits*) is an open-source virtual software developer. These virtual developers are powered by AI agents and can use tools.
+[e2b](https://e2b.dev) or etob (*english2bits*) allows you to create & deploy virtual software developers. These virtual developers are powered by specialized AI agents that build software based on your instructions and can use tools.
 
-The developer writes a short documentation or a technical spec in plain English and then lets the AI agent do the actual work. The AI agents have access to tools like writing to a file, running code, running commands, installing dependencies, deploying, etc. 
+Agents operate in our own secure sandboxed cloud environments that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/).
 
-Agents operate in our own secure sandboxed cloud environments that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/). This way, you for example describe what a server route should do and the agent codes it for you. Like [this example](https://twitter.com/mlejva/status/1641072535163875330) of an AI agent coding Stripe customer checkout based on a technical spec.
-
-e2b currently supports building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more languages and frameworks with time. The goal for e2b is to eventually be able to handle any use-case.
+e2b currently supports building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more use-cases with time.
 
 # 🚀 Get started
 We're working on the cloud-hosted version. In the meantime, the fastest way try out e2b is to run it locally via Docker.
@@ -62,8 +60,6 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 - **BYOP** - Bring Your Own Prompt
 - **BYOT** - Bring Your Own Tools
 
-We think the AI-powered IDE for the future should be open-sourced and allow anybody to bring their models, customize the prompts, and develop custom tools for the agents. But we also plan to offer a cloud version with some features behind subscription though.
-
 ## 🤖 Supported models and model hosting providers
 - [x] [OpenAI](https://openai.com/)
   - [x] GPT-4
@@ -93,13 +89,13 @@ We think the AI-powered IDE for the future should be open-sourced and allow anyb
 # 🤝 Contributing
 We welcome any contributions! If you want to contribute to the project check out the [contibution guide](CONTRIBUTING.md) and join our [Discord](https://discord.gg/dSBY3ms2Qr).
 
-# 📆 Roadmap
-1. Make sure people can run e2b locally without issues and the DX is smooth.
-2. Add support for more models.
+# 📆 Short-term Roadmap
+1. ✅ ~~Make sure people can run e2b locally without issues and the DX is smooth.~~
+2. 🚧 Add support for more models.
     - Let users request new models. Later create a system that will let users use any model.
 3. Improve model's understanding of the context based on the instructions
 4. Support for more tools
 5. Improve the dashboard UI
-6. Let users edit prompt
+6. 🚧 Let users edit prompt
 7. Let users customize tools and build custom workflows for the agent
 8. Release cloud version
