@@ -33,9 +33,10 @@ function ProviderIcon({ provider }: Props) {
         className="
           rounded
         "
+        width={90}
+        height={90}
         alt={`${provider} logo`}
         src={iconPaths[provider]}
-        fill
         priority
       />
     </div>
