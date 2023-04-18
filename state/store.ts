@@ -115,7 +115,7 @@ function getDefaultModel(): SelectedModel {
   }
 }
 
-function getDefaultPrompts(): ModelSetup[] {
+function getDefaultModelSetup(): ModelSetup[] {
   return [{
     provider: ModelProvider.OpenAI,
     modelName: defaultModelName,
@@ -129,7 +129,7 @@ function getDefaultState(): SerializedState {
     envs: [{ key: '', value: '' }],
     routes: [getDefaultRoute()],
     model: getDefaultModel(),
-    modelSetups: getDefaultPrompts(),
+    modelSetups: getDefaultModelSetup(),
   }
 }
 
@@ -153,8 +153,8 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     initialState.envs.push({ key: '', value: '' })
   }
 
-  if (!initialState.modelSetups || !Array.isArray(initialState.modelSetups)) {
-    initialState.modelSetups = getDefaultPrompts()
+  if (!initialState.modelSetups) {
+    initialState.modelSetups = getDefaultModelSetup()
   }
 
   // TEMPORARY: We are checking .model === string for backwards compatibility.
@@ -193,6 +193,20 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       state.envs = envs
     }),
     setModel: (model) => set(state => {
+      const modelSetupIdx = state.modelSetups.findIndex(p =>
+        p.templateID === defaultTemplateID &&
+        p.provider === model.provider &&
+        p.modelName === model.name,
+      )
+
+      if (modelSetupIdx === -1) {
+        state.modelSetups.push({
+          provider: model.provider,
+          templateID: defaultTemplateID,
+          prompt: defaultPromptTemplate,
+          modelName: model.name,
+        })
+      }
       state.model = model
     }),
     changeEnv: (pair, idx) => set(state => {

@@ -71,8 +71,8 @@ class Codegen(BaseModel):
             llm=self._llm,
             tools=tools,
             prefix=self.get_prompt_part("system", "prefix"),
-            format_instructions=self.get_prompt_part("system", "instructionsFormat"),
-            suffix=self.get_prompt_part("system", "suffix"),
+            format_instructions=self.get_prompt_part("system", "suffix"),
+            suffix="",
             input_variables=Codegen.input_variables,
             callback_manager=self._callback_manager,
         )

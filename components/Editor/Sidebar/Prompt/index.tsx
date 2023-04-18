@@ -1,14 +1,13 @@
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
-import { defaultPromptTemplate } from 'state/prompt'
+import { defaultPromptTemplate, getDescription } from 'state/prompt'
 import { defaultTemplateID } from 'state/store'
 
-import PromptEditor from '../RouteEditor/PromptEditor'
+import Editor from './Editor'
 
 function Prompt() {
   const [selectors] = useStateStore()
   const model = selectors.use.model()
-  const setPrompt = selectors.use.setPrompt()
   const modelSetup = selectors.use.modelSetups().find(p =>
     p.templateID === defaultTemplateID &&
     p.provider === model.provider &&
@@ -66,17 +65,31 @@ function Prompt() {
             <div
               key={i}
               className="
-            flex
-            flex-col
-          "
+                flex
+                space-y-4
+                flex-col
+              "
             >
-              <PromptEditor
-                title={`${p.role} ${p.type.replace(/([A-Z])/g, ' $1')}`.toUpperCase()}
+              <div className="flex flex-col">
+                <Text
+                  className="font-bold text-slate-400"
+                  size={Text.size.S2}
+                  text={`${p.role} ${p.type.replace(/([A-Z])/g, ' $1')}`.toUpperCase()}
+                />
+                <Text
+                  className="font-medium text-slate-400"
+                  size={Text.size.S3}
+                  text={getDescription(p)}
+                />
+              </div>
+              <Editor
+                // title={`${p.role} ${p.type.replace(/([A-Z])/g, ' $1')}`.toUpperCase()}
                 placeholder={`Specify ${p.role} ${p.type.replace(/([A-Z])/g, ' $1').toLowerCase()} prompt here`}
                 content={p.content}
-                onChange={(content) => {
-                  setPrompt(defaultTemplateID, model.provider, model.name, i, { ...p, content, })
-                }}
+                model={model}
+                templateID={defaultTemplateID}
+                idx={i}
+                promptPart={p}
               />
             </div>
           )}

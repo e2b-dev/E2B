@@ -35,6 +35,7 @@ function Text({
     'flex-row',
     'items-center',
     'text-left',
+    'whitespace-pre-wrap',
     Sizes[size],
     className,
   )
