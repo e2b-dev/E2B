@@ -66,9 +66,9 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
   - [x] GTP-3.5
 - [ ] [Replicate](https://replicate.com/) 🚧
 - [ ] [HuggingFace](https://huggingface.co/) 🚧
-- [ ] [Anthropic](https://anthropic.com/) 🚧
-  - [ ] Claude v1.3
-  - [ ] Claude Instant v1
+- [x] [Anthropic](https://anthropic.com/) 🚧
+  - [x] Claude v1.3
+  - [x] Claude Instant v1
 
 ### **Model or model hosting provider you like isn't supported?**
 
