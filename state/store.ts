@@ -9,12 +9,16 @@ import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
 import { ModelArgs, ModelProvider } from './model'
+import { defaultPromptTemplate } from './prompt'
 
 export interface SelectedModel {
   provider: ModelProvider
   args: ModelArgs
   name: string
 }
+
+export const defaultTemplateID = 'NodeJSServer'
+export const defaultModelName: 'GPT 3.5 Turbo' = 'GPT 3.5 Turbo'
 
 export type BlockType =
   // Raw text
@@ -38,6 +42,19 @@ export interface Route {
   id: string
 }
 
+export interface PromptPart {
+  role: 'user' | 'system'
+  type: string
+  content: string
+}
+
+export interface ModelSetup {
+  templateID: string
+  provider: ModelProvider
+  modelName: string
+  prompt: PromptPart[]
+}
+
 export enum Method {
   POST = 'post',
   GET = 'get',
@@ -55,6 +72,7 @@ export interface SerializedState {
   envs: { key: string, value: string }[]
   routes: Route[]
   model: SelectedModel
+  modelSetups: ModelSetup[]
 }
 
 export interface State extends SerializedState {
@@ -65,6 +83,7 @@ export interface State extends SerializedState {
   setEnvs: (envs: { key: string, value: string }[]) => void
   changeEnv: (pair: { key: string, value: string }, idx: number) => void
   setModel: (model: SelectedModel) => void
+  setPrompt: (templateID: string, provider: ModelProvider, modelName: string, idx: number, promptPart: PromptPart) => void
 }
 
 function createBlock(type: BlockType): Block {
@@ -91,9 +110,18 @@ function getDefaultRoute(): Route {
 function getDefaultModel(): SelectedModel {
   return {
     provider: ModelProvider.OpenAI,
-    name: 'GPT 3.5 Turbo',
+    name: defaultModelName,
     args: {},
   }
+}
+
+function getDefaultModelSetup(): ModelSetup[] {
+  return [{
+    provider: ModelProvider.OpenAI,
+    modelName: defaultModelName,
+    templateID: defaultTemplateID,
+    prompt: defaultPromptTemplate,
+  }]
 }
 
 function getDefaultState(): SerializedState {
@@ -101,6 +129,7 @@ function getDefaultState(): SerializedState {
     envs: [{ key: '', value: '' }],
     routes: [getDefaultRoute()],
     model: getDefaultModel(),
+    modelSetups: getDefaultModelSetup(),
   }
 }
 
@@ -122,6 +151,10 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     initialState.envs = [{ key: '', value: '' }]
   } else if (initialState.envs.length === 0) {
     initialState.envs.push({ key: '', value: '' })
+  }
+
+  if (!initialState.modelSetups) {
+    initialState.modelSetups = getDefaultModelSetup()
   }
 
   // TEMPORARY: We are checking .model === string for backwards compatibility.
@@ -160,10 +193,32 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       state.envs = envs
     }),
     setModel: (model) => set(state => {
+      const modelSetupIdx = state.modelSetups.findIndex(p =>
+        p.templateID === defaultTemplateID &&
+        p.provider === model.provider &&
+        p.modelName === model.name,
+      )
+
+      if (modelSetupIdx === -1) {
+        state.modelSetups.push({
+          provider: model.provider,
+          templateID: defaultTemplateID,
+          prompt: defaultPromptTemplate,
+          modelName: model.name,
+        })
+      }
       state.model = model
     }),
     changeEnv: (pair, idx) => set(state => {
       state.envs[idx] = pair
+    }),
+    setPrompt: (templateID, provider, modelName, idx, promptPart) => set(state => {
+      const promptIdx = state.modelSetups.findIndex(p =>
+        p.templateID === templateID &&
+        p.provider === provider &&
+        p.modelName === modelName
+      )
+      state.modelSetups[promptIdx].prompt[idx] = promptPart
     }),
   }))
 

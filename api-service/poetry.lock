@@ -536,14 +536,14 @@ files = [
 
 [[package]]
 name = "gptcache"
-version = "0.1.10"
+version = "0.1.11"
 description = "GPTCache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPTCache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
 category = "main"
 optional = false
 python-versions = ">=3.8.1"
 files = [
-    {file = "gptcache-0.1.10-py3-none-any.whl", hash = "sha256:6d5baaed83784164d1cad29423c4e3433a7ae3a8794f7f4785d44ee27691dc19"},
-    {file = "gptcache-0.1.10.tar.gz", hash = "sha256:75f63b181e5ce40aff1859711fe9496bd7569e3b2afcac3ec46cd98a8a0ce974"},
+    {file = "gptcache-0.1.11-py3-none-any.whl", hash = "sha256:114afdfbce429734c11ef50cca7669942a5ab39180b372b187cff5ffb3438c94"},
+    {file = "gptcache-0.1.11.tar.gz", hash = "sha256:d4a18a7587e45916fb406c2e949f2d225cdf1f8fecd0f68ee3de2e7a9cfe30c2"},
 ]
 
 [package.dependencies]
@@ -910,14 +910,14 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "langchain"
-version = "0.0.139"
+version = "0.0.141"
 description = "Building applications with LLMs through composability"
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchain-0.0.139-py3-none-any.whl", hash = "sha256:2ea43780e1f788333f2b741b119d9870640a92c6f5f2d177d1ca0c98463bd097"},
-    {file = "langchain-0.0.139.tar.gz", hash = "sha256:4ea86ad6192f45c65cbbdc24ff1a56aaac4bee8c038be982981369ca553590df"},
+    {file = "langchain-0.0.141-py3-none-any.whl", hash = "sha256:6bbabf6ad5743bad41809b76138ddd110db69e7b78919b2f9cb5b3bac6bcf63c"},
+    {file = "langchain-0.0.141.tar.gz", hash = "sha256:245888ff3d4439c0242f3a36669fb83917d39ece4fa6c316d4c34f1de63f532d"},
 ]
 
 [package.dependencies]
@@ -934,9 +934,9 @@ SQLAlchemy = ">=1,<2"
 tenacity = ">=8.1.0,<9.0.0"
 
 [package.extras]
-all = ["aleph-alpha-client (>=2.15.0,<3.0.0)", "anthropic (>=0.2.4,<0.3.0)", "beautifulsoup4 (>=4,<5)", "cohere (>=3,<4)", "deeplake (>=3.2.21,<4.0.0)", "elasticsearch (>=8,<9)", "faiss-cpu (>=1,<2)", "google-api-python-client (==2.70.0)", "google-search-results (>=2,<3)", "huggingface_hub (>=0,<1)", "jina (>=3.14,<4.0)", "jinja2 (>=3,<4)", "manifest-ml (>=0.0.1,<0.0.2)", "networkx (>=2.6.3,<3.0.0)", "nlpcloud (>=1,<2)", "nltk (>=3,<4)", "nomic (>=1.0.43,<2.0.0)", "openai (>=0,<1)", "opensearch-py (>=2.0.0,<3.0.0)", "pgvector (>=0.1.6,<0.2.0)", "pinecone-client (>=2,<3)", "pinecone-text (>=0.4.2,<0.5.0)", "psycopg2-binary (>=2.9.5,<3.0.0)", "pyowm (>=3.3.0,<4.0.0)", "pypdf (>=3.4.0,<4.0.0)", "qdrant-client (>=1.1.2,<2.0.0)", "redis (>=4,<5)", "sentence-transformers (>=2,<3)", "spacy (>=3,<4)", "tensorflow-text (>=2.11.0,<3.0.0)", "tiktoken (>=0.3.2,<0.4.0)", "torch (>=1,<2)", "transformers (>=4,<5)", "weaviate-client (>=3,<4)", "wikipedia (>=1,<2)", "wolframalpha (==5.0.0)"]
+all = ["aleph-alpha-client (>=2.15.0,<3.0.0)", "anthropic (>=0.2.6,<0.3.0)", "beautifulsoup4 (>=4,<5)", "cohere (>=3,<4)", "deeplake (>=3.2.21,<4.0.0)", "elasticsearch (>=8,<9)", "faiss-cpu (>=1,<2)", "google-api-python-client (==2.70.0)", "google-search-results (>=2,<3)", "huggingface_hub (>=0,<1)", "jina (>=3.14,<4.0)", "jinja2 (>=3,<4)", "manifest-ml (>=0.0.1,<0.0.2)", "networkx (>=2.6.3,<3.0.0)", "nlpcloud (>=1,<2)", "nltk (>=3,<4)", "nomic (>=1.0.43,<2.0.0)", "openai (>=0,<1)", "opensearch-py (>=2.0.0,<3.0.0)", "pgvector (>=0.1.6,<0.2.0)", "pinecone-client (>=2,<3)", "pinecone-text (>=0.4.2,<0.5.0)", "psycopg2-binary (>=2.9.5,<3.0.0)", "pyowm (>=3.3.0,<4.0.0)", "pypdf (>=3.4.0,<4.0.0)", "qdrant-client (>=1.1.2,<2.0.0)", "redis (>=4,<5)", "sentence-transformers (>=2,<3)", "spacy (>=3,<4)", "tensorflow-text (>=2.11.0,<3.0.0)", "tiktoken (>=0.3.2,<0.4.0)", "torch (>=1,<3)", "transformers (>=4,<5)", "weaviate-client (>=3,<4)", "wikipedia (>=1,<2)", "wolframalpha (==5.0.0)"]
 cohere = ["cohere (>=3,<4)"]
-llms = ["anthropic (>=0.2.4,<0.3.0)", "cohere (>=3,<4)", "huggingface_hub (>=0,<1)", "manifest-ml (>=0.0.1,<0.0.2)", "nlpcloud (>=1,<2)", "openai (>=0,<1)", "torch (>=1,<2)", "transformers (>=4,<5)"]
+llms = ["anthropic (>=0.2.6,<0.3.0)", "cohere (>=3,<4)", "huggingface_hub (>=0,<1)", "manifest-ml (>=0.0.1,<0.0.2)", "nlpcloud (>=1,<2)", "openai (>=0,<1)", "torch (>=1,<3)", "transformers (>=4,<5)"]
 openai = ["openai (>=0,<1)"]
 qdrant = ["qdrant-client (>=1.1.2,<2.0.0)"]
 
@@ -2218,4 +2218,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "14d477f3b43f15d34b894740b6abaef868f46ec3edbf522f862a987d1eb22b2f"
+content-hash = "b51558c89c58aa0ec8f414f63a75e547f35d0c6ab49a3b1ee935262c60da93ef"

@@ -37,10 +37,12 @@ export interface Props {
   deploy: () => void
   deployStatus?: deployment_state | null
   isInitializingDeploy?: boolean
+  cancel: () => void
 }
 
 function Agent({
   deployment,
+  cancel,
   isDeployRequestRunning,
   deploy,
   isInitializingDeploy,
@@ -69,7 +71,11 @@ function Agent({
       }
     })
 
-    await client.from(deploymentsTable).update({ logs: logs as unknown as Json[] }).eq('id', deployment.id).single()
+    await client
+      .from(deploymentsTable)
+      .update({ logs: logs as unknown as Json[] })
+      .eq('id', deployment.id)
+      .single()
   }
 
   return (
@@ -133,6 +139,7 @@ function Agent({
           <RunButton
             disabled={missingCreds.length !== 0}
             deploy={deploy}
+            cancel={cancel}
             isDeployRequestRunning={isDeployRequestRunning}
             isInitializingDeploy={isInitializingDeploy}
             deployStatus={deployment?.state}

@@ -3,15 +3,15 @@ import uuid
 
 from pprint import pprint
 from typing import List
+from codegen.tools.base import create_tools
 from dotenv import load_dotenv
 from playground_client.exceptions import NotFoundException
 from quart import Quart, request
 from quart_cors import cors
 
 from codegen import Codegen
-from codegen.tools.playground import create_playground_tools
-from codegen.tools.human.tools import create_human_tools
 from database import Database, DeploymentState
+from session.playground.nodejs import NodeJSPlayground
 
 load_dotenv()
 
@@ -51,46 +51,34 @@ async def generate():
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
     route_id = body["routeID"]
-    blocks = body["blocks"]
-    method = body["method"]
-    route = body["route"]
-
     model_config = body["modelConfig"]
-
-    pprint("+++ Blocks:")
-    pprint(blocks)
-    pprint("--- Blocks:")
+    prompt = body["prompt"]
 
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
 
     try:
         # Create playground for the LLM
-        playground_tools, playground = create_playground_tools(
-            get_envs=lambda: db.get_env_vars(project_id),
+        playground = NodeJSPlayground(get_envs=lambda: db.get_env_vars(project_id))
+
+        # Create tools
+        tools = create_tools(
+            run_id=run_id,
+            playground=playground,
         )
 
-        human_tools = create_human_tools(run_id=run_id, playground=playground)
-
         # Create a new instance of code generator
-        cg = Codegen.from_tools_and_database(
+        cg = Codegen(
             # The order in which we pass tools HAS an effect on the LLM behaviour.
-            custom_tools=[
-                *playground_tools,
-                *human_tools,
-            ],
+            tools=list(tools),
             model_config=model_config,
             database=db,
+            prompt=prompt,
         )
 
         # Generate the code
         print("Generating...", flush=True)
-        await cg.generate(
-            run_id=run_id,
-            route=route,
-            method=method,
-            blocks=blocks,
-        )
+        await cg.generate(run_id=run_id)
 
         deploy_url: str | None = None
         # Disable deployment if there AWS creds are not present

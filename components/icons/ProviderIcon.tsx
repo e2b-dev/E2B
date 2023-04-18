@@ -7,8 +7,8 @@ const iconPaths: {
   [provider in keyof typeof ModelProvider]: string
 } = {
   [ModelProvider.OpenAI]: '/open-ai.png',
-  // [ModelProvider.Replicate]: '/replicate.png',
-  // [ModelProvider.Anthropic]: '/anthropic.png',
+  [ModelProvider.Replicate]: '/replicate.png',
+  [ModelProvider.Anthropic]: '/anthropic.png',
 }
 
 export const providerIcons = Object

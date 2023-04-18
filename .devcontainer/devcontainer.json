@@ -1,7 +1,12 @@
 {
 	"image": "mcr.microsoft.com/devcontainers/universal:2",
 	"features": {
-		"ghcr.io/devcontainers-contrib/features/poetry:2": {}
+		"ghcr.io/devcontainers-contrib/features/poetry:2": {
+			"version": "latest"
+		},
+		"ghcr.io/shinepukur/devcontainer-features/vale:1": {
+			"version": "latest"
+		}
 	},
 	"customizations": {
 		"vscode": {
@@ -10,7 +15,8 @@
 				"ms-python.black-formatter",
 				"ms-python.python",
 				"ms-python.vscode-pylance",
-				"bradlc.vscode-tailwindcss"
+				"bradlc.vscode-tailwindcss",
+				"ChrisChinchilla.vale-vscode"
 			]
 		}
 	}

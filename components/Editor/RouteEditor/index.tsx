@@ -18,8 +18,7 @@ function RouteEditor({ route }: Props) {
 
   return (
     <div className="
-      pt-16
-      pb-8
+      py-8
       px-4
       flex
       flex-1
@@ -50,7 +49,7 @@ function RouteEditor({ route }: Props) {
               referenceSearch={referenceSearch}
               title="What should this route do?"
               placeholder="This is an API endpoint that ..."
-              block={descriptionBlock}
+              content={descriptionBlock.content}
               onChange={updateDescriptionBlock}
             />
           }
@@ -65,7 +64,7 @@ function RouteEditor({ route }: Props) {
               referenceSearch={referenceSearch}
               title="Step-by-step instructions"
               placeholder="1. Check if the incoming `email` is not empty ..."
-              block={instructionsBlock}
+              content={instructionsBlock.content}
               onChange={updateInstructionsBlock}
             />
           }
