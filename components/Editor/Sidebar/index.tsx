@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 import { projects } from '@prisma/client'
@@ -33,6 +33,7 @@ export enum MenuSection {
 
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
+    controller: AbortController,
     projectID: string,
     route: Route,
     modelConfig: ModelConfig,
@@ -41,6 +42,7 @@ async function handlePostGenerate(url: string, { arg }: {
   }
 }) {
   return await fetch(url, {
+    signal: arg.controller.signal,
     method: 'POST',
     body: JSON.stringify({
       projectID: arg.projectID,
@@ -78,6 +80,8 @@ function Sidebar({
     isMutating: isDeployRequestRunning,
   } = useSWRMutation(`${apiURL}/generate`, handlePostGenerate)
 
+  const generateController = useRef<AbortController | null>(null)
+
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
   const model = selectors.use.model()
@@ -97,13 +101,21 @@ function Sidebar({
       return
     }
 
+    const controller = new AbortController()
+    generateController.current = controller
+
     await generate({
+      controller,
       projectID: project.id,
       route,
       envs,
       promptTemplate: prompt,
       modelConfig: config,
     })
+  }
+
+  async function cancelGenerate() {
+    generateController.current?.abort()
   }
 
   const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
@@ -147,6 +159,7 @@ function Sidebar({
       {activeMenuSection === MenuSection.Agent &&
         <Agent
           deploy={deploy}
+          cancel={cancelGenerate}
           isDeployRequestRunning={isDeployRequestRunning}
           isInitializingDeploy={isInitializingDeploy}
           deployment={deployment}

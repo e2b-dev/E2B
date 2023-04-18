@@ -27,7 +27,6 @@
     "vale:sync": "vale sync"
   },
   "dependencies": {
-    "@devbookhq/code-editor": "^0.1.29",
     "@devbookhq/splitter": "^1.4.0",
     "@prisma/client": "^4.12.0",
     "@supabase/auth-helpers-nextjs": "^0.5.5",
@@ -38,6 +37,7 @@
     "@tiptap/extension-code-block": "^2.0.0-beta.220",
     "@tiptap/extension-list-item": "^2.0.0-beta.220",
     "@tiptap/extension-ordered-list": "^2.0.0-beta.220",
+    "@tiptap/extension-paragraph": "^2.0.3",
     "@tiptap/extension-placeholder": "^2.0.0-beta.220",
     "@tiptap/pm": "^2.0.0-beta.220",
     "@tiptap/react": "^2.0.0-beta.220",

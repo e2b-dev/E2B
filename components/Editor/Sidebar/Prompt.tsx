@@ -1,22 +1,11 @@
-import { LanguageSetup } from '@devbookhq/code-editor'
-import type { Extension } from '@codemirror/state'
-
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
 import { defaultPromptTemplate } from 'state/prompt'
 import { defaultTemplateID } from 'state/store'
+
 import PromptEditor from '../RouteEditor/PromptEditor'
 
-export interface Props {
-
-
-}
-
-const supportedLanguages: LanguageSetup[] = []
-const theme: Extension = []
-
-function Prompt({
-}: Props) {
+function Prompt() {
   const [selectors] = useStateStore()
   const model = selectors.use.model()
   const setPrompt = selectors.use.setPrompt()
@@ -83,17 +72,10 @@ function Prompt({
             >
               <PromptEditor
                 title={`${p.role} ${p.type.replace(/([A-Z])/g, ' $1')}`.toUpperCase()}
-                placeholder={`Specify ${p.role} ${p.type} prompt here`}
+                placeholder={`Specify ${p.role} ${p.type.replace(/([A-Z])/g, ' $1').toLowerCase()} prompt here`}
                 content={p.content}
                 onChange={(content) => {
-                  if (modelSetup) {
-                    const newPrompt = modelSetup.prompt.slice()
-                    newPrompt[i] = {
-                      ...newPrompt[i],
-                      content
-                    }
-                    setPrompt(defaultTemplateID, model.provider, model.name, newPrompt)
-                  }
+                  setPrompt(defaultTemplateID, model.provider, model.name, i, { ...p, content, })
                 }}
               />
             </div>

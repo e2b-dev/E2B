@@ -54,10 +54,6 @@ async def generate():
     model_config = body["modelConfig"]
     prompt = body["prompt"]
 
-    pprint("+++ Prompt:")
-    pprint(prompt)
-    pprint("--- Prompt:")
-
     await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
 

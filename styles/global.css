@@ -1,6 +1,4 @@
 /* @import 'highlight.js/styles/a11y-dark.css'; */
-@import '@devbookhq/code-editor/dist/index.css';
-
 @import './prosemirror.css';
 
 @tailwind base;

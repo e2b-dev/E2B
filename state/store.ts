@@ -83,7 +83,7 @@ export interface State extends SerializedState {
   setEnvs: (envs: { key: string, value: string }[]) => void
   changeEnv: (pair: { key: string, value: string }, idx: number) => void
   setModel: (model: SelectedModel) => void
-  setPrompt: (templateID: string, provider: ModelProvider, modelName: string, prompt: PromptPart[]) => void
+  setPrompt: (templateID: string, provider: ModelProvider, modelName: string, idx: number, promptPart: PromptPart) => void
 }
 
 function createBlock(type: BlockType): Block {
@@ -198,23 +198,13 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     changeEnv: (pair, idx) => set(state => {
       state.envs[idx] = pair
     }),
-    setPrompt: (templateID, provider, modelName, prompt) => set(state => {
+    setPrompt: (templateID, provider, modelName, idx, promptPart) => set(state => {
       const promptIdx = state.modelSetups.findIndex(p =>
         p.templateID === templateID &&
         p.provider === provider &&
         p.modelName === modelName
       )
-
-      if (promptIdx !== -1) {
-        state.modelSetups[promptIdx].prompt = prompt
-      } else {
-        state.modelSetups.push({
-          templateID,
-          prompt,
-          modelName,
-          provider,
-        })
-      }
+      state.modelSetups[promptIdx].prompt[idx] = promptPart
     }),
   }))
 

@@ -2,42 +2,18 @@ import { html2markdown } from 'editor/schema'
 import Mustache from 'mustache'
 
 import { Block, PromptPart } from 'state/store'
+import { identity } from 'utils/identity'
 
 export const defaultPromptTemplate: PromptPart[] = [
   {
     role: 'system',
     type: 'prefix',
-    content: `You are an AI JavaScript developer assistant.
-- You are building an Express server that handles REST API.
-- The \`express\` package is already installed.
-- Follow the user's instructions carefully & to the letter.
-- Minimize any other prose.
-- You have access to the following tools:
-`,
+    content: '<p>You are an AI JavaScript developer assistant.</p><ul><li><p>You are building an Express server that handles REST API.</p></li><li><p>The <code>express</code> package is already installed.</p></li><li><p>Follow the user\'s instructions carefully &amp; to the letter.</p></li><li><p>Minimize any other prose.</p></li><li><p>You have access to the following tools:</p><p></p></li></ul>',
   },
   {
     role: 'system',
     type: 'instructionsFormat',
-    content: `The way you use the tools is by specifying a XML snippet.
-The XML snippet MUST have a \`<action tool="$TOOL_NAME">$INPUT</action>\` element with the name of the tool in the \`tool\` attribute and input for the tool inside the XML tag.
-
-Here is an example of a valid XML snippet:
-<action tool="$TOOL_NAME">
-$INPUT
-</action>
-
-ALWAYS use the following format:
-
-Thought: you should always think about what to do
-Action:
-<action tool="$TOOL_NAME">
-$INPUT
-</action>
-Observation: the result of the action
-... (this Thought/Action/Observation can repeat N times)
-Thought: I now know the final server code and can show it.
-Final Answer: the final answer
-`,
+    content: '<p>The way you use the tools is by specifying a XML snippet.</p><p>The XML snippet MUST have a <code>&lt;action tool="$TOOL_NAME"&gt;$INPUT&lt;/action&gt;</code> element with the name of the tool in the <code>tool</code> attribute and input for the tool inside the XML tag.</p><p></p><p>Here is an example of a valid XML snippet:</p><p>&lt;action tool="$TOOL_NAME"&gt;</p><p>$INPUT</p><p>&lt;/action&gt;</p><p></p><p>ALWAYS use the following format:</p><p>Thought: you should always think about what to do</p><p>Action:</p><p>&lt;action tool="$TOOL_NAME"&gt;</p><p>$INPUT</p><p>&lt;/action&gt;</p><p>Observation: the result of the action</p><p>... (this Thought/Action/Observation can repeat N times)</p><p>Thought: I now know the final server code and can show it.</p><p>Final Answer: the final answer</p>',
   },
   {
     role: 'system',
@@ -85,7 +61,7 @@ export function evaluatePrompt(
       return prev
     }, {})
 
-  const evalutedPrompt = promptTemplate.map(t => {
+  const evaluatedPrompt = promptTemplate.map(t => {
     // TODO: Use the references to build context
     const [markdown, references] = html2markdown(t.content)
     return {
@@ -93,9 +69,11 @@ export function evaluatePrompt(
       content: Mustache.render(markdown, {
         ...additionalArgs,
         ...blockMap,
+      }, undefined, {
+        escape: identity,
       }),
     }
   })
 
-  return evalutedPrompt
+  return evaluatedPrompt
 }

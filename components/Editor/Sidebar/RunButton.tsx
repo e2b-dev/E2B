@@ -10,6 +10,7 @@ export interface Props {
   isInitializingDeploy?: boolean
   isDeployRequestRunning?: boolean
   disabled?: boolean
+  cancel: () => void
 }
 
 interface DeploymentRepresentation {
@@ -48,6 +49,7 @@ function getDeploymentRepresentation(deployStatus: deployment_state | null | und
 
 function DeployButton({
   deploy,
+  cancel,
   disabled,
   deployStatus,
   isDeployRequestRunning,
@@ -56,13 +58,22 @@ function DeployButton({
   const representation = getDeploymentRepresentation(deployStatus, isInitializingDeploy)
 
   return (
-    <Button
-      isDisabled={isDeployRequestRunning || disabled}
-      text={representation.text}
-      onClick={deploy}
-      variant={Button.variant.Full}
-      icon={representation.icon}
-    />
+    <>
+      {/* {isDeployRequestRunning &&
+        <Button
+          onClick={cancel}
+          variant={Button.variant.Outline}
+          icon={<Ban size="16px" />}
+        />
+      } */}
+      <Button
+        isDisabled={isDeployRequestRunning || disabled}
+        text={representation.text}
+        onClick={deploy}
+        variant={Button.variant.Full}
+        icon={representation.icon}
+      />
+    </>
   )
 }
 

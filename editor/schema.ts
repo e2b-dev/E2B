@@ -5,6 +5,7 @@ import BulletList from '@tiptap/extension-bullet-list'
 import ListItem from '@tiptap/extension-list-item'
 import OrderedList from '@tiptap/extension-ordered-list'
 import CodeBlock from '@tiptap/extension-code-block'
+import Paragraph from '@tiptap/extension-paragraph'
 
 import { Reference } from './referenceType'
 
@@ -25,6 +26,7 @@ export const extensions = [
     horizontalRule: false,
     italic: false,
     strike: false,
+    paragraph: false,
 
     // We use the Ordered List, Code block, Bullet List and List item from explicit packages
     // so we can use their names in the markdown serializer.
@@ -33,6 +35,7 @@ export const extensions = [
     listItem: false,
     orderedList: false,
   }),
+  Paragraph,
   CodeBlock,
   OrderedList,
   ListItem,
@@ -48,6 +51,10 @@ const serializer = new MarkdownSerializer({
   [ListItem.name]: defaultMarkdownSerializer.nodes.list_item,
   [BulletList.name]: defaultMarkdownSerializer.nodes.bullet_list,
   [CodeBlock.name]: defaultMarkdownSerializer.nodes.code_block,
+  [Paragraph.name]: (state, node) => {
+    state.text('\n')
+    state.renderInline(node)
+  },
   [ReferenceExtension.name]: (state, node) => {
     state.text(' `' + node.attrs[REFERENCE_VALUE_ATTRIBUTE_NAME] + '` ')
   },
