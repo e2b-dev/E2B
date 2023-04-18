@@ -20,7 +20,7 @@
   </a>
 </h4>
 
-![e2b-editor](docs-assets/preview.gif)
+![e2b-editor](docs-assets/e2b.png)
 *Example of AI agent building Stripe checkout. Left - technical specification written by human. Right - steps that the AI agent took and tools that it used to build the server route required by the specification.*
 
 [e2b](https://e2b.dev) or etob (*english2bits*) allows you to create & deploy virtual software developers. These virtual developers are powered by specialized AI agents that build software based on your instructions and can use tools.
@@ -66,7 +66,6 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
   - [x] GTP-3.5
 - [ ] [Replicate](https://replicate.com/) 🚧
 - [ ] [HuggingFace](https://huggingface.co/) 🚧
-- [ ] [Banana](https://www.banana.dev/) 🚧
 - [ ] [Anthropic](https://anthropic.com/) 🚧
   - [ ] Claude v1.3
   - [ ] Claude Instant v1
