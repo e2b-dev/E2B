@@ -54,49 +54,51 @@ function Prompt({
           "
         />
       </div>
-      <div className="
-        flex
-        flex-col
-        scroller
-        flex-1
-        overflow-y-auto
+      <div
+        className="
+      py-8
+      px-4
+      flex
+      flex-1
+      bg-white
+      justify-center
+      overflow-auto
+      scroller
+      "
+      >
+        <div className="
+      flex
+      flex-col
+      space-y-6
+      max-w-[65ch]
+      grow
       ">
-        {prompt.map((p, i) =>
-          <div
-            key={i}
-            className="
+          {prompt.map((p, i) =>
+            <div
+              key={i}
+              className="
             flex
             flex-col
           "
-          >
-            <PromptEditor
-              title={p.role + ' ' + p.type}
-              placeholder={`Specify ${p.role} ${p.type} prompt here`}
-              content={p.content}
-              onChange={(content) => {
-                if (modelSetup) {
-                  const p = modelSetup.prompt[i]
-                  p.content = content
-                  setPrompt(defaultTemplateID, model.provider, model.name, modelSetup.prompt)
-                }
-              }}
-            />
-
-            {/* <CodeEditor
-              content={p.content}
-              supportedLanguages={supportedLanguages}
-              filename="prompt"
-              theme={theme}
-              onContentChange={(content) => {
-                if (modelSetup) {
-                  const p = modelSetup.prompt[i]
-                  p.content = content
-                  setPrompt(defaultTemplateID, model.provider, model.name, modelSetup.prompt)
-                }
-              }}
-            /> */}
-          </div>
-        )}
+            >
+              <PromptEditor
+                title={`${p.role} ${p.type.replace(/([A-Z])/g, ' $1')}`.toUpperCase()}
+                placeholder={`Specify ${p.role} ${p.type} prompt here`}
+                content={p.content}
+                onChange={(content) => {
+                  if (modelSetup) {
+                    const newPrompt = modelSetup.prompt.slice()
+                    newPrompt[i] = {
+                      ...newPrompt[i],
+                      content
+                    }
+                    setPrompt(defaultTemplateID, model.provider, model.name, newPrompt)
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

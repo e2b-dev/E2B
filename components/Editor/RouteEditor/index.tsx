@@ -18,8 +18,7 @@ function RouteEditor({ route }: Props) {
 
   return (
     <div className="
-      pt-16
-      pb-8
+      py-8
       px-4
       flex
       flex-1

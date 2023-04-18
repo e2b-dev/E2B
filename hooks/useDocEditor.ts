@@ -51,7 +51,7 @@ function useDocEditor({
         onContentChange(editor.getHTML())
       }
     },
-  }, [onContentChange])
+  }, [])
 
   return editor
 }

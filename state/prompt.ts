@@ -47,44 +47,7 @@ Final Answer: the final answer
   {
     role: 'user',
     type: 'prefix',
-    content: `The handler you are building should do the following:
-{{Description}}
-
-Do not try to come up with solutions and code if you do not know. Instead, use the tool \`AskHuman\` to ask for help.
-If you think there might be multiple paths forward, use the tool \`LetHumanChoose\` to choose from them.
-{{#RequestBody}}
-The incoming request body is JSON that looks like this:
-\`\`\`
-{
-{{RequestBody}}
-}
-\`\`\`
-{{/RequestBody}}
-Use this starting template:
-\`\`\`
-import express from 'express';
-const app = express();
-const port = 3000;
-app.use(express.json())
-
-// TODO: Implement the {{Method}} handler here
-
-app.listen(port, async () => {
-    console.log(\`Server listening on port \${port}\`)
-})
-\`\`\`
-The HTTP request handler is of type {{Method}}
-The request handler MUST be on the route \`{{Route}}\`
-Do not forget to use async and await
-Always test that the generated server works without bugs and errors as required by running the code and making mock \`curl\` requests to the server
-Generate the full required server code
-
-{{#Instructions}}
-Here are the required implementation instructions:
-{{Instructions}}
-{{/Instructions}}
-Thought: Here is the plan of how I will go about solving this:
-`,
+    content: '<p>The handler you are building should do the following:</p><p>{{Description}}</p><p>Do not try to come up with solutions and code if you do not know. Instead, use the tool <code>AskHuman</code> to ask for help.</p><p>If you think there might be multiple paths forward, use the tool <code>LetHumanChoose</code> to choose from them.</p><p>{{#RequestBody}}</p><p>The incoming request body is JSON that looks like this:</p><pre><code>{\n{{RequestBody}}\n}</code></pre><p>{{/RequestBody}}</p><p>Use this starting template:</p><pre><code>import express from \'express\';\nconst app = express();\nconst port = 3000;\napp.use(express.json())\n\n// TODO: Implement the {{Method}} handler here\n\napp.listen(port, async () =&gt; {\n    console.log(`Server listening on port ${ port }`)\n})</code></pre><p>The HTTP request handler is of type {{Method}}</p><p>The request handler MUST be on the route <code>{{Route}}</code></p><p>Do not forget to use async and await</p><p>Always test that the generated server works without bugs and errors as required by running the code and making mock <code>curl</code> requests to the server</p><p>Generate the full required server code</p><p>{{#Instructions}}</p><p>Here are the required implementation instructions:</p><p>{{Instructions}}</p><p>{{/Instructions}}</p><p>Thought: Here is the plan of how I will go about solving this:</p><p></p>',
   },
 ]
 
@@ -123,9 +86,11 @@ export function evaluatePrompt(
     }, {})
 
   const evalutedPrompt = promptTemplate.map(t => {
+    // TODO: Use the references to build context
+    const [markdown, references] = html2markdown(t.content)
     return {
       ...t,
-      content: Mustache.render(t.content, {
+      content: Mustache.render(markdown, {
         ...additionalArgs,
         ...blockMap,
       }),
