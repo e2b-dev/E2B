@@ -12,6 +12,7 @@ export function getDescription(part: PromptPart) {
     return 'Specify how the model should call tools (like WriteJavaScriptCode)'
   }
   if (part.role === 'user' && part.type === 'prefix') {
+    // https://github.com/janl/mustache.js#templates add docs ref
     return 'Describe the context and the start of the task the model should do.\nTo use information from the user prompt (like the steps from "Step-by-step instructions") add them like this: `{{Instructions}}`.\nYou can add Description, RequestBody, Instructions, Method, and Route this way.'
   }
 

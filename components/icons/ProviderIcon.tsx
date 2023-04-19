@@ -9,6 +9,7 @@ const iconPaths: {
   [ModelProvider.OpenAI]: '/open-ai.png',
   [ModelProvider.Replicate]: '/replicate.png',
   [ModelProvider.Anthropic]: '/anthropic.png',
+  [ModelProvider.HuggingFace]: '/hugging-face.png',
 }
 
 export const providerIcons = Object
