@@ -11,5 +11,5 @@
   ],
   "ext": ".ts",
   "delay": 200,
-  "exec": "export NODE_ENV=dev; tsoa spec-and-routes && ./scripts/build.js && node ./lib/server.js"
+  "exec": "cross-env NODE_ENV=dev; tsoa spec-and-routes && cross-env ./scripts/build.js && node ./lib/server.js"
 }
