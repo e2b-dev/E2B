@@ -1,16 +1,19 @@
 from typing import TypedDict, Dict, Any
 from enum import Enum
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import Anthropic
+from langchain.llms import Anthropic, HuggingFaceEndpoint
 from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 
 from .providers.replicate import ReplicateFix
+from .providers.hugging_face import HuggingFaceHubFix
+
 
 class ModelProvider(Enum):
     OpenAI = "OpenAI"
     Replicate = "Replicate"
     Anthropic = "Anthropic"
+    HuggingFace = "HuggingFace"
 
 
 class ModelConfig(TypedDict):
@@ -47,5 +50,22 @@ def get_model(
                 verbose=True,
                 callback_manager=callback_manager,
             )
+        case ModelProvider.HuggingFace.value:
+            if config["args"].get("endpoint_url"):
+                return HuggingFaceEndpoint(
+                    **config["args"],
+                    verbose=True,
+                    callback_manager=callback_manager,
+                )
+            elif config["args"].get("repo_id"):
+                return HuggingFaceHubFix(
+                    **config["args"],
+                    verbose=True,
+                    callback_manager=callback_manager,
+                )
+            raise ValueError(
+                f"Missing endpoint_url or repo_id for the HuggingFace integration."
+            )
+
         case _:
             raise ValueError(f"Provider {config['provider']} no found.")

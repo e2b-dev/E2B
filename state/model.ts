@@ -6,6 +6,7 @@ export enum ModelProvider {
   OpenAI = 'OpenAI',
   Replicate = 'Replicate',
   Anthropic = 'Anthropic',
+  HuggingFace = 'HuggingFace',
 }
 
 export type ArgValue = string | number
@@ -50,6 +51,7 @@ export const modelTemplates: {
   [provider in keyof typeof ModelProvider]?: ProviderTemplate
 } = {
   [ModelProvider.Anthropic]: {
+    link: 'https://anthropic.com',
     creds: {
       anthropic_api_key: {
         label: 'Anthropic API Key',
@@ -145,65 +147,99 @@ export const modelTemplates: {
       },
     ],
   },
-  // [ModelProvider.Replicate]: {
-  //   link: 'https://replicate.com',
-  //   creds: {
-  //     replicate_api_token: {
-  //       label: 'Replicate API Key',
-  //       type: 'string',
-  //     },
-  //   },
-  //   models: [
-  //     {
-  //       name: 'Hosted model',
-  //       args: {
-  //         model: {
-  //           placeholder: 'owner-name/model-name:version',
-  //           editable: true,
-  //           type: 'string',
-  //           label: 'Model'
-  //         },
-  //         max_length: {
-  //           type: 'number',
-  //           editable: true,
-  //           value: 2500,
-  //           step: 1,
-  //           min: 1,
-  //         },
-  //         temperature: {
-  //           editable: true,
-  //           type: 'number',
-  //           value: 0.5,
-  //           min: 0,
-  //           step: 0.01,
-  //         },
-  //         top_p: {
-  //           editable: true,
-  //           type: 'number',
-  //           value: 0.9,
-  //           min: 0,
-  //           max: 1,
-  //           step: 0.01,
-  //         },
-  //         top_k: {
-  //           editable: true,
-  //           type: 'number',
-  //           value: 0,
-  //           min: 0,
-  //           step: 0.01,
-  //         },
-  //         repetition_penalty: {
-  //           editable: true,
-  //           type: 'number',
-  //           value: 1,
-  //           min: 0,
-  //           step: 0.01,
-  //         },
-  //       },
-  //     },
-  //   ],
-  // },
+  [ModelProvider.HuggingFace]: {
+    link: 'https://huggingface.co',
+    creds: {
+      huggingfacehub_api_token: {
+        label: 'Hugging Face API Key',
+        type: 'string',
+      },
+    },
+    models: [
+      {
+        name: 'Hub model',
+        args: {
+          repo_id: {
+            editable: true,
+            type: 'string',
+            label: 'Repo ID',
+            placeholder: 'owner-name/repo-name',
+          },
+        },
+      },
+      {
+        name: 'Inference Endpoints model',
+        args: {
+          endpoint_url: {
+            editable: true,
+            type: 'string',
+            label: 'Endpoint URL',
+            placeholder: '...endpoints.huggingface.cloud',
+          },
+        },
+      },
+    ],
+  },
+  [ModelProvider.Replicate]: {
+    link: 'https://replicate.com',
+    creds: {
+      replicate_api_token: {
+        label: 'Replicate API Key',
+        type: 'string',
+      },
+    },
+    models: [
+      {
+        name: 'Hosted model',
+        args: {
+          model: {
+            placeholder: 'owner-name/model-name:version',
+            editable: true,
+            type: 'string',
+            label: 'Model'
+          },
+          max_length: {
+            type: 'number',
+            editable: true,
+            value: 2500,
+            step: 1,
+            min: 1,
+          },
+          temperature: {
+            editable: true,
+            type: 'number',
+            value: 0.5,
+            min: 0,
+            step: 0.01,
+          },
+          top_p: {
+            editable: true,
+            type: 'number',
+            value: 0.9,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          top_k: {
+            editable: true,
+            type: 'number',
+            value: 0,
+            min: 0,
+            step: 0.01,
+          },
+          repetition_penalty: {
+            editable: true,
+            type: 'number',
+            value: 1,
+            min: 0,
+            step: 0.01,
+          },
+        },
+      },
+    ],
+  },
   [ModelProvider.OpenAI]: {
+    link: 'https://openai.com',
     creds: {
       openai_api_key: {
         label: 'OpenAI API Key',

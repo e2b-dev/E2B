@@ -1,9 +1,18 @@
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
-import { ModelProvider, modelTemplates } from 'state/model'
+import { ModelProvider, modelTemplates, ProviderTemplate } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
+import { sortByOrder } from 'utils/sortByOrder'
 
 import ProviderCard from './ProviderCard'
+
+const modelProviderOrder = sortByOrder<ModelProvider, [string, ProviderTemplate]>(
+  [
+    ModelProvider.OpenAI,
+    ModelProvider.Anthropic,
+    ModelProvider.HuggingFace,
+    ModelProvider.Replicate,
+  ], i => i[0] as ModelProvider)
 
 export interface Props { }
 
@@ -52,7 +61,7 @@ function Model({ }: Props) {
       >
         {Object.entries(modelTemplates)
           .slice()
-          .sort((t1, t2) => t1[0].localeCompare(t2[0]))
+          .sort(modelProviderOrder)
           .map(([provider, template], i, a) =>
             <div
               key={provider}
@@ -69,11 +78,12 @@ function Model({ }: Props) {
               />
               {i !== a.length - 1 &&
                 <div className="
-                w-full
-                border-b
-                border-slate-300
-                pt-2
-              " />}
+                  w-full
+                  border-b
+                  border-slate-300
+                  pt-2
+                "
+                />}
             </div>
           )}
       </div>
