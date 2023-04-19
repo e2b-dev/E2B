@@ -20,6 +20,12 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Browser console output**
+Console logs from your browser's developer tool console.
+
+**Terminal commands & output**
+Commands you used to start the app and the terminal output.
+
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 

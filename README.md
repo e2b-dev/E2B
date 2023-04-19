@@ -20,8 +20,7 @@
   </a>
 </h4>
 
-![e2b-editor](docs-assets/e2b.png)
-*Example of AI agent building Stripe checkout. Left - technical specification written by human. Right - steps that the AI agent took and tools that it used to build the server route required by the specification.*
+![e2b-editor](docs-assets/preview.gif)
 
 [e2b](https://e2b.dev) or etob (*english2bits*) allows you to create & deploy virtual software developers. These virtual developers are powered by specialized AI agents that build software based on your instructions and can use tools.
 
@@ -92,11 +91,19 @@ We welcome any contributions! If you want to contribute to the project check out
 
 # 📆 Short-term Roadmap
 1. ✅ ~~Make sure people can run e2b locally without issues and the DX is smooth.~~
-2. 🚧 Add support for more models.
-    - Let users request new models. Later create a system that will let users use any model.
-3. Improve model's understanding of the context based on the instructions
-4. Support for more tools
-5. Improve the dashboard UI
-6. 🚧 Let users edit prompt
-7. Let users customize tools and build custom workflows for the agent
-8. Release cloud version
+1. 🚧 Add support for more models.
+    - ✅ ~~OpenAI~~
+    - ✅ ~~Anthropic~~
+    - Model hosting providers:
+      - Hugging Face
+      - Replicate
+      - Banana
+      - Paperspace
+1. Improve agent's reliability and quality of output.
+1. Improve the feedback loop (UX/UI) between the developer and agents.
+1. Improve agent's understanding of the context based on the instructions.
+1. Deployable agents.
+1. Support more tools and 3rd party integraitons that agents can use.
+1. ✅ ~~Let users edit prompts.~~
+1. Let users customize tools and build custom workflows for the agent.
+1. Release cloud version.
