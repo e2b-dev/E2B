@@ -34,8 +34,8 @@ function ModelSection({
     .entries(modelTemplate.args || {})
     .filter(([, value]) => value.editable)
 
-  const requiredParams = editableArgs.filter(a => a[1].value === undefined)
-  const defaultedArgs = editableArgs.filter(a => a[1].value !== undefined)
+  const requiredParams = editableArgs.filter(a => a[1].value === undefined && !a[1].optional)
+  const defaultedArgs = editableArgs.filter(a => a[1].value !== undefined || a[1].optional)
 
   return (
     <div className="

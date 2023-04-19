@@ -59,10 +59,16 @@ def get_model(
                 )
             elif config["args"].get("repo_id"):
                 return HuggingFaceHubFix(
-                    **config["args"],
+                    huggingfacehub_api_token=config["args"]["huggingfacehub_api_token"],
+                    repo_id=config["args"]["repo_id"],
+                    model_kwargs={
+                        **config["args"],
+                        "huggingfacehub_api_token": None,
+                        "repo_id": None,
+                    },
                     verbose=True,
                     callback_manager=callback_manager,
-                )
+                )  # type: ignore
             raise ValueError(
                 f"Missing endpoint_url or repo_id for the HuggingFace integration."
             )
