@@ -157,7 +157,7 @@ export const modelTemplates: {
     },
     models: [
       {
-        name: 'Hub model',
+        name: 'Inference API',
         args: {
           repo_id: {
             editable: true,
@@ -167,17 +167,17 @@ export const modelTemplates: {
           },
         },
       },
-      {
-        name: 'Inference Endpoints model',
-        args: {
-          endpoint_url: {
-            editable: true,
-            type: 'string',
-            label: 'Endpoint URL',
-            placeholder: '...endpoints.huggingface.cloud',
-          },
-        },
-      },
+      // {
+      //   name: 'Inference Endpoints model',
+      //   args: {
+      //     endpoint_url: {
+      //       editable: true,
+      //       type: 'string',
+      //       label: 'Endpoint URL',
+      //       placeholder: '...endpoints.huggingface.cloud',
+      //     },
+      //   },
+      // },
     ],
   },
   [ModelProvider.Replicate]: {
