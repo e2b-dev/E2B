@@ -20,8 +20,7 @@
   </a>
 </h4>
 
-![e2b-editor](docs-assets/e2b.png)
-*Example of AI agent building Stripe checkout. Left - technical specification written by human. Right - steps that the AI agent took and tools that it used to build the server route required by the specification.*
+![e2b-editor](docs-assets/preview.gif)
 
 [e2b](https://e2b.dev) or etob (*english2bits*) allows you to create & deploy virtual software developers. These virtual developers are powered by specialized AI agents that build software based on your instructions and can use tools.
 
