@@ -213,12 +213,23 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       state.envs[idx] = pair
     }),
     setPrompt: (templateID, provider, modelName, idx, promptPart) => set(state => {
-      const promptIdx = state.modelSetups.findIndex(p =>
+      let modelSetupIdx = state.modelSetups.findIndex(p =>
         p.templateID === templateID &&
         p.provider === provider &&
         p.modelName === modelName
       )
-      state.modelSetups[promptIdx].prompt[idx] = promptPart
+
+      if (modelSetupIdx === -1) {
+        state.modelSetups.push({
+          provider,
+          templateID: defaultTemplateID,
+          prompt: defaultPromptTemplate,
+          modelName,
+        })
+        modelSetupIdx = 0
+      }
+
+      state.modelSetups[modelSetupIdx].prompt[idx] = promptPart
     }),
   }))
 
