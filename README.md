@@ -91,18 +91,19 @@ We welcome any contributions! If you want to contribute to the project check out
 
 # 📆 Short-term Roadmap
 1. ✅ ~~Make sure people can run e2b locally without issues and the DX is smooth.~~
-2. 🚧 Add support for more models.
+1. 🚧 Add support for more models.
     - ✅ ~~OpenAI~~
     - ✅ ~~Anthropic~~
-    - Providers for hosting models:
+    - Model hosting providers:
       - Hugging Face
       - Replicate
       - Banana
       - Paperspace
-    - Let users request new models. Later create a system that will let users use any model.
-3. Improve model's understanding of the context based on the instructions
-4. Support for more tools
-5. Improve the dashboard UI
-6. ✅ ~~Let users edit prompt~~
-7. Let users customize tools and build custom workflows for the agent
-8. Release cloud version
+1. Improve agent's reliability and quality of output.
+1. Improve the feedback loop (UX/UI) between the developer and agents.
+1. Improve agent's understanding of the context based on the instructions.
+1. Deployable agents.
+1. Support more tools and 3rd party integraitons that agents can use.
+1. ✅ ~~Let users edit prompts.~~
+1. Let users customize tools and build custom workflows for the agent.
+1. Release cloud version.
