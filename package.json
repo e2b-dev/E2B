@@ -1,7 +1,18 @@
 {
   "name": "e2b",
   "version": "0.1.0",
-  "private": true,
+  "description": "Your own virtual developer. e2b lets you build & deploy specialized AI agents that build software for you based on your instructions",
+  "homepage": "https://e2b.dev",
+  "author": {
+    "name": "FoundryLabs, Inc.",
+    "email": "vasek@e2b.dev",
+    "url": "https://e2b.dev"
+  },
+  "bugs": "https://github.com/e2b-dev/e2b/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b"
+  },
   "scripts": {
     "dev:next": "next dev",
     "start:next": "next start",
