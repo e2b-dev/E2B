@@ -97,8 +97,9 @@ We welcome any contributions! If you want to contribute to the project check out
     - ✅ ~~OpenAI~~
     - ✅ ~~Anthropic~~
     - Model hosting providers:
-      - ✅ Replicate
-      - Hugging Face
+      - ✅ ~~Replicate~~
+      - ✅ ~~Hugging Face Inference API~~
+      - Hugging Face Hub
       - Banana
       - Paperspace
 1. Improve agent's reliability and quality of output.
