@@ -25,6 +25,7 @@ export interface ModelArgTemplate {
   max?: number
   step?: number
   placeholder?: string
+  optional?: boolean
 }
 
 export interface ProviderCredsTemplate {
@@ -164,6 +165,54 @@ export const modelTemplates: {
             type: 'string',
             label: 'Repo ID',
             placeholder: 'owner-name/repo-name',
+          },
+          max_length: {
+            type: 'number',
+            editable: true,
+            step: 1,
+            min: 1,
+            value: 250,
+            optional: true
+          },
+          temperature: {
+            editable: true,
+            type: 'number',
+            value: 1,
+            min: 0,
+            max: 100,
+            step: 0.01,
+            optional: true
+          },
+          top_p: {
+            editable: true,
+            type: 'number',
+            min: 0,
+            step: 0.01,
+            optional: true
+          },
+          top_k: {
+            editable: true,
+            type: 'number',
+            min: 0,
+            step: 1,
+            optional: true
+          },
+          repetition_penalty: {
+            editable: true,
+            type: 'number',
+            value: 1,
+            min: 0,
+            max: 100,
+            step: 0.01,
+            optional: true
+          },
+          max_time: {
+            editable: true,
+            type: 'number',
+            min: 0,
+            max: 120,
+            step: 0.01,
+            optional: true
           },
         },
       },
