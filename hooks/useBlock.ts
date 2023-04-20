@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 
-import { Route, BlockType, Block } from 'state/store'
+import { Route, BlockType, TemplateBlock } from 'state/store'
 import { useStateStore } from 'state/StoreProvider'
 
 /**
@@ -14,7 +14,7 @@ import { useStateStore } from 'state/StoreProvider'
  * @param route 
  * @returns 
  */
-function useBlock(blockType: BlockType, position: number, route?: Route): [Block | undefined, (prompt: string) => void] {
+function useBlock(blockType: BlockType, position: number, route?: Route): [TemplateBlock | undefined, (prompt: string) => void] {
   const [selectors] = useStateStore()
 
   const changeBlock = selectors.use.changeBlock()

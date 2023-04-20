@@ -1,12 +1,12 @@
 import clsx from 'clsx'
 import TextareaAutosize from 'react-textarea-autosize'
 
-import { Block } from 'state/store'
+import { TemplateBlock } from 'state/store'
 import Text from 'components/Text'
 
 export interface Props {
   onChange: (value: string) => void
-  block: Block
+  block: TemplateBlock
 }
 
 function RequestBodyEditor({

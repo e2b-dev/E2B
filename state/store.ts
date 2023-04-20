@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { persist } from 'zustand/middleware'
 import { SupabaseClient } from '@supabase/supabase-js'
-import { nanoid } from 'nanoid'
 import { projects, Prisma } from '@prisma/client'
 
 import { Database } from 'db/supabase'
@@ -20,26 +19,10 @@ export interface SelectedModel {
 export const defaultTemplateID = 'NodeJSServer'
 export const defaultModelName: 'GPT 3.5 Turbo' = 'GPT 3.5 Turbo'
 
-export type BlockType =
-  // Raw text
-  'Basic' |
-  // Code that looks like TypeScript interface definition without the outer parenthesses.
-  'RequestBody' |
-  'Description' |
-  'Instructions'
-
-export interface Block {
-  id: string
-  type: BlockType
+export interface TemplateBlock {
+  type: 'text' | 'xml'
   // `content` must be valid HTML when `type` is `Description` or `Instructions`
   content: string
-}
-
-export interface Route {
-  blocks: Block[]
-  method: Method
-  route: string
-  id: string
 }
 
 export interface PromptPart {
@@ -55,56 +38,24 @@ export interface ModelSetup {
   prompt: PromptPart[]
 }
 
-export enum Method {
-  POST = 'post',
-  GET = 'get',
-  PUT = 'put',
-  DELETE = 'delete',
-  PATCH = 'patch',
-}
-
-export const methods = Object
-  .keys(Method)
-  .filter((item) => isNaN(Number(item)))
-  .map(v => v.toLowerCase())
-
 export interface SerializedState {
   envs: { key: string, value: string }[]
-  routes: Route[]
+  blocks: { [key: string]: TemplateBlock }
   model: SelectedModel
   modelSetups: ModelSetup[]
 }
 
+export interface EnvVar {
+  key: string
+  value: string
+}
+
 export interface State extends SerializedState {
-  changeBlock: (routeID: string, index: number, block: Partial<Omit<Block, 'id'>>) => void
-  changeRoute: (id: string, route: Partial<Omit<Route, 'id'>>) => void
-  deleteRoute: (id: string) => void
-  addRoute: () => void
-  setEnvs: (envs: { key: string, value: string }[]) => void
-  changeEnv: (pair: { key: string, value: string }, idx: number) => void
+  setBlock: (key: string, block: Partial<TemplateBlock>) => void
+  setEnvs: (pair: EnvVar[]) => void
+  setEnv: (pair: EnvVar, idx: number) => void
   setModel: (model: SelectedModel) => void
   setPrompt: (templateID: string, provider: ModelProvider, modelName: string, idx: number, promptPart: PromptPart) => void
-}
-
-function createBlock(type: BlockType): Block {
-  return {
-    type,
-    content: '',
-    id: nanoid(),
-  }
-}
-
-function getDefaultRoute(): Route {
-  return {
-    blocks: [
-      createBlock('RequestBody'),
-      createBlock('Description'),
-      createBlock('Instructions'),
-    ],
-    method: Method.POST,
-    route: '/',
-    id: nanoid(),
-  }
 }
 
 function getDefaultModel(): SelectedModel {
@@ -127,7 +78,6 @@ function getDefaultModelSetup(): ModelSetup[] {
 function getDefaultState(): SerializedState {
   return {
     envs: [{ key: '', value: '' }],
-    routes: [getDefaultRoute()],
     model: getDefaultModel(),
     modelSetups: getDefaultModelSetup(),
   }
@@ -143,14 +93,8 @@ export function getTypedState(data?: Prisma.JsonValue): SerializedState | undefi
 export function createStore(project: projects, client?: SupabaseClient<Database>) {
   const initialState = getTypedState(project.data) || getDefaultState()
 
-  if (initialState.routes.length === 0) {
-    initialState.routes.push(getDefaultRoute())
-  }
-
-  if (!initialState.envs) {
+  if (!initialState.envs || initialState.envs.length === 0) {
     initialState.envs = [{ key: '', value: '' }]
-  } else if (initialState.envs.length === 0) {
-    initialState.envs.push({ key: '', value: '' })
   }
 
   if (!initialState.modelSetups) {
@@ -164,33 +108,17 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
 
   const immerStore = immer<State>((set, get) => ({
     ...initialState,
-    addRoute: () => set(state => {
-      state.routes.push(getDefaultRoute())
-    }),
-    deleteRoute: (id) => set(state => {
-      const idx = state.routes.findIndex(r => r.id === id)
-      state.routes.splice(idx, 1)
-    }),
-    changeRoute: (id, route) => set(state => {
-      const idx = state.routes.findIndex(r => r.id === id)
-      if (idx !== -1) {
-        state.routes[idx] = {
-          ...state.routes[idx],
-          ...route,
-        }
-      }
-    }),
-    changeBlock: (routeID, index, block) => set(state => {
-      const idx = state.routes.findIndex(r => r.id === routeID)
-      if (idx !== -1) {
-        state.routes[idx].blocks[index] = {
-          ...state.routes[idx].blocks[index],
-          ...block,
-        }
+    setBlock: (key, block) => set(state => {
+      state.blocks[key] = {
+        ...state.blocks[key],
+        ...block,
       }
     }),
     setEnvs: (envs) => set(state => {
       state.envs = envs
+    }),
+    setEnv: (pair, idx) => set(state => {
+      state.envs[idx] = pair
     }),
     setModel: (model) => set(state => {
       const modelSetupIdx = state.modelSetups.findIndex(p =>
@@ -209,9 +137,6 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       }
       state.model = model
     }),
-    changeEnv: (pair, idx) => set(state => {
-      state.envs[idx] = pair
-    }),
     setPrompt: (templateID, provider, modelName, idx, promptPart) => set(state => {
       let modelSetupIdx = state.modelSetups.findIndex(p =>
         p.templateID === templateID &&
@@ -228,7 +153,6 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
         })
         modelSetupIdx = 0
       }
-
       state.modelSetups[modelSetupIdx].prompt[idx] = promptPart
     }),
   }))

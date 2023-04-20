@@ -1,7 +1,7 @@
 import { html2markdown } from 'editor/schema'
 import Mustache from 'mustache'
 
-import { Block, PromptPart } from 'state/store'
+import { TemplateBlock, PromptPart } from 'state/store'
 import { identity } from 'utils/identity'
 
 export function getDescription(part: PromptPart) {
@@ -42,7 +42,7 @@ interface BlockMap {
 }
 
 export function evaluatePrompt(
-  blocks: Block[],
+  blocks: TemplateBlock[],
   promptTemplate: PromptPart[],
   additionalArgs: {
     Method: string,
@@ -57,7 +57,7 @@ export function evaluatePrompt(
         case 'Instructions':
           // TODO: Use the references to build context
           const [markdown, references] = html2markdown(b.content)
-          const block: Block = {
+          const block: TemplateBlock = {
             ...b,
             content: markdown,
           }

@@ -7,6 +7,23 @@ import Text from 'components/Text'
 import Select from 'components/Select'
 import { useStateStore } from 'state/StoreProvider'
 
+
+
+export enum Method {
+  POST = 'post',
+  GET = 'get',
+  PUT = 'put',
+  DELETE = 'delete',
+  PATCH = 'patch',
+}
+
+export const methods = Object
+  .keys(Method)
+  .filter((item) => isNaN(Number(item)))
+  .map(v => v.toLowerCase())
+
+
+
 export interface Props {
   routes: Route[]
   selectRoute: (id: string) => void
