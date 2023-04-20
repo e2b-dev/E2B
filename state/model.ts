@@ -217,7 +217,7 @@ export const modelTemplates: {
         },
       },
       {
-        name: 'Inference Endpoints model',
+        name: 'Inference Endpoints',
         args: {
           endpoint_url: {
             editable: true,
