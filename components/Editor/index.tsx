@@ -1,64 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
-import clsx from 'clsx'
-import { Code, Lock, Cpu, WholeWord } from 'lucide-react'
 
-import { useStateStore } from 'state/StoreProvider'
 
-import Routes from './Routes'
-import Sidebar, { MenuSection } from './Sidebar'
-import RouteEditor from './RouteEditor'
-
-const menuIconSize = '18px'
-function getMenuSelectionIcon(selection: MenuSection) {
-  switch (selection) {
-    case MenuSection.Agent:
-      return <Code size={menuIconSize} />
-    // case MenuSection.Context:
-    //   return <Box size={menuIconSize} />
-    // case MenuSection.Deploy:
-    //   return <Server size={menuIconSize} />
-    case MenuSection.Prompt:
-      return <WholeWord size={menuIconSize} />
-    case MenuSection.Envs:
-      return <Lock size={menuIconSize} />
-    case MenuSection.Model:
-      return <Cpu size={menuIconSize} />
-  }
-}
+import Sidebar from './Sidebar'
+import SidebarMenu, { MenuSection } from './SidebarMenu'
+import Template from './Template'
 
 export interface Props {
   project: projects
 }
 
 function Editor({ project }: Props) {
-  const [selectors] = useStateStore()
   const ref = useRef<HTMLDivElement | null>(null)
 
-  const [selectedMenuSection, setSelectedMenuSection] = useState(MenuSection.Agent)
-
-  // TODO: Handle editor state differently so we don't rerender this component on each editor edit.
-  const routes = selectors.use.routes()
-  const deleteRoute = selectors.use.deleteRoute()
-
-  const [selectedRouteID, setSelectedRouteID] = useState(() => routes.length > 0 ? routes[0].id : undefined)
-  const selectedRoute = routes.find(s => s.id === selectedRouteID)
-
-  useEffect(function selectDefaultRoute() {
-    if (selectedRoute?.id || routes.length === 0) return
-    setSelectedRouteID(routes[0].id)
-  }, [routes, selectedRoute?.id])
-
-  function handleDeleteRoute(id: string) {
-    deleteRoute(id)
-    setSelectedRouteID(r => {
-      if (r === id) {
-        return routes.length > 0 ? routes[0].id : undefined
-      }
-    })
-  }
+  const [selectedMenuSection, setSelectedMenuSection] = useState(
+    MenuSection.Agent,
+  )
 
   const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [50, 50])
   const handleResize = useCallback((_: number, newSizes: number[]) => {
@@ -91,68 +50,17 @@ function Editor({ project }: Props) {
         gutterClassName='bg-slate-200'
         draggerClassName='bg-slate-400'
       >
-        <div
-          ref={ref}
-          className="
-            flex
-            flex-col
-            flex-1
-        ">
-          <Routes
-            routes={routes}
-            selectRoute={setSelectedRouteID}
-            selectedRouteID={selectedRoute?.id}
-            deleteRoute={handleDeleteRoute}
-          />
-          <RouteEditor
-            route={selectedRoute}
-          />
-        </div>
+
+        <Template />
         <Sidebar
-          activeMenuSection={selectedMenuSection}
+          activeMenuSection={selectedMenuSection as MenuSection}
           project={project}
-          route={selectedRoute}
         />
       </Splitter>
-      <div className="
-        w-14
-        flex
-        py-2
-        text-sm
-        border-l
-        bg-white
-        flex-col
-        space-y-4
-        items-center
-      "
-      >
-        {Object.values(MenuSection).map(m =>
-          <button
-            key={m}
-            className={clsx(`
-            hover:text-green-800
-            transition-all
-            text-xs
-            items-center
-            justify-center
-            flex
-            flex-col
-            space-y-1
-            `,
-              {
-                'text-slate-400': selectedMenuSection !== m,
-                'text-slate-600': selectedMenuSection === m,
-              }
-            )}
-            onClick={() => setSelectedMenuSection(m)}
-          >
-            {getMenuSelectionIcon(m)}
-            <span>
-              {m.toString()}
-            </span>
-          </button>
-        )}
-      </div>
+      <SidebarMenu
+        selected={selectedMenuSection as MenuSection}
+        setSelected={setSelectedMenuSection}
+      />
     </div>
   )
 }

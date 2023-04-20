@@ -3,32 +3,24 @@ import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 import { projects } from '@prisma/client'
 
-import Agent from './Agent'
-import Envs from './Envs'
-import Model from './Model'
-
 import { defaultTemplateID, PromptPart, Route } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
 import { ModelConfig, getModelConfig } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
-import Prompt from './Prompt'
 import { defaultPromptTemplate, evaluatePrompt } from 'state/prompt'
+
+import Agent from './Agent'
+import Envs from './Envs'
+import Model from './Model'
+import Prompt from './Prompt'
+import { identity } from 'utils/identity'
+import { MenuSection } from '../SidebarMenu'
 // import Deploy from './Deploy'
 
 export interface Props {
   project: projects
-  route?: Route
   activeMenuSection?: MenuSection
-}
-
-export enum MenuSection {
-  Agent = 'Agent',
-  Envs = 'Envs',
-  Model = 'Model',
-  Prompt = 'Prompt',
-  // Context = 'Context',
-  // Deploy = 'Deploy',
 }
 
 async function handlePostGenerate(url: string, { arg }: {
@@ -70,10 +62,9 @@ const apiURL = process.env.NEXT_PUBLIC_PROXY
 
 function Sidebar({
   project,
-  route,
   activeMenuSection,
 }: Props) {
-  const deployment = useLatestDeployment(project, route)
+  const deployment = useLatestDeployment(project)
 
   const {
     trigger: generate,
@@ -85,6 +76,7 @@ function Sidebar({
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
   const model = selectors.use.model()
+  const route = selectors.use.routes().find(identity)
   const prompt = selectors.use.modelSetups().find(p =>
     p.templateID === defaultTemplateID &&
     p.provider === model.provider &&
@@ -94,7 +86,11 @@ function Sidebar({
   const [creds] = useModelProviderArgs()
 
   async function deploy() {
-    if (!route) return
+    if (!route) {
+      console.error('Cannot get route')
+      return
+    }
+
     const config = getModelConfig(model, creds)
     if (!config) {
       console.error('Cannot get model config')
@@ -106,11 +102,11 @@ function Sidebar({
 
     await generate({
       controller,
-      projectID: project.id,
       route,
-      envs,
+      projectID: project.id,
       promptTemplate: prompt,
       modelConfig: config,
+      envs,
     })
   }
 

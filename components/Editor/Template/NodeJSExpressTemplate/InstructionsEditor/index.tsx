@@ -13,7 +13,7 @@ export interface Props {
   referenceSearch?: Fuse<Reference>
 }
 
-function PromptEditor({
+function InstructionsEditor({
   title,
   onChange,
   content,
@@ -51,4 +51,4 @@ function PromptEditor({
   )
 }
 
-export default PromptEditor
+export default InstructionsEditor

@@ -92,7 +92,7 @@ function Select({
             p-1
             mt-0.5
             relative
-            border border-green-500
+            border border-green-800
             rounded
             bg-white
             space-y-2`

@@ -52,7 +52,7 @@ function Button({
         'py-1',
         'px-3',
         {
-          'cursor-not-allowed opacity-70': isDisabled,
+          'cursor-not-allowed opacity-50': isDisabled,
           'bg-green-800/90 text-white border-transparent hover:bg-green-800 font-semibold':
             variant === Variant.Full,
           'border-slate-200 hover:border-green-800 hover:text-green-800':
