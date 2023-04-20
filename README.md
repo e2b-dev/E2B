@@ -99,7 +99,7 @@ We welcome any contributions! If you want to contribute to the project check out
     - Model hosting providers:
       - ✅ ~~Replicate~~
       - ✅ ~~Hugging Face Inference API~~
-      - Hugging Face Hub
+      - Hugging Face Inference Endpoints
       - Banana
       - Paperspace
 1. Improve agent's reliability and quality of output.
