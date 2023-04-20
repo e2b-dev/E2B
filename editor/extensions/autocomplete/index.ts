@@ -9,8 +9,8 @@ import tippy, {
 } from 'tippy.js'
 
 import { destroyOnEsc } from 'editor/tippyPlugins'
-import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/RouteEditor/PromptEditor/Autocomplete/ListWrapper'
-import Autocomplete from 'components/Editor/RouteEditor/PromptEditor/Autocomplete'
+import AutocompleteListWrapper, { AutocompleteList } from 'components/Editor/Template/NodeJSExpressTemplate/InstructionsEditor/Autocomplete/ListWrapper'
+import Autocomplete from 'components/Editor/Template/NodeJSExpressTemplate/InstructionsEditor/Autocomplete'
 
 import { Suggestion, SuggestionOptions, SuggestionProps } from './suggestion'
 import reference from '../reference'

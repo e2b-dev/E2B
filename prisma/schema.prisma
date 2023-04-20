@@ -257,7 +257,7 @@ model deployments {
   created_at DateTime          @default(now()) @db.Timestamptz(6)
   logs       Json[]
   project_id String
-  route_id   String
+  route_id   String?
   state      deployment_state?
   url        String?
   logs_raw   String?           @default("")
@@ -276,6 +276,22 @@ model projects {
   teams       teams         @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
+}
+
+model flow_state {
+  id                     String                @id @db.Uuid
+  user_id                String?               @db.Uuid
+  auth_code              String
+  code_challenge_method  code_challenge_method
+  code_challenge         String
+  provider_type          String
+  provider_access_token  String?
+  provider_refresh_token String?
+  created_at             DateTime?             @db.Timestamptz(6)
+  updated_at             DateTime?             @db.Timestamptz(6)
+
+  @@index([auth_code], map: "idx_auth_code")
+  @@schema("auth")
 }
 
 enum aal_level {
@@ -307,4 +323,11 @@ enum deployment_state {
   error
 
   @@schema("public")
+}
+
+enum code_challenge_method {
+  s256
+  plain
+
+  @@schema("auth")
 }

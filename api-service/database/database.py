@@ -16,18 +16,20 @@ class DeploymentState(Enum):
 TABLE_DEPLOYMENTS = "deployments"
 TABLE_PROJECTS = "projects"
 
+
 class Database:
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
         self.client = Client(supabase_url=supabase_url, supabase_key=supabase_key)
 
     async def create_deployment(
-        self, run_id: str, project_id: str, route_id: str
+        self,
+        run_id: str,
+        project_id: str,
     ) -> None:
         await self.client.table(TABLE_DEPLOYMENTS).insert(
             {
                 "id": run_id,
                 "project_id": project_id,
-                "route_id": route_id,
                 "state": DeploymentState.Generating.value,
             },
         ).execute()

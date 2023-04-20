@@ -4,7 +4,6 @@ import { Plus } from 'lucide-react'
 import { Method, methods, Route } from 'state/store'
 import Button from 'components/Button'
 import Text from 'components/Text'
-import DeleteButton from 'components/DeleteButton'
 import Select from 'components/Select'
 import { useStateStore } from 'state/StoreProvider'
 
@@ -52,6 +51,7 @@ function Routes({
           onClick={addRoute}
           variant={Button.variant.Outline}
           icon={<Plus size="16px" />}
+          isDisabled={routes.length >= 1}
         />
         <div className="
       flex
@@ -96,9 +96,9 @@ function Routes({
                 </div>
 
               </button>
-              <DeleteButton
+              {/* <DeleteButton
                 onDelete={() => deleteRoute(r.id)}
-              />
+              /> */}
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 import { Route } from 'state/store'
 import useBlock from 'hooks/useBlock'
 
-import PromptEditor from './PromptEditor'
+import InstructionsEditor from './InstructionsEditor'
 import RequestBodyEditor from './RequestBodyEditor'
 import useReferences from 'hooks/useReferences'
 
@@ -45,7 +45,7 @@ function RouteEditor({ route }: Props) {
           grow
         ">
           {descriptionBlock &&
-            <PromptEditor
+            <InstructionsEditor
               referenceSearch={referenceSearch}
               title="What should this route do?"
               placeholder="This is an API endpoint that ..."
@@ -60,7 +60,7 @@ function RouteEditor({ route }: Props) {
             />
           }
           {instructionsBlock &&
-            <PromptEditor
+            <InstructionsEditor
               referenceSearch={referenceSearch}
               title="Step-by-step instructions"
               placeholder="1. Check if the incoming `email` is not empty ..."

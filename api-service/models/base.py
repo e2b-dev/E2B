@@ -6,7 +6,7 @@ from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 
 from .providers.replicate import ReplicateFix
-from .providers.hugging_face import HuggingFaceHubFix
+from .providers.hugging_face import HuggingFaceHubFix, HuggingFaceEndpointFix
 
 
 class ModelProvider(Enum):
@@ -52,10 +52,17 @@ def get_model(
             )
         case ModelProvider.HuggingFace.value:
             if config["args"].get("endpoint_url"):
-                return HuggingFaceEndpoint(
-                    **config["args"],
+                return HuggingFaceEndpointFix(
+                    huggingfacehub_api_token=config["args"]["huggingfacehub_api_token"],
+                    endpoint_url=config["args"]["endpoint_url"],
                     verbose=True,
+                    model_kwargs={
+                        **config["args"],
+                        "huggingfacehub_api_token": None,
+                        "endpoint_url": None,
+                    },
                     callback_manager=callback_manager,
+                    task="text-generation",
                 )
             elif config["args"].get("repo_id"):
                 return HuggingFaceHubFix(

@@ -66,10 +66,10 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 - [x] [Anthropic](https://anthropic.com/)
   - [x] Claude v1.3
   - [x] Claude Instant v1
-- [x] [Replicate](https://replicate.com/) 🚧
-- [ ] [HuggingFace](https://huggingface.co/) 🚧
+- [x] [Replicate](https://replicate.com/)
+- [x] [HuggingFace](https://huggingface.co/)
   - [x] Inference API
-  - [ ] Inference Endpoints
+  - [x] Inference Endpoints
 - [ ] [Banana](https://www.banana.dev/) 🚧
 
 ### **Model or model hosting provider you like isn't supported?**
@@ -97,8 +97,9 @@ We welcome any contributions! If you want to contribute to the project check out
     - ✅ ~~OpenAI~~
     - ✅ ~~Anthropic~~
     - Model hosting providers:
-      - ✅ Replicate
-      - Hugging Face
+      - ✅ ~~Replicate~~
+      - ✅ ~~Hugging Face Inference API~~
+      - ✅ ~~Hugging Face Inference Endpoints~~
       - Banana
       - Paperspace
 1. Improve agent's reliability and quality of output.

@@ -59,7 +59,8 @@ function Model({ }: Props) {
           scroller
         "
       >
-        {Object.entries(modelTemplates)
+        {Object
+          .entries(modelTemplates)
           .slice()
           .sort(modelProviderOrder)
           .map(([provider, template], i, a) =>

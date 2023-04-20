@@ -3,7 +3,8 @@ import { useStateStore } from 'state/StoreProvider'
 import { defaultPromptTemplate, getDescription } from 'state/prompt'
 import { defaultTemplateID } from 'state/store'
 
-import Editor from './Editor'
+import Editor from './PromptEditor'
+import { providerIcons } from 'components/icons/ProviderIcon'
 
 function Prompt() {
   const [selectors] = useStateStore()
@@ -26,10 +27,10 @@ function Prompt() {
         flex
         bg-slate-50
         items-center
-        justify-between
         border-b
         py-3.5
-        pr-4
+        px-4
+        space-x-4
       ">
         <Text
           text="Prompt"
@@ -38,21 +39,50 @@ function Prompt() {
             uppercase
             text-slate-400
             font-semibold
-            px-4
           "
         />
       </div>
       <div
         className="
-      py-8
-      px-4
-      flex
-      flex-1
-      bg-white
-      justify-center
-      overflow-auto
-      scroller
-      "
+        border-slate-100
+        py-2
+        px-4
+        border-b
+        space-x-2
+        justify-between
+        font-medium
+        flex
+        "
+      >
+        <div className="
+            flex
+            items-center
+            space-x-2
+          ">
+          {providerIcons[model.provider]}
+          <Text
+            text={model.provider}
+            className="
+            text-slate-400
+          "
+            size={Text.size.S2}
+          />
+        </div>
+        <Text
+          text={model.name}
+        />
+      </div>
+      <div
+        className="
+        py-8
+        px-4
+        flex
+        flex-1
+        bg-white
+        justify-center
+        overflow-auto
+        scroller
+        "
       >
         <div className="
       flex

@@ -35,7 +35,7 @@ function SelectValue({
         py-1
         `,
         {
-          'text-green-500': isSelected,
+          'text-green-800': isSelected,
           'text-slate-500': !isSelected,
         },
       )}

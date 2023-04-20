@@ -85,7 +85,7 @@ CREATE TABLE "public"."deployments" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "logs" "jsonb"[],
     "project_id" "text" NOT NULL,
-    "route_id" "text" NOT NULL,
+    "route_id" "text",
     "state" "public"."deployment_state",
     "url" "text",
     "logs_raw" "text" DEFAULT ''::"text"
