@@ -16,7 +16,7 @@ export interface Database {
           logs: Json[] | null
           logs_raw: string | null
           project_id: string
-          route_id: string
+          route_id: string | null
           state: Database["public"]["Enums"]["deployment_state"] | null
           url: string | null
         }
@@ -26,7 +26,7 @@ export interface Database {
           logs?: Json[] | null
           logs_raw?: string | null
           project_id: string
-          route_id: string
+          route_id?: string | null
           state?: Database["public"]["Enums"]["deployment_state"] | null
           url?: string | null
         }
@@ -36,7 +36,7 @@ export interface Database {
           logs?: Json[] | null
           logs_raw?: string | null
           project_id?: string
-          route_id?: string
+          route_id?: string | null
           state?: Database["public"]["Enums"]["deployment_state"] | null
           url?: string | null
         }
