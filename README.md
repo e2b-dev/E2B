@@ -102,10 +102,10 @@ We welcome any contributions! If you want to contribute to the project check out
       - ✅ ~~Hugging Face Inference Endpoints~~
       - Banana
       - Paperspace
-1. Improve agent's reliability and quality of output.
-1. Improve the feedback loop (UX/UI) between the developer and agents.
-1. Improve agent's understanding of the context based on the instructions.
-1. Deployable agents.
+1. 🚧 Improve agent's reliability and quality of output.
+1. 🚧 Improve the feedback loop (UX/UI) between the developer and agents.
+1. 🚧 Improve agent's understanding of the context based on the instructions.
+1. 🚧 Deployable agents.
 1. Support more tools and 3rd party integraitons that agents can use.
 1. ✅ ~~Let users edit prompts.~~
 1. Let users customize tools and build custom workflows for the agent.
