@@ -3,83 +3,51 @@ import { immer } from 'zustand/middleware/immer'
 import { persist } from 'zustand/middleware'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { projects, Prisma } from '@prisma/client'
+import { WritableDraft } from 'immer/dist/internal'
 
 import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
-import { ModelArgs, ModelProvider } from './model'
-import { defaultPromptTemplate } from './prompt'
-
-export interface SelectedModel {
-  provider: ModelProvider
-  args: ModelArgs
-  name: string
-}
-
-export const defaultTemplateID = 'NodeJSServer'
-export const defaultModelName: 'GPT 3.5 Turbo' = 'GPT 3.5 Turbo'
-
-export interface TemplateBlock {
-  type: 'text' | 'xml'
-  // `content` must be valid HTML when `type` is `Description` or `Instructions`
-  content: string
-}
-
-export interface PromptPart {
-  role: 'user' | 'system'
-  type: string
-  content: string
-}
-
-export interface ModelSetup {
-  templateID: string
-  provider: ModelProvider
-  modelName: string
-  prompt: PromptPart[]
-}
+import { ModelConfig, getDefaultModelConfig, Model } from './model'
+import { PromptFragment } from './prompt'
+import { defaultTemplateID, TemplateID, templates } from './template'
+import { EnvVar, getDefaultEnv } from './envs'
+import { InstructionsRoot } from './instruction'
 
 export interface SerializedState {
+  instructions: InstructionsRoot
   envs: { key: string, value: string }[]
-  blocks: { [key: string]: TemplateBlock }
-  model: SelectedModel
-  modelSetups: ModelSetup[]
-}
-
-export interface EnvVar {
-  key: string
-  value: string
+  modelConfigs: ModelConfig[]
+  templateID: TemplateID
+  selectedModel: Model
 }
 
 export interface State extends SerializedState {
-  setBlock: (key: string, block: Partial<TemplateBlock>) => void
+  setInstructions: (set: (nextStateOrUpdater: InstructionsRoot | Partial<InstructionsRoot> | ((state: WritableDraft<InstructionsRoot>) => void)) => void) => void
   setEnvs: (pair: EnvVar[]) => void
   setEnv: (pair: EnvVar, idx: number) => void
-  setModel: (model: SelectedModel) => void
-  setPrompt: (templateID: string, provider: ModelProvider, modelName: string, idx: number, promptPart: PromptPart) => void
+  setModelConfigPrompt: (config: Model, idx: number, prompt: Partial<PromptFragment>) => void
+  setModelConfig: (config: Partial<ModelConfig> & Model) => void
+  selectedModelConfig: ModelConfig | undefined
+  selectModel: (model: Model) => void
 }
 
-function getDefaultModel(): SelectedModel {
+function getDefaultState(templateID: TemplateID): SerializedState {
+  const prompt = templates[templateID].prompt
+  const defaultModel = getDefaultModelConfig()
+
   return {
-    provider: ModelProvider.OpenAI,
-    name: defaultModelName,
-    args: {},
-  }
-}
-
-function getDefaultModelSetup(): ModelSetup[] {
-  return [{
-    provider: ModelProvider.OpenAI,
-    modelName: defaultModelName,
-    templateID: defaultTemplateID,
-    prompt: defaultPromptTemplate,
-  }]
-}
-
-function getDefaultState(): SerializedState {
-  return {
-    envs: [{ key: '', value: '' }],
-    model: getDefaultModel(),
-    modelSetups: getDefaultModelSetup(),
+    envs: [getDefaultEnv()],
+    modelConfigs: [{
+      ...defaultModel,
+      prompt,
+    }],
+    instructions: {},
+    templateID,
+    selectedModel: {
+      name: defaultModel.name,
+      provider: defaultModel.provider,
+    }
   }
 }
 
@@ -91,87 +59,91 @@ export function getTypedState(data?: Prisma.JsonValue): SerializedState | undefi
 }
 
 export function createStore(project: projects, client?: SupabaseClient<Database>) {
-  const initialState = getTypedState(project.data) || getDefaultState()
+  const initialState = getTypedState(project.data) || getDefaultState(defaultTemplateID)
 
-  if (!initialState.envs || initialState.envs.length === 0) {
-    initialState.envs = [{ key: '', value: '' }]
+  if (!initialState.envs?.length) {
+    initialState.envs = [getDefaultEnv()]
   }
 
-  if (!initialState.modelSetups) {
-    initialState.modelSetups = getDefaultModelSetup()
+  if (!initialState.modelConfigs) {
+    initialState.modelConfigs = [{
+      ...getDefaultModelConfig(),
+      prompt: templates[defaultTemplateID].prompt,
+    }]
   }
 
-  // TEMPORARY: We are checking .model === string for backwards compatibility.
-  if (!initialState.model || typeof initialState.model === 'string') {
-    initialState.model = getDefaultModel()
+  if (!initialState.selectedModel) {
+    const defaultModel = getDefaultModelConfig()
+    initialState.selectedModel = {
+      provider: defaultModel.provider,
+      name: defaultModel.name,
+    }
   }
 
   const immerStore = immer<State>((set, get) => ({
     ...initialState,
-    setBlock: (key, block) => set(state => {
-      state.blocks[key] = {
-        ...state.blocks[key],
-        ...block,
+    setInstructions: transform => set(state => transform(state.instructions)),
+    setEnvs: (envs) => set(state => state.envs = envs),
+    setEnv: (pair, idx) => set(state => state.envs[idx] = pair),
+    selectModel: (model) => set(state => {
+      state.selectedModel = {
+        provider: model.provider,
+        name: model.name
       }
     }),
-    setEnvs: (envs) => set(state => {
-      state.envs = envs
-    }),
-    setEnv: (pair, idx) => set(state => {
-      state.envs[idx] = pair
-    }),
-    setModel: (model) => set(state => {
-      const modelSetupIdx = state.modelSetups.findIndex(p =>
-        p.templateID === defaultTemplateID &&
-        p.provider === model.provider &&
-        p.modelName === model.name,
+    setModelConfigPrompt: (config, idx, prompt) => set(state => {
+      const existingConfigIndex = state.modelConfigs.findIndex(c =>
+        c.provider === config.provider &&
+        c.name === config.name,
       )
 
-      if (modelSetupIdx === -1) {
-        state.modelSetups.push({
-          provider: model.provider,
-          templateID: defaultTemplateID,
-          prompt: defaultPromptTemplate,
-          modelName: model.name,
-        })
+      if (existingConfigIndex !== -1) {
+        const configPrompt = state.modelConfigs[existingConfigIndex].prompt
+        if (configPrompt.length > idx) {
+          configPrompt[idx] = {
+            ...configPrompt[idx],
+            ...prompt,
+          }
+          return
+        }
       }
-      state.model = model
+      console.error('Invalid index when setting model config prompt', config, idx)
     }),
-    setPrompt: (templateID, provider, modelName, idx, promptPart) => set(state => {
-      let modelSetupIdx = state.modelSetups.findIndex(p =>
-        p.templateID === templateID &&
-        p.provider === provider &&
-        p.modelName === modelName
+    setModelConfig: (config) => set(state => {
+      const existingConfigIndex = state.modelConfigs.findIndex(c =>
+        c.provider === config.provider &&
+        c.name === config.name,
       )
 
-      if (modelSetupIdx === -1) {
-        state.modelSetups.push({
-          provider,
-          templateID: defaultTemplateID,
-          prompt: defaultPromptTemplate,
-          modelName,
+      if (existingConfigIndex === -1) {
+        state.modelConfigs.push({
+          args: {},
+          prompt: [],
+          ...config,
         })
-        modelSetupIdx = 0
+      } else {
+        state.modelConfigs[existingConfigIndex] = {
+          ...state.modelConfigs[existingConfigIndex],
+          ...config
+        }
       }
-      state.modelSetups[modelSetupIdx].prompt[idx] = promptPart
     }),
+    get selectedModelConfig() {
+      const state = get()
+      const model = state.selectedModel
+      return state.modelConfigs.find(c =>
+        c.provider === model.provider &&
+        c.name === model.name,
+      )
+    },
   }))
 
   const persistent = persist(immerStore, {
     name: 'supabase-persistence',
-    partialize: (state) => state,
     storage: client ? {
-      getItem: async (name) => {
-        // We retrieve the data on the server
-        return null
-      },
-      removeItem: async () => {
-        // TODO: SECURITY - Enable row security for all tables and configure access to projects.
-        const res = await client.from(projectsTable).update({ data: {} }).eq('id', project.id).single()
-        if (res.error) {
-          throw res.error
-        }
-      },
+      // We retrieve the data on the server
+      getItem: () => null,
+      removeItem: () => { },
       setItem: async (name, value) => {
         // TODO: SECURITY - Enable row security for all tables and configure access to projects.
         const res = await client.from(projectsTable).update({ data: value as any }).eq('id', project.id)

@@ -1,5 +1,4 @@
-import { Route } from 'state/store'
-import useBlock from 'hooks/useBlock'
+import useInstruction from 'components/Editor/Template/NodeJSExpressTemplate/useInstruction'
 
 import InstructionsEditor from './InstructionsEditor'
 import RequestBodyEditor from './RequestBodyEditor'
@@ -10,9 +9,9 @@ export interface Props {
 }
 
 function RouteEditor({ route }: Props) {
-  const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', 1, route)
-  const [descriptionBlock, updateDescriptionBlock] = useBlock('Description', 1, route)
-  const [instructionsBlock, updateInstructionsBlock] = useBlock('Instructions', 1, route)
+  const [descriptionBlock, updateDescriptionBlock] = useInstruction('Description', 'xml')
+  const [requestBodyBlock, updateRequestBodyBlock] = useInstruction('RequestBody', 'text')
+  const [instructionsBlock, updateInstructionsBlock] = useInstruction('Instructions', 'xml')
 
   const [referenceSearch] = useReferences()
 

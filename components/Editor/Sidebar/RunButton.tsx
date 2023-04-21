@@ -18,7 +18,7 @@ interface DeploymentRepresentation {
   icon: ReactNode | null
 }
 
-function getDeploymentRepresentation(deployStatus: deployment_state | null | undefined, isInitializingDeploy: boolean | undefined): DeploymentRepresentation {
+function getProgressRepresentation(deployStatus: deployment_state | null | undefined, isInitializingDeploy: boolean | undefined): DeploymentRepresentation {
   if (isInitializingDeploy) {
     return {
       text: 'Initializing...',
@@ -55,7 +55,7 @@ function DeployButton({
   isDeployRequestRunning,
   isInitializingDeploy,
 }: Props) {
-  const representation = getDeploymentRepresentation(deployStatus, isInitializingDeploy)
+  const representation = getProgressRepresentation(deployStatus, isInitializingDeploy)
 
   return (
     <>

@@ -3,24 +3,25 @@ import { memo, useCallback } from 'react'
 import Button from 'components/Button'
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
+import { getDefaultEnv } from 'state/envs'
 
 function Envs() {
   const [selector] = useStateStore()
 
   const envs = selector.use.envs()
   const setEnvs = selector.use.setEnvs()
-  const changeEnv = selector.use.changeEnv()
+  const setEnv = selector.use.setEnv()
 
   const handleEnvKeyChange = useCallback((event: any, idx: number) => {
-    changeEnv({ key: event.target.value.trim(), value: envs[idx].value }, idx)
-  }, [envs, changeEnv])
+    setEnv({ key: event.target.value.trim(), value: envs[idx].value }, idx)
+  }, [envs, setEnv])
 
   const handleEnvValueChange = useCallback((event: any, idx: number) => {
-    changeEnv({ key: envs[idx].key, value: event.target.value.trim() }, idx)
-  }, [envs, changeEnv])
+    setEnv({ key: envs[idx].key, value: event.target.value.trim() }, idx)
+  }, [envs, setEnv])
 
   const addNewEnv = useCallback(() => {
-    setEnvs([...envs, { key: '', value: '' }])
+    setEnvs([...envs, getDefaultEnv()])
   }, [envs, setEnvs])
 
   const deleteEnv = useCallback((delIdx: number) => {

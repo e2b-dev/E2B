@@ -1,45 +1,50 @@
 import { EditorContent } from '@tiptap/react'
 import Fuse from 'fuse.js'
+import { useCallback } from 'react'
 
 import Text from 'components/Text'
 import useDocEditor from 'hooks/useDocEditor'
 import { Reference } from 'editor/referenceType'
-import { PromptPart, SelectedModel } from 'state/store'
-import { useCallback } from 'react'
 import { useStateStore } from 'state/StoreProvider'
+import { ModelConfig } from 'state/store'
 
 export interface Props {
   title?: string
   placeholder?: string
-  onChange?: (value: string) => void
-  content: string
   referenceSearch?: Fuse<Reference>
-  model: SelectedModel
-  templateID: string
+  modelConfig: ModelConfig
   idx: number
-  promptPart: PromptPart
+  content: string
 }
 
 function Editor({
   title,
   idx,
-  promptPart,
-  templateID,
-  model,
-  content,
   placeholder,
+  modelConfig,
+  content: initialContent,
   referenceSearch,
 }: Props) {
   const [selectors] = useStateStore()
-  const setPrompt = selectors.use.setPrompt()
+  const setModelConfigPrompt = selectors.use.setModelConfigPrompt()
 
   const onChange = useCallback((content: string) => {
-    setPrompt(templateID, model.provider, model.name, idx, { content, role: promptPart.role, type: promptPart.type })
-  }, [setPrompt, templateID, model.provider, model.name, idx, promptPart.role, promptPart.type])
+    if (!modelConfig?.name) return
+    if (!modelConfig?.provider) return
 
+    setModelConfigPrompt({
+      name: modelConfig.name,
+      provider: modelConfig.provider,
+    }, idx, { content })
+  }, [
+    setModelConfigPrompt,
+    modelConfig?.name,
+    modelConfig?.provider,
+    idx,
+  ])
 
   const editor = useDocEditor({
-    initialContent: content,
+    initialContent,
     onContentChange: onChange,
     placeholder,
     referenceSearch,

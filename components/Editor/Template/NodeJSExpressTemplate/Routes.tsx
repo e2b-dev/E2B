@@ -1,13 +1,10 @@
 import clsx from 'clsx'
 import { Plus } from 'lucide-react'
 
-import { Method, methods, Route } from 'state/store'
 import Button from 'components/Button'
 import Text from 'components/Text'
 import Select from 'components/Select'
 import { useStateStore } from 'state/StoreProvider'
-
-
 
 export enum Method {
   POST = 'post',
@@ -19,10 +16,8 @@ export enum Method {
 
 export const methods = Object
   .keys(Method)
-  .filter((item) => isNaN(Number(item)))
+  .filter(item => isNaN(Number(item)))
   .map(v => v.toLowerCase())
-
-
 
 export interface Props {
   routes: Route[]

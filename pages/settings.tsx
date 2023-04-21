@@ -9,7 +9,7 @@ import Text from 'components/Text'
 import { Database } from 'db/supabase'
 import { serverCreds } from 'db/credentials'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
-import { modelTemplates, ModelProvider } from 'state/model'
+import { providerTemplates, ModelProvider } from 'state/model'
 import Input from 'components/Input'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
@@ -133,7 +133,7 @@ function Settings({ }: Props) {
                 w-[450px]
               "
           >
-            {Object.entries(modelTemplates).map(([provider, value]) =>
+            {Object.entries(providerTemplates).map(([provider, value]) =>
               <div
                 key={provider}
               >

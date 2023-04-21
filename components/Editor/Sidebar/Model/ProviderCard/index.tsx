@@ -1,19 +1,18 @@
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 
 import Text from 'components/Text'
 import { providerIcons } from 'components/icons/ProviderIcon'
-import { ModelProvider, getMissingCreds, ProviderTemplate } from 'state/model'
-import { SelectedModel } from 'state/store'
+import { ModelProvider, getMissingCreds, ProviderTemplate, Model } from 'state/model'
 import { Creds } from 'hooks/useModelProviderArgs'
-import { useStateStore } from 'state/StoreProvider'
 import Button from 'components/Button'
+import { useStateStore } from 'state/StoreProvider'
 
 import ModelSection from './ModelSection'
-import Link from 'next/link'
 
 export interface Props {
   provider: ModelProvider
-  selectedModel: SelectedModel
+  selectedModel: Model
   creds: Creds
   template: ProviderTemplate
 }
@@ -24,9 +23,11 @@ function ProviderCard({
   creds,
   selectedModel,
 }: Props) {
-  const [selector] = useStateStore()
   const router = useRouter()
-  const setModel = selector.use.setModel()
+  const [selectors] = useStateStore()
+
+  const selectModel = selectors.use.selectModel()
+  const setModelConfig = selectors.use.setModelConfig()
 
   return (
     <div className="
@@ -114,16 +115,14 @@ function ProviderCard({
         {template.models.map(m =>
           <ModelSection
             key={m.name}
-            modelTemplate={{ ...m, provider: provider as ModelProvider }}
-            selectedModel={
-              m.name === selectedModel?.name && provider === selectedModel.provider
-                ? selectedModel
-                : undefined}
+            provider={provider}
+            modelTemplate={m}
+            selectModel={() => selectModel({ provider, name: m.name })}
             isSelected={m.name === selectedModel?.name && provider === selectedModel.provider}
-            updateSelectedModel={i => setModel({
+            updateModelConfig={c => setModelConfig({
               name: m.name,
               provider: provider as ModelProvider,
-              ...i,
+              ...c,
             })}
           />
         )}

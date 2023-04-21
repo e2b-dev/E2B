@@ -6,8 +6,6 @@ export enum MenuSection {
   Envs = 'Envs',
   Model = 'Model',
   Prompt = 'Prompt',
-  // Context = 'Context',
-  // Deploy = 'Deploy',
 }
 
 const menuIconSize = '18px'
@@ -16,10 +14,6 @@ function getMenuSelectionIcon(selection: MenuSection) {
   switch (selection) {
     case MenuSection.Agent:
       return <Code size={menuIconSize} />
-    // case MenuSection.Context:
-    //   return <Box size={menuIconSize} />
-    // case MenuSection.Deploy:
-    //   return <Server size={menuIconSize} />
     case MenuSection.Prompt:
       return <WholeWord size={menuIconSize} />
     case MenuSection.Envs:

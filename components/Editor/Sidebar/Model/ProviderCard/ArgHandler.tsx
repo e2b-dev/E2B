@@ -1,35 +1,29 @@
 import Input from 'components/Input'
-import { ModelArgTemplate } from 'state/model'
-import { SelectedModel } from 'state/store'
+import { ModelTemplateArg } from 'state/model'
 import { parseInput } from 'utils/parseInput'
 
 export interface Props {
-  updateSelectedModel: (config: Omit<SelectedModel, 'name' | 'provider'>) => void
-  argTemplate: ModelArgTemplate
-  selectedModel?: SelectedModel
+  argTemplate: ModelTemplateArg
   arg: string
   isSelected?: boolean
+  updateModelConfigArg: (value: string | number | undefined) => void
   selectModel?: () => void
+  value?: string | number | undefined
 }
 
 function ArgHandler({
   isSelected,
   arg,
-  updateSelectedModel,
   argTemplate,
-  selectedModel,
+  updateModelConfigArg,
   selectModel,
+  value,
 }: Props) {
   return (
     <Input
-      value={selectedModel?.args[arg]?.toString() || ''}
+      value={value?.toString() || ''}
       type={argTemplate.type === 'number' ? 'number' : 'text'}
-      onChange={v => updateSelectedModel({
-        args: {
-          ...selectedModel?.args,
-          [arg]: parseInput(argTemplate, v),
-        }
-      })}
+      onChange={v => updateModelConfigArg(parseInput(argTemplate, v))}
       isDisabled={!isSelected}
       max={argTemplate.max}
       onClick={selectModel}

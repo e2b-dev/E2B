@@ -1,20 +1,14 @@
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
-import { defaultPromptTemplate, getDescription } from 'state/prompt'
-import { defaultTemplateID } from 'state/store'
+import { getPromptLabel } from 'state/prompt'
 
 import Editor from './PromptEditor'
 import { providerIcons } from 'components/icons/ProviderIcon'
 
 function Prompt() {
   const [selectors] = useStateStore()
-  const model = selectors.use.model()
-  const modelSetup = selectors.use.modelSetups().find(p =>
-    p.templateID === defaultTemplateID &&
-    p.provider === model.provider &&
-    p.modelName === model.name
-  )
-  const prompt = modelSetup?.prompt || defaultPromptTemplate
+  const model = selectors.use.selectedModel()
+  const modelConfig = selectors.use.selectedModelConfig()
 
   return (
     <div className="
@@ -91,7 +85,7 @@ function Prompt() {
       max-w-[65ch]
       grow
       ">
-          {prompt.map((p, i) =>
+          {modelConfig?.prompt.map((p, i) =>
             <div
               key={i}
               className="
@@ -109,17 +103,14 @@ function Prompt() {
                 <Text
                   className="font-medium text-slate-400"
                   size={Text.size.S3}
-                  text={getDescription(p)}
+                  text={getPromptLabel(p)}
                 />
               </div>
               <Editor
-                // title={`${p.role} ${p.type.replace(/([A-Z])/g, ' $1')}`.toUpperCase()}
                 placeholder={`Specify ${p.role} ${p.type.replace(/([A-Z])/g, ' $1').toLowerCase()} prompt here`}
                 content={p.content}
-                model={model}
-                templateID={defaultTemplateID}
+                modelConfig={modelConfig}
                 idx={i}
-                promptPart={p}
               />
             </div>
           )}

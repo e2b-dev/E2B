@@ -6,7 +6,7 @@ import { projects } from '@prisma/client'
 import { defaultTemplateID, PromptPart, Route } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
-import { ModelConfig, getModelConfig } from 'state/model'
+import { ModelConfig, getModelArgs } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { defaultPromptTemplate, evaluatePrompt } from 'state/prompt'
 
@@ -14,9 +14,7 @@ import Agent from './Agent'
 import Envs from './Envs'
 import Model from './Model'
 import Prompt from './Prompt'
-import { identity } from 'utils/identity'
 import { MenuSection } from '../SidebarMenu'
-// import Deploy from './Deploy'
 
 export interface Props {
   project: projects
@@ -76,22 +74,19 @@ function Sidebar({
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
   const model = selectors.use.model()
-  const route = selectors.use.routes().find(identity)
+
   const prompt = selectors.use.modelSetups().find(p =>
     p.templateID === defaultTemplateID &&
     p.provider === model.provider &&
     p.modelName === model.name
   )?.prompt || defaultPromptTemplate
 
+  const modelConfig = selectors.use.selectedModelConfig()
+
   const [creds] = useModelProviderArgs()
 
   async function deploy() {
-    if (!route) {
-      console.error('Cannot get route')
-      return
-    }
-
-    const config = getModelConfig(model, creds)
+    const config = getModelArgs(model, creds)
     if (!config) {
       console.error('Cannot get model config')
       return

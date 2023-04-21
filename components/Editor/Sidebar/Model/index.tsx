@@ -1,6 +1,6 @@
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
-import { ModelProvider, modelTemplates, ProviderTemplate } from 'state/model'
+import { ModelProvider, providerTemplates, ProviderTemplate } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { sortByOrder } from 'utils/sortByOrder'
 
@@ -18,7 +18,8 @@ export interface Props { }
 
 function Model({ }: Props) {
   const [selector] = useStateStore()
-  const model = selector.use.model()
+  const selectedModel = selector.use.selectedModel()
+
   const [creds] = useModelProviderArgs()
 
   return (
@@ -60,7 +61,7 @@ function Model({ }: Props) {
         "
       >
         {Object
-          .entries(modelTemplates)
+          .entries(providerTemplates)
           .slice()
           .sort(modelProviderOrder)
           .map(([provider, template], i, a) =>
@@ -72,7 +73,7 @@ function Model({ }: Props) {
             "
             >
               <ProviderCard
-                selectedModel={model}
+                selectedModel={selectedModel}
                 creds={creds}
                 template={template}
                 provider={provider as ModelProvider}

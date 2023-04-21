@@ -1,6 +1,6 @@
 import { Creds } from 'hooks/useModelProviderArgs'
 
-import { SelectedModel } from './store'
+import { PromptFragment } from './prompt'
 
 export enum ModelProvider {
   OpenAI = 'OpenAI',
@@ -9,13 +9,18 @@ export enum ModelProvider {
   HuggingFace = 'HuggingFace',
 }
 
+export interface ModelConfig extends Model {
+  args: ModelArgs
+  prompt: PromptFragment[]
+}
+
 export type ArgValue = string | number
 
 export interface ModelArgs {
   [arg: string]: ArgValue | undefined
 }
 
-export interface ModelArgTemplate {
+export interface ModelTemplateArg {
   label?: string
   editable?: boolean
   type: 'string' | 'number'
@@ -28,28 +33,31 @@ export interface ModelArgTemplate {
   optional?: boolean
 }
 
-export interface ProviderCredsTemplate {
-  [key: string]: Omit<ModelArgTemplate, 'editable' | 'value'>
+export interface ProviderTemplateCreds {
+  [key: string]: Omit<ModelTemplateArg, 'editable' | 'value'>
 }
 
-export interface ModelConfigTemplate {
+export interface Model {
   provider: ModelProvider
   name: string
+}
+
+export interface ModelTemplate extends Model {
   /**
    * Args should be exactly the same as the args to the langchain's model class in Python.
    */
-  args?: { [arg: string]: ModelArgTemplate }
+  args?: { [arg: string]: ModelTemplateArg }
 }
 
 export interface ProviderTemplate {
   // These creds are merged with the model args then send to the API.
-  creds?: ProviderCredsTemplate
-  models: Omit<ModelConfigTemplate, 'provider'>[]
+  creds?: ProviderTemplateCreds
+  models: Omit<ModelTemplate, 'provider'>[]
   link?: string
 }
 
-export const modelTemplates: {
-  [provider in keyof typeof ModelProvider]?: ProviderTemplate
+export const providerTemplates: {
+  [provider in keyof typeof ModelProvider]: ProviderTemplate
 } = {
   [ModelProvider.Anthropic]: {
     link: 'https://anthropic.com',
@@ -450,19 +458,15 @@ export const modelTemplates: {
   },
 }
 
-export interface ModelConfig extends Omit<ModelConfigTemplate, 'args' | 'name'> {
-  args: ModelArgs
-}
-
-export function getModelConfig(
-  config: SelectedModel,
+export function getModelArgs(
+  modelConfig: Pick<ModelConfig, 'provider' | 'name' | 'args'>,
   creds: Creds,
-): ModelConfig | undefined {
-  const model = modelTemplates[config.provider]?.models.find(m => m.name === config.name)
-  if (!model) return
+): ModelArgs | undefined {
+  const template = providerTemplates[modelConfig.provider]?.models.find(m => m.name === modelConfig.name)
+  if (!template) return
 
   const defaultArgs = Object
-    .entries(model.args || {})
+    .entries(template.args || {})
     .reduce<ModelArgs>((prev, [key, info]) => {
       if (info.value !== undefined) {
         prev[key] = info.value
@@ -471,19 +475,23 @@ export function getModelConfig(
     }, {})
 
   return {
-    provider: config.provider,
-    args: {
-      ...defaultArgs,
-      ...creds[config.provider]?.creds,
-      ...config.args,
-    }
+    ...defaultArgs,
+    ...creds[modelConfig.provider]?.creds,
+    ...modelConfig.args,
   }
 }
 
 export function getMissingCreds(provider: ModelProvider, creds: Creds) {
-  const missing = Object
-    .entries(modelTemplates[provider]?.creds || {})
+  return Object
+    .entries(providerTemplates[provider]?.creds || {})
     .filter(([key,]) => creds[provider]?.creds?.[key] === undefined)
+}
 
-  return missing
+export function getDefaultModelConfig(): ModelConfig {
+  return {
+    provider: ModelProvider.OpenAI,
+    name: providerTemplates[ModelProvider.OpenAI].models[0].name,
+    args: {},
+    prompt: [],
+  }
 }

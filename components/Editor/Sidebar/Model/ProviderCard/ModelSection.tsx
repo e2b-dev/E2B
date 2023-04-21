@@ -1,34 +1,32 @@
 import React, { useState } from 'react'
 
-import { ModelConfigTemplate } from 'state/model'
-import { SelectedModel } from 'state/store'
+import { ModelProvider, ModelTemplate } from 'state/model'
 import Text from 'components/Text'
 import { CheckSquare, ChevronDown, Square } from 'lucide-react'
 import clsx from 'clsx'
 import ArgHandler from './ArgHandler'
+import { ModelConfig } from 'state/store'
+import { useStateStore } from 'state/StoreProvider'
 
 interface Props {
+  provider: ModelProvider
+  modelTemplate: Omit<ModelTemplate, 'provider'>
   isSelected?: boolean
-  updateSelectedModel: (config: Omit<SelectedModel, 'name' | 'provider'>) => void
-  modelTemplate: ModelConfigTemplate
-  selectedModel?: SelectedModel
+  selectModel: () => void
+  updateModelConfig: (config: Partial<Omit<ModelConfig, 'name' | 'provider'>>) => void
 }
 
 function ModelSection({
-  isSelected,
-  updateSelectedModel,
   modelTemplate,
-  selectedModel,
+  provider,
+  isSelected,
+  selectModel,
+  updateModelConfig,
 }: Props) {
   const [isDefaultArgsOpen, setIsDefaultArgsOpen] = useState(false)
 
-  function selectModel() {
-    updateSelectedModel({
-      args: {
-        ...selectedModel?.args,
-      }
-    })
-  }
+  const [selectors] = useStateStore()
+  const modelConfig = selectors.use.modelConfigs().find(c => c.name === modelTemplate.name && c.provider === provider)
 
   const editableArgs = Object
     .entries(modelTemplate.args || {})
@@ -36,6 +34,15 @@ function ModelSection({
 
   const requiredParams = editableArgs.filter(a => a[1].value === undefined && !a[1].optional)
   const defaultedArgs = editableArgs.filter(a => a[1].value !== undefined || a[1].optional)
+
+  function updateModelConfigArg(key: string, value: string | number | undefined) {
+    updateModelConfig({
+      args: {
+        ...modelConfig?.args,
+        [key]: value
+      }
+    })
+  }
 
   return (
     <div className="
@@ -88,12 +95,12 @@ function ModelSection({
           {requiredParams.map(([arg, template]) =>
             <ArgHandler
               selectModel={selectModel}
-              updateSelectedModel={updateSelectedModel}
+              updateModelConfigArg={value => updateModelConfigArg(arg, value)}
               arg={arg}
+              value={modelConfig?.args[arg]}
               key={arg}
               argTemplate={template}
               isSelected={isSelected}
-              selectedModel={selectedModel}
             />
           )}
           {defaultedArgs.length > 0 &&
@@ -135,12 +142,12 @@ function ModelSection({
                   {defaultedArgs.map(([arg, template]) =>
                     <ArgHandler
                       selectModel={selectModel}
-                      updateSelectedModel={updateSelectedModel}
+                      updateModelConfigArg={value => updateModelConfigArg(arg, value)}
                       arg={arg}
+                      value={modelConfig?.args[arg]}
                       key={arg}
                       argTemplate={template}
                       isSelected={isSelected}
-                      selectedModel={selectedModel}
                     />
                   )}
                 </div>
