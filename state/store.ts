@@ -131,7 +131,11 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
         if (existingConfigIndex === -1) {
           const templateID = get().templateID
           if (!templateID) throw new Error('No templateID for current project')
-          state.modelConfigs.push(getDefaultModelConfig(templateID))
+          state.modelConfigs.push({
+            ...getDefaultModelConfig(templateID),
+            provider: model.provider,
+            name: model.name,
+          })
         }
       }),
     setModelConfigPrompt: (config, idx, prompt) =>
@@ -139,10 +143,10 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
         const existingConfigIndex = state.modelConfigs.findIndex(c => isModelEqual(c, config))
 
         if (existingConfigIndex !== -1) {
-          const configPrompt = state.modelConfigs[existingConfigIndex].prompt
-          if (configPrompt.length > idx) {
-            configPrompt[idx] = {
-              ...configPrompt[idx],
+          const config = state.modelConfigs[existingConfigIndex]
+          if (config.prompt.length > idx) {
+            config.prompt[idx] = {
+              ...config.prompt[idx],
               ...prompt,
             }
             return
