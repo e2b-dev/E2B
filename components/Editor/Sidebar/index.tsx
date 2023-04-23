@@ -22,7 +22,6 @@ export interface Props {
   activeMenuSection?: MenuSection
 }
 
-
 interface PostGenerateBody {
   projectID: string
   modelConfig: ModelConfig
@@ -89,6 +88,18 @@ function Sidebar({
 
   const [creds] = useModelProviderArgs()
 
+  const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
+
+  useEffect(function handleDeployState() {
+    if (!deployment) return
+    setIsInitializingDeploy(false)
+  }, [deployment])
+
+  useEffect(function handleDeployState() {
+    if (!isDeployRequestRunning) return
+    setIsInitializingDeploy(true)
+  }, [isDeployRequestRunning])
+
   async function deploy() {
     if (!modelConfig) {
       console.error('Cannot get model config')
@@ -109,21 +120,9 @@ function Sidebar({
     })
   }
 
-  async function cancelGenerate() {
+  function cancelGenerate() {
     generateController.current?.abort()
   }
-
-  const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
-
-  useEffect(function handleDeployState() {
-    if (!deployment) return
-    setIsInitializingDeploy(false)
-  }, [deployment])
-
-  useEffect(function handleDeployState() {
-    if (!isDeployRequestRunning) return
-    setIsInitializingDeploy(true)
-  }, [isDeployRequestRunning])
 
   return (
     <div

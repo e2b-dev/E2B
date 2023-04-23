@@ -27,20 +27,22 @@ export function transformInstructions(
 ) {
   let newInstructions = JSON.parse(JSON.stringify(instructions))
 
-  Object.entries(instructionsTransform).forEach(([jsonPath, transformType]) => {
-    JSONPath({
-      path: jsonPath,
-      json: newInstructions,
-      callback: (payload, payloadType, fullPayload) => {
-        const newPayload = transform(payload, transformType?.type)
-        if (fullPayload.parent) {
-          fullPayload.parent[fullPayload.parentProperty] = newPayload
-        } else if (fullPayload.parent === null) {
-          newInstructions = newPayload
+  Object
+    .entries(instructionsTransform)
+    .forEach(([jsonPath, transformType]) => {
+      JSONPath({
+        path: jsonPath,
+        json: newInstructions,
+        callback: (payload, payloadType, fullPayload) => {
+          const newPayload = transform(payload, transformType?.type)
+          if (fullPayload.parent) {
+            fullPayload.parent[fullPayload.parentProperty] = newPayload
+          } else if (fullPayload.parent === null) {
+            newInstructions = newPayload
+          }
         }
-      }
+      })
     })
-  })
 
   return newInstructions
 }

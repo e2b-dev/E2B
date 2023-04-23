@@ -23,6 +23,9 @@ export function getPromptLabel(fragment: PromptFragment) {
 export interface PromptFragment {
   role: 'user' | 'system'
   type: string
+  /**
+   * By default the content is in XML format and we have to transform it before sending it in a request to backend.
+   */
   content: string
 }
 

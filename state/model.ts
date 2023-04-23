@@ -482,18 +482,22 @@ export function getModelArgs(
   }
 }
 
+export const defaultModelProvider = ModelProvider.OpenAI
+export const defaultModelName = providerTemplates[defaultModelProvider].models[0].name
+
 export function getMissingCreds(provider: ModelProvider, creds: Creds) {
   return Object
     .entries(providerTemplates[provider]?.creds || {})
-    .filter(([key,]) => creds[provider]?.creds?.[key] === undefined)
+    .filter(([key]) => creds[provider]?.creds?.[key] === undefined)
 }
 
 export function getDefaultModelConfig(templateID: TemplateID): ModelConfig {
   const prompt = templates[templateID].prompt
 
+  console.log('def model')
   return {
-    provider: ModelProvider.OpenAI,
-    name: providerTemplates[ModelProvider.OpenAI].models[0].name,
+    provider: defaultModelProvider,
+    name: defaultModelName,
     args: {},
     prompt,
   }
