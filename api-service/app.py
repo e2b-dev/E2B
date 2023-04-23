@@ -41,7 +41,6 @@ async def generate():
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
     model_config = body["modelConfig"]
-    prompt = body["prompt"]
 
     await db.create_deployment(run_id=run_id, project_id=project_id)
     playground = None
@@ -62,7 +61,7 @@ async def generate():
             tools=list(tools),
             model_config=model_config,
             database=db,
-            prompt=prompt,
+            prompt=model_config["prompt"],
         )
 
         # Generate the code
