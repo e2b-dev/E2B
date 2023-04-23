@@ -110,7 +110,6 @@ function useRoutes(): {
   }, [setInstructions])
 
   useEffect(function addDefaultRoute() {
-    console.log(routes)
     if (routes === undefined || routes?.length === 0) {
       const id = nanoid()
       addRoute()

@@ -82,7 +82,7 @@ function Sidebar({
 
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
-  const modelConfig = selectors.use.selectedModelConfig()
+  const modelConfig = selectors.use.getSelectedModelConfig()()
   const instructions = selectors.use.instructions()
   const instructionsTransform = selectors.use.instructionsTransform()
 

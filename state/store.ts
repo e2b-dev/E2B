@@ -8,7 +8,7 @@ import { WritableDraft } from 'immer/dist/internal'
 import { Database } from 'db/supabase'
 import { projectsTable } from 'db/tables'
 
-import { ModelConfig, getDefaultModelConfig, Model } from './model'
+import { ModelConfig, getDefaultModelConfig, Model, isModelEqual } from './model'
 import { PromptFragment } from './prompt'
 import { defaultTemplateID, TemplateID } from './template'
 import { EnvVar, getDefaultEnv } from './envs'
@@ -20,7 +20,7 @@ export interface SerializedState {
    * 
    * For example - the instructions for NodeJSExpress template contains an array of `Routes` that each has 
    * `Description`, `RequestBody`, `Instructions` (Step-by-step instructions), `Method` and `Path` fields.
-   * You then use these fields in the prompt via `{{Method}}`, etc.
+   * You then inject these fields in the prompt via `{{Method}}` Mustache syntax.
    * 
    * This object's structure can be specific for each template so the default type is `any`.
    */
@@ -53,7 +53,10 @@ export interface State extends SerializedState {
   setModelConfigPrompt: (config: Model, idx: number, prompt: Partial<PromptFragment>) => void
   setModelConfig: (config: Partial<ModelConfig> & Model) => void
   selectModel: (model: Model) => void
-  selectedModelConfig: ModelConfig | null
+  /**
+   * TODO: We would ideally use a getter here but there are some problems with the zustand interactions.
+   */
+  getSelectedModelConfig: () => ModelConfig | null
 }
 
 function getDefaultState(templateID: TemplateID): SerializedState {
@@ -122,13 +125,18 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
           provider: model.provider,
           name: model.name
         }
+
+        // Ensure that the model config exists
+        const existingConfigIndex = state.modelConfigs.findIndex(c => isModelEqual(c, model))
+        if (existingConfigIndex === -1) {
+          const templateID = get().templateID
+          if (!templateID) throw new Error('No templateID for current project')
+          state.modelConfigs.push(getDefaultModelConfig(templateID))
+        }
       }),
     setModelConfigPrompt: (config, idx, prompt) =>
       set(state => {
-        const existingConfigIndex = state.modelConfigs.findIndex(c =>
-          c.provider === config.provider &&
-          c.name === config.name,
-        )
+        const existingConfigIndex = state.modelConfigs.findIndex(c => isModelEqual(c, config))
 
         if (existingConfigIndex !== -1) {
           const configPrompt = state.modelConfigs[existingConfigIndex].prompt
@@ -144,10 +152,7 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       }),
     setModelConfig: (config) =>
       set(state => {
-        const existingConfigIndex = state.modelConfigs.findIndex(c =>
-          c.provider === config.provider &&
-          c.name === config.name,
-        )
+        const existingConfigIndex = state.modelConfigs.findIndex(c => isModelEqual(c, config))
 
         if (existingConfigIndex === -1) {
           const templateID = get().templateID
@@ -164,13 +169,9 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
           }
         }
       }),
-    get selectedModelConfig() {
-      const state = get()
-      const model = state.selectedModel
-      return state.modelConfigs.find(c =>
-        c.provider === model.provider &&
-        c.name === model.name,
-      ) || null
+    getSelectedModelConfig: () => {
+      const model = get().selectedModel
+      return get().modelConfigs.find(c => isModelEqual(c, model)) || null
     },
   }))
 

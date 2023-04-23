@@ -493,12 +493,14 @@ export function getMissingCreds(provider: ModelProvider, creds: Creds) {
 
 export function getDefaultModelConfig(templateID: TemplateID): ModelConfig {
   const prompt = templates[templateID].prompt
-
-  console.log('def model')
   return {
     provider: defaultModelProvider,
     name: defaultModelName,
     args: {},
     prompt,
   }
+}
+
+export function isModelEqual(m1: Model, m2: Model) {
+  return m1.provider === m2.provider && m1.name === m2.name
 }

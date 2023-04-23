@@ -1,14 +1,14 @@
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
 import { getPromptLabel } from 'state/prompt'
+import { providerIcons } from 'components/icons/ProviderIcon'
 
 import Editor from './PromptEditor'
-import { providerIcons } from 'components/icons/ProviderIcon'
 
 function Prompt() {
   const [selectors] = useStateStore()
   const model = selectors.use.selectedModel()
-  const modelConfig = selectors.use.selectedModelConfig()
+  const modelConfig = selectors.use.getSelectedModelConfig()()
 
   return (
     <div className="

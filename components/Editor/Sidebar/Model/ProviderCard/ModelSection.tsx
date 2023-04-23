@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import clsx from 'clsx'
 import { CheckSquare, ChevronDown, Square } from 'lucide-react'
 
-import { ModelProvider, ModelTemplate, ModelConfig } from 'state/model'
+import { ModelProvider, ModelTemplate, ModelConfig, isModelEqual } from 'state/model'
 import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
 
@@ -26,7 +26,7 @@ function ModelSection({
   const [isDefaultArgsOpen, setIsDefaultArgsOpen] = useState(false)
 
   const [selectors] = useStateStore()
-  const modelConfig = selectors.use.modelConfigs().find(c => c.name === modelTemplate.name && c.provider === provider)
+  const modelConfig = selectors.use.modelConfigs().find(m => isModelEqual(m, { provider, name: modelTemplate.name }))
 
   const editableArgs = Object
     .entries(modelTemplate.args || {})

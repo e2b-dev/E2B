@@ -50,11 +50,11 @@ function Agent({
   const [selectedTab, setSelectedTab] = useState(0)
   const client = useSupabaseClient<Database>()
   const tabsCss = useTabs(tabsProps)
-  const [selector] = useStateStore()
+  const [selectors] = useStateStore()
   const router = useRouter()
 
   const [creds] = useModelProviderArgs()
-  const modelConfig = selector.use.selectedModelConfig()
+  const modelConfig = selectors.use.getSelectedModelConfig()()
   const missingCreds = modelConfig ? getMissingCreds(modelConfig?.provider, creds) : []
 
   async function saveAnswer({
