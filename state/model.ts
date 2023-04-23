@@ -1,6 +1,7 @@
 import { Creds } from 'hooks/useModelProviderArgs'
 
 import { PromptFragment } from './prompt'
+import { TemplateID, templates } from './template'
 
 export enum ModelProvider {
   OpenAI = 'OpenAI',
@@ -461,9 +462,9 @@ export const providerTemplates: {
 export function getModelArgs(
   modelConfig: Pick<ModelConfig, 'provider' | 'name' | 'args'>,
   creds: Creds,
-): ModelArgs | undefined {
+): ModelArgs {
   const template = providerTemplates[modelConfig.provider]?.models.find(m => m.name === modelConfig.name)
-  if (!template) return
+  if (!template) throw new Error(`Cannot find model template ${modelConfig.provider}/${modelConfig.name}`)
 
   const defaultArgs = Object
     .entries(template.args || {})
@@ -487,11 +488,13 @@ export function getMissingCreds(provider: ModelProvider, creds: Creds) {
     .filter(([key,]) => creds[provider]?.creds?.[key] === undefined)
 }
 
-export function getDefaultModelConfig(): ModelConfig {
+export function getDefaultModelConfig(templateID: TemplateID): ModelConfig {
+  const prompt = templates[templateID].prompt
+
   return {
     provider: ModelProvider.OpenAI,
     name: providerTemplates[ModelProvider.OpenAI].models[0].name,
     args: {},
-    prompt: [],
+    prompt,
   }
 }

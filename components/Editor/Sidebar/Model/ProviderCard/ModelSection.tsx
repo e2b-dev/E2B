@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
-
-import { ModelProvider, ModelTemplate } from 'state/model'
-import Text from 'components/Text'
-import { CheckSquare, ChevronDown, Square } from 'lucide-react'
 import clsx from 'clsx'
-import ArgHandler from './ArgHandler'
-import { ModelConfig } from 'state/store'
+import { CheckSquare, ChevronDown, Square } from 'lucide-react'
+
+import { ModelProvider, ModelTemplate, ModelConfig } from 'state/model'
+import Text from 'components/Text'
 import { useStateStore } from 'state/StoreProvider'
+
+import ArgHandler from './ArgHandler'
 
 interface Props {
   provider: ModelProvider

@@ -1,47 +1,46 @@
-import mapValues from 'lodash.mapvalues'
+import { JSONPath } from 'jsonpath-plus'
 
 import { Reference } from 'editor/referenceType'
 import { html2markdown } from 'editor/schema'
 
-export interface Instruction {
-  type: 'text' | 'xml'
-  // `content` must be valid XML when `type` is `xml`
-  content: string
+export type Instructions = any
+
+export interface TransformType {
+  type: 'xml'
 }
 
-export type NestedInstruction =
-  undefined |
-  Instruction |
-  Instruction[] |
-  InstructionsRoot |
-  InstructionsRoot[]
-
-export interface InstructionsRoot {
-  [key: string]: NestedInstruction
+export interface InstructionsTransform {
+  [jsonPath: string]: TransformType | undefined
 }
 
-export function evaluateInstruction(instruction: Instruction): [string, Reference[]] {
-  if (instruction.type === 'xml') {
-    return html2markdown(instruction.content)
+export function evaluateInstruction(instruction: Instructions, transformType?: TransformType['type']): [Instructions, Reference[]] {
+  if (typeof instruction === 'string' && transformType === 'xml') {
+    return html2markdown(instruction)
   }
-  return [instruction.content, []]
+  return [instruction, []]
 }
 
-export function isInstruction(value: Instruction | InstructionsRoot): value is Instruction {
-  return value.content !== undefined && value.type !== undefined
-}
+export function transformInstructions(
+  instructions: Instructions,
+  instructionsTransform: InstructionsTransform,
+  transform: (i: Instructions, transformType?: TransformType['type']) => Instructions,
+) {
+  let newInstructions = JSON.parse(JSON.stringify(instructions))
 
-export function mapNestedInstructions(instructions: InstructionsRoot, transform: (i: Instruction) => string) {
-  function transformValues(i: Instruction | InstructionsRoot): any {
-    return isInstruction(i)
-      ? transform(i)
-      : mapNestedInstructions(i, transform)
-  }
-
-  return mapValues(instructions, (value, key) => {
-    if (!value) return
-    return Array.isArray(value)
-      ? value.map(transformValues)
-      : transformValues(value)
+  Object.entries(instructionsTransform).forEach(([jsonPath, transformType]) => {
+    JSONPath({
+      path: jsonPath,
+      json: newInstructions,
+      callback: (payload, payloadType, fullPayload) => {
+        const newPayload = transform(payload, transformType?.type)
+        if (fullPayload.parent) {
+          fullPayload.parent[fullPayload.parentProperty] = newPayload
+        } else if (fullPayload.parent === null) {
+          newInstructions = newPayload
+        }
+      }
+    })
   })
+
+  return newInstructions
 }

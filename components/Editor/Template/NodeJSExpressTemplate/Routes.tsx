@@ -4,39 +4,26 @@ import { Plus } from 'lucide-react'
 import Button from 'components/Button'
 import Text from 'components/Text'
 import Select from 'components/Select'
-import { useStateStore } from 'state/StoreProvider'
 
-export enum Method {
-  POST = 'post',
-  GET = 'get',
-  PUT = 'put',
-  DELETE = 'delete',
-  PATCH = 'patch',
-}
-
-export const methods = Object
-  .keys(Method)
-  .filter(item => isNaN(Number(item)))
-  .map(v => v.toLowerCase())
+import { Method, methods, RouteInfo } from './useRoutes'
 
 export interface Props {
-  routes: Route[]
-  selectRoute: (id: string) => void
-  selectedRouteID?: string
-  deleteRoute: (id: string) => void
+  routes: RouteInfo[],
+  selectedRoute?: RouteInfo,
+  addRoute: (route?: RouteInfo) => void,
+  setRoute: (route: Partial<RouteInfo> & Pick<RouteInfo, 'id'>) => void,
+  deleteRoute: (id: string) => void,
+  selectRoute: (id: string) => void,
 }
 
 function Routes({
   routes,
-  selectedRouteID,
+  selectedRoute,
   deleteRoute,
   selectRoute,
+  addRoute,
+  setRoute,
 }: Props) {
-  const [selectors] = useStateStore()
-
-  const addRoute = selectors.use.addRoute()
-  const changeRoute = selectors.use.changeRoute()
-
   return (
     <div>
       <div
@@ -60,7 +47,7 @@ function Routes({
         />
         <Button
           text="New"
-          onClick={addRoute}
+          onClick={() => addRoute()}
           variant={Button.variant.Outline}
           icon={<Plus size="16px" />}
           isDisabled={routes.length >= 1}
@@ -76,7 +63,7 @@ function Routes({
       ">
           {routes.map(r =>
             <div
-              key={r.id}
+              key={r.Method + r.Path}
               className={clsx(`
               flex
               items-center
@@ -85,8 +72,8 @@ function Routes({
               px-2
             `,
                 {
-                  'text-green-800 group': selectedRouteID === r.id,
-                  'text-slate-300': selectedRouteID !== r.id,
+                  'text-green-800 group': selectedRoute?.id === r.id,
+                  'text-slate-300': selectedRoute?.id !== r.id,
                 }
               )}
             >
@@ -100,10 +87,13 @@ function Routes({
                 <div className="flex items-center space-x-2">
                   <Select
                     direction="left"
-                    selectedValue={{ key: r.method, title: r.method.toUpperCase() }}
+                    selectedValue={{ key: r.Method, title: r.Method.toUpperCase() }}
                     values={methods.map(m => ({ key: m, title: m.toUpperCase() }))}
-                    onChange={m => changeRoute(r.id, { method: m.key as Method })}
-                    isSelected={r.id === selectedRouteID}
+                    onChange={m => setRoute({
+                      ...r,
+                      Method: m.key as Method,
+                    })}
+                    isSelected={r.id === selectedRoute?.id}
                   />
                 </div>
 

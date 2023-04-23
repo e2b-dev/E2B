@@ -4,7 +4,7 @@ import { html2markdown } from 'editor/schema'
 import { Reference } from 'editor/referenceType'
 import { identity } from 'utils/identity'
 
-import { evaluateInstruction, mapNestedInstructions, InstructionsRoot } from './instruction'
+import { evaluateInstruction, Instructions, InstructionsTransform, transformInstructions } from './instruction'
 
 export function getPromptLabel(fragment: PromptFragment) {
   if (fragment.role === 'system' && fragment.type === 'prefix') {
@@ -27,16 +27,20 @@ export interface PromptFragment {
 }
 
 export function evaluatePrompt(
-  instructions: InstructionsRoot,
+  instructions: Instructions,
+  instructionsTransform: InstructionsTransform,
   prompt: PromptFragment[],
 ): PromptFragment[] {
   const references: Reference[] = []
 
-  const textualInstructionsView = mapNestedInstructions(instructions, (i) => {
-    const [markdown, references] = evaluateInstruction(i)
-    references.push(...references)
-    return markdown
-  })
+  const instructionsView = transformInstructions(
+    instructions,
+    instructionsTransform,
+    (i, type) => {
+      const [markdown, references] = evaluateInstruction(i, type)
+      references.push(...references)
+      return markdown
+    })
 
   const textualPrompt = prompt
     .map(p => {
@@ -51,9 +55,9 @@ export function evaluatePrompt(
       return {
         ...p,
         content: Mustache.render(p.content, {
-          ...textualInstructionsView,
           // TODO: Use the references to build context
           References: references,
+          ...instructionsView,
         }, undefined, {
           escape: identity,
         }),
@@ -61,6 +65,7 @@ export function evaluatePrompt(
     })
 
 
-  console.log('Prompt', textualPrompt)
+  console.log('Prompt:', textualPrompt)
+  console.log('Instructions view:', instructionsView)
   return textualPrompt
 }

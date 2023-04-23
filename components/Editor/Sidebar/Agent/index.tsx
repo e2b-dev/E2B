@@ -54,8 +54,8 @@ function Agent({
   const router = useRouter()
 
   const [creds] = useModelProviderArgs()
-  const model = selector.use.model()
-  const missingCreds = getMissingCreds(model.provider, creds)
+  const modelConfig = selector.use.selectedModelConfig()
+  const missingCreds = modelConfig ? getMissingCreds(modelConfig?.provider, creds) : []
 
   async function saveAnswer({
     logID,

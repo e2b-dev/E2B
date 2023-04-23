@@ -6,7 +6,7 @@ import Text from 'components/Text'
 import useDocEditor from 'hooks/useDocEditor'
 import { Reference } from 'editor/referenceType'
 import { useStateStore } from 'state/StoreProvider'
-import { ModelConfig } from 'state/store'
+import { ModelConfig } from 'state/model'
 
 export interface Props {
   title?: string

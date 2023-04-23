@@ -17,7 +17,7 @@ const Template = forwardRef<HTMLDivElement, Props>(({ }, ref) => {
       flex-col
       flex-1
   ">
-      {templates[templateID].component}
+      {templateID && templates[templateID].component}
     </div>
   )
 })
