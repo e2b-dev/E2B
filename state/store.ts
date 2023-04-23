@@ -102,12 +102,10 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
     ...initialState,
     setInstructions: transform =>
       set(state => {
-        console.log('set instructs')
         transform(state.instructions)
       }),
     setInstructionTransform: (jsonPath, instructionTransform) =>
       set(state => {
-        console.log('set instructs transforms')
         state.instructionsTransform[jsonPath] = instructionTransform
       }),
     setEnvs: (envs) =>
@@ -127,7 +125,6 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       }),
     setModelConfigPrompt: (config, idx, prompt) =>
       set(state => {
-        console.log('set config prompt')
         const existingConfigIndex = state.modelConfigs.findIndex(c =>
           c.provider === config.provider &&
           c.name === config.name,
@@ -147,16 +144,17 @@ export function createStore(project: projects, client?: SupabaseClient<Database>
       }),
     setModelConfig: (config) =>
       set(state => {
-        console.log('set config')
         const existingConfigIndex = state.modelConfigs.findIndex(c =>
           c.provider === config.provider &&
           c.name === config.name,
         )
 
         if (existingConfigIndex === -1) {
+          const templateID = get().templateID
+          if (!templateID) throw new Error('No templateID for current project')
+
           state.modelConfigs.push({
-            args: {},
-            prompt: [],
+            ...getDefaultModelConfig(templateID),
             ...config,
           })
         } else {
