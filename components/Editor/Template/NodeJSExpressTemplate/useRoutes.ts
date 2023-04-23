@@ -106,14 +106,13 @@ function useRoutes(): {
       } else {
         i.Routes.push(route)
       }
+      i.selectedRouteID = route.id
     })
   }, [setInstructions])
 
   useEffect(function addDefaultRoute() {
     if (routes === undefined || routes?.length === 0) {
-      const id = nanoid()
       addRoute()
-      selectRoute(id)
     }
   }, [routes, addRoute, selectRoute])
 

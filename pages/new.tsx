@@ -17,11 +17,14 @@ import {
   CreationState,
   CreationEvent,
 } from 'utils/newProjectState'
+import { TemplateID } from 'state/template'
+import { getDefaultState, SerializedState } from 'state/store'
 
 const invalidChars = /[^a-zA-Z0-9\-]/
 
-interface PostProjectBody {
+export interface PostProjectBody {
   id: string
+  state: SerializedState
 }
 
 const reducer: Reducer<CreationState, CreationEvent> = (state, event) => {
@@ -72,12 +75,15 @@ function NewProject() {
     trigger: createProject,
   } = useSWRMutation('/api/project', handlePostProject)
 
-  async function confirmTemplate() {
+  async function confirmTemplate(templateID: TemplateID) {
     dispatch(CreationEvent.ConfirmTemplate)
 
     try {
+      const state = getDefaultState(templateID)
+
       const project = await createProject({
-        id: trimmedID
+        id: trimmedID,
+        state,
       })
 
       if (project && 'statusCode' in project) {
@@ -123,7 +129,7 @@ function NewProject() {
       flex-1
       flex-col
       space-x-0
-      space-y-8
+      space-y-6
       overflow-hidden
       p-8
       lg:p-12
@@ -139,7 +145,7 @@ function NewProject() {
       </div>
 
       <div className="flex flex-1 justify-center overflow-hidden min-h-[200px]">
-        <div className="w-[450px] max-h-[600px] flex flex-col space-y-2 overflow-hidden">
+        <div className="w-[500px] max-h-[600px] flex flex-col space-y-2 overflow-hidden">
           <div className="flex space-x-2 items-center transition-all">
             <Text
               text="Configure New Project"

@@ -1,6 +1,8 @@
 import { ReactNode } from 'react'
 
+import NodeJSIcon from 'components/icons/Nodejs'
 import NodeJSExpressTemplate from 'components/Editor/Template/NodeJSExpressTemplate'
+
 import { PromptFragment } from './prompt'
 
 export enum TemplateID {
@@ -10,13 +12,19 @@ export enum TemplateID {
 export interface Template {
   component: ReactNode
   prompt: PromptFragment[]
+  description: string
+  stackDescription: string
+  icon: ReactNode
 }
 
 export const templates: {
   [templateID in keyof typeof TemplateID]: Template
 } = {
   [TemplateID.NodeJSExpress]: {
+    description: 'REST API Server',
+    stackDescription: 'JavaScript + Express',
     component: <NodeJSExpressTemplate />,
+    icon: <NodeJSIcon />,
     prompt: [
       {
         role: 'system',

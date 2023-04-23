@@ -1,15 +1,17 @@
 import SpinnerIcon from 'components/Spinner'
 import Text from 'components/Text'
 import Button from 'components/Button'
-import NodejsIcon from 'components/icons/Nodejs'
 import {
   CreationState,
 } from 'utils/newProjectState'
+import { TemplateID, templates } from 'state/template'
+import TemplateButton from './TemplateButton'
+import { useState } from 'react'
 
 export interface Props {
   state: CreationState
-  onBack: (e: any) => void
-  onCreate: (e: any) => void
+  onBack: () => void
+  onCreate: (templateID: TemplateID) => void
 }
 
 function NewProjectTemplateForm({
@@ -17,74 +19,48 @@ function NewProjectTemplateForm({
   onBack,
   onCreate,
 }: Props) {
+  const [selectedTemplateID, setSelectedTemplateID] = useState<TemplateID>(TemplateID.NodeJSExpress)
+
   return (
     <div className="
       space-y-6
       rounded
       border
-      p-8
-      flex
-      flex-col
+      p-6
       bg-white
-    ">
-      <div className="
-        flex
-        flex-col
-        items-start
-        space-y-1
       ">
+      <div className="space-y-1">
         <Text
           size={Text.size.S3}
           text="Select template"
         />
         <div className="
-          flex
-          gap-2
-        ">
+        sm:grid-cols-2
+        grid
+        gap-2
+      ">
+          {Object.values(TemplateID).map(t =>
+            <TemplateButton
+              key={t}
+              onClick={() => setSelectedTemplateID(t)}
+              template={templates[t]}
+              isSelected={t === selectedTemplateID}
+            />
+          )}
           <div className="
-            py-2
-            px-4
-            bg-transparent
-            cursor-pointer
-            border
-            border-green-800
-            rounded
+          justify-center
+          items-center
+          border-dashed
+          rounded
+          border-2
+          border-slate-200
+          py-4
+          flex
           ">
-            <div className="
-              flex
-              space-x-6
-              items-center
-            ">
-              <NodejsIcon
-                className="text-3xl"
-              />
-              <div className="
-                flex
-                flex-col
-                items-start
-                space-y-0.5
-              ">
-                <Text
-                  className="
-                    font-semibold
-                    text-slate-700
-                  "
-                  text="REST API Server"
-                />
-                <Text
-                  size={Text.size.S3}
-                  className="
-                    text-slate-500
-                  "
-                  text="JavaScript + Express"
-                />
-              </div>
-            </div>
+            <Text
+              text="More coming soon"
+            />
           </div>
-
-          <Text
-            text="More coming soon"
-          />
         </div>
       </div>
       <div className="
@@ -101,7 +77,7 @@ function NewProjectTemplateForm({
           icon={state === CreationState.CreatingProject ? <SpinnerIcon /> : null}
           variant={Button.variant.Full}
           text={state === CreationState.CreatingProject ? 'Creating...' : 'Create'}
-          onClick={onCreate}
+          onClick={() => onCreate(selectedTemplateID)}
         />
       </div>
     </div>

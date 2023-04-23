@@ -59,7 +59,7 @@ export interface State extends SerializedState {
   getSelectedModelConfig: () => ModelConfig | null
 }
 
-function getDefaultState(templateID: TemplateID): SerializedState {
+export function getDefaultState(templateID: TemplateID): SerializedState {
   const defaultModelConfig = getDefaultModelConfig(templateID)
 
   return {

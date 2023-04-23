@@ -1,16 +1,15 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
 
+import { PostProjectBody } from 'pages/new'
+
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-
-export interface PostProjectBody {
-  id: string
-}
 
 async function postProject(req: NextApiRequest, res: NextApiResponse) {
   const {
     id,
+    state,
   } = req.body as PostProjectBody
 
   try {
@@ -51,6 +50,7 @@ async function postProject(req: NextApiRequest, res: NextApiResponse) {
     const project = await prisma.projects.create({
       data: {
         id,
+        data: { state } as any,
         teams: {
           connect: {
             id: defaultTeam.teams.id,
