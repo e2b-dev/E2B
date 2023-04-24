@@ -7,6 +7,7 @@ from langchain.callbacks.base import BaseCallbackManager
 
 from .providers.replicate import ReplicateFix
 from .providers.hugging_face import HuggingFaceHubFix, HuggingFaceEndpointFix
+from .providers.banana import BananaFix
 
 
 class ModelProvider(Enum):
@@ -14,6 +15,7 @@ class ModelProvider(Enum):
     Replicate = "Replicate"
     Anthropic = "Anthropic"
     HuggingFace = "HuggingFace"
+    Banana = "Banana"
 
 
 class ModelConfig(TypedDict):
@@ -79,6 +81,13 @@ def get_model(
             raise ValueError(
                 f"Missing endpoint_url or repo_id for the HuggingFace integration."
             )
-
+        case ModelProvider.Banana.value:
+            return BananaFix(
+                model_key=config["args"]["model_key"],
+                banana_api_key=config["args"]["banana_api_key"],
+                model_kwargs=config["args"],
+                verbose=True,
+                callback_manager=callback_manager,
+            )
         case _:
             raise ValueError(f"Provider {config['provider']} no found.")
