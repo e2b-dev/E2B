@@ -50,10 +50,11 @@ async def generate():
 
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
+    route_id = body["routeID"]
     model_config = body["modelConfig"]
     prompt = body["prompt"]
 
-    await db.create_deployment(run_id=run_id, project_id=project_id)
+    await db.create_deployment(run_id=run_id, project_id=project_id, route_id=route_id)
     playground = None
 
     try:

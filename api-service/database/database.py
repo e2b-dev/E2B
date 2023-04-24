@@ -25,11 +25,13 @@ class Database:
         self,
         run_id: str,
         project_id: str,
+        route_id: str,
     ) -> None:
         await self.client.table(TABLE_DEPLOYMENTS).insert(
             {
                 "id": run_id,
                 "project_id": project_id,
+                "route_id": route_id,
                 "state": DeploymentState.Generating.value,
             },
         ).execute()
