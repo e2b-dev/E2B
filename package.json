@@ -23,7 +23,7 @@
     "start:playground": "cd api-service/playground && npm run dev",
     "install:api-service": "cd api-service && poetry install --with dev && cd playground && npm i",
     "install:all": "npm i && npm run install:api-service",
-    "start": "docker compose build && npm run db:start && docker compose up",
+    "start": "docker compose build && (npm run db:reset ; npm run db:start && docker compose up)",
     "stop": "docker compose down && npm run db:stop",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -35,6 +35,7 @@
     "postinstall": "npm run db:generate",
     "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta,deno-relay,pgadmin-schema-diff,vector,migra",
     "db:stop": "npx --yes supabase stop",
+    "db:reset": "npx --yes supabase db reset",
     "vale:sync": "vale sync"
   },
   "dependencies": {
