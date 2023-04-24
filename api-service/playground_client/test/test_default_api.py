@@ -28,12 +28,6 @@ class TestDefaultApi(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_create_deployment(self):
-        """Test case for create_deployment
-
-        """
-        pass
-
     def test_create_sessions(self):
         """Test case for create_sessions
 

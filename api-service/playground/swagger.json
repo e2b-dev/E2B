@@ -18,23 +18,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"DeploymentResponse": {
-				"properties": {
-					"url": {
-						"type": "string",
-						"description": "If the function is deployed for the first time the url will be defined."
-					}
-				},
-				"type": "object",
-				"additionalProperties": false
-			},
-			"EnvVars": {
-				"properties": {},
-				"additionalProperties": {
-					"type": "string"
-				},
-				"type": "object"
-			},
 			"EntryInfo": {
 				"properties": {
 					"isDir": {
@@ -169,6 +152,13 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"EnvVars": {
+				"properties": {},
+				"additionalProperties": {
+					"type": "string"
+				},
+				"type": "object"
+			},
 			"StartProcessParams": {
 				"properties": {
 					"cmd": {
@@ -266,58 +256,6 @@
 						}
 					}
 				]
-			}
-		},
-		"/deployments/{projectID}": {
-			"put": {
-				"operationId": "CreateDeployment",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/DeploymentResponse"
-								}
-							}
-						}
-					}
-				},
-				"security": [],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "projectID",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"description": "active session to use for deployment",
-						"in": "query",
-						"name": "sessionID",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"properties": {
-									"envVars": {
-										"$ref": "#/components/schemas/EnvVars"
-									}
-								},
-								"type": "object"
-							}
-						}
-					}
-				}
 			}
 		},
 		"/sessions/{sessionID}/filesystem/dir": {

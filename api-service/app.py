@@ -68,15 +68,7 @@ async def generate():
         print("Generating...", flush=True)
         await cg.generate(run_id=run_id)
 
-        deploy_url: str | None = None
-        # Disable deployment if there AWS creds are not present
-        if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get(
-            "AWS_SECRET_ACCESS_KEY"
-        ):
-            await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-            deploy_url = await playground.deploy(project_id)
-
-        await db.finish_deployment(run_id=run_id, url=deploy_url)
+        await db.finish_deployment(run_id=run_id)
         return {}
     except:
         await db.update_state(run_id=run_id, state=DeploymentState.Error)
@@ -84,3 +76,4 @@ async def generate():
     finally:
         if playground is not None:
             playground.close()
+ 

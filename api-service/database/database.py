@@ -57,14 +57,10 @@ class Database:
             }
         ).eq("id", run_id).execute()
 
-    async def finish_deployment(self, run_id: str, url: str | None) -> None:
+    async def finish_deployment(self, run_id: str) -> None:
         update = {
-            "url": url,
             "state": DeploymentState.Finished.value,
         }
-
-        if url is not None:
-            update["url"] = url
 
         await self.client.table(TABLE_DEPLOYMENTS).update(update).eq(
             "id", run_id
