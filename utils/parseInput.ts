@@ -1,6 +1,6 @@
-import { ModelArgTemplate } from 'state/model'
+import { ModelTemplateArg } from 'state/model'
 
-export function parseInput(argTemplate: ModelArgTemplate, value: string) {
+export function parseInput(argTemplate: ModelTemplateArg, value: string) {
   if (argTemplate.type === 'number') {
     try {
       const result = parseFloat(value)

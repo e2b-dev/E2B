@@ -1,20 +1,42 @@
-import { Route } from 'state/store'
-import useBlock from 'hooks/useBlock'
+import { useCallback } from 'react'
+
+import useReferences from 'hooks/useReferences'
 
 import InstructionsEditor from './InstructionsEditor'
 import RequestBodyEditor from './RequestBodyEditor'
-import useReferences from 'hooks/useReferences'
+import { RouteInfo } from './useRoutes'
 
 export interface Props {
-  route?: Route
+  setRoute: (route: Partial<RouteInfo> & Pick<RouteInfo, 'id'>) => void,
+  route?: RouteInfo
 }
 
-function RouteEditor({ route }: Props) {
-  const [requestBodyBlock, updateRequestBodyBlock] = useBlock('RequestBody', 1, route)
-  const [descriptionBlock, updateDescriptionBlock] = useBlock('Description', 1, route)
-  const [instructionsBlock, updateInstructionsBlock] = useBlock('Instructions', 1, route)
-
+function RouteEditor({ route, setRoute }: Props) {
   const [referenceSearch] = useReferences()
+
+  const updateDescription = useCallback((content: string) => {
+    if (!route?.id) return
+    setRoute({
+      id: route.id,
+      Description: content,
+    })
+  }, [route?.id, setRoute])
+
+  const updateRequestBody = useCallback((content: string) => {
+    if (!route?.id) return
+    setRoute({
+      id: route.id,
+      RequestBody: content,
+    })
+  }, [route?.id, setRoute])
+
+  const updateInstructions = useCallback((content: string) => {
+    if (!route?.id) return
+    setRoute({
+      id: route.id,
+      Instructions: content,
+    })
+  }, [route?.id, setRoute])
 
   return (
     <div className="
@@ -44,30 +66,24 @@ function RouteEditor({ route }: Props) {
           max-w-[65ch]
           grow
         ">
-          {descriptionBlock &&
-            <InstructionsEditor
-              referenceSearch={referenceSearch}
-              title="What should this route do?"
-              placeholder="This is an API endpoint that ..."
-              content={descriptionBlock.content}
-              onChange={updateDescriptionBlock}
-            />
-          }
-          {requestBodyBlock &&
-            <RequestBodyEditor
-              block={requestBodyBlock}
-              onChange={updateRequestBodyBlock}
-            />
-          }
-          {instructionsBlock &&
-            <InstructionsEditor
-              referenceSearch={referenceSearch}
-              title="Step-by-step instructions"
-              placeholder="1. Check if the incoming `email` is not empty ..."
-              content={instructionsBlock.content}
-              onChange={updateInstructionsBlock}
-            />
-          }
+          <InstructionsEditor
+            referenceSearch={referenceSearch}
+            title="What should this route do?"
+            placeholder="This is an API endpoint that ..."
+            content={route.Description}
+            onChange={updateDescription}
+          />
+          <RequestBodyEditor
+            content={route.RequestBody}
+            onChange={updateRequestBody}
+          />
+          <InstructionsEditor
+            referenceSearch={referenceSearch}
+            title="Step-by-step instructions"
+            placeholder="1. Check if the incoming `email` is not empty ..."
+            content={route.Instructions}
+            onChange={updateInstructions}
+          />
         </div>
       }
     </div >

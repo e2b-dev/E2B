@@ -22,7 +22,7 @@ function NewProjectIDForm({
       space-y-6
       rounded
       border
-      p-8
+      p-6
       flex
       flex-col
       bg-white

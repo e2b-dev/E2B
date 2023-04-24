@@ -59,6 +59,7 @@
     "http-proxy-middleware": "^3.0.0-beta.1",
     "human-id": "^4.0.0",
     "immer": "^9.0.19",
+    "jsonpath-plus": "^7.2.0",
     "lucide-react": "^0.161.0",
     "mustache": "^4.2.0",
     "nanoid": "^4.0.1",

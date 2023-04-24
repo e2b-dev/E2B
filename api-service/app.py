@@ -28,16 +28,6 @@ app.config.from_prefixed_env()
 app = cors(app, allow_origin="*")
 
 
-def get_request_body_template(blocks: List[dict[str, str]]):
-    request_body_blocks = [
-        block for block in blocks if block.get("type") == "RequestBody"
-    ]
-    request_body_template = (
-        request_body_blocks[0]["content"] if len(request_body_blocks) > 0 else None
-    )
-    return request_body_template
-
-
 @app.route("/health", methods=["GET"])
 async def health():
     return "OK"
@@ -51,7 +41,6 @@ async def generate():
     run_id = str(uuid.uuid4())
     project_id = body["projectID"]
     model_config = body["modelConfig"]
-    prompt = body["prompt"]
 
     await db.create_deployment(run_id=run_id, project_id=project_id)
     playground = None
@@ -72,7 +61,7 @@ async def generate():
             tools=list(tools),
             model_config=model_config,
             database=db,
-            prompt=prompt,
+            prompt=model_config["prompt"],
         )
 
         # Generate the code

@@ -1,17 +1,16 @@
 import clsx from 'clsx'
 import TextareaAutosize from 'react-textarea-autosize'
 
-import { Block } from 'state/store'
 import Text from 'components/Text'
 
 export interface Props {
-  onChange: (value: string) => void
-  block: Block
+  onChange: (content: string) => void
+  content: string
 }
 
 function RequestBodyEditor({
   onChange,
-  block,
+  content,
 }: Props) {
   return (
     <div className="
@@ -45,7 +44,7 @@ function RequestBodyEditor({
         spellCheck="false"
         name="block"
         placeholder="email: string // Optionally add comments to explain what the field is for"
-        value={block.content}
+        value={content}
         onChange={e => onChange(e.target.value)}
         className={clsx(
           'w-full',

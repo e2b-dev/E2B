@@ -3,53 +3,60 @@ import clsx from 'clsx'
 import useSWRMutation from 'swr/mutation'
 import { projects } from '@prisma/client'
 
-import { defaultTemplateID, PromptPart, Route } from 'state/store'
 import { useLatestDeployment } from 'hooks/useLatestDeployment'
 import { useStateStore } from 'state/StoreProvider'
-import { ModelConfig, getModelConfig } from 'state/model'
-import useModelProviderArgs from 'hooks/useModelProviderArgs'
-import { defaultPromptTemplate, evaluatePrompt } from 'state/prompt'
+import { ModelConfig, getModelArgs } from 'state/model'
+import useModelProviderArgs, { Creds } from 'hooks/useModelProviderArgs'
+import { evaluatePrompt } from 'state/prompt'
 
 import Agent from './Agent'
 import Envs from './Envs'
 import Model from './Model'
 import Prompt from './Prompt'
-import { identity } from 'utils/identity'
 import { MenuSection } from '../SidebarMenu'
-// import Deploy from './Deploy'
+import { EnvVar } from 'state/envs'
+import { Instructions, InstructionsTransform } from 'state/instruction'
 
 export interface Props {
   project: projects
   activeMenuSection?: MenuSection
 }
 
+interface PostGenerateBody {
+  projectID: string
+  modelConfig: ModelConfig
+  envs: EnvVar[]
+}
+
 async function handlePostGenerate(url: string, { arg }: {
   arg: {
     controller: AbortController,
+    creds: Creds,
     projectID: string,
-    route: Route,
     modelConfig: ModelConfig,
-    promptTemplate: PromptPart[],
-    envs: { key: string, value: string }[],
+    instructions: Instructions,
+    instructionsTransform: InstructionsTransform,
+    envs: EnvVar[],
   }
 }) {
+  const body: PostGenerateBody = {
+    projectID: arg.projectID,
+    modelConfig: {
+      ...arg.modelConfig,
+      args: getModelArgs(arg.modelConfig, arg.creds),
+      prompt: evaluatePrompt(
+        arg.instructions,
+        arg.instructionsTransform,
+        arg.modelConfig.prompt,
+      ),
+    },
+    envs: arg.envs,
+  }
+
   return await fetch(url, {
     signal: arg.controller.signal,
     method: 'POST',
-    body: JSON.stringify({
-      projectID: arg.projectID,
-      routeID: arg.route.id,
-      prompt: evaluatePrompt(
-        arg.route.blocks,
-        arg.promptTemplate,
-        {
-          Method: arg.route.method.toLowerCase(),
-          Route: arg.route.route,
-        },
-      ),
-      modelConfig: arg.modelConfig,
-      envs: arg.envs,
-    }),
+    body: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
     },
@@ -75,44 +82,11 @@ function Sidebar({
 
   const [selectors] = useStateStore()
   const envs = selectors.use.envs()
-  const model = selectors.use.model()
-  const route = selectors.use.routes().find(identity)
-  const prompt = selectors.use.modelSetups().find(p =>
-    p.templateID === defaultTemplateID &&
-    p.provider === model.provider &&
-    p.modelName === model.name
-  )?.prompt || defaultPromptTemplate
+  const modelConfig = selectors.use.getSelectedModelConfig()()
+  const instructions = selectors.use.instructions()
+  const instructionsTransform = selectors.use.instructionsTransform()
 
   const [creds] = useModelProviderArgs()
-
-  async function deploy() {
-    if (!route) {
-      console.error('Cannot get route')
-      return
-    }
-
-    const config = getModelConfig(model, creds)
-    if (!config) {
-      console.error('Cannot get model config')
-      return
-    }
-
-    const controller = new AbortController()
-    generateController.current = controller
-
-    await generate({
-      controller,
-      route,
-      projectID: project.id,
-      promptTemplate: prompt,
-      modelConfig: config,
-      envs,
-    })
-  }
-
-  async function cancelGenerate() {
-    generateController.current?.abort()
-  }
 
   const [isInitializingDeploy, setIsInitializingDeploy] = useState(false)
 
@@ -126,6 +100,30 @@ function Sidebar({
     setIsInitializingDeploy(true)
   }, [isDeployRequestRunning])
 
+  async function deploy() {
+    if (!modelConfig) {
+      console.error('Cannot get model config')
+      return
+    }
+
+    const controller = new AbortController()
+    generateController.current = controller
+
+    await generate({
+      controller,
+      projectID: project.id,
+      modelConfig,
+      creds,
+      instructions,
+      instructionsTransform,
+      envs,
+    })
+  }
+
+  function cancelGenerate() {
+    generateController.current?.abort()
+  }
+
   return (
     <div
       className={clsx(`
@@ -137,12 +135,6 @@ function Sidebar({
       `,
       )}
     >
-      {/* {activeMenuSection === MenuSection.Deploy &&
-        <Deploy />
-      } */}
-      {/* {activeMenuSection === MenuSection.Context &&
-        <Context />
-      } */}
       {activeMenuSection === MenuSection.Envs &&
         <Envs />
       }
