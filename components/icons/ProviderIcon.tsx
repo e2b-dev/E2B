@@ -10,6 +10,7 @@ const iconPaths: {
   [ModelProvider.Replicate]: '/replicate.png',
   [ModelProvider.Anthropic]: '/anthropic.png',
   [ModelProvider.HuggingFace]: '/hugging-face.png',
+  [ModelProvider.Banana]: '/banana.jpg',
 }
 
 export const providerIcons = Object
