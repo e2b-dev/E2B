@@ -1,14 +1,16 @@
 import os
 import uuid
+import asyncio
 
 from pprint import pprint
-from typing import List
-from codegen.tools.base import create_tools
 from dotenv import load_dotenv
-from playground_client.exceptions import NotFoundException
 from quart import Quart, request
 from quart_cors import cors
+from quart import websocket
 
+from broker import Broker
+from codegen.tools.base import create_tools
+from playground_client.exceptions import NotFoundException
 from codegen import Codegen
 from database import Database, DeploymentState
 from session.playground.nodejs import NodeJSPlayground
@@ -31,6 +33,28 @@ app = cors(app, allow_origin="*")
 @app.route("/health", methods=["GET"])
 async def health():
     return "OK"
+
+
+broker = Broker()
+
+
+async def _receive() -> None:
+    while True:
+        message = await websocket.receive()
+        await broker.publish(message)
+
+
+@app.websocket("/agent/dev")
+async def ws() -> None:
+    task: asyncio.Task[None] | None = None
+    try:
+        task = asyncio.ensure_future(_receive())
+        async for message in broker.subscribe():
+            await websocket.send(message)
+    finally:
+        if task:
+            task.cancel()
+            await task
 
 
 # TODO: SECURITY - Check if user invoking this request has permission to generate and deploy to this project
@@ -61,7 +85,6 @@ async def generate():
             tools=list(tools),
             model_config=model_config,
             database=db,
-            prompt=model_config["prompt"],
         )
 
         # Generate the code
@@ -76,4 +99,3 @@ async def generate():
     finally:
         if playground is not None:
             playground.close()
- 

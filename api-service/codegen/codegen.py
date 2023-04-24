@@ -6,8 +6,8 @@ from typing import (
     ClassVar,
     Sequence,
 )
-from codegen.callbacks.logs import LogsCallbackHandler
 from langchain.agents import AgentExecutor, Agent
+from langchain.chains.llm import LLMChain
 from langchain.schema import BaseLanguageModel
 from pydantic import BaseModel, PrivateAttr
 from langchain.callbacks.base import (
@@ -17,9 +17,10 @@ from langchain.callbacks.base import (
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.tools import BaseTool
 
+from codegen.callbacks.logs import LogsCallbackHandler
 from models import get_model, ModelConfig
 from database import Database
-from codegen.agent import CodegenAgent, CodegenAgentExecutor
+from codegen.agent import CodegenAgent
 
 
 class PromptPart(TypedDict):
@@ -43,13 +44,12 @@ class Codegen(BaseModel):
         database: Database,
         tools: Sequence[BaseTool],
         model_config: ModelConfig,
-        prompt: List[PromptPart],
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self._database = database
         self._tools = tools
-        self._prompt = prompt
+        self._prompt = model_config["prompt"]
 
         self._callback_manager = AsyncCallbackManager(
             [StreamingStdOutCallbackHandler()]
@@ -66,23 +66,41 @@ class Codegen(BaseModel):
             f"Using LLM '{model_config['provider']}' with args:\n{model_config['args']}"
         )
 
-        # Create CodegenAgent
-        self._agent = CodegenAgent.from_llm_and_tools(
+        # prompt = cls.create_prompt(
+        #     tools,
+        #     prefix=prefix,
+        #     suffix=suffix,
+        #     format_instructions=format_instructions,
+        #     input_variables=input_variables,
+        # )
+
+        #
+
+        llm_chain = LLMChain(
             llm=self._llm,
-            tools=tools,
-            prefix=self.get_prompt_part("system", "prefix"),
-            format_instructions=self.get_prompt_part("system", "suffix"),
-            suffix="",
-            input_variables=Codegen.input_variables,
+            prompt=prompt,
             callback_manager=self._callback_manager,
         )
 
-        self._agent_executor = CodegenAgentExecutor.from_agent_and_tools(
-            agent=self._agent,
-            tools=self._tools,
-            verbose=True,
-            callback_manager=self._callback_manager,
-        )
+        # # Create CodegenAgent
+        # self._agent = CodegenAgent.from_llm_and_tools(
+        #     llm=self._llm,
+        #     tools=tools,
+        #     prefix=self.get_prompt_part("system", "prefix"),
+        #     format_instructions=self.get_prompt_part("system", "suffix"),
+        #     suffix="",
+        #     input_variables=Codegen.input_variables,
+        #     callback_manager=self._callback_manager,
+        # )
+
+        # self._agent_executor = CodegenAgentExecutor.from_agent_and_tools(
+        #     agent=self._agent,
+        #     tools=self._tools,
+        #     verbose=True,
+        #     callback_manager=self._callback_manager,
+        # )
+
+        # remove agent executor
 
     def tool_names(self):
         return [tool.name for tool in self._tools]

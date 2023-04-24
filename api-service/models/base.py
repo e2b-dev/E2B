@@ -1,5 +1,6 @@
-from typing import TypedDict, Dict, Any
+from typing import TypedDict, Dict, Any, List
 from enum import Enum
+from codegen.codegen import PromptPart
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import Anthropic, HuggingFaceEndpoint
 from langchain.schema import BaseLanguageModel
@@ -21,6 +22,7 @@ class ModelProvider(Enum):
 class ModelConfig(TypedDict):
     # Provider is string and not ModelProvider because we deserialize it form request's JSON body
     provider: str
+    prompt: List[PromptPart]
     args: Dict[str, Any]
 
 
