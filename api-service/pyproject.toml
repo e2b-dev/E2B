@@ -20,6 +20,7 @@ replicate = "^0.8.1"
 huggingface-hub = "^0.13.4"
 anthropic = "^0.2.6"
 langchain = "^0.0.141"
+banana-dev = "4.0.2"
 
 [tool.poetry.group.dev]
 optional = true

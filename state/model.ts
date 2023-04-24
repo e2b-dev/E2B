@@ -8,6 +8,7 @@ export enum ModelProvider {
   Replicate = 'Replicate',
   Anthropic = 'Anthropic',
   HuggingFace = 'HuggingFace',
+  Banana = 'Banana',
 }
 
 export interface ModelConfig extends Model {
@@ -303,6 +304,64 @@ export const providerTemplates: {
             editable: true,
             type: 'string',
             label: 'Model'
+          },
+          max_length: {
+            type: 'number',
+            editable: true,
+            value: 2500,
+            step: 1,
+            min: 1,
+          },
+          temperature: {
+            editable: true,
+            type: 'number',
+            value: 0.5,
+            min: 0,
+            step: 0.01,
+          },
+          top_p: {
+            editable: true,
+            type: 'number',
+            value: 0.9,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          top_k: {
+            editable: true,
+            type: 'number',
+            value: 0,
+            min: 0,
+            step: 0.01,
+          },
+          repetition_penalty: {
+            editable: true,
+            type: 'number',
+            value: 1,
+            min: 0,
+            step: 0.01,
+          },
+        },
+      },
+    ],
+  },
+  [ModelProvider.Banana]: {
+    link: 'https://banana.dev',
+    creds: {
+      banana_api_key: {
+        label: 'Banana API Key',
+        type: 'string',
+      },
+    },
+    models: [
+      {
+        name: 'Hosted model',
+        args: {
+          model_key: {
+            placeholder: 'xxxx-xxxx-xxxx-xxxx',
+            editable: true,
+            type: 'string',
+            label: 'Model Key'
           },
           max_length: {
             type: 'number',

@@ -70,7 +70,7 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
 - [x] [HuggingFace](https://huggingface.co/)
   - [x] Inference API
   - [x] Inference Endpoints
-- [ ] [Banana](https://www.banana.dev/) 🚧
+- [x] [Banana](https://www.banana.dev/)
 
 ### **Model or model hosting provider you like isn't supported?**
 
@@ -93,20 +93,20 @@ We welcome any contributions! If you want to contribute to the project check out
 
 # 📆 Short-term Roadmap
 1. ✅ ~~Make sure people can run e2b locally without issues and the DX is smooth.~~
-1. 🚧 Add support for more models.
+2. 🚧 Add support for more models.
     - ✅ ~~OpenAI~~
     - ✅ ~~Anthropic~~
     - Model hosting providers:
       - ✅ ~~Replicate~~
       - ✅ ~~Hugging Face Inference API~~
       - ✅ ~~Hugging Face Inference Endpoints~~
-      - Banana
+      - ✅ ~~Banana~~
       - Paperspace
-1. 🚧 Improve agent's reliability and quality of output.
-1. 🚧 Improve the feedback loop (UX/UI) between the developer and agents.
-1. 🚧 Improve agent's understanding of the context based on the instructions.
-1. 🚧 Deployable agents.
-1. Support more tools and 3rd party integraitons that agents can use.
-1. ✅ ~~Let users edit prompts.~~
-1. Let users customize tools and build custom workflows for the agent.
-1. Release cloud version.
+3. 🚧 Improve agent's reliability and quality of output.
+4. 🚧 Improve the feedback loop (UX/UI) between the developer and agents.
+5. 🚧 Improve agent's understanding of the context based on the instructions.
+6. 🚧 Deployable agents.
+7. Support more tools and 3rd party integrations that agents can use.
+8. ✅ ~~Let users edit prompts.~~
+9. Let users customize tools and build custom workflows for the agent.
+10. Release cloud version.
