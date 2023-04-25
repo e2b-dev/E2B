@@ -1,4 +1,5 @@
-from typing import Dict, Any, List, Union
+from typing import Callable, Coroutine, Dict, Any, List, Union
+from codegen.callbacks.log_processor import LogProcessor
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from pydantic import PrivateAttr
@@ -9,39 +10,52 @@ from codegen.callbacks.log_parser import LogStreamParser
 from database import Database
 
 
+OnLogs = Callable[[List[ToolLog | ThoughtLog]], Coroutine[Any, Any, Any]]
+
+
 class LogsCallbackHandler(AsyncCallbackHandler):
     _database: Database = PrivateAttr()
     _run_id: str = PrivateAttr()
     _raw_logs: str = ""
+    _log_processor: LogProcessor = PrivateAttr()
 
     def __init__(
-        self, database: Database, run_id: str, tool_names: List[str], **kwargs: Any
+        self,
+        database: Database,
+        run_id: str,
+        tool_names: List[str],
+        log_processor: LogProcessor,
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
         self._database = database
         self._run_id = run_id
         self._parser = LogStreamParser(tool_names=tool_names)
-        self._log_queue = LogQueue()
-        self._raw_log_queue = LogQueue(1.5)
+        self._log_processor = log_processor
+        # self._log_queue = LogQueue(on_logs=on_logs)
+        # self._raw_log_queue = LogQueue(1.5)
 
     def __del__(self):
-        self._log_queue.close()
-        self._raw_log_queue.close()
+        self._log_processor.close()
+        # self._log_queue.close()
+        # self._raw_log_queue.close()
 
     def _add_and_push_raw_logs(self, new_raw_log: str) -> None:
-        self._raw_logs += new_raw_log
-        self._raw_log_queue.add(
-            self._database.push_raw_logs(self._run_id, self._raw_logs),
-        )
+        pass
+        # self._raw_logs += new_raw_log
+        # self._raw_log_queue.add(
+        #     self._database.push_raw_logs(self._run_id, self._raw_logs),
+        # )
 
     async def _push_logs(
         self, logs: list[ToolLog | ThoughtLog], flush: bool = False
     ) -> None:
-        self._log_queue.add(
-            self._database.push_logs(self._run_id, logs),
-        )
+        self._log_processor.ingest(logs)
+        # self._log_queue.add(
+        #     self._database.push_logs(self._run_id, logs),
+        # )
         if flush:
-            await self._log_queue.flush()
+            await self._log_processor.flush()
 
     async def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -89,8 +103,8 @@ class LogsCallbackHandler(AsyncCallbackHandler):
         print("Starting tool")
         self._add_and_push_raw_logs("Starting tool...")
 
-        await self._log_queue.flush()
-        await self._raw_log_queue.flush()
+        await self._log_processor.flush()
+        # await self._raw_log_queue.flush()
 
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""

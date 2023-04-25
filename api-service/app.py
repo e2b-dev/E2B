@@ -1,101 +1,109 @@
-import os
+from typing import Callable, Coroutine, Dict, List, Any
 import uuid
 import asyncio
+from codegen.callbacks.log_processor import LogProcessor
+from codegen.callbacks.logs import OnLogs
+from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-from pprint import pprint
-from dotenv import load_dotenv
-from quart import Quart, request
-from quart_cors import cors
-from quart import websocket
+from models.base import ModelConfig
+from codegen.agent.parsing import Log, ThoughtLog, ToolLog
+from database.database import DeploymentState
+from run import run_agent
 
-from broker import Broker
-from codegen.tools.base import create_tools
-from playground_client.exceptions import NotFoundException
-from codegen import Codegen
-from database import Database, DeploymentState
-from session.playground.nodejs import NodeJSPlayground
-
-load_dotenv()
-
-url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-
-if not url or not key:
-    raise NotFoundException("Supabase credentials not found")
-
-db = Database(url, key)
-
-app = Quart(__name__)
-app.config.from_prefixed_env()
-app = cors(app, allow_origin="*")
+app = FastAPI(title="e2b-api-service")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.route("/health", methods=["GET"])
-async def health():
-    return "OK"
+class GenerateBody(BaseModel):
+    project_id: str
+    model_config: ModelConfig
 
 
-broker = Broker()
+@app.post("/agent")
+async def generate(body: GenerateBody):
+    return {}
 
 
-async def _receive() -> None:
-    while True:
-        message = await websocket.receive()
-        await broker.publish(message)
+Notify = Callable[[str, Dict[str, Any]], Coroutine[Any, Any, Any]]
 
 
-@app.websocket("/agent/dev")
-async def ws() -> None:
-    task: asyncio.Task[None] | None = None
-    try:
-        task = asyncio.ensure_future(_receive())
-        async for message in broker.subscribe():
-            await websocket.send(message)
-    finally:
-        if task:
-            task.cancel()
-            await task
+class AgentRun(BaseModel):
+    notify: Notify
+
+    async def start(self, project_id: str, model_config: Dict[str, Any]):
+        run_id = str(uuid.uuid4())
+
+        async def on_logs(logs: List[Log]):
+            await self.notify("logs", {"logs": logs})
+
+        log_processor = LogProcessor(on_logs=on_logs)
+
+        async def start_agent():
+            await run_agent(
+                project_id=project_id,
+                run_id=run_id,
+                model_config=ModelConfig(**model_config),
+                log_processor=log_processor,
+            )
+            await self.notify("stateUpdate", {"state": DeploymentState.Finished.value})
+
+        asyncio.create_task(start_agent())
+        return {"run_id": run_id}
 
 
-# TODO: SECURITY - Check if user invoking this request has permission to generate and deploy to this project
-@app.route("/generate", methods=["POST"])
-async def generate():
-    body = await request.json
-
-    run_id = str(uuid.uuid4())
-    project_id = body["projectID"]
-    model_config = body["modelConfig"]
-
-    await db.create_deployment(run_id=run_id, project_id=project_id)
-    playground = None
-
-    try:
-        # Create playground for the LLM
-        playground = NodeJSPlayground(get_envs=lambda: db.get_env_vars(project_id))
-
-        # Create tools
-        tools = create_tools(
-            run_id=run_id,
-            playground=playground,
+async def create_ws_agent_handler(websocket: WebSocket):
+    async def notify(method: str, params: Dict[str, Any]):
+        await websocket.send_json(
+            {
+                "jsonrpc": "2.0",
+                "method": method,
+                "params": params,
+            }
         )
 
-        # Create a new instance of code generator
-        cg = Codegen(
-            # The order in which we pass tools HAS an effect on the LLM behaviour.
-            tools=list(tools),
-            model_config=model_config,
-            database=db,
+    async def call(id: str, method: str, params: List[Any]):
+        async def handle_call():
+            try:
+                if method == "start":
+                    result = await run.start(*params)
+                    return {
+                        "result": result,
+                    }
+                raise Exception(f"Invalid method {method}")
+            except Exception as e:
+                return {
+                    "error": {
+                        "code": 1,
+                        "message": str(e),
+                    }
+                }
+
+        response = await handle_call()
+        await websocket.send_json(
+            {
+                "jsonrpc": "2.0",
+                "id": id,
+                **response,
+            }
         )
 
-        # Generate the code
-        print("Generating...", flush=True)
-        await cg.generate(run_id=run_id)
+    run = AgentRun(notify=notify)
 
-        await db.finish_deployment(run_id=run_id)
-        return {}
-    except:
-        await db.update_state(run_id=run_id, state=DeploymentState.Error)
-        raise
-    finally:
-        if playground is not None:
-            playground.close()
+    async for data in websocket.iter_json():
+        await call(data["id"], data["method"], data["params"])
+
+    print("closing")
+
+
+@app.websocket("/dev/agent")
+async def ws_dev_agent(websocket: WebSocket):
+    await websocket.accept()
+    await create_ws_agent_handler(websocket)

@@ -11,3 +11,6 @@ generate-playground-client:
 	--additional-properties=floatStrictType=false \
 	--additional-properties=library=asyncio \
 	--additional-properties=allowStringInDateTimeParameters=false
+
+generate-api-schema:
+	poetry run python3 generate.py

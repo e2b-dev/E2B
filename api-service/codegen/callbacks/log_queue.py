@@ -3,8 +3,7 @@ from typing import Coroutine
 
 
 class LogQueue:
-    def __init__(self, interval: float = 0.05) -> None:
-        self._interval = interval
+    def __init__(self) -> None:
         self._queue: Queue[Coroutine] = Queue()
         # Start the worker that saves logs from queue to the db.
         self._worker = ensure_future(self._start())
@@ -32,7 +31,6 @@ class LogQueue:
     async def _start(self):
         while True:
             await self._work()
-            await sleep(self._interval)
 
     async def flush(self):
         await self._queue.join()

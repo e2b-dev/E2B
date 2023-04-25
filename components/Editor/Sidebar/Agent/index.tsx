@@ -1,15 +1,14 @@
 import { useState } from 'react'
-import { deployment_state, deployments } from '@prisma/client'
-import produce from 'immer'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
+import produce from 'immer'
+import { deployment_state } from '@prisma/client'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
 import Tabs from 'components/Tabs'
 import { Log, LogType, ToolName } from 'db/types'
-import { Database, Json } from 'db/supabase'
-import { deploymentsTable } from 'db/tables'
+import { Database } from 'db/supabase'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { getMissingCreds } from 'state/model'
 import { useStateStore } from 'state/StoreProvider'
@@ -17,6 +16,8 @@ import Button from 'components/Button'
 
 import LogStream from './LogStream'
 import RunButton from '../RunButton'
+import { AgentRun } from 'api-client/AgentDebugRun'
+import { deploymentsTable } from 'db/tables'
 
 const tabsProps = {
   tabs: [
@@ -32,20 +33,17 @@ const tabsProps = {
 }
 
 export interface Props {
-  deployment?: deployments
-  isDeployRequestRunning?: boolean
-  deploy: () => void
-  deployStatus?: deployment_state | null
-  isInitializingDeploy?: boolean
-  cancel: () => void
+  logs?: Log[]
+  agentState?: deployment_state
+  run: () => void
+  agentRun?: AgentRun
 }
 
 function Agent({
-  deployment,
-  cancel,
-  isDeployRequestRunning,
-  deploy,
-  isInitializingDeploy,
+  agentState,
+  agentRun,
+  logs,
+  run,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
   const client = useSupabaseClient<Database>()
@@ -62,9 +60,10 @@ function Agent({
     answer,
     toolName,
   }: { logID: string, answer: string, toolName: ToolName }) {
-    if (!deployment) return
+    if (!agentRun?.runID) return
+    if (!logs) return
 
-    const logs = produce(deployment.logs as unknown as Log[], ls => {
+    const modifiedLogs = produce(logs, ls => {
       const log = ls.find(l => l.id === logID)
       if (log && log.type === LogType.Tool && log.tool_name === toolName) {
         log.tool_output = answer
@@ -73,8 +72,8 @@ function Agent({
 
     await client
       .from(deploymentsTable)
-      .update({ logs: logs as unknown as Json[] })
-      .eq('id', deployment.id)
+      .update({ logs: modifiedLogs as any })
+      .eq('id', agentRun.runID)
       .single()
   }
 
@@ -138,15 +137,12 @@ function Agent({
           }
           <RunButton
             disabled={missingCreds.length !== 0}
-            deploy={deploy}
-            cancel={cancel}
-            isDeployRequestRunning={isDeployRequestRunning}
-            isInitializingDeploy={isInitializingDeploy}
-            deployStatus={deployment?.state}
+            deploy={run}
+            deployStatus={agentState}
           />
         </div>
       </div>
-      {!deployment &&
+      {!agentState &&
         <div
           className="
           self-center
@@ -160,19 +156,19 @@ function Agent({
           />
         </div>
       }
-      {selectedTab === 0 && deployment &&
+      {selectedTab === 0 && logs &&
         <LogStream
-          logs={deployment.logs as unknown as Log[] | undefined}
+          logs={logs}
           onAnswer={saveAnswer}
-          isDeployRequestRunning={isDeployRequestRunning}
+          isDeployRequestRunning={agentState === deployment_state.generating}
         />
       }
-      {selectedTab === 1 && deployment &&
+      {/* {selectedTab === 1 && deployment &&
         <LogStream
           rawLogs={deployment?.logs_raw}
           isDeployRequestRunning={isDeployRequestRunning}
         />
-      }
+      } */}
     </div>
   )
 }
