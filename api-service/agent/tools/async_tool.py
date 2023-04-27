@@ -2,7 +2,7 @@ from typing import Awaitable, Callable, Optional, cast
 from langchain.agents import Tool
 from langchain.tools.base import BaseTool
 
-from agent.tokens.parsing import ToolLog, parse_thoughts_and_actions
+from agent.output.parse_output import ToolLog, parse_output
 
 
 def func(_: str):
@@ -23,7 +23,7 @@ def async_tool(name: str | None = None) -> Callable:
         tool_example = next(
             (
                 cast(ToolLog, tool)
-                for tool in parse_thoughts_and_actions(arun.__doc__.strip())
+                for tool in parse_output(arun.__doc__.strip())
                 if tool["type"] == "tool"
             ),
             None,

@@ -1,7 +1,7 @@
 from typing import List
 from enum import Enum
 
-from agent.tokens.parsing import ThoughtLog, ToolLog
+from agent.output.parse_output import ThoughtLog, ToolLog
 from database.client import Client
 from session.env import EnvVar
 

@@ -4,8 +4,20 @@ import { deployment_state } from '@prisma/client'
 import { Log } from 'db/types'
 import { ModelConfig } from 'state/model'
 
+
+export interface Step {
+  output: string
+  logs: Log[]
+}
+
+export interface StepEdit {
+  stepIdx: number
+  output: string
+}
+
 export interface Opts {
-  onLogs: (logs: Log[]) => void
+  onSteps: (steps: Step[]) => void
+  onClose: () => void
   onStateChange: (runState: deployment_state) => void
 }
 
@@ -15,6 +27,7 @@ export class AgentRun {
 
   constructor(private readonly url: string, private readonly opts: Opts) {
     this.rpc.onNotification.push(this.handleNotification.bind(this))
+    this.rpc.onClose(opts.onClose)
   }
 
   async connect() {
@@ -28,8 +41,8 @@ export class AgentRun {
   }
 
   private handleNotification(data: IRpcNotification) {
-    if (data.method === 'logs') {
-      return this.opts.onLogs(data.params.logs)
+    if (data.method === 'steps') {
+      return this.opts.onSteps(data.params.steps)
     }
     if (data.method === 'state_update') {
       this.opts.onStateChange(data.params.state)
@@ -46,18 +59,35 @@ export class AgentRun {
   }
 
   async pauseRun() {
+    if (!this.runID) return
     await this.rpc.call('pause')
   }
 
   async resumeRun() {
+    if (!this.runID) return
     await this.rpc.call('resume')
   }
 
   async cancelRun() {
+    if (!this.runID) return
     await this.rpc.call('cancel')
   }
 
-  async rewriteRunLogs(logs: Log[]) {
-    await this.rpc.call('rewrite_logs', [logs])
+  async rewriteRunSteps(steps: Step[]) {
+    if (!this.runID) return
+    await this.rpc.call('rewrite_steps', [steps])
+  }
+
+  static resolveStepsEdit(steps: Step[], edit: StepEdit): Step[] | undefined {
+    const step = steps[edit.stepIdx]
+    if (!step) {
+      throw new Error('Step does not exist')
+    }
+    if (step.output === edit.output) return
+    step.output = edit.output
+    step.logs = []
+
+    // return steps without steps after edited step
+    return steps.slice(0, edit.stepIdx + 1)
   }
 }

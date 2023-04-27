@@ -41,7 +41,7 @@ action_tag_close = "</\\s*action\\s*>?"
 action_tag_split_pattern = re.compile(f"({action_tag_open})|({action_tag_close})|(.+?)")
 action_tag_check_pattern = re.compile(f"{action_tag_open}|{action_tag_close}")
 
-def parse_thoughts_and_actions(text: str):
+def parse_output(text: str):
     escaped = "".join(
         # If the text part is not action tag escape it.
         part if action_tag_check_pattern.match(part) else xml_escape(part)

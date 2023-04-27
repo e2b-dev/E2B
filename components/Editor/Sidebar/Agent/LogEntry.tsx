@@ -19,6 +19,9 @@ function LogEntry({ log, onAnswer }: Props) {
       border-l-4
       rounded
       shadow-sm
+      border-y-transparent
+      border-r-transparent
+      border
       bg-white
       ${log.type === LogType.Tool ? 'border-green-300' : 'border-blue-300'}
     `}>

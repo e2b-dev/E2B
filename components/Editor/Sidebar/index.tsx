@@ -27,10 +27,11 @@ function Sidebar({
 }: Props) {
   const {
     agentRun,
-    logs: newLogs,
+    steps: newSteps,
     start,
     agentState,
   } = useAgentRun()
+  console.log('new', newSteps)
   const [selectors] = useStateStore()
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const instructions = selectors.use.instructions()
@@ -38,8 +39,9 @@ function Sidebar({
 
   const [creds] = useModelProviderArgs()
 
+  // TODO: Change logs to steps in db
   const lastRunLogs = project.deployments.length === 1 ? project.deployments[0] : undefined
-  const logs = newLogs || lastRunLogs
+  const steps = newSteps || lastRunLogs?.logs
 
   async function run() {
     if (!modelConfig) {
@@ -82,7 +84,7 @@ function Sidebar({
         <Agent
           run={run}
           agentState={agentState}
-          logs={logs}
+          steps={steps}
           agentRun={agentRun}
         />
       }

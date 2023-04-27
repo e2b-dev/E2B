@@ -1,10 +1,17 @@
-from asyncio import Queue, ensure_future, sleep
+from asyncio import Queue, ensure_future
+from typing import Any, Callable, Coroutine, Generic, TypeVar
+
 from typing import Coroutine
 
+T = TypeVar("T")
 
-class LogQueue:
-    def __init__(self) -> None:
+
+class WorkQueue(Generic[T]):
+    """Queue that tries to always process only the most recently scheduled workload."""
+
+    def __init__(self, on_workload: Callable[[T], Coroutine[Any, Any, Any]]) -> None:
         self._queue: Queue[Coroutine] = Queue()
+        self._on_workload = on_workload
         # Start the worker that saves logs from queue to the db.
         self._worker = ensure_future(self._start())
 
@@ -35,8 +42,9 @@ class LogQueue:
     async def flush(self):
         await self._queue.join()
 
-    def add(self, log: Coroutine):
-        self._queue.put_nowait(log)
+    def schedule(self, workload: T):
+        task = self._on_workload(workload)
+        self._queue.put_nowait(task)
 
     def close(self):
         self._worker.cancel()

@@ -15,4 +15,5 @@ app.add_middleware(
 
 @app.websocket("/dev/agent")
 async def ws_agent_run(websocket: WebSocket):
-    await WebsocketAgentRun.handle_agent_run(websocket)
+    run = WebsocketAgentRun(websocket)
+    await run.handle_agent_run()

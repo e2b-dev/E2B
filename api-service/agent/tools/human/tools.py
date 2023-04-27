@@ -49,4 +49,4 @@ def create_human_tools(
         response: ToolsLogOutput = thread.get()
         return response.response
 
-    yield ask_human
+    # yield ask_human

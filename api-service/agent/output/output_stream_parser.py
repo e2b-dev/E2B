@@ -3,13 +3,18 @@ import uuid
 
 from typing import List, TypedDict
 
-from agent.tokens.parsing import (
+from agent.output.parse_output import (
     Log,
     ThoughtLog,
     ToolLog,
     merge_logs,
-    parse_thoughts_and_actions,
+    parse_output,
 )
+
+
+class Step(TypedDict):
+    output: str
+    logs: List[ToolLog | ThoughtLog]
 
 
 class ToolOutput(TypedDict):
@@ -22,7 +27,7 @@ class LogMeta(TypedDict):
     created_at: str
 
 
-class LogStreamParser:
+class OutputStreamParser:
     """
     We receive a stream of tokens and want to parse this stream of tokens to thought and tool logs
     even if we haven't yet received all tokens we need to execute the action.
@@ -64,22 +69,37 @@ class LogStreamParser:
     and the buffered can be flushed to finished logs when we receive output for the last tool in the buffered logs.
     """
 
-    def __init__(self, tool_names: List[str]) -> None:
+    def __init__(
+        self,
+        tool_names: List[str],
+        steps: List[Step] = [],
+        buffered_step: Step = Step(output="", logs=[]),
+    ) -> None:
         self._tool_names = tool_names
 
         # All "finished" logs that the parser saved.
-        self._logs: List[ToolLog | ThoughtLog] = []
+        self._steps = steps
 
-        self._token_buffer: str = ""
+        self._token_buffer: str = buffered_step["output"]
 
         # Logs have both `thought` logs and `tool` logs.
         # These logs can be partially parsed or they can have missing outputs.
         # They are flushed to self._logs after outputs for all tools in self._logs.buffer are ingested.
-        self._logs_buffer: List[ToolLog | ThoughtLog] = []
-        self._logs_meta_buffer: List[LogMeta] = []
+        self._logs_buffer: List[ToolLog | ThoughtLog] = buffered_step["logs"]
+        self._logs_meta_buffer: List[LogMeta] = [
+            LogMeta(created_at=log.get("created_at", ""), id=log.get("id", ""))
+            for log in self._logs_buffer
+        ]
 
         # This is a list of tools' outputs that corresponds to the tool logs in the self._logs.buffer.
-        self._tools_output_buffer: List[ToolOutput] = []
+        self._tools_output_buffer: List[ToolOutput] = [
+            ToolOutput(
+                finish_at=log.get("finish_at", ""),
+                tool_output=log.get("tool_output", ""),
+            )
+            for log in self._logs_buffer
+            if log.get("tool_output")
+        ]
 
     def _parse(self):
         """This function should be called only after ingesting new token or tool output to update the buffered logs."""
@@ -87,7 +107,7 @@ class LogStreamParser:
         # If you ingested token or tool output this will save the change so you can call self.get_logs and get the new logs.
         self._logs_buffer = [
             log
-            for log in parse_thoughts_and_actions(self._token_buffer)
+            for log in parse_output(self._token_buffer)
             if log["type"] == "thought"
             or log["type"] == "tool"
             and log.get("tool_name") in self._tool_names
@@ -137,7 +157,7 @@ class LogStreamParser:
         if len(self._tools_output_buffer) == len(
             [log for log in self._logs_buffer if log["type"] == "tool"]
         ):
-            self._logs.extend(self._logs_buffer)
+            self._steps.append(self.get_current_step())
             self._token_buffer = ""
             self._logs_buffer = []
             self._tools_output_buffer = []
@@ -145,5 +165,8 @@ class LogStreamParser:
 
         return self
 
-    def get_logs(self) -> List[ThoughtLog | ToolLog]:
-        return [*self._logs, *self._logs_buffer]
+    def get_steps(self) -> List[Step]:
+        return [*self._steps, self.get_current_step()]
+
+    def get_current_step(self):
+        return Step(output=self._token_buffer, logs=self._logs_buffer)

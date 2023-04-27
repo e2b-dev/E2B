@@ -1,5 +1,3 @@
-import pydantic
-
 from typing import Any, Dict, List
 from fastapi import WebSocket
 
@@ -12,24 +10,27 @@ class WebsocketAgentRun(AgentRun):
     def __init__(self, websocket: WebSocket, **kwargs):
         super().__init__(**kwargs)
         self.websocket = websocket
-
-    class Config:
-        extra = pydantic.Extra.allow
+        self.is_closed = False
 
     async def _notify(self, method: str, params: Dict[str, Any]):
-        await self.websocket.send_json(
-            {
-                "jsonrpc": self.jsonrpc_version,
-                "method": method,
-                "params": params,
-            }
-        )
+        if not self.is_closed:
+            await self.websocket.send_json(
+                {
+                    "jsonrpc": self.jsonrpc_version,
+                    "method": method,
+                    "params": params,
+                }
+            )
+
+    async def _close(self):
+        self.is_closed = True
+        await self.websocket.close()
 
     async def _call(self, id: str, method: str, params: List[Any]):
         async def handle_call():
             try:
                 method_handler = getattr(self, method)
-                if not method_handler:
+                if method_handler is None:
                     raise Exception(f"Method not found {method}")
 
                 result = await method_handler(*params)
@@ -37,6 +38,7 @@ class WebsocketAgentRun(AgentRun):
                     "result": result,
                 }
             except Exception as e:
+                print(f"Error calling {method} via JSONRPC", e)
                 return {
                     "error": {
                         "code": 13,
@@ -45,20 +47,24 @@ class WebsocketAgentRun(AgentRun):
                 }
 
         response = await handle_call()
-        await self.websocket.send_json(
-            {
-                "jsonrpc": self.jsonrpc_version,
-                "id": id,
-                **response,
-            }
-        )
+        if not self.is_closed:
+            await self.websocket.send_json(
+                {
+                    "jsonrpc": self.jsonrpc_version,
+                    "id": id,
+                    **response,
+                }
+            )
 
-    @classmethod
-    async def handle_agent_run(cls, websocket: WebSocket):
-        await websocket.accept()
-        run = cls(websocket=websocket)
+    async def handle_agent_run(self):
+        await self.websocket.accept()
 
-        async for data in websocket.iter_json():
-            await run._call(data["id"], data["method"], data["params"])
+        try:
+            async for data in self.websocket.iter_json():
+                await self._call(data["id"], data["method"], data.get("params", []))
+        except RuntimeError as e:
+            if not self.is_closed:
+                raise
 
         print("closed")
+        await self.cancel()

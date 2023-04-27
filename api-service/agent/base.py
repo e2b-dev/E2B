@@ -3,71 +3,62 @@ import uuid
 
 from abc import abstractmethod
 from typing import Any, Dict, List, Literal, Tuple, cast
-from agent.tokens.parsing import ThoughtLog, ToolLog
-from agent.tokens.log_parser import LogStreamParser
-from agent.tokens.logs import LogsCallbackHandler
+from agent.output.parse_output import Log, ThoughtLog, ToolLog
+from agent.output.output_stream_parser import OutputStreamParser, Step
+from agent.output.token_callback_handler import TokenCallbackHandler
+from agent.output.work_queue import WorkQueue
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chains.llm import LLMChain
-from langchain.schema import AgentAction, BaseMessage
+from langchain.schema import BaseMessage
 from langchain.tools import BaseTool
-from pydantic import BaseModel
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.agents.tools import InvalidTool
 
-from agent.tokens.token_streamer import TokenStreamer
-from agent.tokens.log_processor import LogProcessor
 from agent.tools.base import create_tools
 from database.database import DeploymentState
 from models.base import ModelConfig, PromptPart, get_model
 from database import db
 from session import NodeJSPlayground
 
-FINAL_ANSWERS = ("Final Answer", "FinalAnswer")
 
-
-class RewriteHistoryException(Exception):
+class RewriteStepsException(Exception):
     pass
 
 
-class AgentRun(BaseModel):
-    should_pause = False
-    canceled = False
-    rewriting_history = False
-
+class AgentRun:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.should_pause = False
+        self.canceled = False
+        self.rewriting_steps = False
         self.can_resume = asyncio.Event()
 
-    async def _arun_tool(
-        self,
-        tool_name: str,
-        tool_input: str,
+    @staticmethod
+    async def _run_tool(
+        tool_log: ToolLog,
         name_to_tool_map: Dict[str, BaseTool],
     ) -> str:
         # Otherwise we lookup the tool
-        if tool_name in name_to_tool_map:
-            tool = name_to_tool_map[tool_name]
+        if tool_log["tool_name"] in name_to_tool_map:
+            tool = name_to_tool_map[tool_log["tool_name"]]
             # We then call the tool on the tool input to get an observation
             observation = await tool.arun(
-                tool_input,
+                tool_log["tool_input"],
                 verbose=True,
             )
         else:
             observation = await InvalidTool().arun(  # type: ignore
-                tool_name=tool_name,
-                tool_input=tool_input,
+                tool_name=tool_log["tool_name"],
+                tool_input=tool_log["tool_input"],
                 verbose=True,
             )
         return observation
-
-    @abstractmethod
-    async def _notify(self, method: str, params: Dict[str, Any] | List[Any]):
-        pass
 
     @staticmethod
     def _get_prompt_part(
@@ -83,6 +74,31 @@ class AgentRun(BaseModel):
             )
             .content.replace("{", "{{")
             .replace("}", "}}")
+        )
+
+    @staticmethod
+    def _create_prompt(model_config: ModelConfig, tools: List[BaseTool]):
+        system_template = "\n\n".join(
+            [
+                AgentRun._get_prompt_part(model_config.prompt, "system", "prefix"),
+                "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
+                AgentRun._get_prompt_part(model_config.prompt, "system", "suffix"),
+            ]
+        )
+        human_template = "\n\n".join(
+            [
+                AgentRun._get_prompt_part(model_config.prompt, "user", "prefix"),
+                "{agent_scratchpad}",
+            ]
+        )
+
+        messages: List[BaseMessage | BaseMessagePromptTemplate] = [
+            SystemMessagePromptTemplate.from_template(system_template),
+            HumanMessagePromptTemplate.from_template(human_template),
+        ]
+        return ChatPromptTemplate(
+            input_variables=["agent_scratchpad"],
+            messages=messages,
         )
 
     async def _run(
@@ -105,10 +121,10 @@ class AgentRun(BaseModel):
         await change_state(DeploymentState.Generating)
         try:
             # -----
-            # Initialize callback manager for controlling token stream
-            streamer = TokenStreamer()
+            # Initialize callback manager and handler for controlling token stream
             callback_manager = AsyncCallbackManager([StreamingStdOutCallbackHandler()])
-            callback_manager.add_handler(LogsCallbackHandler(streamer=streamer))
+            self.token_handler = TokenCallbackHandler()
+            callback_manager.add_handler(self.token_handler)
 
             # -----
             # Create tools
@@ -120,7 +136,7 @@ class AgentRun(BaseModel):
                     playground=playground,
                 )
             )
-            tool_names = [tool.name for tool in tools]
+            self.tool_names = [tool.name for tool in tools]
             tool_map = {tool.name: tool for tool in tools}
 
             # Assign callback manager to tools
@@ -128,59 +144,49 @@ class AgentRun(BaseModel):
                 tool.callback_manager = callback_manager
 
             # -----
-            # Create prompt
-            system_template = "\n\n".join(
-                [
-                    self._get_prompt_part(model_config.prompt, "system", "prefix"),
-                    "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-                    self._get_prompt_part(model_config.prompt, "system", "suffix"),
-                ]
-            )
-            human_template = "\n\n".join(
-                [
-                    self._get_prompt_part(model_config.prompt, "user", "prefix"),
-                    "{agent_scratchpad}",
-                ]
-            )
-
-            messages: List[BaseMessage | BaseMessagePromptTemplate] = [
-                SystemMessagePromptTemplate.from_template(system_template),
-                HumanMessagePromptTemplate.from_template(human_template),
-            ]
-            prompt = ChatPromptTemplate(
-                input_variables=["agent_scratchpad"],
-                messages=messages,
-            )
-
-            # -----
             # Create LLM from specified model
             llm_chain = LLMChain(
                 llm=get_model(model_config, callback_manager),
-                prompt=prompt,
+                prompt=self._create_prompt(model_config, tools),
                 callback_manager=callback_manager,
             )
 
             # -----
             # Create log handlers
-            # TODO: Keep track of logs generations - we may need to purge them on rewrite
-            self.logs: List[ThoughtLog | ToolLog] = []
             # Used for sending logs to db/frontend without blocking
-            log_processor = LogProcessor(
-                on_logs=lambda logs: self._notify("logs", {"logs": logs})
+            steps_streamer = WorkQueue[List[Step]](
+                on_workload=lambda steps: self._notify("steps", {"steps": steps})
             )
             # Used for parsing token stream into logs+actions
-            log_parser = LogStreamParser(tool_names=tool_names)
+            self._output_parser = OutputStreamParser(tool_names=self.tool_names)
 
             # -----
-            # Initialize intermediate_steps that keeps state between LLM calls
-            self.intermediate_steps: List[Tuple[AgentAction, str]] = []
+            # List of (LLM output, parsed logs)
+            steps: List[Step] = []
 
-            # This function is used to inject information from previous runs to the prompt
+            # This function is used to inject information from previous steps to the current prompt
             def get_agent_scratchpad():
+                if len(steps) == 0:
+                    return ""
+
                 agent_scratchpad = ""
-                for action, observation in self.intermediate_steps:
-                    agent_scratchpad += action.log
-                    agent_scratchpad += f"\nObservation: {observation}\nThought:"
+                for step in steps:
+                    agent_scratchpad += step["output"]
+
+                    tool_logs = (
+                        cast(ToolLog, action)
+                        for action in step["logs"]
+                        if action["type"] == "tool"
+                    )
+
+                    tool_outputs = "\n".join(
+                        log.get("tool_output", "")
+                        for log in tool_logs
+                        if log.get("tool_output")
+                    )
+
+                    if tool_outputs:
+                        agent_scratchpad += f"\nObservation: {tool_outputs}\nThought:"
 
                 return (
                     f"This was your previous work "
@@ -191,6 +197,7 @@ class AgentRun(BaseModel):
             print("Generating...", flush=True)
             while True:
                 try:
+                    await self._check_interrupt()
                     # Query the LLM in background
                     self.llm_generation = asyncio.create_task(
                         llm_chain.agenerate(
@@ -205,47 +212,42 @@ class AgentRun(BaseModel):
                     while True:
                         await self._check_interrupt()
                         # Consume the tokens from LLM
-                        token = await streamer.retrieve()
+                        token = await self.token_handler.retrieve_token()
 
                         if token is None:
                             break
 
-                        self.logs = log_parser.ingest_token(token).get_logs()
-                        log_processor.ingest(self.logs)
+                        await self._check_interrupt()
+                        # Process logs in a separate task
+                        steps = self._output_parser.ingest_token(token).get_steps()
+                        steps_streamer.schedule(steps)
 
-                    # Check if the the run is finished
+                    current_step = self._output_parser.get_current_step()
+
+                    # Check if the run is finished
                     if any(
-                        final in log_parser._token_buffer for final in FINAL_ANSWERS
+                        keyword in current_step["output"]
+                        for keyword in ("Final Answer", "FinalAnswer")
                     ):
                         break
 
-                    observations: List[str] = []
-
                     for tool in (
                         cast(ToolLog, action)
-                        for action in self.logs
+                        for action in current_step["logs"]
                         if action["type"] == "tool"
                     ):
                         await self._check_interrupt()
-                        output = await self._arun_tool(
-                            tool_name=tool["tool_name"],
-                            tool_input=tool["tool_input"],
+                        tool_output = await self._run_tool(
+                            tool,
                             name_to_tool_map=tool_map,
                         )
-                        self.logs = log_parser.ingest_tool_output(output).get_logs()
-                        log_processor.ingest(self.logs)
+                        await self._check_interrupt()
+                        steps = self._output_parser.ingest_tool_output(
+                            tool_output
+                        ).get_steps()
+                        steps_streamer.schedule(steps)
 
-                        observations.append(output)
-
-                    self.intermediate_steps.append(
-                        (
-                            AgentAction("Action", "", log_parser._token_buffer),
-                            "\n".join(observations),
-                        )
-                    )
-
-                except RewriteHistoryException:
-                    self.logs = log_parser.ingest_complete_llm_output("").get_logs()
+                except RewriteStepsException:
                     continue
 
             await change_state(DeploymentState.Finished)
@@ -264,11 +266,20 @@ class AgentRun(BaseModel):
             await self.can_resume.wait()
             self.can_resume.clear()
 
-        if self.rewriting_history:
-            self.rewriting_history = False
-            raise RewriteHistoryException()
+        if self.rewriting_steps:
+            self.rewriting_steps = False
+            raise RewriteStepsException()
+
+    @abstractmethod
+    async def _notify(self, method: str, params: Dict[str, Any] | List[Any]):
+        pass
+
+    @abstractmethod
+    async def _close():
+        pass
 
     async def start(self, project_id: str, model_config: Dict[str, Any]):
+        print("Start agent run")
         run_id = str(uuid.uuid4())
         asyncio.create_task(
             self._run(
@@ -279,21 +290,29 @@ class AgentRun(BaseModel):
         )
         return {"run_id": run_id}
 
-    def pause(self):
+    async def pause(self):
+        print("Pause agent run")
         self.should_pause = True
 
-    def resume(self):
+    async def resume(self):
+        print("Resume agent run")
+        self.should_pause = False
         self.can_resume.set()
 
-    def cancel(self):
+    async def cancel(self):
+        print("Cancel agent run")
         self.canceled = True
-        # Ensure that the agent run is not stuck on paused
-        self.resume()
-
-    def rewrite_history(self):
-        self.pause()
-        # TODO: Check if there could be any unflushed tokens after cancel
         self.llm_generation.cancel()
-        # TODO: Change self.intermediate_steps to reflect the modified history
-        self.rewriting_history = True
-        self.resume()
+        await self._close()
+
+    async def rewrite_steps(self, steps: List[Step], buffered_step: Step):
+        print("Rewrite agent run steps")
+        await self.pause()
+        self.rewriting_steps = True
+        self.llm_generation.cancel()
+        self._output_parser = OutputStreamParser(
+            tool_names=self.tool_names,
+            steps=steps,
+            buffered_step=buffered_step,
+        )
+        await self.resume()
