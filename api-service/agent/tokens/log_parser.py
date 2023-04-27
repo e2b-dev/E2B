@@ -3,7 +3,8 @@ import uuid
 
 from typing import List, TypedDict
 
-from codegen.agent.parsing import (
+from agent.tokens.parsing import (
+    Log,
     ThoughtLog,
     ToolLog,
     merge_logs,
@@ -144,5 +145,5 @@ class LogStreamParser:
 
         return self
 
-    def get_logs(self) -> list[ToolLog | ThoughtLog]:
+    def get_logs(self) -> List[ThoughtLog | ToolLog]:
         return [*self._logs, *self._logs_buffer]

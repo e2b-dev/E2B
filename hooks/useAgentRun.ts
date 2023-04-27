@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react'
+import { deployment_state } from '@prisma/client'
 
 import { AgentRun } from 'api-client/AgentDebugRun'
 import { Log } from 'db/types'
 import { ModelConfig } from 'state/model'
 import { baseUrl } from 'api-client/api'
-import { deployment_state } from '@prisma/client'
 
 function useAgentRun() {
   const [agentRun, setAgentRun] = useState<AgentRun>()
@@ -20,8 +20,13 @@ function useAgentRun() {
     setLogs([])
     setAgentRun(run)
     await run.connect()
-    return run.startRun(projectID, modelConfig)
-  }, [setAgentRun, setLogs])
+    try {
+      await run.startRun(projectID, modelConfig)
+    } catch (error) {
+      setAgentState(deployment_state.error)
+      console.error(error)
+    }
+  }, [setAgentRun, setLogs, setAgentState])
 
   return {
     start,

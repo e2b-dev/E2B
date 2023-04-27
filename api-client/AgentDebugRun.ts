@@ -28,11 +28,10 @@ export class AgentRun {
   }
 
   private handleNotification(data: IRpcNotification) {
-    console.log('notif', data)
     if (data.method === 'logs') {
       return this.opts.onLogs(data.params.logs)
     }
-    if (data.method === 'stateUpdate') {
+    if (data.method === 'state_update') {
       this.opts.onStateChange(data.params.state)
       if (data.params.state === deployment_state.finished) {
         this.disconnect()
@@ -59,6 +58,6 @@ export class AgentRun {
   }
 
   async rewriteRunLogs(logs: Log[]) {
-    await this.rpc.call('rewriteLogs', [logs])
+    await this.rpc.call('rewrite_logs', [logs])
   }
 }

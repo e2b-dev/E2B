@@ -2,7 +2,7 @@ from typing import Awaitable, Callable, Optional, cast
 from langchain.agents import Tool
 from langchain.tools.base import BaseTool
 
-from codegen.agent.parsing import ToolLog, parse_thoughts_and_actions
+from agent.tokens.parsing import ToolLog, parse_thoughts_and_actions
 
 
 def func(_: str):

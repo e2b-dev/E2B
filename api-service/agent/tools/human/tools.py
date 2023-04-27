@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from typing import Any
 
-from codegen.tools.async_tool import async_tool
+from agent.tools.async_tool import async_tool
 from playground_client.models.tools_log_output import ToolsLogOutput
 from session.playground.base import Playground
 

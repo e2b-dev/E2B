@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { projects } from '@prisma/client'
+import { projects, deployments } from '@prisma/client'
 
 import { useStateStore } from 'state/StoreProvider'
 import { getModelArgs } from 'state/model'
@@ -15,7 +15,9 @@ import { MenuSection } from '../SidebarMenu'
 import useAgentRun from 'hooks/useAgentRun'
 
 export interface Props {
-  project: projects
+  project: projects & {
+    deployments: deployments[];
+  }
   activeMenuSection?: MenuSection
 }
 
@@ -23,14 +25,12 @@ function Sidebar({
   project,
   activeMenuSection,
 }: Props) {
-
   const {
     agentRun,
-    logs,
+    logs: newLogs,
     start,
     agentState,
   } = useAgentRun()
-
   const [selectors] = useStateStore()
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const instructions = selectors.use.instructions()
@@ -38,39 +38,24 @@ function Sidebar({
 
   const [creds] = useModelProviderArgs()
 
+  const lastRunLogs = project.deployments.length === 1 ? project.deployments[0] : undefined
+  const logs = newLogs || lastRunLogs
+
   async function run() {
     if (!modelConfig) {
       console.error('Cannot get model config')
       return
     }
 
-    try {
-      await start(project.id, {
-        ...modelConfig,
-        args: getModelArgs(modelConfig, creds) as any,
-        prompt: evaluatePrompt(
-          instructions,
-          instructionsTransform,
-          modelConfig.prompt,
-        ),
-      })
-
-      // setIsDeployRequestRunning(true)
-      // await generate({
-      //   project_id: project.id,
-      //   model_config: {
-      //     ...modelConfig,
-      //     args: getModelArgs(modelConfig, creds) as any,
-      //     prompt: evaluatePrompt(
-      //       instructions,
-      //       instructionsTransform,
-      //       modelConfig.prompt,
-      //     ),
-      //   },
-      // })
-    } finally {
-      // setIsDeployRequestRunning(false)
-    }
+    await start(project.id, {
+      ...modelConfig,
+      args: getModelArgs(modelConfig, creds) as any,
+      prompt: evaluatePrompt(
+        instructions,
+        instructionsTransform,
+        modelConfig.prompt,
+      ),
+    })
   }
 
   return (

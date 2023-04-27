@@ -1,6 +1,6 @@
-from codegen.tools.async_tool import async_tool
+from agent.tools.async_tool import async_tool
 from session.playground import NodeJSPlayground
-from codegen.tools.playground.tools.process import encode_command_output
+from agent.tools.playground.tools.process import encode_command_output
 
 
 def extract_code(code: str):

@@ -1,7 +1,7 @@
 from typing import List
 from enum import Enum
 
-from codegen.agent.parsing import ThoughtLog, ToolLog
+from agent.tokens.parsing import ThoughtLog, ToolLog
 from database.client import Client
 from session.env import EnvVar
 
@@ -21,19 +21,6 @@ class Database:
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
         self.client = Client(supabase_url=supabase_url, supabase_key=supabase_key)
 
-    async def create_deployment(
-        self,
-        run_id: str,
-        project_id: str,
-    ) -> None:
-        await self.client.table(TABLE_DEPLOYMENTS).insert(
-            {
-                "id": run_id,
-                "project_id": project_id,
-                "state": DeploymentState.Generating.value,
-            },
-        ).execute()
-
     async def push_logs(self, run_id: str, logs: list[ToolLog | ThoughtLog]) -> None:
         if len(logs) > 0:
             await self.client.table(TABLE_DEPLOYMENTS).update(
@@ -50,20 +37,19 @@ class Database:
                 }
             ).eq("id", run_id).execute()
 
-    async def update_state(self, run_id: str, state: DeploymentState) -> None:
-        await self.client.table(TABLE_DEPLOYMENTS).update(
+    async def upsert_deployment(
+        self,
+        run_id: str,
+        project_id: str,
+        state: DeploymentState,
+    ) -> None:
+        await self.client.table(TABLE_DEPLOYMENTS).upsert(
             {
+                "id": run_id,
                 "state": state.value,
-            }
-        ).eq("id", run_id).execute()
-
-    async def finish_deployment(self, run_id: str) -> None:
-        update = {
-            "state": DeploymentState.Finished.value,
-        }
-
-        await self.client.table(TABLE_DEPLOYMENTS).update(update).eq(
-            "id", run_id
+                "project_id": project_id,
+            },
+            on_conflict="id",
         ).execute()
 
     async def get_env_vars(self, project_id: str) -> List[EnvVar]:

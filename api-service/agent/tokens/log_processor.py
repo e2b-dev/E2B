@@ -1,7 +1,7 @@
 from typing import Any, Callable, Coroutine, Generic, TypeVar
 from pydantic import BaseModel, PrivateAttr
 
-from codegen.callbacks.log_queue import LogQueue
+from agent.tokens.log_queue import LogQueue
 
 T = TypeVar("T")
 OnLogs = Callable[[T], Coroutine[Any, Any, Any]]

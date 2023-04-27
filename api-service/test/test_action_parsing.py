@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Any
 
-from codegen.agent.parsing import ToolLog
+from agent.tokens.parsing import ToolLog
 
 
 llm_outputs: List[Dict[str, Any]] = [

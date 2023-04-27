@@ -1,7 +1,7 @@
 import pytest
 from typing import Dict, List, Any, cast
 
-from codegen.agent.parsing import ToolLog, parse_thoughts_and_actions
+from agent.tokens.parsing import ToolLog, parse_thoughts_and_actions
 
 
 class Helpers:
