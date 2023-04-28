@@ -22,12 +22,11 @@ const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({
   target,
   ws: true,
   secure: !isSecure,
-  // changeOrigin: false,
+  changeOrigin: false,
   pathRewrite: { [`^${pathPrefix}`]: '' }, // remove prefix
 })
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('Proxy', req.url)
   proxy(req, res, (result: unknown) => {
     if (result instanceof Error) {
       throw result

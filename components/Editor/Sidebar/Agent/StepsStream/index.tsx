@@ -34,8 +34,6 @@ function StepsStream({
     ref.current.scrollIntoView({ behavior: 'auto' })
   }, [steps, isRunning])
 
-  console.log('running', isRunning)
-
   return (
     <div
       className="

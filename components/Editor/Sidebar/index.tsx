@@ -32,7 +32,6 @@ function Sidebar({
     start,
     agentState,
   } = useAgentRun()
-  console.log('new', newSteps)
   const [selectors] = useStateStore()
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const instructions = selectors.use.instructions()
