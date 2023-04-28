@@ -1,5 +1,6 @@
 from typing import List
 from enum import Enum
+from agent.output.output_stream_parser import Step
 
 from agent.output.parse_output import ThoughtLog, ToolLog
 from database.client import Client
@@ -37,7 +38,20 @@ class Database:
                 }
             ).eq("id", run_id).execute()
 
-    async def upsert_deployment(
+    async def upsert_deployment_steps(
+        self,
+        run_id: str,
+        steps: List[Step],
+    ) -> None:
+        await self.client.table(TABLE_DEPLOYMENTS).upsert(
+            {
+                "id": run_id,
+                "steps": steps,
+            },
+            on_conflict="id",
+        ).execute()
+
+    async def upsert_deployment_state(
         self,
         run_id: str,
         project_id: str,

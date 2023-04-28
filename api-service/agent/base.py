@@ -110,7 +110,7 @@ class AgentRun:
         async def change_state(state: DeploymentState) -> None:
             print(f"Run '{run_id}'", state.value, flush=True)
             await self._notify("state_update", {"state": state.value})
-            await db.upsert_deployment(
+            await db.upsert_deployment_state(
                 run_id=run_id,
                 project_id=project_id,
                 state=state,
@@ -154,9 +154,20 @@ class AgentRun:
             # -----
             # Create log handlers
             # Used for sending logs to db/frontend without blocking
-            steps_streamer = WorkQueue[List[Step]](
+            steps_ws_streamer = WorkQueue[List[Step]](
                 on_workload=lambda steps: self._notify("steps", {"steps": steps})
             )
+            steps_db_streamer = WorkQueue[List[Step]](
+                on_workload=lambda steps: db.upsert_deployment_steps(
+                    run_id=self.run_id,
+                    steps=steps,
+                )
+            )
+
+            def stream_steps(steps: List[Step]):
+                steps_db_streamer.schedule(steps)
+                steps_ws_streamer.schedule(steps)
+
             # Used for parsing token stream into logs+actions
             self._output_parser = OutputStreamParser(tool_names=self.tool_names)
 
@@ -220,7 +231,7 @@ class AgentRun:
                         await self._check_interrupt()
                         # Process logs in a separate task
                         steps = self._output_parser.ingest_token(token).get_steps()
-                        steps_streamer.schedule(steps)
+                        stream_steps(steps)
 
                     current_step = self._output_parser.get_current_step()
 
@@ -245,7 +256,7 @@ class AgentRun:
                         steps = self._output_parser.ingest_tool_output(
                             tool_output
                         ).get_steps()
-                        steps_streamer.schedule(steps)
+                        stream_steps(steps)
 
                 except RewriteStepsException:
                     continue
@@ -271,7 +282,7 @@ class AgentRun:
             raise RewriteStepsException()
 
     @abstractmethod
-    async def _notify(self, method: str, params: Dict[str, Any] | List[Any]):
+    async def _notify(self, method: str, params: Dict[str, Any]):
         pass
 
     @abstractmethod
@@ -280,15 +291,16 @@ class AgentRun:
 
     async def start(self, project_id: str, model_config: Dict[str, Any]):
         print("Start agent run")
-        run_id = str(uuid.uuid4())
+        self.project_id = project_id
+        self.run_id = str(uuid.uuid4())
         asyncio.create_task(
             self._run(
-                run_id=run_id,
+                run_id=self.run_id,
                 project_id=project_id,
                 model_config=ModelConfig(**model_config),
             )
         )
-        return {"run_id": run_id}
+        return {"run_id": self.run_id}
 
     async def pause(self):
         print("Pause agent run")
