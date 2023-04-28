@@ -87,7 +87,7 @@ class OutputStreamParser:
         # They are flushed to self._logs after outputs for all tools in self._logs.buffer are ingested.
         self._logs_buffer: List[ToolLog | ThoughtLog] = buffered_step["logs"]
         self._logs_meta_buffer: List[LogMeta] = [
-            LogMeta(created_at=log.get[str]("created_at", ""), id=log.get("id", ""))
+            LogMeta(created_at=log.get("created_at", ""), id=log.get("id", ""))
             for log in self._logs_buffer
         ]
 

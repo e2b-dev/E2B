@@ -13,6 +13,7 @@ from langchain.chains.llm import LLMChain
 from langchain.schema import BaseMessage
 from langchain.tools import BaseTool
 from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -37,6 +38,7 @@ class AgentRun:
         self.should_pause = False
         self.canceled = False
         self.rewriting_steps = False
+        self.llm_generation = None
         self.can_resume = asyncio.Event()
 
     @staticmethod
@@ -88,13 +90,15 @@ class AgentRun:
         human_template = "\n\n".join(
             [
                 AgentRun._get_prompt_part(model_config.prompt, "user", "prefix"),
-                "{agent_scratchpad}",
+                # "{agent_scratchpad}",
             ]
         )
 
         messages: List[BaseMessage | BaseMessagePromptTemplate] = [
             SystemMessagePromptTemplate.from_template(system_template),
             HumanMessagePromptTemplate.from_template(human_template),
+            # TODO: Check if the results are better when we add scratchpad as AI message
+            AIMessagePromptTemplate.from_template("{agent_scratchpad}"),
         ]
         return ChatPromptTemplate(
             input_variables=["agent_scratchpad"],
@@ -171,9 +175,16 @@ class AgentRun:
             self._output_parser = OutputStreamParser(tool_names=self.tool_names)
 
             # This function is used to inject information from previous steps to the current prompt
+            # TODO: Improve the scratchpad handling and prompts for templates
             def get_agent_scratchpad():
                 steps = self._output_parser.get_steps()
-                if len(steps) == 0:
+
+                print("stps >><<", steps)
+                if (
+                    len(steps) == 0
+                    or len(steps) == 1
+                    and not self._output_parser._token_buffer
+                ):
                     return ""
 
                 agent_scratchpad = ""
@@ -195,22 +206,19 @@ class AgentRun:
                     if tool_outputs:
                         agent_scratchpad += f"\nObservation: {tool_outputs}\nThought:"
 
-                return (
-                    f"This was your previous work "
-                    f"(but I haven't seen any of it! I only see what "
-                    f"you return as final answer):\n{agent_scratchpad}"
-                )
+                return f"This is your previous work (you can continue where you left off):\n{agent_scratchpad}"
 
             print("Generating...", flush=True)
             while True:
                 try:
                     await self._check_interrupt()
                     # Query the LLM in background
+                    scratchpad = get_agent_scratchpad()
                     self.llm_generation = asyncio.create_task(
                         llm_chain.agenerate(
                             [
                                 {
-                                    "agent_scratchpad": get_agent_scratchpad(),
+                                    "agent_scratchpad": scratchpad,
                                     "stop": "Observation:",
                                 }
                             ]
@@ -319,6 +327,8 @@ class AgentRun:
         self.rewriting_steps = True
         if self.llm_generation:
             self.llm_generation.cancel()
+        # TODO: Communicate the rewriting in model prompt - inform about what was rewritten.
+        # TODO: Handle token that is generated after a rewrite - if the current step seems "finished" the model still outputs string (usually something like . or :).
         self._output_parser = OutputStreamParser(
             tool_names=self.tool_names,
             steps=steps[:-1],
