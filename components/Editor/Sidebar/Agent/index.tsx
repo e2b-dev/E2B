@@ -148,7 +148,7 @@ function Agent({
           />
         </div>
       </div>
-      {!agentState &&
+      {!steps &&
         <div
           className="
           self-center

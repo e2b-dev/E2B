@@ -5,6 +5,8 @@ import { useStateStore } from 'state/StoreProvider'
 import { getModelArgs } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { evaluatePrompt } from 'state/prompt'
+import { Step } from 'api-client/AgentRun'
+import useAgentRun from 'hooks/useAgentRun'
 
 import Agent from './Agent'
 import Envs from './Envs'
@@ -12,7 +14,6 @@ import Model from './Model'
 import Prompt from './Prompt'
 import { MenuSection } from '../SidebarMenu'
 
-import useAgentRun from 'hooks/useAgentRun'
 
 export interface Props {
   project: projects & {
@@ -41,7 +42,7 @@ function Sidebar({
 
   // TODO: Change logs to steps in db
   const lastRunLogs = project.deployments.length === 1 ? project.deployments[0] : undefined
-  const steps = newSteps || lastRunLogs?.logs
+  const steps = newSteps || lastRunLogs?.logs as Step[] | undefined
 
   async function run() {
     if (!modelConfig) {

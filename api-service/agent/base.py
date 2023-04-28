@@ -2,8 +2,8 @@ import asyncio
 import uuid
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Literal, Tuple, cast
-from agent.output.parse_output import Log, ThoughtLog, ToolLog
+from typing import Any, Dict, List, Literal, cast
+from agent.output.parse_output import ToolLog
 from agent.output.output_stream_parser import OutputStreamParser, Step
 from agent.output.token_callback_handler import TokenCallbackHandler
 from agent.output.work_queue import WorkQueue
@@ -161,6 +161,7 @@ class AgentRun:
                 on_workload=lambda steps: db.upsert_deployment_steps(
                     run_id=self.run_id,
                     steps=steps,
+                    project_id=project_id,
                 )
             )
 
@@ -317,14 +318,14 @@ class AgentRun:
         self.llm_generation.cancel()
         await self._close()
 
-    async def rewrite_steps(self, steps: List[Step], buffered_step: Step):
+    async def rewrite_steps(self, steps: List[Step]):
         print("Rewrite agent run steps")
         await self.pause()
         self.rewriting_steps = True
         self.llm_generation.cancel()
         self._output_parser = OutputStreamParser(
             tool_names=self.tool_names,
-            steps=steps,
-            buffered_step=buffered_step,
+            steps=steps[:-1],
+            buffered_step=steps[-1],
         )
         await self.resume()

@@ -41,12 +41,14 @@ class Database:
     async def upsert_deployment_steps(
         self,
         run_id: str,
+        project_id: str,
         steps: List[Step],
     ) -> None:
         await self.client.table(TABLE_DEPLOYMENTS).upsert(
             {
                 "id": run_id,
-                "steps": steps,
+                "logs": steps,
+                "project_id": project_id,
             },
             on_conflict="id",
         ).execute()

@@ -87,7 +87,6 @@ export class AgentRun {
     step.output = edit.output
     step.logs = []
 
-    // return steps without steps after edited step
     return steps.slice(0, edit.stepIdx + 1)
   }
 }

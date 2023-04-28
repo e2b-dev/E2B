@@ -7,7 +7,7 @@ import { baseUrl } from 'api-client/api'
 
 function useAgentRun() {
   const [agentRun, setAgentRun] = useState<AgentRun>()
-  const [steps, setSteps] = useState<Step[]>([])
+  const [steps, setSteps] = useState<Step[]>()
   const [agentState, setAgentState] = useState<deployment_state>()
 
   const start = useCallback(async (projectID: string, modelConfig: ModelConfig) => {
