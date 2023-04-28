@@ -170,12 +170,9 @@ class AgentRun:
             # Used for parsing token stream into logs+actions
             self._output_parser = OutputStreamParser(tool_names=self.tool_names)
 
-            # -----
-            # List of (LLM output, parsed logs)
-            steps: List[Step] = []
-
             # This function is used to inject information from previous steps to the current prompt
             def get_agent_scratchpad():
+                steps = self._output_parser.get_steps()
                 if len(steps) == 0:
                     return ""
 
@@ -228,8 +225,8 @@ class AgentRun:
                             break
 
                         await self._check_interrupt()
-                        steps = self._output_parser.ingest_token(token).get_steps()
-                        stream_steps(steps)
+                        self._output_parser.ingest_token(token)
+                        stream_steps(self._output_parser.get_steps())
 
                     current_step = self._output_parser.get_current_step()
 
@@ -251,12 +248,11 @@ class AgentRun:
                             name_to_tool_map=tool_map,
                         )
                         await self._check_interrupt()
-                        steps = self._output_parser.ingest_tool_output(
-                            tool_output
-                        ).get_steps()
-                        stream_steps(steps)
+                        self._output_parser.ingest_tool_output(tool_output)
+                        stream_steps(self._output_parser.get_steps())
 
                 except RewriteStepsException:
+                    print("REWRITING")
                     continue
 
             await change_state(DeploymentState.Finished)
