@@ -62,18 +62,18 @@ class AgentRun:
 
     @staticmethod
     def _get_prompt_part(
-        prompts: List[PromptPart], role: Literal["user", "system"], type: str
+        prompts: List[PromptPart],
+        role: Literal["user", "system"],
+        type: str,
     ):
         return (
             next(
-                (
-                    prompt
-                    for prompt in prompts
-                    if prompt.role == role and prompt.type == type
-                ),
+                prompt
+                for prompt in prompts
+                if prompt.role == role and prompt.type == type
             )
-            .content.replace("{", "{{")
-            .replace("}", "}}")
+            # Double the parenthesses to escape them because the string will be prompt templated.
+            .content.replace("{", "{{").replace("}", "}}")
         )
 
     @staticmethod

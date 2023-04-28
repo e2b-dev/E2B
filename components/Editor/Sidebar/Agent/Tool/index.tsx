@@ -32,7 +32,7 @@ function Tool({
     case ToolName.LetHumanChoose:
       return <LetHumanChoose log={log} onAnswer={onAnswer} isRunning={isRunning} />
     default:
-      return <div>Cannot render frontend component - unknown tol {log.tool_name}</div>
+      return <div>Cannot render frontend component - unknown tool {log.tool_name}</div>
   }
 }
 
