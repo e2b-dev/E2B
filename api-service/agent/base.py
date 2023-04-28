@@ -152,10 +152,10 @@ class AgentRun:
             # -----
             # Create log handlers
             # Used for sending logs to db/frontend without blocking
-            steps_ws_streamer = WorkQueue[List[Step]](
+            ws_streamer = WorkQueue[List[Step]](
                 on_workload=lambda steps: self._notify("steps", {"steps": steps})
             )
-            steps_db_streamer = WorkQueue[List[Step]](
+            db_streamer = WorkQueue[List[Step]](
                 on_workload=lambda steps: db.upsert_deployment_steps(
                     run_id=self.run_id,
                     steps=steps,
@@ -164,8 +164,8 @@ class AgentRun:
             )
 
             def stream_steps(steps: List[Step]):
-                steps_db_streamer.schedule(steps)
-                steps_ws_streamer.schedule(steps)
+                db_streamer.schedule(steps)
+                ws_streamer.schedule(steps)
 
             # Used for parsing token stream into logs+actions
             self._output_parser = OutputStreamParser(tool_names=self.tool_names)
@@ -228,7 +228,6 @@ class AgentRun:
                             break
 
                         await self._check_interrupt()
-                        # Process logs in a separate task
                         steps = self._output_parser.ingest_token(token).get_steps()
                         stream_steps(steps)
 
@@ -267,6 +266,7 @@ class AgentRun:
         finally:
             if playground is not None:
                 playground.close()
+            await self._close()
 
     async def _check_interrupt(self):
         if self.canceled:
