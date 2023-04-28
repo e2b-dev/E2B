@@ -10,12 +10,14 @@ export interface Props {
   log: ToolLog
   icon: ReactNode
   body: ReactNode
+  isRunning?: boolean
 }
 
 function BaseTool({
   icon,
   log,
   body,
+  isRunning,
 }: Props) {
   if (log.type !== LogType.Tool) throw new Error(`'${log.type}': This component supports only logs of type  '${log.type}'`)
 
@@ -42,7 +44,7 @@ function BaseTool({
             {log.tool_name}
           </div>
         </div>
-        {log.tool_output === undefined &&
+        {log.tool_output === undefined && isRunning &&
           <Loader
             className="text-slate-400 animate-spin"
             size="16px"

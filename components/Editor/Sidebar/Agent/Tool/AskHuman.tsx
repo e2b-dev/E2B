@@ -16,11 +16,13 @@ import Base from './Base'
 
 export interface Props {
   log: ToolLog
+  isRunning?: boolean
   onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
 }
 
 function AskHuman({
   log,
+  isRunning,
   onAnswer,
 }: Props) {
   if (log.tool_name !== ToolName.AskHuman) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.AskHuman}' tool`)
@@ -66,6 +68,7 @@ function AskHuman({
 
   return (
     <Base
+      isRunning={isRunning}
       log={log}
       icon={<HelpCircle size="16px" />}
       body={body}

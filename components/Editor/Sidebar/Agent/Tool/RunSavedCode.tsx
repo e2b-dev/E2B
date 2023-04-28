@@ -9,10 +9,12 @@ import Base from './Base'
 
 export interface Props {
   log: ToolLog
+  isRunning?: boolean
 }
 
 function RunSavedCode({
   log,
+  isRunning,
 }: Props) {
   if (log.tool_name !== ToolName.RunSavedCode) throw new Error(`'${log.tool_name}': This component supports only logs for '${ToolName.WriteJavaScriptCode}' tool`)
 
@@ -30,6 +32,7 @@ function RunSavedCode({
 
   return (
     <Base
+      isRunning={isRunning}
       log={log}
       icon={<Code2 size="16px" />}
       body={body}

@@ -15,10 +15,16 @@ export interface StepEdit {
   output: string
 }
 
+export enum AgentRunState {
+  None,
+  Running,
+  Paused,
+}
+
 export interface Opts {
   onSteps: (steps: Step[]) => void
   onClose: () => void
-  onStateChange: (runState: deployment_state) => void
+  onStateChange: (runState: AgentRunState) => void
 }
 
 export class AgentRun {
@@ -55,27 +61,31 @@ export class AgentRun {
   async startRun(projectID: string, modelConfig: ModelConfig) {
     const { run_id } = await this.rpc.call('start', [projectID, modelConfig]) as { run_id: string }
     this.runID = run_id
-    this.opts.onStateChange(deployment_state.generating)
+    this.opts.onStateChange(AgentRunState.Running)
   }
 
   async pauseRun() {
     if (!this.runID) return
     await this.rpc.call('pause')
+    this.opts.onStateChange(AgentRunState.Paused)
   }
 
   async resumeRun() {
     if (!this.runID) return
     await this.rpc.call('resume')
+    this.opts.onStateChange(AgentRunState.Running)
   }
 
   async cancelRun() {
     if (!this.runID) return
     await this.rpc.call('cancel')
+    this.opts.onStateChange(AgentRunState.None)
   }
 
   async rewriteRunSteps(steps: Step[]) {
     if (!this.runID) return
     await this.rpc.call('rewrite_steps', [steps])
+    this.opts.onStateChange(AgentRunState.Running)
   }
 
   static resolveStepsEdit(steps: Step[], edit: StepEdit): Step[] | undefined {

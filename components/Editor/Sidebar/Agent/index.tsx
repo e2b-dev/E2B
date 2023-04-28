@@ -1,7 +1,6 @@
 import { useState } from 'react'
 // import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
-import { deployment_state } from '@prisma/client'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
@@ -11,7 +10,7 @@ import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { getMissingCreds } from 'state/model'
 import { useStateStore } from 'state/StoreProvider'
 import Button from 'components/Button'
-import { AgentRun, Step, StepEdit } from 'api-client/AgentRun'
+import { AgentRun, AgentRunState, Step, StepEdit } from 'api-client/AgentRun'
 
 import StepsStream from './StepsStream'
 import AgentRunControls from './AgentRunControls'
@@ -32,7 +31,7 @@ const tabsProps = {
 
 export interface Props {
   steps?: Step[]
-  agentState?: deployment_state
+  agentState?: AgentRunState
   run: () => void
   agentRun?: AgentRun
 }
@@ -166,7 +165,7 @@ function Agent({
         <StepsStream
           onEdit={onEdit}
           steps={steps}
-          isDeployRequestRunning={agentState === deployment_state.generating}
+          isRunning={agentState === AgentRunState.Running}
         />
       }
       {selectedTab === 1 && steps &&

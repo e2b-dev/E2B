@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, MouseEvent } from 'react'
 import clsx from 'clsx'
-import TextareaAutosize from 'react-textarea-autosize'
 import { Check, X } from 'lucide-react'
 
 import { LogType, ToolName, } from 'db/types'
@@ -10,11 +9,11 @@ import Text from 'components/Text'
 import { Step } from 'api-client/AgentRun'
 import { notEmpty } from 'utils/notEmpty'
 
-
 export interface Props {
   step: Step
   onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
   stepIdx: number
+  isRunning?: boolean
   onEditFinish: (output: string) => void
 }
 
@@ -22,6 +21,7 @@ function StepEditor({
   step,
   onAnswer,
   stepIdx,
+  isRunning,
   onEditFinish,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false)
@@ -68,7 +68,6 @@ function StepEditor({
 
   return (
     <div
-      onClick={() => setIsEditing(e => true)}
       className="
       flex
       flex-col
@@ -139,13 +138,13 @@ function StepEditor({
         className="
           flex
           flex-col
-          cursor-text
           relative
-          transition-all
+          h-full
+          w-full
         "
       >
         {isEditing &&
-          <TextareaAutosize
+          <textarea
             autoCapitalize="off"
             autoComplete="off"
             autoCorrect="off"
@@ -164,38 +163,44 @@ function StepEditor({
                 z-40
                 border
                 leading-[16px]
+                transition-all
                 tracking-normal
                 font-sans
-                bg-slate-50
                 rounded
+                resize-none
+                border-dashed
                 border-slate-300
-                border-l-4
-                p-3
+                pl-3
+                py-4
+                pr-2
                 `,
               'text-slate-500',
-              'no-scroller',
+              'scroller',
               'outline-none',
             )}
           />
         }
         <div
           className={clsx(`
-        flex
-        flex-col
-        space-y-4
-        `,
+          flex
+          flex-col
+          space-y-4
+          `,
             { 'invisible': isEditing },
           )}
         >
           {trimmedLogs.map((l, i) =>
             <div
+              onClick={() => setIsEditing(true)}
               key={i}
               className="
-            flex
-            flex-col
+              cursor-text
+              flex
+              flex-col
           "
             >
               <LogEntry
+                isRunning={isRunning}
                 onAnswer={onAnswer}
                 log={l}
               />

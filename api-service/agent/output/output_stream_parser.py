@@ -73,12 +73,12 @@ class OutputStreamParser:
         self,
         tool_names: List[str],
         steps: List[Step] = [],
-        buffered_step: Step = Step(output="", logs=[]),
+        buffered_step=Step(output="", logs=[]),
     ) -> None:
         self._tool_names = tool_names
-
+        self.id = uuid.uuid4()
         # All "finished" logs that the parser saved.
-        self._steps = steps
+        self._steps = steps[:]
 
         self._token_buffer: str = buffered_step["output"]
 

@@ -1,31 +1,28 @@
 import { useCallback, useState } from 'react'
-import { deployment_state } from '@prisma/client'
 
-import { AgentRun, Step } from 'api-client/AgentRun'
+import { AgentRun, AgentRunState, Step } from 'api-client/AgentRun'
 import { ModelConfig } from 'state/model'
 import { baseUrl } from 'api-client/api'
 
 function useAgentRun() {
   const [agentRun, setAgentRun] = useState<AgentRun>()
   const [steps, setSteps] = useState<Step[]>()
-  const [agentState, setAgentState] = useState<deployment_state>()
+  const [agentState, setAgentState] = useState<AgentRunState>()
 
   const start = useCallback(async (projectID: string, modelConfig: ModelConfig) => {
     const run = new AgentRun(`${baseUrl}/dev/agent`, {
       onSteps: setSteps,
       onStateChange: setAgentState,
-      onClose: () => setAgentRun(undefined),
+      onClose: () => {
+        setAgentRun(undefined)
+        setAgentState(undefined)
+      },
     })
 
     setSteps([])
     setAgentRun(run)
     await run.connect()
-    try {
-      await run.startRun(projectID, modelConfig)
-    } catch (error) {
-      setAgentState(deployment_state.error)
-      console.error(error)
-    }
+    await run.startRun(projectID, modelConfig)
   }, [setAgentRun, setSteps, setAgentState])
 
   return {

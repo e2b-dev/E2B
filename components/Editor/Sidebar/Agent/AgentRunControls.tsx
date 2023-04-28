@@ -1,13 +1,12 @@
-import { deployment_state } from '@prisma/client'
-import { ReactNode, memo, useState, useMemo, useCallback, useEffect } from 'react'
+import { ReactNode, memo, useMemo, useCallback } from 'react'
 import { Ban, Pause, Play } from 'lucide-react'
 
 import Button from 'components/Button'
-import { AgentRun } from 'api-client/AgentRun'
+import { AgentRun, AgentRunState } from 'api-client/AgentRun'
 
 
 export interface Props {
-  agentState?: deployment_state
+  agentState?: AgentRunState
   run: () => void
   agentRun?: AgentRun
   disabled?: boolean
@@ -19,61 +18,44 @@ function AgentRunControls({
   agentState,
   run,
 }: Props) {
-  const [isPaused, setIsPaused] = useState(false)
-
-  useEffect(function resetRun() {
-    if (agentRun) {
-      setIsPaused(false)
-    }
-  }, [agentRun])
-
   const cancel = useCallback(async () => {
     await agentRun?.cancelRun()
-    setIsPaused(false)
   }, [agentRun])
 
   const pause = useCallback(async () => {
     await agentRun?.pauseRun()
-    setIsPaused(true)
-  }, [agentRun, setIsPaused])
+  }, [agentRun])
 
   const resume = useCallback(async () => {
     await agentRun?.resumeRun()
-    setIsPaused(false)
-  }, [agentRun, setIsPaused])
+  }, [agentRun])
 
   const { action, icon, text } = useMemo<{
     text: string
     icon: ReactNode | null
     action: () => void
   }>(() => {
-    if (agentRun) {
-      switch (agentState) {
-        case deployment_state.generating:
-          if (isPaused) {
-            return {
-              text: 'Resume',
-              icon: <Play size="16px" />,
-              action: resume,
-            }
-          } else {
-            return {
-              text: 'Running',
-              icon: <Pause size="16px" />,
-              action: pause,
-            }
-          }
-        case deployment_state.error:
-        case deployment_state.finished:
-        default:
-      }
+    switch (agentState) {
+      case AgentRunState.Running:
+        return {
+          text: 'Running',
+          icon: <Pause size="16px" />,
+          action: pause,
+        }
+      case AgentRunState.Paused:
+        return {
+          text: 'Resume',
+          icon: <Play size="16px" />,
+          action: resume,
+        }
+      default:
+        return {
+          icon: <Play size="16px" />,
+          text: 'Run',
+          action: run,
+        }
     }
-    return {
-      icon: <Play size="16px" />,
-      text: 'Run',
-      action: run,
-    }
-  }, [agentState, agentRun, isPaused, pause, run, resume])
+  }, [agentState, pause, run, resume])
 
   return (
     <>

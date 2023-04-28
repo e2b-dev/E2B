@@ -109,13 +109,11 @@ class AgentRun:
     ):
         async def change_state(state: DeploymentState) -> None:
             print(f"Run '{run_id}'", state.value, flush=True)
-            await self._notify("state_update", {"state": state.value})
             await db.upsert_deployment_state(
                 run_id=run_id,
                 project_id=project_id,
                 state=state,
             )
-            print("Changed state")
 
         playground = None
         await change_state(DeploymentState.Generating)
@@ -315,14 +313,16 @@ class AgentRun:
     async def cancel(self):
         print("Cancel agent run")
         self.canceled = True
-        self.llm_generation.cancel()
+        if self.llm_generation:
+            self.llm_generation.cancel()
         await self._close()
 
     async def rewrite_steps(self, steps: List[Step]):
         print("Rewrite agent run steps")
         await self.pause()
         self.rewriting_steps = True
-        self.llm_generation.cancel()
+        if self.llm_generation:
+            self.llm_generation.cancel()
         self._output_parser = OutputStreamParser(
             tool_names=self.tool_names,
             steps=steps[:-1],

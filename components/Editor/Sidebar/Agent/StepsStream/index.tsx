@@ -7,32 +7,34 @@ import StepEditor from './StepEditor'
 
 export interface Props {
   steps?: Step[]
+  isRunning?: boolean
   onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
-  isDeployRequestRunning?: boolean
   onEdit: (edit: StepEdit) => void
 }
 
 function StepsStream({
   steps,
   onAnswer,
-  isDeployRequestRunning,
+  isRunning,
   onEdit,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(function scrollLogs() {
     if (!ref.current) return
-    if (!isDeployRequestRunning) return
+    if (!isRunning) return
 
     ref.current.scrollIntoView({ behavior: 'smooth' })
-  }, [steps, isDeployRequestRunning])
+  }, [steps, isRunning])
 
   useEffect(function scrollLogs() {
     if (!ref.current) return
-    if (isDeployRequestRunning) return
+    if (isRunning) return
 
     ref.current.scrollIntoView({ behavior: 'auto' })
-  }, [steps, isDeployRequestRunning])
+  }, [steps, isRunning])
+
+  console.log('running', isRunning)
 
   return (
     <div
@@ -55,6 +57,7 @@ function StepsStream({
         <StepEditor
           onEditFinish={output => onEdit({ stepIdx: i, output })}
           step={s}
+          isRunning={isRunning}
           stepIdx={i}
           key={i}
           onAnswer={onAnswer}
