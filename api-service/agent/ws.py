@@ -1,10 +1,10 @@
 from typing import Any, Dict, List
 from fastapi import WebSocket
 
-from agent.base import AgentRun
+from agent.base import Agent
 
 
-class WebsocketAgentRun(AgentRun):
+class WebsocketAgentRun(Agent):
     jsonrpc_version = "2.0"
 
     def __init__(self, websocket: WebSocket, **kwargs):

@@ -23,7 +23,7 @@ const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({
   ws: true,
   secure: !isSecure,
   changeOrigin: true,
-  pathRewrite: { [`^${pathPrefix}`]: '' }, // remove prefix
+  // pathRewrite: { [`^${pathPrefix}`]: '' }, // remove prefix
 })
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {

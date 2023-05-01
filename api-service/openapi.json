@@ -5,15 +5,31 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/agent": {
       "post": {
-        "summary": "Generate",
-        "operationId": "generate_agent_post",
+        "summary": "Create Agent",
+        "operationId": "create_agent_agent_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GenerateBody"
+                "$ref": "#/components/schemas/AgentCreateBody"
               }
             }
           },
@@ -40,26 +56,182 @@
           }
         }
       }
+    },
+    "/agent/{id}/run": {
+      "post": {
+        "summary": "Run Agent",
+        "operationId": "run_agent_agent__id__run_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRunBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/{id}/run/{run_id}/status": {
+      "get": {
+        "summary": "Get Agent Run Status",
+        "operationId": "get_agent_run_status_agent__id__run__run_id__status_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            },
+            "name": "run_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/{id}/run/{run_id}/result": {
+      "get": {
+        "summary": "Get Agent Run Result",
+        "operationId": "get_agent_run_result_agent__id__run__run_id__result_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            },
+            "name": "run_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "GenerateBody": {
-        "title": "GenerateBody",
+      "AgentCreateBody": {
+        "title": "AgentCreateBody",
         "required": [
-          "project_id",
-          "model_config"
+          "model_config",
+          "deploy_config"
         ],
         "type": "object",
         "properties": {
-          "project_id": {
-            "title": "Project Id",
-            "type": "string"
-          },
           "model_config": {
             "$ref": "#/components/schemas/ModelConfig"
+          },
+          "deploy_config": {
+            "$ref": "#/components/schemas/DeployConfig"
           }
         }
+      },
+      "AgentRunBody": {
+        "title": "AgentRunBody",
+        "required": [
+          "instructions"
+        ],
+        "type": "object",
+        "properties": {
+          "instructions": {
+            "title": "Instructions",
+            "type": "string"
+          }
+        }
+      },
+      "DeployConfig": {
+        "title": "DeployConfig",
+        "type": "object",
+        "properties": {}
       },
       "HTTPValidationError": {
         "title": "HTTPValidationError",

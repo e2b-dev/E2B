@@ -32,7 +32,7 @@ class RewriteStepsException(Exception):
     pass
 
 
-class AgentRun:
+class Agent:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.should_pause = False
@@ -82,14 +82,14 @@ class AgentRun:
     def _create_prompt(model_config: ModelConfig, tools: List[BaseTool]):
         system_template = "\n\n".join(
             [
-                AgentRun._get_prompt_part(model_config.prompt, "system", "prefix"),
+                Agent._get_prompt_part(model_config.prompt, "system", "prefix"),
                 "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-                AgentRun._get_prompt_part(model_config.prompt, "system", "suffix"),
+                Agent._get_prompt_part(model_config.prompt, "system", "suffix"),
             ]
         )
         human_template = "\n\n".join(
             [
-                AgentRun._get_prompt_part(model_config.prompt, "user", "prefix"),
+                Agent._get_prompt_part(model_config.prompt, "user", "prefix"),
                 # "{agent_scratchpad}",
             ]
         )
