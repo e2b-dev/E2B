@@ -31,11 +31,11 @@
     "dev:api-service:debug-without-launch": "npx concurrently -p none \"next dev\" \"npm run start:playground\"",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
-    "supabase:generate": "supabase gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
+    "supabase:generate": "npx --yes supabase@1.46.5 gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
     "postinstall": "npm run db:generate",
-    "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta,deno-relay,pgadmin-schema-diff,vector,migra",
-    "db:stop": "npx --yes supabase stop",
-    "db:reset": "npx --yes supabase db reset",
+    "db:start": "npx --yes supabase@1.46.5 start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta,deno-relay,pgadmin-schema-diff,vector,migra",
+    "db:stop": "npx --yes supabase@1.46.5 stop",
+    "db:reset": "npx --yes supabase@1.46.5 db reset",
     "vale:sync": "vale sync"
   },
   "dependencies": {
