@@ -1,16 +1,16 @@
 import { useCallback, useState } from 'react'
 
-import { AgentRun, AgentRunState, Step } from 'api-client/AgentRun'
+import { AgentConnection, AgentRunState, Step } from 'api-client/AgentConnection'
 import { ModelConfig } from 'state/model'
 import { baseUrl } from 'api-client/api'
 
 function useAgentRun() {
-  const [agentRun, setAgentRun] = useState<AgentRun>()
+  const [agentRun, setAgentRun] = useState<AgentConnection>()
   const [steps, setSteps] = useState<Step[]>()
   const [agentState, setAgentState] = useState<AgentRunState>()
 
   const start = useCallback(async (projectID: string, modelConfig: ModelConfig) => {
-    const run = new AgentRun(`${baseUrl}/dev/agent`, {
+    const run = new AgentConnection(`${baseUrl}/dev/agent`, {
       onSteps: setSteps,
       onStateChange: setAgentState,
       onClose: () => {
@@ -22,7 +22,7 @@ function useAgentRun() {
     setSteps([])
     setAgentRun(run)
     await run.connect()
-    await run.startRun(projectID, modelConfig)
+    await run.start(projectID, modelConfig)
   }, [setAgentRun, setSteps, setAgentState])
 
   return {

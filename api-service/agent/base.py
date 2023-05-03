@@ -1,5 +1,7 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Literal
+from abc import abstractmethod, ABC
+from typing import Coroutine, Dict, Literal, Optional, Callable
+
+from pydantic import BaseModel, Json
 
 
 # The schema for agent config and interaction data is serializable and
@@ -10,40 +12,44 @@ from typing import Dict, Literal
 # that then be deployed on our platform.
 
 # For local testing there can be a CLI that takes the implementation of AgentBase class
-# and just starts the server and exposes exposes the functionality with a premade web UI where you can test the agent immediately.
+# and just starts the server and exposes the functionality with a premade web UI where you can test the agent immediately.
 
 # Later we can start supporting other ways to generate the server, for example a gRPC or WS server.
 # This is orthogonal to the environment where the agent is deployed.
-# The agent can still can be deployed as a Python task, in a Firecracker VM, as a docker container, etc.
+# The agent can still be deployed as a Python task, in a Firecracker VM, as a docker container, etc.
 
 
-JsonValue = None | int | str | bool
-JsonType = None | Dict[str, JsonValue | "JsonType"]
+DataType = Dict[str, Json]
 
 
-class AgentLog:
-    type: Literal["log", "error", "output"]
+class AgentLog(BaseModel):
+    type: Literal["log", "error", "output"] | str
     timestamp: str
-    data: JsonType
+    data: DataType
 
 
-AgentConfig = JsonType
+class AgentInteraction(BaseModel):
+    interaction_id: Optional[str] = None
+    type: str
+    data: DataType
 
 
-class AgentInteraction:
+class AgentInteractionResponse(BaseModel):
+    data: DataType
+
+
+class AgentInteractionRequest(BaseModel):
     interaction_id: str
     type: str
-    data: JsonType
+    data: DataType
 
 
-class AgentInteractionResponse:
-    data: JsonType
-
-
-class AgentInteractionRequest:
-    interaction_id: str
-    type: str
-    data: JsonType
+class AgentConfig(BaseModel):
+    data: Optional[DataType] = None
+    on_log: Callable[[AgentLog], Coroutine[None, None, None]]
+    on_interaction_request: Callable[
+        [AgentInteractionRequest], Coroutine[None, None, None]
+    ]
 
 
 class AgentBase(ABC):
@@ -59,12 +65,12 @@ class AgentBase(ABC):
 
     @classmethod
     @abstractmethod
-    def create(cls, config: AgentConfig) -> "AgentBase":
+    async def create(cls, config: AgentConfig) -> "AgentBase":
         """Create an agent with the given config without starting it."""
         pass
 
     @abstractmethod
-    async def start(self):
+    async def start(self, data: DataType | None = None):
         """Start the agent. Started agent can immediately be interacting with the the world."""
         pass
 
@@ -74,16 +80,13 @@ class AgentBase(ABC):
         pass
 
     @abstractmethod
+    async def get_interactions(self):
+        """Return a list of interactions that the agent can handle and that can be requested."""
+        pass
+
+    @abstractmethod
     async def interaction(
         self,
         interaction: AgentInteraction,
     ) -> AgentInteractionResponse:
-        pass
-
-    @abstractmethod
-    async def handle_log(self, log: AgentLog):
-        pass
-
-    @abstractmethod
-    async def handle_interaction_request(self, request: AgentInteractionRequest):
         pass

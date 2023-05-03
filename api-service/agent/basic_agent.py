@@ -3,6 +3,8 @@ import uuid
 
 from abc import abstractmethod
 from typing import Any, Dict, List, Literal, cast
+
+from agent.base import AgentInteraction
 from agent.output.parse_output import ToolLog
 from agent.output.output_stream_parser import OutputStreamParser, Step
 from agent.output.token_callback_handler import TokenCallbackHandler
@@ -24,7 +26,7 @@ from langchain.agents.tools import InvalidTool
 from agent.tools.base import create_tools
 from database.database import DeploymentState
 from models.base import ModelConfig, PromptPart, get_model
-from agent.base import AgentBase
+from agent.base import AgentBase, AgentConfig
 from database import db
 from session import NodeJSPlayground
 
@@ -33,14 +35,21 @@ class RewriteStepsException(Exception):
     pass
 
 
-class SimpleAgent(AgentBase):
-    def __init__(self, config: ModelConfig):
+class BasicAgent(AgentBase):
+    def __init__(self, config: AgentConfig):
+        super().__init__()
         self.config = config
         self.should_pause = False
         self.canceled = False
         self.rewriting_steps = False
         self.llm_generation = None
         self.can_resume = asyncio.Event()
+
+    @classmethod
+    async def create(cls, config: AgentConfig):
+        c = cls(config=config)
+        print("init")
+        return c
 
     @staticmethod
     async def _run_tool(
@@ -83,14 +92,14 @@ class SimpleAgent(AgentBase):
     def _create_prompt(model_config: ModelConfig, tools: List[BaseTool]):
         system_template = "\n\n".join(
             [
-                SimpleAgent._get_prompt_part(model_config.prompt, "system", "prefix"),
+                BasicAgent._get_prompt_part(model_config.prompt, "system", "prefix"),
                 "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-                SimpleAgent._get_prompt_part(model_config.prompt, "system", "suffix"),
+                BasicAgent._get_prompt_part(model_config.prompt, "system", "suffix"),
             ]
         )
         human_template = "\n\n".join(
             [
-                SimpleAgent._get_prompt_part(model_config.prompt, "user", "prefix"),
+                BasicAgent._get_prompt_part(model_config.prompt, "user", "prefix"),
                 "{agent_scratchpad}",
             ]
         )
@@ -306,25 +315,36 @@ class SimpleAgent(AgentBase):
         )
         return {"run_id": self.run_id}
 
-    async def pause(self):
+    async def interaction(self, interaction: AgentInteraction):
+        print("Agent interaction")
+        if interaction.type == "pause":
+            await self._pause()
+        elif interaction.type == "resume":
+            await self._resume()
+        elif interaction.type == "rewrite_steps":
+            await self._rewrite_steps(interaction.data["steps"])
+        else:
+            raise Exception(f"Unknown interaction action: {interaction.type}")
+
+    async def _pause(self):
         print("Pause agent run")
         self.should_pause = True
 
-    async def resume(self):
+    async def _resume(self):
         print("Resume agent run")
         self.should_pause = False
         self.can_resume.set()
 
-    async def cancel(self):
+    async def stop(self):
         print("Cancel agent run")
         self.canceled = True
         if self.llm_generation:
             self.llm_generation.cancel()
         await self._close()
 
-    async def rewrite_steps(self, steps: List[Step]):
+    async def _rewrite_steps(self, steps: List[Step]):
         print("Rewrite agent run steps")
-        await self.pause()
+        await self._pause()
         self.rewriting_steps = True
         if self.llm_generation:
             self.llm_generation.cancel()
@@ -335,4 +355,4 @@ class SimpleAgent(AgentBase):
             steps=steps[:-1],
             buffered_step=steps[-1],
         )
-        await self.resume()
+        await self._resume()

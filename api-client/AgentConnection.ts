@@ -27,7 +27,7 @@ export interface Opts {
   onStateChange: (runState: AgentRunState) => void
 }
 
-export class AgentRun {
+export class AgentConnection {
   private readonly rpc = new RpcWebSocketClient()
   runID?: string
 
@@ -43,48 +43,58 @@ export class AgentRun {
   async disconnect() {
     console.log('closing')
     // This is the browser WebSocket way of closing connection
+    // TODO: Test this connection closing
     this.rpc.ws?.close()
   }
 
   private handleNotification(data: IRpcNotification) {
-    if (data.method === 'steps') {
-      return this.opts.onSteps(data.params.steps)
-    }
-    if (data.method === 'state_update') {
-      this.opts.onStateChange(data.params.state)
-      if (data.params.state === deployment_state.finished) {
-        this.disconnect()
+    if (data.method === 'logs') {
+      if (data.params.logs) {
+        this.opts.onSteps(data.params.logs)
+      }
+      // return this.opts.onSteps(data.params.steps)
+      if (data.params.state) {
+        this.opts.onStateChange(data.params.state)
+        if (data.params.state === deployment_state.finished) {
+          this.disconnect()
+        }
       }
     }
   }
 
-  async startRun(projectID: string, modelConfig: ModelConfig) {
-    const { run_id } = await this.rpc.call('start', [projectID, modelConfig]) as { run_id: string }
+  async start(projectID: string, modelConfig: ModelConfig) {
+    const { run_id } = await this.rpc.call('start', {
+      'project_id': projectID,
+      'model_config': modelConfig,
+    }) as { run_id: string }
+
     this.runID = run_id
     this.opts.onStateChange(AgentRunState.Running)
   }
 
-  async pauseRun() {
+  private async interaction(type: string, data?: any) {
     if (!this.runID) return
-    await this.rpc.call('pause')
+    await this.rpc.call('interaction', { type, data })
+  }
+
+  async pauseRun() {
+    await this.interaction('pause')
     this.opts.onStateChange(AgentRunState.Paused)
   }
 
   async resumeRun() {
-    if (!this.runID) return
-    await this.rpc.call('resume')
+    await this.interaction('resume')
     this.opts.onStateChange(AgentRunState.Running)
   }
 
   async cancelRun() {
     if (!this.runID) return
-    await this.rpc.call('cancel')
+    await this.rpc.call('stop')
     this.opts.onStateChange(AgentRunState.None)
   }
 
   async rewriteRunSteps(steps: Step[]) {
-    if (!this.runID) return
-    await this.rpc.call('rewrite_steps', [steps])
+    await this.interaction('rewrite_steps', { steps })
     this.opts.onStateChange(AgentRunState.Running)
   }
 

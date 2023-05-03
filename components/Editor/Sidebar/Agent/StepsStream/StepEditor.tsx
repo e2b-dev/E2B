@@ -6,7 +6,7 @@ import { LogType, ToolName, } from 'db/types'
 
 import LogEntry from '../LogEntry'
 import Text from 'components/Text'
-import { Step } from 'api-client/AgentRun'
+import { Step } from 'api-client/AgentConnection'
 import { notEmpty } from 'utils/notEmpty'
 
 export interface Props {

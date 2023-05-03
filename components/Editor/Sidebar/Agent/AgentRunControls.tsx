@@ -2,13 +2,13 @@ import { ReactNode, memo, useMemo, useCallback } from 'react'
 import { Ban, Pause, Play } from 'lucide-react'
 
 import Button from 'components/Button'
-import { AgentRun, AgentRunState } from 'api-client/AgentRun'
+import { AgentConnection, AgentRunState } from 'api-client/AgentConnection'
 
 
 export interface Props {
   agentState?: AgentRunState
   run: () => void
-  agentRun?: AgentRun
+  agentRun?: AgentConnection
   disabled?: boolean
 }
 

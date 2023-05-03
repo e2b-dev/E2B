@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import { ToolName, } from 'db/types'
-import { Step, StepEdit } from 'api-client/AgentRun'
+import { Step, StepEdit } from 'api-client/AgentConnection'
 
 import StepEditor from './StepEditor'
 

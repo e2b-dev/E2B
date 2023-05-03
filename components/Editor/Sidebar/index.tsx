@@ -5,7 +5,7 @@ import { useStateStore } from 'state/StoreProvider'
 import { getModelArgs } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { evaluatePrompt } from 'state/prompt'
-import { Step } from 'api-client/AgentRun'
+import { Step } from 'api-client/AgentConnection'
 import useAgentRun from 'hooks/useAgentRun'
 
 import Agent from './Agent'

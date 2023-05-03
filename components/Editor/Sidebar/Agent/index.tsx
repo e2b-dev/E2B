@@ -10,7 +10,7 @@ import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { getMissingCreds } from 'state/model'
 import { useStateStore } from 'state/StoreProvider'
 import Button from 'components/Button'
-import { AgentRun, AgentRunState, Step, StepEdit } from 'api-client/AgentRun'
+import { AgentConnection, AgentRunState, Step, StepEdit } from 'api-client/AgentConnection'
 
 import StepsStream from './StepsStream'
 import AgentRunControls from './AgentRunControls'
@@ -33,7 +33,7 @@ export interface Props {
   steps?: Step[]
   agentState?: AgentRunState
   run: () => void
-  agentRun?: AgentRun
+  agentRun?: AgentConnection
 }
 
 function Agent({
@@ -76,7 +76,7 @@ function Agent({
 
   async function onEdit(edit: StepEdit) {
     if (!steps || !agentRun) return
-    const editedSteps = AgentRun.resolveStepsEdit(steps, edit)
+    const editedSteps = AgentConnection.resolveStepsEdit(steps, edit)
     if (!editedSteps) return
     await agentRun.rewriteRunSteps(editedSteps)
   }
