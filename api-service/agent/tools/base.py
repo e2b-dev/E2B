@@ -8,7 +8,6 @@ from .playground.tools.code import create_code_tools
 
 
 def create_tools(
-    run_id: str,
     playground: NodeJSPlayground,
 ) -> Generator[BaseTool, None, None]:
     # Ensure that the function is a generator even if no tools are yielded
@@ -28,5 +27,5 @@ def create_tools(
     )
     yield from playground_tools
 
-    human_tools = create_human_tools(run_id, playground)
+    human_tools = create_human_tools()
     yield from human_tools

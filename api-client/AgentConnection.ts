@@ -29,7 +29,6 @@ export interface Opts {
 
 export class AgentConnection {
   private readonly rpc = new RpcWebSocketClient()
-  runID?: string
 
   constructor(private readonly url: string, private readonly opts: Opts) {
     this.rpc.onNotification.push(this.handleNotification.bind(this))
@@ -63,17 +62,15 @@ export class AgentConnection {
   }
 
   async start(projectID: string, modelConfig: ModelConfig) {
-    const { run_id } = await this.rpc.call('start', {
+    await this.rpc.call('start', {
       'project_id': projectID,
       'model_config': modelConfig,
-    }) as { run_id: string }
+    })
 
-    this.runID = run_id
     this.opts.onStateChange(AgentRunState.Running)
   }
 
   private async interaction(type: string, data?: any) {
-    if (!this.runID) return
     await this.rpc.call('interaction', { type, data })
   }
 
@@ -88,7 +85,6 @@ export class AgentConnection {
   }
 
   async cancelRun() {
-    if (!this.runID) return
     await this.rpc.call('stop')
     this.opts.onStateChange(AgentRunState.None)
   }

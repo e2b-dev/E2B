@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 
 from abc import abstractmethod
 from typing import Any, Dict, List, Literal, cast
@@ -24,7 +23,6 @@ from langchain.prompts.chat import (
 from langchain.agents.tools import InvalidTool
 
 from agent.tools.base import create_tools
-from database.database import DeploymentState
 from models.base import ModelConfig, PromptPart, get_model
 from agent.base import AgentBase, AgentConfig
 from database import db
@@ -117,20 +115,10 @@ class BasicAgent(AgentBase):
 
     async def _run(
         self,
-        run_id: str,
         project_id: str,
         model_config: ModelConfig,
     ):
-        async def change_state(state: DeploymentState) -> None:
-            print(f"Run '{run_id}'", state.value, flush=True)
-            await db.upsert_deployment_state(
-                run_id=run_id,
-                project_id=project_id,
-                state=state,
-            )
-
         playground = None
-        await change_state(DeploymentState.Generating)
         try:
             # -----
             # Initialize callback manager and handler for controlling token stream
@@ -142,12 +130,7 @@ class BasicAgent(AgentBase):
             # Create tools
             # Create playground for code tools
             playground = NodeJSPlayground(get_envs=lambda: db.get_env_vars(project_id))
-            tools = list(
-                create_tools(
-                    run_id=run_id,
-                    playground=playground,
-                )
-            )
+            tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]
             tool_map = {tool.name: tool for tool in tools}
 
@@ -166,20 +149,12 @@ class BasicAgent(AgentBase):
             # -----
             # Create log handlers
             # Used for sending logs to db/frontend without blocking
-            ws_streamer = WorkQueue[List[Step]](
-                on_workload=lambda steps: self._notify("steps", {"steps": steps})
-            )
-            db_streamer = WorkQueue[List[Step]](
-                on_workload=lambda steps: db.upsert_deployment_steps(
-                    run_id=self.run_id,
-                    steps=steps,
-                    project_id=project_id,
-                )
+            steps_streamer = WorkQueue[List[Step]](
+                on_workload=lambda steps: self.config.on_log({"logs": steps})
             )
 
             def stream_steps(steps: List[Step]):
-                db_streamer.schedule(steps)
-                ws_streamer.schedule(steps)
+                steps_streamer.schedule(steps)
 
             # Used for parsing token stream into logs+actions
             self._output_parser = OutputStreamParser(tool_names=self.tool_names)
@@ -189,7 +164,6 @@ class BasicAgent(AgentBase):
             def get_agent_scratchpad():
                 steps = self._output_parser.get_steps()
 
-                print("stps >><<", steps)
                 if (
                     len(steps) == 0
                     or len(steps) == 1
@@ -273,14 +247,12 @@ class BasicAgent(AgentBase):
                     print("REWRITING")
                     continue
 
-            await change_state(DeploymentState.Finished)
         except:
-            await change_state(DeploymentState.Error)
             raise
         finally:
             if playground is not None:
                 playground.close()
-            await self._close()
+            await self.config.on_close()
 
     async def _check_interrupt(self):
         if self.canceled:
@@ -294,26 +266,15 @@ class BasicAgent(AgentBase):
             self.rewriting_steps = False
             raise RewriteStepsException()
 
-    @abstractmethod
-    async def _notify(self, method: str, params: Dict[str, Any]):
-        pass
-
-    @abstractmethod
-    async def _close():
-        pass
-
     async def start(self, project_id: str, model_config: Dict[str, Any]):
         print("Start agent run")
         self.project_id = project_id
-        self.run_id = str(uuid.uuid4())
         asyncio.create_task(
             self._run(
-                run_id=self.run_id,
                 project_id=project_id,
                 model_config=ModelConfig(**model_config),
             )
         )
-        return {"run_id": self.run_id}
 
     async def interaction(self, interaction: AgentInteraction):
         print("Agent interaction")
@@ -340,7 +301,7 @@ class BasicAgent(AgentBase):
         self.canceled = True
         if self.llm_generation:
             self.llm_generation.cancel()
-        await self._close()
+        await self.config.on_close()
 
     async def _rewrite_steps(self, steps: List[Step]):
         print("Rewrite agent run steps")

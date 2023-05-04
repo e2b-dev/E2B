@@ -1284,6 +1284,20 @@ files = [
 ]
 
 [[package]]
+name = "pybars3"
+version = "0.9.7"
+description = "Handlebars.js templating for Python 3 and 2"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pybars3-0.9.7.tar.gz", hash = "sha256:6ac847e905e53b9c5b936af112c910475e27bf767f79f4528c16f9af1ec0e252"},
+]
+
+[package.dependencies]
+PyMeta3 = ">=0.5.1"
+
+[[package]]
 name = "pydantic"
 version = "1.10.7"
 description = "Data validation and settings management using python type hints"
@@ -1335,6 +1349,17 @@ typing-extensions = ">=4.2.0"
 [package.extras]
 dotenv = ["python-dotenv (>=0.10.4)"]
 email = ["email-validator (>=1.0.3)"]
+
+[[package]]
+name = "pymeta3"
+version = "0.5.1"
+description = "Pattern-matching language based on OMeta for Python 3 and 2"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "PyMeta3-0.5.1.tar.gz", hash = "sha256:18bda326d9a9bbf587bfc0ee0bc96864964d78b067288bcf55d4d98681d05bcb"},
+]
 
 [[package]]
 name = "pytest"
@@ -2100,4 +2125,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "8100077e4dde43817d31746c514de965d5bc31ff8a297d64c61519edd03b197b"
+content-hash = "dae29ad8349fd512858c5f27e2de61b03415a7a560d32f610824ed54e453f3b2"

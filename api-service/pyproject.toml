@@ -20,6 +20,7 @@ anthropic = "^0.2.6"
 langchain = "^0.0.141"
 banana-dev = "4.0.2"
 fastapi = "^0.95.1"
+pybars3 = "^0.9.7"
 
 [tool.poetry.group.dev]
 optional = true

@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from typing import Coroutine, Dict, Literal, Optional, Callable
+from typing import Any, Coroutine, Dict, Literal, Optional, Callable
 
 from pydantic import BaseModel, Json
 
@@ -44,12 +44,21 @@ class AgentInteractionRequest(BaseModel):
     data: DataType
 
 
-class AgentConfig(BaseModel):
-    data: Optional[DataType] = None
-    on_log: Callable[[AgentLog], Coroutine[None, None, None]]
-    on_interaction_request: Callable[
-        [AgentInteractionRequest], Coroutine[None, None, None]
-    ]
+class AgentConfig:
+    def __init__(
+        self,
+        data: DataType,
+        on_log: Callable[[AgentLog], Coroutine[None, None, None]],
+        on_interaction_request: Callable[
+            [AgentInteractionRequest], Coroutine[None, None, None]
+        ],
+        on_close: Callable[[], Coroutine[None, None, None]],
+    ):
+        self.data = data
+        self.on_log = on_log
+        self.data = data
+        self.on_interaction_request = on_interaction_request
+        self.on_close = on_close
 
 
 class AgentBase(ABC):

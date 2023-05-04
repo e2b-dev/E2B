@@ -38,18 +38,21 @@ async def ws_agent_run(websocket: WebSocket):
         await connector.close()
 
 
-@app.post("/agent")
-async def create_agent(body: AgentConfig):
-    deployment = await deployment_manager.create_deployment(body)
+@app.post("/deployment")
+async def create_agent_deployment(body: AgentConfig, project_id: str):
+    deployment = await deployment_manager.create_deployment(
+        body,
+        project_id=project_id,
+    )
     return {"id": deployment.id}
 
 
-class AgentStatusBody(BaseModel):
+class AgentDeploymentStatusBody(BaseModel):
     status: Literal["running", "stopped"]
 
 
-@app.put("/agent/{id}/status")
-async def change_agent_status(id: str, body: AgentStatusBody):
+@app.put("/deployment/{id}/status")
+async def change_agent_deployment_status(id: str, body: AgentDeploymentStatusBody):
     deployment = await deployment_manager.get_deployment(id)
     if body.status == "running":
         await deployment.start()
@@ -57,14 +60,14 @@ async def change_agent_status(id: str, body: AgentStatusBody):
         await deployment.stop()
 
 
-@app.post("/agent/{id}/interaction")
-async def interact_with_agent(id: str, body: AgentInteraction):
+@app.post("/deployment/{id}/interaction")
+async def interact_with_agent_deployment(id: str, body: AgentInteraction):
     deployment = await deployment_manager.get_deployment(id)
     result = await deployment.agent.interaction(body)
     return result
 
 
-@app.get("/agent/{id}/status")
-async def get_agent_status(id: str):
+@app.get("/deployment/{id}/status")
+async def get_agent__deployment_status(id: str):
     deployment = await deployment_manager.get_deployment(id)
     return {"status": deployment.status}

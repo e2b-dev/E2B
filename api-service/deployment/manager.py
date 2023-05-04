@@ -34,7 +34,7 @@ class AgentDeploymentManager(BaseModel):
     """
 
     @abstractmethod
-    async def create_deployment(self, config: AgentConfig) -> AgentDeployment:
+    async def create_deployment(self, config: AgentConfig, **kwargs) -> AgentDeployment:
         pass
 
     @abstractmethod
