@@ -28,16 +28,14 @@
     "stop": "docker compose down && npm run db:stop",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "dev:next:debug": "cross-env NODE_OPTIONS='--inspect' next dev",
-    "dev:api-service:debug-without-launch": "npx concurrently -p none \"next dev\" \"npm run start:playground\"",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
+    "supabase:dump": "supabase db dump -f supabase/migrations/1680452567_name.sql",
     "supabase:generate": "supabase gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
     "postinstall": "npm run db:generate",
     "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta,deno-relay,pgadmin-schema-diff,vector,migra",
     "db:stop": "npx --yes supabase stop",
     "db:reset": "npx --yes supabase db reset",
-    "vale:sync": "vale sync",
     "generate:api-client": "openapi-typescript api-service/openapi.json --support-array-length --alphabetize --output api-client/api/schema.gen.ts"
   },
   "dependencies": {
