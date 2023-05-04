@@ -1,4 +1,3 @@
-from re import DEBUG
 import uuid
 
 from typing import Callable, Coroutine, Dict
@@ -23,16 +22,20 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
             id=str(uuid.uuid4()),
             agent=agent,
         )
-        await db.upsert_deployment(deployment.id, project_id)
+        try:
+            await db.upsert_deployment(deployment.id, project_id)
+        except:
+            await agent.stop()
+            raise
 
         self._deployments[deployment.id] = deployment
-
         return deployment
 
     async def remove_deployment(self, id: str):
         deployment = await self.get_deployment(id)
         await deployment.agent.stop()
         del self._deployments[deployment.id]
+        await db.upsert_deployment(deployment.id, enabled=False)
 
     async def get_deployment(self, id: str):
         return self._deployments[id]

@@ -17,9 +17,11 @@ class Database:
         id: str,
         project_id: str | None = None,
         logs: List[Step] | None = None,
+        enabled: bool | None = True,
     ) -> None:
         update: Dict[str, Any] = {
             "id": id,
+            "enabled": enabled,
         }
 
         if project_id:

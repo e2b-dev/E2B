@@ -3,6 +3,7 @@ import asyncio
 from abc import abstractmethod
 from typing import Any, Dict, List, Literal, cast
 
+
 from agent.base import AgentInteraction
 from agent.output.parse_output import ToolLog
 from agent.output.output_stream_parser import OutputStreamParser, Step
@@ -22,6 +23,7 @@ from langchain.prompts.chat import (
 )
 from langchain.agents.tools import InvalidTool
 
+from agent.base import AgentLog
 from agent.tools.base import create_tools
 from models.base import ModelConfig, PromptPart, get_model
 from agent.base import AgentBase, AgentConfig
@@ -150,7 +152,9 @@ class BasicAgent(AgentBase):
             # Create log handlers
             # Used for sending logs to db/frontend without blocking
             steps_streamer = WorkQueue[List[Step]](
-                on_workload=lambda steps: self.config.on_log({"logs": steps})
+                on_workload=lambda steps: self.config.on_logs(
+                    [AgentLog(data=step) for step in steps]
+                ),
             )
 
             def stream_steps(steps: List[Step]):

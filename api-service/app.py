@@ -11,7 +11,7 @@ from agent.json_rpc_connector import JsonRpcAgentConnector
 from agent.basic_agent import BasicAgent
 
 # TODO: Fix proxying - https://fastapi.tiangolo.com/advanced/behind-a-proxy/
-app = FastAPI(title="e2b-api-service")
+app = FastAPI(title="e2b-api")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,6 +21,9 @@ app.add_middleware(
 )
 
 deployment_manager = InMemoryDeploymentManager(agent_factory=BasicAgent.create)
+
+
+# TODO: Lifecycle - load and start all enabled deployments
 
 
 @app.websocket("/dev/agent")

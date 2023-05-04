@@ -260,6 +260,7 @@ model deployments {
   url        String?
   logs_raw   String?           @default("")
   config     Json?
+  enabled    Boolean           @default(false)
   projects   projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")

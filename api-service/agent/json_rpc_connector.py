@@ -78,12 +78,9 @@ class JsonRpcAgentConnector(BaseModel):
             await self.agent.stop()
 
     async def handle(self):
-        async def handle_log(logs: )
-
-        
         self.agent = await self.agent_factory(
             AgentConfig(
-                on_log=lambda project_id, log: self._notify("log", {"log": log}),
+                on_logs=lambda logs, project_id: self._notify("log", {"log": log}),
                 on_interaction_request=lambda request: self._notify(
                     "interaction_request", {"request": request}
                 ),

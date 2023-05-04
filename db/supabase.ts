@@ -13,6 +13,7 @@ export interface Database {
         Row: {
           config: Json | null
           created_at: string
+          enabled: boolean
           id: string
           logs: Json[] | null
           logs_raw: string | null
@@ -24,6 +25,7 @@ export interface Database {
         Insert: {
           config?: Json | null
           created_at?: string
+          enabled?: boolean
           id?: string
           logs?: Json[] | null
           logs_raw?: string | null
@@ -35,6 +37,7 @@ export interface Database {
         Update: {
           config?: Json | null
           created_at?: string
+          enabled?: boolean
           id?: string
           logs?: Json[] | null
           logs_raw?: string | null

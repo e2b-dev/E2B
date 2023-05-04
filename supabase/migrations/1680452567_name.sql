@@ -89,7 +89,8 @@ CREATE TABLE "public"."deployments" (
     "state" "public"."deployment_state",
     "url" "text",
     "logs_raw" "text" DEFAULT ''::"text",
-    "config" "jsonb"
+    "config" "jsonb",
+    "enabled" boolean DEFAULT false NOT NULL
 );
 
 ALTER TABLE ONLY "public"."deployments" REPLICA IDENTITY FULL;
