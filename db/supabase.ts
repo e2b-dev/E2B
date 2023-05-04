@@ -11,6 +11,7 @@ export interface Database {
     Tables: {
       deployments: {
         Row: {
+          config: Json | null
           created_at: string
           id: string
           logs: Json[] | null
@@ -21,6 +22,7 @@ export interface Database {
           url: string | null
         }
         Insert: {
+          config?: Json | null
           created_at?: string
           id?: string
           logs?: Json[] | null
@@ -31,6 +33,7 @@ export interface Database {
           url?: string | null
         }
         Update: {
+          config?: Json | null
           created_at?: string
           id?: string
           logs?: Json[] | null
@@ -45,6 +48,7 @@ export interface Database {
         Row: {
           created_at: string
           data: Json | null
+          development_logs: Json[] | null
           id: string
           name: string
           team_id: string
@@ -52,6 +56,7 @@ export interface Database {
         Insert: {
           created_at?: string
           data?: Json | null
+          development_logs?: Json[] | null
           id?: string
           name?: string
           team_id: string
@@ -59,6 +64,7 @@ export interface Database {
         Update: {
           created_at?: string
           data?: Json | null
+          development_logs?: Json[] | null
           id?: string
           name?: string
           team_id?: string

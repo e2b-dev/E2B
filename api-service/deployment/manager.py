@@ -5,11 +5,12 @@ from pydantic import BaseModel
 from agent.base import AgentBase, AgentConfig, AgentInteractionRequest
 
 
-class AgentDeployment(BaseModel):
-    id: str
-    agent: AgentBase
-    status: Literal["running", "stopped"] = "stopped"
-    interaction_requests: List[AgentInteractionRequest] = []
+class AgentDeployment:
+    def __init__(self, id: str, agent: AgentBase):
+        self.id = id
+        self.agent = agent
+        self.status: Literal["running", "stopped"] = "stopped"
+        self.interaction_requests: List[AgentInteractionRequest] = []
 
     async def start(self):
         await self.agent.start()
@@ -18,8 +19,6 @@ class AgentDeployment(BaseModel):
     async def stop(self):
         await self.agent.stop()
         self.status = "stopped"
-
-    
 
 
 class AgentDeploymentManager(BaseModel):

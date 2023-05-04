@@ -43,7 +43,6 @@ function Agent({
   run,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
-  // const client = useSupabaseClient<Database>()
   const tabsCss = useTabs(tabsProps)
   const [selectors] = useStateStore()
   const router = useRouter()
@@ -51,28 +50,6 @@ function Agent({
   const [creds] = useModelProviderArgs()
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const missingCreds = modelConfig ? getMissingCreds(modelConfig?.provider, creds) : []
-
-  // async function saveAnswer({
-  //   logID,
-  //   answer,
-  //   toolName,
-  // }: { logID: string, answer: string, toolName: ToolName }) {
-  //   if (!agentRun?.runID) return
-  //   if (!logs) return
-
-  //   const modifiedLogs = produce(logs, ls => {
-  //     const log = ls.find(l => l.id === logID)
-  //     if (log && log.type === LogType.Tool && log.tool_name === toolName) {
-  //       log.tool_output = answer
-  //     }
-  //   })
-
-  //   await client
-  //     .from(deploymentsTable)
-  //     .update({ logs: modifiedLogs as any })
-  //     .eq('id', agentRun.runID)
-  //     .single()
-  // }
 
   async function onEdit(edit: StepEdit) {
     if (!steps || !agentRun) return

@@ -102,7 +102,6 @@ model refresh_tokens {
   @@index([instance_id, user_id])
   @@index([parent])
   @@index([session_id, revoked])
-  @@index([token])
   @@schema("auth")
 }
 
@@ -260,19 +259,21 @@ model deployments {
   state      deployment_state?
   url        String?
   logs_raw   String?           @default("")
+  config     Json?
   projects   projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }
 
 model projects {
-  id          String        @id(map: "ai_api_pkey") @default("")
-  created_at  DateTime      @default(now()) @db.Timestamptz(6)
-  data        Json?
-  team_id     String        @db.Uuid
-  name        String        @default("")
-  deployments deployments[]
-  teams       teams         @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               String        @id(map: "ai_api_pkey") @default("")
+  created_at       DateTime      @default(now()) @db.Timestamptz(6)
+  data             Json?
+  team_id          String        @db.Uuid
+  name             String        @default("")
+  development_logs Json[]
+  deployments      deployments[]
+  teams            teams         @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -288,8 +289,10 @@ model flow_state {
   provider_refresh_token String?
   created_at             DateTime?             @db.Timestamptz(6)
   updated_at             DateTime?             @db.Timestamptz(6)
+  authentication_method  String
 
   @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
   @@schema("auth")
 }
 

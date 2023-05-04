@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { ParsedUrlQuery } from 'querystring'
 
-import { prisma, projects, deployments } from 'db/prisma'
+import { prisma, projects } from 'db/prisma'
 import Editor from 'components/Editor'
 import { StoreProvider } from 'state/StoreProvider'
 import { Database } from 'db/supabase'
@@ -50,14 +50,6 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
                     equals: projectID,
                   },
                 },
-                include: {
-                  deployments: {
-                    take: 1,
-                    orderBy: {
-                      created_at: 'desc',
-                    },
-                  },
-                },
               },
             },
           },
@@ -85,9 +77,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
 }
 
 interface Props {
-  project: projects & {
-    deployments: deployments[];
-  }
+  project: projects
 }
 
 function EditorPage({ project }: Props) {

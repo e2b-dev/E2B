@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { projects, deployments } from '@prisma/client'
+import { projects } from '@prisma/client'
 
 import { useStateStore } from 'state/StoreProvider'
 import { getModelArgs } from 'state/model'
@@ -16,9 +16,7 @@ import { MenuSection } from '../SidebarMenu'
 
 
 export interface Props {
-  project: projects & {
-    deployments: deployments[];
-  }
+  project: projects
   activeMenuSection?: MenuSection
 }
 
@@ -39,9 +37,7 @@ function Sidebar({
 
   const [creds] = useModelProviderArgs()
 
-  // TODO: Change logs to steps in db
-  const lastRunLogs = project.deployments.length === 1 ? project.deployments[0] : undefined
-  const steps = newSteps || lastRunLogs?.logs as Step[] | undefined
+  const steps = newSteps || project.development_logs as unknown as Step[] | undefined
 
   async function run() {
     if (!modelConfig) {

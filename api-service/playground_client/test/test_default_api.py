@@ -88,12 +88,6 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
-    def test_wait_for_log_output(self):
-        """Test case for wait_for_log_output
-
-        """
-        pass
-
     def test_write_filesystem_file(self):
         """Test case for write_filesystem_file
 

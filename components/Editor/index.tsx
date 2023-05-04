@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { projects, deployments } from '@prisma/client'
+import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
 
@@ -9,9 +9,7 @@ import SidebarMenu, { MenuSection } from './SidebarMenu'
 import Template from './Template'
 
 export interface Props {
-  project: projects & {
-    deployments: deployments[];
-  }
+  project: projects
 }
 
 function Editor({ project }: Props) {
