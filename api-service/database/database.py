@@ -12,6 +12,15 @@ class Database:
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
         self.client = Client(supabase_url=supabase_url, supabase_key=supabase_key)
 
+    async def get_deployments(self):
+        response = (
+            await self.client.table(TABLE_DEPLOYMENTS)
+            .select("*")
+            .eq("enabled", True)
+            .execute()
+        )
+        return response.data
+
     async def upsert_deployment(
         self,
         id: str,

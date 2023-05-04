@@ -1,14 +1,15 @@
 from typing import Literal
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from models.base import ModelConfig
+from contextlib import asynccontextmanager
 
 from agent.base import AgentInteraction
 from agent.base import AgentConfig
 from deployment.in_memory import InMemoryDeploymentManager
 from agent.json_rpc_connector import JsonRpcAgentConnector
 from agent.basic_agent import BasicAgent
+from database.base import db
 
 # TODO: Fix proxying - https://fastapi.tiangolo.com/advanced/behind-a-proxy/
 app = FastAPI(title="e2b-api")
@@ -23,7 +24,19 @@ app.add_middleware(
 deployment_manager = InMemoryDeploymentManager(agent_factory=BasicAgent.create)
 
 
-# TODO: Lifecycle - load and start all enabled deployments
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # TODO: Lifecycle - load and start all enabled deployments
+    # deployments = await db.get_deployments()
+    # for deployment in deployments:
+    #     await deployment_manager.create_deployment(
+    #         AgentConfig(
+    #             name=deployment["id"],
+    #             project_id=deployment["project_id"],
+    #         ),
+    #         project_id=deployment["project_id"],
+    #     )
+    yield
 
 
 @app.websocket("/dev/agent")
