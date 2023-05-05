@@ -5,9 +5,27 @@
 
 
 export interface paths {
-  "/generate": {
-    /** Generate */
-    post: operations["generate_generate_post"];
+  "/deployments": {
+    /** List Deployments */
+    get: operations["list_deployments_deployments_get"];
+    /** Create Agent Deployment */
+    post: operations["create_agent_deployment_deployments_post"];
+  };
+  "/deployments/{id}": {
+    /** Delete Agent Deployment */
+    delete: operations["delete_agent_deployment_deployments__id__delete"];
+  };
+  "/deployments/{id}/interaction_requests": {
+    /** Get Agent Intereaction Requests */
+    get: operations["get_agent_intereaction_requests_deployments__id__interaction_requests_get"];
+  };
+  "/deployments/{id}/interactions": {
+    /** Interact With Agent Deployment */
+    post: operations["interact_with_agent_deployment_deployments__id__interactions_post"];
+  };
+  "/deployments/{id}/logs": {
+    /** Get Agent  Deployment Status */
+    get: operations["get_agent__deployment_status_deployments__id__logs_get"];
   };
 }
 
@@ -15,37 +33,24 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** GenerateBody */
-    GenerateBody: {
-      model_config: components["schemas"]["ModelConfig"];
-      /** Project Id */
-      project_id: string;
+    /** AgentInteraction */
+    AgentInteraction: {
+      /** Data */
+      data?: Record<string, never>;
+      /** Interaction Id */
+      interaction_id?: string;
+      /** Type */
+      type: string;
+    };
+    /** CreateDeploymentBody */
+    CreateDeploymentBody: {
+      /** Config */
+      config?: Record<string, never>;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: (components["schemas"]["ValidationError"])[];
-    };
-    /** ModelConfig */
-    ModelConfig: {
-      /** Args */
-      args: Record<string, never>;
-      /** Prompt */
-      prompt: (components["schemas"]["PromptPart"])[];
-      /** Provider */
-      provider: string;
-    };
-    /** PromptPart */
-    PromptPart: {
-      /** Content */
-      content: string;
-      /**
-       * Role 
-       * @enum {string}
-       */
-      role: "user" | "system";
-      /** Type */
-      type: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -68,11 +73,120 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  /** Generate */
-  generate_generate_post: {
+  /** List Deployments */
+  list_deployments_deployments_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+    };
+  };
+  /** Create Agent Deployment */
+  create_agent_deployment_deployments_post: {
+    parameters: {
+      query: {
+        project_id: string;
+      };
+    };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["GenerateBody"];
+        "application/json": components["schemas"]["CreateDeploymentBody"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete Agent Deployment */
+  delete_agent_deployment_deployments__id__delete: {
+    parameters: {
+      path: {
+        id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Agent Intereaction Requests */
+  get_agent_intereaction_requests_deployments__id__interaction_requests_get: {
+    parameters: {
+      path: {
+        id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Interact With Agent Deployment */
+  interact_with_agent_deployment_deployments__id__interactions_post: {
+    parameters: {
+      path: {
+        id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AgentInteraction"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Agent  Deployment Status */
+  get_agent__deployment_status_deployments__id__logs_get: {
+    parameters: {
+      path: {
+        id: string;
       };
     };
     responses: {

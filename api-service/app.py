@@ -1,13 +1,13 @@
-from typing import Literal
+from typing import Any
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
+from pydantic import BaseModel
+
 from agent.base import AgentInteraction
-from agent.base import AgentConfig
 from deployment.in_memory import InMemoryDeploymentManager
-from agent.json_rpc_connector import JsonRpcAgentConnector
+from agent.json_rpc import JsonRpcAgent
 from agent.basic_agent import BasicAgent
 from database.base import db
 
@@ -26,24 +26,21 @@ deployment_manager = InMemoryDeploymentManager(agent_factory=BasicAgent.create)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # TODO: Lifecycle - load and start all enabled deployments
-    # deployments = await db.get_deployments()
-    # for deployment in deployments:
-    #     await deployment_manager.create_deployment(
-    #         AgentConfig(
-    #             name=deployment["id"],
-    #             project_id=deployment["project_id"],
-    #         ),
-    #         project_id=deployment["project_id"],
-    #     )
+    deployments = await db.get_deployments()
+    for deployment in deployments:
+        if deployment["enabled"]:
+            await deployment_manager.create_deployment(
+                deployment["config"],
+                project_id=deployment["project_id"],
+            )
     yield
 
 
 @app.websocket("/dev/agent")
-async def ws_agent_run(websocket: WebSocket):
-    print("ws_agent_run")
+async def ws_agent_run(websocket: WebSocket, project_id: str):
     await websocket.accept()
-    connector = JsonRpcAgentConnector(
+    connector = JsonRpcAgent(
+        project_id=project_id,
         iter_json=websocket.iter_json,
         send_json=websocket.send_json,
         agent_factory=BasicAgent.create,
@@ -52,38 +49,55 @@ async def ws_agent_run(websocket: WebSocket):
         await connector.handle()
     except:
         await connector.close()
+    finally:
+        print("Closing websocket")
 
 
-@app.post("/deployment")
-async def create_agent_deployment(body: AgentConfig, project_id: str):
+class CreateDeploymentBody(BaseModel):
+    config: Any
+
+
+@app.get("/deployments")
+async def list_deployments():
+    deployments = await deployment_manager.list_deployments()
+    return {"deployments": deployments}
+
+
+@app.post("/deployments")
+async def create_agent_deployment(body: CreateDeploymentBody, project_id: str):
     deployment = await deployment_manager.create_deployment(
-        body,
-        project_id=project_id,
+        body.config,
+        project_id,
     )
     return {"id": deployment.id}
 
 
-class AgentDeploymentStatusBody(BaseModel):
-    status: Literal["running", "stopped"]
+@app.delete("/deployments/{id}")
+async def delete_agent_deployment(id: str):
+    await deployment_manager.remove_deployment(id)
+    return {}
 
 
-@app.put("/deployment/{id}/status")
-async def change_agent_deployment_status(id: str, body: AgentDeploymentStatusBody):
-    deployment = await deployment_manager.get_deployment(id)
-    if body.status == "running":
-        await deployment.start()
-    elif body.status == "stopped":
-        await deployment.stop()
-
-
-@app.post("/deployment/{id}/interaction")
+@app.post("/deployments/{id}/interactions")
 async def interact_with_agent_deployment(id: str, body: AgentInteraction):
     deployment = await deployment_manager.get_deployment(id)
     result = await deployment.agent.interaction(body)
+
+    if body.interaction_id:
+        deployment.event_handler.remove_interaction_request(
+            body.interaction_id,
+        )
+
     return result
 
 
-@app.get("/deployment/{id}/status")
+@app.get("/deployments/{id}/interaction_requests")
+async def get_agent_intereaction_requests(id: str):
+    deployment = await deployment_manager.get_deployment(id)
+    return {"interaction_requests": deployment.event_handler.interaction_requests}
+
+
+@app.get("/deployments/{id}/logs")
 async def get_agent__deployment_status(id: str):
     deployment = await deployment_manager.get_deployment(id)
-    return {"status": deployment.status}
+    return {"logs": deployment.event_handler.logs}

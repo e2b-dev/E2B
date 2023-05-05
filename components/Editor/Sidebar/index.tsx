@@ -6,7 +6,7 @@ import { getModelArgs } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { evaluatePrompt } from 'state/prompt'
 import { Step } from 'api-client/AgentConnection'
-import useAgentRun from 'hooks/useAgentRun'
+import useAgent from 'hooks/useAgent'
 
 import Agent from './Agent'
 import Envs from './Envs'
@@ -27,9 +27,9 @@ function Sidebar({
   const {
     agentRun,
     steps: newSteps,
-    start,
+    run,
     agentState,
-  } = useAgentRun()
+  } = useAgent(project.id)
   const [selectors] = useStateStore()
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const instructions = selectors.use.instructions()
@@ -39,21 +39,30 @@ function Sidebar({
 
   const steps = newSteps || project.development_logs as unknown as Step[] | undefined
 
-  async function run() {
+  async function runAgent() {
     if (!modelConfig) {
       console.error('Cannot get model config')
       return
     }
 
-    await start(project.id, {
-      ...modelConfig,
-      args: getModelArgs(modelConfig, creds) as any,
-      prompt: evaluatePrompt(
-        instructions,
-        instructionsTransform,
-        modelConfig.prompt,
-      ),
-    })
+    const {
+      instructions: transformedInstructions,
+      prompt,
+    } = evaluatePrompt(
+      instructions,
+      instructionsTransform,
+      modelConfig.prompt,
+    )
+
+    await run(
+      {
+        name: modelConfig.name,
+        provider: modelConfig.provider,
+        args: getModelArgs(modelConfig, creds) as any,
+        prompt,
+      },
+      transformedInstructions
+    )
   }
 
   return (
@@ -78,7 +87,7 @@ function Sidebar({
       }
       {activeMenuSection === MenuSection.Agent &&
         <Agent
-          run={run}
+          run={runAgent}
           agentState={agentState}
           steps={steps}
           agentRun={agentRun}

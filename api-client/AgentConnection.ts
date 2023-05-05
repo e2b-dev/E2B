@@ -1,5 +1,4 @@
 import { RpcWebSocketClient, IRpcNotification } from 'rpc-websocket-client'
-import { deployment_state } from '@prisma/client'
 
 import { Log } from 'db/types'
 import { ModelConfig } from 'state/model'
@@ -29,14 +28,16 @@ export interface Opts {
 
 export class AgentConnection {
   private readonly rpc = new RpcWebSocketClient()
+  private readonly url: string
 
-  constructor(private readonly url: string, private readonly opts: Opts) {
+  constructor(url: string, private readonly opts: Opts, private readonly projectID: string) {
     this.rpc.onNotification.push(this.handleNotification.bind(this))
     this.rpc.onClose(opts.onClose)
+    this.url = `${url.replace('http', 'ws')}?project_id=${this.projectID}`
   }
 
   async connect() {
-    await this.rpc.connect(this.url.replace('http', 'ws'))
+    await this.rpc.connect(this.url)
   }
 
   async disconnect() {
@@ -46,27 +47,29 @@ export class AgentConnection {
     this.rpc.ws?.close()
   }
 
-  private handleNotification(data: IRpcNotification) {
-    if (data.method === 'logs') {
-      if (data.params.logs) {
-        this.opts.onSteps(data.params.logs)
-      }
-      // return this.opts.onSteps(data.params.steps)
-      if (data.params.state) {
-        this.opts.onStateChange(data.params.state)
-        if (data.params.state === deployment_state.finished) {
-          this.disconnect()
+  private async handleNotification(data: IRpcNotification) {
+    switch (data.method) {
+      case 'logs':
+        if (data.params.logs) {
+          this.opts.onSteps(data.params.logs)
         }
-      }
+        break
+      case 'interaction_request':
+        if (data.params.type === 'done') {
+          this.opts.onStateChange(AgentRunState.None)
+          await this.disconnect()
+        } else {
+          console.error('Unhandler interaction request', data)
+        }
+        break
+      default:
+        console.error('Unknown notification method', data)
+        break
     }
   }
 
-  async start(projectID: string, modelConfig: ModelConfig) {
-    await this.rpc.call('start', {
-      'project_id': projectID,
-      'model_config': modelConfig,
-    })
-
+  async start(config: ModelConfig, instructions: any) {
+    await this.rpc.call('start', { config, instructions })
     this.opts.onStateChange(AgentRunState.Running)
   }
 
@@ -87,6 +90,7 @@ export class AgentConnection {
   async cancelRun() {
     await this.rpc.call('stop')
     this.opts.onStateChange(AgentRunState.None)
+    await this.disconnect()
   }
 
   async rewriteRunSteps(steps: Step[]) {

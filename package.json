@@ -19,7 +19,7 @@
     "dev": "npx concurrently -p none \"next dev\" \"npm run start:api\" \"npm run start:playground\"",
     "dev:api-service": "npx concurrently \"npm run start:api\" \"npm run start:playground\"",
     "build": "next build",
-    "start:api": "cd api-service && cross-env PYTHONUNBUFFERED=1 poetry run hypercorn app:app --reload --debug --bind ':49155'",
+    "start:api": "cd api-service && cross-env PYTHONUNBUFFERED=1 poetry run uvicorn app:app --reload --host 0.0.0.0 --port 49155",
     "start:playground": "cd api-service/playground && npm run dev",
     "install:api-service": "cd api-service && poetry install --with dev && cd playground && npm install",
     "install:api-playground": "cd api-service/playground && npm install",

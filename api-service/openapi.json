@@ -1,14 +1,14 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "e2b-api-service",
+    "title": "e2b-api",
     "version": "0.1.0"
   },
   "paths": {
-    "/health": {
+    "/deployments": {
       "get": {
-        "summary": "Health",
-        "operationId": "health_health_get",
+        "summary": "List Deployments",
+        "operationId": "list_deployments_deployments_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -19,17 +19,26 @@
             }
           }
         }
-      }
-    },
-    "/agent": {
+      },
       "post": {
-        "summary": "Create Agent",
-        "operationId": "create_agent_agent_post",
+        "summary": "Create Agent Deployment",
+        "operationId": "create_agent_deployment_deployments_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            },
+            "name": "project_id",
+            "in": "query"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AgentCreateBody"
+                "$ref": "#/components/schemas/CreateDeploymentBody"
               }
             }
           },
@@ -57,10 +66,47 @@
         }
       }
     },
-    "/agent/{id}/run": {
+    "/deployments/{id}": {
+      "delete": {
+        "summary": "Delete Agent Deployment",
+        "operationId": "delete_agent_deployment_deployments__id__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deployments/{id}/interactions": {
       "post": {
-        "summary": "Run Agent",
-        "operationId": "run_agent_agent__id__run_post",
+        "summary": "Interact With Agent Deployment",
+        "operationId": "interact_with_agent_deployment_deployments__id__interactions_post",
         "parameters": [
           {
             "required": true,
@@ -76,7 +122,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AgentRunBody"
+                "$ref": "#/components/schemas/AgentInteraction"
               }
             }
           },
@@ -104,10 +150,10 @@
         }
       }
     },
-    "/agent/{id}/run/{run_id}/status": {
+    "/deployments/{id}/interaction_requests": {
       "get": {
-        "summary": "Get Agent Run Status",
-        "operationId": "get_agent_run_status_agent__id__run__run_id__status_get",
+        "summary": "Get Agent Intereaction Requests",
+        "operationId": "get_agent_intereaction_requests_deployments__id__interaction_requests_get",
         "parameters": [
           {
             "required": true,
@@ -116,15 +162,6 @@
               "type": "string"
             },
             "name": "id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Run Id",
-              "type": "string"
-            },
-            "name": "run_id",
             "in": "path"
           }
         ],
@@ -150,10 +187,10 @@
         }
       }
     },
-    "/agent/{id}/run/{run_id}/result": {
+    "/deployments/{id}/logs": {
       "get": {
-        "summary": "Get Agent Run Result",
-        "operationId": "get_agent_run_result_agent__id__run__run_id__result_get",
+        "summary": "Get Agent  Deployment Status",
+        "operationId": "get_agent__deployment_status_deployments__id__logs_get",
         "parameters": [
           {
             "required": true,
@@ -162,15 +199,6 @@
               "type": "string"
             },
             "name": "id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Run Id",
-              "type": "string"
-            },
-            "name": "run_id",
             "in": "path"
           }
         ],
@@ -199,39 +227,34 @@
   },
   "components": {
     "schemas": {
-      "AgentCreateBody": {
-        "title": "AgentCreateBody",
+      "AgentInteraction": {
+        "title": "AgentInteraction",
         "required": [
-          "model_config",
-          "deploy_config"
+          "type"
         ],
         "type": "object",
         "properties": {
-          "model_config": {
-            "$ref": "#/components/schemas/ModelConfig"
-          },
-          "deploy_config": {
-            "$ref": "#/components/schemas/DeployConfig"
-          }
-        }
-      },
-      "AgentRunBody": {
-        "title": "AgentRunBody",
-        "required": [
-          "instructions"
-        ],
-        "type": "object",
-        "properties": {
-          "instructions": {
-            "title": "Instructions",
+          "interaction_id": {
+            "title": "Interaction Id",
             "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "data": {
+            "title": "Data"
           }
         }
       },
-      "DeployConfig": {
-        "title": "DeployConfig",
+      "CreateDeploymentBody": {
+        "title": "CreateDeploymentBody",
         "type": "object",
-        "properties": {}
+        "properties": {
+          "config": {
+            "title": "Config"
+          }
+        }
       },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
@@ -243,59 +266,6 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             }
-          }
-        }
-      },
-      "ModelConfig": {
-        "title": "ModelConfig",
-        "required": [
-          "provider",
-          "prompt",
-          "args"
-        ],
-        "type": "object",
-        "properties": {
-          "provider": {
-            "title": "Provider",
-            "type": "string"
-          },
-          "prompt": {
-            "title": "Prompt",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PromptPart"
-            }
-          },
-          "args": {
-            "title": "Args",
-            "type": "object"
-          }
-        }
-      },
-      "PromptPart": {
-        "title": "PromptPart",
-        "required": [
-          "role",
-          "type",
-          "content"
-        ],
-        "type": "object",
-        "properties": {
-          "role": {
-            "title": "Role",
-            "enum": [
-              "user",
-              "system"
-            ],
-            "type": "string"
-          },
-          "type": {
-            "title": "Type",
-            "type": "string"
-          },
-          "content": {
-            "title": "Content",
-            "type": "string"
           }
         }
       },

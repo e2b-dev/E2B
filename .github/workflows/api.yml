@@ -20,6 +20,7 @@ env:
   GCE_INSTANCE: e2b-api-instance-1
   GCE_INSTANCE_ZONE: us-central1-a
 
+# TODO: Update - https://stackoverflow.com/questions/68244641/how-to-circumvent-compute-engines-downtime-during-container-deployments
 jobs:
   deploy:
     name: Build and release

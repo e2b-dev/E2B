@@ -1,27 +1,63 @@
-from typing import List, Literal
-from abc import abstractmethod
-from pydantic import BaseModel
+import uuid
 
-from agent.base import AgentBase, AgentConfig, AgentInteractionRequest
+from typing import Any, Callable, Coroutine, List
+from abc import abstractmethod, ABC
+
+from database.base import db
+from agent.base import (
+    AgentBase,
+    AgentInteractionRequest,
+    OnLogs,
+    OnInteractionRequest,
+    GetEnvs,
+)
+
+
+AgentFactory = Callable[
+    [Any, GetEnvs, OnLogs, OnInteractionRequest], Coroutine[None, None, AgentBase]
+]
+
+
+class AgentEvents:
+    def __init__(self) -> None:
+        self.logs: List[Any] = []
+        self.interaction_requests: List[AgentInteractionRequest] = []
+
+    async def overwrite_logs(self, logs: List[Any]):
+        self.logs = logs
+
+    async def add_interaction_request(
+        self, interaction_request: AgentInteractionRequest
+    ):
+        self.interaction_requests.append(interaction_request)
+
+    def remove_interaction_request(self, interaction_id: str):
+        self.interaction_requests = [
+            interaction_request
+            for interaction_request in self.interaction_requests
+            if interaction_request.interaction_id != interaction_id
+        ]
 
 
 class AgentDeployment:
-    def __init__(self, id: str, agent: AgentBase):
-        self.id = id
+    def __init__(self, agent: AgentBase, event_handler: AgentEvents):
+        self.id = str(uuid.uuid4())
         self.agent = agent
-        self.status: Literal["running", "stopped"] = "stopped"
-        self.interaction_requests: List[AgentInteractionRequest] = []
+        self.event_handler = event_handler
 
-    async def start(self):
-        await self.agent.start()
-        self.status = "running"
+    @classmethod
+    async def from_factory(cls, factory: AgentFactory, project_id: str, config: Any):
+        event_handler = AgentEvents()
+        agent = await factory(
+            config,
+            lambda: db.get_env_vars(project_id),
+            event_handler.overwrite_logs,
+            event_handler.add_interaction_request,
+        )
+        return cls(agent, event_handler)
 
-    async def stop(self):
-        await self.agent.stop()
-        self.status = "stopped"
 
-
-class AgentDeploymentManager(BaseModel):
+class AgentDeploymentManager(ABC):
     """
     This is an abstract class that defines the interface for a deployment adapter.
 
@@ -34,7 +70,7 @@ class AgentDeploymentManager(BaseModel):
     """
 
     @abstractmethod
-    async def create_deployment(self, config: AgentConfig, **kwargs) -> AgentDeployment:
+    async def create_deployment(self, config: Any, **kwargs) -> AgentDeployment:
         pass
 
     @abstractmethod

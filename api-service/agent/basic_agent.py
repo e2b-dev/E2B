@@ -1,33 +1,36 @@
 import asyncio
+import uuid
+import chevron
 
-from abc import abstractmethod
+# Monkey patch chevron to not escape html
+chevron.render.__globals__["_html_escape"] = lambda string: string
+
 from typing import Any, Dict, List, Literal, cast
-
-
-from agent.base import AgentInteraction
-from agent.output.parse_output import ToolLog
-from agent.output.output_stream_parser import OutputStreamParser, Step
-from agent.output.token_callback_handler import TokenCallbackHandler
-from agent.output.work_queue import WorkQueue
+from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chains.llm import LLMChain
-from langchain.schema import BaseMessage
+from langchain.schema import BaseMessage, SystemMessage, HumanMessage
 from langchain.tools import BaseTool
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
 )
-from langchain.agents.tools import InvalidTool
 
-from agent.base import AgentLog
+
+from agent.base import (
+    AgentInteraction,
+    OnLogs,
+    OnInteractionRequest,
+)
+from agent.output.parse_output import ToolLog
+from agent.output.output_stream_parser import OutputStreamParser, Step
+from agent.output.token_callback_handler import TokenCallbackHandler
+from agent.output.work_queue import WorkQueue
 from agent.tools.base import create_tools
 from models.base import ModelConfig, PromptPart, get_model
-from agent.base import AgentBase, AgentConfig
-from database import db
+from agent.base import AgentBase, AgentInteractionRequest, GetEnvs
 from session import NodeJSPlayground
 
 
@@ -36,9 +39,18 @@ class RewriteStepsException(Exception):
 
 
 class BasicAgent(AgentBase):
-    def __init__(self, config: AgentConfig):
+    def __init__(
+        self,
+        config: Any,
+        get_envs: GetEnvs,
+        on_logs: OnLogs,
+        on_interaction_request: OnInteractionRequest,
+    ):
         super().__init__()
-        self.config = config
+        self.get_envs = get_envs
+        self.config = ModelConfig(**config)
+        self.on_interaction_request = on_interaction_request
+        self.on_logs = on_logs
         self.should_pause = False
         self.canceled = False
         self.rewriting_steps = False
@@ -46,10 +58,19 @@ class BasicAgent(AgentBase):
         self.can_resume = asyncio.Event()
 
     @classmethod
-    async def create(cls, config: AgentConfig):
-        c = cls(config=config)
-        print("init")
-        return c
+    async def create(
+        cls,
+        config: Any,
+        get_envs: GetEnvs,
+        on_logs: OnLogs,
+        on_interaction_request: OnInteractionRequest,
+    ):
+        return cls(
+            config,
+            get_envs,
+            on_logs,
+            on_interaction_request,
+        )
 
     @staticmethod
     async def _run_tool(
@@ -85,30 +106,41 @@ class BasicAgent(AgentBase):
                 if prompt.role == role and prompt.type == type
             )
             # Double the parenthesses to escape them because the string will be prompt templated.
-            .content.replace("{", "{{").replace("}", "}}")
+            .content
         )
 
     @staticmethod
-    def _create_prompt(model_config: ModelConfig, tools: List[BaseTool]):
-        system_template = "\n\n".join(
-            [
-                BasicAgent._get_prompt_part(model_config.prompt, "system", "prefix"),
-                "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-                BasicAgent._get_prompt_part(model_config.prompt, "system", "suffix"),
-            ]
-        )
-        human_template = "\n\n".join(
-            [
-                BasicAgent._get_prompt_part(model_config.prompt, "user", "prefix"),
-                "{agent_scratchpad}",
-            ]
+    def _create_prompt(
+        config: ModelConfig,
+        tools: List[BaseTool],
+        instructions: Any,
+    ):
+        system_template = chevron.render(
+            "\n\n".join(
+                [
+                    BasicAgent._get_prompt_part(config.prompt, "system", "prefix"),
+                    "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
+                    BasicAgent._get_prompt_part(config.prompt, "system", "suffix"),
+                ]
+            ),
+            instructions,
         )
 
-        messages: List[BaseMessage | BaseMessagePromptTemplate] = [
-            SystemMessagePromptTemplate.from_template(system_template),
-            HumanMessagePromptTemplate.from_template(human_template),
-            # TODO: Check if the results are better when we add scratchpad as AI message
-            # AIMessagePromptTemplate.from_template("{agent_scratchpad}"),
+        human_template = chevron.render(
+            "\n\n".join(
+                [
+                    BasicAgent._get_prompt_part(config.prompt, "user", "prefix"),
+                ]
+            ),
+            instructions,
+        )
+
+        messages: List[
+            BaseMessage | BaseMessagePromptTemplate | SystemMessage | HumanMessage
+        ] = [
+            SystemMessage(content=system_template),
+            HumanMessage(content=human_template),
+            AIMessagePromptTemplate.from_template("{agent_scratchpad}"),
         ]
         return ChatPromptTemplate(
             input_variables=["agent_scratchpad"],
@@ -117,8 +149,7 @@ class BasicAgent(AgentBase):
 
     async def _run(
         self,
-        project_id: str,
-        model_config: ModelConfig,
+        instructions: Any,
     ):
         playground = None
         try:
@@ -131,7 +162,7 @@ class BasicAgent(AgentBase):
             # -----
             # Create tools
             # Create playground for code tools
-            playground = NodeJSPlayground(get_envs=lambda: db.get_env_vars(project_id))
+            playground = NodeJSPlayground(get_envs=self.get_envs)
             tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]
             tool_map = {tool.name: tool for tool in tools}
@@ -143,8 +174,8 @@ class BasicAgent(AgentBase):
             # -----
             # Create LLM from specified model
             llm_chain = LLMChain(
-                llm=get_model(model_config, callback_manager),
-                prompt=self._create_prompt(model_config, tools),
+                llm=get_model(self.config, callback_manager),
+                prompt=self._create_prompt(self.config, tools, instructions),
                 callback_manager=callback_manager,
             )
 
@@ -152,9 +183,7 @@ class BasicAgent(AgentBase):
             # Create log handlers
             # Used for sending logs to db/frontend without blocking
             steps_streamer = WorkQueue[List[Step]](
-                on_workload=lambda steps: self.config.on_logs(
-                    [AgentLog(data=step) for step in steps]
-                ),
+                on_workload=lambda steps: self.on_logs(steps),
             )
 
             def stream_steps(steps: List[Step]):
@@ -194,7 +223,7 @@ class BasicAgent(AgentBase):
                     if tool_outputs:
                         agent_scratchpad += f"\nObservation: {tool_outputs}\nThought:"
 
-                return f"This is your previous work (you can continue where you left off):\n{agent_scratchpad}"
+                return f"This is my previous work (I will continue where I left off):\n{agent_scratchpad}"
 
             print("Generating...", flush=True)
             while True:
@@ -256,7 +285,12 @@ class BasicAgent(AgentBase):
         finally:
             if playground is not None:
                 playground.close()
-            await self.config.on_close()
+            await self.on_interaction_request(
+                AgentInteractionRequest(
+                    interaction_id=str(uuid.uuid4()),
+                    type="done",
+                )
+            )
 
     async def _check_interrupt(self):
         if self.canceled:
@@ -270,26 +304,13 @@ class BasicAgent(AgentBase):
             self.rewriting_steps = False
             raise RewriteStepsException()
 
-    async def start(self, project_id: str, model_config: Dict[str, Any]):
+    async def _start(self, instructions: Any):
         print("Start agent run")
-        self.project_id = project_id
         asyncio.create_task(
             self._run(
-                project_id=project_id,
-                model_config=ModelConfig(**model_config),
+                instructions=instructions,
             )
         )
-
-    async def interaction(self, interaction: AgentInteraction):
-        print("Agent interaction")
-        if interaction.type == "pause":
-            await self._pause()
-        elif interaction.type == "resume":
-            await self._resume()
-        elif interaction.type == "rewrite_steps":
-            await self._rewrite_steps(interaction.data["steps"])
-        else:
-            raise Exception(f"Unknown interaction action: {interaction.type}")
 
     async def _pause(self):
         print("Pause agent run")
@@ -299,13 +320,6 @@ class BasicAgent(AgentBase):
         print("Resume agent run")
         self.should_pause = False
         self.can_resume.set()
-
-    async def stop(self):
-        print("Cancel agent run")
-        self.canceled = True
-        if self.llm_generation:
-            self.llm_generation.cancel()
-        await self.config.on_close()
 
     async def _rewrite_steps(self, steps: List[Step]):
         print("Rewrite agent run steps")
@@ -321,3 +335,23 @@ class BasicAgent(AgentBase):
             buffered_step=steps[-1],
         )
         await self._resume()
+
+    async def interaction(self, interaction: AgentInteraction):
+        print("Agent interaction")
+        match interaction.type:
+            case "pause":
+                await self._pause()
+            case "resume":
+                await self._resume()
+            case "start":
+                await self._start(interaction.data["instructions"])
+            case "rewrite_steps":
+                await self._rewrite_steps(interaction.data["steps"])
+            case default:
+                raise Exception(f"Unknown interaction action: {interaction.type}")
+
+    async def stop(self):
+        print("Cancel agent run")
+        self.canceled = True
+        if self.llm_generation:
+            self.llm_generation.cancel()
