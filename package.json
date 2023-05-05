@@ -23,7 +23,7 @@
     "start:playground": "cd api-service/playground && npm run dev",
     "install:api-service": "cd api-service && poetry install --with dev && cd playground && npm i",
     "install:all": "npm i && npm run install:api-service",
-    "start": "docker compose build && (npm run db:reset ; npm run db:start && docker compose up)",
+    "start": "docker compose build && (npm run db:reset || true && npm run db:start && docker compose up)",
     "stop": "docker compose down && npm run db:stop",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
