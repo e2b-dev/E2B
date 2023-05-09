@@ -64,8 +64,5 @@ class AgentBase(ABC):
         pass
 
     @abstractmethod
-    async def interaction(
-        self,
-        interaction: AgentInteraction,
-    ) -> Any:
+    async def interaction(self, interaction: AgentInteraction) -> Any:
         pass

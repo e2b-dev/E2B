@@ -9,7 +9,7 @@ export interface paths {
     /** List Deployments */
     get: operations["list_deployments_deployments_get"];
     /** Create Agent Deployment */
-    post: operations["create_agent_deployment_deployments_post"];
+    put: operations["create_agent_deployment_deployments_put"];
   };
   "/deployments/{id}": {
     /** Delete Agent Deployment */
@@ -85,7 +85,7 @@ export interface operations {
     };
   };
   /** Create Agent Deployment */
-  create_agent_deployment_deployments_post: {
+  create_agent_deployment_deployments_put: {
     parameters: {
       query: {
         project_id: string;
@@ -120,11 +120,7 @@ export interface operations {
     };
     responses: {
       /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": Record<string, never>;
-        };
-      };
+      204: never;
       /** @description Validation Error */
       422: {
         content: {

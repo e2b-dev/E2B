@@ -4,7 +4,6 @@ import { projects } from '@prisma/client'
 import { useStateStore } from 'state/StoreProvider'
 import { getModelArgs } from 'state/model'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
-import { evaluatePrompt } from 'state/prompt'
 import { Step } from 'api-client/AgentConnection'
 import useAgent from 'hooks/useAgent'
 
@@ -13,6 +12,8 @@ import Envs from './Envs'
 import Model from './Model'
 import Prompt from './Prompt'
 import { MenuSection } from '../SidebarMenu'
+import Deploy from './Deploy'
+import { evaluateInstructions, evaluatePrompt } from 'state/prompt'
 
 
 export interface Props {
@@ -46,22 +47,32 @@ function Sidebar({
     }
 
     const {
-      instructions: transformedInstructions,
-      prompt,
-    } = evaluatePrompt(
+      references: promptReferences,
+      prompt: evaluatedPrompt,
+    } = evaluatePrompt(modelConfig.prompt)
+    const {
+      references: instructionsReferences,
+      instructions: evaluatedInstructions,
+    } = evaluateInstructions(
       instructions,
       instructionsTransform,
-      modelConfig.prompt,
     )
+
 
     await run(
       {
         name: modelConfig.name,
         provider: modelConfig.provider,
         args: getModelArgs(modelConfig, creds) as any,
-        prompt,
+        prompt: evaluatedPrompt
       },
-      transformedInstructions
+      {
+        References: [
+          ...promptReferences,
+          ...instructionsReferences,
+        ],
+        ...evaluatedInstructions
+      },
     )
   }
 
@@ -81,6 +92,9 @@ function Sidebar({
       }
       {activeMenuSection === MenuSection.Model &&
         <Model />
+      }
+      {activeMenuSection === MenuSection.Deploy &&
+        <Deploy project={project} />
       }
       {activeMenuSection === MenuSection.Prompt &&
         <Prompt />

@@ -30,7 +30,7 @@
     "lint:fix": "next lint --fix",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
-    "supabase:dump": "supabase db dump -f supabase/migrations/1680452567_name.sql",
+    "supabase:dump": "npx --yes supabase@1.46.5 db dump -f supabase/migrations/1680452567_name.sql",
     "supabase:generate": "supabase gen types typescript --project-id \"ntjfcwpzsxugrykskdgi\" --schema public > db/supabase.ts",
     "postinstall": "npm run db:generate",
     "db:start": "npx --yes supabase start -x imgproxy,storage-api,studio,inbucket,edge-runtime,logflare,postgres-meta,deno-relay,pgadmin-schema-diff,vector,migra",

@@ -4,26 +4,27 @@ from database.base import db
 from deployment.manager import AgentDeploymentManager, AgentDeployment, AgentFactory
 
 
+# TODO: Interemediate step between implementing the FC agent deployment
+# can be improving the in-memory deployment manager to use the processes instead of threads.
 class InMemoryDeploymentManager(AgentDeploymentManager):
-    def __init__(
-        self,
-        agent_factory: AgentFactory,
-    ):
+    def __init__(self, agent_factory: AgentFactory):
         self._agent_factory = agent_factory
         self._deployments: Dict[str, AgentDeployment] = {}
 
     async def create_deployment(
         self,
-        config: Any,
+        id: str,
         project_id: str,
+        config: Any,
     ):
         deployment = await AgentDeployment.from_factory(
+            id,
             self._agent_factory,
             project_id,
             config,
         )
         try:
-            await db.upsert_deployment(deployment.id, project_id)
+            await db.create_deployment(deployment.id, project_id, config)
         except:
             await deployment.agent.stop()
             raise
@@ -31,10 +32,23 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
         self._deployments[deployment.id] = deployment
         return deployment
 
+    async def update_deployment(
+        self,
+        id: str,
+        project_id: str,
+        config: Any,
+    ):
+        try:
+            await self.remove_deployment(id)
+        except:
+            print("Failed to remove deployment", id)
+            pass
+        return await self.create_deployment(id, project_id, config)
+
     async def remove_deployment(self, id: str):
         deployment = await self.get_deployment(id)
         await deployment.agent.stop()
-        await db.upsert_deployment(deployment.id, enabled=False)
+        await db.update_deployment(deployment.id, enabled=False)
         del self._deployments[deployment.id]
 
     async def get_deployment(self, id: str):

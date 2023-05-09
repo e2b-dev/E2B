@@ -147,10 +147,7 @@ class BasicAgent(AgentBase):
             messages=messages,
         )
 
-    async def _run(
-        self,
-        instructions: Any,
-    ):
+    async def _run(self, instructions: Any):
         playground = None
         try:
             # -----

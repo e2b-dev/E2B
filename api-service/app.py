@@ -1,8 +1,9 @@
+import uuid
+
 from typing import Any
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-
 from pydantic import BaseModel
 
 from agent.base import AgentInteraction
@@ -10,16 +11,6 @@ from deployment.in_memory import InMemoryDeploymentManager
 from agent.json_rpc import JsonRpcAgent
 from agent.basic_agent import BasicAgent
 from database.base import db
-
-# TODO: Fix proxying - https://fastapi.tiangolo.com/advanced/behind-a-proxy/
-app = FastAPI(title="e2b-api")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 deployment_manager = InMemoryDeploymentManager(agent_factory=BasicAgent.create)
 
@@ -29,11 +20,25 @@ async def lifespan(app: FastAPI):
     deployments = await db.get_deployments()
     for deployment in deployments:
         if deployment["enabled"]:
-            await deployment_manager.create_deployment(
-                deployment["config"],
-                project_id=deployment["project_id"],
-            )
+            if deployment.get("config", None) and deployment.get("project_id", None):
+                print("Restarting deployment", deployment["id"])
+                await deployment_manager.create_deployment(
+                    deployment["id"],
+                    deployment["project_id"],
+                    deployment["config"],
+                )
     yield
+
+
+# TODO: Fix proxying - https://fastapi.tiangolo.com/advanced/behind-a-proxy/
+app = FastAPI(title="e2b-api", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.websocket("/dev/agent")
@@ -60,22 +65,34 @@ class CreateDeploymentBody(BaseModel):
 @app.get("/deployments")
 async def list_deployments():
     deployments = await deployment_manager.list_deployments()
-    return {"deployments": deployments}
+    return {"deployments": [{"id": deployment.id} for deployment in deployments]}
 
 
-@app.post("/deployments")
+@app.put("/deployments")
 async def create_agent_deployment(body: CreateDeploymentBody, project_id: str):
-    deployment = await deployment_manager.create_deployment(
-        body.config,
-        project_id,
-    )
-    return {"id": deployment.id}
+    db_deployment = await db.get_deployment(project_id)
+
+    print("test", db_deployment)
+    if db_deployment:
+        deployment = await deployment_manager.update_deployment(
+            db_deployment["id"],
+            project_id,
+            body.config,
+        )
+        return {"id": deployment.id}
+    else:
+        id = str(uuid.uuid4())
+        deployment = await deployment_manager.create_deployment(
+            id,
+            project_id,
+            body.config,
+        )
+        return {"id": deployment.id}
 
 
-@app.delete("/deployments/{id}")
+@app.delete("/deployments/{id}", status_code=204)
 async def delete_agent_deployment(id: str):
     await deployment_manager.remove_deployment(id)
-    return {}
 
 
 @app.post("/deployments/{id}/interactions")
@@ -84,10 +101,7 @@ async def interact_with_agent_deployment(id: str, body: AgentInteraction):
     result = await deployment.agent.interaction(body)
 
     if body.interaction_id:
-        deployment.event_handler.remove_interaction_request(
-            body.interaction_id,
-        )
-
+        deployment.event_handler.remove_interaction_request(body.interaction_id)
     return result
 
 

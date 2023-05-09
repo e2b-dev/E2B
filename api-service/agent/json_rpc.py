@@ -68,7 +68,7 @@ class JsonRpcAgent:
                             )
                         )
                         return {"result": result}
-                    case default:
+                    case _:
                         raise Exception(f"Method {method} not found")
             except Exception as e:
                 print(f"Error calling {method} via JSONRPC", e)

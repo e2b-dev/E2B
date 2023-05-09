@@ -1,11 +1,12 @@
 import clsx from 'clsx'
-import { Code, Lock, Cpu, WholeWord } from 'lucide-react'
+import { Code, Lock, Cpu, WholeWord, Server } from 'lucide-react'
 
 export enum MenuSection {
   Agent = 'Agent',
   Envs = 'Envs',
   Model = 'Model',
   Prompt = 'Prompt',
+  Deploy = 'Deploy',
 }
 
 const menuIconSize = '18px'
@@ -20,6 +21,8 @@ function getMenuSelectionIcon(selection: MenuSection) {
       return <Lock size={menuIconSize} />
     case MenuSection.Model:
       return <Cpu size={menuIconSize} />
+    case MenuSection.Deploy:
+      return <Server size={menuIconSize} />
   }
 }
 

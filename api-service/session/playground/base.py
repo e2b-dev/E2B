@@ -1,6 +1,7 @@
-import time
 import math
+
 from typing import Any
+from asyncio import sleep
 
 from playground_client.models.list_filesystem_dir_response import (
     ListFilesystemDirResponse,
@@ -73,7 +74,7 @@ class Playground(Session):
 
             if response.finished:
                 return response
-            time.sleep(1 / self.run_command_timeout_frequency)
+            await sleep(1 / self.run_command_timeout_frequency)
 
         if not response.finished:
             thread: Any = self.api.stop_process(
@@ -163,7 +164,7 @@ class Playground(Session):
         for _ in range(self.max_port_checks):
             if await self.is_port_open(port):
                 break
-            time.sleep(self.port_check_interval)
+            await sleep(self.port_check_interval)
 
         request_result = await self.run_command(cmd=request_cmd, rootdir=rootdir)
         server_result = await self.stop_process(server_process_id)

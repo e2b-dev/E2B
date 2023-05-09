@@ -20,9 +20,9 @@
           }
         }
       },
-      "post": {
+      "put": {
         "summary": "Create Agent Deployment",
-        "operationId": "create_agent_deployment_deployments_post",
+        "operationId": "create_agent_deployment_deployments_put",
         "parameters": [
           {
             "required": true,
@@ -82,13 +82,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",

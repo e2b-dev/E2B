@@ -1,5 +1,3 @@
-import uuid
-
 from typing import Any, Callable, Coroutine, List
 from abc import abstractmethod, ABC
 
@@ -19,12 +17,14 @@ AgentFactory = Callable[
 
 
 class AgentEvents:
-    def __init__(self) -> None:
+    def __init__(self, id: str) -> None:
+        self.id = id
         self.logs: List[Any] = []
         self.interaction_requests: List[AgentInteractionRequest] = []
 
     async def overwrite_logs(self, logs: List[Any]):
         self.logs = logs
+        await db.update_deployment_logs(self.id, logs)
 
     async def add_interaction_request(
         self, interaction_request: AgentInteractionRequest
@@ -40,21 +40,27 @@ class AgentEvents:
 
 
 class AgentDeployment:
-    def __init__(self, agent: AgentBase, event_handler: AgentEvents):
-        self.id = str(uuid.uuid4())
+    def __init__(self, id, agent: AgentBase, event_handler: AgentEvents):
+        self.id = id
         self.agent = agent
         self.event_handler = event_handler
 
     @classmethod
-    async def from_factory(cls, factory: AgentFactory, project_id: str, config: Any):
-        event_handler = AgentEvents()
+    async def from_factory(
+        cls,
+        deployment_id: str,
+        factory: AgentFactory,
+        project_id: str,
+        config: Any,
+    ):
+        event_handler = AgentEvents(deployment_id)
         agent = await factory(
             config,
             lambda: db.get_env_vars(project_id),
             event_handler.overwrite_logs,
             event_handler.add_interaction_request,
         )
-        return cls(agent, event_handler)
+        return cls(deployment_id, agent, event_handler)
 
 
 class AgentDeploymentManager(ABC):
@@ -83,4 +89,13 @@ class AgentDeploymentManager(ABC):
 
     @abstractmethod
     async def list_deployments(self) -> List[AgentDeployment]:
+        pass
+
+    @abstractmethod
+    async def update_deployment(
+        self,
+        id: str,
+        config: Any,
+        **kwargs,
+    ) -> AgentDeployment:
         pass

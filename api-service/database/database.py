@@ -1,6 +1,6 @@
-from typing import Any, Dict, List
-from agent.output.output_stream_parser import Step
+from typing import Any, List
 
+from agent.output.output_stream_parser import Step
 from database.client import Client
 from session.env import EnvVar
 
@@ -12,6 +12,17 @@ class Database:
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
         self.client = Client(supabase_url=supabase_url, supabase_key=supabase_key)
 
+    async def get_deployment(self, project_id: str):
+        response = (
+            await self.client.table(TABLE_DEPLOYMENTS)
+            .select("*")
+            .eq("project_id", project_id)
+            .limit(1)
+            .maybe_single()
+            .execute()
+        )
+        return response.data
+
     async def get_deployments(self):
         response = (
             await self.client.table(TABLE_DEPLOYMENTS)
@@ -21,26 +32,40 @@ class Database:
         )
         return response.data
 
-    async def upsert_deployment(
+    async def update_deployment_logs(
         self,
         id: str,
-        project_id: str | None = None,
-        logs: List[Step] | None = None,
-        enabled: bool | None = True,
+        logs: List[Step],
+    ):
+        await self.client.table(TABLE_DEPLOYMENTS).update(
+            {
+                "logs": logs,
+            }
+        ).eq("id", id).execute()
+
+    async def update_deployment(self, id: str, enabled: bool) -> None:
+        await self.client.table(TABLE_DEPLOYMENTS).update(
+            {
+                "enabled": enabled,
+            }
+        ).eq(
+            "id",
+            id,
+        ).execute()
+
+    async def create_deployment(
+        self,
+        id: str,
+        project_id: str,
+        config: Any,
     ) -> None:
-        update: Dict[str, Any] = {
-            "id": id,
-            "enabled": enabled,
-        }
-
-        if project_id:
-            update["project_id"] = project_id
-
-        if logs:
-            update["logs"] = logs
-
         await self.client.table(TABLE_DEPLOYMENTS).upsert(
-            update,
+            {
+                "id": id,
+                "enabled": True,
+                "project_id": project_id,
+                "config": config,
+            },
             on_conflict="id",
         ).execute()
 
