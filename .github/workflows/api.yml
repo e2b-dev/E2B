@@ -1,11 +1,11 @@
 name: Build and Deploy to Google Compute Engine
 
-# on:
-#   push:
-#     paths:
-#       - 'api-service/**'
-#     branches:
-#       - main
+on:
+  push:
+    paths:
+      - 'api-service/**'
+    branches:
+      - main
 
 concurrency: 
   group: ${{ github.workflow }}-${{ github.ref }}

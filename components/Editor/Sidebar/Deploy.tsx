@@ -1,4 +1,5 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
+import Link from 'next/link'
 
 import api from 'api-client/api'
 import Text from 'components/Text'
@@ -7,6 +8,9 @@ import { useStateStore } from 'state/StoreProvider'
 import { evaluatePrompt } from 'state/prompt'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { getModelArgs } from 'state/model'
+import Button from 'components/Button'
+import Spinner from 'components/Spinner'
+import useDeployment from 'hooks/useDeployment'
 
 
 const createDeployment = api.path('/deployments').method('put').create({
@@ -20,31 +24,39 @@ export interface Props {
 function Deploy({ project }: Props) {
   const [selectors] = useStateStore()
   const modelConfig = selectors.use.getSelectedModelConfig()()
+  const [isDeploying, setIsDeploying] = useState(false)
 
   const [creds] = useModelProviderArgs()
 
-  async function deployAgent() {
-    if (!modelConfig) {
-      console.error('Cannot get model config')
-      return
-    }
-    const {
-      references: promptReferences,
-      prompt: evaluatedPrompt,
-    } = evaluatePrompt(modelConfig.prompt)
+  const deployment = useDeployment(project)
 
-    createDeployment({
-      // TODO: Add current envs vars and save them on backend
-      project_id: project.id,
-      config: {
-        name: modelConfig.name,
-        provider: modelConfig.provider,
-        args: getModelArgs(modelConfig, creds) as any,
+  async function deployAgent() {
+    try {
+      setIsDeploying(true)
+      if (!modelConfig) {
+        console.error('Cannot get model config')
+        return
+      }
+      const {
+        references: promptReferences,
         prompt: evaluatedPrompt,
-        // TODO: Handle prompt references
-        prompt_references: promptReferences,
-      } as any,
-    })
+      } = evaluatePrompt(modelConfig.prompt)
+
+      await createDeployment({
+        // TODO: Add current envs vars and save them on backend
+        project_id: project.id,
+        config: {
+          name: modelConfig.name,
+          provider: modelConfig.provider,
+          args: getModelArgs(modelConfig, creds) as any,
+          prompt: evaluatedPrompt,
+          // TODO: Handle prompt references
+          // prompt_references: promptReferences,
+        } as any,
+      })
+    } finally {
+      setIsDeploying(false)
+    }
   }
 
   return (
@@ -79,7 +91,42 @@ function Deploy({ project }: Props) {
       space-y-4
       "
       >
-
+        <div
+          className=""
+        >
+          <Button
+            text={isDeploying ? 'Deploying' : 'Deploy'}
+            isDisabled={isDeploying}
+            icon={isDeploying ? <Spinner /> : ''}
+            onClick={deployAgent}
+            variant={Button.variant.Full}
+          />
+        </div>
+        <div
+          className="
+        "
+        >
+          {deployment && deployment['config'] &&
+            <div
+              className="
+                flex
+                flex-col
+              "
+            >
+              <Text
+                text={`Deployment ID: ${deployment.id}`}
+              />
+              <Link
+                href={`${process.env.NEXT_PUBLIC_API_URL}/deployment/${deployment.id}`}
+                target="_blank"
+                rel="noopener noreferrers"
+                className=""
+              >
+                {`${process.env.NEXT_PUBLIC_API_URL}/deployment/${deployment.id}`}
+              </Link>
+            </div>
+          }
+        </div>
       </div>
     </div>
   )

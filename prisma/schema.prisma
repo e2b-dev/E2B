@@ -1,6 +1,7 @@
 generator js {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema", "views"]
+  engineType      = "binary"
 }
 
 datasource db {

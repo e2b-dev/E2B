@@ -7,7 +7,7 @@ from deployment.manager import AgentFactory
 from database.base import db
 
 
-class JsonRpcAgent:
+class JsonRpcAgentConnection:
     jsonrpc_version = "2.0"
 
     def __init__(

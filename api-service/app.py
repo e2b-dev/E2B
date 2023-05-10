@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from agent.base import AgentInteraction
 from deployment.in_memory import InMemoryDeploymentManager
-from agent.json_rpc import JsonRpcAgent
+from json_rpc import JsonRpcAgentConnection
 from agent.basic_agent import BasicAgent
 from database.base import db
 
@@ -44,16 +44,16 @@ app.add_middleware(
 @app.websocket("/dev/agent")
 async def ws_agent_run(websocket: WebSocket, project_id: str):
     await websocket.accept()
-    connector = JsonRpcAgent(
+    connection = JsonRpcAgentConnection(
         project_id=project_id,
         iter_json=websocket.iter_json,
         send_json=websocket.send_json,
         agent_factory=BasicAgent.create,
     )
     try:
-        await connector.handle()
+        await connection.handle()
     except:
-        await connector.close()
+        await connection.close()
     finally:
         print("Closing websocket")
 
@@ -72,7 +72,6 @@ async def list_deployments():
 async def create_agent_deployment(body: CreateDeploymentBody, project_id: str):
     db_deployment = await db.get_deployment(project_id)
 
-    print("test", db_deployment)
     if db_deployment:
         deployment = await deployment_manager.update_deployment(
             db_deployment["id"],

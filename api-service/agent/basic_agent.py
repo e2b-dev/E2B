@@ -39,6 +39,8 @@ class RewriteStepsException(Exception):
 
 
 class BasicAgent(AgentBase):
+    max_run_time = 60 * 60 * 24  # in seconds
+
     def __init__(
         self,
         config: Any,
@@ -47,6 +49,7 @@ class BasicAgent(AgentBase):
         on_interaction_request: OnInteractionRequest,
     ):
         super().__init__()
+        self._start_loop: asyncio.Task | None = None
         self.get_envs = get_envs
         self.config = ModelConfig(**config)
         self.on_interaction_request = on_interaction_request
@@ -303,10 +306,23 @@ class BasicAgent(AgentBase):
 
     async def _start(self, instructions: Any):
         print("Start agent run")
+
+        async def start_with_timeout():
+            try:
+                self._start_loop = asyncio.create_task(
+                    self._run(instructions=instructions),
+                )
+
+                await asyncio.wait_for(
+                    self._start_loop,
+                    timeout=self.max_run_time,
+                )
+            except asyncio.TimeoutError:
+                await self.stop()
+                print("Timeout")
+
         asyncio.create_task(
-            self._run(
-                instructions=instructions,
-            )
+            start_with_timeout(),
         )
 
     async def _pause(self):
@@ -344,7 +360,7 @@ class BasicAgent(AgentBase):
                 await self._start(interaction.data["instructions"])
             case "rewrite_steps":
                 await self._rewrite_steps(interaction.data["steps"])
-            case default:
+            case _:
                 raise Exception(f"Unknown interaction action: {interaction.type}")
 
     async def stop(self):
@@ -352,3 +368,5 @@ class BasicAgent(AgentBase):
         self.canceled = True
         if self.llm_generation:
             self.llm_generation.cancel()
+        if self._start_loop:
+            self._start_loop.cancel()
