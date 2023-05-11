@@ -21,11 +21,12 @@ function TemplateButton({
         px-4
         cursor-pointer
         border
+        transition-all
         border-green-800
         rounded`,
         {
           'border-green-800': isSelected,
-          'border-transparent': !isSelected,
+          'border-transparent hover:border-green-800': !isSelected,
         },
       )}>
       <div className="

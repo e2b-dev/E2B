@@ -20,12 +20,11 @@ class Playground(Session):
     port_check_interval = 0.5  # 500ms
     max_port_checks = 10
 
-    rootdir = "/"
-
     run_command_timeout_frequency = 2  # in Hz
 
-    def __init__(self, env_id: str, get_envs: GetEnvs):
+    def __init__(self, env_id: str, get_envs: GetEnvs, rootdir="/"):
         super().__init__(env_id, get_envs)
+        self.rootdir = rootdir
 
     async def get_open_ports(self):
         thread: Any = self.api.get_session(self.id, async_req=True)
@@ -39,10 +38,19 @@ class Playground(Session):
             for open_port in open_ports
         )
 
+    async def checkout_repo(self, repo_url: str):
+        await self.run_command(f"git clone {repo_url} .")
+
+    async def push_repo(self, repo_url: str):
+        await self.run_command(f"git push")
+
+    async def change_rootdir(self, rootdir: str):
+        self.rootdir = rootdir
+
     async def run_command(
         self,
         cmd: str,
-        rootdir=rootdir,
+        rootdir: str | None = None,
         timeout: float | None = None,
     ):
         thread: Any = self.api.start_process(
@@ -51,7 +59,7 @@ class Playground(Session):
                 cmd=cmd_with_env_vars(cmd, self.env_vars),
                 # TODO: Env vars are not correctly passed to the devbookd process - that's why we add them with cmd_with_env_vars.
                 envVars=self.env_vars,
-                rootdir=rootdir,
+                rootdir=rootdir or self.rootdir,
             ),
             wait=True if timeout is None else False,
             async_req=True,
@@ -90,7 +98,7 @@ class Playground(Session):
     async def start_process(
         self,
         cmd: str,
-        rootdir=rootdir,
+        rootdir: str | None = None,
     ):
         """Start process and return the process ID."""
         thread: Any = self.api.start_process(
@@ -99,7 +107,7 @@ class Playground(Session):
                 cmd=cmd_with_env_vars(cmd, self.env_vars),
                 # TODO: Env vars are not correctly passed to the devbookd process - that's why we add them with cmd_with_env_vars.
                 envVars=self.env_vars,
-                rootdir=rootdir,
+                rootdir=rootdir or self.rootdir,
             ),
             async_req=True,
         )
@@ -154,11 +162,11 @@ class Playground(Session):
         server_cmd: str,
         request_cmd: str,
         port: float,
-        rootdir=rootdir,
+        rootdir: str | None = None,
     ):
         server_process_id = await self.start_process(
             cmd=server_cmd,
-            rootdir=rootdir,
+            rootdir=rootdir or self.rootdir,
         )
 
         for _ in range(self.max_port_checks):
@@ -166,6 +174,9 @@ class Playground(Session):
                 break
             await sleep(self.port_check_interval)
 
-        request_result = await self.run_command(cmd=request_cmd, rootdir=rootdir)
+        request_result = await self.run_command(
+            cmd=request_cmd,
+            rootdir=rootdir or self.rootdir,
+        )
         server_result = await self.stop_process(server_process_id)
         return request_result, server_result

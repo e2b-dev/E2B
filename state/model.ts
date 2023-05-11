@@ -114,10 +114,10 @@ export const providerTemplates: {
         },
       },
       {
-        name: 'Claude Instant v1',
+        name: 'Claude Instant v1.1',
         args: {
           model: {
-            value: 'claude-instant-v1',
+            value: 'claude-instant-v1.1',
             type: 'string',
           },
           max_tokens_to_sample: {
@@ -474,6 +474,57 @@ export const providerTemplates: {
             label: 'Max tokens',
             type: 'number',
             value: 2048,
+            editable: true,
+          },
+          temperature: {
+            type: 'number',
+            label: 'Temperature',
+            value: 0,
+            min: 0.0,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          presence_penalty: {
+            type: 'number',
+            label: 'Presence penalty',
+            value: 0.0,
+            min: -2,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          frequency_penalty: {
+            type: 'number',
+            label: 'Frequency penalty',
+            value: 0.0,
+            min: -2,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          top_p: {
+            label: 'Top-p',
+            type: 'number',
+            value: 1.0,
+            min: 0,
+            max: 1,
+            step: 0.01,
+            editable: true,
+          },
+        },
+      },
+      {
+        name: 'GPT 4 32k',
+        args: {
+          model_name: {
+            type: 'string',
+            value: 'gpt-4-32k',
+          },
+          max_tokens: {
+            label: 'Max tokens',
+            type: 'number',
+            value: 32768,
             editable: true,
           },
           temperature: {

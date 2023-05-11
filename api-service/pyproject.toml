@@ -22,6 +22,7 @@ uvicorn = {extras = ["standard"], version = "^0.22.0"}
 fastapi = "^0.95.1"
 langchain = "0.0.141"
 chevron = "^0.14.0"
+chromadb = "^0.3.22"
 
 [tool.poetry.group.dev]
 optional = true
