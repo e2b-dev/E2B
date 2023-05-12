@@ -18,7 +18,6 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
 )
 
-
 from agent.base import (
     AgentInteraction,
     OnLogs,
@@ -163,6 +162,11 @@ class BasicAgent(AgentBase):
             # Create tools
             # Create playground for code tools
             playground = NodeJSPlayground(get_envs=self.get_envs)
+
+            if "RepoURL" in instructions:
+                await playground.checkout_repo(instructions["RepoURL"])
+                await playground.run_command("npm install", rootdir="/code")
+
             tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]
             tool_map = {tool.name: tool for tool in tools}
@@ -177,6 +181,7 @@ class BasicAgent(AgentBase):
                 llm=get_model(self.config, callback_manager),
                 prompt=self._create_prompt(self.config, tools, instructions),
                 callback_manager=callback_manager,
+                verbose=True,
             )
 
             # -----
