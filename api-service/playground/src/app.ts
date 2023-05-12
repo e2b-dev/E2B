@@ -25,7 +25,7 @@ RegisterRoutes(app)
 
 app.use(
   function notFoundHandler(_req, res: ExResponse) {
-    res.status(404).send({
+    res.status(500).send({
       message: 'Not Found',
     })
   },

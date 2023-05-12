@@ -263,7 +263,7 @@ class BasicAgent(AgentBase):
                     # Check if the run is finished
                     if any(
                         keyword in current_step["output"]
-                        for keyword in ("Final Answer", "FinalAnswer")
+                        for keyword in ("Final Answer", "FinalAnswer", "Finished")
                     ):
                         break
 

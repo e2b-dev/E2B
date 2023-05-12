@@ -524,7 +524,7 @@ export const providerTemplates: {
           max_tokens: {
             label: 'Max tokens',
             type: 'number',
-            value: 32768,
+            value: 2048,
             editable: true,
           },
           temperature: {
