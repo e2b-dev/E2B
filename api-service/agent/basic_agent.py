@@ -18,6 +18,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
 )
 
+from .memory import get_memory
 from agent.base import (
     AgentInteraction,
     OnLogs,
@@ -142,6 +143,7 @@ class BasicAgent(AgentBase):
         ] = [
             SystemMessage(content=system_template),
             HumanMessage(content=human_template),
+            AIMessagePromptTemplate.from_template("{repo_context}"),
             AIMessagePromptTemplate.from_template("{agent_scratchpad}"),
         ]
         return ChatPromptTemplate(
@@ -176,13 +178,27 @@ class BasicAgent(AgentBase):
                 tool.callback_manager = callback_manager
 
             # -----
-            # Create LLM from specified model
+            # Create LLM from specified models
+            prompt = self._create_prompt(self.config, tools, instructions)
             llm_chain = LLMChain(
                 llm=get_model(self.config, callback_manager),
-                prompt=self._create_prompt(self.config, tools, instructions),
+                prompt=prompt,
                 callback_manager=callback_manager,
                 verbose=True,
             )
+
+            repo_files = await playground.get_files("/code", ["node_modules"])
+            vectordb = await get_memory(self.config, repo_files)
+
+            async def get_repo_context(prompt: str):
+                docs = await vectordb.asimilarity_search(prompt, k=4)
+
+                return "Relevant files in the codebase:\n\n" + "\n".join(
+                    [
+                        f"{doc.metadata['path']}\n```\n({doc.page_content})\n```\n"
+                        for doc in docs
+                    ]
+                )
 
             # -----
             # Create log handlers
@@ -236,10 +252,15 @@ class BasicAgent(AgentBase):
                     await self._check_interrupt()
                     # Query the LLM in background
                     scratchpad = get_agent_scratchpad()
+                    repo_context = await get_repo_context(
+                        prompt=prompt.format_prompt(scratchpad=scratchpad).to_string(),
+                    )
+
                     self.llm_generation = asyncio.create_task(
                         llm_chain.agenerate(
                             [
                                 {
+                                    "repo_context": repo_context,
                                     "agent_scratchpad": scratchpad,
                                     "stop": "Observation:",
                                 }

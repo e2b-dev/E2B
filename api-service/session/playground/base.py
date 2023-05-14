@@ -1,8 +1,12 @@
 import math
 
-from typing import Any
+from typing import Any, Coroutine, List, Tuple
 from asyncio import sleep
 
+from pydantic import StrictStr
+
+
+from playground_client.models.entry_info import EntryInfo
 from playground_client.models.list_filesystem_dir_response import (
     ListFilesystemDirResponse,
 )
@@ -41,11 +45,32 @@ class Playground(Session):
     async def checkout_repo(self, repo_url: str):
         await self.run_command(f"git clone {repo_url} .")
 
-    async def push_repo(self, repo_url: str):
-        await self.run_command(f"git push")
+    # async def push_repo(self, repo_url: str):
+    #     await self.run_command(f"git push")
 
     async def change_rootdir(self, rootdir: str):
         self.rootdir = rootdir
+
+    async def get_files(
+        self,
+        path: str,
+        ignore: List[str] = [],
+    ):
+        dirs: List[EntryInfo] = [EntryInfo(name=path, isDir=True)]
+        files: List[EntryInfo] = []
+        while len(dirs) > 0:
+            dir = dirs.pop()
+            entries = await self.list_dir(dir.name)
+            dirs.extend(
+                entry for entry in entries if entry.is_dir and not entry.name in ignore
+            )
+            files.extend(
+                entry
+                for entry in entries
+                if not entry.is_dir and not entry.name in ignore
+            )
+
+        return [(entry.name, await self.read_file(entry.name)) for entry in files]
 
     async def run_command(
         self,

@@ -10,7 +10,6 @@ python-dateutil = "^2.8.2"
 urllib3 = "^1.26.14"
 pydantic = "^1.10.6"
 aenum = "^3.1.11"
-openai = "^0.27.0"
 lxml = "^4.9.2"
 asyncio = "^3.4.3"
 postgrest = "^0.10.6"
@@ -23,6 +22,7 @@ fastapi = "^0.95.1"
 langchain = "0.0.141"
 chevron = "^0.14.0"
 chromadb = "^0.3.22"
+openai = "^0.27.6"
 
 [tool.poetry.group.dev]
 optional = true
