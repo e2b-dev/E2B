@@ -67,7 +67,7 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
   - [x] Claude v1.3
   - [x] Claude Instant v1
 - [x] [Replicate](https://replicate.com/)
-- [x] [HuggingFace](https://huggingface.co/)
+- [x] [Hugging Face](https://huggingface.co/)
   - [x] Inference API
   - [x] Inference Endpoints
 - [x] [Banana](https://www.banana.dev/)
