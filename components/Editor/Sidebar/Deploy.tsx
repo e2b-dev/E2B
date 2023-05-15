@@ -30,6 +30,8 @@ function Deploy({ project }: Props) {
 
   const deployment = useDeployment(project)
 
+  const baseDeploymentURL = deployment ? `${process.env.NEXT_PUBLIC_API_URL}/deployments/${deployment.id}` : undefined
+
   async function deployAgent() {
     try {
       setIsDeploying(true)
@@ -106,7 +108,7 @@ function Deploy({ project }: Props) {
           className="
         "
         >
-          {deployment && deployment['config'] &&
+          {deployment && deployment['config'] && baseDeploymentURL &&
             <div
               className="
                 flex
@@ -117,12 +119,12 @@ function Deploy({ project }: Props) {
                 text={`Deployment ID: ${deployment.id}`}
               />
               <Link
-                href={`${process.env.NEXT_PUBLIC_API_URL}/deployment/${deployment.id}`}
+                href={baseDeploymentURL}
                 target="_blank"
                 rel="noopener noreferrers"
                 className=""
               >
-                {`${process.env.NEXT_PUBLIC_API_URL}/deployment/${deployment.id}`}
+                {baseDeploymentURL}
               </Link>
             </div>
           }

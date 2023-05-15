@@ -70,6 +70,7 @@ async def list_deployments():
 
 @app.put("/deployments")
 async def create_agent_deployment(body: CreateDeploymentBody, project_id: str):
+    print("pr", project_id)
     db_deployment = await db.get_deployment(project_id)
 
     if db_deployment:
@@ -92,6 +93,16 @@ async def create_agent_deployment(body: CreateDeploymentBody, project_id: str):
 @app.delete("/deployments/{id}", status_code=204)
 async def delete_agent_deployment(id: str):
     await deployment_manager.remove_deployment(id)
+
+
+@app.get("/deployments/{id}")
+async def get_agent_deployment(id: str):
+    deployment = await deployment_manager.get_deployment(id)
+    return {
+        "id": deployment.id,
+        "logs": len(deployment.event_handler.logs),
+        "interaction_request": len(deployment.event_handler.interaction_requests),
+    }
 
 
 @app.post("/deployments/{id}/interactions")
