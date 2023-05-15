@@ -1,10 +1,7 @@
 import math
 
-from typing import Any, Coroutine, List, Tuple
+from typing import Any, List
 from asyncio import sleep
-
-from pydantic import StrictStr
-
 
 from playground_client.models.entry_info import EntryInfo
 from playground_client.models.list_filesystem_dir_response import (
@@ -62,15 +59,23 @@ class Playground(Session):
             dir = dirs.pop()
             entries = await self.list_dir(dir.name)
             dirs.extend(
-                entry for entry in entries if entry.is_dir and not entry.name in ignore
+                EntryInfo(isDir=True, name=f"{dir.name}/{entry.name}")
+                for entry in entries
+                if entry.is_dir and not entry.name in ignore
             )
             files.extend(
-                entry
+                EntryInfo(isDir=False, name=f"{dir.name}/{entry.name}")
                 for entry in entries
                 if not entry.is_dir and not entry.name in ignore
             )
 
-        return [(entry.name, await self.read_file(entry.name)) for entry in files]
+        for file in files:
+            try:
+                content = await self.read_file(file.name)
+                yield (file.name, content)
+            except:
+                print("Skipping file", file.name)
+                continue
 
     async def run_command(
         self,

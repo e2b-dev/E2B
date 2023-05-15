@@ -27,20 +27,13 @@ export class FilesystemController extends Controller {
     @Path() sessionID: string,
     @Query() path: string,
   ): Promise<ListFilesystemDirResponse> {
-    try {
-      const entries = await CachedSession
-        .findSession(sessionID)
-        .session
-        .filesystem!
-        .list(path)
-      return {
-        entries,
-      }
-    } catch (error) {
-      console.error(error)
-      return {
-        entries: [],
-      }
+    const entries = await CachedSession
+      .findSession(sessionID)
+      .session
+      .filesystem!
+      .list(path)
+    return {
+      entries,
     }
   }
 
@@ -73,20 +66,13 @@ export class FilesystemController extends Controller {
     @Path() sessionID: string,
     @Query() path: string,
   ): Promise<ReadFilesystemFileResponse> {
-    try {
-      const content = await CachedSession
-        .findSession(sessionID)
-        .session
-        .filesystem!
-        .read(path)
-      return {
-        content,
-      }
-    } catch (error) {
-      console.error(error)
-      return {
-        content: '',
-      }
+    const content = await CachedSession
+      .findSession(sessionID)
+      .session
+      .filesystem!
+      .read(path)
+    return {
+      content,
     }
   }
 

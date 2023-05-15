@@ -5,7 +5,7 @@ import chevron
 # Monkey patch chevron to not escape html
 chevron.render.__globals__["_html_escape"] = lambda string: string
 
-from typing import Any, Dict, List, Literal, cast
+from typing import Any, Dict, List, Literal, Tuple, cast
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -187,7 +187,10 @@ class BasicAgent(AgentBase):
                 verbose=True,
             )
 
-            repo_files = await playground.get_files("/code", ["node_modules"])
+            repo_files: List[Tuple[str, str]] = []
+            async for file in playground.get_files("/code", ["node_modules"]):
+                repo_files.append(file)
+
             vectordb = await get_memory(self.config, repo_files)
 
             async def get_repo_context(prompt: str):
