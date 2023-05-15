@@ -18,10 +18,10 @@ class Database:
             .select("*")
             .eq("project_id", project_id)
             .limit(1)
-            .maybe_single()
             .execute()
         )
-        return response.data
+
+        return None if len(response.data) == 0 else response.data[0]
 
     async def get_deployments(self):
         response = (
