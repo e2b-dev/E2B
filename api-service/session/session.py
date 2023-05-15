@@ -23,7 +23,8 @@ class Session:
         self.api = playground_client.DefaultApi(self.client)
 
         result = self.api.create_sessions(
-            playground_client.CreateSessionsRequest(envID=env_id)
+            playground_client.CreateSessionsRequest(envID=env_id),
+            _request_timeout=30,
         )
         self.id = result.id
         self.is_closed = False
