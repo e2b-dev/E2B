@@ -11,6 +11,7 @@ import SaveFile from './SaveFile'
 import DeleteFile from './DeleteFile'
 import ListDirectory from './ListDirectory'
 import DeleteDirectory from './DeleteDirectory'
+import RunTerminalCommand from './RunTerminalCommand'
 
 export interface Props {
   log: ToolLog
@@ -32,6 +33,8 @@ function Tool({
       return <WriteCode log={log} isRunning={isRunning} />
     case ToolName.RunSavedCode:
       return <RunSavedCode log={log} isRunning={isRunning} />
+    case ToolName.RunTerminalCommand:
+      return <RunTerminalCommand log={log} isRunning={isRunning} />
     case ToolName.ReadFile:
       return <ReadFile log={log} isRunning={isRunning} />
     case ToolName.SaveFile:

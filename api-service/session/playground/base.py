@@ -39,11 +39,34 @@ class Playground(Session):
             for open_port in open_ports
         )
 
-    async def checkout_repo(self, repo_url: str):
-        await self.run_command(f"git clone {repo_url} .")
+    async def checkout_repo(self, repo_url: str, rootdir: str):
+        # WIP
+        await self.make_dir("/repo")
+        await self.run_command(
+            """
+apk add \
+  --no-cache \
+  --allow-untrusted \
+  --repository http://dl-cdn.alpinelinux.org/alpine/v3.15/main git
+        """
+        )
+        await self.run_command('git config --global http.sslVerify "false"')
+        res = await self.run_command(
+            f"git clone {repo_url} /repo && npm install --prefix /repo",
+            rootdir="/",
+        )
+        print("res", res)
 
-    # async def push_repo(self, repo_url: str):
-    #     await self.run_command(f"git push")
+    async def push_repo(self, repo_url: str):
+        await self.run_command(
+            """
+apk add \
+  --no-cache \
+  --allow-untrusted \
+  --repository http://dl-cdn.alpinelinux.org/alpine/v3.15/main github-cli
+        """
+        )
+        await self.run_command(f"git push")
 
     async def change_rootdir(self, rootdir: str):
         self.rootdir = rootdir

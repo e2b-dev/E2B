@@ -15,6 +15,7 @@ export enum ToolName {
   DeleteFile = 'DeleteFile',
   DeleteDirectory = 'DeleteDirectory',
   ListDirectory = 'ListDirectory',
+  RunTerminalCommand = 'RunTerminalCommand',
 }
 
 interface BaseLog {

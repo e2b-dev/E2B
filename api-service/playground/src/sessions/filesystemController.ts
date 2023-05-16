@@ -82,10 +82,15 @@ export class FilesystemController extends Controller {
     @Query() path: string,
     @BodyProp() content: string,
   ) {
-    await CachedSession
-      .findSession(sessionID)
-      .session
-      .filesystem!
-      .write(path, content)
+    try {
+      await CachedSession
+        .findSession(sessionID)
+        .session
+        .filesystem!
+        .write(path, content)
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
   }
 }

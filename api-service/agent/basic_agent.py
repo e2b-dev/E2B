@@ -1,4 +1,5 @@
 import asyncio
+import math
 import uuid
 import chevron
 
@@ -147,7 +148,7 @@ class BasicAgent(AgentBase):
             AIMessagePromptTemplate.from_template("{agent_scratchpad}"),
         ]
         return ChatPromptTemplate(
-            input_variables=["agent_scratchpad"],
+            input_variables=["agent_scratchpad", "repo_context"],
             messages=messages,
         )
 
@@ -165,9 +166,7 @@ class BasicAgent(AgentBase):
             # Create playground for code tools
             playground = NodeJSPlayground(get_envs=self.get_envs)
 
-            if "RepoURL" in instructions:
-                await playground.checkout_repo(instructions["RepoURL"])
-                await playground.run_command("npm install", rootdir="/code")
+            await playground.checkout_repo(instructions["RepoURL"], "/repo")
 
             tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]
@@ -188,15 +187,23 @@ class BasicAgent(AgentBase):
             )
 
             repo_files: List[Tuple[str, str]] = []
-            async for file in playground.get_files("/code", ["node_modules"]):
+            async for file in playground.get_files(
+                "/repo",
+                ["node_modules", ".git", "package-lock.json", ".next"],
+            ):
                 repo_files.append(file)
 
             vectordb = await get_memory(self.config, repo_files)
 
             async def get_repo_context(prompt: str):
-                docs = await vectordb.asimilarity_search(prompt, k=4)
+                docs = await vectordb.asimilarity_search(
+                    prompt,
+                    k=min(5, len(repo_files)),
+                )
 
-                return "Relevant files in the codebase:\n\n" + "\n".join(
+                print("getting docs >>>", [doc.metadata["path"] for doc in docs])
+
+                return "Relevant files in the initial codebase:\n\n" + "\n".join(
                     [
                         f"{doc.metadata['path']}\n```\n({doc.page_content})\n```\n"
                         for doc in docs
@@ -256,7 +263,9 @@ class BasicAgent(AgentBase):
                     # Query the LLM in background
                     scratchpad = get_agent_scratchpad()
                     repo_context = await get_repo_context(
-                        prompt=prompt.format_prompt(scratchpad=scratchpad).to_string(),
+                        prompt=prompt.format_prompt(
+                            agent_scratchpad=scratchpad, repo_context=""
+                        ).to_string(),
                     )
 
                     self.llm_generation = asyncio.create_task(
@@ -308,7 +317,7 @@ class BasicAgent(AgentBase):
                 except RewriteStepsException:
                     print("REWRITING")
                     continue
-
+            # await playground.push_repo()        
         except:
             raise
         finally:

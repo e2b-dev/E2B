@@ -6,6 +6,7 @@ from session.playground.nodejs import NodeJSPlayground
 from .human.tools import create_human_tools
 from .playground.tools.code import create_code_tools
 from .playground.tools.filesystem import create_filesystem_tools
+from .playground.tools.process import create_process_tools
 
 
 def create_tools(
@@ -19,7 +20,7 @@ def create_tools(
         for tools in (
             tool_factory(playground=playground)
             for tool_factory in [
-                # create_process_tools,
+                create_process_tools,
                 create_filesystem_tools,
                 create_code_tools,
             ]
