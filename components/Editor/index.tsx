@@ -86,7 +86,7 @@ function Editor({ project }: Props) {
   const ref = useRef<HTMLDivElement | null>(null)
 
   const [selectedMenuSection, setSelectedMenuSection] = useState(
-    MenuSection.Agent,
+    MenuSection.Run,
   )
 
   const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [0, 100 / 3, 100 / 3])

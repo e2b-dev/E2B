@@ -99,7 +99,7 @@ function Sidebar({
       {activeMenuSection === MenuSection.Prompt &&
         <Prompt />
       }
-      {activeMenuSection === MenuSection.Agent &&
+      {activeMenuSection === MenuSection.Run &&
         <Agent
           run={runAgent}
           agentState={agentState}
