@@ -116,19 +116,49 @@ function Deploy({ project }: Props) {
               "
             >
               <Text
+                size={Text.size.S3}
                 text={`Deployment ID: ${deployment.id}`}
               />
               <Link
                 href={baseDeploymentURL}
                 target="_blank"
                 rel="noopener noreferrers"
-                className=""
+                className="text-sm"
               >
                 {baseDeploymentURL}
               </Link>
             </div>
           }
         </div>
+        {deployment && deployment['config'] && baseDeploymentURL &&
+          <div>
+            <Text
+              text="Example usage"
+            />
+            <pre className="
+            p-2
+            rounded
+            font-mono
+            text-xs
+            bg-slate-100
+            overflow-auto
+          ">
+              <code>
+                {`curl --request POST \\
+  --url ${baseDeploymentURL} \\
+  --data '{
+  "type": "start",
+  "data": {
+		"instructions": {
+			"Description": "Add Stripe Checkout",
+			"RepoURL": "https://github.com/e2b-dev/test.git"
+		}
+	}
+}'`}
+              </code>
+            </pre>
+          </div>
+        }
       </div>
     </div>
   )
