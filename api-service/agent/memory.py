@@ -7,7 +7,7 @@ from models.base import ModelConfig
 
 
 async def get_memory(config: ModelConfig, files: List[Tuple[str, str]]) -> VectorStore:
-    splitter = CharacterTextSplitter(chunk_size=2000)
+    splitter = CharacterTextSplitter()
     documents = splitter.create_documents(
         [file for _, file in files],
         [{"path": path} for path, _ in files],
