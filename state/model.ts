@@ -413,57 +413,6 @@ export const providerTemplates: {
     },
     models: [
       {
-        name: 'GPT 3.5 Turbo',
-        args: {
-          model_name: {
-            type: 'string',
-            value: 'gpt-3.5-turbo',
-          },
-          max_tokens: {
-            label: 'Max tokens',
-            type: 'number',
-            value: 2048,
-            editable: true,
-          },
-          temperature: {
-            type: 'number',
-            label: 'Temperature',
-            value: 0.0,
-            min: 0,
-            step: 0.01,
-            max: 2,
-            editable: true,
-          },
-          presence_penalty: {
-            type: 'number',
-            label: 'Presence penalty',
-            value: 0.0,
-            min: -2,
-            step: 0.01,
-            max: 2,
-            editable: true,
-          },
-          frequency_penalty: {
-            type: 'number',
-            label: 'Frequency penalty',
-            value: 0.0,
-            min: -2,
-            step: 0.01,
-            max: 2,
-            editable: true,
-          },
-          top_p: {
-            label: 'Top-p',
-            type: 'number',
-            value: 1,
-            min: 0.0,
-            max: 1,
-            step: 0.01,
-            editable: true,
-          },
-        },
-      },
-      {
         name: 'GPT 4',
         args: {
           model_name: {
@@ -473,7 +422,7 @@ export const providerTemplates: {
           max_tokens: {
             label: 'Max tokens',
             type: 'number',
-            value: 2048,
+            value: 6000,
             editable: true,
           },
           temperature: {
@@ -559,6 +508,57 @@ export const providerTemplates: {
             type: 'number',
             value: 1.0,
             min: 0,
+            max: 1,
+            step: 0.01,
+            editable: true,
+          },
+        },
+      },
+      {
+        name: 'GPT 3.5 Turbo',
+        args: {
+          model_name: {
+            type: 'string',
+            value: 'gpt-3.5-turbo',
+          },
+          max_tokens: {
+            label: 'Max tokens',
+            type: 'number',
+            value: 2048,
+            editable: true,
+          },
+          temperature: {
+            type: 'number',
+            label: 'Temperature',
+            value: 0.0,
+            min: 0,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          presence_penalty: {
+            type: 'number',
+            label: 'Presence penalty',
+            value: 0.0,
+            min: -2,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          frequency_penalty: {
+            type: 'number',
+            label: 'Frequency penalty',
+            value: 0.0,
+            min: -2,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          top_p: {
+            label: 'Top-p',
+            type: 'number',
+            value: 1,
+            min: 0.0,
             max: 1,
             step: 0.01,
             editable: true,
