@@ -46,7 +46,7 @@ export const templates: {
     ],
   },
   [TemplateID.StripeCheckout]: {
-    description: 'Stripe Checkout',
+    description: 'Stripe',
     stackDescription: 'Next.js + Stripe',
     component: <StripeCheckoutTemplate />,
     icon: <NodeJSIcon />,
