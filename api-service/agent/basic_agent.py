@@ -189,7 +189,15 @@ class BasicAgent(AgentBase):
             repo_files: List[Tuple[str, str]] = []
             async for file in playground.get_files(
                 "/repo",
-                ["node_modules", ".git", "package-lock.json", ".next"],
+                [
+                    "node_modules",
+                    ".git",
+                    "package-lock.json",
+                    ".next",
+                    "tsconfig.json",
+                    "yarn.lock",
+                    "package.json",
+                ],
             ):
                 repo_files.append(file)
 
@@ -198,7 +206,7 @@ class BasicAgent(AgentBase):
             async def get_repo_context(prompt: str):
                 docs = await vectordb.asimilarity_search(
                     prompt,
-                    k=min(5, len(repo_files)),
+                    k=min(3, len(repo_files)),
                 )
 
                 print("getting docs >>>", [doc.metadata["path"] for doc in docs])
