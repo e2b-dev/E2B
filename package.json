@@ -39,6 +39,11 @@
     "generate:api-client": "openapi-typescript api-service/openapi.json --support-array-length --alphabetize --output api-client/api/schema.gen.ts"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "^6.1.8",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/lang-python": "^6.1.2",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@devbookhq/code-editor": "^0.1.29",
     "@devbookhq/splitter": "^1.4.0",
     "@prisma/client": "^4.13.0",
     "@supabase/auth-helpers-nextjs": "^0.5.5",

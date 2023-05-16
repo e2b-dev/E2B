@@ -1,0 +1,85 @@
+{
+  "jsonrpc": "2.0",
+  "id": 0,
+  "result": {
+    "capabilities": {
+      "textDocumentSync": 2,
+      "completionProvider": {
+        "triggerCharacters": [
+          ".",
+          "\"",
+          "'",
+          "/",
+          "@",
+          "<"
+        ],
+        "resolveProvider": true
+      },
+      "codeActionProvider": true,
+      "definitionProvider": true,
+      "documentFormattingProvider": true,
+      "documentRangeFormattingProvider": true,
+      "documentHighlightProvider": true,
+      "documentSymbolProvider": true,
+      "executeCommandProvider": {
+        "commands": [
+          "_typescript.applyWorkspaceEdit",
+          "_typescript.applyCodeAction",
+          "_typescript.applyRefactoring",
+          "_typescript.configurePlugin",
+          "_typescript.organizeImports",
+          "_typescript.applyRenameFile",
+          "_typescript.goToSourceDefinition"
+        ]
+      },
+      "hoverProvider": true,
+      "inlayHintProvider": true,
+      "renameProvider": true,
+      "referencesProvider": true,
+      "signatureHelpProvider": {
+        "triggerCharacters": [
+          "(",
+          ",",
+          "<"
+        ],
+        "retriggerCharacters": [
+          ")"
+        ]
+      },
+      "workspaceSymbolProvider": true,
+      "implementationProvider": true,
+      "typeDefinitionProvider": true,
+      "foldingRangeProvider": true,
+      "semanticTokensProvider": {
+        "documentSelector": null,
+        "legend": {
+          "tokenTypes": [
+            "class",
+            "enum",
+            "interface",
+            "namespace",
+            "typeParameter",
+            "type",
+            "parameter",
+            "variable",
+            "enumMember",
+            "property",
+            "function",
+            "member"
+          ],
+          "tokenModifiers": [
+            "declaration",
+            "static",
+            "async",
+            "readonly",
+            "defaultLibrary",
+            "local"
+          ]
+        },
+        "full": true,
+        "range": true
+      },
+      "callsProvider": true
+    }
+  }
+}
