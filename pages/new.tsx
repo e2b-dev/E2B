@@ -139,7 +139,7 @@ function NewProject() {
           <LayoutGrid size="30px" strokeWidth="1.5" />
           <Text
             size={Text.size.S1}
-            text="Create New Project"
+            text="Create New Agent"
           />
         </div>
       </div>
@@ -148,7 +148,7 @@ function NewProject() {
         <div className="w-[500px] max-h-[600px] flex flex-col space-y-2 overflow-hidden">
           <div className="flex space-x-2 items-center transition-all">
             <Text
-              text="Configure New Project"
+              text="New Agent"
               className="text-base"
             />
           </div>

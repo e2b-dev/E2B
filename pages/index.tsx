@@ -152,7 +152,7 @@ function Home({ projects }: Props) {
           <LayoutGrid size="30px" strokeWidth="1.5" />
           <Text
             size={Text.size.S1}
-            text="Projects"
+            text="Agents"
           />
         </div>
 
