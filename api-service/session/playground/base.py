@@ -58,7 +58,7 @@ class Playground(Session):
         )
         print("res", res)
 
-    async def push_repo(self, repo_url: str):
+    async def push_repo(self):
         await self.run_command(
             """wget http://github.com/cli/cli/releases/download/v2.29.0/gh_2.29.0_linux_amd64.tar.gz --no-check-certificate && tar -xzf gh_2.29.0_linux_amd64.tar.gz && mv gh_2.29.0_linux_amd64 gh""",
             rootdir="/",
