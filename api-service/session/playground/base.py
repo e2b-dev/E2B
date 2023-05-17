@@ -52,6 +52,7 @@ class Playground(Session):
         #         """
         #         )
         # await self.run_command('git config --global http.sslVerify "false"')
+        await self.run_command("apk add npm")
         res = await self.run_command(
             f"git clone {repo_url} /repo && npm install --prefix /repo",
             rootdir="/",
