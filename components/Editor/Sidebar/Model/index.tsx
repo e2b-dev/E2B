@@ -9,6 +9,7 @@ import ProviderCard from './ProviderCard'
 const modelProviderOrder = sortByOrder<ModelProvider, [string, ProviderTemplate]>(
   [
     ModelProvider.OpenAI,
+    ModelProvider.AzureOpenAI,
     ModelProvider.Anthropic,
     ModelProvider.HuggingFace,
     ModelProvider.Replicate,
