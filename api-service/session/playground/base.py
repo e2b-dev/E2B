@@ -79,7 +79,7 @@ class Playground(Session):
         print(await self.run_command(f"git config --global user.email agent1"))
         print(await self.run_command(f"git checkout -b pr-{id}"))
         print(await self.run_command(f"git add .", rootdir="/repo"))
-        print(await self.run_command(f"git commit -m", rootdir="/repo"))
+        print(await self.run_command(f'git commit -m "Commit"', rootdir="/repo"))
         print(await self.run_command(f"gh auth setup-git"))
         print(
             await self.run_command(
