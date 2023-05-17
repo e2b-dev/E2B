@@ -65,6 +65,7 @@ class Playground(Session):
         )
 
         gh = "/gh/bin/gh"
+
         # Restricted token
         await self.write_file(
             "/github_token",
@@ -73,14 +74,23 @@ class Playground(Session):
 
         id = str(uuid.uuid4())[:8]
 
-        await self.run_command(f"{gh} auth login --with-token < /github_token")
-        await self.run_command(f"git config --global user.email agent1")
-        await self.run_command(f"git checkout -b pr-{id}")
-        await self.run_command(f"git add .", rootdir="/repo")
-        await self.run_command(f"git commit -m", rootdir="/repo")
-        await self.run_command(f"{gh} auth setup-git")
-        await self.run_command(f"git push --set-upstream origin {id}")
-        await self.run_command(f"{gh} pr create --title 'PR-{id}' --body 'PR-{id}'")
+        print(await self.run_command(f"echo 2 > /repo/test.txt"))
+        print(await self.run_command(f"{gh} auth login --with-token < /github_token"))
+        print(await self.run_command(f"git config --global user.email agent1"))
+        print(await self.run_command(f"git checkout -b pr-{id}"))
+        print(await self.run_command(f"git add .", rootdir="/repo"))
+        print(await self.run_command(f"git commit -m", rootdir="/repo"))
+        print(await self.run_command(f"{gh} auth setup-git"))
+        print(
+            await self.run_command(
+                f"git push --set-upstream origin {id}", rootdir="/repo"
+            )
+        )
+        print(
+            await self.run_command(
+                f"gh pr create --title 'PR-{id}' --body 'PR-{id}'", rootdir="/repo"
+            )
+        )
 
     async def change_rootdir(self, rootdir: str):
         self.rootdir = rootdir

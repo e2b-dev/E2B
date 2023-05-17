@@ -93,7 +93,7 @@ function Editor({ project }: Props) {
     MenuSection.Run,
   )
 
-  const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [0, 100 / 3, 100 / 3])
+  const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [100 / 3, 100 / 3, 100 / 3])
   const handleResize = useCallback((_: number, newSizes: number[]) => {
     setSizes(newSizes)
     if (ref.current) {
@@ -115,7 +115,7 @@ function Editor({ project }: Props) {
         flex-1
         ">
       <Splitter
-        minWidths={[0, 260, 260]}
+        minWidths={[260, 260, 260]}
         gutterTheme={GutterTheme.Light}
         initialSizes={sizes}
         classes={['flex', 'flex', 'flex']}
