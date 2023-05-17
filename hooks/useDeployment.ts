@@ -12,8 +12,7 @@ function useDeployment(project: projects) {
   const client = useSupabaseClient<Database>()
 
   useEffect(function init() {
-    (async function () {
-      // TODO: SECURITY - Enable row security for all tables and secure access to deployments.
+    const i = setInterval(async () => {
       const deployment = await client
         .from(deploymentsTable)
         .select('*')
@@ -25,7 +24,11 @@ function useDeployment(project: projects) {
       if (!deployment) return
       if (deployment.error) return
       setInitDeployment(deployment.data as unknown as deployments)
-    }())
+    }, 1000)
+
+    return () => {
+      clearInterval(i)
+    }
   }, [client, project.id])
 
   // Sometimes a large field from realtime server can be missing because of the internal POSTGRES/TOAST workings.
@@ -46,8 +49,21 @@ function useDeployment(project: projects) {
         })
       .subscribe()
 
+    const updateSub = client.channel('any')
+      .on('postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: deploymentsTable,
+          filter: `project_id=eq.${project.id}`,
+        }, payload => {
+          setDeployment(payload.new as deployments)
+        })
+      .subscribe()
+
     return () => {
       insertSub.unsubscribe()
+      updateSub.unsubscribe()
     }
   }, [
     client,

@@ -5,7 +5,7 @@ from session.session import GetEnvs
 
 
 class NodeJSPlayground(Playground):
-    node_js_env_id = "QFNlQVCzcKxD"
+    node_js_env_id = "QJ5rs6J23K7e"
     rootdir = "/repo"
     default_javascript_code_file = os.path.join(rootdir, "index.mjs")
     run_code_timeout = 3  # 3s

@@ -1,4 +1,5 @@
 import math
+import uuid
 
 from typing import Any, List
 from asyncio import sleep
@@ -42,15 +43,15 @@ class Playground(Session):
     async def checkout_repo(self, repo_url: str, rootdir: str):
         # WIP
         await self.make_dir("/repo")
-        await self.run_command(
-            """
-apk add \
-  --no-cache \
-  --allow-untrusted \
-  --repository http://dl-cdn.alpinelinux.org/alpine/v3.15/main git
-        """
-        )
-        await self.run_command('git config --global http.sslVerify "false"')
+        #         await self.run_command(
+        #             """
+        # apk add \
+        #   --no-cache \
+        #   --allow-untrusted \
+        #   --repository http://dl-cdn.alpinelinux.org/alpine/v3.15/main git
+        #         """
+        #         )
+        # await self.run_command('git config --global http.sslVerify "false"')
         res = await self.run_command(
             f"git clone {repo_url} /repo && npm install --prefix /repo",
             rootdir="/",
@@ -59,14 +60,27 @@ apk add \
 
     async def push_repo(self, repo_url: str):
         await self.run_command(
-            """
-apk add \
-  --no-cache \
-  --allow-untrusted \
-  --repository http://dl-cdn.alpinelinux.org/alpine/v3.15/main github-cli
-        """
+            """wget http://github.com/cli/cli/releases/download/v2.29.0/gh_2.29.0_linux_amd64.tar.gz --no-check-certificate && tar -xzf gh_2.29.0_linux_amd64.tar.gz && mv gh_2.29.0_linux_amd64 gh""",
+            rootdir="/",
         )
-        await self.run_command(f"git push")
+
+        gh = "/gh/bin/gh"
+        # Restricted token
+        await self.write_file(
+            "/github_token",
+            "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",
+        )
+
+        id = str(uuid.uuid4())[:8]
+
+        await self.run_command(f"{gh} auth login --with-token < /github_token")
+        await self.run_command(f"git config --global user.email agent1")
+        await self.run_command(f"git checkout -b pr-{id}")
+        await self.run_command(f"git add .", rootdir="/repo")
+        await self.run_command(f"git commit -m", rootdir="/repo")
+        await self.run_command(f"{gh} auth setup-git")
+        await self.run_command(f"git push --set-upstream origin {id}")
+        await self.run_command(f"{gh} pr create --title 'PR-{id}' --body 'PR-{id}'")
 
     async def change_rootdir(self, rootdir: str):
         self.rootdir = rootdir

@@ -2909,6 +2909,17 @@ secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "p
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
+name = "uuid"
+version = "1.30"
+description = "UUID object and generation functions (Python 2.3 or higher)"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "uuid-1.30.tar.gz", hash = "sha256:1f87cc004ac5120466f36c5beae48b4c48cc411968eed0eaecd3da82aa96193f"},
+]
+
+[[package]]
 name = "uvicorn"
 version = "0.22.0"
 description = "The lightning-fast ASGI server."
@@ -3244,4 +3255,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "ee258824f88936140db1334b00417ee185c68aba1e03eedced9daa25445a1e16"
+content-hash = "3747b2a601b49aaa1b335f73c90bdf3422e03db902a08a41dff88442b406b262"

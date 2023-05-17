@@ -21,6 +21,22 @@ export interface Props {
   project: projects
 }
 
+
+function getSnippet(hostname: string, deploymentId: string) {
+  return `curl --request POST \
+  --url http://${hostname}/deployments/${deploymentId}/interactions \
+  --data '{
+  "type": "start",
+  "data": {
+		"instructions": {
+			"Description": "Add Stripe Checkout",
+			"RepoURL": "https://github.com/e2b-dev/test.git"
+		}
+	}
+}'`
+}
+
+
 function Deploy({ project }: Props) {
   const [selectors] = useStateStore()
   const modelConfig = selectors.use.getSelectedModelConfig()()
