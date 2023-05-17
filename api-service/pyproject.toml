@@ -14,18 +14,18 @@ openai = "^0.27.0"
 lxml = "^4.9.2"
 asyncio = "^3.4.3"
 postgrest = "^0.10.6"
-quart-cors = "^0.6.0"
-quart = "^0.18.4"
 replicate = "^0.8.1"
 huggingface-hub = "^0.13.4"
 anthropic = "^0.2.6"
 langchain = "^0.0.141"
 banana-dev = "4.0.2"
+fastapi = "^0.95.1"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
+hypercorn = "^0.14.3"
 python-dotenv = "^1.0.0"
 pytest = "^7.2.2"
 
@@ -33,8 +33,8 @@ pytest = "^7.2.2"
 optional = true
 
 [tool.poetry.group.deploy.dependencies]
-gunicorn = "^20.1.0"
 uvicorn = {extras = ["standard"], version = "^0.21.1"}
+gunicorn = "^20.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.3.0"]

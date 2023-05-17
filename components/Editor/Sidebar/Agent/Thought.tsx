@@ -9,7 +9,7 @@ function Thought({
 }: Props) {
   return (
     <div className="
-      leading-[24px]
+      leading-[22px]
       tracking-normal
       font-sans
       text-sm

@@ -9,16 +9,20 @@ import Tool from './Tool'
 
 export interface Props {
   log: Log
+  isRunning?: boolean
   onAnswer?: (args: { logID: string, answer: string, toolName: ToolName }) => void
 }
 
-function LogEntry({ log, onAnswer }: Props) {
+function LogEntry({ isRunning, log, onAnswer }: Props) {
   return (
     <div className={`
       p-3
       border-l-4
       rounded
       shadow-sm
+      border-y-transparent
+      border-r-transparent
+      border
       bg-white
       ${log.type === LogType.Tool ? 'border-green-300' : 'border-blue-300'}
     `}>
@@ -29,6 +33,7 @@ function LogEntry({ log, onAnswer }: Props) {
       }
       {log.type === LogType.Tool &&
         <Tool
+          isRunning={isRunning}
           log={log}
           onAnswer={onAnswer}
         />

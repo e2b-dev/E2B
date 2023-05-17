@@ -47,16 +47,14 @@ configuration = playground_client.Configuration(
 with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
-    project_id = 'project_id_example' # str | 
-    session_id = 'session_id_example' # str | active session to use for deployment
-    create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
+    create_sessions_request = playground_client.CreateSessionsRequest() # CreateSessionsRequest | 
 
     try:
-        api_response = api_instance.create_deployment(project_id, session_id, create_deployment_request)
-        print("The response of DefaultApi->create_deployment:\n")
+        api_response = api_instance.create_sessions(create_sessions_request)
+        print("The response of DefaultApi->create_sessions:\n")
         pprint(api_response)
     except ApiException as e:
-        print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
+        print("Exception when calling DefaultApi->create_sessions: %s\n" % e)
 
 ```
 
@@ -66,7 +64,6 @@ All URIs are relative to *https://localhost:49160*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**create_deployment**](playground_client/docs/DefaultApi.md#create_deployment) | **PUT** /deployments/{projectID} | 
 *DefaultApi* | [**create_sessions**](playground_client/docs/DefaultApi.md#create_sessions) | **POST** /sessions | 
 *DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{sessionID}/filesystem | 
 *DefaultApi* | [**delete_session**](playground_client/docs/DefaultApi.md#delete_session) | **DELETE** /sessions/{sessionID} | 
@@ -84,9 +81,7 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [CreateDeploymentRequest](playground_client/docs/CreateDeploymentRequest.md)
  - [CreateSessionsRequest](playground_client/docs/CreateSessionsRequest.md)
- - [DeploymentResponse](playground_client/docs/DeploymentResponse.md)
  - [EntryInfo](playground_client/docs/EntryInfo.md)
  - [ListFilesystemDirResponse](playground_client/docs/ListFilesystemDirResponse.md)
  - [OpenPort](playground_client/docs/OpenPort.md)

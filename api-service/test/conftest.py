@@ -1,7 +1,7 @@
 import pytest
 from typing import Dict, List, Any, cast
 
-from codegen.agent.parsing import ToolLog, parse_thoughts_and_actions
+from agent.output.parse_output import ToolLog, parse_output
 
 
 class Helpers:
@@ -12,7 +12,7 @@ class Helpers:
         for output in llm_outputs:
             actions = [
                 cast(ToolLog, action)
-                for action in parse_thoughts_and_actions(output["llm_output"])
+                for action in parse_output(output["llm_output"])
                 if action["type"] == "tool"
             ]
 

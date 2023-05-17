@@ -1,22 +1,20 @@
 import { useState } from 'react'
-import { deployment_state, deployments } from '@prisma/client'
-import produce from 'immer'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+// import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
 
 import Text from 'components/Text'
 import { useTabs } from 'components/Tabs/useTabs'
 import Tabs from 'components/Tabs'
-import { Log, LogType, ToolName } from 'db/types'
-import { Database, Json } from 'db/supabase'
-import { deploymentsTable } from 'db/tables'
+// import { Database } from 'db/supabase'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { getMissingCreds } from 'state/model'
 import { useStateStore } from 'state/StoreProvider'
 import Button from 'components/Button'
+import { AgentRun, AgentRunState, Step, StepEdit } from 'api-client/AgentRun'
 
-import LogStream from './LogStream'
-import RunButton from '../RunButton'
+import StepsStream from './StepsStream'
+import AgentRunControls from './AgentRunControls'
+import RawStepsStream from './RawStepsStream'
 
 const tabsProps = {
   tabs: [
@@ -32,23 +30,20 @@ const tabsProps = {
 }
 
 export interface Props {
-  deployment?: deployments
-  isDeployRequestRunning?: boolean
-  deploy: () => void
-  deployStatus?: deployment_state | null
-  isInitializingDeploy?: boolean
-  cancel: () => void
+  steps?: Step[]
+  agentState?: AgentRunState
+  run: () => void
+  agentRun?: AgentRun
 }
 
 function Agent({
-  deployment,
-  cancel,
-  isDeployRequestRunning,
-  deploy,
-  isInitializingDeploy,
+  agentState,
+  agentRun,
+  steps,
+  run,
 }: Props) {
   const [selectedTab, setSelectedTab] = useState(0)
-  const client = useSupabaseClient<Database>()
+  // const client = useSupabaseClient<Database>()
   const tabsCss = useTabs(tabsProps)
   const [selectors] = useStateStore()
   const router = useRouter()
@@ -57,25 +52,33 @@ function Agent({
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const missingCreds = modelConfig ? getMissingCreds(modelConfig?.provider, creds) : []
 
-  async function saveAnswer({
-    logID,
-    answer,
-    toolName,
-  }: { logID: string, answer: string, toolName: ToolName }) {
-    if (!deployment) return
+  // async function saveAnswer({
+  //   logID,
+  //   answer,
+  //   toolName,
+  // }: { logID: string, answer: string, toolName: ToolName }) {
+  //   if (!agentRun?.runID) return
+  //   if (!logs) return
 
-    const logs = produce(deployment.logs as unknown as Log[], ls => {
-      const log = ls.find(l => l.id === logID)
-      if (log && log.type === LogType.Tool && log.tool_name === toolName) {
-        log.tool_output = answer
-      }
-    })
+  //   const modifiedLogs = produce(logs, ls => {
+  //     const log = ls.find(l => l.id === logID)
+  //     if (log && log.type === LogType.Tool && log.tool_name === toolName) {
+  //       log.tool_output = answer
+  //     }
+  //   })
 
-    await client
-      .from(deploymentsTable)
-      .update({ logs: logs as unknown as Json[] })
-      .eq('id', deployment.id)
-      .single()
+  //   await client
+  //     .from(deploymentsTable)
+  //     .update({ logs: modifiedLogs as any })
+  //     .eq('id', agentRun.runID)
+  //     .single()
+  // }
+
+  async function onEdit(edit: StepEdit) {
+    if (!steps || !agentRun) return
+    const editedSteps = AgentRun.resolveStepsEdit(steps, edit)
+    if (!editedSteps) return
+    await agentRun.rewriteRunSteps(editedSteps)
   }
 
   return (
@@ -136,17 +139,15 @@ function Agent({
               />
             </>
           }
-          <RunButton
+          <AgentRunControls
             disabled={missingCreds.length !== 0}
-            deploy={deploy}
-            cancel={cancel}
-            isDeployRequestRunning={isDeployRequestRunning}
-            isInitializingDeploy={isInitializingDeploy}
-            deployStatus={deployment?.state}
+            run={run}
+            agentRun={agentRun}
+            agentState={agentState}
           />
         </div>
       </div>
-      {!deployment &&
+      {!steps &&
         <div
           className="
           self-center
@@ -160,17 +161,16 @@ function Agent({
           />
         </div>
       }
-      {selectedTab === 0 && deployment &&
-        <LogStream
-          logs={deployment.logs as unknown as Log[] | undefined}
-          onAnswer={saveAnswer}
-          isDeployRequestRunning={isDeployRequestRunning}
+      {selectedTab === 0 && steps &&
+        <StepsStream
+          onEdit={onEdit}
+          steps={steps}
+          isRunning={agentState === AgentRunState.Running}
         />
       }
-      {selectedTab === 1 && deployment &&
-        <LogStream
-          rawLogs={deployment?.logs_raw}
-          isDeployRequestRunning={isDeployRequestRunning}
+      {selectedTab === 1 && steps &&
+        <RawStepsStream
+          rawOutput={steps.map(s => s.output).join('\n')}
         />
       }
     </div>

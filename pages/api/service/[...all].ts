@@ -1,7 +1,6 @@
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-
 export const config = {
   api: {
     responseLimit: false,
@@ -21,9 +20,9 @@ const isSecure = target.startsWith('https://')
 
 const proxy = createProxyMiddleware<NextApiRequest, NextApiResponse>({
   target,
-  // ws: true,
+  ws: true,
   secure: !isSecure,
-  changeOrigin: true,
+  changeOrigin: false,
   pathRewrite: { [`^${pathPrefix}`]: '' }, // remove prefix
 })
 

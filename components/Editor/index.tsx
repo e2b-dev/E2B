@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { projects } from '@prisma/client'
+import { projects, deployments } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
 
@@ -9,7 +9,9 @@ import SidebarMenu, { MenuSection } from './SidebarMenu'
 import Template from './Template'
 
 export interface Props {
-  project: projects
+  project: projects & {
+    deployments: deployments[];
+  }
 }
 
 function Editor({ project }: Props) {
@@ -50,7 +52,6 @@ function Editor({ project }: Props) {
         gutterClassName='bg-slate-200'
         draggerClassName='bg-slate-400'
       >
-
         <Template />
         <Sidebar
           activeMenuSection={selectedMenuSection as MenuSection}
