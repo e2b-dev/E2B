@@ -13,6 +13,7 @@ export interface Props {
   onChange: (value: string) => void
   isTransparent?: boolean
   autofocus?: boolean
+  onBlur?: () => void
   label?: string
   pattern?: string
   title?: string
@@ -34,6 +35,7 @@ function Input({
   isTransparent,
   autofocus,
   onChange,
+  onBlur,
   placeholder,
   label,
   min,
@@ -87,6 +89,7 @@ function Input({
           ref={ref}
           disabled={isDisabled}
           pattern={pattern}
+          onBlur={onBlur}
           type={type}
           className={clsx(
             { 'bg-transparent': isTransparent },

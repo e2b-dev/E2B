@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
-
 import Button from 'components/Button'
 import Text from 'components/Text'
 import { Database } from 'db/supabase'
@@ -11,6 +10,9 @@ import { serverCreds } from 'db/credentials'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { providerTemplates, ModelProvider } from 'state/model'
 import Input from 'components/Input'
+import { CRED_LABELS } from 'utils/constants'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient<Database>(ctx, serverCreds)
@@ -43,6 +45,45 @@ function Settings({ }: Props) {
   async function handleSignOut() {
     await supabaseClient.auth.signOut()
     router.push('/')
+  }
+
+  async function handleCredValidation(cred: any) {
+    if (cred.label === CRED_LABELS.OPENAI) {
+      const response = await fetch('/api/validation/openapi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: creds?.OpenAI?.creds?.openai_api_key
+        })
+      });
+      const data = (await response.json()).data;
+
+      if (data?.error) {
+        toast.error(data?.message, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: false,
+          progress: undefined,
+          theme: "light",
+        });
+      } else {
+        toast.success(data?.message, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: false,
+          progress: undefined,
+          theme: "light",
+        });
+      }
+    }
   }
 
   return (
@@ -143,6 +184,7 @@ function Settings({ }: Props) {
                       title={cred.label || key}
                       value={creds[provider as ModelProvider]?.creds?.[key]?.toString()}
                       onChange={(v) => mergeCreds(provider as ModelProvider, key, v || undefined)}
+                      onBlur={() => handleCredValidation(cred)}
                       placeholder={cred.label}
                       label={cred.label}
                     />
@@ -159,6 +201,7 @@ function Settings({ }: Props) {
           />
         </div>
       </div>
+      <ToastContainer />
     </div >
   )
 }
