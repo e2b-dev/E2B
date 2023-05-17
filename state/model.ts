@@ -9,6 +9,7 @@ export enum ModelProvider {
   Anthropic = 'Anthropic',
   HuggingFace = 'HuggingFace',
   Banana = 'Banana',
+  AzureOpenAI = 'AzureOpenAI'
 }
 
 export interface ModelConfig extends Model {
@@ -513,9 +514,89 @@ export const providerTemplates: {
             editable: true,
           },
         },
+
       },
     ],
   },
+  [ModelProvider.AzureOpenAI]: {
+    link: 'https://azure.microsoft.com/en-us/products/cognitive-services/openai-service',
+    creds: {
+      openai_api_key: {
+        label: 'Azure OpenAI API Key',
+        type: 'string',
+      },
+      openai_api_version: {
+        label: 'Azure OpenAI API version',
+        type: 'string',
+      },
+      openai_api_base: {
+        label: 'Azure OpenAI API base',
+        type: 'string',
+      }
+
+    },
+    models: [
+      {
+        name: 'Hosted model',
+        args: {
+          model_name: {
+            label: "Model name",
+            type: 'string',
+            value: 'gpt-3.5-turbo',
+            editable: true,
+          },
+          deployment_name: {
+            label: "Deployment name",
+            type: 'string',
+            value: 'gpt-3.5-turbo',
+            editable: true,
+          },
+          max_tokens: {
+            label: 'Max tokens',
+            type: 'number',
+            value: 2048,
+            editable: true,
+          },
+          temperature: {
+            type: 'number',
+            label: 'Temperature',
+            value: 0.0,
+            min: 0,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          presence_penalty: {
+            type: 'number',
+            label: 'Presence penalty',
+            value: 0.0,
+            min: -2,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          frequency_penalty: {
+            type: 'number',
+            label: 'Frequency penalty',
+            value: 0.0,
+            min: -2,
+            step: 0.01,
+            max: 2,
+            editable: true,
+          },
+          top_p: {
+            label: 'Top-p',
+            type: 'number',
+            value: 1,
+            min: 0.0,
+            max: 1,
+            step: 0.01,
+            editable: true,
+          },
+        },
+      }
+    ],
+  }
 }
 
 export function getModelArgs(
