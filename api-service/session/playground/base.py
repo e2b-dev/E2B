@@ -59,31 +59,31 @@ class Playground(Session):
         print("res", res)
 
     async def push_repo(self):
-        await self.run_command(
-            """wget http://github.com/cli/cli/releases/download/v2.29.0/gh_2.29.0_linux_amd64.tar.gz --no-check-certificate && tar -xzf gh_2.29.0_linux_amd64.tar.gz && mv gh_2.29.0_linux_amd64 gh""",
-            rootdir="/",
-        )
+        # await self.run_command(
+        #     """wget http://github.com/cli/cli/releases/download/v2.29.0/gh_2.29.0_linux_amd64.tar.gz --no-check-certificate && tar -xzf gh_2.29.0_linux_amd64.tar.gz && mv gh_2.29.0_linux_amd64 gh""",
+        #     rootdir="/",
+        # )
 
-        gh = "/gh/bin/gh"
+        # gh = "/gh/bin/gh"
 
         # Restricted token
-        await self.write_file(
-            "/github_token",
-            "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",
-        )
+        # await self.write_file(
+        #     "/github_token",
+        #     "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",
+        # )
 
         id = str(uuid.uuid4())[:8]
 
         print(await self.run_command(f"echo 2 > /repo/test.txt"))
-        print(await self.run_command(f"{gh} auth login --with-token < /github_token"))
+        print(await self.run_command(f"gh auth login --with-token < /github_token"))
         print(await self.run_command(f"git config --global user.email agent1"))
         print(await self.run_command(f"git checkout -b pr-{id}"))
         print(await self.run_command(f"git add .", rootdir="/repo"))
         print(await self.run_command(f"git commit -m", rootdir="/repo"))
-        print(await self.run_command(f"{gh} auth setup-git"))
+        print(await self.run_command(f"gh auth setup-git"))
         print(
             await self.run_command(
-                f"git push --set-upstream origin {id}", rootdir="/repo"
+                f"git push --set-upstream origin pr-{id}", rootdir="/repo"
             )
         )
         print(
