@@ -5,10 +5,12 @@ import NodeJSExpressTemplate from 'components/Editor/Template/NodeJSExpressTempl
 
 import { PromptFragment } from './prompt'
 import StripeCheckoutTemplate from 'components/Editor/Template/StripeCheckoutTemplate'
+import SmolDeveloperTemplate from 'components/Editor/Template/SmolDeveloperTemplate'
 
 export enum TemplateID {
   NodeJSExpress = 'NodeJSExpress',
   StripeCheckout = 'StripeCheckout',
+  SmolDeveloper = 'SmolDeveloper',
 }
 
 export interface Template {
@@ -49,6 +51,29 @@ export const templates: {
     description: 'Stripe',
     stackDescription: 'Next.js + Stripe',
     component: <StripeCheckoutTemplate />,
+    icon: <NodeJSIcon />,
+    prompt: [
+      {
+        role: 'system',
+        type: 'prefix',
+        content: '<p>You are an AI developer assistant that knows TypeScript.</p><p>You know how to add Stripe to Next.js TypeScript project.</p><p>The codebase you should use is in the <code>/repo</code> directory.</p><p>Packages in the <code>package.json</code> have already been installed.</p><p>Follow the user\'s instructions carefully.</p><p>After finishing output "Final Answer - DONE".</p><p>Don\'t show the relevant file changes in the final answer.</p><p></p><p>You have access to the following tools:\n</p>',
+      },
+      {
+        role: 'system',
+        type: 'suffix',
+        content: '<p>The way you use the tools is by specifying a XML snippet.</p><p>The XML snippet MUST have a <code>&lt;action tool="$TOOL_NAME"&gt;$INPUT&lt;/action&gt;</code> element with the name of the tool in the <code>tool</code> attribute and input for the tool inside the XML tag.</p><p></p><p>Here is an example of a valid XML snippet:</p><p>&lt;action tool="$TOOL_NAME"&gt;</p><p>$INPUT</p><p>&lt;/action&gt;</p><p></p><p>ALWAYS use the following format:</p><p>Thought: you should always think about what to do</p><p>Action:</p><p>&lt;action tool="$TOOL_NAME"&gt;</p><p>$INPUT</p><p>&lt;/action&gt;</p><p>Observation: the result of the action</p><p>... (this Thought/Action/Observation can repeat N times)</p><p>Thought: I now know the final server code and can show it.</p><p>Final Answer - DONE</p>',
+      },
+      {
+        role: 'user',
+        type: 'prefix',
+        content: '<p>To test the user instructions you can run the <code>next lint</code>.</p><p></p><p>User instructions:</p><p>{{Description}}</p><p></p><p>Thought: Here is the plan of how I will go about solving this:</p>',
+      },
+    ],
+  },
+  [TemplateID.SmolDeveloper]: {
+    description: 'Smol developer',
+    stackDescription: '',
+    component: <SmolDeveloperTemplate />,
     icon: <NodeJSIcon />,
     prompt: [
       {

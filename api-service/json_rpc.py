@@ -2,9 +2,10 @@ import asyncio
 
 from typing import Any, AsyncIterator, Callable, Coroutine, Dict, List
 
-from agent.base import AgentInteraction, AgentBase, AgentInteractionRequest
-from deployment.manager import AgentFactory
-from database.base import db
+from agent.base import AgentBase
+from agent.from_template import get_agent_factory_from_template
+from database import db
+from agent.base import AgentInteraction, AgentInteractionRequest
 
 
 class JsonRpcAgentConnection:
@@ -14,12 +15,10 @@ class JsonRpcAgentConnection:
         self,
         send_json: Callable[[Any], Coroutine[Any, Any, None]],
         iter_json: Callable[[], AsyncIterator[Any]],
-        agent_factory: AgentFactory,
         project_id: str,
     ) -> None:
         self._project_id = project_id
         self._agent: AgentBase | None = None
-        self._agent_factory = agent_factory
         self._send_json = send_json
         self._iter_json = iter_json
 
@@ -38,7 +37,10 @@ class JsonRpcAgentConnection:
                 print(f"Calling {method} via JSONRPC")
                 match method:
                     case "start":
-                        self._agent = await self._agent_factory(
+                        agent_factory = get_agent_factory_from_template(
+                            params["config"]["templateID"]
+                        )
+                        self._agent = await agent_factory(
                             params["config"],
                             lambda: db.get_env_vars(self._project_id),
                             self._handle_logs,

@@ -1,11 +1,12 @@
 import asyncio
+import math
 import uuid
 import chevron
 
 # Monkey patch chevron to not escape html
 chevron.render.__globals__["_html_escape"] = lambda string: string
 
-from typing import Any, Dict, List, Literal, cast
+from typing import Any, Dict, List, Literal, Tuple, cast
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -38,7 +39,7 @@ class RewriteStepsException(Exception):
     pass
 
 
-class BasicAgent(AgentBase):
+class SmolAgent(AgentBase):
     max_run_time = 60 * 60 * 24  # in seconds
 
     def __init__(
@@ -121,9 +122,9 @@ class BasicAgent(AgentBase):
         system_template = chevron.render(
             "\n\n".join(
                 [
-                    BasicAgent._get_prompt_part(config.prompt, "system", "prefix"),
+                    SmolAgent._get_prompt_part(config.prompt, "system", "prefix"),
                     "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-                    BasicAgent._get_prompt_part(config.prompt, "system", "suffix"),
+                    SmolAgent._get_prompt_part(config.prompt, "system", "suffix"),
                 ]
             ),
             instructions,
@@ -132,7 +133,7 @@ class BasicAgent(AgentBase):
         human_template = chevron.render(
             "\n\n".join(
                 [
-                    BasicAgent._get_prompt_part(config.prompt, "user", "prefix"),
+                    SmolAgent._get_prompt_part(config.prompt, "user", "prefix"),
                 ]
             ),
             instructions,
@@ -143,10 +144,11 @@ class BasicAgent(AgentBase):
         ] = [
             SystemMessage(content=system_template),
             HumanMessage(content=human_template),
+            AIMessagePromptTemplate.from_template("{repo_context}"),
             AIMessagePromptTemplate.from_template("{agent_scratchpad}"),
         ]
         return ChatPromptTemplate(
-            input_variables=["agent_scratchpad"],
+            input_variables=["agent_scratchpad", "repo_context"],
             messages=messages,
         )
 
@@ -163,6 +165,8 @@ class BasicAgent(AgentBase):
             # Create tools
             # Create playground for code tools
             playground = NodeJSPlayground(get_envs=self.get_envs)
+
+            await playground.checkout_repo(instructions["RepoURL"], "/repo")
 
             tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]
@@ -181,6 +185,38 @@ class BasicAgent(AgentBase):
                 callback_manager=callback_manager,
                 verbose=True,
             )
+
+            repo_files: List[Tuple[str, str]] = []
+            async for file in playground.get_files(
+                "/repo",
+                [
+                    "node_modules",
+                    ".git",
+                    "package-lock.json",
+                    ".next",
+                    "tsconfig.json",
+                    "yarn.lock",
+                    "package.json",
+                ],
+            ):
+                repo_files.append(file)
+
+            vectordb = await get_memory(self.config, repo_files)
+
+            async def get_repo_context(prompt: str):
+                docs = await vectordb.asimilarity_search(
+                    prompt,
+                    k=min(3, len(repo_files)),
+                )
+
+                print("getting docs >>>", [doc.metadata["path"] for doc in docs])
+
+                return "Relevant files in the initial codebase:\n\n" + "\n".join(
+                    [
+                        f"{doc.metadata['path']}\n```\n({doc.page_content})\n```\n"
+                        for doc in docs
+                    ]
+                )
 
             # -----
             # Create log handlers
@@ -234,10 +270,17 @@ class BasicAgent(AgentBase):
                     await self._check_interrupt()
                     # Query the LLM in background
                     scratchpad = get_agent_scratchpad()
+                    repo_context = await get_repo_context(
+                        prompt=prompt.format_prompt(
+                            agent_scratchpad=scratchpad, repo_context=""
+                        ).to_string(),
+                    )
+
                     self.llm_generation = asyncio.create_task(
                         llm_chain.agenerate(
                             [
                                 {
+                                    "repo_context": repo_context,
                                     "agent_scratchpad": scratchpad,
                                     "stop": "Observation:",
                                 }
@@ -282,7 +325,7 @@ class BasicAgent(AgentBase):
                 except RewriteStepsException:
                     print("REWRITING")
                     continue
-
+            await playground.push_repo()
         except:
             raise
         finally:

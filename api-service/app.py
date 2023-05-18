@@ -1,18 +1,20 @@
 import uuid
 
 from typing import Any
+
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 
+from agent.from_template import get_agent_factory_from_template
 from agent.base import AgentInteraction
 from deployment.in_memory import InMemoryDeploymentManager
 from json_rpc import JsonRpcAgentConnection
 from agent.basic_agent import BasicAgent
 from database.base import db
 
-deployment_manager = InMemoryDeploymentManager(agent_factory=BasicAgent.create)
+deployment_manager = InMemoryDeploymentManager()
 
 
 @asynccontextmanager
@@ -42,13 +44,12 @@ app.add_middleware(
 
 
 @app.websocket("/dev/agent")
-async def ws_agent_run(websocket: WebSocket, project_id: str):
+async def ws_agent_run(websocket: WebSocket, project_id: str, template_id: str):
     await websocket.accept()
     connection = JsonRpcAgentConnection(
         project_id=project_id,
         iter_json=websocket.iter_json,
         send_json=websocket.send_json,
-        agent_factory=BasicAgent.create,
     )
     try:
         await connection.handle()
@@ -60,6 +61,7 @@ async def ws_agent_run(websocket: WebSocket, project_id: str):
 
 class CreateDeploymentBody(BaseModel):
     config: Any
+    template_id: str
 
 
 @app.get("/deployments")
@@ -70,7 +72,6 @@ async def list_deployments():
 
 @app.put("/deployments")
 async def create_agent_deployment(body: CreateDeploymentBody, project_id: str):
-    print("pr", project_id)
     db_deployment = await db.get_deployment(project_id)
 
     if db_deployment:

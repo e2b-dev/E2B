@@ -41,7 +41,7 @@ function TemplateButton({
             flex
             flex-col
             items-start
-            space-y-0.5
+            justify-center
           ">
           <Text
             className="

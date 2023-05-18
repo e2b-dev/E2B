@@ -54,7 +54,7 @@ function NewProjectTemplateForm({
           rounded
           border-2
           border-slate-200
-          py-4
+          py-3.5
           flex
           ">
             <Text

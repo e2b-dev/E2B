@@ -1,11 +1,11 @@
 import clsx from 'clsx'
-import { Code, Lock, Cpu, WholeWord, Server, Brain } from 'lucide-react'
+import { Code, Lock, Cpu, WholeWord, Server, } from 'lucide-react'
 
 export enum MenuSection {
   Run = 'Run',
   Model = 'Model',
   Prompt = 'Prompt',
-  Memory = 'Memory',
+  // Memory = 'Memory',
   Envs = 'Envs',
   Deploy = 'Deploy',
 }
@@ -18,8 +18,8 @@ function getMenuSelectionIcon(selection: MenuSection) {
       return <Code size={menuIconSize} />
     case MenuSection.Prompt:
       return <WholeWord size={menuIconSize} />
-    case MenuSection.Memory:
-      return <Brain size={menuIconSize} />
+    // case MenuSection.Memory:
+    //   return <Brain size={menuIconSize} />
     case MenuSection.Model:
       return <Cpu size={menuIconSize} />
     case MenuSection.Envs:
