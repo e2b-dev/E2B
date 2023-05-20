@@ -35,13 +35,14 @@ class ModelConfig(BaseModel):
 def get_model(
     config: ModelConfig,
     callback_manager: BaseCallbackManager,
+    streaming=True,
 ) -> BaseLanguageModel:
     match config.provider:
         case ModelProvider.Anthropic.value:
             return Anthropic(
                 **config.args,
                 verbose=True,
-                streaming=True,
+                streaming=streaming,
                 callback_manager=callback_manager,
             )
         case ModelProvider.OpenAI.value:
@@ -49,7 +50,7 @@ def get_model(
                 **config.args,
                 request_timeout=3600,
                 verbose=True,
-                streaming=True,
+                streaming=streaming,
                 callback_manager=callback_manager,
             )
         case ModelProvider.Replicate.value:

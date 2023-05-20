@@ -32,6 +32,7 @@ function Sidebar({
     agentState,
   } = useAgent(project.id)
   const [selectors] = useStateStore()
+  const templateID = selectors.use.templateID()
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const instructions = selectors.use.instructions()
   const instructionsTransform = selectors.use.instructionsTransform()
@@ -64,7 +65,8 @@ function Sidebar({
         name: modelConfig.name,
         provider: modelConfig.provider,
         args: getModelArgs(modelConfig, creds) as any,
-        prompt: evaluatedPrompt
+        prompt: evaluatedPrompt,
+        // template_id: templateID,
       },
       {
         References: [

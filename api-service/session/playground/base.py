@@ -59,20 +59,7 @@ class Playground(Session):
         )
         print("res", res)
 
-    async def push_repo(self):
-        # await self.run_command(
-        #     """wget http://github.com/cli/cli/releases/download/v2.29.0/gh_2.29.0_linux_amd64.tar.gz --no-check-certificate && tar -xzf gh_2.29.0_linux_amd64.tar.gz && mv gh_2.29.0_linux_amd64 gh""",
-        #     rootdir="/",
-        # )
-
-        # gh = "/gh/bin/gh"
-
-        # Restricted token
-        # await self.write_file(
-        #     "/github_token",
-        #     "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",
-        # )
-
+    async def push_repo(self, access_token: str):
         id = str(uuid.uuid4())[:8]
 
         print(await self.run_command(f"echo 2 > /repo/test.txt"))
@@ -96,7 +83,7 @@ class Playground(Session):
     async def change_rootdir(self, rootdir: str):
         self.rootdir = rootdir
 
-    async def get_files(
+    async def get_filenames(
         self,
         path: str,
         ignore: List[str] = [],
@@ -116,7 +103,14 @@ class Playground(Session):
                 for entry in entries
                 if not entry.is_dir and not entry.name in ignore
             )
+        return files
 
+    async def get_files(
+        self,
+        path: str,
+        ignore: List[str] = [],
+    ):
+        files = await self.get_filenames(path, ignore)
         for file in files:
             try:
                 content = await self.read_file(file.name)

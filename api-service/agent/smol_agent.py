@@ -1,42 +1,30 @@
 import asyncio
-import math
 import uuid
 import chevron
+import os
+import ast
+
+from starlette.types import Message
 
 # Monkey patch chevron to not escape html
 chevron.render.__globals__["_html_escape"] = lambda string: string
 
-from typing import Any, Dict, List, Literal, Tuple, cast
-from langchain.agents.tools import InvalidTool
+from typing import Any, List
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.chains.llm import LLMChain
-from langchain.schema import BaseMessage, SystemMessage, HumanMessage
-from langchain.tools import BaseTool
+from langchain.schema import AIMessage, BaseMessage, SystemMessage, HumanMessage
 from langchain.prompts.chat import (
-    AIMessagePromptTemplate,
-    BaseMessagePromptTemplate,
-    ChatPromptTemplate,
+    ChatPromptValue,
 )
 
-from .memory import get_memory
 from agent.base import (
     AgentInteraction,
     OnLogs,
     OnInteractionRequest,
 )
-from agent.output.parse_output import ToolLog
-from agent.output.output_stream_parser import OutputStreamParser, Step
-from agent.output.token_callback_handler import TokenCallbackHandler
-from agent.output.work_queue import WorkQueue
-from agent.tools.base import create_tools
-from models.base import ModelConfig, PromptPart, get_model
+from models.base import ModelConfig, get_model
 from agent.base import AgentBase, AgentInteractionRequest, GetEnvs
-from session import NodeJSPlayground
-
-
-class RewriteStepsException(Exception):
-    pass
+from session.playground import Playground
 
 
 class SmolAgent(AgentBase):
@@ -50,16 +38,11 @@ class SmolAgent(AgentBase):
         on_interaction_request: OnInteractionRequest,
     ):
         super().__init__()
-        self._start_loop: asyncio.Task | None = None
+        self._dev_loop: asyncio.Task | None = None
         self.get_envs = get_envs
         self.config = ModelConfig(**config)
         self.on_interaction_request = on_interaction_request
         self.on_logs = on_logs
-        self.should_pause = False
-        self.canceled = False
-        self.rewriting_steps = False
-        self.llm_generation = None
-        self.can_resume = asyncio.Event()
 
     @classmethod
     async def create(
@@ -76,255 +59,167 @@ class SmolAgent(AgentBase):
             on_interaction_request,
         )
 
-    @staticmethod
-    async def _run_tool(
-        tool_log: ToolLog,
-        name_to_tool_map: Dict[str, BaseTool],
-    ) -> str:
-        # Otherwise we lookup the tool
-        if tool_log["tool_name"] in name_to_tool_map:
-            tool = name_to_tool_map[tool_log["tool_name"]]
-            # We then call the tool on the tool input to get an observation
-            observation = await tool.arun(
-                tool_log["tool_input"],
-                verbose=True,
-            )
-        else:
-            observation = await InvalidTool().arun(  # type: ignore
-                tool_name=tool_log["tool_name"],
-                tool_input=tool_log["tool_input"],
-                verbose=True,
-            )
-        return observation
+    async def _dev(self, instructions: Any):
+        user_prompt: str = instructions["prompt"]
+        file: str | None = instructions.get("file", None)
 
-    @staticmethod
-    def _get_prompt_part(
-        prompts: List[PromptPart],
-        role: Literal["user", "system"],
-        type: str,
-    ):
-        return (
-            next(
-                prompt
-                for prompt in prompts
-                if prompt.role == role and prompt.type == type
-            )
-            # Double the parenthesses to escape them because the string will be prompt templated.
-            .content
-        )
-
-    @staticmethod
-    def _create_prompt(
-        config: ModelConfig,
-        tools: List[BaseTool],
-        instructions: Any,
-    ):
-        system_template = chevron.render(
-            "\n\n".join(
-                [
-                    SmolAgent._get_prompt_part(config.prompt, "system", "prefix"),
-                    "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-                    SmolAgent._get_prompt_part(config.prompt, "system", "suffix"),
-                ]
-            ),
-            instructions,
-        )
-
-        human_template = chevron.render(
-            "\n\n".join(
-                [
-                    SmolAgent._get_prompt_part(config.prompt, "user", "prefix"),
-                ]
-            ),
-            instructions,
-        )
-
-        messages: List[
-            BaseMessage | BaseMessagePromptTemplate | SystemMessage | HumanMessage
-        ] = [
-            SystemMessage(content=system_template),
-            HumanMessage(content=human_template),
-            AIMessagePromptTemplate.from_template("{repo_context}"),
-            AIMessagePromptTemplate.from_template("{agent_scratchpad}"),
-        ]
-        return ChatPromptTemplate(
-            input_variables=["agent_scratchpad", "repo_context"],
-            messages=messages,
-        )
-
-    async def _run(self, instructions: Any):
         playground = None
         try:
-            # -----
-            # Initialize callback manager and handler for controlling token stream
             callback_manager = AsyncCallbackManager([StreamingStdOutCallbackHandler()])
-            self.token_handler = TokenCallbackHandler()
-            callback_manager.add_handler(self.token_handler)
+            model = get_model(self.config, callback_manager)
 
-            # -----
-            # Create tools
-            # Create playground for code tools
-            playground = NodeJSPlayground(get_envs=self.get_envs)
+            playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
 
             await playground.checkout_repo(instructions["RepoURL"], "/repo")
 
-            tools = list(create_tools(playground=playground))
-            self.tool_names = [tool.name for tool in tools]
-            tool_map = {tool.name: tool for tool in tools}
+            async def clean_dir():
+                extensions_to_skip = [
+                    ".png",
+                    ".jpg",
+                    ".jpeg",
+                    ".gif",
+                    ".bmp",
+                    ".svg",
+                    ".ico",
+                    ".tif",
+                    ".tiff",
+                ]  # Add more extensions if needed
 
-            # Assign callback manager to tools
-            for tool in tools:
-                tool.callback_manager = callback_manager
+                files = await playground.get_filenames("/repo", [])
+                for file in files:
+                    _, extension = os.path.splitext(file.name)
+                    if extension not in extensions_to_skip:
+                        await playground.delete_file(file.name)
 
-            # -----
-            # Create LLM from specified models
-            prompt = self._create_prompt(self.config, tools, instructions)
-            llm_chain = LLMChain(
-                llm=get_model(self.config, callback_manager),
-                prompt=prompt,
-                callback_manager=callback_manager,
-                verbose=True,
-            )
-
-            repo_files: List[Tuple[str, str]] = []
-            async for file in playground.get_files(
-                "/repo",
-                [
-                    "node_modules",
-                    ".git",
-                    "package-lock.json",
-                    ".next",
-                    "tsconfig.json",
-                    "yarn.lock",
-                    "package.json",
-                ],
+            async def generate_response(
+                system_prompt: str, user_prompt: str, *args: Any
             ):
-                repo_files.append(file)
+                messages: List[BaseMessage] = [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=user_prompt),
+                ]
 
-            vectordb = await get_memory(self.config, repo_files)
+                # loop thru each arg and add it to messages alternating role between "assistant" and "user"
+                role = "assistant"
+                for value in args:
+                    if role == "assistant":
+                        messages.append(AIMessage(content=value))
+                    else:
+                        messages.append(HumanMessage(content=value))
 
-            async def get_repo_context(prompt: str):
-                docs = await vectordb.asimilarity_search(
-                    prompt,
-                    k=min(3, len(repo_files)),
+                model_prompt = ChatPromptValue(messages=messages)
+
+                response = await model.agenerate_prompt([model_prompt])
+                return response.generations[0][0].text
+
+            async def generate_file(
+                filename: str,
+                filepaths_string=None,
+                shared_dependencies=None,
+                prompt=None,
+            ):
+                # call openai api with this prompt
+                filecode = await generate_response(
+                    f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
+
+                the app is: {prompt}
+
+                the files we have decided to generate are: {filepaths_string}
+
+                the shared dependencies (like filenames and variable names) we have decided on are: {shared_dependencies}
+
+                only write valid code for the given filepath and file type, and return only the code.
+                do not add any other explanation, only return valid code for that file type.
+                """,
+                    f"""
+                We have broken up the program into per-file generation.
+                Now your job is to generate only the code for the file {filename}.
+                Make sure to have consistent filenames if you reference other files we are also generating.
+
+                Remember that you must obey 3 things:
+                - you are generating code for the file {filename}
+                - do not stray from the names of the files and the shared dependencies we have decided on
+                - MOST IMPORTANT OF ALL - the purpose of our app is {prompt} - every line of code you generate must be valid code. Do not include code fences in your response, for example
+
+                Bad response:
+                ```javascript
+                console.log("hello world")
+                ```
+
+                Good response:
+                console.log("hello world")
+
+                Begin generating the code now.
+
+                """,
                 )
 
-                print("getting docs >>>", [doc.metadata["path"] for doc in docs])
+                return filename, filecode
 
-                return "Relevant files in the initial codebase:\n\n" + "\n".join(
-                    [
-                        f"{doc.metadata['path']}\n```\n({doc.page_content})\n```\n"
-                        for doc in docs
-                    ]
-                )
+            filepaths_string = await generate_response(
+                """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
-            # -----
-            # Create log handlers
-            # Used for sending logs to db/frontend without blocking
-            steps_streamer = WorkQueue[List[Step]](
-                on_workload=lambda steps: self.on_logs(steps),
+            When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
+
+            only list the filepaths you would write, and return them as a python list of strings.
+            do not add any other explanation, only return a python list of strings.
+            """,
+                user_prompt,
             )
 
-            def stream_steps(steps: List[Step]):
-                steps_streamer.schedule(steps)
+            # parse the result into a python list
+            list_actual = ast.literal_eval(filepaths_string)
 
-            # Used for parsing token stream into logs+actions
-            self._output_parser = OutputStreamParser(tool_names=self.tool_names)
+            # if shared_dependencies.md is there, read it in, else set it to None
+            shared_dependencies = await playground.read_file("shared_dependencies.md")
 
-            # This function is used to inject information from previous steps to the current prompt
-            # TODO: Improve the scratchpad handling and prompts for templates
-            def get_agent_scratchpad():
-                steps = self._output_parser.get_steps()
+            if file is not None:
+                # check file
+                print("file", file)
+                filename, filecode = await generate_file(
+                    file,
+                    filepaths_string=filepaths_string,
+                    shared_dependencies=shared_dependencies,
+                    prompt=user_prompt,
+                )
+                await playground.write_file(filename, filecode)
+            else:
+                await clean_dir()
 
-                if (
-                    len(steps) == 0
-                    or len(steps) == 1
-                    and not self._output_parser._token_buffer
-                ):
-                    return ""
+                # understand shared dependencies
+                shared_dependencies = await generate_response(
+                    """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
-                agent_scratchpad = ""
-                for step in steps:
-                    agent_scratchpad += step["output"]
+                In response to the user's prompt:
 
-                    tool_logs = (
-                        cast(ToolLog, action)
-                        for action in step["logs"]
-                        if action["type"] == "tool"
+                ---
+                the app is: {prompt}
+                ---
+
+                the files we have decided to generate are: {filepaths_string}
+
+                Now that we have a list of files, we need to understand what dependencies they share.
+                Please name and briefly describe what is shared between the files we are generating, including exported variables, data schemas, id names of every DOM elements that javascript functions will use, message names, and function names.
+                Exclusively focus on the names of the shared dependencies, and do not add any other explanation.
+                """,
+                    user_prompt,
+                )
+                print(shared_dependencies)
+                # write shared dependencies as a md file inside the generated directory
+                await playground.write_file(
+                    "shared_dependencies.md",
+                    shared_dependencies,
+                )
+
+                for name in list_actual:
+                    filename, filecode = await generate_file(
+                        name,
+                        filepaths_string=filepaths_string,
+                        shared_dependencies=shared_dependencies,
+                        prompt=user_prompt,
                     )
+                    await playground.write_file(filename, filecode)
 
-                    tool_outputs = "\n".join(
-                        log.get("tool_output", "")
-                        for log in tool_logs
-                        if log.get("tool_output")
-                    )
-
-                    if tool_outputs:
-                        agent_scratchpad += f"\nObservation: {tool_outputs}\nThought:"
-
-                return f"This is my previous work (I will continue where I left off):\n{agent_scratchpad}"
-
-            print("Generating...", flush=True)
-            while True:
-                try:
-                    await self._check_interrupt()
-                    # Query the LLM in background
-                    scratchpad = get_agent_scratchpad()
-                    repo_context = await get_repo_context(
-                        prompt=prompt.format_prompt(
-                            agent_scratchpad=scratchpad, repo_context=""
-                        ).to_string(),
-                    )
-
-                    self.llm_generation = asyncio.create_task(
-                        llm_chain.agenerate(
-                            [
-                                {
-                                    "repo_context": repo_context,
-                                    "agent_scratchpad": scratchpad,
-                                    "stop": "Observation:",
-                                }
-                            ]
-                        )
-                    )
-                    while True:
-                        await self._check_interrupt()
-                        # Consume the tokens from LLM
-                        token = await self.token_handler.retrieve_token()
-
-                        if token is None:
-                            break
-
-                        await self._check_interrupt()
-                        self._output_parser.ingest_token(token)
-                        stream_steps(self._output_parser.get_steps())
-
-                    current_step = self._output_parser.get_current_step()
-
-                    # Check if the run is finished
-                    if any(
-                        keyword in current_step["output"]
-                        for keyword in ("Final Answer", "FinalAnswer", "Finished")
-                    ):
-                        break
-
-                    for tool in (
-                        cast(ToolLog, action)
-                        for action in current_step["logs"]
-                        if action["type"] == "tool"
-                    ):
-                        await self._check_interrupt()
-                        tool_output = await self._run_tool(
-                            tool,
-                            name_to_tool_map=tool_map,
-                        )
-                        await self._check_interrupt()
-                        self._output_parser.ingest_tool_output(tool_output)
-                        stream_steps(self._output_parser.get_steps())
-
-                except RewriteStepsException:
-                    print("REWRITING")
-                    continue
             await playground.push_repo()
         except:
             raise
@@ -338,29 +233,21 @@ class SmolAgent(AgentBase):
                 )
             )
 
-    async def _check_interrupt(self):
-        if self.canceled:
-            raise Exception("Canceled")
-
-        if self.should_pause:
-            await self.can_resume.wait()
-            self.can_resume.clear()
-
-        if self.rewriting_steps:
-            self.rewriting_steps = False
-            raise RewriteStepsException()
-
-    async def _start(self, instructions: Any):
+    async def _dev_in_background(self, instructions: Any):
         print("Start agent run")
+
+        if self._dev_loop:
+            print("Agent run already in progress")
+            return
 
         async def start_with_timeout():
             try:
-                self._start_loop = asyncio.create_task(
-                    self._run(instructions=instructions),
+                self._dev_loop = asyncio.create_task(
+                    self._dev_in_background(instructions=instructions),
                 )
 
                 await asyncio.wait_for(
-                    self._start_loop,
+                    self._dev_loop,
                     timeout=self.max_run_time,
                 )
             except asyncio.TimeoutError:
@@ -371,48 +258,15 @@ class SmolAgent(AgentBase):
             start_with_timeout(),
         )
 
-    async def _pause(self):
-        print("Pause agent run")
-        self.should_pause = True
-
-    async def _resume(self):
-        print("Resume agent run")
-        self.should_pause = False
-        self.can_resume.set()
-
-    async def _rewrite_steps(self, steps: List[Step]):
-        print("Rewrite agent run steps")
-        await self._pause()
-        self.rewriting_steps = True
-        if self.llm_generation:
-            self.llm_generation.cancel()
-        # TODO: Communicate the rewriting in model prompt - inform about what was rewritten.
-        # TODO: Handle token that is generated after a rewrite - if the current step seems "finished" the model still outputs string (usually something like . or :).
-        self._output_parser = OutputStreamParser(
-            tool_names=self.tool_names,
-            steps=steps[:-1],
-            buffered_step=steps[-1],
-        )
-        await self._resume()
-
     async def interaction(self, interaction: AgentInteraction):
         print("Agent interaction")
         match interaction.type:
-            case "pause":
-                await self._pause()
-            case "resume":
-                await self._resume()
-            case "start":
-                await self._start(interaction.data["instructions"])
-            case "rewrite_steps":
-                await self._rewrite_steps(interaction.data["steps"])
+            case "dev":
+                await self._dev_in_background(interaction.data["instructions"])
             case _:
                 raise Exception(f"Unknown interaction action: {interaction.type}")
 
     async def stop(self):
         print("Cancel agent run")
-        self.canceled = True
-        if self.llm_generation:
-            self.llm_generation.cancel()
-        if self._start_loop:
-            self._start_loop.cancel()
+        if self._dev_loop:
+            self._dev_loop.cancel()

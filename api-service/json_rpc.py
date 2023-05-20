@@ -37,6 +37,8 @@ class JsonRpcAgentConnection:
                 print(f"Calling {method} via JSONRPC")
                 match method:
                     case "start":
+                        # TODO: Fix hardcoded templateID
+                        params["config"]["templateID"] = "smol"
                         agent_factory = get_agent_factory_from_template(
                             params["config"]["templateID"]
                         )

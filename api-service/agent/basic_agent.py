@@ -18,7 +18,6 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
 )
 
-from .memory import get_memory
 from agent.base import (
     AgentInteraction,
     OnLogs,
