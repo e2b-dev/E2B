@@ -233,9 +233,6 @@
 	"info": {
 		"title": "playground",
 		"version": "1.0.0",
-		"license": {
-			"name": "MIT"
-		},
 		"contact": {}
 	},
 	"openapi": "3.0.0",
