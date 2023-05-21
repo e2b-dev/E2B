@@ -532,8 +532,7 @@ export const providerTemplates: {
       openai_api_base: {
         label: 'Azure OpenAI API base',
         type: 'string',
-      }
-
+      },
     },
     models: [
       {
