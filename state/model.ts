@@ -538,14 +538,14 @@ export const providerTemplates: {
       {
         name: 'Hosted model',
         args: {
-          model_name: {
-            label: 'Model name',
-            type: 'string',
-            value: 'gpt-3.5-turbo',
-            editable: true,
-          },
           deployment_name: {
             label: 'Deployment name',
+            type: 'string',
+            placeholder: 'gpt-3.5-turbo',
+            editable: true,
+          },
+          model_name: {
+            label: 'Model name',
             type: 'string',
             value: 'gpt-3.5-turbo',
             editable: true,
