@@ -99,7 +99,7 @@ function ProviderCard({
               font-medium
               text-[#527CE7]
               "
-              text={template.link.replace('https://', '')}
+              text={template.link.replace('https://', '').split('/')[0]}
             />
           </Link>
         </div>
