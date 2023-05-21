@@ -21,25 +21,21 @@ export interface Props {
   project: projects
 }
 
-
-function getSnippet(hostname: string, deploymentId: string) {
+function getSnippet(hostname: string, deploymentID: string) {
   return `curl --request POST \
-  --url http://${hostname}/deployments/${deploymentId}/interactions \
+  --url http://${hostname}/deployments/${deploymentID}/interactions \
   --data '{
   "type": "start",
   "data": {
-		"instructions": {
-			"Description": "Add Stripe Checkout",
-			"RepoURL": "https://github.com/e2b-dev/test.git"
-		}
+		"instructions": {}
 	}
 }'`
 }
 
-
 function Deploy({ project }: Props) {
   const [selectors] = useStateStore()
   const modelConfig = selectors.use.getSelectedModelConfig()()
+  const templateID = selectors.use.templateID()
   const [isDeploying, setIsDeploying] = useState(false)
 
   const [creds] = useModelProviderArgs()
@@ -68,6 +64,7 @@ function Deploy({ project }: Props) {
           provider: modelConfig.provider,
           args: getModelArgs(modelConfig, creds) as any,
           prompt: evaluatedPrompt,
+          templateID,
           // TODO: Handle prompt references
           // prompt_references: promptReferences,
         } as any,

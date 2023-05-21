@@ -25,7 +25,7 @@ function Instructions({ description, setDescription }: Props) {
     ">
       <InstructionsEditor
         referenceSearch={referenceSearch}
-        title="Specify what should the Stripe dev do:"
+        title="Specify Smol developer prompt:"
         placeholder=""
         content={description}
         onChange={setDescription}

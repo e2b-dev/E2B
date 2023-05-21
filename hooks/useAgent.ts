@@ -10,7 +10,7 @@ function useAgent(projectID: string) {
   const [agentState, setAgentState] = useState<AgentRunState>()
 
   const run = useCallback(async (
-    config: ModelConfig,
+    config: ModelConfig & { templateID: string },
     prompt: any,
   ) => {
     const run = new AgentConnection(`${baseUrl}/dev/agent`, {

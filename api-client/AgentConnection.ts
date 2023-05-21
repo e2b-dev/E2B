@@ -68,7 +68,7 @@ export class AgentConnection {
     }
   }
 
-  async start(config: ModelConfig, instructions: any) {
+  async start(config: ModelConfig & { templateID: string }, instructions: any) {
     await this.rpc.call('start', { config, instructions })
     this.opts.onStateChange(AgentRunState.Running)
   }

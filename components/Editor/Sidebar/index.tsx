@@ -47,6 +47,12 @@ function Sidebar({
       return
     }
 
+    if (!templateID) {
+      console.error('Cannot get template ID')
+      return
+    }
+
+
     const {
       references: promptReferences,
       prompt: evaluatedPrompt,
@@ -59,14 +65,13 @@ function Sidebar({
       instructionsTransform,
     )
 
-
     await run(
       {
         name: modelConfig.name,
         provider: modelConfig.provider,
         args: getModelArgs(modelConfig, creds) as any,
         prompt: evaluatedPrompt,
-        // template_id: templateID,
+        templateID,
       },
       {
         References: [

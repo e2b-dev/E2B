@@ -72,9 +72,6 @@ async def list_deployments():
 async def create_agent_deployment(body: CreateDeploymentBody, project_id: str):
     db_deployment = await db.get_deployment(project_id)
 
-    # TODO: Fix hardcoded templateID
-    body.config["templateID"] = "smol"
-
     if db_deployment:
         deployment = await deployment_manager.update_deployment(
             db_deployment["id"],
