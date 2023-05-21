@@ -1,7 +1,6 @@
 {
   "name": "playground",
   "version": "1.0.0",
-  "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-lambda": "^3.293.0",
     "@devbookhq/sdk": "^2.6.74",
