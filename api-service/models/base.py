@@ -42,7 +42,7 @@ def get_model(
             return Anthropic(
                 **config.args,
                 verbose=True,
-                streaming=streaming,
+                streaming=True,
                 callback_manager=callback_manager,
             )
         case ModelProvider.OpenAI.value:
@@ -50,7 +50,8 @@ def get_model(
                 **config.args,
                 request_timeout=3600,
                 verbose=True,
-                streaming=streaming,
+                max_retries=10,
+                streaming=True,
                 callback_manager=callback_manager,
             )
         case ModelProvider.Replicate.value:

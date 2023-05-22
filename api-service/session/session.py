@@ -1,6 +1,7 @@
 from typing import Callable, Coroutine, List, Any
 
 import playground_client
+from playground_client.models.session_response import SessionResponse
 
 from session.env import EnvVar, format_env_vars
 
@@ -19,20 +20,26 @@ GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
 
 class Session:
     def __init__(self, env_id: str, get_envs: GetEnvs):
-        self.client = playground_client.ApiClient(configuration)
+        self.client = playground_client.ApiClient(configuration, pool_threads=3)
         self.api = playground_client.DefaultApi(self.client)
-
-        result = self.api.create_sessions(
-            playground_client.CreateSessionsRequest(envID=env_id),
-            _request_timeout=30,
-        )
-        self.id = result.id
+        self.env_id = env_id
         self.is_closed = False
         self.env_vars = {}
         self.get_envs = get_envs
+        self.id: str = ""
 
     def __del__(self):
         self.close()
+
+    async def open(self):
+        thread: Any = self.api.create_sessions(
+            playground_client.CreateSessionsRequest(envID=self.env_id),
+            _request_timeout=10,
+            async_req=True,
+        )
+
+        response: SessionResponse = thread.get()
+        self.id = response.id
 
     async def update_envs(self):
         """
@@ -43,7 +50,8 @@ class Session:
         self.env_vars = format_env_vars(result)
 
     def close(self):
-        if not self.is_closed:
-            self.api.delete_session(self.id)
+        if not self.is_closed and self.id is not None:
+            thread: Any = self.api.delete_session(self.id, async_req=True)
+            thread.get()
             self.is_closed = True
             self.client.close()
