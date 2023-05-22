@@ -1,13 +1,7 @@
 import asyncio
 import uuid
-import chevron
 import os
 import ast
-
-from starlette.types import Message
-
-# Monkey patch chevron to not escape html
-chevron.render.__globals__["_html_escape"] = lambda string: string
 
 from typing import Any, List
 from langchain.callbacks.base import AsyncCallbackManager
@@ -25,10 +19,11 @@ from agent.base import (
 from models.base import ModelConfig, get_model
 from agent.base import AgentBase, AgentInteractionRequest, GetEnvs
 from session.playground import Playground
+from playground_client.exceptions import NotFoundException
 
 
 class SmolAgent(AgentBase):
-    max_run_time = 60 * 60 * 24  # in seconds
+    max_run_time = 60 * 60  # in seconds
 
     def __init__(
         self,
@@ -61,7 +56,7 @@ class SmolAgent(AgentBase):
 
     async def _dev(self, instructions: Any):
         user_prompt: str = instructions["Prompt"]
-        file: str | None = instructions.get("file", None)
+        file: str | None = instructions.get("File", None)
 
         playground = None
         try:
@@ -69,10 +64,13 @@ class SmolAgent(AgentBase):
             model = get_model(self.config, callback_manager)
 
             playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
+            await playground.open()
 
             rootdir = "/repo"
             await playground.change_rootdir(rootdir)
-            await playground.checkout_repo(instructions["RepoURL"], False, rootdir)
+            await playground.make_dir(rootdir)
+            await playground.write_file("/file/file.txt", "hello world")
+            # await playground.checkout_repo(instructions["RepoURL"], False, rootdir)
 
             async def clean_dir():
                 extensions_to_skip = [
@@ -94,7 +92,9 @@ class SmolAgent(AgentBase):
                         await playground.delete_file(file.name)
 
             async def generate_response(
-                system_prompt: str, user_prompt: str, *args: Any
+                system_prompt: str,
+                user_prompt: str,
+                *args: Any,
             ):
                 messages: List[BaseMessage] = [
                     SystemMessage(content=system_prompt),
@@ -108,6 +108,7 @@ class SmolAgent(AgentBase):
                         messages.append(AIMessage(content=value))
                     else:
                         messages.append(HumanMessage(content=value))
+                role = "user" if role == "assistant" else "assistant"
 
                 model_prompt = ChatPromptValue(messages=messages)
 
@@ -173,11 +174,15 @@ class SmolAgent(AgentBase):
             list_actual = ast.literal_eval(filepaths_string)
 
             # if shared_dependencies.md is there, read it in, else set it to None
-            shared_dependencies = await playground.read_file("shared_dependencies.md")
+            shared_dependencies: str | None = None
+            try:
+                shared_dependencies = await playground.read_file(
+                    "shared_dependencies.md"
+                )
+            except NotFoundException:
+                pass
 
             if file is not None:
-                # check file
-                print("file", file)
                 filename, filecode = await generate_file(
                     file,
                     filepaths_string=filepaths_string,
@@ -213,16 +218,23 @@ class SmolAgent(AgentBase):
                     shared_dependencies,
                 )
 
-                for name in list_actual:
-                    filename, filecode = await generate_file(
+                # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
+                tasks = [
+                    generate_file(
                         name,
                         filepaths_string=filepaths_string,
                         shared_dependencies=shared_dependencies,
                         prompt=user_prompt,
                     )
-                    await playground.write_file(filename, filecode)
+                    for name in list_actual
+                ]
 
-            await playground.push_repo()
+                generated_files = await asyncio.gather(*tasks)
+
+                for name, content in generated_files:
+                    await playground.write_file(name, content)
+
+            # await playground.push_repo()
         except:
             raise
         finally:
@@ -246,7 +258,7 @@ class SmolAgent(AgentBase):
         async def start_with_timeout():
             try:
                 self._dev_loop = asyncio.create_task(
-                    self._dev_in_background(instructions=instructions),
+                    self._dev(instructions=instructions),
                 )
 
                 await asyncio.wait_for(
@@ -264,7 +276,7 @@ class SmolAgent(AgentBase):
     async def interaction(self, interaction: AgentInteraction):
         print("Agent interaction")
         match interaction.type:
-            case "dev":
+            case "start":
                 await self._dev_in_background(interaction.data["instructions"])
             case _:
                 raise Exception(f"Unknown interaction action: {interaction.type}")
