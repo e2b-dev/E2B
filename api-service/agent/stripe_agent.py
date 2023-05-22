@@ -166,7 +166,7 @@ class StripeAgent(AgentBase):
             # Create playground for code tools
             playground = NodeJSPlayground(get_envs=self.get_envs)
 
-            await playground.checkout_repo(instructions["RepoURL"], "/repo")
+            await playground.checkout_repo(instructions["RepoURL"], True, "/repo")
 
             tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]

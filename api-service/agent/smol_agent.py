@@ -60,7 +60,7 @@ class SmolAgent(AgentBase):
         )
 
     async def _dev(self, instructions: Any):
-        user_prompt: str = instructions["prompt"]
+        user_prompt: str = instructions["Prompt"]
         file: str | None = instructions.get("file", None)
 
         playground = None
@@ -70,7 +70,9 @@ class SmolAgent(AgentBase):
 
             playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
 
-            await playground.checkout_repo(instructions["RepoURL"], "/repo")
+            rootdir = "/repo"
+            await playground.change_rootdir(rootdir)
+            await playground.checkout_repo(instructions["RepoURL"], False, rootdir)
 
             async def clean_dir():
                 extensions_to_skip = [
@@ -85,7 +87,7 @@ class SmolAgent(AgentBase):
                     ".tiff",
                 ]  # Add more extensions if needed
 
-                files = await playground.get_filenames("/repo", [])
+                files = await playground.get_filenames(rootdir, [])
                 for file in files:
                     _, extension = os.path.splitext(file.name)
                     if extension not in extensions_to_skip:
@@ -226,6 +228,7 @@ class SmolAgent(AgentBase):
         finally:
             if playground is not None:
                 playground.close()
+
             await self.on_interaction_request(
                 AgentInteractionRequest(
                     interaction_id=str(uuid.uuid4()),
@@ -234,7 +237,7 @@ class SmolAgent(AgentBase):
             )
 
     async def _dev_in_background(self, instructions: Any):
-        print("Start agent run")
+        print("Start agent run", self._dev_loop)
 
         if self._dev_loop:
             print("Agent run already in progress")

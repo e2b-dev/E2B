@@ -22,13 +22,13 @@ export interface Props {
 }
 
 function getSnippet(hostname: string, deploymentID: string) {
-  return `curl --request POST \
-  --url http://${hostname}/deployments/${deploymentID}/interactions \
-  --data '{
-  "type": "start",
+  return `curl --request POST \\
+--url ${hostname}/deployments/${deploymentID}/interactions \\
+--data '{
+  "type": "",
   "data": {
-		"instructions": {}
-	}
+	  "instructions": {}
+  }
 }'`
 }
 
@@ -160,37 +160,10 @@ function Deploy({ project }: Props) {
             text-xs
             bg-slate-100
             overflow-auto
+            whitespace-pre-wrap
           ">
                 <code>
-                  {`curl --request POST \\
-  --url ${baseDeploymentURL}/interactions \\
-  --data '{
-  "type": "start",
-  "data": {
-		"instructions": {
-			"Description": "Add Stripe Checkout",
-			"RepoURL": "https://github.com/e2b-dev/test.git"
-		}
-	}
-}'`}
-                </code>
-              </pre>
-            </div>
-            <div>
-              <Text
-                text="Agent logs"
-              />
-              <pre className="
-            p-2
-            rounded
-            font-mono
-            text-xs
-            bg-slate-100
-            overflow-auto
-          ">
-                <code>
-                  {`curl --request GET \\
-  --url ${baseDeploymentURL}/logs`}
+                  {getSnippet(process.env.NEXT_PUBLIC_API_URL!, deployment.id)}
                 </code>
               </pre>
             </div>

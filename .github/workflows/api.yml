@@ -1,4 +1,4 @@
-name: Build and Deploy to Google Compute Engine
+name: Build and Deploy API to Google Compute Engine
 
 on:
   push:
