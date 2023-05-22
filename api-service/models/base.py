@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Literal
 from enum import Enum
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
 from langchain.llms import Anthropic
 from langchain.schema import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
@@ -13,6 +13,7 @@ from .providers.banana import BananaFix
 
 class ModelProvider(Enum):
     OpenAI = "OpenAI"
+    AzureOpenAI = "AzureOpenAI"
     Replicate = "Replicate"
     Anthropic = "Anthropic"
     HuggingFace = "HuggingFace"
@@ -51,6 +52,14 @@ def get_model(
                 request_timeout=3600,
                 verbose=True,
                 max_retries=10,
+                streaming=True,
+                callback_manager=callback_manager,
+            )
+        case ModelProvider.AzureOpenAI.value:
+            return AzureChatOpenAI(
+                **config.args,
+                request_timeout=3600,
+                verbose=True,
                 streaming=True,
                 callback_manager=callback_manager,
             )

@@ -67,10 +67,11 @@ While e2b will offer the "batteries-included" solution, our goal is to let users
   - [x] Claude v1.3
   - [x] Claude Instant v1
 - [x] [Replicate](https://replicate.com/)
-- [x] [HuggingFace](https://huggingface.co/)
+- [x] [Hugging Face](https://huggingface.co/)
   - [x] Inference API
   - [x] Inference Endpoints
 - [x] [Banana](https://www.banana.dev/)
+- [x] [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service) 
 
 ### **Model or model hosting provider you like isn't supported?**
 

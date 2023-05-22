@@ -4,13 +4,13 @@ import { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 
-import Button from 'components/Button'
 import Text from 'components/Text'
+import Input from 'components/Input'
+import Button from 'components/Button'
 import { Database } from 'db/supabase'
 import { serverCreds } from 'db/credentials'
 import useModelProviderArgs from 'hooks/useModelProviderArgs'
 import { providerTemplates, ModelProvider } from 'state/model'
-import Input from 'components/Input'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient<Database>(ctx, serverCreds)
@@ -53,30 +53,45 @@ function Settings({ }: Props) {
       flex-col
       space-y-4
       space-x-0
-      overflow-hidden
       p-8
+      overflow-hidden
       md:flex-row
       md:space-y-0
       md:space-x-8
       md:p-12
     "
     >
-      <div className="flex items-start justify-start">
-        <div className="items-center flex space-x-2">
+      <div className="
+        flex
+        items-start
+        justify-between
+        flex-col
+        ">
+        <div className="
+          items-center
+          flex
+          space-x-2
+        ">
           <SettingsIcon size="30px" />
           <Text
             size={Text.size.S1}
             text="Settings"
           />
         </div>
+        <div className="pt-2">
+          <Button
+            onClick={handleSignOut}
+            text="Sign out"
+          />
+        </div>
       </div>
-
       <div
         className="
         flex
+        overflow-auto
+        scroller
         flex-1
         flex-col
-        items-start
         space-y-6
         "
       >
@@ -128,7 +143,7 @@ function Settings({ }: Props) {
                 flex
                 pt-1
                 flex-col
-                space-y-3
+                space-y-4
                 flex-1
                 w-[450px]
               "
@@ -136,6 +151,15 @@ function Settings({ }: Props) {
             {Object.entries(providerTemplates).map(([provider, value]) =>
               <div
                 key={provider}
+                className="
+                space-y-4
+                flex
+                flex-col
+                p-2
+                rounded
+                bg-slate-100
+                flex-1
+                "
               >
                 {Object.entries(value.creds || {}).map(([key, cred]) =>
                   <div key={key}>
@@ -152,14 +176,8 @@ function Settings({ }: Props) {
             )}
           </div>
         </div>
-        <div className="pt-2">
-          <Button
-            onClick={handleSignOut}
-            text="Sign out"
-          />
-        </div>
       </div>
-    </div >
+    </div>
   )
 }
 
