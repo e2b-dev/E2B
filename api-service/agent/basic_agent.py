@@ -162,6 +162,8 @@ class BasicAgent(AgentBase):
             # Create tools
             # Create playground for code tools
             playground = NodeJSPlayground(get_envs=self.get_envs)
+            await playground.open()
+
 
             tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]

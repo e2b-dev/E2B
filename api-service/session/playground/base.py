@@ -54,7 +54,7 @@ class Playground(Session):
         )
         print("res", res)
 
-    async def push_repo(self):
+    async def push_repo(self, rootdir: str):
         id = str(uuid.uuid4())[:8]
 
         print(await self.run_command(f"echo 2 > /repo/test.txt"))
@@ -212,6 +212,7 @@ class Playground(Session):
         thread.get()
 
     async def write_file(self, path: str, content: str):
+        print("Writing file", path, content)
         thread: Any = self.api.write_filesystem_file(
             self.id,
             path,

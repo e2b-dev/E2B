@@ -165,6 +165,7 @@ class StripeAgent(AgentBase):
             # Create tools
             # Create playground for code tools
             playground = NodeJSPlayground(get_envs=self.get_envs)
+            await playground.open()
 
             await playground.checkout_repo(instructions["RepoURL"], True, "/repo")
 
@@ -325,7 +326,7 @@ class StripeAgent(AgentBase):
                 except RewriteStepsException:
                     print("REWRITING")
                     continue
-            await playground.push_repo()
+            await playground.push_repo(rootdir="/repo")
         except:
             raise
         finally:
