@@ -24,6 +24,10 @@ function SmolDeveloper() {
     console.log({ data, error })
   }
 
+  async function signOut() {
+    await supabaseClient.auth.signOut()
+  }
+
   return (
     <div className="
       p-8
@@ -39,10 +43,17 @@ function SmolDeveloper() {
         text="Smol Developer"
       />
 
-      <Button
-        text="Sign in with GitHub"
-        onClick={signInWithGitHub}
-      />
+      {user ? (
+        <Button
+          text="Sign out"
+          onClick={signOut}
+        />
+      ) : (
+        <Button
+          text="Sign in with GitHub"
+          onClick={signInWithGitHub}
+        />
+      )}
     </div>
   )
 }
