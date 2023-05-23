@@ -1,4 +1,4 @@
-name: Build and deploy API
+name: Build and Deploy API to Google Compute Engine
 
 on:
   push:
@@ -16,10 +16,13 @@ permissions:
   contents: read
 
 env:
-  IMAGE_TAG: us-central1-docker.pkg.dev/${{ secrets.GCE_PROJECT }}/services/e2b-api:latest
+  IMAGE_TAG: us-central1-docker.pkg.dev/devbookhq/services/e2b-api:latest
+  GCE_INSTANCE: e2b-api-instance-1
+  GCE_INSTANCE_ZONE: us-central1-a
 
+# TODO: Update - https://stackoverflow.com/questions/68244641/how-to-circumvent-compute-engines-downtime-during-container-deployments
 jobs:
-  release:
+  deploy:
     name: Build and release
     runs-on: ubuntu-20.04
     steps:
@@ -47,8 +50,15 @@ jobs:
           cache-from: type=gha,scope=e2b-api
           cache-to: type=gha,scope=e2b-api
 
-      - name: Deploy
-        uses: google-github-actions/deploy-cloudrun@v1
-        with:
-          service: e2b-api
-          image: ${{ env.IMAGE_TAG }}
+    - name: Delete old docker images from the instance
+      run: |- 
+        gcloud compute instances add-metadata "$GCE_INSTANCE" \
+          --zone "$GCE_INSTANCE_ZONE" \
+          --metadata startup-script="#! /bin/bash
+          docker image prune -af"
+
+    - name: Update the server container
+      run: |-
+        gcloud compute instances update-container "$GCE_INSTANCE" \
+          --zone "$GCE_INSTANCE_ZONE" \
+          --container-image "$IMAGE_TAG"
