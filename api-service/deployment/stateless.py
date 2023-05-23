@@ -4,10 +4,7 @@ from database.base import db
 from deployment.manager import AgentDeploymentManager, AgentDeployment
 from agent.from_template import get_agent_factory_from_template
 
-
-# TODO: Interemediate step between implementing the FC agent deployment
-# can be improving the in-memory deployment manager to use the processes instead of threads.
-class InMemoryDeploymentManager(AgentDeploymentManager):
+class StatelessDeploymentManager(AgentDeploymentManager):
     def __init__(self):
         self._deployments: Dict[str, AgentDeployment] = {}
 
