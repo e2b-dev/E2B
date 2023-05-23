@@ -17,9 +17,9 @@ permissions:
   contents: read
 
 env:
-  IMAGE_TAG: us-central1-docker.pkg.dev/devbookhq/services/e2b-api:latest
-  GCE_INSTANCE: e2b-api-instance-1
-  GCE_INSTANCE_ZONE: us-central1-a
+  IMAGE_TAG: ${{ vars.IMAGE_TAG }}
+  GCE_INSTANCE: ${{ vars.GCE_INSTANCE }}
+  GCE_INSTANCE_ZONE: ${{ vars.GCE_INSTANCE_ZONE }}
 
 # TODO: Update - https://stackoverflow.com/questions/68244641/how-to-circumvent-compute-engines-downtime-during-container-deployments
 jobs:
