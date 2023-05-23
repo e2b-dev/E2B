@@ -3,7 +3,7 @@
   <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<p align="center">Open-source platform for building AI-powered virtual software developers</p>
+<p align="center">Open-source platform for building & deplying AI agents - "Vercel for AI agents"</p>
 
 <h4 align="center">
   <a href="https://e2b.dev">Website</a> |
