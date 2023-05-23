@@ -22,8 +22,7 @@ function App({ Component, pageProps }: AppProps<{ initialSession: Session, proje
   const router = useRouter()
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
 
-  const isSignIn = router.pathname === '/sign' && router.query.signup !== 'true'
-  const isSignUp = router.pathname === '/sign' && router.query.signup === 'true'
+  const hasHeader = !router.pathname.startsWith('/sign') && !router.pathname.startsWith('/agent')
 
   return (
     <main className={clsx(
@@ -40,7 +39,7 @@ function App({ Component, pageProps }: AppProps<{ initialSession: Session, proje
         supabaseClient={supabaseClient}
         initialSession={pageProps.initialSession}
       >
-        {!isSignIn && !isSignUp &&
+        {hasHeader &&
           <Header project={pageProps.project} />
         }
         <Component {...pageProps} />
