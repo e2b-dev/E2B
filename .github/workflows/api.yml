@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'api-service/**'
+      - '.github/workflows/api.yml'
     branches:
       - production
 
