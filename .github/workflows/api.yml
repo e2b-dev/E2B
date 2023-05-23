@@ -51,15 +51,15 @@ jobs:
           cache-from: type=gha,scope=e2b-api
           cache-to: type=gha,scope=e2b-api
 
-    - name: Delete old docker images from the instance
-      run: |- 
-        gcloud compute instances add-metadata "$GCE_INSTANCE" \
-          --zone "$GCE_INSTANCE_ZONE" \
-          --metadata startup-script="#! /bin/bash
-          docker image prune -af"
+      - name: Delete old docker images from the instance
+        run: |- 
+          gcloud compute instances add-metadata "$GCE_INSTANCE" \
+            --zone "$GCE_INSTANCE_ZONE" \
+            --metadata startup-script="#! /bin/bash
+            docker image prune -af"
 
-    - name: Update the server container
-      run: |-
-        gcloud compute instances update-container "$GCE_INSTANCE" \
-          --zone "$GCE_INSTANCE_ZONE" \
-          --container-image "$IMAGE_TAG"
+      - name: Update the server container
+        run: |-
+          gcloud compute instances update-container "$GCE_INSTANCE" \
+            --zone "$GCE_INSTANCE_ZONE" \
+            --container-image "$IMAGE_TAG"
