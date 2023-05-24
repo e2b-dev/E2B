@@ -7,7 +7,6 @@ import { useGitHub } from 'hooks/useGitHub'
 import useListenMessage from 'hooks/useListenMessage'
 import Button from 'components/Button'
 import Text from 'components/Text'
-import { useLocalStorage } from 'hooks/useLocalStorage'
 import { useRepositories } from 'hooks/useRepositories'
 
 import { openPopupModal } from 'utils/popupModal'
@@ -30,8 +29,8 @@ export interface Props {
   accessToken?: string
 }
 
-function Repos({ onRepoSelection }: Props) {
-  const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
+function Repos({ onRepoSelection, accessToken }: Props) {
+  // const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
   const gitHub = useGitHub(accessToken)
   const { repos, refetch } = useRepositories(gitHub)
   const [query, setQuery] = useState<string>()
@@ -48,11 +47,11 @@ function Repos({ onRepoSelection }: Props) {
 
   const handleEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
-      setAccessToken(event.data.accessToken)
+      // setAccessToken(event.data.accessToken)
     } else if (event.data.installationID) {
       refetch()
     }
-  }, [setAccessToken, refetch])
+  }, [refetch])
   useListenMessage(handleEvent)
 
   async function selectRepository(r: Pick<PostProjectBody, 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, url: string }) {

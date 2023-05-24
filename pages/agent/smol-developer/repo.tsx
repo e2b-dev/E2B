@@ -34,7 +34,6 @@ function Repo() {
   const session = useSession()
   const sessionCtx = useSessionContext()
 
-
   async function signOut() {
     await supabaseClient.auth.signOut()
     location.reload()
