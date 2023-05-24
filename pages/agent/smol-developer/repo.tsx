@@ -7,7 +7,7 @@ import {
 } from '@supabase/auth-helpers-react'
 
 import { serverCreds } from 'db/credentials'
-import Repos, { PostProjectBody } from 'components/Repos'
+import Repos from 'components/Repos'
 
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -27,11 +27,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: {} }
 }
 
-export interface Props {
-  onRepoSelection: (repoSetup: Pick<PostProjectBody, 'accessToken' | 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, branches?: string[], url: string }) => void
-}
-
-function Repo({ onRepoSelection }: Props) {
+function Repo() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
   const session = useSession()
@@ -66,7 +62,7 @@ function Repo({ onRepoSelection }: Props) {
         Select repo
         {user &&
           <Repos
-            onRepoSelection={onRepoSelection}
+            onRepoSelection={r => console.log(r)}
             accessToken={session?.provider_token || undefined}
           />
         }
