@@ -7,20 +7,28 @@ import { useGitHub } from 'hooks/useGitHub'
 import useListenMessage from 'hooks/useListenMessage'
 import Button from 'components/Button'
 import Text from 'components/Text'
-import { useLocalStorage } from 'hooks/useLocalStorage'
 import { useRepositories } from 'hooks/useRepositories'
-import { PostProjectBody } from 'pages/api/project'
+
 import { openPopupModal } from 'utils/popupModal'
 import TitleButton from 'components/TitleButton'
 import Input from 'components/Input'
 import SpinnerIcon from 'components/Spinner'
 
-export interface Props {
-  onRepoSelection: (repoSetup: Pick<PostProjectBody, 'accessToken' | 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, branches?: string[], url: string }) => void
+export interface PostProjectBody {
+  repositoryID: number
+  installationID: number
+  accessToken: string
+  branch: string
+  path: string
+  id: string
 }
 
-function Repos({ onRepoSelection }: Props) {
-  const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
+export interface Props {
+  onRepoSelection: (repoSetup: Pick<PostProjectBody, 'accessToken' | 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, branches?: string[], url: string }) => void
+  accessToken?: string
+}
+
+function Repos({ onRepoSelection, accessToken }: Props) {
   const gitHub = useGitHub(accessToken)
   const { repos, refetch } = useRepositories(gitHub)
   const [query, setQuery] = useState<string>()
@@ -37,11 +45,11 @@ function Repos({ onRepoSelection }: Props) {
 
   const handleEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
-      setAccessToken(event.data.accessToken)
+      // setAccessToken(event.data.accessToken)
     } else if (event.data.installationID) {
       refetch()
     }
-  }, [setAccessToken, refetch])
+  }, [refetch])
   useListenMessage(handleEvent)
 
   async function selectRepository(r: Pick<PostProjectBody, 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, url: string }) {
@@ -66,14 +74,8 @@ function Repos({ onRepoSelection }: Props) {
     })
   }
 
-  async function signWithGitHubOAuth() {
-    const url = new URL('/login/oauth/authorize', 'https://github.com')
-    url.searchParams.set('client_id', process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID!)
-    openPopupModal(url)
-  }
-
   function configureGitHubApp() {
-    const url = new URL('https://github.com/apps/devbook-for-github/installations/new')
+    const url = new URL('https://github.com/apps/e2b-for-github/installations/new')
     openPopupModal(url)
   }
 
@@ -88,7 +90,7 @@ function Repos({ onRepoSelection }: Props) {
         flex-1`,
         { 'bg-white': accessToken },
       )}>
-        {!accessToken &&
+        {/* {!accessToken &&
           <div className="flex flex-1 justify-center items-center">
             <Button
               variant={Button.variant.Full}
@@ -97,7 +99,7 @@ function Repos({ onRepoSelection }: Props) {
               icon={<GithubIcon />}
             />
           </div>
-        }
+        } */}
 
         {accessToken &&
           <div className="flex overflow-hidden flex-col flex-1">
@@ -174,10 +176,10 @@ function Repos({ onRepoSelection }: Props) {
       </div>
       {accessToken &&
         <div className="flex justify-between">
-          <TitleButton
+          {/* <TitleButton
             onClick={signWithGitHubOAuth}
             text="Reauthenticate GitHub Account"
-          />
+          /> */}
           <TitleButton
             onClick={configureGitHubApp}
             text="Configure GitHub App"

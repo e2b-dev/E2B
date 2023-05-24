@@ -19,6 +19,8 @@ export default async function handler(
     return
   }
 
+  const callbackURL = 'https://ntjfcwpzsxugrykskdgi.supabase.co/auth/v1/callback'
+
   const exchangeURL = new URL('login/oauth/access_token', 'https://github.com')
   exchangeURL.searchParams.set('client_id', process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID!)
   exchangeURL.searchParams.set('client_secret', process.env.GITHUB_CLIENT_SECRET!)

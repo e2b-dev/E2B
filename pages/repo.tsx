@@ -19,12 +19,12 @@ import dynamic from 'next/dynamic'
 
 import { PostProjectBody } from 'pages/api/project'
 import { apps } from 'database'
-import Text from 'components/typography/Text'
+import Text from 'components/Text'
 import Input from 'components/Input'
 import Select from 'components/Select'
 import { defaultRepoPath } from 'utils/constants'
 import Button from 'components/Button'
-import SpinnerIcon from 'components/icons/Spinner'
+import SpinnerIcon from 'components/Spinner'
 const Repos = dynamic(() => import('components/Repos'), { ssr: false })
 
 async function handlePostProject(url: string, { arg }: { arg: PostProjectBody }) {

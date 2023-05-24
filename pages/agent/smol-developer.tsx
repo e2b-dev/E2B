@@ -1,24 +1,20 @@
-import { useEffect } from 'react'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react'
 import { useUser } from '@supabase/auth-helpers-react'
 
 import Text from 'components/Text'
 import Button from 'components/Button'
+import Repos from 'components/Repos'
 
 function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
-
-  useEffect(function checkUser() {
-    console.log('user', user)
-  }, [user])
+  const session = useSession()
 
   async function signInWithGitHub() {
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'github',
       options: {
         redirectTo: window.location.href,
-        scopes: 'repo',
       }
     })
     console.log({ data, error })
@@ -35,7 +31,6 @@ function SmolDeveloper() {
       flex-1
       flex
       flex-col
-      justify-start
       space-y-4
     ">
       <Text
@@ -54,6 +49,13 @@ function SmolDeveloper() {
           onClick={signInWithGitHub}
         />
       )}
+
+      {user &&
+        <Repos
+          onRepoSelection={(r) => console.log('selected repo', r)}
+          accessToken={session?.provider_token || undefined}
+        />
+      }
     </div>
   )
 }
