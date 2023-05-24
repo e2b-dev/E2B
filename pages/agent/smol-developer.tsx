@@ -4,6 +4,7 @@ import { useUser } from '@supabase/auth-helpers-react'
 
 import Text from 'components/Text'
 import Button from 'components/Button'
+import GitHubButton from 'components/GitHubButton'
 
 function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()
@@ -38,10 +39,47 @@ function SmolDeveloper() {
       justify-start
       space-y-4
     ">
-      <Text
-        size={Text.size.S1}
-        text="Smol Developer"
-      />
+      <div className="
+        flex
+        space-x-1
+      ">
+        <Text
+          size={Text.size.S1}
+          text="Get your own"
+        />
+        <div className="
+          relative
+          group
+        ">
+          <a
+            href="https://github.com/smol-ai/developer"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <Text
+              size={Text.size.S1}
+              className="text-green-800 font-semibold"
+              text="smol developer"
+            />
+          </a>
+          <div className="
+            absolute
+            w-full
+            h-px
+            bg-green-800
+            bottom-0
+            left-0
+            transition-all
+            rounded
+            group-hover:translate-y-[2px]
+          "/>
+        </div>
+        <Text
+          size={Text.size.S1}
+          text="with e2b"
+        />
+      </div>
+
 
       {user ? (
         <Button
@@ -49,8 +87,8 @@ function SmolDeveloper() {
           onClick={signOut}
         />
       ) : (
-        <Button
-          text="Sign in with GitHub"
+        <GitHubButton
+          text="Continue with GitHub"
           onClick={signInWithGitHub}
         />
       )}
