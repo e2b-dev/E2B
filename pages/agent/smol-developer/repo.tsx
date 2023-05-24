@@ -1,5 +1,5 @@
 import type { GetServerSideProps } from 'next'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useSessionContext, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import {
   useUser,
@@ -8,6 +8,7 @@ import {
 
 import { serverCreds } from 'db/credentials'
 import Repos from 'components/Repos'
+import Button from 'components/Button'
 
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -31,6 +32,8 @@ function Repo() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
   const session = useSession()
+  const sessionCtx = useSessionContext()
+
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -67,6 +70,12 @@ function Repo() {
           />
         }
       </div>
+      {!sessionCtx.isLoading && user && (
+        <Button
+          text="Sign out"
+          onClick={signOut}
+        />
+      )}
     </div>
   )
 }

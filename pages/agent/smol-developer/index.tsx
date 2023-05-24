@@ -44,7 +44,6 @@ function SmolDeveloper() {
       provider: 'github',
       options: {
         redirectTo: window.location.href,
-        scopes: 'repo',
       }
     })
     console.log({ data, error })
