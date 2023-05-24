@@ -1,17 +1,42 @@
+import type { GetServerSideProps } from 'next'
 import { useEffect } from 'react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
-import { useUser } from '@supabase/auth-helpers-react'
+import {
+  useUser,
+  useSessionContext,
+} from '@supabase/auth-helpers-react'
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
 import Text from 'components/Text'
-import Button from 'components/Button'
 import GitHubButton from 'components/GitHubButton'
+import SpinnerIcon from 'components/Spinner'
+import { serverCreds } from 'db/credentials'
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const supabase = createServerSupabaseClient(ctx, serverCreds)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (session) {
+    return {
+      redirect: {
+        destination: '/agent/smol-developer/repo',
+        permanent: false,
+      },
+    }
+  }
+  return { props: {} }
+}
 
 function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
+  const sessionCtx = useSessionContext()
 
   useEffect(function checkUser() {
     console.log('user', user)
+
   }, [user])
 
   async function signInWithGitHub() {
@@ -23,10 +48,6 @@ function SmolDeveloper() {
       }
     })
     console.log({ data, error })
-  }
-
-  async function signOut() {
-    await supabaseClient.auth.signOut()
   }
 
   return (
@@ -80,12 +101,17 @@ function SmolDeveloper() {
         />
       </div>
 
-      {user ? (
-        <Button
-          text="Sign out"
-          onClick={signOut}
-        />
-      ) : (
+      {sessionCtx.isLoading && (
+        <div
+          className="
+            flex
+            justify-center
+          "
+        >
+          <SpinnerIcon className="text-slate-400" />
+        </div>
+      )}
+      {!sessionCtx.isLoading && !user && (
         <GitHubButton
           onClick={signInWithGitHub}
         />
