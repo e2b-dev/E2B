@@ -10,14 +10,12 @@ import Text from 'components/Text'
 
 export interface Props {
   className?: string
-  text: string
   onClick?: (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => any
   isDisabled?: boolean
 }
 
 function GitHubButton({
   className,
-  text,
   onClick,
   isDisabled,
 }: Props) {
@@ -45,7 +43,7 @@ function GitHubButton({
       <Text
         size={Text.size.S2}
         className="font-medium"
-        text={text}
+        text="Continue with GitHub"
       />
     </button>
   )

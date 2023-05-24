@@ -80,7 +80,6 @@ function SmolDeveloper() {
         />
       </div>
 
-
       {user ? (
         <Button
           text="Sign out"
@@ -88,7 +87,6 @@ function SmolDeveloper() {
         />
       ) : (
         <GitHubButton
-          text="Continue with GitHub"
           onClick={signInWithGitHub}
         />
       )}
