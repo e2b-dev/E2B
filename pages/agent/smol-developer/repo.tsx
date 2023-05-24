@@ -3,13 +3,12 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import {
   useUser,
-  useSessionContext,
   useSession,
 } from '@supabase/auth-helpers-react'
 
 import { serverCreds } from 'db/credentials'
-import Button from 'components/Button'
-import Repos from 'components/Repos'
+import Repos, { PostProjectBody } from 'components/Repos'
+
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
@@ -28,9 +27,12 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: {} }
 }
 
-function Repo() {
+export interface Props {
+  onRepoSelection: (repoSetup: Pick<PostProjectBody, 'accessToken' | 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, branches?: string[], url: string }) => void
+}
+
+function Repo({ onRepoSelection }: Props) {
   const supabaseClient = useSupabaseClient()
-  const sessionCtx = useSessionContext()
   const user = useUser()
   const session = useSession()
 
@@ -40,29 +42,35 @@ function Repo() {
   }
 
   return (
-    <div className="
+    <div
+      className="
       p-8
-      m-auto
       flex-1
       flex
       flex-col
-      justify-start
       space-y-4
-    ">
-      {user &&
-        <Repos
-          onRepoSelection={(r) => console.log('selected repo', r)}
-          accessToken={session?.provider_token || undefined}
-        />
-      }
-
-      Select repo
-      {!sessionCtx.isLoading && user && (
-        <Button
-          text="Sign out"
-          onClick={signOut}
-        />
-      )}
+    "
+    >
+      <div
+        className="
+      max-w-xl
+      w-full
+      flex-1
+      flex
+      flex-col
+      self-center
+      justify-center
+      space-y-4
+    "
+      >
+        Select repo
+        {user &&
+          <Repos
+            onRepoSelection={onRepoSelection}
+            accessToken={session?.provider_token || undefined}
+          />
+        }
+      </div>
     </div>
   )
 }
