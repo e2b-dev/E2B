@@ -262,6 +262,7 @@ model deployments {
   logs_raw   String?           @default("")
   config     Json?
   enabled    Boolean           @default(false)
+  auth       Json?
   projects   projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
