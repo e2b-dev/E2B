@@ -10,7 +10,6 @@ import { serverCreds } from 'db/credentials'
 import Repos from 'components/Repos'
 import Button from 'components/Button'
 
-
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
@@ -53,6 +52,7 @@ function Repo() {
         className="
       max-w-xl
       w-full
+      max-h-[800px]
       flex-1
       flex
       flex-col
@@ -61,6 +61,12 @@ function Repo() {
       space-y-4
     "
       >
+        {!sessionCtx.isLoading && user && (
+          <Button
+            text="Sign out"
+            onClick={signOut}
+          />
+        )}
         Select repo
         {user &&
           <Repos
@@ -69,12 +75,6 @@ function Repo() {
           />
         }
       </div>
-      {!sessionCtx.isLoading && user && (
-        <Button
-          text="Sign out"
-          onClick={signOut}
-        />
-      )}
     </div>
   )
 }

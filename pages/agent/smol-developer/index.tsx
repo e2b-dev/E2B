@@ -1,5 +1,4 @@
 import type { GetServerSideProps } from 'next'
-import { useEffect } from 'react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
   useUser,
@@ -34,19 +33,14 @@ function SmolDeveloper() {
   const user = useUser()
   const sessionCtx = useSessionContext()
 
-  useEffect(function checkUser() {
-    console.log('user', user)
-
-  }, [user])
-
   async function signInWithGitHub() {
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+    await supabaseClient.auth.signInWithOAuth({
       provider: 'github',
       options: {
         redirectTo: window.location.href,
+        scopes: 'email',
       }
     })
-    console.log({ data, error })
   }
 
   return (
