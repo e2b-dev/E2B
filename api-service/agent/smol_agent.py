@@ -252,8 +252,8 @@ class SmolAgent(AgentBase):
         print("Start agent run", self._dev_loop)
 
         if self._dev_loop:
-            print("Agent run already in progress")
-            return
+            print("Agent run already in progress - restarting")
+            await self.stop()
 
         async def start_with_timeout():
             try:

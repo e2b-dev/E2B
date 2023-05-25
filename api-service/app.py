@@ -1,7 +1,6 @@
 import uuid
 
 from typing import Any
-
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -13,7 +12,6 @@ from json_rpc import JsonRpcAgentConnection
 from database.base import db
 
 deployment_manager = InMemoryDeploymentManager()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,7 +29,10 @@ async def lifespan(app: FastAPI):
 
 
 # TODO: Fix proxying - https://fastapi.tiangolo.com/advanced/behind-a-proxy/
-app = FastAPI(title="e2b-api", lifespan=lifespan)
+app = FastAPI(
+    title="e2b-api",
+    lifespan=lifespan,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
