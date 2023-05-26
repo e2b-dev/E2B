@@ -56,6 +56,7 @@ class SmolAgent(AgentBase):
 
     async def _dev(self, instructions: Any):
         user_prompt: str = instructions["Prompt"]
+        # TODO: Apply the file rewrite when the agent was invoked via PR code comment
         file: str | None = instructions.get("File", None)
 
         playground = None
@@ -69,7 +70,6 @@ class SmolAgent(AgentBase):
             rootdir = "/repo"
             await playground.change_rootdir(rootdir)
             await playground.make_dir(rootdir)
-            await playground.write_file("/file/file.txt", "hello world")
             # await playground.checkout_repo(instructions["RepoURL"], False, rootdir)
 
             async def clean_dir():
