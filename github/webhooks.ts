@@ -14,9 +14,9 @@ export async function getGitHubWebhooksMiddleware() {
 
   webhooks.on('issue_comment', issueCommentHandler)
 
-  webhooks.on('pull_request', async (event) => {
-    event.payload.
-  })
+  // webhooks.on('pull_request', async (event) => {
+  //   event.payload.
+  // })
 
   // TODO: Add handling for review comments
   // webhooks.on('pull_request_review_comment', async (event) => {
