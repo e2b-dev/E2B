@@ -28,16 +28,24 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
 }
 
 export interface PostAgentBody {
+  // ID of the installation of the GitHub App
   installationID: number
+  // ID of the repository
   repositoryID: number
+  // Title of the PR
   title: string
+  // Default branch against which to create the PR
   defaultBranch: string
+  // Initial prompt used as a body text for the PR (can be markdown)
   body: string
+  // Owner of the repo (user or org)
   owner: string
+  // Name of the repo
   repo: string
+  // Name of the branch created for the PR
   branch: string
+  // Commit message for the PR first empty commit
   commitMessage: string
-  prompt: string
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
@@ -72,7 +80,6 @@ function Repo() {
       defaultBranch,
       installationID,
       owner,
-      prompt,
       repo,
       branch,
       commitMessage,

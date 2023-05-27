@@ -13,7 +13,6 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
     repositoryID,
     title,
     body,
-    prompt,
     owner,
     branch,
     commitMessage,
@@ -129,7 +128,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     await triggerSmolDevAgentRun({
       deployment,
-      prompt,
+      prompt: body,
       accessToken,
       commitMessage: 'Add code based on the PR description',
     })
