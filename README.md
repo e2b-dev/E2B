@@ -3,7 +3,7 @@
   <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<p align="center">Open-source platform for building AI-powered virtual software developers</p>
+<p align="center">Open-source platform for building & deploying AI agents - "Vercel for AI agents"</p>
 
 <h4 align="center">
   <a href="https://e2b.dev">Website</a> |
@@ -22,11 +22,9 @@
 
 ![e2b-editor](docs-assets/preview.gif)
 
-[e2b](https://e2b.dev) or etob (*english2bits*) allows you to create & deploy virtual software developers. These virtual developers are powered by specialized AI agents that build software based on your instructions and can use tools.
+[e2b](https://e2b.dev) or etob (*english2bits*) allows you to deploy AI agents.
 
 Agents operate in our own secure sandboxed cloud environments that's powered by [Firecracker](https://github.com/firecracker-microvm/firecracker/).
-
-e2b currently supports building only REST servers in Node.js. Specifically using the [Express](https://expressjs.com/) framework. We'll support more use-cases with time.
 
 # 🚀 Get started
 We're working on the cloud-hosted version. In the meantime, the fastest way try out e2b is to run it locally via Docker.
