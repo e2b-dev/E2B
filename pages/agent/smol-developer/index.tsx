@@ -10,6 +10,8 @@ import Text from 'components/Text'
 import GitHubButton from 'components/GitHubButton'
 import SpinnerIcon from 'components/Spinner'
 import { serverCreds } from 'db/credentials'
+import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
@@ -32,6 +34,13 @@ function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
   const sessionCtx = useSessionContext()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user) {
+      router.reload()
+    }
+  }, [user, router])
 
   async function signInWithGitHub() {
     await supabaseClient.auth.signInWithOAuth({
