@@ -3,7 +3,7 @@ import { GithubIcon, SearchIcon } from 'lucide-react'
 import clsx from 'clsx'
 import Fuse from 'fuse.js'
 
-import { useGitHub } from 'hooks/useGitHub'
+import { useGitHubClient } from 'hooks/useGitHub'
 import useListenMessage from 'hooks/useListenMessage'
 import Button from 'components/Button'
 import Text from 'components/Text'
@@ -31,17 +31,16 @@ export interface Props {
 
 function Repos({ onRepoSelection, accessToken }: Props) {
   // const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
-  const gitHub = useGitHub(accessToken)
+  const gitHub = useGitHubClient(accessToken)
   const { repos, refetch } = useRepositories(gitHub)
   const [query, setQuery] = useState<string>()
 
-  const searchEngine = useMemo(() => {
-    if (!repos) return
-    return new Fuse(repos, {
+  const searchEngine = useMemo(() => repos ?
+    new Fuse(repos, {
       keys: ['full_name'],
       threshold: 0.4,
-    })
-  }, [repos])
+    }) : undefined
+    , [repos])
 
   const filteredRepos = query && searchEngine ? searchEngine.search(query).map(i => i.item) : repos || []
 

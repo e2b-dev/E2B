@@ -144,7 +144,7 @@ async function handler(
     return
   }
 
-  res.setHeader('Allow', 'POST')
+  res.setHeader('Allow', ['POST', 'DELETE'])
   res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' })
   return
 }

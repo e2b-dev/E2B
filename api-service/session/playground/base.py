@@ -44,36 +44,39 @@ class Playground(Session):
         await self.run_command("apk add npm")
         await self.run_command(f"npm install --prefix {rootdir}", rootdir="/")
 
-    async def checkout_repo(self, repo_url: str, install: bool, rootdir: str):
+    async def clone_repo(
+        self,
+        repo_address: str,
+        branch: str,
+        rootdir: str,
+    ):
         await self.make_dir(rootdir)
-        if install:
-            await self.install_deps(rootdir)
         res = await self.run_command(
-            f"git clone {repo_url} {rootdir}",
+            f"git clone --single-branch --branch {branch} {repo_address} {rootdir}",
             rootdir="/",
         )
-        print("res", res)
+        print("Repo clone result", res)
 
-    async def push_repo(self, rootdir: str):
-        id = str(uuid.uuid4())[:8]
-
-        print(await self.run_command(f"echo 2 > /repo/test.txt"))
-        print(await self.run_command(f"gh auth login --with-token < /github_token"))
-        print(await self.run_command(f"git config --global user.email agent1"))
-        print(await self.run_command(f"git checkout -b pr-{id}"))
-        print(await self.run_command(f"git add .", rootdir="/repo"))
-        print(await self.run_command(f'git commit -m "Commit"', rootdir="/repo"))
-        print(await self.run_command(f"gh auth setup-git"))
-        print(
-            await self.run_command(
-                f"git push --set-upstream origin pr-{id}", rootdir="/repo"
-            )
+    async def push_repo(
+        self,
+        repo_address: str,
+        rootdir: str,
+        commit_message: str,
+        git_email: str,
+        git_name: str,
+    ):
+        res = await self.run_command(
+            (
+                f"git config --global user.email {git_email} && "
+                f'git config --global user.name "{git_name}" && '
+                f"git config --global push.autoSetupRemote true && "
+                f"git add . && "
+                f'git commit -m "{commit_message}" && '
+                f"git push {repo_address}"
+            ),
+            rootdir=rootdir,
         )
-        print(
-            await self.run_command(
-                f"gh pr create --title 'PR-{id}' --body 'PR-{id}'", rootdir="/repo"
-            )
-        )
+        print("Repo push result", res)
 
     async def change_rootdir(self, rootdir: str):
         self.rootdir = rootdir

@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 
-import getUserClient, { GitHubUserClient } from 'github/userClient'
+import { getGHUserClient } from 'github/userClient'
+import { GitHubClient } from 'github/client'
 
-export function useGitHub(accessToken?: string) {
-  const [gitHub, setGitHub] = useState<GitHubUserClient>()
-
-  useEffect(function init() {
-    if (!accessToken) return
-    setGitHub(getUserClient({ accessToken }))
-  }, [accessToken])
-
-  return gitHub
+export function useGitHubClient(accessToken?: string): GitHubClient | undefined {
+  return useMemo(() => accessToken
+    ? getGHUserClient({ accessToken })
+    : undefined,
+    [accessToken],
+  )
 }

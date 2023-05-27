@@ -20,7 +20,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   if (session) {
     return {
       redirect: {
-        destination: '/agent/smol-developer/repo',
+        destination: '/agent/smol-developer/setup',
         permanent: false,
       },
     }

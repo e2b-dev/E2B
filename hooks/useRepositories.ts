@@ -1,8 +1,8 @@
 import { useEffect, useReducer, useState } from 'react'
 
-import { GitHubUserClient } from 'github/userClient'
+import { GitHubClient } from 'github/client'
 
-async function fetchRepos(client: GitHubUserClient) {
+async function fetchRepos(client: GitHubClient) {
   const installations = await client.apps.listInstallationsForAuthenticatedUser()
 
   const repos = await Promise.all(
@@ -31,7 +31,7 @@ async function fetchRepos(client: GitHubUserClient) {
   return repos.flat()
 }
 
-export function useRepositories(client?: GitHubUserClient) {
+export function useRepositories(client?: GitHubClient) {
   const [repos, setRepos] = useState<Awaited<ReturnType<typeof fetchRepos>>>()
   const [hook, refetch] = useReducer(() => ({}), {})
 

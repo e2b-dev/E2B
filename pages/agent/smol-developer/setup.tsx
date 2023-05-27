@@ -27,6 +27,30 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: {} }
 }
 
+export interface PostAgentBody {
+  installationID: number
+  repositoryID: number
+  title: string
+  defaultBranch: string
+  body: string
+  owner: string
+  repo: string
+  branch: string
+  commitMessage: string
+  prompt: string
+}
+
+async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
+  return await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(arg),
+
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then(r => r.json())
+}
+
 function Repo() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
@@ -36,6 +60,25 @@ function Repo() {
   async function signOut() {
     await supabaseClient.auth.signOut()
     location.reload()
+  }
+
+  const {
+    trigger: createAgent,
+  } = useSWRMutation('/api/agent', handlePostAgent)
+
+  async function deployAgent() {
+    await createAgent({
+      body,
+      defaultBranch,
+      installationID,
+      owner,
+      prompt,
+      repo,
+      branch,
+      commitMessage,
+      repositoryID,
+      title,
+    })
   }
 
   return (
@@ -75,8 +118,15 @@ function Repo() {
           />
         }
       </div>
+      <Button
+        text='Deploy Smol developer'
+        onClick={deployAgent}
+      />
     </div>
   )
 }
 
 export default Repo
+function useSWRMutation(arg0: string, handlePostAgent: (url: string, { arg }: { arg: PostAgentBody }) => Promise<any>): { trigger: any } {
+  throw new Error('Function not implemented.')
+}

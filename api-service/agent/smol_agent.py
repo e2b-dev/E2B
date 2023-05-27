@@ -56,6 +56,16 @@ class SmolAgent(AgentBase):
 
     async def _dev(self, instructions: Any):
         user_prompt: str = instructions["Prompt"]
+        access_token: str = instructions["AccessToken"]
+        repo: str = instructions["Repo"]
+        owner: str = instructions["Owner"]
+        branch: str = instructions["Branch"]
+        git_app_name: str = instructions["GitHubAppName"]
+        git_app_email: str = instructions["GitHubAppEmail"]
+        commit_message: str = instructions["CommitMessage"]
+
+        repo_address = f"https://{access_token}@github.com/{owner}/{repo}.git"
+
         # TODO: Apply the file rewrite when the agent was invoked via PR code comment
         file: str | None = instructions.get("File", None)
 
@@ -70,7 +80,11 @@ class SmolAgent(AgentBase):
             rootdir = "/repo"
             await playground.change_rootdir(rootdir)
             await playground.make_dir(rootdir)
-            # await playground.checkout_repo(instructions["RepoURL"], False, rootdir)
+            await playground.clone_repo(
+                repo_address=repo_address,
+                rootdir=rootdir,
+                branch=branch,
+            )
 
             async def clean_dir():
                 extensions_to_skip = [
@@ -234,7 +248,13 @@ class SmolAgent(AgentBase):
                 for name, content in generated_files:
                     await playground.write_file(name, content)
 
-            # await playground.push_repo()
+            await playground.push_repo(
+                rootdir=rootdir,
+                repo_address=repo_address,
+                commit_message=commit_message,
+                git_email=git_app_email,
+                git_name=git_app_name,
+            )
         except:
             raise
         finally:
