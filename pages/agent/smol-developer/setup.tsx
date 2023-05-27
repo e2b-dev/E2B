@@ -5,6 +5,7 @@ import {
   useUser,
   useSession,
 } from '@supabase/auth-helpers-react'
+import useSWRMutation from 'swr/mutation'
 
 import { serverCreds } from 'db/credentials'
 import Repos from 'components/Repos'
@@ -134,6 +135,3 @@ function Repo() {
 }
 
 export default Repo
-function useSWRMutation(arg0: string, handlePostAgent: (url: string, { arg }: { arg: PostAgentBody }) => Promise<any>): { trigger: any } {
-  throw new Error('Function not implemented.')
-}
