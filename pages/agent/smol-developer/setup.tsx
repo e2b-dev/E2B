@@ -80,7 +80,10 @@ function Repo() {
 
   async function deployAgent() {
     if (!selectedRepo) return
+    console.log('selectedRepo', selectedRepo)
 
+
+    return
     await createAgent({
       defaultBranch: selectedRepo.defaultBranch,
       installationID: selectedRepo.installationID,

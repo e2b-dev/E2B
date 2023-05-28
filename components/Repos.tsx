@@ -14,6 +14,7 @@ import TitleButton from 'components/TitleButton'
 import Input from 'components/Input'
 import SpinnerIcon from 'components/Spinner'
 import { useLocalStorage } from 'hooks/useLocalStorage'
+import { parseRepoName } from 'github/repo'
 
 export interface PostProjectBody {
   repositoryID: number
@@ -61,11 +62,12 @@ function Repos({ onRepoSelection }: Props) {
   }, [refetch, setAccessToken])
   useListenMessage(handleEvent)
 
-  async function selectRepository(r: Omit<RepoSetup, 'branches'>) {
-    if (!accessToken) return
+  async function selectRepository(r: Omit<RepoSetup, 'branches' | 'owner' | 'repo'>) {
+
     onRepoSelection({
       ...r,
       branches: [r.defaultBranch],
+      ...parseRepoName(r.fullName),
     })
 
     const [repositoryOwnerName, repositoryName] = r.fullName.split('/')
@@ -78,6 +80,7 @@ function Repos({ onRepoSelection }: Props) {
     onRepoSelection({
       ...r,
       branches,
+      ...parseRepoName(r.fullName),
     })
   }
 
@@ -177,8 +180,6 @@ function Repos({ onRepoSelection }: Props) {
                         repositoryID: r.id,
                         fullName: r.full_name,
                         url: r.html_url,
-                        owner: r.owner.name || r.organization?.name as string,
-                        repo: r.name,
                       })}
                       text="Select"
                     />

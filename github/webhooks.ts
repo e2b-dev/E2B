@@ -6,6 +6,7 @@ import {
 
 import { getDeploymentsForPR, getGHAccessToken, getPromptFromPR, triggerSmolDevAgentRun } from './pullRequest'
 import { getGHInstallationClient } from './installationClient'
+import { parseRepoName } from './repo'
 
 export async function getGitHubWebhooksMiddleware() {
   const webhooks = new Webhooks({
@@ -23,8 +24,7 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
 
   const installationID = payload.installation?.id
   const repositoryID = payload.repository.id
-  const repo = payload.repository.name
-  const owner = payload.repository.owner.name || payload.repository.organization as string
+  const { owner, repo } = parseRepoName(payload.repository.full_name)
 
   // Every PR is also an issues - GH API endpoint for issues is used for the shared functionality
   const issueID = payload.issue.id
