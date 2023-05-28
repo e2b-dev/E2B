@@ -3,10 +3,10 @@ import { GithubIcon, SearchIcon } from 'lucide-react'
 import clsx from 'clsx'
 import Fuse from 'fuse.js'
 
-import { useGitHubClient } from 'hooks/useGitHub'
-import useListenMessage from 'hooks/useListenMessage'
+import useListenOnMessage from 'hooks/useListenOnMessage'
 import Button from 'components/Button'
 import Text from 'components/Text'
+import { useGitHubClient } from 'hooks/useGitHub'
 import { useRepositories } from 'hooks/useRepositories'
 
 import { openPopupModal } from 'utils/popupModal'
@@ -60,7 +60,7 @@ function Repos({ onRepoSelection }: Props) {
       refetch()
     }
   }, [refetch, setAccessToken])
-  useListenMessage(handleEvent)
+  useListenOnMessage(handleEvent)
 
   async function selectRepository(r: Omit<RepoSetup, 'branches' | 'owner' | 'repo'>) {
 
