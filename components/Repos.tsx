@@ -6,7 +6,7 @@ import Fuse from 'fuse.js'
 import useListenOnMessage from 'hooks/useListenOnMessage'
 import Button from 'components/Button'
 import Text from 'components/Text'
-import { useGitHubClient } from 'hooks/useGitHub'
+import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
 
 import { openPopupModal } from 'utils/popupModal'
