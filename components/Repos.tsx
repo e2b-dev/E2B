@@ -3,7 +3,7 @@ import { GithubIcon, SearchIcon } from 'lucide-react'
 import clsx from 'clsx'
 import Fuse from 'fuse.js'
 
-import { useGitHubClient } from 'hooks/useGitHub'
+import { useGitHubClient } from 'hooks/useGitHubClient'
 import useListenMessage from 'hooks/useListenMessage'
 import Button from 'components/Button'
 import Text from 'components/Text'

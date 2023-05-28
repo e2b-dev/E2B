@@ -11,6 +11,8 @@ import { serverCreds } from 'db/credentials'
 import Repos, { RepoSetup } from 'components/Repos'
 import Button from 'components/Button'
 import { useState } from 'react'
+import { nanoid } from 'nanoid'
+import { ModelConfig } from 'state/model'
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
@@ -49,6 +51,7 @@ export interface PostAgentBody {
   branch: string
   // Commit message for the PR first empty commit
   commitMessage: string
+  modelConfig: ModelConfig
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
@@ -68,6 +71,7 @@ function Repo() {
   const session = useSession()
   const sessionCtx = useSessionContext()
   const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
+  const [initialPrompt, setInitialPrompt] = useState<string>()
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -80,20 +84,19 @@ function Repo() {
 
   async function deployAgent() {
     if (!selectedRepo) return
+    if (!initialPrompt) return
     console.log('selectedRepo', selectedRepo)
 
-
-    return
     await createAgent({
       defaultBranch: selectedRepo.defaultBranch,
       installationID: selectedRepo.installationID,
       owner: selectedRepo.owner,
       repo: selectedRepo.repo,
       repositoryID: selectedRepo.repositoryID,
-      title,
-      branch,
-      body,
-      commitMessage,
+      title: 'Smol PR',
+      branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
+      body: initialPrompt,
+      commitMessage: 'Smol dev initial commit',
     })
   }
 
