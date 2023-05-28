@@ -2,7 +2,7 @@ import {
   useEffect,
 } from 'react'
 
-function useListenMessage(callback: (event: MessageEvent<any>) => void) {
+function useListenOnMessage(callback: (event: MessageEvent<any>) => void) {
   useEffect(function register() {
     window.addEventListener('message', callback)
     return () => {
@@ -11,4 +11,4 @@ function useListenMessage(callback: (event: MessageEvent<any>) => void) {
   }, [callback])
 }
 
-export default useListenMessage
+export default useListenOnMessage

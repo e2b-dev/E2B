@@ -5,6 +5,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+
   if (!req.url) {
     res.writeHead(400, { 'Content-Type': 'text/html' })
     res.end('No request URL')
@@ -29,10 +30,10 @@ export default async function handler(
       Accept: 'application/json',
     }
   })
-  const { access_token }: { access_token: string } = await response.json()
 
   const redirectionURL = new URL('github/callback', `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.headers.host}`)
 
+  const { access_token }: { access_token: string } = await response.json()
   redirectionURL.searchParams.set('gha_access_token', access_token)
 
   res.writeHead(302, { 'Location': redirectionURL.toString() })
