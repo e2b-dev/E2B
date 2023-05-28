@@ -13,6 +13,7 @@ import { openPopupModal } from 'utils/popupModal'
 import TitleButton from 'components/TitleButton'
 import Input from 'components/Input'
 import SpinnerIcon from 'components/Spinner'
+import { useLocalStorage } from 'hooks/useLocalStorage'
 
 export interface PostProjectBody {
   repositoryID: number
@@ -23,14 +24,21 @@ export interface PostProjectBody {
   id: string
 }
 
-
-export interface Props {
-  onRepoSelection: (repoSetup: Pick<PostProjectBody, 'accessToken' | 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, branches?: string[], url: string }) => void
-  accessToken?: string
+export interface RepoSetup extends Pick<PostProjectBody, 'installationID' | 'repositoryID'> {
+  fullName: string
+  defaultBranch: string
+  branches?: string[]
+  url: string
+  owner: string
+  repo: string
 }
 
-function Repos({ onRepoSelection, accessToken }: Props) {
-  // const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
+export interface Props {
+  onRepoSelection: (repoSetup: RepoSetup) => void
+}
+
+function Repos({ onRepoSelection }: Props) {
+  const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
   const gitHub = useGitHubClient(accessToken)
   const { repos, refetch } = useRepositories(gitHub)
   const [query, setQuery] = useState<string>()
@@ -46,18 +54,17 @@ function Repos({ onRepoSelection, accessToken }: Props) {
 
   const handleEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
-      // setAccessToken(event.data.accessToken)
+      setAccessToken(event.data.accessToken)
     } else if (event.data.installationID) {
       refetch()
     }
-  }, [refetch])
+  }, [refetch, setAccessToken])
   useListenMessage(handleEvent)
 
-  async function selectRepository(r: Pick<PostProjectBody, 'installationID' | 'repositoryID'> & { fullName: string, defaultBranch: string, url: string }) {
+  async function selectRepository(r: Omit<RepoSetup, 'branches'>) {
     if (!accessToken) return
     onRepoSelection({
       ...r,
-      accessToken,
       branches: [r.defaultBranch],
     })
 
@@ -71,7 +78,6 @@ function Repos({ onRepoSelection, accessToken }: Props) {
     onRepoSelection({
       ...r,
       branches,
-      accessToken,
     })
   }
 
@@ -101,7 +107,7 @@ function Repos({ onRepoSelection, accessToken }: Props) {
           <div className="flex flex-1 justify-center items-center">
             <Button
               variant={Button.variant.Full}
-              onClick={signWithGitHubOAuth}
+              onClick={configureGitHubApp}
               text="Add GitHub Repository"
               icon={<GithubIcon />}
             />
@@ -129,7 +135,7 @@ function Repos({ onRepoSelection, accessToken }: Props) {
             }
 
             {repos && repos.length === 0 &&
-              <div className="flex flex-1 items-center justify-center">
+              <div className="flex flex-1 items-center justify-center flex-col space-y-1">
                 <Text text="No connected repositories found" />
                 <Button
                   variant={Button.variant.Full}
@@ -171,6 +177,8 @@ function Repos({ onRepoSelection, accessToken }: Props) {
                         repositoryID: r.id,
                         fullName: r.full_name,
                         url: r.html_url,
+                        owner: r.owner.name || r.organization?.name as string,
+                        repo: r.name,
                       })}
                       text="Select"
                     />

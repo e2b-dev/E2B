@@ -5,9 +5,9 @@ function GitHubCallback() {
   const router = useRouter()
 
   useEffect(function message() {
-    if (router.query.access_token) {
+    if (router.query.gha_access_token) {
       if (window && window.opener) {
-        window.opener.postMessage({ accessToken: router.query.access_token }, '*')
+        window.opener.postMessage({ accessToken: router.query.gha_access_token }, '*')
         window.close()
       }
     }
@@ -17,7 +17,7 @@ function GitHubCallback() {
         window.close()
       }
     }
-  }, [router.query.access_token, router.query.installation_id])
+  }, [router.query.gha_access_token, router.query.installation_id])
 
   return null
 }

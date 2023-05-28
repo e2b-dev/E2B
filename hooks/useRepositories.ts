@@ -1,5 +1,4 @@
 import { useEffect, useReducer, useState } from 'react'
-
 import { GitHubClient } from 'github/client'
 
 async function fetchRepos(client: GitHubClient) {

@@ -22,7 +22,9 @@ function App({ Component, pageProps }: AppProps<{ initialSession: Session, proje
   const router = useRouter()
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
 
-  const hasHeader = !router.pathname.startsWith('/sign') && !router.pathname.startsWith('/agent')
+  const hasHeader =
+    !router.pathname.startsWith('/sign') &&
+    !router.pathname.startsWith('/agent')
 
   return (
     <main className={clsx(

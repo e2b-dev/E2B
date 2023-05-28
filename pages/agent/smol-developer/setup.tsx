@@ -8,8 +8,9 @@ import {
 import useSWRMutation from 'swr/mutation'
 
 import { serverCreds } from 'db/credentials'
-import Repos from 'components/Repos'
+import Repos, { RepoSetup } from 'components/Repos'
 import Button from 'components/Button'
+import { useState } from 'react'
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
@@ -25,6 +26,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       },
     }
   }
+
   return { props: {} }
 }
 
@@ -65,6 +67,7 @@ function Repo() {
   const user = useUser()
   const session = useSession()
   const sessionCtx = useSessionContext()
+  const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -76,16 +79,18 @@ function Repo() {
   } = useSWRMutation('/api/agent', handlePostAgent)
 
   async function deployAgent() {
+    if (!selectedRepo) return
+
     await createAgent({
-      body,
-      defaultBranch,
-      installationID,
-      owner,
-      repo,
-      branch,
-      commitMessage,
-      repositoryID,
+      defaultBranch: selectedRepo.defaultBranch,
+      installationID: selectedRepo.installationID,
+      owner: selectedRepo.owner,
+      repo: selectedRepo.repo,
+      repositoryID: selectedRepo.repositoryID,
       title,
+      branch,
+      body,
+      commitMessage,
     })
   }
 
@@ -121,8 +126,7 @@ function Repo() {
         Select repo
         {user &&
           <Repos
-            onRepoSelection={r => console.log(r)}
-            accessToken={session?.provider_token || undefined}
+            onRepoSelection={setSelectedRepo}
           />
         }
       </div>

@@ -1,4 +1,3 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
 import url from 'url'
 
@@ -19,8 +18,6 @@ export default async function handler(
     return
   }
 
-  const callbackURL = 'https://ntjfcwpzsxugrykskdgi.supabase.co/auth/v1/callback'
-
   const exchangeURL = new URL('login/oauth/access_token', 'https://github.com')
   exchangeURL.searchParams.set('client_id', process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID!)
   exchangeURL.searchParams.set('client_secret', process.env.GITHUB_CLIENT_SECRET!)
@@ -32,15 +29,11 @@ export default async function handler(
       Accept: 'application/json',
     }
   })
-  const {
-    access_token,
-  }: {
-    access_token: string,
-  } = await response.json()
+  const { access_token }: { access_token: string } = await response.json()
 
-  const redirectionURL = new URL('github/callback', `https://${req.headers.host}`)
+  const redirectionURL = new URL('github/callback', `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.headers.host}`)
 
-  redirectionURL.searchParams.set('access_token', access_token)
+  redirectionURL.searchParams.set('gha_access_token', access_token)
 
   res.writeHead(302, { 'Location': redirectionURL.toString() })
   res.end()
