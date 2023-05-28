@@ -27,7 +27,6 @@ export interface PromptFragment {
   content: string
 }
 
-
 export function evaluateInstructions(
   instructions: Instructions,
   instructionsTransform: InstructionsTransform,

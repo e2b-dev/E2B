@@ -14,6 +14,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
     title,
     body,
     owner,
+    modelConfig,
     branch,
     commitMessage,
     defaultBranch,
@@ -120,6 +121,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     await createAgentDeployment({
       project_id: project.id,
+      config: modelConfig as any,
     })
 
     const deployment = project.deployments[0]
