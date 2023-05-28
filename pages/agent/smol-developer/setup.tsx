@@ -6,11 +6,15 @@ import {
   useSession,
 } from '@supabase/auth-helpers-react'
 import useSWRMutation from 'swr/mutation'
+import { nanoid } from 'nanoid'
+import { useState } from 'react'
 
 import { serverCreds } from 'db/credentials'
 import Repos, { RepoSetup } from 'components/Repos'
 import Button from 'components/Button'
-import { useState } from 'react'
+import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
+import { TemplateID } from 'state/template'
+import { Creds } from 'hooks/useModelProviderArgs'
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
@@ -49,6 +53,7 @@ export interface PostAgentBody {
   branch: string
   // Commit message for the PR first empty commit
   commitMessage: string
+  modelConfig: ModelConfig
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
@@ -62,12 +67,25 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
   }).then(r => r.json())
 }
 
+function getSmolDevModelConfig(creds: Creds): ModelConfig {
+  const templateID = TemplateID.SmolDeveloper
+  const modelConfig = getDefaultModelConfig(templateID)
+  return {
+    name: modelConfig.name,
+    provider: modelConfig.provider,
+    args: getModelArgs(modelConfig, creds),
+    prompt: [],
+  }
+}
+
 function Repo() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
   const session = useSession()
   const sessionCtx = useSessionContext()
   const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
+  const [initialPrompt, setInitialPrompt] = useState<string>()
+  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>()
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -80,20 +98,29 @@ function Repo() {
 
   async function deployAgent() {
     if (!selectedRepo) return
+    if (!initialPrompt) return
+    if (!openAIAPIKey) return
     console.log('selectedRepo', selectedRepo)
 
+    const modelConfig = getSmolDevModelConfig({
+      OpenAI: {
+        creds: {
+          openai_api_key: openAIAPIKey,
+        },
+      },
+    })
 
-    return
     await createAgent({
       defaultBranch: selectedRepo.defaultBranch,
       installationID: selectedRepo.installationID,
       owner: selectedRepo.owner,
       repo: selectedRepo.repo,
       repositoryID: selectedRepo.repositoryID,
-      title,
-      branch,
-      body,
-      commitMessage,
+      title: 'Smol PR',
+      branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
+      body: initialPrompt,
+      commitMessage: 'Smol dev initial commit',
+      modelConfig,
     })
   }
 

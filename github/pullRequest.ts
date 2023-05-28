@@ -1,5 +1,6 @@
 import api from 'api-client/api'
 import { deployments, prisma } from 'db/prisma'
+
 import { GitHubClient } from './client'
 
 // All PRs are also issues - GH API endpoint for issues is used for the shared functionality
