@@ -12,6 +12,14 @@ const client = Fetcher.for<paths>()
 
 client.configure({
   baseUrl,
+  init: {
+    headers: {
+      // Add token to all requests if it's set (server-side only)
+      ...process.env.SECRET_TOKEN && {
+        'Authorization': `Bearer ${process.env.SECRET_TOKEN}`,
+      },
+    },
+  },
 })
 
 type ClientType = typeof client
