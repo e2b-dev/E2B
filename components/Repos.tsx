@@ -16,17 +16,10 @@ import SpinnerIcon from 'components/Spinner'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import { parseRepoName } from 'github/repo'
 
-export interface PostProjectBody {
+export interface RepoSetup {
+  fullName: string
   repositoryID: number
   installationID: number
-  accessToken: string
-  branch: string
-  path: string
-  id: string
-}
-
-export interface RepoSetup extends Pick<PostProjectBody, 'installationID' | 'repositoryID'> {
-  fullName: string
   defaultBranch: string
   branches?: string[]
   url: string
@@ -63,11 +56,13 @@ function Repos({ onRepoSelection }: Props) {
   useListenOnMessage(handleEvent)
 
   async function selectRepository(r: Omit<RepoSetup, 'branches' | 'owner' | 'repo'>) {
+    const { owner, repo } = parseRepoName(r.fullName)
 
     onRepoSelection({
       ...r,
       branches: [r.defaultBranch],
-      ...parseRepoName(r.fullName),
+      owner,
+      repo,
     })
 
     const [repositoryOwnerName, repositoryName] = r.fullName.split('/')
@@ -80,7 +75,8 @@ function Repos({ onRepoSelection }: Props) {
     onRepoSelection({
       ...r,
       branches,
-      ...parseRepoName(r.fullName),
+      owner,
+      repo,
     })
   }
 
