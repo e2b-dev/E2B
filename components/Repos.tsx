@@ -55,8 +55,6 @@ function Repos({ onRepoSelection }: Props) {
   }, [refetch, setAccessToken])
   useListenOnMessage(handleEvent)
 
-  console.log(repos)
-
   async function selectRepository(r: Omit<RepoSetup, 'branches' | 'owner' | 'repo'>) {
     const { owner, repo } = parseRepoName(r.fullName)
 

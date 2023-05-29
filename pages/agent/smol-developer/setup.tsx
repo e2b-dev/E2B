@@ -101,7 +101,6 @@ function Repo() {
     if (!selectedRepo) return
     if (!initialPrompt) return
     if (!openAIAPIKey) return
-    console.log('selectedRepo', selectedRepo)
 
     const modelConfig = getSmolDevModelConfig({
       OpenAI: {
