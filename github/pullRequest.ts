@@ -24,11 +24,33 @@ export async function createPR({
   repo: string,
   branch: string,
 }): Promise<{ issueID: number }> {
-  const baseBranchRef = await client.git.getRef({
-    owner,
-    repo,
-    ref: `heads/${defaultBranch}`,
+
+
+  let baseBranchRef: Awaited<ReturnType<typeof client.git.getRef>> | undefined
+  try {
+    baseBranchRef = await client.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${defaultBranch}`,
+    })
+  } catch (error) {
+    baseBranchRef = await client.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${defaultBranch}`,
+    })
+  }
+
+
+
+
+  client.git.createTree({
+    
   })
+
+
+
+  // Create main branch if the repo is empty or it does not exist
 
   const newBranchRef = await client.git.createRef({
     owner,

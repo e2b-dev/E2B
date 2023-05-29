@@ -53,7 +53,7 @@ export interface PostAgentBody {
   branch: string
   // Commit message for the PR first empty commit
   commitMessage: string
-  modelConfig: ModelConfig
+  modelConfig: ModelConfig & { templateID: TemplateID }
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
@@ -67,7 +67,7 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
   }).then(r => r.json())
 }
 
-function getSmolDevModelConfig(creds: Creds): ModelConfig {
+function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: TemplateID } {
   const templateID = TemplateID.SmolDeveloper
   const modelConfig = getDefaultModelConfig(templateID)
   return {
@@ -75,6 +75,7 @@ function getSmolDevModelConfig(creds: Creds): ModelConfig {
     provider: modelConfig.provider,
     args: getModelArgs(modelConfig, creds),
     prompt: [],
+    templateID,
   }
 }
 
@@ -84,8 +85,8 @@ function Repo() {
   const session = useSession()
   const sessionCtx = useSessionContext()
   const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
-  const [initialPrompt, setInitialPrompt] = useState<string>()
-  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>()
+  const [initialPrompt, setInitialPrompt] = useState<string>('create chrome extension')
+  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('..')
 
   async function signOut() {
     await supabaseClient.auth.signOut()
