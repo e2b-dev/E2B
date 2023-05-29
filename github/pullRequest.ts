@@ -4,7 +4,6 @@ import { deployments, prisma } from 'db/prisma'
 import { GitHubClient } from './client'
 
 // All PRs are also issues - GH API endpoint for issues is used for the shared functionality
-
 export async function createPR({
   client,
   title,
@@ -24,39 +23,45 @@ export async function createPR({
   repo: string,
   branch: string,
 }): Promise<{ issueID: number }> {
+  let baseBranchRefSHA: string | undefined
 
-
-  let baseBranchRef: Awaited<ReturnType<typeof client.git.getRef>> | undefined
   try {
-    baseBranchRef = await client.git.getRef({
+    const baseBranchRef = await client.git.getRef({
       owner,
       repo,
-      ref: `heads/${defaultBranch}`,
+      ref: `refs/heads/${defaultBranch}`,
     })
-  } catch (error) {
-    baseBranchRef = await client.git.getRef({
+    baseBranchRefSHA = baseBranchRef.data.object.sha
+  } catch (error: any) {
+    // Make sure we are not overwriting an existing branch
+    // and only create a new branch and init repo if the repo is empty
+    if (error.message !== 'Git Repository is empty.') throw error
+    console.log('Repository is empty - creating initial empty commit')
+
+    // TODO: Create empty commit without placeholder file by deleting the file,
+    // creating an empty commit and then updating the default branch to point to the empty commit
+    // This behavious is not clearly documented and it seems that sometimes the empty commit can get automatically pruned before the ref can be updated
+
+    // Create placeholder file to create the default branch
+    console.log('Creating placeholder file')
+    const file = await client.repos.createOrUpdateFileContents({
       owner,
       repo,
-      ref: `heads/${defaultBranch}`,
+      branch: defaultBranch,
+      path: '/README.md',
+      message: 'Initial commit',
+      content: Buffer.from(`# ${repo}`, 'utf8').toString('base64'),
     })
+    console.log('Finished creating placeholder file')
+
+    baseBranchRefSHA = file.data.commit.sha
   }
-
-
-
-
-  client.git.createTree({
-    
-  })
-
-
-
-  // Create main branch if the repo is empty or it does not exist
 
   const newBranchRef = await client.git.createRef({
     owner,
     repo,
     ref: `refs/heads/${branch}`,
-    sha: baseBranchRef.data.object.sha,
+    sha: baseBranchRefSHA!,
   })
 
   const currentCommit = await client.git.getCommit({
@@ -76,7 +81,7 @@ export async function createPR({
   await client.git.updateRef({
     owner,
     repo,
-    ref: `heads/${branch}`,
+    ref: `refs/heads/${branch}`,
     sha: newCommit.data.sha,
   })
 
