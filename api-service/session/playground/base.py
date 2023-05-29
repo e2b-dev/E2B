@@ -52,7 +52,7 @@ class Playground(Session):
     ):
         await self.make_dir(rootdir)
         res = await self.run_command(
-            f"git clone --single-branch --branch {branch} {repo_address} {rootdir}",
+            f"git clone --single-branch --depth 1 --branch {branch} {repo_address} {rootdir}",
             rootdir="/",
         )
         print("Repo clone result", res)
