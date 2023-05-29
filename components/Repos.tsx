@@ -14,7 +14,7 @@ import TitleButton from 'components/TitleButton'
 import Input from 'components/Input'
 import SpinnerIcon from 'components/Spinner'
 import { useLocalStorage } from 'hooks/useLocalStorage'
-import { parseRepoName } from 'github/repo'
+import { createRepo, parseRepoName } from 'github/repo'
 
 export interface PostProjectBody {
   repositoryID: number
@@ -43,6 +43,20 @@ function Repos({ onRepoSelection }: Props) {
   const gitHub = useGitHubClient(accessToken)
   const { repos, refetch } = useRepositories(gitHub)
   const [query, setQuery] = useState<string>()
+
+
+  async function createEmptyRepository(name: string) {
+    if (!gitHub) return
+
+    await createRepo({ client: gitHub, name })
+    // When we refresh the list of repos now the new repo will be there
+    // if we gave the GH App permissions to access all the personal repos or repos for the org 
+
+    refetch()
+  }
+
+
+
 
   const searchEngine = useMemo(() => repos ?
     new Fuse(repos, {
@@ -190,6 +204,10 @@ function Repos({ onRepoSelection }: Props) {
           </div>
         }
       </div>
+      {<Button
+        onClick={() => createEmptyRepository('new-repo-name')}
+        text="Create Empty Repository"
+      />}
       {accessToken &&
         <div className="flex justify-between">
           <TitleButton
