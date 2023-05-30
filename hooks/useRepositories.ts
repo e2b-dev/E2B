@@ -17,10 +17,13 @@ async function fetchRepos(client: GitHubClient) {
             'If-Modified-Since': 'Sun, 14 Nov 2021 13:42:15 GMT',
           },
         })
-        return repos.data.repositories.map(r => ({
-          ...r,
-          installation_id: i.id,
-        }))
+
+        return repos.data.repositories.map(r => {
+          return {
+            ...r,
+            installation_id: i.id,
+          }
+        })
       } catch (err) {
         console.error(err)
         return []

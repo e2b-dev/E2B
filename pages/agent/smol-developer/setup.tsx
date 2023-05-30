@@ -16,24 +16,6 @@ import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { TemplateID } from 'state/template'
 import { Creds } from 'hooks/useModelProviderArgs'
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const supabase = createServerSupabaseClient(ctx, serverCreds)
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return {
-      redirect: {
-        destination: '/agent/smol-developer',
-        permanent: false,
-      },
-    }
-  }
-
-  return { props: {} }
-}
-
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
   installationID: number
@@ -54,6 +36,24 @@ export interface PostAgentBody {
   // Commit message for the PR first empty commit
   commitMessage: string
   modelConfig: ModelConfig & { templateID: TemplateID }
+}
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const supabase = createServerSupabaseClient(ctx, serverCreds)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/agent/smol-developer',
+        permanent: false,
+      },
+    }
+  }
+
+  return { props: {} }
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
