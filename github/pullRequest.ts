@@ -29,7 +29,7 @@ export async function createPR({
     const baseBranchRef = await client.git.getRef({
       owner,
       repo,
-      ref: `refs/heads/${defaultBranch}`,
+      ref: `heads/${defaultBranch}`,
     })
     baseBranchRefSHA = baseBranchRef.data.object.sha
   } catch (error: any) {
@@ -81,7 +81,7 @@ export async function createPR({
   await client.git.updateRef({
     owner,
     repo,
-    ref: `refs/heads/${branch}`,
+    ref: `heads/${branch}`,
     sha: newCommit.data.sha,
   })
 
