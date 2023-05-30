@@ -242,7 +242,7 @@ export async function getGHAppInfo({
 }) {
   const result = await client.apps.getAuthenticated()
   const id = result.data.id
-  const name = result.data.name
+  const name = result.data.slug || result.data.name
 
   return {
     name,
