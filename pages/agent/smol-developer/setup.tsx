@@ -86,7 +86,7 @@ function Repo() {
   const sessionCtx = useSessionContext()
   const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
   const [initialPrompt, setInitialPrompt] = useState<string>('create chrome extension')
-  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('..')
+  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('')
 
   async function signOut() {
     await supabaseClient.auth.signOut()

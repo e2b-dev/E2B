@@ -242,10 +242,10 @@ export async function getGHAppInfo({
 }) {
   const result = await client.apps.getAuthenticated()
   const id = result.data.id
-  const name = result.data.slug || result.data.name
+  const name = `${result.data.slug}[bot]`
 
   return {
     name,
-    email: `${id}+${name}[bot]@users.noreply.github.com`
+    email: `${id}+${name}@users.noreply.github.com`
   }
 }

@@ -64,7 +64,9 @@ class SmolAgent(AgentBase):
         git_app_email: str = instructions["GitHubAppEmail"]
         commit_message: str = instructions["CommitMessage"]
 
-        repo_address = f"https://{access_token}@github.com/{owner}/{repo}.git"
+        repo_address = (
+            f"https://{git_app_name}:{access_token}@github.com/{owner}/{repo}.git"
+        )
 
         # TODO: Apply the file rewrite when the agent was invoked via PR code comment
         file: str | None = instructions.get("File", None)
@@ -86,6 +88,15 @@ class SmolAgent(AgentBase):
                 branch=branch,
             )
 
+            # await playground.write_file("/repo/test", "..>")
+            # await playground.push_repo(
+            #     rootdir=rootdir,
+            #     repo_address=repo_address,
+            #     commit_message=commit_message,
+            #     git_email=git_app_email,
+            #     git_name=git_app_name,
+            # )
+
             async def clean_dir():
                 extensions_to_skip = [
                     ".png",
@@ -99,7 +110,7 @@ class SmolAgent(AgentBase):
                     ".tiff",
                 ]  # Add more extensions if needed
 
-                files = await playground.get_filenames(rootdir, [])
+                files = await playground.get_filenames(rootdir, [".git"])
                 for file in files:
                     _, extension = os.path.splitext(file.name)
                     if extension not in extensions_to_skip:
@@ -191,7 +202,7 @@ class SmolAgent(AgentBase):
             shared_dependencies: str | None = None
             try:
                 shared_dependencies = await playground.read_file(
-                    "shared_dependencies.md"
+                    os.path.join(rootdir, "shared_dependencies.md")
                 )
             except NotFoundException:
                 pass
@@ -203,7 +214,7 @@ class SmolAgent(AgentBase):
                     shared_dependencies=shared_dependencies,
                     prompt=user_prompt,
                 )
-                await playground.write_file(filename, filecode)
+                await playground.write_file(os.path.join(rootdir, filename), filecode)
             else:
                 await clean_dir()
 
@@ -228,7 +239,7 @@ class SmolAgent(AgentBase):
                 print(shared_dependencies)
                 # write shared dependencies as a md file inside the generated directory
                 await playground.write_file(
-                    "shared_dependencies.md",
+                    os.path.join(rootdir, "shared_dependencies.md"),
                     shared_dependencies,
                 )
 
@@ -246,7 +257,7 @@ class SmolAgent(AgentBase):
                 generated_files = await asyncio.gather(*tasks)
 
                 for name, content in generated_files:
-                    await playground.write_file(name, content)
+                    await playground.write_file(os.path.join(rootdir, name), content)
 
             await playground.push_repo(
                 rootdir=rootdir,

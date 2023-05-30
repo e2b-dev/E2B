@@ -1,5 +1,4 @@
 import math
-import uuid
 
 from typing import Any, List
 from asyncio import sleep
@@ -52,7 +51,7 @@ class Playground(Session):
     ):
         await self.make_dir(rootdir)
         res = await self.run_command(
-            f"git clone --single-branch --depth 1 --branch {branch} {repo_address} {rootdir}",
+            f"git clone --depth 1 --branch {branch} {repo_address} {rootdir}",
             rootdir="/",
         )
         print("Repo clone result", res)
@@ -67,7 +66,8 @@ class Playground(Session):
     ):
         res = await self.run_command(
             (
-                f"git config --global user.email {git_email} && "
+                f"cd {rootdir} && "
+                f'git config --global user.email "{git_email}" && '
                 f'git config --global user.name "{git_name}" && '
                 f"git config --global push.autoSetupRemote true && "
                 f"git add . && "
