@@ -6,6 +6,7 @@ import { serverCreds } from 'db/credentials'
 import { PostAgentBody } from 'pages/agent/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
 import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, triggerSmolDevAgentRun } from 'github/pullRequest'
+import { nanoid } from 'nanoid'
 
 async function postAgent(req: NextApiRequest, res: NextApiResponse) {
   const {
@@ -75,6 +76,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     const project = await prisma.projects.create({
       data: {
+        id: nanoid(),
         deployments: {
           create: {
             auth: {

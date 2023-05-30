@@ -201,7 +201,7 @@ function Repos({ onRepoSelection }: Props) {
         }
       </div>
       {<Button
-        onClick={() => createEmptyRepository('new-repo-name')}
+        onClick={() => createEmptyRepository('test')}
         text="Create Empty Repository"
       />}
       {accessToken &&
