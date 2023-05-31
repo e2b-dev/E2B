@@ -136,6 +136,9 @@ async def get_agent_deployment(
 ):
     check_token(token)
     deployment = await deployment_manager.get_deployment(id)
+    if not deployment:
+        raise HTTPException(status_code=404, detail="Deployment not found")
+
     return {
         "id": deployment.id,
         "logs": len(deployment.event_handler.logs),
@@ -151,8 +154,10 @@ async def interact_with_agent_deployment(
 ):
     check_token(token)
     deployment = await deployment_manager.get_deployment(id)
-    result = await deployment.agent.interaction(body)
+    if not deployment:
+        raise HTTPException(status_code=404, detail="Deployment not found")
 
+    result = await deployment.agent.interaction(body)
     if body.interaction_id:
         deployment.event_handler.remove_interaction_request(body.interaction_id)
     return result
@@ -165,6 +170,9 @@ async def get_agent_intereaction_requests(
 ):
     check_token(token)
     deployment = await deployment_manager.get_deployment(id)
+    if not deployment:
+        raise HTTPException(status_code=404, detail="Deployment not found")
+
     return {"interaction_requests": deployment.event_handler.interaction_requests}
 
 
@@ -175,4 +183,7 @@ async def get_agent_deployment_status(
 ):
     check_token(token)
     deployment = await deployment_manager.get_deployment(id)
+    if not deployment:
+        raise HTTPException(status_code=404, detail="Deployment not found")
+
     return {"logs": deployment.event_handler.logs}
