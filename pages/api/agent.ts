@@ -87,8 +87,6 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
                 repository_id: repositoryID,
                 issue_id: issueID,
                 branch,
-                owner,
-                repo,
               },
             },
             enabled: false,
@@ -135,11 +133,11 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       prompt: body,
       accessToken,
       commitMessage: 'Add code based on the PR description',
+      owner,
+      repo,
     })
 
     res.status(200).json({
-      owner,
-      repo,
       issueID,
     })
   } catch (err: any) {
