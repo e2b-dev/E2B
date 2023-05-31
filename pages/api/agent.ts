@@ -139,6 +139,8 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     res.status(200).json({
       issueID,
+      owner,
+      repo,
     })
   } catch (err: any) {
     console.error(err)

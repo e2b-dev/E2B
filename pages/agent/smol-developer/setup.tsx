@@ -64,7 +64,7 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
       'Content-Type': 'application/json',
     },
   })
-  return await response.json() as { issueID: string }
+  return await response.json() as { issueID: string, owner: string, repo: string }
 }
 
 function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: TemplateID } {
