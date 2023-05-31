@@ -5,6 +5,7 @@ import {
 import useSWRMutation from 'swr/mutation'
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
@@ -82,6 +83,7 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
 }
 
 function Setup() {
+  const supabaseClient = useSupabaseClient()
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedRepositoryID, setSelectedRepositoryID] = useState<number>()
   // const supabaseClient = useSupabaseClient()
@@ -135,8 +137,22 @@ function Setup() {
     })
   }
 
+  async function signOut() {
+    await supabaseClient.auth.signOut()
+    location.reload()
+  }
+
   return (
     <div className="h-full flex flex-col items-center justify-start bg-gray-800 py-8 px-6">
+      <div className="mb-4 w-full flex items-center justify-between">
+        <span />
+        <button
+          className="text-sm font-semibold text-white"
+          onClick={signOut}
+        >
+          Log out
+        </button>
+      </div>
       <div className="overflow-hidden flex-1 mx-auto w-full max-w-lg flex flex-col">
         <Steps steps={steps} />
         <div className="h-px bg-gray-700 my-8" />

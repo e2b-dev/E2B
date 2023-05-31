@@ -6,6 +6,7 @@ async function fetchRepos(client: GitHubClient) {
 
   const repos = await Promise.all(
     installations.data.installations.map(async i => {
+      console.log('installation', i)
       try {
         const repos = await client.apps.listInstallationReposForAuthenticatedUser({
           installation_id: i.id,
@@ -18,12 +19,23 @@ async function fetchRepos(client: GitHubClient) {
           },
         })
 
-        return repos.data.repositories.map(r => {
+        return await Promise.all(repos.data.repositories.map(async r => {
+          const langs = await client.repos.listLanguages({
+            owner: r.owner.login,
+            repo: r.name,
+          })
+
+          let language = ''
+          if (langs.data && Object.keys(langs.data).length > 0) {
+            // Pick the most used language
+            language = Object.keys(langs.data).reduce((a, b) => (langs.data[a] || 0) > (langs.data[b] || 0) ? a : b)
+          }
           return {
             ...r,
             installation_id: i.id,
+            language,
           }
-        })
+        }))
       } catch (err) {
         console.error(err)
         return []
