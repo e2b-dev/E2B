@@ -272,10 +272,14 @@ class SmolAgent(AgentBase):
             if playground is not None:
                 playground.close()
 
+            # TODO: Save the prompt as "last_finished_prompt" column to the deployments table in the database
             await self.on_interaction_request(
                 AgentInteractionRequest(
                     interaction_id=str(uuid.uuid4()),
                     type="done",
+                    data={
+                        "prompt": user_prompt,
+                    },
                 )
             )
 

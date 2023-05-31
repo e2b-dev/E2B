@@ -252,18 +252,19 @@ model users_teams {
 }
 
 model deployments {
-  id         String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime          @default(now()) @db.Timestamptz(6)
-  logs       Json[]
-  project_id String
-  route_id   String?
-  state      deployment_state?
-  url        String?
-  logs_raw   String?           @default("")
-  config     Json?
-  enabled    Boolean           @default(false)
-  auth       Json?
-  projects   projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime          @default(now()) @db.Timestamptz(6)
+  logs                 Json[]
+  project_id           String
+  route_id             String?
+  state                deployment_state?
+  url                  String?
+  logs_raw             String?           @default("")
+  config               Json?
+  enabled              Boolean           @default(false)
+  auth                 Json?
+  last_finished_prompt String?
+  projects             projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }

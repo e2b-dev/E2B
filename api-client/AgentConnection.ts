@@ -59,7 +59,7 @@ export class AgentConnection {
           this.opts.onStateChange(AgentRunState.None)
           await this.disconnect()
         } else {
-          console.error('Unhandler interaction request', data)
+          console.error('Unhandled interaction request', data)
         }
         break
       default:

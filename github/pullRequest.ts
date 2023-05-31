@@ -100,42 +100,46 @@ export async function createPR({
 }
 
 export async function getPromptFromPR({
-  issueID,
+  issueNumber,
   client,
   repo,
   owner,
+  body,
 }: {
+  body?: string,
   owner: string,
   repo: string,
   client: GitHubClient,
-  issueID: number,
+  // Number identifying the issue in the repo (this is not issueID)
+  issueNumber: number,
 }): Promise<string> {
 
   const [
     issueResult,
     commentsResult,
   ] = await Promise.all([
-    client.issues.get({
-      issue_number: issueID,
+    body === undefined ? client.issues.get({
+      issue_number: issueNumber,
       owner,
       repo,
-    }),
+    }) : Promise.resolve(undefined),
     client.issues.listComments({
-      issue_number: issueID,
+      issue_number: issueNumber,
       owner,
       repo,
+      // TODO: Handle pagination
+      page: 1,
       per_page: 100,
     }),
   ])
 
-  // TODO: Check if issue body and comments are returned as markdown
-  const body = issueResult.data.body_text
+  const prBody = issueResult?.data.body || body
   const comments = commentsResult.data
     .filter(c => !c.performed_via_github_app)
-    .map(c => c.body_text)
+    .map(c => c.body)
     .join('\n')
 
-  return `${body}\n\n${comments}`
+  return `${prBody}\n\n${comments}`
 }
 
 export async function getDeploymentsForPR({
@@ -149,6 +153,7 @@ export async function getDeploymentsForPR({
 }) {
   return await prisma.deployments.findMany({
     where: {
+      enabled: true,
       AND: [
         {
           auth: {
@@ -200,6 +205,8 @@ export async function triggerSmolDevAgentRun({
   prompt: string,
   accessToken: string,
 }) {
+  console.log('Triggering smol dev agent run:', prompt)
+
   await interactWithAgent({
     id: deployment.id,
     type: 'start',
