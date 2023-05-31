@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "@devbookhq/splitter": "^1.4.0",
+    "@headlessui/react": "^1.7.14",
     "@octokit/auth-app": "^4.0.13",
     "@octokit/rest": "^19.0.11",
     "@octokit/webhooks": "^11.1.0",
