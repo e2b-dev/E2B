@@ -61,5 +61,5 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
     async def get_deployment(self, id: str):
         return self._deployments.get(id, None)
 
-    async def list_deployments(self):
+    async def list_deployments(self) -> list[AgentDeployment]:
         return list(self._deployments.values())

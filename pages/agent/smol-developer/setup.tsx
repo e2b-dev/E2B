@@ -56,6 +56,14 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: {} }
 }
 
+export interface PostAgentResponse {
+  issueID: number
+  owner: string
+  repo: string
+  pullURL: string
+  pullNumber: number
+}
+
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
   const response = await fetch(url, {
     method: 'POST',
@@ -64,7 +72,7 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
       'Content-Type': 'application/json',
     },
   })
-  return await response.json() as { issueID: string, owner: string, repo: string }
+  return await response.json() as PostAgentResponse
 }
 
 function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: TemplateID } {

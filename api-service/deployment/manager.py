@@ -30,6 +30,12 @@ class AgentEvents:
         self, interaction_request: AgentInteractionRequest
     ):
         self.interaction_requests.append(interaction_request)
+        if interaction_request.type == "done":
+            # TODO: Send the interaction request to nexjs backend + GH App
+            pass
+        elif interaction_request.type == "cancelled":
+            # TODO: Send the interaction request to nexjs backend + GH App
+            pass
 
     def remove_interaction_request(self, interaction_id: str):
         self.interaction_requests = [

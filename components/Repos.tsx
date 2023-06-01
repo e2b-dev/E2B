@@ -48,9 +48,6 @@ function Repos({ onRepoSelection }: Props) {
     refetch()
   }
 
-
-
-
   const searchEngine = useMemo(() => repos ?
     new Fuse(repos, {
       keys: ['full_name'],

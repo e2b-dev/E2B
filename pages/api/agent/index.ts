@@ -1,12 +1,25 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
+import { nanoid } from 'nanoid'
 
+import { PostAgentResponse } from 'pages/agent/smol-developer/setup'
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import { PostAgentBody } from 'pages/agent/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
 import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, triggerSmolDevAgentRun } from 'github/pullRequest'
-import { nanoid } from 'nanoid'
+
+export interface GitHubAuthData {
+  app_name: string,
+  app_email: string,
+  installation_id: number,
+  repository_id: number,
+  issue_id: number,
+  pull_number: number,
+  branch: string,
+  owner: string,
+  repo: string,
+}
 
 async function postAgent(req: NextApiRequest, res: NextApiResponse) {
   const {
@@ -61,7 +74,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       repositoryID,
     })
 
-    const { issueID } = await createPR({
+    const { issueID, number: pullNumber, url: pullURL } = await createPR({
       client,
       title,
       defaultBranch,
@@ -86,7 +99,10 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
                 installation_id: installationID,
                 repository_id: repositoryID,
                 issue_id: issueID,
+                pull_number: pullNumber,
                 branch,
+                owner,
+                repo,
               },
             },
             enabled: false,
@@ -135,13 +151,19 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       commitMessage: 'Add code based on the PR description',
       owner,
       repo,
+      client,
+      pullNumber,
     })
 
-    res.status(200).json({
+    const response: PostAgentResponse = {
+      pullNumber,
+      pullURL,
       issueID,
       owner,
       repo,
-    })
+    }
+
+    res.status(200).json(response)
   } catch (err: any) {
     console.error(err)
     res.status(500).json({ statusCode: 500, message: err.message })
@@ -157,7 +179,7 @@ async function handler(
     return
   }
 
-  res.setHeader('Allow', 'POST')
+  res.setHeader('Allow', ['POST'])
   res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' })
   return
 }

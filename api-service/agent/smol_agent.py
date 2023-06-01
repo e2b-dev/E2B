@@ -289,6 +289,13 @@ class SmolAgent(AgentBase):
         if self._dev_loop:
             print("Agent run already in progress - restarting")
             await self.stop()
+            await self.on_interaction_request(
+                AgentInteractionRequest(
+                    interaction_id=str(uuid.uuid4()),
+                    type="cancelled",
+                    data={},
+                )
+            )
 
         async def start_with_timeout():
             try:

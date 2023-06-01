@@ -69,6 +69,8 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
         commitMessage: 'Update based on PR comments',
         owner,
         repo,
+        client,
+        pullNumber: issueNumber,
       })
     }))
 
@@ -100,8 +102,7 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
   const client = getGHInstallationClient({ installationID })
   const pullNumber = getPRNumber(payload.issue.pull_request?.url)
   if (!pullNumber) {
-    console.log('Not a PR comment')
-    return
+    throw new Error('PR number not found')
   }
 
   const pr = await client.pulls.get({
@@ -136,6 +137,8 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
         owner,
         repo,
         commitMessage: 'Update based on PR comments',
+        client,
+        pullNumber,
       })
     }))
 

@@ -22,7 +22,7 @@ export async function createPR({
   owner: string,
   repo: string,
   branch: string,
-}): Promise<{ issueID: number }> {
+}) {
   let baseBranchRefSHA: string | undefined
 
   try {
@@ -96,6 +96,8 @@ export async function createPR({
 
   return {
     issueID: pr.data.id,
+    number: pr.data.number,
+    url: pr.data.html_url,
   }
 }
 
@@ -191,13 +193,17 @@ export const createAgentDeployment = api
   })
 
 export async function triggerSmolDevAgentRun({
+  client,
   deployment,
   prompt,
   accessToken,
   commitMessage,
   owner,
   repo,
+  pullNumber,
 }: {
+  pullNumber: number,
+  client: GitHubClient,
   owner: string,
   repo: string,
   commitMessage: string,
@@ -206,6 +212,14 @@ export async function triggerSmolDevAgentRun({
   accessToken: string,
 }) {
   console.log('Triggering smol dev agent run:', prompt)
+
+  await addCommentToPR({
+    body: 'Started smol dev agent run',
+    client,
+    owner,
+    repo,
+    pullNumber,
+  })
 
   await interactWithAgent({
     id: deployment.id,
@@ -259,4 +273,25 @@ export async function getGHAppInfo({
     name,
     email: `${id}+${name}@users.noreply.github.com`
   }
+}
+
+export async function addCommentToPR({
+  pullNumber,
+  repo,
+  owner,
+  client,
+  body,
+}: {
+  pullNumber: number,
+  repo: string,
+  owner: string,
+  client: GitHubClient,
+  body: string,
+}) {
+  await client.issues.createComment({
+    owner,
+    repo,
+    issue_number: pullNumber,
+    body,
+  })
 }
