@@ -9,16 +9,18 @@ import { PostAgentBody } from 'pages/agent/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
 import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, triggerSmolDevAgentRun } from 'github/pullRequest'
 
-export interface GitHubAuthData {
-  app_name: string,
-  app_email: string,
-  installation_id: number,
-  repository_id: number,
-  issue_id: number,
-  pull_number: number,
-  branch: string,
-  owner: string,
-  repo: string,
+export interface DeploymentAuthData {
+  github: {
+    app_name: string,
+    app_email: string,
+    installation_id: number,
+    repository_id: number,
+    issue_id: number,
+    pull_number: number,
+    branch: string,
+    owner: string,
+    repo: string,
+  }
 }
 
 async function postAgent(req: NextApiRequest, res: NextApiResponse) {
@@ -87,24 +89,26 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     const appInfo = await appInfoPromise
 
+    const authData: DeploymentAuthData = {
+      github: {
+        app_name: appInfo.name,
+        app_email: appInfo.email,
+        installation_id: installationID,
+        repository_id: repositoryID,
+        issue_id: issueID,
+        pull_number: pullNumber,
+        branch,
+        owner,
+        repo,
+      },
+    }
+
     const project = await prisma.projects.create({
       data: {
         id: nanoid(),
         deployments: {
           create: {
-            auth: {
-              github: {
-                app_name: appInfo.name,
-                app_email: appInfo.email,
-                installation_id: installationID,
-                repository_id: repositoryID,
-                issue_id: issueID,
-                pull_number: pullNumber,
-                branch,
-                owner,
-                repo,
-              },
-            },
+            auth: authData as any,
             enabled: false,
           },
         },
@@ -179,7 +183,7 @@ async function handler(
     return
   }
 
-  res.setHeader('Allow', ['POST'])
+  res.setHeader('Allow', 'POST')
   res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' })
   return
 }
