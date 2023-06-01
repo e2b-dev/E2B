@@ -137,7 +137,7 @@ export async function getPromptFromPR({
 
   const prBody = issueResult?.data.body || body
   const comments = commentsResult.data
-    .filter(c => !c.performed_via_github_app)
+    .filter(c => c.user?.type !== 'Bot')
     .map(c => c.body)
     .join('\n')
 
@@ -211,7 +211,7 @@ export async function triggerSmolDevAgentRun({
   prompt: string,
   accessToken: string,
 }) {
-  console.log('Triggering smol dev agent run:', prompt)
+  console.log('Triggering smol dev agent run:', { owner, repo, pullNumber, prompt })
 
   await addCommentToPR({
     body: 'Started smol dev agent run',
