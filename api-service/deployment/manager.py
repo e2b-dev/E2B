@@ -1,3 +1,7 @@
+import os
+import aiohttp
+import json
+
 from typing import Any, Callable, Coroutine, List
 from abc import abstractmethod, ABC
 
@@ -15,6 +19,44 @@ AgentFactory = Callable[
     [Any, GetEnvs, OnLogs, OnInteractionRequest], Coroutine[None, None, AgentBase]
 ]
 
+app_url = os.environ.get("APP_URL", "http://localhost:3000")
+secret_token = os.environ.get("SECRET_TOKEN")
+
+
+async def agent_run_done(deployment_id: str, prompt: str):
+    async with aiohttp.ClientSession() as client:
+        async with client.post(
+            f"{app_url}/api/agent/run",
+            data=json.dumps(
+                {
+                    "deployment_id": deployment_id,
+                    "prompt": prompt,
+                }
+            ),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {secret_token}",
+            },
+        ) as response:
+            pass
+
+
+async def agent_run_cancelled(deployment_id: str):
+    async with aiohttp.ClientSession() as client:
+        async with client.delete(
+            f"{app_url}/api/agent/run",
+            data=json.dumps(
+                {
+                    "deployment_id": deployment_id,
+                }
+            ),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {secret_token}",
+            },
+        ) as response:
+            pass
+
 
 class AgentEvents:
     def __init__(self, id: str) -> None:
@@ -30,12 +72,11 @@ class AgentEvents:
         self, interaction_request: AgentInteractionRequest
     ):
         self.interaction_requests.append(interaction_request)
-        if interaction_request.type == "done":
-            # TODO: Send the interaction request to nexjs backend + GH App
-            pass
-        elif interaction_request.type == "cancelled":
-            # TODO: Send the interaction request to nexjs backend + GH App
-            pass
+        match interaction_request.type:
+            case "done":
+                await agent_run_done(self.id, interaction_request.data["prompt"])
+            case "cancelled":
+                await agent_run_cancelled(self.id)
 
     def remove_interaction_request(self, interaction_id: str):
         self.interaction_requests = [
