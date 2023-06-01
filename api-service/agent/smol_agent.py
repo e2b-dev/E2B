@@ -88,28 +88,19 @@ class SmolAgent(AgentBase):
                 branch=branch,
             )
 
-            # await playground.write_file("/repo/test", "..>")
-            # await playground.push_repo(
-            #     rootdir=rootdir,
-            #     repo_address=repo_address,
-            #     commit_message=commit_message,
-            #     git_email=git_app_email,
-            #     git_name=git_app_name,
-            # )
+            extensions_to_skip = [
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".bmp",
+                ".svg",
+                ".ico",
+                ".tif",
+                ".tiff",
+            ]
 
             async def clean_dir():
-                extensions_to_skip = [
-                    ".png",
-                    ".jpg",
-                    ".jpeg",
-                    ".gif",
-                    ".bmp",
-                    ".svg",
-                    ".ico",
-                    ".tif",
-                    ".tiff",
-                ]  # Add more extensions if needed
-
                 files = await playground.get_filenames(rootdir, [".git"])
                 for file in files:
                     _, extension = os.path.splitext(file.name)
@@ -214,6 +205,7 @@ class SmolAgent(AgentBase):
                     shared_dependencies=shared_dependencies,
                     prompt=user_prompt,
                 )
+
                 await playground.write_file(os.path.join(rootdir, filename), filecode)
             else:
                 await clean_dir()
@@ -252,6 +244,10 @@ class SmolAgent(AgentBase):
                         prompt=user_prompt,
                     )
                     for name in list_actual
+                    # Filter out files that end with extensions we don't want to generate
+                    if not any(
+                        name.endswith(extension) for extension in extensions_to_skip
+                    )
                 ]
 
                 generated_files = await asyncio.gather(*tasks)
@@ -272,7 +268,6 @@ class SmolAgent(AgentBase):
             if playground is not None:
                 playground.close()
 
-            # TODO: Save the prompt as "last_finished_prompt" column to the deployments table in the database
             await self.on_interaction_request(
                 AgentInteractionRequest(
                     interaction_id=str(uuid.uuid4()),
