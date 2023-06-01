@@ -85,9 +85,13 @@ function getPRNumber(pr_url?: string) {
   }
 }
 
-
 const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (event) => {
   const { payload } = event
+
+  if (payload.comment.user.type === 'Bot') {
+    console.log('Comment was made by a GitHub bot, ignoring')
+    return
+  }
 
   const installationID = payload.installation?.id
   const repositoryID = payload.repository.id
