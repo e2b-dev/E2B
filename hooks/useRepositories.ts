@@ -3,10 +3,8 @@ import { GitHubClient } from 'github/client'
 
 async function fetchRepos(client: GitHubClient) {
   const installations = await client.apps.listInstallationsForAuthenticatedUser()
-
   const repos = await Promise.all(
     installations.data.installations.map(async i => {
-      console.log('installation', i)
       try {
         const repos = await client.apps.listInstallationReposForAuthenticatedUser({
           installation_id: i.id,

@@ -1,19 +1,19 @@
-import {
-  Github,
-} from 'lucide-react'
 
+
+
+import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
 import SpinnerIcon from 'components/Spinner'
 import RepositoriesList from './RepositoriesList'
 
 export interface Props {
-  hasAccessToken: boolean
+  accessToken?: string
   repos?: any[]
-  onConfigureGitHubAppClick: () => void
+  onConfigureGitHubAppClick: (e: any) => void
   onRepoSelection: (repoID: number) => void
 }
 
 function ExistingRepositories({
-  hasAccessToken,
+  accessToken,
   repos,
   onConfigureGitHubAppClick,
   onRepoSelection,
@@ -21,18 +21,13 @@ function ExistingRepositories({
 
   return (
     <div className="overflow-hidden flex-1 flex flex-col items-center justify-center border border-gray-700 rounded-md">
-      {!hasAccessToken && (
-        <button
-          type="button"
-          className="flex items-center space-x-2 rounded-md bg-white/10 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-white/20 transition-all"
+      {!accessToken && (
+        <ConfigureGitHubButton
           onClick={onConfigureGitHubAppClick}
-        >
-          <Github size={16} />
-          <span>Configure GitHub Permissions</span>
-        </button>
+        />
       )}
 
-      {hasAccessToken && (
+      {accessToken && (
         <>
           {!repos && (
             <div className="flex justify-center">
@@ -44,14 +39,9 @@ function ExistingRepositories({
               <span className="mb-2 text-sm text-gray-400 font-semibold">
                 No connected repositories found
               </span>
-              <button
-                type="button"
-                className="flex items-center space-x-2 rounded-md bg-white/10 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-white/20 transition-all"
+              <ConfigureGitHubButton
                 onClick={onConfigureGitHubAppClick}
-              >
-                <Github size={16} />
-                <span>Configure GitHub Permissions</span>
-              </button>
+              />
             </>
           )}
           {repos && repos.length > 0 && (

@@ -1,6 +1,5 @@
 import {
   Fragment,
-  useState,
 } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import clsx from 'clsx'
@@ -11,18 +10,26 @@ import {
   Plus,
 } from 'lucide-react'
 
-export interface Props {
-  owners: string[]
+export interface GitHubAccount {
+  name: string
+  isOrg: boolean
 }
 
+export interface Props {
+  accounts: GitHubAccount[]
+  selectedAccount?: GitHubAccount
+  onSelectedAccountChange: (account: GitHubAccount) => void
+  onAddGithubAccountClick: () => void
+}
 
-function RepoOwnerSelect({
-  owners,
+function RepoAccountSelect({
+  accounts,
+  selectedAccount,
+  onSelectedAccountChange,
+  onAddGithubAccountClick,
 }: Props) {
-  const [selected, setSelected] = useState(owners[0])
-
   return (
-    <Listbox value={selected} onChange={setSelected}>
+    <Listbox value={selectedAccount} onChange={onSelectedAccountChange}>
       {({ open }) => (
         <div className="w-full">
           <Listbox.Label className="block text-sm font-medium leading-6 text-gray-400">Account</Listbox.Label>
@@ -35,7 +42,7 @@ function RepoOwnerSelect({
               }>
               <div className="flex items-center space-x-2">
                 <Github size={14} />
-                <span className="block truncate">{selected}</span>
+                <span className="block truncate">{selectedAccount?.name}</span>
               </div>
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                 <ChevronsUpDown size={16} className="text-gray-400" aria-hidden="true" />
@@ -52,22 +59,22 @@ function RepoOwnerSelect({
               <Listbox.Options
                 className="p-2 absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-gray-800 text-base shadow-lg border border-gray-400 focus:outline-none sm:text-sm"
               >
-                {owners.map((owner) => (
+                {accounts.map((acc) => (
                   <Listbox.Option
-                    key={owner}
+                    key={acc.name}
                     className={({ active }) =>
                       clsx(
                         active ? 'bg-gray-700' : '',
                         'rounded-md relative cursor-pointer select-none py-2 pl-3 pr-9 text-gray-100'
                       )
                     }
-                    value={owner}
+                    value={acc}
                   >
                     {({ selected, active }) => (
                       <div className="flex items-center space-x-2">
                         <Github size={14} />
                         <span className={clsx(selected ? 'font-semibold' : 'font-normal', 'block truncate')}>
-                          {owner}
+                          {acc.name}
                         </span>
 
                         {selected ? (
@@ -81,7 +88,10 @@ function RepoOwnerSelect({
                     )}
                   </Listbox.Option>
                 ))}
-                <button className="w-full rounded-md flex items-center space-x-2 py-2 px-3 cursor-pointer text-gray-100 hover:bg-gray-700">
+                <button
+                  className="w-full rounded-md flex items-center space-x-2 py-2 px-3 cursor-pointer text-gray-100 hover:bg-gray-700"
+                  onClick={onAddGithubAccountClick}
+                >
                   <Plus size={14} />
                   <span>Add GitHub Account</span>
                 </button>
@@ -95,4 +105,4 @@ function RepoOwnerSelect({
   )
 }
 
-export default RepoOwnerSelect
+export default RepoAccountSelect

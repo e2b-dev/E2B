@@ -50,7 +50,7 @@ function Repos({ onRepoSelection }: Props) {
 
     await createRepo({ client: gitHub, name })
     // When we refresh the list of repos now the new repo will be there
-    // if we gave the GH App permissions to access all the personal repos or repos for the org 
+    // if we gave the GH App permissions to access all the personal repos or repos for the org
 
     refetch()
   }
@@ -67,14 +67,14 @@ function Repos({ onRepoSelection }: Props) {
 
   const filteredRepos = query && searchEngine ? searchEngine.search(query).map(i => i.item) : repos || []
 
-  const handleEvent = useCallback((event: MessageEvent) => {
+  const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
       setAccessToken(event.data.accessToken)
     } else if (event.data.installationID) {
       refetch()
     }
   }, [refetch, setAccessToken])
-  useListenOnMessage(handleEvent)
+  useListenOnMessage(handleMessageEvent)
 
   async function selectRepository(r: Omit<RepoSetup, 'branches' | 'owner' | 'repo'>) {
 
@@ -165,14 +165,14 @@ function Repos({ onRepoSelection }: Props) {
 
             {repos && repos.length > 0 &&
               <div className="
-            flex
-            flex-col
-            scroller
-            overflow-auto
-            pl-8
-            flex-1
-            pr-6
-          ">
+                flex
+                flex-col
+                scroller
+                overflow-auto
+                pl-8
+                flex-1
+                pr-6
+              ">
                 {filteredRepos.map(r => (
                   <div
                     className={clsx(

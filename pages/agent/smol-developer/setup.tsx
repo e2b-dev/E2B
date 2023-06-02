@@ -1,20 +1,19 @@
-import type { GetServerSideProps } from 'next'
-import { useSessionContext, useSupabaseClient } from '@supabase/auth-helpers-react'
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import {
-  useUser,
-  useSession,
-} from '@supabase/auth-helpers-react'
+  useState,
+  useCallback,
+} from 'react'
 import useSWRMutation from 'swr/mutation'
-import { nanoid } from 'nanoid'
-import { useState } from 'react'
+import type { GetServerSideProps } from 'next'
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
+import Steps from 'components/Steps'
+import SelectRepository from 'components/SelectRepository'
 import { serverCreds } from 'db/credentials'
-import Repos, { RepoSetup } from 'components/Repos'
-import Button from 'components/Button'
-import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
-import { TemplateID } from 'state/template'
-import { Creds } from 'hooks/useModelProviderArgs'
+import { useGitHubClient } from 'hooks/useGitHubClient'
+import { useRepositories } from 'hooks/useRepositories'
+import { useLocalStorage } from 'hooks/useLocalStorage'
+import useListenOnMessage from 'hooks/useListenOnMessage'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -35,8 +34,24 @@ export interface PostAgentBody {
   branch: string
   // Commit message for the PR first empty commit
   commitMessage: string
-  modelConfig: ModelConfig
 }
+
+// export interface Repository {
+//   repositoryID: number
+//   installationID: number
+//   fullName: string
+//   branches?: string[]
+//   defaultBranch: string
+//   url: string
+//   owner: string
+//   name: string
+// }
+
+const steps = [
+  { name: 'Select Repository', status: 'current' },
+  { name: 'Write Instructions', status: 'upcoming' },
+  { name: 'Step 3', status: 'upcoming' },
+]
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
@@ -67,105 +82,96 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
   }).then(r => r.json())
 }
 
-function getSmolDevModelConfig(creds: Creds): ModelConfig {
-  const templateID = TemplateID.SmolDeveloper
-  const modelConfig = getDefaultModelConfig(templateID)
-  return {
-    name: modelConfig.name,
-    provider: modelConfig.provider,
-    args: getModelArgs(modelConfig, creds),
-    prompt: [],
-  }
-}
-
-function Repo() {
+function Setup() {
   const supabaseClient = useSupabaseClient()
-  const user = useUser()
-  const session = useSession()
-  const sessionCtx = useSessionContext()
-  const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
-  const [initialPrompt, setInitialPrompt] = useState<string>()
-  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>()
+  const [currentStep, setCurrentStep] = useState(0)
+  const [selectedRepositoryID, setSelectedRepositoryID] = useState<number>()
+  // const supabaseClient = useSupabaseClient()
+  // const session = useSession()
+  // const sessionCtx = useSessionContext()
+  // const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
+
+  const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
+  const gitHub = useGitHubClient(accessToken)
+  const { repos, refetch } = useRepositories(gitHub)
+
+  const handleMessageEvent = useCallback((event: MessageEvent) => {
+    if (event.data.accessToken) {
+      setAccessToken(event.data.accessToken)
+    } else if (event.data.installationID) {
+      refetch()
+    }
+  }, [refetch, setAccessToken])
+  useListenOnMessage(handleMessageEvent)
+
+  const {
+    trigger: createAgent,
+  } = useSWRMutation('/api/agent', handlePostAgent)
+
+  // async function deployAgent() {
+  //   if (!selectedRepo) return
+  //   console.log('selectedRepo', selectedRepo)
+
+
+  //   return
+  //   await createAgent({
+  //     defaultBranch: selectedRepo.defaultBranch,
+  //     installationID: selectedRepo.installationID,
+  //     owner: selectedRepo.owner,
+  //     repo: selectedRepo.repo,
+  //     repositoryID: selectedRepo.repositoryID,
+  //     title,
+  //     branch,
+  //     body,
+  //     commitMessage,
+  //   })
+  // }
+
+  function handleRepoSelection(repoID: number) {
+    setSelectedRepositoryID(repoID)
+    setCurrentStep(val => {
+      const newVal = val + 1
+      steps[val].status = 'complete'
+      steps[newVal].status = 'current'
+      return newVal
+    })
+  }
 
   async function signOut() {
     await supabaseClient.auth.signOut()
     location.reload()
   }
 
-  const {
-    trigger: createAgent,
-  } = useSWRMutation('/api/agent', handlePostAgent)
-
-  async function deployAgent() {
-    if (!selectedRepo) return
-    if (!initialPrompt) return
-    if (!openAIAPIKey) return
-    console.log('selectedRepo', selectedRepo)
-
-    const modelConfig = getSmolDevModelConfig({
-      OpenAI: {
-        creds: {
-          openai_api_key: openAIAPIKey,
-        },
-      },
-    })
-
-    await createAgent({
-      defaultBranch: selectedRepo.defaultBranch,
-      installationID: selectedRepo.installationID,
-      owner: selectedRepo.owner,
-      repo: selectedRepo.repo,
-      repositoryID: selectedRepo.repositoryID,
-      title: 'Smol PR',
-      branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
-      body: initialPrompt,
-      commitMessage: 'Smol dev initial commit',
-      modelConfig,
-    })
-  }
-
   return (
-    <div
-      className="
-      p-8
-      flex-1
-      flex
-      flex-col
-      space-y-4
-    "
-    >
-      <div
-        className="
-      max-w-xl
-      w-full
-      max-h-[400px]
-      flex-1
-      flex
-      flex-col
-      self-center
-      justify-center
-      space-y-4
-    "
-      >
-        {!sessionCtx.isLoading && user && (
-          <Button
-            text="Sign out"
-            onClick={signOut}
-          />
-        )}
-        Select repo
-        {user &&
-          <Repos
-            onRepoSelection={setSelectedRepo}
-          />
-        }
+    <div className="h-full flex flex-col items-center justify-start bg-gray-800 py-8 px-6">
+      <div className="mb-4 w-full flex items-center justify-between">
+        <span />
+        <button
+          className="text-sm font-semibold text-white"
+          onClick={signOut}
+        >
+          Log out
+        </button>
       </div>
-      <Button
-        text='Deploy Smol developer'
-        onClick={deployAgent}
-      />
+      <div className="overflow-hidden flex-1 mx-auto w-full max-w-lg flex flex-col">
+        <Steps steps={steps} />
+        <div className="h-px bg-gray-700 my-8" />
+
+        {currentStep === 0 ? (
+          <SelectRepository
+            repos={repos}
+            selectedRepositoryID={selectedRepositoryID}
+            onRepoSelection={handleRepoSelection}
+            accessToken={accessToken}
+          />
+        ) : currentStep === 1 ? (
+          <div>prompt</div>
+        ) : currentStep === 2 ? (
+          <div>keys + deploy</div>
+        ) : null}
+      </div>
     </div>
   )
 }
 
-export default Repo
+export default Setup

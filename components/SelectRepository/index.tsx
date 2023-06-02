@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
 } from 'react'
 import {
@@ -10,26 +11,49 @@ import {
 
 import { configureGitHubApp } from 'utils/github'
 import SpinnerIcon from 'components/Spinner'
+import { useGitHubClient } from 'hooks/useGitHubClient'
 
 import RepoSwitch from './RepoSwitch'
 import ExistingRepositories from './ExistingRepositories'
 import NewRepository from './NewRepository'
+import { GitHubAccount } from './NewRepository/RepoAccountSelect'
 
 export interface Props {
   repos?: any[]
-  hasAccessToken: boolean
+  accessToken?: string
   selectedRepositoryID?: number
   onRepoSelection: (repoID: number) => void
 }
 
 function SelectRepository({
   repos,
-  hasAccessToken,
+  accessToken,
   selectedRepositoryID,
   onRepoSelection,
 }: Props) {
   const user = useUser()
   const [selected, setSelected] = useState<'existing' | 'new'>('new')
+  const ghClient = useGitHubClient(accessToken)
+  const [githubAccounts, setGitHubAccounts] = useState<GitHubAccount[]>([])
+
+  useEffect(function getGitHubAccounts() {
+    async function getAccounts() {
+      if (!ghClient) return
+      const installations = await ghClient?.apps.listInstallationsForAuthenticatedUser()
+      const accounts: GitHubAccount[] = []
+      installations.data.installations.forEach(i => {
+        if (i.account) {
+          const ghAccType = (i.account as any)['type']
+          const ghLogin = (i.account as any)['login']
+          // Filter out user accounts that are not the current user (when a user has access to repos that aren't theirs)
+          if (ghAccType === 'User' && ghLogin !== user?.user_metadata?.user_name) return
+          accounts.push({ name: ghLogin, isOrg: ghAccType === 'Organization' })
+        }
+      })
+      setGitHubAccounts(accounts)
+    }
+    getAccounts()
+  }, [ghClient, user])
 
   return (
     <>
@@ -57,7 +81,7 @@ function SelectRepository({
           />
           {selected === 'existing' && (
             <ExistingRepositories
-              hasAccessToken={hasAccessToken}
+              accessToken={accessToken}
               repos={repos}
               onConfigureGitHubAppClick={configureGitHubApp}
               onRepoSelection={onRepoSelection}
@@ -65,8 +89,10 @@ function SelectRepository({
           )}
           {selected === 'new' && (
             <NewRepository
-              org=""
-              name=""
+              accounts={githubAccounts}
+              // onRepoSelection={onRepoSelection}
+              accessToken={accessToken}
+              onConfigureGitHubAppClick={configureGitHubApp}
             />
           )}
           <button
