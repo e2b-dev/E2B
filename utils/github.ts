@@ -3,6 +3,7 @@ import { openPopupModal } from 'utils/popupModal'
 export interface GitHubAccount {
   name: string
   isOrg: boolean
+  installationID: number
 }
 
 export function configureGitHubApp() {

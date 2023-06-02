@@ -21,12 +21,13 @@ import {
   creationReducer,
   ActionType,
 } from './newRepoState'
+import { RepoSetup } from '../RepoSetup'
 
 export interface Props {
   accessToken?: string
   accounts: GitHubAccount[]
   onConfigureGitHubAppClick: (e: any) => void
-  onRepoSelection: (repo: any) => void
+  onRepoSelection: (repo: RepoSetup) => void
 }
 
 function NewRepository({
@@ -57,7 +58,16 @@ function NewRepository({
         name: state.name,
       })
       dispatch({ type: ActionType.Success, payload: {} })
-      onRepoSelection(newRepo)
+
+      onRepoSelection({
+        fullName: newRepo.full_name,
+        defaultBranch: newRepo.default_branch,
+        repositoryID: newRepo.id,
+        owner: newRepo.owner.login,
+        installationID: state.account.installationID,
+        repo: newRepo.name,
+        url: newRepo.url,
+      })
     } catch (err: any) {
       console.error('Error creating repository', err)
       dispatch({ type: ActionType.Fail, payload: { error: err } })

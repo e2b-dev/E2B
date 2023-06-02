@@ -1,10 +1,5 @@
 import { GitHubClient } from './client'
 
-export function parseRepoName(fullName: string) {
-  const [owner, repo] = fullName.split('/')
-  return { owner, repo }
-}
-
 export async function createRepo({ client, name, org, isPrivate }: {
   client: GitHubClient,
   name: string,

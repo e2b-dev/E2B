@@ -6,7 +6,6 @@ import {
 
 import { getDeploymentsForPR, getGHAccessToken, getPromptFromPR, triggerSmolDevAgentRun } from './pullRequest'
 import { getGHInstallationClient } from './installationClient'
-import { parseRepoName } from './repo'
 
 export async function getGitHubWebhooksMiddleware() {
   const webhooks = new Webhooks({
@@ -32,7 +31,8 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
 
   const installationID = payload.installation?.id
   const repositoryID = payload.repository.id
-  const { owner, repo } = parseRepoName(payload.repository.full_name)
+  const owner = payload.repository.owner.login
+  const repo = payload.repository.name
 
   // Every PR is also an issues - GH API endpoint for issues is used for the shared functionality
   const issueID = payload.pull_request.id
@@ -95,7 +95,9 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
 
   const installationID = payload.installation?.id
   const repositoryID = payload.repository.id
-  const { owner, repo } = parseRepoName(payload.repository.full_name)
+
+  const owner = payload.repository.owner.login
+  const repo = payload.repository.name
 
   // Every PR is also an issues - GH API endpoint for issues is used for the shared functionality
   // This issueID is not the PR issue id though, it's the issue id of the comment

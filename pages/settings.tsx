@@ -1,16 +1,13 @@
-import { Key, Mail, Settings as SettingsIcon } from 'lucide-react'
+import { Mail, Settings as SettingsIcon } from 'lucide-react'
 import { useRouter } from 'next/router'
 import { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 
 import Text from 'components/Text'
-import Input from 'components/Input'
 import Button from 'components/Button'
 import { Database } from 'db/supabase'
 import { serverCreds } from 'db/credentials'
-import useModelProviderArgs from 'hooks/useModelProviderArgs'
-import { providerTemplates, ModelProvider } from 'state/model'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient<Database>(ctx, serverCreds)
@@ -37,8 +34,6 @@ function Settings({ }: Props) {
   const user = useUser()
   const router = useRouter()
   const supabaseClient = useSupabaseClient<Database>()
-
-  const [creds, mergeCreds] = useModelProviderArgs()
 
   async function handleSignOut() {
     await supabaseClient.auth.signOut()
@@ -118,63 +113,6 @@ function Settings({ }: Props) {
             size={Text.size.S2}
             text={user?.email!}
           />
-        </div>
-        <div
-          className="
-        flex
-        flex-col
-        space-y-1
-      "
-        >
-          <div className="
-            flex
-            space-x-2
-            text-slate-400
-            items-center
-          ">
-            <Key size="16px" />
-            <Text
-              size={Text.size.S2}
-              text="Keys"
-            />
-          </div>
-          <div
-            className="
-                flex
-                pt-1
-                flex-col
-                space-y-4
-                flex-1
-                w-[450px]
-              "
-          >
-            {Object.entries(providerTemplates).map(([provider, value]) =>
-              <div
-                key={provider}
-                className="
-                space-y-4
-                flex
-                flex-col
-                p-2
-                rounded
-                bg-slate-100
-                flex-1
-                "
-              >
-                {Object.entries(value.creds || {}).map(([key, cred]) =>
-                  <div key={key}>
-                    <Input
-                      title={cred.label || key}
-                      value={creds[provider as ModelProvider]?.creds?.[key]?.toString()}
-                      onChange={(v) => mergeCreds(provider as ModelProvider, key, v || undefined)}
-                      placeholder={cred.label}
-                      label={cred.label}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

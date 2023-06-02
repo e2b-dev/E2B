@@ -14,14 +14,15 @@ import {
 } from 'utils/github'
 import SpinnerIcon from 'components/Spinner'
 
+import { RepoSetup, Repos } from './RepoSetup'
 import RepoSwitch from './RepoSwitch'
 import ExistingRepositories from './ExistingRepositories'
 import NewRepository from './NewRepository'
 
 export interface Props {
-  repos?: any[]
+  repos?: Repos
   accessToken?: string
-  onRepoSelection: (repo: any) => void
+  onRepoSelection: (repo: RepoSetup) => void
   githubAccounts: GitHubAccount[]
 }
 
