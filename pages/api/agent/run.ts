@@ -36,7 +36,6 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
     const authData = deployment.auth as unknown as DeploymentAuthData
     const client = getGHInstallationClient({ installationID: authData.github.installation_id })
 
-
     // TODO: Should we maybe just edit the previous comment?
     // Or should we do that only if the previous run was cancelled
     await addCommentToPR({
@@ -45,6 +44,15 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
       owner: authData.github.owner,
       repo: authData.github.repo,
       pullNumber: authData.github.pull_number,
+    })
+
+    await prisma.deployments.update({
+      where: {
+        id: deployment_id,
+      },
+      data: {
+        last_finished_prompt: prompt,
+      },
     })
 
     res.status(200).json({})
