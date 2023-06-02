@@ -24,7 +24,7 @@ export async function createRepo({ client, name, org, isPrivate }: {
       private: isPrivate,
       auto_init: true,
     })
-    return { repositoryID: data.id }
+    return data
   }
 
   const { data } = await client.repos.createForAuthenticatedUser({
@@ -32,6 +32,5 @@ export async function createRepo({ client, name, org, isPrivate }: {
     private: isPrivate,
     auto_init: true,
   })
-
-  return { repositoryID: data.id }
+  return data
 }

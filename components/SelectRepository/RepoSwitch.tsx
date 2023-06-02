@@ -23,7 +23,7 @@ function RepoSwitch({
           )}
           onClick={() => onChange('new')}
         >
-          Create new one
+          Create New Repository
         </div>
         <div
           className={clsx(
@@ -32,7 +32,7 @@ function RepoSwitch({
           )}
           onClick={() => onChange('existing')}
         >
-          Select existing
+          Select Existing Repository
         </div>
       </div>
     </div>
