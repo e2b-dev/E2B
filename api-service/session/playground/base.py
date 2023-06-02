@@ -39,6 +39,11 @@ class Playground(Session):
             for open_port in open_ports
         )
 
+    async def sync_clock(self):
+        await self.run_command(
+            "rc-service chronyd stop && chronyd -q 'server pool.ntp.org iburst'"
+        )
+
     async def install_deps(self, rootdir: str):
         await self.run_command("apk add npm")
         await self.run_command(f"npm install --prefix {rootdir}", rootdir="/")

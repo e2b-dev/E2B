@@ -79,6 +79,8 @@ class SmolAgent(AgentBase):
             playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
             await playground.open()
 
+            fixClockDrift = asyncio.ensure_future(playground.sync_clock())
+
             rootdir = "/repo"
             await playground.change_rootdir(rootdir)
             await playground.make_dir(rootdir)
@@ -255,6 +257,7 @@ class SmolAgent(AgentBase):
                 for name, content in generated_files:
                     await playground.write_file(os.path.join(rootdir, name), content)
 
+            await fixClockDrift
             await playground.push_repo(
                 rootdir=rootdir,
                 repo_address=repo_address,
@@ -262,12 +265,6 @@ class SmolAgent(AgentBase):
                 git_email=git_app_email,
                 git_name=git_app_name,
             )
-        except:
-            raise
-        finally:
-            if playground is not None:
-                playground.close()
-
             await self.on_interaction_request(
                 AgentInteractionRequest(
                     interaction_id=str(uuid.uuid4()),
@@ -277,6 +274,11 @@ class SmolAgent(AgentBase):
                     },
                 )
             )
+        except:
+            raise
+        finally:
+            if playground is not None:
+                playground.close()
 
     async def _dev_in_background(self, instructions: Any):
         print("Start agent run", self._dev_loop)
@@ -288,7 +290,9 @@ class SmolAgent(AgentBase):
                 AgentInteractionRequest(
                     interaction_id=str(uuid.uuid4()),
                     type="cancelled",
-                    data={},
+                    data={
+                        # "associated_comment_id": self._dev_comment_id,
+                    },
                 )
             )
 
@@ -305,6 +309,8 @@ class SmolAgent(AgentBase):
             except asyncio.TimeoutError:
                 await self.stop()
                 print("Timeout")
+            finally:
+                self._dev_loop = None
 
         asyncio.create_task(
             start_with_timeout(),
