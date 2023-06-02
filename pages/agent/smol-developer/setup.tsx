@@ -14,6 +14,9 @@ import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import useListenOnMessage from 'hooks/useListenOnMessage'
+import { TemplateID } from 'state/template'
+import { Creds } from 'hooks/useModelProviderArgs'
+import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -36,17 +39,6 @@ export interface PostAgentBody {
   commitMessage: string
   modelConfig: ModelConfig & { templateID: TemplateID }
 }
-
-// export interface Repository {
-//   repositoryID: number
-//   installationID: number
-//   fullName: string
-//   branches?: string[]
-//   defaultBranch: string
-//   url: string
-//   owner: string
-//   name: string
-// }
 
 const steps = [
   { name: 'Select Repository', status: 'current' },
@@ -90,6 +82,7 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
   })
   return await response.json() as PostAgentResponse
 }
+
 
 function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: TemplateID } {
   const templateID = TemplateID.SmolDeveloper
