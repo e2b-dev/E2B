@@ -1,4 +1,4 @@
-import { GitHubAccount } from './RepoAccountSelect'
+import { GitHubAccount } from 'utils/github'
 
 export enum ActionType {
   Initial,
@@ -117,4 +117,3 @@ export function creationReducer(state: State, action: Action) {
       return state
   }
 }
-

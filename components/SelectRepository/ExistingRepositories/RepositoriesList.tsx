@@ -1,10 +1,11 @@
 import {
   Github,
 } from 'lucide-react'
+import { Repos, RepoSetup } from '../RepoSetup'
 
 export interface Props {
-  repos: any[]
-  onRepoSelection: (repo: any) => void
+  repos: Repos
+  onRepoSelection: (repo: RepoSetup) => void
 }
 
 function RepositoriesList({
@@ -13,7 +14,7 @@ function RepositoriesList({
 }: Props) {
   return (
     <ul role="list" className="w-full overflow-auto divide-y divide-gray-700">
-      {repos.map((r) => (
+      {repos?.map((r) => (
         <li key={r.id} className="px-2 flex items-center justify-between h-[60px]">
           <div className="flex flex-col items-start justify-start">
             <div className="flex items-center space-x-1">
@@ -29,7 +30,15 @@ function RepositoriesList({
           <button
             type="button"
             className="rounded bg-white/10 px-2 py-1 text-sm font-medium text-white shadow-sm hover:bg-white/20"
-            onClick={() => onRepoSelection(r)}
+            onClick={() => onRepoSelection({
+              installationID: r.installation_id,
+              defaultBranch: r.default_branch,
+              fullName: r.full_name,
+              owner: r.owner.login,
+              repo: r.name,
+              repositoryID: r.id,
+              url: r.url,
+            })}
           >
             Select
           </button>

@@ -1,11 +1,27 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
+import { nanoid } from 'nanoid'
 
+import { PostAgentResponse } from 'pages/agent/smol-developer/setup'
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import { PostAgentBody } from 'pages/agent/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
 import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, triggerSmolDevAgentRun } from 'github/pullRequest'
+
+export interface DeploymentAuthData {
+  github: {
+    app_name: string,
+    app_email: string,
+    installation_id: number,
+    repository_id: number,
+    issue_id: number,
+    pull_number: number,
+    branch: string,
+    owner: string,
+    repo: string,
+  }
+}
 
 async function postAgent(req: NextApiRequest, res: NextApiResponse) {
   const {
@@ -60,7 +76,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       repositoryID,
     })
 
-    const { issueID } = await createPR({
+    const { issueID, number: pullNumber, url: pullURL } = await createPR({
       client,
       title,
       defaultBranch,
@@ -73,22 +89,26 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     const appInfo = await appInfoPromise
 
+    const authData: DeploymentAuthData = {
+      github: {
+        app_name: appInfo.name,
+        app_email: appInfo.email,
+        installation_id: installationID,
+        repository_id: repositoryID,
+        issue_id: issueID,
+        pull_number: pullNumber,
+        branch,
+        owner,
+        repo,
+      },
+    }
+
     const project = await prisma.projects.create({
       data: {
+        id: nanoid(),
         deployments: {
           create: {
-            auth: {
-              github: {
-                app_name: appInfo.name,
-                app_email: appInfo.email,
-                installation_id: installationID,
-                repository_id: repositoryID,
-                issue_id: issueID,
-                branch,
-                owner,
-                repo,
-              },
-            },
+            auth: authData as any,
             enabled: false,
           },
         },
@@ -133,13 +153,21 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       prompt: body,
       accessToken,
       commitMessage: 'Add code based on the PR description',
-    })
-
-    res.status(200).json({
       owner,
       repo,
-      issueID,
+      client,
+      pullNumber,
     })
+
+    const response: PostAgentResponse = {
+      pullNumber,
+      pullURL,
+      issueID,
+      owner,
+      repo,
+    }
+
+    res.status(200).json(response)
   } catch (err: any) {
     console.error(err)
     res.status(500).json({ statusCode: 500, message: err.message })

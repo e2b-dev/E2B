@@ -1,5 +1,4 @@
 import math
-import uuid
 
 from typing import Any, List
 from asyncio import sleep
@@ -40,6 +39,11 @@ class Playground(Session):
             for open_port in open_ports
         )
 
+    async def sync_clock(self):
+        await self.run_command(
+            "rc-service chronyd stop && chronyd -q 'server pool.ntp.org iburst'"
+        )
+
     async def install_deps(self, rootdir: str):
         await self.run_command("apk add npm")
         await self.run_command(f"npm install --prefix {rootdir}", rootdir="/")
@@ -52,7 +56,7 @@ class Playground(Session):
     ):
         await self.make_dir(rootdir)
         res = await self.run_command(
-            f"git clone --single-branch --branch {branch} {repo_address} {rootdir}",
+            f"git clone --depth 1 --branch {branch} {repo_address} {rootdir}",
             rootdir="/",
         )
         print("Repo clone result", res)
@@ -67,7 +71,8 @@ class Playground(Session):
     ):
         res = await self.run_command(
             (
-                f"git config --global user.email {git_email} && "
+                f"cd {rootdir} && "
+                f'git config --global user.email "{git_email}" && '
                 f'git config --global user.name "{git_name}" && '
                 f"git config --global push.autoSetupRemote true && "
                 f"git add . && "

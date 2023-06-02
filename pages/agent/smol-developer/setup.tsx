@@ -19,7 +19,12 @@ import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import useListenOnMessage from 'hooks/useListenOnMessage'
+import { TemplateID } from 'state/template'
+import { Creds } from 'hooks/useModelProviderArgs'
+import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
+import { nanoid } from 'nanoid'
+import { RepoSetup } from 'components/SelectRepository/RepoSetup'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -40,18 +45,8 @@ export interface PostAgentBody {
   branch: string
   // Commit message for the PR first empty commit
   commitMessage: string
+  modelConfig: ModelConfig & { templateID: TemplateID }
 }
-
-// export interface Repository {
-//   repositoryID: number
-//   installationID: number
-//   fullName: string
-//   branches?: string[]
-//   defaultBranch: string
-//   url: string
-//   owner: string
-//   name: string
-// }
 
 const steps = [
   { name: 'Select Repository', status: 'current' },
@@ -77,17 +72,36 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: {} }
 }
 
+export interface PostAgentResponse {
+  issueID: number
+  owner: string
+  repo: string
+  pullURL: string
+  pullNumber: number
+}
+
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
-  return await fetch(url, {
+  const response = await fetch(url, {
     method: 'POST',
     body: JSON.stringify(arg),
-
     headers: {
       'Content-Type': 'application/json',
     },
-  }).then(r => r.json())
+  })
+  return await response.json() as PostAgentResponse
 }
 
+function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: TemplateID } {
+  const templateID = TemplateID.SmolDeveloper
+  const modelConfig = getDefaultModelConfig(templateID)
+  return {
+    name: modelConfig.name,
+    provider: modelConfig.provider,
+    args: getModelArgs(modelConfig, creds),
+    prompt: [],
+    templateID,
+  }
+}
 function Setup() {
   const user = useUser()
   const supabaseClient = useSupabaseClient()
@@ -95,8 +109,11 @@ function Setup() {
   const github = useGitHubClient(accessToken)
   const [githubAccounts, setGitHubAccounts] = useState<GitHubAccount[]>([])
   const [currentStep, setCurrentStep] = useState(0)
-  const [selectedRepository, setSelectedRepository] = useState<any | undefined>()
+  const [selectedRepository, setSelectedRepository] = useState<RepoSetup>()
   const { repos, refetch } = useRepositories(github)
+
+  const initialPrompt = 'Create chrome extension'
+  const openAIAPIKey = ''
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -111,24 +128,34 @@ function Setup() {
     trigger: createAgent,
   } = useSWRMutation('/api/agent', handlePostAgent)
 
-  // async function deployAgent() {
-  //   if (!selectedRepo) return
-  //   console.log('selectedRepo', selectedRepo)
+  async function deployAgent() {
+    console.log('DEPLOY AGENT', selectedRepository, initialPrompt, openAIAPIKey)
 
+    if (!selectedRepository) return
+    if (!initialPrompt) return
+    if (!openAIAPIKey) return
 
-  //   return
-  //   await createAgent({
-  //     defaultBranch: selectedRepo.defaultBranch,
-  //     installationID: selectedRepo.installationID,
-  //     owner: selectedRepo.owner,
-  //     repo: selectedRepo.repo,
-  //     repositoryID: selectedRepo.repositoryID,
-  //     title,
-  //     branch,
-  //     body,
-  //     commitMessage,
-  //   })
-  // }
+    const modelConfig = getSmolDevModelConfig({
+      OpenAI: {
+        creds: {
+          openai_api_key: openAIAPIKey,
+        },
+      },
+    })
+
+    await createAgent({
+      defaultBranch: selectedRepository.defaultBranch,
+      installationID: selectedRepository.installationID,
+      owner: selectedRepository.owner,
+      repo: selectedRepository.repo,
+      repositoryID: selectedRepository.repositoryID,
+      title: 'Smol PR',
+      branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
+      body: initialPrompt,
+      commitMessage: 'Smol dev initial commit',
+      modelConfig,
+    })
+  }
 
   function handleRepoSelection(repo: any) {
     console.log('SELECTED REPO', repo)
@@ -157,7 +184,7 @@ function Setup() {
           const ghLogin = (i.account as any)['login']
           // Filter out user accounts that are not the current user (when a user has access to repos that aren't theirs)
           if (ghAccType === 'User' && ghLogin !== user?.user_metadata?.user_name) return
-          accounts.push({ name: ghLogin, isOrg: ghAccType === 'Organization' })
+          accounts.push({ name: ghLogin, isOrg: ghAccType === 'Organization', installationID: i.id })
         }
       })
       setGitHubAccounts(accounts)
@@ -180,19 +207,27 @@ function Setup() {
       <div className="overflow-hidden flex-1 mx-auto w-full max-w-lg flex flex-col">
         <Steps steps={steps} />
         <div className="h-px bg-gray-700 my-8" />
-
-        {currentStep === 0 ? (
+        {currentStep === 0 && (
           <SelectRepository
             repos={repos}
             onRepoSelection={handleRepoSelection}
             accessToken={accessToken}
             githubAccounts={githubAccounts}
           />
-        ) : currentStep === 1 ? (
+        )}
+        {currentStep === 1 && (
           <AgentInstructions />
-        ) : currentStep === 2 ? (
-          <div>keys + deploy</div>
-        ) : null}
+        )}
+        {currentStep === 2 && (
+          <div>
+            <button
+              className="w-8 min-w-[64px] h-[24px] min-h-[24px] flex items-center justify-center rounded bg-white/10 px-2 py-1 text-sm text-white font-medium hover:bg-white/20"
+              onClick={deployAgent}
+            >
+              <span>Deploy</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

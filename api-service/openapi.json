@@ -18,7 +18,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       },
       "put": {
         "summary": "Create Agent Deployment",
@@ -63,10 +68,55 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/deployments/{id}": {
+      "get": {
+        "summary": "Get Agent Deployment",
+        "operationId": "get_agent_deployment_deployments__id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
       "delete": {
         "summary": "Delete Agent Deployment",
         "operationId": "delete_agent_deployment_deployments__id__delete",
@@ -95,7 +145,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/deployments/{id}/interactions": {
@@ -142,7 +197,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/deployments/{id}/interaction_requests": {
@@ -179,13 +239,18 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/deployments/{id}/logs": {
       "get": {
-        "summary": "Get Agent  Deployment Status",
-        "operationId": "get_agent__deployment_status_deployments__id__logs_get",
+        "summary": "Get Agent Deployment Status",
+        "operationId": "get_agent_deployment_status_deployments__id__logs_get",
         "parameters": [
           {
             "required": true,
@@ -216,7 +281,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     }
   },
@@ -294,6 +364,17 @@
           "type": {
             "title": "Error Type",
             "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": ""
           }
         }
       }

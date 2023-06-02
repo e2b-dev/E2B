@@ -2,12 +2,13 @@ import clsx from 'clsx'
 import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
 import SpinnerIcon from 'components/Spinner'
 import RepositoriesList from './RepositoriesList'
+import { RepoSetup, Repos } from '../RepoSetup'
 
 export interface Props {
   accessToken?: string
-  repos?: any[]
+  repos?: Repos
   onConfigureGitHubAppClick: (e: any) => void
-  onRepoSelection: (repo: any) => void
+  onRepoSelection: (repo: RepoSetup) => void
 }
 
 function ExistingRepositories({
@@ -47,7 +48,7 @@ function ExistingRepositories({
           )}
           {repos && repos.length > 0 && (
             <RepositoriesList
-              repos={repos.sort((a, b) => (new Date(b.updated_at) as any) - (new Date(a.updated_at) as any))}
+              repos={repos.sort((a, b) => (new Date(b.updated_at || b.created_at!) as any) - (new Date(a.updated_at || b.created_at!) as any))}
               onRepoSelection={onRepoSelection}
             />
           )}

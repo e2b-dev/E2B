@@ -4,7 +4,6 @@ import { deployments, prisma } from 'db/prisma'
 import { GitHubClient } from './client'
 
 // All PRs are also issues - GH API endpoint for issues is used for the shared functionality
-
 export async function createPR({
   client,
   title,
@@ -23,18 +22,46 @@ export async function createPR({
   owner: string,
   repo: string,
   branch: string,
-}): Promise<{ issueID: number }> {
-  const baseBranchRef = await client.git.getRef({
-    owner,
-    repo,
-    ref: `heads/${defaultBranch}`,
-  })
+}) {
+  let baseBranchRefSHA: string | undefined
+
+  try {
+    const baseBranchRef = await client.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${defaultBranch}`,
+    })
+    baseBranchRefSHA = baseBranchRef.data.object.sha
+  } catch (error: any) {
+    // Make sure we are not overwriting an existing branch
+    // and only create a new branch and init repo if the repo is empty
+    if (error.message !== 'Git Repository is empty.') throw error
+    console.log('Repository is empty - creating initial empty commit')
+
+    // TODO: Create empty commit without placeholder file by deleting the file,
+    // creating an empty commit and then updating the default branch to point to the empty commit
+    // This behavious is not clearly documented and it seems that sometimes the empty commit can get automatically pruned before the ref can be updated
+
+    // Create placeholder file to create the default branch
+    console.log('Creating placeholder file')
+    const file = await client.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      branch: defaultBranch,
+      path: '/README.md',
+      message: 'Initial commit',
+      content: Buffer.from(`# ${repo}`, 'utf8').toString('base64'),
+    })
+    console.log('Finished creating placeholder file')
+
+    baseBranchRefSHA = file.data.commit.sha
+  }
 
   const newBranchRef = await client.git.createRef({
     owner,
     repo,
     ref: `refs/heads/${branch}`,
-    sha: baseBranchRef.data.object.sha,
+    sha: baseBranchRefSHA!,
   })
 
   const currentCommit = await client.git.getCommit({
@@ -69,46 +96,52 @@ export async function createPR({
 
   return {
     issueID: pr.data.id,
+    number: pr.data.number,
+    url: pr.data.html_url,
   }
 }
 
 export async function getPromptFromPR({
-  issueID,
+  issueNumber,
   client,
   repo,
   owner,
+  body,
 }: {
+  body?: string,
   owner: string,
   repo: string,
   client: GitHubClient,
-  issueID: number,
+  // Number identifying the issue in the repo (this is not issueID)
+  issueNumber: number,
 }): Promise<string> {
 
   const [
     issueResult,
     commentsResult,
   ] = await Promise.all([
-    client.issues.get({
-      issue_number: issueID,
+    body === undefined ? client.issues.get({
+      issue_number: issueNumber,
       owner,
       repo,
-    }),
+    }) : Promise.resolve(undefined),
     client.issues.listComments({
-      issue_number: issueID,
+      issue_number: issueNumber,
       owner,
       repo,
+      // TODO: Handle pagination
+      page: 1,
       per_page: 100,
     }),
   ])
 
-  // TODO: Check if issue body and comments are returned as markdown
-  const body = issueResult.data.body_text
+  const prBody = issueResult?.data.body || body
   const comments = commentsResult.data
-    .filter(c => !c.performed_via_github_app)
-    .map(c => c.body_text)
+    .filter(c => c.user?.type !== 'Bot')
+    .map(c => c.body)
     .join('\n')
 
-  return `${body}\n\n${comments}`
+  return `${prBody}\n\n${comments}`
 }
 
 export async function getDeploymentsForPR({
@@ -122,6 +155,7 @@ export async function getDeploymentsForPR({
 }) {
   return await prisma.deployments.findMany({
     where: {
+      enabled: true,
       AND: [
         {
           auth: {
@@ -159,16 +193,34 @@ export const createAgentDeployment = api
   })
 
 export async function triggerSmolDevAgentRun({
+  client,
   deployment,
   prompt,
   accessToken,
   commitMessage,
+  owner,
+  repo,
+  pullNumber,
 }: {
+  pullNumber: number,
+  client: GitHubClient,
+  owner: string,
+  repo: string,
   commitMessage: string,
   deployment: deployments,
   prompt: string,
   accessToken: string,
 }) {
+  console.log('Triggering smol dev agent run:', { owner, repo, pullNumber, prompt })
+
+  await addCommentToPR({
+    body: 'Started smol dev agent run',
+    client,
+    owner,
+    repo,
+    pullNumber,
+  })
+
   await interactWithAgent({
     id: deployment.id,
     type: 'start',
@@ -180,8 +232,8 @@ export async function triggerSmolDevAgentRun({
         Prompt: prompt,
         GitHubAppName: (deployment?.auth as any)?.['github']?.['app_name'],
         GitHubAppEmail: (deployment?.auth as any)?.['github']?.['app_email'],
-        Owner: (deployment?.auth as any)?.['github']?.['owner'],
-        Repo: (deployment?.auth as any)?.['github']?.['repo'],
+        Owner: owner,
+        Repo: repo,
         Branch: (deployment?.auth as any)?.['github']?.['branch'],
       },
     } as any,
@@ -215,10 +267,31 @@ export async function getGHAppInfo({
 }) {
   const result = await client.apps.getAuthenticated()
   const id = result.data.id
-  const name = result.data.name
+  const name = `${result.data.slug}[bot]`
 
   return {
     name,
-    email: `${id}+${name}[bot]@users.noreply.github.com`
+    email: `${id}+${name}@users.noreply.github.com`
   }
+}
+
+export async function addCommentToPR({
+  pullNumber,
+  repo,
+  owner,
+  client,
+  body,
+}: {
+  pullNumber: number,
+  repo: string,
+  owner: string,
+  client: GitHubClient,
+  body: string,
+}) {
+  await client.issues.createComment({
+    owner,
+    repo,
+    issue_number: pullNumber,
+    body,
+  })
 }

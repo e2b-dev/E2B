@@ -5,14 +5,14 @@ from pydantic import BaseModel
 from session.env import EnvVar
 
 # The schema for agent config and interaction data is serializable and
-# the format for interations with the agent is based on a modified JSON-RPC 2.0 spec (should we use less modified JSON-RPC?).
+# the format for interactions with the agent is based on a modified JSON-RPC 2.0 spec (should we use less modified JSON-RPC?).
 
 # This way is to have a schema for communication and a tools that can for example take
 # the implementation of AgentBase class and generate REST server that implements the schema
 # that then be deployed on our platform.
 
 # For local testing there can be a CLI that takes the implementation of AgentBase class
-# and just starts the server and exposes the functionality with a premade web UI where you can test the agent immediately.
+# and just starts the server and exposes the functionality with a pre-made web UI where you can test the agent immediately.
 
 # Later we can start supporting other ways to generate the server, for example a gRPC or WS server.
 # This is orthogonal to the environment where the agent is deployed.

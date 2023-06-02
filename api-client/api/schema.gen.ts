@@ -12,6 +12,8 @@ export interface paths {
     put: operations["create_agent_deployment_deployments_put"];
   };
   "/deployments/{id}": {
+    /** Get Agent Deployment */
+    get: operations["get_agent_deployment_deployments__id__get"];
     /** Delete Agent Deployment */
     delete: operations["delete_agent_deployment_deployments__id__delete"];
   };
@@ -24,8 +26,8 @@ export interface paths {
     post: operations["interact_with_agent_deployment_deployments__id__interactions_post"];
   };
   "/deployments/{id}/logs": {
-    /** Get Agent  Deployment Status */
-    get: operations["get_agent__deployment_status_deployments__id__logs_get"];
+    /** Get Agent Deployment Status */
+    get: operations["get_agent_deployment_status_deployments__id__logs_get"];
   };
 }
 
@@ -111,6 +113,28 @@ export interface operations {
       };
     };
   };
+  /** Get Agent Deployment */
+  get_agent_deployment_deployments__id__get: {
+    parameters: {
+      path: {
+        id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Delete Agent Deployment */
   delete_agent_deployment_deployments__id__delete: {
     parameters: {
@@ -178,8 +202,8 @@ export interface operations {
       };
     };
   };
-  /** Get Agent  Deployment Status */
-  get_agent__deployment_status_deployments__id__logs_get: {
+  /** Get Agent Deployment Status */
+  get_agent_deployment_status_deployments__id__logs_get: {
     parameters: {
       path: {
         id: string;

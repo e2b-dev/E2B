@@ -23,6 +23,7 @@ langchain = "0.0.141"
 chevron = "^0.14.0"
 openai = "^0.27.6"
 uuid = "^1.30"
+aiohttp = "^3.8.4"
 
 [tool.poetry.group.dev]
 optional = true
