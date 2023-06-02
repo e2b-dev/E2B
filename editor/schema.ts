@@ -17,14 +17,14 @@ import ReferenceExtension, {
 
 export const extensions = [
   StarterKit.configure({
-    blockquote: false,
-    bold: false,
+    // blockquote: false,
+    // bold: false,
     // code: false,
     dropcursor: false,
     hardBreak: false,
     // heading: false,
-    horizontalRule: false,
-    italic: false,
+    // horizontalRule: false,
+    // italic: false,
     strike: false,
     paragraph: false,
 

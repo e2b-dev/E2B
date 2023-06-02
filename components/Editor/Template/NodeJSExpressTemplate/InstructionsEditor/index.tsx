@@ -31,7 +31,7 @@ function InstructionsEditor({
   })
 
   return (
-    <div className={clsx('flex flex-col space-y-2 self-stretch pb-6', className)}>
+    <div className={clsx('flex flex-col space-y-2 self-stretch pb-6', 'instructions-editor', className)}>
       {title &&
         <Text
           className="font-bold text-slate-400"

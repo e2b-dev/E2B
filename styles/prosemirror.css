@@ -1,5 +1,22 @@
+.instructions-editor > div {
+  height: 100%;
+  width: 100%;
+}
+
 .ProseMirror {
-  @apply text-slate-600 break-words whitespace-pre-wrap prose prose-sm;
+  @apply h-full w-full;
+  @apply text-gray-100 break-words whitespace-pre-wrap prose-invert prose-sm;
+  @apply prose-h1:font-semibold;
+  @apply prose-h2:font-semibold;
+  @apply prose-h3:font-semibold;
+  @apply prose-h4:font-semibold;
+  @apply prose-ol:list-decimal;
+  @apply prose-ul:list-disc;
+  @apply prose-code:p-0.5 prose-code:bg-gray-800;
+  @apply prose-pre:p-1 prose-pre:bg-gray-800 prose-pre:w-full;
+  @apply prose-hr:border-gray-600 prose-hr:rounded-md;
+  @apply prose-blockquote:p-1 prose-blockquote:text-sm prose-blockquote:rounded-md prose-blockquote:bg-gray-700 prose-blockquote:border prose-blockquote:border-gray-600;
+
   /*
    * NOTE: Disabling overflow anchor fixes a code cell scrolling bug
    * that happens in Chrome:
@@ -30,9 +47,9 @@
   @apply whitespace-pre-wrap break-words;
 }
 
-/* Placeholder (on every new line) */
-.ProseMirror p.is-empty::before {
-  @apply float-left h-0 select-none text-slate-300;
+/* Placeholder (on the first empty line) */
+.ProseMirror p.is-empty:first-of-type::before {
+  @apply float-left h-0 select-none text-gray-400;
   content: attr(data-placeholder);
 }
 
