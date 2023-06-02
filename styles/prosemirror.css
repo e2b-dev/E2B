@@ -3,6 +3,13 @@
   width: 100%;
 }
 
+/* This selects <code/> that isn't inside <pre/> */
+.ProseMirror :not(pre) code {
+  @apply p-1;
+  @apply bg-gray-800;
+  @apply border border-gray-600;
+}
+
 .ProseMirror {
   @apply h-full w-full;
   @apply text-gray-100 break-words whitespace-pre-wrap prose-invert prose-sm;
@@ -12,8 +19,7 @@
   @apply prose-h4:font-semibold;
   @apply prose-ol:list-decimal;
   @apply prose-ul:list-disc;
-  @apply prose-code:p-0.5 prose-code:bg-gray-800;
-  @apply prose-pre:p-1 prose-pre:bg-gray-800 prose-pre:w-full;
+  @apply prose-pre:p-1 prose-pre:bg-gray-800 prose-pre:w-full prose-pre:border prose-pre:border-gray-600;
   @apply prose-hr:border-gray-600 prose-hr:rounded-md;
   @apply prose-blockquote:p-1 prose-blockquote:text-sm prose-blockquote:rounded-md prose-blockquote:bg-gray-700 prose-blockquote:border prose-blockquote:border-gray-600;
 
