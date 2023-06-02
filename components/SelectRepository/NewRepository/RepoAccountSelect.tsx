@@ -17,7 +17,7 @@ export interface GitHubAccount {
 
 export interface Props {
   accounts: GitHubAccount[]
-  selectedAccount?: GitHubAccount
+  selectedAccount: GitHubAccount | null
   onSelectedAccountChange: (account: GitHubAccount) => void
   onAddGithubAccountClick: () => void
 }

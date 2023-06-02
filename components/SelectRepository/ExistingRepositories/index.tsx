@@ -1,6 +1,3 @@
-
-
-
 import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
 import SpinnerIcon from 'components/Spinner'
 import RepositoriesList from './RepositoriesList'
@@ -9,7 +6,7 @@ export interface Props {
   accessToken?: string
   repos?: any[]
   onConfigureGitHubAppClick: (e: any) => void
-  onRepoSelection: (repoID: number) => void
+  onRepoSelection: (repo: any) => void
 }
 
 function ExistingRepositories({
@@ -46,12 +43,7 @@ function ExistingRepositories({
           )}
           {repos && repos.length > 0 && (
             <RepositoriesList
-              repos={repos.sort((a, b) => (new Date(b.updated_at) as any) - (new Date(a.updated_at) as any)).map(r => ({
-                id: r.id,
-                owner: r.owner.login,
-                name: r.name,
-                language: r.language,
-              }))}
+              repos={repos.sort((a, b) => (new Date(b.updated_at) as any) - (new Date(a.updated_at) as any))}
               onRepoSelection={onRepoSelection}
             />
           )}

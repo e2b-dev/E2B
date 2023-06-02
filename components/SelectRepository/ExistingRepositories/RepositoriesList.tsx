@@ -3,15 +3,9 @@ import {
 } from 'lucide-react'
 
 export interface Props {
-  repos: {
-    id: number
-    owner: string
-    name: string
-    language?: string
-  }[]
-  onRepoSelection: (repoID: number) => void
+  repos: any[]
+  onRepoSelection: (repo: any) => void
 }
-
 
 function RepositoriesList({
   repos,
@@ -24,7 +18,7 @@ function RepositoriesList({
           <div className="flex flex-col items-start justify-start">
             <div className="flex items-center space-x-1">
               <Github color="#fff" size={14} />
-              <p className="text-xs leading-6 text-white">{r.owner}</p>
+              <p className="text-xs leading-6 text-white">{r.owner.login}</p>
               <p className="text-xs text-white">/</p>
               <p className="text-sm font-semibold leading-6 text-white">{r.name}</p>
             </div>
@@ -35,7 +29,7 @@ function RepositoriesList({
           <button
             type="button"
             className="rounded bg-white/10 px-2 py-1 text-sm font-medium text-white shadow-sm hover:bg-white/20"
-            onClick={() => onRepoSelection(r.id)}
+            onClick={() => onRepoSelection(r)}
           >
             Select
           </button>

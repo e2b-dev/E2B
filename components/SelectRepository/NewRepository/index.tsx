@@ -1,6 +1,6 @@
 import {
-  useState,
   useEffect,
+  useReducer,
 } from 'react'
 import clsx from 'clsx'
 
@@ -14,61 +14,69 @@ import { fetchRepos } from 'hooks/useRepositories'
 
 import RepoAccountSelect, { GitHubAccount } from './RepoAccountSelect'
 import RepoNameInput from './RepoNameInput'
+import {
+  creationReducer,
+  ActionType,
+} from './newRepoState'
 
 export interface Props {
   accessToken?: string
   accounts: GitHubAccount[]
   onConfigureGitHubAppClick: (e: any) => void
+  onRepoSelection: (repo: any) => void
 }
+
 
 function NewRepository({
   accessToken,
   accounts,
   onConfigureGitHubAppClick,
+  onRepoSelection,
 }: Props) {
-  const [name, setName] = useState('')
   const ghClient = useGitHubClient(accessToken)
-  const [selectedAccount, setSelectedAccount] = useState<GitHubAccount | undefined>()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [state, dispatch] = useReducer(creationReducer, {
+    name: '',
+    account: null,
+    isCreating: false,
+  })
 
   async function handleCreateClick() {
-    if (!selectedAccount || !accessToken || !ghClient) return
-    if (!name) return
-    if (isLoading) return
+    if (!accessToken || !ghClient) return
+    if (!state.account) return
+    if (!state.name) return
+    if (state.isCreating) return
 
     try {
       // Create a repository
-      setError('')
-      setIsLoading(true)
+      dispatch({ type: ActionType.Create, payload: {} })
       const { id: newRepoID } = await createRepo({
         client: ghClient,
-        org: selectedAccount.isOrg ? selectedAccount.name : undefined,
-        name,
+        org: state.account.isOrg ? state.account.name : undefined,
+        name: state.name,
       })
-
       // Check if we have permissions to the new repository,
       // if not - present UI that asks user for a permission to the new repository
-      // if we do - select the new repo
+      // if yes - select the new repo
       const repos = await fetchRepos(ghClient)
+      // Check if newly created repo is in the list of repos we have access to.
       const newRepo = repos.find(r => r.id === newRepoID)
+
       if (newRepo) {
-        console.log('HAS ACCESS TO REPO')
-        //onRepoSelection(newRepo)
+        dispatch({ type: ActionType.Success, payload: {} })
+        onRepoSelection(newRepo)
       } else {
         // TODO
-        console.log('DO NOT HAVE ACCESS TO REPO')
+        console.log('DO NOT HAVE ACCESS TO REPO', newRepo)
       }
     } catch (err: any) {
       console.error('Error creating repository', err)
-      setError(err.message)
-    } finally {
-      setIsLoading(false)
+      dispatch({ type: ActionType.Fail, payload: { error: err } })
     }
   }
 
   useEffect(function selectDefaultAccount() {
-    if (accounts.length > 0) setSelectedAccount(accounts[0])
+    if (accounts.length === 0) return
+    dispatch({ type: ActionType.SelectAccount, payload: { account: accounts[0] } })
   }, [accounts])
 
   return (
@@ -93,31 +101,31 @@ function NewRepository({
         <>
           <RepoAccountSelect
             accounts={accounts}
-            selectedAccount={selectedAccount}
-            onSelectedAccountChange={setSelectedAccount}
+            selectedAccount={state.account}
+            onSelectedAccountChange={acc => dispatch({ type: ActionType.SelectAccount, payload: { account: acc } })}
             onAddGithubAccountClick={configureGitHubApp}
           />
 
           <RepoNameInput
-            value={name}
-            onChange={e => setName(e.target.value)}
+            value={state.name}
+            onChange={e => dispatch({ type: ActionType.UpdateName, payload: { name: e.target.value } })}
           />
 
           <button
             className="w-8 min-w-[64px] h-[24px] min-h-[24px] flex items-center justify-center rounded bg-white/10 px-2 py-1 text-sm text-white font-medium hover:bg-white/20"
             onClick={handleCreateClick}
           >
-            {isLoading ? (
+            {state.isCreating ? (
               <SpinnerIcon />
             ) : (
               <span>Create</span>
             )}
           </button>
 
-          {error && (
+          {state.error && (
             <AlertError
               title="Error creating repository"
-              infoItems={[error]}
+              infoItems={[state.error.message]}
             />
           )}
         </>

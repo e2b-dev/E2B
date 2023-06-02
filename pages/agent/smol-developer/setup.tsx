@@ -85,7 +85,7 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
 function Setup() {
   const supabaseClient = useSupabaseClient()
   const [currentStep, setCurrentStep] = useState(0)
-  const [selectedRepositoryID, setSelectedRepositoryID] = useState<number>()
+  const [selectedRepository, setSelectedRepository] = useState<any | undefined>()
   // const supabaseClient = useSupabaseClient()
   // const session = useSession()
   // const sessionCtx = useSessionContext()
@@ -127,8 +127,9 @@ function Setup() {
   //   })
   // }
 
-  function handleRepoSelection(repoID: number) {
-    setSelectedRepositoryID(repoID)
+  function handleRepoSelection(repo: any) {
+    console.log('SELECTED REPO', repo)
+    setSelectedRepository(repo)
     setCurrentStep(val => {
       const newVal = val + 1
       steps[val].status = 'complete'
@@ -160,7 +161,6 @@ function Setup() {
         {currentStep === 0 ? (
           <SelectRepository
             repos={repos}
-            selectedRepositoryID={selectedRepositoryID}
             onRepoSelection={handleRepoSelection}
             accessToken={accessToken}
           />

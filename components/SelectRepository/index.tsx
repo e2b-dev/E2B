@@ -21,14 +21,12 @@ import { GitHubAccount } from './NewRepository/RepoAccountSelect'
 export interface Props {
   repos?: any[]
   accessToken?: string
-  selectedRepositoryID?: number
-  onRepoSelection: (repoID: number) => void
+  onRepoSelection: (repo: any) => void
 }
 
 function SelectRepository({
   repos,
   accessToken,
-  selectedRepositoryID,
   onRepoSelection,
 }: Props) {
   const user = useUser()
@@ -92,7 +90,7 @@ function SelectRepository({
               accounts={githubAccounts}
               accessToken={accessToken}
               onConfigureGitHubAppClick={configureGitHubApp}
-            // onRepoSelection={onRepoSelection}
+              onRepoSelection={onRepoSelection}
             />
           )}
           <button
