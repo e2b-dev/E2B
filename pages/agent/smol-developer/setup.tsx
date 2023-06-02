@@ -13,6 +13,7 @@ import {
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
+import AgentInstructions from 'components/AgentInstructions'
 import { serverCreds } from 'db/credentials'
 import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
@@ -54,8 +55,8 @@ export interface PostAgentBody {
 
 const steps = [
   { name: 'Select Repository', status: 'current' },
-  { name: 'Write Instructions', status: 'upcoming' },
-  { name: 'Step 3', status: 'upcoming' },
+  { name: 'Your Instructions', status: 'upcoming' },
+  { name: 'Deploy AI Developer', status: 'upcoming' },
 ]
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -188,7 +189,7 @@ function Setup() {
             githubAccounts={githubAccounts}
           />
         ) : currentStep === 1 ? (
-          <div>prompt</div>
+          <AgentInstructions />
         ) : currentStep === 2 ? (
           <div>keys + deploy</div>
         ) : null}

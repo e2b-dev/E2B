@@ -1,11 +1,13 @@
 import { EditorContent } from '@tiptap/react'
 import Fuse from 'fuse.js'
+import clsx from 'clsx'
 
 import Text from 'components/Text'
 import useDocEditor from 'hooks/useDocEditor'
 import { Reference } from 'editor/referenceType'
 
 export interface Props {
+  className?: string,
   title?: string
   placeholder?: string
   onChange: (value: string) => void
@@ -14,6 +16,7 @@ export interface Props {
 }
 
 function InstructionsEditor({
+  className,
   title,
   onChange,
   content,
@@ -28,15 +31,7 @@ function InstructionsEditor({
   })
 
   return (
-    <div className="
-      flex
-      flex-col
-      space-y-2
-      self-stretch
-      pb-6
-      border-b
-      border-slate-200
-    ">
+    <div className={clsx('flex flex-col space-y-2 self-stretch pb-6', className)}>
       {title &&
         <Text
           className="font-bold text-slate-400"
