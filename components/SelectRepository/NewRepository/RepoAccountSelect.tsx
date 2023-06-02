@@ -10,10 +10,7 @@ import {
   Plus,
 } from 'lucide-react'
 
-export interface GitHubAccount {
-  name: string
-  isOrg: boolean
-}
+import { GitHubAccount } from 'utils/github'
 
 export interface Props {
   accounts: GitHubAccount[]

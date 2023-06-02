@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
 import SpinnerIcon from 'components/Spinner'
 import RepositoriesList from './RepositoriesList'
@@ -17,7 +18,10 @@ function ExistingRepositories({
 }: Props) {
 
   return (
-    <div className="overflow-hidden flex-1 flex flex-col items-center justify-center border border-gray-700 rounded-md">
+    <div className={clsx(
+      repos && repos.length > 0 ? 'justify-start' : 'justify-center',
+      'overflow-hidden flex-1 flex flex-col items-center border border-gray-700 rounded-md'
+    )}>
       {!accessToken && (
         <ConfigureGitHubButton
           onClick={onConfigureGitHubAppClick}

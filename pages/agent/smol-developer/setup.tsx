@@ -1,11 +1,15 @@
 import {
   useState,
   useCallback,
+  useEffect,
 } from 'react'
 import useSWRMutation from 'swr/mutation'
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import {
+  useUser,
+  useSupabaseClient,
+} from '@supabase/auth-helpers-react'
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
@@ -14,6 +18,7 @@ import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import useListenOnMessage from 'hooks/useListenOnMessage'
+import { GitHubAccount } from 'utils/github'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -83,17 +88,14 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
 }
 
 function Setup() {
+  const user = useUser()
   const supabaseClient = useSupabaseClient()
+  const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
+  const github = useGitHubClient(accessToken)
+  const [githubAccounts, setGitHubAccounts] = useState<GitHubAccount[]>([])
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedRepository, setSelectedRepository] = useState<any | undefined>()
-  // const supabaseClient = useSupabaseClient()
-  // const session = useSession()
-  // const sessionCtx = useSessionContext()
-  // const [selectedRepo, setSelectedRepo] = useState<RepoSetup>()
-
-  const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
-  const gitHub = useGitHubClient(accessToken)
-  const { repos, refetch } = useRepositories(gitHub)
+  const { repos, refetch } = useRepositories(github)
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -143,6 +145,26 @@ function Setup() {
     location.reload()
   }
 
+  useEffect(function getGitHubAccounts() {
+    async function getAccounts() {
+      if (!github) return
+      const installations = await github.apps.listInstallationsForAuthenticatedUser()
+      const accounts: GitHubAccount[] = []
+      installations.data.installations.forEach(i => {
+        if (i.account) {
+          const ghAccType = (i.account as any)['type']
+          const ghLogin = (i.account as any)['login']
+          // Filter out user accounts that are not the current user (when a user has access to repos that aren't theirs)
+          if (ghAccType === 'User' && ghLogin !== user?.user_metadata?.user_name) return
+          accounts.push({ name: ghLogin, isOrg: ghAccType === 'Organization' })
+        }
+      })
+      setGitHubAccounts(accounts)
+    }
+    getAccounts()
+  }, [github, user])
+
+
   return (
     <div className="h-full flex flex-col items-center justify-start bg-gray-800 py-8 px-6">
       <div className="mb-4 w-full flex items-center justify-between">
@@ -163,6 +185,7 @@ function Setup() {
             repos={repos}
             onRepoSelection={handleRepoSelection}
             accessToken={accessToken}
+            githubAccounts={githubAccounts}
           />
         ) : currentStep === 1 ? (
           <div>prompt</div>

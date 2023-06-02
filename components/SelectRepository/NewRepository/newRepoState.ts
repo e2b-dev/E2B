@@ -69,6 +69,7 @@ export interface State {
   error?: Error
   // TODO: Maybe pass the whole repo?
   selectedRepo?: number
+  requiresPermissions: boolean
 }
 
 export function creationReducer(state: State, action: Action) {
@@ -104,6 +105,7 @@ export function creationReducer(state: State, action: Action) {
     case ActionType.RequestPermissions:
       return {
         ...state,
+        requiresPermissions: true,
       }
     case ActionType.SelectRepo:
       return {

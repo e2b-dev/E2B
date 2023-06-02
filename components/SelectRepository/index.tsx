@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useState,
 } from 'react'
 import {
@@ -9,49 +8,31 @@ import {
   useUser,
 } from '@supabase/auth-helpers-react'
 
-import { configureGitHubApp } from 'utils/github'
+import {
+  configureGitHubApp,
+  GitHubAccount,
+} from 'utils/github'
 import SpinnerIcon from 'components/Spinner'
-import { useGitHubClient } from 'hooks/useGitHubClient'
 
 import RepoSwitch from './RepoSwitch'
 import ExistingRepositories from './ExistingRepositories'
 import NewRepository from './NewRepository'
-import { GitHubAccount } from './NewRepository/RepoAccountSelect'
 
 export interface Props {
   repos?: any[]
   accessToken?: string
   onRepoSelection: (repo: any) => void
+  githubAccounts: GitHubAccount[]
 }
 
 function SelectRepository({
   repos,
   accessToken,
   onRepoSelection,
+  githubAccounts,
 }: Props) {
-  const user = useUser()
   const [selected, setSelected] = useState<'existing' | 'new'>('new')
-  const ghClient = useGitHubClient(accessToken)
-  const [githubAccounts, setGitHubAccounts] = useState<GitHubAccount[]>([])
-
-  useEffect(function getGitHubAccounts() {
-    async function getAccounts() {
-      if (!ghClient) return
-      const installations = await ghClient?.apps.listInstallationsForAuthenticatedUser()
-      const accounts: GitHubAccount[] = []
-      installations.data.installations.forEach(i => {
-        if (i.account) {
-          const ghAccType = (i.account as any)['type']
-          const ghLogin = (i.account as any)['login']
-          // Filter out user accounts that are not the current user (when a user has access to repos that aren't theirs)
-          if (ghAccType === 'User' && ghLogin !== user?.user_metadata?.user_name) return
-          accounts.push({ name: ghLogin, isOrg: ghAccType === 'Organization' })
-        }
-      })
-      setGitHubAccounts(accounts)
-    }
-    getAccounts()
-  }, [ghClient, user])
+  const user = useUser()
 
   return (
     <>
