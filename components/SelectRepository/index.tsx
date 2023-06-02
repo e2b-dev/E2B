@@ -90,9 +90,9 @@ function SelectRepository({
           {selected === 'new' && (
             <NewRepository
               accounts={githubAccounts}
-              // onRepoSelection={onRepoSelection}
               accessToken={accessToken}
               onConfigureGitHubAppClick={configureGitHubApp}
+            // onRepoSelection={onRepoSelection}
             />
           )}
           <button

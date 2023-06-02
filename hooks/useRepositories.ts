@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useState } from 'react'
 import { GitHubClient } from 'github/client'
 
-async function fetchRepos(client: GitHubClient) {
+export async function fetchRepos(client: GitHubClient) {
   const installations = await client.apps.listInstallationsForAuthenticatedUser()
   const repos = await Promise.all(
     installations.data.installations.map(async i => {

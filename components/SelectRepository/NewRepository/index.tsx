@@ -10,6 +10,7 @@ import { configureGitHubApp } from 'utils/github'
 import { useGitHubClient } from 'hooks/useGitHubClient'
 import SpinnerIcon from 'components/Spinner'
 import { createRepo } from 'github/repo'
+import { fetchRepos } from 'hooks/useRepositories'
 
 import RepoAccountSelect, { GitHubAccount } from './RepoAccountSelect'
 import RepoNameInput from './RepoNameInput'
@@ -37,19 +38,27 @@ function NewRepository({
     if (isLoading) return
 
     try {
-      // TODO: Create a repository
+      // Create a repository
       setError('')
       setIsLoading(true)
-      const data = await createRepo({
+      const { id: newRepoID } = await createRepo({
         client: ghClient,
         org: selectedAccount.isOrg ? selectedAccount.name : undefined,
         name,
       })
-      console.log('new repo data', data)
 
-      // TODO: Check if we have permissions to the new repository,
+      // Check if we have permissions to the new repository,
       // if not - present UI that asks user for a permission to the new repository
       // if we do - select the new repo
+      const repos = await fetchRepos(ghClient)
+      const newRepo = repos.find(r => r.id === newRepoID)
+      if (newRepo) {
+        console.log('HAS ACCESS TO REPO')
+        //onRepoSelection(newRepo)
+      } else {
+        // TODO
+        console.log('DO NOT HAVE ACCESS TO REPO')
+      }
     } catch (err: any) {
       console.error('Error creating repository', err)
       setError(err.message)
@@ -95,7 +104,7 @@ function NewRepository({
           />
 
           <button
-            className="w-8 min-w-[64px] flex items-center justify-center rounded bg-white/10 px-2 py-1 text-sm text-white font-medium hover:bg-white/20"
+            className="w-8 min-w-[64px] h-[24px] min-h-[24px] flex items-center justify-center rounded bg-white/10 px-2 py-1 text-sm text-white font-medium hover:bg-white/20"
             onClick={handleCreateClick}
           >
             {isLoading ? (

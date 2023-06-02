@@ -10,8 +10,8 @@ function AlertError({
   infoItems,
 }: Props) {
   return (
-    <div className="rounded-md bg-red-50 p-4">
-      <div className="flex">
+    <div className="rounded-md bg-red-50 p-4 max-w-full">
+      <div className="flex overflow-auto">
         <div className="shrink-0">
           <XCircle className="text-red-400" size={16} aria-hidden="true" />
         </div>
