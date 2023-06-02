@@ -6,14 +6,17 @@ import clsx from 'clsx'
 
 import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
 import AlertError from 'components/AlertError'
-import { configureGitHubApp } from 'utils/github'
+import {
+  configureGitHubApp,
+  GitHubAccount,
+} from 'utils/github'
 import { useGitHubClient } from 'hooks/useGitHubClient'
 import SpinnerIcon from 'components/Spinner'
 import { createRepo } from 'github/repo'
-import { fetchRepos } from 'hooks/useRepositories'
 
-import RepoAccountSelect, { GitHubAccount } from './RepoAccountSelect'
+import RepoAccountSelect from './RepoAccountSelect'
 import RepoNameInput from './RepoNameInput'
+import PermissionsModal from './PermissionsModal'
 import {
   creationReducer,
   ActionType,
@@ -26,7 +29,6 @@ export interface Props {
   onRepoSelection: (repo: any) => void
 }
 
-
 function NewRepository({
   accessToken,
   accounts,
@@ -38,6 +40,7 @@ function NewRepository({
     name: '',
     account: null,
     isCreating: false,
+    requiresPermissions: false,
   })
 
   async function handleCreateClick() {
@@ -47,27 +50,14 @@ function NewRepository({
     if (state.isCreating) return
 
     try {
-      // Create a repository
       dispatch({ type: ActionType.Create, payload: {} })
-      const { id: newRepoID } = await createRepo({
+      const newRepo = await createRepo({
         client: ghClient,
         org: state.account.isOrg ? state.account.name : undefined,
         name: state.name,
       })
-      // Check if we have permissions to the new repository,
-      // if not - present UI that asks user for a permission to the new repository
-      // if yes - select the new repo
-      const repos = await fetchRepos(ghClient)
-      // Check if newly created repo is in the list of repos we have access to.
-      const newRepo = repos.find(r => r.id === newRepoID)
-
-      if (newRepo) {
-        dispatch({ type: ActionType.Success, payload: {} })
-        onRepoSelection(newRepo)
-      } else {
-        // TODO
-        console.log('DO NOT HAVE ACCESS TO REPO', newRepo)
-      }
+      dispatch({ type: ActionType.Success, payload: {} })
+      onRepoSelection(newRepo)
     } catch (err: any) {
       console.error('Error creating repository', err)
       dispatch({ type: ActionType.Fail, payload: { error: err } })
@@ -121,6 +111,11 @@ function NewRepository({
               <span>Create</span>
             )}
           </button>
+
+
+          {state.requiresPermissions && (
+            <PermissionsModal />
+          )}
 
           {state.error && (
             <AlertError

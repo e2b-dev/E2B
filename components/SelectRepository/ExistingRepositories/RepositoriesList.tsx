@@ -14,7 +14,7 @@ function RepositoriesList({
   return (
     <ul role="list" className="w-full overflow-auto divide-y divide-gray-700">
       {repos.map((r) => (
-        <li key={r.id} className="px-2 flex items-center justify-between py-5 h-[70px]">
+        <li key={r.id} className="px-2 flex items-center justify-between h-[60px]">
           <div className="flex flex-col items-start justify-start">
             <div className="flex items-center space-x-1">
               <Github color="#fff" size={14} />
