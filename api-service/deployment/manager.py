@@ -38,7 +38,7 @@ async def agent_run_done(deployment_id: str, prompt: str):
                 "Authorization": f"Bearer {secret_token}",
             },
         ) as response:
-            pass
+            await response.json()
 
 
 async def agent_run_cancelled(deployment_id: str):
@@ -55,7 +55,7 @@ async def agent_run_cancelled(deployment_id: str):
                 "Authorization": f"Bearer {secret_token}",
             },
         ) as response:
-            pass
+            await response.json()
 
 
 class AgentEvents:
