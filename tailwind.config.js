@@ -14,11 +14,11 @@ module.exports = {
       },
       height: { inherit: 'inherit' },
       colors: {
-        green: {
-          400: '#E9F5E6',
-          500: '#d0f7e2',
-          800: '#20BC69',
-        },
+        // green: {
+        //   400: '#E9F5E6',
+        //   500: '#d0f7e2',
+        //   800: '#20BC69',
+        // },
       },
     },
   },

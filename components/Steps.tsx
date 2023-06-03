@@ -8,7 +8,7 @@ function Steps({
   const currentName = steps.find(s => s.status === 'current')?.name
   return (
     <div className="px-px w-full flex items-center justify-center">
-      <ol role="list" className="w-full flex items-center space-x-5">
+      <ol role="list" className="w-full flex items-center space-x-5 mr-1 mt-0.5">
         <div className="w-full flex items-center justify-between">
           <span className="text-xs font-medium text-white">{currentName}</span>
           <p className="text-gray-400 text-xs font-medium">
