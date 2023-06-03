@@ -232,10 +232,11 @@ function Setup() {
         )}
         {currentStep === 1 && (
           <AgentInstructions
-            value={instructions}
-            onChange={setInstructions}
             onBack={() => previousStep()}
-            onNext={() => nextStep()}
+            onNext={i => {
+              setInstructions(i)
+              nextStep()
+            }}
           />
         )}
         {currentStep === 2 && (

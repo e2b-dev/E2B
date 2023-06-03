@@ -7,7 +7,7 @@ import InstructionsEditor from 'components/Editor/Template/NodeJSExpressTemplate
 
 export interface Props {
   onBack: () => void
-  onNext: () => void
+  onNext: (instructions: string) => void
 }
 
 function AgentInstructions({
@@ -26,7 +26,6 @@ function AgentInstructions({
           onChange={setContent}
         />
       </div>
-
       <div className="w-full flex items-center justify-between">
         <button
           className="flex items-center justify-start space-x-1 text-gray-400 hover:text-gray-100 transition-all"
@@ -37,7 +36,7 @@ function AgentInstructions({
         </button>
         <button
           className="px-2 py-1 font-medium rounded-md text-sm border border-transparent bg-indigo-600/30 text-indigo-500 hover:bg-transparent hover:border-indigo-600 transition-all"
-          onClick={onNext}
+          onClick={() => onNext(content)}
         >
           Continue
         </button>
