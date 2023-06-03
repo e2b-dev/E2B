@@ -25,6 +25,7 @@ import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
 import { nanoid } from 'nanoid'
 import { RepoSetup } from 'components/SelectRepository/RepoSetup'
+import { html2markdown } from 'editor/schema'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -112,8 +113,7 @@ function Setup() {
   const [selectedRepository, setSelectedRepository] = useState<RepoSetup>()
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
-
-  const openAIAPIKey = ''
+  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>()
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -129,11 +129,19 @@ function Setup() {
   } = useSWRMutation('/api/agent', handlePostAgent)
 
   async function deployAgent() {
+    if (!selectedRepository) {
+      console.error('No repository selected')
+      return
+    }
+    if (!instructions) {
+      console.error('No instructions provided')
+      return
+    }
+    if (!openAIAPIKey) {
+      console.error('No OpenAI API key provided')
+      return
+    }
     console.log('DEPLOY AGENT', selectedRepository, instructions, openAIAPIKey)
-
-    if (!selectedRepository) return
-    if (!instructions) return
-    if (!openAIAPIKey) return
 
     const modelConfig = getSmolDevModelConfig({
       OpenAI: {
@@ -143,6 +151,9 @@ function Setup() {
       },
     })
 
+    // Transform instruction from prosemirror XML to markdown
+    const [mdBody] = html2markdown(instructions)
+
     await createAgent({
       defaultBranch: selectedRepository.defaultBranch,
       installationID: selectedRepository.installationID,
@@ -151,7 +162,7 @@ function Setup() {
       repositoryID: selectedRepository.repositoryID,
       title: 'Smol PR',
       branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
-      body: instructions,
+      body: mdBody,
       commitMessage: 'Smol dev initial commit',
       modelConfig,
     })
@@ -205,7 +216,6 @@ function Setup() {
     getAccounts()
   }, [github, user])
 
-
   return (
     <div className="h-full flex flex-col items-center justify-start bg-gray-800 py-8 px-6">
       <div className="mb-4 w-full flex items-center justify-between">
@@ -230,10 +240,11 @@ function Setup() {
         )}
         {currentStep === 1 && (
           <AgentInstructions
-            value={instructions}
-            onChange={setInstructions}
             onBack={() => previousStep()}
-            onNext={() => nextStep()}
+            onNext={i => {
+              setInstructions(i)
+              nextStep()
+            }}
           />
         )}
         {currentStep === 2 && (
