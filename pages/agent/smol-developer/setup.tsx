@@ -25,6 +25,7 @@ import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
 import { nanoid } from 'nanoid'
 import { RepoSetup } from 'components/SelectRepository/RepoSetup'
+import { html2markdown } from 'editor/schema'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -129,11 +130,10 @@ function Setup() {
   } = useSWRMutation('/api/agent', handlePostAgent)
 
   async function deployAgent() {
-    console.log('DEPLOY AGENT', selectedRepository, instructions, openAIAPIKey)
-
     if (!selectedRepository) return
     if (!instructions) return
     if (!openAIAPIKey) return
+    console.log('DEPLOY AGENT', selectedRepository, instructions, openAIAPIKey)
 
     const modelConfig = getSmolDevModelConfig({
       OpenAI: {
@@ -143,6 +143,9 @@ function Setup() {
       },
     })
 
+    // Transform instruction from prosemirror XML to markdown
+    const [mdBody] = html2markdown(instructions)
+
     await createAgent({
       defaultBranch: selectedRepository.defaultBranch,
       installationID: selectedRepository.installationID,
@@ -151,7 +154,7 @@ function Setup() {
       repositoryID: selectedRepository.repositoryID,
       title: 'Smol PR',
       branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
-      body: instructions,
+      body: mdBody,
       commitMessage: 'Smol dev initial commit',
       modelConfig,
     })
@@ -204,7 +207,6 @@ function Setup() {
     }
     getAccounts()
   }, [github, user])
-
 
   return (
     <div className="h-full flex flex-col items-center justify-start bg-gray-800 py-8 px-6">
