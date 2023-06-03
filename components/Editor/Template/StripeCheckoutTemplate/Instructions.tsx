@@ -1,5 +1,3 @@
-import useReferences from 'hooks/useReferences'
-
 import InstructionsEditor from './InstructionsEditor'
 
 export interface Props {
@@ -8,8 +6,6 @@ export interface Props {
 }
 
 function Instructions({ description, setDescription }: Props) {
-  const [referenceSearch] = useReferences()
-
   return (
     <div className="
       py-8
@@ -24,7 +20,6 @@ function Instructions({ description, setDescription }: Props) {
       h-full
     ">
       <InstructionsEditor
-        referenceSearch={referenceSearch}
         title="Specify what should the Stripe dev do:"
         placeholder=""
         content={description}

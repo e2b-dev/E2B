@@ -1,7 +1,5 @@
 import { useCallback } from 'react'
 
-import useReferences from 'hooks/useReferences'
-
 import InstructionsEditor from './InstructionsEditor'
 import RequestBodyEditor from './RequestBodyEditor'
 import { RouteInfo } from './useRoutes'
@@ -12,8 +10,6 @@ export interface Props {
 }
 
 function RouteEditor({ route, setRoute }: Props) {
-  const [referenceSearch] = useReferences()
-
   const updateDescription = useCallback((content: string) => {
     if (!route?.id) return
     setRoute({
@@ -67,7 +63,6 @@ function RouteEditor({ route, setRoute }: Props) {
           grow
         ">
           <InstructionsEditor
-            referenceSearch={referenceSearch}
             title="What should this route do?"
             placeholder="This is an API endpoint that ..."
             content={route.Description}
@@ -78,7 +73,6 @@ function RouteEditor({ route, setRoute }: Props) {
             onChange={updateRequestBody}
           />
           <InstructionsEditor
-            referenceSearch={referenceSearch}
             title="Step-by-step instructions"
             placeholder="1. Check if the incoming `email` is not empty ..."
             content={route.Instructions}

@@ -21,7 +21,7 @@ type Repo = {
 };
 
 export const getServerSideProps: GetServerSideProps<{
-  repo: Repo
+  repo: Repo,
 }> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
 

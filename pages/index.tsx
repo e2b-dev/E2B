@@ -1,13 +1,10 @@
 import type { GetServerSideProps } from 'next'
 import useSWRMutation from 'swr/mutation'
-import { LayoutGrid, Plus } from 'lucide-react'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/router'
 
-import ItemList from 'components/ItemList'
-import Text from 'components/Text'
-import { prisma, projects } from 'db/prisma'
-import Button from 'components/Button'
+import AgentOverview from 'components/AgentOverview'
+import { deployments, prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
@@ -34,7 +31,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         include: {
           teams: {
             include: {
-              projects: true,
+              projects: {
+                include: {
+                  deployments: true,
+                },
+              },
             },
           },
         },
@@ -53,8 +54,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   const hasDefaultTeam = user?.users_teams.some(t => t.teams.is_default)
   if (!hasDefaultTeam) {
-    // User is one of the old users without default team - create default team.
-    const team = await prisma.teams.create({
+    // User is without default team -> create default team.
+    await prisma.teams.create({
       data: {
         name: session.user.email || session.user.id,
         is_default: true,
@@ -68,27 +69,23 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           }
         },
       },
-      include: {
-        projects: true,
-      },
     })
 
     return {
       redirect: {
         permanent: false,
-        destination: '/new',
+        destination: '/agent/smol-developer',
       },
     }
   }
 
   // Show projects from all teams.
   const projects = user.users_teams.flatMap(t => t.teams.projects)
-
   if (projects.length === 0) {
     return {
       redirect: {
         permanent: false,
-        destination: '/new',
+        destination: '/agent/smol-developer',
       },
     }
   }
@@ -100,7 +97,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
 }
 
-interface DeleteProjectBody {
+export interface DeleteProjectBody {
   id: string
 }
 
@@ -108,7 +105,6 @@ async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBod
   return await fetch(url, {
     method: 'DELETE',
     body: JSON.stringify(arg),
-
     headers: {
       'Content-Type': 'application/json',
     },
@@ -116,7 +112,7 @@ async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBod
 }
 
 interface Props {
-  projects: projects[]
+  projects: (projects & { deployments: deployments[] })[]
 }
 
 function Home({ projects }: Props) {
@@ -132,61 +128,9 @@ function Home({ projects }: Props) {
   }
 
   return (
-    <div
-      className="
-      flex
-      flex-1
-      flex-col
-      space-x-0
-      space-y-4
-      overflow-hidden
-      p-8
-      lg:flex-row
-      lg:space-y-0
-      lg:space-x-4
-      lg:p-12
-    "
-    >
-      <div className="flex items-start space-x-4 lg:justify-start justify-between">
-        <div className="items-center flex space-x-2">
-          <LayoutGrid size="30px" strokeWidth="1.5" />
-          <Text
-            size={Text.size.S1}
-            text="Agents"
-          />
-        </div>
-
-        <Button
-          icon={<Plus size="16px" />}
-          text="New"
-          variant={Button.variant.Full}
-          onClick={() => router.push('/new')}
-        />
-      </div>
-
-      <div
-        className="
-        flex
-        flex-1
-        flex-col
-        items-stretch
-        overflow-hidden
-        "
-      >
-        <div className="flex flex-1 justify-center overflow-hidden">
-          <ItemList
-            deleteItem={handleDelete}
-            items={projects.map(i => ({
-              ...i,
-              title: i.name,
-              path: '/[projectID]',
-              type: 'Project',
-              icon: <LayoutGrid size="22px" strokeWidth="1.7" />,
-            }))}
-          />
-        </div>
-      </div>
-    </div>
+    <AgentOverview
+      projects={projects}
+    />
   )
 }
 
