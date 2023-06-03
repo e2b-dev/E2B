@@ -52,7 +52,7 @@ def get_model(
                 request_timeout=3600,
                 verbose=True,
                 max_retries=10,
-                streaming=True,
+                streaming=False,
                 callback_manager=callback_manager,
             )
         case ModelProvider.AzureOpenAI.value:

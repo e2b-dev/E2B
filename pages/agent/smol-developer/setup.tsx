@@ -23,9 +23,8 @@ import { TemplateID } from 'state/template'
 import { Creds } from 'hooks/useModelProviderArgs'
 import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
-import { nanoid } from 'nanoid'
 import { RepoSetup } from 'components/SelectRepository/RepoSetup'
-import { html2markdown } from 'editor/schema'
+import { nanoid } from 'nanoid'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -151,9 +150,6 @@ function Setup() {
       },
     })
 
-    // Transform instruction from prosemirror XML to markdown
-    const [mdBody] = html2markdown(instructions)
-
     await createAgent({
       defaultBranch: selectedRepository.defaultBranch,
       installationID: selectedRepository.installationID,
@@ -162,7 +158,7 @@ function Setup() {
       repositoryID: selectedRepository.repositoryID,
       title: 'Smol PR',
       branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
-      body: mdBody.trim(),
+      body: instructions,
       commitMessage: 'Smol dev initial commit',
       modelConfig,
     })
@@ -184,7 +180,6 @@ function Setup() {
       steps[newVal].status = 'current'
       return newVal
     })
-
   }
 
   function handleRepoSelection(repo: any) {
