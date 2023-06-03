@@ -55,7 +55,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
         users_teams: {
           include: {
             teams: true,
-          }
+          },
         }
       },
     })
@@ -106,6 +106,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
     const project = await prisma.projects.create({
       data: {
         id: nanoid(),
+        name: 'Smol developer',
         deployments: {
           create: {
             auth: authData as any,
@@ -113,30 +114,32 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
           },
         },
         teams: {
-          connectOrCreate: {
-            where: {
-              id: defaultTeam?.teams.id,
-            },
-            create: {
-              name: session.user.email || session.user.id,
-              is_default: true,
-              users_teams: {
-                create: {
-                  users: {
-                    connect: {
-                      id: session.user.id,
+          ...defaultTeam
+            ? {
+              connect: {
+                id: defaultTeam.teams.id,
+              },
+            }
+            : {
+              create: {
+                name: session.user.email || session.user.id,
+                is_default: true,
+                users_teams: {
+                  create: {
+                    users: {
+                      connect: {
+                        id: session.user.id,
+                      },
                     },
                   },
                 },
               },
-            },
-          },
+            }
         },
-        name: 'Smol developer',
       },
       include: {
-        deployments: true
-      },
+        deployments: true,
+      }
     })
 
     await createAgentDeployment({
