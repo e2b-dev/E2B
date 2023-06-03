@@ -242,8 +242,8 @@ function Setup() {
           <AgentInstructions
             value={instructions}
             onChange={setInstructions}
-            onBack={() => previousStep()}
-            onNext={() => nextStep()}
+            onBack={previousStep}
+            onNext={nextStep}
           />
         )}
         {currentStep === 2 && (
