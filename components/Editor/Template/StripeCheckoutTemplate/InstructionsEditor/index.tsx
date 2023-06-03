@@ -18,13 +18,11 @@ function InstructionsEditor({
   onChange,
   content,
   placeholder,
-  referenceSearch,
 }: Props) {
   const editor = useDocEditor({
     initialContent: content,
     onContentChange: onChange,
     placeholder,
-    referenceSearch,
   })
 
   return (

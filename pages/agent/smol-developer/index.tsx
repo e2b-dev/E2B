@@ -16,9 +16,9 @@ import { serverCreds } from 'db/credentials'
 import SpinnerIcon from 'components/Spinner'
 
 type Repo = {
-  name: string;
-  stargazers_count: number;
-};
+  name: string
+  stargazers_count: number
+}
 
 export const getServerSideProps: GetServerSideProps<{
   repo: Repo,
