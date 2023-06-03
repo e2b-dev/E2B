@@ -2,7 +2,7 @@ import uuid
 import os
 
 from typing import Annotated, Any
-from fastapi import Depends, FastAPI, HTTPException, WebSocket
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
@@ -11,7 +11,6 @@ from fastapi.security import OAuth2PasswordBearer
 
 from agent.base import AgentInteraction
 from deployment.in_memory import InMemoryDeploymentManager
-from json_rpc import JsonRpcAgentConnection
 from database.base import db
 
 deployment_manager = InMemoryDeploymentManager()
@@ -64,23 +63,6 @@ app.add_middleware(
 @app.get("/health")
 async def health():
     return {"Status": "Ok"}
-
-
-@app.websocket("/dev/agent")
-async def ws_agent_run(websocket: WebSocket, project_id: str):
-    await websocket.accept()
-
-    connection = JsonRpcAgentConnection(
-        project_id=project_id,
-        iter_json=websocket.iter_json,
-        send_json=websocket.send_json,
-    )
-    try:
-        await connection.handle()
-    except:
-        await connection.close()
-    finally:
-        print("Closing websocket")
 
 
 class CreateDeploymentBody(BaseModel):
