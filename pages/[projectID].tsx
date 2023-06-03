@@ -4,7 +4,6 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { ParsedUrlQuery } from 'querystring'
 
 import { prisma, projects } from 'db/prisma'
-import Editor from 'components/Editor'
 import { StoreProvider } from 'state/StoreProvider'
 import { Database } from 'db/supabase'
 import { serverCreds } from 'db/credentials'
@@ -88,9 +87,6 @@ function EditorPage({ project }: Props) {
       client={client}
       project={project}
     >
-      <Editor
-        project={project}
-      />
     </StoreProvider>
   )
 }

@@ -27,7 +27,6 @@ function InstructionsEditor({
     initialContent: content,
     onContentChange: onChange,
     placeholder,
-    referenceSearch,
   })
 
   return (
