@@ -113,7 +113,7 @@ function Setup() {
   const [selectedRepository, setSelectedRepository] = useState<RepoSetup>()
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
-  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>()
+  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('')
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -240,11 +240,10 @@ function Setup() {
         )}
         {currentStep === 1 && (
           <AgentInstructions
+            value={instructions}
+            onChange={setInstructions}
             onBack={() => previousStep()}
-            onNext={i => {
-              setInstructions(i)
-              nextStep()
-            }}
+            onNext={() => nextStep()}
           />
         )}
         {currentStep === 2 && (

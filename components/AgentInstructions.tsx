@@ -8,7 +8,7 @@ export interface Props {
   value: string
   onChange: (value: string) => void
   onBack: () => void
-  onNext: (instructions: string) => void
+  onNext: () => void
 }
 
 function AgentInstructions({
@@ -38,7 +38,7 @@ function AgentInstructions({
         </button>
         <button
           className="px-2 py-1 font-medium rounded-md text-sm border border-transparent bg-indigo-600/30 text-indigo-500 hover:bg-transparent hover:border-indigo-600 transition-all"
-          onClick={() => onNext(content)}
+          onClick={onNext}
         >
           Continue
         </button>
