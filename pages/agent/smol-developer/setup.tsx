@@ -113,8 +113,7 @@ function Setup() {
   const [selectedRepository, setSelectedRepository] = useState<RepoSetup>()
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
-
-  const openAIAPIKey = ''
+  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>()
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -130,9 +129,18 @@ function Setup() {
   } = useSWRMutation('/api/agent', handlePostAgent)
 
   async function deployAgent() {
-    if (!selectedRepository) return
-    if (!instructions) return
-    if (!openAIAPIKey) return
+    if (!selectedRepository) {
+      console.error('No repository selected')
+      return
+    }
+    if (!instructions) {
+      console.error('No instructions provided')
+      return
+    }
+    if (!openAIAPIKey) {
+      console.error('No OpenAI API key provided')
+      return
+    }
     console.log('DEPLOY AGENT', selectedRepository, instructions, openAIAPIKey)
 
     const modelConfig = getSmolDevModelConfig({
