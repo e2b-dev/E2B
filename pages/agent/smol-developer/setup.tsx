@@ -113,7 +113,7 @@ function Setup() {
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
 
-  const openAIAPIKey = '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'
+  const openAIAPIKey = ''
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
