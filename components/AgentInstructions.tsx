@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   ArrowLeft,
 } from 'lucide-react'
@@ -6,15 +5,18 @@ import {
 import InstructionsEditor from 'components/Editor/Template/NodeJSExpressTemplate/InstructionsEditor'
 
 export interface Props {
+  value: string
+  onChange: (value: string) => void
   onBack: () => void
   onNext: () => void
 }
 
 function AgentInstructions({
+  value,
+  onChange,
   onBack,
   onNext,
 }: Props) {
-  const [content, setContent] = useState('')
   return (
     <div className="flex-1 flex flex-col items-start justify-start space-y-2">
       <h3 className="text-white font-bold">What do you want the AI developer to build?</h3>
@@ -22,8 +24,8 @@ function AgentInstructions({
         <InstructionsEditor
           className="absolute inset-0 bg-gray-950 p-4 text-gray-100"
           placeholder="Create a website using Nextjs..."
-          content={content}
-          onChange={setContent}
+          content={value}
+          onChange={onChange}
         />
       </div>
 
