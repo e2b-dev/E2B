@@ -162,7 +162,7 @@ function Setup() {
       repositoryID: selectedRepository.repositoryID,
       title: 'Smol PR',
       branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
-      body: mdBody,
+      body: mdBody.trim(),
       commitMessage: 'Smol dev initial commit',
       modelConfig,
     })
