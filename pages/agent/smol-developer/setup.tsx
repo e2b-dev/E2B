@@ -111,9 +111,9 @@ function Setup() {
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedRepository, setSelectedRepository] = useState<RepoSetup>()
   const { repos, refetch } = useRepositories(github)
+  const [instructions, setInstructions] = useState('')
 
-  const initialPrompt = 'Create chrome extension'
-  const openAIAPIKey = ''
+  const openAIAPIKey = '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'
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -129,10 +129,10 @@ function Setup() {
   } = useSWRMutation('/api/agent', handlePostAgent)
 
   async function deployAgent() {
-    console.log('DEPLOY AGENT', selectedRepository, initialPrompt, openAIAPIKey)
+    console.log('DEPLOY AGENT', selectedRepository, instructions, openAIAPIKey)
 
     if (!selectedRepository) return
-    if (!initialPrompt) return
+    if (!instructions) return
     if (!openAIAPIKey) return
 
     const modelConfig = getSmolDevModelConfig({
@@ -151,21 +151,34 @@ function Setup() {
       repositoryID: selectedRepository.repositoryID,
       title: 'Smol PR',
       branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
-      body: initialPrompt,
+      body: instructions,
       commitMessage: 'Smol dev initial commit',
       modelConfig,
     })
   }
 
-  function handleRepoSelection(repo: any) {
-    console.log('SELECTED REPO', repo)
-    setSelectedRepository(repo)
+  function nextStep() {
     setCurrentStep(val => {
       const newVal = val + 1
       steps[val].status = 'complete'
       steps[newVal].status = 'current'
       return newVal
     })
+  }
+
+  function previousStep() {
+    setCurrentStep(val => {
+      const newVal = val - 1
+      steps[val].status = 'upcoming'
+      steps[newVal].status = 'current'
+      return newVal
+    })
+
+  }
+
+  function handleRepoSelection(repo: any) {
+    setSelectedRepository(repo)
+    nextStep()
   }
 
   async function signOut() {
@@ -216,7 +229,12 @@ function Setup() {
           />
         )}
         {currentStep === 1 && (
-          <AgentInstructions />
+          <AgentInstructions
+            value={instructions}
+            onChange={setInstructions}
+            onBack={() => previousStep()}
+            onNext={() => nextStep()}
+          />
         )}
         {currentStep === 2 && (
           <div>

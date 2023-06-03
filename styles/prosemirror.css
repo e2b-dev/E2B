@@ -55,7 +55,7 @@
 
 /* Placeholder (on the first empty line) */
 .ProseMirror p.is-empty:first-of-type::before {
-  @apply float-left h-0 select-none text-gray-400;
+  @apply float-left h-0 select-none text-gray-500;
   content: attr(data-placeholder);
 }
 
