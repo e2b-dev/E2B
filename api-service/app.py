@@ -30,19 +30,19 @@ def check_token(token: str | None):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    deployments = await db.get_deployments()
-    for deployment in deployments:
-        if (
-            deployment["enabled"]
-            and deployment.get("config", None)
-            and deployment.get("project_id", None)
-        ):
-            print("Restarting deployment", deployment["id"])
-            await deployment_manager.create_deployment(
-                deployment["id"],
-                deployment["project_id"],
-                deployment["config"],
-            )
+    # deployments = await db.get_deployments()
+    # for deployment in deployments:
+    #     if (
+    #         deployment["enabled"]
+    #         and deployment.get("config", None)
+    #         and deployment.get("project_id", None)
+    #     ):
+    #         print("Restarting deployment", deployment["id"])
+    #         await deployment_manager.create_deployment(
+    #             deployment["id"],
+    #             deployment["project_id"],
+    #             deployment["config"],
+    #         )
     yield
 
 

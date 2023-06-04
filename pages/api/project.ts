@@ -3,7 +3,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-import type { DeleteProjectBody } from 'pages'
+import type { DeleteProjectBody } from 'components/AgentOverview'
 
 async function deleteProject(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.body as DeleteProjectBody

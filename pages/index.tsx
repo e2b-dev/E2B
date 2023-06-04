@@ -1,7 +1,5 @@
 import type { GetServerSideProps } from 'next'
-import useSWRMutation from 'swr/mutation'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter } from 'next/router'
 
 import AgentOverview from 'components/AgentOverview'
 import { deployments, prisma, projects } from 'db/prisma'
@@ -97,35 +95,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
 }
 
-export interface DeleteProjectBody {
-  id: string
-}
-
-async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBody }) {
-  return await fetch(url, {
-    method: 'DELETE',
-    body: JSON.stringify(arg),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then(r => r.json())
-}
-
 interface Props {
   projects: (projects & { deployments: deployments[] })[]
 }
 
 function Home({ projects }: Props) {
-  const router = useRouter()
-
-  const {
-    trigger: deleteProject,
-  } = useSWRMutation('/api/project', handleDeleteProject)
-
-  async function handleDelete(id: string) {
-    await deleteProject({ id })
-    router.replace(router.asPath)
-  }
 
   return (
     <AgentOverview

@@ -8,68 +8,82 @@ import clsx from 'clsx'
 import { Grid } from 'lucide-react'
 
 import { projects, deployments } from 'db/prisma'
+import { useRouter } from 'next/router'
 
 const navigation = [
   {
-    name: 'Agents', href: '#', icon: Grid, current: false,
+    name: 'Agents', href: '#', icon: Grid, current: true,
   },
 ]
 const statuses = {
-  offline: 'text-gray-500 bg-gray-100/10',
-  online: 'text-green-400 bg-green-400/10',
-  error: 'text-rose-400 bg-rose-400/10',
+  disabled: 'text-gray-500 bg-gray-100/10',
+  enabled: 'text-green-400 bg-green-400/10',
 }
 const environments = {
   Preview: 'text-gray-400 bg-gray-400/10 ring-gray-400/20',
   Production: 'text-indigo-400 bg-indigo-400/10 ring-indigo-400/30',
 }
-const deployments = [
-  {
-    id: 1,
-    href: '#',
-    projectName: 'smol-ai/developer',
-    teamName: 'Smol Agent',
-    status: 'offline',
-    statusText: 'Initiated 1m 32s ago',
-    description: 'Deployed to GitHub repository ValentaTomas/test',
-    environment: 'PR#11',
-  },
-  {
-    id: 2,
-    href: '#',
-    projectName: 'smol-ai/developer',
-    teamName: 'Smol Agent',
-    status: 'online',
-    statusText: 'Initiated 1m 32s ago',
-    description: 'Deployed to GitHub repository ValentaTomas/test',
-    environment: 'PR#12',
-  },
-]
-const activityItems = [
-  {
-    user: {
-      name: 'Michael Foster',
-      imageUrl:
-        'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+// const deployments = [
+//   {
+//     id: 1,
+//     href: '#',
+//     projectName: 'smol-ai/developer',
+//     teamName: 'Smol Agent',
+//     status: 'offline',
+//     statusText: 'Initiated 1m 32s ago',
+//     description: 'Deployed to GitHub repository ValentaTomas/test',
+//     environment: 'PR#11',
+//   },
+//   {
+//     id: 2,
+//     href: '#',
+//     projectName: 'smol-ai/developer',
+//     teamName: 'Smol Agent',
+//     status: 'online',
+//     statusText: 'Initiated 1m 32s ago',
+//     description: 'Deployed to GitHub repository ValentaTomas/test',
+//     environment: 'PR#12',
+//   },
+// ]
+
+export interface DeleteProjectBody {
+  id: string
+}
+
+async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBody }) {
+  return await fetch(url, {
+    method: 'DELETE',
+    body: JSON.stringify(arg),
+    headers: {
+      'Content-Type': 'application/json',
     },
-    projectName: 'ios-app',
-    commit: '2d89f0c8',
-    branch: 'main',
-    date: '1h',
-    dateTime: '2023-01-23T11:00',
-  },
-  // More items...
-]
+  }).then(r => r.json())
+}
+
 
 export interface Props {
   projects: (projects & { deployments: deployments[] })[]
 }
 
 export default function AgentOverview({ projects }: Props) {
-  const projectWithDeployments = projects
-    .filter(p => p.deployments.length > 0)
-
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const router = useRouter()
+
+  const {
+    trigger: deleteProject,
+  } = useSWRMutation('/api/project', handleDeleteProject)
+
+  async function handleDelete(id: string) {
+    await deleteProject({ id })
+    router.replace(router.asPath)
+  }
+
+  const projectsWithDeployments = projects
+    .filter(p => p.deployments.length === 1 && p.deployments[0].auth !== null)
+    .map(p => ({
+      project: p,
+      deployment: p.deployments[0],
+    }))
 
   return (
     <div>
@@ -223,38 +237,38 @@ export default function AgentOverview({ projects }: Props) {
 
           {/* Deployment list */}
           <ul role="list" className="divide-y divide-white/5">
-            {deployments.map((deployment) => (
-              <li key={deployment.id} className="relative flex items-center space-x-4 p-4 sm:px-6 lg:px-8">
+            {projectsWithDeployments.map((p) => (
+              <li key={p.project.id} className="relative flex items-center space-x-4 p-4 sm:px-6 lg:px-8">
                 <div className="min-w-0 flex-auto">
                   <div className="flex items-center gap-x-3">
-                    <div className={clsx(statuses[deployment.status as keyof typeof statuses], 'flex-none rounded-full p-1')}>
+                    <div className={clsx(statuses[p.deployment.enabled ? 'enabled' : 'disabled'], 'flex-none rounded-full p-1')}>
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
                     <h2 className="min-w-0 text-sm font-semibold leading-6 text-white">
-                      <a href={deployment.href} className="flex gap-x-2">
-                        <span className="truncate">{deployment.teamName}</span>
+                      <a className="flex gap-x-2">
+                        <span className="truncate">{p.project.name}</span>
                         <span className="text-gray-400">-</span>
-                        <span className="whitespace-nowrap">{deployment.projectName}</span>
+                        <span className="whitespace-nowrap">{(p.deployment?.auth as any)?.['github']?.['owner'] + '/' + (p.deployment?.auth as any)?.['github']?.['repo']}</span>
                         <span className="absolute inset-0" />
                       </a>
                     </h2>
                   </div>
                   <div className="mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400">
-                    <p className="truncate">{deployment.description}</p>
+                    <p className="truncate">{`PR#${(p.deployment?.auth as any)?.['github']?.['pull_number']}`}</p>
                     <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 flex-none fill-gray-300">
                       <circle cx={1} cy={1} r={1} />
                     </svg>
-                    <p className="whitespace-nowrap">{deployment.statusText}</p>
+                    {/* <p className="whitespace-nowrap">{p.statusText}</p> */}
                   </div>
                 </div>
-                <div
+                {/* <div
                   className={clsx(
-                    environments[deployment.environment as keyof typeof environments],
+                    environments[p.environment as keyof typeof environments],
                     'rounded-full flex-none py-1 px-2 text-xs font-medium ring-1 ring-inset'
                   )}
                 >
-                  {deployment.environment}
-                </div>
+                  {p.environment}
+                </div> */}
                 <ChevronRightIcon className="h-5 w-5 flex-none text-gray-400" aria-hidden="true" />
               </li>
             ))}
@@ -262,6 +276,9 @@ export default function AgentOverview({ projects }: Props) {
         </main>
 
       </div>
-    </div>
+    </div >
   )
+}
+function useSWRMutation(arg0: string, handleDeleteProject: (url: string, { arg }: { arg: DeleteProjectBody }) => Promise<any>): { trigger: any } {
+  throw new Error('Function not implemented.')
 }
