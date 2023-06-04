@@ -3,7 +3,7 @@
   <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<h2 align="center">Platform for deploying, testing, and monitoring AI agents</h2>
+<h2 align="center">Developer-first AgentOps platform - deploy, test, and monitor AI agents</h2>
 
 <h4 align="center">
   <a href="https://e2b.dev">Website</a> |
