@@ -3,7 +3,7 @@
   <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<p align="center">Open-source platform for building & deploying AI agents - "Vercel for AI agents"</p>
+<h2 align="center">Platform for deploying, testing, and monitoring AI agents</h2>
 
 <h4 align="center">
   <a href="https://e2b.dev">Website</a> |
@@ -20,7 +20,7 @@
   </a>
 </h4>
 
-![e2b-editor](docs-assets/preview.gif)
+<!-- ![e2b-editor](docs-assets/preview.gif) -->
 
 [e2b](https://e2b.dev) or etob (*english2bits*) allows you to deploy AI agents.
 
