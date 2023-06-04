@@ -1,12 +1,10 @@
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import type { ParsedUrlQuery } from 'querystring'
 
-import { prisma, projects } from 'db/prisma'
-import { StoreProvider } from 'state/StoreProvider'
-import { Database } from 'db/supabase'
+import { prisma, projects, deployments } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
+import AgentDetail from 'components/AgentDetail'
 
 interface PathProps extends ParsedUrlQuery {
   projectID: string
@@ -44,6 +42,9 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
           teams: {
             include: {
               projects: {
+                include: {
+                  deployments: true,
+                },
                 where: {
                   id: {
                     equals: projectID,
@@ -76,19 +77,15 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
 }
 
 interface Props {
-  project: projects
+  project: projects & { deployments: deployments[] }
 }
 
-function EditorPage({ project }: Props) {
-  const client = useSupabaseClient<Database>()
-
+function ProjectPage({ project }: Props) {
   return (
-    <StoreProvider
-      client={client}
+    <AgentDetail
       project={project}
-    >
-    </StoreProvider>
+    />
   )
 }
 
-export default EditorPage
+export default ProjectPage

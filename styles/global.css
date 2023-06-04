@@ -18,7 +18,7 @@
 
   html,
   body {
-    @apply h-full;
+    @apply h-full bg-gray-800;
     @apply antialiased;
     text-rendering: optimizeLegibility;
     overflow: overlay;

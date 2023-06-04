@@ -54,7 +54,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   const hasDefaultTeam = user?.users_teams.some(t => t.teams.is_default)
   if (!hasDefaultTeam) {
-    // User is without default team -> create default team.
+    // If user is without default team create default team.
     await prisma.teams.create({
       data: {
         name: session.user.email || session.user.id,
