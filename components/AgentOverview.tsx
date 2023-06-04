@@ -8,7 +8,6 @@ import clsx from 'clsx'
 import { Grid } from 'lucide-react'
 
 import { projects, deployments } from 'db/prisma'
-import { useRouter } from 'next/router'
 
 const navigation = [
   {
@@ -19,47 +18,6 @@ const statuses = {
   disabled: 'text-gray-500 bg-gray-100/10',
   enabled: 'text-green-400 bg-green-400/10',
 }
-const environments = {
-  Preview: 'text-gray-400 bg-gray-400/10 ring-gray-400/20',
-  Production: 'text-indigo-400 bg-indigo-400/10 ring-indigo-400/30',
-}
-// const deployments = [
-//   {
-//     id: 1,
-//     href: '#',
-//     projectName: 'smol-ai/developer',
-//     teamName: 'Smol Agent',
-//     status: 'offline',
-//     statusText: 'Initiated 1m 32s ago',
-//     description: 'Deployed to GitHub repository ValentaTomas/test',
-//     environment: 'PR#11',
-//   },
-//   {
-//     id: 2,
-//     href: '#',
-//     projectName: 'smol-ai/developer',
-//     teamName: 'Smol Agent',
-//     status: 'online',
-//     statusText: 'Initiated 1m 32s ago',
-//     description: 'Deployed to GitHub repository ValentaTomas/test',
-//     environment: 'PR#12',
-//   },
-// ]
-
-export interface DeleteProjectBody {
-  id: string
-}
-
-async function handleDeleteProject(url: string, { arg }: { arg: DeleteProjectBody }) {
-  return await fetch(url, {
-    method: 'DELETE',
-    body: JSON.stringify(arg),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then(r => r.json())
-}
-
 
 export interface Props {
   projects: (projects & { deployments: deployments[] })[]
@@ -67,16 +25,6 @@ export interface Props {
 
 export default function AgentOverview({ projects }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const router = useRouter()
-
-  const {
-    trigger: deleteProject,
-  } = useSWRMutation('/api/project', handleDeleteProject)
-
-  async function handleDelete(id: string) {
-    await deleteProject({ id })
-    router.replace(router.asPath)
-  }
 
   const projectsWithDeployments = projects
     .filter(p => p.deployments.length === 1 && p.deployments[0].auth !== null)
@@ -278,7 +226,4 @@ export default function AgentOverview({ projects }: Props) {
       </div>
     </div >
   )
-}
-function useSWRMutation(arg0: string, handleDeleteProject: (url: string, { arg }: { arg: DeleteProjectBody }) => Promise<any>): { trigger: any } {
-  throw new Error('Function not implemented.')
 }
