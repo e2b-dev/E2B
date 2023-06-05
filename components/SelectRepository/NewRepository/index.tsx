@@ -53,7 +53,7 @@ function NewRepository({
     if (!state.name) return
     if (state.isCreating) return
 
-    posthog?.capture('create repository', {
+    posthog?.capture('created repository', {
       account: state.account.name,
       repository: `${state.account.name}/${state.name}`,
     })

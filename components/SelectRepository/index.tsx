@@ -38,12 +38,12 @@ function SelectRepository({
   const posthog = usePostHog()
 
   function configure() {
-    posthog?.capture('configure github app')
+    posthog?.capture('configured github app')
     configureGitHubApp()
   }
 
   function selectRepo(repo: RepoSetup) {
-    posthog?.capture('select repository', {
+    posthog?.capture('selected repository', {
       repository: repo.fullName,
     })
     onRepoSelection(repo)
