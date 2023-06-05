@@ -10,6 +10,7 @@ import {
   useUser,
   useSupabaseClient,
 } from '@supabase/auth-helpers-react'
+import { usePostHog } from 'posthog-js/react'
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
@@ -112,6 +113,8 @@ function Setup() {
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
   const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('')
+  const posthog = usePostHog()
+
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -188,6 +191,7 @@ function Setup() {
 
   async function signOut() {
     await supabaseClient.auth.signOut()
+    posthog?.reset(true)
     location.reload()
   }
 

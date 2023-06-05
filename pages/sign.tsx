@@ -17,9 +17,6 @@ function SignIn() {
   useEffect(() => {
     if (user) {
       router.push('/')
-
-
-      
     }
   }, [user, router])
 

@@ -79,14 +79,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   // Show projects from all teams.
   const projects = user.users_teams.flatMap(t => t.teams.projects)
-  if (projects.length === 0) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: '/agent/smol-developer',
-      },
-    }
-  }
 
   return {
     props: {

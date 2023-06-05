@@ -24,6 +24,14 @@ const nextConfig = {
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/:path*',
+        destination: 'https://app.posthog.com/:path*',
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
