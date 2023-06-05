@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { nanoid } from 'nanoid'
+import { client as posthog } from 'utils/posthog'
 
 import { PostAgentResponse } from 'pages/agent/smol-developer/setup'
 import { prisma } from 'db/prisma'
@@ -8,6 +9,7 @@ import { serverCreds } from 'db/credentials'
 import { PostAgentBody } from 'pages/agent/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
 import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, triggerSmolDevAgentRun } from 'github/pullRequest'
+import { TemplateID } from 'state/template'
 
 export interface DeploymentAuthData {
   github: {
@@ -169,6 +171,16 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       owner,
       repo,
     }
+
+    posthog?.capture({
+      distinctId: user.id,
+      event: 'triggered intial agent run',
+      properties: {
+        agent: TemplateID.SmolDeveloper,
+        pr_url: pullURL,
+        repository: `${owner}/${repo}`,
+      },
+    })
 
     res.status(200).json(response)
   } catch (err: any) {

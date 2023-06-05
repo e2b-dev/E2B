@@ -13,6 +13,7 @@ import {
   GitHubAccount,
 } from 'utils/github'
 import SpinnerIcon from 'components/Spinner'
+import { usePostHog } from 'posthog-js/react'
 
 import { RepoSetup, Repos } from './RepoSetup'
 import RepoSwitch from './RepoSwitch'
@@ -34,6 +35,19 @@ function SelectRepository({
 }: Props) {
   const [selected, setSelected] = useState<'existing' | 'new'>('new')
   const user = useUser()
+  const posthog = usePostHog()
+
+  function configure() {
+    posthog?.capture('configure github app')
+    configureGitHubApp()
+  }
+
+  function selectRepo(repo: RepoSetup) {
+    posthog?.capture('select repository', {
+      repository: repo.fullName,
+    })
+    onRepoSelection(repo)
+  }
 
   return (
     <>
@@ -63,22 +77,22 @@ function SelectRepository({
             <ExistingRepositories
               accessToken={accessToken}
               repos={repos}
-              onConfigureGitHubAppClick={configureGitHubApp}
-              onRepoSelection={onRepoSelection}
+              onConfigureGitHubAppClick={configure}
+              onRepoSelection={selectRepo}
             />
           )}
           {selected === 'new' && (
             <NewRepository
               accounts={githubAccounts}
               accessToken={accessToken}
-              onConfigureGitHubAppClick={configureGitHubApp}
-              onRepoSelection={onRepoSelection}
+              onConfigureGitHubAppClick={configure}
+              onRepoSelection={selectRepo}
             />
           )}
           <button
             type="button"
             className="flex justify-start items-center text-xs font-medium space-x-1 text-white/80 hover:text-white transition-all mt-4 rounded-md"
-            onClick={configureGitHubApp}
+            onClick={configure}
           >
             <span>Configure GitHub Permissions</span>
             <ArrowRight size={14} />

@@ -115,7 +115,6 @@ function Setup() {
   const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('')
   const posthog = usePostHog()
 
-
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
       setAccessToken(event.data.accessToken)

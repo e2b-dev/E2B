@@ -3,9 +3,11 @@ import {
   Webhooks,
   createNodeMiddleware,
 } from '@octokit/webhooks'
+import { client as posthog } from 'utils/posthog'
 
 import { getDeploymentsForPR, getGHAccessToken, getPromptFromPR, triggerSmolDevAgentRun } from './pullRequest'
 import { getGHInstallationClient } from './installationClient'
+import { TemplateID } from 'state/template'
 
 export async function getGitHubWebhooksMiddleware() {
   const webhooks = new Webhooks({
@@ -72,7 +74,28 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
         client,
         pullNumber: issueNumber,
       })
+
+      deployment
+        .projects
+        .teams
+        .users_teams
+        .map(team => team.users)
+        .flat()
+        .forEach(user => {
+          posthog?.capture({
+            distinctId: user.id,
+            event: 'triggered agent with PR action',
+            properties: {
+              agent: TemplateID.SmolDeveloper,
+              pr_action: payload.action,
+              pr_url: payload.pull_request.url,
+              repository: payload.repository.full_name,
+            },
+          })
+        })
     }))
+
+  await posthog?.shutdownAsync()
 
   console.log('Trigger results', res)
 }
@@ -146,7 +169,27 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
         client,
         pullNumber,
       })
+      deployment
+        .projects
+        .teams
+        .users_teams
+        .map(team => team.users)
+        .flat()
+        .forEach(user => {
+          posthog?.capture({
+            distinctId: user.id,
+            event: 'triggered agent by PR comment action',
+            properties: {
+              agent: TemplateID.SmolDeveloper,
+              pr_comment_action: payload.action,
+              pr_url: pr.data.url,
+              repository: payload.repository.full_name,
+            },
+          })
+        })
     }))
+
+  await posthog?.shutdownAsync()
 
   console.log('Trigger results', res)
 }

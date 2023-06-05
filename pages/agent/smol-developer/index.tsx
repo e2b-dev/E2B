@@ -11,6 +11,8 @@ import {
   useUser,
   useSessionContext,
 } from '@supabase/auth-helpers-react'
+import { usePostHog } from 'posthog-js/react'
+
 
 import { serverCreds } from 'db/credentials'
 import SpinnerIcon from 'components/Spinner'
@@ -49,6 +51,7 @@ function SmolDeveloper({
   const user = useUser()
   const sessionCtx = useSessionContext()
   const router = useRouter()
+  const posthog = usePostHog()
 
   useEffect(() => {
     if (user) {
@@ -85,7 +88,10 @@ function SmolDeveloper({
           </svg>
           <div className="m-auto max-w-xl text-center lg:mx-0 lg:flex-auto lg:py-32 lg:text-left">
             <div className="flex flex-col space-y-4 items-center lg:items-start">
-              <a href="#" className="inline-flex space-x-6">
+              <a
+                href="/" className="inline-flex space-x-6"
+                onMouseDown={() => posthog?.capture('Clicked link to e2b homepage')}
+              >
                 <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
                   Runs on <b>e2b</b>
                 </span>
@@ -103,6 +109,7 @@ function SmolDeveloper({
                 href="https://github.com/smol-ai/developer"
                 rel="noreferer noopener"
                 target="_blank"
+                onMouseDown={() => posthog?.capture('Clicked link', { url: 'https://github.com/smol-ai/developer' })}
               >smol developer
               </a>{' '}
               AI agent.
@@ -116,6 +123,7 @@ function SmolDeveloper({
                   href="https://github.com/smol-ai/developer"
                   rel="noreferer noopener"
                   target="_blank"
+                  onMouseDown={() => posthog?.capture('Clicked link', { url: 'https://github.com/smol-ai/developer' })}
                 >
                   <span>smol-ai/developer</span>
                   <span>Stars {repo.stargazers_count.toLocaleString()}</span>
@@ -152,7 +160,13 @@ function SmolDeveloper({
                     <span>Continue with GitHub</span>
                   </button>
                 }
-                <a href="#" className="text-sm font-semibold leading-6 text-white">
+                <a
+                  className="text-sm font-semibold leading-6 text-white"
+                  href="https://github.com/smol-ai/developer"
+                  rel="noreferer noopener"
+                  target="_blank"
+                  onMouseDown={() => posthog?.capture('Clicked link', { url: 'https://github.com/smol-ai/developer' })}
+                >
                   Learn about smol developer  <span aria-hidden="true">→</span>
                 </a>
               </div>

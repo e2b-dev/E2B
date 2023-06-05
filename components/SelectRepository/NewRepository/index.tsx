@@ -3,6 +3,7 @@ import {
   useReducer,
 } from 'react'
 import clsx from 'clsx'
+import { usePostHog } from 'posthog-js/react'
 
 import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
 import AlertError from 'components/AlertError'
@@ -37,6 +38,8 @@ function NewRepository({
   onRepoSelection,
 }: Props) {
   const ghClient = useGitHubClient(accessToken)
+  const posthog = usePostHog()
+
   const [state, dispatch] = useReducer(creationReducer, {
     name: '',
     account: null,
@@ -49,6 +52,11 @@ function NewRepository({
     if (!state.account) return
     if (!state.name) return
     if (state.isCreating) return
+
+    posthog?.capture('create repository', {
+      account: state.account.name,
+      repository: `${state.account.name}/${state.name}`,
+    })
 
     try {
       dispatch({ type: ActionType.Create, payload: {} })

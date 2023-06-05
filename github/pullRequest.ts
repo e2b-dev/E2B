@@ -154,6 +154,21 @@ export async function getDeploymentsForPR({
   installationID: number,
 }) {
   return await prisma.deployments.findMany({
+    include: {
+      projects: {
+        include: {
+          teams: {
+            include: {
+              users_teams: {
+                include: {
+                  users: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     where: {
       enabled: true,
       AND: [

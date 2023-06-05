@@ -16,10 +16,16 @@ import Layout from 'components/Layout'
 // Initialize PostHog
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+    // Use the ingest endpoint for all requests
     api_host: `${window.location.protocol}//${window.location.host}/ingest`,
-    // Enable debug mode in development
+    // Disable session recording when not in production
+    disable_session_recording: process.env.NODE_ENV !== 'production',
+    advanced_disable_toolbar_metrics: true,
     loaded: (posthog) => {
-      if (process.env.NODE_ENV === 'development') posthog.debug()
+      // Enable debug mode in development
+      if (process.env.NODE_ENV === 'development') {
+        posthog.debug()
+      }
     }
   })
 }
