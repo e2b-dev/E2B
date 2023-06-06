@@ -69,20 +69,6 @@ class Database:
             on_conflict="id",
         ).execute()
 
-    async def update_project_developent_logs(
-        self,
-        id: str,
-        logs: List[Step],
-    ) -> None:
-        await self.client.table(TABLE_PROJECTS).update(
-            {
-                "development_logs": logs,
-            }
-        ).eq(
-            "id",
-            id,
-        ).execute()
-
     async def get_env_vars(self, project_id: str) -> List[EnvVar]:
         """The return value is a list of dicts with the following keys:
         - key: The name of an env var

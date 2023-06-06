@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from database.base import db
 from deployment.manager import AgentDeploymentManager, AgentDeployment
@@ -16,12 +16,15 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
         id: str,
         project_id: str,
         config: Any,
+        logs: List[Any],
     ):
+        print("Creating deployment", config, logs)
         deployment = await AgentDeployment.from_factory(
             id,
             get_agent_factory_from_template(config["templateID"]),
             project_id,
             config,
+            logs,
         )
         try:
             await db.create_deployment(deployment.id, project_id, config)
@@ -37,7 +40,9 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
         id: str,
         project_id: str,
         config: Any,
+        logs: List[Any],
     ):
+        print(">>>> Updating deployment", id, config, logs)
         try:
             await self.remove_deployment(id)
         except:
@@ -47,6 +52,7 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
             id,
             project_id,
             config,
+            logs,
         )
 
     async def remove_deployment(self, id: str):

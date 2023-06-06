@@ -73,7 +73,8 @@ class SmolAgent(AgentBase):
 
         await self.on_logs(
             {
-                "message": f"hi its me, 🐣the smol developer🐣! you said you wanted:\n{user_prompt}"
+                "message": f"hi its me, 🐣the smol developer🐣! you said you wanted:\n{user_prompt}",
+                "type": "info",
             }
         )
         playground = None
@@ -84,18 +85,39 @@ class SmolAgent(AgentBase):
             playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
             await playground.open()
 
+            await self.on_logs(
+                {
+                    "message": f"Created playground",
+                    "properties": {
+                        "playground": "created",
+                        "id": playground.id,
+                    },
+                    "type": "playground",
+                }
+            )
+
             fixClockDrift = asyncio.ensure_future(playground.sync_clock())
 
             rootdir = "/repo"
             await playground.change_rootdir(rootdir)
             await playground.make_dir(rootdir)
+
             await playground.clone_repo(
                 repo_address=repo_address,
                 rootdir=rootdir,
                 branch=branch,
             )
 
-            await self.on_logs({"message": f"Cloned repository"})
+            await self.on_logs(
+                {
+                    "message": f"Cloned repository",
+                    "properties": {
+                        "tool": "git",
+                        "repository": f"{owner}/{repo}",
+                    },
+                    "type": "tool",
+                }
+            )
 
             extensions_to_skip = [
                 ".png",
@@ -182,6 +204,18 @@ Begin generating the code now.
 """,
                 )
 
+                await self.on_logs(
+                    {
+                        "message": f"Generated file",
+                        "properties": {
+                            "content": filecode,
+                            "filename": filename,
+                            "model": "gpt-4",
+                        },
+                        "type": "model",
+                    }
+                )
+
                 return filename, filecode
 
             filepaths_string = await generate_response(
@@ -193,6 +227,18 @@ only list the filepaths you would write, and return them as a python list of str
 do not add any other explanation, only return a python list of strings.
 """,
                 user_prompt,
+            )
+
+            await self.on_logs(
+                {
+                    "message": f"Generating filepaths",
+                    "properties": {
+                        "prompt": user_prompt,
+                        "result": filepaths_string,
+                        "model": "gpt-4",
+                    },
+                    "type": "model",
+                }
             )
 
             # parse the result into a python list
@@ -215,9 +261,44 @@ do not add any other explanation, only return a python list of strings.
                     prompt=user_prompt,
                 )
 
+                await self.on_logs(
+                    {
+                        "message": f"Generated file",
+                        "properties": {
+                            "filename": filename,
+                            "result": filecode,
+                            "model": "gpt-4",
+                        },
+                        "type": "model",
+                    }
+                )
+
                 await playground.write_file(os.path.join(rootdir, filename), filecode)
+
+                await self.on_logs(
+                    {
+                        "message": f"Saved file",
+                        "properties": {
+                            "filename": filename,
+                            "content": filecode,
+                            "tool": "filesystem",
+                        },
+                        "type": "tool",
+                    }
+                )
+
             else:
                 await clean_dir()
+
+                await self.on_logs(
+                    {
+                        "message": f"Cleaned root directory",
+                        "properties": {
+                            "tool": "filesystem",
+                        },
+                        "type": "tool",
+                    }
+                )
 
                 # understand shared dependencies
                 shared_dependencies = await generate_response(
@@ -237,11 +318,35 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
 """,
                     user_prompt,
                 )
+
+                await self.on_logs(
+                    {
+                        "message": f"Generated shared dependencies",
+                        "properties": {
+                            "result": shared_dependencies,
+                            "model": "gpt-4",
+                        },
+                        "type": "model",
+                    }
+                )
+
                 print(shared_dependencies)
                 # write shared dependencies as a md file inside the generated directory
                 await playground.write_file(
                     os.path.join(rootdir, "shared_dependencies.md"),
                     shared_dependencies,
+                )
+
+                await self.on_logs(
+                    {
+                        "message": f"Saved shared dependencies",
+                        "properties": {
+                            "filename": "shared_dependencies.md",
+                            "content": shared_dependencies,
+                            "tool": "filesystem",
+                        },
+                        "type": "tool",
+                    }
                 )
 
                 # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
@@ -262,7 +367,19 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 generated_files = await asyncio.gather(*tasks)
 
                 for name, content in generated_files:
-                    await playground.write_file(os.path.join(rootdir, name), content)
+                    filepath = os.path.join(rootdir, name)
+                    await playground.write_file(filepath, content)
+                    await self.on_logs(
+                        {
+                            "message": f"Saved file",
+                            "properties": {
+                                "filename": filepath,
+                                "content": content,
+                                "tool": "filesystem",
+                            },
+                            "type": "tool",
+                        }
+                    )
 
             await fixClockDrift
             await playground.push_repo(
@@ -272,6 +389,20 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 git_email=git_app_email,
                 git_name=git_app_name,
             )
+
+            await self.on_logs(
+                {
+                    "message": f"Pushed repository",
+                    "properties": {
+                        "repository_url": f"https://github.com/{owner}/{repo}",
+                        "branch": branch,
+                        "commit_message": commit_message,
+                        "tool": "git",
+                    },
+                    "type": "tool",
+                }
+            )
+
             await self.on_interaction_request(
                 AgentInteractionRequest(
                     interaction_id=str(uuid.uuid4()),
@@ -286,6 +417,15 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
         finally:
             if playground is not None:
                 playground.close()
+                await self.on_logs(
+                    {
+                        "message": f"Closed playground",
+                        "properties": {
+                            "playground": "closed",
+                        },
+                        "type": "playground",
+                    }
+                )
 
     async def _dev_in_background(self, instructions: Any):
         print("Start agent run", self._dev_loop)
