@@ -31,7 +31,7 @@ class AgentInteractionRequest(BaseModel):
     data: Any = None
 
 
-OnLogs = Callable[[List[Any]], Coroutine[None, None, None]]
+OnLogs = Callable[[Any], Coroutine[None, None, None]]
 OnInteractionRequest = Callable[[AgentInteractionRequest], Coroutine[None, None, None]]
 GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
 

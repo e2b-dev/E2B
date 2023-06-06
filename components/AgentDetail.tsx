@@ -46,21 +46,6 @@ const deployments = [
     environment: 'PR#12',
   },
 ]
-const activityItems = [
-  {
-    user: {
-      name: 'Michael Foster',
-      imageUrl:
-        'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    projectName: 'ios-app',
-    commit: '2d89f0c8',
-    branch: 'main',
-    date: '1h',
-    dateTime: '2023-01-23T11:00',
-  },
-  // More items...
-]
 
 export interface Props {
   project: projects
@@ -69,10 +54,6 @@ export interface Props {
 export default function AgentDetail({ project }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const deployment = useDeployment(project)
-
-  deployment?.logs.forEach(log => {
-    console.log(log)
-  })
 
   return (
     <div>

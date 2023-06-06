@@ -39,7 +39,14 @@ export default function AgentOverview({ projects }: Props) {
   }
 
   const projectsWithDeployments = projects
-    .filter(p => p.deployments.length === 1 && p.deployments[0].auth !== null)
+    .filter(p => {
+      if (p.deployments.length !== 1) return false
+
+      const deployment = p.deployments[0]
+      const auth = deployment.auth as any
+      if (!auth) return false
+      return true
+    })
     .map(p => ({
       project: p,
       deployment: p.deployments[0],

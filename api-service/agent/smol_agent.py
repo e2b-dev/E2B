@@ -71,11 +71,11 @@ class SmolAgent(AgentBase):
         # TODO: Apply the file rewrite when the agent was invoked via PR code comment
         file: str | None = instructions.get("File", None)
 
-        # await self.on_logs(
-        #     {
-        #         "message": f"hi its me, 🐣the smol developer🐣! you said you wanted:\n{user_prompt}"
-        #     }
-        # )
+        await self.on_logs(
+            {
+                "message": f"hi its me, 🐣the smol developer🐣! you said you wanted:\n{user_prompt}"
+            }
+        )
         playground = None
         try:
             callback_manager = AsyncCallbackManager([StreamingStdOutCallbackHandler()])
@@ -94,6 +94,8 @@ class SmolAgent(AgentBase):
                 rootdir=rootdir,
                 branch=branch,
             )
+
+            await self.on_logs({"message": f"Cloned repository"})
 
             extensions_to_skip = [
                 ".png",
