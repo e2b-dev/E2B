@@ -13,7 +13,6 @@ import {
 } from '@supabase/auth-helpers-react'
 import { usePostHog } from 'posthog-js/react'
 
-
 import { serverCreds } from 'db/credentials'
 import SpinnerIcon from 'components/Spinner'
 
