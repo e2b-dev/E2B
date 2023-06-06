@@ -90,6 +90,8 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
               pr_action: payload.action,
               pr_url: payload.pull_request.url,
               repository: payload.repository.full_name,
+              pr_body: payload.pull_request.body,
+              prompt,
             },
           })
         })
@@ -184,6 +186,8 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
               pr_comment_action: payload.action,
               pr_url: pr.data.url,
               repository: payload.repository.full_name,
+              comment_body: payload.comment.body,
+              prompt,
             },
           })
         })
