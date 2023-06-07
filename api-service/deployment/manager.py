@@ -1,8 +1,10 @@
 import os
-from re import L
-from agent.output.work_queue import WorkQueue
+import uuid
 import aiohttp
 import json
+from datetime import datetime, timedelta, date
+
+from agent.output.work_queue import WorkQueue
 
 from typing import Any, Callable, Coroutine, List
 from abc import abstractmethod, ABC
@@ -70,6 +72,9 @@ class AgentEvents:
         )
 
     async def add_log(self, log: Any):
+        date = datetime.now()
+        log["timestamp"] = str(date)
+        log["id"] = str(uuid.uuid4())
         self.logs.append(log)
         self.log_que.schedule(self.logs)
 

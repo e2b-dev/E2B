@@ -170,6 +170,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       issueID,
       owner,
       repo,
+      projectID: project.id,
     }
 
     posthog?.capture({

@@ -26,6 +26,7 @@ import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
 import { RepoSetup } from 'components/SelectRepository/RepoSetup'
 import { nanoid } from 'nanoid'
+import { useRouter } from 'next/router'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -78,6 +79,7 @@ export interface PostAgentResponse {
   repo: string
   pullURL: string
   pullNumber: number
+  projectID: string
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
@@ -114,6 +116,7 @@ function Setup() {
   const [instructions, setInstructions] = useState('')
   const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('')
   const posthog = usePostHog()
+  const router = useRouter()
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -126,6 +129,7 @@ function Setup() {
 
   const {
     trigger: createAgent,
+    data,
   } = useSWRMutation('/api/agent', handlePostAgent)
 
   async function deployAgent() {
@@ -151,7 +155,7 @@ function Setup() {
       },
     })
 
-    await createAgent({
+    const response = await createAgent({
       defaultBranch: selectedRepository.defaultBranch,
       installationID: selectedRepository.installationID,
       owner: selectedRepository.owner,
@@ -163,6 +167,12 @@ function Setup() {
       commitMessage: 'Smol dev initial commit',
       modelConfig,
     })
+
+    // if (response) {
+    //   router.push(`/${response.projectID}`)
+    // } else {
+    //   console.error('No response from agent creation')
+    // }
   }
 
   function nextStep() {
