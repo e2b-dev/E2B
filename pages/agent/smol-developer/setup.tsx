@@ -156,28 +156,29 @@ function Setup() {
       },
     })
 
-    setIsDeploying(true)
-
-    const response = await createAgent({
-      defaultBranch: selectedRepository.defaultBranch,
-      installationID: selectedRepository.installationID,
-      owner: selectedRepository.owner,
-      repo: selectedRepository.repo,
-      repositoryID: selectedRepository.repositoryID,
-      title: 'Smol PR',
-      branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
-      body: instructions,
-      commitMessage: 'Smol dev initial commit',
-      modelConfig,
-    })
-
-    // if (response) {
-    //   router.push(`/${response.projectID}`)
-    // } else {
-    //   console.error('No response from agent creation')
-    // }
-    setIsDeploying(false)
-    // TODO: Redirect to the dashboard.
+    try {
+      setIsDeploying(true)
+      const response = await createAgent({
+        defaultBranch: selectedRepository.defaultBranch,
+        installationID: selectedRepository.installationID,
+        owner: selectedRepository.owner,
+        repo: selectedRepository.repo,
+        repositoryID: selectedRepository.repositoryID,
+        title: 'Smol PR',
+        branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
+        body: instructions,
+        commitMessage: 'Smol dev initial commit',
+        modelConfig,
+      })
+      // Redirect to the dashboard.
+      if (response) {
+        router.push(`/${response.projectID}`)
+      } else {
+        console.error('No response from agent creation')
+      }
+    } finally {
+      setIsDeploying(false)
+    }
   }
 
   function nextStep() {
