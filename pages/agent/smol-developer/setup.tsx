@@ -10,10 +10,12 @@ import {
   useUser,
   useSupabaseClient,
 } from '@supabase/auth-helpers-react'
+import { nanoid } from 'nanoid'
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
 import AgentInstructions from 'components/AgentInstructions'
+import DeployAgent from 'components/DeployAgent'
 import { serverCreds } from 'db/credentials'
 import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
@@ -23,8 +25,7 @@ import { TemplateID } from 'state/template'
 import { Creds } from 'hooks/useModelProviderArgs'
 import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
-import { RepoSetup } from 'components/SelectRepository/RepoSetup'
-import { nanoid } from 'nanoid'
+import { RepoSetup } from 'utils/repoSetup'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -49,9 +50,9 @@ export interface PostAgentBody {
 }
 
 const steps = [
-  { name: 'Select Repository', status: 'current' },
-  { name: 'Your Instructions', status: 'upcoming' },
-  { name: 'Deploy AI Developer', status: 'upcoming' },
+  { name: 'Select Repository' },
+  { name: 'Your Instructions' },
+  { name: 'Overview & Deploy' },
 ]
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -108,11 +109,12 @@ function Setup() {
   const [accessToken, setAccessToken] = useLocalStorage<string | undefined>('gh_access_token', undefined)
   const github = useGitHubClient(accessToken)
   const [githubAccounts, setGitHubAccounts] = useState<GitHubAccount[]>([])
-  const [currentStep, setCurrentStep] = useState(0)
+  const [currentStepIdx, setCurrentStepIdx] = useState(0)
   const [selectedRepository, setSelectedRepository] = useState<RepoSetup>()
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
   const [openAIAPIKey, setOpenAIAPIKey] = useState('')
+  const [isDeploying, setIsDeploying] = useState(false)
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -140,7 +142,6 @@ function Setup() {
       console.error('No OpenAI API key provided')
       return
     }
-    console.log('DEPLOY AGENT', selectedRepository, instructions, openAIAPIKey)
 
     const modelConfig = getSmolDevModelConfig({
       OpenAI: {
@@ -149,6 +150,8 @@ function Setup() {
         },
       },
     })
+
+    setIsDeploying(true)
 
     await createAgent({
       defaultBranch: selectedRepository.defaultBranch,
@@ -162,24 +165,16 @@ function Setup() {
       commitMessage: 'Smol dev initial commit',
       modelConfig,
     })
+    setIsDeploying(false)
+    // TODO: Redirect to the dashboard.
   }
 
   function nextStep() {
-    setCurrentStep(val => {
-      const newVal = val + 1
-      steps[val].status = 'complete'
-      steps[newVal].status = 'current'
-      return newVal
-    })
+    setCurrentStepIdx(currentStepIdx + 1)
   }
 
   function previousStep() {
-    setCurrentStep(val => {
-      const newVal = val - 1
-      steps[val].status = 'upcoming'
-      steps[newVal].status = 'current'
-      return newVal
-    })
+    setCurrentStepIdx(currentStepIdx - 1)
   }
 
   function handleRepoSelection(repo: any) {
@@ -223,9 +218,12 @@ function Setup() {
         </button>
       </div>
       <div className="overflow-hidden flex-1 mx-auto w-full max-w-lg flex flex-col">
-        <Steps steps={steps} />
+        <Steps
+          currentIdx={currentStepIdx}
+          steps={steps}
+        />
         <div className="h-px bg-gray-700 my-8" />
-        {currentStep === 0 && (
+        {currentStepIdx === 0 && (
           <SelectRepository
             repos={repos}
             onRepoSelection={handleRepoSelection}
@@ -233,23 +231,26 @@ function Setup() {
             githubAccounts={githubAccounts}
           />
         )}
-        {currentStep === 1 && (
+        {currentStepIdx === 1 && (
           <AgentInstructions
             value={instructions}
+            onTemplateSelect={t => { console.log(t); setInstructions(t) }}
             onChange={setInstructions}
             onBack={previousStep}
             onNext={nextStep}
           />
         )}
-        {currentStep === 2 && (
-          <div>
-            <button
-              className="w-8 min-w-[64px] h-[24px] min-h-[24px] flex items-center justify-center rounded bg-white/10 px-2 py-1 text-sm text-white font-medium hover:bg-white/20"
-              onClick={deployAgent}
-            >
-              <span>Deploy</span>
-            </button>
-          </div>
+        {currentStepIdx === 2 && (
+          <DeployAgent
+            selectedRepo={selectedRepository!}
+            instructions={instructions}
+            onInstructionsChange={setInstructions}
+            onChangeRepo={() => setCurrentStepIdx(0)}
+            onChangeTemplate={() => setCurrentStepIdx(1)}
+            onBack={previousStep}
+            onDeploy={deployAgent}
+            isDeploying={isDeploying}
+          />
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useRepositories } from 'hooks/useRepositories'
+import type { useRepositories } from 'hooks/useRepositories'
 
 export interface RepoSetup {
   fullName: string
