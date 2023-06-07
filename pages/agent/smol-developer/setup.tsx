@@ -156,6 +156,8 @@ function Setup() {
       },
     })
 
+    setIsDeploying(true)
+
     const response = await createAgent({
       defaultBranch: selectedRepository.defaultBranch,
       installationID: selectedRepository.installationID,
@@ -174,6 +176,8 @@ function Setup() {
     // } else {
     //   console.error('No response from agent creation')
     // }
+    setIsDeploying(false)
+    // TODO: Redirect to the dashboard.
   }
 
   function nextStep() {
