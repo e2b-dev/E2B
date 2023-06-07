@@ -14,8 +14,8 @@ import {
 } from 'utils/github'
 import SpinnerIcon from 'components/Spinner'
 import { usePostHog } from 'posthog-js/react'
+import { RepoSetup, Repos } from 'utils/repoSetup'
 
-import { RepoSetup, Repos } from './RepoSetup'
 import RepoSwitch from './RepoSwitch'
 import ExistingRepositories from './ExistingRepositories'
 import NewRepository from './NewRepository'

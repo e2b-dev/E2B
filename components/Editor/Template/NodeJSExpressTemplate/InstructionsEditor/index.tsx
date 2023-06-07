@@ -1,3 +1,7 @@
+import {
+  forwardRef,
+  useImperativeHandle,
+} from 'react'
 import { EditorContent } from '@tiptap/react'
 import Fuse from 'fuse.js'
 import clsx from 'clsx'
@@ -15,18 +19,30 @@ export interface Props {
   referenceSearch?: Fuse<Reference>
 }
 
-function InstructionsEditor({
+export interface InstructionsEditorRef {
+  setContent: (content: string) => void
+}
+
+const InstructionsEditor = forwardRef<InstructionsEditorRef, Props>(function InstructionsEditor({
   className,
   title,
   onChange,
   content,
   placeholder,
   referenceSearch,
-}: Props) {
+}: Props, ref) {
   const editor = useDocEditor({
     initialContent: content,
     onContentChange: onChange,
     placeholder,
+  })
+
+  useImperativeHandle(ref, () => {
+    return {
+      setContent(content: string) {
+        editor?.commands.setContent(content)
+      }
+    }
   })
 
   return (
@@ -43,6 +59,6 @@ function InstructionsEditor({
       />
     </div>
   )
-}
+})
 
 export default InstructionsEditor
