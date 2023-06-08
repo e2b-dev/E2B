@@ -29,7 +29,7 @@ function SignIn() {
           scopes: 'email',
         }
       })
-    } finally {
+    } catch {
       setIsSigningIn(false)
     }
   }
