@@ -117,7 +117,7 @@ function Setup() {
   const [instructions, setInstructions] = useState('')
   const posthog = usePostHog()
   const router = useRouter()
-  const [openAIAPIKey, setOpenAIAPIKey] = useState('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')
+  const [openAIAPIKey, setOpenAIAPIKey] = useState('')
   const [isDeploying, setIsDeploying] = useState(false)
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
