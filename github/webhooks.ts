@@ -16,6 +16,8 @@ export async function getGitHubWebhooksMiddleware() {
 
   webhooks.on('issue_comment', issueCommentHandler)
   webhooks.on('pull_request.edited', pullRequestEditHandler)
+  webhooks.on('pull_request.reopened', pullRequestReopenedHandler)
+  webhooks.on('pull_request.closed', pullRequestClosedHandler)
 
   // TODO: Add handling for review comments
   return createNodeMiddleware(webhooks, {
@@ -26,6 +28,20 @@ export async function getGitHubWebhooksMiddleware() {
       error: console.error,
     }
   })
+}
+
+const pullRequestReopenedHandler: HandlerFunction<'pull_request.reopened', unknown> = async (event) => {
+  // TODO: Enable smol dev agent for the PR if it was disabled
+  // TODO: Update agent info about PR+merge status (saving timestamps here too?)
+  // TODO: Log the analytics event for this
+
+  // TODO: Save default PR state when creating it
+}
+
+const pullRequestClosedHandler: HandlerFunction<'pull_request.closed', unknown> = async (event) => {
+  // TODO: Disable agent for that PR
+  // TODO: Update agent info about PR+merge status (saving timestamps here too?)
+  // TODO: Log the analytics event for this
 }
 
 const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = async (event) => {
