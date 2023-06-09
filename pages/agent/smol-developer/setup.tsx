@@ -143,18 +143,9 @@ function Setup() {
       console.error('No instructions provided')
       return
     }
-    if (!openAIAPIKey) {
-      console.error('No OpenAI API key provided')
-      return
-    }
+    console.log('DEPLOY AGENT', selectedRepository, instructions)
 
-    const modelConfig = getSmolDevModelConfig({
-      OpenAI: {
-        creds: {
-          openai_api_key: openAIAPIKey,
-        },
-      },
-    })
+    const modelConfig = getSmolDevModelConfig({})
 
     try {
       setIsDeploying(true)

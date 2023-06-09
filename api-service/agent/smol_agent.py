@@ -21,6 +21,8 @@ from agent.base import AgentBase, AgentInteractionRequest, GetEnvs
 from session.playground import Playground
 from playground_client.exceptions import NotFoundException
 
+default_openai_api_key = os.environ.get("OPENAI_API_KEY", None)
+
 
 class SmolAgent(AgentBase):
     max_run_time = 60 * 60  # in seconds
@@ -80,6 +82,12 @@ class SmolAgent(AgentBase):
         playground = None
         try:
             callback_manager = AsyncCallbackManager([StreamingStdOutCallbackHandler()])
+
+            # Use default openai api key if not provided
+            self.config.args["openai_api_key"] = self.config.args.get(
+                "openai_api_key", default_openai_api_key
+            )
+
             model = get_model(self.config, callback_manager)
 
             playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
@@ -330,7 +338,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     }
                 )
 
-                print(shared_dependencies)
                 # write shared dependencies as a md file inside the generated directory
                 await playground.write_file(
                     os.path.join(rootdir, "shared_dependencies.md"),
@@ -348,23 +355,31 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "type": "tool",
                     }
                 )
+                # Maximum number of allowed concurrent calls
+                semaphore = asyncio.Semaphore(3)
+
+                async def with_semaphore(coro):
+                    async with semaphore:
+                        return await coro
 
                 # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
-                tasks = [
-                    generate_file(
-                        name,
-                        filepaths_string=filepaths_string,
-                        shared_dependencies=shared_dependencies,
-                        prompt=user_prompt,
+                coros = [
+                    with_semaphore(
+                        generate_file(
+                            name,
+                            filepaths_string=filepaths_string,
+                            shared_dependencies=shared_dependencies,
+                            prompt=user_prompt,
+                        )
                     )
                     for name in list_actual
-                    # Filter out files that end with extensions we don't want to generate
+                    # Filter out files that end with esxtensions we don't want to generate
                     if not any(
                         name.endswith(extension) for extension in extensions_to_skip
                     )
                 ]
 
-                generated_files = await asyncio.gather(*tasks)
+                generated_files = await asyncio.gather(*coros)
 
                 for name, content in generated_files:
                     filepath = os.path.join(rootdir, name)
@@ -416,7 +431,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
             raise
         finally:
             if playground is not None:
-                playground.close()
+                await playground.close()
                 await self.on_logs(
                     {
                         "message": f"Closed playground",
@@ -428,7 +443,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 )
 
     async def _dev_in_background(self, instructions: Any):
-        print("Start agent run", self._dev_loop)
+        print("Start agent run", bool(self._dev_loop))
 
         if self._dev_loop:
             print("Agent run already in progress - restarting")
