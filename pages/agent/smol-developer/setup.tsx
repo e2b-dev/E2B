@@ -112,7 +112,6 @@ function Setup() {
   const [selectedRepository, setSelectedRepository] = useState<RepoSetup>()
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
-  const [openAIAPIKey, setOpenAIAPIKey] = useState<string>('')
   const posthog = usePostHog()
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
@@ -137,19 +136,9 @@ function Setup() {
       console.error('No instructions provided')
       return
     }
-    if (!openAIAPIKey) {
-      console.error('No OpenAI API key provided')
-      return
-    }
-    console.log('DEPLOY AGENT', selectedRepository, instructions, openAIAPIKey)
+    console.log('DEPLOY AGENT', selectedRepository, instructions)
 
-    const modelConfig = getSmolDevModelConfig({
-      OpenAI: {
-        creds: {
-          openai_api_key: openAIAPIKey,
-        },
-      },
-    })
+    const modelConfig = getSmolDevModelConfig({})
 
     await createAgent({
       defaultBranch: selectedRepository.defaultBranch,

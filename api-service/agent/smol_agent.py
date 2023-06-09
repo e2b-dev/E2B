@@ -21,6 +21,8 @@ from agent.base import AgentBase, AgentInteractionRequest, GetEnvs
 from session.playground import Playground
 from playground_client.exceptions import NotFoundException
 
+default_openai_api_key = os.environ.get("OPENAI_API_KEY", None)
+
 
 class SmolAgent(AgentBase):
     max_run_time = 60 * 60  # in seconds
@@ -74,6 +76,12 @@ class SmolAgent(AgentBase):
         playground = None
         try:
             callback_manager = AsyncCallbackManager([StreamingStdOutCallbackHandler()])
+
+            # Use default openai api key if not provided
+            self.config.args["openai_api_key"] = self.config.args.get(
+                "openai_api_key", default_openai_api_key
+            )
+
             model = get_model(self.config, callback_manager)
 
             playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
