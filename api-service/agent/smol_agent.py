@@ -245,13 +245,22 @@ class SmolAgent(AgentBase):
                     shared_dependencies,
                 )
 
+                # Maximum number of allowed concurrent calls
+                semaphore = asyncio.Semaphore(3)
+
+                async def with_semaphore(coro):
+                    async with semaphore:
+                        return await coro
+
                 # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
                 coros = [
-                    generate_file(
-                        name,
-                        filepaths_string=filepaths_string,
-                        shared_dependencies=shared_dependencies,
-                        prompt=user_prompt,
+                    with_semaphore(
+                        generate_file(
+                            name,
+                            filepaths_string=filepaths_string,
+                            shared_dependencies=shared_dependencies,
+                            prompt=user_prompt,
+                        )
                     )
                     for name in list_actual
                     # Filter out files that end with esxtensions we don't want to generate
@@ -260,13 +269,7 @@ class SmolAgent(AgentBase):
                     )
                 ]
 
-                generated_files = []
-
-                for coro in coros:
-                    res = await coro
-                    generated_files.append(res)
-
-                # generated_files = await asyncio.gather(*coros)
+                generated_files = await asyncio.gather(*coros)
 
                 for name, content in generated_files:
                     await playground.write_file(os.path.join(rootdir, name), content)
