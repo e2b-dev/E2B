@@ -14,8 +14,8 @@ import {
 } from 'utils/github'
 import SpinnerIcon from 'components/Spinner'
 import { usePostHog } from 'posthog-js/react'
+import { RepoSetup, Repos } from 'utils/repoSetup'
 
-import { RepoSetup, Repos } from './RepoSetup'
 import RepoSwitch from './RepoSwitch'
 import ExistingRepositories from './ExistingRepositories'
 import NewRepository from './NewRepository'
@@ -38,12 +38,12 @@ function SelectRepository({
   const posthog = usePostHog()
 
   function configure() {
-    posthog?.capture('configure github app')
+    posthog?.capture('configured github app')
     configureGitHubApp()
   }
 
   function selectRepo(repo: RepoSetup) {
-    posthog?.capture('select repository', {
+    posthog?.capture('selected repository', {
       repository: repo.fullName,
     })
     onRepoSelection(repo)

@@ -1,8 +1,10 @@
 import clsx from 'clsx'
+
 import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
 import SpinnerIcon from 'components/Spinner'
+import { RepoSetup, Repos } from 'utils/repoSetup'
+
 import RepositoriesList from './RepositoriesList'
-import { RepoSetup, Repos } from '../RepoSetup'
 
 export interface Props {
   accessToken?: string

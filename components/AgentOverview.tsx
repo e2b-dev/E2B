@@ -1,8 +1,5 @@
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-// import {
-//   XMarkIcon,
-// } from '@heroicons/react/24/outline'
 import { ChevronRightIcon } from '@heroicons/react/20/solid'
 import clsx from 'clsx'
 import { Grid } from 'lucide-react'
@@ -14,9 +11,13 @@ import { useRouter } from 'next/router'
 
 const navigation = [
   {
-    name: 'Agents', href: '#', icon: Grid, current: true,
+    name: 'Agents',
+    href: '#',
+    icon: Grid,
+    current: true,
   },
 ]
+
 const statuses = {
   disabled: 'text-gray-500 bg-gray-100/10',
   enabled: 'text-green-400 bg-green-400/10',
@@ -38,15 +39,27 @@ export default function AgentOverview({ projects }: Props) {
     router.push('/sign')
   }
 
+  function selectAgent(projectID: string) {
+    posthog?.capture('selected deployed agent', { projectID: projectID })
+    router.push(`/${projectID}`)
+  }
+
   const projectsWithDeployments = projects
-    .filter(p => p.deployments.length === 1 && p.deployments[0].auth !== null)
+    .filter(p => {
+      if (p.deployments.length !== 1) return false
+
+      const deployment = p.deployments[0]
+      const auth = deployment.auth as any
+      if (!auth) return false
+      return deployment.enabled
+    })
     .map(p => ({
       project: p,
       deployment: p.deployments[0],
     }))
 
   return (
-    <div>
+    <div className="overflow-hidden">
       <Transition.Root show={sidebarOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50 xl:hidden" onClose={setSidebarOpen}>
           <Transition.Child
@@ -136,7 +149,6 @@ export default function AgentOverview({ projects }: Props) {
           </div>
         </Dialog>
       </Transition.Root>
-
       {/* Static sidebar for desktop */}
       <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-72 xl:flex-col">
         {/* Sidebar component, swap this element with another sidebar if you like */}
@@ -188,16 +200,19 @@ export default function AgentOverview({ projects }: Props) {
       </div>
 
       <div className="xl:pl-72">
-        <main className="">
+        <main className="overflow-hidden">
           <header className="flex items-center justify-between border-b border-white/5 p-4 sm:p-6 lg:px-8">
             <h1 className="text-base font-semibold leading-7 text-white">Agents</h1>
           </header>
 
           {/* Deployment list */}
-          <ul role="list" className="divide-y divide-white/5">
+          <ul role="list" className="divide-y divide-white/5 overflow-auto">
             {projectsWithDeployments.map((p) => (
               <li key={p.project.id} className="relative flex items-center space-x-4 p-4 sm:px-6 lg:px-8">
-                <div className="min-w-0 flex-auto">
+                <div
+                  className="min-w-0 flex-auto cursor-pointer"
+                  onClick={() => selectAgent(p.project.id)}
+                >
                   <div className="flex items-center gap-x-3">
                     <div className={clsx(statuses[p.deployment.enabled ? 'enabled' : 'disabled'], 'flex-none rounded-full p-1')}>
                       <div className="h-2 w-2 rounded-full bg-current" />
@@ -216,23 +231,15 @@ export default function AgentOverview({ projects }: Props) {
                     <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 flex-none fill-gray-300">
                       <circle cx={1} cy={1} r={1} />
                     </svg>
-                    {/* <p className="whitespace-nowrap">{p.statusText}</p> */}
                   </div>
                 </div>
-                {/* <div
-                  className={clsx(
-                    environments[p.environment as keyof typeof environments],
-                    'rounded-full flex-none py-1 px-2 text-xs font-medium ring-1 ring-inset'
-                  )}
-                >
-                  {p.environment}
-                </div> */}
-                <ChevronRightIcon className="h-5 w-5 flex-none text-gray-400" aria-hidden="true" />
+                <ChevronRightIcon
+                  className="h-5 w-5 flex-none text-gray-400" aria-hidden="true"
+                />
               </li>
             ))}
           </ul>
         </main>
-
       </div>
     </div >
   )

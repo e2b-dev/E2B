@@ -14,6 +14,7 @@ import {
 import { useGitHubClient } from 'hooks/useGitHubClient'
 import SpinnerIcon from 'components/Spinner'
 import { createRepo } from 'github/repo'
+import { RepoSetup } from 'utils/repoSetup'
 
 import RepoAccountSelect from './RepoAccountSelect'
 import RepoNameInput from './RepoNameInput'
@@ -22,7 +23,6 @@ import {
   creationReducer,
   ActionType,
 } from './newRepoState'
-import { RepoSetup } from '../RepoSetup'
 
 export interface Props {
   accessToken?: string
@@ -53,7 +53,7 @@ function NewRepository({
     if (!state.name) return
     if (state.isCreating) return
 
-    posthog?.capture('create repository', {
+    posthog?.capture('created repository', {
       account: state.account.name,
       repository: `${state.account.name}/${state.name}`,
     })

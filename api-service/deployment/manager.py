@@ -1,6 +1,10 @@
 import os
+import uuid
 import aiohttp
 import json
+from datetime import datetime, timedelta, date
+
+from agent.output.work_queue import WorkQueue
 
 from typing import Any, Callable, Coroutine, List
 from abc import abstractmethod, ABC
@@ -59,17 +63,24 @@ async def agent_run_cancelled(deployment_id: str):
 
 
 class AgentEvents:
-    def __init__(self, id: str) -> None:
+    def __init__(self, id: str, logs: List[Any]) -> None:
         self.id = id
-        self.logs: List[Any] = []
+        self.logs: List[Any] = logs
         self.interaction_requests: List[AgentInteractionRequest] = []
+        self.log_que = WorkQueue[List[Any]](
+            lambda logs: db.update_deployment_logs(self.id, logs)
+        )
 
-    async def overwrite_logs(self, logs: List[Any]):
-        self.logs = logs
-        await db.update_deployment_logs(self.id, logs)
+    async def add_log(self, log: Any):
+        date = datetime.now()
+        log["timestamp"] = str(date)
+        log["id"] = str(uuid.uuid4())
+        self.logs.append(log)
+        self.log_que.schedule(self.logs)
 
     async def add_interaction_request(
-        self, interaction_request: AgentInteractionRequest
+        self,
+        interaction_request: AgentInteractionRequest,
     ):
         self.interaction_requests.append(interaction_request)
         match interaction_request.type:
@@ -99,12 +110,13 @@ class AgentDeployment:
         factory: AgentFactory,
         project_id: str,
         config: Any,
+        logs: List[Any],
     ):
-        event_handler = AgentEvents(deployment_id)
+        event_handler = AgentEvents(deployment_id, logs)
         agent = await factory(
             config,
             lambda: db.get_env_vars(project_id),
-            event_handler.overwrite_logs,
+            event_handler.add_log,
             event_handler.add_interaction_request,
         )
         return cls(deployment_id, agent, event_handler)

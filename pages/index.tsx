@@ -30,6 +30,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           teams: {
             include: {
               projects: {
+                orderBy: {
+                  created_at: 'desc',
+                },
                 include: {
                   deployments: true,
                 },
@@ -92,7 +95,7 @@ interface Props {
 }
 
 function Home({ projects }: Props) {
-
+  console.log(projects)
   return (
     <AgentOverview
       projects={projects}

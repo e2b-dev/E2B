@@ -28,28 +28,8 @@ def check_token(token: str | None):
     raise HTTPException(status_code=401, detail="Invalid token")
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # deployments = await db.get_deployments()
-    # for deployment in deployments:
-    #     if (
-    #         deployment["enabled"]
-    #         and deployment.get("config", None)
-    #         and deployment.get("project_id", None)
-    #     ):
-    #         print("Restarting deployment", deployment["id"])
-    #         await deployment_manager.create_deployment(
-    #             deployment["id"],
-    #             deployment["project_id"],
-    #             deployment["config"],
-    #         )
-    yield
-
-
-# TODO: Fix proxying - https://fastapi.tiangolo.com/advanced/behind-a-proxy/
 app = FastAPI(
     title="e2b-api",
-    lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -90,6 +70,7 @@ async def create_agent_deployment(
             db_deployment["id"],
             project_id,
             body.config,
+            db_deployment.get("logs") or [],
         )
         return {"id": deployment.id}
     else:
@@ -98,6 +79,7 @@ async def create_agent_deployment(
             id,
             project_id,
             body.config,
+            [],
         )
         return {"id": deployment.id}
 
@@ -137,35 +119,24 @@ async def interact_with_agent_deployment(
     check_token(token)
     deployment = await deployment_manager.get_deployment(id)
     if not deployment:
-        raise HTTPException(status_code=404, detail="Deployment not found")
+        # Get deployment from db if enabled
+        db_deployment = await db.get_deployment(id)
+        if (
+            db_deployment
+            and db_deployment["enabled"]
+            and db_deployment.get("config", None)
+            and db_deployment.get("project_id", None)
+        ):
+            deployment = await deployment_manager.create_deployment(
+                db_deployment["id"],
+                db_deployment["project_id"],
+                db_deployment["config"],
+                db_deployment.get("logs") or [],
+            )
+        else:
+            raise HTTPException(status_code=404, detail="Deployment not found")
 
     result = await deployment.agent.interaction(body)
     if body.interaction_id:
         deployment.event_handler.remove_interaction_request(body.interaction_id)
     return result
-
-
-@app.get("/deployments/{id}/interaction_requests")
-async def get_agent_intereaction_requests(
-    id: str,
-    token: Annotated[str, Depends(oauth2_scheme)],
-):
-    check_token(token)
-    deployment = await deployment_manager.get_deployment(id)
-    if not deployment:
-        raise HTTPException(status_code=404, detail="Deployment not found")
-
-    return {"interaction_requests": deployment.event_handler.interaction_requests}
-
-
-@app.get("/deployments/{id}/logs")
-async def get_agent_deployment_status(
-    id: str,
-    token: Annotated[str, Depends(oauth2_scheme)],
-):
-    check_token(token)
-    deployment = await deployment_manager.get_deployment(id)
-    if not deployment:
-        raise HTTPException(status_code=404, detail="Deployment not found")
-
-    return {"logs": deployment.event_handler.logs}

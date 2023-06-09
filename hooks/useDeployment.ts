@@ -12,7 +12,7 @@ function useDeployment(project: projects) {
   const client = useSupabaseClient<Database>()
 
   useEffect(function init() {
-    const i = setInterval(async () => {
+    (async () => {
       const deployment = await client
         .from(deploymentsTable)
         .select('*')
@@ -24,11 +24,7 @@ function useDeployment(project: projects) {
       if (!deployment) return
       if (deployment.error) return
       setInitDeployment(deployment.data as unknown as deployments)
-    }, 1000)
-
-    return () => {
-      clearInterval(i)
-    }
+    })()
   }, [client, project.id])
 
   // Sometimes a large field from realtime server can be missing because of the internal POSTGRES/TOAST workings.
