@@ -238,7 +238,7 @@ class SmolAgent(AgentBase):
                 """,
                     user_prompt,
                 )
-                print(shared_dependencies)
+
                 # write shared dependencies as a md file inside the generated directory
                 await playground.write_file(
                     os.path.join(rootdir, "shared_dependencies.md"),
@@ -246,7 +246,7 @@ class SmolAgent(AgentBase):
                 )
 
                 # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
-                tasks = [
+                coros = [
                     generate_file(
                         name,
                         filepaths_string=filepaths_string,
@@ -254,13 +254,19 @@ class SmolAgent(AgentBase):
                         prompt=user_prompt,
                     )
                     for name in list_actual
-                    # Filter out files that end with extensions we don't want to generate
+                    # Filter out files that end with esxtensions we don't want to generate
                     if not any(
                         name.endswith(extension) for extension in extensions_to_skip
                     )
                 ]
 
-                generated_files = await asyncio.gather(*tasks)
+                generated_files = []
+
+                for coro in coros:
+                    res = await coro
+                    generated_files.append(res)
+
+                # generated_files = await asyncio.gather(*coros)
 
                 for name, content in generated_files:
                     await playground.write_file(os.path.join(rootdir, name), content)
@@ -289,7 +295,7 @@ class SmolAgent(AgentBase):
                 playground.close()
 
     async def _dev_in_background(self, instructions: Any):
-        print("Start agent run", self._dev_loop)
+        print("Start agent run", bool(self._dev_loop))
 
         if self._dev_loop:
             print("Agent run already in progress - restarting")
