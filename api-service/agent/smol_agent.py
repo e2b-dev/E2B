@@ -168,7 +168,7 @@ class SmolAgent(AgentBase):
                 model_prompt = ChatPromptValue(messages=messages)
 
                 response = await model.agenerate_prompt([model_prompt])
-                return response.generations[0][0].text
+                return response.generations[0][0].text, model_prompt.to_string()
 
             async def generate_file(
                 filename: str,
@@ -177,7 +177,7 @@ class SmolAgent(AgentBase):
                 prompt=None,
             ):
                 # call openai api with this prompt
-                filecode = await generate_response(
+                filecode, file_prompt = await generate_response(
                     f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
 the app is: {prompt}
@@ -216,17 +216,17 @@ Begin generating the code now.
                     {
                         "message": f"Generated file",
                         "properties": {
-                            "content": filecode,
-                            "filename": filename,
+                            "prompt": file_prompt,
+                            "result": filecode,
                             "model": "gpt-4",
                         },
                         "type": "model",
                     }
                 )
 
-                return filename, filecode
+                return filename, filecode, file_prompt
 
-            filepaths_string = await generate_response(
+            filepaths_string, filepaths_prompt = await generate_response(
                 """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
 When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
@@ -241,7 +241,7 @@ do not add any other explanation, only return a python list of strings.
                 {
                     "message": f"Generating filepaths",
                     "properties": {
-                        "prompt": user_prompt,
+                        "prompt": filepaths_prompt,
                         "result": filepaths_string,
                         "model": "gpt-4",
                     },
@@ -262,7 +262,7 @@ do not add any other explanation, only return a python list of strings.
                 pass
 
             if file is not None:
-                filename, filecode = await generate_file(
+                filename, filecode, file_prompt = await generate_file(
                     file,
                     filepaths_string=filepaths_string,
                     shared_dependencies=shared_dependencies,
@@ -273,7 +273,7 @@ do not add any other explanation, only return a python list of strings.
                     {
                         "message": f"Generated file",
                         "properties": {
-                            "filename": filename,
+                            "prompt": file_prompt,
                             "result": filecode,
                             "model": "gpt-4",
                         },
@@ -309,7 +309,10 @@ do not add any other explanation, only return a python list of strings.
                 )
 
                 # understand shared dependencies
-                shared_dependencies = await generate_response(
+                (
+                    shared_dependencies,
+                    shared_dependencies_prompt,
+                ) = await generate_response(
                     """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
 In response to the user's prompt:
@@ -331,6 +334,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     {
                         "message": f"Generated shared dependencies",
                         "properties": {
+                            "prompt": shared_dependencies_prompt,
                             "result": shared_dependencies,
                             "model": "gpt-4",
                         },
@@ -381,7 +385,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
 
                 generated_files = await asyncio.gather(*coros)
 
-                for name, content in generated_files:
+                for name, content, file_prompt in generated_files:
                     filepath = os.path.join(rootdir, name)
                     await playground.write_file(filepath, content)
                     await self.on_logs(
