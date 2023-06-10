@@ -18,7 +18,6 @@ function useDocEditor({
   placeholder?: string
 }) {
   const editor = useEditor({
-    content: initialContent,
     parseOptions: {
       preserveWhitespace: 'full',
     },
@@ -40,7 +39,9 @@ function useDocEditor({
         }
       }),
     ],
-
+    onCreate({ editor }) {
+      editor?.commands.setContent(initialContent)
+    },
     onUpdate({ transaction, editor }) {
       if (transaction.docChanged) {
         onContentChange(editor.storage.markdown.getMarkdown())

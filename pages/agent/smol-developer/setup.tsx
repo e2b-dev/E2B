@@ -117,7 +117,6 @@ function Setup() {
   const [instructions, setInstructions] = useState('')
   const posthog = usePostHog()
   const router = useRouter()
-  const [openAIAPIKey, setOpenAIAPIKey] = useState('')
   const [isDeploying, setIsDeploying] = useState(false)
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
@@ -158,7 +157,7 @@ function Setup() {
         title: 'Smol PR',
         branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
         body: instructions,
-        commitMessage: 'Smol dev initial commit',
+        commitMessage: 'Initial commit',
         modelConfig,
       })
       // Redirect to the dashboard.
