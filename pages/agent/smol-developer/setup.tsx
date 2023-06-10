@@ -117,7 +117,6 @@ function Setup() {
   const [instructions, setInstructions] = useState('')
   const posthog = usePostHog()
   const router = useRouter()
-  const [openAIAPIKey, setOpenAIAPIKey] = useState('')
   const [isDeploying, setIsDeploying] = useState(false)
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
@@ -143,18 +142,9 @@ function Setup() {
       console.error('No instructions provided')
       return
     }
-    if (!openAIAPIKey) {
-      console.error('No OpenAI API key provided')
-      return
-    }
+    console.log('DEPLOY AGENT', selectedRepository, instructions)
 
-    const modelConfig = getSmolDevModelConfig({
-      OpenAI: {
-        creds: {
-          openai_api_key: openAIAPIKey,
-        },
-      },
-    })
+    const modelConfig = getSmolDevModelConfig({})
 
     try {
       setIsDeploying(true)
@@ -167,7 +157,7 @@ function Setup() {
         title: 'Smol PR',
         branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
         body: instructions,
-        commitMessage: 'Smol dev initial commit',
+        commitMessage: 'Initial commit',
         modelConfig,
       })
       // Redirect to the dashboard.

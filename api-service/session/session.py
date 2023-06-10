@@ -1,3 +1,6 @@
+import asyncio
+
+from multiprocessing.pool import ApplyResult
 from typing import Callable, Coroutine, List, Any
 
 import playground_client
@@ -15,7 +18,15 @@ configuration.verify_ssl = False
 configuration.ssl_ca_cert = None
 configuration.cert_file = None
 
+
 GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
+
+
+async def get_result(result: ApplyResult[Any]):
+    while not result.ready():
+        await asyncio.sleep(1)  # give other tasks chance to run
+
+    return result.get()
 
 
 class Session:
@@ -28,17 +39,14 @@ class Session:
         self.get_envs = get_envs
         self.id: str = ""
 
-    def __del__(self):
-        self.close()
-
     async def open(self):
-        thread: Any = self.api.create_sessions(
+        thread: ApplyResult[Any] = self.api.create_sessions(
             playground_client.CreateSessionsRequest(envID=self.env_id),
             _request_timeout=10,
             async_req=True,
-        )
+        )  # type: ignore
 
-        response: SessionResponse = thread.get()
+        response: SessionResponse = await get_result(thread)
         self.id = response.id
 
     async def update_envs(self):
@@ -49,9 +57,9 @@ class Session:
         result = await self.get_envs()
         self.env_vars = format_env_vars(result)
 
-    def close(self):
+    async def close(self):
         if not self.is_closed and self.id is not None:
             thread: Any = self.api.delete_session(self.id, async_req=True)
-            thread.get()
+            await get_result(thread)
             self.is_closed = True
             self.client.close()

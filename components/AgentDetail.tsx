@@ -1,5 +1,4 @@
-import { ChatBubbleLeftEllipsisIcon, TagIcon, UserCircleIcon } from '@heroicons/react/20/solid'
-import clsx from 'clsx'
+import { Box, Hammer, Cpu, Info } from 'lucide-react'
 
 import { projects } from 'db/prisma'
 import useDeployment from 'hooks/useDeployment'
@@ -42,7 +41,14 @@ export interface Props {
 export function AgentDetail({ project }: Props) {
   const deployment = useDeployment(project)
   return (
-    <div className="flex flex-1 items-center justify-center">
+    <div className="flex flex-1 flex-col justify-center items-center">
+      <div>
+        <div>
+          <h3 className="text-lg leading-6 font-medium text-gray-100">
+            Agent
+          </h3>
+        </div>
+      </div>
       <div className="flow-root">
         <ul role="list" className="-mb-8">
           {(deployment?.logs as unknown as AgentLogBase[])
@@ -51,26 +57,29 @@ export function AgentDetail({ project }: Props) {
             .map((log, idx, logs) => (
               <li key={log.timestamp}>
                 <div className="relative pb-8">
+                  <div>
+                    {log.timestamp}
+                  </div>
                   {idx !== logs.length - 1 ? (
-                    <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
+                    <span className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-white" aria-hidden="true" />
                   ) : null}
                   <div className="relative flex items-start space-x-3">
                     {log.type === 'info' ? (
                       <>
-                        <div className="relative">
-                          <span className="absolute -bottom-0.5 -right-1 rounded-tl bg-white px-0.5 py-px">
-                            <ChatBubbleLeftEllipsisIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                          </span>
+                        <div className="relative px-1">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white ring-8 ring-white">
+                            <Info className="h-5 w-5 text-gray-600" aria-hidden="true" />
+                          </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div>
                             <div className="text-sm">
-                              <a className="font-medium text-gray-900">
+                              <a className="font-medium text-gray-400">
                                 {log.type}
-                              </a>
+                              </a>{' '}
                             </div>
                           </div>
-                          <div className="mt-2 text-sm text-gray-700">
+                          <div className="mt-2 text-sm text-gray-600">
                             <p>{log.message}</p>
                           </div>
                         </div>
@@ -79,19 +88,15 @@ export function AgentDetail({ project }: Props) {
                       <>
                         <div>
                           <div className="relative px-1">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white">
-                              <UserCircleIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white ring-8 ring-white">
+                              <Cpu className="h-5 w-5 text-gray-600" aria-hidden="true" />
                             </div>
                           </div>
                         </div>
                         <div className="min-w-0 flex-1 py-1.5">
-                          <div className="text-sm text-gray-500">
-                            <a className="font-medium text-gray-900">
+                          <div className="text-sm text-gray-600">
+                            <a className="font-medium text-gray-400">
                               {log.type}
-                            </a>{' '}
-                            assigned{' '}
-                            <a className="font-medium text-gray-900">
-                              {/* {log.assigned.name} */}
                             </a>{' '}
                             <span className="whitespace-nowrap">{log.message}</span>
                           </div>
@@ -101,29 +106,16 @@ export function AgentDetail({ project }: Props) {
                       <>
                         <div>
                           <div className="relative px-1">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white">
-                              <TagIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white ring-8 ring-white">
+                              <Box className="h-5 w-5 text-gray-600" aria-hidden="true" />
                             </div>
                           </div>
                         </div>
                         <div className="min-w-0 flex-1 py-0">
-                          <div className="text-sm leading-8 text-gray-500">
+                          <div className="text-sm leading-8 text-gray-600">
                             <span className="mr-0.5">
-                              <a className="font-medium text-gray-900">
+                              <a className="font-medium text-gray-400">
                                 {log.type}
-                              </a>{' '}
-                            </span>{' '}
-                            <span className="mr-0.5">
-                              <a
-                                className="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-900 ring-1 ring-inset ring-gray-200"
-                              >
-                                <svg
-                                  className={clsx('h-1.5 w-1.5')}
-                                  viewBox="0 0 6 6"
-                                  aria-hidden="true"
-                                >
-                                  <circle cx={3} cy={3} r={3} />
-                                </svg>
                               </a>{' '}
                             </span>
                             <span className="whitespace-nowrap">{log.message}</span>
@@ -134,18 +126,18 @@ export function AgentDetail({ project }: Props) {
                       <>
                         <div>
                           <div className="relative px-1">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white">
-                              <TagIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white ring-8 ring-white">
+                              <Hammer className="h-5 w-5 text-gray-600" aria-hidden="true" />
                             </div>
                           </div>
                         </div>
                         <div className="min-w-0 flex-1 py-0">
-                          <div className="text-sm leading-8 text-gray-500">
+                          <div className="text-sm leading-8 text-gray-600">
                             <span className="mr-0.5">
-                              <a className="font-medium text-gray-900">
+                              <a className="font-medium text-gray-400">
                                 {log.type}
                               </a>{' '}
-                            </span>{' '}
+                            </span>
                             <span className="mr-0.5">
                             </span>
                             <span className="whitespace-nowrap">{log.message}</span>

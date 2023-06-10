@@ -1,5 +1,6 @@
 import math
 
+from multiprocessing.pool import ApplyResult
 from typing import Any, List
 from asyncio import sleep
 
@@ -14,14 +15,14 @@ from playground_client.models.read_filesystem_file_response import (
 from playground_client.models.session_response import SessionResponse
 import playground_client
 from session.env import cmd_with_env_vars
-from session.session import GetEnvs, Session
+from session.session import GetEnvs, Session, get_result
 
 
 class Playground(Session):
     port_check_interval = 0.5  # 500ms
     max_port_checks = 10
 
-    run_command_timeout_frequency = 2  # in Hz
+    run_command_timeout_frequency = 1  # in Hz
 
     def __init__(self, env_id: str, get_envs: GetEnvs, rootdir="/"):
         super().__init__(env_id, get_envs)
@@ -29,7 +30,7 @@ class Playground(Session):
 
     async def get_open_ports(self):
         thread: Any = self.api.get_session(self.id, async_req=True)
-        response: SessionResponse = thread.get()
+        response: SessionResponse = await get_result(thread)
         return response.ports
 
     async def is_port_open(self, port: float) -> bool:
@@ -128,7 +129,9 @@ class Playground(Session):
         rootdir: str | None = None,
         timeout: float | None = None,
     ):
-        thread: Any = self.api.start_process(
+        thread: ApplyResult[ProcessResponse]
+
+        thread = self.api.start_process(
             self.id,
             playground_client.StartProcessParams(
                 cmd=cmd_with_env_vars(cmd, self.env_vars),
@@ -138,9 +141,9 @@ class Playground(Session):
             ),
             wait=True if timeout is None else False,
             async_req=True,
-        )
+        )  # type: ignore
 
-        response: ProcessResponse = thread.get()
+        response: ProcessResponse = await get_result(thread)
 
         if timeout is None or response.finished:
             return response
@@ -151,22 +154,22 @@ class Playground(Session):
                 self.id,
                 process_id=response.process_id,
                 async_req=True,
-            )
+            )  # type: ignore
 
-            response: ProcessResponse = thread.get()
+            response: ProcessResponse = await get_result(thread)
 
             if response.finished:
                 return response
             await sleep(1 / self.run_command_timeout_frequency)
 
         if not response.finished:
-            thread: Any = self.api.stop_process(
+            thread = self.api.stop_process(
                 self.id,
                 process_id=response.process_id,
                 results=False,
                 async_req=True,
-            )
-            thread.get()
+            )  # type: ignore
+            await get_result(thread)
 
         return response
 
@@ -187,7 +190,7 @@ class Playground(Session):
             async_req=True,
         )
 
-        response: ProcessResponse = thread.get()
+        response: ProcessResponse = await get_result(thread)
         return response.process_id
 
     async def stop_process(self, process_id: str):
@@ -198,26 +201,26 @@ class Playground(Session):
             async_req=True,
         )
 
-        response: ProcessResponse = thread.get()
+        response: ProcessResponse = await get_result(thread)
         return response
 
     async def read_file(self, path: str):
         thread: Any = self.api.read_filesystem_file(self.id, path, async_req=True)
-        response: ReadFilesystemFileResponse = thread.get()
+        response: ReadFilesystemFileResponse = await get_result(thread)
         return response.content
 
     async def list_dir(self, path: str):
         thread: Any = self.api.list_filesystem_dir(self.id, path, async_req=True)
-        response: ListFilesystemDirResponse = thread.get()
+        response: ListFilesystemDirResponse = await get_result(thread)
         return response.entries
 
     async def delete_file(self, path: str):
         thread: Any = self.api.delete_filesystem_entry(self.id, path, async_req=True)
-        thread.get()
+        await get_result(thread)
 
     async def delete_dir(self, path: str):
         thread: Any = self.api.delete_filesystem_entry(self.id, path, async_req=True)
-        thread.get()
+        await get_result(thread)
 
     async def write_file(self, path: str, content: str):
         print("Writing file", path, content)
@@ -227,11 +230,11 @@ class Playground(Session):
             playground_client.WriteFilesystemFileRequest(content=content),
             async_req=True,
         )
-        thread.get()
+        await get_result(thread)
 
     async def make_dir(self, path: str):
         thread: Any = self.api.make_filesystem_dir(self.id, path, async_req=True)
-        thread.get()
+        await get_result(thread)
 
     async def run_server_with_request(
         self,

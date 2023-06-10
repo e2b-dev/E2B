@@ -1,7 +1,38 @@
+import { Configuration, OpenAIApi } from 'openai'
+
 import api from 'api-client/api'
 import { deployments, prisma } from 'db/prisma'
 
 import { GitHubClient } from './client'
+
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+})
+
+const openai = new OpenAIApi(configuration)
+
+export async function prTitleFromInstructions(instructions: string) {
+  try {
+    const result = await openai.createChatCompletion({
+      model: 'gpt-4',
+      messages: [
+        {
+          content: `${instructions}\n\nTl;dr in one sentence (around 50 characters) describing what to build. Don't use pronouns, just describe the thing:`,
+          role: 'user',
+        }
+      ],
+    })
+    return result.data.choices[0].message?.content
+  } catch (error: any) {
+    if (error.response) {
+      console.log(error.response.status)
+      console.log(error.response.data)
+    } else {
+      console.log(error.message)
+    }
+  }
+}
 
 // All PRs are also issues - GH API endpoint for issues is used for the shared functionality
 export async function createPR({

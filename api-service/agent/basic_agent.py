@@ -164,7 +164,6 @@ class BasicAgent(AgentBase):
             playground = NodeJSPlayground(get_envs=self.get_envs)
             await playground.open()
 
-
             tools = list(create_tools(playground=playground))
             self.tool_names = [tool.name for tool in tools]
             tool_map = {tool.name: tool for tool in tools}
@@ -288,7 +287,7 @@ class BasicAgent(AgentBase):
             raise
         finally:
             if playground is not None:
-                playground.close()
+                await playground.close()
             await self.on_interaction_request(
                 AgentInteractionRequest(
                     interaction_id=str(uuid.uuid4()),

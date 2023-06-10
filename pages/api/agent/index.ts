@@ -8,7 +8,7 @@ import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import { PostAgentBody } from 'pages/agent/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
-import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, triggerSmolDevAgentRun } from 'github/pullRequest'
+import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, prTitleFromInstructions, triggerSmolDevAgentRun } from 'github/pullRequest'
 import { TemplateID } from 'state/template'
 
 export interface DeploymentAuthData {
@@ -78,9 +78,16 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       repositoryID,
     })
 
+
+    const prTitle = await prTitleFromInstructions(body)
+
+    if (!prTitle) {
+      throw new Error('Generated PR title is empty')
+    }
+
     const { issueID, number: pullNumber, url: pullURL } = await createPR({
       client,
-      title,
+      title: prTitle,
       defaultBranch,
       branch,
       commitMessage,
