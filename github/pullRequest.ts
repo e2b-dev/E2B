@@ -1,4 +1,6 @@
 import { Configuration, OpenAIApi } from 'openai'
+import { backOff } from 'exponential-backoff'
+
 
 import api from 'api-client/api'
 import { deployments, prisma } from 'db/prisma'
@@ -14,7 +16,7 @@ const openai = new OpenAIApi(configuration)
 
 export async function prTitleFromInstructions(instructions: string) {
   try {
-    const result = await openai.createChatCompletion({
+    const result = await backOff(() => openai.createChatCompletion({
       model: 'gpt-4',
       messages: [
         {
@@ -22,7 +24,7 @@ export async function prTitleFromInstructions(instructions: string) {
           role: 'user',
         }
       ],
-    })
+    }))
     return result.data.choices[0].message?.content
   } catch (error: any) {
     if (error.response) {
