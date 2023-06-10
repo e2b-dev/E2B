@@ -3,10 +3,8 @@ import uuid
 import os
 import ast
 
-from langchain.callbacks import get_openai_callback
 from typing import Any, List
 from langchain.callbacks.base import AsyncCallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.schema import (
     AIMessage,
     BaseLanguageModel,
@@ -30,6 +28,13 @@ from playground_client.exceptions import NotFoundException
 
 default_openai_api_key = os.environ.get("OPENAI_API_KEY", None)
 
+pricing = {
+    "gpt-4": {
+        "prompt": 0.03 / 1000,
+        "completion": 0.06 / 1000,
+    }
+}
+
 
 class SmolAgent(AgentBase):
     max_run_time = 60 * 60  # in seconds
@@ -45,7 +50,7 @@ class SmolAgent(AgentBase):
         super().__init__()
         self._dev_loop: asyncio.Task | None = None
         self.get_envs = get_envs
-        self.config = ModelConfig(**config)
+        self.config = config
         self.on_interaction_request = on_interaction_request
         self.on_logs = on_logs
         self.model = model
@@ -58,17 +63,16 @@ class SmolAgent(AgentBase):
         on_logs: OnLogs,
         on_interaction_request: OnInteractionRequest,
     ):
-        callback_manager = AsyncCallbackManager([StreamingStdOutCallbackHandler()])
+        callback_manager = AsyncCallbackManager([])
+        new_config = ModelConfig(**config)
 
-        # Use default openai api key if not provided
-        config.args["openai_api_key"] = config.args.get(
-            "openai_api_key", default_openai_api_key
-        )
+        # Use default openai api key
+        new_config.args["openai_api_key"] = default_openai_api_key
 
-        model = get_model(config, callback_manager)
+        model = get_model(new_config, callback_manager)
 
         return cls(
-            config,
+            new_config,
             get_envs,
             on_logs,
             on_interaction_request,
@@ -153,17 +157,30 @@ Begin generating the code now.
         role = "user" if role == "assistant" else "assistant"
 
         model_prompt = ChatPromptValue(messages=messages)
+        response = await self.model.agenerate_prompt([model_prompt])
 
-        with get_openai_callback() as cb:
-            response = await self.model.agenerate_prompt([model_prompt])
+        cost = (
+            response.llm_output["token_usage"]["prompt_tokens"]
+            * pricing["gpt-4"]["prompt"]
+            + response.llm_output["token_usage"]["completion_tokens"]
+            * pricing["gpt-4"]["completion"]
+            if response.llm_output
+            else None
+        )
 
-            return response.generations[0][0].text, {
-                "prompt": model_prompt.to_string(),
-                "total_tokens": cb.total_tokens,
-                "prompt_tokens": cb.prompt_tokens,
-                "response_tokens": cb.completion_tokens,
-                "cost": cb.total_cost,
-            }
+        return response.generations[0][0].text, {
+            "prompt": model_prompt.to_string(),
+            "total_tokens": response.llm_output["token_usage"]["total_tokens"]
+            if response.llm_output
+            else None,
+            "prompt_tokens": response.llm_output["token_usage"]["prompt_tokens"]
+            if response.llm_output
+            else None,
+            "response_tokens": response.llm_output["token_usage"]["completion_tokens"]
+            if response.llm_output
+            else None,
+            "cost": cost,
+        }
 
     async def _dev(self, instructions: Any):
         user_prompt: str = instructions["Prompt"]
@@ -338,7 +355,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 }
             )
             # Maximum number of allowed concurrent calls
-            semaphore = asyncio.Semaphore(3)
+            semaphore = asyncio.Semaphore(4)
 
             async def with_semaphore(coro):
                 async with semaphore:
@@ -361,7 +378,11 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
 
             generated_files = await asyncio.gather(*coros)
 
-            for name, content, file_prompt in generated_files:
+            for (
+                name,
+                content,
+                _,  # metadata
+            ) in generated_files:
                 filepath = os.path.join(rootdir, name)
                 await playground.write_file(filepath, content)
                 await self.on_logs(
