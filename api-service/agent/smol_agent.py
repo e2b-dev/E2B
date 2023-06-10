@@ -176,7 +176,7 @@ Begin generating the code now.
             "prompt_tokens": response.llm_output["token_usage"]["prompt_tokens"]
             if response.llm_output
             else None,
-            "response_tokens": response.llm_output["token_usage"]["completion_tokens"]
+            "result_tokens": response.llm_output["token_usage"]["completion_tokens"]
             if response.llm_output
             else None,
             "cost": cost,
