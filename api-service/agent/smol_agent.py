@@ -308,12 +308,12 @@ do not add any other explanation, only return a python list of strings.
                 shared_dependencies,
                 metadata,
             ) = await self.generate_response(
-                """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
+                f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
 In response to the user's prompt:
 
 ---
-the app is: {prompt}
+the app is: {user_prompt}
 ---
 
 the files we have decided to generate are: {filepaths_string}

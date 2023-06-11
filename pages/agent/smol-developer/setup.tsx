@@ -162,7 +162,7 @@ function Setup() {
       })
       // Redirect to the dashboard.
       if (response) {
-        router.push(`/${response.projectID}`)
+        router.push(response.pullURL)
       } else {
         console.error('No response from agent creation')
       }

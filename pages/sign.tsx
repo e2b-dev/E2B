@@ -26,6 +26,7 @@ function SignIn() {
       await supabaseClient.auth.signInWithOAuth({
         provider: 'github',
         options: {
+          redirectTo: window.location.href,
           scopes: 'email',
         }
       })
