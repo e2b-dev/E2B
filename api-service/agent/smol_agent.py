@@ -184,7 +184,7 @@ Begin generating the code now.
             "cost": cost,
         }
 
-    async def _dev(self, instructions: Any):
+    async def _dev(self, run_id: str, instructions: Any):
         user_prompt: str = instructions["Prompt"]
         access_token: str = instructions["AccessToken"]
         repo: str = instructions["Repo"]
@@ -193,8 +193,6 @@ Begin generating the code now.
         git_app_name: str = instructions["GitHubAppName"]
         git_app_email: str = instructions["GitHubAppEmail"]
         commit_message: str = instructions["CommitMessage"]
-
-        run_id = str(uuid.uuid4())
 
         repo_address = (
             f"https://{git_app_name}:{access_token}@github.com/{owner}/{repo}.git"
@@ -441,6 +439,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     type="done",
                     data={
                         "prompt": user_prompt,
+                        "run_id": self.run_id,
                     },
                 )
             )
@@ -467,10 +466,12 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
             print("Agent run already in progress - restarting")
             await self.stop()
 
+        self.run_id = str(uuid.uuid4())
+
         async def start_with_timeout():
             try:
                 self._dev_loop = asyncio.create_task(
-                    self._dev(instructions=instructions),
+                    self._dev(run_id=self.run_id, instructions=instructions),
                 )
                 await asyncio.wait_for(
                     self._dev_loop,
@@ -501,7 +502,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 interaction_id=str(uuid.uuid4()),
                 type="cancelled",
                 data={
-                    # "associated_comment_id": self._dev_comment_id,
+                    "run_id": self.run_id,
                 },
             )
         )

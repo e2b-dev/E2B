@@ -14,9 +14,11 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
     const {
       deployment_id,
       prompt,
+      run_id,
     } = req.body as {
       prompt: string,
       deployment_id: string,
+      run_id: string,
     }
 
     const header = req.headers.authorization
@@ -79,6 +81,7 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
           agent_deployment_id: deployment.id,
           agent: TemplateID.SmolDeveloper,
           repository: `${authData.github.owner}/${authData.github.repo}`,
+          run_id,
 
           pr_number: authData.github.pr_number,
         },
@@ -100,7 +103,11 @@ async function deleteRun(req: NextApiRequest, res: NextApiResponse) {
   try {
     const {
       deployment_id,
-    } = req.body as { deployment_id: string }
+      run_id,
+    } = req.body as {
+      deployment_id: string,
+      run_id: string,
+    }
 
     const header = req.headers.authorization
     // Extract the token from the header
@@ -158,6 +165,7 @@ async function deleteRun(req: NextApiRequest, res: NextApiResponse) {
           agent_deployment_id: deployment.id,
           agent: TemplateID.SmolDeveloper,
           repository: `${authData.github.owner}/${authData.github.repo}`,
+          run_id,
 
           pr_number: authData.github.pr_number,
         },
