@@ -448,15 +448,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
         if self._dev_loop:
             print("Agent run already in progress - restarting")
             await self.stop()
-            await self.on_interaction_request(
-                AgentInteractionRequest(
-                    interaction_id=str(uuid.uuid4()),
-                    type="cancelled",
-                    data={
-                        # "associated_comment_id": self._dev_comment_id,
-                    },
-                )
-            )
 
         async def start_with_timeout():
             try:
@@ -488,5 +479,14 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
 
     async def stop(self):
         print("Cancel agent run")
+        await self.on_interaction_request(
+            AgentInteractionRequest(
+                interaction_id=str(uuid.uuid4()),
+                type="cancelled",
+                data={
+                    # "associated_comment_id": self._dev_comment_id,
+                },
+            )
+        )
         if self._dev_loop:
             self._dev_loop.cancel()
