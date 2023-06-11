@@ -71,7 +71,7 @@ function SmolDeveloper({
   return (
     <div className="bg-white h-full">
       <div className="m-auto h-full max-w-full">
-        <div className="h-full relative isolate overflow-auto md:overflow-hidden bg-gray-900 px-6 pt-16 shadow-2xl sm:px-16 md:pt-24 lg:flex lg:gap-x-20 lg:px-24 lg:pt-0">
+        <div className="h-full relative isolate overflow-x-hidden md:overflow-hidden bg-gray-900 px-6 pt-16 shadow-2xl sm:px-16 md:pt-24 lg:flex lg:gap-x-20 lg:px-24 lg:pt-0">
           <svg
             viewBox="0 0 1024 1024"
             className="absolute left-1/2 top-1/2 -z-10 h-[64rem] w-[64rem] -translate-y-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] sm:left-full sm:-ml-80 lg:left-1/2 lg:ml-0 lg:-translate-x-1/2 lg:translate-y-0"
@@ -150,24 +150,26 @@ function SmolDeveloper({
                     <SpinnerIcon className="text-slate-400" />
                   </div>
                 )}
-                {!sessionCtx.isLoading && !user &&
-                  <button
-                    className="flex items-center space-x-2 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                    onClick={signInWithGitHub}
+                <div className="w-full flex flex-col md:flex-row items-center md:items-center justify-center md:justify-between space-y-2 md:space-y-0">
+                  {!sessionCtx.isLoading && !user &&
+                    <button
+                      className="flex items-center space-x-2 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      onClick={signInWithGitHub}
+                    >
+                      <Github size={16} />
+                      <span>Continue with GitHub</span>
+                    </button>
+                  }
+                  <a
+                    className="text-sm font-semibold leading-6 text-white"
+                    href="https://github.com/smol-ai/developer"
+                    rel="noreferer noopener"
+                    target="_blank"
+                    onMouseDown={() => posthog?.capture('clicked link', { url: 'https://github.com/smol-ai/developer' })}
                   >
-                    <Github size={16} />
-                    <span>Continue with GitHub</span>
-                  </button>
-                }
-                <a
-                  className="text-sm font-semibold leading-6 text-white"
-                  href="https://github.com/smol-ai/developer"
-                  rel="noreferer noopener"
-                  target="_blank"
-                  onMouseDown={() => posthog?.capture('clicked link', { url: 'https://github.com/smol-ai/developer' })}
-                >
-                  Learn about smol developer  <span aria-hidden="true">→</span>
-                </a>
+                    Learn about smol developer  <span aria-hidden="true">→</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
