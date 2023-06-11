@@ -1,8 +1,13 @@
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { ChevronRightIcon } from '@heroicons/react/20/solid'
 import clsx from 'clsx'
-import { Grid } from 'lucide-react'
+import {
+  Zap,
+  ListEnd,
+  ChevronRight,
+  X,
+  Menu,
+} from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
 
 import { projects, deployments } from 'db/prisma'
@@ -12,14 +17,14 @@ import { useRouter } from 'next/router'
 const navigation = [
   {
     name: 'Deployed Agents',
-    href: '#',
-    icon: Grid,
+    href: '/',
+    icon: Zap,
     current: true,
   },
   {
     name: 'Run Queue',
-    href: '#',
-    icon: Grid,
+    href: '/runs',
+    icon: ListEnd,
     current: false,
   },
 ]
@@ -66,6 +71,7 @@ export default function AgentOverview({ projects }: Props) {
 
   return (
     <div className="overflow-hidden">
+      {/* Mobile sidebar */}
       <Transition.Root show={sidebarOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50 xl:hidden" onClose={setSidebarOpen}>
           <Transition.Child
@@ -103,19 +109,20 @@ export default function AgentOverview({ projects }: Props) {
                   <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
                     <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpen(false)}>
                       <span className="sr-only">Close sidebar</span>
-                      {/* <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" /> */}
+                      <X className="text-white" aria-hidden="true" />
                     </button>
                   </div>
                 </Transition.Child>
                 {/* Sidebar component, swap this element with another sidebar if you like */}
                 <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 ring-1 ring-white/10">
-                  <div className="flex h-16 shrink-0 items-center">
-                    {/* <img
+                  {/* Logo */}
+                  {/* <div className="flex h-16 shrink-0 items-center">
+                    <img
                       className="h-8 w-auto"
                       src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
                       alt="Your Company"
-                    /> */}
-                  </div>
+                    />
+                  </div> */}
                   <nav className="flex flex-1 flex-col">
                     <ul role="list" className="flex flex-1 flex-col gap-y-7">
                       <li>
@@ -131,7 +138,7 @@ export default function AgentOverview({ projects }: Props) {
                                   'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                                 )}
                               >
-                                <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                                <item.icon size={14} aria-hidden="true" />
                                 {item.name}
                               </a>
                             </li>
@@ -139,13 +146,16 @@ export default function AgentOverview({ projects }: Props) {
                         </ul>
                       </li>
                       <li className="-mx-6 mt-auto">
-                        <a
-                          href="#"
-                          className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-white hover:bg-gray-800"
+                        <div
+                          className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-white"
                         >
-                          <span className="sr-only">Your profile</span>
-                          <span aria-hidden="true">Tom Cook</span>
-                        </a>
+                          <button
+                            className="text-sm font-semibold text-white"
+                            onClick={signOut}
+                          >
+                            Log out
+                          </button>
+                        </div>
                       </li>
                     </ul>
                   </nav>
@@ -155,18 +165,20 @@ export default function AgentOverview({ projects }: Props) {
           </div>
         </Dialog>
       </Transition.Root>
+
       {/* Static sidebar for desktop */}
       <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-72 xl:flex-col">
         {/* Sidebar component, swap this element with another sidebar if you like */}
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-black/10 px-6 ring-1 ring-white/5">
-          <div className="flex h-16 shrink-0 items-center">
-            {/* <img
+          {/* Logo */}
+          {/* <div className="flex h-16 shrink-0 items-center">
+            <img
               className="h-8 w-auto"
               src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
               alt="Your Company"
-            /> */}
-          </div>
-          <nav className="flex flex-1 flex-col">
+            />
+          </div> */}
+          <nav className="flex flex-1 flex-col py-[22px]">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
@@ -178,10 +190,10 @@ export default function AgentOverview({ projects }: Props) {
                           item.current
                             ? 'bg-gray-800 text-white'
                             : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                          'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                          'group flex gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'
                         )}
                       >
-                        <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                        <item.icon size={16} className="shrink-0" aria-hidden="true" />
                         {item.name}
                       </a>
                     </li>
@@ -206,9 +218,16 @@ export default function AgentOverview({ projects }: Props) {
       </div>
 
       <div className="xl:pl-72">
+        <div className="xl:hidden sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-6 border-b border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
+          <button type="button" className="-m-2.5 p-2.5 text-white xl:hidden" onClick={() => setSidebarOpen(true)}>
+            <span className="sr-only">Open sidebar</span>
+            <Menu aria-hidden="true" />
+          </button>
+        </div>
+
         <main className="overflow-hidden">
           <header className="flex items-center justify-between border-b border-white/5 p-4 sm:p-6 lg:px-8">
-            <h1 className="text-base font-semibold leading-7 text-white">Agents</h1>
+            <h1 className="text-2xl font-semibold leading-7 text-white">Deployed Agents</h1>
           </header>
 
           {/* Deployment list */}
@@ -239,8 +258,10 @@ export default function AgentOverview({ projects }: Props) {
                     </svg>
                   </div>
                 </div>
-                <ChevronRightIcon
-                  className="h-5 w-5 flex-none text-gray-400" aria-hidden="true"
+                <ChevronRight
+                  size={16}
+                  className="text-gray-400"
+                  aria-hidden="true"
                 />
               </li>
             ))}
