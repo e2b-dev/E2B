@@ -49,6 +49,7 @@
     "@supabase/auth-helpers-nextjs": "^0.5.5",
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.10.0",
+    "@tailwindcss/forms": "^0.5.3",
     "@tiptap/core": "^2.0.0-beta.220",
     "@tiptap/extension-placeholder": "^2.0.0-beta.220",
     "@tiptap/pm": "^2.0.0-beta.220",
