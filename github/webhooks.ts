@@ -1,13 +1,15 @@
 import type { HandlerFunction } from '@octokit/webhooks/dist-types/types'
+import { prisma } from 'db/prisma'
 import {
   Webhooks,
   createNodeMiddleware,
 } from '@octokit/webhooks'
 import { client as posthog } from 'utils/posthog'
 
-import { getDeploymentsForPR, getGHAccessToken, getPromptFromPR, triggerSmolDevAgentRun } from './pullRequest'
+import { disableAgentDeployment, getDeploymentsForPR, getGHAccessToken, getPromptFromPR, triggerSmolDevAgentRun } from './pullRequest'
 import { getGHInstallationClient } from './installationClient'
 import { TemplateID } from 'state/template'
+import { DeploymentAuthData } from 'pages/api/agent'
 
 export async function getGitHubWebhooksMiddleware() {
   const webhooks = new Webhooks({
@@ -19,7 +21,6 @@ export async function getGitHubWebhooksMiddleware() {
   webhooks.on('pull_request.reopened', pullRequestReopenedHandler)
   webhooks.on('pull_request.closed', pullRequestClosedHandler)
 
-  // TODO: Add handling for review comments
   return createNodeMiddleware(webhooks, {
     path: '/api/github/webhook', log: {
       debug: console.log,
@@ -31,17 +32,158 @@ export async function getGitHubWebhooksMiddleware() {
 }
 
 const pullRequestReopenedHandler: HandlerFunction<'pull_request.reopened', unknown> = async (event) => {
-  // TODO: Enable smol dev agent for the PR if it was disabled
-  // TODO: Update agent info about PR+merge status (saving timestamps here too?)
-  // TODO: Log the analytics event for this
+  const { payload } = event
 
-  // TODO: Save default PR state when creating it
+  const installationID = payload.installation?.id
+  const repositoryID = payload.repository.id
+
+  // Every PR is also an issues - GH API endpoint for issues is used for the shared functionality
+  const issueID = payload.pull_request.id
+
+  if (!installationID) {
+    throw new Error('InstallationID not found')
+  }
+
+  const deployments = await getDeploymentsForPR({ issueID, installationID, repositoryID })
+
+  if (deployments.length === 0) {
+    console.log('No deployments found')
+    return
+  }
+
+  const res = await Promise.allSettled(deployments.map(async d => {
+    await prisma.deployments.update({
+      where: {
+        id: d.id,
+      },
+      data: {
+        enabled: true,
+      },
+    })
+
+    const auth: DeploymentAuthData = {
+      ...d.auth as any,
+      github: {
+        ...(d.auth as unknown as DeploymentAuthData).github,
+        pr_status: payload.pull_request.state,
+        pr_merged: payload.pull_request.merged,
+        pr_closed_at: payload.pull_request.closed_at,
+      }
+    }
+
+    await prisma.deployments.update({
+      where: {
+        id: d.id,
+      },
+      data: {
+        auth: auth as any,
+      },
+    })
+
+    d
+      .projects
+      .teams
+      .users_teams
+      .map(team => team.users)
+      .flat()
+      .forEach(user => {
+        posthog?.capture({
+          distinctId: user.id,
+          event: 'reopened PR created by agent',
+          properties: {
+            agent_deployment_id: d.id,
+            agent: TemplateID.SmolDeveloper,
+            repository: payload.repository.full_name,
+
+            pr_action: payload.action,
+            pr_url: payload.pull_request.url,
+            pr_number: payload.pull_request.number,
+
+            prompt: d.last_finished_prompt,
+            title: payload.pull_request.title,
+            merged: payload.pull_request.merged,
+          },
+        })
+      })
+  }))
+
+  await posthog?.shutdownAsync()
+
+  console.log('Reopened PRs', res)
 }
 
 const pullRequestClosedHandler: HandlerFunction<'pull_request.closed', unknown> = async (event) => {
-  // TODO: Disable agent for that PR
-  // TODO: Update agent info about PR+merge status (saving timestamps here too?)
-  // TODO: Log the analytics event for this
+  const { payload } = event
+  const installationID = payload.installation?.id
+  const repositoryID = payload.repository.id
+
+  // Every PR is also an issues - GH API endpoint for issues is used for the shared functionality
+  const issueID = payload.pull_request.id
+
+  if (!installationID) {
+    throw new Error('InstallationID not found')
+  }
+
+  const deployments = await getDeploymentsForPR({ issueID, installationID, repositoryID })
+
+  if (deployments.length === 0) {
+    console.log('No deployments found')
+    return
+  }
+
+  const res = await Promise.allSettled(deployments.map(async d => {
+    await disableAgentDeployment({
+      id: d.id,
+    })
+
+    const auth: DeploymentAuthData = {
+      ...d.auth as any,
+      github: {
+        ...(d.auth as unknown as DeploymentAuthData).github,
+        pr_status: payload.pull_request.state,
+        pr_merged: payload.pull_request.merged,
+        pr_closed_at: payload.pull_request.closed_at,
+      }
+    }
+
+    await prisma.deployments.update({
+      where: {
+        id: d.id,
+      },
+      data: {
+        auth: auth as any,
+      },
+    })
+
+    d
+      .projects
+      .teams
+      .users_teams
+      .map(team => team.users)
+      .flat()
+      .forEach(user => {
+        posthog?.capture({
+          distinctId: user.id,
+          event: 'closed PR created by agent',
+          properties: {
+            agent_deployment_id: d.id,
+            agent: TemplateID.SmolDeveloper,
+            repository: payload.repository.full_name,
+
+            pr_action: payload.action,
+            pr_url: payload.pull_request.url,
+            pr_number: payload.pull_request.number,
+
+            prompt: d.last_finished_prompt,
+            title: payload.pull_request.title,
+            merged: payload.pull_request.merged,
+          },
+        })
+      })
+  }))
+
+  await posthog?.shutdownAsync()
+  console.log('Closed PRs', res)
 }
 
 const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = async (event) => {
@@ -74,7 +216,7 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
   }
 
   const res = await Promise.allSettled(
-    deployments.map(async deployment => {
+    deployments.map(async d => {
       const accessToken = await getGHAccessToken({
         client,
         installationID,
@@ -82,7 +224,7 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
       })
       await triggerSmolDevAgentRun({
         prompt,
-        deployment,
+        deployment: d,
         accessToken,
         commitMessage: 'Update based on PR comments',
         owner,
@@ -91,7 +233,7 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
         pullNumber: issueNumber,
       })
 
-      deployment
+      d
         .projects
         .teams
         .users_teams
@@ -102,25 +244,28 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
             distinctId: user.id,
             event: 'triggered agent with PR action',
             properties: {
+              agent_deployment_id: d.id,
               agent: TemplateID.SmolDeveloper,
+              repository: payload.repository.full_name,
+
               pr_action: payload.action,
               pr_url: payload.pull_request.url,
-              repository: payload.repository.full_name,
-              pr_body: payload.pull_request.body,
+              pr_number: issueNumber,
+
               prompt,
+              title: payload.pull_request.title,
+              pr_body: payload.pull_request.body,
             },
           })
         })
     }))
 
   await posthog?.shutdownAsync()
-
   console.log('Trigger results', res)
 }
 
 function getPRNumber(pr_url?: string) {
   const prNumber = pr_url?.split('/').pop()
-
   if (prNumber) {
     return parseInt(prNumber, 10)
   }
@@ -171,7 +316,7 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
   }
 
   const res = await Promise.allSettled(
-    deployments.map(async deployment => {
+    deployments.map(async d => {
       const accessToken = await getGHAccessToken({
         client,
         installationID,
@@ -179,7 +324,7 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
       })
       await triggerSmolDevAgentRun({
         prompt,
-        deployment,
+        deployment: d,
         accessToken,
         owner,
         repo,
@@ -187,7 +332,7 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
         client,
         pullNumber,
       })
-      deployment
+      d
         .projects
         .teams
         .users_teams
@@ -198,12 +343,17 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
             distinctId: user.id,
             event: 'triggered agent by PR comment action',
             properties: {
+              agent_deployment_id: d.id,
               agent: TemplateID.SmolDeveloper,
+              repository: payload.repository.full_name,
+
               pr_comment_action: payload.action,
               pr_url: pr.data.url,
-              repository: payload.repository.full_name,
-              comment_body: payload.comment.body,
+              pr_number: pr.data.number,
+
               prompt,
+              title: pr.data.title,
+              comment_body: payload.comment.body,
             },
           })
         })

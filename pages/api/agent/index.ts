@@ -8,7 +8,13 @@ import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import { PostAgentBody } from 'pages/agent/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
-import { createAgentDeployment, createPR, getGHAccessToken, getGHAppInfo, prTitleFromInstructions, triggerSmolDevAgentRun } from 'github/pullRequest'
+import {
+  createAgentDeployment,
+  createPR, getGHAccessToken,
+  getGHAppInfo,
+  prTitleFromInstructions,
+  triggerSmolDevAgentRun,
+} from 'github/pullRequest'
 import { TemplateID } from 'state/template'
 
 export interface DeploymentAuthData {
@@ -18,10 +24,13 @@ export interface DeploymentAuthData {
     installation_id: number,
     repository_id: number,
     issue_id: number,
-    pull_number: number,
+    pr_number: number,
     branch: string,
     owner: string,
     repo: string,
+    pr_status: string,
+    merged: boolean
+    closed_at: null | string,
   }
 }
 
@@ -78,7 +87,6 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       repositoryID,
     })
 
-
     const prTitle = await prTitleFromInstructions(body)
 
     if (!prTitle) {
@@ -96,6 +104,19 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       repo,
     })
 
+    posthog?.capture({
+      distinctId: user.id,
+      event: 'created PR when deploying agent',
+      properties: {
+        agent: TemplateID.SmolDeveloper,
+        repository: `${owner}/${repo}`,
+
+        pr_action: 'created',
+        pr_url: pullURL,
+        pr_number: pullNumber,
+      },
+    })
+
     const appInfo = await appInfoPromise
 
     const authData: DeploymentAuthData = {
@@ -105,10 +126,13 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
         installation_id: installationID,
         repository_id: repositoryID,
         issue_id: issueID,
-        pull_number: pullNumber,
+        pr_number: pullNumber,
         branch,
         owner,
         repo,
+        pr_status: 'opened',
+        merged: false,
+        closed_at: null,
       },
     }
 
@@ -156,15 +180,28 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       config: modelConfig as any,
     })
 
+
     const deployment = project.deployments[0]
     // We started the process of getting the token earlier but we await it only now because we need in now
     const accessToken = await accessTokenPromise
+
+    posthog?.capture({
+      distinctId: user.id,
+      event: 'created agent deployment',
+      properties: {
+        agent_deployment_id: deployment.id,
+        agent: TemplateID.SmolDeveloper,
+        pr_url: pullURL,
+        pr_number: pullNumber,
+        repository: `${owner}/${repo}`,
+      },
+    })
 
     await triggerSmolDevAgentRun({
       deployment,
       prompt: body,
       accessToken,
-      commitMessage: 'Add code based on the PR description',
+      commitMessage: 'Add code based on the PR instructions',
       owner,
       repo,
       client,
@@ -182,11 +219,17 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     posthog?.capture({
       distinctId: user.id,
-      event: 'triggered intial agent run',
+      event: 'triggered deployed agent initial run',
       properties: {
+        agent_deployment_id: deployment.id,
         agent: TemplateID.SmolDeveloper,
-        pr_url: pullURL,
         repository: `${owner}/${repo}`,
+
+        pr_url: pullURL,
+        pr_number: pullNumber,
+
+        title,
+        prompt: body,
       },
     })
 

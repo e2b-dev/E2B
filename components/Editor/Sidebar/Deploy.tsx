@@ -57,7 +57,6 @@ function Deploy({ project }: Props) {
       } = evaluatePrompt(modelConfig.prompt)
 
       await createDeployment({
-        // TODO: Add current envs vars and save them on backend
         project_id: project.id,
         config: {
           name: modelConfig.name,
@@ -65,8 +64,6 @@ function Deploy({ project }: Props) {
           args: getModelArgs(modelConfig, creds) as any,
           prompt: evaluatedPrompt,
           templateID,
-          // TODO: Handle prompt references
-          // prompt_references: promptReferences,
         } as any,
       })
     } finally {

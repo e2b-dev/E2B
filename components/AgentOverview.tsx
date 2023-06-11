@@ -233,7 +233,7 @@ export default function AgentOverview({ projects }: Props) {
                     </h2>
                   </div>
                   <div className="mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400">
-                    <p className="truncate">{`PR#${(p.deployment?.auth as any)?.['github']?.['pull_number']}`}</p>
+                    <p className="truncate">{`PR#${(p.deployment?.auth as any)?.['github']?.['pr_number']}`}</p>
                     <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 flex-none fill-gray-300">
                       <circle cx={1} cy={1} r={1} />
                     </svg>

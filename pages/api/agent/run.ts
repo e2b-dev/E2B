@@ -3,6 +3,9 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from 'db/prisma'
 import { getGHInstallationClient } from 'github/installationClient'
 import { addCommentToPR } from 'github/pullRequest'
+import { TemplateID } from 'state/template'
+import { client as posthog } from 'utils/posthog'
+
 import { DeploymentAuthData } from '.'
 
 // Indicate that the agent state changed (run finished)
@@ -43,7 +46,7 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
       client,
       owner: authData.github.owner,
       repo: authData.github.repo,
-      pullNumber: authData.github.pull_number,
+      pullNumber: authData.github.pr_number,
     })
 
     await prisma.deployments.update({
@@ -81,20 +84,60 @@ async function deleteRun(req: NextApiRequest, res: NextApiResponse) {
       where: {
         id: deployment_id,
       },
+      include: {
+        projects: {
+          include: {
+            teams: {
+              include: {
+                users_teams: {
+                  include: {
+                    users: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     })
 
     const authData = deployment.auth as unknown as DeploymentAuthData
     const client = getGHInstallationClient({ installationID: authData.github.installation_id })
 
     // Add comment about the run being cancelled
-    // TODO: Maybe just edit the previous comment?
     await addCommentToPR({
       body: 'Run cancelled',
       client,
       owner: authData.github.owner,
       repo: authData.github.repo,
-      pullNumber: authData.github.pull_number,
+      pullNumber: authData.github.pr_number,
     })
+
+    const users = deployment
+      .projects
+      .teams
+      .users_teams
+      .map(u => u.users)
+      .flat()
+
+    const result = await Promise.allSettled(users.map(async u => {
+      posthog?.capture({
+        distinctId: u.id,
+        event: 'cancelled agent run',
+        properties: {
+          agent_deployment_id: deployment.id,
+          agent: TemplateID.SmolDeveloper,
+          repository: `${authData.github.owner}/${authData.github.repo}`,
+
+          pr_number: authData.github.pr_number,
+        },
+      })
+    }))
+
+    await posthog?.shutdownAsync()
+
+    console.log('Analytics logged', result)
+
     res.status(200).json({})
   } catch (err: any) {
     console.error(err)

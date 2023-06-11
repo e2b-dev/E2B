@@ -1,12 +1,10 @@
 import { Configuration, OpenAIApi } from 'openai'
 import { backOff } from 'exponential-backoff'
 
-
 import api from 'api-client/api'
 import { deployments, prisma } from 'db/prisma'
 
 import { GitHubClient } from './client'
-
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -239,6 +237,11 @@ export const createAgentDeployment = api
   .create({
     project_id: true,
   })
+
+export const disableAgentDeployment = api
+  .path('/deployments/{id}')
+  .method('delete')
+  .create()
 
 export async function triggerSmolDevAgentRun({
   client,
