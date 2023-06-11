@@ -179,7 +179,9 @@ export async function getDeploymentsForPR({
   installationID,
   issueID,
   repositoryID,
+  enabled,
 }: {
+  enabled: boolean | undefined,
   repositoryID: number,
   issueID: number,
   installationID: number,
@@ -201,7 +203,7 @@ export async function getDeploymentsForPR({
       },
     },
     where: {
-      enabled: true,
+      enabled,
       AND: [
         {
           auth: {

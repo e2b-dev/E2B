@@ -44,7 +44,7 @@ const pullRequestReopenedHandler: HandlerFunction<'pull_request.reopened', unkno
     throw new Error('InstallationID not found')
   }
 
-  const deployments = await getDeploymentsForPR({ issueID, installationID, repositoryID })
+  const deployments = await getDeploymentsForPR({ issueID, installationID, repositoryID, enabled: undefined })
 
   if (deployments.length === 0) {
     console.log('No deployments found')
@@ -125,7 +125,7 @@ const pullRequestClosedHandler: HandlerFunction<'pull_request.closed', unknown> 
     throw new Error('InstallationID not found')
   }
 
-  const deployments = await getDeploymentsForPR({ issueID, installationID, repositoryID })
+  const deployments = await getDeploymentsForPR({ issueID, installationID, repositoryID, enabled: undefined })
 
   if (deployments.length === 0) {
     console.log('No deployments found')
@@ -209,7 +209,7 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
 
   const [prompt, deployments] = await Promise.all([
     getPromptFromPR({ client, issueNumber, repo, owner, body }),
-    getDeploymentsForPR({ issueID, installationID, repositoryID }),
+    getDeploymentsForPR({ issueID, installationID, repositoryID, enabled: true }),
   ])
 
   if (deployments.length === 0) {
@@ -310,7 +310,7 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
 
   const [prompt, deployments] = await Promise.all([
     getPromptFromPR({ client, issueNumber: pullNumber, repo, owner, body }),
-    getDeploymentsForPR({ issueID: pr.data.id, installationID, repositoryID }),
+    getDeploymentsForPR({ issueID: pr.data.id, installationID, repositoryID, enabled: true }),
   ])
 
   if (deployments.length === 0) {
