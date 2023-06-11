@@ -17,7 +17,7 @@ const openai = new OpenAIApi(configuration)
 export async function prTitleFromInstructions(instructions: string) {
   try {
     const result = await backOff(() => openai.createChatCompletion({
-      model: 'gpt-4',
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           content: `${instructions}\n\nTl;dr in one sentence (around 50 characters) describing what to build. Don't use pronouns, just describe the thing:`,
