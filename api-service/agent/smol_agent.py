@@ -5,8 +5,13 @@ import ast
 
 from typing import Any, List
 from langchain.callbacks.base import AsyncCallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.schema import AIMessage, BaseMessage, SystemMessage, HumanMessage
+from langchain.schema import (
+    AIMessage,
+    BaseLanguageModel,
+    BaseMessage,
+    SystemMessage,
+    HumanMessage,
+)
 from langchain.prompts.chat import (
     ChatPromptValue,
 )
@@ -23,6 +28,13 @@ from playground_client.exceptions import NotFoundException
 
 default_openai_api_key = os.environ.get("OPENAI_API_KEY", None)
 
+pricing = {
+    "gpt-4": {
+        "prompt": 0.03 / 1000,
+        "completion": 0.06 / 1000,
+    }
+}
+
 
 class SmolAgent(AgentBase):
     max_run_time = 60 * 60  # in seconds
@@ -33,13 +45,15 @@ class SmolAgent(AgentBase):
         get_envs: GetEnvs,
         on_logs: OnLogs,
         on_interaction_request: OnInteractionRequest,
+        model: BaseLanguageModel,
     ):
         super().__init__()
         self._dev_loop: asyncio.Task | None = None
         self.get_envs = get_envs
-        self.config = ModelConfig(**config)
+        self.config = config
         self.on_interaction_request = on_interaction_request
         self.on_logs = on_logs
+        self.model = model
 
     @classmethod
     async def create(
@@ -49,12 +63,124 @@ class SmolAgent(AgentBase):
         on_logs: OnLogs,
         on_interaction_request: OnInteractionRequest,
     ):
+        callback_manager = AsyncCallbackManager([])
+        new_config = ModelConfig(**config)
+
+        # Use default openai api key
+        new_config.args["openai_api_key"] = default_openai_api_key
+
+        model = get_model(new_config, callback_manager)
+
         return cls(
-            config,
+            new_config,
             get_envs,
             on_logs,
             on_interaction_request,
+            model,
         )
+
+    async def generate_file(
+        self,
+        filename: str,
+        filepaths_string=None,
+        shared_dependencies=None,
+        prompt=None,
+    ):
+        # call openai api with this prompt
+        filecode, metadata = await self.generate_response(
+            f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
+
+the app is: {prompt}
+
+the files we have decided to generate are: {filepaths_string}
+
+the shared dependencies (like filenames and variable names) we have decided on are: {shared_dependencies}
+
+only write valid code for the given filepath and file type, and return only the code.
+do not add any other explanation, only return valid code for that file type.
+""",
+            f"""
+We have broken up the program into per-file generation.
+Now your job is to generate only the code for the file {filename}.
+Make sure to have consistent filenames if you reference other files we are also generating.
+
+Remember that you must obey 3 things:
+- you are generating code for the file {filename}
+- do not stray from the names of the files and the shared dependencies we have decided on
+- MOST IMPORTANT OF ALL - the purpose of our app is {prompt} - every line of code you generate must be valid code. Do not include code fences in your response, for example
+
+Bad response:
+```javascript
+console.log("hello world")
+```
+
+Good response:
+console.log("hello world")
+
+Begin generating the code now.
+
+""",
+        )
+
+        await self.on_logs(
+            {
+                "message": f"Generated file",
+                "properties": {
+                    **metadata,
+                    "result": filecode,
+                    "model": "gpt-4",
+                },
+                "type": "model",
+            }
+        )
+
+        return filename, filecode, metadata
+
+    async def generate_response(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *args: Any,
+    ):
+        messages: List[BaseMessage] = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt),
+        ]
+
+        # loop thru each arg and add it to messages alternating role between "assistant" and "user"
+        role = "assistant"
+        for value in args:
+            if role == "assistant":
+                messages.append(AIMessage(content=value))
+            else:
+                messages.append(HumanMessage(content=value))
+        role = "user" if role == "assistant" else "assistant"
+
+        model_prompt = ChatPromptValue(messages=messages)
+        response = await self.model.agenerate_prompt([model_prompt])
+
+        cost = (
+            response.llm_output["token_usage"]["prompt_tokens"]
+            * pricing["gpt-4"]["prompt"]
+            + response.llm_output["token_usage"]["completion_tokens"]
+            * pricing["gpt-4"]["completion"]
+            if response.llm_output
+            else None
+        )
+
+        return response.generations[0][0].text, {
+            "prompt": model_prompt.to_string(),
+            "total_tokens": response.llm_output["token_usage"]["total_tokens"]
+            if response.llm_output
+            else None,
+            "prompt_tokens": response.llm_output["token_usage"]["prompt_tokens"]
+            if response.llm_output
+            else None,
+            "result_tokens": response.llm_output["token_usage"]["completion_tokens"]
+            if response.llm_output
+            else None,
+            "cost": cost,
+        }
 
     async def _dev(self, instructions: Any):
         user_prompt: str = instructions["Prompt"]
@@ -70,26 +196,14 @@ class SmolAgent(AgentBase):
             f"https://{git_app_name}:{access_token}@github.com/{owner}/{repo}.git"
         )
 
-        # TODO: Apply the file rewrite when the agent was invoked via PR code comment
-        file: str | None = instructions.get("File", None)
-
         await self.on_logs(
             {
-                "message": f"hi its me, 🐣the smol developer🐣! you said you wanted:\n{user_prompt}",
+                "message": f"hi its me, 🐣the smol developer🐣!",
                 "type": "info",
             }
         )
         playground = None
         try:
-            callback_manager = AsyncCallbackManager([StreamingStdOutCallbackHandler()])
-
-            # Use default openai api key if not provided
-            self.config.args["openai_api_key"] = self.config.args.get(
-                "openai_api_key", default_openai_api_key
-            )
-
-            model = get_model(self.config, callback_manager)
-
             playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
             await playground.open()
 
@@ -139,94 +253,7 @@ class SmolAgent(AgentBase):
                 ".tiff",
             ]
 
-            async def clean_dir():
-                files = await playground.get_filenames(rootdir, [".git"])
-                for file in files:
-                    _, extension = os.path.splitext(file.name)
-                    if extension not in extensions_to_skip:
-                        await playground.delete_file(file.name)
-
-            async def generate_response(
-                system_prompt: str,
-                user_prompt: str,
-                *args: Any,
-            ):
-                messages: List[BaseMessage] = [
-                    SystemMessage(content=system_prompt),
-                    HumanMessage(content=user_prompt),
-                ]
-
-                # loop thru each arg and add it to messages alternating role between "assistant" and "user"
-                role = "assistant"
-                for value in args:
-                    if role == "assistant":
-                        messages.append(AIMessage(content=value))
-                    else:
-                        messages.append(HumanMessage(content=value))
-                role = "user" if role == "assistant" else "assistant"
-
-                model_prompt = ChatPromptValue(messages=messages)
-
-                response = await model.agenerate_prompt([model_prompt])
-                return response.generations[0][0].text
-
-            async def generate_file(
-                filename: str,
-                filepaths_string=None,
-                shared_dependencies=None,
-                prompt=None,
-            ):
-                # call openai api with this prompt
-                filecode = await generate_response(
-                    f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
-
-the app is: {prompt}
-
-the files we have decided to generate are: {filepaths_string}
-
-the shared dependencies (like filenames and variable names) we have decided on are: {shared_dependencies}
-
-only write valid code for the given filepath and file type, and return only the code.
-do not add any other explanation, only return valid code for that file type.
-""",
-                    f"""
-We have broken up the program into per-file generation.
-Now your job is to generate only the code for the file {filename}.
-Make sure to have consistent filenames if you reference other files we are also generating.
-
-Remember that you must obey 3 things:
-- you are generating code for the file {filename}
-- do not stray from the names of the files and the shared dependencies we have decided on
-- MOST IMPORTANT OF ALL - the purpose of our app is {prompt} - every line of code you generate must be valid code. Do not include code fences in your response, for example
-
-Bad response:
-```javascript
-console.log("hello world")
-```
-
-Good response:
-console.log("hello world")
-
-Begin generating the code now.
-
-""",
-                )
-
-                await self.on_logs(
-                    {
-                        "message": f"Generated file",
-                        "properties": {
-                            "content": filecode,
-                            "filename": filename,
-                            "model": "gpt-4",
-                        },
-                        "type": "model",
-                    }
-                )
-
-                return filename, filecode
-
-            filepaths_string = await generate_response(
+            filepaths_string, metadata = await self.generate_response(
                 """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
 When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
@@ -241,7 +268,7 @@ do not add any other explanation, only return a python list of strings.
                 {
                     "message": f"Generating filepaths",
                     "properties": {
-                        "prompt": user_prompt,
+                        **metadata,
                         "result": filepaths_string,
                         "model": "gpt-4",
                     },
@@ -261,61 +288,32 @@ do not add any other explanation, only return a python list of strings.
             except NotFoundException:
                 pass
 
-            if file is not None:
-                filename, filecode = await generate_file(
-                    file,
-                    filepaths_string=filepaths_string,
-                    shared_dependencies=shared_dependencies,
-                    prompt=user_prompt,
-                )
+            files = await playground.get_filenames(rootdir, [".git"])
+            for file in files:
+                _, extension = os.path.splitext(file.name)
+                if extension not in extensions_to_skip:
+                    await playground.delete_file(file.name)
 
-                await self.on_logs(
-                    {
-                        "message": f"Generated file",
-                        "properties": {
-                            "filename": filename,
-                            "result": filecode,
-                            "model": "gpt-4",
-                        },
-                        "type": "model",
-                    }
-                )
+            await self.on_logs(
+                {
+                    "message": f"Cleaned root directory",
+                    "properties": {
+                        "tool": "filesystem",
+                    },
+                    "type": "tool",
+                }
+            )
 
-                await playground.write_file(os.path.join(rootdir, filename), filecode)
-
-                await self.on_logs(
-                    {
-                        "message": f"Saved file",
-                        "properties": {
-                            "filename": filename,
-                            "content": filecode,
-                            "tool": "filesystem",
-                        },
-                        "type": "tool",
-                    }
-                )
-
-            else:
-                await clean_dir()
-
-                await self.on_logs(
-                    {
-                        "message": f"Cleaned root directory",
-                        "properties": {
-                            "tool": "filesystem",
-                        },
-                        "type": "tool",
-                    }
-                )
-
-                # understand shared dependencies
-                shared_dependencies = await generate_response(
-                    """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
+            (
+                shared_dependencies,
+                metadata,
+            ) = await self.generate_response(
+                f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
 In response to the user's prompt:
 
 ---
-the app is: {prompt}
+the app is: {user_prompt}
 ---
 
 the files we have decided to generate are: {filepaths_string}
@@ -324,77 +322,80 @@ Now that we have a list of files, we need to understand what dependencies they s
 Please name and briefly describe what is shared between the files we are generating, including exported variables, data schemas, id names of every DOM elements that javascript functions will use, message names, and function names.
 Exclusively focus on the names of the shared dependencies, and do not add any other explanation.
 """,
-                    user_prompt,
-                )
+                user_prompt,
+            )
 
+            await self.on_logs(
+                {
+                    "message": f"Generated shared dependencies",
+                    "properties": {
+                        **metadata,
+                        "result": shared_dependencies,
+                        "model": "gpt-4",
+                    },
+                    "type": "model",
+                }
+            )
+
+            # write shared dependencies as a md file inside the generated directory
+            await playground.write_file(
+                os.path.join(rootdir, "shared_dependencies.md"),
+                shared_dependencies,
+            )
+
+            await self.on_logs(
+                {
+                    "message": f"Saved shared dependencies",
+                    "properties": {
+                        "filename": "shared_dependencies.md",
+                        "content": shared_dependencies,
+                        "tool": "filesystem",
+                    },
+                    "type": "tool",
+                }
+            )
+            # Maximum number of allowed concurrent calls
+            semaphore = asyncio.Semaphore(4)
+
+            async def with_semaphore(coro):
+                async with semaphore:
+                    return await coro
+
+            # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
+            coros = [
+                with_semaphore(
+                    self.generate_file(
+                        name,
+                        filepaths_string=filepaths_string,
+                        shared_dependencies=shared_dependencies,
+                        prompt=user_prompt,
+                    )
+                )
+                for name in list_actual
+                # Filter out files that end with esxtensions we don't want to generate
+                if not any(name.endswith(extension) for extension in extensions_to_skip)
+            ]
+
+            generated_files = await asyncio.gather(*coros)
+
+            for (
+                name,
+                content,
+                _,  # metadata
+            ) in generated_files:
+                filepath = os.path.join(rootdir, name)
+                await playground.write_file(filepath, content)
                 await self.on_logs(
                     {
-                        "message": f"Generated shared dependencies",
+                        "message": f"Saved file",
                         "properties": {
-                            "result": shared_dependencies,
-                            "model": "gpt-4",
-                        },
-                        "type": "model",
-                    }
-                )
-
-                # write shared dependencies as a md file inside the generated directory
-                await playground.write_file(
-                    os.path.join(rootdir, "shared_dependencies.md"),
-                    shared_dependencies,
-                )
-
-                await self.on_logs(
-                    {
-                        "message": f"Saved shared dependencies",
-                        "properties": {
-                            "filename": "shared_dependencies.md",
-                            "content": shared_dependencies,
+                            "filename": filepath,
+                            "content": content,
                             "tool": "filesystem",
                         },
                         "type": "tool",
                     }
                 )
-                # Maximum number of allowed concurrent calls
-                semaphore = asyncio.Semaphore(3)
-
-                async def with_semaphore(coro):
-                    async with semaphore:
-                        return await coro
-
-                # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
-                coros = [
-                    with_semaphore(
-                        generate_file(
-                            name,
-                            filepaths_string=filepaths_string,
-                            shared_dependencies=shared_dependencies,
-                            prompt=user_prompt,
-                        )
-                    )
-                    for name in list_actual
-                    # Filter out files that end with esxtensions we don't want to generate
-                    if not any(
-                        name.endswith(extension) for extension in extensions_to_skip
-                    )
-                ]
-
-                generated_files = await asyncio.gather(*coros)
-
-                for name, content in generated_files:
-                    filepath = os.path.join(rootdir, name)
-                    await playground.write_file(filepath, content)
-                    await self.on_logs(
-                        {
-                            "message": f"Saved file",
-                            "properties": {
-                                "filename": filepath,
-                                "content": content,
-                                "tool": "filesystem",
-                            },
-                            "type": "tool",
-                        }
-                    )
 
             await fixClockDrift
             await playground.push_repo(
@@ -454,7 +455,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 self._dev_loop = asyncio.create_task(
                     self._dev(instructions=instructions),
                 )
-
                 await asyncio.wait_for(
                     self._dev_loop,
                     timeout=self.max_run_time,

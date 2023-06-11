@@ -11,10 +11,16 @@ import { useRouter } from 'next/router'
 
 const navigation = [
   {
-    name: 'Agents',
+    name: 'Deployed Agents',
     href: '#',
     icon: Grid,
     current: true,
+  },
+  {
+    name: 'Run Queue',
+    href: '#',
+    icon: Grid,
+    current: false,
   },
 ]
 

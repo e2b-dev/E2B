@@ -4,6 +4,7 @@ import {
 } from 'react'
 import {
   ArrowLeft,
+  ArrowRight,
 } from 'lucide-react'
 
 import smolTemplates from 'utils/smolTemplates'
@@ -84,10 +85,11 @@ function AgentInstructions({
           <span className="text-sm">Back</span>
         </button>
         <button
-          className="px-2 py-1 font-medium rounded-md text-sm border border-indigo-400/30 bg-indigo-400/10 text-indigo-400 hover:bg-transparent hover:border-indigo-400 transition-all"
+          className="px-2 py-1 flex group items-center space-x-1 font-medium rounded-md border border-indigo-400/30 bg-indigo-400/10 text-indigo-400 hover:bg-transparent hover:border-indigo-400 transition-all"
           onClick={handleContinue}
         >
-          Continue
+          <span className="text-sm">Continue</span>
+          <ArrowRight className="group-hover:translate-x-0.5 transition-all" size={14} />
         </button>
       </div>
     </div>

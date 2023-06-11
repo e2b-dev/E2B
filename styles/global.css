@@ -18,7 +18,8 @@
 
   html,
   body {
-    @apply h-full bg-gray-800;
+    @apply h-full;
+    @apply bg-gray-900;
     @apply antialiased;
     text-rendering: optimizeLegibility;
     overflow: overlay;
@@ -51,7 +52,7 @@
   .reference {
     @apply text-slate-600 font-mono font-semibold border-b border-slate-600;
     box-decoration-break: clone;
-  }  
+  }
 }
 
 .no-scroller::-webkit-scrollbar {
