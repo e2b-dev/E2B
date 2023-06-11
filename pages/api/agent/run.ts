@@ -34,6 +34,21 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
       data: {
         last_finished_prompt: prompt,
       },
+      include: {
+        projects: {
+          include: {
+            teams: {
+              include: {
+                users_teams: {
+                  include: {
+                    users: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     })
 
     const authData = deployment.auth as unknown as DeploymentAuthData
@@ -49,14 +64,29 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
       pullNumber: authData.github.pr_number,
     })
 
-    await prisma.deployments.update({
-      where: {
-        id: deployment_id,
-      },
-      data: {
-        last_finished_prompt: prompt,
-      },
-    })
+    const users = deployment
+      .projects
+      .teams
+      .users_teams
+      .map(u => u.users)
+      .flat()
+
+    const result = await Promise.allSettled(users.map(async u => {
+      posthog?.capture({
+        distinctId: u.id,
+        event: 'finished agent run',
+        properties: {
+          agent_deployment_id: deployment.id,
+          agent: TemplateID.SmolDeveloper,
+          repository: `${authData.github.owner}/${authData.github.repo}`,
+
+          pr_number: authData.github.pr_number,
+        },
+      })
+    }))
+
+    await posthog?.shutdownAsync()
+    console.log('Analytics logged', result)
 
     res.status(200).json({})
   } catch (err: any) {
