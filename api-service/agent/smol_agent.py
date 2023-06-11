@@ -82,6 +82,7 @@ class SmolAgent(AgentBase):
     async def generate_file(
         self,
         filename: str,
+        run_id: str,
         filepaths_string=None,
         shared_dependencies=None,
         prompt=None,
@@ -129,6 +130,7 @@ Begin generating the code now.
                     **metadata,
                     "result": filecode,
                     "model": "gpt-4",
+                    "run_id": run_id,
                 },
                 "type": "model",
             }
@@ -192,6 +194,8 @@ Begin generating the code now.
         git_app_email: str = instructions["GitHubAppEmail"]
         commit_message: str = instructions["CommitMessage"]
 
+        run_id = str(uuid.uuid4())
+
         repo_address = (
             f"https://{git_app_name}:{access_token}@github.com/{owner}/{repo}.git"
         )
@@ -200,6 +204,9 @@ Begin generating the code now.
             {
                 "message": f"hi its me, 🐣the smol developer🐣!",
                 "type": "info",
+                "properties": {
+                    "run_id": run_id,
+                },
             }
         )
         playground = None
@@ -213,6 +220,7 @@ Begin generating the code now.
                     "properties": {
                         "playground": "created",
                         "id": playground.id,
+                        "run_id": run_id,
                     },
                     "type": "playground",
                 }
@@ -236,6 +244,7 @@ Begin generating the code now.
                     "properties": {
                         "tool": "git",
                         "repository": f"{owner}/{repo}",
+                        "run_id": run_id,
                     },
                     "type": "tool",
                 }
@@ -271,6 +280,7 @@ do not add any other explanation, only return a python list of strings.
                         **metadata,
                         "result": filepaths_string,
                         "model": "gpt-4",
+                        "run_id": run_id,
                     },
                     "type": "model",
                 }
@@ -299,6 +309,7 @@ do not add any other explanation, only return a python list of strings.
                     "message": f"Cleaned root directory",
                     "properties": {
                         "tool": "filesystem",
+                        "run_id": run_id,
                     },
                     "type": "tool",
                 }
@@ -332,6 +343,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         **metadata,
                         "result": shared_dependencies,
                         "model": "gpt-4",
+                        "run_id": run_id,
                     },
                     "type": "model",
                 }
@@ -350,6 +362,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "filename": "shared_dependencies.md",
                         "content": shared_dependencies,
                         "tool": "filesystem",
+                        "run_id": run_id,
                     },
                     "type": "tool",
                 }
@@ -366,6 +379,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 with_semaphore(
                     self.generate_file(
                         name,
+                        run_id=run_id,
                         filepaths_string=filepaths_string,
                         shared_dependencies=shared_dependencies,
                         prompt=user_prompt,
@@ -392,6 +406,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                             "filename": filepath,
                             "content": content,
                             "tool": "filesystem",
+                            "run_id": run_id,
                         },
                         "type": "tool",
                     }
@@ -414,6 +429,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "branch": branch,
                         "commit_message": commit_message,
                         "tool": "git",
+                        "run_id": run_id,
                     },
                     "type": "tool",
                 }
@@ -438,6 +454,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "message": f"Closed playground",
                         "properties": {
                             "playground": "closed",
+                            "run_id": run_id,
                         },
                         "type": "playground",
                     }
