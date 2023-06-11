@@ -1,10 +1,10 @@
 import { Fragment, useState } from 'react'
+import Link from 'next/link'
 import { Dialog, Transition } from '@headlessui/react'
 import clsx from 'clsx'
 import {
   Zap,
   ListEnd,
-  ChevronRight,
   X,
   Menu,
 } from 'lucide-react'
@@ -13,6 +13,7 @@ import { usePostHog } from 'posthog-js/react'
 import { projects, deployments } from 'db/prisma'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
+import AgentListItem from './AgentListItem'
 
 const navigation = [
   {
@@ -50,7 +51,8 @@ export default function AgentOverview({ projects }: Props) {
     router.push('/sign')
   }
 
-  function selectAgent(projectID: string) {
+  function selectAgent(e: any, projectID: string) {
+    e.preventDefault()
     posthog?.capture('selected deployed agent', { projectID: projectID })
     router.push(`/${projectID}`)
   }
@@ -68,6 +70,8 @@ export default function AgentOverview({ projects }: Props) {
       project: p,
       deployment: p.deployments[0],
     }))
+
+  console.log('projects with deployments', projectsWithDeployments)
 
   return (
     <div className="overflow-hidden">
@@ -218,6 +222,7 @@ export default function AgentOverview({ projects }: Props) {
       </div>
 
       <div className="xl:pl-72">
+        {/* Mobile menu icon */}
         <div className="xl:hidden sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-6 border-b border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
           <button type="button" className="-m-2.5 p-2.5 text-white xl:hidden" onClick={() => setSidebarOpen(true)}>
             <span className="sr-only">Open sidebar</span>
@@ -231,38 +236,19 @@ export default function AgentOverview({ projects }: Props) {
           </header>
 
           {/* Deployment list */}
-          <ul role="list" className="divide-y divide-white/5 overflow-auto">
-            {projectsWithDeployments.map((p) => (
-              <li key={p.project.id} className="relative flex items-center space-x-4 p-4 sm:px-6 lg:px-8">
-                <div
-                  className="min-w-0 flex-auto cursor-pointer"
-                  onClick={() => selectAgent(p.project.id)}
+          <ul role="list" className="px-4 sm:px-6 lg:px-8 space-y-4 overflow-auto">
+            {projectsWithDeployments.map(p => (
+              <li
+                key={p.project.id}
+              >
+                <Link
+                  href={p.project.id}
+                  onClick={(e) => selectAgent(e, p.project.id)}
                 >
-                  <div className="flex items-center gap-x-3">
-                    <div className={clsx(statuses[p.deployment.enabled ? 'enabled' : 'disabled'], 'flex-none rounded-full p-1')}>
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <h2 className="min-w-0 text-sm font-semibold leading-6 text-white">
-                      <a className="flex gap-x-2">
-                        <span className="truncate">{p.project.name}</span>
-                        <span className="text-gray-400">-</span>
-                        <span className="whitespace-nowrap">{(p.deployment?.auth as any)?.['github']?.['owner'] + '/' + (p.deployment?.auth as any)?.['github']?.['repo']}</span>
-                        <span className="absolute inset-0" />
-                      </a>
-                    </h2>
-                  </div>
-                  <div className="mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400">
-                    <p className="truncate">{`PR#${(p.deployment?.auth as any)?.['github']?.['pull_number']}`}</p>
-                    <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 flex-none fill-gray-300">
-                      <circle cx={1} cy={1} r={1} />
-                    </svg>
-                  </div>
-                </div>
-                <ChevronRight
-                  size={16}
-                  className="text-gray-400"
-                  aria-hidden="true"
-                />
+                  <AgentListItem
+                    agent={p}
+                  />
+                </Link>
               </li>
             ))}
           </ul>
