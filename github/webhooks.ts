@@ -94,9 +94,10 @@ const pullRequestReopenedHandler: HandlerFunction<'pull_request.reopened', unkno
             agent_deployment_id: d.id,
             agent: TemplateID.SmolDeveloper,
             repository: payload.repository.full_name,
+            repository_url: payload.repository.html_url,
 
             pr_action: payload.action,
-            pr_url: payload.pull_request.url,
+            pr_url: payload.pull_request.html_url,
             pr_number: payload.pull_request.number,
 
             prompt: d.last_finished_prompt,
@@ -169,9 +170,10 @@ const pullRequestClosedHandler: HandlerFunction<'pull_request.closed', unknown> 
             agent_deployment_id: d.id,
             agent: TemplateID.SmolDeveloper,
             repository: payload.repository.full_name,
+            repository_url: payload.repository.html_url,
 
             pr_action: payload.action,
-            pr_url: payload.pull_request.url,
+            pr_url: payload.pull_request.html_url,
             pr_number: payload.pull_request.number,
 
             prompt: d.last_finished_prompt,
@@ -247,9 +249,10 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
               agent_deployment_id: d.id,
               agent: TemplateID.SmolDeveloper,
               repository: payload.repository.full_name,
+              repository_url: payload.repository.html_url,
 
               pr_action: payload.action,
-              pr_url: payload.pull_request.url,
+              pr_url: payload.pull_request.html_url,
               pr_number: issueNumber,
 
               prompt,
@@ -346,9 +349,10 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
               agent_deployment_id: d.id,
               agent: TemplateID.SmolDeveloper,
               repository: payload.repository.full_name,
+              repository_url: payload.repository.html_url,
 
               pr_comment_action: payload.action,
-              pr_url: pr.data.url,
+              pr_url: pr.data.html_url,
               pr_number: pr.data.number,
 
               prompt,
