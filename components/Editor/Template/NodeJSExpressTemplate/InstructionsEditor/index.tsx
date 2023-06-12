@@ -17,6 +17,7 @@ export interface Props {
   onChange: (value: string) => void
   content: string
   referenceSearch?: Fuse<Reference>
+  onFocus?: () => void
 }
 
 export interface InstructionsEditorRef {
@@ -28,6 +29,7 @@ const InstructionsEditor = forwardRef<InstructionsEditorRef, Props>(function Ins
   title,
   onChange,
   content,
+  onFocus,
   placeholder,
   referenceSearch,
 }: Props, ref) {
@@ -35,6 +37,7 @@ const InstructionsEditor = forwardRef<InstructionsEditorRef, Props>(function Ins
     initialContent: content,
     onContentChange: onChange,
     placeholder,
+    onFocus,
   })
 
   useImperativeHandle(ref, () => {
