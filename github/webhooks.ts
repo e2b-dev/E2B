@@ -1,15 +1,16 @@
 import type { HandlerFunction } from '@octokit/webhooks/dist-types/types'
-import { prisma } from 'db/prisma'
 import {
   Webhooks,
   createNodeMiddleware,
 } from '@octokit/webhooks'
+
+import { prisma } from 'db/prisma'
 import { client as posthog } from 'utils/posthog'
+import { TemplateID } from 'state/template'
+import { DeploymentAuthData } from 'pages/api/agent'
 
 import { disableAgentDeployment, getDeploymentsForPR, getGHAccessToken, getPromptFromPR, triggerSmolDevAgentRun } from './pullRequest'
 import { getGHInstallationClient } from './installationClient'
-import { TemplateID } from 'state/template'
-import { DeploymentAuthData } from 'pages/api/agent'
 
 export async function getGitHubWebhooksMiddleware() {
   const webhooks = new Webhooks({
@@ -22,12 +23,13 @@ export async function getGitHubWebhooksMiddleware() {
   webhooks.on('pull_request.closed', pullRequestClosedHandler)
 
   return createNodeMiddleware(webhooks, {
-    path: '/api/github/webhook', log: {
+    path: '/api/github/webhook',
+    log: {
       debug: console.log,
       info: console.log,
       warn: console.log,
       error: console.error,
-    }
+    },
   })
 }
 
