@@ -9,7 +9,6 @@ export interface Props {
   }
 }
 
-
 function AgentListItem({
   agent,
 }: Props) {
