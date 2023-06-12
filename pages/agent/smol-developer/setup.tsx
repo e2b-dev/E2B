@@ -130,7 +130,6 @@ function Setup() {
 
   const {
     trigger: createAgent,
-    data,
   } = useSWRMutation('/api/agent', handlePostAgent)
 
   async function deployAgent() {
@@ -160,6 +159,12 @@ function Setup() {
         commitMessage: 'Initial commit',
         modelConfig,
       })
+
+      posthog?.capture('clicked on deploy agent', {
+        repository: `${selectedRepository.owner}/${selectedRepository.repo}`,
+        instructions,
+      })
+
       // Redirect to the dashboard.
       if (response) {
         router.push(response.pullURL)
@@ -177,6 +182,9 @@ function Setup() {
 
   function previousStep() {
     setCurrentStepIdx(currentStepIdx - 1)
+    posthog?.capture('clicked previous step', {
+      step: currentStepIdx - 1,
+    })
   }
 
   function handleRepoSelection(repo: any) {
@@ -248,8 +256,14 @@ function Setup() {
             selectedRepo={selectedRepository!}
             instructions={instructions}
             onInstructionsChange={setInstructions}
-            onChangeRepo={() => setCurrentStepIdx(0)}
-            onChangeTemplate={() => setCurrentStepIdx(1)}
+            onChangeRepo={() => {
+              setCurrentStepIdx(0)
+              posthog?.capture('returned to repository selection step')
+            }}
+            onChangeTemplate={() => {
+              setCurrentStepIdx(1)
+              posthog?.capture('returned to the instructions step')
+            }}
             onBack={previousStep}
             onDeploy={deployAgent}
             isDeploying={isDeploying}

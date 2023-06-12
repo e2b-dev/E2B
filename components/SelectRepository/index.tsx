@@ -38,14 +38,21 @@ function SelectRepository({
   const posthog = usePostHog()
 
   function configure() {
-    posthog?.capture('configured github app')
+    posthog?.capture('started github app configuration')
     configureGitHubApp()
   }
 
   function selectRepo(repo: RepoSetup) {
-    posthog?.capture('selected repository', {
-      repository: repo.fullName,
-    })
+    if (selected === 'new') {
+      posthog?.capture('created new repository', {
+        repository: repo.fullName,
+      })
+    } else if (selected === 'existing') {
+      posthog?.capture('selected existing repository', {
+        repository: repo.fullName,
+      })
+    }
+
     onRepoSelection(repo)
   }
 
@@ -71,7 +78,10 @@ function SelectRepository({
         <>
           <RepoSwitch
             value={selected}
-            onChange={setSelected}
+            onChange={v => {
+              setSelected(v)
+              posthog?.capture(`selected ${v} repository tab`)
+            }}
           />
           {selected === 'existing' && (
             <ExistingRepositories

@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useRef,
   useState,
 } from 'react'
@@ -11,6 +12,7 @@ import smolTemplates from 'utils/smolTemplates'
 import InstructionsEditor, { InstructionsEditorRef } from 'components/Editor/Template/NodeJSExpressTemplate/InstructionsEditor'
 import InstructionsTemplateButton from 'components/InstructionsTemplateButton'
 import AlertError from 'components/AlertError'
+import { usePostHog } from 'posthog-js/react'
 
 export interface Props {
   value: string
@@ -29,9 +31,13 @@ function AgentInstructions({
 }: Props) {
   const [error, setError] = useState<{ title: string, infoItems: string[] }>()
   const editorRef = useRef<InstructionsEditorRef>(null)
+  const posthog = usePostHog()
 
   function handleContinue() {
     setError(undefined)
+    posthog?.capture('confirmed instructions', {
+      instructions: value,
+    })
     if (!value) {
       setError({
         title: 'No instructions provided',
@@ -44,9 +50,16 @@ function AgentInstructions({
     onNext()
   }
 
+  const onFocus = useCallback(() => {
+    posthog?.capture('focused instructions editor')
+  }, [posthog])
+
   function handleTemplateClick(template: string) {
     editorRef.current?.setContent(template)
     onTemplateSelect(template)
+    posthog?.capture('selected instructions template', {
+      template: template,
+    })
   }
 
   return (
@@ -70,6 +83,7 @@ function AgentInstructions({
       <div className="relative bg-gray-950 flex flex-col p-2 w-full flex-1 overflow-auto border border-gray-700 rounded-md">
         <InstructionsEditor
           ref={editorRef}
+          onFocus={onFocus}
           className="absolute inset-0 bg-gray-950 p-4 text-gray-100"
           placeholder="Create a website using Nextjs..."
           content={value}

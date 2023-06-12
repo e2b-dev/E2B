@@ -8,7 +8,9 @@ function useDocEditor({
   initialContent,
   onContentChange,
   placeholder,
+  onFocus,
 }: {
+  onFocus?: () => void,
   initialContent: string,
   /**
    * @param content in Markdown format
@@ -39,6 +41,9 @@ function useDocEditor({
         }
       }),
     ],
+    onFocus({ editor }) {
+      onFocus?.()
+    },
     onCreate({ editor }) {
       editor?.commands.setContent(initialContent)
     },
@@ -47,7 +52,7 @@ function useDocEditor({
         onContentChange(editor.storage.markdown.getMarkdown())
       }
     },
-  }, [onContentChange])
+  }, [onContentChange, onFocus,])
 
   return editor
 }
