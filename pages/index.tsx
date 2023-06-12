@@ -17,6 +17,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { deployments, prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import AgentList from 'components/AgentList'
+import AgentRunsList from 'components/AgentRunsList'
 
 const navigation = [
   {
@@ -127,6 +128,8 @@ function Home({ projects }: Props) {
   const posthog = usePostHog()
 
   const view = router.query.view as string | undefined
+  const selectedAgentInstance = router.query.projectID as string | undefined
+  console.log({ view, selectedAgentInstance })
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -137,7 +140,8 @@ function Home({ projects }: Props) {
   function selectAgent(e: any, projectID: string) {
     e.preventDefault()
     posthog?.capture('selected deployed agent', { projectID: projectID })
-    router.push(`/deployed/${projectID}`)
+    router.push(`/?view=runs&projectID=${projectID}`, undefined, { shallow: true })
+    // router.push(`/deployed/${projectID}`)
   }
 
   const projectsWithDeployments = projects
@@ -318,8 +322,10 @@ function Home({ projects }: Props) {
             agents={projectsWithDeployments}
             onSelectAgent={selectAgent}
           />
-        ) : view === 'runs' ? (
-          <div>runs</div>
+        ) : view === 'runs' && selectedAgentInstance ? (
+          <AgentRunsList
+            agentInstance={projects.find(p => p.id === selectedAgentInstance)!}
+          />
         ) : (
           <span>404</span>
         )}
