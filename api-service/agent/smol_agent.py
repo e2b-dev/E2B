@@ -90,6 +90,7 @@ class SmolAgent(AgentBase):
         prompt=None,
     ):
         # call openai api with this prompt
+        print("Generating file", filename)
         filecode, metadata = await self.generate_response(
             f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
@@ -124,7 +125,7 @@ Begin generating the code now.
 
 """,
         )
-
+        print("File generated", filename)
         await self.on_logs(
             {
                 "message": f"Generated file",
@@ -449,6 +450,7 @@ Begin generating the code now.
                 ]
 
                 generated_files = await asyncio.gather(*coros)
+                print("All files generated")
 
                 for (
                     name,
