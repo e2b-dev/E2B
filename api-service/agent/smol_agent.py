@@ -443,7 +443,18 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     },
                 )
             )
-        except:
+        except Exception as e:
+            print(f"Failed agent run {self.run_id}", e)
+            await self.on_interaction_request(
+                AgentInteractionRequest(
+                    interaction_id=str(uuid.uuid4()),
+                    type="failed",
+                    data={
+                        "run_id": self.run_id,
+                        "error": str(e),
+                    },
+                )
+            )
             raise
         finally:
             if playground is not None:

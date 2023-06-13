@@ -23,6 +23,17 @@ class Database:
 
         return None if len(response.data) == 0 else response.data[0]
 
+    async def get_deployment_by_id(self, id: str):
+        response = (
+            await self.client.table(TABLE_DEPLOYMENTS)
+            .select("*")
+            .eq("id", id)
+            .limit(1)
+            .execute()
+        )
+
+        return None if len(response.data) == 0 else response.data[0]
+
     async def get_deployments(self):
         response = (
             await self.client.table(TABLE_DEPLOYMENTS)

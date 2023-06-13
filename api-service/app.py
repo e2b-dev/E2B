@@ -6,7 +6,8 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
-
+from opentelemetry import metrics
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from agent.base import AgentInteraction
 from deployment.in_memory import InMemoryDeploymentManager
@@ -119,7 +120,7 @@ async def interact_with_agent_deployment(
     deployment = await deployment_manager.get_deployment(id)
     if not deployment:
         # Get deployment from db if enabled
-        db_deployment = await db.get_deployment(id)
+        db_deployment = await db.get_deployment_by_id(id)
         if (
             db_deployment
             and db_deployment["enabled"]
@@ -139,3 +140,6 @@ async def interact_with_agent_deployment(
     if body.interaction_id:
         deployment.event_handler.remove_interaction_request(body.interaction_id)
     return result
+
+
+FastAPIInstrumentor.instrument_app(app)
