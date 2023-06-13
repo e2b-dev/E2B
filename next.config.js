@@ -23,6 +23,7 @@ const nextConfig = {
   swcMinify: true,
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
+    // instrumentationHook: true,
   },
   async rewrites() {
     return [
