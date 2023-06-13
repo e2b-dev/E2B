@@ -283,6 +283,8 @@ Begin generating the code now.
                     ".ico",
                     ".tif",
                     ".tiff",
+                    ".mp3",
+                    ".lock",
                 ]
 
                 filepaths_string, metadata = await self.generate_response(
