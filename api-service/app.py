@@ -6,9 +6,9 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
-from opentelemetry import metrics
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry import trace
 
+from observability import total_deployments_counter, total_deployment_runs_counter
 from agent.base import AgentInteraction
 from deployment.in_memory import InMemoryDeploymentManager
 from database.base import db
@@ -49,13 +49,6 @@ class CreateDeploymentBody(BaseModel):
     config: Any
 
 
-@app.get("/deployments")
-async def list_deployments(token: Annotated[str, Depends(oauth2_scheme)]):
-    check_token(token)
-    deployments = await deployment_manager.list_deployments()
-    return {"deployments": [{"id": deployment.id} for deployment in deployments]}
-
-
 @app.put("/deployments")
 async def create_agent_deployment(
     body: CreateDeploymentBody,
@@ -72,6 +65,22 @@ async def create_agent_deployment(
             body.config,
             db_deployment.get("logs") or [],
         )
+        current_span = trace.get_current_span()
+        current_span.set_attributes(
+            {
+                "deployment_id": deployment.id,
+                "project_id": project_id,
+            }
+        )
+        total_deployments_counter.add(
+            1,
+            {
+                "project_id": project_id,
+                "deployment_id": deployment.id,
+                "agent": "SmolDeveloper",
+                "update": True,
+            },
+        )
         return {"id": deployment.id}
     else:
         id = str(uuid.uuid4())
@@ -80,6 +89,21 @@ async def create_agent_deployment(
             project_id,
             body.config,
             [],
+        )
+        current_span = trace.get_current_span()
+        current_span.set_attributes(
+            {
+                "deployment_id": deployment.id,
+                "project_id": project_id,
+            }
+        )
+        total_deployments_counter.add(
+            1,
+            {
+                "project_id": project_id,
+                "deployment_id": id,
+                "agent": "SmolDeveloper",
+            },
         )
         return {"id": deployment.id}
 
@@ -90,6 +114,7 @@ async def delete_agent_deployment(
     token: Annotated[str, Depends(oauth2_scheme)],
 ):
     check_token(token)
+
     await deployment_manager.remove_deployment(id)
 
 
@@ -136,10 +161,15 @@ async def interact_with_agent_deployment(
         else:
             raise HTTPException(status_code=404, detail="Deployment not found")
 
+    current_span = trace.get_current_span()
+    current_span.set_attributes(
+        {
+            "deployment_id": id,
+        }
+    )
+
+    total_deployment_runs_counter.add(1, {"deployment_id": id})
     result = await deployment.agent.interaction(body)
     if body.interaction_id:
         deployment.event_handler.remove_interaction_request(body.interaction_id)
     return result
-
-
-FastAPIInstrumentor.instrument_app(app)

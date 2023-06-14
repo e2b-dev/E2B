@@ -15,7 +15,9 @@ from langchain.schema import (
 from langchain.prompts.chat import (
     ChatPromptValue,
 )
+from opentelemetry.trace.span import StatusCode, Status
 
+from observability import tracer
 from agent.base import (
     AgentInteraction,
     OnLogs,
@@ -185,224 +187,158 @@ Begin generating the code now.
         }
 
     async def _dev(self, run_id: str, instructions: Any):
-        user_prompt: str = instructions["Prompt"]
-        access_token: str = instructions["AccessToken"]
-        repo: str = instructions["Repo"]
-        owner: str = instructions["Owner"]
-        branch: str = instructions["Branch"]
-        git_app_name: str = instructions["GitHubAppName"]
-        git_app_email: str = instructions["GitHubAppEmail"]
-        commit_message: str = instructions["CommitMessage"]
+        with tracer.start_as_current_span("agent-run") as span:
+            user_prompt: str = instructions["Prompt"]
+            access_token: str = instructions["AccessToken"]
+            repo: str = instructions["Repo"]
+            owner: str = instructions["Owner"]
+            branch: str = instructions["Branch"]
+            git_app_name: str = instructions["GitHubAppName"]
+            git_app_email: str = instructions["GitHubAppEmail"]
+            commit_message: str = instructions["CommitMessage"]
 
-        repo_address = (
-            f"https://{git_app_name}:{access_token}@github.com/{owner}/{repo}.git"
-        )
-
-        await self.on_logs(
-            {
-                "message": f"hi its me, 🐣the smol developer🐣!",
-                "type": "info",
-                "properties": {
+            span.set_attributes(
+                {
                     "run_id": run_id,
-                },
-            }
-        )
-        playground = None
-        try:
-            playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
-            await playground.open()
-
-            await self.on_logs(
-                {
-                    "message": f"Created playground",
-                    "properties": {
-                        "playground": "created",
-                        "id": playground.id,
-                        "run_id": run_id,
-                    },
-                    "type": "playground",
+                    "prompt": user_prompt,
+                    "prompt.length": len(user_prompt),
+                    "repository": f"{owner}/{repo}",
                 }
             )
 
-            fixClockDrift = asyncio.ensure_future(playground.sync_clock())
-
-            rootdir = "/repo"
-            await playground.change_rootdir(rootdir)
-            await playground.make_dir(rootdir)
-
-            await playground.clone_repo(
-                repo_address=repo_address,
-                rootdir=rootdir,
-                branch=branch,
+            repo_address = (
+                f"https://{git_app_name}:{access_token}@github.com/{owner}/{repo}.git"
             )
 
             await self.on_logs(
                 {
-                    "message": f"Cloned repository",
+                    "message": f"hi its me, 🐣the smol developer🐣!",
+                    "type": "info",
                     "properties": {
-                        "tool": "git",
-                        "repository": f"{owner}/{repo}",
                         "run_id": run_id,
+                        "prompt": user_prompt,
                     },
-                    "type": "tool",
                 }
             )
-
-            extensions_to_skip = [
-                ".png",
-                ".jpg",
-                ".jpeg",
-                ".gif",
-                ".bmp",
-                ".svg",
-                ".ico",
-                ".tif",
-                ".tiff",
-            ]
-
-            filepaths_string, metadata = await self.generate_response(
-                """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
-
-When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
-
-only list the filepaths you would write, and return them as a python list of strings.
-do not add any other explanation, only return a python list of strings.
-""",
-                user_prompt,
-            )
-
-            await self.on_logs(
-                {
-                    "message": f"Generating filepaths",
-                    "properties": {
-                        **metadata,
-                        "result": filepaths_string,
-                        "model": "gpt-4",
-                        "run_id": run_id,
-                    },
-                    "type": "model",
-                }
-            )
-
-            # parse the result into a python list
-            list_actual = ast.literal_eval(filepaths_string)
-
-            # if shared_dependencies.md is there, read it in, else set it to None
-            shared_dependencies: str | None = None
+            playground = None
             try:
-                shared_dependencies = await playground.read_file(
-                    os.path.join(rootdir, "shared_dependencies.md")
-                )
-            except NotFoundException:
-                pass
-
-            files = await playground.get_filenames(rootdir, [".git"])
-            for file in files:
-                _, extension = os.path.splitext(file.name)
-                if extension not in extensions_to_skip:
-                    await playground.delete_file(file.name)
-
-            await self.on_logs(
-                {
-                    "message": f"Cleaned root directory",
-                    "properties": {
-                        "tool": "filesystem",
-                        "run_id": run_id,
-                    },
-                    "type": "tool",
-                }
-            )
-
-            (
-                shared_dependencies,
-                metadata,
-            ) = await self.generate_response(
-                f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
-
-In response to the user's prompt:
-
----
-the app is: {user_prompt}
----
-
-the files we have decided to generate are: {filepaths_string}
-
-Now that we have a list of files, we need to understand what dependencies they share.
-Please name and briefly describe what is shared between the files we are generating, including exported variables, data schemas, id names of every DOM elements that javascript functions will use, message names, and function names.
-Exclusively focus on the names of the shared dependencies, and do not add any other explanation.
-""",
-                user_prompt,
-            )
-
-            await self.on_logs(
-                {
-                    "message": f"Generated shared dependencies",
-                    "properties": {
-                        **metadata,
-                        "result": shared_dependencies,
-                        "model": "gpt-4",
-                        "run_id": run_id,
-                    },
-                    "type": "model",
-                }
-            )
-
-            # write shared dependencies as a md file inside the generated directory
-            await playground.write_file(
-                os.path.join(rootdir, "shared_dependencies.md"),
-                shared_dependencies,
-            )
-
-            await self.on_logs(
-                {
-                    "message": f"Saved shared dependencies",
-                    "properties": {
-                        "filename": "shared_dependencies.md",
-                        "content": shared_dependencies,
-                        "tool": "filesystem",
-                        "run_id": run_id,
-                    },
-                    "type": "tool",
-                }
-            )
-            # Maximum number of allowed concurrent calls
-            semaphore = asyncio.Semaphore(4)
-
-            async def with_semaphore(coro):
-                async with semaphore:
-                    return await coro
-
-            # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
-            coros = [
-                with_semaphore(
-                    self.generate_file(
-                        name,
-                        run_id=run_id,
-                        filepaths_string=filepaths_string,
-                        shared_dependencies=shared_dependencies,
-                        prompt=user_prompt,
-                    )
-                )
-                for name in list_actual
-                # Filter out files that end with esxtensions we don't want to generate
-                if not any(name.endswith(extension) for extension in extensions_to_skip)
-            ]
-
-            generated_files = await asyncio.gather(*coros)
-
-            for (
-                name,
-                content,
-                _,  # metadata
-            ) in generated_files:
-                filepath = os.path.join(rootdir, name)
-                await playground.write_file(filepath, content)
+                playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
+                await playground.open()
                 await self.on_logs(
                     {
-                        "message": f"Saved file",
+                        "message": f"Created playground",
                         "properties": {
-                            "filename": filepath,
-                            "content": content,
+                            "playground": "created",
+                            "id": playground.id,
+                            "run_id": run_id,
+                        },
+                        "type": "playground",
+                    }
+                )
+                span.add_event(
+                    "playground-created",
+                    {
+                        "playground.id": playground.id,
+                    },
+                )
+
+                fixClockDrift = asyncio.ensure_future(playground.sync_clock())
+
+                rootdir = "/repo"
+                await playground.change_rootdir(rootdir)
+                await playground.make_dir(rootdir)
+
+                await playground.clone_repo(
+                    repo_address=repo_address,
+                    rootdir=rootdir,
+                    branch=branch,
+                )
+
+                await self.on_logs(
+                    {
+                        "message": f"Cloned repository",
+                        "properties": {
+                            "tool": "git",
+                            "repository": f"{owner}/{repo}",
+                            "run_id": run_id,
+                        },
+                        "type": "tool",
+                    }
+                )
+                span.add_event(
+                    "repository-cloned",
+                    {
+                        "repository": f"{owner}/{repo}",
+                    },
+                )
+
+                extensions_to_skip = [
+                    ".png",
+                    ".jpg",
+                    ".jpeg",
+                    ".gif",
+                    ".bmp",
+                    ".svg",
+                    ".ico",
+                    ".tif",
+                    ".tiff",
+                ]
+
+                filepaths_string, metadata = await self.generate_response(
+                    """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
+
+    When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
+
+    only list the filepaths you would write, and return them as a python list of strings.
+    do not add any other explanation, only return a python list of strings.
+    """,
+                    user_prompt,
+                )
+
+                await self.on_logs(
+                    {
+                        "message": f"Generated filepaths",
+                        "properties": {
+                            **metadata,
+                            "result": filepaths_string,
+                            "model": "gpt-4",
+                            "run_id": run_id,
+                        },
+                        "type": "model",
+                    }
+                )
+
+                span.add_event(
+                    "filepaths-generated",
+                    {
+                        "filepaths": filepaths_string,
+                        "model": "gpt-4",
+                        **metadata,
+                    },
+                )
+
+                # parse the result into a python list
+                list_actual = ast.literal_eval(filepaths_string)
+
+                # if shared_dependencies.md is there, read it in, else set it to None
+                shared_dependencies: str | None = None
+                try:
+                    shared_dependencies = await playground.read_file(
+                        os.path.join(rootdir, "shared_dependencies.md")
+                    )
+                except NotFoundException:
+                    pass
+
+                files = await playground.get_filenames(rootdir, [".git"])
+                for file in files:
+                    _, extension = os.path.splitext(file.name)
+                    if extension not in extensions_to_skip:
+                        await playground.delete_file(file.name)
+
+                await self.on_logs(
+                    {
+                        "message": f"Cleaned root directory",
+                        "properties": {
                             "tool": "filesystem",
                             "run_id": run_id,
                         },
@@ -410,65 +346,200 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     }
                 )
 
-            await fixClockDrift
-            await playground.push_repo(
-                rootdir=rootdir,
-                repo_address=repo_address,
-                commit_message=commit_message,
-                git_email=git_app_email,
-                git_name=git_app_name,
-            )
-
-            await self.on_logs(
-                {
-                    "message": f"Pushed repository",
-                    "properties": {
-                        "repository_url": f"https://github.com/{owner}/{repo}",
-                        "branch": branch,
-                        "commit_message": commit_message,
-                        "tool": "git",
-                        "run_id": run_id,
-                    },
-                    "type": "tool",
-                }
-            )
-
-            await self.on_interaction_request(
-                AgentInteractionRequest(
-                    interaction_id=str(uuid.uuid4()),
-                    type="done",
-                    data={
-                        "prompt": user_prompt,
-                        "run_id": self.run_id,
+                span.add_event(
+                    "files-deleted",
+                    {
+                        "path": rootdir,
                     },
                 )
-            )
-        except Exception as e:
-            print(f"Failed agent run {self.run_id}", e)
-            await self.on_interaction_request(
-                AgentInteractionRequest(
-                    interaction_id=str(uuid.uuid4()),
-                    type="failed",
-                    data={
-                        "run_id": self.run_id,
-                        "error": str(e),
-                    },
+
+                (
+                    shared_dependencies,
+                    metadata,
+                ) = await self.generate_response(
+                    f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
+
+    In response to the user's prompt:
+
+    ---
+    the app is: {user_prompt}
+    ---
+
+    the files we have decided to generate are: {filepaths_string}
+
+    Now that we have a list of files, we need to understand what dependencies they share.
+    Please name and briefly describe what is shared between the files we are generating, including exported variables, data schemas, id names of every DOM elements that javascript functions will use, message names, and function names.
+    Exclusively focus on the names of the shared dependencies, and do not add any other explanation.
+    """,
+                    user_prompt,
                 )
-            )
-            raise
-        finally:
-            if playground is not None:
-                await playground.close()
+
                 await self.on_logs(
                     {
-                        "message": f"Closed playground",
+                        "message": f"Generated shared dependencies",
                         "properties": {
-                            "playground": "closed",
+                            **metadata,
+                            "result": shared_dependencies,
+                            "model": "gpt-4",
                             "run_id": run_id,
                         },
-                        "type": "playground",
+                        "type": "model",
                     }
                 )
+
+                span.add_event(
+                    "model-used",
+                    {
+                        "shared_dependencies": shared_dependencies,
+                        "model": "gpt-4",
+                        **metadata,
+                    },
+                )
+
+                # write shared dependencies as a md file inside the generated directory
+                await playground.write_file(
+                    os.path.join(rootdir, "shared_dependencies.md"),
+                    shared_dependencies,
+                )
+
+                await self.on_logs(
+                    {
+                        "message": f"Saved shared dependencies",
+                        "properties": {
+                            "filename": "shared_dependencies.md",
+                            "content": shared_dependencies,
+                            "tool": "filesystem",
+                            "run_id": run_id,
+                        },
+                        "type": "tool",
+                    }
+                )
+
+                span.add_event(
+                    "file-saved",
+                    {
+                        "filename": "shared_dependencies.md",
+                        "model": "gpt-4",
+                    },
+                )
+
+                # Maximum number of allowed concurrent calls
+                semaphore = asyncio.Semaphore(4)
+
+                async def with_semaphore(coro):
+                    async with semaphore:
+                        return await coro
+
+                # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
+                coros = [
+                    with_semaphore(
+                        self.generate_file(
+                            name,
+                            run_id=run_id,
+                            filepaths_string=filepaths_string,
+                            shared_dependencies=shared_dependencies,
+                            prompt=user_prompt,
+                        )
+                    )
+                    for name in list_actual
+                    # Filter out files that end with esxtensions we don't want to generate
+                    if not any(
+                        name.endswith(extension) for extension in extensions_to_skip
+                    )
+                ]
+
+                generated_files = await asyncio.gather(*coros)
+
+                for (
+                    name,
+                    content,
+                    _,  # metadata
+                ) in generated_files:
+                    filepath = os.path.join(rootdir, name)
+                    await playground.write_file(filepath, content)
+                    await self.on_logs(
+                        {
+                            "message": f"Saved file",
+                            "properties": {
+                                "filename": filepath,
+                                "content": content,
+                                "tool": "filesystem",
+                                "run_id": run_id,
+                            },
+                            "type": "tool",
+                        }
+                    )
+
+                await fixClockDrift
+                await playground.push_repo(
+                    rootdir=rootdir,
+                    repo_address=repo_address,
+                    commit_message=commit_message,
+                    git_email=git_app_email,
+                    git_name=git_app_name,
+                )
+
+                await self.on_logs(
+                    {
+                        "message": f"Pushed repository",
+                        "properties": {
+                            "repository_url": f"https://github.com/{owner}/{repo}",
+                            "branch": branch,
+                            "commit_message": commit_message,
+                            "tool": "git",
+                            "run_id": run_id,
+                        },
+                        "type": "tool",
+                    }
+                )
+
+                await self.on_interaction_request(
+                    AgentInteractionRequest(
+                        interaction_id=str(uuid.uuid4()),
+                        type="done",
+                        data={
+                            "prompt": user_prompt,
+                            "run_id": self.run_id,
+                        },
+                    )
+                )
+            except Exception as e:
+                print(f"Failed agent run", e)
+                await self.on_logs(
+                    {
+                        "message": f"Agent run failed",
+                        "properties": {
+                            "run_id": run_id,
+                            "error": str(e),
+                        },
+                        "type": "error",
+                    }
+                )
+                span.set_status(Status(StatusCode.ERROR))
+                span.record_exception(e)
+                raise
+            finally:
+                if playground is not None:
+                    await playground.close()
+                    await self.on_logs(
+                        {
+                            "message": f"Closed playground",
+                            "properties": {
+                                "playground": "closed",
+                                "run_id": run_id,
+                            },
+                            "type": "playground",
+                        }
+                    )
+                    await self.on_logs(
+                        {
+                            "message": f"Agent run finished",
+                            "properties": {
+                                "run_id": run_id,
+                            },
+                            "type": "info",
+                        }
+                    )
 
     async def _dev_in_background(self, instructions: Any):
         print("Start agent run", bool(self._dev_loop))
@@ -505,6 +576,9 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 await self._dev_in_background(interaction.data["instructions"])
             case _:
                 raise Exception(f"Unknown interaction action: {interaction.type}")
+
+    def is_running(self) -> bool:
+        return bool(self._dev_loop)
 
     async def stop(self):
         print("Cancel agent run")
