@@ -469,6 +469,13 @@ Begin generating the code now.
                             "type": "tool",
                         }
                     )
+                    span.add_event(
+                        "file-saved",
+                        {
+                            "filename": filepath,
+                            "model": "gpt-4",
+                        },
+                    )
 
                 await fixClockDrift
                 await playground.push_repo(
@@ -491,6 +498,12 @@ Begin generating the code now.
                         },
                         "type": "tool",
                     }
+                )
+                span.add_event(
+                    "pushed-repository",
+                    {
+                        "repository": f"{owner}/{repo}",
+                    },
                 )
 
                 await self.on_interaction_request(
@@ -530,6 +543,10 @@ Begin generating the code now.
                             },
                             "type": "playground",
                         }
+                    )
+                    span.add_event(
+                        "closed-playground",
+                        {},
                     )
                     await self.on_logs(
                         {
