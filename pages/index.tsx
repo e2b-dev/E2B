@@ -335,7 +335,7 @@ function Home({ projects }: Props) {
             className="group ml-auto flex items-center space-x-1 cursor-pointer transition-all py-1 px-2 rounded-md bg-gray-900 border border-white/5 hover:border-white/10"
           >
             <MessageCircle size={14} className="text-gray-400 group-hover:text-gray-100 transition-all" />
-            <span className="text-sm text-gray-400 group-hover:text-gray-100 transition-all">Complain to CEO</span>
+            <span className="text-sm text-gray-400 group-hover:text-gray-100 transition-all">Complain to the CEO</span>
           </button>
         </div>
 

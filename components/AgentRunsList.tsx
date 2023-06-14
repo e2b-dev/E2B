@@ -91,7 +91,11 @@ function AgentRunsList({
           <div key={a.project.id} className="flex flex-col space-y-2">
             <div className="group flex items-center space-x-2 px-4 sm:px-6 lg:px-8">
               <div
-                className="p-1 cursor-pointer bg-gray-800 hover:bg-gray-700 transition-all rounded-md"
+                className={clsx(
+                  'p-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                  selectedAgentID === a.project.id && 'bg-gray-700',
+                  selectedAgentID !== a.project.id && 'bg-gray-800',
+                )}
                 onClick={() => toggleSelectedAgentID(a.project.id)}
               >
                 <ChevronRight size={15} className={clsx(
