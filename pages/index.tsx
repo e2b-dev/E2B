@@ -9,6 +9,7 @@ import {
   ListEnd,
   X,
   Menu,
+  MessageCircle,
 } from 'lucide-react'
 import { useRouter } from 'next/router'
 import { usePostHog } from 'posthog-js/react'
@@ -268,7 +269,7 @@ function Home({ projects }: Props) {
       {/* Static sidebar for desktop */}
       <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-72 xl:flex-col">
         {/* Sidebar component, swap this element with another sidebar if you like */}
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-black/10 px-6 ring-1 ring-white/5">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-black/10 px-6 border-r border-white/5">
           {/* Logo */}
           {/* <div className="flex h-16 shrink-0 items-center">
             <img
@@ -323,6 +324,15 @@ function Home({ projects }: Props) {
           <button type="button" className="-m-2.5 p-2.5 text-white xl:hidden" onClick={() => setSidebarOpen(true)}>
             <span className="sr-only">Open sidebar</span>
             <Menu aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="flex py-2 px-6 border-b border-white/5">
+          <button
+            className="group ml-auto flex items-center space-x-1 cursor-pointer transition-all py-1 px-2 rounded-md bg-gray-900 border border-white/5 hover:border-white/10"
+          >
+            <MessageCircle size={14} className="text-gray-400 group-hover:text-gray-100 transition-all" />
+            <span className="text-sm text-gray-400 group-hover:text-gray-100 transition-all">Feedback</span>
           </button>
         </div>
 

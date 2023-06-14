@@ -111,7 +111,7 @@ function AgentRunsList({
                 <div className="flex flex-col space-y-3 w-full">
                   {Object.keys(runs).map((runID: string) => (
                     <div key={runID} className="px-4 py-2 cursor-pointer bg-[#1F2437] hover:bg-[#262C40] border border-[#2A3441] rounded-md">
-                      <span>runID: {runID}</span>
+                      <span>runID: {runID} [TODO: Better name]</span>
                     </div>
                   ))}
                 </div>
