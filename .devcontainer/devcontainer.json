@@ -7,7 +7,9 @@
 	"features": {
 		"ghcr.io/devcontainers/features/terraform:1": {},
 		"ghcr.io/dhoeric/features/google-cloud-cli:1": {},
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/go:1": {},
+		"ghcr.io/devcontainers/features/node:1": {}
 	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
