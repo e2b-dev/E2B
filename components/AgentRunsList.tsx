@@ -89,7 +89,7 @@ function AgentRunsList({
         {/* Each deployed agent */}
         {allDeployedAgents.map((a) => (
           <div key={a.project.id} className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2 px-4 sm:px-6 lg:px-8">
+            <div className="group flex items-center space-x-2 px-4 sm:px-6 lg:px-8">
               <div
                 className="p-1 cursor-pointer bg-gray-800 hover:bg-gray-700 transition-all rounded-md"
                 onClick={() => toggleSelectedAgentID(a.project.id)}
@@ -101,7 +101,14 @@ function AgentRunsList({
                   selectedAgentID === a.project.id && 'rotate-90',
                 )} />
               </div>
-              <span>{a.project.name} - {a.project.id} [TODO: Better name]</span>
+              <span
+                className={clsx(
+                  'text-sm group-hover:font-semibold',
+                  selectedAgentID === a.project.id && 'font-semibold',
+                )}
+              >
+                {a.project.name} - {a.project.id} [TODO: Better name]
+              </span>
             </div>
 
             {/* Each run */}
@@ -110,7 +117,7 @@ function AgentRunsList({
                 <div className="w-px self-stretch border-r border-gray-800 rounded" />
                 <div className="flex flex-col space-y-3 w-full">
                   {Object.keys(runs).map((runID: string) => (
-                    <div key={runID} className="px-4 py-2 cursor-pointer bg-[#1F2437] hover:bg-[#262C40] border border-[#2A3441] rounded-md">
+                    <div key={runID} className="px-4 py-2 cursor-pointer text-sm bg-[#1F2437] hover:bg-[#262C40] border border-[#2A3441] rounded-md">
                       <span>runID: {runID} [TODO: Better name]</span>
                     </div>
                   ))}

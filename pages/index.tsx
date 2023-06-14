@@ -278,7 +278,10 @@ function Home({ projects }: Props) {
               alt="Your Company"
             />
           </div> */}
-          <nav className="flex flex-1 flex-col py-[22px]">
+          <nav className="flex flex-1 flex-col space-y-6 py-[22px]">
+            <div className="font-bold text-gray-100">
+              Arken
+            </div>
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
@@ -332,7 +335,7 @@ function Home({ projects }: Props) {
             className="group ml-auto flex items-center space-x-1 cursor-pointer transition-all py-1 px-2 rounded-md bg-gray-900 border border-white/5 hover:border-white/10"
           >
             <MessageCircle size={14} className="text-gray-400 group-hover:text-gray-100 transition-all" />
-            <span className="text-sm text-gray-400 group-hover:text-gray-100 transition-all">Feedback</span>
+            <span className="text-sm text-gray-400 group-hover:text-gray-100 transition-all">Complain to CEO</span>
           </button>
         </div>
 
