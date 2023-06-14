@@ -1,33 +1,137 @@
+import {
+  useState,
+} from 'react'
+import {
+  ChevronRight,
+} from 'lucide-react'
+import clsx from 'clsx'
+import { useRouter } from 'next/router'
+
 import { deployments, projects } from 'db/prisma'
 
 
 export interface Props {
-  agentInstance: (projects & { deployments: deployments[] })
+  allDeployedAgents: {
+    project: projects & { deployments: deployments[] }
+    deployment: deployments
+  }[]
+  initialSelectedAgentID?: string
+  // agentInstance: {
+  //   project: projects & { deployments: deployments[] }
+  //   deployment: deployments
+  // }
 }
 
 function AgentRunsList({
-  agentInstance,
+  allDeployedAgents,
+  initialSelectedAgentID,
 }: Props) {
-  console.log('agentInstance', agentInstance)
-  // TODO: We'll have a better concept for run, challenge, task, benchmark, etc
-  // once we give access to the AutoGPT team. Let's start with a simple version first.
-  // At the moment, a run is just an array of logs with the same run ID.
-  const runs = agentInstance.deployments.reduce((acc, d) => {
-
+  const router = useRouter()
+  const [selectedAgentID, setSelectedAgentID] = useState(initialSelectedAgentID || '')
+  const agentInstance = allDeployedAgents.find(a => a.project.id === selectedAgentID)
+  const runs = agentInstance?.deployment.logs.reduce((acc: any, l: any) => {
+    const runID = l['properties']['run_id']
+    if (!acc[runID]) {
+      acc[runID] = []
+    } else {
+      acc[runID].push(l)
+    }
     return acc
-  }, [])
+  }, {})
+  // function getAgentRuns(agentInstance: any) {
+  // }
+
+
+
+
+
+
+  // agentInstance={projectsWithDeployments.find(p => p.project.id === selectedAgentInstanceID)!}
+
+  // TODO: If no agent instance was specified, display all instances and runs and make them foldabble.
+
+  // console.log('agentInstance', agentInstance)
+  // // TODO: We'll have a better concept for run, challenge, task, benchmark, etc
+  // // once we give SDK to the first users. Let's start with a simple version first.
+  // // At the moment, a run is just an array of logs with the same run ID.
+  // const runs = agentInstance.deployment.logs.reduce((acc: any, l: any) => {
+  //   const runID = l['properties']['run_id']
+  //   console.log('run ID', runID)
+  //   console.log('log', l)
+  //   console.log('acc', acc)
+  //   if (!acc[runID]) {
+  //     acc[runID] = []
+  //   } else {
+  //     acc[runID].push(l)
+  //   }
+  //   return acc
+  // }, {})
+
+  function toggleSelectedAgentID(projectID: string) {
+    if (selectedAgentID === projectID) {
+      setSelectedAgentID('')
+      router.push('/?view=runs', undefined, { shallow: true })
+    } else {
+      setSelectedAgentID(projectID)
+      router.push(`/?view=runs&projectID=${projectID}`, undefined, { shallow: true })
+    }
+  }
 
 
   return (
-    <main className="overflow-hidden">
-      <header className="flex items-center justify-between border-b border-white/5 p-4 sm:p-6 lg:px-8">
-        <h1 className="text-2xl font-semibold leading-7 text-white">{agentInstance.name}</h1>
+    <main className="overflow-hidden flex flex-col max-h-full">
+      <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
+        <h1 className="text-2xl font-semibold leading-7 text-white">Agent Runs</h1>
       </header>
 
-      <ul role="list" className="px-4 sm:px-6 lg:px-8 space-y-4 overflow-auto">
 
-      </ul>
-    </main>
+      <div className="flex flex-col space-y-4">
+        {/* Each deployed agent */}
+        {allDeployedAgents.map((a) => (
+          <div key={a.project.id} className="flex flex-col space-y-2">
+            <div className="flex items-center space-x-2 px-4 sm:px-6 lg:px-8">
+              <div
+                className="p-1 cursor-pointer bg-gray-800 hover:bg-gray-700 transition-all rounded-md"
+                onClick={() => toggleSelectedAgentID(a.project.id)}
+              >
+                <ChevronRight size={15} className={clsx(
+                  'text-gray-400',
+                  'transition-all',
+                  'select-none',
+                  selectedAgentID === a.project.id && 'rotate-90',
+                )} />
+              </div>
+              <span>{a.project.name} - {a.project.id} [TODO: Better name]</span>
+            </div>
+
+            {/* Each run */}
+            {selectedAgentID === a.project.id && (
+              <div className="pl-16 flex flex-col space-y-4">
+                {Object.keys(runs).map((runID: string) => (
+                  <div key={runID} className="flex flex-col space-y-2">
+                    <span>runID: {runID}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* {Object.keys(runs).map((runID: any) => (
+        <div key={runID} className="px-4 sm:px-6 lg:px-8 flex flex-col">
+          <span>run: {runID}</span>
+          <ul
+            role="list"
+            className="px-4 sm:px-6 lg:px-8 space-y-4 overflow-auto max-h-[200px]"
+          >
+            {runs[runID].map((log: any) => (
+              <li key={log.id}>{log.message}</li>
+            ))}
+          </ul>
+        </div>
+      ))} */}
+    </main >
   )
 }
 

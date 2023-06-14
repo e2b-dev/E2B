@@ -1,5 +1,5 @@
 import { useState, Fragment } from 'react'
-import type { GetServerSideProps } from 'next'
+import type { GetServerSideProps, Redirect } from 'next'
 import Link from 'next/link'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { Dialog, Transition } from '@headlessui/react'
@@ -26,7 +26,7 @@ const navigation = [
     icon: Zap,
   },
   {
-    name: 'Run Queue',
+    name: 'Agent Runs',
     view: 'runs',
     icon: ListEnd,
   },
@@ -110,10 +110,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   // Show projects from all teams.
   const projects = user.users_teams.flatMap(t => t.teams.projects)
 
+  // Select the 'deployed' view by default.
+  const view = ctx.query['view'] as string
+  let redirect: Redirect | undefined
+  if (!view) {
+    redirect = {
+      destination: '/?view=deployed',
+      permanent: false,
+    }
+  }
+
   return {
     props: {
       projects,
-    }
+    },
+    redirect,
   }
 }
 
@@ -128,8 +139,7 @@ function Home({ projects }: Props) {
   const posthog = usePostHog()
 
   const view = router.query.view as string | undefined
-  const selectedAgentInstance = router.query.projectID as string | undefined
-  console.log({ view, selectedAgentInstance })
+  const selectedAgentInstanceID = router.query.projectID as string | undefined
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -141,7 +151,6 @@ function Home({ projects }: Props) {
     e.preventDefault()
     posthog?.capture('selected deployed agent', { projectID: projectID })
     router.push(`/?view=runs&projectID=${projectID}`, undefined, { shallow: true })
-    // router.push(`/deployed/${projectID}`)
   }
 
   const projectsWithDeployments = projects
@@ -308,7 +317,7 @@ function Home({ projects }: Props) {
         </div>
       </div>
 
-      <div className="xl:pl-72">
+      <div className="xl:pl-72 flex flex-col max-h-full">
         {/* Mobile menu icon */}
         <div className="xl:hidden sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-6 border-b border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
           <button type="button" className="-m-2.5 p-2.5 text-white xl:hidden" onClick={() => setSidebarOpen(true)}>
@@ -322,9 +331,10 @@ function Home({ projects }: Props) {
             agents={projectsWithDeployments}
             onSelectAgent={selectAgent}
           />
-        ) : view === 'runs' && selectedAgentInstance ? (
+        ) : view === 'runs' ? (
           <AgentRunsList
-            agentInstance={projects.find(p => p.id === selectedAgentInstance)!}
+            allDeployedAgents={projectsWithDeployments}
+            initialSelectedAgentID={selectedAgentInstanceID}
           />
         ) : (
           <span>404</span>

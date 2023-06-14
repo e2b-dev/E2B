@@ -141,8 +141,6 @@ function Setup() {
       console.error('No instructions provided')
       return
     }
-    console.log('DEPLOY AGENT', selectedRepository, instructions)
-
     const modelConfig = getSmolDevModelConfig({})
 
     try {
