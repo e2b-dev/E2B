@@ -88,6 +88,9 @@ class AgentEvents:
                 await agent_run_done(self.id, interaction_request.data["prompt"])
             case "cancelled":
                 await agent_run_cancelled(self.id)
+            # case "failed":
+            #     # TODO: Save agent/interactions/states/run
+            #     await agent_run_failed(self.id)
 
     def remove_interaction_request(self, interaction_id: str):
         self.interaction_requests = [

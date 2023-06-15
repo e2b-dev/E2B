@@ -40,3 +40,6 @@ next-env.d.ts
 vale-styles
 
 .idea/
+
+# Sentry Auth Token
+.sentryclirc

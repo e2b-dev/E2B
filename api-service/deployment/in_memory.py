@@ -1,8 +1,10 @@
 from typing import Any, Dict, List
 
+from opentelemetry.metrics import Observation
 from database.base import db
 from deployment.manager import AgentDeploymentManager, AgentDeployment
 from agent.from_template import get_agent_factory_from_template
+from observability import meter
 
 
 # TODO: Interemediate step between implementing the FC agent deployment
@@ -10,6 +12,34 @@ from agent.from_template import get_agent_factory_from_template
 class InMemoryDeploymentManager(AgentDeploymentManager):
     def __init__(self):
         self._deployments: Dict[str, AgentDeployment] = {}
+
+        def report_deployments(opts):
+            yield Observation(value=len(self._deployments))
+
+        self.active_deployments_counter = meter.create_observable_up_down_counter(
+            "agents.deployments.active",
+            [report_deployments],
+            "1",
+            "Current number of active agent deployments",
+        )
+
+        def report_running_deployments(opts):
+            yield Observation(
+                value=len(
+                    [
+                        deployment
+                        for deployment in self._deployments.values()
+                        if deployment.agent.is_running()
+                    ]
+                )
+            )
+
+        self.active_deployment_runs_counter = meter.create_observable_up_down_counter(
+            "agents.deployments.runs.active",
+            [report_running_deployments],
+            "1",
+            "Current number of active agent deployment runs",
+        )
 
     async def create_deployment(
         self,

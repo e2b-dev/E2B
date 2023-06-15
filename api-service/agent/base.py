@@ -64,5 +64,10 @@ class AgentBase(ABC):
         pass
 
     @abstractmethod
+    def is_running(self) -> bool:
+        """Check if the agent run is in progress."""
+        pass
+
+    @abstractmethod
     async def interaction(self, interaction: AgentInteraction) -> Any:
         pass
