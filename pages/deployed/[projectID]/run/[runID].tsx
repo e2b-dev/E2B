@@ -7,6 +7,7 @@ import { serverCreds } from 'db/credentials'
 import AgentDetail from 'components/AgentDetail'
 
 interface PathProps extends ParsedUrlQuery {
+  runID: string
   projectID: string
 }
 
@@ -14,7 +15,20 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
   const projectID = ctx.params?.projectID
   if (!projectID) {
     return {
-      notFound: true,
+      redirect: {
+        destination: '/?view=deployed',
+        permanent: false,
+      }
+    }
+  }
+
+  const runID = ctx.params?.runID
+  if (!runID) {
+    return {
+      redirect: {
+        destination: `/?view=runs&  projectID=${projectID}`,
+        permanent: false,
+      }
     }
   }
 
@@ -69,18 +83,24 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
   return {
     props: {
       project,
+      runID,
     }
   }
 }
 
 interface Props {
   project: projects
+  runID: string
 }
 
-function ProjectPage({ project }: Props) {
+function ProjectPage({
+  project,
+  runID,
+}: Props) {
   return (
     <AgentDetail
       project={project}
+      runID={runID}
     />
   )
 }

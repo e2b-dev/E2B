@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 
 import { deployments, projects } from 'db/prisma'
 
@@ -121,9 +122,14 @@ function AgentRunsList({
                 <div className="w-px self-stretch border-r border-gray-800 rounded" />
                 <div className="flex flex-col space-y-3 w-full">
                   {Object.keys(runs).map((runID: string) => (
-                    <div key={runID} className="px-4 py-2 cursor-pointer text-sm bg-[#1F2437] hover:bg-[#262C40] border border-[#2A3441] rounded-md">
-                      <span>runID: {runID} [TODO: Better name]</span>
-                    </div>
+                    <Link
+                      key={runID}
+                      href={`/deployed/${a.project.id}/run/${runID}`}
+                    >
+                      <div className="px-4 py-2 cursor-pointer text-sm bg-[#1F2437] hover:bg-[#262C40] border border-[#2A3441] rounded-md">
+                        <span>runID: {runID} [TODO: Better name]</span>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -131,20 +137,6 @@ function AgentRunsList({
           </div>
         ))}
       </div>
-
-      {/* {Object.keys(runs).map((runID: any) => (
-        <div key={runID} className="px-4 sm:px-6 lg:px-8 flex flex-col">
-          <span>run: {runID}</span>
-          <ul
-            role="list"
-            className="px-4 sm:px-6 lg:px-8 space-y-4 overflow-auto max-h-[200px]"
-          >
-            {runs[runID].map((log: any) => (
-              <li key={log.id}>{log.message}</li>
-            ))}
-          </ul>
-        </div>
-      ))} */}
     </main >
   )
 }

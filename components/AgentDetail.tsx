@@ -2,6 +2,7 @@ import { Box, Hammer, Cpu, Info } from 'lucide-react'
 
 import { projects } from 'db/prisma'
 import useDeployment from 'hooks/useDeployment'
+import useFilterRunLogs from 'hooks/useFilterRunLogs'
 
 export interface AgentLogBase {
   id: string
@@ -36,10 +37,16 @@ export interface AgentPlaygroundLog extends AgentLogBase {
 
 export interface Props {
   project: projects
+  runID: string
 }
 
-export function AgentDetail({ project }: Props) {
+export function AgentDetail({
+  runID,
+  project,
+}: Props) {
   const deployment = useDeployment(project)
+  const logs = useFilterRunLogs({ deployment, runID })
+
   return (
     <div className="flex flex-1 flex-col justify-center items-center">
       <div>
