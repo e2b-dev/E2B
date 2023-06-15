@@ -1,8 +1,6 @@
 import type { GetServerSideProps, Redirect } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
-
-
 import { deployments, prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
