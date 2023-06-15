@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 serve(async (req) => {
@@ -17,7 +16,7 @@ serve(async (req) => {
     'https://app.loops.so/api/v1/contacts/create',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' , 'Accept': 'application/json', 'Authorization': `Bearer ${Deno.env.get('API_KEY_LOOPS')}`},
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${Deno.env.get('API_KEY_LOOPS')}` },
       body: JSON.stringify(body)
     }
   )
