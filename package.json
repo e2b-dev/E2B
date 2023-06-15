@@ -16,7 +16,8 @@
   "scripts": {
     "dev:next": "next dev",
     "start:next": "next start",
-    "dev": "npx concurrently -p none \"next dev\" \"npm run start:api\" \"npm run start:playground\"",
+    "dev-otel": "npx concurrently -p none \"next dev\" \"npm run start:api\" \"npm run start:playground\"",
+    "dev": "OTEL_SDK_DISABLED=\"true\" npx concurrently -p none \"next dev\" \"npm run start:api\" \"npm run start:playground\"",
     "dev:api-service": "npx concurrently \"npm run start:api\" \"npm run start:playground\"",
     "build": "next build",
     "start:api": "cd api-service && cross-env PYTHONUNBUFFERED=1 OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES poetry run opentelemetry-instrument --service_name agent-api --exporter_otlp_endpoint \"ingest.lightstep.com:443\" --traces_exporter console,otlp_proto_grpc --metrics_exporter console,otlp_proto_grpc gunicorn --bind 0.0.0.0:49155 --reload --workers 1 --threads 2 --timeout 120 app:app -k uvicorn.workers.UvicornWorker",
@@ -47,6 +48,7 @@
     "@octokit/webhooks": "^11.1.0",
     "@opentelemetry/api": "^1.4.1",
     "@prisma/client": "^4.13.0",
+    "@sentry/nextjs": "^7.55.2",
     "@supabase/auth-helpers-nextjs": "^0.5.5",
     "@supabase/auth-helpers-react": "^0.3.1",
     "@supabase/supabase-js": "^2.10.0",
