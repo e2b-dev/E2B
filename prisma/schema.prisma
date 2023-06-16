@@ -307,7 +307,7 @@ model flow_state {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model logs {
-  id         String    @id @db.Uuid
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   data       Json[]
   project_id String

@@ -7,9 +7,6 @@ import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 
 
-import testLogs from './logfile.json'
-
-
 interface PathProps extends ParsedUrlQuery {
   logFileID: string
 }
@@ -113,13 +110,7 @@ export interface Props {
   logFile: LogFile & { content: AgentLogs }
 }
 
-function LogFile({ logFile: log }: Props) {
-  const logFile: Props['logFile'] = {
-    id: 'test',
-    name: 'test.json',
-    content: testLogs as any as AgentLogs,
-  }
-
+function LogFile({ logFile }: Props) {
   return (
     <main className="overflow-hidden flex flex-col max-h-full">
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
