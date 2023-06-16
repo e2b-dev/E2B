@@ -1,9 +1,10 @@
 export interface LogFile {
+  id: string
   name: string
-  content: AgentLogs
 }
 
 export interface AgentLogs {
+  logFileID: string
   context: SystemContext | UserContext | AssistantContext
   functions: {
     name: string
