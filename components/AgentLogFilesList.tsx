@@ -16,7 +16,7 @@ export interface Props {
   initialSelectedLogFileID?: string
 }
 
-function AgentLogsList({
+function AgentLogFilesList({
   logFiles,
   initialSelectedLogFileID,
 }: Props) {
@@ -91,4 +91,4 @@ function AgentLogsList({
   )
 }
 
-export default AgentLogsList
+export default AgentLogFilesList

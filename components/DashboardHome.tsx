@@ -5,7 +5,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { deployments, projects } from 'db/prisma'
 import AgentList from 'components/AgentList'
 import AgentRunsList from 'components/AgentRunsList'
-import AgentLogsList from 'components/AgentLogsList'
+import AgentLogFilesList from 'components/AgentLogsList'
 import { LogFile } from 'utils/agentLogs'
 
 
@@ -67,7 +67,7 @@ function DashboardHome({
           initialSelectedAgentID={selectedAgentInstanceID}
         />
       ) : view === 'logs' ? (
-        <AgentLogsList
+        <AgentLogFilesList
           logFiles={logFiles}
           initialSelectedLogFileID={selectedLogFileID}
         />
