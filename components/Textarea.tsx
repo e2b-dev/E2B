@@ -24,6 +24,9 @@ function Textarea({ value = '', className, placeholder, onChange, isOpen }: Prop
       ref={ref}
       placeholder={placeholder}
       value={value}
+      autoCapitalize="off"
+      autoCorrect="on"
+      autoComplete="off"
       className={clsx(
         'w-full',
         'px-2.5',
@@ -33,13 +36,15 @@ function Textarea({ value = '', className, placeholder, onChange, isOpen }: Prop
         'min-h-[200px]',
         'focus:outline-none',
         'font-sans',
-        'border-transparent',
-        'bg-gray-950/40',
+        'border-gray-700',
+        'focus:border-gray-500',
+        'bg-gray-800/40',
         'outline-none',
+        'ring-0',
         'transition-colors',
         'text-sm',
         'text-white',
-        'placeholder:text-gray-100',
+        'placeholder:text-gray-600',
         className,
       )}
       onChange={onChange}

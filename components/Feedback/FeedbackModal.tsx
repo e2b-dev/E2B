@@ -1,25 +1,25 @@
 import { useUser } from '@supabase/auth-helpers-react'
 import { FormEvent, MouseEvent, useRef, useState } from 'react'
 import { useOnClickOutside } from 'usehooks-ts'
+import { Send } from 'lucide-react'
 
 import Textarea from 'components/Textarea'
 import SpinnerIcon from 'components/Spinner'
 import { useAddFeedback } from 'hooks/useAddFeedback'
-import clsx from 'clsx'
 
 export interface Props {
   isOpen: boolean
   onClose: () => any
+  onSend?: () => void
 }
 
-function FeedbackModal({ isOpen, onClose }: Props) {
+function FeedbackModal({ isOpen, onClose, onSend }: Props) {
   const [feedback, setFeedback] = useState('')
   const [isSavingFeedback, setIsSavingFeedback] = useState(false)
   const user = useUser()
   const ref = useRef<HTMLFormElement>(null)
 
   useOnClickOutside(ref, onClose, 'mousedown')
-
   const addFeedback = useAddFeedback()
 
   async function saveFeedback(
@@ -33,9 +33,10 @@ function FeedbackModal({ isOpen, onClose }: Props) {
     setIsSavingFeedback(true)
 
     await addFeedback(feedback)
-
     setIsSavingFeedback(false)
     onClose()
+    setFeedback('')
+    onSend?.()
   }
 
   return (
@@ -43,15 +44,18 @@ function FeedbackModal({ isOpen, onClose }: Props) {
       {isOpen &&
         <form
           ref={ref}
-          autoComplete="of"
+          autoCapitalize="off"
+          autoCorrect="on"
+          autoComplete="off"
           className="
           flex
           p-3
           border
           z-50
           bg-gray-900
-          border-gray-600
+          border-gray-800
           w-[400px]
+          shadow-lg
           rounded
           absolute
           flex-col
@@ -63,16 +67,23 @@ function FeedbackModal({ isOpen, onClose }: Props) {
         >
           <Textarea
             value={feedback}
+            placeholder="What should we improve?"
             onChange={e => setFeedback(e.target.value)}
             isOpen={isOpen}
           />
           <button
-            className={clsx({ 'border-white/10 text-gray-100': isOpen, 'border-white/5 text-gray-400': !isOpen }, 'group ml-auto flex items-center space-x-1 cursor-pointer py-1 px-2 rounded-md bg-gray-900 border border-white/5 hover:border-white/10 transition-all')}
-            onMouseDown={saveFeedback}
+            className="flex items-center space-x-2 rounded-md bg-gray-200 py-1 px-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white cursor-pointer transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+            onClick={saveFeedback}
             disabled={isSavingFeedback || feedback.trim() === ''}
           >
-            {isSavingFeedback ? <SpinnerIcon className="text-white" /> : null}
-            {!isSavingFeedback && <span className="text-sm">Send</span>}
+            {isSavingFeedback &&
+              <SpinnerIcon />
+            }
+
+            {!isSavingFeedback &&
+              <Send size="14px" />
+            }
+            <span className="text-sm">Send</span>
           </button>
         </form>
       }
