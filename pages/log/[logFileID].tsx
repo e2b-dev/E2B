@@ -3,6 +3,9 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
 
+
+import Link from 'next/link'
+
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 
@@ -113,8 +116,14 @@ export interface Props {
 function LogFile({ logFile }: Props) {
   return (
     <main className="overflow-hidden flex flex-col max-h-full">
-      <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
-        <h1 className="text-2xl font-semibold leading-7 text-white">Logs</h1>
+      <header className="flex items-center space-x-2 p-4 sm:p-6 lg:px-8">
+        <Link
+          href="/?view=logs"
+        >
+          <h1 className="text-2xl font-semibold leading-7 text-[#6366F1]">Log Files</h1>
+        </Link>
+        <h1 className="text-2xl font-semibold leading-7 text-[#6366F1]">/</h1>
+        <h1 className="text-2xl font-semibold leading-7 text-white font-mono">{logFile.name}</h1>
       </header>
 
       <div className="flex flex-col space-y-4">
