@@ -3,7 +3,7 @@ import uuid
 import os
 import ast
 
-from typing import Any, List
+from typing import Any, Coroutine, List
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.schema import (
     AIMessage,
@@ -242,7 +242,7 @@ Begin generating the code now.
                     },
                 )
 
-                fixClockDrift = asyncio.ensure_future(playground.sync_clock())
+                await asyncio.ensure_future(playground.sync_clock())
 
                 rootdir = "/repo"
                 await playground.change_rootdir(rootdir)
@@ -477,7 +477,6 @@ Begin generating the code now.
                         },
                     )
 
-                await fixClockDrift
                 await playground.push_repo(
                     rootdir=rootdir,
                     repo_address=repo_address,
