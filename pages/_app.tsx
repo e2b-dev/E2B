@@ -12,6 +12,7 @@ import { Database } from 'db/supabase'
 import { clientCreds } from 'db/credentials'
 import { useRouter } from 'next/router'
 import Layout from 'components/Layout'
+import Head from 'next/head'
 
 // Initialize PostHog
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
@@ -34,6 +35,11 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
   const router = useRouter()
 
+  const meta = {
+    title: 'Dashboard | e2b',
+    description: 'e2b Dashboard',
+  }
+
   useEffect(function trackPageViews() {
     // Track page views
     const handleRouteChange = () => posthog?.capture('$pageview')
@@ -52,6 +58,53 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
         supabaseClient={supabaseClient}
         initialSession={pageProps.initialSession}
       >
+        <Head>
+          <title>{meta.title}</title>
+          <meta
+            content="follow, index"
+            name="robots"
+          />
+          <link
+            href="/favicon.ico"
+            rel="shortcut icon"
+          />
+          <meta
+            content={meta.description}
+            name="description"
+          />
+          <meta
+            content="website"
+            property="og:type"
+          />
+          <meta
+            content={meta.title}
+            property="og:site_name"
+          />
+          <meta
+            content={meta.description}
+            property="og:description"
+          />
+          <meta
+            content={meta.title}
+            property="og:title"
+          />
+          <meta
+            content="summary_large_image"
+            name="twitter:card"
+          />
+          <meta
+            content="@devbookhq"
+            name="twitter:site"
+          />
+          <meta
+            content={meta.title}
+            name="twitter:title"
+          />
+          <meta
+            content={meta.description}
+            name="twitter:description"
+          />
+        </Head>
         <Layout>
           <Component {...pageProps} />
         </Layout>
