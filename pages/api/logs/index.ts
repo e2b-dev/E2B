@@ -3,9 +3,84 @@ import { NextApiRequest, NextApiResponse } from 'next'
 
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-import { PostLogs } from 'utils/agentLogs'
+import { PostLogs } from 'hooks/useUploadLogs'
+import { DeleteLogs } from 'hooks/useRemoveLogs'
 
-async function postAgent(req: NextApiRequest, res: NextApiResponse) {
+async function deleteLogs(req: NextApiRequest, res: NextApiResponse) {
+  const {
+    id,
+  } = req.body as DeleteLogs
+
+  try {
+    const supabase = createServerSupabaseClient({ req, res }, serverCreds)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return res.status(401).json({
+        error: 'not_authenticated',
+        description: 'The user does not have an active session or is not authenticated',
+      })
+    }
+
+    const user = await prisma.auth_users.findUnique({
+      where: {
+        id: session.user.id,
+      },
+      include: {
+        users_teams: {
+          include: {
+            teams: {
+              include: {
+                projects: {
+                  include: {
+                    logs: {
+                      where: {
+                        id,
+                      },
+                      select: {
+                        id: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!user) {
+      return res.status(401).json({
+        error: 'invalid_user',
+      })
+    }
+
+    const hasAccessToLogs = user
+      .users_teams
+      .flatMap(t => t.teams.projects)
+      .flatMap(p => p.logs)
+      .some(l => l.id === id)
+
+    if (!hasAccessToLogs) {
+      return res.status(401).json({
+        error: 'logs_does_not_belong_to_user',
+      })
+    }
+
+    await prisma.logs.delete({
+      where: {
+        id,
+      },
+    })
+
+    res.status(200).json({})
+  } catch (err: any) {
+    console.error(err)
+    res.status(500).json({ statusCode: 500, message: err.message })
+  }
+}
+
+async function postLogs(req: NextApiRequest, res: NextApiResponse) {
   const {
     logFiles,
     projectID,
@@ -84,11 +159,16 @@ async function handler(
   res: NextApiResponse,
 ) {
   if (req.method === 'POST') {
-    await postAgent(req, res)
+    await postLogs(req, res)
     return
   }
 
-  res.setHeader('Allow', 'POST')
+  if (req.method === 'POST') {
+    await deleteLogs(req, res)
+    return
+  }
+
+  res.setHeader('Allow', ['POST', 'DELETE'])
   res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' })
   return
 }

@@ -42,12 +42,3 @@ export interface AssistantContext {
     arguments: { [argName: string]: string }
   }
 }
-
-export interface PostLogs {
-  logFiles: RawFileLog[]
-  projectID: string
-}
-
-export interface PostLogsResponse {
-  id: string
-}

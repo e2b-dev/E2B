@@ -1,7 +1,16 @@
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
 
-import { PostLogs, PostLogsResponse, RawFileLog } from 'utils/agentLogs'
+import { RawFileLog } from 'utils/agentLogs'
+
+export interface PostLogs {
+  logFiles: RawFileLog[]
+  projectID: string
+}
+
+export interface PostLogsResponse {
+  id: string
+}
 
 async function handlePostLogs(url: string, { arg }: { arg: PostLogs }) {
   const response = await fetch(url, {
