@@ -10,6 +10,7 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { deployments, projects } from 'db/prisma'
 import AgentList from 'components/AgentList'
 import AgentRunsList from 'components/AgentRunsList'
+import AgentLogsList from 'components/AgentLogsList'
 
 
 export interface Props {
@@ -26,6 +27,7 @@ function DashboardHome({
 
   const view = router.query.view as string | undefined
   const selectedAgentInstanceID = router.query.projectID as string | undefined
+  const selectedLogFileID = router.query.fileID as string | undefined
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -66,9 +68,12 @@ function DashboardHome({
           initialSelectedAgentID={selectedAgentInstanceID}
         />
       ) : view === 'logs' ? (
-        <AgentRunsList
-          allDeployedAgents={projectsWithDeployments}
-          initialSelectedAgentID={selectedAgentInstanceID}
+        <AgentLogsList
+          logFiles={[
+            { name: '0', id: 'id-0' },
+            { name: '1', id: 'id-1' },
+          ]}
+          initialSelectedLogFileID={selectedLogFileID}
         />
       ) : (
         <span>404</span>

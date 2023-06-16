@@ -88,7 +88,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   let redirect: Redirect | undefined
   if (!view) {
     redirect = {
-      destination: '/?view=deployed',
+      // destination: '/?view=deployed',
+      destination: '/?view=logs',
       permanent: false,
     }
   }
