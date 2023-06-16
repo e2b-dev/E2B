@@ -64,8 +64,7 @@ function Layout({ children }: PropsWithChildren) {
     }
   }, [posthog, user])
 
-
-  if (router.pathname.startsWith('/agent')) {
+  if (router.pathname.startsWith('/agent') || router.pathname.startsWith('/sign')) {
     return (
       <div className={clsx(
         inter.variable,
