@@ -19,7 +19,6 @@ import AgentFunctions from 'components/AgentFunctions'
 import AgentContext from 'components/AgentContext'
 import AgentContextDetail from 'components/AgentContextDetail'
 
-
 interface PathProps extends ParsedUrlQuery {
   logFileID: string
 }

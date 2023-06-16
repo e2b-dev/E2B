@@ -52,7 +52,7 @@ function SignIn() {
         </h2>
         <div className="sm:mx-auto sm:w-full sm:max-w-sm justify-center flex">
           <button
-            className="flex items-center space-x-2 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="flex items-center space-x-2 rounded-md bg-gray-200 px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all"
             onClick={signInWithGitHub}
             disabled={isLoading}
           >
@@ -62,7 +62,7 @@ function SignIn() {
             {!isLoading &&
               <Github size={16} />
             }
-            <span>Continue with GitHub</span>
+            <span className="">Continue with GitHub</span>
           </button>
         </div>
       </div>
