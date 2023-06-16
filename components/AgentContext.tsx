@@ -57,7 +57,14 @@ function AgentContext({
         {context.map((ctx, idx) => (
           <>
             <div key={idx} className="flex items-center space-x-2 ">
-              <span className="font-bold text-sm text-[#55618C] capitalize min-w-[72px]">{ctx.role}</span>
+              <span className={clsx(
+                'font-bold text-sm capitalize min-w-[72px]',
+                opened === idx && 'text-[#6366F1]',
+                opened !== idx && 'text-[#55618C]',
+              )}
+              >
+                {ctx.role}
+              </span>
               <span
                 className={clsx(
                   'text-sm text-gray-100 max-w-full truncate p-2 hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full',
