@@ -16,7 +16,7 @@ import {
 
 import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
 import DashboardMobileSidebar from 'components/Sidebar/DashboardMobileSidebar'
-import FeedbackButton from 'components/FeedbackButton'
+import Feedback from 'components/Feedback'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -115,16 +115,12 @@ function Layout({ children }: PropsWithChildren) {
           </button>
 
           <div className="xl:hidden">
-            <FeedbackButton
-              onClick={() => { console.log('todo') }}
-            />
+            <Feedback />
           </div>
         </div>
 
         <div className="hidden xl:flex py-2 px-6 border-b border-white/5">
-          <FeedbackButton
-            onClick={() => { console.log('todo') }}
-          />
+          <Feedback />
         </div>
 
         {children}

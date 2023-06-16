@@ -112,7 +112,7 @@ function AgentLogFilesList({
           onClick={handleClick}
         >
           <Upload size={14} />
-          <span className="text-sm font-medium">Upload log file</span>
+          <span className="text-sm font-medium">Upload log folder</span>
         </button>
       </header>
 
@@ -130,7 +130,7 @@ function AgentLogFilesList({
             className="w-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-500 p-12 text-center hover:border-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <Upload size={48} className="text-gray-500" strokeWidth={1.5} />
-            <span className="mt-2 block text-sm font-semibold text-gray-300">Upload log file</span>
+            <span className="mt-2 block text-sm font-semibold text-gray-300">Upload log folder</span>
           </button>
         </div>
       )}

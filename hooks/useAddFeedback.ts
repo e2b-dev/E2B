@@ -23,7 +23,7 @@ async function handlePostFeedback(url: string, { arg }: { arg: PostFeedback }) {
 export function useAddFeedback() {
   const {
     trigger,
-  } = useSWRMutation('/api/logs', handlePostFeedback)
+  } = useSWRMutation('/api/feedback', handlePostFeedback)
 
   return useCallback(async (feedback: string) =>
     trigger({
