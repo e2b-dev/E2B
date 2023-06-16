@@ -24,11 +24,14 @@ function AgentContext({
 
   useEffect(function selectLogBasedOnURLQuery() {
     const selectedLog = router.query.selectedLog as string
+    let idx: number
     if (selectedLog) {
-      const idx = parseInt(selectedLog)
-      setOpened(idx)
-      onSelected(context[idx])
+      idx = parseInt(selectedLog)
+    } else {
+      idx = 0
     }
+    setOpened(idx)
+    onSelected(context[idx])
   }, [router, context, onSelected])
 
   function open(idx: number) {
@@ -37,13 +40,13 @@ function AgentContext({
     router.push(`/log/${router.query.logFileID}?selectedLog=${idx}`, undefined, { shallow: true })
   }
 
-  function close(idx: number) {
+  function close() {
     setOpened(undefined)
   }
 
   function toggle(idx: number) {
     if (opened === idx) {
-      close(idx)
+      close()
     } else {
       open(idx)
     }
