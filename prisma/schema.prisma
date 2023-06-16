@@ -103,6 +103,7 @@ model refresh_tokens {
   @@index([instance_id, user_id])
   @@index([parent])
   @@index([session_id, revoked])
+  @@index([updated_at(sort: Desc)])
   @@schema("auth")
 }
 
@@ -134,6 +135,7 @@ model saml_relay_states {
 
   @@index([for_email])
   @@index([sso_provider_id])
+  @@index([created_at(sort: Desc)])
   @@schema("auth")
 }
 
@@ -157,6 +159,7 @@ model sessions {
 
   @@index([user_id])
   @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@index([not_after(sort: Desc)])
   @@schema("auth")
 }
 
@@ -264,7 +267,7 @@ model deployments {
   enabled              Boolean           @default(false)
   auth                 Json?
   last_finished_prompt String?
-  projects             projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  projects             projects          @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -277,6 +280,7 @@ model projects {
   name             String        @default("")
   development_logs Json[]
   deployments      deployments[]
+  logs             logs[]
   teams            teams         @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
@@ -297,7 +301,19 @@ model flow_state {
 
   @@index([auth_code], map: "idx_auth_code")
   @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@index([created_at(sort: Desc)])
   @@schema("auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model logs {
+  id         String    @id @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  data       Json[]
+  project_id String
+  projects   projects  @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
 }
 
 enum aal_level {
