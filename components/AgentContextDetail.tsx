@@ -31,10 +31,16 @@ function AgentContextDetail({
             ) : (
               <ReactJson
                 src={JSON.parse(context.content)}
-                theme="pop"
                 name={null}
-                displayDataTypes={false}
+                style={{
+                  background: 'transparent'
+                }}
                 displayObjectSize={false}
+                quotesOnKeys={false}
+                sortKeys={true}
+                displayDataTypes={false}
+                theme="ocean"
+                enableClipboard={false}
               />
             )}
           </div>
@@ -47,17 +53,24 @@ function AgentContextDetail({
                   ...(context as any).function_call,
                   'arguments': JSON.parse((context as any).function_call.arguments),
                 }}
-                theme="pop"
                 name={null}
-                displayDataTypes={false}
+                style={{
+                  background: 'transparent'
+                }}
                 displayObjectSize={false}
+                quotesOnKeys={false}
+                sortKeys={true}
+                displayDataTypes={false}
+                theme="ocean"
+                enableClipboard={false}
               />
             </>
           )}
         </>
-      )}
+      )
+      }
 
-    </div>
+    </div >
   )
 }
 

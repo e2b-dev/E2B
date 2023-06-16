@@ -109,11 +109,19 @@ function AgentFunctions({
                   {fn.parameters && (
                     <div className="flex flex-col space-y-1 w-full">
                       <span className="text-sm font-bold text-gray-400">Parameters</span>
-                      <div className="rounded-md border border-gray-500 overflow-hidden p-2">
+                      <div className="rounded-md overflow-hidden p-2">
                         <ReactJson
                           src={fn.parameters}
-                          theme="pop"
                           name={null}
+                          style={{
+                            background: 'transparent'
+                          }}
+                          displayObjectSize={false}
+                          quotesOnKeys={false}
+                          sortKeys={true}
+                          displayDataTypes={false}
+                          theme="ocean"
+                          enableClipboard={false}
                         />
                       </div>
                     </div>
