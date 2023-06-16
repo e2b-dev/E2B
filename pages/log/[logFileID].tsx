@@ -130,7 +130,7 @@ function LogFile({ logFile }: Props) {
 
   return (
     <main className="overflow-hidden flex flex-col flex-1">
-      <header className="flex items-center space-x-2 p-4 sm:p-6 lg:px-8">
+      <header className="flex items-center space-x-2 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
         <Link
           href="/?view=logs"
         >
