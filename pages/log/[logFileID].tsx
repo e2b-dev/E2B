@@ -1,11 +1,119 @@
-import { AgentLogs, LogFile } from 'utils/agentLogs'
+import { AgentLogs, LogFile, RawFileLog } from 'utils/agentLogs'
+import type { GetServerSideProps } from 'next'
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import type { ParsedUrlQuery } from 'querystring'
+
+import { prisma } from 'db/prisma'
+import { serverCreds } from 'db/credentials'
+
+
 import testLogs from './logfile.json'
+
+
+interface PathProps extends ParsedUrlQuery {
+  logFileID: string
+}
+
+export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
+  const logFileID = ctx.params?.logFileID
+  if (!logFileID) {
+    return {
+      redirect: {
+        destination: '/?view=logs',
+        permanent: false,
+      }
+    }
+  }
+
+  const supabase = createServerSupabaseClient(ctx, serverCreds)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/sign',
+        permanent: false,
+      },
+    }
+  }
+
+  const user = await prisma.auth_users.findUnique({
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      users_teams: {
+        select: {
+          teams: {
+            include: {
+              projects: {
+                where: {
+                  logs: {
+                    some: {
+                      id: logFileID,
+                    },
+                  },
+                },
+                include: {
+                  logs: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const log = user
+    ?.users_teams
+    .flatMap((ut) => ut.teams)
+    .flatMap((t) => t.projects)
+    .flatMap((p) => p.logs)
+    .find((l) => l.id === logFileID)
+
+  if (!log) {
+    return {
+      notFound: true,
+    }
+  }
+
+  const files = log.data
+
+  if (!files) {
+    console.log('no files')
+    return {
+      notFound: true,
+    }
+  }
+
+  if (!log.data || log.data.length === 0) {
+    console.log('no files')
+    return {
+      notFound: true,
+    }
+  }
+
+  const file = log.data[0] as any as RawFileLog
+
+  return {
+    props: {
+      logFile: {
+        id: log.id,
+        name: file.filename,
+        content: JSON.parse(file.content),
+      }
+    }
+  }
+}
 
 export interface Props {
   logFile: LogFile & { content: AgentLogs }
 }
 
-function LogFile() {
+function LogFile({ logFile: log }: Props) {
   const logFile: Props['logFile'] = {
     id: 'test',
     name: 'test.json',
