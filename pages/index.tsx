@@ -1,7 +1,7 @@
 import type { GetServerSideProps, Redirect } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
-import { logs, prisma, projects } from 'db/prisma'
+import { deployments, logs, prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
 import { LogFile, RawFileLog } from 'utils/agentLogs'
@@ -36,6 +36,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 },
                 include: {
                   logs: true,
+                  deployments: true,
                 },
               },
             },
@@ -103,12 +104,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 }
 
 export interface Props {
-  projects: (projects & { logs: logs[] })[]
+  projects: (projects & { logs: logs[], deployments: deployments[] })[]
 }
 
 function Home({ projects }: Props) {
   const projectWithLogs = projects
-    .map<projects & { logs: LogFile[] }>(p => {
+    .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
       return {
         ...p,
         logs: p
