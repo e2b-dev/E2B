@@ -1,3 +1,8 @@
+export interface RawFileLog {
+  filename: string
+  content: string
+}
+
 export interface LogFile {
   id: string
   name: string

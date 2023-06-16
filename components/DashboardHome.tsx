@@ -1,19 +1,15 @@
-import {
-  useState,
-} from 'react'
-
-
 import { useRouter } from 'next/router'
 import { usePostHog } from 'posthog-js/react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
-import { deployments, projects } from 'db/prisma'
+import { projects } from 'db/prisma'
 import AgentList from 'components/AgentList'
 import AgentRunsList from 'components/AgentRunsList'
+import { LogFile } from 'utils/agentLogs'
 
 
 export interface Props {
-  projects: (projects & { deployments: deployments[] })[]
+  projects: (projects & { logs: LogFile[] })[]
 }
 
 function DashboardHome({
@@ -21,7 +17,6 @@ function DashboardHome({
 }: Props) {
   const supabaseClient = useSupabaseClient()
   const router = useRouter()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const posthog = usePostHog()
 
   const view = router.query.view as string | undefined
@@ -39,30 +34,16 @@ function DashboardHome({
     router.push(`/?view=runs&projectID=${projectID}`, undefined, { shallow: true })
   }
 
-  const projectsWithDeployments = projects
-    .filter(p => {
-      if (p.deployments.length !== 1) return false
-
-      const deployment = p.deployments[0]
-      const auth = deployment.auth as any
-      if (!auth) return false
-      return deployment.enabled
-    })
-    .map(p => ({
-      project: p,
-      deployment: p.deployments[0],
-    }))
-
   return (
     <>
       {view === 'deployed' ? (
         <AgentList
-          agents={projectsWithDeployments}
+          agents={projectsWithLogs}
           onSelectAgent={selectAgent}
         />
       ) : view === 'runs' ? (
         <AgentRunsList
-          allDeployedAgents={projectsWithDeployments}
+          allDeployedAgents={projectsWithLogs}
           initialSelectedAgentID={selectedAgentInstanceID}
         />
       ) : view === 'logs' ? (
