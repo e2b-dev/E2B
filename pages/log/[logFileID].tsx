@@ -125,7 +125,7 @@ export interface Props {
 
 function LogFile({ logFile }: Props) {
   const [isResizing, setIsResizing] = useState(false)
-  const [sizes, setSizes] = useState([50, 50])
+  const [sizes, setSizes] = useState([30, 70])
   const [selectedContext, setSelectedContext] = useState<SystemContext | UserContext | AssistantContext>()
 
   return (

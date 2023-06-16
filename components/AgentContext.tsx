@@ -1,6 +1,8 @@
 import {
   useState,
+  useEffect,
 } from 'react'
+import { useRouter } from 'next/router'
 import clsx from 'clsx'
 import {
   SystemContext,
@@ -15,13 +17,24 @@ export interface Props {
 
 function AgentContext({
   context,
-  onSelected: onOpened,
+  onSelected,
 }: Props) {
+  const router = useRouter()
   const [opened, setOpened] = useState<number>()
+
+  useEffect(function selectLogBasedOnURLQuery() {
+    const selectedLog = router.query.selectedLog as string
+    if (selectedLog) {
+      const idx = parseInt(selectedLog)
+      setOpened(idx)
+      onSelected(context[idx])
+    }
+  }, [router, context, onSelected])
 
   function open(idx: number) {
     setOpened(idx)
-    onOpened(context[idx])
+    onSelected(context[idx])
+    router.push(`/log/${router.query.logFileID}?selectedLog=${idx}`, undefined, { shallow: true })
   }
 
   function close(idx: number) {

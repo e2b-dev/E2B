@@ -47,8 +47,6 @@ function AgentFunctions({
     })
   }
 
-  console.log('functions', functions)
-
   return (
     <div className="flex-1 flex flex-col space-y-2 max-w-full w-full overflow-hidden">
       <h2 className="mb-2 font-medium text-sm text-gray-500">Functions</h2>
