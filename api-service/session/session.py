@@ -24,7 +24,7 @@ GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
 
 async def get_result(result: ApplyResult[Any]):
     while not result.ready():
-        await asyncio.sleep(1)  # give other tasks chance to run
+        await asyncio.sleep(0.5)  # give other tasks chance to run
 
     return result.get()
 
