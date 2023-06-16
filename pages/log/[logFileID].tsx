@@ -18,6 +18,21 @@ function LogFile() {
         <h1 className="text-2xl font-semibold leading-7 text-white">Logs</h1>
       </header>
 
+      <div className="flex flex-col space-y-4">
+        {logFile.content.functions.map(fn => (
+          <div key={logFile.id} className="shadow overflow-hidden sm:rounded-md">
+            {fn.name}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col space-y-4">
+        {logFile.content.context.map(ctx => (
+          <div key={logFile.id} className="shadow overflow-hidden sm:rounded-md">
+            {ctx.role}
+          </div>
+        ))}
+      </div>
     </main>
   )
 }

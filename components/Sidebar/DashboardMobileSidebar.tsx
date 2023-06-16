@@ -25,6 +25,7 @@ function DashboardMobileSidebar({
   const router = useRouter()
   const view = router.query.view as string | undefined
   const isOnRunDetail = router.pathname.startsWith('/deployed/[projectID]/run/[runID]')
+  const isOnLogDetail = router.pathname.startsWith('/log/[logFileID]')
 
   return (
     <Transition.Root show={isSidebarOpen} as={Fragment}>
@@ -87,7 +88,7 @@ function DashboardMobileSidebar({
                             <Link
                               href={`/?view=${item.view}`}
                               className={clsx(
-                                item.view === view || (isOnRunDetail && item.view === 'runs')
+                                item.view === view || (isOnRunDetail && item.view === 'runs') || (isOnLogDetail && item.view === 'logs')
                                   ? 'bg-gray-800 text-white'
                                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
                                 'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'

@@ -10,11 +10,13 @@ export interface LogFile {
 
 export interface AgentLogs {
   context: (SystemContext | UserContext | AssistantContext)[]
-  functions: {
-    name: string
-    description?: string
-    parameters: { [key: string]: any }
-  }
+  functions: AgentFunction[]
+}
+
+export interface AgentFunction {
+  name: string
+  description?: string
+  parameters: { [key: string]: any }
 }
 
 export interface SystemContext {

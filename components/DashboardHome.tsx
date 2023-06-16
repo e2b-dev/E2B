@@ -24,6 +24,8 @@ function DashboardHome({
   const selectedAgentInstanceID = router.query.projectID as string | undefined
   const selectedLogFileID = router.query.fileID as string | undefined
 
+  console.log({ router })
+
   async function signOut() {
     await supabaseClient.auth.signOut()
     posthog?.reset(true)
