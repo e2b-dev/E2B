@@ -32,7 +32,7 @@ function DashboardDesktopSidebar({
         </div> */}
         <nav className="flex flex-1 flex-col space-y-6 py-[22px]">
           <div className="font-bold text-gray-100">
-            Arken
+            e2b
           </div>
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
