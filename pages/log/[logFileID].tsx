@@ -10,7 +10,13 @@ import Link from 'next/link'
 
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
+import {
+  SystemContext,
+  UserContext,
+  AssistantContext,
+} from 'utils/agentLogs'
 import AgentFunctions from 'components/AgentFunctions'
+import AgentContext from 'components/AgentContext'
 
 
 interface PathProps extends ParsedUrlQuery {
@@ -119,6 +125,7 @@ export interface Props {
 function LogFile({ logFile }: Props) {
   const [isResizing, setIsResizing] = useState(false)
   const [sizes, setSizes] = useState([50, 50])
+  const [selectedContext, setSelectedContext] = useState<SystemContext | UserContext | AssistantContext>()
 
   return (
     <main className="overflow-hidden flex flex-col flex-1">
@@ -153,15 +160,16 @@ function LogFile({ logFile }: Props) {
           <AgentFunctions
             functions={logFile.content.functions}
           />
-          <div className="flex flex-col space-y-4 max-w-full overflow-auto">
-            <h2 className="font-bold text-gray-500">Logs</h2>
-            {logFile.content.context.map((ctx, idx) => (
-              <div key={idx} className="shadow sm:rounded-md">
-                {ctx.role}
-              </div>
-            ))}
-          </div>
+
+          <AgentContext
+            context={logFile.content.context}
+            onSelected={setSelectedContext}
+          />
         </Splitter>
+
+        <div className="flex flex-col min-w-[500px]">
+          hello
+        </div>
       </div>
     </main >
   )
