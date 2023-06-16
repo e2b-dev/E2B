@@ -84,6 +84,7 @@ async function postLogs(req: NextApiRequest, res: NextApiResponse) {
   const {
     logFiles,
     projectID,
+    metadata,
   } = req.body as PostLogs
 
   try {
@@ -137,6 +138,7 @@ async function postLogs(req: NextApiRequest, res: NextApiResponse) {
     const logs = await prisma.logs.create({
       data: {
         data: logFiles as any,
+        metadata: metadata,
         projects: {
           connect: {
             id: projectID,

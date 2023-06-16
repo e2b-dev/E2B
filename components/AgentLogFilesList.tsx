@@ -1,6 +1,3 @@
-// Disable ts check because html attributes for folder uploads are not type in react
-// @ts-nocheck 
-
 import {
   useRef,
   useState,
@@ -13,9 +10,9 @@ import Link from 'next/link'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
-import { LogFile } from 'utils/agentLogs'
-import { useUploadLog } from 'hooks/useUploadLogs'
-import type { File as BufferFile } from 'buffer'
+import { LogFile, RawFileLog } from 'utils/agentLogs'
+import { useUploadLogs } from 'hooks/useUploadLogs'
+import { useDeleteLogs } from 'hooks/useRemoveLogs'
 
 export interface Props {
   logFiles: LogFile[]
@@ -32,48 +29,57 @@ function AgentLogFilesList({
   const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
   const fileInput = useRef<any>(null)
 
-  const uploadFile = useUploadLog(defaultProjectID)
+  const uploadFiles = useUploadLogs(defaultProjectID)
+  const deleteLogs = useDeleteLogs()
 
   function handleClick() {
     // trigger the click event of the file input
     fileInput.current.click()
   }
 
-  async function handleUpload(file: BufferFile) {
-    const text = await file.text()
+  async function handleUpload(files: FileList) {
+    const logFiles: RawFileLog[] = []
 
-    const log = await uploadFile({
-      content: text,
-      filename: file.name,
-      metadata: {
-        size: file.size,
-        type: file.type,
-        timestamp: file.lastModified,
-      },
-    })
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const content = await file.text()
+
+      logFiles.push({
+        filename: file.name,
+        content,
+        metadata: {
+          size: file.size,
+          type: file.type,
+          timestamp: file.lastModified,
+        }
+      })
+    }
+
+    const logEntry = await uploadFiles(logFiles, {})
 
     // Reload to refresh the list of 
     router.reload()
   }
 
   async function handleFileChange(event: any) {
-    const file: BufferFile = event.target.files[0]
-    await handleUpload(file)
+    if (event.target.files.length === 0) return
+    console.log('Files', event.target.files)
+    await handleUpload(event.target.files)
   }
 
   const handleDrag = function (e: any) {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === 'dragenter' || e.type === 'dragover') {
-    } else if (e.type === 'dragleave') {
-    }
+    } else if (e.type === 'dragleave') { }
   }
 
   async function handleDrop(e: any) {
     e.preventDefault()
     e.stopPropagation()
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      await handleUpload(e.dataTransfer.files[0])
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      console.log('Files', e.dataTransfer.files)
+      await handleUpload(e.dataTransfer.files)
     }
   }
 
@@ -94,6 +100,7 @@ function AgentLogFilesList({
         style={{ display: 'none' }}
         ref={fileInput}
         onChange={handleFileChange}
+        // @ts-ignore
         directory=""
         webkitdirectory=""
         mozdirectory=""

@@ -1,11 +1,12 @@
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
 
-import { RawFileLog } from 'utils/agentLogs'
+import { LogsMetadata, RawFileLog } from 'utils/agentLogs'
 
 export interface PostLogs {
   logFiles: RawFileLog[]
   projectID: string
+  metadata: LogsMetadata
 }
 
 export interface PostLogsResponse {
@@ -23,16 +24,15 @@ async function handlePostLogs(url: string, { arg }: { arg: PostLogs }) {
   return await response.json() as PostLogsResponse
 }
 
-export function useUploadLog(projectID: string) {
+export function useUploadLogs(projectID: string) {
   const {
     trigger: upload,
   } = useSWRMutation('/api/logs', handlePostLogs)
 
-  const uploadLog = useCallback(async (logFiles: RawFileLog[]) =>
+  return useCallback(async (logFiles: RawFileLog[], metadata: LogsMetadata) =>
     upload({
       logFiles,
       projectID,
+      metadata,
     }), [projectID, upload])
-
-  return uploadLog
-}
+} 

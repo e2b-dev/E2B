@@ -8,6 +8,10 @@ export interface RawFileLog {
   }
 }
 
+export interface LogsMetadata {
+
+}
+
 export interface LogFile {
   id: string
   name: string

@@ -18,14 +18,12 @@ async function handleDeleteLogs(url: string, { arg }: { arg: DeleteLogs }) {
   return await response.json() as DeleteLogsResponse
 }
 
-export function useRemoveLog() {
+export function useDeleteLogs() {
   const {
     trigger: remove,
   } = useSWRMutation('/api/logs', handleDeleteLogs)
 
-  const deleteLogs = useCallback(async (logID: string) => remove({
+  return useCallback(async (logID: string) => remove({
     id: logID,
   }), [remove])
-
-  return deleteLogs
 }
