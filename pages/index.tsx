@@ -1,4 +1,4 @@
-import type { GetServerSideProps, Redirect } from 'next'
+import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
 import { deployments, prisma, projects } from 'db/prisma'
@@ -10,12 +10,13 @@ import { nanoid } from 'nanoid'
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   // Select the 'deployed' view by default.
   const view = ctx.query['view'] as string
-  let redirect: Redirect | undefined
+  const joinTeamID = ctx.query['team'] as string | undefined
   if (!view) {
-    redirect = {
-      // destination: '/?view=deployed',
-      destination: '/?view=logs',
-      permanent: false,
+    return {
+      redirect: {
+        destination: joinTeamID ? `/?view=logs&team=${joinTeamID}` : '/?view=logs',
+        permanent: false,
+      }
     }
   }
 
@@ -68,6 +69,33 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   const defaultTeam =
     user?.users_teams.flatMap(u => u.teams)?.find(t => t.is_default) ||
+    (joinTeamID && await prisma.teams.update({
+      where: {
+        id: joinTeamID,
+      },
+      data: {
+        users_teams: {
+          connectOrCreate: {
+            where: {
+              user_id_team_id: {
+                team_id: joinTeamID,
+                user_id: session.user.id,
+              },
+            },
+            create: {
+              user_id: session.user.id,
+            },
+          },
+        },
+      },
+      include: {
+        projects: {
+          include: {
+            logs: true,
+          },
+        },
+      },
+    })) ||
     await prisma.teams.create({
       include: {
         projects: {
@@ -99,6 +127,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   const defaultProject =
     user.users_teams.flatMap(u => u.teams.projects).find(p => p.is_default) ||
+    defaultTeam.projects.find(p => p.is_default) ||
     await prisma.projects.create({
       data: {
         id: nanoid(),
@@ -137,7 +166,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           }
         })
     },
-    redirect,
   }
 }
 
@@ -147,7 +175,6 @@ export interface Props {
 }
 
 function Home({ projects, defaultProjectID }: Props) {
-  console.log(defaultProjectID)
   return (
     <DashboardHome
       defaultProjectID={defaultProjectID}
