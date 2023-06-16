@@ -40,7 +40,6 @@ function AgentLogFilesList({
   async function handleUpload(file: BufferFile) {
     const text = await file.text()
 
-    // console.log('text >>>>>>>>>', text)
     const log = await uploadFile({
       content: text,
       filename: file.name,

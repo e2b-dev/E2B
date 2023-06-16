@@ -90,15 +90,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             users: {
               connect: {
                 id: session.user.id,
-              }
-            }
-          }
+              },
+            },
+          },
         },
       },
     })
 
   const defaultProject =
-    defaultTeam.projects.find(p => p.is_default) ||
+    user.users_teams.flatMap(u => u.teams.projects).find(p => p.is_default) ||
     await prisma.projects.create({
       data: {
         id: nanoid(),
@@ -115,12 +115,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       },
     })
 
-
   return {
     props: {
       defaultProjectID: defaultProject.id,
-      projects: defaultTeam
-        .projects
+      projects: [defaultProject]
         .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
           return {
             ...p,
@@ -149,7 +147,7 @@ export interface Props {
 }
 
 function Home({ projects, defaultProjectID }: Props) {
-
+  console.log(defaultProjectID)
   return (
     <DashboardHome
       defaultProjectID={defaultProjectID}
