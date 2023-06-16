@@ -28,6 +28,7 @@ function AgentLogFilesList({
   const router = useRouter()
   const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
   const fileInput = useRef<any>(null)
+  const [dragActive, setDragActive] = useState(false)
 
   const uploadFile = useUploadLog(defaultProjectID)
 
@@ -36,8 +37,7 @@ function AgentLogFilesList({
     fileInput.current.click()
   }
 
-  async function handleFileChange(event: any) {
-    const file: BufferFile = event.target.files[0]
+  async function handleUpload(file: BufferFile) {
     const text = await file.text()
 
     const log = await uploadFile({
@@ -54,6 +54,30 @@ function AgentLogFilesList({
     router.reload()
   }
 
+  async function handleFileChange(event: any) {
+    const file: BufferFile = event.target.files[0]
+    await handleUpload(file)
+  }
+
+  const handleDrag = function (e: any) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  async function handleDrop(e: any) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await handleUpload(e.dataTransfer.files[0])
+    }
+  }
+
   function toggleSelectedLogFileID(logFileID: string) {
     if (selectedLogFileID === logFileID) {
       setSelectedLogFileID('')
@@ -66,14 +90,14 @@ function AgentLogFilesList({
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full">
+      <input
+        type="file"
+        style={{ display: 'none' }}
+        ref={fileInput}
+        onChange={handleFileChange}
+      />
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
-        <input
-          type="file"
-          style={{ display: 'none' }}
-          ref={fileInput}
-          onChange={handleFileChange}
-        />
         <button
           className="p-2 rounded-md bg-[#6366F1] flex items-center space-x-2"
           onClick={handleClick}
@@ -84,9 +108,16 @@ function AgentLogFilesList({
       </header>
 
       {logFiles.length === 0 && (
-        <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8">
+        <div
+          className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8"
+          onDrop={handleDrop}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+        >
           <button
             type="button"
+            onClick={handleClick}
             className="w-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-500 p-12 text-center hover:border-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <Upload size={48} className="text-gray-500" strokeWidth={1.5} />

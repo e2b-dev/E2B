@@ -5,7 +5,8 @@ import clsx from 'clsx'
 import {
   ChevronRight,
 } from 'lucide-react'
-import ReactJson from 'react-json-view'
+import dynamic from 'next/dynamic'
+const ReactJson = dynamic(import('react-json-view'), { ssr: false })
 
 import { AgentFunction } from 'utils/agentLogs'
 

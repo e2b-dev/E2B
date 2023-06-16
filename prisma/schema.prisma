@@ -279,6 +279,7 @@ model projects {
   team_id          String        @db.Uuid
   name             String        @default("")
   development_logs Json[]
+  is_default       Boolean       @default(false)
   deployments      deployments[]
   logs             logs[]
   teams            teams         @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
