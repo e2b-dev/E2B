@@ -1,6 +1,7 @@
 import {
   useState,
   useEffect,
+  Fragment,
 } from 'react'
 import { useRouter } from 'next/router'
 import clsx from 'clsx'
@@ -58,8 +59,8 @@ function AgentContext({
 
       <div className="flex-1 flex flex-col space-y-1 max-w-full w-full overflow-auto">
         {context.map((ctx, idx) => (
-          <>
-            <div key={idx} className="flex items-center space-x-2 ">
+          <Fragment key={idx}>
+            <div className="flex items-center space-x-2 ">
               <span className={clsx(
                 'font-bold text-sm capitalize min-w-[72px]',
                 opened === idx && 'text-[#6366F1]',
@@ -81,7 +82,7 @@ function AgentContext({
             {idx !== context.length - 1 && (
               <div className="ml-1 rounded min-h-[20px] w-px bg-gray-800" />
             )}
-          </>
+          </Fragment>
         ))}
       </div>
     </div>
