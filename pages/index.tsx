@@ -1,7 +1,7 @@
 import type { GetServerSideProps, Redirect } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
-import { deployments, logs, prisma, projects } from 'db/prisma'
+import { deployments, prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
 import { LogFile, RawFileLog } from 'utils/agentLogs'
@@ -36,7 +36,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 },
                 include: {
                   logs: true,
-                  deployments: true,
                 },
               },
             },
@@ -74,7 +73,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         projects: {
           include: {
             logs: true,
-            deployments: true,
           }
         }
       },
@@ -100,7 +98,24 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
     return {
       props: {
-        projects: team.projects,
+        projects: team.projects
+          .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
+            return {
+              ...p,
+              // Don't send any deployments to the client.
+              deployments: [],
+              logs: p
+                .logs
+                .filter(l => l.data !== null && l.data.length > 0)
+                .map<LogFile>(l => {
+                  const log = l.data[0] as unknown as RawFileLog
+                  return {
+                    id: l.id,
+                    name: log.filename,
+                  }
+                })
+            }
+          }),
         defaultProjectID: team.projects[0].id,
       },
     }
@@ -113,7 +128,24 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   return {
     props: {
-      projects,
+      projects: projects
+        .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
+          return {
+            ...p,
+            // Don't send any deployments to the client.
+            deployments: [],
+            logs: p
+              .logs
+              .filter(l => l.data !== null && l.data.length > 0)
+              .map<LogFile>(l => {
+                const log = l.data[0] as unknown as RawFileLog
+                return {
+                  id: l.id,
+                  name: log.filename,
+                }
+              })
+          }
+        }),
       defaultProjectID: projects[0].id,
     },
     redirect,
@@ -121,32 +153,16 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 }
 
 export interface Props {
-  projects: (projects & { logs: logs[], deployments: deployments[] })[]
+  projects: (projects & { logs: LogFile[], deployments: deployments[] })[]
   defaultProjectID: string
 }
 
 function Home({ projects, defaultProjectID }: Props) {
-  const projectWithLogs = projects
-    .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
-      return {
-        ...p,
-        logs: p
-          .logs
-          .filter(l => l.data !== null && l.data.length > 0)
-          .map<LogFile>(l => {
-            const log = l.data[0] as unknown as RawFileLog
-            return {
-              id: l.id,
-              name: log.filename,
-            }
-          })
-      }
-    })
 
   return (
     <DashboardHome
       defaultProjectID={defaultProjectID}
-      projects={projectWithLogs}
+      projects={projects}
     />
   )
 }
