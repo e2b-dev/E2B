@@ -1,35 +1,66 @@
 import {
+  useRef,
   useState,
 } from 'react'
 import {
-  File,
   Upload,
+  File,
 } from 'lucide-react'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
 import { LogFile } from 'utils/agentLogs'
+import { useUploadLog } from 'hooks/useUploadLogs'
+import type { File as BufferFile } from 'buffer'
 
 export interface Props {
   logFiles: LogFile[]
   initialSelectedLogFileID?: string
+  defaultProjectID: string
 }
 
 function AgentLogFilesList({
   logFiles,
   initialSelectedLogFileID,
+  defaultProjectID,
 }: Props) {
   const router = useRouter()
   const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
+  const fileInput = useRef<any>(null)
 
-  function toggleSelectedLogFileID(projectID: string) {
-    if (selectedLogFileID === projectID) {
+  const uploadFile = useUploadLog(defaultProjectID)
+
+  function handleClick() {
+    // trigger the click event of the file input
+    fileInput.current.click()
+  }
+
+  async function handleFileChange(event: any) {
+    const file: BufferFile = event.target.files[0]
+    const text = await file.text()
+
+    const log = await uploadFile({
+      content: text,
+      filename: file.name,
+      metadata: {
+        size: file.size,
+        type: file.type,
+        timestamp: file.lastModified,
+      },
+    })
+
+    // Reload to refresh the list of 
+    router.reload()
+  }
+
+  function toggleSelectedLogFileID(logFileID: string) {
+    if (selectedLogFileID === logFileID) {
       setSelectedLogFileID('')
       router.push('/?view=logs', undefined, { shallow: true })
     } else {
-      setSelectedLogFileID(projectID)
-      router.push(`/?view=logs&fileID=${projectID}`, undefined, { shallow: true })
+      setSelectedLogFileID(logFileID)
+      router.push(`/?view=logs&fileID=${logFileID}`, undefined, { shallow: true })
     }
   }
 
@@ -37,7 +68,16 @@ function AgentLogFilesList({
     <main className="overflow-hidden flex flex-col max-h-full">
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
-        <button className="p-2 rounded-md bg-[#6366F1] flex items-center space-x-2">
+        <input
+          type="file"
+          style={{ display: 'none' }}
+          ref={fileInput}
+          onChange={handleFileChange}
+        />
+        <button
+          className="p-2 rounded-md bg-[#6366F1] flex items-center space-x-2"
+          onClick={handleClick}
+        >
           <Upload size={14} />
           <span className="text-sm font-medium">Upload log file</span>
         </button>

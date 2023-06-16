@@ -8,13 +8,14 @@ import AgentRunsList from 'components/AgentRunsList'
 import AgentLogFilesList from 'components/AgentLogFilesList'
 import { LogFile } from 'utils/agentLogs'
 
-
 export interface Props {
   projects: (projects & { logs: LogFile[], deployments: deployments[] })[]
+  defaultProjectID: string
 }
 
 function DashboardHome({
   projects,
+  defaultProjectID,
 }: Props) {
   const supabaseClient = useSupabaseClient()
   const router = useRouter()
@@ -69,6 +70,7 @@ function DashboardHome({
       ) : view === 'logs' ? (
         <AgentLogFilesList
           logFiles={logFiles}
+          defaultProjectID={defaultProjectID}
           initialSelectedLogFileID={selectedLogFileID}
         />
       ) : (

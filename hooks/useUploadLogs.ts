@@ -19,12 +19,11 @@ export function useUploadLog(projectID: string) {
     trigger: upload,
   } = useSWRMutation('/api/logs', handlePostLogs)
 
-  const uploadLog = useCallback(async (logFile: RawFileLog) => {
-    await upload({
+  const uploadLog = useCallback(async (logFile: RawFileLog) =>
+    upload({
       logFiles: [logFile],
       projectID,
-    })
-  }, [projectID, upload])
+    }), [projectID, upload])
 
   return uploadLog
 }

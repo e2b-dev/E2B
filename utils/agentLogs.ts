@@ -1,6 +1,11 @@
 export interface RawFileLog {
   filename: string
   content: string
+  metadata?: {
+    size: number,
+    type: string,
+    timestamp: number,
+  }
 }
 
 export interface LogFile {

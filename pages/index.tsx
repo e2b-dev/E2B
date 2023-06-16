@@ -55,13 +55,37 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  const hasDefaultTeam = user?.users_teams.some(t => t.teams.is_default)
+  // Select the 'deployed' view by default.
+  const view = ctx.query['view'] as string
+  let redirect: Redirect | undefined
+  if (!view) {
+    redirect = {
+      // destination: '/?view=deployed',
+      destination: '/?view=logs',
+      permanent: false,
+    }
+  }
+
+  const hasDefaultTeam = user?.users_teams.find(t => t.teams.is_default)
   if (!hasDefaultTeam) {
     // If user is without default team create default team.
-    await prisma.teams.create({
+    const team = await prisma.teams.create({
+      include: {
+        projects: {
+          include: {
+            logs: true,
+            deployments: true,
+          }
+        }
+      },
       data: {
         name: session.user.email || session.user.id,
         is_default: true,
+        projects: {
+          create: {
+            name: 'Default Project',
+          },
+        },
         users_teams: {
           create: {
             users: {
@@ -75,30 +99,22 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     })
 
     return {
-      redirect: {
-        permanent: false,
-        destination: '/agent/smol-developer',
+      props: {
+        projects: team.projects,
+        defaultProjectID: team.projects[0].id,
       },
     }
   }
 
   // Show projects from all teams.
-  const projects = user.users_teams.flatMap(t => t.teams.projects)
-
-  // Select the 'deployed' view by default.
-  const view = ctx.query['view'] as string
-  let redirect: Redirect | undefined
-  if (!view) {
-    redirect = {
-      // destination: '/?view=deployed',
-      destination: '/?view=logs',
-      permanent: false,
-    }
-  }
+  const projects = user
+    .users_teams
+    .flatMap(t => t.teams.projects)
 
   return {
     props: {
       projects,
+      defaultProjectID: projects[0].id,
     },
     redirect,
   }
@@ -106,9 +122,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
 export interface Props {
   projects: (projects & { logs: logs[], deployments: deployments[] })[]
+  defaultProjectID: string
 }
 
-function Home({ projects }: Props) {
+function Home({ projects, defaultProjectID }: Props) {
   const projectWithLogs = projects
     .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
       return {
@@ -128,6 +145,7 @@ function Home({ projects }: Props) {
 
   return (
     <DashboardHome
+      defaultProjectID={defaultProjectID}
       projects={projectWithLogs}
     />
   )
