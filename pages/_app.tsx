@@ -5,14 +5,14 @@ import { useEffect, useState } from 'react'
 import { projects } from '@prisma/client'
 import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
 
 import 'styles/global.css'
 
 import { Database } from 'db/supabase'
 import { clientCreds } from 'db/credentials'
-import { useRouter } from 'next/router'
 import Layout from 'components/Layout'
-import Head from 'next/head'
 
 // Initialize PostHog
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {

@@ -28,9 +28,9 @@ export function useUploadLog(projectID: string) {
     trigger: upload,
   } = useSWRMutation('/api/logs', handlePostLogs)
 
-  const uploadLog = useCallback(async (logFile: RawFileLog) =>
+  const uploadLog = useCallback(async (logFiles: RawFileLog[]) =>
     upload({
-      logFiles: [logFile],
+      logFiles,
       projectID,
     }), [projectID, upload])
 

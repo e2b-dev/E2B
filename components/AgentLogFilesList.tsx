@@ -1,3 +1,6 @@
+// Disable ts check because html attributes for folder uploads are not type in react
+// @ts-nocheck 
+
 import {
   useRef,
   useState,
@@ -28,7 +31,6 @@ function AgentLogFilesList({
   const router = useRouter()
   const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
   const fileInput = useRef<any>(null)
-  const [dragActive, setDragActive] = useState(false)
 
   const uploadFile = useUploadLog(defaultProjectID)
 
@@ -63,16 +65,13 @@ function AgentLogFilesList({
     e.preventDefault()
     e.stopPropagation()
     if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
     } else if (e.type === 'dragleave') {
-      setDragActive(false)
     }
   }
 
   async function handleDrop(e: any) {
     e.preventDefault()
     e.stopPropagation()
-    setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       await handleUpload(e.dataTransfer.files[0])
     }
@@ -95,6 +94,10 @@ function AgentLogFilesList({
         style={{ display: 'none' }}
         ref={fileInput}
         onChange={handleFileChange}
+        directory=""
+        webkitdirectory=""
+        mozdirectory=""
+        multiple
       />
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
