@@ -324,6 +324,7 @@ model feedback {
   created_at DateTime?   @default(now()) @db.Timestamptz(6)
   user_id    String?     @db.Uuid
   text       String?
+  email      String?
   users      auth_users? @relation(fields: [user_id], references: [id], onUpdate: NoAction)
 
   @@schema("public")

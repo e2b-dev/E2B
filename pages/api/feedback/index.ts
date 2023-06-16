@@ -23,6 +23,7 @@ async function postFeedback(req: NextApiRequest, res: NextApiResponse) {
     await prisma.feedback.create({
       data: {
         text: feedback,
+        email: session.user.email,
         users: {
           connect: {
             id: session.user.id,
