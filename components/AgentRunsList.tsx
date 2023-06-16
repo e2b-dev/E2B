@@ -52,7 +52,7 @@ function AgentRunsList({
 
 
   return (
-    <main className="overflow-hidden flex flex-col max-h-full">
+    <main className="overflow-hidden flex flex-col flex-1">
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold leading-7 text-white">Agent Runs</h1>
       </header>

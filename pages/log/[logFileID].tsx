@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { AgentLogs, LogFile, RawFileLog } from 'utils/agentLogs'
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
-
+import Splitter from '@devbookhq/splitter'
+import clsx from 'clsx'
 
 import Link from 'next/link'
 
@@ -114,8 +116,11 @@ export interface Props {
 }
 
 function LogFile({ logFile }: Props) {
+  const [isResizing, setIsResizing] = useState(false)
+  const [sizes, setSizes] = useState([50, 50])
+
   return (
-    <main className="overflow-hidden flex flex-col max-h-full">
+    <main className="overflow-hidden flex flex-col flex-1">
       <header className="flex items-center space-x-2 p-4 sm:p-6 lg:px-8">
         <Link
           href="/?view=logs"
@@ -126,22 +131,44 @@ function LogFile({ logFile }: Props) {
         <h1 className="text-2xl font-semibold leading-7 text-white font-mono">{logFile.name}</h1>
       </header>
 
-      <div className="flex flex-col space-y-4">
-        {logFile.content.functions.map(fn => (
-          <div key={logFile.id} className="shadow overflow-hidden sm:rounded-md">
-            {fn.name}
+      <div className="flex-1 flex items-start justify-start sm:p-6 lg:px-8">
+        <Splitter
+          draggerClassName={clsx(
+            'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
+            isResizing && 'bg-[#6366F1]',
+          )}
+          gutterClassName={clsx(
+            'mx-2 bg-transparent hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
+            isResizing && 'bg-[#6366F1]',
+          )}
+          classes={['flex', 'flex']}
+          onResizeStarted={() => setIsResizing(true)}
+          onResizeFinished={(_, newSizes) => {
+            setIsResizing(false)
+            setSizes(newSizes)
+          }}
+          initialSizes={sizes}
+        >
+          <div className="flex flex-col space-y-4 max-w-full overflow-auto">
+            <h2 className="font-bold text-gray-500">Functions</h2>
+            {logFile.content.functions.map((fn, idx) => (
+              <div key={idx} className="shadow sm:rounded-md">
+                {fn.name}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div className="flex flex-col space-y-4">
-        {logFile.content.context.map(ctx => (
-          <div key={logFile.id} className="shadow overflow-hidden sm:rounded-md">
-            {ctx.role}
+          <div className="flex flex-col space-y-4 max-w-full overflow-auto">
+            <h2 className="font-bold text-gray-500">Logs</h2>
+            {logFile.content.context.map((ctx, idx) => (
+              <div key={idx} className="shadow sm:rounded-md">
+                {ctx.role}
+              </div>
+            ))}
           </div>
-        ))}
+        </Splitter>
       </div>
-    </main>
+    </main >
   )
 }
 
