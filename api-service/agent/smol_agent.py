@@ -436,6 +436,7 @@ Begin generating the code now.
                         if not any(
                             name.endswith(extension) for extension in extensions_to_skip
                         )
+                        and not name.endswith("/")
                     ]
                 )
 
