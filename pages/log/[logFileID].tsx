@@ -33,6 +33,13 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
       }
     }
   }
+  const logFileName = ctx.query['filename'] as string | undefined
+  if (!logFileName) {
+    console.log('no file specified in the "filename" query string', logFileName)
+    return {
+      notFound: true,
+    }
+  }
 
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
@@ -105,14 +112,22 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     }
   }
 
-  const file = log.data[0] as any as RawFileLog
+  const file = (log.data as unknown as RawFileLog[])
+    .find((f) => f.filename === logFileName)
+
+  if (!file) {
+    console.log('file not found', logFileName)
+    return {
+      notFound: true,
+    }
+  }
 
   return {
     props: {
       logFile: {
-        id: log.id,
         name: file.filename,
         content: JSON.parse(file.content),
+        relativePath: file.metadata.relativePath,
       }
     }
   }
