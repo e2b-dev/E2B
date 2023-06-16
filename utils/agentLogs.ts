@@ -10,7 +10,7 @@ export interface LogFile {
 
 export interface AgentLogs {
   logFileID: string
-  context: SystemContext | UserContext | AssistantContext
+  context: (SystemContext | UserContext | AssistantContext)[]
   functions: {
     name: string
     description?: string
