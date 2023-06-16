@@ -51,7 +51,7 @@ function AgentFunctions({
 
   return (
     <div className="flex-1 flex flex-col space-y-2 max-w-full w-full overflow-hidden">
-      <h2 className="font-bold text-gray-500">Functions</h2>
+      <h2 className="mb-2 font-medium text-sm text-gray-500">Functions</h2>
 
       <div className="flex-1 flex flex-col space-y-3 max-w-full w-full overflow-auto">
         {sortAlphabetically([...functions]).map((fn, idx) => (

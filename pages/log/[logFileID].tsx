@@ -17,6 +17,7 @@ import {
 } from 'utils/agentLogs'
 import AgentFunctions from 'components/AgentFunctions'
 import AgentContext from 'components/AgentContext'
+import AgentContextDetail from 'components/AgentContextDetail'
 
 
 interface PathProps extends ParsedUrlQuery {
@@ -139,7 +140,7 @@ function LogFile({ logFile }: Props) {
         <h1 className="text-2xl font-semibold leading-7 text-white font-mono">{logFile.name}</h1>
       </header>
 
-      <div className="flex-1 flex items-start justify-start sm:p-6 lg:px-8 overflow-hidden">
+      <div className="flex-1 flex items-start justify-start space-x-2 sm:p-6 lg:px-8 overflow-hidden">
         <Splitter
           draggerClassName={clsx(
             'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
@@ -167,9 +168,9 @@ function LogFile({ logFile }: Props) {
           />
         </Splitter>
 
-        <div className="flex flex-col min-w-[500px]">
-          hello
-        </div>
+        <AgentContextDetail
+          context={selectedContext}
+        />
       </div>
     </main >
   )

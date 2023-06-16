@@ -107,7 +107,7 @@ function Layout({ children }: PropsWithChildren) {
         />
       </div>
 
-      <div className="xl:pl-72 flex flex-col flex-1 max-h-full">
+      <div className="xl:pl-56 flex flex-col flex-1 max-h-full">
         {/* Mobile menu icon */}
         <div className="xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border-b border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
           <button type="button" className="-m-2.5 p-2.5 text-white xl:hidden" onClick={() => setIsSidebarOpen(true)}>

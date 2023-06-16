@@ -38,7 +38,7 @@ function AgentContext({
 
   return (
     <div className="flex-1 flex flex-col space-y-2 max-w-full w-full overflow-hidden">
-      <h2 className="font-bold text-gray-500">Logs</h2>
+      <h2 className="font-medium text-sm text-gray-500">Logs</h2>
 
       <div className="flex-1 flex flex-col space-y-1 max-w-full w-full overflow-auto">
         {context.map((ctx, idx) => (
