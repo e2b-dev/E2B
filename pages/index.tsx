@@ -5,8 +5,20 @@ import { deployments, prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
 import { LogFile, RawFileLog } from 'utils/agentLogs'
+import { nanoid } from 'nanoid'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
+  // Select the 'deployed' view by default.
+  const view = ctx.query['view'] as string
+  let redirect: Redirect | undefined
+  if (!view) {
+    redirect = {
+      // destination: '/?view=deployed',
+      destination: '/?view=logs',
+      permanent: false,
+    }
+  }
+
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
     data: { session },
@@ -54,21 +66,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  // Select the 'deployed' view by default.
-  const view = ctx.query['view'] as string
-  let redirect: Redirect | undefined
-  if (!view) {
-    redirect = {
-      // destination: '/?view=deployed',
-      destination: '/?view=logs',
-      permanent: false,
-    }
-  }
-
-  const hasDefaultTeam = user?.users_teams.find(t => t.teams.is_default)
-  if (!hasDefaultTeam) {
-    // If user is without default team create default team.
-    const team = await prisma.teams.create({
+  const defaultTeam =
+    user?.users_teams.flatMap(u => u.teams)?.find(t => t.is_default) ||
+    await prisma.teams.create({
       include: {
         projects: {
           include: {
@@ -82,6 +82,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         projects: {
           create: {
             name: 'Default Project',
+            is_default: true,
           },
         },
         users_teams: {
@@ -96,39 +97,30 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       },
     })
 
-    return {
-      props: {
-        projects: team.projects
-          .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
-            return {
-              ...p,
-              // Don't send any deployments to the client.
-              deployments: [],
-              logs: p
-                .logs
-                .filter(l => l.data !== null && l.data.length > 0)
-                .map<LogFile>(l => {
-                  const log = l.data[0] as unknown as RawFileLog
-                  return {
-                    id: l.id,
-                    name: log.filename,
-                  }
-                })
-            }
-          }),
-        defaultProjectID: team.projects[0].id,
+  const defaultProject =
+    defaultTeam.projects.find(p => p.is_default) ||
+    await prisma.projects.create({
+      data: {
+        id: nanoid(),
+        is_default: true,
+        name: 'Default Project',
+        teams: {
+          connect: {
+            id: defaultTeam.id,
+          },
+        },
       },
-    }
-  }
+      include: {
+        logs: true,
+      },
+    })
 
-  // Show projects from all teams.
-  const projects = user
-    .users_teams
-    .flatMap(t => t.teams.projects)
 
   return {
     props: {
-      projects: projects
+      defaultProjectID: defaultProject.id,
+      projects: defaultTeam
+        .projects
         .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
           return {
             ...p,
@@ -145,8 +137,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 }
               })
           }
-        }),
-      defaultProjectID: projects[0].id,
+        })
     },
     redirect,
   }
