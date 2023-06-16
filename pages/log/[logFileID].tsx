@@ -6,8 +6,9 @@ export interface Props {
 }
 
 function LogFile({
-
-}) {
+  logFile,
+  logs,
+}: Props) {
   return (
     <main className="overflow-hidden flex flex-col max-h-full">
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
