@@ -10,6 +10,7 @@ import Link from 'next/link'
 
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
+import AgentFunctions from 'components/AgentFunctions'
 
 
 interface PathProps extends ParsedUrlQuery {
@@ -131,7 +132,7 @@ function LogFile({ logFile }: Props) {
         <h1 className="text-2xl font-semibold leading-7 text-white font-mono">{logFile.name}</h1>
       </header>
 
-      <div className="flex-1 flex items-start justify-start sm:p-6 lg:px-8">
+      <div className="flex-1 flex items-start justify-start sm:p-6 lg:px-8 overflow-hidden">
         <Splitter
           draggerClassName={clsx(
             'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
@@ -149,15 +150,9 @@ function LogFile({ logFile }: Props) {
           }}
           initialSizes={sizes}
         >
-          <div className="flex flex-col space-y-4 max-w-full overflow-auto">
-            <h2 className="font-bold text-gray-500">Functions</h2>
-            {logFile.content.functions.map((fn, idx) => (
-              <div key={idx} className="shadow sm:rounded-md">
-                {fn.name}
-              </div>
-            ))}
-          </div>
-
+          <AgentFunctions
+            functions={logFile.content.functions}
+          />
           <div className="flex flex-col space-y-4 max-w-full overflow-auto">
             <h2 className="font-bold text-gray-500">Logs</h2>
             {logFile.content.context.map((ctx, idx) => (
