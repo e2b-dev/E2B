@@ -4,6 +4,7 @@ import {
 import {
   File,
 } from 'lucide-react'
+import Link from 'next/link'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
@@ -39,28 +40,32 @@ function AgentLogsList({
 
       <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8">
         {logFiles.map((logFile, i) => (
-          <div
+          <Link
             key={logFile.id}
-            className={clsx(
-              'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-              selectedLogFileID === logFile.id && 'bg-gray-700',
-              selectedLogFileID !== logFile.id && 'bg-gray-800',
-            )}
-            onClick={() => toggleSelectedLogFileID(logFile.id)}
+            href={`/log/${logFile.id}`}
           >
-            <File size={14} className="text-gray-500" />
-            <span
+            <div
               className={clsx(
-                'text-sm',
-                'cursor-pointer',
-                'font-semibold',
-                selectedLogFileID === logFile.id && 'font-semibold',
+                'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                selectedLogFileID === logFile.id && 'bg-gray-700',
+                selectedLogFileID !== logFile.id && 'bg-gray-800',
               )}
               onClick={() => toggleSelectedLogFileID(logFile.id)}
             >
-              {logFile.name}.json
-            </span>
-          </div>
+              <File size={14} className="text-gray-500" />
+              <span
+                className={clsx(
+                  'text-sm',
+                  'cursor-pointer',
+                  'font-semibold',
+                  selectedLogFileID === logFile.id && 'font-semibold',
+                )}
+                onClick={() => toggleSelectedLogFileID(logFile.id)}
+              >
+                {logFile.name}.json
+              </span>
+            </div>
+          </Link>
         ))}
       </div>
     </main >
