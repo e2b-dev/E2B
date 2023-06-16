@@ -84,7 +84,7 @@ function AgentLogFilesList({
       router.push('/?view=logs', undefined, { shallow: true })
     } else {
       setSelectedLogFileID(logFileID)
-      router.push(`/?view=logs&fileID=${logFileID}`, undefined, { shallow: true })
+      router.push(`/log/${logFileID}`, undefined, { shallow: true })
     }
   }
 
