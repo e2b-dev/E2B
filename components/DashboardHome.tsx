@@ -65,6 +65,11 @@ function DashboardHome({
           allDeployedAgents={projectsWithDeployments}
           initialSelectedAgentID={selectedAgentInstanceID}
         />
+      ) : view === 'logs' ? (
+        <AgentRunsList
+          allDeployedAgents={projectsWithDeployments}
+          initialSelectedAgentID={selectedAgentInstanceID}
+        />
       ) : (
         <span>404</span>
       )}

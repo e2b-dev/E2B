@@ -39,34 +39,6 @@ function AgentRunsList({
     }
     return acc
   }, {})
-  // function getAgentRuns(agentInstance: any) {
-  // }
-
-
-
-
-
-
-  // agentInstance={projectsWithDeployments.find(p => p.project.id === selectedAgentInstanceID)!}
-
-  // TODO: If no agent instance was specified, display all instances and runs and make them foldabble.
-
-  // console.log('agentInstance', agentInstance)
-  // // TODO: We'll have a better concept for run, challenge, task, benchmark, etc
-  // // once we give SDK to the first users. Let's start with a simple version first.
-  // // At the moment, a run is just an array of logs with the same run ID.
-  // const runs = agentInstance.deployment.logs.reduce((acc: any, l: any) => {
-  //   const runID = l['properties']['run_id']
-  //   console.log('run ID', runID)
-  //   console.log('log', l)
-  //   console.log('acc', acc)
-  //   if (!acc[runID]) {
-  //     acc[runID] = []
-  //   } else {
-  //     acc[runID].push(l)
-  //   }
-  //   return acc
-  // }, {})
 
   function toggleSelectedAgentID(projectID: string) {
     if (selectedAgentID === projectID) {

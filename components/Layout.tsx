@@ -10,9 +10,8 @@ import { Inter } from 'next/font/google'
 import { usePostHog } from 'posthog-js/react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
-  Zap,
-  ListEnd,
   Menu,
+  List,
 } from 'lucide-react'
 
 import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
@@ -25,15 +24,20 @@ const inter = Inter({
 })
 
 const navigation = [
+  // {
+  //   name: 'Deployed Agents',
+  //   view: 'deployed',
+  //   icon: Zap,
+  // },
+  // {
+  //   name: 'Agent Runs',
+  //   view: 'runs',
+  //   icon: ListEnd,
+  // },
   {
-    name: 'Deployed Agents',
-    view: 'deployed',
-    icon: Zap,
-  },
-  {
-    name: 'Agent Runs',
-    view: 'runs',
-    icon: ListEnd,
+    name: 'Agent Logs',
+    view: 'logs',
+    icon: List,
   },
 ]
 
