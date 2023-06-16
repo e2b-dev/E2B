@@ -108,9 +108,11 @@ function AgentRunsList({
               </div>
               <span
                 className={clsx(
-                  'text-sm group-hover:font-semibold',
+                  'text-sm',
+                  'cursor-pointer',
                   selectedAgentID === a.project.id && 'font-semibold',
                 )}
+                onClick={() => toggleSelectedAgentID(a.project.id)}
               >
                 {a.project.name} - {a.project.id} [TODO: Better name]
               </span>

@@ -4,7 +4,7 @@ import type { ParsedUrlQuery } from 'querystring'
 
 import { prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-import AgentDetail from 'components/AgentDetail'
+import AgentRun from 'components/AgentRun'
 
 interface PathProps extends ParsedUrlQuery {
   runID: string
@@ -98,11 +98,15 @@ function ProjectPage({
   runID,
 }: Props) {
   return (
-    <AgentDetail
-      project={project}
-      runID={runID}
+    <AgentRun
     />
   )
+  // return (
+  //   <AgentDetail
+  //     project={project}
+  //     runID={runID}
+  //   />
+  // )
 }
 
 export default ProjectPage

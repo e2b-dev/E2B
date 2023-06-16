@@ -15,6 +15,7 @@ function DashboardDesktopSidebar({
 }: Props) {
   const router = useRouter()
   const view = router.query.view as string | undefined
+  const isOnRunDetail = router.pathname.startsWith('/deployed/[projectID]/run/[runID]')
 
   return (
     <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-72 xl:flex-col">
@@ -40,9 +41,9 @@ function DashboardDesktopSidebar({
                     <Link
                       href={`/?view=${item.view}`}
                       className={clsx(
-                        item.view === view
-                          ? 'bg-gray-800 text-white'
-                          : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                        item.view === view || (isOnRunDetail && item.view === 'runs')
+                          ? 'bg-[#1F2437] text-white'
+                          : 'text-gray-400 hover:text-white hover:bg-[#1F2437]',
                         'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'
                       )}
                       shallow
