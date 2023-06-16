@@ -48,16 +48,15 @@ function AgentLogFilesList({
         filename: file.name,
         content,
         metadata: {
+          relativePath: file.webkitRelativePath,
           size: file.size,
           type: file.type,
           timestamp: file.lastModified,
         }
       })
     }
-
-    const logEntry = await uploadFiles(logFiles, {})
-
-    // Reload to refresh the list of 
+    await uploadFiles(logFiles, {})
+    // Reload to refresh the list of log files
     router.reload()
   }
 

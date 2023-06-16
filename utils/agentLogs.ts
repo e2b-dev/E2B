@@ -1,10 +1,11 @@
 export interface RawFileLog {
   filename: string
   content: string
-  metadata?: {
+  metadata: {
     size: number,
     type: string,
     timestamp: number,
+    relativePath: string,
   }
 }
 
