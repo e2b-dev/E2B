@@ -24,7 +24,7 @@ interface PathProps extends ParsedUrlQuery {
 }
 
 export interface Props {
-  logFile: log_files & { content: AgentPromptLogs | AgentNextActionLog }
+  logFile: Omit<log_files, 'content'> & { content: AgentPromptLogs | AgentNextActionLog }
 }
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
