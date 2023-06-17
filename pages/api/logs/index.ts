@@ -165,7 +165,7 @@ async function handler(
     return
   }
 
-  if (req.method === 'POST') {
+  if (req.method === 'DELETE') {
     await deleteLogs(req, res)
     return
   }
