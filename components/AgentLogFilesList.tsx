@@ -3,7 +3,6 @@ import {
   useState,
 } from 'react'
 import {
-  Upload,
   File,
 } from 'lucide-react'
 import clsx from 'clsx'
@@ -12,6 +11,7 @@ import { useRouter } from 'next/router'
 import { Log, RawFileLog } from 'utils/agentLogs'
 import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
+import LogFolderUploadButton from 'components/LogFolderUploadButton'
 
 export interface Props {
   logs: Log[]
@@ -112,31 +112,18 @@ function AgentLogFilesList({
       />
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
-        <button
-          className="p-2 rounded-md bg-[#6366F1] flex items-center space-x-2"
+        <LogFolderUploadButton
           onClick={handleClickOnUpload}
-        >
-          <Upload size={14} />
-          <span className="text-sm font-medium">Upload log folder</span>
-        </button>
+        />
       </header>
 
-      {logs.length === 0 && (
+      {logs.length > 0 && (
         <div
-          className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8"
-          onDrop={handleDrop}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
+          className="flex items-center justify-center flex-1"
         >
-          <button
-            type="button"
+          <LogFolderUploadButton
             onClick={handleClickOnUpload}
-            className="w-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-500 p-12 text-center hover:border-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            <Upload size={48} className="text-gray-500" strokeWidth={1.5} />
-            <span className="mt-2 block text-sm font-semibold text-gray-300">Upload log folder</span>
-          </button>
+          />
         </div>
       )}
 
@@ -160,7 +147,7 @@ function AgentLogFilesList({
                 >
                   {log.id}
                 </span>
-                <div
+                <button
                   className="cursor-pointer"
                   onClick={async () => {
                     try {
@@ -173,7 +160,7 @@ function AgentLogFilesList({
                   }}
                 >
                   Delete
-                </div>
+                </button>
               </div>
               {log.files.map((f, i) =>
                 <div
