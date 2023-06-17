@@ -23,7 +23,7 @@ export function useDeleteLogs() {
     trigger: remove,
   } = useSWRMutation('/api/logs', handleDeleteLogs)
 
-  return useCallback(async (logID: string) => remove({
-    id: logID,
+  return useCallback(async (logUploadID: string) => remove({
+    id: logUploadID,
   }), [remove])
 }

@@ -32,12 +32,9 @@ async function deleteLogs(req: NextApiRequest, res: NextApiResponse) {
               include: {
                 projects: {
                   include: {
-                    logs: {
+                    log_uploads: {
                       where: {
                         id,
-                      },
-                      select: {
-                        id: true,
                       },
                     },
                   },
@@ -58,7 +55,7 @@ async function deleteLogs(req: NextApiRequest, res: NextApiResponse) {
     const hasAccessToLogs = user
       .users_teams
       .flatMap(t => t.teams.projects)
-      .flatMap(p => p.logs)
+      .flatMap(p => p.log_uploads)
       .some(l => l.id === id)
 
     if (!hasAccessToLogs) {
@@ -67,7 +64,7 @@ async function deleteLogs(req: NextApiRequest, res: NextApiResponse) {
       })
     }
 
-    await prisma.logs.delete({
+    await prisma.log_uploads.delete({
       where: {
         id,
       },
