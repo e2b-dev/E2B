@@ -31,7 +31,7 @@ function AgentLogFilesList({
   const uploadFiles = useUploadLogs(defaultProjectID)
   const deleteLogs = useDeleteLogs()
 
-  function handleClick() {
+  function handleClickOnUpload() {
     // trigger the click event of the file input
     fileInput.current.click()
   }
@@ -114,7 +114,7 @@ function AgentLogFilesList({
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
         <button
           className="p-2 rounded-md bg-[#6366F1] flex items-center space-x-2"
-          onClick={handleClick}
+          onClick={handleClickOnUpload}
         >
           <Upload size={14} />
           <span className="text-sm font-medium">Upload log folder</span>
@@ -131,7 +131,7 @@ function AgentLogFilesList({
         >
           <button
             type="button"
-            onClick={handleClick}
+            onClick={handleClickOnUpload}
             className="w-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-500 p-12 text-center hover:border-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <Upload size={48} className="text-gray-500" strokeWidth={1.5} />
@@ -145,11 +145,10 @@ function AgentLogFilesList({
           {logs.map((log, i) => (
             <div
               key={log.id}
-
             >
               <div
                 className={clsx(
-                  'flex items-center space-x-2 p-2 transition-all rounded-md',
+                  'flex items-center space-x-2 p-2 transition-all rounded-md justify-between',
                 )}
               >
                 <span
@@ -161,6 +160,20 @@ function AgentLogFilesList({
                 >
                   {log.id}
                 </span>
+                <div
+                  className="cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      const res = await deleteLogs(log.id)
+                      console.log(res)
+                      router.reload()
+                    } catch (err) {
+                      console.error(err)
+                    }
+                  }}
+                >
+                  Delete
+                </div>
               </div>
               {log.files.map((f, i) =>
                 <div
