@@ -3,7 +3,6 @@ import {
   useState,
 } from 'react'
 import {
-  Upload,
   File,
 } from 'lucide-react'
 import clsx from 'clsx'
@@ -13,6 +12,7 @@ import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
 import { LiteLogUpload } from 'pages'
 import { log_files } from '@prisma/client'
+import LogFolderUploadButton from 'components/LogFolderUploadButton'
 
 export interface Props {
   logUploads: LiteLogUpload[]
@@ -68,22 +68,6 @@ function AgentLogFilesList({
     await handleUpload(event.target.files)
   }
 
-  const handleDrag = function (e: any) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-    } else if (e.type === 'dragleave') { }
-  }
-
-  async function handleDrop(e: any) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      console.log('Files', e.dataTransfer.files)
-      await handleUpload(e.dataTransfer.files)
-    }
-  }
-
   function toggleSelectedLogFileID(logFileID: string, filename: string) {
     router.push({
       pathname: `/log/${logFileID}`,
@@ -115,31 +99,18 @@ function AgentLogFilesList({
       />
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
-        <button
-          className="p-2 rounded-md bg-[#6366F1] flex items-center space-x-2"
+        <LogFolderUploadButton
           onClick={handleClickOnUpload}
-        >
-          <Upload size={14} />
-          <span className="text-sm font-medium">Upload log folder</span>
-        </button>
+        />
       </header>
 
       {logUploads.length === 0 && (
         <div
-          className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8"
-          onDrop={handleDrop}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
+          className="flex items-center justify-center flex-1"
         >
-          <button
-            type="button"
+          <LogFolderUploadButton
             onClick={handleClickOnUpload}
-            className="w-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-500 p-12 text-center hover:border-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            <Upload size={48} className="text-gray-500" strokeWidth={1.5} />
-            <span className="mt-2 block text-sm font-semibold text-gray-300">Upload log folder</span>
-          </button>
+          />
         </div>
       )}
 
@@ -163,12 +134,26 @@ function AgentLogFilesList({
                 >
                   {logUpload.id}
                 </span>
+                <button
+                  className="cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      const res = await deleteLogs(logUpload.id)
+                      console.log(res)
+                      router.reload()
+                    } catch (err) {
+                      console.error(err)
+                    }
+                  }}
+                >
+                  Delete
+                </button>
               </div>
               {logUpload.log_files.map((f, i) =>
                 <div
                   key={i}
                   className={clsx(
-                    'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md justify-between',
+                    'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
                     selectedLogFileID === f.id && 'bg-gray-700',
                     selectedLogFileID !== f.id && 'bg-gray-800',
                   )}
@@ -185,20 +170,6 @@ function AgentLogFilesList({
                   >
                     {f.filename}
                   </span>
-                  <div
-                    className="cursor-pointer"
-                    onClick={async () => {
-                      try {
-                        const res = await deleteLogs(f.id)
-                        console.log(res)
-                        router.reload()
-                      } catch (err) {
-                        console.error(err)
-                      }
-                    }}
-                  >
-                    Delete
-                  </div>
                 </div>
               )
               }
