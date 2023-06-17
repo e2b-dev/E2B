@@ -71,9 +71,6 @@ function AgentLogFilesList({
   function toggleSelectedLogFileID(logFileID: string, filename: string) {
     router.push({
       pathname: `/log/${logFileID}`,
-      query: {
-        filename,
-      }
     }, undefined, { shallow: true })
     // if (selectedLogFileID === logFileID) {
     //   router.push(`/log/${logFileID}`, undefined, { shallow: true })

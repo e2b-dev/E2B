@@ -104,6 +104,19 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     }
   }
 
+  if (logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context')) {
+    return {
+      props: {
+        logFile: {
+          ...logFile,
+          content: {
+            logs: parsedFileContent as AgentNextActionLog,
+          },
+        },
+      },
+    }
+  }
+
   return {
     props: {
       logFile: {
@@ -112,8 +125,8 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
           ...parsedFileContent,
           logs: parsedFileContent?.context || [],
           context: undefined,
-        } as AgentPromptLogs,
-      },
+        },
+      } as any,
     },
   }
 }
