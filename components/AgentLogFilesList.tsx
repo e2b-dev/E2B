@@ -12,6 +12,7 @@ import { useRouter } from 'next/router'
 import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
 import { LiteLogUpload } from 'pages'
+import { log_files } from '@prisma/client'
 
 export interface Props {
   logUploads: LiteLogUpload[]
@@ -37,28 +38,28 @@ function AgentLogFilesList({
   }
 
   async function handleUpload(files: FileList) {
-    const logFiles: [] = []
+    const logFiles: Pick<log_files, 'content' | 'filename' | 'relativePath' | 'size' | 'last_modified' | 'type'>[] = []
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const content = await file.text()
 
+      if (file.name.startsWith('.')) continue
 
-      
       logFiles.push({
         filename: file.name,
+        relativePath: file.webkitRelativePath,
+        type: file.type,
         content,
-        metadata: {
-          relativePath: file.webkitRelativePath,
-          size: file.size,
-          type: file.type,
-          timestamp: file.lastModified,
-        }
+        last_modified: new Date(file.lastModified),
+        size: file.size,
       })
     }
-    await uploadFiles(logFiles, {})
+
+    console.log('NEW LOGS', logFiles)
+    await uploadFiles(logFiles)
     // Reload to refresh the list of log files
-    router.reload()
+    // router.reload()
   }
 
   async function handleFileChange(event: any) {
@@ -162,30 +163,15 @@ function AgentLogFilesList({
                 >
                   {logUpload.id}
                 </span>
-                <div
-                  className="cursor-pointer"
-                  onClick={async () => {
-                    try {
-                      const res = await deleteLogs(logUpload.id)
-                      console.log(res)
-                      router.reload()
-                    } catch (err) {
-                      console.error(err)
-                    }
-                  }}
-                >
-                  Delete
-                </div>
               </div>
               {logUpload.log_files.map((f, i) =>
                 <div
                   key={i}
                   className={clsx(
-                    'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                    'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md justify-between',
                     selectedLogFileID === f.id && 'bg-gray-700',
                     selectedLogFileID !== f.id && 'bg-gray-800',
                   )}
-                  onClick={() => toggleSelectedLogFileID(f.id, f.filename)}
                 >
                   <File size={14} className="text-gray-500" />
                   <span
@@ -195,9 +181,24 @@ function AgentLogFilesList({
                       'font-semibold',
                       selectedLogFileID === f.id && 'font-semibold',
                     )}
+                    onClick={() => toggleSelectedLogFileID(f.id, f.filename)}
                   >
                     {f.filename}
                   </span>
+                  <div
+                    className="cursor-pointer"
+                    onClick={async () => {
+                      try {
+                        const res = await deleteLogs(f.id)
+                        console.log(res)
+                        router.reload()
+                      } catch (err) {
+                        console.error(err)
+                      }
+                    }}
+                  >
+                    Delete
+                  </div>
                 </div>
               )
               }

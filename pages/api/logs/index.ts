@@ -84,7 +84,6 @@ async function postLogs(req: NextApiRequest, res: NextApiResponse) {
   const {
     logFiles,
     projectID,
-    metadata,
   } = req.body as PostLogs
 
   try {
@@ -135,16 +134,22 @@ async function postLogs(req: NextApiRequest, res: NextApiResponse) {
       })
     }
 
-    const logs = await prisma.logs.create({
+    const logs = await prisma.log_uploads.create({
       data: {
-        data: logFiles as any,
-        metadata: metadata,
         projects: {
           connect: {
             id: projectID,
           },
         },
-      }
+        log_files: {
+          createMany: {
+            data: logFiles.map(l => ({
+              ...l,
+              project_id: projectID,
+            })),
+          },
+        },
+      },
     })
 
     res.status(200).json({
