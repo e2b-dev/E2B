@@ -23,6 +23,22 @@ export interface LogFile {
   relativePath: string
 }
 
+// This is very specific to AutoGPT logs.
+// We'll generalize later.
+export interface AgentNextAction {
+  thoughts: {
+    text: string
+    reasoning: string
+    plan: string
+    criticism: string
+    speaker: string
+  }
+  command: {
+    name: string
+    args: { [key: string]: string }
+  }
+}
+
 export interface AgentLogs {
   logs: (SystemPromptLog | UserPromptLog | AssistantPromptLog)[]
   functions?: AgentFunction[]
@@ -45,10 +61,10 @@ export interface UserPromptLog {
 }
 
 export interface AssistantPromptLog {
-  role: 'user'
+  role: 'assistant'
   content: string
-  function_call: {
+  function_call?: {
     name: string
-    arguments: { [argName: string]: string }
+    arguments: string
   }
 }

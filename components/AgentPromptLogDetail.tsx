@@ -7,30 +7,29 @@ import dynamic from 'next/dynamic'
 const ReactJson = dynamic(import('react-json-view'), { ssr: false })
 
 export interface Props {
-  context?: SystemPromptLog | UserPromptLog | AssistantPromptLog
+  log?: SystemPromptLog | UserPromptLog | AssistantPromptLog
 }
 
-function AgentContextDetail({
-  context,
+function AgentPrompLogDetail({
+  log,
 }: Props) {
   return (
     <div className="overflow-auto p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
       <h2 className="font-medium text-sm text-gray-500">Context</h2>
-
-      {context && (
+      {log && (
         <>
           <div className="flex flex-col space-y-1 w-full">
             <span className="text-sm font-medium text-gray-500">Role</span>
-            <span className="text-sm text-gray-200 w-full">{context.role}</span>
+            <span className="text-sm text-gray-200 w-full">{log.role}</span>
           </div>
 
           <div className="flex flex-col space-y-1 w-full">
             <span className="text-sm font-medium text-gray-500">Content</span>
-            {(context as any).role !== 'assistant' ? (
-              <p className="text-sm text-gray-200 w-full prose whitespace-pre-wrap max-w-full">{context.content}</p>
+            {log.role !== 'assistant' ? (
+              <p className="text-sm text-gray-200 w-full prose whitespace-pre-wrap max-w-full">{log.content}</p>
             ) : (
               <ReactJson
-                src={JSON.parse(context.content)}
+                src={JSON.parse(log.content)}
                 name={null}
                 style={{
                   background: 'transparent'
@@ -45,13 +44,13 @@ function AgentContextDetail({
             )}
           </div>
 
-          {(context as any).role === 'assistant' && (
+          {log.role === 'assistant' && log.function_call && (
             <>
               <span className="text-sm font-medium text-gray-500">Function Call</span>
               <ReactJson
                 src={{
-                  ...(context as any).function_call,
-                  'arguments': JSON.parse((context as any).function_call.arguments),
+                  ...(log as any).function_call,
+                  'arguments': JSON.parse(log.function_call.arguments),
                 }}
                 name={null}
                 style={{
@@ -67,11 +66,9 @@ function AgentContextDetail({
             </>
           )}
         </>
-      )
-      }
-
+      )}
     </div >
   )
 }
 
-export default AgentContextDetail
+export default AgentPrompLogDetail

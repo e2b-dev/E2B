@@ -16,6 +16,7 @@ import {
   AssistantPromptLog,
 } from 'utils/agentLogs'
 import AgentPromptLogs from 'components/AgentPromptLogs'
+import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
 
 interface PathProps extends ParsedUrlQuery {
   logFileID: string
@@ -124,7 +125,9 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     props: {
       logFile: {
         name: file.filename,
-        content: JSON.parse(file.content),
+        content: {
+          logs: JSON.parse(file.content),
+        },
         relativePath: file.metadata.relativePath,
       }
     }
@@ -136,6 +139,7 @@ export interface Props {
 }
 
 function LogFile({ logFile }: Props) {
+  console.log('logFile', logFile)
   const [isResizing, setIsResizing] = useState(false)
   const [sizes, setSizes] = useState([60, 40])
   const [selectedLog, setSelectedLog] = useState<SystemPromptLog | UserPromptLog | AssistantPromptLog>()
@@ -170,16 +174,16 @@ function LogFile({ logFile }: Props) {
           }}
           initialSizes={sizes}
         >
-          {logFile.name.includes('full_message_history') ? (
+          {logFile.name.includes('full_message_history') || logFile.name.includes('current_context') ? (
             <>
               <AgentPromptLogs
                 logs={logFile.content.logs}
                 onSelected={setSelectedLog}
               />
-              <div />
+              <AgentPrompLogDetail
+                log={selectedLog}
+              />
             </>
-          ) : logFile.name.includes('current_context') ? (
-            <div />
           ) : logFile.name.includes('next_action') ? (
             <div />
           ) : (
@@ -187,13 +191,6 @@ function LogFile({ logFile }: Props) {
               Unexpected JSON format. Please reach out to the e2b team.
             </div>
           )}
-          {/* <AgentContext
-            context={logFile.content.context}
-            onSelected={setSelectedContext}
-          />
-          <AgentContextDetail
-            context={selectedContext}
-          /> */}
         </Splitter>
       </div>
     </main >
