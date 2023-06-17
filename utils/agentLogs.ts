@@ -1,29 +1,3 @@
-export interface RawFileLog {
-  filename: string
-  content: string
-  metadata: {
-    size: number,
-    type: string,
-    timestamp: number,
-    relativePath: string,
-  }
-}
-
-export interface Log {
-  id: string;
-  files: LogFile[]
-}
-
-export interface LogsMetadata {
-
-}
-
-export interface LogFile {
-  name: string
-  relativePath: string
-}
-
-
 export interface AgentPromptLogs {
   logs: (SystemPromptLog | UserPromptLog | AssistantPromptLog)[]
   functions?: AgentFunction[]

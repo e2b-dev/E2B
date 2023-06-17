@@ -5,10 +5,11 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import AgentList from 'components/AgentList'
 import AgentRunsList from 'components/AgentRunsList'
 import AgentLogFilesList from 'components/AgentLogFilesList'
-import { ProjectWithLogFiles } from 'pages'
+import { LiteLogUpload } from 'pages'
+import { deployments, projects } from 'db/prisma'
 
 export interface Props {
-  projects: ProjectWithLogFiles[]
+  projects: (projects & { log_uploads: LiteLogUpload[], deployments: deployments[] })[]
   defaultProjectID: string
 }
 
@@ -35,8 +36,6 @@ function DashboardHome({
     posthog?.capture('selected deployed agent', { projectID: projectID })
     router.push(`/?view=runs&projectID=${projectID}`, undefined, { shallow: true })
   }
-
-  const logs = projects.flatMap(p => p.logs)
 
   const projectsWithDeployments = projects
     .filter(p => {
@@ -66,7 +65,7 @@ function DashboardHome({
         />
       ) : view === 'logs' ? (
         <AgentLogFilesList
-          logs={logs}
+          logUploads={projects.flatMap(p => p.log_uploads)}
           defaultProjectID={defaultProjectID}
           initialSelectedLogFileID={selectedLogFileID}
         />

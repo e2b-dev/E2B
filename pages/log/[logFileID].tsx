@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AgentPromptLogs, AgentNextActionLog, LogFile, RawFileLog } from 'utils/agentLogs'
+import { AgentPromptLogs, AgentNextActionLog, } from 'utils/agentLogs'
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
@@ -7,7 +7,7 @@ import clsx from 'clsx'
 import Splitter from '@devbookhq/splitter'
 import Link from 'next/link'
 
-import { prisma } from 'db/prisma'
+import { log_files, prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import {
   SystemPromptLog,
@@ -16,15 +16,15 @@ import {
 } from 'utils/agentLogs'
 import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
 import AgentPromptLogsList from 'components/AgentPromptLogsList'
+import { alwaysTrue } from 'utils/positive'
 
 interface PathProps extends ParsedUrlQuery {
   logFileID: string
 }
 
 export interface Props {
-  logFile: LogFile & { content: AgentPromptLogs | AgentNextActionLog }
+  logFile: log_files & { content: AgentPromptLogs | AgentNextActionLog }
 }
-
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
   const logFileID = ctx.params?.logFileID
@@ -34,13 +34,6 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
         destination: '/?view=logs',
         permanent: false,
       }
-    }
-  }
-  const logFileName = ctx.query['filename'] as string | undefined
-  if (!logFileName) {
-    console.log('no file specified in the "filename" query string', logFileName)
-    return {
-      notFound: true,
     }
   }
 
@@ -68,15 +61,12 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
           teams: {
             include: {
               projects: {
-                where: {
-                  logs: {
-                    some: {
+                include: {
+                  log_files: {
+                    where: {
                       id: logFileID,
                     },
                   },
-                },
-                include: {
-                  logs: true,
                 },
               },
             },
@@ -86,53 +76,28 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     },
   })
 
-  const log = user
+  const logFile = user
     ?.users_teams
-    .flatMap((ut) => ut.teams)
-    .flatMap((t) => t.projects)
-    .flatMap((p) => p.logs)
-    .find((l) => l.id === logFileID)
+    .flatMap(ut => ut.teams)
+    .flatMap(t => t.projects)
+    .flatMap(p => p.log_files)
+    .find(alwaysTrue)
 
-  if (!log) {
+  if (!logFile) {
     return {
       notFound: true,
     }
   }
 
-  const files = log.data
-
-  if (!files) {
-    console.log('no files')
-    return {
-      notFound: true,
-    }
-  }
-
-  if (!log.data || log.data.length === 0) {
-    console.log('no files')
-    return {
-      notFound: true,
-    }
-  }
-
-  const file = (log.data as unknown as RawFileLog[])
-    .find((f) => f.filename === logFileName)
-
-  if (!file) {
-    console.log('file not found', logFileName)
-    return {
-      notFound: true,
-    }
-  }
+  const parsedFileContent = JSON.parse(logFile.content)
 
   // Specific to AutoGPT
-  if (file.filename.includes('next_action')) {
+  if (logFile.filename.includes('next_action')) {
     return {
       props: {
         logFile: {
-          name: file.filename,
-          content: JSON.parse(file.content),
-          relativePath: file.metadata.relativePath,
+          ...logFile,
+          content: parsedFileContent as AgentNextActionLog,
         }
       }
     }
@@ -141,13 +106,14 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
   return {
     props: {
       logFile: {
-        name: file.filename,
+        ...logFile,
         content: {
-          logs: JSON.parse(file.content),
-        },
-        relativePath: file.metadata.relativePath,
-      }
-    }
+          ...parsedFileContent,
+          logs: parsedFileContent?.context || [],
+          context: undefined,
+        } as AgentPromptLogs,
+      },
+    },
   }
 }
 
@@ -166,7 +132,7 @@ function LogFile({ logFile }: Props) {
           <h1 className="text-2xl font-semibold leading-7 text-[#6366F1]">Log Files</h1>
         </Link>
         <h1 className="text-2xl font-semibold leading-7 text-[#6366F1]">/</h1>
-        <h1 className="text-2xl font-semibold leading-7 text-white font-mono">{logFile.name}</h1>
+        <h1 className="text-2xl font-semibold leading-7 text-white font-mono">{logFile.filename}</h1>
       </header>
 
       <div className="flex-1 flex items-start justify-start space-x-2 sm:p-6 lg:px-8 overflow-hidden">
@@ -187,7 +153,7 @@ function LogFile({ logFile }: Props) {
           }}
           initialSizes={sizes}
         >
-          {logFile.name.includes('full_message_history') || logFile.name.includes('current_context') ? (
+          {logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context') ? (
             <>
               <AgentPromptLogsList
                 logs={(logFile.content as AgentPromptLogs).logs}
@@ -197,7 +163,7 @@ function LogFile({ logFile }: Props) {
                 log={selectedLog}
               />
             </>
-          ) : logFile.name.includes('next_action') ? (
+          ) : logFile.filename.includes('next_action') ? (
             <div />
           ) : (
             <div>
