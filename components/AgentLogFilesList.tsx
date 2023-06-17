@@ -6,22 +6,21 @@ import {
   Upload,
   File,
 } from 'lucide-react'
-import Link from 'next/link'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
-import { LogFile, RawFileLog } from 'utils/agentLogs'
+import { Log, RawFileLog } from 'utils/agentLogs'
 import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
 
 export interface Props {
-  logFiles: LogFile[]
+  logs: Log[]
   initialSelectedLogFileID?: string
   defaultProjectID: string
 }
 
 function AgentLogFilesList({
-  logFiles,
+  logs,
   initialSelectedLogFileID,
   defaultProjectID,
 }: Props) {
@@ -82,14 +81,20 @@ function AgentLogFilesList({
     }
   }
 
-  function toggleSelectedLogFileID(logFileID: string) {
-    if (selectedLogFileID === logFileID) {
-      setSelectedLogFileID('')
-      router.push('/?view=logs', undefined, { shallow: true })
-    } else {
-      setSelectedLogFileID(logFileID)
-      router.push(`/log/${logFileID}`, undefined, { shallow: true })
-    }
+  function toggleSelectedLogFileID(logFileID: string, filename: string) {
+    router.push({
+      pathname: `/log/${logFileID}`,
+      query: {
+        filename,
+      }
+    }, undefined, { shallow: true })
+    // if (selectedLogFileID === logFileID) {
+    //   router.push(`/log/${logFileID}`, undefined, { shallow: true })
+    //   setSelectedLogFileID('')
+    //   router.push('/?view=logs', undefined, { shallow: true })
+    // } else {
+    //   setSelectedLogFileID(logFileID)
+    // }
   }
 
   return (
@@ -116,7 +121,7 @@ function AgentLogFilesList({
         </button>
       </header>
 
-      {logFiles.length === 0 && (
+      {logs.length === 0 && (
         <div
           className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8"
           onDrop={handleDrop}
@@ -135,20 +140,19 @@ function AgentLogFilesList({
         </div>
       )}
 
-      {logFiles.length > 0 && (
+      {logs.length > 0 && (
         <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8">
-          {logFiles.map((logFile, i) => (
-            <Link
-              key={logFile.id}
-              href={`/log/${logFile.id}`}
+          {logs.map((log, i) => (
+            <div
+              key={log.id}
+
             >
               <div
                 className={clsx(
                   'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                  selectedLogFileID === logFile.id && 'bg-gray-700',
-                  selectedLogFileID !== logFile.id && 'bg-gray-800',
+                  selectedLogFileID === log.id && 'bg-gray-500',
+                  selectedLogFileID !== log.id && 'bg-gray-600',
                 )}
-                onClick={() => toggleSelectedLogFileID(logFile.id)}
               >
                 <File size={14} className="text-gray-500" />
                 <span
@@ -156,14 +160,37 @@ function AgentLogFilesList({
                     'text-sm',
                     'cursor-pointer',
                     'font-semibold',
-                    selectedLogFileID === logFile.id && 'font-semibold',
+                    selectedLogFileID === log.id && 'font-semibold',
                   )}
-                  onClick={() => toggleSelectedLogFileID(logFile.id)}
                 >
-                  {logFile.name}
+                  {log.id}
                 </span>
               </div>
-            </Link>
+              {log.files.map((f, i) =>
+                <div
+                  key={i}
+                  className={clsx(
+                    'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                    selectedLogFileID === log.id && 'bg-gray-700',
+                    selectedLogFileID !== log.id && 'bg-gray-800',
+                  )}
+                  onClick={() => toggleSelectedLogFileID(log.id, f.name)}
+                >
+                  <File size={14} className="text-gray-500" />
+                  <span
+                    className={clsx(
+                      'text-sm',
+                      'cursor-pointer',
+                      'font-semibold',
+                      selectedLogFileID === log.id && 'font-semibold',
+                    )}
+                  >
+                    {f.name}
+                  </span>
+                </div>
+              )
+              }
+            </div>
           ))}
         </div>
       )}

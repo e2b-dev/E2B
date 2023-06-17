@@ -2,14 +2,13 @@ import { useRouter } from 'next/router'
 import { usePostHog } from 'posthog-js/react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
-import { deployments, projects } from 'db/prisma'
 import AgentList from 'components/AgentList'
 import AgentRunsList from 'components/AgentRunsList'
 import AgentLogFilesList from 'components/AgentLogFilesList'
-import { LogFile } from 'utils/agentLogs'
+import { ProjectWithLogFiles } from 'pages'
 
 export interface Props {
-  projects: (projects & { logs: LogFile[], deployments: deployments[] })[]
+  projects: ProjectWithLogFiles[]
   defaultProjectID: string
 }
 
@@ -37,7 +36,7 @@ function DashboardHome({
     router.push(`/?view=runs&projectID=${projectID}`, undefined, { shallow: true })
   }
 
-  const logFiles = projects.flatMap(p => p.logs)
+  const logs = projects.flatMap(p => p.logs)
 
   const projectsWithDeployments = projects
     .filter(p => {
@@ -67,7 +66,7 @@ function DashboardHome({
         />
       ) : view === 'logs' ? (
         <AgentLogFilesList
-          logFiles={logFiles}
+          logs={logs}
           defaultProjectID={defaultProjectID}
           initialSelectedLogFileID={selectedLogFileID}
         />

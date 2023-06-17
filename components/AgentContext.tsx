@@ -38,7 +38,13 @@ function AgentContext({
   function open(idx: number) {
     setOpened(idx)
     onSelected(context[idx])
-    router.push(`/log/${router.query.logFileID}?selectedLog=${idx}`, undefined, { shallow: true })
+    router.push({
+      pathname: `/log/${router.query.logFileID}`,
+      query: {
+        ...router.query['filename'] && { filename: router.query['filename'] },
+        selectedLog: idx.toString(),
+      },
+    }, undefined, { shallow: true })
   }
 
   function close() {

@@ -1,11 +1,16 @@
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { nanoid } from 'nanoid'
 
 import { deployments, prisma, projects } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
-import { LogFile, RawFileLog } from 'utils/agentLogs'
-import { nanoid } from 'nanoid'
+import { RawFileLog, Log } from 'utils/agentLogs'
+
+export type ProjectWithLogFiles = projects & {
+  deployments: deployments[]
+  logs: Log[]
+}
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   // Select the 'deployed' view by default.
@@ -148,19 +153,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     props: {
       defaultProjectID: defaultProject.id,
       projects: [defaultProject]
-        .map<projects & { logs: LogFile[], deployments: deployments[] }>(p => {
+        .map<ProjectWithLogFiles>(p => {
           return {
             ...p,
             // Don't send any deployments to the client.
             deployments: [],
             logs: p
               .logs
-              .filter(l => l.data !== null && l.data.length > 0)
-              .map<LogFile>(l => {
-                const log = l.data[0] as unknown as RawFileLog
+              .filter(l => l.data !== null)
+              .map(l => {
                 return {
                   id: l.id,
-                  name: log.filename,
+                  files: (l.data as unknown as RawFileLog[]).map(f => ({
+                    name: f.filename,
+                    relativePath: f.metadata.relativePath,
+                  }))
                 }
               })
           }
@@ -170,7 +177,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 }
 
 export interface Props {
-  projects: (projects & { logs: LogFile[], deployments: deployments[] })[]
+  projects: ProjectWithLogFiles[]
   defaultProjectID: string
 }
 

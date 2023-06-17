@@ -23,7 +23,7 @@ function Feedback() {
         <FeedbackModal
           onSend={() => setIsFinished(true)}
           isOpen={isFeedbackVisible}
-          onClose={() => setIsFeedbackVisible(f => !f)}
+          onClose={() => setIsFeedbackVisible(false)}
         />
       </div>
     </div>
