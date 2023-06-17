@@ -59,7 +59,7 @@ function AgentLogFilesList({
     console.log('NEW LOGS', logFiles)
     await uploadFiles(logFiles)
     // Reload to refresh the list of log files
-    // router.reload()
+    router.reload()
   }
 
   async function handleFileChange(event: any) {
