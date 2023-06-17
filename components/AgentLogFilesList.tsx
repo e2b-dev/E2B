@@ -141,7 +141,7 @@ function AgentLogFilesList({
       )}
 
       {logs.length > 0 && (
-        <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8">
+        <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto">
           {logs.map((log, i) => (
             <div
               key={log.id}
@@ -149,16 +149,12 @@ function AgentLogFilesList({
             >
               <div
                 className={clsx(
-                  'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                  selectedLogFileID === log.id && 'bg-gray-500',
-                  selectedLogFileID !== log.id && 'bg-gray-600',
+                  'flex items-center space-x-2 p-2 transition-all rounded-md',
                 )}
               >
-                <File size={14} className="text-gray-500" />
                 <span
                   className={clsx(
                     'text-sm',
-                    'cursor-pointer',
                     'font-semibold',
                     selectedLogFileID === log.id && 'font-semibold',
                   )}
