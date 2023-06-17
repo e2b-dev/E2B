@@ -24,8 +24,8 @@ export interface LogFile {
 }
 
 export interface AgentLogs {
-  context: (SystemContext | UserContext | AssistantContext)[]
-  functions: AgentFunction[]
+  logs: (SystemPromptLog | UserPromptLog | AssistantPromptLog)[]
+  functions?: AgentFunction[]
 }
 
 export interface AgentFunction {
@@ -34,17 +34,17 @@ export interface AgentFunction {
   parameters: { [key: string]: any }
 }
 
-export interface SystemContext {
+export interface SystemPromptLog {
   role: 'system'
   content: string
 }
 
-export interface UserContext {
+export interface UserPromptLog {
   role: 'user'
   content: string
 }
 
-export interface AssistantContext {
+export interface AssistantPromptLog {
   role: 'user'
   content: string
   function_call: {

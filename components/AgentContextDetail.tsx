@@ -1,20 +1,20 @@
 import {
-  SystemContext,
-  UserContext,
-  AssistantContext,
+  SystemPromptLog,
+  UserPromptLog,
+  AssistantPromptLog,
 } from 'utils/agentLogs'
 import dynamic from 'next/dynamic'
 const ReactJson = dynamic(import('react-json-view'), { ssr: false })
 
 export interface Props {
-  context?: SystemContext | UserContext | AssistantContext
+  context?: SystemPromptLog | UserPromptLog | AssistantPromptLog
 }
 
 function AgentContextDetail({
   context,
 }: Props) {
   return (
-    <div className="overflow-auto p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 max-w-[500px] min-w-[500px] border border-gray-800">
+    <div className="overflow-auto p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
       <h2 className="font-medium text-sm text-gray-500">Context</h2>
 
       {context && (

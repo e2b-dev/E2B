@@ -3,21 +3,19 @@ import { AgentLogs, LogFile, RawFileLog } from 'utils/agentLogs'
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
-import Splitter from '@devbookhq/splitter'
 import clsx from 'clsx'
+import Splitter from '@devbookhq/splitter'
 
 import Link from 'next/link'
 
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import {
-  SystemContext,
-  UserContext,
-  AssistantContext,
+  SystemPromptLog,
+  UserPromptLog,
+  AssistantPromptLog,
 } from 'utils/agentLogs'
-import AgentFunctions from 'components/AgentFunctions'
-import AgentContext from 'components/AgentContext'
-import AgentContextDetail from 'components/AgentContextDetail'
+import AgentPromptLogs from 'components/AgentPromptLogs'
 
 interface PathProps extends ParsedUrlQuery {
   logFileID: string
@@ -139,8 +137,8 @@ export interface Props {
 
 function LogFile({ logFile }: Props) {
   const [isResizing, setIsResizing] = useState(false)
-  const [sizes, setSizes] = useState([30, 70])
-  const [selectedContext, setSelectedContext] = useState<SystemContext | UserContext | AssistantContext>()
+  const [sizes, setSizes] = useState([60, 40])
+  const [selectedLog, setSelectedLog] = useState<SystemPromptLog | UserPromptLog | AssistantPromptLog>()
 
   return (
     <main className="overflow-hidden flex flex-col flex-1">
@@ -172,19 +170,31 @@ function LogFile({ logFile }: Props) {
           }}
           initialSizes={sizes}
         >
-          <AgentFunctions
-            functions={logFile.content.functions}
-          />
-
-          <AgentContext
+          {logFile.name.includes('full_message_history') ? (
+            <>
+              <AgentPromptLogs
+                logs={logFile.content.logs}
+                onSelected={setSelectedLog}
+              />
+              <div />
+            </>
+          ) : logFile.name.includes('current_context') ? (
+            <div />
+          ) : logFile.name.includes('next_action') ? (
+            <div />
+          ) : (
+            <div>
+              Unexpected JSON format. Please reach out to the e2b team.
+            </div>
+          )}
+          {/* <AgentContext
             context={logFile.content.context}
             onSelected={setSelectedContext}
           />
+          <AgentContextDetail
+            context={selectedContext}
+          /> */}
         </Splitter>
-
-        <AgentContextDetail
-          context={selectedContext}
-        />
       </div>
     </main >
   )
