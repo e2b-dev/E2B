@@ -22,12 +22,12 @@ function AgentPromptLogsList({
   onSelected,
 }: Props) {
   const router = useRouter()
-  const [openedIdx, setOpenedIdx] = useState<number>()
+  const [selectedLogIdx, setSelectedLogIdx] = useState<number>(0)
 
-  const open = useCallback((idx: number) => {
-    setOpenedIdx(idx)
+  const selectLog = useCallback((idx: number) => {
+    setSelectedLogIdx(idx)
     onSelected(logs[idx])
-    router.push({
+    router.replace({
       pathname: `/log/${router.query.logFileID}`,
       query: {
         ...router.query['filename'] && { filename: router.query['filename'] },
@@ -35,18 +35,6 @@ function AgentPromptLogsList({
       },
     }, undefined, { shallow: true })
   }, [logs, onSelected, router])
-
-  const close = useCallback(() => {
-    setOpenedIdx(undefined)
-  }, [])
-
-  function toggle(idx: number) {
-    if (openedIdx === idx) {
-      close()
-    } else {
-      open(idx)
-    }
-  }
 
   useEffect(function selectLogBasedOnURLQuery() {
     const selectedLog = router.query.selectedLog as string
@@ -56,33 +44,29 @@ function AgentPromptLogsList({
     } else {
       idx = 0
     }
-    setOpenedIdx(idx)
+    setSelectedLogIdx(idx)
     onSelected(logs[idx])
   }, [router, logs, onSelected])
 
   useEffect(function listenToArrowNavigitons() {
     function handleUpKey(e: KeyboardEvent) {
       if (e.key === 'ArrowUp') {
-        if (openedIdx === undefined) {
-          open(logs.length - 1)
-        } else if (openedIdx === 0) {
-          close()
+        if (selectedLogIdx === 0) {
+          selectLog(logs.length - 1)
         } else {
-          open(openedIdx - 1)
+          selectLog(selectedLogIdx - 1)
         }
       } else if (e.key === 'ArrowDown') {
-        if (openedIdx === undefined) {
-          open(0)
-        } else if (openedIdx === logs.length - 1) {
-          close()
+        if (selectedLogIdx === logs.length - 1) {
+          selectLog(0)
         } else {
-          open(openedIdx + 1)
+          selectLog(selectedLogIdx + 1)
         }
       }
     }
     window.addEventListener('keydown', handleUpKey)
     return () => window.removeEventListener('keydown', handleUpKey)
-  }, [logs, open, openedIdx, close])
+  }, [logs, selectLog, selectedLogIdx])
 
   return (
     <div className="flex-1 flex flex-col space-y-2 max-w-full w-full overflow-hidden">
@@ -94,8 +78,8 @@ function AgentPromptLogsList({
             <div className="flex items-center space-x-2">
               <span className={clsx(
                 'font-bold text-sm capitalize min-w-[72px]',
-                openedIdx === idx && 'text-[#6366F1]',
-                openedIdx !== idx && 'text-[#55618C]',
+                selectedLogIdx === idx && 'text-[#6366F1]',
+                selectedLogIdx !== idx && 'text-[#55618C]',
               )}
               >
                 {ctx.role}
@@ -103,9 +87,9 @@ function AgentPromptLogsList({
               <span
                 className={clsx(
                   'text-sm text-gray-100 max-w-full truncate p-2 hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full',
-                  openedIdx === idx && 'bg-[#1F2437]',
+                  selectedLogIdx === idx && 'bg-[#1F2437]',
                 )}
-                onClick={() => toggle(idx)}
+                onClick={() => selectLog(idx)}
               >
                 {ctx.content}
               </span>

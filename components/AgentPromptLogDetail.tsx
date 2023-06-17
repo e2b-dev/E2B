@@ -15,7 +15,6 @@ function AgentPrompLogDetail({
 }: Props) {
   return (
     <div className="overflow-auto p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
-      <h2 className="font-medium text-sm text-gray-500">Context</h2>
       {log && (
         <>
           <div className="flex flex-col space-y-1 w-full">

@@ -16,6 +16,7 @@ import {
 } from 'utils/agentLogs'
 import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
 import AgentPromptLogsList from 'components/AgentPromptLogsList'
+import AgentNextActionLogDetail from 'components/AgentNextActionLogDetail'
 
 interface PathProps extends ParsedUrlQuery {
   logFileID: string
@@ -170,41 +171,41 @@ function LogFile({ logFile }: Props) {
       </header>
 
       <div className="flex-1 flex items-start justify-start space-x-2 sm:p-6 lg:px-8 overflow-hidden">
-        <Splitter
-          draggerClassName={clsx(
-            'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
-            isResizing && 'bg-[#6366F1]',
-          )}
-          gutterClassName={clsx(
-            'mx-2 bg-transparent hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
-            isResizing && 'bg-[#6366F1]',
-          )}
-          classes={['flex', 'flex']}
-          onResizeStarted={() => setIsResizing(true)}
-          onResizeFinished={(_, newSizes) => {
-            setIsResizing(false)
-            setSizes(newSizes)
-          }}
-          initialSizes={sizes}
-        >
-          {logFile.name.includes('full_message_history') || logFile.name.includes('current_context') ? (
-            <>
-              <AgentPromptLogsList
-                logs={(logFile.content as AgentPromptLogs).logs}
-                onSelected={setSelectedLog}
-              />
-              <AgentPrompLogDetail
-                log={selectedLog}
-              />
-            </>
-          ) : logFile.name.includes('next_action') ? (
-            <div />
-          ) : (
-            <div>
-              Unexpected JSON format. Please reach out to the e2b team.
-            </div>
-          )}
-        </Splitter>
+        {logFile.name.includes('full_message_history') || logFile.name.includes('current_context') ? (
+          <Splitter
+            draggerClassName={clsx(
+              'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
+              isResizing && 'bg-[#6366F1]',
+            )}
+            gutterClassName={clsx(
+              'mx-2 bg-transparent hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
+              isResizing && 'bg-[#6366F1]',
+            )}
+            classes={['flex', 'flex']}
+            onResizeStarted={() => setIsResizing(true)}
+            onResizeFinished={(_, newSizes) => {
+              setIsResizing(false)
+              setSizes(newSizes)
+            }}
+            initialSizes={sizes}
+          >
+            <AgentPromptLogsList
+              logs={(logFile.content as AgentPromptLogs).logs}
+              onSelected={setSelectedLog}
+            />
+            <AgentPrompLogDetail
+              log={selectedLog}
+            />
+          </Splitter>
+        ) : logFile.name.includes('next_action') ? (
+          <AgentNextActionLogDetail
+            log={logFile.content as AgentNextActionLog}
+          />
+        ) : (
+          <div>
+            Unexpected JSON format. Please reach out to the e2b team.
+          </div>
+        )}
       </div>
     </main >
   )
