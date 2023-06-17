@@ -9,13 +9,18 @@ export interface RawFileLog {
   }
 }
 
+export interface Log {
+  id: string;
+  files: LogFile[]
+}
+
 export interface LogsMetadata {
 
 }
 
 export interface LogFile {
-  id: string
   name: string
+  relativePath: string
 }
 
 export interface AgentLogs {
