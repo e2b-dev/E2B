@@ -65,22 +65,6 @@ function AgentLogFilesList({
     await handleUpload(event.target.files)
   }
 
-  const handleDrag = function (e: any) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-    } else if (e.type === 'dragleave') { }
-  }
-
-  async function handleDrop(e: any) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      console.log('Files', e.dataTransfer.files)
-      await handleUpload(e.dataTransfer.files)
-    }
-  }
-
   function toggleSelectedLogFileID(logFileID: string, filename: string) {
     router.push({
       pathname: `/log/${logFileID}`,
