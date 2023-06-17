@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { AgentLogs, LogFile, RawFileLog } from 'utils/agentLogs'
+import { AgentPromptLogs, AgentNextActionLog, LogFile, RawFileLog } from 'utils/agentLogs'
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
 import clsx from 'clsx'
 import Splitter from '@devbookhq/splitter'
-
 import Link from 'next/link'
 
 import { prisma } from 'db/prisma'
@@ -15,12 +14,17 @@ import {
   UserPromptLog,
   AssistantPromptLog,
 } from 'utils/agentLogs'
-import AgentPromptLogs from 'components/AgentPromptLogs'
 import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
+import AgentPromptLogsList from 'components/AgentPromptLogsList'
 
 interface PathProps extends ParsedUrlQuery {
   logFileID: string
 }
+
+export interface Props {
+  logFile: LogFile & { content: AgentPromptLogs | AgentNextActionLog }
+}
+
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
   const logFileID = ctx.params?.logFileID
@@ -121,6 +125,19 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     }
   }
 
+  // Specific to AutoGPT
+  if (file.filename.includes('next_action')) {
+    return {
+      props: {
+        logFile: {
+          name: file.filename,
+          content: JSON.parse(file.content),
+          relativePath: file.metadata.relativePath,
+        }
+      }
+    }
+  }
+
   return {
     props: {
       logFile: {
@@ -132,10 +149,6 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
       }
     }
   }
-}
-
-export interface Props {
-  logFile: LogFile & { content: AgentLogs }
 }
 
 function LogFile({ logFile }: Props) {
@@ -176,8 +189,8 @@ function LogFile({ logFile }: Props) {
         >
           {logFile.name.includes('full_message_history') || logFile.name.includes('current_context') ? (
             <>
-              <AgentPromptLogs
-                logs={logFile.content.logs}
+              <AgentPromptLogsList
+                logs={(logFile.content as AgentPromptLogs).logs}
                 onSelected={setSelectedLog}
               />
               <AgentPrompLogDetail

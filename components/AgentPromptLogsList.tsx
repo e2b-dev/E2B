@@ -17,7 +17,7 @@ export interface Props {
   onSelected: (ctx: SystemPromptLog | UserPromptLog | AssistantPromptLog) => void
 }
 
-function AgentPromptLogs({
+function AgentPromptLogsList({
   logs,
   onSelected,
 }: Props) {
@@ -120,4 +120,4 @@ function AgentPromptLogs({
   )
 }
 
-export default AgentPromptLogs
+export default AgentPromptLogsList

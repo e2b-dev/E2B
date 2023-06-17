@@ -24,8 +24,8 @@ export interface LogFile {
 }
 
 
-export interface AgentLogs {
-  logs: (SystemPromptLog | UserPromptLog | AssistantPromptLog)[] | AgentNextActionLog
+export interface AgentPromptLogs {
+  logs: (SystemPromptLog | UserPromptLog | AssistantPromptLog)[]
   functions?: AgentFunction[]
 }
 
