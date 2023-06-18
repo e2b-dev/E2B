@@ -18,7 +18,7 @@ import AgentPromptLogsList from 'components/AgentPromptLogsList'
 import AgentNextActionLogDetail from 'components/AgentNextActionLogDetail'
 
 export interface Props {
-  logFile?: Omit<log_files, 'content'> & { content: AgentPromptLogs | AgentNextActionLog }
+  logFile?: Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }
 }
 
 function AgentLogFileContent({

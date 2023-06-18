@@ -3,10 +3,10 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { nanoid } from 'nanoid'
 import path from 'path'
 
-import { prisma, projects, deployments } from 'db/prisma'
+import { prisma, projects, deployments, log_files } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
-import { LiteLogUpload } from 'utils/agentLogs'
+import { AgentNextActionLog, AgentPromptLogs, LiteLogUpload } from 'utils/agentLogs'
 
 function getLastTwoDirsAndFile(fullPath: string): string {
   const fileName = path.basename(fullPath)
@@ -16,6 +16,38 @@ function getLastTwoDirsAndFile(fullPath: string): string {
   const lastTwoDirs = parts.slice(-2).join(path.sep)
 
   return path.join(lastTwoDirs, fileName)
+}
+
+function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'last_modified'>) {
+  const parsedFileContent = JSON.parse(logFile.content)
+  const relativePath = getLastTwoDirsAndFile(logFile.relativePath)
+
+  // Specific to AutoGPT
+  if (logFile.filename.includes('next_action')) {
+    return {
+      ...logFile,
+      relativePath,
+      content: parsedFileContent as AgentNextActionLog,
+    }
+  }
+  if (logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context')) {
+    return {
+      ...logFile,
+      relativePath,
+      content: {
+        logs: parsedFileContent as AgentPromptLogs,
+      },
+    }
+  }
+  return {
+    ...logFile,
+    relativePath,
+    content: {
+      ...parsedFileContent,
+      logs: parsedFileContent?.context || [],
+      context: undefined,
+    },
+  }
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
@@ -57,6 +89,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       id: true,
       is_default: true,
       projects: {
+        where: {
+          is_default: true,
+        },
         include: {
           log_uploads: {
             select: {
@@ -67,8 +102,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                   id: true,
                   created_at: true,
                   filename: true,
-                  last_modified: true,
                   relativePath: true,
+                  content: true,
                 },
               },
             },
@@ -180,10 +215,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             .log_uploads
             .map<LiteLogUpload>(u => ({
               ...u,
-              log_files: u.log_files.map(f => ({
-                ...f,
-                relativePath: getLastTwoDirsAndFile(f.relativePath),
-              })),
+              log_files: u.log_files.map(formatLogFileContent),
             }))
         }))
     },

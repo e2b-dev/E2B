@@ -35,7 +35,7 @@ function AgentLogFilesList({
   const getLogFile = useGetLogFile()
   const [isUploading, setIsUploading] = useState(false)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
-  const [selectedLogFile, setSelectedLogFile] = useState<Omit<log_files, 'content'> & { content: AgentPromptLogs | AgentNextActionLog }>()
+  const [selectedLogFile, setSelectedLogFile] = useState<Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }>()
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
   const uploadFiles = useUploadLogs(defaultProjectID)
@@ -116,37 +116,40 @@ function AgentLogFilesList({
     return `/?${new URLSearchParams(query).toString()}`
   }
 
-  async function selectLogFile(logFileID: string) {
+  async function selectLogFile(logFile: any) {
     // Log files in logUploads don't have content. We fetch the full log file lazily.
-    const logFile = await getLogFile(logFileID)
-    if (!logFile) return
+    // setSelectedLogFile()
 
-    const parsedFileContent = JSON.parse(logFile.content)
+    // const logFile = await getLogFile(logFileID)
+    // if (!logFile) return
 
-    // Specific to AutoGPT
-    if (logFile.filename.includes('next_action')) {
-      setSelectedLogFile({
-        ...logFile,
-        content: parsedFileContent,
-      })
-    } else if (logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context')) {
-      setSelectedLogFile({
-        ...logFile,
-        content: {
-          //logs: parsedFileContent as AgentNextActionLog,
-          logs: parsedFileContent as any,
-        },
-      })
-    } else {
-      setSelectedLogFile({
-        ...logFile,
-        content: {
-          ...parsedFileContent,
-          logs: parsedFileContent?.context || [],
-          context: undefined,
-        },
-      })
-    }
+
+    // const parsedFileContent = JSON.parse(logFile.content)
+
+    // // Specific to AutoGPT
+    // if (logFile.filename.includes('next_action')) {
+    //   setSelectedLogFile({
+    //     ...logFile,
+    //     content: parsedFileContent,
+    //   })
+    // } else if (logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context')) {
+    //   setSelectedLogFile({
+    //     ...logFile,
+    //     content: {
+    //       //logs: parsedFileContent as AgentNextActionLog,
+    //       logs: parsedFileContent as any,
+    //     },
+    //   })
+    // } else {
+    //   setSelectedLogFile({
+    //     ...logFile,
+    //     content: {
+    //       ...parsedFileContent,
+    //       logs: parsedFileContent?.context || [],
+    //       context: undefined,
+    //     },
+    //   })
+    // }
   }
 
   return (
@@ -254,7 +257,9 @@ function AgentLogFilesList({
                           <Link
                             href={logFileURL(logFile.id)}
                             shallow={true}
-                            onClick={() => selectLogFile(logFile.id)}
+                            onClick={() => {
+                              setSelectedLogFile(logFile)
+                            }}
                           >
                             {logFile.relativePath.split('/').map(p => (
                               <span key={p}>{'/ '}{p}</span>
