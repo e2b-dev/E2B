@@ -168,7 +168,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           ...p,
           // Don't send any deployments to the client but keep the props structure so we don't have to change the component now.
           deployments: [],
-          logs_uploads: p
+          log_uploads: p
             .log_uploads
             .map<LiteLogUpload>(u => ({
               ...u,
