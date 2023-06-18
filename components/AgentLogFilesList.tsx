@@ -2,13 +2,16 @@ import {
   useRef,
   useState,
 } from 'react'
-
+import {
+  ChevronRight,
+} from 'lucide-react'
+import Link from 'next/link'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
+import { log_files } from '@prisma/client'
 import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
-import { log_files } from '@prisma/client'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
 import { LiteLogUpload } from 'utils/agentLogs'
 
@@ -23,39 +26,34 @@ function AgentLogFilesList({
   initialSelectedLogFileID,
   defaultProjectID,
 }: Props) {
+  console.log('logUploads', logUploads)
+  const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
   const router = useRouter()
-  const [opeDirs, setOpenDirs] = useState<string[]>([])
-  // const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
   const fileInput = useRef<HTMLInputElement>(null)
 
   const uploadFiles = useUploadLogs(defaultProjectID)
   const deleteLogs = useDeleteLogs()
 
-  // Log files sorted by relative path into directory "buckets".
-  const logFilesInDirs = logFiles
-    // Convert the relative path 'a/b/c' to ['a', 'b', 'c']
-    .map(lf => ({ ...lf, relativePath: lf.relativePath.split('/') }))
-    // Put logs with the same upload ID into separate arrays.
-    .reduce((acc: { [uploadID: string]: (typeof lf)[] }, lf) => {
-      const uploadID = lf.log_upload_id as string
-      if (acc[uploadID]) {
-        acc[uploadID].push(lf)
-      } else {
-        acc[uploadID] = [lf]
+  const sortedLogUploads = logUploads
+    // logUploads sorted by created_at - the newest first
+    .sort((a, b) => {
+      if (a.created_at > b.created_at) return -1
+      if (a.created_at < b.created_at) return 1
+      return 0
+    })
+    // Sort the log_files inside logUploads alphabtetical by relativePath
+    .map(logUpload => {
+      const sortedLogFiles = logUpload.log_files.sort((a, b) => {
+        if (a.relativePath > b.relativePath) return 1
+        if (a.relativePath < b.relativePath) return -1
+        return 0
+      })
+
+      return {
+        ...logUpload,
+        log_files: sortedLogFiles,
       }
-      return acc
-    }, {})
-  // .reduce((acc: { [dir: string]: (typeof lf)[] }, lf) => {
-  //   const dir = lf.relativePath[0]
-  //   const dirBucket = acc[dir]
-  //   if (acc[dir]) {
-  //     acc[dir].push(lf)
-  //   } else {
-  //     acc[dir] = [lf]
-  //   }
-  //   return acc
-  // }, {})
-  console.log('logFilesInDirs', logFilesInDirs)
+    })
 
 
   function handleClickOnUpload() {
@@ -105,7 +103,13 @@ function AgentLogFilesList({
     // }
   }
 
-  console.log('logFiles', logFiles)
+  function toggleLogUpload(logUploadID: string) {
+    if (openedLogUploads.includes(logUploadID)) {
+      setOpeneLogUploads(prev => prev.filter(id => id !== logUploadID))
+    } else {
+      setOpeneLogUploads(prev => [...prev, logUploadID])
+    }
+  }
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full">
@@ -128,7 +132,7 @@ function AgentLogFilesList({
         />
       </header>
 
-      {logFiles.length === 0 && (
+      {sortedLogUploads.length === 0 && (
         <div
           className="flex items-center justify-center flex-1"
         >
@@ -138,70 +142,75 @@ function AgentLogFilesList({
         </div>
       )}
 
-      {logFiles.length > 0 && (
+      {sortedLogUploads.length > 0 && (
         <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto">
-
-          {logFiles.map((logFile, i) => (
+          {sortedLogUploads.map((logUpload, i) => (
             <div
-              key={logFile.id}
+              key={logUpload.id}
             >
               <div
-                className={clsx(
-                  'flex items-center space-x-2 p-2 transition-all rounded-md justify-between',
-                )}
+                className="flex flex-col space-y-2"
               >
-                <span
-                  className={clsx(
-                    'text-sm',
-                    'font-semibold',
-                  )}
-                >
-                  {/* {logFile.log_files} */}
-                </span>
-              </div>
-
-              {/* Uploaded files */}
-              {/* {logFile.log_files.map((lu, i) =>
-                <div
-                  key={lu.id}
-                  className="group flex items-center space-x-2"
-                >
+                <div className="flex items-center space-x-2">
                   <div
                     className={clsx(
                       'p-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                      opened.includes(idx) && 'bg-gray-700',
-                      !opened.includes(idx) && 'bg-gray-800',
+                      openedLogUploads.includes(logUpload.id) && 'bg-gray-700',
+                      !openedLogUploads.includes(logUpload.id) && 'bg-gray-800',
                     )}
-                    onClick={() => toggle(idx)}
+                    onClick={() => toggleLogUpload(logUpload.id)}
                   >
                     <ChevronRight size={15} className={clsx(
                       'text-gray-400',
                       'transition-all',
                       'select-none',
-                      opened.includes(idx) && 'rotate-90',
+                      openedLogUploads.includes(logUpload.id) && 'rotate-90',
                     )} />
                   </div>
-
                   <span
                     className={clsx(
-                      'rounded-md',
-                      'py-0.5',
-                      'px-2',
-                      'hover:bg-[#1F2437]',
-                      'transition-all',
-                      'w-full',
                       'text-sm',
-                      'cursor-pointer',
-                      'font-mono',
-                      opened.includes(idx) && 'bg-[#1F2437]',
-                      opened.includes(idx) && 'font-semibold',
+                      'font-semibold',
+                      'text-gray-500',
                     )}
-                    onClick={() => toggle(idx)}
                   >
-                    {fn.name}
+                    Uploaded at {logUpload.created_at.toLocaleString()}
                   </span>
                 </div>
-              )} */}
+
+                {openedLogUploads.includes(logUpload.id) && (
+                  <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2">
+                    {logUpload.log_files.map((logFile) => (
+                      <span
+                        key={logFile.id}
+                        className={clsx(
+                          'rounded-md',
+                          'py-0.5',
+                          'px-2',
+                          'text-gray-200',
+                          'hover:bg-[#1F2437]',
+                          'transition-all',
+                          'w-full',
+                          'text-sm',
+                          'cursor-pointer',
+                          'font-mono',
+                          'flex',
+                          'items-center',
+                          'space-x-2',
+                        )}
+                      >
+                        <Link
+                          href={`/log/${logFile.id}`}
+                        >
+                          {logFile.relativePath.split('/').map(p => (
+                            <span key={p}>{'/ '}{p}</span>
+                          ))}
+                        </Link>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
