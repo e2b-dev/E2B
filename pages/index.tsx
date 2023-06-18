@@ -228,6 +228,8 @@ export interface Props {
 }
 
 function Home({ projects, defaultProjectID }: Props) {
+
+
   return (
     <DashboardHome
       defaultProjectID={defaultProjectID}

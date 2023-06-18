@@ -1,84 +1,73 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
-import { LiteLogUpload } from 'utils/agentLogs'
+import { useCallback } from 'react'
+import path from 'path-browserify'
 
+import Filesystem, { FileInfo } from 'components/Filesystem'
+import { LiteLogUpload } from 'utils/agentLogs'
+import { FiletreeProvider } from 'hooks/useFiletree'
 
 export interface Props {
-  logUploads: LiteLogUpload[]
+  logUpload: LiteLogUpload
 }
 
-function Uploadtree({
-  logUploads,
+function UploadTree({
+  logUpload,
 }: Props) {
-  const [openNodes, setOpenNodes] = useState<string[]>([])
 
-  const sortedLogUploads = useMemo(() => {
-    return logUploads
-      // logUploads sorted by created_at - the newest first
-      .sort((a, b) => {
-        if (a.created_at > b.created_at) return -1
-        if (a.created_at < b.created_at) return 1
-        return 0
+  const fetchLogDirContent = useCallback<(dirpath: string) => FileInfo[]>(dirpath => {
+    const currentDir = dirpath.slice(1)
+    const childFiles = logUpload
+      .log_files
+      .filter(f => {
+        return path.dirname(f.relativePath) === currentDir
       })
-      // Sort the log_files inside logUploads alphabtetical by relativePath
-      .map(logUpload => {
-        const sortedLogFiles = logUpload.log_files.sort((a, b) => {
-          if (a.relativePath > b.relativePath) return 1
-          if (a.relativePath < b.relativePath) return -1
-          return 0
-        })
 
-        return {
-          ...logUpload,
-          log_files: sortedLogFiles,
-        }
+    console.log('childFiles', childFiles)
+
+    const filesInChildDirs = logUpload
+      .log_files
+      .filter(f => {
+        const fileDir = path.dirname(f.relativePath)
+        return fileDir !== currentDir && fileDir.startsWith(currentDir)
       })
-  }, [logUploads])
 
-  useEffect(function uploadsToTree() {
-    const tree = sortedLogUploads.map(logUpload => {
-      const relativePaths = logUpload.log_files.map(logFile => logFile.relativePath)
-      const relativePathsSplit = relativePaths.map(relativePath => relativePath.split('/'))
+    const childDirs = filesInChildDirs.reduce((acc, file) => {
+      if (currentDir === '') {
+        const fileDir = path.dirname(file.relativePath)
+        const childDir = fileDir.split('/')[0]
+        return acc.add(childDir)
+      }
 
-      const tree = relativePathsSplit.reduce((acc, relativePathSplit) => {
-        let currentAcc = acc
+      const fileDir = path.dirname(file.relativePath)
+      const childDirs = fileDir.slice(currentDir.length)
+      const childDir = childDirs.split('/')[1]
+      return acc.add(childDir)
+    }, new Set<string>())
 
-        relativePathSplit.forEach((relativePathSplitPart, index) => {
-          if (currentAcc[relativePathSplitPart]) {
-            currentAcc = currentAcc[relativePathSplitPart]
-          } else {
-            currentAcc[relativePathSplitPart] = {}
-            currentAcc = currentAcc[relativePathSplitPart]
-          }
+    const content = [
+      ...childFiles.map(f => ({
+        name: f.filename,
+        isDir: false,
+      })),
+      ...Array.from(childDirs).map(dir => ({
+        name: dir,
+        isDir: true,
+      })),
+    ]
 
-          if (index === relativePathSplit.length - 1) {
-            currentAcc = {
-              ...currentAcc,
-              id: logUpload.id,
-              name: relativePathSplitPart,
-              children: [],
-            }
-          }
-        })
-
-        return acc
-      }, {} as any)
-
-
-      return tree
-    })
-
-    console.log('tree', tree)
-  }, [sortedLogUploads])
+    console.log('content', content)
+    return content
+  }, [logUpload])
 
   return (
     <div className="flex flex-col items-start justify-start">
-      {/* <NodeComponent /> */}
+      <FiletreeProvider>
+        <Filesystem
+          rootPath='/'
+          fetchContent={fetchLogDirContent}
+        />
+      </FiletreeProvider>
     </div>
   )
 }
 
-export default Uploadtree
+export default UploadTree

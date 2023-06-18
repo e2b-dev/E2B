@@ -1,11 +1,11 @@
 import {
+  useMemo,
   useRef,
   useState,
 } from 'react'
 import {
   ChevronRight,
 } from 'lucide-react'
-import Link from 'next/link'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 import Splitter from '@devbookhq/splitter'
@@ -20,8 +20,7 @@ import {
 } from 'utils/agentLogs'
 import Spinner from 'components/Spinner'
 import AgentLogFileContent from 'components/AgentLogFileContent'
-import { useGetLogFile } from 'hooks/useGetLogFile'
-import Uploadtree from 'components/Uploadtree'
+import UploadTree from './UploadTree'
 
 export interface Props {
   logUploads: LiteLogUpload[]
@@ -32,7 +31,6 @@ function AgentLogFilesList({
   logUploads,
   defaultProjectID,
 }: Props) {
-  const getLogFile = useGetLogFile()
   const [isUploading, setIsUploading] = useState(false)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
   const [selectedLogFile, setSelectedLogFile] = useState<Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }>()
@@ -40,7 +38,7 @@ function AgentLogFilesList({
   const fileInput = useRef<HTMLInputElement>(null)
   const uploadFiles = useUploadLogs(defaultProjectID)
 
-  const sortedLogUploads = logUploads
+  const sortedLogUploads = useMemo(() => logUploads
     // logUploads sorted by created_at - the newest first
     .sort((a, b) => {
       if (a.created_at > b.created_at) return -1
@@ -59,8 +57,7 @@ function AgentLogFilesList({
         ...logUpload,
         log_files: sortedLogFiles,
       }
-    })
-
+    }), [logUploads])
 
   function handleClickOnUpload() {
     // trigger the click event of the file input
@@ -116,42 +113,6 @@ function AgentLogFilesList({
     return `/?${new URLSearchParams(query).toString()}`
   }
 
-  async function selectLogFile(logFile: any) {
-    // Log files in logUploads don't have content. We fetch the full log file lazily.
-    // setSelectedLogFile()
-
-    // const logFile = await getLogFile(logFileID)
-    // if (!logFile) return
-
-
-    // const parsedFileContent = JSON.parse(logFile.content)
-
-    // // Specific to AutoGPT
-    // if (logFile.filename.includes('next_action')) {
-    //   setSelectedLogFile({
-    //     ...logFile,
-    //     content: parsedFileContent,
-    //   })
-    // } else if (logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context')) {
-    //   setSelectedLogFile({
-    //     ...logFile,
-    //     content: {
-    //       //logs: parsedFileContent as AgentNextActionLog,
-    //       logs: parsedFileContent as any,
-    //     },
-    //   })
-    // } else {
-    //   setSelectedLogFile({
-    //     ...logFile,
-    //     content: {
-    //       ...parsedFileContent,
-    //       logs: parsedFileContent?.context || [],
-    //       context: undefined,
-    //     },
-    //   })
-    // }
-  }
-
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1">
       <input
@@ -195,7 +156,7 @@ function AgentLogFilesList({
           classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
         >
           <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto min-w-[320px]">
-            <Uploadtree logUploads={logUploads} />
+            {/* <Uploadtree logUploads={logUploads} /> */}
             {sortedLogUploads.map((logUpload, i) => (
               <div
                 key={logUpload.id}
@@ -235,38 +196,9 @@ function AgentLogFilesList({
 
                   {openedLogUploads.includes(logUpload.id) && (
                     <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[10px]">
-                      {logUpload.log_files.map((logFile) => (
-                        <span
-                          key={logFile.id}
-                          className={clsx(
-                            'rounded-md',
-                            'py-0.5',
-                            'px-2',
-                            'text-gray-200',
-                            'hover:bg-[#1F2437]',
-                            'transition-all',
-                            'w-full',
-                            'text-sm',
-                            'cursor-pointer',
-                            'font-mono',
-                            'flex',
-                            'items-center',
-                            'space-x-2',
-                          )}
-                        >
-                          <Link
-                            href={logFileURL(logFile.id)}
-                            shallow={true}
-                            onClick={() => {
-                              setSelectedLogFile(logFile)
-                            }}
-                          >
-                            {logFile.relativePath.split('/').map(p => (
-                              <span key={p}>{'/ '}{p}</span>
-                            ))}
-                          </Link>
-                        </span>
-                      ))}
+                      <UploadTree
+                        logUpload={logUpload}
+                      />
                     </div>
                   )}
                 </div>
