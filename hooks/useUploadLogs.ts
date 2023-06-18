@@ -2,9 +2,7 @@ import { log_files } from 'db/prisma'
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
 
-export interface FileUpload extends Pick<log_files, 'content' | 'filename' | 'relativePath' | 'size' | 'last_modified' | 'type'> {
-
-}
+export interface FileUpload extends Pick<log_files, 'content' | 'filename' | 'relativePath' | 'size' | 'last_modified' | 'type'> { }
 
 export interface PostLogs {
   logFiles: FileUpload[]

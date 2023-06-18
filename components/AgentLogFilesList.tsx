@@ -26,15 +26,14 @@ function AgentLogFilesList({
 }: Props) {
   const router = useRouter()
   const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
-  const []
-  const fileInput = useRef<any>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
 
   const uploadFiles = useUploadLogs(defaultProjectID)
   const deleteLogs = useDeleteLogs()
 
   function handleClickOnUpload() {
     // trigger the click event of the file input
-    fileInput.current.click()
+    fileInput.current?.click()
   }
 
   async function handleUpload(files: FileList) {
@@ -92,6 +91,7 @@ function AgentLogFilesList({
         directory=""
         webkitdirectory=""
         mozdirectory=""
+        allowdirs=""
         multiple
       />
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
