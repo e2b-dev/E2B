@@ -8,12 +8,19 @@ import {
 import Link from 'next/link'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
+import Splitter from '@devbookhq/splitter'
 
-import { log_files } from '@prisma/client'
+import { log_files } from 'db/prisma'
 import { useUploadLogs } from 'hooks/useUploadLogs'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
-import { LiteLogUpload } from 'utils/agentLogs'
+import {
+  LiteLogUpload,
+  AgentPromptLogs,
+  AgentNextActionLog,
+} from 'utils/agentLogs'
 import Spinner from 'components/Spinner'
+import AgentLogFileContent from 'components/AgentLogFileContent'
+import { useGetLogFile } from 'hooks/useGetLogFile'
 
 export interface Props {
   logUploads: LiteLogUpload[]
@@ -24,8 +31,10 @@ function AgentLogFilesList({
   logUploads,
   defaultProjectID,
 }: Props) {
+  const getLogFile = useGetLogFile()
   const [isUploading, setIsUploading] = useState(false)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
+  const [selectedLogFile, setSelectedLogFile] = useState<Omit<log_files, 'content'> & { content: AgentPromptLogs | AgentNextActionLog }>()
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
   const uploadFiles = useUploadLogs(defaultProjectID)
@@ -96,6 +105,49 @@ function AgentLogFilesList({
     }
   }
 
+  function logFileURL(logFileID: string) {
+    // Create URL like so /?logFileID=123 and also pass any existing queries in the router.
+    const query = {
+      ...router.query,
+      logFileID,
+      selectedLog: '0',
+    }
+    return `/?${new URLSearchParams(query).toString()}`
+  }
+
+  async function selectLogFile(logFileID: string) {
+    // Log files in logUploads don't have content. We fetch the full log file lazily.
+    const logFile = await getLogFile(logFileID)
+    if (!logFile) return
+
+    const parsedFileContent = JSON.parse(logFile.content)
+
+    // Specific to AutoGPT
+    if (logFile.filename.includes('next_action')) {
+      setSelectedLogFile({
+        ...logFile,
+        content: parsedFileContent,
+      })
+    } else if (logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context')) {
+      setSelectedLogFile({
+        ...logFile,
+        content: {
+          //logs: parsedFileContent as AgentNextActionLog,
+          logs: parsedFileContent as any,
+        },
+      })
+    } else {
+      setSelectedLogFile({
+        ...logFile,
+        content: {
+          ...parsedFileContent,
+          logs: parsedFileContent?.context || [],
+          context: undefined,
+        },
+      })
+    }
+  }
+
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1">
       <input
@@ -129,79 +181,95 @@ function AgentLogFilesList({
       )}
 
       {sortedLogUploads.length > 0 && (
-        <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto">
-          {sortedLogUploads.map((logUpload, i) => (
-            <div
-              key={logUpload.id}
-            >
+        <Splitter
+          gutterClassName={clsx(
+            'bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
+          )}
+          draggerClassName={clsx(
+            'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
+          )}
+          classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
+        >
+          <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto min-w-[320px]">
+            {sortedLogUploads.map((logUpload, i) => (
               <div
-                className="flex flex-col space-y-2"
+                key={logUpload.id}
               >
-                <div className="flex items-center space-x-2">
-                  <div
-                    className={clsx(
-                      'p-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                      openedLogUploads.includes(logUpload.id) && 'bg-gray-700',
-                      !openedLogUploads.includes(logUpload.id) && 'bg-gray-800',
-                    )}
-                    onClick={() => toggleLogUpload(logUpload.id)}
-                  >
-                    <ChevronRight size={15} className={clsx(
-                      'text-gray-400',
-                      'transition-all',
-                      'select-none',
-                      openedLogUploads.includes(logUpload.id) && 'rotate-90',
-                    )} />
+                <div
+                  className="flex flex-col space-y-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className={clsx(
+                        'p-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                        openedLogUploads.includes(logUpload.id) && 'bg-gray-700',
+                        !openedLogUploads.includes(logUpload.id) && 'bg-gray-800',
+                      )}
+                      onClick={() => toggleLogUpload(logUpload.id)}
+                    >
+                      <ChevronRight size={15} className={clsx(
+                        'text-gray-400',
+                        'transition-all',
+                        'select-none',
+                        openedLogUploads.includes(logUpload.id) && 'rotate-90',
+                      )} />
+                    </div>
+                    <span
+                      className={clsx(
+                        'text-sm',
+                        'font-semibold',
+                        'text-gray-500',
+                        'whitespace-nowrap',
+                      )}
+                      // This prevents hydration warning for timestamps rendered via SSR
+                      suppressHydrationWarning
+                    >
+                      Uploaded {logUpload.created_at.toLocaleString()}
+                    </span>
                   </div>
-                  <span
-                    className={clsx(
-                      'text-sm',
-                      'font-semibold',
-                      'text-gray-500',
-                    )}
-                    // This prevents hydration warning for timestamps rendered via SSR
-                    suppressHydrationWarning
-                  >
-                    Uploaded at {logUpload.created_at.toLocaleString()}
-                  </span>
-                </div>
 
-                {openedLogUploads.includes(logUpload.id) && (
-                  <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[10px]">
-                    {logUpload.log_files.map((logFile) => (
-                      <span
-                        key={logFile.id}
-                        className={clsx(
-                          'rounded-md',
-                          'py-0.5',
-                          'px-2',
-                          'text-gray-200',
-                          'hover:bg-[#1F2437]',
-                          'transition-all',
-                          'w-full',
-                          'text-sm',
-                          'cursor-pointer',
-                          'font-mono',
-                          'flex',
-                          'items-center',
-                          'space-x-2',
-                        )}
-                      >
-                        <Link
-                          href={`/log/${logFile.id}`}
+                  {openedLogUploads.includes(logUpload.id) && (
+                    <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[10px]">
+                      {logUpload.log_files.map((logFile) => (
+                        <span
+                          key={logFile.id}
+                          className={clsx(
+                            'rounded-md',
+                            'py-0.5',
+                            'px-2',
+                            'text-gray-200',
+                            'hover:bg-[#1F2437]',
+                            'transition-all',
+                            'w-full',
+                            'text-sm',
+                            'cursor-pointer',
+                            'font-mono',
+                            'flex',
+                            'items-center',
+                            'space-x-2',
+                          )}
                         >
-                          {logFile.relativePath.split('/').map(p => (
-                            <span key={p}>{'/ '}{p}</span>
-                          ))}
-                        </Link>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                          <Link
+                            href={logFileURL(logFile.id)}
+                            shallow={true}
+                            onClick={() => selectLogFile(logFile.id)}
+                          >
+                            {logFile.relativePath.split('/').map(p => (
+                              <span key={p}>{'/ '}{p}</span>
+                            ))}
+                          </Link>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          <AgentLogFileContent
+            logFile={selectedLogFile}
+          />
+        </Splitter>
       )}
     </main >
   )

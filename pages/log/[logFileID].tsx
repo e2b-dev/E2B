@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { AgentPromptLogs, AgentNextActionLog, } from 'utils/agentLogs'
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
@@ -13,11 +12,13 @@ import {
   SystemPromptLog,
   UserPromptLog,
   AssistantPromptLog,
+  AgentPromptLogs,
+  AgentNextActionLog,
 } from 'utils/agentLogs'
 import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
 import AgentPromptLogsList from 'components/AgentPromptLogsList'
-import { alwaysTrue } from 'utils/positive'
 import AgentNextActionLogDetail from 'components/AgentNextActionLogDetail'
+import { alwaysTrue } from 'utils/positive'
 
 interface PathProps extends ParsedUrlQuery {
   logFileID: string

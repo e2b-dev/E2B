@@ -19,7 +19,7 @@ function DashboardDesktopSidebar({
   const isOnLogDetail = router.pathname.startsWith('/log/[logFileID]')
 
   return (
-    <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-56 xl:flex-col">
+    <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-48 xl:flex-col">
       {/* Sidebar component, swap this element with another sidebar if you like */}
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-black/10 px-6 border-r border-white/5">
         {/* Logo */}

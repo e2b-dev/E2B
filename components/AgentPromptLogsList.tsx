@@ -1,8 +1,8 @@
 import {
   useState,
   useEffect,
-  Fragment,
   useCallback,
+  Fragment,
 } from 'react'
 import { useRouter } from 'next/router'
 import clsx from 'clsx'
@@ -28,9 +28,10 @@ function AgentPromptLogsList({
     setSelectedLogIdx(idx)
     onSelected(logs[idx])
     router.replace({
-      pathname: `/log/${router.query.logFileID}`,
+      // pathname: `/log/${router.query.logFileID}`,
+      pathname: '',
       query: {
-        ...router.query['filename'] && { filename: router.query['filename'] },
+        ...router.query,
         selectedLog: idx.toString(),
       },
     }, undefined, { shallow: true })
@@ -69,43 +70,38 @@ function AgentPromptLogsList({
   }, [logs, selectLog, selectedLogIdx])
 
   return (
-    <div className="flex-1 flex flex-col space-y-2 max-w-full w-full overflow-hidden">
-      <h2 className="font-medium text-sm text-gray-500">Logs</h2>
-
+    <div className="flex flex-col space-y-1 overflow-auto">
       {logs.length === 0 && (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-400">No logs</p>
         </div>
       )}
-
-      <div className="flex-1 flex flex-col space-y-1 max-w-full w-full overflow-auto">
-        {logs.map((ctx, idx) => (
-          <Fragment key={idx}>
-            <div className="flex items-center space-x-2">
-              <span className={clsx(
-                'font-bold text-sm capitalize min-w-[72px]',
-                selectedLogIdx === idx && 'text-[#6366F1]',
-                selectedLogIdx !== idx && 'text-[#55618C]',
-              )}
-              >
-                {ctx.role}
-              </span>
-              <span
-                className={clsx(
-                  'text-sm text-gray-100 max-w-full truncate p-2 hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full',
-                  selectedLogIdx === idx && 'bg-[#1F2437]',
-                )}
-                onClick={() => selectLog(idx)}
-              >
-                {ctx.content}
-              </span>
-            </div>
-            {idx !== logs.length - 1 && (
-              <div className="ml-1 rounded min-h-[20px] w-px bg-gray-800" />
+      {logs.map((ctx, idx) => (
+        <Fragment key={idx}>
+          <div className="flex items-center space-x-2">
+            <span className={clsx(
+              'font-bold text-sm capitalize min-w-[72px]',
+              selectedLogIdx === idx && 'text-[#6366F1]',
+              selectedLogIdx !== idx && 'text-[#55618C]',
             )}
-          </Fragment>
-        ))}
-      </div>
+            >
+              {ctx.role}
+            </span>
+            <span
+              className={clsx(
+                'text-sm text-gray-100 max-w-full truncate p-2 hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full',
+                selectedLogIdx === idx && 'bg-[#1F2437]',
+              )}
+              onClick={() => selectLog(idx)}
+            >
+              {ctx.content}
+            </span>
+          </div>
+          {idx !== logs.length - 1 && (
+            <div className="ml-1 rounded min-h-[20px] w-px bg-gray-800" />
+          )}
+        </Fragment>
+      ))}
     </div>
   )
 }

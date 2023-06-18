@@ -5,6 +5,7 @@ import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import { PostLogs } from 'hooks/useUploadLogs'
 import { DeleteLogs } from 'hooks/useRemoveLogs'
+// import { GetLogFile } from 'hooks/useLogFile'
 
 async function deleteLogs(req: NextApiRequest, res: NextApiResponse) {
   const {
@@ -172,7 +173,7 @@ async function handler(
     return
   }
 
-  res.setHeader('Allow', ['POST', 'DELETE'])
+  res.setHeader('Allow', ['GET', 'POST', 'DELETE'])
   res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' })
   return
 }
