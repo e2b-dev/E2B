@@ -52,24 +52,14 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     }
   }
 
-  const user = await prisma.auth_users.findUnique({
+  const logFiles = await prisma.log_files.findMany({
     where: {
-      id: session.user.id,
-    },
-    select: {
-      users_teams: {
-        select: {
-          teams: {
-            include: {
-              projects: {
-                include: {
-                  log_files: {
-                    where: {
-                      id: logFileID,
-                    },
-                  },
-                },
-              },
+      id: logFileID,
+      projects: {
+        teams: {
+          users_teams: {
+            some: {
+              user_id: session.user.id,
             },
           },
         },
@@ -77,12 +67,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     },
   })
 
-  const logFile = user
-    ?.users_teams
-    .flatMap(ut => ut.teams)
-    .flatMap(t => t.projects)
-    .flatMap(p => p.log_files)
-    .find(alwaysTrue)
+  const logFile = logFiles.find(alwaysTrue)
 
   if (!logFile) {
     return {
