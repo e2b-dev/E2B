@@ -128,7 +128,6 @@ function AgentLogFilesList({
           onClick={handleClickOnUpload}
         />
       </header>
-
       {sortedLogUploads.length === 0 && (
         <div
           className="flex items-center justify-center flex-1"
@@ -170,6 +169,8 @@ function AgentLogFilesList({
                       'font-semibold',
                       'text-gray-500',
                     )}
+                    // This prevents the SSR hydration warning for timestamps for timestamps
+                    suppressHydrationWarning
                   >
                     Uploaded at {logUpload.created_at.toLocaleString()}
                   </span>

@@ -33,7 +33,7 @@ function AgentNextActionLogDetail({
           src={log.command}
           name={null}
           style={{
-            background: 'transparent'
+            background: 'transparent',
           }}
           displayObjectSize={false}
           quotesOnKeys={false}
