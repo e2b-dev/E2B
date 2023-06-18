@@ -169,7 +169,7 @@ function AgentLogFilesList({
                       'font-semibold',
                       'text-gray-500',
                     )}
-                    // This prevents the SSR hydration warning for timestamps for timestamps
+                    // This prevents hydration warning for timestamps rendered via SSR
                     suppressHydrationWarning
                   >
                     Uploaded at {logUpload.created_at.toLocaleString()}
