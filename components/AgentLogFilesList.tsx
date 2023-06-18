@@ -26,7 +26,6 @@ function AgentLogFilesList({
   initialSelectedLogFileID,
   defaultProjectID,
 }: Props) {
-  console.log('logUploads', logUploads)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
@@ -179,7 +178,7 @@ function AgentLogFilesList({
                 </div>
 
                 {openedLogUploads.includes(logUpload.id) && (
-                  <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2">
+                  <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[10px]">
                     {logUpload.log_files.map((logFile) => (
                       <span
                         key={logFile.id}
