@@ -131,20 +131,6 @@ function AgentLogFilesList({
                 >
                   {logUpload.id}
                 </span>
-                <button
-                  className="cursor-pointer"
-                  onClick={async () => {
-                    try {
-                      const res = await deleteLogs(logUpload.id)
-                      console.log(res)
-                      router.reload()
-                    } catch (err) {
-                      console.error(err)
-                    }
-                  }}
-                >
-                  Delete
-                </button>
               </div>
               {logUpload.log_files.map((f, i) =>
                 <div
