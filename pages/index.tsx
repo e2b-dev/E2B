@@ -45,43 +45,41 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  const projects = await prisma.projects.findMany({
+  const teams = await prisma.teams.findMany({
     where: {
-      teams: {
-        users_teams: {
-          some: {
-            user_id: session.user.id,
+      users_teams: {
+        some: {
+          user_id: session.user.id,
+        }
+      }
+    },
+    select: {
+      id: true,
+      is_default: true,
+      projects: {
+        include: {
+          log_uploads: {
+            select: {
+              id: true,
+              created_at: true,
+              log_files: {
+                select: {
+                  id: true,
+                  created_at: true,
+                  filename: true,
+                  last_modified: true,
+                  relativePath: true,
+                },
+              },
+            },
           },
         },
       },
     },
-    include: {
-      teams: {
-        select: {
-          id: true,
-          is_default: true,
-        },
-      },
-      log_uploads: {
-        select: {
-          id: true,
-          created_at: true,
-          log_files: {
-            select: {
-              id: true,
-              created_at: true,
-              filename: true,
-              last_modified: true,
-              relativePath: true,
-            }
-          }
-        }
-      }
-    },
   })
 
   const defaultTeam =
-    projects.flatMap(p => p.teams).find(p => p.is_default) ||
+    teams.find(t => t.is_default) ||
     (defaultNewTeamID && await prisma.teams.update({
       where: {
         id: defaultNewTeamID,
@@ -148,7 +146,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     })
 
   const defaultProject =
-    projects.find(p => p.is_default) ||
+    teams.flatMap(t => t.projects).find(p => p.is_default) ||
+    defaultTeam.projects.find(p => p.is_default) ||
     await prisma.projects.create({
       data: {
         id: nanoid(),
