@@ -18,7 +18,7 @@ function getLastTwoDirsAndFile(fullPath: string): string {
   return path.join(lastTwoDirs, fileName)
 }
 
-function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id'>) {
+function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'last_modified'>) {
   const parsedFileContent = JSON.parse(logFile.content)
   const relativePath = getLastTwoDirsAndFile(logFile.relativePath)
 
@@ -102,7 +102,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                   id: true,
                   created_at: true,
                   filename: true,
-                  last_modified: true,
                   relativePath: true,
                   content: true,
                 },

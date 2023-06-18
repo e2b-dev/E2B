@@ -34,7 +34,7 @@ function AgentLogFilesList({
   const getLogFile = useGetLogFile()
   const [isUploading, setIsUploading] = useState(false)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
-  const [selectedLogFile, setSelectedLogFile] = useState<Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content'> & { content: AgentPromptLogs | AgentNextActionLog }>()
+  const [selectedLogFile, setSelectedLogFile] = useState<Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }>()
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
   const uploadFiles = useUploadLogs(defaultProjectID)
