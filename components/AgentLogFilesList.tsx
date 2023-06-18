@@ -11,9 +11,9 @@ import { useRouter } from 'next/router'
 
 import { log_files } from '@prisma/client'
 import { useUploadLogs } from 'hooks/useUploadLogs'
-import { useDeleteLogs } from 'hooks/useRemoveLogs'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
 import { LiteLogUpload } from 'utils/agentLogs'
+import Spinner from 'components/Spinner'
 
 export interface Props {
   logUploads: LiteLogUpload[]
@@ -24,12 +24,11 @@ function AgentLogFilesList({
   logUploads,
   defaultProjectID,
 }: Props) {
+  const [isUploading, setIsUploading] = useState(false)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
-
   const uploadFiles = useUploadLogs(defaultProjectID)
-  const deleteLogs = useDeleteLogs()
 
   const sortedLogUploads = logUploads
     // logUploads sorted by created_at - the newest first
@@ -84,20 +83,9 @@ function AgentLogFilesList({
 
   async function handleFileChange(event: any) {
     if (event.target.files.length === 0) return
+    setIsUploading(true)
     await handleUpload(event.target.files)
-  }
-
-  function toggleSelectedLogFileID(logFileID: string, filename: string) {
-    router.push({
-      pathname: `/log/${logFileID}`,
-    }, undefined, { shallow: true })
-    // if (selectedLogFileID === logFileID) {
-    //   router.push(`/log/${logFileID}`, undefined, { shallow: true })
-    //   setSelectedLogFileID('')
-    //   router.push('/?view=logs', undefined, { shallow: true })
-    // } else {
-    //   setSelectedLogFileID(logFileID)
-    // }
+    setIsUploading(false)
   }
 
   function toggleLogUpload(logUploadID: string) {
@@ -124,17 +112,25 @@ function AgentLogFilesList({
       />
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
-        <LogFolderUploadButton
-          onClick={handleClickOnUpload}
-        />
+        {isUploading ? (
+          <Spinner />
+        ) : (
+          <LogFolderUploadButton
+            onClick={handleClickOnUpload}
+          />
+        )}
       </header>
       {sortedLogUploads.length === 0 && (
         <div
           className="flex items-center justify-center flex-1"
         >
-          <LogFolderUploadButton
-            onClick={handleClickOnUpload}
-          />
+          {isUploading ? (
+            <Spinner />
+          ) : (
+            <LogFolderUploadButton
+              onClick={handleClickOnUpload}
+            />
+          )}
         </div>
       )}
 
