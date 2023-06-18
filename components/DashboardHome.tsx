@@ -5,8 +5,8 @@ import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import AgentList from 'components/AgentList'
 import AgentRunsList from 'components/AgentRunsList'
 import AgentLogFilesList from 'components/AgentLogFilesList'
-import { LiteLogUpload } from 'pages'
 import { deployments, projects } from 'db/prisma'
+import { LiteLogUpload } from 'utils/agentLogs'
 
 export interface Props {
   projects: (projects & { log_uploads: LiteLogUpload[], deployments: deployments[] })[]
@@ -65,7 +65,7 @@ function DashboardHome({
         />
       ) : view === 'logs' ? (
         <AgentLogFilesList
-          logFiles={projects.flatMap(p => p.log_uploads).flatMap(lu => lu.log_files)}
+          logUploads={projects.flatMap(p => p.log_uploads)}
           defaultProjectID={defaultProjectID}
           initialSelectedLogFileID={selectedLogFileID}
         />

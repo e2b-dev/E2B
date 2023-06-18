@@ -52,7 +52,7 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
 
   return (
     <PostHogProvider
-      client={posthog}
+      client={process.env.NEXT_PUBLIC_POSTHOG_KEY ? posthog : undefined}
     >
       <SessionContextProvider
         supabaseClient={supabaseClient}

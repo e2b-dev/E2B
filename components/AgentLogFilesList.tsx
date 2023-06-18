@@ -3,7 +3,6 @@ import {
   useState,
 } from 'react'
 
-
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
@@ -11,15 +10,16 @@ import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
 import { log_files } from '@prisma/client'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
+import { LiteLogUpload } from 'utils/agentLogs'
 
 export interface Props {
-  logFiles: Omit<log_files, 'content'>[]
+  logUploads: LiteLogUpload[]
   initialSelectedLogFileID?: string
   defaultProjectID: string
 }
 
 function AgentLogFilesList({
-  logFiles,
+  logUploads,
   initialSelectedLogFileID,
   defaultProjectID,
 }: Props) {

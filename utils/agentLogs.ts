@@ -1,3 +1,9 @@
+import { log_files, log_uploads } from 'db/prisma'
+
+export interface LiteLogUpload extends Omit<log_uploads, 'log_files'> {
+  log_files: Omit<log_files, 'content'>[]
+}
+
 export interface AgentPromptLogs {
   logs: (SystemPromptLog | UserPromptLog | AssistantPromptLog)[]
   functions?: AgentFunction[]

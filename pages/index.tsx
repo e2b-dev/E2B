@@ -2,9 +2,10 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { nanoid } from 'nanoid'
 
-import { prisma, projects, log_files, log_uploads, deployments } from 'db/prisma'
+import { prisma, projects, deployments } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
+import { LiteLogUpload } from 'utils/agentLogs'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   // Select the 'deployed' view by default.
@@ -168,7 +169,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           ...p,
           // Don't send any deployments to the client but keep the props structure so we don't have to change the component now.
           deployments: [],
-          logs_uploads: p
+          log_uploads: p
             .log_uploads
             .map<LiteLogUpload>(u => ({
               ...u,
@@ -180,10 +181,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         }))
     },
   }
-}
-
-export interface LiteLogUpload extends Omit<log_uploads, 'log_files'> {
-  log_files: Omit<log_files, 'content'>[]
 }
 
 export interface Props {
