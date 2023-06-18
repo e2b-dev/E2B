@@ -13,7 +13,7 @@ import { log_files } from '@prisma/client'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
 
 export interface Props {
-  logFiles: Omit<log_files, 'content'>[][]
+  logFiles: Omit<log_files, 'content'>[]
   initialSelectedLogFileID?: string
   defaultProjectID: string
 }
