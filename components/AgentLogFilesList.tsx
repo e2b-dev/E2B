@@ -24,11 +24,39 @@ function AgentLogFilesList({
   defaultProjectID,
 }: Props) {
   const router = useRouter()
-  const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
+  const [opeDirs, setOpenDirs] = useState<string[]>([])
+  // const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
   const fileInput = useRef<HTMLInputElement>(null)
 
   const uploadFiles = useUploadLogs(defaultProjectID)
   const deleteLogs = useDeleteLogs()
+
+  // Log files sorted by relative path into directory "buckets".
+  const logFilesInDirs = logFiles
+    // Convert the relative path 'a/b/c' to ['a', 'b', 'c']
+    .map(lf => ({ ...lf, relativePath: lf.relativePath.split('/') }))
+    // Put logs with the same upload ID into separate arrays.
+    .reduce((acc: { [uploadID: string]: (typeof lf)[] }, lf) => {
+      const uploadID = lf.log_upload_id as string
+      if (acc[uploadID]) {
+        acc[uploadID].push(lf)
+      } else {
+        acc[uploadID] = [lf]
+      }
+      return acc
+    }, {})
+  // .reduce((acc: { [dir: string]: (typeof lf)[] }, lf) => {
+  //   const dir = lf.relativePath[0]
+  //   const dirBucket = acc[dir]
+  //   if (acc[dir]) {
+  //     acc[dir].push(lf)
+  //   } else {
+  //     acc[dir] = [lf]
+  //   }
+  //   return acc
+  // }, {})
+  console.log('logFilesInDirs', logFilesInDirs)
+
 
   function handleClickOnUpload() {
     // trigger the click event of the file input
@@ -54,7 +82,6 @@ function AgentLogFilesList({
       })
     }
 
-    console.log('NEW LOGS', logFiles)
     await uploadFiles(logFiles)
     // Reload to refresh the list of log files
     router.reload()
@@ -62,7 +89,6 @@ function AgentLogFilesList({
 
   async function handleFileChange(event: any) {
     if (event.target.files.length === 0) return
-    console.log('Files', event.target.files)
     await handleUpload(event.target.files)
   }
 
@@ -78,6 +104,8 @@ function AgentLogFilesList({
     //   setSelectedLogFileID(logFileID)
     // }
   }
+
+  console.log('logFiles', logFiles)
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full">
@@ -100,7 +128,7 @@ function AgentLogFilesList({
         />
       </header>
 
-      {logUploads.length === 0 && (
+      {logFiles.length === 0 && (
         <div
           className="flex items-center justify-center flex-1"
         >
@@ -110,12 +138,12 @@ function AgentLogFilesList({
         </div>
       )}
 
-      {logUploads.length > 0 && (
+      {logFiles.length > 0 && (
         <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto">
 
-          {logUploads.map((logUpload, i) => (
+          {logFiles.map((logFile, i) => (
             <div
-              key={logUpload.id}
+              key={logFile.id}
             >
               <div
                 className={clsx(
@@ -128,12 +156,12 @@ function AgentLogFilesList({
                     'font-semibold',
                   )}
                 >
-                  {logUpload.log_files}
+                  {/* {logFile.log_files} */}
                 </span>
               </div>
 
               {/* Uploaded files */}
-              {logUpload.log_files.map((lu, i) =>
+              {/* {logFile.log_files.map((lu, i) =>
                 <div
                   key={lu.id}
                   className="group flex items-center space-x-2"
@@ -173,7 +201,7 @@ function AgentLogFilesList({
                     {fn.name}
                   </span>
                 </div>
-              )}
+              )} */}
             </div>
           ))}
         </div>
