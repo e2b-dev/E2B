@@ -101,7 +101,7 @@ function AgentLogFilesList({
         />
       </header>
 
-      {logs.length > 0 && (
+      {logs.length === 0 && (
         <div
           className="flex items-center justify-center flex-1"
         >
@@ -146,6 +146,7 @@ function AgentLogFilesList({
                   Delete
                 </button>
               </div>
+
               {log.files.map((f, i) =>
                 <div
                   key={i}
