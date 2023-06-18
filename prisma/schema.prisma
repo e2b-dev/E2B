@@ -354,7 +354,7 @@ model log_files {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model log_uploads {
   id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at DateTime?   @default(now()) @db.Timestamptz(6)
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
   project_id String?
   log_files  log_files[]
   projects   projects?   @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
