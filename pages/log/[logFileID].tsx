@@ -132,7 +132,6 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
 }
 
 function LogFile({ logFile }: Props) {
-  console.log('logFile', logFile)
   const [isResizing, setIsResizing] = useState(false)
   const [sizes, setSizes] = useState([60, 40])
   const [selectedLog, setSelectedLog] = useState<SystemPromptLog | UserPromptLog | AssistantPromptLog>()

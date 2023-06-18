@@ -72,6 +72,12 @@ function AgentPromptLogsList({
     <div className="flex-1 flex flex-col space-y-2 max-w-full w-full overflow-hidden">
       <h2 className="font-medium text-sm text-gray-500">Logs</h2>
 
+      {logs.length === 0 && (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-400">No logs</p>
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col space-y-1 max-w-full w-full overflow-auto">
         {logs.map((ctx, idx) => (
           <Fragment key={idx}>
