@@ -1,11 +1,22 @@
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { nanoid } from 'nanoid'
+import path from 'path'
 
 import { prisma, projects, deployments } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
 import { LiteLogUpload } from 'utils/agentLogs'
+
+function getLastTwoDirsAndFile(fullPath: string): string {
+  const fileName = path.basename(fullPath)
+  const dirName = path.dirname(fullPath)
+
+  const parts = dirName.split(path.sep)
+  const lastTwoDirs = parts.slice(-2).join(path.sep)
+
+  return path.join(lastTwoDirs, fileName)
+}
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   // Select the 'deployed' view by default.
@@ -176,6 +187,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
               log_files: u.log_files.map(f => ({
                 ...f,
                 content: undefined,
+                relativePath: getLastTwoDirsAndFile(f.relativePath),
               })),
             }))
         }))
