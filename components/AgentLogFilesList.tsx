@@ -54,7 +54,6 @@ function AgentLogFilesList({
       })
     }
 
-    console.log('NEW LOGS', logFiles)
     await uploadFiles(logFiles)
     // Reload to refresh the list of log files
     router.reload()
@@ -62,7 +61,6 @@ function AgentLogFilesList({
 
   async function handleFileChange(event: any) {
     if (event.target.files.length === 0) return
-    console.log('Files', event.target.files)
     await handleUpload(event.target.files)
   }
 
