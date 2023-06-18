@@ -84,7 +84,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  console.log('HANDLER')
   if (req.method === 'GET') {
     await getLog(req, res)
     return
