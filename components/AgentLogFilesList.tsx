@@ -9,18 +9,17 @@ import { useRouter } from 'next/router'
 
 import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
-import { LiteLogUpload } from 'pages'
 import { log_files } from '@prisma/client'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
 
 export interface Props {
-  logUploads: LiteLogUpload[]
+  logFiles: Omit<log_files, 'content'>[][]
   initialSelectedLogFileID?: string
   defaultProjectID: string
 }
 
 function AgentLogFilesList({
-  logUploads,
+  logFiles,
   initialSelectedLogFileID,
   defaultProjectID,
 }: Props) {

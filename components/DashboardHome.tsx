@@ -65,7 +65,7 @@ function DashboardHome({
         />
       ) : view === 'logs' ? (
         <AgentLogFilesList
-          logUploads={projects.flatMap(p => p.log_uploads)}
+          logUploads={projects.flatMap(p => p.log_uploads).flatMap(lu => lu.log_files)}
           defaultProjectID={defaultProjectID}
           initialSelectedLogFileID={selectedLogFileID}
         />
