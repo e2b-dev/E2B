@@ -96,7 +96,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
         logFile: {
           ...logFile,
           content: {
-            logs: parsedFileContent as AgentNextActionLog,
+            logs: parsedFileContent as AgentPromptLogs,
           },
         },
       },

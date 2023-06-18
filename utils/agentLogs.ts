@@ -1,7 +1,7 @@
 import { log_files, log_uploads } from 'db/prisma'
 
 export interface LiteLogUpload extends Omit<log_uploads, 'log_files' | 'project_id'> {
-  log_files: Omit<log_files, 'content' | 'project_id' | 'type' | 'size' | 'log_upload_id'>[]
+  log_files: (Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content'> & { content: AgentPromptLogs | AgentNextActionLog })[]
 }
 
 export interface AgentPromptLogs {

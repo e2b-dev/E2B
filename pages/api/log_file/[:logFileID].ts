@@ -9,6 +9,8 @@ async function getLog(req: NextApiRequest, res: NextApiResponse) {
     ':logFileID': logFileID,
   } = req.query
 
+  console.log('getting log >>>>')
+
   try {
     if (!logFileID) {
       res.status(400).json({ statusCode: 400, message: 'Missing log ID in URL' })
