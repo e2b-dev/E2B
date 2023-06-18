@@ -67,7 +67,6 @@ function DashboardHome({
         <AgentLogFilesList
           logUploads={projects.flatMap(p => p.log_uploads)}
           defaultProjectID={defaultProjectID}
-          initialSelectedLogFileID={selectedLogFileID}
         />
       ) : (
         <span>404</span>
