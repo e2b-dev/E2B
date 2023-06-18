@@ -323,7 +323,7 @@ model feedback {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model log_files {
   id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
   content       String      @default("")
   filename      String
   size          Int

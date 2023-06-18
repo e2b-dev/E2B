@@ -45,45 +45,43 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  const user = await prisma.auth_users.findUnique({
+  const projects = await prisma.projects.findMany({
     where: {
-      id: session.user.id,
-    },
-    include: {
-      users_teams: {
-        include: {
-          teams: {
-            include: {
-              projects: {
-                orderBy: {
-                  created_at: 'desc',
-                },
-                include: {
-                  log_uploads: {
-                    include: {
-                      log_files: true,
-                    },
-                  },
-                },
-              },
-            },
+      teams: {
+        users_teams: {
+          some: {
+            user_id: session.user.id,
           },
         },
       },
     },
+    include: {
+      teams: {
+        select: {
+          id: true,
+          is_default: true,
+        },
+      },
+      log_uploads: {
+        select: {
+          id: true,
+          created_at: true,
+          log_files: {
+            select: {
+              id: true,
+              created_at: true,
+              filename: true,
+              last_modified: true,
+              relativePath: true,
+            }
+          }
+        }
+      }
+    },
   })
 
-  if (!user) {
-    return {
-      redirect: {
-        destination: '/sign',
-        permanent: false,
-      }
-    }
-  }
-
   const defaultTeam =
-    user?.users_teams.flatMap(u => u.teams)?.find(t => t.is_default) ||
+    projects.flatMap(p => p.teams).find(p => p.is_default) ||
     (defaultNewTeamID && await prisma.teams.update({
       where: {
         id: defaultNewTeamID,
@@ -150,8 +148,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     })
 
   const defaultProject =
-    user.users_teams.flatMap(u => u.teams.projects).find(p => p.is_default) ||
-    defaultTeam.projects.find(p => p.is_default) ||
+    projects.find(p => p.is_default) ||
     await prisma.projects.create({
       data: {
         id: nanoid(),
@@ -186,7 +183,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
               ...u,
               log_files: u.log_files.map(f => ({
                 ...f,
-                content: undefined,
                 relativePath: getLastTwoDirsAndFile(f.relativePath),
               })),
             }))
