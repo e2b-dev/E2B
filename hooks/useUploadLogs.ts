@@ -1,12 +1,14 @@
+import { log_files } from 'db/prisma'
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
 
-import { LogsMetadata, RawFileLog } from 'utils/agentLogs'
+export interface FileUpload extends Pick<log_files, 'content' | 'filename' | 'relativePath' | 'size' | 'last_modified' | 'type'> {
+
+}
 
 export interface PostLogs {
-  logFiles: RawFileLog[]
+  logFiles: FileUpload[]
   projectID: string
-  metadata: LogsMetadata
 }
 
 export interface PostLogsResponse {
@@ -29,10 +31,9 @@ export function useUploadLogs(projectID: string) {
     trigger: upload,
   } = useSWRMutation('/api/logs', handlePostLogs)
 
-  return useCallback(async (logFiles: RawFileLog[], metadata: LogsMetadata) =>
+  return useCallback(async (logFiles: FileUpload[]) =>
     upload({
       logFiles,
       projectID,
-      metadata,
     }), [projectID, upload])
 } 

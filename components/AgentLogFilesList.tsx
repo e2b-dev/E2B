@@ -8,19 +8,20 @@ import {
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
-import { Log, RawFileLog } from 'utils/agentLogs'
 import { useUploadLogs } from 'hooks/useUploadLogs'
 import { useDeleteLogs } from 'hooks/useRemoveLogs'
+import { LiteLogUpload } from 'pages'
+import { log_files } from '@prisma/client'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
 
 export interface Props {
-  logs: Log[]
+  logUploads: LiteLogUpload[]
   initialSelectedLogFileID?: string
   defaultProjectID: string
 }
 
 function AgentLogFilesList({
-  logs,
+  logUploads,
   initialSelectedLogFileID,
   defaultProjectID,
 }: Props) {
@@ -37,24 +38,26 @@ function AgentLogFilesList({
   }
 
   async function handleUpload(files: FileList) {
-    const logFiles: RawFileLog[] = []
+    const logFiles: Pick<log_files, 'content' | 'filename' | 'relativePath' | 'size' | 'last_modified' | 'type'>[] = []
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const content = await file.text()
 
+      if (file.name.startsWith('.')) continue
+
       logFiles.push({
         filename: file.name,
+        relativePath: file.webkitRelativePath,
+        type: file.type,
         content,
-        metadata: {
-          relativePath: file.webkitRelativePath,
-          size: file.size,
-          type: file.type,
-          timestamp: file.lastModified,
-        }
+        last_modified: new Date(file.lastModified),
+        size: file.size,
       })
     }
-    await uploadFiles(logFiles, {})
+
+    console.log('NEW LOGS', logFiles)
+    await uploadFiles(logFiles)
     // Reload to refresh the list of log files
     router.reload()
   }
@@ -68,9 +71,6 @@ function AgentLogFilesList({
   function toggleSelectedLogFileID(logFileID: string, filename: string) {
     router.push({
       pathname: `/log/${logFileID}`,
-      query: {
-        filename,
-      }
     }, undefined, { shallow: true })
     // if (selectedLogFileID === logFileID) {
     //   router.push(`/log/${logFileID}`, undefined, { shallow: true })
@@ -101,7 +101,7 @@ function AgentLogFilesList({
         />
       </header>
 
-      {logs.length === 0 && (
+      {logUploads.length === 0 && (
         <div
           className="flex items-center justify-center flex-1"
         >
@@ -111,11 +111,11 @@ function AgentLogFilesList({
         </div>
       )}
 
-      {logs.length > 0 && (
+      {logUploads.length > 0 && (
         <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto">
-          {logs.map((log, i) => (
+          {logUploads.map((logUpload, i) => (
             <div
-              key={log.id}
+              key={logUpload.id}
             >
               <div
                 className={clsx(
@@ -126,16 +126,16 @@ function AgentLogFilesList({
                   className={clsx(
                     'text-sm',
                     'font-semibold',
-                    selectedLogFileID === log.id && 'font-semibold',
+                    selectedLogFileID === logUpload.id && 'font-semibold',
                   )}
                 >
-                  {log.id}
+                  {logUpload.id}
                 </span>
                 <button
                   className="cursor-pointer"
                   onClick={async () => {
                     try {
-                      const res = await deleteLogs(log.id)
+                      const res = await deleteLogs(logUpload.id)
                       console.log(res)
                       router.reload()
                     } catch (err) {
@@ -146,16 +146,14 @@ function AgentLogFilesList({
                   Delete
                 </button>
               </div>
-
-              {log.files.map((f, i) =>
+              {logUpload.log_files.map((f, i) =>
                 <div
                   key={i}
                   className={clsx(
                     'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                    selectedLogFileID === log.id && 'bg-gray-700',
-                    selectedLogFileID !== log.id && 'bg-gray-800',
+                    selectedLogFileID === f.id && 'bg-gray-700',
+                    selectedLogFileID !== f.id && 'bg-gray-800',
                   )}
-                  onClick={() => toggleSelectedLogFileID(log.id, f.name)}
                 >
                   <File size={14} className="text-gray-500" />
                   <span
@@ -163,10 +161,11 @@ function AgentLogFilesList({
                       'text-sm',
                       'cursor-pointer',
                       'font-semibold',
-                      selectedLogFileID === log.id && 'font-semibold',
+                      selectedLogFileID === f.id && 'font-semibold',
                     )}
+                    onClick={() => toggleSelectedLogFileID(f.id, f.filename)}
                   >
-                    {f.name}
+                    {f.filename}
                   </span>
                 </div>
               )
