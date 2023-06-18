@@ -21,6 +21,7 @@ import {
 import Spinner from 'components/Spinner'
 import AgentLogFileContent from 'components/AgentLogFileContent'
 import { useGetLogFile } from 'hooks/useGetLogFile'
+import Uploadtree from 'components/Uploadtree'
 
 export interface Props {
   logUploads: LiteLogUpload[]
@@ -191,6 +192,7 @@ function AgentLogFilesList({
           classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
         >
           <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto min-w-[320px]">
+            <Uploadtree logUploads={logUploads} />
             {sortedLogUploads.map((logUpload, i) => (
               <div
                 key={logUpload.id}
@@ -224,7 +226,7 @@ function AgentLogFilesList({
                       // This prevents hydration warning for timestamps rendered via SSR
                       suppressHydrationWarning
                     >
-                      Uploaded {logUpload.created_at.toLocaleString()}
+                      Upload from {logUpload.created_at.toLocaleString()}
                     </span>
                   </div>
 
