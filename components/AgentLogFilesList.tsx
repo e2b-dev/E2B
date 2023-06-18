@@ -97,7 +97,7 @@ function AgentLogFilesList({
   }
 
   return (
-    <main className="overflow-hidden flex flex-col max-h-full">
+    <main className="overflow-hidden flex flex-col max-h-full flex-1">
       <input
         type="file"
         style={{ display: 'none' }}
@@ -110,7 +110,7 @@ function AgentLogFilesList({
         allowdirs=""
         multiple
       />
-      <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
+      <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8 min-h-[88px]">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
         {isUploading ? (
           <Spinner />
@@ -124,13 +124,7 @@ function AgentLogFilesList({
         <div
           className="flex items-center justify-center flex-1"
         >
-          {isUploading ? (
-            <Spinner />
-          ) : (
-            <LogFolderUploadButton
-              onClick={handleClickOnUpload}
-            />
-          )}
+          <p className="text-gray-400 text-lg">No log files uploaded yet</p>
         </div>
       )}
 
