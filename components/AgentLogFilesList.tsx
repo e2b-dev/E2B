@@ -17,16 +17,13 @@ import { LiteLogUpload } from 'utils/agentLogs'
 
 export interface Props {
   logUploads: LiteLogUpload[]
-  initialSelectedLogFileID?: string
   defaultProjectID: string
 }
 
 function AgentLogFilesList({
   logUploads,
-  initialSelectedLogFileID,
   defaultProjectID,
 }: Props) {
-  console.log('logUploads', logUploads)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
