@@ -2,9 +2,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import {
-  File,
-} from 'lucide-react'
+
+
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 
@@ -27,6 +26,7 @@ function AgentLogFilesList({
 }: Props) {
   const router = useRouter()
   const [selectedLogFileID, setSelectedLogFileID] = useState(initialSelectedLogFileID || '')
+  const []
   const fileInput = useRef<any>(null)
 
   const uploadFiles = useUploadLogs(defaultProjectID)
@@ -113,6 +113,7 @@ function AgentLogFilesList({
 
       {logUploads.length > 0 && (
         <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto">
+
           {logUploads.map((logUpload, i) => (
             <div
               key={logUpload.id}
@@ -126,36 +127,54 @@ function AgentLogFilesList({
                   className={clsx(
                     'text-sm',
                     'font-semibold',
-                    selectedLogFileID === logUpload.id && 'font-semibold',
                   )}
                 >
-                  {logUpload.id}
+                  {logUpload.log_files}
                 </span>
               </div>
-              {logUpload.log_files.map((f, i) =>
+
+              {/* Uploaded files */}
+              {logUpload.log_files.map((lu, i) =>
                 <div
-                  key={i}
-                  className={clsx(
-                    'flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                    selectedLogFileID === f.id && 'bg-gray-700',
-                    selectedLogFileID !== f.id && 'bg-gray-800',
-                  )}
+                  key={lu.id}
+                  className="group flex items-center space-x-2"
                 >
-                  <File size={14} className="text-gray-500" />
+                  <div
+                    className={clsx(
+                      'p-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                      opened.includes(idx) && 'bg-gray-700',
+                      !opened.includes(idx) && 'bg-gray-800',
+                    )}
+                    onClick={() => toggle(idx)}
+                  >
+                    <ChevronRight size={15} className={clsx(
+                      'text-gray-400',
+                      'transition-all',
+                      'select-none',
+                      opened.includes(idx) && 'rotate-90',
+                    )} />
+                  </div>
+
                   <span
                     className={clsx(
+                      'rounded-md',
+                      'py-0.5',
+                      'px-2',
+                      'hover:bg-[#1F2437]',
+                      'transition-all',
+                      'w-full',
                       'text-sm',
                       'cursor-pointer',
-                      'font-semibold',
-                      selectedLogFileID === f.id && 'font-semibold',
+                      'font-mono',
+                      opened.includes(idx) && 'bg-[#1F2437]',
+                      opened.includes(idx) && 'font-semibold',
                     )}
-                    onClick={() => toggleSelectedLogFileID(f.id, f.filename)}
+                    onClick={() => toggle(idx)}
                   >
-                    {f.filename}
+                    {fn.name}
                   </span>
                 </div>
-              )
-              }
+              )}
             </div>
           ))}
         </div>
