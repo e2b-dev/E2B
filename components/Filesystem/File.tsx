@@ -56,6 +56,7 @@ function File({
           { 'bg-transparent': !isSelectedViaRouter }
         )}
       onClick={handleOnClick}
+      replace
       shallow
     >
       <FileIcon
