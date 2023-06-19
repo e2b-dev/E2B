@@ -2,17 +2,20 @@ import { useCallback } from 'react'
 import path from 'path-browserify'
 
 import Filesystem, { FileInfo } from 'components/Filesystem'
-import { LiteLogUpload } from 'utils/agentLogs'
+import { AgentNextActionLog, AgentPromptLogs, LiteLogUpload } from 'utils/agentLogs'
 import { FiletreeProvider } from 'hooks/useFiletree'
+import { NodeType } from 'filesystem'
+import { log_files } from 'db/prisma'
 
 export interface Props {
   logUpload: LiteLogUpload
+  onFileSelect: (file: Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }) => void
 }
 
 function UploadTree({
   logUpload,
+  onFileSelect,
 }: Props) {
-
   const fetchLogDirContent = useCallback<(dirpath: string) => FileInfo[]>(dirpath => {
     const currentDir = dirpath.slice(1)
     const childFiles = logUpload
@@ -20,8 +23,6 @@ function UploadTree({
       .filter(f => {
         return path.dirname(f.relativePath) === currentDir
       })
-
-    console.log('childFiles', childFiles)
 
     const filesInChildDirs = logUpload
       .log_files
@@ -53,8 +54,6 @@ function UploadTree({
         isDir: true,
       })),
     ]
-
-    console.log('content', content)
     return content
   }, [logUpload])
 
@@ -62,6 +61,16 @@ function UploadTree({
     <div className="flex flex-col items-start justify-start">
       <FiletreeProvider>
         <Filesystem
+          onFiletreeClick={(path, type) => {
+            console.log('select file', path, type)
+            const pathWithoutLeadingSlash = path.slice(1)
+            if (type === NodeType.File) {
+              const file = logUpload.log_files.find(f => f.relativePath === pathWithoutLeadingSlash)
+              if (file) {
+                onFileSelect(file)
+              }
+            }
+          }}
           rootPath='/'
           fetchContent={fetchLogDirContent}
         />

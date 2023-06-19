@@ -198,6 +198,7 @@ function AgentLogFilesList({
                     <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[10px]">
                       <UploadTree
                         logUpload={logUpload}
+                        onFileSelect={setSelectedLogFile}
                       />
                     </div>
                   )}
