@@ -47,7 +47,7 @@ function AgentLogFileContent({
           classes={['pr-2 overflow-auto', 'bg-gray-900 pl-2']}
           initialSizes={splitterSizes}
           onResizeFinished={setSizes}
-        // minWidths={[100, 100]}
+          minWidths={[120, 120]}
         >
           <AgentPromptLogsList
             logs={(logFile.content as AgentPromptLogs).logs}
@@ -62,7 +62,7 @@ function AgentLogFileContent({
           log={logFile.content as AgentNextActionLog}
         />
       ) : logFile.filename.includes('user_input') ? (
-        <div className="overflow-auto p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
+        <div className="overflow-auto p-2 mr-2.5 mb-2.5 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
           <div className="flex flex-col space-y-1 w-full">
             <span className="text-sm font-medium text-gray-500">User Input</span>
             <span

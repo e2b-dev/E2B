@@ -33,7 +33,7 @@ function AgentPrompLogDetail({
   }, [log])
 
   return (
-    <div className="overflow-auto p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 border border-gray-800 min-w-[550px]">
+    <div className="overflow-auto mr-2.5 mb-2.5 p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 border border-gray-800">
       {log && (
         <>
           <div className="flex flex-col space-y-1 w-full">
@@ -57,7 +57,8 @@ function AgentPrompLogDetail({
                     src={parsedLog}
                     name={null}
                     style={{
-                      background: 'transparent'
+                      background: 'transparent',
+                      display: 'flex',
                     }}
                     displayObjectSize={false}
                     quotesOnKeys={false}
