@@ -82,8 +82,8 @@ function File({
           'items-center',
           'space-x-1',
           'hover:bg-gray-700/80',
-          { 'bg-gray-700': isSelected || isSelectedViaRouter },
-          { 'bg-transparent': !isSelected && !isSelectedViaRouter }
+          { 'bg-gray-700': isSelectedViaRouter },
+          { 'bg-transparent': !isSelectedViaRouter }
         )}
       onClick={handleOnClick}
       shallow
