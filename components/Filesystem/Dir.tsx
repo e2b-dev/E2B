@@ -60,8 +60,9 @@ function Dir({
           'rounded',
           'space-x-1',
           'cursor-pointer',
-          'hover:bg-gray-700/80',
+          'border-gray-800',
           'text-gray-300',
+          'hover:bg-gray-700/80',
           { 'bg-gray-700': isSelected },
           { 'bg-transparent': !isSelected },
         )}
@@ -82,7 +83,7 @@ function Dir({
             ml-[11px]
             pl-3
             border-l
-            border-gray-700
+          border-gray-800
           "
         >
           {children}

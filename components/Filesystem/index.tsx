@@ -3,6 +3,7 @@ import {
   useEffect,
 } from 'react'
 import clsx from 'clsx'
+import path from 'path-browserify'
 
 import FilesystemPrimitive, {
   DirNode,
@@ -28,6 +29,7 @@ export interface Props {
   ignore?: string[]
   onFiletreeClick?: (path: string, type: NodeType) => void
   fetchContent: (dirpath: string) => (FileInfo & { id?: string })[]
+  expandedPath?: string
 }
 
 function Filesystem({
@@ -36,9 +38,9 @@ function Filesystem({
   ignore,
   fetchContent,
   onFiletreeClick,
+  expandedPath,
 }: Props) {
   const fs = useFilesystem({ rootPath })
-
   const fetchDirContent = useCallback(async (dirpath: string) => {
     const files = fetchContent(dirpath)
     const ns = files.map(f => (f.isDir
@@ -95,6 +97,23 @@ function Filesystem({
       onFiletreeClick,
       fetchDirContent,
     ],)
+
+  useEffect(function expandPath() {
+    if (expandedPath) {
+      const dir = path.dirname(expandedPath)
+      dir.split('/').forEach((v, i, a) => {
+        const currentDir = a.slice(0, i + 1).join('/') || '/'
+        fetchDirContent(currentDir)
+        if (currentDir === '/') return
+        fs.setIsDirExpanded(currentDir, true)
+      })
+    }
+  }, [
+    fs,
+    handleNodeSelect,
+    fetchDirContent,
+    expandedPath,
+  ])
 
   useEffect(function mountFilesystem() {
     fetchDirContent(rootPath)

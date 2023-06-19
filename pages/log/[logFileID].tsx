@@ -6,7 +6,7 @@ import clsx from 'clsx'
 import Splitter from '@devbookhq/splitter'
 import Link from 'next/link'
 
-import { log_files, prisma } from 'db/prisma'
+import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import {
   SystemPromptLog,
@@ -14,6 +14,7 @@ import {
   AssistantPromptLog,
   AgentPromptLogs,
   AgentNextActionLog,
+  LiteLogFile,
 } from 'utils/agentLogs'
 import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
 import AgentPromptLogsList from 'components/AgentPromptLogsList'
@@ -25,7 +26,7 @@ interface PathProps extends ParsedUrlQuery {
 }
 
 export interface Props {
-  logFile: Omit<log_files, 'content'> & { content: AgentPromptLogs | AgentNextActionLog }
+  logFile: LiteLogFile
 }
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {

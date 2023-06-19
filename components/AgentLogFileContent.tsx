@@ -5,20 +5,20 @@ import { useRouter } from 'next/router'
 import Splitter from '@devbookhq/splitter'
 import clsx from 'clsx'
 
-import { log_files } from 'db/prisma'
 import {
   SystemPromptLog,
   UserPromptLog,
   AssistantPromptLog,
   AgentPromptLogs,
   AgentNextActionLog,
+  LiteLogFile,
 } from 'utils/agentLogs'
 import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
 import AgentPromptLogsList from 'components/AgentPromptLogsList'
 import AgentNextActionLogDetail from 'components/AgentNextActionLogDetail'
 
 export interface Props {
-  logFile?: Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }
+  logFile?: LiteLogFile
 }
 
 function AgentLogFileContent({

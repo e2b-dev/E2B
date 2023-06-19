@@ -11,6 +11,7 @@ import {
   FileProps,
   NodeType,
 } from '../../filesystem'
+import { useRouter } from 'next/router'
 
 function File({
   name,
@@ -20,6 +21,9 @@ function File({
   metadata,
   fs,
 }: FileProps) {
+  const router = useRouter()
+  const isSelectedViaRouter = router.query.logFileID === metadata['href']['query']['logFileID']
+
   function handleOnClick(e: any) {
     // This conditions prevents deselecting when user clicks on a file that's already selected.
     if (filePath !== fs.selectedPath) {
@@ -78,8 +82,8 @@ function File({
           'items-center',
           'space-x-1',
           'hover:bg-gray-700/80',
-          { 'bg-gray-700': isSelected },
-          { 'bg-transparent': !isSelected }
+          { 'bg-gray-700': isSelected || isSelectedViaRouter },
+          { 'bg-transparent': !isSelected && !isSelectedViaRouter }
         )}
       onClick={handleOnClick}
       shallow

@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -15,8 +16,7 @@ import { useUploadLogs } from 'hooks/useUploadLogs'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
 import {
   LiteLogUpload,
-  AgentPromptLogs,
-  AgentNextActionLog,
+  LiteLogFile,
 } from 'utils/agentLogs'
 import Spinner from 'components/Spinner'
 import AgentLogFileContent from 'components/AgentLogFileContent'
@@ -32,16 +32,27 @@ function AgentLogFilesList({
   defaultProjectID,
 }: Props) {
   const [isUploading, setIsUploading] = useState(false)
-  const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
+  const [openLogUploads, setOpenLogUploads] = useState<{ [key: string]: boolean }>({})
+  const [selectedLogFile, setSelectedLogFile] = useState<LiteLogFile>()
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
   const uploadFiles = useUploadLogs(defaultProjectID)
 
-  const selectedLogFile = useMemo<undefined | Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }>(() => {
-    const id = router.query.logFileID || router.query.logfileid
+  useEffect(function handleLogFileSelection() {
+    const id = router.query.logFileID
     if (!id) return
-    return logUploads.flatMap(logUpload => logUpload.log_files).find(f => f.id === id)
-  }, [router.query, logUploads])
+    const logFile = logUploads.flatMap(logUpload => logUpload.log_files).find(f => f.id === id)
+    setSelectedLogFile(logFile)
+    if (logFile) {
+      const logUpload = logUploads.find(lu => lu.log_files.some(f => f.id === id))
+      if (logUpload) {
+        setOpenLogUploads(prev => ({
+          ...prev,
+          [logUpload.id]: true,
+        }))
+      }
+    }
+  }, [router.query, logUploads, setSelectedLogFile, setOpenLogUploads])
 
   const sortedLogUploads = useMemo(() => logUploads
     // logUploads sorted by created_at - the newest first
@@ -101,10 +112,16 @@ function AgentLogFilesList({
   }
 
   function toggleLogUpload(logUploadID: string) {
-    if (openedLogUploads.includes(logUploadID)) {
-      setOpeneLogUploads(prev => prev.filter(id => id !== logUploadID))
+    if (openLogUploads[logUploadID]) {
+      setOpenLogUploads(prev => ({
+        ...prev,
+        [logUploadID]: false,
+      }))
     } else {
-      setOpeneLogUploads(prev => [...prev, logUploadID])
+      setOpenLogUploads(prev => ({
+        ...prev,
+        [logUploadID]: true,
+      }))
     }
   }
 
@@ -164,8 +181,8 @@ function AgentLogFilesList({
                     <div
                       className={clsx(
                         'p-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                        openedLogUploads.includes(logUpload.id) && 'bg-gray-700',
-                        !openedLogUploads.includes(logUpload.id) && 'bg-gray-800',
+                        openLogUploads[logUpload.id] && 'bg-gray-700',
+                        !openLogUploads[logUpload.id] && 'bg-gray-800',
                       )}
                       onClick={() => toggleLogUpload(logUpload.id)}
                     >
@@ -173,7 +190,7 @@ function AgentLogFilesList({
                         'text-gray-400',
                         'transition-all',
                         'select-none',
-                        openedLogUploads.includes(logUpload.id) && 'rotate-90',
+                        openLogUploads[logUpload.id] && 'rotate-90',
                       )} />
                     </div>
                     <span
@@ -190,10 +207,11 @@ function AgentLogFilesList({
                     </span>
                   </div>
 
-                  {openedLogUploads.includes(logUpload.id) && (
+                  {openLogUploads[logUpload.id] && (
                     <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
                       <UploadTree
                         logUpload={logUpload}
+                        selectedLogFile={logUpload.id === selectedLogFile?.log_upload_id ? selectedLogFile : undefined}
                       />
                     </div>
                   )}
