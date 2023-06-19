@@ -219,7 +219,7 @@ function AgentLogFilesList({
                   <div className="flex items-center space-x-2">
                     <button
                       className={clsx(
-                        'h-6 px-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                        'h-6 w-6 flex items-center justify-center px-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
                         openLogUploads[logUpload.id] && 'bg-gray-700',
                         !openLogUploads[logUpload.id] && 'bg-gray-800',
                       )}
