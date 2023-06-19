@@ -92,16 +92,14 @@ function Filesystem({
 
   return (
     <div className="
-      mt-2
       flex
       flex-col
       space-y-2
-      py-2
       rounded-lg
     ">
       <FilesystemPrimitive.Tree
         className={clsx(
-          'px-2',
+          'px-1',
           'flex-1',
           'flex',
           'flex-col',

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
-import Splitter from '@devbookhq/splitter'
+import Splitter, { SplitDirection } from '@devbookhq/splitter'
 
 import { log_files } from 'db/prisma'
 import { useUploadLogs } from 'hooks/useUploadLogs'
@@ -153,16 +153,17 @@ function AgentLogFilesList({
           draggerClassName={clsx(
             'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
           )}
+          direction={SplitDirection.Horizontal}
           classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
         >
-          <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto min-w-[320px]">
+          <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto min-w-[320px] flex-1">
             {/* <Uploadtree logUploads={logUploads} /> */}
             {sortedLogUploads.map((logUpload, i) => (
               <div
                 key={logUpload.id}
               >
                 <div
-                  className="flex flex-col space-y-2"
+                  className="flex flex-col space-y-2 flex-1"
                 >
                   <div className="flex items-center space-x-2">
                     <div
@@ -195,7 +196,7 @@ function AgentLogFilesList({
                   </div>
 
                   {openedLogUploads.includes(logUpload.id) && (
-                    <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[10px]">
+                    <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
                       <UploadTree
                         logUpload={logUpload}
                         onFileSelect={setSelectedLogFile}
