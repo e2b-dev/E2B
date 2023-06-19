@@ -55,21 +55,29 @@ function Dir({
       <div
         className={clsx(
           'px-1',
+          'py-2',
           'flex',
           'items-center',
-          'rounded',
+          'rounded-md',
           'space-x-1',
           'cursor-pointer',
           'border-gray-800',
-          'text-gray-300',
-          'hover:bg-gray-700/80',
-          { 'bg-gray-700': isSelected },
+          'hover:bg-[#1F2437]',
+          { 'bg-[#1F2437]': isSelected },
           { 'bg-transparent': !isSelected },
         )}
         onClick={handleOnClick}
       >
         {icon}
-        <span className="truncate text-gray-400">{name}</span>
+        <span
+          className="
+            truncate
+            text-sm
+            text-gray-100
+            whitespace-nowrap
+            ">
+          {name}
+        </span>
       </div>
 
       {isExpanded && (

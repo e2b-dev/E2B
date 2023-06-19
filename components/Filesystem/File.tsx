@@ -75,22 +75,27 @@ function File({
       className={
         clsx(
           'px-1',
-          'rounded',
+          'py-2',
+          'rounded-md',
           'cursor-pointer',
-          'text-gray-300',
           'flex',
           'items-center',
           'space-x-1',
-          'hover:bg-gray-700/80',
-          { 'bg-gray-700': isSelectedViaRouter },
+          'hover:bg-[#1F2437]',
+          { 'bg-[#1F2437]': isSelectedViaRouter },
           { 'bg-transparent': !isSelectedViaRouter }
         )}
       onClick={handleOnClick}
       shallow
     >
       {icon}
-      < span
-        className='truncate text-gray-400'
+      <span
+        className="
+        truncate
+        text-sm
+        whitespace-nowrap
+        text-gray-100
+        "
       >
         {name}
       </span >

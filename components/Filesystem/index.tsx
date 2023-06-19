@@ -16,7 +16,6 @@ import FilesystemPrimitive, {
 import Dir from './Dir'
 import File from './File'
 
-
 export interface FileInfo {
   isDir: boolean
   name: string
@@ -56,7 +55,6 @@ function Filesystem({
           }
         }
       })))
-
     fs.add(dirpath, ns, ignore)
   }, [
     fs,
