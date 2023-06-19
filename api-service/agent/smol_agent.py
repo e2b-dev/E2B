@@ -29,8 +29,10 @@ from session.playground import Playground
 
 default_openai_api_key = os.environ.get("OPENAI_API_KEY", None)
 
+model_version = "gpt-4-0613"
+
 pricing = {
-    "gpt-4": {
+    "gpt-4-0613": {
         "prompt": 0.03 / 1000,
         "completion": 0.06 / 1000,
     }
@@ -163,7 +165,7 @@ Begin generating the code now.
                 "properties": {
                     **metadata,
                     "result": filecode,
-                    "model": "gpt-4",
+                    "model": model_version,
                     "run_id": run_id,
                 },
                 "type": "model",
@@ -197,9 +199,9 @@ Begin generating the code now.
 
         cost = (
             response.llm_output["token_usage"]["prompt_tokens"]
-            * pricing["gpt-4"]["prompt"]
+            * pricing[model_version]["prompt"]
             + response.llm_output["token_usage"]["completion_tokens"]
-            * pricing["gpt-4"]["completion"]
+            * pricing[model_version]["completion"]
             if response.llm_output
             else None
         )
@@ -350,7 +352,7 @@ do not add any other explanation, only return a python list of strings.
                         "properties": {
                             **metadata,
                             "result": filepaths_string,
-                            "model": "gpt-4",
+                            "model": model_version,
                             "run_id": run_id,
                         },
                         "type": "model",
@@ -361,7 +363,7 @@ do not add any other explanation, only return a python list of strings.
                     "filepaths-generated",
                     {
                         "filepaths": filepaths_string,
-                        "model": "gpt-4",
+                        "model": model_version,
                         **metadata,
                     },
                 )
@@ -396,7 +398,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "properties": {
                             **metadata,
                             "result": shared_dependencies,
-                            "model": "gpt-4",
+                            "model": model_version,
                             "run_id": run_id,
                         },
                         "type": "model",
@@ -407,7 +409,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     "model-used",
                     {
                         "shared_dependencies": shared_dependencies,
-                        "model": "gpt-4",
+                        "model": model_version,
                         **metadata,
                     },
                 )
