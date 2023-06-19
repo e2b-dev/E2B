@@ -20,7 +20,7 @@ import {
 } from 'utils/agentLogs'
 import Spinner from 'components/Spinner'
 import AgentLogFileContent from 'components/AgentLogFileContent'
-import UploadTree from './UploadTree'
+import UploadTree from './UploadFiletree'
 
 export interface Props {
   logUploads: LiteLogUpload[]
