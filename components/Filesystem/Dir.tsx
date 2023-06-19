@@ -73,7 +73,7 @@ function Dir({
         <span
           className="
             text-sm
-            text-gray-100
+            text-gray-200
             whitespace-nowrap
             ">
           {name}

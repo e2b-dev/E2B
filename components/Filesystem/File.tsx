@@ -64,9 +64,9 @@ function File({
       />
       <span
         className="
-          text-sm
-          whitespace-nowrap
-          text-gray-100
+        text-sm
+        whitespace-nowrap
+        text-gray-200
         "
       >
         {name}
