@@ -7,13 +7,15 @@ import {
 } from 'react'
 import {
   ChevronRight,
+  Edit,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 import Splitter, { SplitDirection } from '@devbookhq/splitter'
 
 import { log_files } from 'db/prisma'
-import { useUploadLogs } from 'hooks/useUploadLogs'
+import { useUploadLogUpload } from 'hooks/useUploadLogUpload'
+import { useRenameLogUpload } from 'hooks/useRenameLogUpload'
 import LogFolderUploadButton from 'components/LogFolderUploadButton'
 import {
   LiteLogUpload,
@@ -38,10 +40,17 @@ function AgentLogFilesList({
   const [selectedLogFile, setSelectedLogFile] = useState<LiteLogFile>()
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
-  const uploadFiles = useUploadLogs(defaultProjectID)
+  const uploadFiles = useUploadLogUpload(defaultProjectID)
+  const renameLogUpload = useRenameLogUpload()
   const [splitterSizes, setSplitterSizes] = useLocalStorage('log-file-list-splitter', [40, 60])
 
-  const setSizes = useCallback((pairIdx: number, sizes: number[]) => {
+  // ID of the log upload that is being renamed.
+  const [renamingLogUploadID, setIsRenamingLogUploadID] = useState('')
+
+  // Just a helpful object to keep track of the renamed log uploads in the UI.
+  const [renamedLogUploads, setRenamedLogUploads] = useState<{ [key: string]: string }>({})
+
+  const setSizes = useCallback((_: number, sizes: number[]) => {
     setSplitterSizes(sizes)
   }, [setSplitterSizes])
 
@@ -132,6 +141,27 @@ function AgentLogFilesList({
     }
   }
 
+  async function handleRenameLogUpload(logUploadID: string) {
+    if (renamingLogUploadID) return
+
+    const newName = prompt('Enter a new name for the logs')
+    if (!newName) return
+
+
+    setIsRenamingLogUploadID(logUploadID)
+    try {
+      await renameLogUpload({ logUploadID, displayName: newName })
+      setRenamedLogUploads(val => ({
+        ...val,
+        [logUploadID]: newName,
+      }))
+    } catch (err: any) {
+      console.error(`failed to rename log upload ${logUploadID}`)
+      console.error(err)
+    }
+    setIsRenamingLogUploadID('')
+  }
+
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1">
       <input
@@ -187,32 +217,57 @@ function AgentLogFilesList({
                   className="flex flex-col space-y-2 flex-1"
                 >
                   <div className="flex items-center space-x-2">
-                    <div
+                    <button
                       className={clsx(
-                        'p-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                        'h-6 px-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
                         openLogUploads[logUpload.id] && 'bg-gray-700',
                         !openLogUploads[logUpload.id] && 'bg-gray-800',
                       )}
                       onClick={() => toggleLogUpload(logUpload.id)}
                     >
-                      <ChevronRight size={15} className={clsx(
+                      <ChevronRight size={14} className={clsx(
                         'text-gray-400',
                         'transition-all',
                         'select-none',
                         openLogUploads[logUpload.id] && 'rotate-90',
                       )} />
-                    </div>
+                    </button>
+
+                    <button
+                      className={clsx(
+                        'h-6 w-20 flex items-center justify-center space-x-1 px-1 bg-gray-800 transition-all rounded-md text-gray-400 text-xs',
+                        renamingLogUploadID === logUpload.id && 'hover:bg-gray-800 cursor-not-allowed',
+                        renamingLogUploadID !== logUpload.id && 'cursor-pointer hover:bg-gray-700',
+                      )}
+                      onClick={() => handleRenameLogUpload(logUpload.id)}
+                    >
+                      {renamingLogUploadID === logUpload.id ? (
+                        <Spinner
+                          className="text-gray-400 transition-all select-none"
+                        />
+                      ) : (
+                        <Edit
+                          className="text-gray-400 transition-all select-none"
+                          size={14}
+                        />
+                      )}
+                      <span>Rename</span>
+                    </button>
                     <span
                       className={clsx(
                         'text-sm',
                         'font-semibold',
-                        'text-gray-500',
+                        'text-gray-200',
                         'whitespace-nowrap',
                       )}
                       // This prevents hydration warning for timestamps rendered via SSR
                       suppressHydrationWarning
                     >
-                      Upload from {logUpload.created_at.toLocaleString()}
+                      {logUpload.display_name && !renamedLogUploads[logUpload.id] && logUpload.display_name}
+                      {logUpload.display_name && renamedLogUploads[logUpload.id] && renamedLogUploads[logUpload.id]}
+                      {!logUpload.display_name && (
+                        `Upload from ${logUpload.created_at.toLocaleString()}`
+                      )}
                     </span>
                   </div>
 
