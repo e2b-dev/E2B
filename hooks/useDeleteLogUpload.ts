@@ -1,13 +1,14 @@
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
 
-export interface DeleteLogs {
+export interface DeleteLogUpload {
+  // Log Upload ID
   id: string
 }
 
-export interface DeleteLogsResponse { }
+export interface DeleteLogUploadResponse { }
 
-async function handleDeleteLogs(url: string, { arg }: { arg: DeleteLogs }) {
+async function handleDeleteLogUpload(url: string, { arg }: { arg: DeleteLogUpload }) {
   const response = await fetch(url, {
     method: 'DELETE',
     body: JSON.stringify(arg),
@@ -15,13 +16,13 @@ async function handleDeleteLogs(url: string, { arg }: { arg: DeleteLogs }) {
       'Content-Type': 'application/json',
     },
   })
-  return await response.json() as DeleteLogsResponse
+  return await response.json() as DeleteLogUploadResponse
 }
 
-export function useDeleteLogs() {
+export function useDeleteLogUpload() {
   const {
     trigger: remove,
-  } = useSWRMutation('/api/logs', handleDeleteLogs)
+  } = useSWRMutation('/api/log_upload', handleDeleteLogUpload)
 
   return useCallback(async (logUploadID: string) => remove({
     id: logUploadID,

@@ -8,6 +8,12 @@ import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
 import { AgentNextActionLog, AgentPromptLogs, LiteLogUpload } from 'utils/agentLogs'
 
+export interface Props {
+  projects: (projects & { log_uploads: LiteLogUpload[], deployments: deployments[] })[]
+  defaultProjectID: string
+}
+
+
 function getLastTwoDirsAndFile(fullPath: string): string {
   const fileName = path.basename(fullPath)
   const dirName = path.dirname(fullPath)
@@ -103,6 +109,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         include: {
           log_uploads: {
             select: {
+              display_name: true,
               id: true,
               created_at: true,
               log_files: {
@@ -229,11 +236,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         }))
     },
   }
-}
-
-export interface Props {
-  projects: (projects & { log_uploads: LiteLogUpload[], deployments: deployments[] })[]
-  defaultProjectID: string
 }
 
 function Home({ projects, defaultProjectID }: Props) {

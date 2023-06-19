@@ -4,16 +4,16 @@ import useSWRMutation from 'swr/mutation'
 
 export interface FileUpload extends Pick<log_files, 'content' | 'filename' | 'relativePath' | 'size' | 'last_modified' | 'type'> { }
 
-export interface PostLogs {
+export interface PostLogUpload {
   logFiles: FileUpload[]
   projectID: string
 }
 
-export interface PostLogsResponse {
+export interface PostLogUploadResponse {
   id: string
 }
 
-async function handlePostLogs(url: string, { arg }: { arg: PostLogs }) {
+async function handlePostLogUpload(url: string, { arg }: { arg: PostLogUpload }) {
   const response = await fetch(url, {
     method: 'POST',
     body: JSON.stringify(arg),
@@ -21,17 +21,17 @@ async function handlePostLogs(url: string, { arg }: { arg: PostLogs }) {
       'Content-Type': 'application/json',
     },
   })
-  return await response.json() as PostLogsResponse
+  return await response.json() as PostLogUploadResponse
 }
 
-export function useUploadLogs(projectID: string) {
+export function useUploadLogUpload(projectID: string) {
   const {
     trigger: upload,
-  } = useSWRMutation('/api/logs', handlePostLogs)
+  } = useSWRMutation('/api/log_upload', handlePostLogUpload)
 
   return useCallback(async (logFiles: FileUpload[]) =>
     upload({
       logFiles,
       projectID,
     }), [projectID, upload])
-} 
+}
