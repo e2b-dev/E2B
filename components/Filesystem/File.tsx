@@ -94,7 +94,7 @@ function File({
         truncate
         text-sm
         whitespace-nowrap
-        text-gray-100
+        text-gray-200
         "
       >
         {name}

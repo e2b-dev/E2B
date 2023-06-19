@@ -73,7 +73,7 @@ function Dir({
           className="
             truncate
             text-sm
-            text-gray-100
+            text-gray-200
             whitespace-nowrap
             ">
           {name}
