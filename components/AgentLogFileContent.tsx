@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useState,
 } from 'react'
 import Splitter from '@devbookhq/splitter'
@@ -15,6 +16,7 @@ import {
 import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
 import AgentPromptLogsList from 'components/AgentPromptLogsList'
 import AgentNextActionLogDetail from 'components/AgentNextActionLogDetail'
+import { useLocalStorage } from 'hooks/useLocalStorage'
 
 export interface Props {
   logFile?: LiteLogFile
@@ -24,10 +26,16 @@ function AgentLogFileContent({
   logFile,
 }: Props) {
   const [selectedLog, setSelectedLog] = useState<SystemPromptLog | UserPromptLog | AssistantPromptLog>()
+  const [splitterSizes, setSplitterSizes] = useLocalStorage('log-content-splitter', [40, 60])
+
+  const setSizes = useCallback((pairIdx: number, sizes: number[]) => {
+    setSplitterSizes(sizes)
+  }, [setSplitterSizes])
+
   if (!logFile) return null
 
   return (
-    <div className="flex-1 flex space-x-2 items-start justify-start max-w-full">
+    <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden">
       {logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context') ? (
         <Splitter
           gutterClassName={clsx(
@@ -36,7 +44,10 @@ function AgentLogFileContent({
           draggerClassName={clsx(
             'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
           )}
-          classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
+          classes={['pr-2 overflow-auto', 'bg-gray-900 pl-2']}
+          initialSizes={splitterSizes}
+          onResizeFinished={setSizes}
+        // minWidths={[100, 100]}
         >
           <AgentPromptLogsList
             logs={(logFile.content as AgentPromptLogs).logs}

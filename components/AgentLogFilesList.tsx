@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -21,6 +22,7 @@ import {
 import Spinner from 'components/Spinner'
 import AgentLogFileContent from 'components/AgentLogFileContent'
 import UploadTree from './UploadFiletree'
+import { useLocalStorage } from 'hooks/useLocalStorage'
 
 export interface Props {
   logUploads: LiteLogUpload[]
@@ -37,6 +39,11 @@ function AgentLogFilesList({
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
   const uploadFiles = useUploadLogs(defaultProjectID)
+  const [splitterSizes, setSplitterSizes] = useLocalStorage('log-file-list-splitter', [40, 60])
+
+  const setSizes = useCallback((pairIdx: number, sizes: number[]) => {
+    setSplitterSizes(sizes)
+  }, [setSplitterSizes])
 
   useEffect(function handleLogFileSelection() {
     const id = router.query.logFileID
@@ -167,9 +174,11 @@ function AgentLogFilesList({
           )}
           direction={SplitDirection.Horizontal}
           classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
+          initialSizes={splitterSizes}
+          onResizeFinished={setSizes}
+          minWidths={[120, 120]}
         >
-          <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 overflow-auto min-w-[320px] flex-1">
-            {/* <Uploadtree logUploads={logUploads} /> */}
+          <div className="flex flex-col space-y-4 p-4 sm:p-6 lg:px-8 flex-1">
             {sortedLogUploads.map((logUpload, i) => (
               <div
                 key={logUpload.id}
