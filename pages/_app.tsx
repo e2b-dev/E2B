@@ -41,6 +41,8 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
   }
 
   useEffect(function trackPageViews() {
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return
+
     // Track page views
     const handleRouteChange = () => posthog?.capture('$pageview')
     router.events.on('routeChangeComplete', handleRouteChange)
