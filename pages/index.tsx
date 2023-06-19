@@ -19,8 +19,16 @@ function getLastTwoDirsAndFile(fullPath: string): string {
 }
 
 function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'last_modified'>) {
-  const parsedFileContent = JSON.parse(logFile.content)
   const relativePath = getLastTwoDirsAndFile(logFile.relativePath)
+
+  if (logFile.filename.includes('user_input')) {
+    return {
+      ...logFile,
+      relativePath,
+      content: logFile.content as string,
+    }
+  }
+  const parsedFileContent = JSON.parse(logFile.content)
 
   // Specific to AutoGPT
   if (logFile.filename.includes('next_action')) {

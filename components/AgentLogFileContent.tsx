@@ -1,7 +1,6 @@
 import {
   useState,
 } from 'react'
-import { useRouter } from 'next/router'
 import Splitter from '@devbookhq/splitter'
 import clsx from 'clsx'
 
@@ -24,21 +23,7 @@ export interface Props {
 function AgentLogFileContent({
   logFile,
 }: Props) {
-  const router = useRouter()
   const [selectedLog, setSelectedLog] = useState<SystemPromptLog | UserPromptLog | AssistantPromptLog>()
-
-  // return (
-  //   <>
-  //     <AgentPromptLogsList
-  //       logs={!!logFile ? (logFile.content as AgentPromptLogs)?.logs : []}
-  //       onSelected={setSelectedLog}
-  //     />
-  //     <AgentPrompLogDetail
-  //       log={selectedLog}
-  //     />
-  //   </>
-  // )
-
   if (!logFile) return null
 
   return (
@@ -65,6 +50,17 @@ function AgentLogFileContent({
         <AgentNextActionLogDetail
           log={logFile.content as AgentNextActionLog}
         />
+      ) : logFile.filename.includes('user_input') ? (
+        <div className="overflow-auto p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
+          <div className="flex flex-col space-y-1 w-full">
+            <span className="text-sm font-medium text-gray-500">User Input</span>
+            <span
+              className="text-sm text-gray-200 w-full prose whitespace-pre-wrap max-w-full"
+            >
+              {logFile.content as string}
+            </span>
+          </div>
+        </div>
       ) : (
         <div>
           Unexpected JSON format. Please reach out to the e2b team.

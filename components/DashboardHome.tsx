@@ -23,7 +23,6 @@ function DashboardHome({
 
   const view = router.query.view as string | undefined
   const selectedAgentInstanceID = router.query.projectID as string | undefined
-  const selectedLogFileID = router.query.fileID as string | undefined
 
   async function signOut() {
     await supabaseClient.auth.signOut()
