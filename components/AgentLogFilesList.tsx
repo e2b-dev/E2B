@@ -33,10 +33,15 @@ function AgentLogFilesList({
 }: Props) {
   const [isUploading, setIsUploading] = useState(false)
   const [openedLogUploads, setOpeneLogUploads] = useState<string[]>([])
-  const [selectedLogFile, setSelectedLogFile] = useState<Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }>()
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
   const uploadFiles = useUploadLogs(defaultProjectID)
+
+  const selectedLogFile = useMemo<undefined | Omit<log_files, 'project_id' | 'type' | 'size' | 'log_upload_id' | 'content' | 'last_modified'> & { content: AgentPromptLogs | AgentNextActionLog }>(() => {
+    const id = router.query.logFileID || router.query.logfileid
+    if (!id) return
+    return logUploads.flatMap(logUpload => logUpload.log_files).find(f => f.id === id)
+  }, [router.query, logUploads])
 
   const sortedLogUploads = useMemo(() => logUploads
     // logUploads sorted by created_at - the newest first
@@ -101,16 +106,6 @@ function AgentLogFilesList({
     } else {
       setOpeneLogUploads(prev => [...prev, logUploadID])
     }
-  }
-
-  function logFileURL(logFileID: string) {
-    // Create URL like so /?logFileID=123 and also pass any existing queries in the router.
-    const query = {
-      ...router.query,
-      logFileID,
-      selectedLog: '0',
-    }
-    return `/?${new URLSearchParams(query).toString()}`
   }
 
   return (
@@ -199,7 +194,6 @@ function AgentLogFilesList({
                     <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
                       <UploadTree
                         logUpload={logUpload}
-                        onFileSelect={setSelectedLogFile}
                       />
                     </div>
                   )}

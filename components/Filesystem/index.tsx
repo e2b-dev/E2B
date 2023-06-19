@@ -15,6 +15,7 @@ import FilesystemPrimitive, {
 import Dir from './Dir'
 import File from './File'
 
+
 export interface FileInfo {
   isDir: boolean
   name: string
@@ -26,7 +27,7 @@ export interface Props {
   rootPath: string
   ignore?: string[]
   onFiletreeClick?: (path: string, type: NodeType) => void
-  fetchContent: (dirpath: string) => FileInfo[]
+  fetchContent: (dirpath: string) => (FileInfo & { id?: string })[]
 }
 
 function Filesystem({
@@ -40,7 +41,19 @@ function Filesystem({
 
   const fetchDirContent = useCallback(async (dirpath: string) => {
     const files = fetchContent(dirpath)
-    const ns = files.map(f => (f.isDir ? new DirNode({ name: f.name }) : new FileNode({ name: f.name })))
+    const ns = files.map(f => (f.isDir
+      ? new DirNode({ name: f.name })
+      : new FileNode({
+        name: f.name, metadata: {
+          href: {
+            pathname: '/',
+            query: {
+              view: 'logs',
+              logFileID: f.id,
+            }
+          }
+        }
+      })))
 
     fs.add(dirpath, ns, ignore)
   }, [

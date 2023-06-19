@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import path from 'path-browserify'
+import Link from 'next/link'
 
 import {
   FileProps,
@@ -64,28 +65,32 @@ function File({
   }
 
   return (
-    <div
-      className={clsx(
-        'px-1',
-        'rounded',
-        'cursor-pointer',
-        'text-gray-300',
-        'flex',
-        'items-center',
-        'space-x-1',
-        'hover:bg-gray-700/80',
-        { 'bg-gray-700': isSelected },
-        { 'bg-transparent': !isSelected }
-      )}
+    <Link
+      prefetch={false}
+      href={metadata['href']}
+      className={
+        clsx(
+          'px-1',
+          'rounded',
+          'cursor-pointer',
+          'text-gray-300',
+          'flex',
+          'items-center',
+          'space-x-1',
+          'hover:bg-gray-700/80',
+          { 'bg-gray-700': isSelected },
+          { 'bg-transparent': !isSelected }
+        )}
       onClick={handleOnClick}
+      shallow
     >
       {icon}
-      <span
+      < span
         className='truncate text-gray-400'
       >
         {name}
-      </span>
-    </div>
+      </span >
+    </Link >
   )
 }
 
