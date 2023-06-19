@@ -6,23 +6,19 @@ export interface Template {
 const templates: { [key: string]: Template } = {
   createReactApp: {
     title: 'React App',
-    content: '# A starter react app\nA starter react app based on the latest standards with Typescript.\n\n ### Requirements\n- Authentication: Implement user authentication using libraries like Firebase Authentication.\n- Deployment: Configure the application for deployment to a hosting platform like Netlify, Vercel, or Firebase.',
+    content: '# A starter react app\nA starter react app based on the latest standards with Typescript.\n\n ### Requirements\n- Authentication: Implement user authentication using libraries like Firebase Authentication.',
   },
   createNextApp: {
     title: 'Next.js App',
     content: '# Next.js App\nBuild a modern web application using the Next.js framework.\n\n### Tech stack\n- Next.js framework for server-side rendering and routing\n- TypeScript for type checking and improved developer experience\n\n### Features\n- Server-side rendering for improved performance',
   },
-  createRailsApp: {
-    title: 'Rails App',
-    content: '# Rails App\nBuild a simple application using the Ruby on Rails framework.\n\n### Tech stack\n- Ruby for server-side scripting\n- Rails framework for building the application\n\n### Features\n- Active Record for database interactions',
-  },
   createDjangoApp: {
     title: 'Django App',
-    content: '# Django App\nBuild a web application using the Django framework.\n\n### Tech stack\n- Django framework for building the application\n- PostgreSQL for the database\n\n### Features\n- MVC architecture for clean code organization',
+    content: '# Django App\nBuild a simple web backend application using the Django framework.\n\n### Tech stack\n- Django framework for building the application\n- PostgreSQL for the database',
   },
   createLaravelApp: {
     title: 'Laravel App',
-    content: '# Laravel App\nBuild a small Laravel web application.\n\n### Tech stack\n- Laravel framework for building the application\n- MySQL for the database\n\n### Design\nCreate an elegant and modern user interface using Bootstrap or a custom CSS framework',
+    content: '# Laravel App\nBuild a minimal working Laravel web application.\n\n### Tech stack\n- Laravel framework for building the application\n- MySQL for the database',
   },
   personalWebsite: {
     title: 'Personal Website',
