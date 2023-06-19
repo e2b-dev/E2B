@@ -1,10 +1,7 @@
 import {
-  Database as DatabaseIcon,
   File as FileIcon,
-  Settings as SettingsIcon,
 } from 'lucide-react'
 import clsx from 'clsx'
-import path from 'path-browserify'
 import Link from 'next/link'
 
 import {
@@ -40,34 +37,6 @@ function File({
       })
   }
 
-
-  let icon = (
-    <FileIcon
-      size={16}
-    />
-  )
-
-  const ext = path.extname(filePath).substring(1)
-  if (ext === 'sql') {
-    icon = (
-      <DatabaseIcon
-        className="
-          text-red-500
-        "
-        size={16}
-      />
-    )
-  } else if (ext === 'toml') {
-    icon = (
-      <SettingsIcon
-        className="
-          text-teal-800
-        "
-        size={16}
-      />
-    )
-  }
-
   return (
     <Link
       prefetch={false}
@@ -82,19 +51,22 @@ function File({
           'items-center',
           'space-x-1',
           'hover:bg-[#1F2437]',
+          'w-full',
           { 'bg-[#1F2437]': isSelectedViaRouter },
           { 'bg-transparent': !isSelectedViaRouter }
         )}
       onClick={handleOnClick}
       shallow
     >
-      {icon}
+      <FileIcon
+        className="shrink-0"
+        size={16}
+      />
       <span
         className="
-        truncate
-        text-sm
-        whitespace-nowrap
-        text-gray-100
+          text-sm
+          whitespace-nowrap
+          text-gray-100
         "
       >
         {name}

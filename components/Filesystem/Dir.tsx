@@ -40,24 +40,25 @@ function Dir({
 
   const icon = isExpanded ? (
     <ChevronDownIcon
-      className="text-white/60"
+      className="text-white/60 shrink-0"
       size={16}
     />
   ) : (
     <ChevronRightIcon
-      className="text-white/60"
+      className="text-white/60 shrink-0"
       size={16}
     />
   )
 
   return (
-    <div className="flex flex-col rounded">
+    <div className="flex flex-col rounded w-full">
       <div
         className={clsx(
           'px-1',
           'py-2',
           'flex',
           'items-center',
+          'w-full',
           'rounded-md',
           'space-x-1',
           'cursor-pointer',
@@ -71,7 +72,6 @@ function Dir({
         {icon}
         <span
           className="
-            truncate
             text-sm
             text-gray-100
             whitespace-nowrap

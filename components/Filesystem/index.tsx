@@ -125,7 +125,7 @@ function Filesystem({
       flex
       flex-col
       space-y-2
-      rounded-lg
+      w-full
     ">
       <FilesystemPrimitive.Tree
         className={clsx(
