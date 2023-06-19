@@ -78,9 +78,12 @@ function AgentPromptLogsList({
       )}
       {logs.map((ctx, idx) => (
         <Fragment key={idx}>
-          <div className="flex items-center space-x-2">
+          <div
+            className="flex items-center space-x-2 cursor-pointer group"
+            onClick={() => selectLog(idx)}
+          >
             <span className={clsx(
-              'font-bold text-sm capitalize min-w-[72px]',
+              'font-bold text-sm capitalize min-w-[72px] group-hover:text-[#6366F1] transition-all',
               selectedLogIdx === idx && 'text-[#6366F1]',
               selectedLogIdx !== idx && 'text-[#55618C]',
             )}
@@ -89,10 +92,9 @@ function AgentPromptLogsList({
             </span>
             <span
               className={clsx(
-                'text-sm text-gray-100 max-w-full truncate p-2 hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full',
+                'text-sm text-gray-100 max-w-full truncate p-2 group-hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full',
                 selectedLogIdx === idx && 'bg-[#1F2437]',
               )}
-              onClick={() => selectLog(idx)}
             >
               {ctx.content}
             </span>
