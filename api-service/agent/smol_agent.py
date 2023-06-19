@@ -336,10 +336,10 @@ Begin generating the code now.
                 filepaths_string, metadata = await self.generate_response(
                     """You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
-    When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
+When given their intent, create a complete, exhaustive list of filepaths that the user would write to make the program.
 
-    only list the filepaths you would write, and return them as a python list of strings.
-    do not add any other explanation, only return a python list of strings.
+only list the filepaths you would write, and return them as a python list of strings.
+do not add any other explanation, only return a python list of strings.
     """,
                     user_prompt,
                 )
@@ -375,17 +375,17 @@ Begin generating the code now.
                 ) = await self.generate_response(
                     f"""You are an AI developer who is trying to write a program that will generate code for the user based on their intent.
 
-    In response to the user's prompt:
+In response to the user's prompt:
 
-    ---
-    the app is: {user_prompt}
-    ---
+---
+the app is: {user_prompt}
+---
 
-    the files we have decided to generate are: {filepaths_string}
+the files we have decided to generate are: {filepaths_string}
 
-    Now that we have a list of files, we need to understand what dependencies they share.
-    Please name and briefly describe what is shared between the files we are generating, including exported variables, data schemas, id names of every DOM elements that javascript functions will use, message names, and function names.
-    Exclusively focus on the names of the shared dependencies, and do not add any other explanation.
+Now that we have a list of files, we need to understand what dependencies they share.
+Please name and briefly describe what is shared between the files we are generating, including exported variables, data schemas, id names of every DOM elements that javascript functions will use, message names, and function names.
+Exclusively focus on the names of the shared dependencies, and do not add any other explanation.
     """,
                     user_prompt,
                 )
