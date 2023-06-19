@@ -64,7 +64,6 @@ function Dir({
           'cursor-pointer',
           'border-gray-800',
           'hover:bg-[#1F2437]',
-          { 'bg-[#1F2437]': isSelected },
           { 'bg-transparent': !isSelected },
         )}
         onClick={handleOnClick}
