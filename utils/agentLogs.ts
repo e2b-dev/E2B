@@ -1,6 +1,6 @@
 import { log_files, log_uploads } from 'db/prisma'
 
-export interface LiteLogFile extends Omit<log_files, 'project_id' | 'type' | 'size' | 'content' | 'last_modified'> {
+export interface LiteLogFile extends Omit<log_files, 'project_id' | 'type' | 'size' | 'content' | 'last_modified' | 'deployment_id'> {
   content: AgentPromptLogs | AgentNextActionLog | string
 }
 
