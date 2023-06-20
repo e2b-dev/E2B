@@ -26,24 +26,27 @@ function getLastTwoDirsAndFile(fullPath: string): string {
 function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'last_modified' | 'deployment_id'>) {
   const relativePath = getLastTwoDirsAndFile(logFile.relativePath)
 
-  if (logFile.filename.includes('user_input')) {
+  // This parsing is very Ssecific to the AutoGPT format.
+  const filename = logFile.filename
+  if (filename.includes('user_input')) {
     return {
       ...logFile,
       relativePath,
       content: logFile.content as string,
     }
-  }
-  const parsedFileContent = JSON.parse(logFile.content)
-
-  // Specific to AutoGPT
-  if (logFile.filename.includes('next_action')) {
+  } else if (filename.includes('next_action')) {
+    const parsedFileContent = JSON.parse(logFile.content)
     return {
       ...logFile,
       relativePath,
       content: parsedFileContent as AgentNextActionLog,
     }
-  }
-  if (logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context')) {
+  } else if (
+    filename.includes('full_message_history')
+    || filename.includes('current_context')
+    || filename.includes('prompt_summary')
+  ) {
+    const parsedFileContent = JSON.parse(logFile.content)
     return {
       ...logFile,
       relativePath,
@@ -51,7 +54,11 @@ function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | '
         logs: parsedFileContent as AgentPromptLogs,
       },
     }
+  } else {
+    console.error(`Unexpected log file: ${filename}`)
   }
+
+  const parsedFileContent = JSON.parse(logFile.content)
   return {
     ...logFile,
     relativePath,

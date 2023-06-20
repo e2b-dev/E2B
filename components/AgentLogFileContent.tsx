@@ -34,9 +34,13 @@ function AgentLogFileContent({
 
   if (!logFile) return null
 
+  console.log('logFile', logFile)
+
   return (
     <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden">
-      {logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context') ? (
+      {logFile.filename.includes('full_message_history')
+        || logFile.filename.includes('current_context')
+        || logFile.filename.includes('prompt_summary') ? (
         <Splitter
           gutterClassName={clsx(
             'bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
