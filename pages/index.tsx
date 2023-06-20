@@ -11,6 +11,7 @@ import { AgentNextActionLog, AgentPromptLogs, LiteLogUpload } from 'utils/agentL
 export interface Props {
   projects: (projects & { log_uploads: LiteLogUpload[], deployments: deployments[] })[]
   defaultProjectID: string
+  view: 'deployments' | 'uploads'
 }
 
 function getLastTwoDirsAndFile(fullPath: string): string {
@@ -23,7 +24,7 @@ function getLastTwoDirsAndFile(fullPath: string): string {
   return path.join(lastTwoDirs, fileName)
 }
 
-function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'last_modified' | 'deployment_id'>) {
+function formatLogFileContent(logFile: log_files) {
   const relativePath = getLastTwoDirsAndFile(logFile.relativePath)
 
   if (logFile.filename.includes('user_input')) {
@@ -64,17 +65,8 @@ function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | '
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-  // Select the 'deployed' view by default.
-  const view = ctx.query['view'] as string
   const defaultNewTeamID = process.env.DEFAULT_NEW_TEAM_ID as string | undefined
-  if (!view) {
-    return {
-      redirect: {
-        destination: '/?view=logs',
-        permanent: false,
-      }
-    }
-  }
+  const showUploadedLogs = process.env.NEXT_PUBLIC_SHOW_UPLOADED_LOGS === '1'
 
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
@@ -107,20 +99,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
         include: {
           log_uploads: {
-            select: {
-              display_name: true,
-              id: true,
-              created_at: true,
-              log_files: {
-                select: {
-                  id: true,
-                  log_upload_id: true,
-                  created_at: true,
-                  filename: true,
-                  relativePath: true,
-                  content: true,
-                },
-              },
+            include: {
+              log_files: true,
+            },
+          },
+          deployments: {
+            include: {
+              log_files: true,
             },
           },
         },
@@ -157,6 +142,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 log_files: true,
               },
             },
+            deployments: {
+              include: {
+                log_files: true,
+              },
+            },
           },
         },
       },
@@ -166,6 +156,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         projects: {
           include: {
             log_uploads: {
+              include: {
+                log_files: true,
+              },
+            },
+            deployments: {
               include: {
                 log_files: true,
               },
@@ -215,17 +210,27 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             log_files: true,
           },
         },
+        deployments: {
+          include: {
+            log_files: true,
+          },
+        },
       },
     })
 
+
+
+
   return {
     props: {
+      view: showUploadedLogs ? 'uploads' : 'deployments',
       defaultProjectID: defaultProject.id,
-      projects: [defaultProject]
+      projects: [
+        defaultProject,
+        ...teams.flatMap(t => t.projects),
+      ]
         .map(p => ({
           ...p,
-          // Don't send any deployments to the client but keep the props structure so we don't have to change the component now.
-          deployments: [],
           log_uploads: p
             .log_uploads
             .map<LiteLogUpload>(u => ({
@@ -237,11 +242,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
 }
 
-function Home({ projects, defaultProjectID }: Props) {
-
-
+function Home({ projects, defaultProjectID, view }: Props) {
   return (
     <DashboardHome
+      view={view}
       defaultProjectID={defaultProjectID}
       projects={projects}
     />

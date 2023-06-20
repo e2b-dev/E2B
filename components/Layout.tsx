@@ -48,8 +48,6 @@ function Layout({ children }: PropsWithChildren) {
   const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-  const view = router.query.view as string | undefined
-
   async function signOut() {
     await supabaseClient.auth.signOut()
     posthog?.reset(true)
@@ -109,7 +107,11 @@ function Layout({ children }: PropsWithChildren) {
       <div className="xl:pl-48 flex flex-col flex-1 max-h-full">
         {/* Mobile menu icon */}
         <div className="xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border-b border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
-          <button type="button" className="-m-2.5 p-2.5 text-white xl:hidden" onClick={() => setIsSidebarOpen(true)}>
+          <button
+            type="button"
+            className="-m-2.5 p-2.5 text-white xl:hidden"
+            onClick={() => setIsSidebarOpen(true)}
+          >
             <span className="sr-only">Open sidebar</span>
             <Menu aria-hidden="true" />
           </button>
