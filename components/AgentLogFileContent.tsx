@@ -65,7 +65,7 @@ function AgentLogFileContent({
         <AgentNextActionLogDetail
           log={logFile.content as AgentNextActionLog}
         />
-      ) : logFile.filename.includes('user_input') ? (
+      ) : logFile.filename.includes('user_input.txt') || logFile.filename.includes('summary.txt') ? (
         <div className="overflow-auto p-2 mr-2.5 mb-2.5 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
           <div className="flex flex-col space-y-1 w-full">
             <span className="text-sm font-medium text-gray-500">User Input</span>

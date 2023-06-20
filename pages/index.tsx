@@ -28,7 +28,10 @@ function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | '
 
   // This parsing is very Ssecific to the AutoGPT format.
   const filename = logFile.filename
-  if (filename.includes('user_input')) {
+  console.log('filename', filename)
+  if (filename.includes('user_input.txt')
+    || filename.includes('summary.txt')
+  ) {
     return {
       ...logFile,
       relativePath,
