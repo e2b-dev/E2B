@@ -13,7 +13,6 @@ export interface Props {
   defaultProjectID: string
 }
 
-
 function getLastTwoDirsAndFile(fullPath: string): string {
   const fileName = path.basename(fullPath)
   const dirName = path.dirname(fullPath)
@@ -24,7 +23,7 @@ function getLastTwoDirsAndFile(fullPath: string): string {
   return path.join(lastTwoDirs, fileName)
 }
 
-function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'last_modified'>) {
+function formatLogFileContent(logFile: Omit<log_files, 'project_id' | 'type' | 'size' | 'last_modified' | 'deployment_id'>) {
   const relativePath = getLastTwoDirsAndFile(logFile.relativePath)
 
   if (logFile.filename.includes('user_input')) {

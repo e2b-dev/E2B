@@ -97,7 +97,7 @@ function AgentLogFilesList({
   }
 
   async function handleUpload(files: FileList) {
-    const logFiles: Pick<log_files, 'content' | 'filename' | 'relativePath' | 'size' | 'last_modified' | 'type'>[] = []
+    const logFiles: Pick<log_files, 'content' | 'filename' | 'relativePath' | 'last_modified'>[] = []
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -108,10 +108,8 @@ function AgentLogFilesList({
       logFiles.push({
         filename: file.name,
         relativePath: file.webkitRelativePath,
-        type: file.type,
         content,
         last_modified: new Date(file.lastModified),
-        size: file.size,
       })
     }
 

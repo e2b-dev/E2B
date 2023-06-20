@@ -269,6 +269,7 @@ model deployments {
   auth                 Json?
   last_finished_prompt String?
   projects             projects          @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  log_files            log_files[]
 
   @@schema("public")
 }
@@ -322,18 +323,18 @@ model feedback {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model log_files {
-  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at    DateTime    @default(now()) @db.Timestamptz(6)
-  content       String      @default("")
-  filename      String
-  size          Int
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at    DateTime     @default(now()) @db.Timestamptz(6)
+  content       String       @default("")
+  filename      String       @default("")
   relativePath  String
-  last_modified DateTime    @db.Timestamptz(6)
+  last_modified DateTime     @db.Timestamptz(6)
   project_id    String
-  log_upload_id String      @db.Uuid
-  type          String?
-  log_upload    log_uploads @relation(fields: [log_upload_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  projects      projects    @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  log_upload_id String?      @db.Uuid
+  deployment_id String?      @db.Uuid
+  deployments   deployments? @relation(fields: [deployment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  log_upload    log_uploads? @relation(fields: [log_upload_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  projects      projects     @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
