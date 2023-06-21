@@ -14,6 +14,11 @@ export interface Props {
   view: 'deployments' | 'logs'
 }
 
+export interface Props {
+  projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
+  defaultProjectID: string
+}
+
 function getLastTwoDirsAndFile(fullPath: string): string {
   const fileName = path.basename(fullPath)
   const dirName = path.dirname(fullPath)
