@@ -7,7 +7,6 @@ import {
 } from 'react'
 import {
   ChevronRight,
-  Edit,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
@@ -23,7 +22,8 @@ import {
 } from 'utils/agentLogs'
 import Spinner from 'components/Spinner'
 import AgentLogFileContent from 'components/AgentLogFileContent'
-import UploadTree from './UploadFiletree'
+import UploadTree from 'components/UploadFiletree'
+import RenameLogUploadButton from 'components/RenameLogUploadButton'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 
 export interface Props {
@@ -226,33 +226,17 @@ function AgentLogFilesList({
                         onClick={() => toggleLogUpload(logUpload.id)}
                       >
                         <ChevronRight size={14} className={clsx(
-                          // 'text-gray-400',
                           'transition-all',
                           'select-none',
                           openLogUploads[logUpload.id] && 'rotate-90',
                         )} />
                       </button>
 
-                      <button
-                        className={clsx(
-                          'h-6 w-20 flex items-center justify-center space-x-1 px-1 bg-[#1F2437] transition-all rounded-md text-gray-200 text-xs',
-                          renamingLogUploadID === logUpload.id && 'hover:bg-[#1F2437] cursor-not-allowed',
-                          renamingLogUploadID !== logUpload.id && 'cursor-pointer hover:bg-[#272D44]',
-                        )}
+                      <RenameLogUploadButton
+                        isRenaming={renamingLogUploadID === logUpload.id}
                         onClick={() => handleRenameLogUpload(logUpload.id)}
-                      >
-                        {renamingLogUploadID === logUpload.id ? (
-                          <Spinner
-                            className="text-gray-200 transition-all select-none"
-                          />
-                        ) : (
-                          <Edit
-                            className="text-gray-200 transition-all select-none"
-                            size={14}
-                          />
-                        )}
-                        <span>Rename</span>
-                      </button>
+                      />
+
                       <span
                         className={clsx(
                           'text-sm',
