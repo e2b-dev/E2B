@@ -27,19 +27,6 @@ function AgentDeploymentLogList({
       if (a.created_at > b.created_at) return -1
       if (a.created_at < b.created_at) return 1
       return 0
-    })
-    // Sort the log_files inside logUploads alphabtetical by relativePath
-    .map(d => {
-      const sortedLogs = d.log_files.sort((a, b) => {
-        if (a.relativePath > b.relativePath) return 1
-        if (a.relativePath < b.relativePath) return -1
-        return 0
-      })
-
-      return {
-        ...d,
-        log_files: sortedLogs,
-      }
     }), [deployments])
 
   function toggleDeployments(logUploadID: string) {
@@ -57,7 +44,7 @@ function AgentDeploymentLogList({
   }
 
   return (
-    <main className="overflow-hidden flex flex-col max-h-full flex-1">
+    <main className="overflow-hidden flex flex-col max-h-full flex-1 border-white/5 border rounded-md">
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8 min-h-[88px]">
         <h1 className="text-2xl font-semibold text-white">Agent Deployments</h1>
       </header>

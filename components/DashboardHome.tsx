@@ -19,7 +19,7 @@ function DashboardHome({
   const router = useRouter()
   const showView = router.query['view'] === 'logs' ? 'logs' : view
 
-  const projectsWithDeployments = useMemo(() => projects
+  const deployments = useMemo(() => projects
     .filter(p => {
       if (p.deployments.length !== 1) return false
 
@@ -28,16 +28,14 @@ function DashboardHome({
       if (!auth) return false
       return true
     })
-    .map(p => ({
-      project: p,
-      deployment: p.deployments[0],
-    })), [projects])
+    .flatMap(p => p.deployments)
+    , [projects])
 
   return (
     <>
       {showView === 'deployments' &&
         <AgentDeploymentLogList
-          deployments={projectsWithDeployments.flatMap(p => p.deployment)}
+          deployments={deployments}
         />
       }
       {showView === 'logs' &&

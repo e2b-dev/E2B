@@ -2,19 +2,18 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
 
-import { prisma, projects } from 'db/prisma'
+import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-import AgentRun from 'components/AgentRun'
+import { LiteDeploymentLog } from 'utils/agentLogs'
+import AgentRunLogContent from 'components/AgentRunLogContent'
 
 interface PathProps extends ParsedUrlQuery {
-  runID: string
-  projectID: string
+  logID: string
 }
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
-  const projectID = ctx.params?.projectID
   const logID = ctx.params?.logID
-  if (!projectID) {
+  if (!logID) {
     return {
       redirect: {
         destination: '/',
@@ -37,22 +36,25 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     }
   }
 
-  const user = await prisma.auth_users.findUnique({
+  const log = await prisma.log_files.findFirst({
     where: {
-      id: session.user.id,
+      id: logID,
+      projects: {
+        teams: {
+          users_teams: {
+            some: {
+              user_id: session.user.id,
+            },
+          },
+        },
+      },
     },
-    select: {
-      users_teams: {
-        select: {
-          teams: {
-            include: {
-              projects: {
-                where: {
-                  id: {
-                    equals: projectID,
-                  },
-                },
-              },
+    include: {
+      deployments: {
+        include: {
+          projects: {
+            select: {
+              name: true,
             },
           },
         },
@@ -60,12 +62,8 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     },
   })
 
-  const project = user
-    ?.users_teams
-    .flatMap(t => t.teams.projects)
-    .find(p => p.id === projectID)
 
-  if (!project) {
+  if (!log || !log.deployments) {
     return {
       notFound: true,
     }
@@ -73,23 +71,24 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
 
   return {
     props: {
-      project,
-      logID,
+      log: {
+        ...log,
+        content: JSON.parse(log.content),
+      } as any,
     }
   }
 }
 
 interface Props {
-  project: projects
-  runID: string
+  log: LiteDeploymentLog
 }
 
 function ProjectPage({
-  project,
-  runID,
+  log,
 }: Props) {
   return (
-    <AgentRun
+    <AgentRunLogContent
+      log={log}
     />
   )
 }

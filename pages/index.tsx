@@ -109,12 +109,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           },
           deployments: {
             include: {
+              log_files: {
+                select: {
+                  id: true,
+                  created_at: true,
+                  log_upload_id: true,
+                },
+              },
               projects: {
                 select: {
                   name: true,
                 },
               },
-              log_files: true,
             },
           },
         },
@@ -153,12 +159,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             },
             deployments: {
               include: {
+                log_files: {
+                  select: {
+                    id: true,
+                    created_at: true,
+                    log_upload_id: true,
+                  },
+                },
                 projects: {
                   select: {
                     name: true,
                   },
                 },
-                log_files: true,
               },
             },
           },
@@ -176,12 +188,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             },
             deployments: {
               include: {
+                log_files: {
+                  select: {
+                    id: true,
+                    created_at: true,
+                    log_upload_id: true,
+                  },
+                },
                 projects: {
                   select: {
                     name: true,
                   },
                 },
-                log_files: true,
               },
             },
           },
@@ -231,12 +249,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
         deployments: {
           include: {
+            log_files: {
+              select: {
+                id: true,
+                created_at: true,
+                log_upload_id: true,
+              },
+            },
             projects: {
               select: {
                 name: true,
               },
             },
-            log_files: true,
           },
         },
       },

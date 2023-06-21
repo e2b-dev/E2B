@@ -1,11 +1,12 @@
 import { deployments, log_files, log_uploads } from 'db/prisma'
 
 export interface LiteDeploymentLog extends Omit<log_files, 'content'> {
-  content: AgentPromptLogs | AgentNextActionLog | string
+  content: any
+  deployments: LiteDeployment
 }
 
-export interface LiteDeployment extends Omit<deployments, 'log_files'> {
-  log_files: LiteDeploymentLog[]
+export interface LiteDeployment extends deployments {
+  log_files: Pick<log_files, 'id' | 'created_at' | 'log_upload_id'>[]
   projects: {
     name: string
   }
