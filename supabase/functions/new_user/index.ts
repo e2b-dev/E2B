@@ -8,7 +8,7 @@ serve(async (req) => {
 
   const body = {
     email: data.record.email,
-    userGroup: 'signUpUser'
+    userGroup: 'Authenticated'
   }
   console.log(`New user with email: ${body.email} created`)
 
