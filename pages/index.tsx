@@ -122,6 +122,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
               log_files: {
                 select: {
                   id: true,
+                  relativePath: true,
+                  filename: true,
                   created_at: true,
                   log_upload_id: true,
                 },
@@ -172,6 +174,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 log_files: {
                   select: {
                     id: true,
+                    relativePath: true,
+                    filename: true,
                     created_at: true,
                     log_upload_id: true,
                   },
@@ -201,6 +205,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 log_files: {
                   select: {
                     id: true,
+                    relativePath: true,
+                    filename: true,
                     created_at: true,
                     log_upload_id: true,
                   },
@@ -262,6 +268,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             log_files: {
               select: {
                 id: true,
+                relativePath: true,
+                filename: true,
                 created_at: true,
                 log_upload_id: true,
               },

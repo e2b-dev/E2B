@@ -283,6 +283,7 @@ model projects {
   name             String        @default("")
   development_logs Json[]
   is_default       Boolean       @default(false)
+  slug             String?       @unique
   deployments      deployments[]
   log_files        log_files[]
   log_uploads      log_uploads[]
