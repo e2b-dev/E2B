@@ -1,12 +1,14 @@
 import AgentLogFilesList from 'components/AgentLogFilesList'
-import { deployments, projects } from 'db/prisma'
+import { projects } from 'db/prisma'
+import { useRouter } from 'next/router'
 import { useMemo } from 'react'
-import { LiteLogUpload } from 'utils/agentLogs'
+import { LiteDeployment, LiteLogUpload } from 'utils/agentLogs'
+import AgentDeploymentLogList from './AgentDeploymentLogList'
 
 export interface Props {
-  projects: (projects & { log_uploads: LiteLogUpload[], deployments: deployments[] })[]
+  projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
   defaultProjectID: string
-  view: 'deployments' | 'uploads'
+  view: 'deployments' | 'logs'
 }
 
 function DashboardHome({
@@ -14,6 +16,8 @@ function DashboardHome({
   defaultProjectID,
   view,
 }: Props) {
+  const router = useRouter()
+  const showView = router.query['view'] === 'logs' ? 'logs' : view
 
   const projectsWithDeployments = useMemo(() => projects
     .filter(p => {
@@ -22,7 +26,7 @@ function DashboardHome({
       const deployment = p.deployments[0]
       const auth = deployment.auth as any
       if (!auth) return false
-      return deployment.enabled
+      return true
     })
     .map(p => ({
       project: p,
@@ -31,13 +35,12 @@ function DashboardHome({
 
   return (
     <>
-      {view === 'deployments' &&
-        <AgentLogFilesList
-          logUploads={projects.flatMap(p => p.deployments)}
-          defaultProjectID={defaultProjectID}
+      {showView === 'deployments' &&
+        <AgentDeploymentLogList
+          deployments={projectsWithDeployments.flatMap(p => p.deployment)}
         />
       }
-      {view === 'uploads' &&
+      {showView === 'logs' &&
         <AgentLogFilesList
           logUploads={projects.flatMap(p => p.log_uploads)}
           defaultProjectID={defaultProjectID}

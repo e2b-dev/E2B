@@ -40,7 +40,7 @@ function FeedbackModal({ isOpen, onClose, onSend }: Props) {
   }
 
   return (
-    <div className="relative flex flex-row-reverse pt-1">
+    <div className="relative flex flex-row-reverse">
       {isOpen &&
         <form
           ref={ref}
@@ -50,6 +50,7 @@ function FeedbackModal({ isOpen, onClose, onSend }: Props) {
           className="
           flex
           p-3
+          mt-1
           border
           z-50
           bg-gray-900

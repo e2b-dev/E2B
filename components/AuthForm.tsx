@@ -80,7 +80,6 @@ function AuthForm({ authType }: Props) {
 
   useEffect(
     function autofocusEmailInput() {
-      console.log('user', user)
       if (isLoading) return
 
       if (!emailRef.current?.value) {

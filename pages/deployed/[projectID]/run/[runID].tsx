@@ -13,20 +13,11 @@ interface PathProps extends ParsedUrlQuery {
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
   const projectID = ctx.params?.projectID
+  const logID = ctx.params?.logID
   if (!projectID) {
     return {
       redirect: {
-        destination: '/?view=deployed',
-        permanent: false,
-      }
-    }
-  }
-
-  const runID = ctx.params?.runID
-  if (!runID) {
-    return {
-      redirect: {
-        destination: `/?view=runs&  projectID=${projectID}`,
+        destination: '/',
         permanent: false,
       }
     }
@@ -83,7 +74,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
   return {
     props: {
       project,
-      runID,
+      logID,
     }
   }
 }
@@ -101,12 +92,6 @@ function ProjectPage({
     <AgentRun
     />
   )
-  // return (
-  //   <AgentDetail
-  //     project={project}
-  //     runID={runID}
-  //   />
-  // )
 }
 
 export default ProjectPage

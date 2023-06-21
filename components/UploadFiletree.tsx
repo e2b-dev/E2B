@@ -2,16 +2,16 @@ import { useCallback } from 'react'
 import path from 'path-browserify'
 
 import Filesystem, { FileInfo } from 'components/Filesystem'
-import { LiteLogFile, LiteLogUpload } from 'utils/agentLogs'
+import { LiteDeployment, LiteLogFile, LiteLogUpload } from 'utils/agentLogs'
 import { FiletreeProvider } from 'hooks/useFiletree'
 
 export interface Props {
-  logUpload: LiteLogUpload
+  log: LiteLogUpload | LiteDeployment
   selectedLogFile?: LiteLogFile
 }
 
 function UploadTree({
-  logUpload,
+  log: logUpload,
   selectedLogFile,
 }: Props) {
   const fetchLogDirContent = useCallback<(dirpath: string) => (FileInfo & { id?: string })[]>(dirpath => {

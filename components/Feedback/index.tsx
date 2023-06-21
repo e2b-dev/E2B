@@ -10,22 +10,20 @@ function Feedback() {
 
   return (
     <div className="flex flex-col items-end flex-1">
-      <div>
-        <FeedbackButton
-          isOpen={isFeedbackVisible || isFinished}
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            setIsFeedbackVisible(f => !f)
-          }}
-          isFinished={isFinished}
-        />
-        <FeedbackModal
-          onSend={() => setIsFinished(true)}
-          isOpen={isFeedbackVisible}
-          onClose={() => setIsFeedbackVisible(false)}
-        />
-      </div>
+      <FeedbackButton
+        isOpen={isFeedbackVisible || isFinished}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          setIsFeedbackVisible(f => !f)
+        }}
+        isFinished={isFinished}
+      />
+      <FeedbackModal
+        onSend={() => setIsFinished(true)}
+        isOpen={isFeedbackVisible}
+        onClose={() => setIsFeedbackVisible(false)}
+      />
     </div>
   )
 }

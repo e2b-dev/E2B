@@ -3,15 +3,15 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { nanoid } from 'nanoid'
 import path from 'path'
 
-import { prisma, projects, deployments, log_files } from 'db/prisma'
+import { prisma, projects, log_files } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
-import { AgentNextActionLog, AgentPromptLogs, LiteLogUpload } from 'utils/agentLogs'
+import { AgentNextActionLog, AgentPromptLogs, LiteDeployment, LiteLogUpload } from 'utils/agentLogs'
 
 export interface Props {
-  projects: (projects & { log_uploads: LiteLogUpload[], deployments: deployments[] })[]
+  projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
   defaultProjectID: string
-  view: 'deployments' | 'uploads'
+  view: 'deployments' | 'logs'
 }
 
 function getLastTwoDirsAndFile(fullPath: string): string {
@@ -95,7 +95,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       is_default: true,
       projects: {
         where: {
-          is_default: true,
         },
         include: {
           log_uploads: {
@@ -105,6 +104,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           },
           deployments: {
             include: {
+              projects: {
+                select: {
+                  name: true,
+                },
+              },
               log_files: true,
             },
           },
@@ -144,6 +148,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             },
             deployments: {
               include: {
+                projects: {
+                  select: {
+                    name: true,
+                  },
+                },
                 log_files: true,
               },
             },
@@ -162,6 +171,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             },
             deployments: {
               include: {
+                projects: {
+                  select: {
+                    name: true,
+                  },
+                },
                 log_files: true,
               },
             },
@@ -212,22 +226,24 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
         deployments: {
           include: {
+            projects: {
+              select: {
+                name: true,
+              },
+            },
             log_files: true,
           },
         },
       },
     })
 
-
-
-
   return {
     props: {
-      view: showUploadedLogs ? 'uploads' : 'deployments',
+      view: showUploadedLogs ? 'logs' : 'deployments',
       defaultProjectID: defaultProject.id,
       projects: [
         defaultProject,
-        ...teams.flatMap(t => t.projects),
+        ...teams.flatMap(t => t.projects).filter(p => p.id !== defaultProject.id),
       ]
         .map(p => ({
           ...p,

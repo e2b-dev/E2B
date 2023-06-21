@@ -272,7 +272,7 @@ function AgentLogFilesList({
                   {openLogUploads[logUpload.id] && (
                     <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
                       <UploadTree
-                        logUpload={logUpload}
+                        log={logUpload}
                         selectedLogFile={logUpload.id === selectedLogFile?.log_upload_id ? selectedLogFile : undefined}
                       />
                     </div>
