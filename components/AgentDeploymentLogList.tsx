@@ -112,7 +112,7 @@ function AgentDeploymentLogList({
                 </div>
 
                 {openDeployments[deployment.id] && (
-                  <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
+                  <div className="flex flex-col space-y-3 border-l border-white/5 pl-2 ml-[11px] flex-1">
                     <UploadTree
                       log={deployment}
                     />

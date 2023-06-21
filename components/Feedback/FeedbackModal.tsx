@@ -53,8 +53,8 @@ function FeedbackModal({ isOpen, onClose, onSend }: Props) {
           mt-1
           border
           z-50
-          bg-gray-900
-          border-gray-800
+          bg-transparent
+          border-white/5
           w-[400px]
           shadow-lg
           rounded

@@ -219,14 +219,14 @@ function AgentLogFilesList({
                     <div className="flex items-center space-x-2">
                       <button
                         className={clsx(
-                          'h-6 w-6 flex items-center justify-center px-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                          openLogUploads[logUpload.id] && 'bg-gray-700',
-                          !openLogUploads[logUpload.id] && 'bg-gray-800',
+                          'h-6 w-6 flex items-center justify-center px-1 cursor-pointer hover:bg-[#6366F1] transition-all rounded-md',
+                          openLogUploads[logUpload.id] && 'bg-[#6366F1] text-gray-200',
+                          !openLogUploads[logUpload.id] && 'bg-[#1F2437] text-gray-200',
                         )}
                         onClick={() => toggleLogUpload(logUpload.id)}
                       >
                         <ChevronRight size={14} className={clsx(
-                          'text-gray-400',
+                          // 'text-gray-400',
                           'transition-all',
                           'select-none',
                           openLogUploads[logUpload.id] && 'rotate-90',
@@ -235,19 +235,19 @@ function AgentLogFilesList({
 
                       <button
                         className={clsx(
-                          'h-6 w-20 flex items-center justify-center space-x-1 px-1 bg-gray-800 transition-all rounded-md text-gray-400 text-xs',
-                          renamingLogUploadID === logUpload.id && 'hover:bg-gray-800 cursor-not-allowed',
-                          renamingLogUploadID !== logUpload.id && 'cursor-pointer hover:bg-gray-700',
+                          'h-6 w-20 flex items-center justify-center space-x-1 px-1 bg-[#1F2437] transition-all rounded-md text-gray-200 text-xs',
+                          renamingLogUploadID === logUpload.id && 'hover:bg-[#1F2437] cursor-not-allowed',
+                          renamingLogUploadID !== logUpload.id && 'cursor-pointer hover:bg-[#272D44]',
                         )}
                         onClick={() => handleRenameLogUpload(logUpload.id)}
                       >
                         {renamingLogUploadID === logUpload.id ? (
                           <Spinner
-                            className="text-gray-400 transition-all select-none"
+                            className="text-gray-200 transition-all select-none"
                           />
                         ) : (
                           <Edit
-                            className="text-gray-400 transition-all select-none"
+                            className="text-gray-200 transition-all select-none"
                             size={14}
                           />
                         )}
@@ -272,7 +272,7 @@ function AgentLogFilesList({
                     </div>
 
                     {openLogUploads[logUpload.id] && (
-                      <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
+                      <div className="flex flex-col space-y-3 border-l border-white/5 pl-2 ml-[11px] flex-1">
                         <UploadTree
                           log={logUpload}
                           selectedLogFile={logUpload.id === selectedLogFile?.log_upload_id ? selectedLogFile : undefined}

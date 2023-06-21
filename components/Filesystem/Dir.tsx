@@ -90,7 +90,7 @@ function Dir({
             ml-[11px]
             pl-3
             border-l
-          border-gray-800
+            border-white/5
           "
         >
           {children}
