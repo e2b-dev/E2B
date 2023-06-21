@@ -32,6 +32,7 @@ class AgentInteractionRequest(BaseModel):
 
 
 OnLogs = Callable[[Any], Coroutine[None, None, None]]
+SetRun = Callable[[str], None]
 OnInteractionRequest = Callable[[AgentInteractionRequest], Coroutine[None, None, None]]
 GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
 

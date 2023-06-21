@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from opentelemetry.metrics import Observation
 from database.base import db
@@ -46,15 +46,13 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
         id: str,
         project_id: str,
         config: Any,
-        logs: List[Any],
     ):
-        print("Creating deployment", config, logs)
+        print("Creating deployment", config)
         deployment = await AgentDeployment.from_factory(
             id,
             get_agent_factory_from_template(config["templateID"]),
             project_id,
             config,
-            logs,
         )
         try:
             await db.create_deployment(deployment.id, project_id, config)
@@ -70,9 +68,8 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
         id: str,
         project_id: str,
         config: Any,
-        logs: List[Any],
     ):
-        print(">>>> Updating deployment", id, config, logs)
+        print(">>>> Updating deployment", id, config)
         try:
             await self.remove_deployment(id)
         except:
@@ -82,7 +79,6 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
             id,
             project_id,
             config,
-            logs,
         )
 
     async def remove_deployment(self, id: str):

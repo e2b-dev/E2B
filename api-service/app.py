@@ -63,7 +63,6 @@ async def create_agent_deployment(
             db_deployment["id"],
             project_id,
             body.config,
-            db_deployment.get("logs") or [],
         )
         current_span = trace.get_current_span()
         current_span.set_attributes(
@@ -88,7 +87,6 @@ async def create_agent_deployment(
             id,
             project_id,
             body.config,
-            [],
         )
         current_span = trace.get_current_span()
         current_span.set_attributes(
@@ -156,7 +154,6 @@ async def interact_with_agent_deployment(
                 db_deployment["id"],
                 db_deployment["project_id"],
                 db_deployment["config"],
-                db_deployment.get("logs") or [],
             )
         else:
             raise HTTPException(status_code=404, detail="Deployment not found")

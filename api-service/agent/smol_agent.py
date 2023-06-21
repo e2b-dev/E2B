@@ -3,7 +3,7 @@ import uuid
 import os
 import ast
 
-from typing import Any, Coroutine, List
+from typing import Any, Callable, Coroutine, List
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.schema import (
     AIMessage,
@@ -45,6 +45,7 @@ class SmolAgent(AgentBase):
         self,
         config: Any,
         get_envs: GetEnvs,
+        set_run_id: Callable[[str], None],
         on_logs: OnLogs,
         on_interaction_request: OnInteractionRequest,
         model: BaseLanguageModel,
@@ -55,6 +56,7 @@ class SmolAgent(AgentBase):
         self.config = config
         self.on_interaction_request = on_interaction_request
         self.on_logs = on_logs
+        self.set_run_id = set_run_id
         self.model = model
 
     @classmethod
@@ -62,6 +64,7 @@ class SmolAgent(AgentBase):
         cls,
         config: Any,
         get_envs: GetEnvs,
+        set_run_id: Callable[[str], None],
         on_logs: OnLogs,
         on_interaction_request: OnInteractionRequest,
     ):
@@ -76,6 +79,7 @@ class SmolAgent(AgentBase):
         return cls(
             new_config,
             get_envs,
+            set_run_id,
             on_logs,
             on_interaction_request,
             model,
@@ -84,7 +88,6 @@ class SmolAgent(AgentBase):
     async def generate_file(
         self,
         filename: str,
-        run_id: str,
         filepaths_string=None,
         shared_dependencies=None,
         prompt=None,
@@ -132,10 +135,9 @@ Begin generating the code now.
                     **metadata,
                     "result": filecode,
                     "model": "gpt-4",
-                    "run_id": run_id,
                 },
                 "type": "model",
-            }
+            },
         )
 
         return filename, filecode, metadata
@@ -186,7 +188,7 @@ Begin generating the code now.
             "cost": cost,
         }
 
-    async def _dev(self, run_id: str, instructions: Any):
+    async def _dev(self, instructions: Any):
         with tracer.start_as_current_span("agent-run") as span:
             user_prompt: str = instructions["Prompt"]
             access_token: str = instructions["AccessToken"]
@@ -199,7 +201,7 @@ Begin generating the code now.
 
             span.set_attributes(
                 {
-                    "run_id": run_id,
+                    "run_id": self.run_id,
                     "prompt": user_prompt,
                     "prompt.length": len(user_prompt),
                     "repository": f"{owner}/{repo}",
@@ -215,10 +217,9 @@ Begin generating the code now.
                     "message": f"hi its me, 🐣the smol developer🐣!",
                     "type": "info",
                     "properties": {
-                        "run_id": run_id,
                         "prompt": user_prompt,
                     },
-                }
+                },
             )
             playground = None
             try:
@@ -230,10 +231,9 @@ Begin generating the code now.
                         "properties": {
                             "playground": "created",
                             "id": playground.id,
-                            "run_id": run_id,
                         },
                         "type": "playground",
-                    }
+                    },
                 )
                 span.add_event(
                     "playground-created",
@@ -260,10 +260,9 @@ Begin generating the code now.
                         "properties": {
                             "tool": "git",
                             "repository": f"{owner}/{repo}",
-                            "run_id": run_id,
                         },
                         "type": "tool",
-                    }
+                    },
                 )
                 span.add_event(
                     "repository-cloned",
@@ -302,10 +301,9 @@ Begin generating the code now.
                             **metadata,
                             "result": filepaths_string,
                             "model": "gpt-4",
-                            "run_id": run_id,
                         },
                         "type": "model",
-                    }
+                    },
                 )
 
                 span.add_event(
@@ -340,10 +338,9 @@ Begin generating the code now.
                         "message": f"Cleaned root directory",
                         "properties": {
                             "tool": "filesystem",
-                            "run_id": run_id,
                         },
                         "type": "tool",
-                    }
+                    },
                 )
 
                 span.add_event(
@@ -381,10 +378,9 @@ Begin generating the code now.
                             **metadata,
                             "result": shared_dependencies,
                             "model": "gpt-4",
-                            "run_id": run_id,
                         },
                         "type": "model",
-                    }
+                    },
                 )
 
                 span.add_event(
@@ -409,10 +405,9 @@ Begin generating the code now.
                             "filename": "shared_dependencies.md",
                             "content": shared_dependencies,
                             "tool": "filesystem",
-                            "run_id": run_id,
                         },
                         "type": "tool",
-                    }
+                    },
                 )
 
                 span.add_event(
@@ -435,7 +430,6 @@ Begin generating the code now.
                     with_semaphore(
                         self.generate_file(
                             name,
-                            run_id=run_id,
                             filepaths_string=filepaths_string,
                             shared_dependencies=shared_dependencies,
                             prompt=user_prompt,
@@ -464,10 +458,9 @@ Begin generating the code now.
                                 "filename": filepath,
                                 "content": content,
                                 "tool": "filesystem",
-                                "run_id": run_id,
                             },
                             "type": "tool",
-                        }
+                        },
                     )
                     span.add_event(
                         "file-saved",
@@ -493,10 +486,9 @@ Begin generating the code now.
                             "branch": branch,
                             "commit_message": commit_message,
                             "tool": "git",
-                            "run_id": run_id,
                         },
                         "type": "tool",
-                    }
+                    },
                 )
                 span.add_event(
                     "pushed-repository",
@@ -521,11 +513,10 @@ Begin generating the code now.
                     {
                         "message": f"Agent run failed",
                         "properties": {
-                            "run_id": run_id,
                             "error": str(e),
                         },
                         "type": "error",
-                    }
+                    },
                 )
                 span.set_status(Status(StatusCode.ERROR))
                 span.record_exception(e)
@@ -538,10 +529,9 @@ Begin generating the code now.
                             "message": f"Closed playground",
                             "properties": {
                                 "playground": "closed",
-                                "run_id": run_id,
                             },
                             "type": "playground",
-                        }
+                        },
                     )
                     span.add_event(
                         "closed-playground",
@@ -550,11 +540,9 @@ Begin generating the code now.
                     await self.on_logs(
                         {
                             "message": f"Agent run finished",
-                            "properties": {
-                                "run_id": run_id,
-                            },
+                            "properties": {},
                             "type": "info",
-                        }
+                        },
                     )
 
     async def _dev_in_background(self, instructions: Any):
@@ -565,11 +553,12 @@ Begin generating the code now.
             await self.stop()
 
         self.run_id = str(uuid.uuid4())
+        self.set_run_id(self.run_id)
 
         async def start_with_timeout():
             try:
                 self._dev_loop = asyncio.create_task(
-                    self._dev(run_id=self.run_id, instructions=instructions),
+                    self._dev(instructions=instructions),
                 )
                 await asyncio.wait_for(
                     self._dev_loop,
