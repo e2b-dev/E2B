@@ -161,7 +161,7 @@ function AgentLogFilesList({
   }
 
   return (
-    <main className="overflow-hidden flex flex-col max-h-full flex-1">
+    <main className="rounded-md border-white/5 overflow-hidden flex flex-col max-h-full flex-1">
       <input
         type="file"
         style={{ display: 'none' }}
@@ -174,7 +174,7 @@ function AgentLogFilesList({
         allowdirs=""
         multiple
       />
-      <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8 min-h-[88px]">
+      <header className="flex items-center justify-between py-4 sm:px-6 lg:px-8 border-b border-b-white/5">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
         {isUploading ? (
           <Spinner />
@@ -184,6 +184,7 @@ function AgentLogFilesList({
           />
         )}
       </header>
+
       {sortedLogUploads.length === 0 && (
         <div
           className="flex items-center justify-center flex-1"
@@ -192,100 +193,102 @@ function AgentLogFilesList({
         </div>
       )}
 
-      {sortedLogUploads.length > 0 && (
-        <Splitter
-          gutterClassName={clsx(
-            'bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
-          )}
-          draggerClassName={clsx(
-            'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
-          )}
-          direction={SplitDirection.Horizontal}
-          classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
-          initialSizes={splitterSizes}
-          onResizeFinished={setSizes}
-          minWidths={[120, 120]}
-        >
-          <div className="flex flex-col space-y-4 py-2 sm:px-4 lg:px-8 flex-1">
-            {sortedLogUploads.map((logUpload, i) => (
-              <div
-                key={logUpload.id}
-              >
+      <div className="my-4 overflow-hidden flex flex-col flex-1">
+        {sortedLogUploads.length > 0 && (
+          <Splitter
+            gutterClassName={clsx(
+              'bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
+            )}
+            draggerClassName={clsx(
+              'bg-white/5 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
+            )}
+            direction={SplitDirection.Horizontal}
+            classes={['flex pr-2 overflow-auto', 'bg-gray-900 flex pl-2']}
+            initialSizes={splitterSizes}
+            onResizeFinished={setSizes}
+            minWidths={[120, 120]}
+          >
+            <div className="flex flex-col space-y-4 sm:px-4 lg:px-8 flex-1">
+              {sortedLogUploads.map((logUpload, i) => (
                 <div
-                  className="flex flex-col space-y-2 flex-1"
+                  key={logUpload.id}
                 >
-                  <div className="flex items-center space-x-2">
-                    <button
-                      className={clsx(
-                        'h-6 w-6 flex items-center justify-center px-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
-                        openLogUploads[logUpload.id] && 'bg-gray-700',
-                        !openLogUploads[logUpload.id] && 'bg-gray-800',
-                      )}
-                      onClick={() => toggleLogUpload(logUpload.id)}
-                    >
-                      <ChevronRight size={14} className={clsx(
-                        'text-gray-400',
-                        'transition-all',
-                        'select-none',
-                        openLogUploads[logUpload.id] && 'rotate-90',
-                      )} />
-                    </button>
+                  <div
+                    className="flex flex-col space-y-2 flex-1"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <button
+                        className={clsx(
+                          'h-6 w-6 flex items-center justify-center px-1 cursor-pointer hover:bg-gray-700 transition-all rounded-md',
+                          openLogUploads[logUpload.id] && 'bg-gray-700',
+                          !openLogUploads[logUpload.id] && 'bg-gray-800',
+                        )}
+                        onClick={() => toggleLogUpload(logUpload.id)}
+                      >
+                        <ChevronRight size={14} className={clsx(
+                          'text-gray-400',
+                          'transition-all',
+                          'select-none',
+                          openLogUploads[logUpload.id] && 'rotate-90',
+                        )} />
+                      </button>
 
-                    <button
-                      className={clsx(
-                        'h-6 w-20 flex items-center justify-center space-x-1 px-1 bg-gray-800 transition-all rounded-md text-gray-400 text-xs',
-                        renamingLogUploadID === logUpload.id && 'hover:bg-gray-800 cursor-not-allowed',
-                        renamingLogUploadID !== logUpload.id && 'cursor-pointer hover:bg-gray-700',
-                      )}
-                      onClick={() => handleRenameLogUpload(logUpload.id)}
-                    >
-                      {renamingLogUploadID === logUpload.id ? (
-                        <Spinner
-                          className="text-gray-400 transition-all select-none"
-                        />
-                      ) : (
-                        <Edit
-                          className="text-gray-400 transition-all select-none"
-                          size={14}
-                        />
-                      )}
-                      <span>Rename</span>
-                    </button>
-                    <span
-                      className={clsx(
-                        'text-sm',
-                        'font-semibold',
-                        'text-gray-200',
-                        'whitespace-nowrap',
-                      )}
-                      // This prevents hydration warning for timestamps rendered via SSR
-                      suppressHydrationWarning
-                    >
-                      {logUpload.display_name && !renamedLogUploads[logUpload.id] && logUpload.display_name}
-                      {logUpload.display_name && renamedLogUploads[logUpload.id] && renamedLogUploads[logUpload.id]}
-                      {!logUpload.display_name && (
-                        `Upload from ${logUpload.created_at.toLocaleString()}`
-                      )}
-                    </span>
-                  </div>
-
-                  {openLogUploads[logUpload.id] && (
-                    <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
-                      <UploadTree
-                        log={logUpload}
-                        selectedLogFile={logUpload.id === selectedLogFile?.log_upload_id ? selectedLogFile : undefined}
-                      />
+                      <button
+                        className={clsx(
+                          'h-6 w-20 flex items-center justify-center space-x-1 px-1 bg-gray-800 transition-all rounded-md text-gray-400 text-xs',
+                          renamingLogUploadID === logUpload.id && 'hover:bg-gray-800 cursor-not-allowed',
+                          renamingLogUploadID !== logUpload.id && 'cursor-pointer hover:bg-gray-700',
+                        )}
+                        onClick={() => handleRenameLogUpload(logUpload.id)}
+                      >
+                        {renamingLogUploadID === logUpload.id ? (
+                          <Spinner
+                            className="text-gray-400 transition-all select-none"
+                          />
+                        ) : (
+                          <Edit
+                            className="text-gray-400 transition-all select-none"
+                            size={14}
+                          />
+                        )}
+                        <span>Rename</span>
+                      </button>
+                      <span
+                        className={clsx(
+                          'text-sm',
+                          'font-semibold',
+                          'text-gray-200',
+                          'whitespace-nowrap',
+                        )}
+                        // This prevents hydration warning for timestamps rendered via SSR
+                        suppressHydrationWarning
+                      >
+                        {logUpload.display_name && !renamedLogUploads[logUpload.id] && logUpload.display_name}
+                        {logUpload.display_name && renamedLogUploads[logUpload.id] && renamedLogUploads[logUpload.id]}
+                        {!logUpload.display_name && (
+                          `Upload from ${logUpload.created_at.toLocaleString()}`
+                        )}
+                      </span>
                     </div>
-                  )}
+
+                    {openLogUploads[logUpload.id] && (
+                      <div className="flex flex-col space-y-3 border-l border-gray-800 pl-2 ml-[11px] flex-1">
+                        <UploadTree
+                          log={logUpload}
+                          selectedLogFile={logUpload.id === selectedLogFile?.log_upload_id ? selectedLogFile : undefined}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <AgentLogFileContent
-            logFile={selectedLogFile}
-          />
-        </Splitter>
-      )}
+              ))}
+            </div>
+            <AgentLogFileContent
+              logFile={selectedLogFile}
+            />
+          </Splitter>
+        )}
+      </div>
     </main >
   )
 }

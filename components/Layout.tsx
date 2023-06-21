@@ -83,28 +83,29 @@ function Layout({ children }: PropsWithChildren) {
     <div className={clsx(
       inter.variable,
       'font-sans',
+      'flex-1',
       'flex',
+      'items-start',
+      'justify-start',
+      'p-2',
+      'space-x-1',
       'h-full',
       'w-full',
-      'flex-1',
-      'flex-col',
       'overflow-hidden',
     )}>
-      <div className="overflow-hidden">
-        <DashboardMobileSidebar
-          isSidebarOpen={isSidebarOpen}
-          onSetSidebarOpen={setIsSidebarOpen}
-          onSignOut={signOut}
-          navigation={navigation}
-        />
+      <DashboardMobileSidebar
+        isSidebarOpen={isSidebarOpen}
+        onSetSidebarOpen={setIsSidebarOpen}
+        onSignOut={signOut}
+        navigation={navigation}
+      />
 
-        <DashboardDesktopSidebar
-          onSignOut={signOut}
-          navigation={navigation}
-        />
-      </div>
+      <DashboardDesktopSidebar
+        onSignOut={signOut}
+        navigation={navigation}
+      />
 
-      <div className="xl:pl-48 flex flex-col flex-1 max-h-full">
+      <div className="flex flex-col flex-1 self-stretch overflow-hidden">
         {/* Mobile menu icon */}
         <div className="xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border-b border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
           <button
@@ -121,11 +122,14 @@ function Layout({ children }: PropsWithChildren) {
           </div>
         </div>
 
-        <div className="hidden xl:flex py-2 px-6 border-b border-white/5">
+        {/* Header` */}
+        <div className="hidden xl:flex py-2 px-6 border border-white/5 bg-gray-900 rounded-md">
           <Feedback />
         </div>
 
-        {children}
+        <div className="mt-1 flex-1 flex flex-col self-stretch overflow-auto bg-gray-900 rounded-md">
+          {children}
+        </div>
       </div>
     </div>
   )

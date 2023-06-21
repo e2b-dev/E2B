@@ -100,7 +100,7 @@ function AgentPromptLogsList({
             </span>
           </div>
           {idx !== logs.length - 1 && (
-            <div className="ml-1 rounded min-h-[20px] w-px bg-gray-800" />
+            <div className="ml-1 rounded h-[24px] w-px bg-white/5" />
           )}
         </Fragment>
       ))}
