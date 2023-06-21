@@ -23,7 +23,7 @@
     "start:api-otel": "cd api-service && cross-env PYTHONUNBUFFERED=1 OTEL_METRIC_EXPORT_INTERVAL=15000 OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES poetry run opentelemetry-instrument --service_name agent-api --exporter_otlp_endpoint \"ingest.lightstep.com:443\" --traces_exporter console,otlp_proto_grpc --metrics_exporter console,otlp_proto_grpc gunicorn --bind 0.0.0.0:49155 --workers 1 --threads 2 --timeout 120 app:app -k uvicorn.workers.UvicornWorker",
     "start:api": "cd api-service && cross-env PYTHONUNBUFFERED=1 poetry run uvicorn app:app --reload --host 0.0.0.0 --port 49155",
     "start:playground": "cd api-service/playground && npm run dev",
-    "install:api-service": "cd api-service && poetry install --with dev --no-root && cd playground && npm install && make install-instrumentation",
+    "install:api-service": "cd api-service && poetry install --with dev --no-root && cd playground && npm install && poetry run opentelemetry-bootstrap -a install",
     "install:api-playground": "cd api-service/playground && npm install",
     "install:all": "npm install && npm run install:api-service && npm run install:api-playground",
     "start": "docker compose build && (npm run db:reset || cd . && npm run db:start && docker compose up)",

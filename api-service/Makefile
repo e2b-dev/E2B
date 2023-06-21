@@ -14,6 +14,3 @@ generate-playground-client:
 
 generate-api-schema:
 	poetry run python3 generate.py
-
-install-instrumentation:
-	poetry run opentelemetry-bootstrap -a install
