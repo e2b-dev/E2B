@@ -34,8 +34,6 @@ function AgentLogFileContent({
 
   if (!logFile) return null
 
-  console.log('logFile', logFile)
-
   return (
     <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden">
       {logFile.filename.includes('full_message_history')
