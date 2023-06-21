@@ -161,7 +161,7 @@ function AgentLogFilesList({
   }
 
   return (
-    <main className="rounded-md border-white/5 border overflow-hidden flex flex-col max-h-full flex-1">
+    <main className="rounded-md border-white/5 border overflow-hidden pb-6 flex flex-col max-h-full flex-1">
       <input
         type="file"
         style={{ display: 'none' }}

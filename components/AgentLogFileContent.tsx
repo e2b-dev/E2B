@@ -34,9 +34,13 @@ function AgentLogFileContent({
 
   if (!logFile) return null
 
+  console.log('logFile', logFile)
+
   return (
     <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden">
-      {logFile.filename.includes('full_message_history') || logFile.filename.includes('current_context') ? (
+      {logFile.filename.includes('full_message_history')
+        || logFile.filename.includes('current_context')
+        || logFile.filename.includes('prompt_summary') ? (
         <Splitter
           gutterClassName={clsx(
             'bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',
@@ -61,7 +65,7 @@ function AgentLogFileContent({
         <AgentNextActionLogDetail
           log={logFile.content as AgentNextActionLog}
         />
-      ) : logFile.filename.includes('user_input') ? (
+      ) : logFile.filename.includes('user_input.txt') || logFile.filename.includes('summary.txt') ? (
         <div className="overflow-auto p-2 mr-2.5 mb-2.5 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 w-full border border-gray-800">
           <div className="flex flex-col space-y-1 w-full">
             <span className="text-sm font-medium text-gray-500">User Input</span>
