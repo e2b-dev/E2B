@@ -4,6 +4,5 @@ import {
 
 export type Navigation = {
   name: string
-  view: string
   icon: LucideIcon
 }[]

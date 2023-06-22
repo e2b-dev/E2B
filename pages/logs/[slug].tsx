@@ -8,12 +8,12 @@ import { LiteDeploymentLog } from 'utils/agentLogs'
 import AgentRunLogContent from 'components/AgentRunLogContent'
 
 interface PathProps extends ParsedUrlQuery {
-  logID: string
+  slug: string
 }
 
 export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (ctx) => {
-  const logID = ctx.params?.logID
-  if (!logID) {
+  const slug = ctx.params?.slug
+  if (!slug) {
     return {
       redirect: {
         destination: '/',
@@ -36,9 +36,24 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     }
   }
 
+  const splittedLogSlug = slug.split('-')
+  const projectSlug = splittedLogSlug.slice(0, splittedLogSlug.length - 1).join('-')
+  const logNumber = parseInt(splittedLogSlug.length > 1 ? splittedLogSlug[splittedLogSlug.length - 1] : '0')
+
   const log = await prisma.log_files.findFirst({
+    orderBy: {
+      created_at: 'asc',
+    },
+    skip: logNumber,
     where: {
-      id: logID,
+      deployments: {
+        projects: {
+          slug: {
+            equals: projectSlug,
+            mode: 'insensitive',
+          }
+        }
+      },
       projects: {
         teams: {
           users_teams: {
@@ -62,7 +77,6 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
     },
   })
 
-
   if (!log || !log.deployments) {
     return {
       notFound: true,
@@ -83,13 +97,9 @@ interface Props {
   log: LiteDeploymentLog
 }
 
-function ProjectPage({
-  log,
-}: Props) {
+function ProjectPage({ log }: Props) {
   return (
-    <AgentRunLogContent
-      log={log}
-    />
+    <AgentRunLogContent log={log} />
   )
 }
 

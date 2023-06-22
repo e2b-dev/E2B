@@ -118,7 +118,6 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
     })
 
     const appInfo = await appInfoPromise
-
     const authData: DeploymentAuthData = {
       github: {
         app_name: appInfo.name,
@@ -136,10 +135,12 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       },
     }
 
+    const slug = `smoldev-${owner}-${repo}-pr${pullNumber}`.toLowerCase()
     const project = await prisma.projects.create({
       data: {
         id: nanoid(),
         name: 'Smol developer',
+        slug,
         deployments: {
           create: {
             auth: authData as any,
@@ -179,7 +180,6 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       project_id: project.id,
       config: modelConfig as any,
     })
-
 
     const deployment = project.deployments[0]
     // We started the process of getting the token earlier but we await it only now because we need in now

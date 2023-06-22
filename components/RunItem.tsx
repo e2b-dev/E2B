@@ -1,0 +1,68 @@
+import clsx from 'clsx'
+import Link from 'next/link'
+
+import {
+  FileProps,
+} from '../filesystem'
+
+function RunItem({
+  name,
+  path: filePath,
+  onSelect,
+  isSelected,
+  metadata,
+}: FileProps) {
+  return (
+    <Link
+      href={metadata['href']}
+      className={
+        clsx(
+          'px-2',
+          'py-2',
+          'rounded-md',
+          'cursor-pointer',
+          'flex',
+          'items-center',
+          'space-x-2',
+          'bg-[#1F2437]',
+          'border',
+          'border-[#2A3441]',
+          'hover:bg-[#262C40]',
+          'w-full',
+          'justify-between',
+        )}
+    >
+      <span className="flex space-x-2">
+        <span
+          className="
+        text-sm
+        whitespace-nowrap
+        text-gray-200
+        "
+        >
+          Run
+        </span >
+        <span
+          className="
+        text-sm
+        whitespace-nowrap
+        text-gray-500
+        "
+        >
+          {metadata['id']}
+        </span>
+      </span>
+      <span
+        className="
+        text-sm
+        whitespace-nowrap
+        text-gray-500
+        "
+      >
+        {metadata['timestamp'].toLocaleString()}
+      </span>
+    </Link>
+  )
+}
+
+export default RunItem

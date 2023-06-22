@@ -6,9 +6,10 @@ export interface LiteDeploymentLog extends Omit<log_files, 'content'> {
 }
 
 export interface LiteDeployment extends deployments {
-  log_files: Pick<log_files, 'id' | 'created_at' | 'log_upload_id' | 'relativePath' | 'filename'>[]
+  log_files: (Pick<log_files, 'id' | 'created_at' | 'log_upload_id' | 'relativePath' | 'filename'>)[]
   projects: {
     name: string
+    slug: string | null
   }
 }
 

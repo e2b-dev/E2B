@@ -11,7 +11,7 @@ import {
   LiteDeployment,
 } from 'utils/agentLogs'
 
-import UploadTree from './UploadFiletree'
+import DeploymentTree from './DeploymentTree'
 
 export interface Props {
   deployments: LiteDeployment[]
@@ -45,7 +45,7 @@ function AgentDeploymentLogList({
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1 border-white/5 border rounded-md">
-      <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8 min-h-[88px]">
+      <header className="flex items-center justify-between py-4 sm:px-6 lg:px-8 border-b border-b-white/5">
         <h1 className="text-2xl font-semibold text-white">Agent Deployments</h1>
       </header>
       {sortedDeployments.length === 0 && (
@@ -57,7 +57,7 @@ function AgentDeploymentLogList({
       )}
 
       {sortedDeployments.length > 0 && (
-        <div className="flex-col space-y-4 py-2 sm:px-4 lg:px-8 flex-1 flex pr-2 overflow-auto">
+        <div className="my-4 flex-col space-y-4 py-2 sm:px-4 lg:px-8 flex-1 flex pr-2 overflow-auto">
           {sortedDeployments.map(deployment => (
             <div
               key={deployment.id}
@@ -81,27 +81,38 @@ function AgentDeploymentLogList({
                       openDeployments[deployment.id] && 'rotate-90',
                     )} />
                   </button>
-                  <span
+                  <div
                     className={clsx(
                       'text-sm',
                       'font-semibold',
                       'text-gray-200',
+                      'flex',
+                      'space-x-2',
                       'whitespace-nowrap',
                     )}
                     // This prevents hydration warning for timestamps rendered via SSR
                     suppressHydrationWarning
                   >
-                    {deployment.enabled}
-                    <span>
+                    <div className="flex items-center">
+                      <div className={clsx({
+                        'text-green-400 bg-green-400/10': deployment.enabled, 'text-gray-500 bg-gray-100/10': !deployment.enabled
+                      }, 'flex-none rounded-full flex p-1')}>
+                        <div className="h-2 w-2 rounded-full bg-current" />
+                      </div>
+                    </div>
+                    <span className="text-gray-200 font-normal">
                       {deployment.projects.name}
                     </span>
-                  </span>
+                    <span className="text-gray-600 font-normal">
+                      {deployment.projects.slug}
+                    </span>
+                  </div>
                 </div>
 
                 {openDeployments[deployment.id] && (
                   <div className="flex flex-col space-y-3 border-l border-white/5 pl-2 ml-[11px] flex-1">
-                    <UploadTree
-                      log={deployment}
+                    <DeploymentTree
+                      deployment={deployment}
                     />
                   </div>
                 )}

@@ -119,6 +119,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           deployments: {
             include: {
               log_files: {
+                orderBy: {
+                  created_at: 'desc',
+                },
                 select: {
                   id: true,
                   relativePath: true,
@@ -129,6 +132,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
               },
               projects: {
                 select: {
+                  slug: true,
                   name: true,
                 },
               },
@@ -171,6 +175,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             deployments: {
               include: {
                 log_files: {
+                  orderBy: {
+                    created_at: 'desc',
+                  },
                   select: {
                     id: true,
                     relativePath: true,
@@ -181,6 +188,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 },
                 projects: {
                   select: {
+                    slug: true,
                     name: true,
                   },
                 },
@@ -202,6 +210,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             deployments: {
               include: {
                 log_files: {
+                  orderBy: {
+                    created_at: 'desc',
+                  },
                   select: {
                     id: true,
                     relativePath: true,
@@ -212,6 +223,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 },
                 projects: {
                   select: {
+                    slug: true,
                     name: true,
                   },
                 },
@@ -265,6 +277,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         deployments: {
           include: {
             log_files: {
+              orderBy: {
+                created_at: 'desc',
+              },
               select: {
                 id: true,
                 relativePath: true,
@@ -275,6 +290,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             },
             projects: {
               select: {
+                slug: true,
                 name: true,
               },
             },

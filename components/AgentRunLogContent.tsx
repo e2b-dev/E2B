@@ -29,14 +29,13 @@ function AgentRunLogContent({
     setSplitterSizes(sizes)
   }, [setSplitterSizes])
 
-  if (!log) return null
-
   return (
-    <main className="overflow-hidden flex flex-col max-h-full flex-1">
-      <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8 min-h-[88px]">
-        <h1 className="text-2xl font-semibold text-white">Agent run logs</h1>
+    <main className="overflow-hidden flex flex-col max-h-full flex-1 border-white/5 border rounded-md">
+      <header className="flex items-center py-4 sm:px-6 lg:px-8 border-b border-b-white/5">
+        <h1 className="text-2xl font-semibold text-white">Agent Run Logs</h1>
+        <div className="text-base text-gray-400 self-center">Log</div>
       </header>
-      <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden">
+      <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden my-4">
         <Splitter
           gutterClassName={clsx(
             'bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group',

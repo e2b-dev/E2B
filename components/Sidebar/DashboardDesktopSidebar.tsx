@@ -14,12 +14,9 @@ function DashboardDesktopSidebar({
   navigation,
 }: Props) {
   const router = useRouter()
-  const view = router.query.view as string | undefined
-  const isOnRunDetail = router.pathname.startsWith('/deployed/[projectID]/run/[runID]')
-  const isOnLogDetail = router.pathname.startsWith('/log/[logFileID]')
 
   return (
-    <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-48 xl:flex-col">
+    <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-[220px] xl:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 border border-white/5 rounded-md">
         {/* Logo */}
         {/* <div className="flex h-16 shrink-0 items-center">
@@ -39,9 +36,9 @@ function DashboardDesktopSidebar({
                 {navigation.map((item) => (
                   <li key={item.name}>
                     <Link
-                      href={`/?view=${item.view}`}
+                      href={'/'}
                       className={clsx(
-                        item.view === view || (isOnRunDetail && item.view === 'runs') || (isOnLogDetail && item.view === 'logs')
+                        router.pathname === '/'
                           ? 'bg-[#1F2437] text-white'
                           : 'text-gray-400 hover:text-white hover:bg-[#1F2437]',
                         'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'

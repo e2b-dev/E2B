@@ -8,6 +8,7 @@ import path from 'path-browserify'
 import FilesystemPrimitive, {
   DirNode,
   FileNode,
+  FileProps,
   NodeType,
   SelectHandler,
   useFilesystem,
@@ -27,8 +28,9 @@ export interface Props {
   rootPath: string
   ignore?: string[]
   onFiletreeClick?: (path: string, type: NodeType) => void
-  fetchContent: (dirpath: string) => (FileInfo & { id?: string })[]
+  fetchContent: (dirpath: string) => (FileInfo & { href?: any, id?: string, timestamp?: Date })[]
   expandedPath?: string
+  file?: React.ComponentType<FileProps>
 }
 
 function Filesystem({
@@ -38,6 +40,7 @@ function Filesystem({
   fetchContent,
   onFiletreeClick,
   expandedPath,
+  file,
 }: Props) {
   const fs = useFilesystem({ rootPath })
   const fetchDirContent = useCallback(async (dirpath: string) => {
@@ -46,13 +49,9 @@ function Filesystem({
       ? new DirNode({ name: f.name })
       : new FileNode({
         name: f.name, metadata: {
-          href: {
-            pathname: '/',
-            query: {
-              view: 'logs',
-              logFileID: f.id,
-            }
-          }
+          href: f.href,
+          id: f.id,
+          timestamp: f.timestamp,
         }
       })))
     fs.add(dirpath, ns, ignore)
@@ -139,7 +138,7 @@ function Filesystem({
           className,
         )}
         dir={Dir}
-        file={File}
+        file={file || File}
         fs={fs}
         onSelect={handleNodeSelect}
       />
