@@ -31,8 +31,7 @@ function AgentChallengeTagModal({
       ref={ref}
       className="
       absolute
-      left-1/2
-      top-1/2
+      mt-1
       w-[200px]
       border
       border-[#6366F1]/50

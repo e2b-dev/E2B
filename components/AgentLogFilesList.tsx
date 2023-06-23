@@ -207,7 +207,7 @@ function AgentLogFilesList({
             onResizeFinished={setSizes}
             minWidths={[120, 120]}
           >
-            <div className="flex flex-col space-y-4 sm:px-4 lg:px-8 flex-1">
+            <div className="flex flex-col space-y-4 sm:px-4 lg:px-8 flex-1 relative">
               {sortedLogUploads.map((logUpload, i) => (
                 <div
                   key={logUpload.id}

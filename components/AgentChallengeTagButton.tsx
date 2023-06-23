@@ -28,7 +28,7 @@ function AgentChallengeTagButton({
   }
 
   return (
-    <div className="relative">
+    <div>
       <button
         className="flex items-center justify-center text-xs shrink-0 text-gray-400 bg-[#1F2437] hover:bg-[#272D44] h-6 w-6 rounded-md"
         onClick={handleButtonClick}
