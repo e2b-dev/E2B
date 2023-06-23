@@ -215,6 +215,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       owner,
       repo,
       projectID: project.id,
+      projectSlug: slug,
     }
 
     posthog?.capture({

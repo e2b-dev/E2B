@@ -6,34 +6,38 @@ import Splitter from '@devbookhq/splitter'
 import clsx from 'clsx'
 
 import {
-  SystemPromptLog,
-  UserPromptLog,
-  AssistantPromptLog,
   LiteDeploymentLog,
 } from 'utils/agentLogs'
-import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
-import AgentPromptLogsList from 'components/AgentPromptLogsList'
 import { useLocalStorage } from 'hooks/useLocalStorage'
+import useDeploymentRunLog from 'hooks/useDeploymentRunLog'
+import AgentRunLogDetail from './AgentRunLogDetail'
+import AgentDeploymentLogsList from './AgentDeploymentsLogsList'
+import { useRouter } from 'next/router'
 
 export interface Props {
   log: LiteDeploymentLog
 }
 
 function AgentRunLogContent({
-  log,
+  log: inialLog,
 }: Props) {
-  const [selectedLog, setSelectedLog] = useState<SystemPromptLog | UserPromptLog | AssistantPromptLog>()
+  const [selectedLog, setSelectedLog] = useState<any>()
   const [splitterSizes, setSplitterSizes] = useLocalStorage('log-content-splitter', [40, 60])
+  const router = useRouter()
+
+  const slug = router.query.slug as string
 
   const setSizes = useCallback((pairIdx: number, sizes: number[]) => {
     setSplitterSizes(sizes)
   }, [setSplitterSizes])
 
+  const log = useDeploymentRunLog(inialLog)
+
   return (
-    <main className="overflow-hidden flex flex-col max-h-full flex-1 border-white/5 border rounded-md">
-      <header className="flex items-center py-4 sm:px-6 lg:px-8 border-b border-b-white/5">
+    <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
+      <header className="flex items-center p-4 border-b border-b-white/5 justify-between">
         <h1 className="text-2xl font-semibold text-white">Agent Run Logs</h1>
-        <div className="text-base text-gray-400 self-center">Log</div>
+        <div className="text-sm text-gray-400 self-center truncate">{slug}</div>
       </header>
       <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden my-4">
         <Splitter
@@ -48,11 +52,11 @@ function AgentRunLogContent({
           onResizeFinished={setSizes}
           minWidths={[120, 120]}
         >
-          <AgentPromptLogsList
+          <AgentDeploymentLogsList
             logs={log.content as any}
             onSelected={setSelectedLog}
           />
-          <AgentPrompLogDetail
+          <AgentRunLogDetail
             log={selectedLog}
           />
         </Splitter>

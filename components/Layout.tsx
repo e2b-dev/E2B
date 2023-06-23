@@ -23,24 +23,6 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const navigation = [
-  // {
-  //   name: 'Deployed Agents',
-  //   view: 'deployed',
-  //   icon: Zap,
-  // },
-  // {
-  //   name: 'Agent Runs',
-  //   view: 'runs',
-  //   icon: ListEnd,
-  // },
-  {
-    name: 'Agent Logs',
-    view: 'logs',
-    icon: List,
-  },
-]
-
 function Layout({ children }: PropsWithChildren) {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
@@ -90,58 +72,64 @@ function Layout({ children }: PropsWithChildren) {
   ]
 
   return (
-    <div className={clsx(
-      inter.variable,
-      'font-sans',
-      'flex-1',
-      'flex',
-      'items-start',
-      'justify-start',
-      'p-2',
-      'space-x-1',
-      'h-full',
-      'w-full',
-      'overflow-hidden',
-    )}>
-      <DashboardMobileSidebar
-        isSidebarOpen={isSidebarOpen}
-        onSetSidebarOpen={setIsSidebarOpen}
-        onSignOut={signOut}
-        navigation={navigation}
-      />
+    <>
+      <style jsx global>
+        {`
+        :root {
+          --font-inter: ${inter.variable};
+        }
+        `}
+      </style>
+      <div className={clsx(
+        'font-sans',
+        'flex-1',
+        'flex',
+        'items-start',
+        'justify-start',
+        'p-2',
+        'h-full',
+        'w-full',
+        'overflow-hidden',
+      )}>
+        <DashboardMobileSidebar
+          isSidebarOpen={isSidebarOpen}
+          onSetSidebarOpen={setIsSidebarOpen}
+          onSignOut={signOut}
+          navigation={navigation}
+        />
+        <DashboardDesktopSidebar
+          onSignOut={signOut}
+          navigation={navigation}
+        />
 
-      <DashboardDesktopSidebar
-        onSignOut={signOut}
-        navigation={navigation}
-      />
+        <div className="flex flex-col flex-1 self-stretch overflow-hidden">
+          {/* Mobile menu icon */}
+          <div className="rounded-md xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
+            <button
+              type="button"
+              className="-m-2.5 p-2.5 text-white xl:hidden"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <span className="sr-only">Open sidebar</span>
+              <Menu aria-hidden="true" />
+            </button>
 
-      <div className="flex flex-col flex-1 self-stretch overflow-hidden">
-        {/* Mobile menu icon */}
-        <div className="xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border-b border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 text-white xl:hidden"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <span className="sr-only">Open sidebar</span>
-            <Menu aria-hidden="true" />
-          </button>
+            <div className="xl:hidden">
+              <Feedback />
+            </div>
+          </div>
 
-          <div className="xl:hidden">
+          {/* Header` */}
+          <div className="hidden xl:flex py-2 px-4 border border-white/5 bg-gray-900 rounded-md">
             <Feedback />
           </div>
-        </div>
 
-        {/* Header` */}
-        <div className="hidden xl:flex py-2 px-6 border border-white/5 bg-gray-900 rounded-md">
-          <Feedback />
-        </div>
-
-        <div className="mt-1 flex-1 flex flex-col self-stretch overflow-auto bg-gray-900 rounded-md">
-          {children}
+          <div className="mt-1 flex-1 flex flex-col self-stretch overflow-auto bg-gray-900 rounded-md border border-white/5">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

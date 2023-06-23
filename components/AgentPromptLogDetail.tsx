@@ -11,13 +11,13 @@ function handleJSONQuotes(content: string) {
   try {
     return JSON.parse(content)
   } catch (err) {
-    console.log('JSON parse error', err, content)
+    // console.log('JSON parse error', err, content)
   }
 
   try {
     return JSON.parse(content.replace(/"/g, '\\"').replace(/'/g, '"'))
   } catch (err) {
-    console.log('JSON parse error', err, content)
+    // console.log('JSON parse error', err, content)
   }
 }
 

@@ -81,6 +81,7 @@ export interface PostAgentResponse {
   pullURL: string
   pullNumber: number
   projectID: string
+  projectSlug: string
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
@@ -105,6 +106,7 @@ function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: Templa
     templateID,
   }
 }
+
 function Setup() {
   const user = useUser()
   const supabaseClient = useSupabaseClient()
@@ -165,7 +167,12 @@ function Setup() {
 
       // Redirect to the dashboard.
       if (response) {
-        router.push(response.pullURL)
+        router.push({
+          pathname: '/logs/[slug]',
+          query: {
+            slug: `${response.projectSlug}-0`,
+          },
+        })
       } else {
         console.error('No response from agent creation')
       }

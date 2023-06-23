@@ -247,7 +247,7 @@ Begin generating the code now.
 
             await self.on_logs(
                 {
-                    "message": f"hi its me, 🐣the smol developer🐣!",
+                    "message": f"Initial prompt",
                     "type": "info",
                     "properties": {
                         "prompt": user_prompt,
@@ -261,16 +261,6 @@ Begin generating the code now.
 
                 async def initialize_playground():
                     await playground.open()
-                    await self.on_logs(
-                        {
-                            "message": f"Created playground",
-                            "properties": {
-                                "playground": "created",
-                                "id": playground.id,
-                            },
-                            "type": "playground",
-                        }
-                    )
                     span.add_event(
                         "playground-created",
                         {
@@ -284,17 +274,6 @@ Begin generating the code now.
                         repo_address=repo_address,
                         rootdir=rootdir,
                         branch=branch,
-                    )
-
-                    await self.on_logs(
-                        {
-                            "message": f"Cloned repository",
-                            "properties": {
-                                "tool": "git",
-                                "repository": f"{owner}/{repo}",
-                            },
-                            "type": "tool",
-                        }
                     )
                     span.add_event(
                         "repository-cloned",
@@ -313,16 +292,6 @@ Begin generating the code now.
 
                     res = await playground.run_command(delete_command, rootdir)
                     print("Delete command result: ", res.stdout, res.stderr)
-
-                    await self.on_logs(
-                        {
-                            "message": f"Cleaned root directory",
-                            "properties": {
-                                "tool": "filesystem",
-                            },
-                            "type": "tool",
-                        }
-                    )
 
                     span.add_event(
                         "files-deleted",
@@ -440,17 +409,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 async def save_file(name, content):
                     filepath = os.path.join(rootdir, name)
                     await playground.write_file(filepath, content)
-                    await self.on_logs(
-                        {
-                            "message": f"Saved file",
-                            "properties": {
-                                "filename": filepath,
-                                "content": content,
-                                "tool": "filesystem",
-                            },
-                            "type": "tool",
-                        },
-                    )
                     span.add_event(
                         "file-saved",
                         {
@@ -477,18 +435,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     commit_message=commit_message,
                     git_email=git_app_email,
                     git_name=git_app_name,
-                )
-                await self.on_logs(
-                    {
-                        "message": f"Pushed repository",
-                        "properties": {
-                            "repository_url": f"https://github.com/{owner}/{repo}",
-                            "branch": branch,
-                            "commit_message": commit_message,
-                            "tool": "git",
-                        },
-                        "type": "tool",
-                    },
                 )
                 span.add_event(
                     "pushed-repository",
@@ -524,15 +470,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
             finally:
                 if playground is not None:
                     await playground.close()
-                    await self.on_logs(
-                        {
-                            "message": f"Closed playground",
-                            "properties": {
-                                "playground": "closed",
-                            },
-                            "type": "playground",
-                        },
-                    )
                     span.add_event(
                         "closed-playground",
                         {},

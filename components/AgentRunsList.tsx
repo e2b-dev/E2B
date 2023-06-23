@@ -10,17 +10,12 @@ import Link from 'next/link'
 
 import { deployments, projects } from 'db/prisma'
 
-
 export interface Props {
   allDeployedAgents: {
     project: projects & { deployments: deployments[] }
     deployment: deployments
   }[]
   initialSelectedAgentID?: string
-  // agentInstance: {
-  //   project: projects & { deployments: deployments[] }
-  //   deployment: deployments
-  // }
 }
 
 function AgentRunsList({
@@ -50,13 +45,11 @@ function AgentRunsList({
     }
   }
 
-
   return (
     <main className="overflow-hidden flex flex-col flex-1">
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
         <h1 className="text-2xl font-semibold leading-7 text-white">Agent Runs</h1>
       </header>
-
 
       <div className="flex flex-col space-y-4">
         {/* Each deployed agent */}

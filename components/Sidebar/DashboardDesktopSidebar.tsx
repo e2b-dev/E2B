@@ -16,16 +16,9 @@ function DashboardDesktopSidebar({
   const router = useRouter()
 
   return (
-    <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-[220px] xl:flex-col">
+    <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-[220px] xl:flex-col pr-1">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 border border-white/5 rounded-md">
         {/* Logo */}
-        {/* <div className="flex h-16 shrink-0 items-center">
-          <img
-            className="h-8 w-auto"
-            src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-            alt="Your Company"
-          />
-        </div> */}
         <nav className="flex flex-1 flex-col space-y-6 py-[22px]">
           <div className="font-bold text-gray-100">
             e2b
@@ -43,7 +36,6 @@ function DashboardDesktopSidebar({
                           : 'text-gray-400 hover:text-white hover:bg-[#1F2437]',
                         'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'
                       )}
-                      shallow
                     >
                       <item.icon size={16} className="shrink-0" aria-hidden="true" />
                       {item.name}

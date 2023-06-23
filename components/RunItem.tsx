@@ -32,7 +32,7 @@ function RunItem({
           'justify-between',
         )}
     >
-      <span className="flex space-x-2">
+      <span className="flex space-x-2 truncate">
         <span
           className="
         text-sm
@@ -45,6 +45,7 @@ function RunItem({
         <span
           className="
         text-sm
+        truncate
         whitespace-nowrap
         text-gray-500
         "
@@ -57,6 +58,7 @@ function RunItem({
         text-sm
         whitespace-nowrap
         text-gray-500
+        truncate
         "
       >
         {metadata['timestamp'].toLocaleString()}

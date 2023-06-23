@@ -69,17 +69,10 @@ function DashboardMobileSidebar({
               {/* Sidebar component, swap this element with another sidebar if you like */}
               <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 ring-1 ring-white/10">
                 {/* Logo */}
-                {/* <div className="flex h-16 shrink-0 items-center">
-                  <img
-                    className="h-8 w-auto"
-                    src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-                    alt="Your Company"
-                  />
-                </div> */}
                 <nav className="flex flex-1 flex-col">
                   <ul role="list" className="flex flex-1 flex-col gap-y-7">
                     <li>
-                      <ul role="list" className="-mx-2 space-y-1">
+                      <ul role="list" className="py-8 space-y-1">
                         {navigation.map((item) => (
                           <li key={item.name}>
                             <Link
@@ -90,7 +83,6 @@ function DashboardMobileSidebar({
                                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
                                 'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'
                               )}
-                              shallow
                             >
                               <item.icon size={16} className="shrink-0" aria-hidden="true" />
                               {item.name}
@@ -101,7 +93,7 @@ function DashboardMobileSidebar({
                     </li>
                     <li className="-mx-6 mt-auto">
                       <div
-                        className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-white"
+                        className="flex items-center gap-x-4 p-8 text-sm font-semibold leading-6 text-white"
                       >
                         <button
                           className="text-sm font-semibold text-white"
@@ -116,9 +108,9 @@ function DashboardMobileSidebar({
               </div>
             </Dialog.Panel>
           </Transition.Child>
-        </div >
-      </Dialog >
-    </Transition.Root >
+        </div>
+      </Dialog>
+    </Transition.Root>
   )
 }
 
