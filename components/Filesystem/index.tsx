@@ -15,10 +15,12 @@ import FilesystemPrimitive, {
 
 import Dir from './Dir'
 import File from './File'
+import { AgentChallengeTag } from 'utils/agentLogs'
 
 export interface FileInfo {
   isDir: boolean
   name: string
+  tags: AgentChallengeTag[]
 }
 
 export interface Props {
@@ -56,6 +58,9 @@ function Filesystem({
         }
       })))
     fs.add(dirpath, ns, ignore)
+    files.forEach(f => {
+      fs.setMetadata<AgentChallengeTag[]>(path.join(dirpath, f.name), { key: 'tags', value: f.tags })
+    })
   }, [
     fs,
     fetchContent,
