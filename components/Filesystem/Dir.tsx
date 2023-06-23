@@ -87,7 +87,6 @@ function Dir({
   }
 
   function removeTag() {
-    setMetadata([])
     // TODO: Remove from DB
     // TODO: IF success remove from metadata
     setMetadata([])
