@@ -19,6 +19,8 @@ import {
   DirProps,
   NodeType,
 } from 'filesystem'
+import { useAddLogUploadTag } from 'hooks/useAddLogUploadTag'
+import { useDeleteLogUploadTag } from 'hooks/useDeleteLogUploadTag'
 
 
 
@@ -53,6 +55,8 @@ function Dir({
   //   }
   // }, [path])
 
+  const addTag = useAddLogUploadTag()
+  const deleteTag = useDeleteLogUploadTag()
 
   function handleOnClick(e: any) {
     fs.setIsDirExpanded(path, !isExpanded)
@@ -73,23 +77,31 @@ function Dir({
       })
   }
 
-  function addNewTag(s: Severity) {
+  async function addNewTag(s: Severity) {
     if (!newTagName) return
     const newTag: AgentChallengeTagType = {
       path,
       text: newTagName,
       severity: s,
     }
-    // TODO: Add to DB
-    // TODO: If success add to metadata
     setNewTagName('')
-    setMetadata([newTag])
+    setMetadata([...tags, newTag])
+    try {
+      await addTag(metadata['logUploadID'], newTag)
+    } catch (e) {
+      setMetadata([])
+      console.error(e)
+    }
   }
 
-  function removeTag() {
-    // TODO: Remove from DB
-    // TODO: IF success remove from metadata
-    setMetadata([])
+  async function removeTag(i: number) {
+    setMetadata(tags.filter((t: any) => t !== tags[i]))
+    try {
+      await deleteTag(metadata['logUploadID'], tags[i])
+    } catch (e) {
+      setMetadata(tags)
+      console.error(e)
+    }
   }
 
   const icon = isExpanded ? (
@@ -114,7 +126,7 @@ function Dir({
             />
             <button
               className="text-gray-400 hover:text-gray-400"
-              onClick={removeTag}
+              onClick={() => removeTag(i)}
             >
               <X size={12} />
             </button>

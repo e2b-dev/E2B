@@ -10,15 +10,10 @@ const ReactJson = dynamic(import('react-json-view'), { ssr: false })
 function handleJSONQuotes(content: string) {
   try {
     return JSON.parse(content)
-  } catch (err) {
-    console.log('JSON parse error', err, content)
-  }
-
+  } catch (err) { }
   try {
     return JSON.parse(content.replace(/"/g, '\\"').replace(/'/g, '"'))
-  } catch (err) {
-    console.log('JSON parse error', err, content)
-  }
+  } catch (err) { }
 }
 
 export interface Props {

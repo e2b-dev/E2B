@@ -29,7 +29,7 @@ export interface Props {
   rootPath: string
   ignore?: string[]
   onFiletreeClick?: (path: string, type: NodeType) => void
-  fetchContent: (dirpath: string) => (FileInfo & { id?: string })[]
+  fetchContent: (dirpath: string) => (FileInfo & { id?: string, logUploadID: string })[]
   expandedPath?: string
 }
 
@@ -45,7 +45,7 @@ function Filesystem({
   const fetchDirContent = useCallback(async (dirpath: string) => {
     const files = fetchContent(dirpath)
     const ns = files.map(f => (f.isDir
-      ? new DirNode({ name: f.name })
+      ? new DirNode({ name: f.name, metadata: { logUploadID: f.logUploadID } })
       : new FileNode({
         name: f.name, metadata: {
           href: {

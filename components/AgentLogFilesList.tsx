@@ -145,7 +145,6 @@ function AgentLogFilesList({
     const newName = prompt('Enter a new name for the logs')
     if (!newName) return
 
-
     setIsRenamingLogUploadID(logUploadID)
     try {
       await renameLogUpload({ logUploadID, displayName: newName })

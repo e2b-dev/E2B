@@ -6,7 +6,7 @@ import path from 'path'
 import { prisma, projects, log_files } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
-import { AgentNextActionLog, AgentPromptLogs, LiteDeployment, LiteLogUpload } from 'utils/agentLogs'
+import { AgentChallengeTag, AgentNextActionLog, AgentPromptLogs, LiteDeployment, LiteLogUpload } from 'utils/agentLogs'
 
 export interface Props {
   projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
@@ -298,6 +298,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             .map<LiteLogUpload>(u => ({
               ...u,
               log_files: u.log_files.map(formatLogFileContent),
+              tags: u.tags as unknown as AgentChallengeTag[],
             }))
         }))
     },

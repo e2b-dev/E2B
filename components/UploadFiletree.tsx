@@ -2,11 +2,11 @@ import { useCallback } from 'react'
 import path from 'path-browserify'
 
 import Filesystem, { FileInfo } from 'components/Filesystem'
-import { AgentChallengeTag, LiteDeployment, LiteLogFile, LiteLogUpload } from 'utils/agentLogs'
+import { LiteLogFile, LiteLogUpload } from 'utils/agentLogs'
 import { FiletreeProvider } from 'hooks/useFiletree'
 
 export interface Props {
-  log: LiteLogUpload | LiteDeployment
+  log: LiteLogUpload
   selectedLogFile?: LiteLogFile
 }
 
@@ -14,12 +14,7 @@ function UploadTree({
   log: logUpload,
   selectedLogFile,
 }: Props) {
-  const fetchLogDirContent = useCallback<(dirpath: string) => (FileInfo & { id?: string })[]>(dirpath => {
-    let tags: AgentChallengeTag[] = []
-    if ((logUpload as any)['tags']) {
-      tags = (logUpload as LiteLogUpload)['tags']
-    }
-
+  const fetchLogDirContent = useCallback<(dirpath: string) => (FileInfo & { id?: string, logUploadID: string })[]>(dirpath => {
     const currentDir = dirpath.slice(1)
     const childFiles = logUpload
       .log_files
@@ -47,18 +42,22 @@ function UploadTree({
       return acc.add(childDir)
     }, new Set<string>())
 
+    console.log('tags', logUpload.tags)
+
     const content = [
       ...childFiles.map(f => ({
         name: f.filename,
         isDir: false,
         id: f.id,
         tags: [],
+        logUploadID: logUpload.id,
       })),
       ...Array.from(childDirs).map(dir => ({
         name: dir,
         isDir: true,
         // Filter out tags that don't belong to this dir.
-        tags: tags.filter(t => t.path === dir),
+        tags: logUpload.tags.filter(t => t.path === `/${dir}`),
+        logUploadID: logUpload.id,
       })),
     ]
     return content

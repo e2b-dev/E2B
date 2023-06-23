@@ -34,7 +34,6 @@ function AgentChallengeTagModal({
       left-1/2
       top-1/2
       w-[200px]
-      py-2
       border
       border-[#6366F1]/50
       shadow-lg
@@ -46,8 +45,7 @@ function AgentChallengeTagModal({
         className="
           w-full
           bg-transparent
-          px-2
-          pb-4
+          p-4
           text-sm
           outline-none
           border-b
