@@ -11,7 +11,6 @@ import {
   LiteDeployment,
 } from 'utils/agentLogs'
 
-import UploadTree from './UploadFiletree'
 
 export interface Props {
   deployments: LiteDeployment[]
@@ -100,9 +99,9 @@ function AgentDeploymentLogList({
 
                 {openDeployments[deployment.id] && (
                   <div className="flex flex-col space-y-3 border-l border-white/5 pl-2 ml-[11px] flex-1">
-                    <UploadTree
+                    {/* <UploadTree
                       log={deployment}
-                    />
+                    /> */}
                   </div>
                 )}
               </div>
