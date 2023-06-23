@@ -19,7 +19,6 @@ function SignIn() {
       router.push({
         pathname: '/',
         query: {
-          view: 'logs',
           ...router.query['team'] && { team: router.query['team'] },
         },
       })
