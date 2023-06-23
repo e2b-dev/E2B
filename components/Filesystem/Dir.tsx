@@ -75,18 +75,21 @@ function Dir({
 
   function addNewTag(s: Severity) {
     if (!newTagName) return
-    // TODO: Add tag in DB to all files that has this challenge dir as an ancestor
     const newTag: AgentChallengeTagType = {
       path,
       text: newTagName,
       severity: s,
     }
-    console.log('New tag', newTag)
+    // TODO: Add to DB
+    // TODO: If success add to metadata
     setNewTagName('')
     setMetadata([newTag])
   }
 
   function removeTag() {
+    setMetadata([])
+    // TODO: Remove from DB
+    // TODO: IF success remove from metadata
     setMetadata([])
   }
 
