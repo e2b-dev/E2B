@@ -117,10 +117,10 @@ function Dir({
   )
 
   return (
-    <div className="flex flex-col rounded w-full">
+    <div className="flex flex-col rounded w-full overflow-hidden">
       <div className="flex items-center justify-start w-full space-x-1">
         {tags.map((tag: AgentChallengeTagType, i: number) => (
-          <div className="flex items-center space-x-1" key={i}>
+          <div className="flex items-center space-x-1 shrink-0" key={i}>
             <AgentChallengeTag
               tag={tag}
             />
@@ -147,7 +147,6 @@ function Dir({
             'py-2',
             'flex',
             'items-center',
-            'w-full',
             'rounded-md',
             'space-x-1',
             'cursor-pointer',
