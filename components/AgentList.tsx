@@ -20,7 +20,7 @@ function AgentList({
   return (
     <main className="overflow-hidden">
       <header className="flex items-center justify-between p-4 sm:p-6 lg:px-8">
-        <h1 className="text-2xl font-semibold leading-7 text-white">Deployed Agents</h1>
+        <h1 className="text-xl font-semibold leading-7 text-white">Deployed Agents</h1>
       </header>
 
       <ul role="list" className="px-4 sm:px-6 lg:px-8 space-y-4 overflow-auto">

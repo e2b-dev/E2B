@@ -35,8 +35,8 @@ function AgentRunLogContent({
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
-      <header className="flex items-center p-4 border-b border-b-white/5 justify-between">
-        <h1 className="text-2xl font-semibold text-white">Agent Run Logs</h1>
+      <header className="flex items-center px-4 py-3 border-b border-b-white/5 justify-between">
+        <h1 className="text-xl font-semibold text-white">Agent Run Logs</h1>
         <div className="text-sm text-gray-400 self-center truncate">{slug}</div>
       </header>
       <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden my-4">
@@ -47,7 +47,7 @@ function AgentRunLogContent({
           draggerClassName={clsx(
             'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
           )}
-          classes={['pr-2 overflow-auto', 'bg-gray-900 pl-2']}
+          classes={['pr-2 overflow-auto', 'bg-gray-900 pl-2 pr-1']}
           initialSizes={splitterSizes}
           onResizeFinished={setSizes}
           minWidths={[120, 120]}

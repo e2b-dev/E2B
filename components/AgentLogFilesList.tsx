@@ -161,7 +161,7 @@ function AgentLogFilesList({
   }
 
   return (
-    <main className="rounded-md overflow-hidden pb-6 flex flex-col max-h-full flex-1">
+    <main className="rounded-md overflow-hidden flex flex-col max-h-full flex-1">
       <input
         type="file"
         style={{ display: 'none' }}
@@ -174,15 +174,12 @@ function AgentLogFilesList({
         allowdirs=""
         multiple
       />
-      <header className="flex items-center justify-between py-4 sm:px-6 lg:px-8 border-b border-b-white/5">
-        <h1 className="text-2xl font-semibold text-white">Log Files</h1>
-        {isUploading ? (
-          <Spinner />
-        ) : (
-          <LogFolderUploadButton
-            onClick={handleClickOnUpload}
-          />
-        )}
+      <header className="flex items-center justify-between px-4 py-2 border-b border-b-white/5">
+        <h1 className="text-xl font-semibold text-white">Log Files</h1>
+        <LogFolderUploadButton
+          onClick={handleClickOnUpload}
+          isUploading={isUploading}
+        />
       </header>
 
       {sortedLogUploads.length === 0 && (
@@ -208,7 +205,7 @@ function AgentLogFilesList({
             onResizeFinished={setSizes}
             minWidths={[120, 120]}
           >
-            <div className="flex flex-col space-y-4 sm:px-4 lg:px-8 flex-1">
+            <div className="flex flex-col space-y-4 sm:px-4 flex-1">
               {sortedLogUploads.map((logUpload, i) => (
                 <div
                   key={logUpload.id}

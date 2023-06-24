@@ -70,7 +70,7 @@ function AgentDeploymentLogsList({
   }, [logs, selectLog, selectedLogIdx])
 
   return (
-    <div className="flex flex-col space-y-1 overflow-auto ml-4 sm:ml-8">
+    <div className="flex flex-col space-y-1 overflow-auto ml-4">
       {logs.length === 0 && (
         <div className="flex-1 flex items-center justify-center h-full">
           <p className="text-gray-400">No logs</p>

@@ -6,6 +6,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import clsx from 'clsx'
+import { usePostHog } from 'posthog-js/react'
 
 import {
   LiteDeployment,
@@ -21,6 +22,7 @@ function AgentDeploymentsList({
   deployments,
 }: Props) {
   const [openDeployments, setOpenDeployments] = useState<{ [key: string]: boolean }>({})
+  const posthog = usePostHog()
   const sortedDeployments = useMemo(() => deployments
     // deployments sorted by created_at - the newest first
     .sort((a, b) => {
@@ -29,24 +31,27 @@ function AgentDeploymentsList({
       return 0
     }), [deployments])
 
-  function toggleDeployments(logUploadID: string) {
-    if (openDeployments[logUploadID]) {
+  function toggleDeployments(deploymentID: string) {
+    if (openDeployments[deploymentID]) {
+      posthog?.capture('deployment closed', {
+        logUploadID: deploymentID,
+      })
       setOpenDeployments(prev => ({
         ...prev,
-        [logUploadID]: false,
+        [deploymentID]: false,
       }))
     } else {
       setOpenDeployments(prev => ({
         ...prev,
-        [logUploadID]: true,
+        [deploymentID]: true,
       }))
     }
   }
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
-      <header className="flex items-center justify-between p-4 border-b border-b-white/5">
-        <h1 className="text-2xl font-semibold text-white">Agent Deployments</h1>
+      <header className="flex items-center justify-between px-4 py-3 border-b border-b-white/5">
+        <h1 className="text-xl font-semibold text-white">Agent Deployments</h1>
       </header>
       {sortedDeployments.length === 0 && (
         <div
@@ -57,7 +62,7 @@ function AgentDeploymentsList({
       )}
 
       {sortedDeployments.length > 0 && (
-        <div className="my-4 flex-col space-y-4 px-4 py-2 sm:px-4 lg:px-8 flex-1 flex pr-2 overflow-auto">
+        <div className="my-4 flex-col space-y-4 px-4 py-2 sm:px-4 flex-1 flex pr-2 overflow-auto">
           {sortedDeployments.map(deployment => (
             <div
               key={deployment.id}

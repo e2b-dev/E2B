@@ -120,7 +120,7 @@ function Layout({ children }: PropsWithChildren) {
           </div>
 
           {/* Header` */}
-          <div className="hidden xl:flex py-2 px-4 border border-white/5 bg-gray-900 rounded-md">
+          <div className="hidden xl:flex px-4 py-2 border border-white/5 bg-gray-900 rounded-md">
             <Feedback />
           </div>
 
