@@ -167,6 +167,11 @@ function Setup() {
 
       // Redirect to the dashboard.
       if (response) {
+        if ((response as any).statusCode === 500) {
+          console.error('Error creating agent', response)
+          return
+        }
+
         router.push({
           pathname: '/logs/[slug]',
           query: {

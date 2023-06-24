@@ -108,8 +108,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       id: true,
       is_default: true,
       projects: {
-        where: {
-        },
         include: {
           log_uploads: {
             include: {
