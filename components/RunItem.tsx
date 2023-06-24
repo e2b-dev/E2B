@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import Link from 'next/link'
-
+import { usePostHog } from 'posthog-js/react'
 import {
   FileProps,
 } from '../filesystem'
@@ -12,6 +12,7 @@ function RunItem({
   isSelected,
   metadata,
 }: FileProps) {
+  const posthog = usePostHog()
   return (
     <Link
       href={metadata['href']}
@@ -31,6 +32,11 @@ function RunItem({
           'w-full',
           'justify-between',
         )}
+      onClick={() => {
+        posthog?.capture('selected run', {
+          slug: metadata['id'],
+        })
+      }}
     >
       <span className="flex space-x-2 truncate">
         <span

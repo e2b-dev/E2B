@@ -4,6 +4,7 @@ import {
 } from 'react'
 import Splitter from '@devbookhq/splitter'
 import clsx from 'clsx'
+import { useRouter } from 'next/router'
 
 import {
   LiteDeploymentLog,
@@ -12,7 +13,6 @@ import { useLocalStorage } from 'hooks/useLocalStorage'
 import useDeploymentRunLog from 'hooks/useDeploymentRunLog'
 import AgentRunLogDetail from './AgentRunLogDetail'
 import AgentDeploymentLogsList from './AgentDeploymentsLogsList'
-import { useRouter } from 'next/router'
 
 export interface Props {
   log: LiteDeploymentLog

@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { usePostHog } from 'posthog-js/react'
 
 import { Navigation } from './types'
 
@@ -14,6 +15,7 @@ function DashboardDesktopSidebar({
   navigation,
 }: Props) {
   const router = useRouter()
+  const posthog = usePostHog()
 
   return (
     <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-[220px] xl:flex-col pr-1">
@@ -36,6 +38,11 @@ function DashboardDesktopSidebar({
                           : 'text-gray-400 hover:text-white hover:bg-[#1F2437]',
                         'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'
                       )}
+                      onClick={() => {
+                        posthog?.capture('clicked navigation item', {
+                          item: item.name,
+                        })
+                      }}
                     >
                       <item.icon size={16} className="shrink-0" aria-hidden="true" />
                       {item.name}

@@ -6,6 +6,8 @@ import {
 } from 'react'
 import { useRouter } from 'next/router'
 import clsx from 'clsx'
+import { usePostHog } from 'posthog-js/react'
+
 import {
   SystemPromptLog,
   UserPromptLog,
@@ -23,19 +25,22 @@ function AgentDeploymentLogsList({
 }: Props) {
   const router = useRouter()
   const [selectedLogIdx, setSelectedLogIdx] = useState<number>(0)
+  const posthog = usePostHog()
 
   const selectLog = useCallback((idx: number) => {
     setSelectedLogIdx(idx)
     onSelected(logs[idx])
+    posthog?.capture('selected log', {
+      logIdx: idx,
+    })
     router.replace({
-      // pathname: `/log/${router.query.logFileID}`,
       pathname: '',
       query: {
         ...router.query,
         selectedLog: idx.toString(),
       },
     }, undefined, { shallow: true })
-  }, [logs, onSelected, router])
+  }, [logs, onSelected, router, posthog])
 
   useEffect(function selectLogBasedOnURLQuery() {
     const selectedLog = router.query.selectedLog as string

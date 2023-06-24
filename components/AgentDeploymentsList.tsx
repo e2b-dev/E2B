@@ -33,14 +33,17 @@ function AgentDeploymentsList({
 
   function toggleDeployments(deploymentID: string) {
     if (openDeployments[deploymentID]) {
-      posthog?.capture('deployment closed', {
-        logUploadID: deploymentID,
+      posthog?.capture('closed deployment', {
+        deploymentID: deploymentID,
       })
       setOpenDeployments(prev => ({
         ...prev,
         [deploymentID]: false,
       }))
     } else {
+      posthog?.capture('opened deployment', {
+        deploymentID: deploymentID,
+      })
       setOpenDeployments(prev => ({
         ...prev,
         [deploymentID]: true,
@@ -54,9 +57,7 @@ function AgentDeploymentsList({
         <h1 className="text-xl font-semibold text-white">Agent Deployments</h1>
       </header>
       {sortedDeployments.length === 0 && (
-        <div
-          className="flex items-center justify-center flex-1"
-        >
+        <div className="flex items-center justify-center flex-1">
           <p className="text-gray-400 text-lg">No log files uploaded yet</p>
         </div>
       )}
