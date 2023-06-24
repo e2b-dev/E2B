@@ -233,7 +233,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
       },
       data: {
-        id: nanoid(),
         name: session.user.email || session.user.id,
         is_default: true,
         projects: {
