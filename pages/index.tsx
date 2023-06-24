@@ -237,6 +237,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         is_default: true,
         projects: {
           create: {
+            id: nanoid(),
             name: 'Default Project',
             is_default: true,
           },
