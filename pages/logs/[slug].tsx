@@ -2,10 +2,11 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
 
-import { prisma } from 'db/prisma'
+import { prisma, log_files, deployments } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import { LiteDeploymentLog } from 'utils/agentLogs'
 import AgentRunLogContent from 'components/AgentRunLogContent'
+import { wait } from 'utils/wait'
 
 interface PathProps extends ParsedUrlQuery {
   slug: string
@@ -40,43 +41,60 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
   const projectSlug = splittedLogSlug.slice(0, splittedLogSlug.length - 1).join('-')
   const logNumber = parseInt(splittedLogSlug.length > 1 ? splittedLogSlug[splittedLogSlug.length - 1] : '0')
 
-  const log = await prisma.log_files.findFirst({
-    orderBy: [
-      { created_at: 'asc' },
-      { id: 'asc', },
-    ],
-    skip: logNumber,
-    where: {
-      deployments: {
-        projects: {
-          slug: {
-            equals: projectSlug,
-            mode: 'insensitive',
-          }
-        }
-      },
+  let log: (log_files & {
+    deployments: (deployments & {
       projects: {
-        teams: {
-          users_teams: {
-            some: {
-              user_id: session.user.id,
-            },
-          },
-        },
-      },
-    },
-    include: {
-      deployments: {
-        include: {
+        name: string;
+      };
+    }) | null;
+  }) | null = null
+
+  // Poll the DB in case the log is not yet available
+  for (let i = 0; i < 6; i++) {
+    log = await prisma.log_files.findFirst({
+      orderBy: [
+        { created_at: 'asc' },
+        { id: 'asc', },
+      ],
+      skip: logNumber,
+      where: {
+        deployments: {
           projects: {
-            select: {
-              name: true,
+            slug: {
+              equals: projectSlug,
+              mode: 'insensitive',
+            }
+          }
+        },
+        projects: {
+          teams: {
+            users_teams: {
+              some: {
+                user_id: session.user.id,
+              },
             },
           },
         },
       },
-    },
-  })
+      include: {
+        deployments: {
+          include: {
+            projects: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (log) {
+      break
+    }
+
+    await wait(400 * (i + 1))
+  }
 
   if (!log || !log.deployments) {
     return {

@@ -12,6 +12,7 @@ import {
 } from '@supabase/auth-helpers-react'
 import { usePostHog } from 'posthog-js/react'
 import { nanoid } from 'nanoid'
+import { useRouter } from 'next/router'
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
@@ -26,7 +27,6 @@ import { TemplateID } from 'state/template'
 import { Creds } from 'hooks/useModelProviderArgs'
 import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
-import { useRouter } from 'next/router'
 import { RepoSetup } from 'utils/repoSetup'
 
 export interface PostAgentBody {
