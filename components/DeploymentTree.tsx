@@ -14,7 +14,7 @@ function DeploymentTree({
 }: Props) {
   const fetchLogDirContent = useCallback<(dirpath: string) => (FileInfo & { href?: any })[]>(_ => {
     return deployment.log_files.map((f, i, a) => {
-      const slug = `${deployment.projects.slug}-${a.length - i - 1}`
+      const slug = `${deployment.projects.slug}-run-${a.length - i - 1}`
       return {
         name: f.id,
         timestamp: f.created_at,

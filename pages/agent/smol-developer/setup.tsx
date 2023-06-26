@@ -175,7 +175,7 @@ function Setup() {
         router.push({
           pathname: '/logs/[slug]',
           query: {
-            slug: `${response.projectSlug}-0`,
+            slug: `${response.projectSlug}-run-0`,
           },
         })
       } else {

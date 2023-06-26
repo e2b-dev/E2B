@@ -135,7 +135,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       },
     }
 
-    const slug = `smoldev-${owner}-${repo}-pr${pullNumber}`.toLowerCase()
+    const slug = `smoldev-${owner}-${repo}-pr-${pullNumber}`.toLowerCase()
     const project = await prisma.projects.create({
       data: {
         id: nanoid(),

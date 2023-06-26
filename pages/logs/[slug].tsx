@@ -38,7 +38,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
   }
 
   const splittedLogSlug = slug.split('-')
-  const projectSlug = splittedLogSlug.slice(0, splittedLogSlug.length - 1).join('-')
+  const projectSlug = splittedLogSlug.slice(0, splittedLogSlug.length - 2).join('-')
   const logNumber = parseInt(splittedLogSlug.length > 1 ? splittedLogSlug[splittedLogSlug.length - 1] : '0')
 
   let log: (log_files & {
@@ -93,7 +93,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
       break
     }
 
-    await wait(400 * (i + 1))
+    await wait(200 * (i + 1))
   }
 
   if (!log || !log.deployments) {
