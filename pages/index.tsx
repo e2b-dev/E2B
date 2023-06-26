@@ -117,10 +117,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           deployments: {
             include: {
               log_files: {
-                orderBy: {
-                  created_at: 'desc',
-                  id: 'desc',
-                },
+                orderBy: [
+                  { created_at: 'desc' },
+                  { id: 'desc', },
+                ],
                 select: {
                   id: true,
                   relativePath: true,
@@ -174,10 +174,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             deployments: {
               include: {
                 log_files: {
-                  orderBy: {
-                    created_at: 'desc',
-                    id: 'desc',
-                  },
+                  orderBy: [
+                    { created_at: 'desc' },
+                    { id: 'desc', },
+                  ],
                   select: {
                     id: true,
                     relativePath: true,
@@ -210,10 +210,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             deployments: {
               include: {
                 log_files: {
-                  orderBy: {
-                    created_at: 'desc',
-                    id: 'desc',
-                  },
+                  orderBy: [
+                    { created_at: 'desc' },
+                    { id: 'desc', },
+                  ],
                   select: {
                     id: true,
                     relativePath: true,
@@ -278,10 +278,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         deployments: {
           include: {
             log_files: {
-              orderBy: {
-                created_at: 'desc',
-                id: 'desc',
-              },
+              orderBy: [
+                { created_at: 'desc' },
+                { id: 'desc', },
+              ],
               select: {
                 id: true,
                 relativePath: true,
