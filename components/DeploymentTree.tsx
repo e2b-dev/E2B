@@ -16,7 +16,7 @@ function DeploymentTree({
     return deployment.log_files.map((f, i, a) => {
       const slug = `${deployment.projects.slug}-${a.length - i - 1}`
       return {
-        name: f.filename,
+        name: f.id,
         timestamp: f.created_at,
         isDir: false,
         id: slug,
