@@ -119,6 +119,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
               log_files: {
                 orderBy: {
                   created_at: 'desc',
+                  id: 'desc',
                 },
                 select: {
                   id: true,
@@ -175,6 +176,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 log_files: {
                   orderBy: {
                     created_at: 'desc',
+                    id: 'desc',
                   },
                   select: {
                     id: true,
@@ -210,6 +212,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 log_files: {
                   orderBy: {
                     created_at: 'desc',
+                    id: 'desc',
                   },
                   select: {
                     id: true,
@@ -277,6 +280,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             log_files: {
               orderBy: {
                 created_at: 'desc',
+                id: 'desc',
               },
               select: {
                 id: true,

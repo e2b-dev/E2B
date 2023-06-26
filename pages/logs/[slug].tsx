@@ -43,6 +43,7 @@ export const getServerSideProps: GetServerSideProps<Props, PathProps> = async (c
   const log = await prisma.log_files.findFirst({
     orderBy: {
       created_at: 'asc',
+      id: 'asc',
     },
     skip: logNumber,
     where: {
