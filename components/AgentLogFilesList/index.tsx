@@ -77,7 +77,7 @@ function AgentLogFilesList({
     }), [logUploads])
 
   return (
-    <main className="rounded-md border-white/5 border overflow-hidden pb-6 flex flex-col max-h-full flex-1">
+    <main className="rounded-md overflow-hidden pb-6 flex flex-col max-h-full flex-1">
       <header className="flex items-center justify-between py-4 sm:px-6 lg:px-8 border-b border-b-white/5">
         <h1 className="text-2xl font-semibold text-white">Log Files</h1>
         <Upload
