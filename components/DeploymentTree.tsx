@@ -20,6 +20,7 @@ function DeploymentTree({
         timestamp: f.created_at,
         isDir: false,
         id: slug,
+        tags: [],
         href: {
           pathname: '/logs/[slug]',
           query: {

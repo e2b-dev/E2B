@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -8,17 +9,36 @@ import Splitter, { SplitDirection } from '@devbookhq/splitter'
 
 import {
   LiteLogFile,
-  LiteLogUpload,
 } from 'utils/agentLogs'
 import AgentLogFileContent from 'components/AgentLogFileContent'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 
 import Upload from './Upload'
 import UploadedLogsDetail from './UploadedLogsDetail'
+import { log_uploads } from '@prisma/client'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { Database } from 'db/supabase'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useRouter } from 'next/router'
+import { formatLogFileContent } from 'utils/formatLogFileContent'
 
 export interface Props {
-  logUploads: LiteLogUpload[]
+  logUploads: log_uploads[]
   defaultProjectID: string
+}
+
+async function getUploadLog(client: SupabaseClient<Database>, id: string) {
+  const result = await client
+    .from('log_files')
+    .select('id, content, relativePath, log_upload_id, filename')
+    .eq('id', id)
+    .single()
+
+  if (result.error) {
+    throw new Error(`failed to fetch log files for upload ${id} - ${result.error.message}`)
+  }
+
+  return result.data
 }
 
 function AgentLogFilesList({
@@ -27,6 +47,22 @@ function AgentLogFilesList({
 }: Props) {
   const [splitterSizes, setSplitterSizes] = useLocalStorage('log-file-list-splitter', [40, 60])
   const [selectedLogFile, setSelectedLogFile] = useState<LiteLogFile>()
+  const router = useRouter()
+  const client = useSupabaseClient()
+
+  useEffect(function fetchSelectedLogDetails() {
+    // Only fetch this for the initial load
+    const logID = router.query.logFileID
+    if (!logID) return
+    getUploadLog(client, logID as string).then(log => {
+      setSelectedLogFile({
+        id: logID as string,
+        ...formatLogFileContent(log),
+        log_upload_id: log.log_upload_id,
+      })
+
+    })
+  }, [client])
 
   const setSizes = useCallback((_: number, sizes: number[]) => {
     setSplitterSizes(sizes)

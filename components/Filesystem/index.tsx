@@ -30,7 +30,7 @@ export interface Props {
   rootPath: string
   ignore?: string[]
   onFiletreeClick?: (path: string, type: NodeType) => void
-  fetchContent: (dirpath: string) => (FileInfo & { href?: any, id?: string, timestamp?: Date, logUploadID: string })[]
+  fetchContent: (dirpath: string) => (FileInfo & { href?: any, id?: string, timestamp?: Date, logUploadID?: string })[]
   expandedPath?: string
   file?: React.ComponentType<FileProps>
 }
@@ -56,6 +56,7 @@ function Filesystem({
           timestamp: f.timestamp,
         }
       })))
+
     fs.add(dirpath, ns, ignore)
     files.forEach(f => {
       fs.setMetadata<AgentChallengeTag[]>(path.join(dirpath, f.name), { key: 'tags', value: f.tags })
@@ -132,6 +133,7 @@ function Filesystem({
       w-full
     ">
       <FilesystemPrimitive.Tree
+        emptyPlaceholder='Loading...'
         className={clsx(
           'px-1',
           'flex-1',

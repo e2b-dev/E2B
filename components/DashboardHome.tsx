@@ -2,13 +2,13 @@ import { useMemo } from 'react'
 import { useRouter } from 'next/router'
 
 import AgentLogFilesList from 'components/AgentLogFilesList'
-import { projects } from 'db/prisma'
-import { LiteDeployment, LiteLogUpload } from 'utils/agentLogs'
+import { log_uploads, projects } from 'db/prisma'
+import { LiteDeployment } from 'utils/agentLogs'
 
 import AgentDeploymentsList from './AgentDeploymentsList'
 
 export interface Props {
-  projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
+  projects: (projects & { log_uploads: log_uploads[], deployments: LiteDeployment[] })[]
   defaultProjectID: string
   view: 'deployments' | 'logs'
 }

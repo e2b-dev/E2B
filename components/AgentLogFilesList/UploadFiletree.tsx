@@ -2,28 +2,33 @@ import { useCallback } from 'react'
 import path from 'path-browserify'
 
 import Filesystem, { FileInfo } from 'components/Filesystem'
-import { LiteLogFile, LiteLogUpload } from 'utils/agentLogs'
+import { AgentChallengeTag, LiteLogFile } from 'utils/agentLogs'
 import { FiletreeProvider } from 'hooks/useFiletree'
+import { log_uploads } from 'db/prisma'
 
 export interface Props {
-  log: LiteLogUpload
+  logUpload: log_uploads
+  logFiles: {
+    id: string;
+    relativePath: string;
+    filename: string;
+  }[]
   selectedLogFile?: LiteLogFile
 }
 
 function UploadTree({
-  log: logUpload,
+  logUpload,
   selectedLogFile,
+  logFiles,
 }: Props) {
   const fetchLogDirContent = useCallback<(dirpath: string) => (FileInfo & { id?: string, logUploadID: string, href?: any })[]>(dirpath => {
     const currentDir = dirpath.slice(1)
-    const childFiles = logUpload
-      .log_files
+    const childFiles = logFiles
       .filter(f => {
         return path.dirname(f.relativePath) === currentDir
       })
 
-    const filesInChildDirs = logUpload
-      .log_files
+    const filesInChildDirs = logFiles
       .filter(f => {
         const fileDir = path.dirname(f.relativePath)
         return fileDir !== currentDir && fileDir.startsWith(currentDir)
@@ -60,14 +65,13 @@ function UploadTree({
         name: dir,
         isDir: true,
         // Filter out tags that don't belong to this dir.
-        tags: logUpload.tags.filter(t => t.path === `/${dir}`),
+        tags: (logUpload.tags as unknown as AgentChallengeTag[]).filter(t => t.path === `/${dir}`),
         logUploadID: logUpload.id,
       })),
     ]
-      .sort((a, b) => a.name.localeCompare(b.name))
 
     return content
-  }, [logUpload])
+  }, [logUpload, logFiles])
 
   return (
     <div className="flex flex-col items-start justify-start">

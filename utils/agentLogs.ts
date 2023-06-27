@@ -20,7 +20,7 @@ export interface AgentChallengeTag {
   severity: string
 }
 
-export interface LiteLogFile extends Omit<log_files, 'content'> {
+export interface LiteLogFile extends Omit<log_files, 'content' | 'created_at' | 'last_modified' | 'project_id' | 'deployment_id'> {
   content: AgentPromptLogs | AgentNextActionLog | string
 }
 
