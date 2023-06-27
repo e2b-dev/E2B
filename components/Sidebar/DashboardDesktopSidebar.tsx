@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { usePostHog } from 'posthog-js/react'
 
 import { Navigation } from './types'
 
@@ -14,22 +15,13 @@ function DashboardDesktopSidebar({
   navigation,
 }: Props) {
   const router = useRouter()
-  const view = router.query.view as string | undefined
-  const isOnRunDetail = router.pathname.startsWith('/deployed/[projectID]/run/[runID]')
-  const isOnLogDetail = router.pathname.startsWith('/log/[logFileID]')
+  const posthog = usePostHog()
 
   return (
-    <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-48 xl:flex-col">
-      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 border border-white/5 rounded-md">
+    <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-[220px] xl:flex-col pr-1">
+      <div className="flex grow flex-col gap-y-4 overflow-y-auto bg-gray-900 px-4 border border-white/5 rounded-md">
         {/* Logo */}
-        {/* <div className="flex h-16 shrink-0 items-center">
-          <img
-            className="h-8 w-auto"
-            src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-            alt="Your Company"
-          />
-        </div> */}
-        <nav className="flex flex-1 flex-col space-y-6 py-[22px]">
+        <nav className="flex flex-1 flex-col space-y-8 py-4">
           <div className="font-bold text-gray-100">
             e2b
           </div>
@@ -39,14 +31,18 @@ function DashboardDesktopSidebar({
                 {navigation.map((item) => (
                   <li key={item.name}>
                     <Link
-                      href={`/?view=${item.view}`}
+                      href={'/'}
                       className={clsx(
-                        item.view === view || (isOnRunDetail && item.view === 'runs') || (isOnLogDetail && item.view === 'logs')
+                        router.pathname === '/'
                           ? 'bg-[#1F2437] text-white'
                           : 'text-gray-400 hover:text-white hover:bg-[#1F2437]',
                         'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'
                       )}
-                      shallow
+                      onClick={() => {
+                        posthog?.capture('clicked navigation item', {
+                          item: item.name,
+                        })
+                      }}
                     >
                       <item.icon size={16} className="shrink-0" aria-hidden="true" />
                       {item.name}
@@ -57,7 +53,7 @@ function DashboardDesktopSidebar({
             </li>
             <li className="-mx-6 mt-auto">
               <div
-                className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-white"
+                className="flex items-center gap-x-4 px-6 text-sm font-semibold leading-6 text-white"
               >
                 <button
                   className="text-sm font-semibold text-white"

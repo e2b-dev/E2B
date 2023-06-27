@@ -9,7 +9,13 @@ import { client as posthog } from 'utils/posthog'
 import { TemplateID } from 'state/template'
 import { DeploymentAuthData } from 'pages/api/agent'
 
-import { disableAgentDeployment, getDeploymentsForPR, getGHAccessToken, getPromptFromPR, triggerSmolDevAgentRun } from './pullRequest'
+import {
+  disableAgentDeployment,
+  getDeploymentsForPR,
+  getGHAccessToken,
+  getPromptFromPR,
+  triggerSmolDevAgentRun,
+} from './pullRequest'
 import { getGHInstallationClient } from './installationClient'
 
 export async function getGitHubWebhooksMiddleware() {

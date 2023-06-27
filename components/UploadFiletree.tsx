@@ -14,7 +14,7 @@ function UploadTree({
   log: logUpload,
   selectedLogFile,
 }: Props) {
-  const fetchLogDirContent = useCallback<(dirpath: string) => (FileInfo & { id?: string, logUploadID: string })[]>(dirpath => {
+  const fetchLogDirContent = useCallback<(dirpath: string) => (FileInfo & { id?: string, logUploadID: string, href?: any })[]>(dirpath => {
     const currentDir = dirpath.slice(1)
     const childFiles = logUpload
       .log_files
@@ -51,6 +51,13 @@ function UploadTree({
         id: f.id,
         tags: [],
         logUploadID: logUpload.id,
+        href: {
+          pathname: '/',
+          query: {
+            view: 'logs',
+            logFileID: f.id,
+          },
+        },
       })),
       ...Array.from(childDirs).map(dir => ({
         name: dir,

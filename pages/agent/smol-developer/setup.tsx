@@ -12,6 +12,7 @@ import {
 } from '@supabase/auth-helpers-react'
 import { usePostHog } from 'posthog-js/react'
 import { nanoid } from 'nanoid'
+import { useRouter } from 'next/router'
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
@@ -26,7 +27,6 @@ import { TemplateID } from 'state/template'
 import { Creds } from 'hooks/useModelProviderArgs'
 import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
-import { useRouter } from 'next/router'
 import { RepoSetup } from 'utils/repoSetup'
 
 export interface PostAgentBody {
@@ -81,6 +81,7 @@ export interface PostAgentResponse {
   pullURL: string
   pullNumber: number
   projectID: string
+  projectSlug: string
 }
 
 async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
@@ -105,6 +106,7 @@ function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: Templa
     templateID,
   }
 }
+
 function Setup() {
   const user = useUser()
   const supabaseClient = useSupabaseClient()
@@ -165,7 +167,16 @@ function Setup() {
 
       // Redirect to the dashboard.
       if (response) {
-        router.push(response.pullURL)
+        if ((response as any).statusCode === 500) {
+          throw new Error((response as any).message)
+        }
+
+        router.push({
+          pathname: '/logs/[slug]',
+          query: {
+            slug: `${response.projectSlug}-run-0`,
+          },
+        })
       } else {
         console.error('No response from agent creation')
       }

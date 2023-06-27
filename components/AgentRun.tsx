@@ -4,7 +4,7 @@ function AgentRun() {
   return (
     <main className="overflow-hidden flex flex-col flex-1">
       <header className="flex items-center justify-between pt-4 px-4 sm:pt-8 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold leading-7 text-white">Run Detail [TODO: name]</h1>
+        <h1 className="text-xl font-semibold leading-7 text-white">Run Detail [TODO: name]</h1>
       </header>
 
       <div className="flex-1 flex items-start justify-start sm:p-6 lg:px-8">

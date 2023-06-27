@@ -44,6 +44,7 @@ export interface Props {
   file?: React.ComponentType<FileProps>
   dir?: React.ComponentType<DirProps>
   onSelect?: SelectHandler
+  emptyPlaceholder?: string
 }
 
 function FilesystemTree({
@@ -52,6 +53,7 @@ function FilesystemTree({
   file,
   dir,
   onSelect,
+  emptyPlaceholder = 'Empty directory',
 }: Props) {
   const nodeChildren = useChildren(fs, fs.root.path, true)
   const UserFile = useMemo(() => (file ? memo(file) : () => null), [file])
@@ -73,7 +75,7 @@ function FilesystemTree({
         <Text
           className="text-center text-gray-500"
           size={Text.size.S3}
-          text="Empty directory"
+          text={emptyPlaceholder}
         />
       }
 

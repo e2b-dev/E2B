@@ -108,8 +108,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       id: true,
       is_default: true,
       projects: {
-        where: {
-        },
         include: {
           log_uploads: {
             include: {
@@ -119,6 +117,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           deployments: {
             include: {
               log_files: {
+                orderBy: [
+                  { created_at: 'desc' },
+                  { id: 'desc', },
+                ],
                 select: {
                   id: true,
                   relativePath: true,
@@ -129,6 +131,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
               },
               projects: {
                 select: {
+                  slug: true,
                   name: true,
                 },
               },
@@ -171,6 +174,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             deployments: {
               include: {
                 log_files: {
+                  orderBy: [
+                    { created_at: 'desc' },
+                    { id: 'desc', },
+                  ],
                   select: {
                     id: true,
                     relativePath: true,
@@ -181,6 +188,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 },
                 projects: {
                   select: {
+                    slug: true,
                     name: true,
                   },
                 },
@@ -202,6 +210,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             deployments: {
               include: {
                 log_files: {
+                  orderBy: [
+                    { created_at: 'desc' },
+                    { id: 'desc', },
+                  ],
                   select: {
                     id: true,
                     relativePath: true,
@@ -212,6 +224,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
                 },
                 projects: {
                   select: {
+                    slug: true,
                     name: true,
                   },
                 },
@@ -221,11 +234,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
       },
       data: {
-        id: nanoid(),
         name: session.user.email || session.user.id,
         is_default: true,
         projects: {
           create: {
+            id: nanoid(),
             name: 'Default Project',
             is_default: true,
           },
@@ -265,6 +278,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         deployments: {
           include: {
             log_files: {
+              orderBy: [
+                { created_at: 'desc' },
+                { id: 'desc', },
+              ],
               select: {
                 id: true,
                 relativePath: true,
@@ -275,6 +292,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             },
             projects: {
               select: {
+                slug: true,
                 name: true,
               },
             },

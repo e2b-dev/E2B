@@ -1,6 +1,4 @@
-import {
-  Github,
-} from 'lucide-react'
+import { Github } from 'lucide-react'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'

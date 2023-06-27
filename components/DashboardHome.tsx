@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
+import { useRouter } from 'next/router'
+
 import AgentLogFilesList from 'components/AgentLogFilesList'
 import { projects } from 'db/prisma'
-import { useRouter } from 'next/router'
-import { useMemo } from 'react'
 import { LiteDeployment, LiteLogUpload } from 'utils/agentLogs'
-import AgentDeploymentLogList from './AgentDeploymentLogList'
+
+import AgentDeploymentsList from './AgentDeploymentsList'
 
 export interface Props {
   projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
@@ -34,7 +36,7 @@ function DashboardHome({
   return (
     <>
       {showView === 'deployments' &&
-        <AgentDeploymentLogList
+        <AgentDeploymentsList
           deployments={deployments}
         />
       }

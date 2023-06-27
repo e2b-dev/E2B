@@ -46,7 +46,7 @@ function AgentLogFileContent({
           draggerClassName={clsx(
             'bg-white/5 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full',
           )}
-          classes={['pr-2 overflow-auto', 'bg-gray-900 pl-2']}
+          classes={['pr-2 overflow-auto', 'bg-gray-900 pl-2 pr-2']}
           initialSizes={splitterSizes}
           onResizeFinished={setSizes}
           minWidths={[120, 120]}
