@@ -64,6 +64,8 @@ function UploadTree({
         logUploadID: logUpload.id,
       })),
     ]
+      .sort((a, b) => a.name.localeCompare(b.name))
+
     return content
   }, [logUpload])
 

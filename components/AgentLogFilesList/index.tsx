@@ -38,18 +38,6 @@ function AgentLogFilesList({
       if (a.created_at > b.created_at) return -1
       if (a.created_at < b.created_at) return 1
       return 0
-    })
-    // Sort the log_files inside logUploads alphabtetical by relativePath
-    .map(logUpload => {
-      const sortedLogFiles = logUpload.log_files.sort((a, b) => {
-        if (a.relativePath > b.relativePath) return 1
-        if (a.relativePath < b.relativePath) return -1
-        return 0
-      })
-      return {
-        ...logUpload,
-        log_files: sortedLogFiles,
-      }
     }), [logUploads])
 
   return (
