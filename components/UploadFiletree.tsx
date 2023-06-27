@@ -42,8 +42,6 @@ function UploadTree({
       return acc.add(childDir)
     }, new Set<string>())
 
-    console.log('tags', logUpload.tags)
-
     const content = [
       ...childFiles.map(f => ({
         name: f.filename,
@@ -54,7 +52,6 @@ function UploadTree({
         href: {
           pathname: '/',
           query: {
-            view: 'logs',
             logFileID: f.id,
           },
         },
