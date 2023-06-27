@@ -5,7 +5,7 @@ import { logger } from '../utils/logger'
 import Dir from './dir'
 import Node, { NodeType } from './node'
 
-const log = logger('filesystem')
+const log = logger('filesystem', 'orange', false)
 
 type DirListener = (path: string, children: IterableIterator<Node>) => void
 type MetadataListener<T = any> = (path: string, {

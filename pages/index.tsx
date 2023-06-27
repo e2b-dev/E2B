@@ -1,81 +1,16 @@
 import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { nanoid } from 'nanoid'
-import path from 'path'
 
-import { prisma, projects, log_files } from 'db/prisma'
+import { prisma, projects, log_uploads } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import DashboardHome from 'components/DashboardHome'
-import { AgentNextActionLog, AgentPromptLogs, LiteDeployment, LiteLogUpload } from 'utils/agentLogs'
+import { LiteDeployment } from 'utils/agentLogs'
 
 export interface Props {
-  projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
+  projects: (projects & { log_uploads: log_uploads[], deployments: LiteDeployment[] })[]
   defaultProjectID: string
   view: 'deployments' | 'logs'
-}
-
-export interface Props {
-  projects: (projects & { log_uploads: LiteLogUpload[], deployments: LiteDeployment[] })[]
-  defaultProjectID: string
-}
-
-function getLastTwoDirsAndFile(fullPath: string): string {
-  const fileName = path.basename(fullPath)
-  const dirName = path.dirname(fullPath)
-
-  const parts = dirName.split(path.sep)
-  const lastTwoDirs = parts.slice(-2).join(path.sep)
-
-  return path.join(lastTwoDirs, fileName)
-}
-
-function formatLogFileContent(logFile: log_files) {
-  const relativePath = getLastTwoDirsAndFile(logFile.relativePath)
-
-  // This parsing is very Ssecific to the AutoGPT format.
-  const filename = logFile.filename
-  if (filename.includes('user_input.txt')
-    || filename.includes('summary.txt')
-  ) {
-    return {
-      ...logFile,
-      relativePath,
-      content: logFile.content as string,
-    }
-  } else if (filename.includes('next_action')) {
-    const parsedFileContent = JSON.parse(logFile.content)
-    return {
-      ...logFile,
-      relativePath,
-      content: parsedFileContent as AgentNextActionLog,
-    }
-  } else if (
-    filename.includes('full_message_history')
-    || filename.includes('current_context')
-    || filename.includes('prompt_summary')
-  ) {
-    const parsedFileContent = JSON.parse(logFile.content)
-    return {
-      ...logFile,
-      relativePath,
-      content: {
-        logs: parsedFileContent as AgentPromptLogs,
-      },
-    }
-  } else {
-    console.error(`Unexpected log file: ${filename}`)
-  }
-
-  const parsedFileContent = JSON.parse(logFile.content)
-  return {
-    ...logFile,
-    relativePath,
-    content: {
-      ...parsedFileContent,
-      logs: parsedFileContent?.context || [],
-      context: undefined,
-    },
-  }
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
@@ -109,11 +44,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       is_default: true,
       projects: {
         include: {
-          log_uploads: {
-            include: {
-              log_files: true,
-            },
-          },
+          log_uploads: true,
           deployments: {
             include: {
               log_files: {
@@ -166,11 +97,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       include: {
         projects: {
           include: {
-            log_uploads: {
-              include: {
-                log_files: true,
-              },
-            },
+            log_uploads: true,
             deployments: {
               include: {
                 log_files: {
@@ -202,11 +129,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       include: {
         projects: {
           include: {
-            log_uploads: {
-              include: {
-                log_files: true,
-              },
-            },
+            log_uploads: true,
             deployments: {
               include: {
                 log_files: {
@@ -270,11 +193,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
       },
       include: {
-        log_uploads: {
-          include: {
-            log_files: true,
-          },
-        },
+        log_uploads: true,
         deployments: {
           include: {
             log_files: {
@@ -308,16 +227,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       projects: [
         defaultProject,
         ...teams.flatMap(t => t.projects).filter(p => p.id !== defaultProject.id),
-      ]
-        .map(p => ({
-          ...p,
-          log_uploads: p
-            .log_uploads
-            .map<LiteLogUpload>(u => ({
-              ...u,
-              log_files: u.log_files.map(formatLogFileContent),
-            }))
-        }))
+      ].map(p => ({
+        ...p,
+        deployments: showUploadedLogs ? [] : p.deployments,
+      }))
     },
   }
 }

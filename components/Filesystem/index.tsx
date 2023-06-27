@@ -16,10 +16,12 @@ import FilesystemPrimitive, {
 
 import Dir from './Dir'
 import File from './File'
+import { AgentChallengeTag } from 'utils/agentLogs'
 
 export interface FileInfo {
   isDir: boolean
   name: string
+  tags: AgentChallengeTag[]
 }
 
 export interface Props {
@@ -28,7 +30,7 @@ export interface Props {
   rootPath: string
   ignore?: string[]
   onFiletreeClick?: (path: string, type: NodeType) => void
-  fetchContent: (dirpath: string) => (FileInfo & { href?: any, id?: string, timestamp?: Date })[]
+  fetchContent: (dirpath: string) => (FileInfo & { href?: any, id?: string, timestamp?: Date, logUploadID?: string })[]
   expandedPath?: string
   file?: React.ComponentType<FileProps>
 }
@@ -46,7 +48,7 @@ function Filesystem({
   const fetchDirContent = useCallback(async (dirpath: string) => {
     const files = fetchContent(dirpath)
     const ns = files.map(f => (f.isDir
-      ? new DirNode({ name: f.name })
+      ? new DirNode({ name: f.name, metadata: { logUploadID: f.logUploadID } })
       : new FileNode({
         name: f.name, metadata: {
           href: f.href,
@@ -54,7 +56,11 @@ function Filesystem({
           timestamp: f.timestamp,
         }
       })))
+
     fs.add(dirpath, ns, ignore)
+    files.forEach(f => {
+      fs.setMetadata<AgentChallengeTag[]>(path.join(dirpath, f.name), { key: 'tags', value: f.tags })
+    })
   }, [
     fs,
     fetchContent,
@@ -127,6 +133,7 @@ function Filesystem({
       w-full
     ">
       <FilesystemPrimitive.Tree
+        emptyPlaceholder='Loading...'
         className={clsx(
           'px-1',
           'flex-1',

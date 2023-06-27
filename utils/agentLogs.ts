@@ -13,12 +13,20 @@ export interface LiteDeployment extends deployments {
   }
 }
 
-export interface LiteLogFile extends Omit<log_files, 'content'> {
+// This is very specific ot AutoGPT logs.
+export interface AgentChallengeTag {
+  path: string
+  text: string
+  severity: string
+}
+
+export interface LiteLogFile extends Omit<log_files, 'content' | 'created_at' | 'last_modified' | 'project_id' | 'deployment_id'> {
   content: AgentPromptLogs | AgentNextActionLog | string
 }
 
-export interface LiteLogUpload extends Omit<log_uploads, 'log_files'> {
+export interface LiteLogUpload extends Omit<log_uploads, 'log_files' | 'tags'> {
   log_files: LiteLogFile[]
+  tags: AgentChallengeTag[]
 }
 
 export interface AgentPromptLogs {

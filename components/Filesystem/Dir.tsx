@@ -1,13 +1,37 @@
 import {
-  ChevronDown as ChevronDownIcon,
-  ChevronRight as ChevronRightIcon,
+  useState,
+} from 'react'
+import {
+  ChevronDown,
+  ChevronRight,
+  X,
 } from 'lucide-react'
 import clsx from 'clsx'
+import {
+  useMetadata,
+} from 'hooks/filesystem'
 
+import { AgentChallengeTag as AgentChallengeTagType } from 'utils/agentLogs'
+import AgentChallengeTagButton from 'components/AgentChallengeTagButton'
+import { Severity } from 'components/AgentChallengeTagModal'
+import AgentChallengeTag from 'components/AgentChallengeTag'
 import {
   DirProps,
   NodeType,
-} from '../../filesystem'
+} from 'filesystem'
+import { useAddLogUploadTag } from 'hooks/useAddLogUploadTag'
+import { useDeleteLogUploadTag } from 'hooks/useDeleteLogUploadTag'
+
+
+
+
+// export interface CustomProps {
+//   tags: [{
+//     type: string
+//     challenge: string
+//   }]
+// }
+// export type Props = DirProps & CustomProps
 
 function Dir({
   name,
@@ -19,6 +43,21 @@ function Dir({
   isExpanded,
   isSelected,
 }: DirProps) {
+  const [node] = useState(fs.find(path))
+  const [newTagName, setNewTagName] = useState('')
+  const [, setMetadata] = useMetadata<AgentChallengeTagType[]>(fs, path, 'tags', true)
+  const tags = metadata?.tags || [] as AgentChallengeTagType[]
+  // console.log('metadata', metadata)
+
+  // useEffect(() => {
+  //   if (path === '/20230616_054339_memory_challenge_a_level_3') {
+  //     setMetadata([{ challengeDir: '20230616_054339_memory_challenge_a_level_3', text: 'challenge', color: 'red' }])
+  //   }
+  // }, [path])
+
+  const addTag = useAddLogUploadTag()
+  const deleteTag = useDeleteLogUploadTag()
+
   function handleOnClick(e: any) {
     fs.setIsDirExpanded(path, !isExpanded)
 
@@ -38,13 +77,40 @@ function Dir({
       })
   }
 
+  async function addNewTag(s: Severity) {
+    if (!newTagName) return
+    const newTag: AgentChallengeTagType = {
+      path,
+      text: newTagName,
+      severity: s,
+    }
+    setNewTagName('')
+    setMetadata([...tags, newTag])
+    try {
+      await addTag(metadata['logUploadID'], newTag)
+    } catch (e) {
+      setMetadata([])
+      console.error(e)
+    }
+  }
+
+  async function removeTag(i: number) {
+    setMetadata(tags.filter((t: any) => t !== tags[i]))
+    try {
+      await deleteTag(metadata['logUploadID'], tags[i])
+    } catch (e) {
+      setMetadata(tags)
+      console.error(e)
+    }
+  }
+
   const icon = isExpanded ? (
-    <ChevronDownIcon
+    <ChevronDown
       className="text-white/60 shrink-0"
       size={16}
     />
   ) : (
-    <ChevronRightIcon
+    <ChevronRight
       className="text-white/60 shrink-0"
       size={16}
     />
@@ -52,31 +118,55 @@ function Dir({
 
   return (
     <div className="flex flex-col rounded w-full">
-      <div
-        className={clsx(
-          'px-1',
-          'py-2',
-          'flex',
-          'items-center',
-          'w-full',
-          'rounded-md',
-          'space-x-1',
-          'cursor-pointer',
-          'border-gray-800',
-          'hover:bg-[#1F2437]',
-          { 'bg-transparent': !isSelected },
+      <div className="flex items-center justify-start w-full space-x-1">
+        {tags.map((tag: AgentChallengeTagType, i: number) => (
+          <div className="flex items-center space-x-1 shrink-0" key={i}>
+            <AgentChallengeTag
+              tag={tag}
+            />
+            <button
+              className="text-gray-400 hover:text-gray-400"
+              onClick={() => removeTag(i)}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        ))}
+
+        {/* AutoGPT wants to add tags only for challenges - challenges are the first "dirs" -> very heuristic and works only for AutoGPT */}
+        {tags.length === 0 && node?.level === 0 && (
+          <AgentChallengeTagButton
+            newTagName={newTagName}
+            onNewTagNameChange={e => setNewTagName(e.target.value)}
+            onSeveritySelect={addNewTag}
+          />
         )}
-        onClick={handleOnClick}
-      >
-        {icon}
-        <span
-          className="
-            text-sm
-            text-gray-200
-            whitespace-nowrap
-            ">
-          {name}
-        </span>
+        <div
+          className={clsx(
+            'px-1',
+            'py-2',
+            'flex',
+            'flex-1',
+            'items-center',
+            'rounded-md',
+            'space-x-1',
+            'cursor-pointer',
+            'border-gray-800',
+            'hover:bg-[#1F2437]',
+            { 'bg-transparent': !isSelected },
+          )}
+          onClick={handleOnClick}
+        >
+          {icon}
+          <span
+            className="
+              text-sm
+              text-gray-200
+              whitespace-nowrap
+              ">
+            {name}
+          </span>
+        </div>
       </div>
 
       {isExpanded && (
