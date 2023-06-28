@@ -2,6 +2,7 @@ import asyncio
 import uuid
 import os
 import ast
+from decimal import Decimal, ROUND_UP
 
 from typing import Any, Callable, List
 from langchain.callbacks.base import AsyncCallbackManager
@@ -33,8 +34,8 @@ model_version = "gpt-4-0613"
 
 pricing = {
     "gpt-4-0613": {
-        "prompt": 0.03 / 1000,
-        "completion": 0.06 / 1000,
+        "prompt": Decimal(0.00003),
+        "completion": Decimal(0.00006),
     }
 }
 
@@ -200,9 +201,9 @@ Begin generating the code now.
         response = await self.model.agenerate_prompt([model_prompt])
 
         cost = (
-            response.llm_output["token_usage"]["prompt_tokens"]
+            Decimal(response.llm_output["token_usage"]["prompt_tokens"])
             * pricing[model_version]["prompt"]
-            + response.llm_output["token_usage"]["completion_tokens"]
+            + Decimal(response.llm_output["token_usage"]["completion_tokens"])
             * pricing[model_version]["completion"]
             if response.llm_output
             else None
@@ -219,7 +220,7 @@ Begin generating the code now.
             "result_tokens": response.llm_output["token_usage"]["completion_tokens"]
             if response.llm_output
             else None,
-            "cost": cost,
+            "cost": float(cost),
         }
 
     async def _dev(self, instructions: Any):
