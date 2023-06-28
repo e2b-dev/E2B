@@ -62,6 +62,7 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
       >
         <Head>
           <title>{meta.title}</title>
+          <link rel="icon" href="/favicon.png" sizes="any"/>
           <meta
             content="follow, index"
             name="robots"
