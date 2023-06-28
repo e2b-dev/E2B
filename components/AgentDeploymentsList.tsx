@@ -99,13 +99,6 @@ function AgentDeploymentsList({
                     // This prevents hydration warning for timestamps rendered via SSR
                     suppressHydrationWarning
                   >
-                    <div className="flex items-center">
-                      <div className={clsx({
-                        'text-green-400 bg-green-400/10': deployment.enabled, 'text-gray-500 bg-gray-100/10': !deployment.enabled
-                      }, 'flex-none rounded-full flex p-1')}>
-                        <div className="h-2 w-2 rounded-full bg-current" />
-                      </div>
-                    </div>
                     <span className="text-gray-200 font-normal">
                       {deployment.projects.name}
                     </span>

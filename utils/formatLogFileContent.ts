@@ -1,5 +1,7 @@
-import { log_files } from 'db/prisma'
 import path from 'path-browserify'
+
+import { log_files } from 'db/prisma'
+
 import { AgentNextActionLog, AgentPromptLogs } from './agentLogs'
 
 function getLastTwoDirsAndFile(fullPath: string): string {
