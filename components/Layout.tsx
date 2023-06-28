@@ -13,13 +13,13 @@ import {
   Menu,
   List,
 } from 'lucide-react'
-import * as gtag from '../utils/gtag'
+import Script from 'next/script'
 
 import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
 import DashboardMobileSidebar from 'components/Sidebar/DashboardMobileSidebar'
 import Feedback from 'components/Feedback'
-import Head from 'next/head'
-import Script from 'next/script'
+
+import * as gtag from '../utils/gtag'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -93,29 +93,22 @@ function Layout({ children }: PropsWithChildren) {
 
   return (
     <>
-      <Head>
-        {distinctID &&
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
+      <>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
+        />
+        <Script id="google-analytics">
+          {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
 
-              gtag('config', '${gtag.GA_TRACKING_ID}', {
-                page_path: window.location.pathname,
-                user_id: '${distinctID}',
-              });
-            `,
-            }}
-          />}
-      </Head>
-
-      {/* Global Site Tag (gtag.js) - Google Analytics */}
-      <Script
-        strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
-      />
+          gtag('config', '${gtag.GA_TRACKING_ID}', {
+            page_path: window.location.pathname,
+          });
+        `}
+        </Script>
+      </>
       <style jsx global>
         {`
         :root {
