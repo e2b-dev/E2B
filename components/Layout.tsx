@@ -13,10 +13,13 @@ import {
   Menu,
   List,
 } from 'lucide-react'
+import * as gtag from '../utils/gtag'
 
 import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
 import DashboardMobileSidebar from 'components/Sidebar/DashboardMobileSidebar'
 import Feedback from 'components/Feedback'
+import Head from 'next/head'
+import Script from 'next/script'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,12 +32,29 @@ function Layout({ children }: PropsWithChildren) {
   const posthog = usePostHog()
   const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [distinctID, setDistinctID] = useState<string>()
+
+  useEffect(() => {
+    if (!distinctID) return
+
+    const handleRouteChange = (url: string) => {
+      gtag.pageview(url, distinctID)
+    }
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange)
+    }
+  }, [router.events, distinctID])
 
   async function signOut() {
     await supabaseClient.auth.signOut()
     posthog?.reset(true)
     router.push('/sign')
   }
+
+  useEffect(function handleDistinctID() {
+    setDistinctID(posthog?.get_distinct_id())
+  }, [posthog])
 
   useEffect(function identifyUser() {
     if (user) {
@@ -73,6 +93,29 @@ function Layout({ children }: PropsWithChildren) {
 
   return (
     <>
+      <Head>
+        {distinctID &&
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', '${gtag.GA_TRACKING_ID}', {
+                page_path: window.location.pathname,
+                user_id: '${distinctID}',
+              });
+            `,
+            }}
+          />}
+      </Head>
+
+      {/* Global Site Tag (gtag.js) - Google Analytics */}
+      <Script
+        strategy="afterInteractive"
+        src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
+      />
       <style jsx global>
         {`
         :root {
