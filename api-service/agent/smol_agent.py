@@ -238,7 +238,7 @@ Begin generating the code now.
 
             await self.on_logs(
                 {
-                    "message": "Started run",
+                    "message": "Run started",
                     "type": "Run",
                     "properties": {
                         "user_prompt": user_prompt,
