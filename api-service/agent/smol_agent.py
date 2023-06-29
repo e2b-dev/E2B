@@ -325,11 +325,10 @@ do not add any other explanation, only return a python list of strings.
                     user_prompt,
                 )
 
-                group_id = str(uuid.uuid4())
                 await self.on_logs(
                     {
                         "group": {
-                            "id": group_id,
+                            "id": str(uuid.uuid4()),
                             "message": "Create a list of filepaths",
                         },
                         "message": f"Called OpenAI",
@@ -442,7 +441,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     )
                     group = {
                         "message": f"Create file",
-                        "id": group_id,
+                        "id": str(uuid.uuid4()),
                     }
                     await self.on_logs(
                         {
