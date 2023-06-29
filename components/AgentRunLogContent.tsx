@@ -13,13 +13,14 @@ import { useLocalStorage } from 'hooks/useLocalStorage'
 import useDeploymentRunLog from 'hooks/useDeploymentRunLog'
 import AgentRunLogDetail from './AgentRunLogDetail'
 import AgentDeploymentLogsList from './AgentDeploymentsLogsList'
+import Spinner from './Spinner'
 
 export interface Props {
   log: LiteDeploymentLog
 }
 
 function AgentRunLogContent({
-  log: inialLog,
+  log: initialLog,
 }: Props) {
   const [selectedLog, setSelectedLog] = useState<any>()
   const [splitterSizes, setSplitterSizes] = useLocalStorage('log-content-splitter', [40, 60])
@@ -31,12 +32,22 @@ function AgentRunLogContent({
     setSplitterSizes(sizes)
   }, [setSplitterSizes])
 
-  const log = useDeploymentRunLog(inialLog)
+  const log = useDeploymentRunLog(initialLog)
+
+  const runSteps = log.content && log.content.filter((c: any) => c.type === 'Run')
+  const isRunning = initialLog.deployments.enabled && runSteps.length > 0 && runSteps.length <= 2
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
       <header className="flex items-center px-4 py-3 border-b border-b-white/5 justify-between">
-        <h1 className="text-xl font-semibold text-white">Agent Run Logs</h1>
+        <div className="flex items-center space-x-2">
+          <h1 className="text-xl font-semibold text-white">Agent Run Logs</h1>
+          {isRunning &&
+            <div className="mt-1">
+              <Spinner />
+            </div>
+          }
+        </div>
         <div className="text-sm text-gray-400 self-center truncate">{slug}</div>
       </header>
       <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden my-4">
