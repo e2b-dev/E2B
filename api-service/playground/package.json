@@ -2,7 +2,7 @@
   "name": "playground",
   "version": "1.0.0",
   "dependencies": {
-    "@aws-sdk/client-lambda": "^3.293.0",
+    "@aws-sdk/client-lambda": "^3.362.0",
     "@devbookhq/sdk": "^2.6.74",
     "@supabase/supabase-js": "^2.12.0",
     "dotenv": "^16.0.3",
