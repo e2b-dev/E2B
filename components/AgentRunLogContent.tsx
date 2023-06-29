@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useMemo,
   useState,
 } from 'react'
 import Splitter from '@devbookhq/splitter'
@@ -35,7 +36,11 @@ function AgentRunLogContent({
   const log = useDeploymentRunLog(initialLog)
 
   const runSteps = log.content && log.content.filter((c: any) => c.type === 'Run')
-  const isRunning = initialLog.deployments.enabled && runSteps.length > 0 && runSteps.length <= 2
+  const isRunOlderThanTimeout = useMemo(() => {
+    const oneHourAgo = new Date(Date.now() - (60 * 60 * 1000))
+    return initialLog.created_at < oneHourAgo
+  }, [initialLog.created_at])
+  const isRunning = initialLog.deployments.enabled && !isRunOlderThanTimeout && runSteps.length > 0 && runSteps.length <= 2
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
