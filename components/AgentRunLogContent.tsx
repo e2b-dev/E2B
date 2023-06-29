@@ -1,7 +1,6 @@
 import {
   useCallback,
   useMemo,
-  useState,
 } from 'react'
 import Splitter from '@devbookhq/splitter'
 import clsx from 'clsx'
@@ -13,7 +12,7 @@ import {
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import useDeploymentRunLog from 'hooks/useDeploymentRunLog'
 import AgentRunLogDetail from './AgentRunLogDetail'
-import AgentDeploymentLogsList from './AgentDeploymentsLogsList'
+import AgentDeploymentStepsList from './AgentDeploymentsStepsList'
 import Spinner from './Spinner'
 
 export interface Props {
@@ -23,9 +22,9 @@ export interface Props {
 function AgentRunLogContent({
   log: initialLog,
 }: Props) {
-  const [selectedLog, setSelectedLog] = useState<any>()
   const [splitterSizes, setSplitterSizes] = useLocalStorage('log-content-splitter', [40, 60])
   const router = useRouter()
+  const selectedStepID = router.query.stepID as string
 
   const slug = router.query.slug as string
 
@@ -34,6 +33,9 @@ function AgentRunLogContent({
   }, [setSplitterSizes])
 
   const log = useDeploymentRunLog(initialLog)
+  const selectedStep = useMemo(() => {
+    return log.content?.find((c: any) => c.id === selectedStepID)
+  }, [log.content, selectedStepID])
 
   const runSteps = log.content && log.content.filter((c: any) => c.type === 'Run')
   const isRunOlderThanTimeout = useMemo(() => {
@@ -68,12 +70,11 @@ function AgentRunLogContent({
           onResizeFinished={setSizes}
           minWidths={[120, 120]}
         >
-          <AgentDeploymentLogsList
-            logs={log.content as any}
-            onSelected={setSelectedLog}
+          <AgentDeploymentStepsList
+            steps={log.content as any}
           />
           <AgentRunLogDetail
-            log={selectedLog}
+            step={selectedStep}
           />
         </Splitter>
       </div>

@@ -2,31 +2,31 @@ import dynamic from 'next/dynamic'
 const ReactJson = dynamic(import('react-json-view'), { ssr: false })
 
 export interface Props {
-  log?: any
+  step?: any
 }
 
 function AgentRunLogDetail({
-  log,
+  step,
 }: Props) {
 
   return (
     <div className="overflow-auto mr-2.5 mb-2.5 p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 border border-[#6366F1]/50">
-      {log && (
+      {step && (
         <>
           <div className="flex flex-col space-y-1 w-full">
             <span className="text-sm font-medium text-gray-500">Type</span>
-            <span className="text-sm text-gray-200 w-full">{log.type}</span>
+            <span className="text-sm text-gray-200 w-full">{step.type}</span>
           </div>
 
           <div className="flex flex-col space-y-1 w-full">
             <span className="text-sm font-medium text-gray-500">Message</span>
-            <p className="text-sm text-gray-200 w-full prose whitespace-pre-wrap max-w-full">{log.message}</p>
+            <p className="text-sm text-gray-200 w-full prose whitespace-pre-wrap max-w-full">{step.message}</p>
           </div>
-          {log.properties &&
+          {step.properties &&
             <div className="flex flex-col space-y-1 w-full">
               <span className="text-sm font-medium text-gray-500">Properties</span>
               <ReactJson
-                src={log.properties}
+                src={step.properties}
                 name={null}
                 style={{
                   background: 'transparent',
