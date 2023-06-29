@@ -22,24 +22,26 @@ function AgentRunLogDetail({
             <span className="text-sm font-medium text-gray-500">Message</span>
             <p className="text-sm text-gray-200 w-full prose whitespace-pre-wrap max-w-full">{log.message}</p>
           </div>
-          <div className="flex flex-col space-y-1 w-full">
-            <span className="text-sm font-medium text-gray-500">Properties</span>
-            <ReactJson
-              src={log.properties}
-              name={null}
-              style={{
-                background: 'transparent',
-                display: 'flex',
-                whiteSpace: 'pre-wrap',
-              }}
-              displayObjectSize={false}
-              quotesOnKeys={false}
-              sortKeys={true}
-              displayDataTypes={false}
-              theme="ocean"
-              enableClipboard={false}
-            />
-          </div>
+          {log.properties &&
+            <div className="flex flex-col space-y-1 w-full">
+              <span className="text-sm font-medium text-gray-500">Properties</span>
+              <ReactJson
+                src={log.properties}
+                name={null}
+                style={{
+                  background: 'transparent',
+                  display: 'flex',
+                  whiteSpace: 'pre-wrap',
+                }}
+                displayObjectSize={false}
+                quotesOnKeys={false}
+                sortKeys={true}
+                displayDataTypes={false}
+                theme="ocean"
+                enableClipboard={false}
+              />
+            </div>
+          }
         </>
       )}
     </div >
