@@ -58,11 +58,11 @@ function SelectRepository({
 
   return (
     <>
-      <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-        Select Git Repository
+      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        Deploy <a className="text-indigo-400 hover:text-indigo-500 transition-all" href="https://github.com/smol-ai/developer" target="_blank" rel="noreferrer noopener">Smol Developer</a>
       </h2>
       <p className="mt-2 mb-6 text-lg leading-8 text-gray-400">
-        Select a git repository to which you want to give the AI developer access.
+        Select a git repository to which you want to give the AI agent access.
       </p>
 
       {!user && (

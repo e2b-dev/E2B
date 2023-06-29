@@ -42,7 +42,7 @@ function AgentInstructions({
       setError({
         title: 'No instructions provided',
         infoItems: [
-          'Please provide instructions for the AI developer to follow',
+          'Please provide instructions for the AI agent',
         ],
       })
       return
@@ -64,7 +64,12 @@ function AgentInstructions({
 
   return (
     <div className="flex-1 flex flex-col items-start justify-start space-y-2">
-      <h3 className="text-white font-bold">What do you want the AI developer to build?</h3>
+      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        Deploy <a className="text-indigo-400 hover:text-indigo-500 transition-all" href="https://github.com/smol-ai/developer" target="_blank" rel="noreferrer noopener">Smol Developer</a>
+      </h2>
+      <p className="mt-2 mb-6 text-lg leading-8 text-gray-400">
+      What do you want the AI agent to build?
+      </p>
       {error && (
         <AlertError
           title={error.title}
