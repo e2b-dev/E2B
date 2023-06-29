@@ -73,7 +73,7 @@ async def with_semaphore(semaphore, coro):
 
 
 class SmolAgent(AgentBase):
-    max_run_time = 60 * 60  # in seconds
+    max_run_time = 2 * 60 * 60  # 2 hours in seconds
 
     def __init__(
         self,
@@ -248,6 +248,7 @@ Begin generating the code now.
                 },
             )
             playground = None
+            tasks: List[asyncio.Task[Any]] = []
             try:
                 playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
                 rootdir = "/repo"
@@ -427,7 +428,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 print("Filepaths:", ", ".join(list_actual))
 
                 # Maximum number of allowed concurrent calls
-                semaphore = asyncio.Semaphore(4)
+                semaphore = asyncio.Semaphore(2)
                 # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
 
                 async def create_file(name):
@@ -455,22 +456,24 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     )
                     await save_file(filename, content, group)
 
-                await asyncio.gather(
-                    *[
+                tasks = [
+                    asyncio.ensure_future(
                         with_semaphore(
                             semaphore,
                             create_file(
                                 name,
                             ),
                         )
-                        for name in list_actual
-                        # Filter out files that end with extensions we don't want to generate
-                        if not any(
-                            name.endswith(extension) for extension in extensions_to_skip
-                        )
-                        and not name.endswith("/")
-                    ]
-                )
+                    )
+                    for name in list_actual
+                    # Filter out files that end with extensions we don't want to generate
+                    if not any(
+                        name.endswith(extension) for extension in extensions_to_skip
+                    )
+                    and not name.endswith("/")
+                ]
+
+                await asyncio.gather(*tasks)
 
                 print("All files generated")
 
@@ -514,6 +517,8 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     }
                 )
             except Exception as e:
+                for t in tasks:
+                    t.cancel()
                 print(f"Failed agent run", e)
                 await self.on_logs(
                     {

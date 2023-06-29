@@ -4,7 +4,7 @@ import NodeCache from 'node-cache'
 import { CachedProcess, RunProcessParams } from './process'
 
 export const sessionCache = new NodeCache({
-  stdTTL: 3600,
+  stdTTL: 7200,
   checkperiod: 200,
   useClones: false,
   deleteOnExpire: true,

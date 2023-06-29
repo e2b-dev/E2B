@@ -51,7 +51,8 @@ def get_model(
                 **config.args,
                 request_timeout=3600,
                 verbose=True,
-                max_retries=10,
+                # The max time between retries is 1 minute so we set max_retries to 45
+                max_retries=45,
                 streaming=False,
                 callback_manager=callback_manager,
             )

@@ -18,7 +18,6 @@ configuration.verify_ssl = False
 configuration.ssl_ca_cert = None
 configuration.cert_file = None
 
-
 GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
 
 
