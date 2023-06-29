@@ -57,14 +57,20 @@ function AgentDeploymentsList({
     <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
       <header className="flex items-center justify-between px-4 py-3 border-b border-b-white/5">
         <h1 className="text-xl font-semibold text-white">Agent Deployments</h1>
-        <Link href="//agent/smol-developer">
-          <button
-            className="py-1 px-2 rounded bg-green-400/10 hover:bg-green-400/20 border border-green-400/20 transition-all flex items-center space-x-2 text-green-400 text-sm font-semibold"
-          >
-            <Plus size={16} />
-            <span>Deploy New Agent</span>
-          </button>
-        </Link>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-400">
+            SDK Coming Soon
+          </span>
+
+          <Link href="/agent/smol-developer">
+            <button
+              className="py-1 px-2 rounded bg-green-400/10 hover:bg-green-400/20 border border-green-400/20 transition-all flex items-center space-x-2 text-green-400 text-sm font-semibold"
+            >
+              <Plus size={16} />
+              <span>Deploy Smol Developer</span>
+            </button>
+          </Link>
+        </div>
       </header>
       {sortedDeployments.length === 0 && (
         <div className="flex items-center justify-center flex-1">
