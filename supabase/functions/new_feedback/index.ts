@@ -14,11 +14,12 @@ const slackClient = new WebClient(SLACK_API_TOKEN)
 console.log('Slack client created')
 
 function sendSlackMessage(email: string, feedback: string) {
-  const message = `:rotating_light: @here *New User Feedback From Dashboard*\n*User*\n${email}\n*Feedback*\n>${feedback}`
+  const message = `:rotating_light: @here <@here> *New User Feedback From Dashboard*\n*User*\n${email}\n*Feedback*\n>${feedback}`
 
   return slackClient.chat.postMessage({
     channel: SLACK_CHANNEL,
     text: message,
+    link_names: true,
   })
 }
 
