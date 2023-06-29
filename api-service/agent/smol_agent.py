@@ -210,7 +210,10 @@ Begin generating the code now.
         )
 
         return response.generations[0][0].text, {
-            "prompt": model_prompt.to_string(),
+            "prompt": [
+                {"role": m.type, "content": m.content}
+                for m in model_prompt.to_messages()
+            ],
             "total_tokens": response.llm_output["token_usage"]["total_tokens"]
             if response.llm_output
             else None,
@@ -220,7 +223,7 @@ Begin generating the code now.
             "result_tokens": response.llm_output["token_usage"]["completion_tokens"]
             if response.llm_output
             else None,
-            "cost": float(cost),
+            "cost": float(cost) if cost else None,
         }
 
     async def _dev(self, instructions: Any):
@@ -248,10 +251,11 @@ Begin generating the code now.
 
             await self.on_logs(
                 {
-                    "message": f"Initial prompt",
-                    "type": "info",
+                    "message": "Start run",
+                    "type": "Run",
                     "properties": {
-                        "prompt": user_prompt,
+                        "user_prompt": user_prompt,
+                        "trigger": "github",
                     },
                 },
             )
@@ -316,13 +320,13 @@ do not add any other explanation, only return a python list of strings.
 
                 await self.on_logs(
                     {
-                        "message": f"Generated filepaths",
+                        "message": f"Called OpenAI",
                         "properties": {
                             **metadata,
                             "result": filepaths_string,
                             "model": model_version,
                         },
-                        "type": "model",
+                        "type": "LLM",
                     },
                 )
 
