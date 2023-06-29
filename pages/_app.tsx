@@ -35,9 +35,11 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
   const router = useRouter()
 
+  const isAgent = router.pathname.startsWith('/agent')
+
   const meta = {
-    title: 'Dashboard | e2b',
-    description: 'e2b Dashboard',
+    title: isAgent ? 'Smol Developer | e2b' : 'Dashboard | e2b',
+    description: isAgent ? 'Smol Developer on e2b' : 'e2b Dashboard',
   }
 
   useEffect(function trackPageViews() {
@@ -52,6 +54,7 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
     }
   }, [])
 
+
   return (
     <PostHogProvider
       client={process.env.NEXT_PUBLIC_POSTHOG_KEY ? posthog : undefined}
@@ -62,7 +65,7 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
       >
         <Head>
           <title>{meta.title}</title>
-          <link rel="icon" href="/favicon.png" sizes="any"/>
+          <link rel="icon" href="/favicon.png" sizes="any" />
           <meta
             content="follow, index"
             name="robots"

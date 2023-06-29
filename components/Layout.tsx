@@ -35,8 +35,6 @@ function Layout({ children }: PropsWithChildren) {
   const [distinctID, setDistinctID] = useState<string>()
 
   useEffect(() => {
-    if (!distinctID) return
-
     const handleRouteChange = (url: string) => {
       gtag.pageview(url, distinctID)
     }
@@ -64,20 +62,42 @@ function Layout({ children }: PropsWithChildren) {
     }
   }, [posthog, user])
 
+  const gaScript = (<>
+    <Script id="google-analytics">
+      {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', '${gtag.GA_TRACKING_ID}', {
+            page_path: window.location.pathname,
+            ${distinctID ? `user_id: ${distinctID}` : ''}
+          });
+        `}
+    </Script>
+    <Script
+      src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
+    />
+  </>
+  )
+
   if (router.pathname.startsWith('/agent') || router.pathname.startsWith('/sign')) {
     return (
-      <div className={clsx(
-        inter.variable,
-        'font-sans',
-        'flex',
-        'h-full',
-        'w-full',
-        'flex-1',
-        'flex-col',
-        'overflow-hidden',
-      )}>
-        {children}
-      </div>
+      <>
+        {gaScript}
+        <div className={clsx(
+          inter.variable,
+          'font-sans',
+          'flex',
+          'h-full',
+          'w-full',
+          'flex-1',
+          'flex-col',
+          'overflow-hidden',
+        )}>
+          {children}
+        </div>
+      </>
     )
   }
 
@@ -93,25 +113,7 @@ function Layout({ children }: PropsWithChildren) {
 
   return (
     <>
-      {distinctID &&
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
-          />
-          <Script id="google-analytics">
-            {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-
-          gtag('config', '${gtag.GA_TRACKING_ID}', {
-            page_path: window.location.pathname,
-            user_id: '${distinctID}',
-          });
-        `}
-          </Script>
-        </>
-      }
+      {gaScript}
       <style jsx global>
         {`
         :root {

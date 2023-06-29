@@ -6,5 +6,5 @@ export const pageview = (url, user_id) => {
     page_path: url,
     user_id: user_id,
   })
-  console.log('tracked pageview', url, user_id)
+  // console.log('tracked pageview', url, user_id)
 }
