@@ -152,7 +152,7 @@ function AgentDeploymentStepsList({
                       {step.message}
                     </span>
                     <span className="text-gray-600 text-sm self-center">
-                      {new Date(step.timestamp).toLocaleTimeString()}
+                      {new Date(step.timestamp + 'Z').toLocaleTimeString()}
                     </span>
                   </span>
                 </div>
