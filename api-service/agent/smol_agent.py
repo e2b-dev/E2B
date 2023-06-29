@@ -2,7 +2,7 @@ import asyncio
 import uuid
 import os
 import ast
-from decimal import Decimal, ROUND_UP
+from decimal import Decimal
 
 from typing import Any, Callable, List
 from langchain.callbacks.base import AsyncCallbackManager
@@ -162,19 +162,6 @@ Begin generating the code now.
 
 """,
         )
-        print("File generated", filename)
-        await self.on_logs(
-            {
-                "message": f"Generated file",
-                "properties": {
-                    **metadata,
-                    "result": filecode,
-                    "model": model_version,
-                },
-                "type": "model",
-            },
-        )
-
         return filename, filecode, metadata
 
     async def generate_response(
@@ -251,11 +238,12 @@ Begin generating the code now.
 
             await self.on_logs(
                 {
-                    "message": "Start run",
+                    "message": "Started run",
                     "type": "Run",
                     "properties": {
                         "user_prompt": user_prompt,
                         "trigger": "github",
+                        "repository": f"{owner}/{repo}",
                     },
                 },
             )
@@ -287,6 +275,16 @@ Begin generating the code now.
                         },
                     )
 
+                    await self.on_logs(
+                        {
+                            "type": "GitHub",
+                            "message": "Cloned repository",
+                            "properties": {
+                                "repository": f"{owner}/{repo}",
+                            },
+                        }
+                    )
+
                     extensions = " -o ".join(
                         [f'-name "*{extension}"' for extension in extensions_to_skip]
                     )
@@ -298,6 +296,15 @@ Begin generating the code now.
                     res = await playground.run_command(delete_command, rootdir)
                     print("Delete command result: ", res.stdout, res.stderr)
 
+                    # await self.on_logs(
+                    #     {
+                    #         "type": "Filesystem",
+                    #         "message": "",
+                    #         "properties": {
+                    #             "path": rootdir,
+                    #         },
+                    #     }
+                    # )
                     span.add_event(
                         "files-deleted",
                         {
@@ -318,8 +325,13 @@ do not add any other explanation, only return a python list of strings.
                     user_prompt,
                 )
 
+                group_id = str(uuid.uuid4())
                 await self.on_logs(
                     {
+                        "group": {
+                            "id": group_id,
+                            "message": "Create a list of filepaths",
+                        },
                         "message": f"Called OpenAI",
                         "properties": {
                             **metadata,
@@ -363,18 +375,25 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     user_prompt,
                 )
 
+                group = (
+                    {
+                        "message": f"Create shared dependencies",
+                        "id": str(uuid.uuid4()),
+                    },
+                )
+
                 await self.on_logs(
                     {
-                        "message": f"Generated shared dependencies",
+                        "group": group,
                         "properties": {
                             **metadata,
                             "result": shared_dependencies,
                             "model": model_version,
                         },
-                        "type": "model",
+                        "message": f"Called OpenAI",
+                        "type": "LLM",
                     },
                 )
-
                 span.add_event(
                     "model-used",
                     {
@@ -384,22 +403,67 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     },
                 )
 
-                await initializing_playground
+                async def save_file(name: str, content: str, group: Any):
+                    filepath = os.path.join(rootdir, name)
+                    await initializing_playground
+                    await playground.write_file(filepath, content)
+                    span.add_event(
+                        "file-saved",
+                        {
+                            "filename": filepath,
+                        },
+                    )
+                    await self.on_logs(
+                        {
+                            "type": "Filesystem",
+                            "group": group,
+                            "message": f"Saved file",
+                            "properties": {
+                                "path": filepath,
+                                "content": content,
+                            },
+                        }
+                    )
+
+                await save_file("shared_dependencies.md", shared_dependencies, group)
 
                 print("Filepaths:", ", ".join(list_actual))
 
                 # Maximum number of allowed concurrent calls
                 semaphore = asyncio.Semaphore(4)
                 # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
-                generated_files = await asyncio.gather(
+
+                async def create_file(name):
+                    filename, content, metadata = await self.generate_file(
+                        name,
+                        filepaths_string=filepaths_string,
+                        shared_dependencies=shared_dependencies,
+                        prompt=user_prompt,
+                    )
+                    group = {
+                        "message": f"Create file",
+                        "id": group_id,
+                    }
+                    await self.on_logs(
+                        {
+                            "group": group,
+                            "message": f"Called OpenAI",
+                            "properties": {
+                                **metadata,
+                                "result": content,
+                                "model": model_version,
+                            },
+                            "type": "LLM",
+                        },
+                    )
+                    await save_file(filename, content, group)
+
+                await asyncio.gather(
                     *[
                         with_semaphore(
                             semaphore,
-                            self.generate_file(
+                            create_file(
                                 name,
-                                filepaths_string=filepaths_string,
-                                shared_dependencies=shared_dependencies,
-                                prompt=user_prompt,
                             ),
                         )
                         for name in list_actual
@@ -411,27 +475,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     ]
                 )
 
-                async def save_file(name, content):
-                    filepath = os.path.join(rootdir, name)
-                    await playground.write_file(filepath, content)
-                    span.add_event(
-                        "file-saved",
-                        {
-                            "filename": filepath,
-                        },
-                    )
-
-                fs_semaphore = asyncio.Semaphore(5)
-                await asyncio.gather(
-                    *[
-                        with_semaphore(fs_semaphore, save_file(name, content))
-                        for name, content, _ in generated_files
-                    ],
-                    with_semaphore(
-                        fs_semaphore,
-                        save_file("shared_dependencies.md", shared_dependencies),
-                    ),
-                )
                 print("All files generated")
 
                 await playground.push_repo(
@@ -447,6 +490,15 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "repository": f"{owner}/{repo}",
                     },
                 )
+                await self.on_logs(
+                    {
+                        "message": f"Pushed repository",
+                        "properties": {
+                            "repository": f"{owner}/{repo}",
+                        },
+                        "type": "GitHub",
+                    }
+                )
 
                 await self.on_interaction_request(
                     AgentInteractionRequest(
@@ -458,15 +510,21 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         },
                     )
                 )
+                await self.on_logs(
+                    {
+                        "message": f"Run finished",
+                        "type": "Run",
+                    }
+                )
             except Exception as e:
                 print(f"Failed agent run", e)
                 await self.on_logs(
                     {
-                        "message": f"Agent run failed",
+                        "message": f"Run failed",
                         "properties": {
                             "error": str(e),
                         },
-                        "type": "error",
+                        "type": "Run",
                     },
                 )
                 span.set_status(Status(StatusCode.ERROR))
@@ -479,13 +537,6 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "closed-playground",
                         {},
                     )
-                await self.on_logs(
-                    {
-                        "message": f"Agent run finished",
-                        "properties": {},
-                        "type": "info",
-                    }
-                )
 
     async def _dev_in_background(self, instructions: Any):
         print("Start agent run", bool(self._dev_loop))
@@ -529,6 +580,12 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
 
     async def stop(self):
         print("Cancel agent run")
+        await self.on_logs(
+            {
+                "message": f"Run cancelled",
+                "type": "Run",
+            },
+        )
         await self.on_interaction_request(
             AgentInteractionRequest(
                 interaction_id=str(uuid.uuid4()),

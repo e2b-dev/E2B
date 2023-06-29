@@ -14,7 +14,7 @@ function AgentRunLogDetail({
       {log && (
         <>
           <div className="flex flex-col space-y-1 w-full">
-            <span className="text-sm font-medium text-gray-500">Action Type</span>
+            <span className="text-sm font-medium text-gray-500">Type</span>
             <span className="text-sm text-gray-200 w-full">{log.type}</span>
           </div>
 
