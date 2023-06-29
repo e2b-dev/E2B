@@ -85,7 +85,7 @@ class AgentEvents:
 
     async def add_log(self, log: Any):
         date = datetime.now()
-        log["timestamp"] = str(date)
+        log["timestamp"] = date.isoformat()
         log["id"] = str(uuid.uuid4())
         self.logs.append(log)
         self.log_que.schedule(self.logs)

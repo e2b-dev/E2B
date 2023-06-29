@@ -97,11 +97,16 @@ function AgentDeploymentLogsList({
             </span>
             <span
               className={clsx(
-                'text-sm text-gray-100 max-w-full truncate p-2 group-hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full',
+                'text-sm text-gray-100 max-w-full truncate p-2 group-hover:bg-[#1F2437] transition-all rounded-md cursor-pointer w-full flex justify-between',
                 selectedLogIdx === idx && 'bg-[#1F2437]',
               )}
             >
-              {ctx.message}
+              <span>
+                {ctx.message}
+              </span>
+              <span className="text-gray-600 text-sm self-center">
+                {new Date(ctx.timestamp).toLocaleTimeString()}
+              </span>
             </span>
           </div>
           {idx !== logs.length - 1 && (
