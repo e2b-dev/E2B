@@ -374,12 +374,10 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     user_prompt,
                 )
 
-                group = (
-                    {
-                        "message": f"Create shared dependencies",
-                        "id": str(uuid.uuid4()),
-                    },
-                )
+                group = {
+                    "message": f"Create shared dependencies",
+                    "id": str(uuid.uuid4()),
+                }
 
                 await self.on_logs(
                     {
