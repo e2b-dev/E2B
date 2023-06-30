@@ -28,6 +28,7 @@ import { Creds } from 'hooks/useModelProviderArgs'
 import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
 import { RepoSetup } from 'utils/repoSetup'
+import StarUs from 'components/StarUs'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -227,15 +228,15 @@ function Setup() {
   }, [github, user])
 
   return (
-    <div className="h-full flex flex-col items-center justify-start bg-gray-800 py-8 px-6">
+    <div className="h-full flex flex-col items-center justify-start bg-gray-800 py-8 px-6 space-y-8">
       <div className="mb-4 w-full flex items-center justify-between">
-        <span />
         <button
-          className="text-sm font-semibold text-white"
+          className="text-sm font-semibold text-gray-400 hover:text-white transition-all"
           onClick={signOut}
         >
-          Log out
+          Sign out
         </button>
+        <StarUs />
       </div>
       <div className="overflow-hidden flex-1 mx-auto w-full max-w-lg flex flex-col">
         <Steps

@@ -6,7 +6,7 @@ export interface Template {
 const templates: { [key: string]: Template } = {
   createReactApp: {
     title: 'React App',
-    content: '# A starter react app\nA starter react app based on the latest standards with Typescript.\n\n ### Requirements\n- Authentication: Implement user authentication using libraries like Firebase Authentication.',
+    content: '# A starter react app\nA starter react app based on the latest standards with Typescript.\n\n ### Requirements\n- Authentication: Implement user authentication using libraries like Firebase Authentication',
   },
   createNextApp: {
     title: 'Next.js App',
@@ -22,11 +22,11 @@ const templates: { [key: string]: Template } = {
   },
   personalWebsite: {
     title: 'Personal Website',
-    content: '# Personal Website\n Build a simple personal website\n ### Tech stack\n- Simple HTML and CSS.\n- Use Tailwind CSS for styling. \n ### Design \n - Make it dark, clean and simple',
+    content: '# Personal Website\n Build a simple personal website.\n ### Tech stack\n- Simple HTML and CSS\n- Use Tailwind CSS for styling\n ### Design \n - Make it dark, clean and simple',
   },
   createChromeExtension: {
     title: 'Chrome extension',
-    content: '# Website Comment Chrome Extension\n Build a Chrome extension that allows the user to add comments to websites, providing a platform for users to save their thoughts, opinions, and feedback directly on the web pages.\n\n### Tech Stack\n- HTML: Markup language for creating the extension\'s user interface.\n- CSS: Styling language for customizing the appearance of the comment interface.\n- JavaScript: Programming language for implementing extension functionality and user interaction.\n- Chrome Storage API: Used to store and retrieve comments for specific web pages.'
+    content: '# Website Comment Chrome Extension\n Build a Chrome extension that allows the user to add comments to websites, providing a platform for users to save their thoughts, opinions, and feedback directly on the web pages.\n\n### Tech Stack\n- HTML: Markup language for creating the extension\'s user interface\n- CSS: Styling language for customizing the appearance of the comment interface\n- JavaScript: Programming language for implementing extension functionality and user interaction\n- Chrome Storage API: Used to store and retrieve comments for specific web pages'
   },
   createWebScraper: {
     title: 'Web Scraper',

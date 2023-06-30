@@ -99,7 +99,7 @@ function DashboardMobileSidebar({
                           className="text-sm font-semibold text-gray-400 hover:text-white transition-all"
                           onClick={onSignOut}
                         >
-                          Sign Out
+                          Sign out
                         </button>
                       </div>
                     </li>

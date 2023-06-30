@@ -101,7 +101,7 @@ function SelectRepository({
           )}
           <button
             type="button"
-            className="flex justify-start items-center text-xs font-medium space-x-1 text-white/80 hover:text-white transition-all mt-4 rounded-md"
+            className="flex justify-start items-center text-xs font-medium space-x-1 text-gray-400 hover:text-white transition-all mt-4 rounded-md"
             onClick={configure}
           >
             <span>Configure GitHub Permissions</span>

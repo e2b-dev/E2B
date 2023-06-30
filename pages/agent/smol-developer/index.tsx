@@ -14,6 +14,7 @@ import { usePostHog } from 'posthog-js/react'
 
 import { serverCreds } from 'db/credentials'
 import SpinnerIcon from 'components/Spinner'
+import StarUs from 'components/StarUs'
 
 type Repo = {
   name: string
@@ -68,7 +69,7 @@ function SmolDeveloper({
   }
 
   return (
-    <div className="bg-white h-full">
+    <div className="h-full">
       <div className="m-auto h-full max-w-full">
         <div className="h-full relative isolate overflow-x-hidden md:overflow-hidden bg-gray-900 px-6 pt-16 shadow-2xl sm:px-16 md:pt-24 lg:flex lg:gap-x-20 lg:px-24 lg:pt-0">
           <svg
@@ -86,14 +87,17 @@ function SmolDeveloper({
           </svg>
           <div className="m-auto max-w-xl text-center lg:mx-0 lg:flex-auto lg:py-32 lg:text-left">
             <div className="flex flex-col space-y-4 items-center lg:items-start">
-              <Link
-                href="/" className="inline-flex space-x-6"
-                onMouseDown={() => posthog?.capture('clicked link to e2b homepage')}
-              >
-                <span className="rounded-full bg-indigo-400/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-400/20">
-                  Runs on <b>e2b</b>
-                </span>
-              </Link>
+              <span className="flex space-x-4">
+                <Link
+                  href="/" className="inline-flex space-x-6"
+                  onMouseDown={() => posthog?.capture('clicked link to e2b homepage')}
+                >
+                  <span className="rounded-full bg-indigo-400/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-400/20">
+                    Runs on <b>e2b</b>
+                  </span>
+                </Link>
+                <StarUs />
+              </span>
               <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 Your personal AI developer.
                 <br />
