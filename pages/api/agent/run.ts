@@ -160,32 +160,32 @@ async function deleteRun(req: NextApiRequest, res: NextApiResponse) {
         repo: authData.github.repo,
         pullNumber: authData.github.pr_number,
       })
-
-      const users = deployment
-        .projects
-        .teams
-        .users_teams
-        .map(u => u.users)
-        .flat()
-
-      const result = await Promise.allSettled(users.map(async u => {
-        posthog?.capture({
-          distinctId: u.id,
-          event: 'cancelled agent run',
-          properties: {
-            agent_deployment_id: deployment.id,
-            agent: TemplateID.SmolDeveloper,
-            repository: `${authData.github.owner}/${authData.github.repo}`,
-            run_id,
-
-            pr_number: authData.github.pr_number,
-          },
-        })
-      }))
-
-      await posthog?.shutdownAsync()
-      console.log('Analytics logged', result)
     }
+
+    const users = deployment
+      .projects
+      .teams
+      .users_teams
+      .map(u => u.users)
+      .flat()
+
+    const result = await Promise.allSettled(users.map(async u => {
+      posthog?.capture({
+        distinctId: u.id,
+        event: 'cancelled agent run',
+        properties: {
+          agent_deployment_id: deployment.id,
+          agent: TemplateID.SmolDeveloper,
+          repository: `${authData.github.owner}/${authData.github.repo}`,
+          run_id,
+
+          pr_number: authData.github.pr_number,
+        },
+      })
+    }))
+
+    await posthog?.shutdownAsync()
+    console.log('Analytics logged', result)
 
     res.status(200).json({})
   } catch (err: any) {
