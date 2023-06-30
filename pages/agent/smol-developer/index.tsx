@@ -16,20 +16,22 @@ import { serverCreds } from 'db/credentials'
 import SpinnerIcon from 'components/Spinner'
 import StarUs from 'components/StarUs'
 
-type Repo = {
-  name: string
-  stargazers_count: number
-}
+// type Repo = {
+//   name: string
+//   stargazers_count: number
+// }
 
 export const getServerSideProps: GetServerSideProps<{
-  repo: Repo,
+  // repo: Repo,
 }> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
 
-  const [{ data: { session } }, ghResponse] = await Promise.all([
-    supabase.auth.getSession(),
-    fetch('https://api.github.com/repos/smol-ai/developer'),
-  ])
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // const [{ data: { session } }, ghResponse] = await Promise.all([
+  //   supabase.auth.getSession(),
+  //   fetch('https://api.github.com/repos/smol-ai/developer'),
+  // ])
 
   if (session) {
     return {
@@ -39,12 +41,12 @@ export const getServerSideProps: GetServerSideProps<{
       },
     }
   }
-  const repo = await ghResponse.json()
-  return { props: { repo } }
+  // const repo = await ghResponse.json()
+  return { props: {} }
 }
 
 function SmolDeveloper({
-  repo,
+  // repo,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
@@ -128,7 +130,7 @@ function SmolDeveloper({
                   onMouseDown={() => posthog?.capture('clicked link', { url: 'https://github.com/smol-ai/developer' })}
                 >
                   <span>smol-ai/developer</span>
-                  <span>Stars {repo.stargazers_count.toLocaleString()}</span>
+                  <span>10k</span>
                 </a>
               </div>
               <div className="w-full flex items-center justify-between gap-x-6">
