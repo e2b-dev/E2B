@@ -1,11 +1,12 @@
-name: Build and Deploy to Google Compute Engine
+name: Build and Deploy API to Google Compute Engine
 
 on:
   push:
     paths:
       - 'api-service/**'
+      - '.github/workflows/api.yml'
     branches:
-      - main
+      - production
 
 concurrency: 
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,9 +17,9 @@ permissions:
   contents: read
 
 env:
-  IMAGE_TAG: us-central1-docker.pkg.dev/${{ secrets.GCE_PROJECT }}/services/e2b-api:latest
-  GCE_INSTANCE: e2b-api-instance-1
-  GCE_INSTANCE_ZONE: us-central1-a
+  IMAGE_TAG: ${{ vars.IMAGE_TAG }}
+  GCE_INSTANCE: ${{ vars.GCE_INSTANCE }}
+  GCE_INSTANCE_ZONE: ${{ vars.GCE_INSTANCE_ZONE }}
 
 # TODO: Update - https://stackoverflow.com/questions/68244641/how-to-circumvent-compute-engines-downtime-during-container-deployments
 jobs:
@@ -50,15 +51,15 @@ jobs:
           cache-from: type=gha,scope=e2b-api
           cache-to: type=gha,scope=e2b-api
 
-    - name: Delete old docker images from the instance
-      run: |- 
-        gcloud compute instances add-metadata "$GCE_INSTANCE" \
-          --zone "$GCE_INSTANCE_ZONE" \
-          --metadata startup-script="#! /bin/bash
-          docker image prune -af"
+      - name: Delete old docker images from the instance
+        run: |- 
+          gcloud compute instances add-metadata "$GCE_INSTANCE" \
+            --zone "$GCE_INSTANCE_ZONE" \
+            --metadata startup-script="#! /bin/bash
+            docker image prune -af"
 
-    - name: Update the server container
-      run: |-
-        gcloud compute instances update-container "$GCE_INSTANCE" \
-          --zone "$GCE_INSTANCE_ZONE" \
-          --container-image "$IMAGE_TAG"
+      - name: Update the server container
+        run: |-
+          gcloud compute instances update-container "$GCE_INSTANCE" \
+            --zone "$GCE_INSTANCE_ZONE" \
+            --container-image "$IMAGE_TAG"

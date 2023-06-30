@@ -31,8 +31,8 @@ function NewProjectIDForm({
         <Input
           title="Must be a combination of letters, numbers and dashes"
           pattern="[^a-zA-Z0-9\-]"
-          label="Project name"
-          placeholder="Project name"
+          label="Agent name"
+          placeholder="Agent name"
           value={value}
           onChange={onChange}
           required

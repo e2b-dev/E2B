@@ -30,7 +30,9 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN --mount=type=cache,target=/home/.cache/pypoetry/cache \
     --mount=type=cache,target=/home/.cache/pypoetry/artifacts \
-    poetry install --with deploy --no-root --no-ansi --no-interaction
+    poetry install --no-root --no-ansi --no-interaction
+
+RUN poetry run opentelemetry-bootstrap -a install
 
 COPY . ./
 RUN rm -rf ./playground

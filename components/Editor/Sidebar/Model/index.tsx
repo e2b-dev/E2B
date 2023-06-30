@@ -12,6 +12,7 @@ const modelProviderOrder = sortByOrder<ModelProvider, [string, ProviderTemplate]
     ModelProvider.Anthropic,
     ModelProvider.HuggingFace,
     ModelProvider.Replicate,
+    ModelProvider.AzureOpenAI,
     ModelProvider.Banana,
   ], i => i[0] as ModelProvider)
 

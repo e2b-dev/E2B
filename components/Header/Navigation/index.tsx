@@ -16,7 +16,7 @@ function Navigation({ project }: Props) {
       <HeaderLink
         active={router.pathname === '/'}
         href="/"
-        title="Projects"
+        title="Agents"
         icon={<LayoutGrid size="18px" />}
       />
       {project && (

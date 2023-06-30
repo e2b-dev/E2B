@@ -1,0 +1,20 @@
+# How the smol agent specific deployment works
+- Deploy button in repo opens page `/agent/smol-developer`
+- On this page user signs in with GitHub
+  - We need to fix GH Apps vs OAuth Apps for the sign in - we need GH App access token to retrieve repos that were given permissions by the user
+- User selects repo to deploy
+  - They can also modify permissions for our GH App if we don't have access to repo they want to use
+- User adds initial prompt that specifies what should smol dev do in the first iteration
+- User specifies their OpenAI key and clicks on "Deploy"
+- Then we create a PR throught the GH API (using the GH App token)
+  - We need to create branch and (empty) commit first to be able to create PR
+  - (For now we can probably create the branch directly in the repo without forking it - we need repo write access for that)
+- We then create agent deployment for the specific repo
+  - The necessary GH data are in the `auth` field in the deployments table
+  - The OpenAI key is included in the `config` field alongside the model configuration
+  - We also add informations about the PR that was created so we can update the branch connected to the deployment via git pushes in the agent dev environemnt
+- During each agent run we authenticate with GH App token, pull the repo, make the changes necessary and then push the changes to the branch connected to the deployment
+  - To pull and push we use the `git` command line tool but we need to authenticate with GH App token
+    - We can use the `git credential` helper to do that - ideally using the `gh` CLI tool 
+- On each comment to the PR we trigger a webhook that compiles the prompt from the PR description and comments and then triggers a new run of the smol agent
+  - If the smol dev agent is already processing previous PR change we cancel that run and then start a new one with the latest changes

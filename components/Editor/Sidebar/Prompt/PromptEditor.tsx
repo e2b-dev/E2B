@@ -23,7 +23,6 @@ function Editor({
   placeholder,
   modelConfig,
   content: initialContent,
-  referenceSearch,
 }: Props) {
   const [selectors] = useStateStore()
   const setModelConfigPrompt = selectors.use.setModelConfigPrompt()
@@ -47,7 +46,6 @@ function Editor({
     initialContent,
     onContentChange: onChange,
     placeholder,
-    referenceSearch,
   })
 
   return (

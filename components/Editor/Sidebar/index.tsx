@@ -32,6 +32,7 @@ function Sidebar({
     agentState,
   } = useAgent(project.id)
   const [selectors] = useStateStore()
+  const templateID = selectors.use.templateID()
   const modelConfig = selectors.use.getSelectedModelConfig()()
   const instructions = selectors.use.instructions()
   const instructionsTransform = selectors.use.instructionsTransform()
@@ -46,6 +47,12 @@ function Sidebar({
       return
     }
 
+    if (!templateID) {
+      console.error('Cannot get template ID')
+      return
+    }
+
+
     const {
       references: promptReferences,
       prompt: evaluatedPrompt,
@@ -58,13 +65,13 @@ function Sidebar({
       instructionsTransform,
     )
 
-
     await run(
       {
         name: modelConfig.name,
         provider: modelConfig.provider,
         args: getModelArgs(modelConfig, creds) as any,
-        prompt: evaluatedPrompt
+        prompt: evaluatedPrompt,
+        templateID,
       },
       {
         References: [
@@ -99,7 +106,7 @@ function Sidebar({
       {activeMenuSection === MenuSection.Prompt &&
         <Prompt />
       }
-      {activeMenuSection === MenuSection.Agent &&
+      {activeMenuSection === MenuSection.Run &&
         <Agent
           run={runAgent}
           agentState={agentState}

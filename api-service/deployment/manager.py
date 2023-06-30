@@ -1,3 +1,11 @@
+import os
+import uuid
+import aiohttp
+import json
+from datetime import datetime
+
+from agent.output.work_queue import WorkQueue
+
 from typing import Any, Callable, Coroutine, List
 from abc import abstractmethod, ABC
 
@@ -6,30 +14,97 @@ from agent.base import (
     AgentBase,
     AgentInteractionRequest,
     OnLogs,
+    SetRun,
     OnInteractionRequest,
     GetEnvs,
 )
 
-
 AgentFactory = Callable[
-    [Any, GetEnvs, OnLogs, OnInteractionRequest], Coroutine[None, None, AgentBase]
+    [Any, GetEnvs, SetRun, OnLogs, OnInteractionRequest],
+    Coroutine[None, None, AgentBase],
 ]
+
+app_url = os.environ.get("APP_URL", "http://localhost:3000")
+secret_token = os.environ.get("SECRET_TOKEN")
+
+
+async def agent_run_done(deployment_id: str, prompt: str):
+    async with aiohttp.ClientSession() as client:
+        async with client.post(
+            f"{app_url}/api/agent/run",
+            data=json.dumps(
+                {
+                    "deployment_id": deployment_id,
+                    "prompt": prompt,
+                }
+            ),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {secret_token}",
+            },
+        ) as response:
+            await response.json()
+
+
+async def agent_run_cancelled(deployment_id: str):
+    async with aiohttp.ClientSession() as client:
+        async with client.delete(
+            f"{app_url}/api/agent/run",
+            data=json.dumps(
+                {
+                    "deployment_id": deployment_id,
+                }
+            ),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {secret_token}",
+            },
+        ) as response:
+            await response.json()
 
 
 class AgentEvents:
-    def __init__(self, id: str) -> None:
-        self.id = id
+    def __init__(self, deployment_id: str, project_id: str) -> None:
+        self.deployment_id = deployment_id
         self.logs: List[Any] = []
         self.interaction_requests: List[AgentInteractionRequest] = []
+        self.run_id: str | None
 
-    async def overwrite_logs(self, logs: List[Any]):
-        self.logs = logs
-        await db.update_deployment_logs(self.id, logs)
+        self.log_que = WorkQueue[List[Any]](
+            lambda logs: db.update_deployment_logs(
+                deployment_id=self.deployment_id,
+                run_id=self.run_id,
+                project_id=project_id,
+                logs=logs,
+            )
+        )
+
+    def set_run_id(self, run_id: str):
+        self.logs = []
+        self.run_id = run_id
+
+    async def add_log(self, log: Any):
+        date = datetime.now()
+        log["timestamp"] = date.isoformat()
+        log["id"] = str(uuid.uuid4())
+        self.logs.append(log)
+        self.log_que.schedule(self.logs)
 
     async def add_interaction_request(
-        self, interaction_request: AgentInteractionRequest
+        self,
+        interaction_request: AgentInteractionRequest,
     ):
         self.interaction_requests.append(interaction_request)
+        match interaction_request.type:
+            case "done":
+                await agent_run_done(
+                    self.deployment_id, interaction_request.data["prompt"]
+                )
+            case "cancelled":
+                await agent_run_cancelled(self.deployment_id)
+            # case "failed":
+            #     # TODO: Save agent/interactions/states/run
+            #     await agent_run_failed(self.id)
 
     def remove_interaction_request(self, interaction_id: str):
         self.interaction_requests = [
@@ -53,11 +128,12 @@ class AgentDeployment:
         project_id: str,
         config: Any,
     ):
-        event_handler = AgentEvents(deployment_id)
+        event_handler = AgentEvents(deployment_id=deployment_id, project_id=project_id)
         agent = await factory(
             config,
             lambda: db.get_env_vars(project_id),
-            event_handler.overwrite_logs,
+            event_handler.set_run_id,
+            event_handler.add_log,
             event_handler.add_interaction_request,
         )
         return cls(deployment_id, agent, event_handler)

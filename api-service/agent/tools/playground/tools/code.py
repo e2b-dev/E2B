@@ -32,7 +32,7 @@ def create_code_tools(playground: NodeJSPlayground):
         output = await playground.run_saved_javascript_code()
         return encode_command_output(output)
 
-    yield run_saved_code
+    # yield run_saved_code
 
     # A tool for writing JavaScript code specifically to the index.mjs file
     @async_tool("WriteJavaScriptCode")
@@ -44,7 +44,7 @@ def create_code_tools(playground: NodeJSPlayground):
         await playground.write_javascript_code(extract_code(code))
         return "Code written to index.mjs"
 
-    yield write_javascript_code
+    # yield write_javascript_code
 
     # # This tool is just for executing JavaScript without doing the request to server
     # @async_tool("RunJavaScriptCode")

@@ -5,14 +5,14 @@ from pydantic import BaseModel
 from session.env import EnvVar
 
 # The schema for agent config and interaction data is serializable and
-# the format for interations with the agent is based on a modified JSON-RPC 2.0 spec (should we use less modified JSON-RPC?).
+# the format for interactions with the agent is based on a modified JSON-RPC 2.0 spec (should we use less modified JSON-RPC?).
 
 # This way is to have a schema for communication and a tools that can for example take
 # the implementation of AgentBase class and generate REST server that implements the schema
 # that then be deployed on our platform.
 
 # For local testing there can be a CLI that takes the implementation of AgentBase class
-# and just starts the server and exposes the functionality with a premade web UI where you can test the agent immediately.
+# and just starts the server and exposes the functionality with a pre-made web UI where you can test the agent immediately.
 
 # Later we can start supporting other ways to generate the server, for example a gRPC or WS server.
 # This is orthogonal to the environment where the agent is deployed.
@@ -31,7 +31,8 @@ class AgentInteractionRequest(BaseModel):
     data: Any = None
 
 
-OnLogs = Callable[[List[Any]], Coroutine[None, None, None]]
+OnLogs = Callable[[Any], Coroutine[None, None, None]]
+SetRun = Callable[[str], None]
 OnInteractionRequest = Callable[[AgentInteractionRequest], Coroutine[None, None, None]]
 GetEnvs = Callable[[], Coroutine[Any, Any, List[EnvVar]]]
 
@@ -61,6 +62,11 @@ class AgentBase(ABC):
     @abstractmethod
     async def stop(self):
         """Stop the agent and clean used resources."""
+        pass
+
+    @abstractmethod
+    def is_running(self) -> bool:
+        """Check if the agent run is in progress."""
         pass
 
     @abstractmethod

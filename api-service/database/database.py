@@ -1,3 +1,4 @@
+import json
 from typing import Any, List
 
 from agent.output.output_stream_parser import Step
@@ -5,6 +6,7 @@ from database.client import Client
 from session.env import EnvVar
 
 TABLE_DEPLOYMENTS = "deployments"
+TABLE_LOGS = "log_files"
 TABLE_PROJECTS = "projects"
 
 
@@ -18,10 +20,20 @@ class Database:
             .select("*")
             .eq("project_id", project_id)
             .limit(1)
-            .maybe_single()
             .execute()
         )
-        return response.data
+        return None if len(response.data) == 0 else response.data[0]
+
+    async def get_deployment_by_id(self, id: str):
+        response = (
+            await self.client.table(TABLE_DEPLOYMENTS)
+            .select("*")
+            .eq("id", id)
+            .limit(1)
+            .execute()
+        )
+
+        return None if len(response.data) == 0 else response.data[0]
 
     async def get_deployments(self):
         response = (
@@ -34,14 +46,23 @@ class Database:
 
     async def update_deployment_logs(
         self,
-        id: str,
+        deployment_id: str,
+        run_id: str | None,
+        project_id: str,
         logs: List[Step],
     ):
-        await self.client.table(TABLE_DEPLOYMENTS).update(
+        if run_id is None:
+            return
+
+        await self.client.table(TABLE_LOGS).upsert(
             {
-                "logs": logs,
-            }
-        ).eq("id", id).execute()
+                "id": run_id,
+                "project_id": project_id,
+                "deployment_id": deployment_id,
+                "content": json.dumps(logs),
+            },
+            on_conflict="id",
+        ).execute()
 
     async def update_deployment(self, id: str, enabled: bool) -> None:
         await self.client.table(TABLE_DEPLOYMENTS).update(
@@ -67,20 +88,6 @@ class Database:
                 "config": config,
             },
             on_conflict="id",
-        ).execute()
-
-    async def update_project_developent_logs(
-        self,
-        id: str,
-        logs: List[Step],
-    ) -> None:
-        await self.client.table(TABLE_PROJECTS).update(
-            {
-                "development_logs": logs,
-            }
-        ).eq(
-            "id",
-            id,
         ).execute()
 
     async def get_env_vars(self, project_id: str) -> List[EnvVar]:

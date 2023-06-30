@@ -7,7 +7,7 @@
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   *,
@@ -19,8 +19,8 @@
   html,
   body {
     @apply h-full;
-    @apply bg-slate-50;
-    @apply text-slate-600 antialiased;
+    @apply bg-gray-950;
+    @apply antialiased;
     text-rendering: optimizeLegibility;
     overflow: overlay;
   }
@@ -52,7 +52,7 @@
   .reference {
     @apply text-slate-600 font-mono font-semibold border-b border-slate-600;
     box-decoration-break: clone;
-  }  
+  }
 }
 
 .no-scroller::-webkit-scrollbar {

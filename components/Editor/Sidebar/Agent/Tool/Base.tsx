@@ -54,7 +54,7 @@ function BaseTool({
 
       {body &&
         <div className="
-        py-4
+        pb-4
         overflow-x-auto
         scroller
       ">
