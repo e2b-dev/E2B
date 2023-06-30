@@ -124,7 +124,7 @@ function AgentDeploymentStepsList({
         <Fragment key={idx}>
           <div className={clsx({ 'border-gray-700 rounded-md py-4 my-3': group.id, 'border-transparent my-1': !group.id }, 'px-4 border relative')}>
             {group.id &&
-              <span className="absolute top-[-10px] bg-gray-900 text-xs px-1.5 text-gray-50">
+              <span className="absolute top-[-9px] bg-gray-900 text-xs px-1.5 text-gray-50">
                 {group.message}
               </span>
             }
