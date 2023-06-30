@@ -36,7 +36,7 @@ export interface DeploymentAuthData {
 
 export const prInfoText = `
 ---
-*Add PR comments with additional instructions to trigger the agent again.*
+*Trigger the agent again by adding instructions in a new PR comment or by editing existing instructions.*
 
 *Powered by [e2b](https://app.e2b.dev/agent/smol-developer?utm_source=github)*
 `
