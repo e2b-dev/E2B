@@ -38,7 +38,7 @@ export const prInfoText = `
 ---
 *Add PR comments with additional instructions to trigger the agent again.*
 
-*Powered by [e2b](https://app.e2b.dev/agent/smol-developer)*
+*Powered by [e2b](https://app.e2b.dev/agent/smol-developer?utm_source=github)*
 `
 
 async function postAgent(req: NextApiRequest, res: NextApiResponse) {

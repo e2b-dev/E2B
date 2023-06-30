@@ -64,7 +64,7 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
     // TODO: Should we maybe just edit the previous comment?
     // Or should we do that only if the previous run was cancelled
     await addCommentToPR({
-      body: `Finished smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}).`,
+      body: `Finished smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}?utm_source=github).`,
       client,
       owner: authData.github.owner,
       repo: authData.github.repo,
@@ -154,7 +154,7 @@ async function deleteRun(req: NextApiRequest, res: NextApiResponse) {
     if (deployment.enabled) {
       // Add comment about the run being cancelled
       await addCommentToPR({
-        body: `Cancelled smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}).`,
+        body: `Cancelled smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}?utm_source=github).`,
         client,
         owner: authData.github.owner,
         repo: authData.github.repo,

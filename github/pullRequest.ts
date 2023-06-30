@@ -167,13 +167,15 @@ export async function getPromptFromPR({
     }),
   ])
 
-  const prBody = issueResult?.data.body || body
+  const prBody = issueResult?.data.body || body!
   const comments = commentsResult.data
     .filter(c => c.user?.type !== 'Bot')
     .map(c => c.body)
     .join('\n')
 
-  return `${prBody?.replace(prInfoText, '')}\n\n${comments}`
+  const indexOfSub = prBody.indexOf(prInfoText)
+  const prBodyWithoutInfo = prBody.substring(0, indexOfSub)
+  return `${prBodyWithoutInfo}\n\n${comments}`
 }
 
 export async function getDeploymentsForPR({
@@ -278,7 +280,7 @@ export async function triggerSmolDevAgentRun({
 
   console.log('Triggering smol dev agent run:', { owner, repo, pullNumber, prompt })
   await addCommentToPR({
-    body: `Started smol developer [agent run](https://app.e2b.dev/logs/${slug}-run-${totalRuns}).`,
+    body: `Started smol developer [agent run](https://app.e2b.dev/logs/${slug}-run-${totalRuns}?utm_source=github).`,
     client,
     owner,
     repo,
