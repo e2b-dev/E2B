@@ -47,16 +47,14 @@ configuration = playground_client.Configuration(
 with playground_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = playground_client.DefaultApi(api_client)
-    project_id = 'project_id_example' # str | 
-    session_id = 'session_id_example' # str | active session to use for deployment
-    create_deployment_request = playground_client.CreateDeploymentRequest() # CreateDeploymentRequest | 
+    create_sessions_request = playground_client.CreateSessionsRequest() # CreateSessionsRequest | 
 
     try:
-        api_response = api_instance.create_deployment(project_id, session_id, create_deployment_request)
-        print("The response of DefaultApi->create_deployment:\n")
+        api_response = api_instance.create_sessions(create_sessions_request)
+        print("The response of DefaultApi->create_sessions:\n")
         pprint(api_response)
     except ApiException as e:
-        print("Exception when calling DefaultApi->create_deployment: %s\n" % e)
+        print("Exception when calling DefaultApi->create_sessions: %s\n" % e)
 
 ```
 
@@ -66,7 +64,6 @@ All URIs are relative to *https://localhost:49160*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**create_deployment**](playground_client/docs/DefaultApi.md#create_deployment) | **PUT** /deployments/{projectID} | 
 *DefaultApi* | [**create_sessions**](playground_client/docs/DefaultApi.md#create_sessions) | **POST** /sessions | 
 *DefaultApi* | [**delete_filesystem_entry**](playground_client/docs/DefaultApi.md#delete_filesystem_entry) | **DELETE** /sessions/{sessionID}/filesystem | 
 *DefaultApi* | [**delete_session**](playground_client/docs/DefaultApi.md#delete_session) | **DELETE** /sessions/{sessionID} | 
@@ -77,16 +74,13 @@ Class | Method | HTTP request | Description
 *DefaultApi* | [**read_filesystem_file**](playground_client/docs/DefaultApi.md#read_filesystem_file) | **GET** /sessions/{sessionID}/filesystem/file | 
 *DefaultApi* | [**start_process**](playground_client/docs/DefaultApi.md#start_process) | **POST** /sessions/{sessionID}/processes | 
 *DefaultApi* | [**stop_process**](playground_client/docs/DefaultApi.md#stop_process) | **DELETE** /sessions/{sessionID}/processes/{processID} | 
-*DefaultApi* | [**wait_for_log_output**](playground_client/docs/DefaultApi.md#wait_for_log_output) | **GET** /tools/logOutput | 
 *DefaultApi* | [**write_filesystem_file**](playground_client/docs/DefaultApi.md#write_filesystem_file) | **PUT** /sessions/{sessionID}/filesystem/file | 
 *DefaultApi* | [**write_process_stdin**](playground_client/docs/DefaultApi.md#write_process_stdin) | **POST** /sessions/{sessionID}/processes/{processID}/stdin | 
 
 
 ## Documentation For Models
 
- - [CreateDeploymentRequest](playground_client/docs/CreateDeploymentRequest.md)
  - [CreateSessionsRequest](playground_client/docs/CreateSessionsRequest.md)
- - [DeploymentResponse](playground_client/docs/DeploymentResponse.md)
  - [EntryInfo](playground_client/docs/EntryInfo.md)
  - [ListFilesystemDirResponse](playground_client/docs/ListFilesystemDirResponse.md)
  - [OpenPort](playground_client/docs/OpenPort.md)
@@ -99,7 +93,6 @@ Class | Method | HTTP request | Description
  - [ReadFilesystemFileResponse](playground_client/docs/ReadFilesystemFileResponse.md)
  - [SessionResponse](playground_client/docs/SessionResponse.md)
  - [StartProcessParams](playground_client/docs/StartProcessParams.md)
- - [ToolsLogOutput](playground_client/docs/ToolsLogOutput.md)
  - [WriteFilesystemFileRequest](playground_client/docs/WriteFilesystemFileRequest.md)
  - [WriteProcessStdinRequest](playground_client/docs/WriteProcessStdinRequest.md)
 

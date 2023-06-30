@@ -15,9 +15,9 @@
     "**/.vercel/**": true,
     ".vscode/**": true,
     ".git/**": true,
-    "node_modules/**": true,
-    "package-lock.json": true,
-    "yarl.lock": true
+    "**/node_modules/**": true,
+    "**/package-lock.json": true,
+    "**/yarl.lock": true
   },
   "files.watcherExclude": {
     "**/.git": true,
@@ -35,9 +35,9 @@
     ".next/**": true,
     ".vscode/**": true,
     ".git/**": true,
-    "node_modules/**": true,
-    "package-lock.json": true,
-    "yarl.lock": true
+    "**/node_modules/**": true,
+    "**/package-lock.json": true,
+    "**/yarl.lock": true
   },
   "typescript.tsdk": "node_modules/typescript/lib",
   "css.validate": false,
@@ -57,14 +57,16 @@
   "python.formatting.provider": "black",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
-},
+  },
   "python.autoComplete.extraPaths": [
     "./**",
+    "./api-service/**",
     "./api-service/.venv/bin/python",
   ],
   "python.defaultInterpreterPath": "./api-service/.venv/bin/python",
   "python.analysis.extraPaths": [
     "./**",
+    "./api-service/**",
     "./api-service/.venv/bin/python"
   ],
   // Disable Pylint and use just Pylance

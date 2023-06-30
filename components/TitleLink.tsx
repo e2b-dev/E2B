@@ -48,6 +48,7 @@ function TitleLink({
   )
 }
 
+
 TitleLink.size = Size
 
 export default TitleLink

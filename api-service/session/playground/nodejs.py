@@ -5,13 +5,17 @@ from session.session import GetEnvs
 
 
 class NodeJSPlayground(Playground):
-    node_js_env_id = "dCeMnVVxu01L"
-    rootdir = "/code"
+    node_js_env_id = "PPSrlH5TIvFx"
+    rootdir = "/repo"
     default_javascript_code_file = os.path.join(rootdir, "index.mjs")
     run_code_timeout = 3  # 3s
 
     def __init__(self, get_envs: GetEnvs):
-        super().__init__(NodeJSPlayground.node_js_env_id, get_envs)
+        super().__init__(
+            NodeJSPlayground.node_js_env_id,
+            get_envs,
+            rootdir=NodeJSPlayground.rootdir,
+        )
 
     # async def run_javascript_code(self, code: str):
     #     # print(f"Running javascript code...")
@@ -35,7 +39,8 @@ class NodeJSPlayground(Playground):
     async def install_dependencies(self, dependencies: str):
         # print(f"Installing dependencies: {dependencies}")
         result = await self.run_command(
-            f"npm install {dependencies}", rootdir=self.rootdir
+            f"npm install {dependencies}",
+            rootdir=self.rootdir,
         )
         # pprint.pprint(f"Result: {result}")
         return result

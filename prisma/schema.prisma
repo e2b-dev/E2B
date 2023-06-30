@@ -68,6 +68,7 @@ model mfa_challenges {
   ip_address  String      @db.Inet
   mfa_factors mfa_factors @relation(fields: [factor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "mfa_challenges_auth_factor_id_fkey")
 
+  @@index([created_at(sort: Desc)], map: "mfa_challenge_created_at_idx")
   @@schema("auth")
 }
 
@@ -103,7 +104,7 @@ model refresh_tokens {
   @@index([instance_id, user_id])
   @@index([parent])
   @@index([session_id, revoked])
-  @@index([token])
+  @@index([updated_at(sort: Desc)])
   @@schema("auth")
 }
 
@@ -135,6 +136,7 @@ model saml_relay_states {
 
   @@index([for_email])
   @@index([sso_provider_id])
+  @@index([created_at(sort: Desc)])
   @@schema("auth")
 }
 
@@ -158,6 +160,7 @@ model sessions {
 
   @@index([user_id])
   @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@index([not_after(sort: Desc)])
   @@schema("auth")
 }
 
@@ -223,6 +226,7 @@ model auth_users {
   identities                  identities[]
   mfa_factors                 mfa_factors[]
   sessions                    sessions[]
+  feedback                    feedback[]
   users_teams                 users_teams[]
 
   @@index([instance_id])
@@ -245,35 +249,45 @@ model users_teams {
   user_id    String     @db.Uuid
   created_at DateTime   @default(now()) @db.Timestamptz(6)
   team_id    String     @db.Uuid
-  teams      teams      @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users      auth_users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  teams      teams      @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      auth_users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([user_id, team_id])
   @@schema("public")
 }
 
 model deployments {
-  id         String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime          @default(now()) @db.Timestamptz(6)
-  logs       Json[]
-  project_id String
-  route_id   String?
-  state      deployment_state?
-  url        String?
-  logs_raw   String?           @default("")
-  projects   projects          @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at           DateTime          @default(now()) @db.Timestamptz(6)
+  logs                 Json[]
+  project_id           String
+  route_id             String?
+  state                deployment_state?
+  url                  String?
+  logs_raw             String?           @default("")
+  config               Json?
+  enabled              Boolean           @default(false)
+  auth                 Json?
+  last_finished_prompt String?
+  projects             projects          @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  log_files            log_files[]
 
   @@schema("public")
 }
 
 model projects {
-  id          String        @id(map: "ai_api_pkey") @default("")
-  created_at  DateTime      @default(now()) @db.Timestamptz(6)
-  data        Json?
-  team_id     String        @db.Uuid
-  name        String        @default("")
-  deployments deployments[]
-  teams       teams         @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               String        @id(map: "ai_api_pkey") @default("")
+  created_at       DateTime      @default(now()) @db.Timestamptz(6)
+  data             Json?
+  team_id          String        @db.Uuid
+  name             String        @default("")
+  development_logs Json[]
+  is_default       Boolean       @default(false)
+  slug             String?       @unique
+  deployments      deployments[]
+  log_files        log_files[]
+  log_uploads      log_uploads[]
+  teams            teams         @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -289,9 +303,55 @@ model flow_state {
   provider_refresh_token String?
   created_at             DateTime?             @db.Timestamptz(6)
   updated_at             DateTime?             @db.Timestamptz(6)
+  authentication_method  String
 
   @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@index([created_at(sort: Desc)])
   @@schema("auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model feedback {
+  id         BigInt      @id @default(autoincrement())
+  created_at DateTime?   @default(now()) @db.Timestamptz(6)
+  user_id    String?     @db.Uuid
+  text       String?
+  email      String?
+  users      auth_users? @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model log_files {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at    DateTime     @default(now()) @db.Timestamptz(6)
+  content       String       @default("")
+  filename      String       @default("")
+  relativePath  String       @default("")
+  last_modified DateTime?    @db.Timestamptz(6)
+  project_id    String
+  log_upload_id String?      @db.Uuid
+  deployment_id String?      @db.Uuid
+  deployments   deployments? @relation(fields: [deployment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  log_upload    log_uploads? @relation(fields: [log_upload_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  projects      projects     @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model log_uploads {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
+  project_id   String?
+  display_name String?     @default("")
+  tags         Json        @default("[]")
+  log_files    log_files[]
+  projects     projects?   @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
 }
 
 enum aal_level {

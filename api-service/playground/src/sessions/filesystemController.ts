@@ -9,6 +9,7 @@ import {
   BodyProp,
 } from 'tsoa'
 import { FileInfo as EntryInfo } from '@devbookhq/sdk'
+import { dirname } from 'path'
 
 import { CachedSession } from './session'
 
@@ -32,7 +33,6 @@ export class FilesystemController extends Controller {
       .session
       .filesystem!
       .list(path)
-
     return {
       entries,
     }
@@ -72,7 +72,6 @@ export class FilesystemController extends Controller {
       .session
       .filesystem!
       .read(path)
-
     return {
       content,
     }
@@ -84,10 +83,13 @@ export class FilesystemController extends Controller {
     @Query() path: string,
     @BodyProp() content: string,
   ) {
-    await CachedSession
+    const dir = dirname(path)
+
+    const session = CachedSession
       .findSession(sessionID)
       .session
-      .filesystem!
-      .write(path, content)
+
+    await session.filesystem!.makeDir(dir)
+    await session.filesystem!.write(path, content)
   }
 }

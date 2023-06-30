@@ -3,10 +3,10 @@ import { projects } from '@prisma/client'
 import Splitter, { GutterTheme } from '@devbookhq/splitter'
 import { useLocalStorage } from 'usehooks-ts'
 
-
 import Sidebar from './Sidebar'
 import SidebarMenu, { MenuSection } from './SidebarMenu'
 import Template from './Template'
+
 
 export interface Props {
   project: projects
@@ -14,9 +14,8 @@ export interface Props {
 
 function Editor({ project }: Props) {
   const ref = useRef<HTMLDivElement | null>(null)
-
   const [selectedMenuSection, setSelectedMenuSection] = useState(
-    MenuSection.Agent,
+    MenuSection.Run,
   )
 
   const [sizes, setSizes] = useLocalStorage('project-board-splitter-sizes', [50, 50])
@@ -50,7 +49,47 @@ function Editor({ project }: Props) {
         gutterClassName='bg-slate-200'
         draggerClassName='bg-slate-400'
       >
+        {/* <div className="
+          flex-1
+          flex
+          flex-col
+        ">
+          <div className="
+            p-1
+            flex
+            space-x-1
+          ">
+            <Button
+              text='StripeAgent.py'
+              onClick={() => setEditorContent(codeEditorContentStripe.content)}
+            />
+            <Button
+              text='BaseAgent.py'
+              onClick={() => setEditorContent(codeEditorContentBase.content)}
+            />
+          </div>
+          <div className="
+                  flex-1
+                  overflow-hidden
+                  relative
+          ">
 
+            <CodeEditor
+              theme={theme}
+              className={`
+                absolute
+                inset-0
+                not-prose
+              `}
+              content={editorContent}
+              // content={codeEditorContentStripe.content}
+              // content={codeEditorContentBase.content}
+              lintGutter={false}
+              filename="main.py"
+              supportedLanguages={supportedLanguages}
+            />
+          </div>
+        </div> */}
         <Template />
         <Sidebar
           activeMenuSection={selectedMenuSection as MenuSection}

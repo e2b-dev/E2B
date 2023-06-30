@@ -1,8 +1,6 @@
-import Mustache from 'mustache'
 
 import { html2markdown } from 'editor/schema'
 import { Reference } from 'editor/referenceType'
-import { identity } from 'utils/identity'
 
 import { evaluateInstruction, Instructions, InstructionsTransform, transformInstructions } from './instruction'
 
@@ -29,11 +27,11 @@ export interface PromptFragment {
   content: string
 }
 
-export function evaluatePrompt(
+export function evaluateInstructions(
   instructions: Instructions,
   instructionsTransform: InstructionsTransform,
-  prompt: PromptFragment[],
-): PromptFragment[] {
+) {
+
   const references: Reference[] = []
 
   const instructionsView = transformInstructions(
@@ -45,6 +43,17 @@ export function evaluatePrompt(
       return markdown
     })
 
+  return {
+    references,
+    instructions: instructionsView,
+  }
+}
+
+export function evaluatePrompt(
+  prompt: PromptFragment[],
+) {
+  const references: Reference[] = []
+
   const textualPrompt = prompt
     .map(p => {
       const [markdown, references] = html2markdown(p.content)
@@ -54,21 +63,9 @@ export function evaluatePrompt(
         content: markdown,
       }
     })
-    .map(p => {
-      return {
-        ...p,
-        content: Mustache.render(p.content, {
-          // TODO: Use the references to build context
-          References: references,
-          ...instructionsView,
-        }, undefined, {
-          escape: identity,
-        }),
-      }
-    })
 
-
-  console.log('Prompt:', textualPrompt)
-  console.log('Instructions view:', instructionsView)
-  return textualPrompt
+  return {
+    prompt: textualPrompt,
+    references,
+  }
 }

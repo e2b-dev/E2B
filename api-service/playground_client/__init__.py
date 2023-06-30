@@ -29,9 +29,7 @@ from playground_client.exceptions import ApiKeyError
 from playground_client.exceptions import ApiAttributeError
 from playground_client.exceptions import ApiException
 # import models into sdk package
-from playground_client.models.create_deployment_request import CreateDeploymentRequest
 from playground_client.models.create_sessions_request import CreateSessionsRequest
-from playground_client.models.deployment_response import DeploymentResponse
 from playground_client.models.entry_info import EntryInfo
 from playground_client.models.list_filesystem_dir_response import ListFilesystemDirResponse
 from playground_client.models.open_port import OpenPort
@@ -44,6 +42,5 @@ from playground_client.models.process_response import ProcessResponse
 from playground_client.models.read_filesystem_file_response import ReadFilesystemFileResponse
 from playground_client.models.session_response import SessionResponse
 from playground_client.models.start_process_params import StartProcessParams
-from playground_client.models.tools_log_output import ToolsLogOutput
 from playground_client.models.write_filesystem_file_request import WriteFilesystemFileRequest
 from playground_client.models.write_process_stdin_request import WriteProcessStdinRequest

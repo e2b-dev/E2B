@@ -88,13 +88,13 @@ CREATE TABLE "public"."deployments" (
     "route_id" "text",
     "state" "public"."deployment_state",
     "url" "text",
-    "logs_raw" "text" DEFAULT ''::"text"
+    "logs_raw" "text" DEFAULT ''::"text",
+    "config" "jsonb",
+    "enabled" boolean DEFAULT false NOT NULL
 );
 
-ALTER publication supabase_realtime
-ADD TABLE "public"."deployments";
-
 ALTER TABLE ONLY "public"."deployments" REPLICA IDENTITY FULL;
+
 
 ALTER TABLE "public"."deployments" OWNER TO "postgres";
 
@@ -107,12 +107,12 @@ CREATE TABLE "public"."projects" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "data" "jsonb",
     "team_id" "uuid" NOT NULL,
-    "name" "text" DEFAULT ''::"text" NOT NULL
+    "name" "text" DEFAULT ''::"text" NOT NULL,
+    "development_logs" "jsonb"[]
 );
 
+
 ALTER TABLE "public"."projects" OWNER TO "postgres";
-
-
 
 --
 -- Name: teams; Type: TABLE; Schema: public; Owner: postgres
@@ -125,9 +125,8 @@ CREATE TABLE "public"."teams" (
     "name" "text" DEFAULT ''::"text" NOT NULL
 );
 
+
 ALTER TABLE "public"."teams" OWNER TO "postgres";
-
-
 
 --
 -- Name: users_teams; Type: TABLE; Schema: public; Owner: postgres
@@ -141,7 +140,6 @@ CREATE TABLE "public"."users_teams" (
 
 
 ALTER TABLE "public"."users_teams" OWNER TO "postgres";
-
 
 --
 -- Name: projects ai_api_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -943,6 +941,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 --
 -- PostgreSQL database dump complete
 --
-
 
 RESET ALL;

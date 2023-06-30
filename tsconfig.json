@@ -28,10 +28,12 @@
   "include": [
     "next-env.d.ts",
     "**/*.ts",
-    "**/*.tsx",
+    "**/*.tsx"
   ],
   "exclude": [
+    "supabase",
     "node_modules",
     "api-service",
+    "api-client/api/schema.gen.ts"
   ]
 }

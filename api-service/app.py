@@ -1,86 +1,172 @@
-import os
 import uuid
+import os
 
-from pprint import pprint
-from typing import List
-from codegen.tools.base import create_tools
-from dotenv import load_dotenv
-from playground_client.exceptions import NotFoundException
-from quart import Quart, request
-from quart_cors import cors
+from typing import Annotated, Any
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from fastapi.security import OAuth2PasswordBearer
+from opentelemetry import trace
 
-from codegen import Codegen
-from database import Database, DeploymentState
-from session.playground.nodejs import NodeJSPlayground
+from observability import total_deployments_counter, total_deployment_runs_counter
+from agent.base import AgentInteraction
+from deployment.in_memory import InMemoryDeploymentManager
+from database.base import db
 
-load_dotenv()
+deployment_manager = InMemoryDeploymentManager()
 
-url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-
-if not url or not key:
-    raise NotFoundException("Supabase credentials not found")
-
-db = Database(url, key)
-
-app = Quart(__name__)
-app.config.from_prefixed_env()
-app = cors(app, allow_origin="*")
+# TODO: Add proper auth
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="")
+secret_token = os.environ.get("SECRET_TOKEN")
 
 
-@app.route("/health", methods=["GET"])
+def check_token(token: str | None):
+    if not secret_token:
+        return
+    if token == secret_token:
+        return
+    raise HTTPException(status_code=401, detail="Invalid token")
+
+
+app = FastAPI(
+    title="e2b-api",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
 async def health():
-    return "OK"
+    return {"Status": "Ok"}
 
 
-# TODO: SECURITY - Check if user invoking this request has permission to generate and deploy to this project
-@app.route("/generate", methods=["POST"])
-async def generate():
-    body = await request.json
+class CreateDeploymentBody(BaseModel):
+    config: Any
 
-    run_id = str(uuid.uuid4())
-    project_id = body["projectID"]
-    model_config = body["modelConfig"]
 
-    await db.create_deployment(run_id=run_id, project_id=project_id)
-    playground = None
+@app.put("/deployments")
+async def create_agent_deployment(
+    body: CreateDeploymentBody,
+    project_id: str,
+    token: Annotated[str, Depends(oauth2_scheme)],
+):
+    check_token(token)
+    db_deployment = await db.get_deployment(project_id)
 
-    try:
-        # Create playground for the LLM
-        playground = NodeJSPlayground(get_envs=lambda: db.get_env_vars(project_id))
-
-        # Create tools
-        tools = create_tools(
-            run_id=run_id,
-            playground=playground,
+    if db_deployment:
+        deployment = await deployment_manager.update_deployment(
+            db_deployment["id"],
+            project_id,
+            body.config,
         )
-
-        # Create a new instance of code generator
-        cg = Codegen(
-            # The order in which we pass tools HAS an effect on the LLM behaviour.
-            tools=list(tools),
-            model_config=model_config,
-            database=db,
-            prompt=model_config["prompt"],
+        current_span = trace.get_current_span()
+        current_span.set_attributes(
+            {
+                "deployment_id": deployment.id,
+                "project_id": project_id,
+            }
         )
+        total_deployments_counter.add(
+            1,
+            {
+                "project_id": project_id,
+                "deployment_id": deployment.id,
+                "agent": "SmolDeveloper",
+                "update": True,
+            },
+        )
+        return {"id": deployment.id}
+    else:
+        id = str(uuid.uuid4())
+        deployment = await deployment_manager.create_deployment(
+            id,
+            project_id,
+            body.config,
+        )
+        current_span = trace.get_current_span()
+        current_span.set_attributes(
+            {
+                "deployment_id": deployment.id,
+                "project_id": project_id,
+            }
+        )
+        total_deployments_counter.add(
+            1,
+            {
+                "project_id": project_id,
+                "deployment_id": id,
+                "agent": "SmolDeveloper",
+            },
+        )
+        return {"id": deployment.id}
 
-        # Generate the code
-        print("Generating...", flush=True)
-        await cg.generate(run_id=run_id)
 
-        deploy_url: str | None = None
-        # Disable deployment if there AWS creds are not present
-        if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get(
-            "AWS_SECRET_ACCESS_KEY"
+@app.delete("/deployments/{id}", status_code=204)
+async def delete_agent_deployment(
+    id: str,
+    token: Annotated[str, Depends(oauth2_scheme)],
+):
+    check_token(token)
+
+    await deployment_manager.remove_deployment(id)
+
+
+@app.get("/deployments/{id}")
+async def get_agent_deployment(
+    id: str,
+    token: Annotated[str, Depends(oauth2_scheme)],
+):
+    check_token(token)
+    deployment = await deployment_manager.get_deployment(id)
+    if not deployment:
+        raise HTTPException(status_code=404, detail="Deployment not found")
+
+    return {
+        "id": deployment.id,
+        "logs": len(deployment.event_handler.logs),
+        "interaction_request": len(deployment.event_handler.interaction_requests),
+    }
+
+
+@app.post("/deployments/{id}/interactions")
+async def interact_with_agent_deployment(
+    id: str,
+    body: AgentInteraction,
+    token: Annotated[str, Depends(oauth2_scheme)],
+):
+    check_token(token)
+    deployment = await deployment_manager.get_deployment(id)
+    if not deployment:
+        # Get deployment from db if enabled
+        db_deployment = await db.get_deployment_by_id(id)
+        if (
+            db_deployment
+            and db_deployment["enabled"]
+            and db_deployment.get("config", None)
+            and db_deployment.get("project_id", None)
         ):
-            await db.update_state(run_id=run_id, state=DeploymentState.Deploying)
-            deploy_url = await playground.deploy(project_id)
+            deployment = await deployment_manager.create_deployment(
+                db_deployment["id"],
+                db_deployment["project_id"],
+                db_deployment["config"],
+            )
+        else:
+            raise HTTPException(status_code=404, detail="Deployment not found")
 
-        await db.finish_deployment(run_id=run_id, url=deploy_url)
-        return {}
-    except:
-        await db.update_state(run_id=run_id, state=DeploymentState.Error)
-        raise
-    finally:
-        if playground is not None:
-            playground.close()
+    current_span = trace.get_current_span()
+    current_span.set_attributes(
+        {
+            "deployment_id": id,
+        }
+    )
+
+    total_deployment_runs_counter.add(1, {"deployment_id": id})
+    result = await deployment.agent.interaction(body)
+    if body.interaction_id:
+        deployment.event_handler.remove_interaction_request(body.interaction_id)
+    return result

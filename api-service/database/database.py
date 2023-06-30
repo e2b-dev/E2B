@@ -1,19 +1,12 @@
-from typing import List
-from enum import Enum
+import json
+from typing import Any, List
 
-from codegen.agent.parsing import ThoughtLog, ToolLog
+from agent.output.output_stream_parser import Step
 from database.client import Client
 from session.env import EnvVar
 
-
-class DeploymentState(Enum):
-    Generating = "generating"
-    Deploying = "deploying"
-    Finished = "finished"
-    Error = "error"
-
-
 TABLE_DEPLOYMENTS = "deployments"
+TABLE_LOGS = "log_files"
 TABLE_PROJECTS = "projects"
 
 
@@ -21,53 +14,80 @@ class Database:
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
         self.client = Client(supabase_url=supabase_url, supabase_key=supabase_key)
 
-    async def create_deployment(
+    async def get_deployment(self, project_id: str):
+        response = (
+            await self.client.table(TABLE_DEPLOYMENTS)
+            .select("*")
+            .eq("project_id", project_id)
+            .limit(1)
+            .execute()
+        )
+        return None if len(response.data) == 0 else response.data[0]
+
+    async def get_deployment_by_id(self, id: str):
+        response = (
+            await self.client.table(TABLE_DEPLOYMENTS)
+            .select("*")
+            .eq("id", id)
+            .limit(1)
+            .execute()
+        )
+
+        return None if len(response.data) == 0 else response.data[0]
+
+    async def get_deployments(self):
+        response = (
+            await self.client.table(TABLE_DEPLOYMENTS)
+            .select("*")
+            .eq("enabled", True)
+            .execute()
+        )
+        return response.data
+
+    async def update_deployment_logs(
         self,
-        run_id: str,
+        deployment_id: str,
+        run_id: str | None,
         project_id: str,
-    ) -> None:
-        await self.client.table(TABLE_DEPLOYMENTS).insert(
+        logs: List[Step],
+    ):
+        if run_id is None:
+            return
+
+        await self.client.table(TABLE_LOGS).upsert(
             {
                 "id": run_id,
                 "project_id": project_id,
-                "state": DeploymentState.Generating.value,
+                "deployment_id": deployment_id,
+                "content": json.dumps(logs),
             },
+            on_conflict="id",
         ).execute()
 
-    async def push_logs(self, run_id: str, logs: list[ToolLog | ThoughtLog]) -> None:
-        if len(logs) > 0:
-            await self.client.table(TABLE_DEPLOYMENTS).update(
-                {
-                    "logs": logs,
-                }
-            ).eq("id", run_id).execute()
-
-    async def push_raw_logs(self, run_id: str, logs_raw: str) -> None:
-        if logs_raw:
-            await self.client.table(TABLE_DEPLOYMENTS).update(
-                {
-                    "logs_raw": logs_raw,
-                }
-            ).eq("id", run_id).execute()
-
-    async def update_state(self, run_id: str, state: DeploymentState) -> None:
+    async def update_deployment(self, id: str, enabled: bool) -> None:
         await self.client.table(TABLE_DEPLOYMENTS).update(
             {
-                "state": state.value,
+                "enabled": enabled,
             }
-        ).eq("id", run_id).execute()
+        ).eq(
+            "id",
+            id,
+        ).execute()
 
-    async def finish_deployment(self, run_id: str, url: str | None) -> None:
-        update = {
-            "url": url,
-            "state": DeploymentState.Finished.value,
-        }
-
-        if url is not None:
-            update["url"] = url
-
-        await self.client.table(TABLE_DEPLOYMENTS).update(update).eq(
-            "id", run_id
+    async def create_deployment(
+        self,
+        id: str,
+        project_id: str,
+        config: Any,
+    ) -> None:
+        await self.client.table(TABLE_DEPLOYMENTS).upsert(
+            {
+                "id": id,
+                "enabled": True,
+                "project_id": project_id,
+                "config": config,
+            },
+            on_conflict="id",
         ).execute()
 
     async def get_env_vars(self, project_id: str) -> List[EnvVar]:

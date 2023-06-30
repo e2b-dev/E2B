@@ -28,12 +28,6 @@ class TestDefaultApi(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_create_deployment(self):
-        """Test case for create_deployment
-
-        """
-        pass
-
     def test_create_sessions(self):
         """Test case for create_sessions
 
@@ -90,12 +84,6 @@ class TestDefaultApi(unittest.TestCase):
 
     def test_stop_process(self):
         """Test case for stop_process
-
-        """
-        pass
-
-    def test_wait_for_log_output(self):
-        """Test case for wait_for_log_output
 
         """
         pass

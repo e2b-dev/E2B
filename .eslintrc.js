@@ -11,7 +11,9 @@ module.exports = {
     'tailwindcss/enforces-shorthand': 'warn',
     'tailwindcss/migration-from-tailwind-2': 'warn',
     'tailwindcss/no-arbitrary-value': 'off',
-    'tailwindcss/no-custom-classname': 'error',
+    'tailwindcss/no-custom-classname': ['error', {
+      'whitelist': ['instructions-editor']
+    }],
     'tailwindcss/no-contradicting-classname': 'error',
     'unused-imports/no-unused-imports': 'error',
     'react/jsx-sort-props': [

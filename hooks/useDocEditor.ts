@@ -1,9 +1,6 @@
 import { useEditor } from '@tiptap/react'
 import Placeholder from '@tiptap/extension-placeholder'
-import Fuse from 'fuse.js'
 
-import { Reference } from 'editor/referenceType'
-import AutocompleteExtension from 'editor/extensions/autocomplete'
 import { extensions } from 'editor/schema'
 import CustomKeymap from 'editor/extensions/keymap'
 
@@ -11,15 +8,18 @@ function useDocEditor({
   initialContent,
   onContentChange,
   placeholder,
-  referenceSearch,
+  onFocus,
 }: {
-  referenceSearch?: Fuse<Reference>
+  onFocus?: () => void,
   initialContent: string,
+  /**
+   * @param content in Markdown format
+   * @returns
+   */
   onContentChange: (content: string) => void,
   placeholder?: string
 }) {
   const editor = useEditor({
-    content: initialContent,
     parseOptions: {
       preserveWhitespace: 'full',
     },
@@ -32,11 +32,6 @@ function useDocEditor({
     extensions: [
       ...extensions,
       CustomKeymap,
-      ...referenceSearch ? [AutocompleteExtension.configure({
-        suggestion: {
-          items: query => referenceSearch.search(query),
-        },
-      })] : [],
       Placeholder.configure({
         placeholder: ({ editor }) => {
           if (!editor.getText()) {
@@ -46,12 +41,18 @@ function useDocEditor({
         }
       }),
     ],
+    onFocus({ editor }) {
+      onFocus?.()
+    },
+    onCreate({ editor }) {
+      editor?.commands.setContent(initialContent)
+    },
     onUpdate({ transaction, editor }) {
       if (transaction.docChanged) {
-        onContentChange(editor.getHTML())
+        onContentChange(editor.storage.markdown.getMarkdown())
       }
     },
-  }, [onContentChange])
+  }, [onContentChange, onFocus,])
 
   return editor
 }

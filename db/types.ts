@@ -10,6 +10,12 @@ export enum ToolName {
   RunSavedCode = 'RunSavedCode',
   LetHumanChoose = 'LetHumanChoose',
   Curl = 'Curl',
+  SaveFile = 'SaveFile',
+  ReadFile = 'ReadFile',
+  DeleteFile = 'DeleteFile',
+  DeleteDirectory = 'DeleteDirectory',
+  ListDirectory = 'ListDirectory',
+  RunTerminalCommand = 'RunTerminalCommand',
 }
 
 interface BaseLog {

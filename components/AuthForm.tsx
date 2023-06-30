@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
+import { useUser } from '@supabase/auth-helpers-react'
 
 import Button from 'components/Button'
 import Text from 'components/Text'
@@ -23,6 +24,7 @@ function AuthForm({ authType }: Props) {
   const [errMessage, setErrMessage] = useState('')
   const supabaseClient = useSupabaseClient<Database>()
   const router = useRouter()
+  const user = useUser()
 
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)

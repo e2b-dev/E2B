@@ -1,42 +1,55 @@
+import {
+  forwardRef,
+  useImperativeHandle,
+} from 'react'
 import { EditorContent } from '@tiptap/react'
 import Fuse from 'fuse.js'
+import clsx from 'clsx'
 
 import Text from 'components/Text'
 import useDocEditor from 'hooks/useDocEditor'
 import { Reference } from 'editor/referenceType'
 
 export interface Props {
+  className?: string,
   title?: string
   placeholder?: string
   onChange: (value: string) => void
   content: string
   referenceSearch?: Fuse<Reference>
+  onFocus?: () => void
 }
 
-function InstructionsEditor({
+export interface InstructionsEditorRef {
+  setContent: (content: string) => void
+}
+
+const InstructionsEditor = forwardRef<InstructionsEditorRef, Props>(function InstructionsEditor({
+  className,
   title,
   onChange,
   content,
+  onFocus,
   placeholder,
   referenceSearch,
-}: Props) {
+}: Props, ref) {
   const editor = useDocEditor({
     initialContent: content,
     onContentChange: onChange,
     placeholder,
-    referenceSearch,
+    onFocus,
+  })
+
+  useImperativeHandle(ref, () => {
+    return {
+      setContent(content: string) {
+        editor?.commands.setContent(content)
+      }
+    }
   })
 
   return (
-    <div className="
-      flex
-      flex-col
-      space-y-2
-      self-stretch
-      pb-6
-      border-b
-      border-slate-200
-    ">
+    <div className={clsx('flex flex-col space-y-2 self-stretch pb-6', 'instructions-editor', className)}>
       {title &&
         <Text
           className="font-bold text-slate-400"
@@ -49,6 +62,6 @@ function InstructionsEditor({
       />
     </div>
   )
-}
+})
 
 export default InstructionsEditor
