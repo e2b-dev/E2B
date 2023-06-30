@@ -5,12 +5,16 @@ import {
 import Splitter from '@devbookhq/splitter'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { GithubIcon } from 'lucide-react'
 
+import { DeploymentAuthData } from 'pages/api/agent'
 import {
   LiteDeploymentLog,
 } from 'utils/agentLogs'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import useDeploymentRunLog from 'hooks/useDeploymentRunLog'
+
 import AgentRunLogDetail from './AgentRunLogDetail'
 import AgentDeploymentStepsList from './AgentDeploymentsStepsList'
 import Spinner from './Spinner'
@@ -43,6 +47,14 @@ function AgentRunLogContent({
     return initialLog.created_at < oneHourAgo
   }, [initialLog.created_at])
   const isRunning = initialLog.deployments.enabled && !isRunOlderThanTimeout && runSteps.length === 1
+  const pr = useMemo(() => {
+    const gh = (log.deployments.auth as unknown as DeploymentAuthData).github
+    return {
+      url: `https://github.com/${gh.owner}/${gh.repo}/pull/${gh.pr_number}`,
+      repository: `${gh.owner}/${gh.repo}`,
+      prNumber: gh.pr_number,
+    }
+  }, [log.deployments.auth])
 
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
@@ -55,7 +67,17 @@ function AgentRunLogContent({
             </div>
           }
         </div>
-        <div className="text-sm text-gray-400 self-center truncate">{slug}</div>
+        <Link
+          href={pr.url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center space-x-1 text-sm text-gray-400 hover:text-white transition-all"
+        >
+          <GithubIcon size="16px" />
+          <span>
+            {pr.repository}
+          </span>
+        </Link>
       </header>
       <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden my-4">
         <Splitter
