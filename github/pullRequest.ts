@@ -5,7 +5,6 @@ import api from 'api-client/api'
 import { deployments, prisma } from 'db/prisma'
 
 import { GitHubClient } from './client'
-import { prInfoText } from 'pages/api/agent'
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -173,9 +172,12 @@ export async function getPromptFromPR({
     .map(c => c.body)
     .join('\n')
 
-  const indexOfSub = prBody.indexOf(prInfoText)
-  const prBodyWithoutInfo = prBody.substring(0, indexOfSub)
-  return `${prBodyWithoutInfo}\n\n${comments}`
+
+  // Remove everything from the prBody string after the last '---'
+  // This is the separator between the PR description and the PR body
+  const indexOfSeparator = prBody.lastIndexOf('---')
+  const prBodyWithoutSeparator = prBody.substring(0, indexOfSeparator)
+  return `${prBodyWithoutSeparator}\n\n${comments}`
 }
 
 export async function getDeploymentsForPR({
