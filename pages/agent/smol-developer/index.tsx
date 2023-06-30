@@ -130,7 +130,7 @@ function SmolDeveloper({
                   onMouseDown={() => posthog?.capture('clicked link', { url: 'https://github.com/smol-ai/developer' })}
                 >
                   <span>smol-ai/developer</span>
-                  <span>10k</span>
+                  <span>Stars 10k</span>
                 </a>
               </div>
               <div className="w-full flex items-center justify-between gap-x-6">
