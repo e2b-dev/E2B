@@ -114,7 +114,7 @@ function AgentDeploymentStepsList({
   // }, [groupedSteps, selectStep, selectedStepID])
 
   return (
-    <div className="flex flex-col overflow-auto ml-4">
+    <div className="flex flex-col ml-4 overflow-auto">
       {steps.length === 0 && (
         <div className="flex-1 flex items-center justify-center h-full">
           <p className="text-gray-400">No logs</p>
