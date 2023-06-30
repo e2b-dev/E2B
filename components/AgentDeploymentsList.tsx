@@ -64,7 +64,7 @@ function AgentDeploymentsList({
 
           <Link href="/agent/smol-developer">
             <button
-              className="py-1 px-2 rounded bg-green-400/10 hover:bg-green-400/20 border border-green-400/20 transition-all flex items-center space-x-2 text-green-400 text-sm font-semibold"
+              className="py-1 px-2 rounded-md bg-green-400/10 hover:bg-green-400/20 border border-green-400/20 transition-all flex items-center space-x-2 text-green-400 text-sm font-semibold"
             >
               <Plus size={16} />
               <span>Deploy Smol Developer</span>
@@ -125,7 +125,7 @@ function AgentDeploymentsList({
                 </div>
 
                 {openDeployments[deployment.id] && (
-                  <div className="flex flex-col space-y-3 border-l border-white/5 pl-2 ml-[11px] flex-1">
+                  <div className="flex flex-col transition-all space-y-3 border-l border-white/5 pl-2 ml-[11px] flex-1">
                     <DeploymentTree
                       deployment={deployment}
                     />

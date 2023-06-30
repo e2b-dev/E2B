@@ -111,7 +111,7 @@ function SmolDeveloper({
               >smol developer
               </a>{' '}
               AI agent.
-              You specify the instructions and then let smol developer do its work for you.
+              You specify the instructions and then let smol developer do the work for you.
             </p>
             <div className="mt-6 flex flex-col space-y-4">
               <div className="flex flex-col space-y-2">

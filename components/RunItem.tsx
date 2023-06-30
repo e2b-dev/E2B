@@ -23,6 +23,7 @@ function RunItem({
           'rounded-md',
           'cursor-pointer',
           'flex',
+          'transition-all',
           'items-center',
           'space-x-2',
           'bg-[#1F2437]',
