@@ -34,6 +34,13 @@ export interface DeploymentAuthData {
   }
 }
 
+export const prInfoText = `
+---
+*Add PR comments with additional instructions to trigger the agent again.*
+
+*Powered by [e2b](https://app.e2b.dev/agent/smol-developer)*
+`
+
 async function postAgent(req: NextApiRequest, res: NextApiResponse) {
   const {
     installationID,
@@ -93,13 +100,15 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       throw new Error('Generated PR title is empty')
     }
 
+    const bodyWithInfo = `${body}${prInfoText}`
+
     const { issueID, number: pullNumber, url: pullURL } = await createPR({
       client,
       title: prTitle,
       defaultBranch,
       branch,
       commitMessage,
-      body,
+      body: bodyWithInfo,
       owner,
       repo,
     })
@@ -205,6 +214,8 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       owner,
       repo,
       client,
+      slug,
+      totalRuns: 0,
       pullNumber,
     })
 

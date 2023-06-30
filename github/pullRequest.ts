@@ -5,6 +5,7 @@ import api from 'api-client/api'
 import { deployments, prisma } from 'db/prisma'
 
 import { GitHubClient } from './client'
+import { prInfoText } from 'pages/api/agent'
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -172,7 +173,7 @@ export async function getPromptFromPR({
     .map(c => c.body)
     .join('\n')
 
-  return `${prBody}\n\n${comments}`
+  return `${prBody?.replace(prInfoText, '')}\n\n${comments}`
 }
 
 export async function getDeploymentsForPR({
@@ -188,6 +189,11 @@ export async function getDeploymentsForPR({
 }) {
   return await prisma.deployments.findMany({
     include: {
+      _count: {
+        select: {
+          log_files: true,
+        },
+      },
       projects: {
         include: {
           teams: {
@@ -251,10 +257,14 @@ export async function triggerSmolDevAgentRun({
   prompt,
   accessToken,
   commitMessage,
+  slug,
   owner,
   repo,
   pullNumber,
+  totalRuns,
 }: {
+  totalRuns: number,
+  slug: string | null,
   pullNumber: number,
   client: GitHubClient,
   owner: string,
@@ -264,10 +274,11 @@ export async function triggerSmolDevAgentRun({
   prompt: string,
   accessToken: string,
 }) {
-  console.log('Triggering smol dev agent run:', { owner, repo, pullNumber, prompt })
+  if (!slug) throw new Error('slug is required')
 
+  console.log('Triggering smol dev agent run:', { owner, repo, pullNumber, prompt })
   await addCommentToPR({
-    body: 'Started smol dev agent run',
+    body: `Started smol developer [agent run](https://app.e2b.dev/logs/${slug}-run-${totalRuns}).`,
     client,
     owner,
     repo,

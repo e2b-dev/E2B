@@ -240,6 +240,8 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
         owner,
         repo,
         client,
+        totalRuns: d._count.log_files,
+        slug: d.projects.slug,
         pullNumber: issueNumber,
       })
 
@@ -336,6 +338,8 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
       await triggerSmolDevAgentRun({
         prompt,
         deployment: d,
+        slug: d.projects.slug,
+        totalRuns: d._count.log_files,
         accessToken,
         owner,
         repo,
