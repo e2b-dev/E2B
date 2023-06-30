@@ -2,9 +2,7 @@ import { Github } from 'lucide-react'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import Link from 'next/link'
-import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 import Image from 'next/image'
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
   useUser,
@@ -12,42 +10,10 @@ import {
 } from '@supabase/auth-helpers-react'
 import { usePostHog } from 'posthog-js/react'
 
-import { serverCreds } from 'db/credentials'
 import SpinnerIcon from 'components/Spinner'
 import StarUs from 'components/StarUs'
 
-// type Repo = {
-//   name: string
-//   stargazers_count: number
-// }
-
-export const getServerSideProps: GetServerSideProps<{
-  // repo: Repo,
-}> = async (ctx) => {
-  const supabase = createServerSupabaseClient(ctx, serverCreds)
-
-  const { data: { session } } = await supabase.auth.getSession()
-
-  // const [{ data: { session } }, ghResponse] = await Promise.all([
-  //   supabase.auth.getSession(),
-  //   fetch('https://api.github.com/repos/smol-ai/developer'),
-  // ])
-
-  if (session) {
-    return {
-      redirect: {
-        destination: '/agent/smol-developer/setup',
-        permanent: false,
-      },
-    }
-  }
-  // const repo = await ghResponse.json()
-  return { props: {} }
-}
-
-function SmolDeveloper({
-  // repo,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()
   const user = useUser()
   const sessionCtx = useSessionContext()
@@ -56,7 +22,7 @@ function SmolDeveloper({
 
   useEffect(() => {
     if (user) {
-      router.reload()
+      router.push('/agent/smol-developer/setup')
     }
   }, [user, router])
 
