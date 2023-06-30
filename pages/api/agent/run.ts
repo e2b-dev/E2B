@@ -151,40 +151,41 @@ async function deleteRun(req: NextApiRequest, res: NextApiResponse) {
     const authData = deployment.auth as unknown as DeploymentAuthData
     const client = getGHInstallationClient({ installationID: authData.github.installation_id })
 
-    // Add comment about the run being cancelled
-    await addCommentToPR({
-      body: `Cancelled smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}).`,
-      client,
-      owner: authData.github.owner,
-      repo: authData.github.repo,
-      pullNumber: authData.github.pr_number,
-    })
-
-    const users = deployment
-      .projects
-      .teams
-      .users_teams
-      .map(u => u.users)
-      .flat()
-
-    const result = await Promise.allSettled(users.map(async u => {
-      posthog?.capture({
-        distinctId: u.id,
-        event: 'cancelled agent run',
-        properties: {
-          agent_deployment_id: deployment.id,
-          agent: TemplateID.SmolDeveloper,
-          repository: `${authData.github.owner}/${authData.github.repo}`,
-          run_id,
-
-          pr_number: authData.github.pr_number,
-        },
+    if (deployment.enabled) {
+      // Add comment about the run being cancelled
+      await addCommentToPR({
+        body: `Cancelled smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}).`,
+        client,
+        owner: authData.github.owner,
+        repo: authData.github.repo,
+        pullNumber: authData.github.pr_number,
       })
-    }))
 
-    await posthog?.shutdownAsync()
+      const users = deployment
+        .projects
+        .teams
+        .users_teams
+        .map(u => u.users)
+        .flat()
 
-    console.log('Analytics logged', result)
+      const result = await Promise.allSettled(users.map(async u => {
+        posthog?.capture({
+          distinctId: u.id,
+          event: 'cancelled agent run',
+          properties: {
+            agent_deployment_id: deployment.id,
+            agent: TemplateID.SmolDeveloper,
+            repository: `${authData.github.owner}/${authData.github.repo}`,
+            run_id,
+
+            pr_number: authData.github.pr_number,
+          },
+        })
+      }))
+
+      await posthog?.shutdownAsync()
+      console.log('Analytics logged', result)
+    }
 
     res.status(200).json({})
   } catch (err: any) {

@@ -83,11 +83,10 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
 
     async def remove_deployment(self, id: str):
         deployment = await self.get_deployment(id)
+        await db.update_deployment(id, enabled=False)
         if deployment:
             await deployment.agent.stop()
             del self._deployments[deployment.id]
-
-        await db.update_deployment(id, enabled=False)
 
     async def get_deployment(self, id: str):
         return self._deployments.get(id, None)
