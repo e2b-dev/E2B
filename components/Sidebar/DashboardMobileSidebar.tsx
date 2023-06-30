@@ -96,7 +96,7 @@ function DashboardMobileSidebar({
                         className="flex items-center gap-x-4 p-8 text-sm font-semibold leading-6 text-white"
                       >
                         <button
-                          className="text-sm font-semibold text-white"
+                          className="text-sm font-semibold text-gray-400 hover:text-white transition-all"
                           onClick={onSignOut}
                         >
                           Sign Out
