@@ -38,15 +38,12 @@ Every agent deployed on e2b gets their own small virtual machine.
 
 # 🚀 Get started
 
-We're working on the cloud-hosted version. In the meantime, the fastest way try
-out e2b is to run it locally via Docker.
+You can start e2b's cloud dashboard locally via docker.
 
 ## 🐳 Start e2b with Docker
 
 You will need:
 
-- [OpenAI API key](https://platform.openai.com/account/api-keys) (support for
-  more and custom models coming soon)
 - Docker
 - Node.js _16+_
 - Free ports 3000 (Next.js app), 54321 (Supabase API Gateway), 54322 (Supabase
