@@ -108,7 +108,7 @@ class SmolAgent(AgentBase):
         # Use default openai api key
         new_config.args["openai_api_key"] = default_openai_api_key
 
-        model = get_model(new_config, callback_manager)
+        model = get_model(new_config, callback_manager, streaming=False)
 
         return cls(
             new_config,
