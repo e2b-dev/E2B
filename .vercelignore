@@ -1,1 +1,15 @@
 api-service
+supabase
+.github
+.devcontainer
+README.md
+CONTRIBUTING.md
+DEVELOPMENT_SETUP.md
+LICENSE
+Dockerfile
+docker-compose.yml
+.env.example
+.vscode
+docs-assets
+.python-version
+.dockerignore
