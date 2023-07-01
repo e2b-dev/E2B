@@ -26,7 +26,7 @@ const templates: { [key: string]: Template } = {
   },
   createChromeExtension: {
     title: 'Chrome extension',
-    content: '# Website Comment Chrome Extension\n Build a Chrome extension that allows the user to add comments to websites, providing a platform for users to save their thoughts, opinions, and feedback directly on the web pages.\n\n### Tech Stack\n- HTML: Markup language for creating the extension\'s user interface\n- CSS: Styling language for customizing the appearance of the comment interface\n- JavaScript: Programming language for implementing extension functionality and user interaction\n- Chrome Storage API: Used to store and retrieve comments for specific web pages'
+    content: '# Website Comment Chrome Extension\n Build a Chrome extension with V3 manifest that allows the user to add comments to websites, providing a platform for users to save their thoughts, opinions, and feedback directly on the web pages.\n\n### Tech Stack\n- HTML: Markup language for creating the extension\'s user interface\n- CSS: Styling language for customizing the appearance of the comment interface\n- JavaScript: Programming language for implementing extension functionality and user interaction\n- Chrome Storage API: Used to store and retrieve comments for specific web pages'
   },
   createWebScraper: {
     title: 'Web Scraper',

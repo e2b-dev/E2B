@@ -64,7 +64,7 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
     // TODO: Should we maybe just edit the previous comment?
     // Or should we do that only if the previous run was cancelled
     await addCommentToPR({
-      body: `Finished smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}?utm_source=github).`,
+      body: `Finished smol developer [agent run](https://app.e2b.dev/logs/${deployment.projects.slug}-run-${deployment._count.log_files - 1}?utm_source=github).\n\n*Trigger the agent again by adding instructions in a new PR comment or by editing existing instructions.*`,
       client,
       owner: authData.github.owner,
       repo: authData.github.repo,

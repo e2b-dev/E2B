@@ -79,7 +79,7 @@ export async function createPR({
       owner,
       repo,
       branch: defaultBranch,
-      path: '/README.md',
+      path: 'README.md',
       message: 'Initial commit',
       content: Buffer.from(`# ${repo}`, 'utf8').toString('base64'),
     })
