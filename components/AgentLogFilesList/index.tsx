@@ -6,21 +6,21 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import Splitter, { SplitDirection } from '@devbookhq/splitter'
+import { useRouter } from 'next/router'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
+import { log_uploads } from 'db/prisma'
 import {
   LiteLogFile,
 } from 'utils/agentLogs'
 import AgentLogFileContent from 'components/AgentLogFileContent'
 import { useLocalStorage } from 'hooks/useLocalStorage'
+import { Database } from 'db/supabase'
+import { formatLogFileContent } from 'utils/formatLogFileContent'
 
 import Upload from './Upload'
 import UploadedLogsDetail from './UploadedLogsDetail'
-import { log_uploads } from '@prisma/client'
-import { SupabaseClient } from '@supabase/supabase-js'
-import { Database } from 'db/supabase'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
-import { useRouter } from 'next/router'
-import { formatLogFileContent } from 'utils/formatLogFileContent'
 
 export interface Props {
   logUploads: log_uploads[]
