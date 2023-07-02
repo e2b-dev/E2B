@@ -93,7 +93,6 @@ function FilesystemTree({
               metadata={n.metadata}
               name={n.name}
               path={n.path}
-              //onSelect={onSelect}
               onSelect={handleSelect}
             />
           )}
@@ -106,7 +105,6 @@ function FilesystemTree({
               metadata={n.metadata}
               name={n.name}
               path={n.path}
-              // onSelect={onSelect}
               onSelect={handleSelect}
             />
           )}

@@ -28,7 +28,6 @@ function AgentPromptLogsList({
     setSelectedLogIdx(idx)
     onSelected(logs[idx])
     router.replace({
-      // pathname: `/log/${router.query.logFileID}`,
       pathname: '',
       query: {
         ...router.query,

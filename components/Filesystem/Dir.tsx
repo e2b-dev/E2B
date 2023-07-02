@@ -22,17 +22,6 @@ import {
 import { useAddLogUploadTag } from 'hooks/useAddLogUploadTag'
 import { useDeleteLogUploadTag } from 'hooks/useDeleteLogUploadTag'
 
-
-
-
-// export interface CustomProps {
-//   tags: [{
-//     type: string
-//     challenge: string
-//   }]
-// }
-// export type Props = DirProps & CustomProps
-
 function Dir({
   name,
   path,
@@ -47,13 +36,6 @@ function Dir({
   const [newTagName, setNewTagName] = useState('')
   const [, setMetadata] = useMetadata<AgentChallengeTagType[]>(fs, path, 'tags', true)
   const tags = metadata?.tags || [] as AgentChallengeTagType[]
-  // console.log('metadata', metadata)
-
-  // useEffect(() => {
-  //   if (path === '/20230616_054339_memory_challenge_a_level_3') {
-  //     setMetadata([{ challengeDir: '20230616_054339_memory_challenge_a_level_3', text: 'challenge', color: 'red' }])
-  //   }
-  // }, [path])
 
   const addTag = useAddLogUploadTag()
   const deleteTag = useDeleteLogUploadTag()

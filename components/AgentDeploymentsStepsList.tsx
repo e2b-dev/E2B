@@ -83,36 +83,6 @@ function AgentDeploymentStepsList({
 
   const groupedSteps = useMemo(() => groupSteps(steps), [steps])
 
-  // useEffect(function listenToArrowNavigitons() {
-  //   function handleUpDownKey(e: KeyboardEvent) {
-  //     const currentGroupIdx = groupedSteps.findIndex((group) => group.steps.some((step) => step.id === selectedStepID))
-  //     if (currentGroupIdx === undefined) return
-  //     const currentGroupStepIdx = groupedSteps[currentGroupIdx].steps.findIndex((step) => step.id === selectedStepID)
-
-
-
-  //     if (e.key === 'ArrowUp') {
-  //       if (currentGroupStepIdx === 0) {
-
-  //       }
-
-  //       if (selectedLogID === 0) {
-  //         selectLog(logs.length - 1)
-  //       } else {
-  //         selectLog(selectedLogID - 1)
-  //       }
-  //     } else if (e.key === 'ArrowDown') {
-  //       if (selectedLogID === logs.length - 1) {
-  //         selectLog(0)
-  //       } else {
-  //         selectLog(selectedLogID + 1)
-  //       }
-  //     }
-  //   }
-  //   window.addEventListener('keydown', handleUpDownKey)
-  //   return () => window.removeEventListener('keydown', handleUpDownKey)
-  // }, [groupedSteps, selectStep, selectedStepID])
-
   return (
     <div className="flex flex-col ml-4 overflow-auto">
       {steps.length === 0 && (
