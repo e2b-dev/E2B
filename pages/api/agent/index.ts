@@ -153,6 +153,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
           create: {
             auth: authData as any,
             enabled: false,
+            config: { templateID } as any,
           },
         },
         teams: {
