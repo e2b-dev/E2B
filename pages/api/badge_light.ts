@@ -10,10 +10,11 @@ function handler() {
 </svg>
 
 `,
-    { headers: {
-      'Content-Type': 'image/svg+xml',
-    }
-  })
+    {
+      headers: {
+        'Content-Type': 'image/svg+xml',
+      }
+    })
 }
 
 export default handler

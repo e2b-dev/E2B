@@ -33,11 +33,6 @@ function Header({ project }: Props) {
           title="Settings"
           icon={<Settings size="18px" />}
         />
-        {/* <Button
-          icon={<LayoutGrid size="18px" />}
-          text="Settings"
-          onClick={() => router.push('/settings')}
-        /> */}
       </div>
     </div>
   )

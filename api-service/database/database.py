@@ -1,7 +1,6 @@
 import json
 from typing import Any, List
 
-from agent.output.output_stream_parser import Step
 from database.client import Client
 from session.env import EnvVar
 
@@ -49,7 +48,7 @@ class Database:
         deployment_id: str,
         run_id: str | None,
         project_id: str,
-        logs: List[Step],
+        logs: List[Any],
     ):
         if run_id is None:
             return

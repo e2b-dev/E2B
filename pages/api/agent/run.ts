@@ -3,10 +3,10 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from 'db/prisma'
 import { getGHInstallationClient } from 'github/installationClient'
 import { addCommentToPR } from 'github/pullRequest'
-import { TemplateID } from 'state/template'
 import { client as posthog } from 'utils/posthog'
 
 import { DeploymentAuthData } from '.'
+import { smolDeveloperTemplateID } from 'utils/smolTemplates'
 
 // Indicate that the agent state changed (run finished)
 async function postRun(req: NextApiRequest, res: NextApiResponse) {
@@ -84,7 +84,7 @@ async function postRun(req: NextApiRequest, res: NextApiResponse) {
         event: 'finished agent run',
         properties: {
           agent_deployment_id: deployment.id,
-          agent: TemplateID.SmolDeveloper,
+          agent: smolDeveloperTemplateID,
           repository: `${authData.github.owner}/${authData.github.repo}`,
           run_id,
 
@@ -175,7 +175,7 @@ async function deleteRun(req: NextApiRequest, res: NextApiResponse) {
         event: 'cancelled agent run',
         properties: {
           agent_deployment_id: deployment.id,
-          agent: TemplateID.SmolDeveloper,
+          agent: smolDeveloperTemplateID,
           repository: `${authData.github.owner}/${authData.github.repo}`,
           run_id,
 

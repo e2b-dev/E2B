@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 
 import smolTemplates from 'utils/smolTemplates'
-import InstructionsEditor, { InstructionsEditorRef } from 'components/Editor/Template/NodeJSExpressTemplate/InstructionsEditor'
+import InstructionsEditor, { InstructionsEditorRef } from 'components/InstructionsEditor'
 import InstructionsTemplateButton from 'components/InstructionsTemplateButton'
 import AlertError from 'components/AlertError'
 import { usePostHog } from 'posthog-js/react'
@@ -68,7 +68,7 @@ function AgentInstructions({
         Deploy <a className="text-indigo-400 hover:text-indigo-500 transition-all" href="https://github.com/smol-ai/developer" target="_blank" rel="noreferrer noopener">Smol Developer</a>
       </h2>
       <p className="mt-2 mb-6 text-lg leading-8 text-gray-400">
-      What do you want the AI agent to build?
+        What do you want the AI agent to build?
       </p>
       {error && (
         <AlertError

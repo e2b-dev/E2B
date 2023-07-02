@@ -1,3 +1,5 @@
+export const smolDeveloperTemplateID = 'SmolDeveloper'
+
 export interface Template {
   title: string
   content: string

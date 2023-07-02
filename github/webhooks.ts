@@ -6,8 +6,8 @@ import {
 
 import { prisma } from 'db/prisma'
 import { client as posthog } from 'utils/posthog'
-import { TemplateID } from 'state/template'
 import { DeploymentAuthData } from 'pages/api/agent'
+import { smolDeveloperTemplateID } from 'utils/smolTemplates'
 
 import {
   disableAgentDeployment,
@@ -100,7 +100,7 @@ const pullRequestReopenedHandler: HandlerFunction<'pull_request.reopened', unkno
           event: 'reopened PR created by agent',
           properties: {
             agent_deployment_id: d.id,
-            agent: TemplateID.SmolDeveloper,
+            agent: smolDeveloperTemplateID,
             repository: payload.repository.full_name,
             repository_url: payload.repository.html_url,
 
@@ -176,7 +176,7 @@ const pullRequestClosedHandler: HandlerFunction<'pull_request.closed', unknown> 
           event: 'closed PR created by agent',
           properties: {
             agent_deployment_id: d.id,
-            agent: TemplateID.SmolDeveloper,
+            agent: smolDeveloperTemplateID,
             repository: payload.repository.full_name,
             repository_url: payload.repository.html_url,
 
@@ -257,7 +257,7 @@ const pullRequestEditHandler: HandlerFunction<'pull_request.edited', unknown> = 
             event: 'triggered agent with PR action',
             properties: {
               agent_deployment_id: d.id,
-              agent: TemplateID.SmolDeveloper,
+              agent: smolDeveloperTemplateID,
               repository: payload.repository.full_name,
               repository_url: payload.repository.html_url,
 
@@ -359,7 +359,7 @@ const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (ev
             event: 'triggered agent by PR comment action',
             properties: {
               agent_deployment_id: d.id,
-              agent: TemplateID.SmolDeveloper,
+              agent: smolDeveloperTemplateID,
               repository: payload.repository.full_name,
               repository_url: payload.repository.html_url,
 

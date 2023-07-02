@@ -4,7 +4,7 @@ import {
   ScrollText,
 } from 'lucide-react'
 
-import InstructionsEditor from 'components/Editor/Template/NodeJSExpressTemplate/InstructionsEditor'
+import InstructionsEditor from 'components/InstructionsEditor'
 import { RepoSetup } from 'utils/repoSetup'
 import SpinnerIcon from 'components/Spinner'
 

@@ -4,6 +4,8 @@ import os
 import ast
 from decimal import Decimal
 
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import BaseLanguageModel
 from typing import Any, Callable, List
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.schema import (
@@ -24,7 +26,6 @@ from agent.base import (
     OnLogs,
     OnInteractionRequest,
 )
-from models.base import ModelConfig, get_model
 from agent.base import AgentBase, AgentInteractionRequest, GetEnvs
 from session.playground import Playground
 
@@ -103,15 +104,22 @@ class SmolAgent(AgentBase):
         on_interaction_request: OnInteractionRequest,
     ):
         callback_manager = AsyncCallbackManager([])
-        new_config = ModelConfig(**config)
 
-        # Use default openai api key
-        new_config.args["openai_api_key"] = default_openai_api_key
-
-        model = get_model(new_config, callback_manager, streaming=False)
+        model: BaseLanguageModel = ChatOpenAI(
+            temperature=0,
+            max_tokens=6000,
+            model_name=model_version,
+            openai_api_key=default_openai_api_key,
+            request_timeout=3600,
+            verbose=True,
+            # The max time between retries is 1 minute so we set max_retries to 45
+            max_retries=45,
+            streaming=False,
+            callback_manager=callback_manager,
+        )  # type: ignore
 
         return cls(
-            new_config,
+            config,
             get_envs,
             set_run_id,
             on_logs,
@@ -297,15 +305,6 @@ Begin generating the code now.
                     res = await playground.run_command(delete_command, rootdir)
                     print("Delete command result: ", res.stdout, res.stderr)
 
-                    # await self.on_logs(
-                    #     {
-                    #         "type": "Filesystem",
-                    #         "message": "",
-                    #         "properties": {
-                    #             "path": rootdir,
-                    #         },
-                    #     }
-                    # )
                     span.add_event(
                         "files-deleted",
                         {

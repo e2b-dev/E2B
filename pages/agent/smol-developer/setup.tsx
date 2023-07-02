@@ -23,12 +23,10 @@ import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import useListenOnMessage from 'hooks/useListenOnMessage'
-import { TemplateID } from 'state/template'
-import { Creds } from 'hooks/useModelProviderArgs'
-import { getDefaultModelConfig, getModelArgs, ModelConfig } from 'state/model'
 import { GitHubAccount } from 'utils/github'
 import { RepoSetup } from 'utils/repoSetup'
 import StarUs from 'components/StarUs'
+import { smolDeveloperTemplateID } from 'utils/smolTemplates'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -49,7 +47,7 @@ export interface PostAgentBody {
   branch: string
   // Commit message for the PR first empty commit
   commitMessage: string
-  modelConfig: ModelConfig & { templateID: TemplateID }
+  templateID: typeof smolDeveloperTemplateID
 }
 
 const steps = [
@@ -96,18 +94,6 @@ async function handlePostAgent(url: string, { arg }: { arg: PostAgentBody }) {
   return await response.json() as PostAgentResponse
 }
 
-function getSmolDevModelConfig(creds: Creds): ModelConfig & { templateID: TemplateID } {
-  const templateID = TemplateID.SmolDeveloper
-  const modelConfig = getDefaultModelConfig(templateID)
-  return {
-    name: modelConfig.name,
-    provider: modelConfig.provider,
-    args: getModelArgs(modelConfig, creds),
-    prompt: [],
-    templateID,
-  }
-}
-
 function Setup() {
   const user = useUser()
   const supabaseClient = useSupabaseClient()
@@ -144,7 +130,6 @@ function Setup() {
       console.error('No instructions provided')
       return
     }
-    const modelConfig = getSmolDevModelConfig({})
 
     try {
       setIsDeploying(true)
@@ -158,7 +143,7 @@ function Setup() {
         branch: `pr/smol-dev/${nanoid(6).toLowerCase()}`,
         body: instructions,
         commitMessage: 'Initial commit',
-        modelConfig,
+        templateID: smolDeveloperTemplateID,
       })
 
       posthog?.capture('clicked on deploy agent', {

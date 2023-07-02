@@ -15,7 +15,6 @@ import {
   prTitleFromInstructions,
   triggerSmolDevAgentRun,
 } from 'github/pullRequest'
-import { TemplateID } from 'state/template'
 
 export interface DeploymentAuthData {
   github: {
@@ -48,7 +47,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
     title,
     body,
     owner,
-    modelConfig,
+    templateID,
     branch,
     commitMessage,
     defaultBranch,
@@ -117,7 +116,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       distinctId: user.id,
       event: 'created PR when deploying agent',
       properties: {
-        agent: TemplateID.SmolDeveloper,
+        agent: templateID,
         repository: `${owner}/${repo}`,
 
         pr_action: 'created',
@@ -187,7 +186,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     await createAgentDeployment({
       project_id: project.id,
-      config: modelConfig as any,
+      config: { templateID } as any,
     })
 
     const deployment = project.deployments[0]
@@ -199,7 +198,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       event: 'created agent deployment',
       properties: {
         agent_deployment_id: deployment.id,
-        agent: TemplateID.SmolDeveloper,
+        agent: templateID,
         pr_url: pullURL,
         pr_number: pullNumber,
         repository: `${owner}/${repo}`,
@@ -234,7 +233,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       event: 'triggered deployed agent initial run',
       properties: {
         agent_deployment_id: deployment.id,
-        agent: TemplateID.SmolDeveloper,
+        agent: templateID,
         repository: `${owner}/${repo}`,
 
         pr_url: pullURL,

@@ -2,12 +2,13 @@ import os
 import uuid
 import aiohttp
 import json
+
 from datetime import datetime
-
-from agent.output.work_queue import WorkQueue
-
 from typing import Any, Callable, Coroutine, List
 from abc import abstractmethod, ABC
+
+from .work_queue import WorkQueue
+
 
 from database.base import db
 from agent.base import (
