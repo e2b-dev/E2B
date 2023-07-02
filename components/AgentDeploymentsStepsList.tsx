@@ -99,7 +99,7 @@ function AgentDeploymentStepsList({
               </span>
             }
             {group.steps.map((step, stepIdx) => (
-              <>
+              <Fragment key={stepIdx}>
                 <div
                   className={clsx('flex items-center space-x-2 cursor-pointer group')}
                   onClick={() => selectStep(step.id)}
@@ -129,7 +129,7 @@ function AgentDeploymentStepsList({
                 {stepIdx !== group.steps.length - 1 && (
                   <div className="ml-1 rounded h-[24px] w-px bg-gray-800" />
                 )}
-              </>
+              </Fragment>
             ))}
           </div>
           {idx !== groupedSteps.length - 1 && (

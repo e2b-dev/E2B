@@ -146,12 +146,13 @@ function SmolDeveloper() {
           </div>
           <div className="relative mb-8 md:mb-8 md:h-full">
             <Image
-              className="absolute w-[57rem] top-4 lg:top-1/2 lg:-translate-y-1/2 max-w-none rounded-md bg-white/5 ring-1 ring-white/10"
-              // src="https://tailwindui.com/img/component-images/dark-project-app-screenshot.png"
-              src="/graphics.png"
               alt="App screenshot"
               width={1824}
               height={1080}
+              priority={true}
+              className="absolute w-[57rem] top-4 lg:top-1/2 lg:-translate-y-1/2 max-w-none rounded-md bg-white/5 ring-1 ring-white/10"
+              // src="https://tailwindui.com/img/component-images/dark-project-app-screenshot.png"
+              src="/graphics.png"
             />
           </div>
         </div>

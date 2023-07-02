@@ -5,9 +5,8 @@ import clsx from 'clsx'
 import {
   ChevronRight,
 } from 'lucide-react'
-import dynamic from 'next/dynamic'
-const ReactJson = dynamic(import('react-json-view'), { ssr: false })
 
+import JsonView from 'components/JsonView'
 import { AgentFunction } from 'utils/agentLogs'
 
 export interface Props {
@@ -110,7 +109,7 @@ function AgentFunctions({
                     <div className="flex flex-col space-y-1 w-full">
                       <span className="text-sm font-bold text-gray-400">Parameters</span>
                       <div className="rounded-md overflow-hidden p-2">
-                        <ReactJson
+                        <JsonView
                           src={fn.parameters}
                           name={null}
                           style={{

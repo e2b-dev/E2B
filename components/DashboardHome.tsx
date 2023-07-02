@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import { useRouter } from 'next/router'
+import dynamic from 'next/dynamic'
 
-import AgentLogFilesList from 'components/AgentLogFilesList'
 import { log_uploads, projects } from 'db/prisma'
 import { LiteDeployment } from 'utils/agentLogs'
-
-import AgentDeploymentsList from './AgentDeploymentsList'
+const AgentDeploymentsList = dynamic(() => import('components/AgentDeploymentsList'), { ssr: false })
+const AgentLogFilesList = dynamic(() => import('components/AgentLogFilesList'), { ssr: false })
 
 export interface Props {
   projects: (projects & { log_uploads: log_uploads[], deployments: LiteDeployment[] })[]

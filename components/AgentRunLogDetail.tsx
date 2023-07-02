@@ -1,5 +1,4 @@
-import dynamic from 'next/dynamic'
-const ReactJson = dynamic(import('react-json-view'), { ssr: false })
+import JsonView from 'components/JsonView'
 
 export interface Props {
   step?: any
@@ -8,7 +7,6 @@ export interface Props {
 function AgentRunLogDetail({
   step,
 }: Props) {
-
   return (
     <div className="overflow-auto mr-2.5 mb-2.5 p-2 h-full bg-[#1F2437] rounded-md flex flex-col space-y-4 border border-[#6366F1]/50">
       {step && (
@@ -25,7 +23,7 @@ function AgentRunLogDetail({
           {step.properties &&
             <div className="flex flex-col space-y-1 w-full">
               <span className="text-sm font-medium text-gray-500">Properties</span>
-              <ReactJson
+              <JsonView
                 src={step.properties}
                 name={null}
                 style={{

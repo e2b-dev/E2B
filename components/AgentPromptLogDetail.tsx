@@ -3,9 +3,9 @@ import {
   UserPromptLog,
   AssistantPromptLog,
 } from 'utils/agentLogs'
-import dynamic from 'next/dynamic'
 import { useMemo } from 'react'
-const ReactJson = dynamic(import('react-json-view'), { ssr: false })
+import JsonView from 'components/JsonView'
+
 
 function handleJSONQuotes(content: string) {
   try {
@@ -53,7 +53,7 @@ function AgentPrompLogDetail({
                   </div>
                 }
                 {parsedLog &&
-                  <ReactJson
+                  <JsonView
                     src={parsedLog}
                     name={null}
                     style={{
@@ -75,7 +75,7 @@ function AgentPrompLogDetail({
           {log.role === 'assistant' && log.function_call && (
             <>
               <span className="text-sm font-medium text-gray-500">Function Call</span>
-              <ReactJson
+              <JsonView
                 src={{
                   ...(log as any).function_call,
                   'arguments': JSON.parse(log.function_call.arguments),
