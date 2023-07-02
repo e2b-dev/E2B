@@ -166,7 +166,7 @@ function Setup() {
       } else {
         console.error('No response from agent creation')
       }
-    } finally {
+    } catch (error) {
       setIsDeploying(false)
     }
   }
