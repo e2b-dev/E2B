@@ -36,7 +36,7 @@ E2b is made of three parts:
 
 Every agent deployed on e2b gets their own [small virtual machine](https://github.com/firecracker-microvm/firecracker) that works as a playground for the agent.
 
-# 🤔 What is this repo?
+# 🤔 What is this repo
 This repo is the cloud dashboard of e2b. The e2b dashboard is where you can manage and inspect your AI agents. Think about it like devtools for your browser. The agents themselves currently runs on e2b infrastructure that isn't open-sourced at this moment.
 
 # 🚀 Get started
