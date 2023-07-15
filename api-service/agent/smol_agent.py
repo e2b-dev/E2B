@@ -105,8 +105,6 @@ class SmolAgent(AgentBase):
     ):
         callback_manager = AsyncCallbackManager([])
 
-        print('KWWWWYYY', config['openAIKey'])
-
         model: BaseLanguageModel = ChatOpenAI(
             temperature=0,
             max_tokens=6000,
