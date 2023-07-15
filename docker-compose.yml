@@ -23,6 +23,7 @@ services:
     build:
       context: ./
       args:
+        BUILD: docker
         NEXT_PUBLIC_SUPABASE_URL: http://supabase_kong_workspace:8000
         NEXT_PUBLIC_API_URL: http://api:49155
         NEXT_PUBLIC_PROXY: 1
