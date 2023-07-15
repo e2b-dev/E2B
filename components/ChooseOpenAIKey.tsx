@@ -71,17 +71,17 @@ function ChooseOpenAIKey({
 
         {selectedOpenAIKeyType === 'e2b' && (
           <ul className="list-disc p-4 border border-indigo-400/40 rounded-md text-sm">
-            <li className="ml-4">Use the e2b key to get started quickly and not get charged for OpenAI API usage.</li>
-            <li className="ml-4">We can&apos;t guarantee that e2b will not get blocked by OpenAI API rate limits.</li>
-            <li className="ml-4"><b>All costs running the smol developer will be billed to e2b.</b></li>
+            <li className="ml-4">Use the e2b key to get started quickly and not get charged for OpenAI API usage</li>
+            <li className="ml-4">We can&apos;t guarantee that e2b will not get blocked by OpenAI API rate limits</li>
+            <li className="ml-4"><b>All costs running the smol developer will be billed to e2b</b></li>
           </ul>
         )}
         {selectedOpenAIKeyType === 'user' && (
           <div className="flex flex-col space-y-2">
             <ul className="list-disc p-4 border border-indigo-400/40 rounded-md text-sm">
               <li className="ml-4">Use your own OpenAI API key</li>
-              <li className="ml-4">Using your own key might help when e2b is hitting the OpenAI&apos;s API rate limits.</li>
-              <li className="ml-4"><b>All costs running the smol developer will be billed to your OpenAI account.</b></li>
+              <li className="ml-4">Using your own key might help when e2b is hitting the OpenAI&apos;s API rate limits</li>
+              <li className="ml-4"><b>All costs running the smol developer will be billed to your OpenAI account</b></li>
             </ul>
             <input
               className="bg-gray-800 block w-full rounded-md border-0 px-3 py-1.5 text-gray-100 shadow-sm ring-1 ring-inset ring-gray-400 placeholder:text-gray-400 focus:ring-gray-300 outline-none sm:text-sm sm:leading-6 transition-all"
