@@ -67,17 +67,29 @@ function AgentRunLogContent({
             </div>
           }
         </div>
-        <Link
-          href={pr.url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center space-x-1 text-sm text-gray-400 hover:text-white transition-all"
-        >
-          <GithubIcon size="16px" />
-          <span>
-            {pr.repository}
-          </span>
-        </Link>
+        <div className="flex space-x-4">
+          {log.deployments.secrets &&
+            <span className="text-xs text-gray-500">
+              Open AI API - using your own API key
+            </span>
+          }
+          {!log.deployments.secrets &&
+            <span className="text-xs text-gray-500">
+              {'Open AI API - using e2b\'s API key'}
+            </span>
+          }
+          <Link
+            href={pr.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center space-x-1 text-sm text-gray-400 hover:text-white transition-all"
+          >
+            <GithubIcon size="16px" />
+            <span>
+              {pr.repository}
+            </span>
+          </Link>
+        </div>
       </header>
       <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden my-4">
         <Splitter

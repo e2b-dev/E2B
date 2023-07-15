@@ -49,6 +49,7 @@ export interface PostAgentBody {
   // Commit message for the PR first empty commit
   commitMessage: string
   templateID: typeof smolDeveloperTemplateID
+  openAIKey?: string
 }
 
 const steps = [
@@ -148,6 +149,7 @@ function Setup() {
         body: instructions,
         commitMessage: 'Initial commit',
         templateID: smolDeveloperTemplateID,
+        openAIKey: userOpenAIKey,
       })
 
       posthog?.capture('clicked on deploy agent', {

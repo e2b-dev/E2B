@@ -122,6 +122,16 @@ function AgentDeploymentsList({
                       {deployment.projects.slug}
                     </span>
                   </div>
+                  {/* {deployment.secrets &&
+                    <span className="text-xs text-gray-500">
+                      Open AI API - using your own API key
+                    </span>
+                  }
+                  {!deployment.secrets &&
+                    <span className="text-xs text-gray-500">
+                      {'Open AI API - using e2b\'s API key'}
+                    </span>
+                  } */}
                 </div>
 
                 {openDeployments[deployment.id] && (

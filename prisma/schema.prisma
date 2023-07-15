@@ -269,6 +269,7 @@ model deployments {
   enabled              Boolean           @default(false)
   auth                 Json?
   last_finished_prompt String?
+  secrets              String?
   projects             projects          @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   log_files            log_files[]
 
@@ -351,6 +352,27 @@ model log_uploads {
   log_files    log_files[]
   projects     projects?   @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@schema("public")
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+view decrypted_deployments {
+  id                   String?           @db.Uuid
+  created_at           DateTime?         @db.Timestamptz(6)
+  logs                 Json[]
+  project_id           String?
+  route_id             String?
+  state                deployment_state?
+  url                  String?
+  logs_raw             String?
+  config               Json?
+  enabled              Boolean?
+  auth                 Json?
+  last_finished_prompt String?
+  secrets              String?
+  decrypted_secrets    String?
+
+  @@ignore
   @@schema("public")
 }
 

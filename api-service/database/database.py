@@ -4,6 +4,7 @@ from typing import Any, List
 from database.client import Client
 from session.env import EnvVar
 
+TABLE_DECRYPTED_DEPLOYMENTS = "deployments"
 TABLE_DEPLOYMENTS = "deployments"
 TABLE_LOGS = "log_files"
 TABLE_PROJECTS = "projects"
@@ -15,7 +16,7 @@ class Database:
 
     async def get_deployment(self, project_id: str):
         response = (
-            await self.client.table(TABLE_DEPLOYMENTS)
+            await self.client.table(TABLE_DECRYPTED_DEPLOYMENTS)
             .select("*")
             .eq("project_id", project_id)
             .limit(1)
@@ -25,7 +26,7 @@ class Database:
 
     async def get_deployment_by_id(self, id: str):
         response = (
-            await self.client.table(TABLE_DEPLOYMENTS)
+            await self.client.table(TABLE_DECRYPTED_DEPLOYMENTS)
             .select("*")
             .eq("id", id)
             .limit(1)
@@ -36,7 +37,7 @@ class Database:
 
     async def get_deployments(self):
         response = (
-            await self.client.table(TABLE_DEPLOYMENTS)
+            await self.client.table(TABLE_DECRYPTED_DEPLOYMENTS)
             .select("*")
             .eq("enabled", True)
             .execute()

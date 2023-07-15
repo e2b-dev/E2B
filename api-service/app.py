@@ -1,10 +1,11 @@
+import json
 import uuid
 import os
 
 from typing import Annotated, Any
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, config
 from fastapi.security import OAuth2PasswordBearer
 from opentelemetry import trace
 
@@ -59,10 +60,14 @@ async def create_agent_deployment(
     db_deployment = await db.get_deployment(project_id)
 
     if db_deployment:
+        secrets= json.loads(db_deployment["decrypted_secrets"]) if db_deployment.get('decrypted_secrets', None) else {}
         deployment = await deployment_manager.update_deployment(
             db_deployment["id"],
             project_id,
-            body.config,
+            {
+                **body.config,
+                **secrets,
+            },
         )
         current_span = trace.get_current_span()
         current_span.set_attributes(

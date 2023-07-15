@@ -52,6 +52,11 @@
     @apply text-slate-600 font-mono font-semibold border-b border-slate-600;
     box-decoration-break: clone;
   }
+
+  .security {
+    -webkit-text-security: disc;
+    text-security: disc;
+  }
 }
 
 .no-scroller::-webkit-scrollbar {
