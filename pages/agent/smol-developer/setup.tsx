@@ -27,6 +27,7 @@ import { GitHubAccount } from 'utils/github'
 import { RepoSetup } from 'utils/repoSetup'
 import StarUs from 'components/StarUs'
 import { smolDeveloperTemplateID } from 'utils/smolTemplates'
+import ChooseOpenAIKey from 'components/ChooseOpenAIKey'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -53,6 +54,7 @@ export interface PostAgentBody {
 const steps = [
   { name: 'Select Repository' },
   { name: 'Your Instructions' },
+  { name: 'OpenAI API Key' },
   { name: 'Overview & Deploy' },
 ]
 
@@ -107,6 +109,8 @@ function Setup() {
   const posthog = usePostHog()
   const router = useRouter()
   const [isDeploying, setIsDeploying] = useState(false)
+  const [selectedOpenAIKeyType, setSelectedOpenAIKeyType] = useState('e2b')
+  const [userOpenAIKey, setUserOpenAIKey] = useState('')
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -247,6 +251,16 @@ function Setup() {
           />
         )}
         {currentStepIdx === 2 && (
+          <ChooseOpenAIKey
+            selectedOpenAIKeyType={selectedOpenAIKeyType}
+            onSelectedOpenAIKeyTypeChange={setSelectedOpenAIKeyType}
+            userOpenAIKey={userOpenAIKey}
+            onUserOpenAIKeyChange={e => setUserOpenAIKey(e.target.value)}
+            onNext={nextStep}
+            onBack={previousStep}
+          />
+        )}
+        {currentStepIdx === 3 && (
           <DeployAgent
             selectedRepo={selectedRepository!}
             instructions={instructions}
@@ -262,6 +276,7 @@ function Setup() {
             onBack={previousStep}
             onDeploy={deployAgent}
             isDeploying={isDeploying}
+            selectedOpenAIKeyType={selectedOpenAIKeyType}
           />
         )}
       </div>

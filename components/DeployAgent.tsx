@@ -18,6 +18,7 @@ export interface Props {
   onDeploy: (e: any) => void
   isDeploying?: boolean
   error?: string
+  selectedOpenAIKeyType: string // 'e2b' or 'user'
 }
 
 function DeployAgent({
@@ -29,6 +30,7 @@ function DeployAgent({
   onBack,
   onDeploy,
   isDeploying,
+  selectedOpenAIKeyType,
   error,
 }: Props) {
   return (
@@ -44,6 +46,19 @@ function DeployAgent({
 
         {!isDeploying && (
           <>
+            {/* OpenAI Key */}
+            <div className="w-full flex flex-col space-y-2 items-start justify-start">
+              <span className="text-sm text-gray-300 font-medium">
+                OpenAI API Key
+              </span>
+              <span className="text-sm font-medium text-gray-100">
+                {selectedOpenAIKeyType === 'user' && 'Use your own OpenAI API key'}
+                {selectedOpenAIKeyType === 'e2b' && 'Use e2b\'s OpenAI API key'}
+              </span>
+            </div>
+
+            <hr className="w-full border-gray-700 rounded" />
+
             {/* Selected repo */}
             <div className="w-full flex flex-col space-y-2 items-start justify-start">
               <div className="w-full flex items-center justify-between">
