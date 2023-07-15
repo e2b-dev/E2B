@@ -156,6 +156,7 @@ function Setup() {
       posthog?.capture('clicked on deploy agent', {
         repository: `${selectedRepository.owner}/${selectedRepository.repo}`,
         instructions,
+        hasUserProvidedOpenAIKey: !!userOpenAIKey,
       })
 
       // Redirect to the dashboard.
