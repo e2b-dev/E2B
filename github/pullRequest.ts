@@ -6,13 +6,14 @@ import { deployments, prisma } from 'db/prisma'
 
 import { GitHubClient } from './client'
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-})
 
-const openai = new OpenAIApi(configuration)
+export async function prTitleFromInstructions(instructions: string, openAIKey?: string) {
+  const configuration = new Configuration({
+    apiKey: openAIKey || process.env.OPENAI_API_KEY,
+  })
 
-export async function prTitleFromInstructions(instructions: string) {
+  const openai = new OpenAIApi(configuration)
+
   try {
     const result = await backOff(() => openai.createChatCompletion({
       model: 'gpt-3.5-turbo',

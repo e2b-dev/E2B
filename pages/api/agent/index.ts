@@ -94,7 +94,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       repositoryID,
     })
 
-    const prTitle = await prTitleFromInstructions(body)
+    const prTitle = await prTitleFromInstructions(body, openAIKey)
 
     if (!prTitle) {
       throw new Error('Generated PR title is empty')
