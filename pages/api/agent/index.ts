@@ -205,6 +205,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
         pr_url: pullURL,
         pr_number: pullNumber,
         repository: `${owner}/${repo}`,
+        hasUserProvidedOpenAIKey: !!openAIKey,
       },
     })
 
