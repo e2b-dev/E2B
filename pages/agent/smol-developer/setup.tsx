@@ -112,6 +112,7 @@ function Setup() {
   const [isDeploying, setIsDeploying] = useState(false)
   const [selectedOpenAIKeyType, setSelectedOpenAIKeyType] = useState('e2b')
   const [userOpenAIKey, setUserOpenAIKey] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -135,7 +136,7 @@ function Setup() {
       console.error('No instructions provided')
       return
     }
-
+    setErrorMessage('')
     try {
       setIsDeploying(true)
       const response = await createAgent({
@@ -160,7 +161,10 @@ function Setup() {
       // Redirect to the dashboard.
       if (response) {
         if ((response as any).statusCode === 500) {
-          throw new Error((response as any).message)
+          console.log('Error response', response)
+          setErrorMessage((response as any).message)
+          setIsDeploying(false)
+          return
         }
 
         router.push({
@@ -172,7 +176,7 @@ function Setup() {
       } else {
         console.error('No response from agent creation')
       }
-    } catch (error) {
+    } catch (error: any) {
       setIsDeploying(false)
     }
   }
@@ -271,6 +275,7 @@ function Setup() {
               setCurrentStepIdx(0)
               posthog?.capture('returned to repository selection step')
             }}
+            error={errorMessage}
             onChangeTemplate={() => {
               setCurrentStepIdx(1)
               posthog?.capture('returned to the instructions step')

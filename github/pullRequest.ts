@@ -27,10 +27,10 @@ export async function prTitleFromInstructions(instructions: string, openAIKey?: 
     return result.data.choices[0].message?.content
   } catch (error: any) {
     if (error.response) {
-      console.log(error.response.status)
-      console.log(error.response.data)
+      console.log(error.response)
+      throw new Error(error.response.data.error.message)
     } else {
-      console.log(error.message)
+      throw new Error(error.message)
     }
   }
 }

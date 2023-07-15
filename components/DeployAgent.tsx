@@ -7,6 +7,7 @@ import {
 import InstructionsEditor from 'components/InstructionsEditor'
 import { RepoSetup } from 'utils/repoSetup'
 import SpinnerIcon from 'components/Spinner'
+import AlertError from './AlertError'
 
 export interface Props {
   selectedRepo: RepoSetup;
@@ -43,7 +44,12 @@ function DeployAgent({
             <span className="text-gray-300">Deploying...</span>
           </div>
         )}
-
+        {!isDeploying && error && (
+          <AlertError
+            title="Deploy failed"
+            infoItems={[error]}
+          />
+        )}
         {!isDeploying && (
           <>
             {/* OpenAI Key */}
@@ -128,7 +134,6 @@ function DeployAgent({
             </div>
           </>
         )}
-
       </div>
     </div>
   )
