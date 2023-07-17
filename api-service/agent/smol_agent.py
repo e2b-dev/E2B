@@ -104,12 +104,16 @@ class SmolAgent(AgentBase):
         on_interaction_request: OnInteractionRequest,
     ):
         callback_manager = AsyncCallbackManager([])
+        print(
+            "conf",
+            config.get("openAIKey") or default_openai_api_key,
+        )
 
         model: BaseLanguageModel = ChatOpenAI(
             temperature=0,
             max_tokens=6000,
             model_name=model_version,
-            openai_api_key=config['openAIKey'] or default_openai_api_key,
+            openai_api_key=config.get("openAIKey") or default_openai_api_key,
             request_timeout=3600,
             verbose=True,
             # The max time between retries is 1 minute so we set max_retries to 45
