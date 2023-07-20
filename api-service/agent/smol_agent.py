@@ -104,11 +104,6 @@ class SmolAgent(AgentBase):
         on_interaction_request: OnInteractionRequest,
     ):
         callback_manager = AsyncCallbackManager([])
-        print(
-            "conf",
-            config.get("openAIKey") or default_openai_api_key,
-        )
-
         model: BaseLanguageModel = ChatOpenAI(
             temperature=0,
             max_tokens=6000,
