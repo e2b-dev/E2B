@@ -50,6 +50,7 @@ export interface PostAgentBody {
   commitMessage: string
   templateID: typeof smolDeveloperTemplateID
   openAIKey?: string
+  openAIModel: string
 }
 
 const steps = [
@@ -169,6 +170,7 @@ function Setup() {
         commitMessage: 'Initial commit',
         templateID: smolDeveloperTemplateID,
         openAIKey: userOpenAIKey,
+        openAIModel: selectedOpenAIModel.value,
       })
 
       posthog?.capture('clicked on deploy agent', {

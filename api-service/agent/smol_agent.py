@@ -30,14 +30,25 @@ from agent.base import AgentBase, AgentInteractionRequest, GetEnvs
 from session.playground import Playground
 
 default_openai_api_key = os.environ.get("OPENAI_API_KEY", None)
-
-model_version = "gpt-4-0613"
-
+default_openai_model = "gpt-4"
+# Pricing is in USD per token
 pricing = {
-    "gpt-4-0613": {
+    "gpt-4": {
         "prompt": Decimal(0.00003),
         "completion": Decimal(0.00006),
-    }
+    },
+    "gpt-4-32k": {
+        "prompt": Decimal(0.00006),
+        "completion": Decimal(0.00012),
+    },
+    "gpt-3.5-turbo": {
+        "prompt": Decimal(0.0000015),
+        "completion": Decimal(0.000002),
+    },
+    "gpt-3.5-turbo-16k": {
+        "prompt": Decimal(0.000003),
+        "completion": Decimal(0.000004),
+    },
 }
 
 extensions_to_skip = [
@@ -84,11 +95,13 @@ class SmolAgent(AgentBase):
         on_logs: OnLogs,
         on_interaction_request: OnInteractionRequest,
         model: BaseLanguageModel,
+        model_name: str,
     ):
         super().__init__()
         self._dev_loop: asyncio.Task | None = None
         self.get_envs = get_envs
         self.config = config
+        self.model_name = model_name
         self.on_interaction_request = on_interaction_request
         self.on_logs = on_logs
         self.set_run_id = set_run_id
@@ -109,10 +122,11 @@ class SmolAgent(AgentBase):
             config.get("openAIKey") or default_openai_api_key,
         )
 
+        model_name = config.get("openAIModel") or default_openai_model
         model: BaseLanguageModel = ChatOpenAI(
             temperature=0,
             max_tokens=6000,
-            model_name=model_version,
+            model_name=model_name,
             openai_api_key=config.get("openAIKey") or default_openai_api_key,
             request_timeout=3600,
             verbose=True,
@@ -129,6 +143,7 @@ class SmolAgent(AgentBase):
             on_logs,
             on_interaction_request,
             model,
+            model_name,
         )
 
     async def generate_file(
@@ -201,9 +216,9 @@ Begin generating the code now.
 
         cost = (
             Decimal(response.llm_output["token_usage"]["prompt_tokens"])
-            * pricing[model_version]["prompt"]
+            * pricing[self.model_name]["prompt"]
             + Decimal(response.llm_output["token_usage"]["completion_tokens"])
-            * pricing[model_version]["completion"]
+            * pricing[self.model_name]["completion"]
             if response.llm_output
             else None
         )
@@ -339,7 +354,7 @@ do not add any other explanation, only return a python list of strings.
                         "properties": {
                             **metadata,
                             "result": filepaths_string,
-                            "model": model_version,
+                            "model": self.model_name,
                         },
                         "type": "LLM",
                     },
@@ -349,7 +364,7 @@ do not add any other explanation, only return a python list of strings.
                     "filepaths-generated",
                     {
                         "filepaths": filepaths_string,
-                        "model": model_version,
+                        "model": self.model_name,
                         **metadata,
                     },
                 )
@@ -389,7 +404,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                         "properties": {
                             **metadata,
                             "result": shared_dependencies,
-                            "model": model_version,
+                            "model": self.model_name,
                         },
                         "message": f"Called OpenAI",
                         "type": "LLM",
@@ -399,7 +414,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                     "model-used",
                     {
                         "shared_dependencies": shared_dependencies,
-                        "model": model_version,
+                        "model": self.model_name,
                         **metadata,
                     },
                 )
@@ -434,7 +449,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                 semaphore = asyncio.Semaphore(2)
                 # execute the file generation in paralell and wait for all of them to finish. Use list comprehension to generate the tasks
 
-                async def create_file(name):
+                async def create_file(name, model_name):
                     filename, content, metadata = await self.generate_file(
                         name,
                         filepaths_string=filepaths_string,
@@ -452,7 +467,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                             "properties": {
                                 **metadata,
                                 "result": content,
-                                "model": model_version,
+                                "model": model_name,
                             },
                             "type": "LLM",
                         },
@@ -465,6 +480,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
                             semaphore,
                             create_file(
                                 name,
+                                model_name=self.model_name,
                             ),
                         )
                     )
@@ -574,6 +590,7 @@ Exclusively focus on the names of the shared dependencies, and do not add any ot
 
     async def interaction(self, interaction: AgentInteraction):
         print("Agent interaction")
+
         match interaction.type:
             case "start":
                 await self._dev_in_background(interaction.data["instructions"])
