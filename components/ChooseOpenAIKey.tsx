@@ -5,11 +5,19 @@ import {
 import { usePostHog } from 'posthog-js/react'
 import clsx from 'clsx'
 
+import OpenAIKeyInput from 'components/OpenAIKeyInput'
+
 export interface Props {
   selectedOpenAIKeyType: string
+
   onSelectedOpenAIKeyTypeChange: (type: string) => void
   userOpenAIKey?: string
   onUserOpenAIKeyChange: (e: any) => void
+
+  openAIModels: { displayName: string, value: string }[]
+  selectedOpenAIModel: { displayName: string, value: string }
+  onOpenAIModelChange: (value: string) => void
+
   onNext: () => void
   onBack: () => void
 }
@@ -20,9 +28,15 @@ const selectedClasses = 'bg-indigo-400/10 text-indigo-400  border border-indigo-
 
 function ChooseOpenAIKey({
   selectedOpenAIKeyType,
+
   onSelectedOpenAIKeyTypeChange,
   userOpenAIKey,
   onUserOpenAIKeyChange,
+
+  openAIModels,
+  selectedOpenAIModel,
+  onOpenAIModelChange,
+
   onNext,
   onBack,
 }: Props) {
@@ -34,6 +48,7 @@ function ChooseOpenAIKey({
     }
     posthog?.capture('selected OpenAI key', {
       selectedOpenAIKeyType,
+      selectedOpenAIModel,
     })
     onNext()
   }
@@ -83,12 +98,12 @@ function ChooseOpenAIKey({
               <li className="ml-4">Using your own key might help when e2b is hitting the OpenAI&apos;s API rate limits</li>
               <li className="ml-4"><b>All costs running the smol developer will be billed to your OpenAI account</b></li>
             </ul>
-            <input
-              className="bg-gray-800 block w-full rounded-md border-0 px-3 py-1.5 text-gray-100 shadow-sm ring-1 ring-inset ring-gray-400 placeholder:text-gray-400 focus:ring-gray-300 outline-none sm:text-sm sm:leading-6 transition-all security"
-              placeholder="OpenAI API Key"
-              value={userOpenAIKey}
-              onChange={onUserOpenAIKeyChange}
-              autoFocus
+            <OpenAIKeyInput
+              openAIKey={userOpenAIKey}
+              onOpenAIKeyChange={onUserOpenAIKeyChange}
+              models={openAIModels}
+              selectedModel={selectedOpenAIModel}
+              onModelChange={onOpenAIModelChange}
             />
           </div>
         )}

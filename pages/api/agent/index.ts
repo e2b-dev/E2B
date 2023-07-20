@@ -53,6 +53,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
     openAIKey,
     defaultBranch,
     repo,
+    openAIModel,
   } = req.body as PostAgentBody
 
   try {
@@ -154,7 +155,11 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
           create: {
             auth: authData as any,
             enabled: false,
-            config: { templateID } as any,
+            config: {
+              templateID,
+              // OpenAI Model if OpenAI Key is provided
+              ...(openAIKey && { openAIModel }),
+            } as any,
             ...openAIKey && { secrets: JSON.stringify({ openAIKey }) },
           },
         },
@@ -189,7 +194,11 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     await createAgentDeployment({
       project_id: project.id,
-      config: { templateID } as any,
+      config: {
+        templateID,
+        // OpenAI Model if OpenAI Key is provided
+        ...(openAIKey && { openAIModel }),
+      } as any,
       secrets: { openAIKey } as any,
     })
 
