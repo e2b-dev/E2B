@@ -5,10 +5,10 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/deployments": {
+    "/health": {
       "get": {
-        "summary": "List Deployments",
-        "operationId": "list_deployments_deployments_get",
+        "summary": "Health",
+        "operationId": "health_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -18,13 +18,10 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
-      },
+        }
+      }
+    },
+    "/deployments": {
       "put": {
         "summary": "Create Agent Deployment",
         "operationId": "create_agent_deployment_deployments_put",
@@ -204,90 +201,6 @@
           }
         ]
       }
-    },
-    "/deployments/{id}/interaction_requests": {
-      "get": {
-        "summary": "Get Agent Intereaction Requests",
-        "operationId": "get_agent_intereaction_requests_deployments__id__interaction_requests_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Id",
-              "type": "string"
-            },
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
-      }
-    },
-    "/deployments/{id}/logs": {
-      "get": {
-        "summary": "Get Agent Deployment Status",
-        "operationId": "get_agent_deployment_status_deployments__id__logs_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Id",
-              "type": "string"
-            },
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
-      }
     }
   },
   "components": {
@@ -318,6 +231,9 @@
         "properties": {
           "config": {
             "title": "Config"
+          },
+          "secrets": {
+            "title": "Secrets"
           }
         }
       },

@@ -46,16 +46,20 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
         id: str,
         project_id: str,
         config: Any,
+        secrets: Any,
     ):
         print("Creating deployment", config)
         deployment = await AgentDeployment.from_factory(
             id,
             get_agent_factory_from_template(config["templateID"]),
             project_id,
-            config,
+            {
+                **config,
+                **secrets,
+            },
         )
         try:
-            await db.create_deployment(deployment.id, project_id, config)
+            await db.create_deployment(deployment.id, project_id, config, secrets)
         except:
             await deployment.agent.stop()
             raise
@@ -68,6 +72,7 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
         id: str,
         project_id: str,
         config: Any,
+        secrets: Any,
     ):
         print(">>>> Updating deployment", id, config)
         try:
@@ -79,6 +84,7 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
             id,
             project_id,
             config,
+            secrets,
         )
 
     async def remove_deployment(self, id: str):

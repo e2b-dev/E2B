@@ -48,6 +48,7 @@ async def health():
 
 class CreateDeploymentBody(BaseModel):
     config: Any
+    secrets: Any
 
 
 @app.put("/deployments")
@@ -60,13 +61,22 @@ async def create_agent_deployment(
     db_deployment = await db.get_deployment(project_id)
 
     if db_deployment:
-        secrets= json.loads(db_deployment["decrypted_secrets"]) if db_deployment.get('decrypted_secrets', None) else {}
+        secrets = (
+            json.loads(db_deployment["decrypted_secrets"])
+            if db_deployment.get("decrypted_secrets", None)
+            else {}
+        )
+        print("secrets", secrets)
         deployment = await deployment_manager.update_deployment(
             db_deployment["id"],
             project_id,
             {
+                **db_deployment["config"],
                 **body.config,
+            },
+            {
                 **secrets,
+                **body.secrets,
             },
         )
         current_span = trace.get_current_span()
@@ -92,6 +102,7 @@ async def create_agent_deployment(
             id,
             project_id,
             body.config,
+            body.secrets,
         )
         current_span = trace.get_current_span()
         current_span.set_attributes(
@@ -159,6 +170,9 @@ async def interact_with_agent_deployment(
                 db_deployment["id"],
                 db_deployment["project_id"],
                 db_deployment["config"],
+                json.loads(db_deployment["secrets"])
+                if db_deployment["secrets"]
+                else {},
             )
         else:
             raise HTTPException(status_code=404, detail="Deployment not found")
