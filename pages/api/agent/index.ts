@@ -189,7 +189,8 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     await createAgentDeployment({
       project_id: project.id,
-      config: { templateID, openAIKey } as any,
+      config: { templateID } as any,
+      secrets: { openAIKey } as any,
     })
 
     const deployment = project.deployments[0]

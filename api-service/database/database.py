@@ -4,7 +4,7 @@ from typing import Any, List
 from database.client import Client
 from session.env import EnvVar
 
-TABLE_DECRYPTED_DEPLOYMENTS = "deployments"
+TABLE_DECRYPTED_DEPLOYMENTS = "decrypted_deployments"
 TABLE_DEPLOYMENTS = "deployments"
 TABLE_LOGS = "log_files"
 TABLE_PROJECTS = "projects"
@@ -79,6 +79,7 @@ class Database:
         id: str,
         project_id: str,
         config: Any,
+        secrets: Any,
     ) -> None:
         await self.client.table(TABLE_DEPLOYMENTS).upsert(
             {
@@ -86,6 +87,7 @@ class Database:
                 "enabled": True,
                 "project_id": project_id,
                 "config": config,
+                "secrets": json.dumps(secrets),
             },
             on_conflict="id",
         ).execute()
