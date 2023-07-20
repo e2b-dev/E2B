@@ -59,6 +59,13 @@ const steps = [
   { name: 'Overview & Deploy' },
 ]
 
+const openAIModels = [
+  { displayName: 'GPT-4', value: 'gpt-4' },
+  { displayName: 'GPT-4 32k', value: 'gpt-4-32k' },
+  { displayName: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
+  { displayName: 'GPT-3.5 Turbo 16k', value: 'gpt-3.5-turbo-16k' },
+]
+
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
@@ -113,6 +120,7 @@ function Setup() {
   const [selectedOpenAIKeyType, setSelectedOpenAIKeyType] = useState('e2b')
   const [userOpenAIKey, setUserOpenAIKey] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [selectedOpenAIModel, setSelectedOpenAIModel] = useState(openAIModels[0])
 
   const handleMessageEvent = useCallback((event: MessageEvent) => {
     if (event.data.accessToken) {
@@ -122,6 +130,16 @@ function Setup() {
     }
   }, [refetch, setAccessToken])
   useListenOnMessage(handleMessageEvent)
+
+  const handleSelectOpenAIModel = useCallback((value: string) => {
+    const model = openAIModels.find((model) => model.value === value)
+    if (!model) throw new Error(`Invalid OpenAI model: ${value}`)
+    setSelectedOpenAIModel(model)
+  }, [])
+
+  const handleOpenAIKeyChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setUserOpenAIKey(event.target.value)
+  }, [])
 
   const {
     trigger: createAgent,
@@ -260,9 +278,15 @@ function Setup() {
         {currentStepIdx === 2 && (
           <ChooseOpenAIKey
             selectedOpenAIKeyType={selectedOpenAIKeyType}
+
             onSelectedOpenAIKeyTypeChange={setSelectedOpenAIKeyType}
             userOpenAIKey={userOpenAIKey}
-            onUserOpenAIKeyChange={e => setUserOpenAIKey(e.target.value)}
+            onUserOpenAIKeyChange={handleOpenAIKeyChange}
+
+            openAIModels={openAIModels}
+            selectedOpenAIModel={selectedOpenAIModel}
+            onOpenAIModelChange={handleSelectOpenAIModel}
+
             onNext={nextStep}
             onBack={previousStep}
           />
