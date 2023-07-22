@@ -170,8 +170,8 @@ async def interact_with_agent_deployment(
                 db_deployment["id"],
                 db_deployment["project_id"],
                 db_deployment["config"],
-                json.loads(db_deployment["secrets"])
-                if db_deployment["secrets"]
+                json.loads(db_deployment["decrypted_secrets"])
+                if db_deployment.get("decrypted_secrets", None)
                 else {},
             )
         else:
