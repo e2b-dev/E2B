@@ -32,22 +32,26 @@ from session.playground import Playground
 default_openai_api_key = os.environ.get("OPENAI_API_KEY", None)
 default_openai_model = "gpt-4"
 # Pricing is in USD per token
-pricing = {
+models = {
     "gpt-4": {
         "prompt": Decimal(0.00003),
         "completion": Decimal(0.00006),
+        "max_tokens": 8192,
     },
     "gpt-4-32k": {
         "prompt": Decimal(0.00006),
         "completion": Decimal(0.00012),
+        "max_tokens": 32768,
     },
     "gpt-3.5-turbo": {
         "prompt": Decimal(0.0000015),
         "completion": Decimal(0.000002),
+        "max_tokens": 4096,
     },
     "gpt-3.5-turbo-16k": {
         "prompt": Decimal(0.000003),
         "completion": Decimal(0.000004),
+        "max_tokens": 16384,
     },
 }
 
@@ -118,9 +122,10 @@ class SmolAgent(AgentBase):
     ):
         callback_manager = AsyncCallbackManager([])
         model_name = config.get("openAIModel") or default_openai_model
+        completion_max_tokens: int = models[model_name]["max_tokens"] / 2
         model: BaseLanguageModel = ChatOpenAI(
             temperature=0,
-            max_tokens=6000,
+            max_tokens=completion_max_tokens,
             model_name=model_name,
             openai_api_key=config.get("openAIKey") or default_openai_api_key,
             request_timeout=3600,
@@ -211,9 +216,9 @@ Begin generating the code now.
 
         cost = (
             Decimal(response.llm_output["token_usage"]["prompt_tokens"])
-            * pricing[self.model_name]["prompt"]
+            * models[self.model_name]["prompt"]
             + Decimal(response.llm_output["token_usage"]["completion_tokens"])
-            * pricing[self.model_name]["completion"]
+            * models[self.model_name]["completion"]
             if response.llm_output
             else None
         )
