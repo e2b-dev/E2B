@@ -59,7 +59,9 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
             },
         )
         try:
-            await db.create_deployment(deployment.id, project_id, config, secrets)
+            # Right now we are not overwriting secrets here because
+            # there is some problem with encrypting them when calling Supabase from the Python client and the JSON saved is invalid.
+            await db.create_deployment(deployment.id, project_id, config)
         except:
             await deployment.agent.stop()
             raise

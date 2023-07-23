@@ -79,7 +79,7 @@ class Database:
         id: str,
         project_id: str,
         config: Any,
-        secrets: Any,
+        # secrets: Any,
     ) -> None:
         await self.client.table(TABLE_DEPLOYMENTS).upsert(
             {
@@ -87,7 +87,7 @@ class Database:
                 "enabled": True,
                 "project_id": project_id,
                 "config": config,
-                "secrets": json.dumps(secrets),
+                # "secrets": json.dumps(secrets),
             },
             on_conflict="id",
         ).execute()
