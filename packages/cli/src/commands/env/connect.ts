@@ -12,7 +12,7 @@ import {
   asFormattedError,
   asLocalRelative,
 } from 'src/utils/format'
-import { createDeferredPromise } from 'src/utils/promise'
+import { spawnConnectedTerminal } from 'src/terminal'
 import { listEnvironments } from './list'
 
 export const connectCommand = new commander.Command('connect')
@@ -28,7 +28,7 @@ export const connectCommand = new commander.Command('connect')
   )
   .action(async (id, opts) => {
     try {
-      const apiKey = ensureAPIKey()
+      const apiKey = opts.published ? undefined : ensureAPIKey()
       const root = getRoot(opts.path)
 
       if (opts.localDebug) {
@@ -40,6 +40,7 @@ export const connectCommand = new commander.Command('connect')
       if (id) {
         env = { id }
       } else if (opts.select) {
+        const apiKey = ensureAPIKey()
         const envs = await listEnvironments({ apiKey })
         env = await getPromptEnv(envs, 'Select environment to connect to')
       } else {
@@ -60,59 +61,6 @@ export const connectCommand = new commander.Command('connect')
       process.exit(1)
     }
   })
-
-function getStdoutSize() {
-  return {
-    cols: process.stdout.columns,
-    rows: process.stdout.rows,
-  }
-}
-
-async function spawnConnectedTerminal(
-  manager: sdk.TerminalManager,
-  introText: string,
-  exitText: string,
-) {
-  const { promise: exited, resolve: onExit } = createDeferredPromise()
-
-  // Clear local terminal emulator before starting terminal
-  // process.stdout.write('\x1b[2J\x1b[0f')
-
-  console.log(introText)
-
-  const terminal = await manager.createSession({
-    onData: data => process.stdout.write(data),
-    size: getStdoutSize(),
-    onExit,
-    envVars: {
-      TERM: 'xterm-256color',
-    },
-  })
-
-  process.stdin.setEncoding('utf8')
-  process.stdin.setRawMode(true)
-
-  process.stdout.setEncoding('utf8')
-
-  const resizeListener = process.stdout.on('resize', () =>
-    terminal.resize(getStdoutSize()),
-  )
-
-  const stdinListener = process.stdin.on('data', data =>
-    terminal.sendData(data.toString('utf8')),
-  )
-
-  exited.then(() => {
-    console.log(exitText)
-    resizeListener.destroy()
-    stdinListener.destroy()
-  })
-
-  return {
-    destroy: terminal.destroy.bind(terminal),
-    exited,
-  }
-}
 
 export async function connectEnvironment({
   apiKey,
