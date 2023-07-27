@@ -3,8 +3,6 @@
   <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
 </h1>
 
-<h2 align="center">Developer-first platform for deploying, testing, and monitoring AI agents</h2>
-
 <h4 align="center">
   <a href="https://e2b.dev">Website</a> |
   <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
@@ -20,11 +18,14 @@
   </a>
 </h4>
 
-[e2b](https://e2b.dev) (_english2bits_) is like AWS for AI agents. Our goal is
-to build a developer-first platform that helps developers to build reliable AI
-agents.
+[e2b](https://e2b.dev) (_english2bits_) is like operating system for AI agents. Our goal for e2b is to sit at the bottom of the AI agents tech stack and being framework agnostic.
 
-E2b allows developers to debug, test, deploy, and monitor their AI agents.
+E2b offers low level APIs for developers to debug, test, deploy, and monitor their AI agents.
+
+# 🚧 This repo is going through a big update and is work in progress.
+
+
+---
 
 # How e2b works
 
@@ -34,7 +35,7 @@ E2b is made of three parts:
 2. Cloud dashboard (this repo)
 3. [SDK](https://github.com/e2b-dev/sdk)
 
-Every agent deployed on e2b gets their own [small virtual machine](https://github.com/firecracker-microvm/firecracker) that works as a playground for the agent.
+Every agent deployed on e2b gets their own playground.
 
 # 🤔 What is this repo
 This repo is the cloud dashboard of e2b. The e2b dashboard is where you can manage and inspect your AI agents. Think about it like devtools for your browser. The agents themselves currently runs on e2b infrastructure that isn't open-sourced at this moment.
