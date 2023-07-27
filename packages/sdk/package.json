@@ -57,8 +57,7 @@
     "src",
     "README.md",
     "LICENSE",
-    "package.json",
-    "package-lock.json"
+    "package.json"
   ],
   "keywords": [
     "devbook",

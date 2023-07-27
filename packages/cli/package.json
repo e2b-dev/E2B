@@ -44,8 +44,8 @@
   "files": [
     "dist",
     "LICENSE",
-    "package.json",
-    "package-lock.json"
+    "README",
+    "package.json"
   ],
   "bin": {
     "dbk": "dist/index.js",
