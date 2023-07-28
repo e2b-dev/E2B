@@ -153,6 +153,7 @@ func (s *Service) Remove(path string) error {
 	return nil
 }
 
+// Method used for reading UTF-8 data from files.
 func (s *Service) Read(path string) (string, error) {
 	s.logger.Infow("Read file",
 		"path", path,
@@ -168,6 +169,27 @@ func (s *Service) Read(path string) (string, error) {
 	}
 
 	return string(data), nil
+}
+
+// We need to handle non-utf8 data, so we encode the data to base64.
+// This can be used to transfer binary data and data incompatible with utf-8.
+func (s *Service) ReadBase64(path string) (string, error) {
+	s.logger.Infow("Read file and encode to base64",
+		"path", path,
+	)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		s.logger.Errorw("Failed to read a file",
+			"path", path,
+			"error", err,
+		)
+		return "", fmt.Errorf("error reading file '%s': %+v", path, err)
+	}
+
+	content := base64.StdEncoding.EncodeToString(data)
+
+	return content, nil
 }
 
 // Because the []byte(content) is representing each char in content as utf-8 bytes we cannot use this to transfer non-utf8 data.
