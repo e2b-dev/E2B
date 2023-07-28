@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -169,12 +170,40 @@ func (s *Service) Read(path string) (string, error) {
 	return string(data), nil
 }
 
+// Because the []byte(content) is representing each char in content as utf-8 bytes we cannot use this to transfer non-utf8 data.
 func (s *Service) Write(path string, content string) error {
 	s.logger.Infow("Write file",
 		"path", path,
 	)
 
 	if err := os.WriteFile(path, []byte(content), 0755); err != nil {
+		s.logger.Errorw("Failed to write to a file",
+			"path", path,
+			"content", content,
+			"error", err,
+		)
+		return fmt.Errorf("error writing to file '%s': %+v", path, err)
+	}
+	return nil
+}
+
+// Use this method if you need to transfer non-utf8 data.
+// You need to encode the data to base64 before sending it to this method.
+func (s *Service) WriteBase64(path string, content string) error {
+	s.logger.Infow("Decode bytes from base64 and write them to file",
+		"path", path,
+	)
+
+	bytes, err := base64.StdEncoding.DecodeString(content)
+	if err != nil {
+		s.logger.Errorw("Failed to decode bytes from base64",
+			"content", content,
+			"error", err,
+		)
+		return fmt.Errorf("error decoding bytes from base64 '%s': %+v", bytes, err)
+	}
+
+	if err := os.WriteFile(path, bytes, 0755); err != nil {
 		s.logger.Errorw("Failed to write to a file",
 			"path", path,
 			"content", content,
