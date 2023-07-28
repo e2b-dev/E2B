@@ -67,6 +67,7 @@
 - Does ubuntu need the newer kernel?
   - Using driver with multiple kernels
 - Cloud Hypervisor insted of FC - https://github.com/cloud-hypervisor/cloud-hypervisor
+- Add installation instructions for all tools used in the repo
 
 ## CLI
 - fix error whe disconnecting from `connect`
