@@ -30,6 +30,7 @@
     "@trivago/prettier-plugin-sort-imports": "^3.3.0",
     "@types/inquirer": "^8.0.0",
     "@types/node": "16.11",
+    "@types/parse-gitignore": "^1.0.0",
     "@types/update-notifier": "5.1.0",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
@@ -51,7 +52,13 @@
     "dbk": "dist/index.js",
     "devbook": "dist/index.js",
     "devbookctl": "dist/index.js",
-    "dbkctl": "dist/index.js"
+    "dbkctl": "dist/index.js",
+    "e2b": "dist/index.js",
+    "E2B": "dist/index.js",
+    "E2b": "dist/index.js",
+    "etob": "dist/index.js",
+    "EtoB": "dist/index.js",
+    "Etob": "dist/index.js"
   },
   "dependencies": {
     "@devbookhq/sdk": "workspace:*",
@@ -59,9 +66,11 @@
     "@nodelib/fs.walk": "^1.2.8",
     "boxen": "^7.0.0",
     "chalk": "^5.1.2",
+    "chokidar": "^3.5.3",
     "commander": "^9.4.1",
     "docker-names": "^1.2.1",
     "inquirer": "^8.0.0",
+    "parse-gitignore": "^2.0.0",
     "update-notifier": "5.1.0",
     "yup": "^0.32.11"
   },

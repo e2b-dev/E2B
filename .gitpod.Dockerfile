@@ -12,7 +12,7 @@ RUN sudo apt-get install -y apt-transport-https ca-certificates gnupg \
   && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
   && sudo apt-get update && sudo apt-get install -y google-cloud-cli
 
-# Installing go-swagger
+# Installing go-swagger - this is used for generating API client for the Firecracker user in the firecracker-task-manager
 RUN download_url=$(curl -s https://api.github.com/repos/go-swagger/go-swagger/releases/latest | \
   jq -r '.assets[] | select(.name | contains("'"$(uname | tr '[:upper:]' '[:lower:]')"'_amd64")) | .browser_download_url') \
   && sudo curl -o /usr/local/bin/swagger -L'#' "$download_url" \
