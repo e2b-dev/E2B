@@ -168,7 +168,7 @@ You can **manually kill** the process by calling `proc.kill`.
 ```ts
 const proc = await session.process.start({
   cmd: 'echo 2',
-  onStdout: stdout => consoel.log(stdout),
+  onStdout: stdout => console.log(stdout),
   onStderr: stderr => console.log(stderr),
   onExit: () => console.log('exit'),
   envVars: { ['ENV']: 'prod' },
