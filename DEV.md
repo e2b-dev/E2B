@@ -73,6 +73,8 @@
 - using devbookd locally for development of agent without remote
 - Send usage metadata from the SDK to the session server (observability)
 - **How to handle users/api keys when we have multiple projects?**
+- Store old snapshots when publishing so you can rollback (both prod and edit version)
+- Add more detailed observability/analytics
 
 ## CLI
 - fix error whe disconnecting from `connect`
@@ -96,6 +98,8 @@
 - Connect with id may be creating toml?
 - Enable auth flow/creating tokens from CLI?
 
+### FC mutation limit
+> With a microVM configured with a minimal Linux kernel, single-core CPU, and 128 MiB of RAM, Firecracker supports a steady mutation rate of 5 microVMs per host core per second (e.g., one can create 180 microVMs per second on a host with 36 physical cores).
 
 ### CLI Feedback
 > How can I create the DEVBOOK_KEY? It seems I can’t create resources without it
