@@ -10,6 +10,7 @@ export function getFilesHash(files: { name: string; content: string }[]) {
     // Add delimiter to hash to prevent collisions between files where the join of the name and content is the same
     shasum.update(delimiter)
     shasum.update(content)
+    shasum.update(delimiter)
   })
 
   return shasum.digest('base64')
