@@ -9,7 +9,7 @@
     "email": "hello@usedevbook.com",
     "url": "https://usedevbook.com"
   },
-  "bugs": "https://github.com/DevbookHQ/devbook-api/issues",
+  "bugs": "https://github.com/DevbookHQ/api/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/devbookhq/api/tree/master/packages/cli"
