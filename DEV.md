@@ -71,6 +71,7 @@
 - API for creating snapshots
 - eBPF
 - using devbookd locally for development of agent without remote
+- Send usage metadata from the SDK to the session server (observability)
 
 ## CLI
 - fix error whe disconnecting from `connect`
