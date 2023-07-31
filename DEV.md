@@ -72,6 +72,7 @@
 - eBPF
 - using devbookd locally for development of agent without remote
 - Send usage metadata from the SDK to the session server (observability)
+- **How to handle users/api keys when we have multiple projects?**
 
 ## CLI
 - fix error whe disconnecting from `connect`
