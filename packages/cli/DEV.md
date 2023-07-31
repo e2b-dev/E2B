@@ -32,7 +32,6 @@ How to setup building, package.json, etc.
 - option to add [y/N] check before executing command and password protected commands
 - add fast automatic updating - either via downloading new CLI version or by downloading part of a command from some central DB that the command maintainer can quickly modify to reflect changes to the workflow
 
-
 ## Best Practices for Offering a CLI
 Now that we’ve evidenced a growing trend of CLI support across the industry, what best practices are there for maintaining one?
 
