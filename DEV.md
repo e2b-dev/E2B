@@ -89,6 +89,10 @@
 - Add default "empty" template that is used if you don't define anything
 - Ignore "files" directory when pushing if it is not present
 - Connect with id may be creating toml?
+- using devbookd locally for development of agent without remote
+- API for creating snapshots
+- eBPF
+
 
 ### CLI Feedback
 > How can I create the DEVBOOK_KEY? It seems I can’t create resources without it
