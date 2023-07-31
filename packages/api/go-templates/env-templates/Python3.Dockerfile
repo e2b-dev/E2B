@@ -1,5 +1,3 @@
-# IMPORTANT: Don't specify the FROM field here. The FROM field (with additional configuration) is injected during runtime.
-# We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
 ENV PIP_DEFAULT_TIMEOUT=100 \
@@ -7,16 +5,12 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=1.0.5
 
-RUN apk update && apk upgrade 
-
-# RUN apk update && apk add --no-cache python3=3.7.10-r0 --repository=http://dl-cdn.alpinelinux.org/alpine/v3.10/main py3-pip
-RUN apk add --no-cache python3 py3-pip
-# Install poetry
+RUN apt-get install -y python-is-python3 python3-pip python3.8-venv
 RUN pip3 install "poetry==$POETRY_VERSION"
 
 RUN poetry new code
 
-WORKDIR code
+WORKDIR /code
 RUN rm -rf tests README.rst
 RUN touch main.py
 

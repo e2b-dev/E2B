@@ -1,14 +1,8 @@
-# IMPORTANT: Don't specify the FROM field here. The FROM field (with additional configuration) is injected during runtime.
-# We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk upgrade
-RUN apk add --no-cache curl tar make gcc build-base wget gnupg ca-certificates g++ git gd-dev
-RUN apk add --no-cache zlib zlib-dev
-RUN apk add --no-cache perl perl-dev
-RUN apk add --no-cache perl-app-cpanminus
+RUN apt-get install -y perl
 
-WORKDIR code
+WORKDIR /code
 
 RUN touch main.pl
 RUN chmod +x main.pl

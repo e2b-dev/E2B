@@ -1,15 +1,13 @@
-# IMPORTANT: Don't specify the FROM field here. The FROM field (with additional configuration) is injected during runtime.
-# We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-COPY --from=golang:1.18-alpine /usr/local/go/ /usr/local/go/
+RUN apt-get install -y golang-go
 
 ENV PATH=/usr/local/go/bin:$PATH
 
 RUN sed -i.bak '/^unset -f append_path/i append_path "/usr/local/go/bin"' /etc/profile
 RUN sed -i.bak '/export PATH/a export GOLANG_VERSION=$GOLANG_VERSION' "/etc/profile"
 
-WORKDIR code
+WORKDIR /code
 
 RUN go mod init main
 

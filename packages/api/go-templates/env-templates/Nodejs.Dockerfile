@@ -1,14 +1,11 @@
-# IMPORTANT: Don't specify the FROM field here. The FROM field (with additional configuration) is injected during runtime.
-# We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk upgrade 
-RUN apk add --no-cache nodejs-current npm
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash -
+RUN apt-get install -y nodejs
 
 WORKDIR /code
 
 RUN npm init -y
-RUN npm config set strict-ssl false
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=node >> /.dbkenv

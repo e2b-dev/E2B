@@ -1,11 +1,8 @@
-# IMPORTANT: Don't specify the FROM field here. The FROM field (with additional configuration) is injected during runtime.
-# We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk upgrade 
-RUN apk add --no-cache openjdk17
+RUN apt-get install -y openjdk-17-jdk
 
-WORKDIR code
+WORKDIR /code
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=java >> /.dbkenv

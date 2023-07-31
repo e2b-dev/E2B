@@ -1,11 +1,6 @@
-# IMPORTANT: Don't specify the FROM field here. The FROM field (with additional configuration) is injected during runtime.
-# We will have a proper Devbook based image in the future.
 {{ .BaseDockerfile }}
 
-RUN apk update && apk upgrade 
-RUN apk add --no-cache curl bash
-
-WORKDIR code
+WORKDIR /code
 
 # Set env vars for devbook-daemon
 RUN echo RUN_CMD=bash >> /.dbkenv
