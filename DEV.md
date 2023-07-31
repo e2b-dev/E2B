@@ -68,6 +68,9 @@
   - Using driver with multiple kernels
 - Cloud Hypervisor insted of FC - https://github.com/cloud-hypervisor/cloud-hypervisor
 - Add installation instructions for all tools used in the repo
+- API for creating snapshots
+- eBPF
+- using devbookd locally for development of agent without remote
 
 ## CLI
 - fix error whe disconnecting from `connect`
@@ -81,7 +84,7 @@
 - Change `/` root to `/code` root in 
   - Handle deleting files that were removed in local filesystem - how can we recognize that the file was deleted? Saving what was pushed last and only manipulating with these files? (lock) If the file changed since then we should probably ignore it (save name+hash that we already calculate for everyting together)
 - Allow custom string for template (--select option for the current list?)
-- Fix size and dependencies
+- Fix size and dependencies - packaging could work better
 - Change template option description
 - Finish CLI README
 - Warn about having multiple configs for the same environment
@@ -89,9 +92,7 @@
 - Add default "empty" template that is used if you don't define anything
 - Ignore "files" directory when pushing if it is not present
 - Connect with id may be creating toml?
-- using devbookd locally for development of agent without remote
-- API for creating snapshots
-- eBPF
+- Enable auth flow/creating tokens from CLI?
 
 
 ### CLI Feedback
