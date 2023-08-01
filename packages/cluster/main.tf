@@ -1,18 +1,12 @@
-data "template_file" "startup_script_server" {
-  template = file("${path.module}/scripts/start-server.sh")
-
-  vars = {
-    num_servers      = var.server_cluster_size
-    cluster_tag_name = var.cluster_tag_name
-  }
-}
-
 # Server cluster instances are not currently automatically updated when you create a new
 # orchestrator image with Packer.
 module "server_cluster" {
   source = "./server"
 
-  startup_script                             = data.template_file.startup_script_server.rendered
+  startup_script                             = templatefile("${path.module}/scripts/start-server.sh", {
+    num_servers      = var.server_cluster_size
+    cluster_tag_name = var.cluster_tag_name
+  })
   instance_group_update_policy_min_ready_sec = 0
 
   cluster_name     = var.server_cluster_name
@@ -26,18 +20,12 @@ module "server_cluster" {
   network_name   = var.network_name
 }
 
-data "template_file" "startup_script_client" {
-  template = file("${path.module}/scripts/start-client.sh")
-
-  vars = {
-    cluster_tag_name = var.cluster_tag_name
-  }
-}
-
 module "client_cluster" {
   source = "./client"
 
-  startup_script                             = data.template_file.startup_script_client.rendered
+  startup_script                             = templatefile("${path.module}/scripts/start-client.sh", {
+    cluster_tag_name = var.cluster_tag_name
+  })
   instance_group_update_policy_min_ready_sec = 0
 
   cluster_name     = var.client_cluster_name
