@@ -5,7 +5,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=1.0.5
 
-RUN apt-get install -y python-is-python3 python3-pip python3.8-venv
+RUN apt-get install -y python-is-python3 python3-pip python3-venv
 RUN pip3 install "poetry==$POETRY_VERSION"
 
 RUN poetry new code
