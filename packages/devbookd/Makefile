@@ -2,16 +2,16 @@ upload:
 	./upload.sh
 
 build:
-	CGO_ENABLED=0 GOOS=linux go build -a -o bin/devbookd .
+	CGO_ENABLED=0 go build -a -o bin/devbookd .
 
 build-darwin:
 	GOOS=darwin go build -a -o bin/darwin/devbookd .
 
 build-debug-devbookd-race:
-	CGO_ENABLED=1 GOOS=linux go build -race -gcflags=all="-N -l" -o bin/debug/devbookd
+	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/debug/devbookd
 
 build-debug-devbookd:
-	GOOS=linux go build -gcflags=all="-N -l" -o bin/debug/devbookd
+	go build -gcflags=all="-N -l" -o bin/debug/devbookd
 
 build-docker:
 	DOCKER_BUILDKIT=1 docker build -t devbookd-debug . -f debug.Dockerfile

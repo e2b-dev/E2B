@@ -4,7 +4,7 @@ upload:
 	./upload.sh
 
 build:
-	CGO_ENABLED=0 GOOS=linux go build -o bin/ .
+	CGO_ENABLED=0 go build -o bin/ .
 
 set-project-gcloud:
 	gcloud config set project devbookhq
