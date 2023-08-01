@@ -75,6 +75,7 @@
 - **How to handle users/api keys when we have multiple projects?**
 - Store old snapshots when publishing so you can rollback (both prod and edit version)
 - Add more detailed observability/analytics
+- envs vars in SDK/devbookd are not working correctly
 
 ## CLI
 - fix error whe disconnecting from `connect`
