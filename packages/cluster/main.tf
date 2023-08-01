@@ -3,7 +3,7 @@
 module "server_cluster" {
   source = "./server"
 
-  startup_script                             = templatefile("${path.module}/scripts/start-server.sh", {
+  startup_script = templatefile("${path.module}/scripts/start-server.sh", {
     num_servers      = var.server_cluster_size
     cluster_tag_name = var.cluster_tag_name
   })
@@ -23,7 +23,7 @@ module "server_cluster" {
 module "client_cluster" {
   source = "./client"
 
-  startup_script                             = templatefile("${path.module}/scripts/start-client.sh", {
+  startup_script = templatefile("${path.module}/scripts/start-client.sh", {
     cluster_tag_name = var.cluster_tag_name
   })
   instance_group_update_policy_min_ready_sec = 0
