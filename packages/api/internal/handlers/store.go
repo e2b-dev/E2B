@@ -36,6 +36,8 @@ func NewAPIStore() *APIStore {
 	}
 	fmt.Println("Initialized Supabase client")
 
+	// Uncomment this to rebuild templates
+	// Keep this commented out in production to prevent rebuilding templates on restart
 	// TODO: Build only templates that changed
 	// go func() {
 	// 	err := nomadClient.RebuildTemplates(tracer)
@@ -52,6 +54,7 @@ func NewAPIStore() *APIStore {
 	}
 
 	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
+	// Comment this line out if you are developing locally to prevent killing sessions in production
 	go cache.KeepInSync(nomadClient)
 
 	return &APIStore{

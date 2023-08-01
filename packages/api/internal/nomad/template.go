@@ -69,6 +69,7 @@ func (n *NomadClient) RebuildTemplates(t trace.Tracer) error {
 		return fmt.Errorf("error retrieving templates from the filesystem: %+v", err)
 	}
 
+	// Limit number of concurrent template builds to 2
 	templateParallelBuildLock := utils.CreateRequestLimitLock(2)
 
 	for _, template := range *templates {
