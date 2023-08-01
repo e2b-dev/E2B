@@ -5,6 +5,7 @@ provider "registry.terraform.io/hashicorp/consul" {
   version = "2.18.0"
   hashes = [
     "h1:ABHNF3vYoRej5vLiiKR/XYgjhjubsjlVROssc555Vj8=",
+    "h1:GIbc9IimARunBuk+GdxgUX0cnZ2WwFW0IZMyT8E88B8=",
     "zh:155f6899c8f1e0162169e4d09f426ea9a9738d74129f0ffc54b7570941c49cd4",
     "zh:241ba909b387c349845b0371321af45ccbb00290edbe1ea0861ad8732951f718",
     "zh:612f52be1fb5dd507b8064c67785313a531faad35873cba53f998f3766473335",
@@ -26,6 +27,7 @@ provider "registry.terraform.io/hashicorp/google" {
   hashes = [
     "h1:91QFfSGwMX4wKH5u+/FEMf2W3mToJxHtw/Ty0nvrDEU=",
     "h1:9TYwyR4R4dIop7wV2lvvYZHw9RUVd/YRWR+9jjXpyfw=",
+    "h1:Z6roZilqTNFFWigBNqnZvKVf7wng+59hmWIjz1t5Epk=",
     "zh:07aabc8e46a5a2b29932e10677b23d4ce9d9a25f22ab61d3307a6b0e7998c84e",
     "zh:0b63cd9534a98ed0fee794da495833046ad5319bd2da3102e21a941b7e2b857e",
     "zh:17f815d57e1426edf8818323ab8e1022c8ec60dce0ced89a3b8e5dde5a95b3cc",
@@ -46,6 +48,7 @@ provider "registry.terraform.io/hashicorp/google-beta" {
   hashes = [
     "h1:1nsVeFXCTeXKo0CDQ/M7z5TnUYI0Uo13smNII4jrjgo=",
     "h1:GYvCJnoIaT9clM2aAbfe0qsnRy4OdRfJ0NwO0dWnCJI=",
+    "h1:ZQao0R1BLd7OqBjTm9IpgX7aJEp0/ff6TnjngLTNxSg=",
     "zh:2d647e42313f4e3f36480d2508a5056373099843a16558c21d5c798899a1e2d7",
     "zh:51a637b35d8c923cb02eb9a13c72526a72364f0a99100470cb253c5116446475",
     "zh:52940431348d23998fdd9216b7fa666e3bcfd6c3ad9751f8f076fbd5529006de",
@@ -63,6 +66,7 @@ provider "registry.terraform.io/hashicorp/google-beta" {
 provider "registry.terraform.io/hashicorp/nomad" {
   version = "1.4.20"
   hashes = [
+    "h1:4IKRa9RKAwJ55lLQjgkOkXLnm+KV4T0bCH+ldNhRR14=",
     "h1:M/QVXHPfeySejJZI3I8mBYrL/J9VsbnyF/dKIMlUhXo=",
     "zh:02989edcebe724fc0aa873b22176fd20074c4f46295e728010711a8fc5dfa72c",
     "zh:089ba7d19bcf5c6bab3f8b8c5920eb6d78c52cf79bb0c5dfeb411c600e7efcba",
@@ -85,6 +89,7 @@ provider "registry.terraform.io/kreuzwerker/docker" {
   hashes = [
     "h1:FyU8TUgpwfu+O+k+Uu5N58I/JWlEZk2PzQLJMluuaIQ=",
     "h1:OcTn2QyCQNjDiJYy1vqQFmz2dxJdOF/2/HBXBvGxU2E=",
+    "h1:aslxshC6HTeDoZuygVzqDmyFCbCizZs7AWHDWk1p/6c=",
     "zh:0ff8aa7884c6dae90e6f245bb9d37898735f89e095ba53413f2f364db4d11a77",
     "zh:4101f4c909477f3a8225829b7063e5c5a2e2986a6163e0f113af040b5feab61f",
     "zh:59db110d2b6c620cc12a1741d81ed8d1dd7fb0540024428fefbb57e8bebe5b60",
