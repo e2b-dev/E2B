@@ -39,6 +39,7 @@ echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
 # Start systemd services
 systemctl enable devbookd
+systemctl enable chrony
 
 # Delete itself once done.
 rm -- "$0"
