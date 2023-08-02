@@ -21,10 +21,8 @@ RUN mkdir -p /etc/systemd/system
 COPY ubuntu/devbookd.service /etc/systemd/system/devbookd.service
 
 RUN mkdir -p /etc/chrony
-RUN echo "refclock PHC /dev/ptp0 poll 1 dpoll 0 offset 0 trust prefer" > /etc/chrony/chrony.conf
+RUN echo "refclock PHC /dev/ptp0 poll -1 dpoll -1 offset 0 trust prefer" > /etc/chrony/chrony.conf
 RUN echo "makestep 1 -1" >> /etc/chrony/chrony.conf
-RUN echo "minsamples 1" >> /etc/chrony/chrony.conf
-RUN echo "maxsamples 1" >> /etc/chrony/chrony.conf
 
 RUN mkdir -p /etc/systemd/system/chrony.service.d
 RUN echo "[Service]" > /etc/systemd/system/chrony.service.d/override.conf
