@@ -108,3 +108,7 @@ func (c *SessionCache) KeepInSync(client *NomadClient) {
 		}
 	}
 }
+
+func (c *SessionCache) Count() int {
+	return c.cache.Len()
+}
