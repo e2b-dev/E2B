@@ -120,7 +120,7 @@ class Session extends SessionConnection {
        * Write array of bytes to a file.
        * This can be used when you cannot represent the data as an UTF-8 string.
        *
-       * @param path path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
+       * @param path path to a file
        * @param content byte array representing the content to write
        */
       writeBytes: async (path, content) => {

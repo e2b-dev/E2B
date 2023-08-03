@@ -76,6 +76,8 @@
 - Store old snapshots when publishing so you can rollback (both prod and edit version)
 - Add more detailed observability/analytics
 - envs vars in SDK/devbookd are not working correctly
+- in JS SDK spawn api client for each instance
+- in JS SDK improve the types/usage API
 
 ## CLI
 - fix error whe disconnecting from `connect`

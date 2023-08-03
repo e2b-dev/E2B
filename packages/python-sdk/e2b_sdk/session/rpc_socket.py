@@ -7,7 +7,12 @@ from jsonrpcclient import request_json, Ok, parse_json
 
 class RpcWebSocketClient:
     def __init__(
-        self, server_url, on_open=None, on_close=None, on_message=None, on_error=None
+        self,
+        server_url,
+        on_open=None,
+        on_close=None,
+        on_message=None,
+        on_error=None,
     ):
         self.server_url = server_url
         self.websocket = None

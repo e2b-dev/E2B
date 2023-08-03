@@ -1,47 +1,49 @@
 import asyncio
-import json
+from asyncio.tasks import _FutureLike
 import logging
-from typing import Optional
 
-import aiohttp as aiohttp
+from typing import Awaitable, Literal, Optional, Callable, List, Coroutine, Union, Any
 
+from pydantic import BaseModel, PrivateAttr
 from rpc_socket import RpcWebSocketClient
-from constants import (
+
+from e2b_sdk.api.client import NewSession, Session
+from e2b_sdk.utils.noop import noop
+from e2b_sdk.api import client, configuration
+from e2b_sdk.constants import (
     SESSION_DOMAIN,
     WS_PORT,
     WS_ROUTE,
     WS_RECONNECT_INTERVAL,
     SESSION_REFRESH_PERIOD,
-    ENV_ID,
 )
 
-async def create_session():
-    async with aiohttp.ClientSession() as client:
-        async with client.post(
-            f"https://{SESSION_DOMAIN}/sessions",
-            data=json.dumps({"codeSnippetID": ENV_ID}),
-            headers={"Content-Type": "application/json"},
-        ) as response:
-            # TODO: Improve handling of response
-            if response.status != 201:
-                raise Exception(f"Failed to create session: {response.status}")
-            return await response.json()
+CloseHandler = Callable[[], None]
+DisconnectHandler = Callable[[], None]
+ReconnectHandler = Callable[[], None]
 
+class SessionConnectionOpts(BaseModel):
+    ip: str
+    api_key: Optional[str]
+    on_close: Optional[CloseHandler]
+    on_disconnect: Optional[DisconnectHandler]
+    on_reconnect: Optional[ReconnectHandler]
+    debug: bool = False
+    edit_enabled: bool = False
+    _debug_hostname: Optional[str] = None
+    _debug_port: Optional[int] = None
+    _debug_devEnv: Optional[Literal['remote'] | Literal['local']] = None
 
-async def refresh_session(session_id: str):
-    async with aiohttp.ClientSession() as client:
-        async with client.post(
-            f"https://{SESSION_DOMAIN}/sessions/{session_id}/refresh",
-            headers={"Content-Type": "application/json"},
-        ) as response:
-            return response.status
+class SessionConnection(BaseModel):
+    is_open: bool = False
+    session: Optional[Session] = None
 
+    _rpc: Optional[RpcWebSocketClient] = PrivateAttr()
 
-class SessionConnection:
-    def __init__(self, opts=None):
+    def __init__(self, opts):
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        self.logger.info(f"Session for code snippet {ENV_ID} initialized")
+        self.logger.info(f"Session for code snippet {opts.id} initialized")
         self.is_open = False
         self.is_finished = False
         self.subscribers = []
@@ -49,6 +51,8 @@ class SessionConnection:
         self.rpc = None
         self.opts = opts or {}
         self.refreshing_task = None
+        self.api = client.SessionsApi(client.ApiClient(configuration, pool_threads=3))
+        self.session: Session | None = None
 
     def get_hostname(self, port: Optional[int] = None) -> Optional[str]:
         """
@@ -60,7 +64,7 @@ class SessionConnection:
             return None
 
         hostname = (
-            f"{self.session['sessionID']}-{self.session['clientID']}.{SESSION_DOMAIN}"
+            f"{self.session.session_id}-{self.session.client_id}.{SESSION_DOMAIN}"
         )
         if port:
             return f"{port}-{hostname}"
@@ -99,10 +103,11 @@ class SessionConnection:
             self.is_open = True
 
         try:
-            self.session = await create_session()
+            self.session = await self.api.sessions_post(NewSession(codeSnippetID=self.opts.id, editEnabled=self.opts.edit_enabled), async_req=True)
             self.logger.info(f"Acquired session: {self.session}")
+            self.session.session_id
             self.refreshing_task = asyncio.create_task(
-                self.refresh(self.session["sessionID"])
+                self._refresh(self.session.session_id)
             )
         except Exception as e:
             self.logger.info(f"Failed to acquire session: {e}")
@@ -173,15 +178,20 @@ class SessionConnection:
         # Not sure about this
         return await self.rpc.send_message(f"{service}_{method}", *params)
 
-    async def handle_subscriptions(self, *subs):
-        results = await asyncio.gather(*subs)
-
-        if all([r for r in results]):
-            return results
-        await asyncio.gather(
-            *[self.unsubscribe(r) if r else None for r in results if isinstance(r, str)]
+    async def handle_subscriptions(self, *subs: Awaitable[str] | None):
+        results: List[str | Exception | None] = await asyncio.gather(
+            *[sub if sub is not None else noop() for sub in subs],
+            return_exceptions=True,
         )
-        raise Exception()
+
+        if not any([isinstance(r, Exception) for r in results]):
+            return [r for r in results if isinstance(r, str) or not r]
+
+        await asyncio.gather(
+            *[self.unsubscribe(r) for r in results if isinstance(r, str)]
+        )
+
+        raise Exception(self.format_settled_errors(results))
 
     async def unsubscribe(self, subscription_id: str):
         for subscription in self.subscribers:
@@ -212,7 +222,7 @@ class SessionConnection:
             if s["subID"] == data.params.subscription:
                 s["handler"](data.params.result)
 
-    async def refresh(self, session_id: str):
+    async def _refresh(self, session_id: str):
         self.logger.info(f"Started refreshing session {session_id}")
         try:
             while True:
@@ -223,7 +233,7 @@ class SessionConnection:
                     return
                 await asyncio.sleep(SESSION_REFRESH_PERIOD)
                 try:
-                    await refresh_session(session_id)
+                    await self.api.sessions_session_id_refresh_post(session_id, async_req=True)
                     self.logger.info(f"Refreshed session {session_id}")
                 except Exception as e:
                     self.logger.info(e)

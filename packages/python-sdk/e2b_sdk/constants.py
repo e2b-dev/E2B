@@ -4,5 +4,3 @@ WS_RECONNECT_INTERVAL = 600
 SESSION_DOMAIN = "ondevbook.com"
 WS_PORT = 49982
 WS_ROUTE = "/ws"
-
-ENV_ID = "PPSrlH5TIvFx"

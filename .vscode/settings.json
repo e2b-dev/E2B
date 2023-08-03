@@ -38,5 +38,23 @@
   "eslint.validate": ["javascript", "typescript"],
   "[terraform]": {
     "editor.tabSize": 2
-  }
+  },
+  "python.formatting.provider": "black",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "python.autoComplete.extraPaths": [
+    "packages/python-sdk/**",
+    "packages/python-sdk/.venv/bin/python",
+    "packages/python-sdk/.venv/bin"
+  ],
+  "python.defaultInterpreterPath": "packages/python-sdk/.venv/bin/python",
+  "python.analysis.extraPaths": [
+    "packages/python-sdk/**",
+    "packages/python-sdk/.venv/bin/python",
+    "packages/python-sdk/.venv/bin"
+  ],
+  // Disable Pylint and use just Pylance
+  "python.linting.enabled": false,
+  "python.analysis.typeCheckingMode": "basic"
 }
