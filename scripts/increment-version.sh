@@ -13,7 +13,7 @@ increment_package_version() {
 }
 
 cli_path="packages/cli" 
-sdk_path="packages/sdk"
+sdk_path="packages/js-sdk"
 
 increment_package_version $sdk_path $new_version
 npm i --package-lock-only --prefix $sdk_path

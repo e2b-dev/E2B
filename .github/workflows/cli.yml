@@ -37,7 +37,7 @@ jobs:
 
       # TODO: Create proper monorepo
       - name: Setup local SDK dependency
-        working-directory: ./packages/sdk
+        working-directory: ./packages/js-sdk
         run: |
           npm i && npm run build
 

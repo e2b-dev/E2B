@@ -58,8 +58,8 @@ jobs:
               - 'packages/api/**'
               - '.github/workflows/api-image.yml'
             sdk:
-              - 'packages/sdk/**'
-              - '.github/workflows/sdk.yml'
+              - 'packages/js-sdk/**'
+              - '.github/workflows/js-sdk.yml'
             cli:
               - 'packages/cli/**'
               - '.github/workflows/cli.yml'
@@ -160,7 +160,7 @@ jobs:
       always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.sdk == 'true' && needs.terraform.result == 'success'
-    uses: ./.github/workflows/sdk.yml
+    uses: ./.github/workflows/js-sdk.yml
     secrets:
       node_auth_token: ${{ secrets.NPM_TOKEN }}
 

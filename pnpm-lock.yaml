@@ -12,7 +12,7 @@ importers:
     dependencies:
       '@devbookhq/sdk':
         specifier: workspace:*
-        version: link:../sdk
+        version: link:../js-sdk
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -92,7 +92,7 @@ importers:
 
   packages/devbookd: {}
 
-  packages/sdk:
+  packages/js-sdk:
     dependencies:
       cross-fetch:
         specifier: ^3.1.5
