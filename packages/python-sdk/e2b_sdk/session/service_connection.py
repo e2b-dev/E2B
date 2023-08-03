@@ -15,7 +15,6 @@ from constants import (
     ENV_ID,
 )
 
-
 async def create_session():
     async with aiohttp.ClientSession() as client:
         async with client.post(

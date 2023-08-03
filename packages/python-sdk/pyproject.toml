@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "@e2b/sdk"
+version = "2.6.0"
+description = "SDK for managing e2b environment sessions"
+authors = ["e2b <hello@e2b.dev>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://e2b.dev/"
+repository = "https://github.com/devobokhq/api/tree/master/"
+packages = [{ include = "e2b_sdk" }]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+urllib3 = ">= 1.25.3"
+python-dateutil = ">=2.8.2"
+aiohttp = ">= 3.8.4"
+pydantic = "^1.10.5, <2"
+aenum = ">=3.1.11"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/devbookhq/api/issues"
