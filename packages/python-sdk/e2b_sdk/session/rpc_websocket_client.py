@@ -1,9 +1,9 @@
 import asyncio
 import json
 
+
 from websockets.client import WebSocketClientProtocol, connect
-from websockets.exceptions import WebSocketException
-from typing import Callable, Optional, Any, Dict
+from typing import Callable, Optional, Any, Dict, Awaitable
 from pydantic import BaseModel, PrivateAttr
 from jsonrpcclient import request_json, Ok, parse_json, Error
 from websockets.typing import Data
@@ -15,8 +15,8 @@ from e2b_sdk.utils.future import DeferredFuture
 class RpcWebSocketClient(BaseModel):
     url: str = PrivateAttr()
     on_open: Callable[[], None] = PrivateAttr()
-    on_error: Callable[[], None] = PrivateAttr()
-    on_close: Callable[[], None] = PrivateAttr()
+    on_error: Callable[[Exception], None] = PrivateAttr()
+    on_close: Callable[[], Awaitable[None]] = PrivateAttr()
     on_message: Callable[[Any], None] = PrivateAttr()
 
     waiting_for_replies: Dict[str, DeferredFuture] = PrivateAttr()
@@ -26,22 +26,18 @@ class RpcWebSocketClient(BaseModel):
     async def connect(self):
         future_connect = DeferredFuture()
 
-        async def connect_with_reconnect(retries=2):
-            for i in range(retries + 1):
-                try:
-                    async with connect(self.url) as self.ws:
-                        self.on_open()
-                        future_connect(None)
-                        async for message in self.ws:
-                            asyncio.create_task(self._receive_message(message))
-                except (WebSocketException, OSError):
-                    self.on_error()
-                    print("Connection error occurred. Reconnecting...")
-                    await asyncio.sleep(WS_RECONNECT_INTERVAL)
-                self.on_close()
-            print("Connection retries exceeded.")
+        async def _connect():
+            try:
+                async with connect(self.url) as self.ws:
+                    self.on_open()
+                    future_connect(None)
+                    async for message in self.ws:
+                        asyncio.create_task(self._receive_message(message))
+            except Exception as e:
+                self.on_error(e)
+            await self.on_close()
 
-        asyncio.create_task(connect_with_reconnect())
+        asyncio.create_task(_connect())
         await future_connect
 
     async def send_message(self, message, *params) -> Any:
@@ -75,4 +71,4 @@ class RpcWebSocketClient(BaseModel):
         if self.ws:
             await self.ws.close()
         if self.on_close:
-            self.on_close()
+            await self.on_close()
