@@ -78,6 +78,9 @@
 - envs vars in SDK/devbookd are not working correctly
 - in JS SDK spawn api client for each instance
 - in JS SDK improve the types/usage API
+- Can process/terminal stdin accept non utf-8 data? We may want to handle this in the SDKs and devobookd
+- process stdout reading on char or on line? (on line could block and return only each second)
+- the terminal and process id should be automatically assigned in devbookd
 
 ## CLI
 - fix error whe disconnecting from `connect`
