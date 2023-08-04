@@ -74,7 +74,7 @@ class TerminalManager(BaseModel):
                 self.service_name, opts.on_data, "onData", opts.terminal_id
             ),
             self.session_connection.subscribe(
-                self.service_name, future_exit.resolve, "onExit", opts.terminal_id
+                self.service_name, future_exit, "onExit", opts.terminal_id
             ),
         )
 
@@ -93,12 +93,12 @@ class TerminalManager(BaseModel):
             )
             if opts.on_exit:
                 opts.on_exit()
-            future_exit_handler_finish.resolve()
+            future_exit_handler_finish(None)
 
         asyncio.create_task(exit_handler())
 
         async def trigger_exit():
-            future_exit.resolve()
+            future_exit(None)
             await future_exit_handler_finish
 
         if not on_data_sub_id or not on_exit_sub_id:

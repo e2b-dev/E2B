@@ -50,7 +50,7 @@ class ProcessManager(BaseModel):
             on_stderr_sub_id,
         ) = await self.session_connection.handle_subscriptions(
             self.session_connection.subscribe(
-                self.service_name, future_exit.resolve, "onExit", opts.process_id
+                self.service_name, future_exit, "onExit", opts.process_id
             ),
             self.session_connection.subscribe(
                 self.service_name, opts.on_stdout, "onStdout", opts.process_id
@@ -82,12 +82,12 @@ class ProcessManager(BaseModel):
             )
             if opts.on_exit:
                 opts.on_exit()
-            future_exit_handler_finish.resolve()
+            future_exit_handler_finish(None)
 
         asyncio.create_task(exit_handler())
 
         async def trigger_exit():
-            future_exit.resolve()
+            future_exit(None)
             await future_exit_handler_finish
 
         if (
