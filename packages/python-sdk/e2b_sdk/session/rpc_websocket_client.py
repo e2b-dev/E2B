@@ -8,6 +8,7 @@ from pydantic import BaseModel, PrivateAttr
 from jsonrpcclient import request_json, Ok, parse_json, Error
 from websockets.typing import Data
 
+from e2b_sdk.constants import WS_RECONNECT_INTERVAL
 from e2b_sdk.utils.future import DeferredFuture
 
 
@@ -36,7 +37,7 @@ class RpcWebSocketClient(BaseModel):
                 except (WebSocketException, OSError):
                     self.on_error()
                     print("Connection error occurred. Reconnecting...")
-                    await asyncio.sleep(2**i)
+                    await asyncio.sleep(WS_RECONNECT_INTERVAL)
                 self.on_close()
             print("Connection retries exceeded.")
 

@@ -23,13 +23,13 @@ class DeferredFuture(Generic[T]):
             self.future.set_exception(reason)
 
 
-def format_settled_errors(settled: List[Future]):
-    if all(s.done() and s.exception() is None for s in settled):
+def format_settled_errors(settled: List[str | Exception | None]):
+    if all(not s is Exception is None for s in settled):
         return None
 
     errors = "errors:\n"
     for i, s in enumerate(settled):
-        if s.done() and s.exception() is not None:
+        if s is Exception:
             errors += f"\n[{i}]: {json.dumps(s.exception().__str__())}"
 
     return errors
