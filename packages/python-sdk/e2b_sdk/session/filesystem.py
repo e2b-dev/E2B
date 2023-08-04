@@ -2,7 +2,7 @@ import base64
 
 from pathlib import Path, PosixPath
 from typing import ClassVar, List, Any
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, PrivateAttr, Field
 
 from e2b_sdk.session.session_connection import SessionConnection
 from e2b_sdk.session.filesystem_watcher import FilesystemWatcher
@@ -14,7 +14,7 @@ class FileInfo(BaseModel):
 
 
 class FilesystemManager(BaseModel):
-    service_name: ClassVar[str] = "filesystem"
+    service_name: ClassVar[str] = Field("filesystem", allow_mutation=False)
 
     session_connection: SessionConnection = PrivateAttr()
 

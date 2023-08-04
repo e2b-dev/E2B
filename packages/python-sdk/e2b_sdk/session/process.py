@@ -38,7 +38,7 @@ class ProcessStartOpts(BaseModel):
 
 
 class ProcessManager(BaseModel):
-    service_name: ClassVar[str] = "process"
+    service_name: ClassVar[str] = Field("process", allow_mutation=False)
     session_connection: SessionConnection = PrivateAttr()
 
     async def start(self, opts: ProcessStartOpts) -> Process:

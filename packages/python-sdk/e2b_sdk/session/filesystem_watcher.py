@@ -18,8 +18,10 @@ class FilesystemEvent(BaseModel):
     path: str
     name: str
     operation: FilesystemOperation
-    # Unix epoch in nanoseconds
     timestamp: int
+    """
+    Unix epoch in nanoseconds
+    """
     is_dir: bool
 
 

@@ -1,5 +1,5 @@
 from typing import Optional, ClassVar, Callable, List
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, PrivateAttr, Field
 from enum import Enum
 
 from e2b_sdk.session.out import OutStderrResponse, OutStdoutResponse
@@ -32,7 +32,7 @@ class CodeSnippetOpts(BaseModel):
 
 
 class CodeSnippetManager(BaseModel):
-    service_name: ClassVar[str] = "codeSnippet"
+    service_name: ClassVar[str] = Field("codeSnippet", allow_mutation=False)
     session_connection: SessionConnection = PrivateAttr()
     opts: Optional[CodeSnippetOpts]
 

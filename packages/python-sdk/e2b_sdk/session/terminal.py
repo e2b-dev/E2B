@@ -59,7 +59,7 @@ class TerminalSessionOpts(BaseModel):
 
 
 class TerminalManager(BaseModel):
-    service_name: ClassVar[str] = "terminal"
+    service_name: ClassVar[str] = Field("terminal", allow_mutation=False)
 
     session_connection: SessionConnection = PrivateAttr()
 

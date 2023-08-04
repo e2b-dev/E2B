@@ -9,8 +9,10 @@ class OutType(str, Enum):
 
 class OutResponse(BaseModel):
     type: OutType
-    # Unix epoch in nanoseconds
     timestamp: int
+    """
+    Unix epoch in nanoseconds
+    """
     line: str
 
 
