@@ -1,15 +1,19 @@
 import asyncio
 
+
 class DeferredFuture:
     def __init__(self):
         self.future = asyncio.Future()
 
-    def resolve(self, value):
-        self.future.set_result(value)
+    def resolve(self):
+        if self.future.done():
+            return
+        self.future.set_result(None)
 
     def reject(self, reason):
+        if self.future.done():
+            return
         self.future.set_exception(reason)
 
-    @property
-    def promise(self):
-        return self.future
+    def __await__(self):
+        yield from self.future.__await__()

@@ -22,6 +22,7 @@ CloseHandler = Callable[[], None]
 DisconnectHandler = Callable[[], None]
 ReconnectHandler = Callable[[], None]
 
+
 class SessionConnectionOpts(BaseModel):
     ip: str
     api_key: Optional[str]
@@ -32,7 +33,8 @@ class SessionConnectionOpts(BaseModel):
     edit_enabled: bool = False
     _debug_hostname: Optional[str] = None
     _debug_port: Optional[int] = None
-    _debug_devEnv: Optional[Literal['remote'] | Literal['local']] = None
+    _debug_devEnv: Optional[Literal["remote"] | Literal["local"]] = None
+
 
 class SessionConnection(BaseModel):
     is_open: bool = False
@@ -103,7 +105,12 @@ class SessionConnection(BaseModel):
             self.is_open = True
 
         try:
-            self.session = await self.api.sessions_post(NewSession(codeSnippetID=self.opts.id, editEnabled=self.opts.edit_enabled), async_req=True)
+            self.session = await self.api.sessions_post(
+                NewSession(
+                    codeSnippetID=self.opts.id, editEnabled=self.opts.edit_enabled
+                ),
+                async_req=True,
+            )
             self.logger.info(f"Acquired session: {self.session}")
             self.session.session_id
             self.refreshing_task = asyncio.create_task(
@@ -188,7 +195,8 @@ class SessionConnection(BaseModel):
             return [r for r in results if isinstance(r, str) or not r]
 
         await asyncio.gather(
-            *[self.unsubscribe(r) for r in results if isinstance(r, str)]
+            *[self.unsubscribe(r) for r in results if isinstance(r, str)],
+            return_exceptions=True,
         )
 
         raise Exception(self.format_settled_errors(results))
@@ -233,7 +241,9 @@ class SessionConnection(BaseModel):
                     return
                 await asyncio.sleep(SESSION_REFRESH_PERIOD)
                 try:
-                    await self.api.sessions_session_id_refresh_post(session_id, async_req=True)
+                    await self.api.sessions_session_id_refresh_post(
+                        session_id, async_req=True
+                    )
                     self.logger.info(f"Refreshed session {session_id}")
                 except Exception as e:
                     self.logger.info(e)

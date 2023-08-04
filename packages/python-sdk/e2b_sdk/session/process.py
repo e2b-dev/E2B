@@ -1,7 +1,11 @@
-from pydantic import BaseModel, PrivateAttr, Field
-from typing import Optional, Callable, ClassVar
+import asyncio
 
+from pydantic import BaseModel, PrivateAttr, Field
+from typing import Optional, Callable, ClassVar, Any, Coroutine
+
+from e2b_sdk.utils.noop import noop
 from e2b_sdk.session.out import OutStdoutResponse, OutStderrResponse
+from e2b_sdk.utils.future import DeferredFuture
 from e2b_sdk.session.env_vars import EnvVars
 from e2b_sdk.session.session_connection import SessionConnection
 
@@ -9,13 +13,18 @@ from e2b_sdk.session.session_connection import SessionConnection
 class Process(BaseModel):
     process_id: str
     session_connection: SessionConnection = PrivateAttr()
-    _handle_exit: Optional[Callable[[], None]] = PrivateAttr()
+    trigger_exit: Callable[[], Coroutine[Any, Any, None]] = PrivateAttr()
 
     async def send_stdin(self, data: str) -> None:
-        pass
+        await self.session_connection.call(
+            ProcessManager.service_name, "stdin", [self.process_id, data]
+        )
 
     async def kill(self) -> None:
-        pass
+        await self.session_connection.call(
+            ProcessManager.service_name, "kill", [self.process_id]
+        )
+        await self.trigger_exit()
 
 
 class ProcessStartOpts(BaseModel):
@@ -29,97 +38,82 @@ class ProcessStartOpts(BaseModel):
 
 
 class ProcessManager(BaseModel):
-    _service_name: ClassVar[str] = "process"
+    service_name: ClassVar[str] = "process"
     session_connection: SessionConnection = PrivateAttr()
 
     async def start(self, opts: ProcessStartOpts) -> Process:
-        on_exit_sub_id, on_stdout_sub_id, on_stderr_sub_id = await self.session_connection.handle_subscriptions(
-            self.session_connection.subscribe(self._service_name, opts.on_exit, "onExit", opts.process_id),
-            self.session_connection.subscribe(self._service_name, opts.on_stdout, "onStdout", opts.process_id) if opts.on_stdout else None,
-            self.session_connection.subscribe(self._service_name, opts.on_stderr, "onStderr", opts.process_id) if opts.on_stderr else None,
+        future_exit = DeferredFuture()
+
+        (
+            on_exit_sub_id,
+            on_stdout_sub_id,
+            on_stderr_sub_id,
+        ) = await self.session_connection.handle_subscriptions(
+            self.session_connection.subscribe(
+                self.service_name, future_exit.resolve, "onExit", opts.process_id
+            ),
+            self.session_connection.subscribe(
+                self.service_name, opts.on_stdout, "onStdout", opts.process_id
+            )
+            if opts.on_stdout
+            else None,
+            self.session_connection.subscribe(
+                self.service_name, opts.on_stderr, "onStderr", opts.process_id
+            )
+            if opts.on_stderr
+            else None,
         )
 
-        if not on_exit_sub_id or (not on_stdout_sub_id and opts.on_stdout) or (not on_stderr_sub_id and opts.on_stderr):
+        future_exit_handler_finish = DeferredFuture()
+
+        async def exit_handler():
+            await future_exit
+            await asyncio.gather(
+                self.session_connection.unsubscribe(on_exit_sub_id)
+                if on_exit_sub_id
+                else noop(),
+                self.session_connection.unsubscribe(on_stdout_sub_id)
+                if on_stdout_sub_id
+                else noop(),
+                self.session_connection.unsubscribe(on_stderr_sub_id)
+                if on_stderr_sub_id
+                else noop(),
+                return_exceptions=True,
+            )
+            if opts.on_exit:
+                opts.on_exit()
+            future_exit_handler_finish.resolve()
+
+        asyncio.create_task(exit_handler())
+
+        async def trigger_exit():
+            future_exit.resolve()
+            await future_exit_handler_finish
+
+        if (
+            not on_exit_sub_id
+            or (not on_stdout_sub_id and opts.on_stdout)
+            or (not on_stderr_sub_id and opts.on_stderr)
+        ):
+            await trigger_exit()
             raise Exception("Failed to subscribe to process service")
 
-        # TODO: Handle process exit and unsubscribe
-
-
         try:
-            await self.session_connection.call(self._service_name, "start", [
-                opts.process_id,
-                opts.cmd,
-                opts.env_vars,
-                opts.rootdir,
-            ])
-            return Process(session_connection=self.session_connection, process_id=opts.process_id)
-        except Exception as e:
+            await self.session_connection.call(
+                self.service_name,
+                "start",
+                [
+                    opts.process_id,
+                    opts.cmd,
+                    opts.env_vars,
+                    opts.rootdir,
+                ],
+            )
+            return Process(
+                session_connection=self.session_connection,
+                process_id=opts.process_id,
+                trigger_exit=trigger_exit,
+            )
+        except:
+            await trigger_exit()
             raise
-
-        pass
-
-    # this.process = {
-    #   start: async ({
-    #     cmd,
-    #     onStdout,
-    #     onStderr,
-    #     onExit,
-    #     envVars = {},
-    #     rootdir = '/',
-    #     processID = id(12),
-    #   }) => {
-    #     const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
-
-    #     const [onExitSubID, onStdoutSubID, onStderrSubID] =
-    #       await this.handleSubscriptions(
-    #         this.subscribe(processService, triggerExit, 'onExit', processID),
-    #         onStdout
-    #           ? this.subscribe(processService, onStdout, 'onStdout', processID)
-    #           : undefined,
-    #         onStderr
-    #           ? this.subscribe(processService, onStderr, 'onStderr', processID)
-    #           : undefined,
-    #       )
-
-    #     const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
-    #       createDeferredPromise()
-
-    #     processExited.then(async () => {
-    #       const results = await Promise.allSettled([
-    #         this.unsubscribe(onExitSubID),
-    #         onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
-    #         onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
-    #       ])
-
-    #       const errMsg = formatSettledErrors(results)
-    #       if (errMsg) {
-    #         this.logger.error(errMsg)
-    #       }
-
-    #       onExit?.()
-    #       handleFinishUnsubscribing()
-    #     })
-
-    #     try {
-    #       await this.call(processService, 'start', [processID, cmd, envVars, rootdir])
-    #     } catch (err) {
-    #       triggerExit()
-    #       await unsubscribing
-    #       throw err
-    #     }
-
-    #     return {
-    #       kill: async () => {
-    #         try {
-    #           await this.call(processService, 'kill', [processID])
-    #         } finally {
-    #           triggerExit()
-    #           await unsubscribing
-    #         }
-    #       },
-    #       processID,
-    #       sendStdin: async data => {
-    #         await this.call(processService, 'stdin', [processID, data])
-    #       },
-    #     }
-    #   },

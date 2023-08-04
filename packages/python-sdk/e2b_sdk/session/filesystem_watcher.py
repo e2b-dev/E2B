@@ -5,6 +5,7 @@ from pydantic import BaseModel, PrivateAttr
 from e2b_sdk.session.session_connection import SessionConnection
 from e2b_sdk.session.filesystem import FilesystemManager
 
+
 class FilesystemOperation(str, Enum):
     Create = "Create"
     Write = "Write"
@@ -35,9 +36,9 @@ class FilesystemWatcher(BaseModel):
     async def start(self) -> None:
         if self._rpc_subscription_id:
             return
-        
+
         self._rpc_subscription_id = await self.session_connection.subscribe(
-            FilesystemManager._service_name,
+            FilesystemManager.service_name,
             self._handle_filesystem_events,
             "watchDir",
             self.path,
@@ -55,7 +56,6 @@ class FilesystemWatcher(BaseModel):
             self._listeners.remove(listener)
 
         return delete_listener
-        
 
     def _handle_filesystem_events(self, event: FilesystemEvent) -> None:
         for listener in self._listeners:

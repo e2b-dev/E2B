@@ -7,13 +7,15 @@ from tinyrpc import RPCClient
 remote_server = rpc_client.get_proxy()
 
 # call a method called 'reverse_string' with a single string argument
-result = remote_server.reverse_string('Hello, World!')
+result = remote_server.reverse_string("Hello, World!")
 
 print("Server answered:", result)
 
 
 class RpcWebsocketClient:
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         self.session = session
         self.rpc_client = RPCClient(
             JSONRPCProtocol(),

@@ -3,5 +3,6 @@ import string
 
 characters = string.ascii_letters + string.digits
 
+
 def id(length: int):
-    return ''.join(random.choices(characters, k=length))
+    return "".join(random.choices(characters, k=length))
