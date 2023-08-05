@@ -2,10 +2,10 @@ import base64
 
 from pathlib import Path, PosixPath
 from typing import ClassVar, List, Any
-from pydantic import BaseModel, PrivateAttr, Field
+from pydantic import BaseModel, Field
 
-from e2b_sdk.session.session_connection import SessionConnection
-from e2b_sdk.session.filesystem_watcher import FilesystemWatcher
+from e2b.session.session_connection import SessionConnection
+from e2b.session.filesystem_watcher import FilesystemWatcher
 
 
 class FileInfo(BaseModel):
@@ -14,9 +14,11 @@ class FileInfo(BaseModel):
 
 
 class FilesystemManager(BaseModel):
-    service_name: ClassVar[str] = Field("filesystem", allow_mutation=False)
+    service_name: ClassVar[str] = "filesystem"
+    session: SessionConnection
 
-    session_connection: SessionConnection = PrivateAttr()
+    class Config:
+        arbitrary_types_allowed = True
 
     # async def read_bytes(self, path: str) -> bytearray:
     #     """
@@ -26,7 +28,7 @@ class FilesystemManager(BaseModel):
     #     :param path: path to a file
     #     :return: byte array representing the content of a file
     #     """
-    #     result: str = await self.session_connection.call(
+    #     result: str = await self.session.call(
     #         self.service_name, "readBase64", [path]
     #     )
     #     return bytearray(result, "base64")
@@ -40,7 +42,7 @@ class FilesystemManager(BaseModel):
     #     :param content: byte array representing the content to write
     #     """
     #     base64_content = base64.b64encode(content).decode("utf-8")
-    #     await self.session_connection.call(
+    #     await self.session.call(
     #         self.service_name, "writeBase64", [path, base64_content]
     #     )
 
@@ -51,9 +53,7 @@ class FilesystemManager(BaseModel):
         :param path: path to a file
         :return: content of a file
         """
-        result: str = await self.session_connection.call(
-            self.service_name, "read", [path]
-        )
+        result: str = await self.session.call(self.service_name, "read", [path])
         return result
 
     async def write(self, path: str, content: str) -> None:
@@ -63,7 +63,7 @@ class FilesystemManager(BaseModel):
         :param path: path to a file
         :param content: content to write
         """
-        await self.session_connection.call(self.service_name, "write", [path, content])
+        await self.session.call(self.service_name, "write", [path, content])
 
     async def remove(self, path: str) -> None:
         """
@@ -71,7 +71,7 @@ class FilesystemManager(BaseModel):
 
         :param path: path to a file or a directory
         """
-        await self.session_connection.call(self.service_name, "remove", [path])
+        await self.session.call(self.service_name, "remove", [path])
 
     async def list(self, path: str) -> List[FileInfo]:
         """
@@ -80,9 +80,7 @@ class FilesystemManager(BaseModel):
         :param path: path to a directory
         :return: array of files in a directory
         """
-        result: List[Any] = await self.session_connection.call(
-            self.service_name, "list", [path]
-        )
+        result: List[Any] = await self.session.call(self.service_name, "list", [path])
         return [FileInfo(**file_info) for file_info in result]
 
     async def make_dir(self, path: str) -> None:
@@ -91,7 +89,7 @@ class FilesystemManager(BaseModel):
 
         :param path: path to a new directory. For example '/dirA/dirB' when creating 'dirB'
         """
-        await self.session_connection.call(self.service_name, "makeDir", [path])
+        await self.session.call(self.service_name, "makeDir", [path])
 
     async def watch_dir(self, path: str) -> FilesystemWatcher:
         """
@@ -102,5 +100,7 @@ class FilesystemManager(BaseModel):
         """
         npath = PosixPath(Path(path).resolve())
         return FilesystemWatcher(
-            session_connection=self.session_connection, path=str(npath)
+            _connection=self.session,
+            path=str(npath),
+            _service_name=self.service_name,
         )

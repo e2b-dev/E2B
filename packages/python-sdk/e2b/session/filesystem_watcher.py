@@ -2,8 +2,7 @@ from enum import Enum
 from typing import Callable, Set, Optional
 from pydantic import BaseModel, PrivateAttr
 
-from e2b_sdk.session.session_connection import SessionConnection
-from e2b_sdk.session.filesystem import FilesystemManager
+from e2b.session.session_connection import SessionConnection
 
 
 class FilesystemOperation(str, Enum):
@@ -31,16 +30,17 @@ FilesystemEventListener = Callable[[FilesystemEvent], None]
 class FilesystemWatcher(BaseModel):
     _listeners: Set[FilesystemEventListener] = PrivateAttr(set())
     _rpc_subscription_id: Optional[str] = PrivateAttr(None)
+    _connection: SessionConnection
 
+    _service_name: str
     path: str
-    session_connection: SessionConnection
 
     async def start(self) -> None:
         if self._rpc_subscription_id:
             return
 
-        self._rpc_subscription_id = await self.session_connection.subscribe(
-            FilesystemManager.service_name,
+        self._rpc_subscription_id = await self._connection.subscribe(
+            self._service_name,
             self._handle_filesystem_events,
             "watchDir",
             self.path,
@@ -49,7 +49,7 @@ class FilesystemWatcher(BaseModel):
     async def stop(self) -> None:
         self._listeners.clear()
         if self._rpc_subscription_id:
-            await self.session_connection.unsubscribe(self._rpc_subscription_id)
+            await self._connection.unsubscribe(self._rpc_subscription_id)
 
     def add_event_listener(self, listener: FilesystemEventListener):
         self._listeners.add(listener)

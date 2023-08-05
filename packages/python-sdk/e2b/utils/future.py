@@ -1,8 +1,7 @@
 import asyncio
 import json
 
-from concurrent.futures import Future
-from typing import TypeVar, Generic, Any, List
+from typing import TypeVar, Generic, List
 
 T = TypeVar("T")
 
@@ -16,9 +15,10 @@ class DeferredFuture(Generic[T]):
             self.future.set_result(result)
 
     def __await__(self):
-        yield from self.future.__await__()
+        result = yield from self.future.__await__()
+        return result
 
-    def reject(self, reason: Any):
+    def reject(self, reason: Exception):
         if not self.future.done():
             self.future.set_exception(reason)
 
