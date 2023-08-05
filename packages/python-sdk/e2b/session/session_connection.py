@@ -58,7 +58,7 @@ class SessionConnection:
 
         logger.info(f"Session for code snippet {self.id} initialized")
 
-    def get_hostname(self, port: Optional[int] = None) -> Optional[str]:
+    def get_hostname(self, port: Optional[int] = None):
         """
         Get the hostname for the session or for the specified session's port.
 
@@ -66,7 +66,7 @@ class SessionConnection:
         :return: hostname of the session or session's port
         """
         if not self.session:
-            return None
+            raise Exception("Session is not initialized")
 
         if self._debug_hostname:
             if port and self._debug_dev_env == "remote":
@@ -132,9 +132,6 @@ class SessionConnection:
             raise e
 
         hostname = self.get_hostname(WS_PORT)
-
-        if not hostname:
-            raise Exception("Cannot get session's hostname")
 
         protocol = "wss"
         session_url = f"{protocol}://{hostname}{WS_ROUTE}"
