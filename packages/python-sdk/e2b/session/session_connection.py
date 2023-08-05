@@ -131,9 +131,9 @@ class SessionConnection:
             logger.info(f"Failed to acquire session: {e}")
             raise e
 
-        hostname = self.get_hostname(WS_PORT)
+        hostname = self.get_hostname(self._debug_port or WS_PORT)
+        protocol = "ws" if self._debug_dev_env == "local" else "wss"
 
-        protocol = "wss"
         session_url = f"{protocol}://{hostname}{WS_ROUTE}"
 
         async def on_close():
