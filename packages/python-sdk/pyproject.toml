@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "@e2b/sdk"
-version = "2.6.0"
+version = "0.1.0"
 description = "SDK for managing e2b environment sessions"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://e2b.dev/"
-repository = "https://github.com/devobokhq/api/tree/master/"
-packages = [{ include = "e2b_sdk" }]
+repository = "https://github.com/devbookhq/api/tree/master/"
+packages = [{ include = "e2b" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
