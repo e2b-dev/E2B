@@ -8,6 +8,7 @@ from e2b.session.out import OutStdoutResponse, OutStderrResponse
 from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
 from e2b.session.session_connection import SessionConnection
+from e2b.utils.id import create_id
 
 
 class Process:
@@ -48,9 +49,10 @@ class ProcessManager(BaseModel):
         on_exit: Optional[Callable[[], None]] = None,
         env_vars: Optional[EnvVars] = {},
         rootdir: str = "/",
-        process_id: str = Field(default_factory=lambda: id(12)),
+        process_id: str | None = None,
     ) -> Process:
         future_exit = DeferredFuture()
+        process_id = process_id or create_id(12)
 
         (
             on_exit_sub_id,

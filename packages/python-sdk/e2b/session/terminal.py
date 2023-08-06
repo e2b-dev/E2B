@@ -7,6 +7,7 @@ from e2b.utils.noop import noop
 from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
 from e2b.session.session_connection import SessionConnection
+from e2b.utils.id import create_id
 
 
 class TerminalSession(BaseModel):
@@ -50,7 +51,7 @@ class TerminalManager(BaseModel):
         cols: int,
         rows: int,
         rootdir: str,
-        terminal_id: str = Field(default_factory=lambda: id(12)),
+        terminal_id: str | None = None,
         on_exit: Optional[Callable[[], None]] = None,
         cmd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -69,6 +70,7 @@ class TerminalManager(BaseModel):
         :return: Terminal session.
         """
         future_exit = DeferredFuture()
+        terminal_id = terminal_id or create_id(12)
 
         (
             on_data_sub_id,
