@@ -3,14 +3,48 @@ import json
 import logging
 
 from websockets.client import WebSocketClientProtocol, connect
-from typing import Callable, Optional, Any, Dict, Awaitable, List
+from typing import Callable, Optional, Any, Dict, Awaitable, List, Union, Iterable
 from pydantic import BaseModel, PrivateAttr
-from jsonrpcclient import request_json, Ok, parse_json
+from jsonrpcclient import request_json, Ok
+from jsonrpcclient.responses import Response, Error, Deserialized
+from jsonrpcclient.utils import compose
 from websockets.typing import Data
 
 from e2b.utils.future import DeferredFuture
 
 logger = logging.getLogger(__name__)
+
+
+def to_response_or_notification(response: Dict[str, Any]) -> Response:
+    """Create a Response namedtuple from a dict"""
+    if "error" in response:
+        return Error(
+            response["error"]["code"],
+            response["error"]["message"],
+            response["error"].get("data"),
+            response["id"],
+        )
+    elif "result" in response and "id" in response:
+        return Ok(response["result"], response["id"])
+
+    elif "result" in response:
+        return Ok(response["result"], None)
+
+    raise ValueError("Invalid response")
+
+
+def parse(deserialized: Deserialized) -> Union[Response, Iterable[Response]]:
+    """Create a Response or list of Responses from a dict or list of dicts"""
+    if isinstance(deserialized, str):
+        raise TypeError("Use parse_json on strings")
+    return (
+        map(to_response_or_notification, deserialized)
+        if isinstance(deserialized, list)
+        else to_response_or_notification(deserialized)
+    )
+
+
+parse_json_response_or_notification = compose(parse, json.loads)
 
 
 class SessionDaemon(BaseModel):
@@ -60,8 +94,9 @@ class SessionDaemon(BaseModel):
             del self._waiting_for_replies[request_with_id["id"]]
 
     async def _receive_message(self, message: Data):
-        data = parse_json(message)
-        if id := getattr(data, "id"):
+        data = parse_json_response_or_notification(message)
+
+        if id := getattr(data, "id") is not None:
             if id in self._waiting_for_replies and self._waiting_for_replies[id]:
                 if isinstance(data, Ok):
                     self._waiting_for_replies[id](getattr(data, "result"))
