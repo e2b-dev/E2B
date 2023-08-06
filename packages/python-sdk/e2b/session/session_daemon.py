@@ -58,6 +58,10 @@ class SessionDaemon(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+    def __del__(self):
+        if self._ws:
+            asyncio.create_task(self._ws.close())
+
     async def connect(self):
         self._ws = await connect(self.url)
 
@@ -95,6 +99,7 @@ class SessionDaemon(BaseModel):
 
     async def _receive_message(self, message: Data):
         data = parse_json_response_or_notification(message)
+        logger.info(f"Received message: {data}")
 
         if id := getattr(data, "id") is not None:
             if id in self._waiting_for_replies and self._waiting_for_replies[id]:
@@ -111,3 +116,6 @@ class SessionDaemon(BaseModel):
             await self._ws.close()
         if self.on_close:
             await self.on_close()
+        for h in self._waiting_for_replies.values():
+            h.cancel()
+            del h

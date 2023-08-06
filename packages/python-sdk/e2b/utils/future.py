@@ -18,6 +18,10 @@ class DeferredFuture(Generic[T]):
         result = yield from self.future.__await__()
         return result
 
+    def cancel(self):
+        if not self.future.done():
+            self.future.cancel()
+
     def reject(self, reason: Exception):
         if not self.future.done():
             self.future.set_exception(reason)
