@@ -95,7 +95,6 @@ components:
         - Java
         - Perl
         - DotNET
-        - ubuntu-20
 
     EnvironmentState:
       type: string
