@@ -24,7 +24,7 @@ class DeferredFuture(Generic[T]):
 
 
 def format_settled_errors(settled: List[str | Exception | None]):
-    if all(not s is Exception is None for s in settled):
+    if all(s is not Exception for s in settled if s is not None):
         return None
 
     errors = "errors:\n"
