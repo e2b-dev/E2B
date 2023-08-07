@@ -84,6 +84,8 @@
 - Agents passing envs around between each other
 - Auth for access to env by agents
 - Security checks/deps - paid GH?
+- Add supabase config to this repo so the backend is codified
+- Generated types in go?
 
 
 ### Python SDK
