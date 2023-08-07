@@ -73,6 +73,7 @@ async def main():
         cols=80,
         rows=24,
         rootdir="/code",
+        
     )
 
     await term.send_data("echo 1\n")
@@ -82,7 +83,7 @@ async def main():
 
     # await term.resize(80, 30)
 
-    # await term.destroy()
+    await term.kill()
 
     await session.close()
 

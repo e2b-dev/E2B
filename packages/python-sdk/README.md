@@ -11,7 +11,6 @@ This SDK gives your agent a full cloud development environment that's sandboxed.
 
 These cloud environments are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
 
-
 ## Installation
 
 ```sh
@@ -86,8 +85,9 @@ await proc.finished
 
 ### Create interactive terminal inside cloud environment
 ```python
-term = await session.terminal.create_session(
+term = await session.terminal.start(
     on_data=lambda data: print("Data", data),
+    on_exit=lambda: print("Exit"),
     cols=80,
     rows=24,
     rootdir="/code",
@@ -101,11 +101,11 @@ await term.resize(80, 30)
 
 print(term.terminal_id)
 
-await term.destroy()
+await term.kill()
 ```
 
-### Get public URL for an exposed port inside cloud environment
+### Get public hostname for an exposed port inside cloud environment
 ```python
-# Get URL for port 3000. The URL is without the protocol (http://).
-url = await session.get_hostname(3000)
+# Get hostname for port 3000. The hostname is without the protocol (http://).
+hostname = await session.get_hostname(3000)
 ```
