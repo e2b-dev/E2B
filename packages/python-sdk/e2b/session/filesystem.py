@@ -1,8 +1,8 @@
 import base64
 
 from pathlib import Path, PosixPath
-from typing import ClassVar, List, Any
-from pydantic import BaseModel, Field
+from typing import List, Any
+from pydantic import BaseModel
 
 from e2b.session.session_connection import SessionConnection
 from e2b.session.filesystem_watcher import FilesystemWatcher
@@ -13,12 +13,11 @@ class FileInfo(BaseModel):
     name: str
 
 
-class FilesystemManager(BaseModel):
-    service_name: ClassVar[str] = "filesystem"
-    session: SessionConnection
+class FilesystemManager:
+    _service_name = "filesystem"
 
-    class Config:
-        arbitrary_types_allowed = True
+    def __init__(self, session: SessionConnection):
+        self._session = session
 
     # async def read_bytes(self, path: str) -> bytearray:
     #     """
@@ -53,7 +52,7 @@ class FilesystemManager(BaseModel):
         :param path: path to a file
         :return: content of a file
         """
-        result: str = await self.session.call(self.service_name, "read", [path])
+        result: str = await self._session._call(self._service_name, "read", [path])
         return result
 
     async def write(self, path: str, content: str) -> None:
@@ -63,7 +62,7 @@ class FilesystemManager(BaseModel):
         :param path: path to a file
         :param content: content to write
         """
-        await self.session.call(self.service_name, "write", [path, content])
+        await self._session._call(self._service_name, "write", [path, content])
 
     async def remove(self, path: str) -> None:
         """
@@ -71,7 +70,7 @@ class FilesystemManager(BaseModel):
 
         :param path: path to a file or a directory
         """
-        await self.session.call(self.service_name, "remove", [path])
+        await self._session._call(self._service_name, "remove", [path])
 
     async def list(self, path: str) -> List[FileInfo]:
         """
@@ -80,8 +79,13 @@ class FilesystemManager(BaseModel):
         :param path: path to a directory
         :return: array of files in a directory
         """
-        result: List[Any] = await self.session.call(self.service_name, "list", [path])
-        return [FileInfo(**file_info) for file_info in result]
+        result: List[Any] = await self._session._call(
+            self._service_name, "list", [path]
+        )
+        return [
+            FileInfo(is_dir=file_info["isDir"], name=file_info["name"])
+            for file_info in result
+        ]
 
     async def make_dir(self, path: str) -> None:
         """
@@ -89,18 +93,19 @@ class FilesystemManager(BaseModel):
 
         :param path: path to a new directory. For example '/dirA/dirB' when creating 'dirB'
         """
-        await self.session.call(self.service_name, "makeDir", [path])
+        await self._session._call(self._service_name, "makeDir", [path])
 
     async def watch_dir(self, path: str) -> FilesystemWatcher:
         """
         Watches directory for filesystem events.
 
         :param path: path to a directory that will be watched
-        :return: new watcher
+
+        :return: New watcher
         """
         npath = PosixPath(Path(path).resolve())
         return FilesystemWatcher(
-            _connection=self.session,
+            connection=self._session,
             path=str(npath),
-            _service_name=self.service_name,
+            service_name=self._service_name,
         )

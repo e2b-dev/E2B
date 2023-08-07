@@ -18,7 +18,7 @@ import re  # noqa: F401
 from aenum import Enum, no_arg
 
 
-class Template(str, Enum):
+class Template(Enum):
     """
     Template
     """
@@ -35,7 +35,6 @@ class Template(str, Enum):
     JAVA = "Java"
     PERL = "Perl"
     DOTNET = "DotNET"
-    UBUNTU_MINUS_20 = "ubuntu-20"
 
     @classmethod
     def from_json(cls, json_str: str) -> Template:

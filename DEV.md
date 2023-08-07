@@ -81,6 +81,8 @@
 - Can process/terminal stdin accept non utf-8 data? We may want to handle this in the SDKs and devobookd
 - process stdout reading on char or on line? (on line could block and return only each second)
 - the terminal and process id should be automatically assigned in devbookd
+- Agents passing envs around between each other
+- Auth for access to env by agents
 
 ## CLI
 - fix error whe disconnecting from `connect`

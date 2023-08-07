@@ -4,8 +4,9 @@ import logging
 from typing import Awaitable, Literal, Optional, Callable, List, Any
 from pydantic import BaseModel
 
+from e2b.utils.future import DeferredFuture
 from e2b.utils.future import format_settled_errors
-from e2b.session.session_daemon import SessionDaemon
+from e2b.session.session_daemon import SessionDaemon, Notification
 from e2b.api.client import NewSession, Session as SessionInfo
 from e2b.utils.noop import noop
 from e2b.api.main import client, configuration
@@ -26,46 +27,58 @@ class Subscription(BaseModel):
 
 
 class SessionConnection:
+    @property
+    def finished(self):
+        """
+        A future that is resolved when the session exits.
+        """
+        return self._finished
+
+    @property
+    def is_open(self) -> bool:
+        """
+        Whether the session is open.
+        """
+        return self._is_open
+
+    def __await__(self):
+        return self.finished.__await__()
+
     def __init__(
         self,
         id: str,
         api_key: Optional[str] = None,
-        on_close: Optional[Callable[[], None]] = None,
-        on_disconnect: Optional[Callable[[], None]] = None,
-        on_reconnect: Optional[Callable[[], None]] = None,
-        debug: bool = False,
         edit_enabled: bool = False,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
-        self.id = id
-        self.api_key = api_key
-        self.on_close = on_close
-        self.on_disconnect = on_disconnect
-        self.on_reconnect = on_reconnect
+        self._id = id
+        self._api_key = api_key
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env
-        self.debug = debug
-        self.edit_enabled = edit_enabled
+        self._edit_enabled = edit_enabled
 
-        self.session: Optional[SessionInfo] = None
-        self.is_open = False
-        self.refreshing_task: Optional[asyncio.Task] = None
-        self.subscribers = {}
-        self.daemon: SessionDaemon
+        self._session: Optional[SessionInfo] = None
+        self._is_open = False
+        self._process_cleanup: List[Callable[[], Any]] = []
+        self._refreshing_task: Optional[asyncio.Task] = None
+        self._subscribers = {}
+        self._daemon: SessionDaemon
+        self._finished = DeferredFuture(self._process_cleanup)
 
-        logger.info(f"Session for code snippet {self.id} initialized")
+        logger.info(f"Session for code snippet {self._id} initialized")
 
     def get_hostname(self, port: Optional[int] = None):
         """
         Get the hostname for the session or for the specified session's port.
 
         :param port: specify if you want to connect to a specific port of the session
+
         :return: hostname of the session or session's port
         """
-        if not self.session:
+        if not self._session:
             raise Exception("Session is not initialized")
 
         if self._debug_hostname:
@@ -77,7 +90,7 @@ class SessionConnection:
                 return self._debug_hostname
 
         hostname = (
-            f"{self.session.session_id}-{self.session.client_id}.{SESSION_DOMAIN}"
+            f"{self._session.session_id}-{self._session.client_id}.{SESSION_DOMAIN}"
         )
         if port:
             return f"{port}-{hostname}"
@@ -87,46 +100,48 @@ class SessionConnection:
         """
         Close the session and unsubscribe from all the subscriptions.
         """
-        if self.refreshing_task:
-            self.refreshing_task.cancel()
+        self._close()
 
-        if self.is_open:
-            logger.info(f"Closing session {self.session}")
-            self.is_open = False
-            logger.info(f"Unsubscribing from session {self.session}")
-            results = await asyncio.gather(
-                self.unsubscribe(id) for id, _ in self.subscribers.items()
-            )
-            for r in results:
-                if isinstance(r, Exception):
-                    logger.info(f"Failed to unsubscribe: {r}")
-            if self.daemon:
-                await self.daemon.close()
-            if self.on_close:
-                self.on_close()
-            logger.info(f"Disconnected from the session {self.session}")
+        if self._is_open:
+            logger.info(f"Closing session {self._session}")
+            self._is_open = False
+            if self._daemon:
+                await self._daemon.close()
+
+    def __del__(self):
+        self._close()
+
+    def _close(self):
+        self._subscribers.clear()
+
+        for cleanup in self._process_cleanup:
+            cleanup()
+        self._process_cleanup.clear()
 
     async def open(self) -> None:
         """
-        Open a connection to a new session
+        Open a connection to a new session.
+
+        You must call this method before using the session.
         """
-        if self.is_open or self.session:
+        if self._is_open or self._session:
             raise Exception("Session connect was already called")
         else:
-            self.is_open = True
+            self._is_open = True
 
         try:
             async with client.ApiClient(configuration) as api_client:
                 api = client.SessionsApi(api_client)
 
-                self.session = await api.sessions_post(
-                    NewSession(codeSnippetID=self.id, editEnabled=self.edit_enabled),
+                self._session = await api.sessions_post(
+                    NewSession(codeSnippetID=self._id, editEnabled=self._edit_enabled),
                 )
-                logger.info(f"Acquired session: {self.session}")
-                self.session.session_id
-                self.refreshing_task = asyncio.create_task(
-                    self._refresh(self.session.session_id)
+                logger.info(f"Acquired session: {self._session}")
+                self._session.session_id
+                self._refreshing_task = asyncio.create_task(
+                    self._refresh(self._session.session_id)
                 )
+                self._process_cleanup.append(self._refreshing_task.cancel)
         except Exception as e:
             logger.info(f"Failed to acquire session: {e}")
             raise e
@@ -136,65 +151,48 @@ class SessionConnection:
 
         session_url = f"{protocol}://{hostname}{WS_ROUTE}"
 
-        async def on_close():
-            logger.info(f"Closing WS connection to session {self.session}")
-            if self.is_open:
-                if self.on_disconnect:
-                    self.on_disconnect()
-
-                logger.info(f"Reconnecting to session: {self.session}")
-                try:
-                    await self.daemon.connect()
-                    if self.on_reconnect:
-                        self.on_reconnect()
-                    logger.info(f"Reconnected to session: {self.session}")
-
-                except Exception as e:
-                    logger.info(f"Failed reconnecting to session: {e}")
-
         try:
-            logger.info(f"Connection to session: {self.session}")
-            self.daemon = SessionDaemon(
+            logger.info(f"Connection to session: {self._session}")
+            self._daemon = SessionDaemon(
                 url=session_url,
-                on_close=on_close,
-                on_message=self.handle_notification,
+                on_message=self._handle_notification,
             )
-            await self.daemon.connect()
+            await self._daemon.connect()
         except Exception as e:
             logger.info(e)
             raise e
 
-    async def call(self, service: str, method: str, params: List[Any] = []):
-        return await self.daemon.send_message(f"{service}_{method}", params)
+    async def _call(self, service: str, method: str, params: List[Any] = []):
+        return await self._daemon.send_message(f"{service}_{method}", params)
 
-    async def handle_subscriptions(self, *subs: Awaitable[str] | None):
+    async def _handle_subscriptions(self, subs: List[Awaitable[str] | None]):
         results: List[str | Exception | None] = await asyncio.gather(
-            *[sub if sub is not None else noop() for sub in subs],
+            *[sub if sub else noop() for sub in subs],
             return_exceptions=True,
         )
 
-        if not any([isinstance(r, Exception) for r in results]):
-            return [r for r in results if isinstance(r, str) or not r]
+        if any([isinstance(r, Exception) for r in results]):
+            await asyncio.gather(
+                *[self._unsubscribe(r) for r in results if isinstance(r, str)],
+                return_exceptions=True,
+            )
+            logger.info(f"Failed to subscribe: {results}")
+            raise Exception(format_settled_errors(results))
 
-        await asyncio.gather(
-            *[self.unsubscribe(r) for r in results if isinstance(r, str)],
-            return_exceptions=True,
-        )
+        return [r for r in results if isinstance(r, str) or not r]
 
-        raise Exception(format_settled_errors(results))
-
-    async def unsubscribe(self, sub_id: str):
-        sub = self.subscribers[sub_id]
-        await self.call(sub.service, "unsubscribe", [sub.id])
-        del self.subscribers[sub_id]
+    async def _unsubscribe(self, sub_id: str):
+        sub = self._subscribers[sub_id]
+        await self._call(sub.service, "unsubscribe", [sub.id])
+        del self._subscribers[sub_id]
         logger.info(f"Unsubscribed from {sub_id}")
 
-    async def subscribe(self, service: str, handler, method: str, *params):
-        sub_id = await self.call(service, "subscribe", [method, *params])
+    async def _subscribe(self, service: str, handler, method: str, *params):
+        sub_id = await self._call(service, "subscribe", [method, *params])
         if not isinstance(sub_id, str):
             raise Exception(f"Failed to subscribe: ${sub_id}")
 
-        self.subscribers[sub_id] = Subscription(
+        self._subscribers[sub_id] = Subscription(
             service=service, id=sub_id, handler=handler
         )
         logger.info(
@@ -202,22 +200,22 @@ class SessionConnection:
         )
         return sub_id
 
-    def handle_notification(self, data):
+    def _handle_notification(self, data: Notification):
         logger.info(f"Notification {data}")
-        for id, sub in self.subscribers.items():
-            if id == data.params.subscription:
-                sub.handler(data.params.result)
+
+        for id, sub in self._subscribers.items():
+            if id == data.params["subscription"]:
+                sub.handler(data.params["result"])
 
     async def _refresh(self, session_id: str):
         logger.info(f"Started refreshing session {session_id}")
         try:
             async with client.ApiClient(configuration) as api_client:
                 api = client.SessionsApi(api_client)
-
                 while True:
-                    if not self.is_open:
+                    if not self._is_open:
                         logger.info(
-                            f"Cannot refresh session - it was closed. {self.session}"
+                            f"Cannot refresh session - it was closed. {self._session}"
                         )
                         return
                     await asyncio.sleep(SESSION_REFRESH_PERIOD)

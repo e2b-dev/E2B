@@ -1,14 +1,16 @@
 import asyncio
 import json
 
-from typing import TypeVar, Generic, List
+from typing import TypeVar, Generic, List, Callable, Any
 
 T = TypeVar("T")
 
 
 class DeferredFuture(Generic[T]):
-    def __init__(self):
+    def __init__(self, cleanup_list: List[Callable[[], Any]] | None = None):
         self.future = asyncio.Future[T]()
+        if cleanup_list is not None:
+            cleanup_list.append(self.future.cancel)
 
     def __call__(self, result: T):
         if not self.future.done():

@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "@e2b/sdk"
-version = "0.1.0"
-description = "SDK for managing e2b environment sessions"
+name = "e2b"
+version = "0.1.1"
+description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://e2b.dev/"
-repository = "https://github.com/devbookhq/api/tree/master/"
+repository = "https://github.com/e2b-dev/rest-api/tree/main/"
 packages = [{ include = "e2b" }]
 
 [tool.poetry.dependencies]
@@ -28,4 +28,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/devbookhq/api/issues"
+"Bug Tracker" = "https://github.com/e2b-dev/rest-api/issues"
