@@ -17,8 +17,22 @@ async def main():
     )
     await session.open()
 
-    res = await session.filesystem.read("/etc/hosts")
-    print("RESULT", res)
+    # proc = await session.terminal.start(
+    #     rootdir="/codasde",
+    #     cols=80,
+    #     rows=24,
+    #     on_data=lambda data: print("DATA", data),
+    #     cmd="ls",
+    # )
+
+    # await proc.finished
+    proc = await session.process.start(
+        "ls", on_stdout=lambda data: print("STDOUT", data), rootdir="/adasdad"
+    )
+    await proc.finished
+
+    await session.close()
+    return
     await session.filesystem.write("test.txt", "Hello World")
 
     f = await session.filesystem.read("test.txt")
@@ -73,7 +87,6 @@ async def main():
         cols=80,
         rows=24,
         rootdir="/code",
-        
     )
 
     await term.send_data("echo 1\n")

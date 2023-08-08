@@ -6,7 +6,7 @@ from .session import (
     FilesystemEvent,
     FilesystemManager,
     TerminalManager,
-    TerminalSession,
+    Terminal,
     ProcessManager,
     Process,
     OpenPort,
@@ -15,4 +15,9 @@ from .session import (
     OutStdoutResponse,
     OutResponse,
     OutType,
+    SessionException,
+    TerminalException,
+    ProcessException,
+    FilesystemException,
+    RpcException,
 )

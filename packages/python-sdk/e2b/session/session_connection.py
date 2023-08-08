@@ -1,12 +1,13 @@
 import asyncio
 import logging
 
-from typing import Awaitable, Literal, Optional, Callable, List, Any
+from typing import Awaitable, Literal, Optional, Callable, List, Any, Coroutine
 from pydantic import BaseModel
 
+from e2b.session.exception import MultipleExceptions
 from e2b.utils.future import DeferredFuture
 from e2b.utils.future import format_settled_errors
-from e2b.session.session_daemon import SessionDaemon, Notification
+from e2b.session.session_rpc import SessionRpc, Notification
 from e2b.api.client import NewSession, Session as SessionInfo
 from e2b.utils.noop import noop
 from e2b.api.main import client, configuration
@@ -65,7 +66,7 @@ class SessionConnection:
         self._process_cleanup: List[Callable[[], Any]] = []
         self._refreshing_task: Optional[asyncio.Task] = None
         self._subscribers = {}
-        self._daemon: SessionDaemon
+        self._rpc: SessionRpc
         self._finished = DeferredFuture(self._process_cleanup)
 
         logger.info(f"Session for code snippet {self._id} initialized")
@@ -105,8 +106,8 @@ class SessionConnection:
         if self._is_open:
             logger.info(f"Closing session {self._session}")
             self._is_open = False
-            if self._daemon:
-                await self._daemon.close()
+            if self._rpc:
+                await self._rpc.close()
 
     def __del__(self):
         self._close()
@@ -153,33 +154,55 @@ class SessionConnection:
 
         try:
             logger.info(f"Connection to session: {self._session}")
-            self._daemon = SessionDaemon(
+            self._rpc = SessionRpc(
                 url=session_url,
                 on_message=self._handle_notification,
             )
-            await self._daemon.connect()
+            await self._rpc.connect()
         except Exception as e:
             logger.info(e)
             raise e
 
     async def _call(self, service: str, method: str, params: List[Any] = []):
-        return await self._daemon.send_message(f"{service}_{method}", params)
+        return await self._rpc.send_message(f"{service}_{method}", params)
 
-    async def _handle_subscriptions(self, subs: List[Awaitable[str] | None]):
-        results: List[str | Exception | None] = await asyncio.gather(
+    async def _handle_subscriptions(
+        self,
+        *subs: Awaitable[Callable[[], Awaitable[None]]] | None,
+    ):
+        results: List[
+            Callable[[], Awaitable[None]] | None | Exception
+        ] = await asyncio.gather(
             *[sub if sub else noop() for sub in subs],
             return_exceptions=True,
         )
 
-        if any([isinstance(r, Exception) for r in results]):
-            await asyncio.gather(
-                *[self._unsubscribe(r) for r in results if isinstance(r, str)],
+        exceptions = [e for e in results if isinstance(e, Exception)]
+
+        async def unsub_all():
+            return await asyncio.gather(
+                *[
+                    unsub()
+                    for unsub in results
+                    if not isinstance(unsub, Exception) and unsub
+                ],
                 return_exceptions=True,
             )
-            logger.info(f"Failed to subscribe: {results}")
-            raise Exception(format_settled_errors(results))
 
-        return [r for r in results if isinstance(r, str) or not r]
+        if len(exceptions) > 0:
+            await unsub_all()
+
+            if len(exceptions) == 1:
+                raise exceptions[0]
+
+            error_message = format_settled_errors(exceptions)
+            logger.info(f"Failed to subscribe: {error_message}")
+            raise MultipleExceptions(
+                message=error_message,
+                exceptions=exceptions,
+            )
+
+        return unsub_all
 
     async def _unsubscribe(self, sub_id: str):
         sub = self._subscribers[sub_id]
@@ -198,7 +221,11 @@ class SessionConnection:
         logger.info(
             f"Subscribed to {service}_{method} with params [{', '.join(params)}] and with id {sub_id}"
         )
-        return sub_id
+
+        async def unsub():
+            await self._unsubscribe(sub_id)
+
+        return unsub
 
     def _handle_notification(self, data: Notification):
         logger.info(f"Notification {data}")

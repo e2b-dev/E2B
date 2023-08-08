@@ -18,10 +18,26 @@ from jsonrpcclient import request_json, Ok
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response, Error, Deserialized
 from websockets.typing import Data
+from e2b.session.exception import SessionException
 
 from e2b.utils.future import DeferredFuture
 
 logger = logging.getLogger(__name__)
+
+
+class RpcException(SessionException):
+    def __init__(
+        self,
+        message: str,
+        code: int,
+        id: str,
+        data: Optional[Dict] = None,
+    ):
+        super().__init__(message)
+        self.data = data
+        self.code = code
+        self.message = message
+        self.id = id
 
 
 class Notification(BaseModel):
@@ -64,7 +80,7 @@ def parse(deserialized: Deserialized) -> Union[Message, Iterable[Message]]:
     )
 
 
-class SessionDaemon(BaseModel):
+class SessionRpc(BaseModel):
     url: str
     on_message: Callable[[Notification], None]
 
@@ -139,7 +155,14 @@ class SessionDaemon(BaseModel):
                 message.id in self._waiting_for_replies
                 and self._waiting_for_replies[message.id]
             ):
-                self._waiting_for_replies[message.id].reject(Exception(message))
+                self._waiting_for_replies[message.id].reject(
+                    RpcException(
+                        code=message.code,
+                        message=message.message,
+                        id=message.id,
+                        data=message.data,
+                    )
+                )
                 return
 
         elif isinstance(message, Notification):

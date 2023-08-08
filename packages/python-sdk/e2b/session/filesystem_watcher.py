@@ -1,8 +1,10 @@
 from enum import Enum
-from typing import Callable, Set, Any
+from typing import Callable, Set, Any, Awaitable, Optional
 from pydantic import BaseModel
 
 from e2b.session.session_connection import SessionConnection
+from e2b.session.exception import FilesystemException
+from e2b.session.session_rpc import RpcException
 
 
 class FilesystemOperation(str, Enum):
@@ -41,30 +43,37 @@ class FilesystemWatcher:
         self._connection = connection
         self._path = path
         self._service_name = service_name
-        self._rpc_subscription_id: str | None = None
+        self._unsubscribe: Optional[Callable[[], Awaitable[Any]]] = None
         self._listeners: Set[Callable[[FilesystemEvent], Any]] = set()
 
     async def start(self) -> None:
         """
         Starts the filesystem watcher.
         """
-        if self._rpc_subscription_id:
+        if self._unsubscribe:
             return
 
-        self._rpc_subscription_id = await self._connection._subscribe(
-            self._service_name,
-            self._handle_filesystem_events,
-            "watchDir",
-            self.path,
-        )
+        try:
+            self._unsubscribe = await self._connection._subscribe(
+                self._service_name,
+                self._handle_filesystem_events,
+                "watchDir",
+                self.path,
+            )
+        except RpcException as e:
+            raise FilesystemException(e.message) from e
 
     async def stop(self) -> None:
         """
         Stops the filesystem watcher.
         """
         self._listeners.clear()
-        if self._rpc_subscription_id:
-            await self._connection._unsubscribe(self._rpc_subscription_id)
+        if self._unsubscribe:
+            try:
+                await self._unsubscribe()
+                self._unsubscribe = None
+            except RpcException as e:
+                raise FilesystemException(e.message) from e
 
     def add_event_listener(self, listener: Callable[[FilesystemEvent], Any]):
         """

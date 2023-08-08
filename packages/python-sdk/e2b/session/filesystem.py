@@ -1,11 +1,12 @@
 import base64
 
-from pathlib import Path, PosixPath
 from typing import List, Any
 from pydantic import BaseModel
 
 from e2b.session.session_connection import SessionConnection
 from e2b.session.filesystem_watcher import FilesystemWatcher
+from e2b.session.session_rpc import RpcException
+from e2b.session.exception import FilesystemException
 
 
 class FileInfo(BaseModel):
@@ -52,8 +53,11 @@ class FilesystemManager:
         :param path: path to a file
         :return: content of a file
         """
-        result: str = await self._session._call(self._service_name, "read", [path])
-        return result
+        try:
+            result: str = await self._session._call(self._service_name, "read", [path])
+            return result
+        except RpcException as e:
+            raise FilesystemException(e.message) from e
 
     async def write(self, path: str, content: str) -> None:
         """
@@ -62,7 +66,10 @@ class FilesystemManager:
         :param path: path to a file
         :param content: content to write
         """
-        await self._session._call(self._service_name, "write", [path, content])
+        try:
+            await self._session._call(self._service_name, "write", [path, content])
+        except RpcException as e:
+            raise FilesystemException(e.message) from e
 
     async def remove(self, path: str) -> None:
         """
@@ -70,7 +77,10 @@ class FilesystemManager:
 
         :param path: path to a file or a directory
         """
-        await self._session._call(self._service_name, "remove", [path])
+        try:
+            await self._session._call(self._service_name, "remove", [path])
+        except RpcException as e:
+            raise FilesystemException(e.message) from e
 
     async def list(self, path: str) -> List[FileInfo]:
         """
@@ -79,13 +89,16 @@ class FilesystemManager:
         :param path: path to a directory
         :return: array of files in a directory
         """
-        result: List[Any] = await self._session._call(
-            self._service_name, "list", [path]
-        )
-        return [
-            FileInfo(is_dir=file_info["isDir"], name=file_info["name"])
-            for file_info in result
-        ]
+        try:
+            result: List[Any] = await self._session._call(
+                self._service_name, "list", [path]
+            )
+            return [
+                FileInfo(is_dir=file_info["isDir"], name=file_info["name"])
+                for file_info in result
+            ]
+        except RpcException as e:
+            raise FilesystemException(e.message) from e
 
     async def make_dir(self, path: str) -> None:
         """
@@ -93,7 +106,10 @@ class FilesystemManager:
 
         :param path: path to a new directory. For example '/dirA/dirB' when creating 'dirB'
         """
-        await self._session._call(self._service_name, "makeDir", [path])
+        try:
+            await self._session._call(self._service_name, "makeDir", [path])
+        except RpcException as e:
+            raise FilesystemException(e.message) from e
 
     async def watch_dir(self, path: str) -> FilesystemWatcher:
         """
@@ -103,9 +119,8 @@ class FilesystemManager:
 
         :return: New watcher
         """
-        npath = PosixPath(Path(path).resolve())
         return FilesystemWatcher(
             connection=self._session,
-            path=str(npath),
+            path=path,
             service_name=self._service_name,
         )

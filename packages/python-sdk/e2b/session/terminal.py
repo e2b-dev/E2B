@@ -7,9 +7,11 @@ from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
 from e2b.session.session_connection import SessionConnection
 from e2b.utils.id import create_id
+from e2b.session.exception import TerminalException, MultipleExceptions
+from e2b.session.session_rpc import RpcException
 
 
-class TerminalSession:
+class Terminal:
     @property
     def finished(self):
         """
@@ -45,11 +47,14 @@ class TerminalSession:
 
         :param data: Data to send
         """
-        await self._session._call(
-            TerminalManager._service_name,
-            "data",
-            [self.terminal_id, data],
-        )
+        try:
+            await self._session._call(
+                TerminalManager._service_name,
+                "data",
+                [self.terminal_id, data],
+            )
+        except RpcException as e:
+            raise TerminalException(e.message) from e
 
     async def resize(self, cols: int, rows: int) -> None:
         """
@@ -58,19 +63,25 @@ class TerminalSession:
         :param cols: Number of columns
         :param rows: Number of rows
         """
-        await self._session._call(
-            TerminalManager._service_name,
-            "resize",
-            [self.terminal_id, cols, rows],
-        )
+        try:
+            await self._session._call(
+                TerminalManager._service_name,
+                "resize",
+                [self.terminal_id, cols, rows],
+            )
+        except RpcException as e:
+            raise TerminalException(e.message) from e
 
     async def kill(self) -> None:
         """
         Kill the terminal session.
         """
-        await self._session._call(
-            TerminalManager._service_name, "destroy", [self.terminal_id]
-        )
+        try:
+            await self._session._call(
+                TerminalManager._service_name, "destroy", [self.terminal_id]
+            )
+        except RpcException as e:
+            raise TerminalException(e.message) from e
         await self._trigger_exit()
 
 
@@ -82,7 +93,6 @@ class TerminalManager:
         self._process_cleanup: List[Callable[[], Any]] = []
 
     def __del__(self):
-        print("DELETING")
         self._close()
 
     def _close(self):
@@ -101,7 +111,7 @@ class TerminalManager:
         on_exit: Optional[Callable[[], Any]] = None,
         cmd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
-    ) -> TerminalSession:
+    ) -> Terminal:
         """
         Start a new terminal session.
 
@@ -121,33 +131,35 @@ class TerminalManager:
         future_exit = DeferredFuture(self._process_cleanup)
         terminal_id = terminal_id or create_id(12)
 
-        (
-            on_data_sub_id,
-            on_exit_sub_id,
-        ) = await self._session._handle_subscriptions(
-            [
+        unsub_all: Optional[Callable[[], Awaitable[Any]]] = None
+
+        try:
+            unsub_all = await self._session._handle_subscriptions(
                 self._session._subscribe(
                     self._service_name, on_data, "onData", terminal_id
                 ),
                 self._session._subscribe(
                     self._service_name, future_exit, "onExit", terminal_id
                 ),
-            ],
-        )
+            )
+        except (RpcException, MultipleExceptions) as e:
+            future_exit.cancel()
+
+            if isinstance(e, RpcException):
+                raise TerminalException(e.message) from e
+            elif isinstance(e, MultipleExceptions):
+                raise TerminalException(
+                    "Failed to subscribe to RPC services necessary for starting terminal"
+                ) from e
 
         future_exit_handler_finish = DeferredFuture(self._process_cleanup)
 
         async def exit_handler():
             await future_exit
-            await asyncio.gather(
-                self._session._unsubscribe(on_data_sub_id)
-                if on_data_sub_id
-                else noop(),
-                self._session._unsubscribe(on_exit_sub_id)
-                if on_exit_sub_id
-                else noop(),
-                return_exceptions=True,
-            )
+
+            if unsub_all:
+                await unsub_all()
+
             if on_exit:
                 on_exit()
             future_exit_handler_finish(None)
@@ -158,10 +170,6 @@ class TerminalManager:
         async def trigger_exit():
             future_exit(None)
             await future_exit_handler_finish
-
-        if not on_data_sub_id or not on_exit_sub_id:
-            await trigger_exit()
-            raise Exception("Failed to subscribe to terminal service")
 
         try:
             await self._session._call(
@@ -176,12 +184,12 @@ class TerminalManager:
                     rootdir,
                 ],
             )
-            return TerminalSession(
+            return Terminal(
                 terminal_id=terminal_id,
                 session=self._session,
                 trigger_exit=trigger_exit,
                 finished=future_exit,
             )
-        except:
+        except RpcException as e:
             await trigger_exit()
-            raise
+            raise TerminalException(e.message) from e

@@ -10,7 +10,7 @@ class DeferredFuture(Generic[T]):
     def __init__(self, cleanup_list: List[Callable[[], Any]] | None = None):
         self.future = asyncio.Future[T]()
         if cleanup_list is not None:
-            cleanup_list.append(self.future.cancel)
+            cleanup_list.append(self.cancel)
 
     def __call__(self, result: T):
         if not self.future.done():
@@ -29,10 +29,7 @@ class DeferredFuture(Generic[T]):
             self.future.set_exception(reason)
 
 
-def format_settled_errors(settled: List[str | Exception | None]):
-    if all(s is not Exception for s in settled if s is not None):
-        return None
-
+def format_settled_errors(settled: List[Exception]):
     errors = "errors:\n"
     for i, s in enumerate(settled):
         if s is Exception:

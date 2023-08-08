@@ -9,6 +9,9 @@ from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
 from e2b.session.session_connection import SessionConnection
 from e2b.utils.id import create_id
+from e2b.session.session_rpc import RpcException
+from e2b.session.exception import ProcessException, MultipleExceptions
+
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +53,23 @@ class Process:
 
         :param data: Data to send
         """
-        await self._session._call(
-            ProcessManager._service_name, "stdin", [self.process_id, data]
-        )
+        try:
+            await self._session._call(
+                ProcessManager._service_name, "stdin", [self.process_id, data]
+            )
+        except RpcException as e:
+            raise ProcessException(e.message) from e
 
     async def kill(self) -> None:
         """
         Kills the process.
         """
-        await self._session._call(
-            ProcessManager._service_name, "kill", [self.process_id]
-        )
+        try:
+            await self._session._call(
+                ProcessManager._service_name, "kill", [self.process_id]
+            )
+        except RpcException as e:
+            raise ProcessException(e.message) from e
         await self._trigger_exit()
 
 
@@ -107,12 +116,10 @@ class ProcessManager:
         future_exit = DeferredFuture(self._process_cleanup)
         process_id = process_id or create_id(12)
 
-        (
-            on_exit_sub_id,
-            on_stdout_sub_id,
-            on_stderr_sub_id,
-        ) = await self._session._handle_subscriptions(
-            [
+        unsub_all: Optional[Callable[[], Awaitable[Any]]] = None
+
+        try:
+            unsub_all = await self._session._handle_subscriptions(
                 self._session._subscribe(
                     self._service_name, future_exit, "onExit", process_id
                 ),
@@ -126,8 +133,16 @@ class ProcessManager:
                 )
                 if on_stderr
                 else None,
-            ],
-        )
+            )
+        except (RpcException, MultipleExceptions) as e:
+            future_exit.cancel()
+
+            if isinstance(e, RpcException):
+                raise ProcessException(e.message) from e
+            elif isinstance(e, MultipleExceptions):
+                raise ProcessException(
+                    "Failed to subscribe to RPC services necessary for starting process"
+                ) from e
 
         future_exit_handler_finish = DeferredFuture(self._process_cleanup)
 
@@ -136,18 +151,8 @@ class ProcessManager:
             logger.info(
                 f"Handling process exit {process_id} - {future_exit.future.done()}",
             )
-            await asyncio.gather(
-                self._session._unsubscribe(on_exit_sub_id)
-                if on_exit_sub_id
-                else noop(),
-                self._session._unsubscribe(on_stdout_sub_id)
-                if on_stdout_sub_id
-                else noop(),
-                self._session._unsubscribe(on_stderr_sub_id)
-                if on_stderr_sub_id
-                else noop(),
-                return_exceptions=True,
-            )
+            if unsub_all:
+                await unsub_all()
             if on_exit:
                 on_exit()
             future_exit_handler_finish(None)
@@ -159,14 +164,6 @@ class ProcessManager:
             logger.info("Triggering exit")
             future_exit(None)
             await future_exit_handler_finish
-
-        if (
-            not on_exit_sub_id
-            or (not on_stdout_sub_id and on_stdout)
-            or (not on_stderr_sub_id and on_stderr)
-        ):
-            await trigger_exit()
-            raise Exception("Failed to subscribe to process service")
 
         try:
             await self._session._call(
@@ -185,6 +182,6 @@ class ProcessManager:
                 trigger_exit=trigger_exit,
                 finished=future_exit_handler_finish,
             )
-        except:
+        except RpcException as e:
             await trigger_exit()
-            raise
+            raise ProcessException(e.message) from e
