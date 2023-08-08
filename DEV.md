@@ -86,10 +86,19 @@
 - Security checks/deps - paid GH?
 - Add supabase config to this repo so the backend is codified
 - Generated types in go?
+- Clarify naming in the sdk -- fs, filesystem, session, environment, instance?
+- "Pluging" to the SDK - linters, git, the agent protocol
+- Better SDK errors
+- Allow running commands as user (homedir + sudo) instead of root
+- Use CNI for FC networking
+- FC alternatives
+- Change casing of the reported ports from the devbookd
+- Use binary data streaming over websocket instead of using the jsonrpc in devbookd
+- Decide if we want to have the REST API alongside the SDKs
 
 
 ### Python SDK
-- devbookd scan lines problem
+- devbookd scan lines problem (vs scan bytes)
 - fix template/id type
 - improve docstrings
 - use yield/generators instead of callback handlers
