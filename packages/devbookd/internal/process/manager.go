@@ -37,7 +37,7 @@ func (m *Manager) Get(id ID) (*Process, bool) {
 func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
 	proc, err := New(id, cmd, envVars, rootdir, m.logger)
 	if err != nil {
-		return nil, fmt.Errorf("error starting new process with id '%s': %+v", id, err)
+		return nil, fmt.Errorf("error configuring new process with id '%s': %+v", id, err)
 	}
 
 	m.procs.Insert(proc.ID, proc)

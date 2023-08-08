@@ -39,6 +39,14 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 }
 
 func (p *Process) Kill() {
+	if p.cmd.Process == nil {
+		p.logger.Warnw("Process is nil, cannot kill",
+			"processID", p.ID,
+			"cmd", p.cmd,
+		)
+		return
+	}
+
 	if err := p.cmd.Process.Signal(syscall.SIGKILL); err != nil {
 		p.logger.Warnw("Failed to kill process with signal",
 			"processID", p.ID,

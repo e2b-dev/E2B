@@ -50,7 +50,7 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 		Rows: rows,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error starting pty with command '%s': %+v", cmd, err)
+		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %+v", cmd, rootdir, cols, rows, err)
 	}
 
 	return &Terminal{
