@@ -88,14 +88,18 @@
 - Generated types in go?
 - Clarify naming in the sdk -- fs, filesystem, session, environment, instance?
 - "Pluging" to the SDK - linters, git, the agent protocol
-- Better SDK errors
+- Better SDK errors and exceptions
 - Allow running commands as user (homedir + sudo) instead of root
 - Use CNI for FC networking
 - FC alternatives
 - Change casing of the reported ports from the devbookd
 - Use binary data streaming over websocket instead of using the jsonrpc in devbookd
 - Decide if we want to have the REST API alongside the SDKs
-
+- Exceptions are part of the SDK API!
+- remove undefined from JS SDK services
+- What was the FC alternative that supported Windows?
+- Start tty in devbookd only after hooking it to the onData subscribers!
+- vale for text linting
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
@@ -107,8 +111,16 @@
 - use attrs or dataclasses?
 - Check double slash `//dir` in file watcher event data
 - better readme
+- start filesystem watcher automatically
+- improve DX - clearly communicate instantiation+initialization flow, awaiting object for exit, etc
+- sync flow?
 - add tests
 - support lower python versions
+- Check if stderr and stdout are ordered
+- Myabe remove types (and timestamps?) from stdout/stderr
+- Use specific version (nodejs20) for the templates
+- Using pathlib for paths? windows support?
+- Flush all stdout/err after killing process or terminal in devbookd and also wait for the Stdout/err in the SDK
 
 
 ## CLI
