@@ -38,9 +38,8 @@ function Layout({ children }: PropsWithChildren) {
   const [distinctID, setDistinctID] = useState<string>()
 
   useEffect(() => {
-    const handleRouteChange = (url: string) => {
-      gtag.pageview(url, distinctID)
-    }
+    if (!pathname) return
+    gtag.pageview(pathname + searchParams ? `?${searchParams}` : '', distinctID)
   }, [pathname, searchParams, distinctID])
 
   async function signOut() {
