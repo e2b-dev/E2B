@@ -3,7 +3,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from 'db/prisma'
 import { getGHInstallationClient } from 'github/installationClient'
 import { addCommentToPR } from 'github/pullRequest'
-import { client as posthog } from 'utils/posthog'
+import { client as posthog } from 'utils/posthogNode'
 
 import { DeploymentAuthData } from '.'
 import { smolDeveloperTemplateID } from 'utils/smolTemplates'

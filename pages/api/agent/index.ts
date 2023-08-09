@@ -1,12 +1,12 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { nanoid } from 'nanoid'
-import { client as posthog } from 'utils/posthog'
+import { client as posthog } from 'utils/posthogNode'
 
-import { PostAgentResponse } from 'pages/agent/smol-developer/setup'
+import { PostAgentResponse } from 'pages/agent-old/smol-developer/setup'
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-import { PostAgentBody } from 'pages/agent/smol-developer/setup'
+import { PostAgentBody } from 'pages/agent-old/smol-developer/setup'
 import { getGHInstallationClient } from 'github/installationClient'
 import {
   createAgentDeployment,

@@ -5,7 +5,7 @@ import {
 } from '@octokit/webhooks'
 
 import { prisma } from 'db/prisma'
-import { client as posthog } from 'utils/posthog'
+import { client as posthog } from 'utils/posthogNode'
 import { DeploymentAuthData } from 'pages/api/agent'
 import { smolDeveloperTemplateID } from 'utils/smolTemplates'
 

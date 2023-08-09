@@ -22,7 +22,7 @@ function SmolDeveloper() {
 
   useEffect(() => {
     if (user) {
-      router.push('/agent/smol-developer/setup')
+      router.push('/agent-old/smol-developer/setup')
     }
   }, [user, router])
 

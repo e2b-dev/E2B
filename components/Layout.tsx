@@ -5,7 +5,7 @@ import {
 } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
 import clsx from 'clsx'
-import { useRouter } from 'next/router'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Inter } from 'next/font/google'
 import { usePostHog } from 'posthog-js/react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
@@ -32,6 +32,8 @@ function Layout({ children }: PropsWithChildren) {
   const user = useUser()
   const posthog = usePostHog()
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [distinctID, setDistinctID] = useState<string>()
 
@@ -39,11 +41,7 @@ function Layout({ children }: PropsWithChildren) {
     const handleRouteChange = (url: string) => {
       gtag.pageview(url, distinctID)
     }
-    router.events.on('routeChangeComplete', handleRouteChange)
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange)
-    }
-  }, [router.events, distinctID])
+  }, [pathname, searchParams, distinctID])
 
   async function signOut() {
     await supabaseClient.auth.signOut()
@@ -64,7 +62,8 @@ function Layout({ children }: PropsWithChildren) {
   }, [posthog, user])
 
   const view = process.env.NEXT_PUBLIC_SHOW_UPLOADED_LOGS === '1'
-  const showView = router.query['view'] === 'logs' ? 'logs' : view
+  // FIXME: Check before merging!
+  const showView = searchParams?.get('view') === 'logs' ? 'logs' : view
 
   const navigation = [
     {
@@ -90,7 +89,7 @@ function Layout({ children }: PropsWithChildren) {
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
       />
-      {(router.pathname.startsWith('/agent') || router.pathname.startsWith('/sign'))
+      {(pathname?.startsWith('/agent') || pathname?.startsWith('/sign'))
         ?
         <div className={clsx(
           inter.variable,

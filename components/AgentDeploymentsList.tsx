@@ -73,6 +73,7 @@ function AgentDeploymentsList({
             SDK Coming Soon
           </a>
 
+          {/* FIXME: Test, inspection error until full migration */}
           <Link href="/agent/smol-developer">
             <button
               className="py-1 px-2 rounded-md bg-green-400/10 hover:bg-green-400/20 border border-green-400/20 transition-all flex items-center space-x-2 text-green-400 text-sm font-semibold"

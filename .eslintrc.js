@@ -1,12 +1,10 @@
 module.exports = {
   extends: ['next'],
   ignorePatterns: ['db/supabase.ts'],
+  plugins: ['unused-imports', 'tailwindcss'],
   rules: {
     '@next/next/no-html-link-for-pages': 'off',
     'react/jsx-key': 'off',
-  },
-  plugins: ['unused-imports', 'tailwindcss'],
-  rules: {
     'tailwindcss/enforces-negative-arbitrary-values': 'warn',
     'tailwindcss/enforces-shorthand': 'warn',
     'tailwindcss/migration-from-tailwind-2': 'warn',
