@@ -8,25 +8,25 @@ T = TypeVar("T")
 
 class DeferredFuture(Generic[T]):
     def __init__(self, cleanup_list: List[Callable[[], Any]] | None = None):
-        self.future = asyncio.Future[T]()
+        self._future = asyncio.Future[T]()
         if cleanup_list is not None:
             cleanup_list.append(self.cancel)
 
     def __call__(self, result: T):
-        if not self.future.done():
-            self.future.set_result(result)
+        if not self._future.done():
+            self._future.set_result(result)
 
     def __await__(self):
-        result = yield from self.future.__await__()
+        result = yield from self._future.__await__()
         return result
 
     def cancel(self):
-        if not self.future.done():
-            self.future.cancel()
+        if not self._future.done():
+            self._future.cancel()
 
     def reject(self, reason: Exception):
-        if not self.future.done():
-            self.future.set_exception(reason)
+        if not self._future.done():
+            self._future.set_exception(reason)
 
 
 def format_settled_errors(settled: List[Exception]):

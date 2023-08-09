@@ -1,6 +1,7 @@
 import asyncio
 
 from typing import Awaitable, Callable, Optional, Coroutine, Any, List
+from pydantic import BaseModel
 
 from e2b.utils.noop import noop
 from e2b.utils.future import DeferredFuture
@@ -11,7 +12,32 @@ from e2b.session.exception import TerminalException, MultipleExceptions
 from e2b.session.session_rpc import RpcException
 
 
+class TerminalOutput(BaseModel):
+    data = ""
+
+    def _add_data(self, data: str) -> None:
+        self.data += data
+
+
 class Terminal:
+    """
+    Terminal session.
+    """
+
+    @property
+    def data(self) -> str:
+        """
+        Terminal output data.
+        """
+        return self._output.data
+
+    @property
+    def output(self) -> TerminalOutput:
+        """
+        Terminal output.
+        """
+        return self._output
+
     @property
     def finished(self):
         """
@@ -34,12 +60,14 @@ class Terminal:
         terminal_id: str,
         session: SessionConnection,
         trigger_exit: Callable[[], Coroutine[Any, Any, None]],
-        finished: Awaitable[None],
+        finished: Awaitable[TerminalOutput],
+        output: TerminalOutput,
     ):
         self._terminal_id = terminal_id
         self._session = session
         self._trigger_exit = trigger_exit
         self._finished = finished
+        self._output = output
 
     async def send_data(self, data: str) -> None:
         """
@@ -86,6 +114,10 @@ class Terminal:
 
 
 class TerminalManager:
+    """
+    Manager for starting and interacting with terminal sessions in the environment.
+    """
+
     _service_name = "terminal"
 
     def __init__(self, session: SessionConnection):
@@ -133,10 +165,16 @@ class TerminalManager:
 
         unsub_all: Optional[Callable[[], Awaitable[Any]]] = None
 
+        output = TerminalOutput()
+
+        def handle_data(data: str):
+            output._add_data(data)
+            on_data(data)
+
         try:
             unsub_all = await self._session._handle_subscriptions(
                 self._session._subscribe(
-                    self._service_name, on_data, "onData", terminal_id
+                    self._service_name, handle_data, "onData", terminal_id
                 ),
                 self._session._subscribe(
                     self._service_name, future_exit, "onExit", terminal_id
@@ -152,7 +190,10 @@ class TerminalManager:
                     "Failed to subscribe to RPC services necessary for starting terminal"
                 ) from e
 
-        future_exit_handler_finish = DeferredFuture(self._process_cleanup)
+        # TODO: Handle exit handler finish for exits (the same for processes)
+        future_exit_handler_finish = DeferredFuture[TerminalOutput](
+            self._process_cleanup
+        )
 
         async def exit_handler():
             await future_exit
@@ -162,7 +203,7 @@ class TerminalManager:
 
             if on_exit:
                 on_exit()
-            future_exit_handler_finish(None)
+            future_exit_handler_finish(output)
 
         exit_task = asyncio.create_task(exit_handler())
         self._process_cleanup.append(exit_task.cancel)
@@ -188,7 +229,8 @@ class TerminalManager:
                 terminal_id=terminal_id,
                 session=self._session,
                 trigger_exit=trigger_exit,
-                finished=future_exit,
+                finished=future_exit_handler_finish,
+                output=output,
             )
         except RpcException as e:
             await trigger_exit()

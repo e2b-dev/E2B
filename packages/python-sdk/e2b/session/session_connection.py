@@ -43,7 +43,7 @@ class SessionConnection:
         return self._is_open
 
     def __await__(self):
-        return self.finished.__await__()
+        return self._finished.__await__()
 
     def __init__(
         self,
@@ -210,7 +210,13 @@ class SessionConnection:
         del self._subscribers[sub_id]
         logger.info(f"Unsubscribed from {sub_id}")
 
-    async def _subscribe(self, service: str, handler, method: str, *params):
+    async def _subscribe(
+        self,
+        service: str,
+        handler: Callable[[Any], Any],
+        method: str,
+        *params,
+    ):
         sub_id = await self._call(service, "subscribe", [method, *params])
         if not isinstance(sub_id, str):
             raise Exception(f"Failed to subscribe: ${sub_id}")

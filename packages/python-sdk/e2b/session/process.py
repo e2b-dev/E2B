@@ -1,10 +1,11 @@
 import asyncio
 import logging
 
-from typing import Awaitable, Optional, Callable, Any, Coroutine, List
+from typing import Awaitable, ClassVar, Optional, Callable, Any, Coroutine, List, Dict
+from pydantic import BaseModel
 
 from e2b.utils.noop import noop
-from e2b.session.out import OutStdoutResponse, OutStderrResponse
+from e2b.session.out import OutStdoutResponse, OutStderrResponse, OutResponse, OutType
 from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
 from e2b.session.session_connection import SessionConnection
@@ -16,7 +17,98 @@ from e2b.session.exception import ProcessException, MultipleExceptions
 logger = logging.getLogger(__name__)
 
 
+class ProcessMessage(BaseModel):
+    """
+    A message from a process
+    """
+
+    line: str
+    error: bool = False
+    timestamp: int
+    """
+    Unix epoch in nanoseconds
+    """
+
+
+class ProcessOutput(BaseModel):
+    """
+    Output from a process.
+    """
+
+    delimiter: ClassVar[str] = "\n"
+    messages: List[ProcessMessage] = []
+
+    error = False
+
+    @property
+    def stdout(self) -> str:
+        """
+        The stdout from the process
+        """
+        return self.delimiter.join(out.line for out in self.messages if not out.error)
+
+    @property
+    def stderr(self) -> str:
+        """
+        The stderr from the process
+        """
+        return self.delimiter.join(out.line for out in self.messages if out.error)
+
+    def _insert_by_timestamp(self, message: ProcessMessage):
+        """Insert an out based on its timestamp using insertion sort."""
+        i = len(self.messages) - 1
+        while i >= 0 and self.messages[i].timestamp > message.timestamp:
+            i -= 1
+        self.messages.insert(i + 1, message)
+
+    def _add_stdout(self, message: ProcessMessage):
+        self._insert_by_timestamp(message)
+
+    def _add_stderr(self, message: ProcessMessage):
+        self.error = True
+        self._insert_by_timestamp(message)
+
+
 class Process:
+    """
+    A process running in the environment.
+    """
+
+    @property
+    def output(self) -> ProcessOutput:
+        """
+        The output from the process
+        """
+        return self._output
+
+    @property
+    def stdout(self) -> str:
+        """
+        The stdout from the process
+        """
+        return self._output.stdout
+
+    @property
+    def stderr(self) -> str:
+        """
+        The stderr from the process
+        """
+        return self._output.stderr
+
+    @property
+    def error(self) -> bool:
+        """
+        True if the process has written to stderr
+        """
+        return self._output.error
+
+    @property
+    def output_messages(self) -> List[ProcessMessage]:
+        """
+        The output messages from the process
+        """
+        return self._output.messages
+
     @property
     def finished(self):
         """
@@ -33,19 +125,21 @@ class Process:
         return self._process_id
 
     def __await__(self):
-        return self.finished.__await__()
+        return self._finished.__await__()
 
     def __init__(
         self,
         process_id: str,
         session: SessionConnection,
         trigger_exit: Callable[[], Coroutine[Any, Any, None]],
-        finished: Awaitable[None],
+        finished: Awaitable[ProcessOutput],
+        output: ProcessOutput,
     ):
         self._process_id = process_id
         self._session = session
         self._trigger_exit = trigger_exit
         self._finished = finished
+        self._output = output
 
     async def send_stdin(self, data: str) -> None:
         """
@@ -74,6 +168,10 @@ class Process:
 
 
 class ProcessManager:
+    """
+    Manager for starting and interacting with processes in the environment.
+    """
+
     _service_name = "process"
 
     def __init__(self, session: SessionConnection):
@@ -92,8 +190,8 @@ class ProcessManager:
     async def start(
         self,
         cmd: str,
-        on_stdout: Optional[Callable[[OutStdoutResponse], Any]] = None,
-        on_stderr: Optional[Callable[[OutStderrResponse], Any]] = None,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[], Any]] = None,
         env_vars: Optional[EnvVars] = {},
         rootdir: str = "/",
@@ -118,21 +216,45 @@ class ProcessManager:
 
         unsub_all: Optional[Callable[[], Awaitable[Any]]] = None
 
+        output = ProcessOutput()
+
+        def handle_stdout(data: Dict[Any, Any]):
+            out = OutStdoutResponse(**data)
+
+            message = ProcessMessage(
+                line=out.line,
+                timestamp=out.timestamp,
+                error=False,
+            )
+
+            output._add_stdout(message)
+            if on_stdout:
+                on_stdout(message)
+
+        def handle_stderr(data: Dict[Any, Any]):
+            out = OutStderrResponse(**data)
+
+            message = ProcessMessage(
+                line=out.line,
+                timestamp=out.timestamp,
+                error=True,
+            )
+
+            output._add_stderr(message)
+            if on_stderr:
+                on_stderr(message)
+
         try:
             unsub_all = await self._session._handle_subscriptions(
                 self._session._subscribe(
                     self._service_name, future_exit, "onExit", process_id
                 ),
                 self._session._subscribe(
-                    self._service_name, on_stdout, "onStdout", process_id
-                )
-                if on_stdout
-                else None,
+                    self._service_name, handle_stdout, "onStdout", process_id
+                ),
                 self._session._subscribe(
-                    self._service_name, on_stderr, "onStderr", process_id
-                )
-                if on_stderr
-                else None,
+                    self._service_name, handle_stderr, "onStderr", process_id
+                ),
             )
         except (RpcException, MultipleExceptions) as e:
             future_exit.cancel()
@@ -144,18 +266,20 @@ class ProcessManager:
                     "Failed to subscribe to RPC services necessary for starting process"
                 ) from e
 
-        future_exit_handler_finish = DeferredFuture(self._process_cleanup)
+        future_exit_handler_finish = DeferredFuture[ProcessOutput](
+            self._process_cleanup
+        )
 
         async def exit_handler():
             await future_exit
             logger.info(
-                f"Handling process exit {process_id} - {future_exit.future.done()}",
+                f"Handling process exit {process_id} - {future_exit._future.done()}",
             )
             if unsub_all:
                 await unsub_all()
             if on_exit:
                 on_exit()
-            future_exit_handler_finish(None)
+            future_exit_handler_finish(output)
 
         exit_task = asyncio.create_task(exit_handler())
         self._process_cleanup.append(exit_task.cancel)
@@ -177,6 +301,7 @@ class ProcessManager:
                 ],
             )
             return Process(
+                output=output,
                 session=self._session,
                 process_id=process_id,
                 trigger_exit=trigger_exit,

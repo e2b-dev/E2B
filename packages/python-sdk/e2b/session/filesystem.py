@@ -10,11 +10,19 @@ from e2b.session.exception import FilesystemException
 
 
 class FileInfo(BaseModel):
+    """
+    Information about a file or a directory in the environment.
+    """
+
     is_dir: bool
     name: str
 
 
 class FilesystemManager:
+    """
+    Filesystem manager is used to read, write, remove and list files and directories in the environment.
+    """
+
     _service_name = "filesystem"
 
     def __init__(self, session: SessionConnection):

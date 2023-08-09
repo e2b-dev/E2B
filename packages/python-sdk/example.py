@@ -9,27 +9,33 @@ logging.basicConfig(level=logging.ERROR)
 
 
 async def main():
-    session = Session(
-        id,
-        # on_scan_ports=lambda ports: print(
-        #     "PORTS", ports,
-        # ),
-    )
-    await session.open()
+    session = await Session.create(id)
 
     # proc = await session.terminal.start(
-    #     rootdir="/codasde",
+    #     rootdir="/code",
     #     cols=80,
     #     rows=24,
     #     on_data=lambda data: print("DATA", data),
     #     cmd="ls",
     # )
 
+    # out = proc.output
+
+    # out = await proc
+    # print("OUT", out)
+
     # await proc.finished
     proc = await session.process.start(
-        "ls", on_stdout=lambda data: print("STDOUT", data), rootdir="/adasdad"
+        "ls",
+        rootdir="/",
+        on_stderr=lambda data: print("ERR", data),
+        on_stdout=lambda data: print("OUT", data),
     )
-    await proc.finished
+    output = await proc
+
+    # output.lines
+
+    print(output.messages)
 
     await session.close()
     return
