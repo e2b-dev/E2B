@@ -100,6 +100,8 @@
 - What was the FC alternative that supported Windows?
 - Start tty in devbookd only after hooking it to the onData subscribers!
 - vale for text linting
+- embed all hcl tasks in the API code
+- Do we need provisioning script now? Without it it could be easier to build custom envs. Also think about how flyio solved the daemon - I think they just injected the daemon into the environment. Codesandbox also has a daemon in the env but they don't have a update pipeline for the old envs because it is not needed.
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
