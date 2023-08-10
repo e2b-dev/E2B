@@ -1,10 +1,12 @@
 package process
 
 import (
+	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/user"
 
 	"go.uber.org/zap"
 )
@@ -21,10 +23,27 @@ type Process struct {
 
 func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
 	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
-	cmd.Dir = rootdir
 
-	formattedVars := os.Environ()
+	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
+	if err != nil {
+		return nil, fmt.Errorf("error getting user '%s': %+v", user.DefaultUser, err)
+	}
 
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
+
+	if rootdir != "" {
+		cmd.Dir = homedir
+	} else {
+		cmd.Dir = rootdir
+	}
+
+	formattedVars := []string{}
+
+	formattedVars = append(formattedVars, "HOME="+cmd.Dir)
+	formattedVars = append(formattedVars, "USER="+username)
+
+	// Only the last values of the env vars are used - this allows for overwriting defaults
 	for key, value := range *envVars {
 		formattedVars = append(formattedVars, key+"="+value)
 	}

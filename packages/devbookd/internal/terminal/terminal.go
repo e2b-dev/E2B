@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"go.uber.org/zap"
 
 	"github.com/creack/pty"
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/user"
 )
 
 type ID = string
@@ -30,20 +32,36 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 		cmd = exec.Command(shell, "-l")
 	}
 
-	formattedVars := os.Environ()
+	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
+	if err != nil {
+		return nil, fmt.Errorf("error getting user '%s': %+v", user.DefaultUser, err)
+	}
 
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
+
+	if rootdir != "" {
+		cmd.Dir = homedir
+	} else {
+		cmd.Dir = rootdir
+	}
+
+	formattedVars := []string{}
+
+	formattedVars = append(formattedVars, "HOME="+cmd.Dir)
+	formattedVars = append(formattedVars, "USER="+username)
+	formattedVars = append(
+		formattedVars,
+		"TERM=xterm",
+	)
+
+	// Only the last values of the env vars are used - this allows for overwriting defaults
 	if envVars != nil {
 		for key, value := range *envVars {
 			formattedVars = append(formattedVars, key+"="+value)
 		}
 	}
-
-	cmd.Env = append(
-		formattedVars,
-		"TERM=xterm",
-	)
-
-	cmd.Dir = rootdir
+	cmd.Env = formattedVars
 
 	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
 		Cols: cols,
