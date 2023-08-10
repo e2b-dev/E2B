@@ -2,8 +2,6 @@
 ## Infra
 - Clock drift
   - https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it
-  - check with CSB how they solved this
-  - it should happen in the first log2(3) seconds
 - Change read/write file to allow other thatn utf-8 format so we don't break the files
 - Remove dnsmasq from cluster VM image if it is not needed
 - Remove need for provisioning during building env
@@ -102,6 +100,11 @@
 - vale for text linting
 - embed all hcl tasks in the API code
 - Do we need provisioning script now? Without it it could be easier to build custom envs. Also think about how flyio solved the daemon - I think they just injected the daemon into the environment. Codesandbox also has a daemon in the env but they don't have a update pipeline for the old envs because it is not needed.
+- Should we mount special filesystems on boots 
+- Change FC env building system - not having separate fc-env dir/package - inline?
+- Fix correct user permission for home dir (chown problem in FC)
+- Add linter for unhandled go errors (https://stackoverflow.com/questions/43898074/is-there-a-way-to-find-not-handled-errors-in-go-code)
+- Should we just do "stubs" of fs libraries from various languages so our code can be used exactly like that?
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
@@ -115,7 +118,7 @@
 - better readme
 - start filesystem watcher automatically
 - improve DX - clearly communicate instantiation+initialization flow, awaiting object for exit, etc
-- sync flow?
+- sync flow? Sync version
 - add tests
 - support lower python versions
 - Check if stderr and stdout are ordered
