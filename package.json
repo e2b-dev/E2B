@@ -95,6 +95,7 @@
     "concurrently": "^7.6.0",
     "cross-env": "^7.0.3",
     "cssnano": "^6.0.0",
+    "encoding": "^0.1.13",
     "eslint": "^8.35.0",
     "eslint-config-next": "^13.2.3",
     "eslint-plugin-tailwindcss": "^3.10.1",

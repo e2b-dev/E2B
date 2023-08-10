@@ -7,7 +7,7 @@ import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { clientCreds } from '../../db/credentials'
 
 // Based on https://github.com/supabase/auth-helpers/pull/397
-export default function SupabaseProvider({
+export function SupabaseProvider({
   children,
   initialSession,
 }: {

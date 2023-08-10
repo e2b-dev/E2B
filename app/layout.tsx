@@ -1,25 +1,30 @@
-import React, {ReactNode} from 'react'
+import React, { ReactNode } from 'react'
 import { Metadata } from 'next'
-import { PostHogProvider } from './_lib/posthog'
-import SupabaseProvider from './_lib/supabase'
-import {createServerComponentSupabaseClient} from '@supabase/auth-helpers-nextjs'
-import {cookies, headers} from 'next/headers'
+import { PostHogProvider } from './_lib/PostHogProvider'
+import { SupabaseProvider } from './_lib/SupabaseProvider'
+import { createServerComponentSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { cookies, headers } from 'next/headers'
 
 import 'styles/global.css'
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  // TODO: Replace with createServerComponentClient after updating @supabase/auth-helpers-nextjs to newest version
-  const supabaseClient = createServerComponentSupabaseClient({ headers, cookies})
-  const {data: { session }} = await supabaseClient.auth.getSession()
+// Reasoning: https://github.com/vercel/next.js/pull/52916
+export const dynamic = 'force-dynamic'
+
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const supabaseClient = createServerComponentSupabaseClient({ headers, cookies })
+  const {
+    data: { session },
+  } = await supabaseClient.auth.getSession()
   return (
     <html lang="en">
       <body>
-        {/* Beware that "old" Layout.tsx is handling user tracking for GA, but _app.tsx for Posthog */}
-        <PostHogProvider>
-          <SupabaseProvider initialSession={session}>
-            {children}
-          </SupabaseProvider>
-        </PostHogProvider>
+        <SupabaseProvider initialSession={session}>
+          <PostHogProvider>{children}</PostHogProvider>
+        </SupabaseProvider>
       </body>
     </html>
   )
@@ -27,12 +32,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
 export const metadata: Metadata = {
   robots: 'follow, index',
-  title: 'e2b', // will be rewritten in sub routes
-  description: 'e2b', // will be rewritten in sub routes
+  // override in sub routes as needed
+  title: 'Smol Developer | e2b', 
+  description: 'Smol Developer | e2b',
   openGraph: {
-    description: 'e2b', // will be rewritten in sub routes
-    siteName: 'e2b', // will be rewritten in sub routes
+    description: 'Smol Developer | e2b',
+    siteName: 'Smol Developer | e2b',
     type: 'website',
-    // TODO: More
-  }
+  },
 }

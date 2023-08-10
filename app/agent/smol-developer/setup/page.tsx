@@ -10,14 +10,12 @@ import {
   useUser,
   useSupabaseClient, useSession,
 } from '@supabase/auth-helpers-react'
+import dynamic from 'next/dynamic'
 import { usePostHog } from 'posthog-js/react'
 import { nanoid } from 'nanoid'
 import {redirect, useRouter} from 'next/navigation'
 
 import Steps from 'components/Steps'
-import SelectRepository from 'components/SelectRepository'
-import AgentInstructions from 'components/AgentInstructions'
-import DeployAgent from 'components/DeployAgent'
 import { useGitHubClient } from 'hooks/useGitHubClient'
 import { useRepositories } from 'hooks/useRepositories'
 import { useLocalStorage } from 'hooks/useLocalStorage'
@@ -26,7 +24,13 @@ import { GitHubAccount } from 'utils/github'
 import { RepoSetup } from 'utils/repoSetup'
 import StarUs from 'components/StarUs'
 import { smolDeveloperTemplateID } from 'utils/smolTemplates'
-import ChooseOpenAIKey from 'components/ChooseOpenAIKey'
+
+// Lot of hydration issues, so import dynamically to force client-side rendering
+// See https://github.com/tailwindlabs/headlessui/issues?q=is%3Aissue+hydration
+const SelectRepository = dynamic(() => import('components/SelectRepository'), { ssr: false}) 
+const AgentInstructions = dynamic(() => import('components/AgentInstructions'), { ssr: false}) 
+const DeployAgent = dynamic(() => import('components/DeployAgent'), { ssr: false}) 
+const ChooseOpenAIKey = dynamic(() => import('components/ChooseOpenAIKey'), { ssr: false}) 
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
