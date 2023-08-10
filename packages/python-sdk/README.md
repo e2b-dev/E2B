@@ -107,5 +107,5 @@ await term.kill()
 ### Get public hostname for an exposed port inside cloud environment
 ```python
 # Get hostname for port 3000. The hostname is without the protocol (http://).
-hostname = await session.get_hostname(3000)
+hostname = session.get_hostname(3000)
 ```
