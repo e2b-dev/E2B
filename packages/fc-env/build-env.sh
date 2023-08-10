@@ -125,7 +125,7 @@ function mkrootfs() {
 
   echo -e "$DOCKERFILE" | docker build -t $tag -f - $SCRIPTDIR
   local container_id=$(docker run -dt $tag /bin/sh)
-  docker exec $container_id /provision-env.sh
+  docker exec -u root $container_id /provision-env.sh
   local container_size=$(docker image inspect $tag:latest --format='{{.Size}}')
   local rootfs_size=$(($container_size+$free))
 
