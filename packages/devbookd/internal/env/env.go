@@ -121,8 +121,11 @@ func NewEnv(rawRuntimeMode string, debug bool) (*Env, *zap.SugaredLogger, error)
 	}
 
 	l, err := log.NewLogger(env.logDir, env.debug, env.runtimeMode == RuntimeModeServer)
-	envLogger := l.Named("env")
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating a new logger: %+v", err)
+	}
 
+	envLogger := l.Named("env")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating a new logger: %+v", err)
 	}
