@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
-cat <<EOF > /etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
+cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty --noissue --autologin root %I 115200,38400,9600 vt102
@@ -20,22 +20,32 @@ mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -s /etc/systemd/system/devbookd.service /etc/systemd/system/multi-user.target.wants/devbookd.service
 # ------------------------------- #
 
-echo "export SHELL='/bin/bash'" > /etc/profile.d/shell.sh
-echo "export PS1='\w \$ '" > /etc/profile.d/prompt.sh
-echo "export PS1='\w \$ '" >> "/etc/profile"
-echo "export PS1='\w \$ '" >> "/root/.bashrc"
+echo "export SHELL='/bin/bash'" >/etc/profile.d/shell.sh
+echo "export PS1='\w \$ '" >/etc/profile.d/prompt.sh
+echo "export PS1='\w \$ '" >>"/etc/profile"
+echo "export PS1='\w \$ '" >>"/root/.bashrc"
 
 mkdir -p /etc/ssh
 touch /etc/ssh/sshd_config
-echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
-echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
-echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+echo "PermitRootLogin yes" >>/etc/ssh/sshd_config
+echo "PermitEmptyPasswords yes" >>/etc/ssh/sshd_config
+echo "PasswordAuthentication yes" >>/etc/ssh/sshd_config
 
 # Remove password for root.
 passwd -d root
 
+# Create defaul user.
+adduser --disabled-password --gecos "" user
+usermod -aG sudo user
+echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
+
+chmod -R 755 /home/user
+# TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
+# It may be becayse of the way we are starting the FC VM?
+# chown -R user:user /home/user
+
 # Add DNS.
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 8.8.8.8" >/etc/resolv.conf
 
 # Start systemd services
 systemctl enable devbookd
