@@ -7,6 +7,7 @@ export interface Process {
   readonly sendStdin: (data: string) => Promise<void>
   readonly kill: () => Promise<void>
   readonly processID: string
+  readonly finished: Promise<void>
 }
 
 export interface ProcessManager {
