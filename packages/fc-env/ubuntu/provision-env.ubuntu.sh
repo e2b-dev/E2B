@@ -39,7 +39,7 @@ adduser --disabled-password --gecos "" user
 usermod -aG sudo user
 echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 
-chmod -R 755 /home/user
+chmod -R 777 /home/user
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
 # It may be becayse of the way we are starting the FC VM?
 # chown -R user:user /home/user
