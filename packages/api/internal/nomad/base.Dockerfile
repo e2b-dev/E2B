@@ -8,7 +8,7 @@ RUN apt-get update
 # Get Ubuntu packages
 RUN apt-get install -y \
     build-essential \
-    curl socat util-linux openssh-server git chrony nano sudo
+    curl socat util-linux openssh-server git chrony nano sudo htop
 
 # Unminimize ubuntu so it can be used in an interactive way
 RUN yes | unminimize
