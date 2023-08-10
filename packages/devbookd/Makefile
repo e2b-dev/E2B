@@ -1,8 +1,11 @@
 upload:
 	./upload.sh
 
+upload-local:
+	./upload-local.sh
+
 build:
-	CGO_ENABLED=0 GOOS=linux go build -a -o bin/devbookd .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/devbookd .
 
 build-debug:
 	go build -gcflags=all="-N -l" -o bin/debug/devbookd
