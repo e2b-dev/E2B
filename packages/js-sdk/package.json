@@ -1,18 +1,18 @@
 {
-  "name": "@devbookhq/sdk",
-  "version": "2.6.86",
-  "description": "SDK for managing Devbook sessions from JavaScript/TypeScript",
-  "homepage": "https://usedevbook.com",
-  "license": "SEE LICENSE IN LICENSE",
+  "name": "@e2b/sdk",
+  "version": "0.1.0",
+  "description": "E2B SDK that give agents cloud environments",
+  "homepage": "https://e2b.dev",
+  "license": "MIT",
   "author": {
     "name": "FoundryLabs, Inc.",
-    "email": "hello@usedevbook.com",
-    "url": "https://usedevbook.com"
+    "email": "hello@e2b.dev",
+    "url": "https://e2b.dev"
   },
-  "bugs": "https://github.com/DevbookHQ/devbook-api/issues",
+  "bugs": "https://github.com/e2b-dev/e2b/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DevbookHQ/devbook-api"
+    "url": "https://github.com/e2b-dev/api"
   },
   "publishConfig": {
     "access": "public"
@@ -56,12 +56,14 @@
     "dist",
     "src",
     "README.md",
-    "LICENSE",
     "package.json"
   ],
   "keywords": [
-    "devbook",
-    "documentation",
+    "e2b",
+    "ai-agents",
+    "agents",
+    "ai",
+    "code-interpreter",
     "sandbox",
     "code",
     "runtime",
