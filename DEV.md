@@ -106,6 +106,7 @@
 - Add linter for unhandled go errors (https://stackoverflow.com/questions/43898074/is-there-a-way-to-find-not-handled-errors-in-go-code)
 - Should we just do "stubs" of fs libraries from various languages so our code can be used exactly like that?
 - Session performance periodic monitoring
+- rename process to command?
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
