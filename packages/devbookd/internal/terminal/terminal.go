@@ -40,7 +40,7 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
 
-	if rootdir != "" {
+	if rootdir == "" {
 		cmd.Dir = homedir
 	} else {
 		cmd.Dir = rootdir
