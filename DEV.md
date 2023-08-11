@@ -108,6 +108,10 @@
 - Session performance periodic monitoring
 - rename process to command?
 - automatic codebase multirepo sync (git tree?) in GH actions?
+- longer session ids + security
+- should we use use REST instead of JSONRPC or streaming there for saving/loading bigger data (files, byte files)
+- should we support graphql for our API
+- GH action for the CLI
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
