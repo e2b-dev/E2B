@@ -109,6 +109,10 @@
 - Should we just do "stubs" of fs libraries from various languages so our code can be used exactly like that?
 - Local vs remote building from Dockerfile + logs streaming
 - Improve env vars handling for process and terminal in devbookd
+- longer session ids + security
+- should we use use REST instead of JSONRPC or streaming there for saving/loading bigger data (files, byte files)
+- should we support graphql for our API
+- GH action for the CLI
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
