@@ -112,7 +112,7 @@ class Session extends SessionConnection {
         onExit,
         envVars,
         cmd,
-        rootdir,
+        rootdir = '',
         terminalID = id(12),
       }) => {
         const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
@@ -183,7 +183,7 @@ class Session extends SessionConnection {
         onStderr,
         onExit,
         envVars = {},
-        rootdir = '/',
+        rootdir = '',
         processID = id(12),
       }) => {
         const { promise: processExited, resolve: triggerExit } = createDeferredPromise()

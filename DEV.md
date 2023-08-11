@@ -107,6 +107,7 @@
 - Should we just do "stubs" of fs libraries from various languages so our code can be used exactly like that?
 - Session performance periodic monitoring
 - rename process to command?
+- automatic codebase multirepo sync (git tree?) in GH actions?
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)

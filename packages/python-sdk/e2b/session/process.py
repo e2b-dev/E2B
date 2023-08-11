@@ -194,7 +194,7 @@ class ProcessManager:
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[], Any]] = None,
         env_vars: Optional[EnvVars] = {},
-        rootdir: str = "/",
+        rootdir: str = "",
         process_id: str | None = None,
     ) -> Process:
         """
