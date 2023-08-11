@@ -57,6 +57,90 @@
     -webkit-text-security: disc;
     text-security: disc;
   }
+  
+  /* TODO: Consider refactoring `agent-` classes to relevant components */
+  .agent-step-root {
+    @apply flex-1 flex flex-col justify-start;
+  }
+  
+  .agent-step-footer {
+    @apply w-full flex items-center justify-between;
+    @apply text-sm;
+  }
+
+  .agent-step-footer-btn-back {
+    @apply flex items-center justify-start space-x-1; 
+    @apply text-gray-400 hover:text-gray-100 transition-all;
+  }
+  
+  .agent-step-footer-btn-next {
+    @apply px-4 py-2 flex items-center space-x-1 font-medium rounded-md border;
+    @apply border-indigo-400/30 bg-indigo-400/10 text-indigo-400 hover:bg-transparent hover:border-indigo-400 transition-all;
+  }
+
+  .agent-step-footer-btn-next_final {
+    /* indigo -> green*/
+    @apply border-green-400/30 bg-green-400/10 text-green-400 hover:border-green-400;
+  }
+  
+  .agent-editor {
+    @apply relative bg-gray-950 flex flex-col p-2 w-full flex-1 overflow-auto border border-gray-700 rounded-md;
+  }
+  
+  .agent-editor-textarea {
+    @apply bg-gray-950 p-4 text-gray-100;
+  }
+
+  .agent-step-title {
+    @apply text-2xl font-bold tracking-tight;
+  }
+  
+  .agent-step-subtitle {
+    @apply mb-6;
+    @apply text-gray-400;
+  }
+
+  .agent-step-content {
+    @apply flex-1 w-full flex flex-col items-center justify-start;
+    @apply space-y-4;
+  }
+  
+  .agent-step-overview-block {
+    @apply flex flex-col items-start justify-start;
+    @apply w-full;
+  }
+  
+  .agent-step-overview-title {
+    @apply flex mb-2;
+    @apply text-sm;
+    @apply text-gray-300;
+  }
+
+  .agent-step-overview-edit {
+    @apply inline-flex;
+  }
+
+  .agent-step-overview-edit-icon {
+    @apply inline-block w-4 h-4 ml-2;
+    @apply text-gray-600 hover:text-white transition-all;
+  }
+
+  .agent-step-overview-value {
+    @apply block;
+    @apply text-sm text-white font-bold;
+    @apply flex items-center;
+  }
+
+  .agent-step-overview-icon {
+    @apply inline-block w-4 h-4 mr-2;
+    @apply text-gray-400;
+  }
+  
+  .agent-btn-inline {
+    /* min dimensions so the button does not collapse with only spinner */
+    @apply min-w-[64px] min-h-[28px] flex items-center justify-center;
+    @apply rounded bg-white/10 px-2 py-1 text-sm font-medium text-white shadow-sm hover:bg-white/20;
+  }
 }
 
 .no-scroller::-webkit-scrollbar {

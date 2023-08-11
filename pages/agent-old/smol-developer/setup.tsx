@@ -54,8 +54,8 @@ export interface PostAgentBody {
 }
 
 const steps = [
-  { name: 'Select Repository' },
-  { name: 'Your Instructions' },
+  { name: 'Repository' },
+  { name: 'Agent Instructions' },
   { name: 'OpenAI API Key' },
   { name: 'Overview & Deploy' },
 ]

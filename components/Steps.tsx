@@ -7,12 +7,15 @@ function Steps({
   currentIdx,
   steps,
 }: Props) {
-  const currentStep = steps.find((s, idx) => idx === currentIdx)
   return (
     <div className="px-px w-full flex items-center justify-center">
       <ol role="list" className="w-full flex items-center space-x-5 mr-1 mt-0.5">
         <div className="w-full flex items-center justify-between">
-          <span className="text-xs font-medium text-white">{currentStep?.name}</span>
+          <span className="text-sm font-medium text-white">
+            Deploy
+            {' '}
+            <a className="text-indigo-400 hover:text-indigo-500 transition-all" href="https://github.com/smol-ai/developer" target="_blank" rel="noreferrer noopener">Smol Developer</a>
+          </span>
           <p className="text-gray-400 text-xs font-medium">
             Step {currentIdx + 1} of {steps.length}
           </p>

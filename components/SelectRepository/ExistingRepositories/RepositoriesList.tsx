@@ -30,7 +30,7 @@ function RepositoriesList({
           </div>
           <button
             type="button"
-            className="rounded bg-white/10 px-2 py-1 text-sm font-medium text-white shadow-sm hover:bg-white/20"
+            className="agent-btn-inline"
             onClick={() => onRepoSelection({
               installationID: r.installation_id,
               defaultBranch: r.default_branch,

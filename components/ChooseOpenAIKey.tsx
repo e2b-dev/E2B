@@ -54,12 +54,12 @@ function ChooseOpenAIKey({
   }
 
   return (
-    <div className="flex-1 flex flex-col items-start justify-start space-y-2">
-      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-        Select OpenAI API Key
+    <div className="agent-step-root">
+      <h2 className="agent-step-title">
+        OpenAI API Key
       </h2>
-      <p className="mt-2 mb-6 text-lg leading-8 text-gray-400">
-        Pass your own OpenAI key or use the e2b key.
+      <p className="agent-step-subtitle">
+        Use the e2b&apos;s API key or pass your own.
       </p>
 
       <div className="flex-1 w-full flex flex-col space-y-4 items-center justify-start">
@@ -88,7 +88,7 @@ function ChooseOpenAIKey({
           <ul className="list-disc p-4 border border-indigo-400/40 rounded-md text-sm">
             <li className="ml-4">Use the e2b key to get started quickly and not get charged for OpenAI API usage</li>
             <li className="ml-4">We can&apos;t guarantee that e2b will not get blocked by OpenAI API rate limits</li>
-            <li className="ml-4"><b>All costs running the smol developer will be billed to e2b</b></li>
+            <li className="ml-4"><b className="text-green-500">All costs running the smol developer will be billed to e2b</b></li>
           </ul>
         )}
         {selectedOpenAIKeyType === 'user' && (
@@ -96,7 +96,7 @@ function ChooseOpenAIKey({
             <ul className="list-disc p-4 border border-indigo-400/40 rounded-md text-sm">
               <li className="ml-4">Use your own OpenAI API key</li>
               <li className="ml-4">Using your own key might help when e2b is hitting the OpenAI&apos;s API rate limits</li>
-              <li className="ml-4"><b>All costs running the smol developer will be billed to your OpenAI account</b></li>
+              <li className="ml-4"><b className="text-orange-500">All costs running the smol developer will be billed to your OpenAI account</b></li>
             </ul>
             <OpenAIKeyInput
               openAIKey={userOpenAIKey}
@@ -110,20 +110,20 @@ function ChooseOpenAIKey({
       </div>
 
 
-      <div className="w-full flex items-center justify-between">
+      <div className="agent-step-footer">
         <button
-          className="flex items-center justify-start space-x-1 text-gray-400 hover:text-gray-100 transition-all"
+          className="agent-step-footer-btn-back"
           onClick={onBack}
         >
           <ArrowLeft size={14} />
-          <span className="text-sm">Back</span>
+          <span>Back</span>
         </button>
 
         <button
-          className="px-2 py-1 flex group items-center space-x-1 font-medium rounded-md border border-indigo-400/30 bg-indigo-400/10 text-indigo-400 hover:bg-transparent hover:border-indigo-400 transition-all"
+          className="agent-step-footer-btn-next group"
           onClick={handleContinue}
         >
-          <span className="text-sm">Continue</span>
+          <span>Continue</span>
           <ArrowRight className="group-hover:translate-x-0.5 transition-all" size={14} />
         </button>
       </div>

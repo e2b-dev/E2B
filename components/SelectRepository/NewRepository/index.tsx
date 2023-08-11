@@ -120,7 +120,7 @@ function NewRepository({
           />
 
           <button
-            className="w-8 min-w-[64px] h-[24px] min-h-[24px] flex items-center justify-center rounded bg-white/10 px-2 py-1 text-sm text-white font-medium hover:bg-white/20"
+            className="agent-btn-inline"
             onClick={handleCreateClick}
           >
             {state.isCreating ? (

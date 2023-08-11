@@ -1,8 +1,4 @@
-import {
-  Github,
-  ArrowLeft,
-  ScrollText,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, Github, KeySquare, Pencil } from 'lucide-react'
 
 import InstructionsEditor from 'components/InstructionsEditor'
 import { RepoSetup } from 'utils/repoSetup'
@@ -35,106 +31,109 @@ function DeployAgent({
   error,
 }: Props) {
   return (
-    <div className="">
-      <div className="">
+    <div className="agent-step-root">
+      {isDeploying && (
+        <div className="flex flex-col items-center py-12 gap-y-4">
+          <SpinnerIcon className="w-8 h-8" />
+          <span className="">Deploying...</span>
+        </div>
+      )}
+      {!isDeploying && error && (
+        <AlertError title="Deploy failed" infoItems={[error]} />
+      )}
+      {!isDeploying && (
+        <>
+          <h2 className="agent-step-title">Confirm & Deploy</h2>
+          <p className="agent-step-subtitle">
+            Make sure everything is to your liking and then deploy the agent.
+          </p>
 
-        {isDeploying && (
-          <div className="">
-            <SpinnerIcon className="" />
-            <span className="">Deploying...</span>
-          </div>
-        )}
-        {!isDeploying && error && (
-          <AlertError
-            title="Deploy failed"
-            infoItems={[error]}
-          />
-        )}
-        {!isDeploying && (
-          <>
-            {/* OpenAI Key */}
-            <div className="">
-              <span className="">
-                OpenAI API Key
-              </span>
-              <span className="">
-                {selectedOpenAIKeyType === 'user' && 'Use your own OpenAI API key'}
-                {selectedOpenAIKeyType === 'e2b' && 'Use e2b\'s OpenAI API key'}
-              </span>
-            </div>
-
-            <hr className="" />
-
+          <div className="agent-step-content">
             {/* Selected repo */}
-            <div className="">
-              <div className="">
-                <div className="">
-                  <Github className="" size={16} />
-                  <span className="">
-                    Repository
-                  </span>
-                </div>
-
+            <div className="agent-step-overview-block">
+              <span className="agent-step-overview-title">
+                Repository
                 <button
                   type="button"
-                  className=""
+                  className="agent-step-overview-edit"
+                  title="Change repository"
                   onClick={onChangeRepo}
                 >
-                  Change Repository
+                  <Pencil className="agent-step-overview-edit-icon" />
                 </button>
-              </div>
-
-              <span className="">
-                {selectedRepo.fullName}
+              </span>
+              <span className="agent-step-overview-value">
+                <Github className="agent-step-overview-icon" />
+                {selectedRepo?.fullName ?? 'Strajk/fixme'}
               </span>
             </div>
 
-            <hr className="" />
-
-            {/* Instructions */}
-            <div className="">
-              <div className="">
-                <div className="">
-                  <ScrollText className="" size={16} />
-                  <span className="">
-                    Instructions
-                  </span>
-                </div>
+            {/* OpenAI Key */}
+            <div className="agent-step-overview-block">
+              <span className="agent-step-overview-title">
+                OpenAI API Key
                 <button
                   type="button"
-                  className=""
-                  onClick={onChangeTemplate}
+                  className="agent-step-overview-edit"
+                  title="Change OpenAI API key"
+                  onClick={onBack}
                 >
-                  Use Template
+                  <Pencil className="agent-step-overview-edit-icon" />
                 </button>
-              </div>
+              </span>
+              <span className="agent-step-overview-value">
+                <KeySquare className="agent-step-overview-icon" />
+                {selectedOpenAIKeyType === 'user' &&
+                  'Use your own OpenAI API key'}
+                {selectedOpenAIKeyType === 'e2b' && "Use e2b's OpenAI API key"}
+              </span>
+            </div>
 
-              <div className="">
+            {/* Instructions */}
+            <div className="agent-step-overview-block">
+              <span className="agent-step-overview-title">
+                Instructions
+                <button
+                  type="button"
+                  className="agent-step-overview-edit"
+                  onClick={onChangeTemplate}
+                  title="Change instructions"
+                >
+                  <Pencil className="agent-step-overview-edit-icon" />
+                </button>
+              </span>
+              <div className="agent-editor">
                 <InstructionsEditor
-                  className=""
+                  className="agent-editor-textarea"
                   content={instructions}
                   onChange={onInstructionsChange}
                 />
               </div>
             </div>
-            <div className="">
-              <button
-                className=""
-                onClick={onBack}
-              >
-                <ArrowLeft size={14} />
-                <span className="">Back</span>
-              </button>
-              <button
-                className=""
-                onClick={onDeploy}
-              >
+          </div>
+
+          {/* Footer */}
+          <div className="agent-step-footer">
+            <button className="agent-step-footer-btn-back" onClick={onBack}>
+              <ArrowLeft size={14} />
+              <span>Back</span>
+            </button>
+
+            <button
+              className="agent-step-footer-btn-next agent-step-footer-btn-next_final group"
+              onClick={onDeploy}
+            >
+              <span>
                 Deploy on <b>e2b</b>
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+              </span>
+              <ArrowRight
+                className="group-hover:translate-x-0.5 transition-all"
+                size={14}
+              />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
