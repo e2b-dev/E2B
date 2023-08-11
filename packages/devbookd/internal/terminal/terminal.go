@@ -45,15 +45,13 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	} else {
 		cmd.Dir = rootdir
 	}
-
-	formattedVars := []string{}
+	// We inherit the env vars from the root process, but we should handle this differently in the future.
+	formattedVars := os.Environ()
 
 	formattedVars = append(formattedVars, "HOME="+cmd.Dir)
 	formattedVars = append(formattedVars, "USER="+username)
-	formattedVars = append(
-		formattedVars,
-		"TERM=xterm",
-	)
+	formattedVars = append(formattedVars, "LOGNAME="+username)
+	formattedVars = append(formattedVars, "TERM=xterm")
 
 	// Only the last values of the env vars are used - this allows for overwriting defaults
 	if envVars != nil {

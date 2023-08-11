@@ -3,6 +3,7 @@ package process
 import (
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"syscall"
 
@@ -38,10 +39,12 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 		cmd.Dir = rootdir
 	}
 
-	formattedVars := []string{}
+	// We inherit the env vars from the root process, but we should handle this differently in the future.
+	formattedVars := os.Environ()
 
 	formattedVars = append(formattedVars, "HOME="+cmd.Dir)
 	formattedVars = append(formattedVars, "USER="+username)
+	formattedVars = append(formattedVars, "LOGNAME="+username)
 
 	// Only the last values of the env vars are used - this allows for overwriting defaults
 	for key, value := range *envVars {
