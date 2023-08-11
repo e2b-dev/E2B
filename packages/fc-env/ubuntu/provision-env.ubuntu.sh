@@ -37,6 +37,7 @@ passwd -d root
 # Create defaul user.
 adduser --disabled-password --gecos "" user
 usermod -aG sudo user
+passwd -d user
 echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 
 chmod -R 777 /home/user
