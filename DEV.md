@@ -1,5 +1,7 @@
 # DEV
+
 ## Infra
+
 - Clock drift
   - https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it
 - Change read/write file to allow other thatn utf-8 format so we don't break the files
@@ -98,14 +100,20 @@
 - What was the FC alternative that supported Windows?
 - Start tty in devbookd only after hooking it to the onData subscribers!
 - vale for text linting
-- embed all hcl tasks in the API code
+- embed all hcl tasks in the API code (also the fc-env scripts?)
 - Do we need provisioning script now? Without it it could be easier to build custom envs. Also think about how flyio solved the daemon - I think they just injected the daemon into the environment. Codesandbox also has a daemon in the env but they don't have a update pipeline for the old envs because it is not needed.
-- Should we mount special filesystems on boots 
+- Should we mount special filesystems on boots
 - Change FC env building system - not having separate fc-env dir/package - inline?
 - Fix correct user permission for home dir (chown problem in FC)
 - Add linter for unhandled go errors (https://stackoverflow.com/questions/43898074/is-there-a-way-to-find-not-handled-errors-in-go-code)
 - Should we just do "stubs" of fs libraries from various languages so our code can be used exactly like that?
 - Session performance periodic monitoring
+- Local vs remote building from Dockerfile + logs streaming
+- Improve env vars handling for process and terminal in devbookd
+- longer session ids + security
+- should we use use REST instead of JSONRPC or streaming there for saving/loading bigger data (files, byte files)
+- should we support graphql for our API
+- GH action for the CLI
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
