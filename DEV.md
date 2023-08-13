@@ -110,6 +110,8 @@
 - Session performance periodic monitoring
 - Local vs remote building from Dockerfile + logs streaming
 - Improve env vars handling for process and terminal in devbookd
+- rename process to command?
+- automatic codebase multirepo sync (git tree?) in GH actions?
 - longer session ids + security
 - should we use use REST instead of JSONRPC or streaming there for saving/loading bigger data (files, byte files)
 - should we support graphql for our API

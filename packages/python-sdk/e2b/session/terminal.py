@@ -138,7 +138,7 @@ class TerminalManager:
         on_data: Callable[[str], Any],
         cols: int,
         rows: int,
-        rootdir: str,
+        rootdir: str = "",
         terminal_id: str | None = None,
         on_exit: Optional[Callable[[], Any]] = None,
         cmd: Optional[str] = None,

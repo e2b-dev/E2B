@@ -3,12 +3,7 @@ import normalizePath from 'normalize-path'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors } from '../utils/promise'
 import {
-  CodeSnippetExecState,
-  CodeSnippetManager,
-  CodeSnippetStateHandler,
-  CodeSnippetStderrHandler,
-  CodeSnippetStdoutHandler,
-  ScanOpenedPortsHandler,
+  ScanOpenedPortsHandler as ScanOpenPortsHandler,
   codeSnippetService,
 } from './codeSnippet'
 import { FileInfo, FilesystemManager, filesystemService } from './filesystem'
@@ -17,71 +12,20 @@ import { ProcessManager, processService } from './process'
 import SessionConnection, { SessionConnectionOpts } from './sessionConnection'
 import { TerminalManager, terminalService } from './terminal'
 
-export interface CodeSnippetOpts {
-  onStateChange?: CodeSnippetStateHandler
-  onStderr?: CodeSnippetStderrHandler
-  onStdout?: CodeSnippetStdoutHandler
-  onScanPorts?: ScanOpenedPortsHandler
-}
-
 export interface SessionOpts extends SessionConnectionOpts {
-  codeSnippet?: CodeSnippetOpts
+  onScanPorts?: ScanOpenPortsHandler
 }
 
 class Session extends SessionConnection {
-  codeSnippet?: CodeSnippetManager
-  terminal?: TerminalManager
-  filesystem?: FilesystemManager
-  process?: ProcessManager
+  readonly terminal: TerminalManager
+  readonly filesystem: FilesystemManager
+  readonly process: ProcessManager
 
-  private readonly codeSnippetOpts?: CodeSnippetOpts
+  private onScanPorts?: ScanOpenPortsHandler
 
-  constructor(opts: SessionOpts) {
+  private constructor(opts: SessionOpts) {
     super(opts)
-    this.codeSnippetOpts = opts.codeSnippet
-  }
-
-  async open() {
-    await super.open()
-
-    await this.handleSubscriptions(
-      this.codeSnippetOpts?.onStateChange
-        ? this.subscribe(codeSnippetService, this.codeSnippetOpts.onStateChange, 'state')
-        : undefined,
-      this.codeSnippetOpts?.onStderr
-        ? this.subscribe(codeSnippetService, this.codeSnippetOpts.onStderr, 'stderr')
-        : undefined,
-      this.codeSnippetOpts?.onStdout
-        ? this.subscribe(codeSnippetService, this.codeSnippetOpts.onStdout, 'stdout')
-        : undefined,
-      this.codeSnippetOpts?.onScanPorts
-        ? this.subscribe(
-            codeSnippetService,
-            this.codeSnippetOpts.onScanPorts,
-            'scanOpenedPorts',
-          )
-        : undefined,
-    )
-
-    // Init CodeSnippet handler
-    this.codeSnippet = {
-      run: async (code, envVars = {}) => {
-        const state = (await this.call(codeSnippetService, 'run', [
-          code,
-          envVars,
-        ])) as CodeSnippetExecState
-        this.codeSnippetOpts?.onStateChange?.(state)
-        return state
-      },
-      stop: async () => {
-        const state = (await this.call(
-          codeSnippetService,
-          'stop',
-        )) as CodeSnippetExecState
-        this.codeSnippetOpts?.onStateChange?.(state)
-        return state
-      },
-    }
+    this.onScanPorts = opts.onScanPorts
 
     // Init Filesystem handler
     this.filesystem = {
@@ -162,13 +106,13 @@ class Session extends SessionConnection {
 
     // Init Terminal handler
     this.terminal = {
-      createSession: async ({
+      start: async ({
         onData,
         size,
         onExit,
         envVars,
         cmd,
-        rootdir,
+        rootdir = '',
         terminalID = id(12),
       }) => {
         const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
@@ -211,7 +155,8 @@ class Session extends SessionConnection {
         }
 
         return {
-          destroy: async () => {
+          finished: unsubscribing,
+          kill: async () => {
             try {
               await this.call(terminalService, 'destroy', [terminalID])
             } finally {
@@ -238,7 +183,7 @@ class Session extends SessionConnection {
         onStderr,
         onExit,
         envVars = {},
-        rootdir = '/',
+        rootdir = '',
         processID = id(12),
       }) => {
         const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
@@ -282,6 +227,7 @@ class Session extends SessionConnection {
         }
 
         return {
+          finished: unsubscribing,
           kill: async () => {
             try {
               await this.call(processService, 'kill', [processID])
@@ -297,6 +243,22 @@ class Session extends SessionConnection {
         }
       },
     }
+  }
+
+  static async create(opts: SessionOpts) {
+    return await new Session(opts).open()
+  }
+
+  protected override async open() {
+    await super.open()
+
+    await this.handleSubscriptions(
+      this.onScanPorts
+        ? this.subscribe(codeSnippetService, this.onScanPorts, 'scanOpenedPorts')
+        : undefined,
+    )
+
+    return this
   }
 }
 

@@ -12,7 +12,7 @@ export type {
 } from './session/codeSnippet'
 export type { OutResponse, OutStderrResponse, OutStdoutResponse } from './session/out'
 export { OutType } from './session/out'
-export type { TerminalManager, TerminalSession } from './session/terminal'
+export type { TerminalManager, Terminal as TerminalSession } from './session/terminal'
 export type { FilesystemManager, FileInfo } from './session/filesystem'
 export {
   default as FilesystemWatcher,
