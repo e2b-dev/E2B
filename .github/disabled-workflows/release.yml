@@ -21,8 +21,6 @@ jobs:
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
       fc-env: ${{ steps.filter.outputs.fc-env }}
       api-image: ${{ steps.filter.outputs.api-image }}
-      sdk: ${{ steps.filter.outputs.sdk }}
-      cli: ${{ steps.filter.outputs.cli }}
       devbookd: ${{ steps.filter.outputs.devbookd }}
       firecracker-task-driver: ${{ steps.filter.outputs.firecracker-task-driver }}
       version: ${{ steps.filter.outputs.version }}
@@ -57,12 +55,6 @@ jobs:
             api-image:
               - 'packages/api/**'
               - '.github/workflows/api-image.yml'
-            sdk:
-              - 'packages/js-sdk/**'
-              - '.github/workflows/js-sdk.yml'
-            cli:
-              - 'packages/cli/**'
-              - '.github/workflows/cli.yml'
             devbookd:
               - 'packages/devbookd/**'
               - '.github/workflows/devbookd.yml'
@@ -80,8 +72,8 @@ jobs:
     name: Devbook Firecracker Task Driver
     needs: changes
     if: |
-     needs.changes.outputs.version == 'true' &&
-     needs.changes.outputs.firecracker-task-driver == 'true'
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.firecracker-task-driver == 'true'
     uses: ./.github/workflows/firecracker-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -136,7 +128,15 @@ jobs:
 
   terraform:
     name: Terraform
-    needs: [changes, cluster-disk-image, fc-env, api-image, devbookd, firecracker-task-driver]
+    needs:
+      [
+        changes,
+        cluster-disk-image,
+        fc-env,
+        api-image,
+        devbookd,
+        firecracker-task-driver,
+      ]
     if: |
       always() &&
       needs.changes.outputs.version == 'true' &&
@@ -151,40 +151,14 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-    # TODO: Restart API when devbookd changes
-
-  sdk:
-    name: SDK
-    needs: [changes, terraform]
-    if: |
-      always() &&
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.sdk == 'true' && needs.terraform.result == 'success'
-    uses: ./.github/workflows/js-sdk.yml
-    secrets:
-      node_auth_token: ${{ secrets.NPM_TOKEN }}
-
-  cli:
-    name: CLI
-    needs: [changes, sdk]
-    if: |
-      always() &&
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.cli == 'true' && needs.sdk.result == 'success'
-    uses: ./.github/workflows/cli.yml
-    secrets:
-      node_auth_token: ${{ secrets.NPM_TOKEN }}
-
   # The last succeesful release is used for determining which changed and what should be deployed in this release.
   release:
     name: Release
-    needs: [changes, cli, terraform]
+    needs: [changes, terraform]
     if: |
       always() &&
       needs.terraform.result == 'success' &&
-      needs.changes.outputs.version == 'true' &&
-      (needs.sdk.result == 'success' || needs.sdk.result == 'skipped') &&
-      (needs.cli.result == 'success' || needs.cli.result == 'skipped')
+      needs.changes.outputs.version == 'true'
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
