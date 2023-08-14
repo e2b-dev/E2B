@@ -22,6 +22,11 @@
 
 E2b offers low level APIs for developers to debug, test, deploy, and monitor their AI agents.
 
+This mono repo contains:
+- Admin dashboard
+- E2B's Python SDK
+- E2B's JavaScript/TypeScript SDK
+
 # 🚧 This repo is going through a big update and is work in progress.
 
 
