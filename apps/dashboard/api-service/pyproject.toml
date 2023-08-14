@@ -14,7 +14,7 @@ asyncio = "^3.4.3"
 postgrest = "^0.10.6"
 uvicorn = {extras = ["standard"], version = "^0.22.0"}
 fastapi = "^0.95.1"
-langchain = "0.0.141"
+langchain = "0.0.236"
 openai = "^0.27.6"
 uuid = "^1.30"
 aiohttp = "^3.8.4"
