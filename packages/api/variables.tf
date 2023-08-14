@@ -25,7 +25,7 @@ variable "api_port" {
 
 variable "image_name" {
   type    = string
-  default = "us-central1-docker.pkg.dev/devbookhq/orchestration/api"
+  default = "us-central1-docker.pkg.dev/e2b-prod/orchestration/api"
 }
 
 variable "logs_proxy_address" {

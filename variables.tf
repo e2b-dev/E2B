@@ -1,7 +1,7 @@
 variable "gcp_project_id" {
   description = "The project to deploy the cluster in"
   type        = string
-  default     = "devbookhq"
+  default     = "e2b-prod"
 }
 
 variable "gcp_region" {
@@ -32,7 +32,7 @@ variable "client_cluster_size" {
 
 variable "client_machine_type" {
   type    = string
-  default = "n1-standard-16"
+  default = "n1-standard-8"
 }
 
 variable "client_proxy_health_port" {

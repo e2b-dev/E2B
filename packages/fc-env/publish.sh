@@ -11,7 +11,7 @@ set -euo pipefail
 ./package.sh
 
 gsutil -h "Cache-Control:no-cache, max-age=0" \
-  cp env.tar.gz gs://devbook-environment-pipeline
+  cp env.tar.gz gs://e2b-fc-env-pipeline
 
 rm env.tar.gz
 rm -rf env

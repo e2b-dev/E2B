@@ -29,12 +29,12 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
       driver = "raw_exec"
 
       artifact {
-        source = "https://storage.googleapis.com/devbook-environment-pipeline/env.tar.gz"
+        source = "https://storage.googleapis.com/e2b-fc-env-pipeline/env.tar.gz"
         destination = "local"
       }
 
       artifact {
-        source = "https://storage.googleapis.com/devbook-environment-pipeline/devbookd"
+        source = "https://storage.googleapis.com/e2b-fc-env-pipeline/devbookd"
         destination = "local/devbookd"
         mode = "file"
       }
