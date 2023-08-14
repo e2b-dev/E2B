@@ -26,7 +26,6 @@ apply:
 .PHONY: generate-from-openapi
 generate-from-openapi:
 	$(MAKE) -C packages/api generate
-	npm run generate --prefix packages/js-sdk
 
 .PHONY: increment-version
 increment-version:
