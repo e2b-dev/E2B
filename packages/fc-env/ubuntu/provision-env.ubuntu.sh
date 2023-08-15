@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+# TODO: Add swap
+
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
 cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
@@ -33,6 +35,9 @@ echo "PasswordAuthentication yes" >>/etc/ssh/sshd_config
 
 # Remove password for root.
 passwd -d root
+
+# TODO: Change the directory for core dumps.
+# bash -c 'echo "kernel.core_pattern=/tmp/%e.%t.%p.%s.core" > /proc/sys/kernel/core_pattern'
 
 # Create defaul user.
 adduser --disabled-password --gecos "" user

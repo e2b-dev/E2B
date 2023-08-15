@@ -107,7 +107,7 @@ function mkdirs() {
 }
 
 function mkbuildidfile() {
-  echo -n "${RUN_UUID}" > ${BUILD_BUILD_ID_FILE}
+  echo -n "${RUN_UUID}" >${BUILD_BUILD_ID_FILE}
 }
 
 function mkrootfs() {
@@ -115,11 +115,11 @@ function mkrootfs() {
 
   local tag=rootfs-${RUN_UUID}
 
-  local free=1500000000 # 1500MB in B
+  local free=3000000000 # 3000MB in B
 
   if [ "$CODE_SNIPPET_ID" == "Rust" ]; then
     free=3300000000 # 3300MB in B
-  fi  
+  fi
 
   cp $DEVBOOKD $SCRIPTDIR/devbookd
 
@@ -127,7 +127,7 @@ function mkrootfs() {
   local container_id=$(docker run -dt $tag /bin/sh)
   docker exec -u root $container_id /provision-env.sh
   local container_size=$(docker image inspect $tag:latest --format='{{.Size}}')
-  local rootfs_size=$(($container_size+$free))
+  local rootfs_size=$(($container_size + $free))
 
   echo "===> Rootfs size: ${rootfs_size}B"
 
@@ -140,9 +140,9 @@ function mkrootfs() {
   umount $BUILD_MNT_DIR
   rm -rf $BUILD_MNT_DIR
 
-  docker kill $container_id && \
-  docker rm -f $container_id && \
-  docker rmi -f $tag
+  docker kill $container_id &&
+    docker rm -f $container_id &&
+    docker rmi -f $tag
 
   echo "===> rootfs done"
 }
@@ -167,7 +167,7 @@ function startfc() {
   kernel_args="$kernel_args reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on"
 
   local config="vmconfig.json"
-  cat <<EOF > $config
+  cat <<EOF >$config
 {
   "boot-source": {
     "kernel_image_path": "/fc-vm/vmlinux.bin",
@@ -191,7 +191,7 @@ function startfc() {
   "machine-config": {
     "vcpu_count": 4,
     "smt": true,
-    "mem_size_mib": 512
+    "mem_size_mib": 1024
   },
   "mmds-config": {
     "network_interfaces": ["eth0"],
@@ -208,10 +208,10 @@ EOF
 
 function pausefc() {
   curl --unix-socket $FC_SOCK -i \
-      -X PATCH 'http://localhost/vm' \
-      -H 'Accept: application/json' \
-      -H 'Content-Type: application/json' \
-      -d '{
+    -X PATCH 'http://localhost/vm' \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d '{
               "state": "Paused"
       }'
 }
@@ -219,10 +219,10 @@ function pausefc() {
 # We could do a diff snapshot here because it's the first snapshot - we don't have anything to merge it with.
 function snapfc() {
   curl --unix-socket $FC_SOCK -i \
-      -X PUT 'http://localhost/snapshot/create' \
-      -H  'Accept: application/json' \
-      -H  'Content-Type: application/json' \
-      -d "{
+    -X PUT 'http://localhost/snapshot/create' \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d "{
             \"snapshot_type\": \"Full\",
             \"snapshot_path\": \"$BUILD_FC_SNAPFILE\",
             \"mem_file_path\": \"$BUILD_FC_MEMFILE\"
