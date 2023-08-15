@@ -1,10 +1,11 @@
 import asyncio
 import logging
+import traceback
 
 from typing import Awaitable, Literal, Optional, Callable, List, Any, Coroutine
 from pydantic import BaseModel
 
-from e2b.session.exception import MultipleExceptions
+from e2b.session.exception import MultipleExceptions, SessionException
 from e2b.utils.future import DeferredFuture
 from e2b.utils.future import format_settled_errors
 from e2b.session.session_rpc import SessionRpc, Notification
@@ -164,6 +165,9 @@ class SessionConnection:
             raise e
 
     async def _call(self, service: str, method: str, params: List[Any] = []):
+        if not self.is_open:
+            raise SessionException("Session is not open")
+        
         return await self._rpc.send_message(f"{service}_{method}", params)
 
     async def _handle_subscriptions(
@@ -195,8 +199,13 @@ class SessionConnection:
             if len(exceptions) == 1:
                 raise exceptions[0]
 
-            error_message = format_settled_errors(exceptions)
-            logger.info(f"Failed to subscribe: {error_message}")
+            error_message = "\n"
+
+            for i, s in enumerate(exceptions):
+                tb = s.__traceback__  # Get the traceback object
+                stack_trace = '\n'.join(traceback.extract_tb(tb).format())                
+                error_message += f"\n[{i}]: {type(s).__name__}(\"{s}\"):\n{stack_trace}\n"
+
             raise MultipleExceptions(
                 message=error_message,
                 exceptions=exceptions,
