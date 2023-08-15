@@ -31,7 +31,7 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
-	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid), Groups: []uint32{uint32(gid)}, NoSetGroups: true}
 
 	if rootdir == "" {
 		cmd.Dir = homedir
