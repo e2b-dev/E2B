@@ -121,6 +121,12 @@
 - How to monitor devbookd OOM and similar errors remotely?
 - Lint also the docstrings
 - Generate docs from SDKs
+- relative paths are not handled correctly for the session.filesystem?
+- on_ports should be better - not periodically reporting, and also need access to session fields?
+- process/terminal handling with await is confusing -
+- Add sync support to the python SDK
+
+
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
