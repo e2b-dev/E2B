@@ -6,4 +6,4 @@ fallocate -l 500M /swapfile
 chmod 600 /swapfile
 mkswap /swapfile
 swapon /swapfile
-sysctl vm.swappiness=0
+sysctl vm.swappiness=1
