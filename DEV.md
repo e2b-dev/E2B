@@ -116,6 +116,11 @@
 - should we use use REST instead of JSONRPC or streaming there for saving/loading bigger data (files, byte files)
 - should we support graphql for our API
 - GH action for the CLI
+- change `id` in SDK to something more descriptive (envID?) and maybe change `session` too so there is no confusion
+  - What about `await Session.from_env(id=id)` + `await Session.from_snapshot(id=id)`
+- How to monitor devbookd OOM and similar errors remotely?
+- Lint also the docstrings
+- Generate docs from SDKs
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
