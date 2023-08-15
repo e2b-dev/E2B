@@ -80,7 +80,7 @@ class SessionConnection:
         :return: hostname of the session or session's port
         """
         if not self._session:
-            raise Exception("Session is not initialized")
+            raise Exception("Session is not running. You have to run `await session.open()` first or create the session with `await Session.create()")
 
         if self._debug_hostname:
             if port and self._debug_dev_env == "remote":
