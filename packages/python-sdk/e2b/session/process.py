@@ -5,7 +5,7 @@ from typing import Awaitable, ClassVar, Optional, Callable, Any, Coroutine, List
 from pydantic import BaseModel
 
 from e2b.utils.noop import noop
-from e2b.session.out import OutStdoutResponse, OutStderrResponse, OutResponse, OutType
+from e2b.session.out import OutStdoutResponse, OutStderrResponse
 from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
 from e2b.session.session_connection import SessionConnection

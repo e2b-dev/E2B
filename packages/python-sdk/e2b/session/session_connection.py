@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 from e2b.session.exception import MultipleExceptions, SessionException
 from e2b.utils.future import DeferredFuture
-from e2b.utils.future import format_settled_errors
 from e2b.session.session_rpc import SessionRpc, Notification
 from e2b.api.client import NewSession, Session as SessionInfo
 from e2b.utils.noop import noop
