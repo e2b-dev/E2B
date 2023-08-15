@@ -135,6 +135,7 @@
 - Using pathlib for paths? windows support?
 - Flush all stdout/err after killing process or terminal in devbookd and also wait for the Stdout/err in the SDK
 - handle when user passes async handler for on_stdout, exit, etc.
+- pam_env(sudo:session): Unable to open env file: /etc/default/locale: No such file or directory -- fix locale
 
 
 ## CLI
