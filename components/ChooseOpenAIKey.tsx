@@ -63,7 +63,16 @@ function ChooseOpenAIKey({
       </p>
 
       <div className="flex-1 w-full flex flex-col space-y-4 items-center justify-start">
-        <div className="mb-2 flex items-center justify-center space-x-2">
+        <div
+          className={clsx(
+            baseClasses,
+            selectedOpenAIKeyType === 'user' ? selectedClasses : unselectedClasses,
+          )}
+          onClick={() => onSelectedOpenAIKeyTypeChange('user')}
+        >
+          Use my own OpenAI API key
+        </div>
+        {/* <div className="mb-2 flex items-center justify-center space-x-2">
           <div
             className={clsx(
               baseClasses,
@@ -82,7 +91,7 @@ function ChooseOpenAIKey({
           >
             Use my own OpenAI API key
           </div>
-        </div>
+        </div> */}
 
         {selectedOpenAIKeyType === 'e2b' && (
           <ul className="list-disc p-4 border border-indigo-400/40 rounded-md text-sm">
@@ -96,7 +105,7 @@ function ChooseOpenAIKey({
             <ul className="list-disc p-4 border border-indigo-400/40 rounded-md text-sm">
               <li className="ml-4">Use your own OpenAI API key</li>
               <li className="ml-4">Using your own key might help when e2b is hitting the OpenAI&apos;s API rate limits</li>
-              <li className="ml-4"><b>All costs running the smol developer will be billed to your OpenAI account</b></li>
+              <li className="ml-4 text-red-500"><b>All costs running the smol developer will be billed to your OpenAI account</b></li>
             </ul>
             <OpenAIKeyInput
               openAIKey={userOpenAIKey}
