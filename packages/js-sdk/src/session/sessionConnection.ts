@@ -54,7 +54,7 @@ const refreshSession = api
   .method('post')
   .create({ api_key: true })
 
-abstract class SessionConnection {
+class SessionConnection {
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
   protected isOpen = false
@@ -206,7 +206,7 @@ abstract class SessionConnection {
    *
    * `open` method requires `this` context - you may need to bind it.
    */
-  protected async open() {
+  async open() {
     if (this.isOpen || !!this.session) {
       throw new Error('Session connect was already called')
     } else {
