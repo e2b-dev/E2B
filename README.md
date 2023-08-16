@@ -19,16 +19,29 @@
   </a>
 </h4>
 
-[e2b](https://e2b.dev) (_english2bits_) is like operating system for AI agents. Our goal for e2b is to sit at the bottom of the AI agents tech stack and being framework agnostic.
+[e2b](https://e2b.dev) (_english2bits_) is like a cloud operating system for AI agents. 
 
-E2b offers low level APIs for developers to debug, test, deploy, and monitor their AI agents.
+With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
+- Run any code
+- Run any terminal command
+- Install dependencies and programs
+- Use filesystem
+- Upload and download files
+- Access the internet
+- Start a web server that's accessible from the internet
+- Clone git repositories
+- Start any process (even long-running such as a database)
 
-**This is a monorepo that contains:**
+This just a few examples of what can be done with our agent cloud environments.
+
+**Our SDK works with any AI agent (no matter what framework, you're using), and without the need to manage any infrastructure.**
+
+This is a monorepo that contains:
 - Admin dashboard
 - E2B's Python SDK
 - E2B's JavaScript/TypeScript SDK
 
-## Get Started & Documentation
+## Getting Started & Documentation
 
 Visit [docs.e2b.dev](https://docs.e2b.dev/) to get started with the SDK.
 
