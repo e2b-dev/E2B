@@ -38,8 +38,8 @@ This just a few examples of what can be done with our agent cloud environments.
 
 This is a monorepo that contains:
 - Admin dashboard
-- E2B's Python SDK
-- E2B's JavaScript/TypeScript SDK
+- Python SDK
+- JavaScript/TypeScript SDK
 
 ## Getting Started & Documentation
 
