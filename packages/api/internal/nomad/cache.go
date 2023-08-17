@@ -7,11 +7,10 @@ import (
 	"time"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
-	"github.com/jellydator/ttlcache/v3"
 )
 
 const (
-	sessionExpiration = time.Second * 11
+	sessionExpiration = time.Second * 90
 	cacheSyncTime     = time.Second * 180
 )
 
