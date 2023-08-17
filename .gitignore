@@ -43,3 +43,4 @@ vale-styles
 
 # Sentry Auth Token
 .sentryclirc
+node_modules

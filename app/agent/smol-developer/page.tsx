@@ -1,17 +1,16 @@
+'use client'
+
+import { useSessionContext, useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 import { Github } from 'lucide-react'
-import { useRouter } from 'next/router'
-import { useEffect } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
-import {
-  useUser,
-  useSessionContext,
-} from '@supabase/auth-helpers-react'
+import Link from 'next/link'
+
 import { usePostHog } from 'posthog-js/react'
+import { useEffect } from 'react'
 
 import SpinnerIcon from 'components/Spinner'
 import StarUs from 'components/StarUs'
+import { useRouter } from 'next/router'
 
 function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()

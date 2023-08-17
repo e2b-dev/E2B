@@ -1,35 +1,36 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { NextApiRequest, NextApiResponse } from 'next'
 import { nanoid } from 'nanoid'
+import { NextApiRequest, NextApiResponse } from 'next'
 import { client as posthog } from 'utils/posthog'
 
-import { PostAgentResponse } from 'pages/agent/smol-developer/setup'
-import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-import { PostAgentBody } from 'pages/agent/smol-developer/setup'
+import { prisma } from 'db/prisma'
+
+import { PostAgentBody, PostAgentResponse } from 'app/agent/smol-developer/setup/page'
 import { getGHInstallationClient } from 'github/installationClient'
 import {
   createAgentDeployment,
-  createPR, getGHAccessToken,
+  createPR,
+  getGHAccessToken,
   getGHAppInfo,
   prTitleFromInstructions,
-  triggerSmolDevAgentRun,
+  triggerSmolDevAgentRun
 } from 'github/pullRequest'
 
 export interface DeploymentAuthData {
   github: {
-    app_name: string,
-    app_email: string,
-    installation_id: number,
-    repository_id: number,
-    issue_id: number,
-    pr_number: number,
-    branch: string,
-    owner: string,
-    repo: string,
-    pr_status: string,
+    app_name: string
+    app_email: string
+    installation_id: number
+    repository_id: number
+    issue_id: number
+    pr_number: number
+    branch: string
+    owner: string
+    repo: string
+    pr_status: string
     merged: boolean
-    closed_at: null | string,
+    closed_at: null | string
   }
 }
 
@@ -58,11 +59,14 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     const supabase = createServerSupabaseClient({ req, res }, serverCreds)
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     if (!session) {
       return res.status(401).json({
         error: 'not_authenticated',
-        description: 'The user does not have an active session or is not authenticated',
+        description:
+          'The user does not have an active session or is not authenticated',
       })
     }
 
@@ -75,7 +79,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
           include: {
             teams: true,
           },
-        }
+        },
       },
     })
     if (!user) {
@@ -84,7 +88,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       })
     }
 
-    const defaultTeam = user.users_teams.find(t => t.teams.is_default)
+    const defaultTeam = user.users_teams.find((t) => t.teams.is_default)
     const client = getGHInstallationClient({ installationID })
 
     const appInfoPromise = getGHAppInfo({ client })
@@ -103,7 +107,11 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
 
     const bodyWithInfo = `${body}${prInfoText}`
 
-    const { issueID, number: pullNumber, url: pullURL } = await createPR({
+    const {
+      issueID,
+      number: pullNumber,
+      url: pullURL,
+    } = await createPR({
       client,
       title: prTitle,
       defaultBranch,
@@ -145,7 +153,9 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
       },
     }
 
-    const slug = `smoldev-${nanoid(3)}-${owner}-${repo}-pr-${pullNumber}`.toLowerCase()
+    const slug = `smoldev-${nanoid(
+      3
+    )}-${owner}-${repo}-pr-${pullNumber}`.toLowerCase()
     const project = await prisma.projects.create({
       data: {
         id: nanoid(),
@@ -160,36 +170,36 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
               // OpenAI Model if OpenAI Key is provided
               ...(openAIKey && { openAIModel }),
             } as any,
-            ...openAIKey && { secrets: JSON.stringify({ openAIKey }) },
+            ...(openAIKey && { secrets: JSON.stringify({ openAIKey }) }),
           },
         },
         teams: {
-          ...defaultTeam
+          ...(defaultTeam
             ? {
-              connect: {
-                id: defaultTeam.teams.id,
-              },
-            }
+                connect: {
+                  id: defaultTeam.teams.id,
+                },
+              }
             : {
-              create: {
-                name: session.user.email || session.user.id,
-                is_default: true,
-                users_teams: {
-                  create: {
-                    users: {
-                      connect: {
-                        id: session.user.id,
+                create: {
+                  name: session.user.email || session.user.id,
+                  is_default: true,
+                  users_teams: {
+                    create: {
+                      users: {
+                        connect: {
+                          id: session.user.id,
+                        },
                       },
                     },
                   },
                 },
-              },
-            }
+              }),
         },
       },
       include: {
         deployments: true,
-      }
+      },
     })
 
     await createAgentDeployment({
@@ -265,10 +275,7 @@ async function postAgent(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     await postAgent(req, res)
     return

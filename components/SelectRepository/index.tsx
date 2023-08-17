@@ -1,24 +1,24 @@
 import {
-  useState,
-} from 'react'
+  useUser
+} from '@supabase/auth-helpers-react'
 import {
-  ArrowRight,
+  ArrowRight
 } from 'lucide-react'
 import {
-  useUser,
-} from '@supabase/auth-helpers-react'
+  useState
+} from 'react'
 
-import {
-  configureGitHubApp,
-  GitHubAccount,
-} from 'utils/github'
 import SpinnerIcon from 'components/Spinner'
 import { usePostHog } from 'posthog-js/react'
-import { RepoSetup, Repos } from 'utils/repoSetup'
+import {
+  configureGitHubApp,
+  GitHubAccount
+} from 'utils/github'
+import { Repos, RepoSetup } from 'utils/repoSetup'
 
-import RepoSwitch from './RepoSwitch'
 import ExistingRepositories from './ExistingRepositories'
 import NewRepository from './NewRepository'
+import RepoSwitch from './RepoSwitch'
 
 export interface Props {
   repos?: Repos
@@ -55,6 +55,9 @@ function SelectRepository({
 
     onRepoSelection(repo)
   }
+
+  console.log(user)
+
 
   return (
     <>

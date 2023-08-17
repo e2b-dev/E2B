@@ -1,24 +1,25 @@
+import { useUser } from '@supabase/auth-helpers-react'
+import clsx from 'clsx'
 import {
   PropsWithChildren,
   useEffect,
-  useState,
+  useState
 } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import clsx from 'clsx'
-import { useRouter } from 'next/router'
-import { Inter } from 'next/font/google'
-import { usePostHog } from 'posthog-js/react'
+
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
-  Menu,
-  List,
+  List, Menu
 } from 'lucide-react'
-import Script from 'next/script'
+import { Inter } from 'next/font/google'
+import { usePostHog } from 'posthog-js/react'
 
+
+import Feedback from 'components/Feedback'
 import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
 import DashboardMobileSidebar from 'components/Sidebar/DashboardMobileSidebar'
-import Feedback from 'components/Feedback'
 
+import { useRouter } from 'next/router'
+import Script from 'next/script'
 import * as gtag from '../utils/gtag'
 import StarUs from './StarUs'
 

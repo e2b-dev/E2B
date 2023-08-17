@@ -1,33 +1,33 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-} from 'react'
-import useSWRMutation from 'swr/mutation'
-import type { GetServerSideProps } from 'next'
+'use client'
+
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import {
-  useUser,
-  useSupabaseClient,
+  useSupabaseClient, useUser
 } from '@supabase/auth-helpers-react'
-import { usePostHog } from 'posthog-js/react'
 import { nanoid } from 'nanoid'
-import { useRouter } from 'next/router'
+import type { GetServerSideProps } from 'next'
 
-import Steps from 'components/Steps'
-import SelectRepository from 'components/SelectRepository'
+import { usePostHog } from 'posthog-js/react'
+import {
+  useCallback,
+  useEffect, useState
+} from 'react'
+import useSWRMutation from 'swr/mutation'
+
 import AgentInstructions from 'components/AgentInstructions'
+import ChooseOpenAIKey from 'components/ChooseOpenAIKey'
 import DeployAgent from 'components/DeployAgent'
+import SelectRepository from 'components/SelectRepository'
+import StarUs from 'components/StarUs'
+import Steps from 'components/Steps'
 import { serverCreds } from 'db/credentials'
 import { useGitHubClient } from 'hooks/useGitHubClient'
-import { useRepositories } from 'hooks/useRepositories'
-import { useLocalStorage } from 'hooks/useLocalStorage'
 import useListenOnMessage from 'hooks/useListenOnMessage'
+import { useLocalStorage } from 'hooks/useLocalStorage'
+import { useRepositories } from 'hooks/useRepositories'
 import { GitHubAccount } from 'utils/github'
 import { RepoSetup } from 'utils/repoSetup'
-import StarUs from 'components/StarUs'
 import { smolDeveloperTemplateID } from 'utils/smolTemplates'
-import ChooseOpenAIKey from 'components/ChooseOpenAIKey'
 
 export interface PostAgentBody {
   // ID of the installation of the GitHub App
@@ -67,7 +67,7 @@ const openAIModels = [
   { displayName: 'GPT-3.5 Turbo 16k', value: 'gpt-3.5-turbo-16k' },
 ]
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
+export const generateStaticParams: GetServerSideProps = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
     data: { session },
@@ -116,7 +116,7 @@ function Setup() {
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
   const posthog = usePostHog()
-  const router = useRouter()
+  // const router = useRouter()
   const [isDeploying, setIsDeploying] = useState(false)
   const [selectedOpenAIKeyType, setSelectedOpenAIKeyType] = useState('e2b')
   const [userOpenAIKey, setUserOpenAIKey] = useState('')
@@ -188,12 +188,12 @@ function Setup() {
           return
         }
 
-        router.push({
-          pathname: '/logs/[slug]',
-          query: {
-            slug: `${response.projectSlug}-run-0`,
-          },
-        })
+        // router.push({
+        //   pathname: '/logs/[slug]',
+        //   query: {
+        //     slug: `${response.projectSlug}-run-0`,
+        //   },
+        // })
       } else {
         console.error('No response from agent creation')
       }
