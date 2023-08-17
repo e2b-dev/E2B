@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/posthog/posthog-go"
 	"net/http"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
@@ -100,6 +101,27 @@ func (a *APIStore) PostSessions(
 		}
 	}
 
+	var teamID *string
+	if a.isPredefinedTemplate(newSession.CodeSnippetID) {
+		teamID = a.validateTeamAPIKey(params.ApiKey)
+		if teamID != nil {
+			a.posthog.Enqueue(posthog.Capture{
+				Event: "creating_session",
+				Properties: posthog.NewProperties().
+					Set("environment", newSession.CodeSnippetID),
+				Groups: posthog.NewGroups().
+					Set("team", teamID),
+			})
+		} else if params.ApiKey != nil {
+			_, _, userErr := a.validateAPIKey(params.ApiKey)
+			if userErr != nil {
+				errMsg := fmt.Errorf("invalid API key: %+v", params.ApiKey)
+				ReportCriticalError(ctx, errMsg)
+				a.sendAPIStoreError(c, 401, "Invalid API key")
+			}
+		}
+	}
+
 	session, err := a.nomad.CreateSession(a.tracer, ctx, &newSession)
 	if err != nil {
 		errMsg := fmt.Errorf("error when creating: %v", err)
@@ -108,6 +130,17 @@ func (a *APIStore) PostSessions(
 		return
 	}
 	ReportEvent(ctx, "created session")
+	if teamID != nil {
+		a.posthog.Enqueue(posthog.Capture{
+			Event: "session_created",
+			Properties: posthog.NewProperties().
+				Set("environment", newSession.CodeSnippetID).
+				Set("session_id", session.SessionID),
+			Groups: posthog.NewGroups().
+				Set("team", teamID),
+		})
+		a.teamCache.Add(session.SessionID, *teamID)
+	}
 
 	if *newSession.EditEnabled {
 		// We check for the edit session again because we didn't want to lock for the whole duration of this function.
@@ -116,7 +149,7 @@ func (a *APIStore) PostSessions(
 		if err == nil {
 			fmt.Printf("Found another edit session after we created a new editing session. Returning the other session.")
 
-			delErr := a.nomad.DeleteSession(session.SessionID, true)
+			delErr := a.DeleteSession(session.SessionID, true)
 			if delErr != nil {
 				errMsg := fmt.Errorf("redundant session couldn't be deleted: %v", delErr)
 				ReportError(ctx, errMsg)
@@ -137,7 +170,7 @@ func (a *APIStore) PostSessions(
 		errMsg := fmt.Errorf("error when adding session to cache: %v", err)
 		ReportError(ctx, errMsg)
 
-		delErr := a.nomad.DeleteSession(session.SessionID, true)
+		delErr := a.DeleteSession(session.SessionID, true)
 		if delErr != nil {
 			errMsg := fmt.Errorf("couldn't delete session that couldn't be added to cache: %v", delErr)
 			ReportError(ctx, errMsg)
@@ -182,7 +215,7 @@ func (a *APIStore) DeleteSessionsSessionID(
 
 	// TODO: Delete session from cache
 
-	err := a.nomad.DeleteSession(sessionID, true)
+	err := a.DeleteSession(sessionID, true)
 	if err != nil {
 		errMsg := fmt.Errorf("error when deleting session: %v", err)
 		ReportCriticalError(ctx, errMsg)
