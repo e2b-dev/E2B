@@ -151,6 +151,7 @@
 - Add formatting
 - handle when user passes async handler for on_stdout, exit, etc.
 - pam_env(sudo:session): Unable to open env file: /etc/default/locale: No such file or directory -- fix locale
+- Change wait system in SDKs (explicit wait()). Add async context management
 
 
 ## CLI
