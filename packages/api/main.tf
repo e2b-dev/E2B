@@ -32,8 +32,8 @@ data "google_secret_manager_secret_version" "posthog_cloud_environments" {
 data "google_secret_manager_secret_version" "e2b_supabase_key" {
   secret = "e2b-supabase-key"
 }
-data "google_secret_manager_secret_version" "e2b_supabase_key" {
-  secret = "e2b-supabase-key"
+data "google_secret_manager_secret_version" "e2b_supabase_url" {
+  secret = "e2b-supabase-url"
 }
 
 data "google_secret_manager_secret_version" "api_admin_key" {
