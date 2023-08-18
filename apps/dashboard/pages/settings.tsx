@@ -61,9 +61,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         data: {
           name: session.user.email || session.user.id,
           is_default: true,
-        }
+        },
       })
-  
 
     for (let i = 0; i < 5; i++) {
       apiKeyValue = generateApiKey()

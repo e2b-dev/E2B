@@ -31,9 +31,6 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "supabase",
-    "node_modules",
-    "api-service",
-    "api-client/api/schema.gen.ts"
+    "node_modules"
   ]
 }
