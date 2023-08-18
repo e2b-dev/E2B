@@ -50,7 +50,7 @@ Visit [docs.e2b.dev](https://docs.e2b.dev/) to get started with the SDK.
 pip install e2b
 ```
 
-### JavaScriipt & TypeScript
+### JavaScript & TypeScript
 ```bash
 npm install @e2b/sdk
 ```
