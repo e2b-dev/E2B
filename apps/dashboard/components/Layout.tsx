@@ -136,7 +136,7 @@ function Layout({ children }: PropsWithChildren) {
 
             <div className="flex flex-col flex-1 self-stretch overflow-hidden">
               {/* Mobile menu icon */}
-              <div className="rounded-md xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
+              <div className="rounded-md xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border border-white/5 bg-gray-800 px-4 shadow-sm sm:px-6 lg:px-8">
                 <button
                   type="button"
                   className="-m-2.5 p-2.5 text-white xl:hidden"
@@ -153,14 +153,14 @@ function Layout({ children }: PropsWithChildren) {
               </div>
 
               {/* Header` */}
-              <div className="hidden xl:flex px-4 py-2 border border-white/5 justify-end bg-gray-900 rounded-md">
+              <div className="hidden xl:flex px-4 py-2 border border-white/5 justify-end bg-gray-800 rounded-md">
                 <div className="flex justify-end space-x-4">
                   <StarUs />
                   <Feedback />
                 </div>
               </div>
 
-              <div className="mt-1 flex-1 flex flex-col self-stretch overflow-auto bg-gray-900 rounded-md border border-white/5">
+              <div className="mt-1 flex-1 flex flex-col self-stretch overflow-auto bg-gray-800 rounded-md border border-white/5">
                 {children}
               </div>
             </div>

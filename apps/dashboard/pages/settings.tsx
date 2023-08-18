@@ -1,5 +1,5 @@
 import type { GetServerSideProps } from 'next'
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { User, createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
@@ -104,6 +104,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   return {
     props: {
+      user: session.user,
       apiKey: apiKey!.api_key,
     }
   }
@@ -111,10 +112,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
 interface Props {
   apiKey: string
+  user: User
 }
 
-function SettingsPage({ apiKey }: Props) {
-  return <Settings apiKey={apiKey} />
+function SettingsPage({ apiKey, user }: Props) {
+  return <Settings apiKey={apiKey} user={user} />
 }
 
 export default SettingsPage
