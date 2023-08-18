@@ -2,20 +2,15 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { nanoid } from 'nanoid'
 
-import { prisma, projects, log_uploads } from 'db/prisma'
+import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
-import DashboardHome from 'components/DashboardHome'
-import { LiteDeployment } from 'utils/agentLogs'
 
 export interface Props {
-  projects: (projects & { log_uploads: log_uploads[], deployments: LiteDeployment[] })[]
   defaultProjectID: string
-  view: 'deployments' | 'logs'
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const defaultNewTeamID = process.env.DEFAULT_NEW_TEAM_ID as string | undefined
-  const showUploadedLogs = process.env.NEXT_PUBLIC_SHOW_UPLOADED_LOGS === '1'
 
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
@@ -226,30 +221,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       permanent: false,
     },
   }
-
-  return {
-    props: {
-      view: showUploadedLogs ? 'logs' : 'deployments',
-      defaultProjectID: defaultProject.id,
-      projects: [
-        defaultProject,
-        ...teams.flatMap(t => t.projects).filter(p => p.id !== defaultProject.id),
-      ].map(p => ({
-        ...p,
-        deployments: showUploadedLogs ? [] : p.deployments,
-      }))
-    },
-  }
 }
 
-function Home({ projects, defaultProjectID, view }: Props) {
-  return (
-    <DashboardHome
-      view={view}
-      defaultProjectID={defaultProjectID}
-      projects={projects}
-    />
-  )
+function Home({ }: Props) {
+  return <></>
 }
 
 export default Home

@@ -67,7 +67,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     for (let i = 0; i < 5; i++) {
       apiKeyValue = generateApiKey()
       try {
-        apiKey = await prisma.team_api_keys.create({
+        await prisma.team_api_keys.create({
           data: {
             team_id: defaultTeam.teams.id,
             api_key: apiKeyValue,
