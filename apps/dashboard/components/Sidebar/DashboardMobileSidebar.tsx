@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/router'
 
-import { Navigation } from './types'
+import { Navigation } from './navigation'
 
 export interface Props {
   isSidebarOpen?: boolean
@@ -36,7 +36,7 @@ function DashboardMobileSidebar({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-gray-900/80" />
+          <div className="fixed inset-0 bg-gray-800/80" />
         </Transition.Child>
 
         <div className="fixed inset-0 flex">
@@ -67,7 +67,7 @@ function DashboardMobileSidebar({
                 </div>
               </Transition.Child>
               {/* Sidebar component, swap this element with another sidebar if you like */}
-              <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 ring-1 ring-white/10">
+              <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-800 px-6 ring-1 ring-white/10">
                 {/* Logo */}
                 <nav className="flex flex-1 flex-col">
                   <ul role="list" className="flex flex-1 flex-col gap-y-7">

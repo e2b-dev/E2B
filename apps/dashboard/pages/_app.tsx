@@ -10,9 +10,9 @@ import { useRouter } from 'next/router'
 
 import 'styles/global.css'
 
-import { Database } from 'apps/dashboard/db/supabase'
-import { clientCreds } from 'apps/dashboard/db/credentials'
-import Layout from 'apps/dashboard/components/Layout'
+import { Database } from 'db/supabase'
+import { clientCreds } from 'db/credentials'
+import Layout from 'components/Layout'
 
 // Initialize PostHog
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
@@ -35,11 +35,9 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
   const router = useRouter()
 
-  const isAgent = router.pathname.startsWith('/agent')
-
   const meta = {
-    title: isAgent ? 'Smol Developer | e2b' : 'Dashboard | e2b',
-    description: isAgent ? 'Smol Developer on e2b' : 'e2b Dashboard',
+    title: 'Dashboard | e2b',
+    description: 'e2b Dashboard',
   }
 
   useEffect(function trackPageViews() {
@@ -53,7 +51,6 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
       router.events.off('routeChangeComplete', handleRouteChange)
     }
   }, [])
-
 
   return (
     <PostHogProvider

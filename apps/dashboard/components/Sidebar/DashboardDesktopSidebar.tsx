@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { usePostHog } from 'posthog-js/react'
 
-import { Navigation } from './types'
+import { Navigation } from './navigation'
 
 export interface Props {
   onSignOut: () => void
@@ -19,7 +19,7 @@ function DashboardDesktopSidebar({
 
   return (
     <div className="hidden xl:self-stretch xl:z-50 xl:flex xl:w-[220px] xl:flex-col pr-1">
-      <div className="flex grow flex-col gap-y-4 overflow-y-auto bg-gray-900 px-4 border border-white/5 rounded-md">
+      <div className="flex grow flex-col gap-y-4 overflow-y-auto bg-gray-800 px-4 border border-white/5 rounded-md">
         {/* Logo */}
         <nav className="flex flex-1 flex-col space-y-8 py-4">
           <div className="font-bold text-gray-100">

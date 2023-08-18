@@ -11,21 +11,23 @@ import { usePostHog } from 'posthog-js/react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
   Menu,
-  List,
 } from 'lucide-react'
 import Script from 'next/script'
 
-import DashboardDesktopSidebar from 'apps/dashboard/components/Sidebar/DashboardDesktopSidebar'
-import DashboardMobileSidebar from 'apps/dashboard/components/Sidebar/DashboardMobileSidebar'
-import Feedback from 'apps/dashboard/components/Feedback'
+import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
+import DashboardMobileSidebar from 'components/Sidebar/DashboardMobileSidebar'
+import Feedback from 'components/Feedback'
 
 import * as gtag from '../utils/gtag'
 import StarUs from './StarUs'
+import { Navigation } from './Sidebar/navigation'
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
 })
+
+const navigation: Navigation = []
 
 function Layout({ children }: PropsWithChildren) {
   const supabaseClient = useSupabaseClient()
@@ -62,16 +64,6 @@ function Layout({ children }: PropsWithChildren) {
       })
     }
   }, [posthog, user])
-
-  const view = process.env.NEXT_PUBLIC_SHOW_UPLOADED_LOGS === '1'
-  const showView = router.query['view'] === 'logs' ? 'logs' : view
-
-  const navigation = [
-    {
-      name: showView === 'logs' ? 'Agent Logs' : 'Agent Deployments',
-      icon: List,
-    },
-  ]
 
   return (
     <>
@@ -137,7 +129,7 @@ function Layout({ children }: PropsWithChildren) {
 
             <div className="flex flex-col flex-1 self-stretch overflow-hidden">
               {/* Mobile menu icon */}
-              <div className="rounded-md xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border border-white/5 bg-gray-900 px-4 shadow-sm sm:px-6 lg:px-8">
+              <div className="rounded-md xl:hidden sticky top-0 z-40 flex justify-between h-16 shrink-0 items-center gap-x-6 border border-white/5 bg-gray-800 px-4 shadow-sm sm:px-6 lg:px-8">
                 <button
                   type="button"
                   className="-m-2.5 p-2.5 text-white xl:hidden"
@@ -154,14 +146,14 @@ function Layout({ children }: PropsWithChildren) {
               </div>
 
               {/* Header` */}
-              <div className="hidden xl:flex px-4 py-2 border border-white/5 justify-end bg-gray-900 rounded-md">
+              <div className="hidden xl:flex px-4 py-2 border border-white/5 justify-end bg-gray-800 rounded-md">
                 <div className="flex justify-end space-x-4">
                   <StarUs />
                   <Feedback />
                 </div>
               </div>
 
-              <div className="mt-1 flex-1 flex flex-col self-stretch overflow-auto bg-gray-900 rounded-md border border-white/5">
+              <div className="mt-1 flex-1 flex flex-col self-stretch overflow-auto bg-gray-800 rounded-md border border-white/5">
                 {children}
               </div>
             </div>

@@ -1,29 +1,6 @@
 /** @type {import('next').NextConfig} */
-const fastDockerBuild = {
-  compress: false,
-  productionBrowserSourceMaps: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  optimizeFonts: false,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  output: 'standalone',
-  experimental: {
-    turbotrace: {
-      memoryLimit: 1000,
-    },
-  },
-}
-
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  ...process.env.BUILD === 'docker' && fastDockerBuild,
   swcMinify: true,
-  experimental: {
-    swcPlugins: [['next-superjson-plugin', {}]],
-  },
   async rewrites() {
     return [
       {
@@ -41,9 +18,7 @@ module.exports = nextConfig
 
 const { withSentryConfig } = require('@sentry/nextjs')
 
-module.exports = process.env.BUILD === 'docker'
-  ? module.exports
-  : withSentryConfig(
+module.exports = withSentryConfig(
     module.exports,
     {
       // For all available options, see:

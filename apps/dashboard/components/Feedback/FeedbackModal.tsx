@@ -3,8 +3,8 @@ import { FormEvent, MouseEvent, useRef, useState } from 'react'
 import { useOnClickOutside } from 'usehooks-ts'
 import { Send } from 'lucide-react'
 
-import Textarea from 'apps/dashboard/components/Textarea'
-import SpinnerIcon from 'apps/dashboard/components/Spinner'
+import Textarea from 'components/Textarea'
+import SpinnerIcon from 'components/Spinner'
 import { useAddFeedback } from 'hooks/useAddFeedback'
 
 export interface Props {
@@ -53,7 +53,7 @@ function FeedbackModal({ isOpen, onClose, onSend }: Props) {
           mt-1
           border
           z-50
-          bg-gray-900
+          bg-gray-800
           border-white/5
           w-[400px]
           shadow-lg

@@ -9,6 +9,7 @@ export interface PostFeedback {
 export interface PostFeedbackResponse {
 }
 
+// TODO: Call supabase directly + set row level security
 async function handlePostFeedback(url: string, { arg }: { arg: PostFeedback }) {
   const response = await fetch(url, {
     method: 'POST',

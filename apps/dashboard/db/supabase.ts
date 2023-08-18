@@ -3,7 +3,7 @@ export type Json =
   | number
   | boolean
   | null
-  | { [key: string]: Json }
+  | { [key: string]: Json | undefined }
   | Json[]
 
 export interface Database {
@@ -21,6 +21,7 @@ export interface Database {
           logs_raw: string | null
           project_id: string
           route_id: string | null
+          secrets: string | null
           state: Database["public"]["Enums"]["deployment_state"] | null
           url: string | null
         }
@@ -35,6 +36,7 @@ export interface Database {
           logs_raw?: string | null
           project_id: string
           route_id?: string | null
+          secrets?: string | null
           state?: Database["public"]["Enums"]["deployment_state"] | null
           url?: string | null
         }
@@ -49,6 +51,7 @@ export interface Database {
           logs_raw?: string | null
           project_id?: string
           route_id?: string | null
+          secrets?: string | null
           state?: Database["public"]["Enums"]["deployment_state"] | null
           url?: string | null
         }
@@ -131,6 +134,12 @@ export interface Database {
             foreignKeyName: "log_files_deployment_id_fkey"
             columns: ["deployment_id"]
             referencedRelation: "deployments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "log_files_deployment_id_fkey"
+            columns: ["deployment_id"]
+            referencedRelation: "decrypted_deployments"
             referencedColumns: ["id"]
           },
           {
@@ -218,6 +227,31 @@ export interface Database {
           }
         ]
       }
+      team_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          team_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          team_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_api_keys_team_id_fkey"
+            columns: ["team_id"]
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       teams: {
         Row: {
           created_at: string
@@ -272,7 +306,64 @@ export interface Database {
       }
     }
     Views: {
-      [_ in never]: never
+      decrypted_deployments: {
+        Row: {
+          auth: Json | null
+          config: Json | null
+          created_at: string | null
+          decrypted_secrets: string | null
+          enabled: boolean | null
+          id: string | null
+          last_finished_prompt: string | null
+          logs: Json[] | null
+          logs_raw: string | null
+          project_id: string | null
+          route_id: string | null
+          secrets: string | null
+          state: Database["public"]["Enums"]["deployment_state"] | null
+          url: string | null
+        }
+        Insert: {
+          auth?: Json | null
+          config?: Json | null
+          created_at?: string | null
+          decrypted_secrets?: never
+          enabled?: boolean | null
+          id?: string | null
+          last_finished_prompt?: string | null
+          logs?: Json[] | null
+          logs_raw?: string | null
+          project_id?: string | null
+          route_id?: string | null
+          secrets?: string | null
+          state?: Database["public"]["Enums"]["deployment_state"] | null
+          url?: string | null
+        }
+        Update: {
+          auth?: Json | null
+          config?: Json | null
+          created_at?: string | null
+          decrypted_secrets?: never
+          enabled?: boolean | null
+          id?: string | null
+          last_finished_prompt?: string | null
+          logs?: Json[] | null
+          logs_raw?: string | null
+          project_id?: string | null
+          route_id?: string | null
+          secrets?: string | null
+          state?: Database["public"]["Enums"]["deployment_state"] | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deployments_project_id_fkey"
+            columns: ["project_id"]
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Functions: {
       append_array: {
