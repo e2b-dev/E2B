@@ -23,7 +23,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
   let apiKeyValue: string | undefined
 
-  const apiKey = await prisma.team_api_keys.findFirst({
+  let apiKey = await prisma.team_api_keys.findFirst({
     include: {
       teams: {
         include: {
@@ -67,7 +67,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     for (let i = 0; i < 5; i++) {
       apiKeyValue = generateApiKey()
       try {
-        await prisma.team_api_keys.create({
+        apiKey = await prisma.team_api_keys.create({
           data: {
             team_id: defaultTeam.teams.id,
             api_key: apiKeyValue,
