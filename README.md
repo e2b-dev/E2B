@@ -4,6 +4,7 @@
 </h1>
 
 <h4 align="center">
+  <a href="https://docs.e2b.dev">Docs</a> |
   <a href="https://e2b.dev">Website</a> |
   <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
   <a href="https://twitter.com/e2b_dev">Twitter</a>
@@ -18,72 +19,38 @@
   </a>
 </h4>
 
-[e2b](https://e2b.dev) (_english2bits_) is like operating system for AI agents. Our goal for e2b is to sit at the bottom of the AI agents tech stack and being framework agnostic.
+[e2b](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
 
-E2b offers low level APIs for developers to debug, test, deploy, and monitor their AI agents.
+With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
+- Run any code
+- Run any terminal command
+- Install dependencies and programs
+- Use filesystem
+- Upload and download files
+- Access the internet
+- Start a web server that's accessible from the internet
+- Clone git repositories
+- Start any process (even long-running such as a database)
 
-**This is a monorepo that contains:**
+This just a few examples of what can be done with our agent cloud environments.
+
+**Our SDK works with any AI agent (no matter what framework, you're using), and without the need to manage any infrastructure.**
+
+This is a monorepo that contains:
 - Admin dashboard
-- E2B's Python SDK
-- E2B's JavaScript/TypeScript SDK
+- Python SDK
+- JavaScript/TypeScript SDK
 
-# 🚧 This repo is going through a big update and is work in progress.
+## Getting Started & Documentation
 
+Visit [docs.e2b.dev](https://docs.e2b.dev/) to get started with the SDK.
 
----
-
-# How e2b works
-
-E2b is made of three parts:
-
-1. Infrastructure
-2. Cloud dashboard (this repo)
-3. [SDK](https://github.com/e2b-dev/sdk)
-
-Every agent deployed on e2b gets their own playground.
-
-# 🤔 What is this repo
-This repo is the cloud dashboard of e2b. The e2b dashboard is where you can manage and inspect your AI agents. Think about it like devtools for your browser. The agents themselves currently runs on e2b infrastructure that isn't open-sourced at this moment.
-
-# 🚀 Get started
-
-You can start e2b's cloud dashboard locally via docker.
-
-## 🐳 Start e2b with Docker
-
-You will need:
-
-- Docker
-- Node.js _16+_
-- Free ports 3000 (Next.js app), 54321 (Supabase API Gateway), 54322 (Supabase
-  Database)
-
-To start e2b run:
-
-```
-npm start
+### Python
+```bash
+pip install e2b
 ```
 
-Then open page on [http://localhost:3000](http://localhost:3000).
-
-`npm start` starts local Supabase in the background - to stop it you have to run
-`npm run stop`.
-
-## 💻 Development setup
-
-For developing with hot reloading and contributing to the project you may want
-to run the app locally without Docker (`npm start` command).
-
-[Follow these steps](DEVELOPMENT_SETUP.md) to set it up.
-
-# ℹ️ Community & Support
-
-- [Discord](https://discord.gg/U7KEcGErtQ) - live discussion and support
-- [GitHub issues](https://github.com/e2b-dev/e2b/issues) - for reporting bugs
-- [Twitter](https://twitter.com/e2b_dev) - to stay up to date
-
-# 🤝 Contributing
-
-We welcome any contributions! If you want to contribute to the project check out
-the [contibution guide](CONTRIBUTING.md) and join our
-[Discord](https://discord.gg/dSBY3ms2Qr).
+### JavaScriipt & TypeScript
+```bash
+npm install @e2b/sdk
+```
