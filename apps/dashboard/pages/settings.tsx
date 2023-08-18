@@ -40,9 +40,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   })
 
 
-  if (apiKey) {
-    apiKeyValue = apiKey.api_key
-  } else {
+  if (!apiKey) {
     const user = await prisma.auth_users.findUniqueOrThrow({
       where: {
         id: session.user.id,
