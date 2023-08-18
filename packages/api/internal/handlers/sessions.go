@@ -106,7 +106,8 @@ func (a *APIStore) PostSessions(
 		teamID = a.validateTeamAPIKey(params.ApiKey)
 		if teamID != nil {
 			err := a.posthog.Enqueue(posthog.Capture{
-				Event: "creating_session",
+				DistinctId: "backend_infra",
+				Event:      "creating_session",
 				Properties: posthog.NewProperties().
 					Set("environment", newSession.CodeSnippetID),
 				Groups: posthog.NewGroups().
@@ -135,7 +136,8 @@ func (a *APIStore) PostSessions(
 	ReportEvent(ctx, "created session")
 	if teamID != nil {
 		err := a.posthog.Enqueue(posthog.Capture{
-			Event: "session_created",
+			DistinctId: "backend_infra",
+			Event:      "session_created",
 			Properties: posthog.NewProperties().
 				Set("environment", newSession.CodeSnippetID).
 				Set("session_id", session.SessionID),

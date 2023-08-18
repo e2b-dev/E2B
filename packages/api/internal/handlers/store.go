@@ -189,7 +189,8 @@ func (a *APIStore) DeleteSession(sessionID string, purge bool) *api.APIError {
 	teamID, teamErr := a.teamCache.Get(sessionID)
 	if teamErr != nil {
 		err := a.posthog.Enqueue(posthog.Capture{
-			Event: "session_created",
+			DistinctId: "backend_infra",
+			Event:      "session_created",
 			Properties: posthog.NewProperties().
 				Set("session_id", sessionID).Set("duration", duration),
 			Groups: posthog.NewGroups().
