@@ -35,11 +35,9 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
   const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
   const router = useRouter()
 
-  const isAgent = router.pathname.startsWith('/agent')
-
   const meta = {
-    title: isAgent ? 'Smol Developer | e2b' : 'Dashboard | e2b',
-    description: isAgent ? 'Smol Developer on e2b' : 'e2b Dashboard',
+    title: 'Dashboard | e2b',
+    description: 'e2b Dashboard',
   }
 
   useEffect(function trackPageViews() {
@@ -53,7 +51,6 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
       router.events.off('routeChangeComplete', handleRouteChange)
     }
   }, [])
-
 
   return (
     <PostHogProvider
