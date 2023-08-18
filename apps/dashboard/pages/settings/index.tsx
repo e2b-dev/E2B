@@ -23,7 +23,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
   let apiKeyValue: string | undefined
 
-  let apiKey = await prisma.team_api_keys.findFirst({
+  const apiKey = await prisma.team_api_keys.findFirst({
     include: {
       teams: {
         include: {
@@ -39,9 +39,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     },
   })
 
-  apiKeyValue = apiKey?.api_key
 
-  if (!apiKey) {
+  if (apiKey) {
+    apiKeyValue = apiKey?.api_key
+  } else {
     const user = await prisma.auth_users.findUniqueOrThrow({
       where: {
         id: session.user.id,
@@ -92,7 +93,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   return {
     props: {
-      apiKey: apiKey?.api_key!,
+      apiKey: apiKeyValue,
     }
   }
 }
