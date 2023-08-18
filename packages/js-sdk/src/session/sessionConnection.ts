@@ -31,16 +31,9 @@ interface Subscriber {
   handler: SubscriptionHandler
 }
 
-export type CloseHandler = () => void
-export type DisconnectHandler = () => void
-export type ReconnectHandler = () => void
-
 export interface SessionConnectionOpts {
   id: string
   apiKey?: string
-  onClose?: CloseHandler
-  onDisconnect?: DisconnectHandler
-  onReconnect?: ReconnectHandler
   debug?: boolean
   editEnabled?: boolean
   __debug_hostname?: string
@@ -54,7 +47,7 @@ const refreshSession = api
   .method('post')
   .create({ api_key: true })
 
-class SessionConnection {
+export class SessionConnection {
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
   protected isOpen = false
@@ -123,7 +116,6 @@ class SessionConnection {
       this.rpc.ws?.terminate?.()
       // This is the browser WebSocket way of closing connection
       this.rpc.ws?.close?.()
-      this.opts?.onClose?.()
       this.logger.log('Disconected from the session')
     }
   }
@@ -285,7 +277,6 @@ class SessionConnection {
     this.rpc.onClose(async e => {
       this.logger.log('Closing WS connection to session:', this.session, e)
       if (this.isOpen) {
-        this.opts.onDisconnect?.()
         await wait(WS_RECONNECT_INTERVAL)
         this.logger.log('Reconnecting to session:', this.session)
         try {
@@ -293,7 +284,6 @@ class SessionConnection {
           // We want to delete the subscriber handlers here so there are no orphans.
           this.subscribers = []
           await this.rpc.connect(sessionURL)
-          this.opts.onReconnect?.()
           this.logger.log('Reconnected to session:', this.session)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
@@ -365,5 +355,3 @@ class SessionConnection {
     }
   }
 }
-
-export default SessionConnection

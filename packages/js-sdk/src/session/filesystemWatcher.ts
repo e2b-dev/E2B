@@ -1,5 +1,5 @@
 import { filesystemService } from './filesystem'
-import SessionConnection from './sessionConnection'
+import { SessionConnection } from './sessionConnection'
 
 export enum FilesystemOperation {
   Create = 'Create',
