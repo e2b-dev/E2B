@@ -60,14 +60,14 @@
   },
   "python.autoComplete.extraPaths": [
     "./**",
-    "./api-service/**",
-    "./api-service/.venv/bin/python",
+    "./packages/python-sdk/**",
+    "./packages/python-sdk/.venv/bin/python",
   ],
-  "python.defaultInterpreterPath": "./api-service/.venv/bin/python",
+  "python.defaultInterpreterPath": "./packages/python-sdk/.venv/bin/python",
   "python.analysis.extraPaths": [
     "./**",
-    "./api-service/**",
-    "./api-service/.venv/bin/python"
+    "./packages/python-sdk/**",
+    "./packages/python-sdk/.venv/bin/python"
   ],
   // Disable Pylint and use just Pylance
   "python.linting.enabled": false,
