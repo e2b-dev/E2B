@@ -104,24 +104,13 @@ func (a *APIStore) PostSessions(
 	var teamID *string
 	if a.isPredefinedTemplate(newSession.CodeSnippetID) {
 		teamID = a.validateTeamAPIKey(params.ApiKey)
-		if teamID != nil {
-			err := a.posthog.Enqueue(posthog.Capture{
-				DistinctId: "backend_infra",
-				Event:      "creating_session",
-				Properties: posthog.NewProperties().
-					Set("environment", newSession.CodeSnippetID),
-				Groups: posthog.NewGroups().
-					Set("team", teamID),
-			})
-			if err != nil {
-				fmt.Printf("Error when sending event to Posthog: %+v\n", err)
-			}
-		} else if params.ApiKey != nil {
+		if teamID == nil && params.ApiKey != nil {
 			_, _, userErr := a.validateAPIKey(params.ApiKey)
 			if userErr != nil {
 				errMsg := fmt.Errorf("invalid API key: %+v", params.ApiKey)
 				ReportCriticalError(ctx, errMsg)
 				a.sendAPIStoreError(c, 401, "Invalid API key")
+				return
 			}
 		}
 	}
@@ -135,15 +124,27 @@ func (a *APIStore) PostSessions(
 	}
 	ReportEvent(ctx, "created session")
 	if teamID != nil {
-		err := a.posthog.Enqueue(posthog.Capture{
-			DistinctId: "backend_infra",
-			Event:      "session_created",
+		err := a.posthog.Enqueue(posthog.GroupIdentify{
+			Type: "team",
+			Key:  *teamID,
+			Properties: posthog.NewProperties().
+				Set("session_tried", true),
+		},
+		)
+		if err != nil {
+			fmt.Printf("Error when setting group property in Posthog: %+v\n", err)
+		}
+
+		err = a.posthog.Enqueue(posthog.Capture{
+			DistinctId: "backend",
+			Event:      "created_session",
 			Properties: posthog.NewProperties().
 				Set("environment", newSession.CodeSnippetID).
 				Set("session_id", session.SessionID),
 			Groups: posthog.NewGroups().
-				Set("team", teamID),
+				Set("team", *teamID),
 		})
+
 		if err != nil {
 			fmt.Printf("Error when sending event to Posthog: %+v\n", err)
 		}

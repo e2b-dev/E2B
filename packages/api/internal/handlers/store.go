@@ -66,7 +66,7 @@ func NewAPIStore() *APIStore {
 	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
 	teamCache := nomad.NewTeamCache()
 	// Comment this line out if you are developing locally to prevent killing sessions in production
-	// go cache.KeepInSync(nomadClient)
+	go cache.KeepInSync(nomadClient)
 
 	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
 	client, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
@@ -190,7 +190,7 @@ func (a *APIStore) DeleteSession(sessionID string, purge bool) *api.APIError {
 	if teamErr != nil {
 		err := a.posthog.Enqueue(posthog.Capture{
 			DistinctId: "backend_infra",
-			Event:      "session_created",
+			Event:      "closed_session",
 			Properties: posthog.NewProperties().
 				Set("session_id", sessionID).Set("duration", duration),
 			Groups: posthog.NewGroups().
