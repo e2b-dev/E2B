@@ -1,11 +1,11 @@
 import asyncio
-import json
 
-from typing import TypeVar, Generic, List, Callable, Any
+from typing import Awaitable, TypeVar, Generic, List, Callable, Any, Optional
 
 T = TypeVar("T")
 
 
+# Check if using event is not better for most use cases
 class DeferredFuture(Generic[T]):
     def __init__(self, cleanup_list: List[Callable[[], Any]] | None = None):
         self._future = asyncio.Future[T]()
@@ -29,10 +29,14 @@ class DeferredFuture(Generic[T]):
             self._future.set_exception(reason)
 
 
-def format_settled_errors(settled: List[Exception]):
-    errors = "errors:\n"
-    for i, s in enumerate(settled):
-        if s is Exception:
-            errors += f"\n[{i}]: {json.dumps(s.exception().__str__())}"
+def run_async_func_in_new_loop(
+    coro: Awaitable, loop: Optional[asyncio.AbstractEventLoop] = None
+):
+    # Create a new loop
+    loop = loop or asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-    return errors
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()

@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 
+from threading import Event
 from websockets.client import WebSocketClientProtocol, connect
 from typing import (
     Callable,
@@ -18,8 +19,9 @@ from jsonrpcclient import request_json, Ok
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response, Error, Deserialized
 from websockets.typing import Data
-from e2b.session.exception import SessionException
 
+from e2b.session.exception import SessionException
+from e2b.utils.future import run_async_func_in_new_loop
 from e2b.utils.future import DeferredFuture
 
 logger = logging.getLogger(__name__)
@@ -97,8 +99,32 @@ class SessionRpc(BaseModel):
         future_connect = DeferredFuture(self._process_cleanup)
 
         async def handle_messages():
-            async for websocket in connect(self.url):
+            async for websocket in connect(
+                self.url,
+                ping_interval=None,
+                ping_timeout=None,
+                max_queue=None,
+                max_size=None,
+            ):
                 self._ws = websocket
+
+                cancel_event = Event()
+
+                self._process_cleanup.append(cancel_event.set)
+
+                async def keep_pong():
+                    while not cancel_event.is_set():
+                        await asyncio.sleep(5)
+                        await websocket.pong()
+
+                ponging = asyncio.to_thread(
+                    run_async_func_in_new_loop,
+                    keep_pong(),
+                )
+
+                ponging_task = asyncio.create_task(ponging)
+                self._process_cleanup.append(ponging_task.cancel)
+
                 logger.info(f"Connected to {self.url}")
                 future_connect(None)
                 try:
@@ -133,7 +159,7 @@ class SessionRpc(BaseModel):
             logger.info(f"Received reply: {r}")
             return r
         except Exception as e:
-            logger.info(f"Error: {request} {e}")
+            logger.error(f"Error: {request} {e}")
             raise e
         finally:
             del self._waiting_for_replies[id]
@@ -168,9 +194,6 @@ class SessionRpc(BaseModel):
         elif isinstance(message, Notification):
             self.on_message(message)
 
-    def __del__(self):
-        self._close()
-
     def _close(self):
         for cancel in self._process_cleanup:
             cancel()
@@ -182,6 +205,7 @@ class SessionRpc(BaseModel):
             del handler
 
     async def close(self):
+        print("cancelling")
         self._close()
 
         if self._ws:

@@ -178,9 +178,6 @@ class ProcessManager:
         self._session = session
         self._process_cleanup: List[Callable[[], Any]] = []
 
-    def __del__(self):
-        self._close()
-
     def _close(self):
         for cleanup in self._process_cleanup:
             cleanup()

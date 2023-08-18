@@ -93,6 +93,7 @@ class Session(SessionConnection):
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
+            on_close=self._close_services,
         )
         self._code_snippet = CodeSnippetManager(
             session=self,
@@ -106,10 +107,20 @@ class Session(SessionConnection):
         await super().open()
         await self._code_snippet._subscribe()
 
-    async def close(self) -> None:
+    def _close_services(self):
         self._terminal._close()
         self._process._close()
+
+    async def close(self) -> None:
         await super().close()
+        self._close()
+
+    async def __aenter__(self):
+        await self.open()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.close()
 
     @classmethod
     async def create(
