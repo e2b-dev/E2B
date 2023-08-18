@@ -41,7 +41,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
 
   if (apiKey) {
-    apiKeyValue = apiKey?.api_key
+    apiKeyValue = apiKey.api_key
   } else {
     const user = await prisma.auth_users.findUniqueOrThrow({
       where: {
@@ -89,6 +89,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       event: 'created API key',
       groups: { team: defaultTeam.teams.id },
     })
+  }
+
+  if (!apiKeyValue) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    }
   }
 
   return {
