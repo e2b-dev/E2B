@@ -23,7 +23,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
   let apiKeyValue: string | undefined
 
-  const apiKey = await prisma.team_api_keys.findFirst({
+  let apiKey = await prisma.team_api_keys.findFirst({
     include: {
       teams: {
         include: {
@@ -55,22 +55,35 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
       },
     })
-    const defaultTeam = user.users_teams.find((t) => t.teams.is_default)
+    let defaultTeam = user.users_teams.find((t) => t.teams.is_default)?.teams
     if (!defaultTeam) {
-      return {
-        redirect: {
-          destination: '/',
-          permanent: false,
-        },
-      }
-    }
+      defaultTeam = await prisma.teams.create({
+        data: {
+          name: session.user.email || session.user.id,
+          is_default: true,
+        }
+      })
+  
 
     for (let i = 0; i < 5; i++) {
       apiKeyValue = generateApiKey()
       try {
-        await prisma.team_api_keys.create({
+        apiKey = await prisma.team_api_keys.create({
+          include: {
+            teams: {
+              include: {
+                users_teams: {
+                  where: {
+                    user_id: {
+                      equals: session.user.id,
+                    },
+                  },
+                },
+              },
+            },
+          },
           data: {
-            team_id: defaultTeam.teams.id,
+            team_id: defaultTeam.id,
             api_key: apiKeyValue,
           },
         })
@@ -82,27 +95,19 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           throw e
         }
       }
-    }
+    }}
 
     posthog?.capture({
       distinctId: user.id,
       event: 'created API key',
-      groups: { team: defaultTeam.teams.id },
+      groups: { team: defaultTeam.id },
     })
   }
-
-  if (!apiKeyValue) {
-    return {
-      redirect: {
-        destination: '/',
-        permanent: false,
-      },
-    }
-  }
+  
 
   return {
     props: {
-      apiKey: apiKeyValue,
+      apiKey: apiKey!.api_key,
     }
   }
 }
