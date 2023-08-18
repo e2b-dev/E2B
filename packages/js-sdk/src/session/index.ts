@@ -1,5 +1,6 @@
 import normalizePath from 'normalize-path'
 
+import { components } from '../api'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors } from '../utils/promise'
 import {
@@ -8,22 +9,30 @@ import {
 } from './codeSnippet'
 import { FileInfo, FilesystemManager, filesystemService } from './filesystem'
 import FilesystemWatcher from './filesystemWatcher'
-import { ProcessManager, processService } from './process'
-import SessionConnection, { SessionConnectionOpts } from './sessionConnection'
+import {
+  Process,
+  ProcessManager,
+  ProcessMessage,
+  ProcessOutput,
+  processService,
+} from './process'
+import { SessionConnection, SessionConnectionOpts } from './sessionConnection'
 import { TerminalManager, terminalService } from './terminal'
+
+export type Environment = components['schemas']['Template']
 
 export interface SessionOpts extends SessionConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler
 }
 
-class Session extends SessionConnection {
+export class Session extends SessionConnection {
   readonly terminal: TerminalManager
   readonly filesystem: FilesystemManager
   readonly process: ProcessManager
 
   private onScanPorts?: ScanOpenPortsHandler
 
-  private constructor(opts: SessionOpts) {
+  constructor(opts: SessionOpts) {
     super(opts)
     this.onScanPorts = opts.onScanPorts
 
@@ -60,32 +69,32 @@ class Session extends SessionConnection {
       write: async (path, content) => {
         await this.call(filesystemService, 'write', [path, content])
       },
-      /**
-       * Write array of bytes to a file.
-       * This can be used when you cannot represent the data as an UTF-8 string.
-       *
-       * @param path path to a file
-       * @param content byte array representing the content to write
-       */
-      writeBytes: async (path, content) => {
-        // We need to convert the byte array to base64 string without using browser or node specific APIs.
-        // This should be achieved by the node polyfills.
-        const base64Content = Buffer.from(content).toString('base64')
-        await this.call(filesystemService, 'writeBase64', [path, base64Content])
-      },
-      /**
-       * Reads the whole content of a file as an array of bytes.
-       * @param path path to a file
-       * @returns byte array representing the content of a file
-       */
-      readBytes: async path => {
-        const base64Content = (await this.call(filesystemService, 'readBase64', [
-          path,
-        ])) as string
-        // We need to convert the byte array to base64 string without using browser or node specific APIs.
-        // This should be achieved by the node polyfills.
-        return Buffer.from(base64Content, 'base64')
-      },
+      // /**
+      //  * Write array of bytes to a file.
+      //  * This can be used when you cannot represent the data as an UTF-8 string.
+      //  *
+      //  * @param path path to a file
+      //  * @param content byte array representing the content to write
+      //  */
+      // writeBytes: async (path, content) => {
+      //   // We need to convert the byte array to base64 string without using browser or node specific APIs.
+      //   // This should be achieved by the node polyfills.
+      //   const base64Content = Buffer.from(content).toString('base64')
+      //   await this.call(filesystemService, 'writeBase64', [path, base64Content])
+      // },
+      // /**
+      //  * Reads the whole content of a file as an array of bytes.
+      //  * @param path path to a file
+      //  * @returns byte array representing the content of a file
+      //  */
+      // readBytes: async path => {
+      //   const base64Content = (await this.call(filesystemService, 'readBase64', [
+      //     path,
+      //   ])) as string
+      //   // We need to convert the byte array to base64 string without using browser or node specific APIs.
+      //   // This should be achieved by the node polyfills.
+      //   return Buffer.from(base64Content, 'base64')
+      // },
       /**
        * Creates a new directory and all directories along the way if needed on the specified pth.
        * @param path path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
@@ -188,19 +197,29 @@ class Session extends SessionConnection {
       }) => {
         const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
+        const output = new ProcessOutput()
+
+        function handleStdout(data: { line: string; timestamp: number }) {
+          const message = new ProcessMessage(data.line, data.timestamp, false)
+          output.addStdout(message)
+          onStdout?.(message)
+        }
+
+        function handleStderr(data: { line: string; timestamp: number }) {
+          const message = new ProcessMessage(data.line, data.timestamp, true)
+          output.addStderr(message)
+          onStderr?.(message)
+        }
+
         const [onExitSubID, onStdoutSubID, onStderrSubID] =
           await this.handleSubscriptions(
             this.subscribe(processService, triggerExit, 'onExit', processID),
-            onStdout
-              ? this.subscribe(processService, onStdout, 'onStdout', processID)
-              : undefined,
-            onStderr
-              ? this.subscribe(processService, onStderr, 'onStderr', processID)
-              : undefined,
+            this.subscribe(processService, handleStdout, 'onStdout', processID),
+            this.subscribe(processService, handleStderr, 'onStderr', processID),
           )
 
         const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
-          createDeferredPromise()
+          createDeferredPromise<ProcessOutput>()
 
         processExited.then(async () => {
           const results = await Promise.allSettled([
@@ -214,8 +233,8 @@ class Session extends SessionConnection {
             this.logger.error(errMsg)
           }
 
+          handleFinishUnsubscribing(output)
           onExit?.()
-          handleFinishUnsubscribing()
         })
 
         try {
@@ -226,21 +245,7 @@ class Session extends SessionConnection {
           throw err
         }
 
-        return {
-          finished: unsubscribing,
-          kill: async () => {
-            try {
-              await this.call(processService, 'kill', [processID])
-            } finally {
-              triggerExit()
-              await unsubscribing
-            }
-          },
-          processID,
-          sendStdin: async data => {
-            await this.call(processService, 'stdin', [processID, data])
-          },
-        }
+        return new Process(processID, this, triggerExit, unsubscribing, output)
       },
     }
   }
@@ -249,17 +254,20 @@ class Session extends SessionConnection {
     return await new Session(opts).open()
   }
 
-  protected override async open() {
+  override async open() {
     await super.open()
 
+    const portsHander = this.onScanPorts
+      ? (ports: { State: string; Ip: string; Port: number }[]) =>
+          this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
+      : undefined
+
     await this.handleSubscriptions(
-      this.onScanPorts
-        ? this.subscribe(codeSnippetService, this.onScanPorts, 'scanOpenedPorts')
+      portsHander
+        ? this.subscribe(codeSnippetService, portsHander, 'scanOpenedPorts')
         : undefined,
     )
 
     return this
   }
 }
-
-export default Session

@@ -1,38 +1,26 @@
 import { Session } from '../dist/cjs/index.js'
 
 async function main() {
-  const session = new Session({
-    id: '5udkAFHBVrGz',
-    debug: true,
-    retry: true,
-    // codeSnippet: {
-    //   onStateChange(state) {
-    //     console.log(state)
-    //   },
-    //   onStdout(out) {
-    //     console.log(out)
-    //   },
-    //   onStderr(err) {
-    //     console.log(err)
-    //   },
-    // },
-    onDisconnect() {
-      console.log('disconnect')
-    },
-    onReconnect() {
-      console.log('reconnect')
-    },
-    onClose() {
-      console.log('close')
-    },
-    // __debug_port: 49982,
-    // __debug_hostname: '127.0.0.1',
-    // __debug_devEnv: 'local',
+  const session = await Session.create({
+    id: 'Nodejs',
   })
 
   try {
-    await session.open()
+    await session.filesystem.write('/code/file', 'test')
+    const content = await session.filesystem.read('/code/file')
+    console.log('content', content)
 
+    const process = await session.process.start({
+      cmd: 'while true; do echo "Hello, World!"; sleep 1; done',
+      onExit: () => console.log('exit'),
+      onStdout: data => console.log(data.line),
+    })
+
+    const output = await process.finished
+
+    console.log('stdout', output.stdout)
+
+    await session.close()
     // const cmd = 'npm i'
 
     // await session.process.start({

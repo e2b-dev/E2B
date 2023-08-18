@@ -30,7 +30,6 @@ import { Session } from '@e2b/sdk'
 // 'Nodejs', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
 const session = await Session.create({ 
   id: 'Nodejs',
-  onClose: () => console.log('Close'),
 })
 
 // Close the session after you are done
