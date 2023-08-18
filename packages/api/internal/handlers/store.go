@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/posthog/posthog-go"
 	"net/http"
 	"os"
 	"sync"
@@ -11,7 +10,9 @@ import (
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
 	"github.com/devbookhq/devbook-api/packages/api/internal/nomad"
 	"github.com/devbookhq/devbook-api/packages/api/internal/supabase"
+
 	"github.com/gin-gonic/gin"
+	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -68,11 +69,17 @@ func NewAPIStore() *APIStore {
 	// go cache.KeepInSync(nomadClient)
 
 	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
-	client, _ := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
+	client, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
 		Interval:  30 * time.Second,
 		BatchSize: 100,
 		Verbose:   true,
 	})
+
+	if posthogErr != nil {
+		fmt.Printf("Error initializing Posthog client\n: %s", posthogErr)
+		panic(posthogErr)
+	}
+
 	return &APIStore{
 		nomad:         nomadClient,
 		supabase:      supabaseClient,
@@ -88,7 +95,10 @@ func NewAPIStore() *APIStore {
 func (a *APIStore) Close() {
 	a.nomad.Close()
 	a.supabase.Close()
-	a.posthog.Close()
+	err := a.posthog.Close()
+	if err != nil {
+		fmt.Printf("Error closing Posthog client\n: %s", err)
+	}
 }
 
 func (a *APIStore) validateAPIKey(apiKey *string) (string, bool, error) {
@@ -154,12 +164,12 @@ func (a *APIStore) isPredefinedTemplate(codeSnippetID string) bool {
 	return false
 }
 
-func (a *APIStore) validateTeamAPIKey(api_key *string) *string {
-	if api_key == nil {
-		fmt.Printf("No api key provided")
+func (a *APIStore) validateTeamAPIKey(apiKey *string) *string {
+	if apiKey == nil {
+		fmt.Println("No api key provided")
 		return nil
 	}
-	team, err := a.supabase.GetTeamID(*api_key)
+	team, err := a.supabase.GetTeamID(*apiKey)
 	if err != nil {
 		fmt.Printf("Failed to get a team from api key: %+v\n", err)
 		return nil
@@ -178,13 +188,16 @@ func (a *APIStore) DeleteSession(sessionID string, purge bool) *api.APIError {
 	}
 	teamID, teamErr := a.teamCache.Get(sessionID)
 	if teamErr != nil {
-		a.posthog.Enqueue(posthog.Capture{
+		err := a.posthog.Enqueue(posthog.Capture{
 			Event: "session_created",
 			Properties: posthog.NewProperties().
 				Set("session_id", sessionID).Set("duration", duration),
 			Groups: posthog.NewGroups().
 				Set("team", teamID),
 		})
+		if err != nil {
+			fmt.Printf("Error sending Posthog event: %s", err)
+		}
 	}
 	return nil
 }

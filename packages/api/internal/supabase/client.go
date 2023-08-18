@@ -33,6 +33,9 @@ func NewClient() (*DB, error) {
 		},
 	)
 	e2bParsedURL, err := url.Parse(e2bsupabaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse e2b Supabase URL '%s': %s", e2bParsedURL, err)
+	}
 
 	e2bClient := postgrest.NewClient(
 		*e2bParsedURL,

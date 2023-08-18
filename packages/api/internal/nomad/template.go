@@ -44,7 +44,7 @@ func GetTemplates() (*[]string, error) {
 		return nil, fmt.Errorf("error reading dir %s: %+v", tempDirPath, err)
 	}
 
-	templates := []string{}
+	var templates []string
 
 	for _, file := range files {
 		if file.IsDir() {

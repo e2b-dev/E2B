@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/posthog/posthog-go"
 	"net/http"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
+	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -105,13 +105,16 @@ func (a *APIStore) PostSessions(
 	if a.isPredefinedTemplate(newSession.CodeSnippetID) {
 		teamID = a.validateTeamAPIKey(params.ApiKey)
 		if teamID != nil {
-			a.posthog.Enqueue(posthog.Capture{
+			err := a.posthog.Enqueue(posthog.Capture{
 				Event: "creating_session",
 				Properties: posthog.NewProperties().
 					Set("environment", newSession.CodeSnippetID),
 				Groups: posthog.NewGroups().
 					Set("team", teamID),
 			})
+			if err != nil {
+				fmt.Printf("Error when sending event to Posthog: %+v\n", err)
+			}
 		} else if params.ApiKey != nil {
 			_, _, userErr := a.validateAPIKey(params.ApiKey)
 			if userErr != nil {
@@ -131,7 +134,7 @@ func (a *APIStore) PostSessions(
 	}
 	ReportEvent(ctx, "created session")
 	if teamID != nil {
-		a.posthog.Enqueue(posthog.Capture{
+		err := a.posthog.Enqueue(posthog.Capture{
 			Event: "session_created",
 			Properties: posthog.NewProperties().
 				Set("environment", newSession.CodeSnippetID).
@@ -139,6 +142,9 @@ func (a *APIStore) PostSessions(
 			Groups: posthog.NewGroups().
 				Set("team", teamID),
 		})
+		if err != nil {
+			fmt.Printf("Error when sending event to Posthog: %+v\n", err)
+		}
 		a.teamCache.Add(session.SessionID, *teamID)
 	}
 
