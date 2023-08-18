@@ -1,5 +1,6 @@
 import crypto from 'crypto'
-import crc32 from 'crc32'
+import crc32 from 'crc/crc32'
+
 
 const base62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
@@ -35,7 +36,7 @@ function generateBase62String(length: number) {
 
 export function generateApiKey() {
   const randomString = generateBase62String(32)
-  const checksum = crc32(randomString)
+  const checksum = crc32(randomString).toString(16)
   const checksumEncoded = numberToBase62(parseInt(checksum, 16), 6)
   return 'pk_' + randomString + '_' + checksumEncoded
 }
