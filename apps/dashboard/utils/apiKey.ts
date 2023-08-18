@@ -3,13 +3,13 @@ import crc32 from 'crc32'
 
 const base62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
-function numberToBase62(number, length) {
+function numberToBase62(num: number, length: number) {
   const base = base62.length
 
   let result = ''
-  while (number > 0) {
-    result = base62[number % base] + result
-    number = Math.floor(number / base)
+  while (num > 0) {
+    result = base62[num % base] + result
+    num = Math.floor(num / base)
   }
 
   while (result.length < length) {
@@ -18,7 +18,8 @@ function numberToBase62(number, length) {
 
   return result
 }
-function generateBase62String(length) {
+
+function generateBase62String(length: number) {
   const base = base62.length
 
   const randomBytes = crypto.randomBytes(length)
@@ -31,6 +32,7 @@ function generateBase62String(length) {
 
   return result
 }
+
 export function generateApiKey() {
   const randomString = generateBase62String(32)
   const checksum = crc32(randomString)
