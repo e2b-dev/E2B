@@ -86,7 +86,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     posthog?.capture({
       distinctId: user.id,
       event: 'created API key',
-      team: defaultTeam.teams.id,
+      groups: { team: defaultTeam.teams.id },
     })
   }
 
