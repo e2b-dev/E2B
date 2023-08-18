@@ -18,7 +18,7 @@ import re  # noqa: F401
 from aenum import Enum, no_arg
 
 
-class Template(Enum):
+class Template(str, Enum):
     """
     Template
     """
