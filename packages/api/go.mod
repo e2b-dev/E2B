@@ -55,6 +55,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
+	github.com/posthog/posthog-go v0.0.0-20230801140217-d607812dee69
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/sethvargo/go-envconfig v0.8.2 // indirect
 	github.com/shirou/gopsutil/v3 v3.22.6 // indirect
