@@ -1,4 +1,4 @@
-import APIKey from './Settings/APIKey.tsx'
+import APIKey from './Settings/APIKey'
 
 
 export interface Props {
@@ -14,9 +14,9 @@ function Settings({ apiKey }: Props) {
         </div>
       </header>
       <div className="space-x-4 overflow-hidden m-4">
-          <div className="text-xl font-semibold text-white">API key</div>
-          <APIKey apiKey={apiKey} />
-        </div>
+        <div className="text-xl font-semibold text-white">API key</div>
+        <APIKey apiKey={apiKey} />
+      </div>
     </main>
   )
 }

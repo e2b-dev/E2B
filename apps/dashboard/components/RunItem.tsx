@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
 import {
   FileProps,
-} from '../../../filesystem'
+} from 'filesystem'
 
 function RunItem({
   name,

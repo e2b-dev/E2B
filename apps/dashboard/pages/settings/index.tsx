@@ -4,8 +4,8 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import Settings from 'components/Settings'
-import { client as posthog } from '../../utils/posthog.ts'
-import { generateApiKey } from '../../utils/apiKey.ts'
+import { client as posthog } from 'utils/posthog'
+import { generateApiKey } from 'utils/apiKey'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
@@ -21,8 +21,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       },
     }
   }
+  let apiKeyValue: string | undefined
 
-  let apiKey = await prisma.team_api_keys.findFirst({
+  const apiKey = await prisma.team_api_keys.findFirst({
     include: {
       teams: {
         include: {
@@ -38,8 +39,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     },
   })
 
+  apiKeyValue = apiKey?.api_key
+
   if (!apiKey) {
-    const user = await prisma.auth_users.findUnique({
+    const user = await prisma.auth_users.findUniqueOrThrow({
       where: {
         id: session.user.id,
       },
@@ -51,11 +54,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
       },
     })
-    if (!user) {
-      return res.status(401).json({
-        error: 'invalid_user',
-      })
-    }
     const defaultTeam = user.users_teams.find((t) => t.teams.is_default)
     if (!defaultTeam) {
       return {
@@ -66,17 +64,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       }
     }
 
-    while (true) {
-      const generatedApiKey = generateApiKey()
+    for (let i = 0; i < 100; i++) {
+      apiKeyValue = generateApiKey()
       try {
-        apiKey = await prisma.team_api_keys.create({
+        await prisma.team_api_keys.create({
           data: {
             team_id: defaultTeam.teams.id,
-            api_key: generatedApiKey,
+            api_key: apiKeyValue,
           },
         })
         break
-      } catch (e) {
+      } catch (e: any) {
+        // TODO: Get prisma typed error
         // Duplicate key error
         if (e.code !== 'P2002') {
           throw e
@@ -87,19 +86,19 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     posthog?.capture({
       distinctId: user.id,
       event: 'created API key',
-      team: defaultTeam.teams.team_id,
+      team: defaultTeam.teams.id,
     })
   }
 
   return {
     props: {
-      apiKey: apiKey.api_key,
-    },
+      apiKey: apiKey?.api_key!,
+    }
   }
 }
 
 interface Props {
-  apiKey: string;
+  apiKey: string
 }
 
 function SettingsPage({ apiKey }: Props) {

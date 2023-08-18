@@ -9,7 +9,7 @@ import DirWrapper from '../components/DirWrapper'
 export type {
   Props as DirWrapperProps,
   DirProps,
-} from '../apps/dashboard/components/DirWrapper'
+} from 'components/DirWrapper'
 
 export { NodeType } from './node'
 export type { Metadata } from './node'

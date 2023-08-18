@@ -65,7 +65,7 @@ function Layout({ children }: PropsWithChildren) {
   const view = process.env.NEXT_PUBLIC_SHOW_UPLOADED_LOGS === '1'
   const showView = router.query['view'] === 'logs' ? 'logs' : view
 
-  const navigation = []
+  const navigation: any[] = []
   //   {
   //     name: showView === 'logs' ? 'Agent Logs' : 'Agent Deployments',
   //     icon: List,
