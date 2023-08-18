@@ -1,4 +1,3 @@
-'use client'
 import { CopyIcon } from 'lucide-react'
 
 interface Props {

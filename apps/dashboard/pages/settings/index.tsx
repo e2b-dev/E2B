@@ -4,8 +4,8 @@ import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { prisma } from 'db/prisma'
 import { serverCreds } from 'db/credentials'
 import Settings from 'components/Settings'
-import { client as posthog } from '../../utils/posthog.ts'
-import { generateApiKey } from '../../utils/apiKey.ts'
+import { client as posthog } from 'utils/posthog'
+import { generateApiKey } from 'utils/apiKey'
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)

@@ -1,4 +1,4 @@
-import APIKey from './Settings/APIKey.tsx'
+import APIKey from './Settings/APIKey'
 
 
 export interface Props {
