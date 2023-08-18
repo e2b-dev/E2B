@@ -2,7 +2,7 @@ import { Configuration, OpenAIApi } from 'openai'
 import { backOff } from 'exponential-backoff'
 
 import api from 'api-client/api'
-import { deployments, prisma } from 'apps/dashboard/db/prisma'
+import { deployments, prisma } from 'db/prisma'
 
 import { GitHubClient } from './client'
 

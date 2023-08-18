@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { UrlObject } from 'url'
 
-import TitleLink from 'apps/dashboard/components/TitleLink'
+import TitleLink from 'components/TitleLink'
 import { ReactNode } from 'react'
 
 export interface Props {

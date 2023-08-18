@@ -12,7 +12,7 @@ import { useChildren } from 'hooks/filesystem'
 import Dir from 'filesystem/dir'
 import DirWrapper, { DirProps } from './DirWrapper'
 
-import Text from 'apps/dashboard/components/Text'
+import Text from 'components/Text'
 import { useFiletree } from 'hooks/useFiletree'
 import Filesystem from 'filesystem/filesystem'
 

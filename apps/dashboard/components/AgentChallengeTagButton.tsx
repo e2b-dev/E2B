@@ -4,7 +4,7 @@ import {
 import {
   Plus,
 } from 'lucide-react'
-import AgentChallengeTagModal, { Severity } from 'apps/dashboard/components/AgentChallengeTagModal'
+import AgentChallengeTagModal, { Severity } from 'components/AgentChallengeTagModal'
 
 export interface Props {
   newTagName: string

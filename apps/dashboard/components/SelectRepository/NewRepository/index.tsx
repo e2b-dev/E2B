@@ -5,16 +5,16 @@ import {
 import clsx from 'clsx'
 import { usePostHog } from 'posthog-js/react'
 
-import ConfigureGitHubButton from 'apps/dashboard/components/ConfigureGitHubButton'
-import AlertError from 'apps/dashboard/components/AlertError'
+import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
+import AlertError from 'components/AlertError'
 import {
   configureGitHubApp,
   GitHubAccount,
-} from 'apps/dashboard/utils/github'
+} from 'utils/github'
 import { useGitHubClient } from 'hooks/useGitHubClient'
-import SpinnerIcon from 'apps/dashboard/components/Spinner'
+import SpinnerIcon from 'components/Spinner'
 import { createRepo } from 'github/repo'
-import { RepoSetup } from 'apps/dashboard/utils/repoSetup'
+import { RepoSetup } from 'utils/repoSetup'
 
 import RepoAccountSelect from './RepoAccountSelect'
 import RepoNameInput from './RepoNameInput'

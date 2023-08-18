@@ -1,8 +1,8 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
 
-import { prisma } from 'apps/dashboard/db/prisma'
-import { serverCreds } from 'apps/dashboard/db/credentials'
+import { prisma } from 'db/prisma'
+import { serverCreds } from 'db/credentials'
 import { DeleteLogUploadTag } from 'hooks/useDeleteLogUploadTag'
 import { PostLogUploadTag } from 'hooks/useAddLogUploadTag'
 

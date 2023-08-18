@@ -1,4 +1,4 @@
-import { openPopupModal } from 'apps/dashboard/utils/popupModal'
+import { openPopupModal } from 'utils/popupModal'
 
 export interface GitHubAccount {
   name: string

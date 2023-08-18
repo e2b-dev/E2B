@@ -2,9 +2,9 @@ import {
   SystemPromptLog,
   UserPromptLog,
   AssistantPromptLog,
-} from 'apps/dashboard/utils/agentLogs'
+} from 'utils/agentLogs'
 import { useMemo } from 'react'
-import JsonView from 'apps/dashboard/components/JsonView'
+import JsonView from 'components/JsonView'
 
 
 function handleJSONQuotes(content: string) {

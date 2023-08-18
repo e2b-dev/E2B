@@ -3,14 +3,14 @@ import { ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 
-import RenameLogUploadButton from 'apps/dashboard/components/RenameLogUploadButton'
-import UploadTree from 'apps/dashboard/components/AgentLogFilesList/UploadFiletree'
+import RenameLogUploadButton from 'components/RenameLogUploadButton'
+import UploadTree from 'components/AgentLogFilesList/UploadFiletree'
 import { useRenameLogUpload } from 'hooks/useRenameLogUpload'
-import { LiteLogFile } from 'apps/dashboard/utils/agentLogs'
+import { LiteLogFile } from 'utils/agentLogs'
 import { SupabaseClient, useSupabaseClient } from '@supabase/auth-helpers-react'
-import { Database } from 'apps/dashboard/db/supabase'
-import { formatLogFileContent } from 'apps/dashboard/utils/formatLogFileContent'
-import { log_uploads } from 'apps/dashboard/db/prisma'
+import { Database } from 'db/supabase'
+import { formatLogFileContent } from 'utils/formatLogFileContent'
+import { log_uploads } from 'db/prisma'
 
 async function getUploadLogsContent(client: SupabaseClient<Database>, logUploadID: string) {
   const result = await client

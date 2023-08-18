@@ -12,9 +12,9 @@ import { usePostHog } from 'posthog-js/react'
 
 import {
   LiteDeployment,
-} from 'apps/dashboard/utils/agentLogs'
+} from 'utils/agentLogs'
 
-import DeploymentTree from 'apps/dashboard/components/DeploymentTree'
+import DeploymentTree from 'components/DeploymentTree'
 
 export interface Props {
   deployments: LiteDeployment[]

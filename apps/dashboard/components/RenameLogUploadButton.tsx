@@ -1,7 +1,7 @@
 import {
   Edit,
 } from 'lucide-react'
-import Spinner from 'apps/dashboard/components/Spinner'
+import Spinner from 'components/Spinner'
 
 import clsx from 'clsx'
 

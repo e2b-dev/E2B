@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
-import { AgentChallengeTag } from 'apps/dashboard/utils/agentLogs'
+import { AgentChallengeTag } from 'utils/agentLogs'
 
 export interface DeleteLogUploadTag {
   // Log Upload ID

@@ -1,4 +1,4 @@
-import { deployments, log_files, log_uploads } from 'apps/dashboard/db/prisma'
+import { deployments, log_files, log_uploads } from 'db/prisma'
 
 export interface LiteDeploymentLog extends Omit<log_files, 'content'> {
   content: any

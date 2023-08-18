@@ -5,7 +5,7 @@ import {
 import { EditorContent } from '@tiptap/react'
 import clsx from 'clsx'
 
-import Text from 'apps/dashboard/components/Text'
+import Text from 'components/Text'
 import useDocEditor from 'hooks/useDocEditor'
 
 export interface Props {

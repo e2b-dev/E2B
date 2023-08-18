@@ -15,9 +15,9 @@ import {
 } from 'lucide-react'
 import Script from 'next/script'
 
-import DashboardDesktopSidebar from 'apps/dashboard/components/Sidebar/DashboardDesktopSidebar'
-import DashboardMobileSidebar from 'apps/dashboard/components/Sidebar/DashboardMobileSidebar'
-import Feedback from 'apps/dashboard/components/Feedback'
+import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
+import DashboardMobileSidebar from 'components/Sidebar/DashboardMobileSidebar'
+import Feedback from 'components/Feedback'
 
 import * as gtag from '../utils/gtag'
 import StarUs from './StarUs'

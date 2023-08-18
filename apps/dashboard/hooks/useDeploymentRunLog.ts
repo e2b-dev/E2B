@@ -1,9 +1,9 @@
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useState, useEffect, useMemo } from 'react'
 
-import { logsTable } from 'apps/dashboard/db/tables'
-import { Database } from 'apps/dashboard/db/supabase'
-import { LiteDeploymentLog } from 'apps/dashboard/utils/agentLogs'
+import { logsTable } from 'db/tables'
+import { Database } from 'db/supabase'
+import { LiteDeploymentLog } from 'utils/agentLogs'
 
 function useDeploymentRunLog(initLog: LiteDeploymentLog) {
   const [logContent, setLogContent] = useState<any>()

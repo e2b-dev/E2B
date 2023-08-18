@@ -12,10 +12,10 @@ import {
   AgentPromptLogs,
   AgentNextActionLog,
   LiteLogFile,
-} from 'apps/dashboard/utils/agentLogs'
-import AgentPrompLogDetail from 'apps/dashboard/components/AgentPromptLogDetail'
-import AgentPromptLogsList from 'apps/dashboard/components/AgentPromptLogsList'
-import AgentNextActionLogDetail from 'apps/dashboard/components/AgentNextActionLogDetail'
+} from 'utils/agentLogs'
+import AgentPrompLogDetail from 'components/AgentPromptLogDetail'
+import AgentPromptLogsList from 'components/AgentPromptLogsList'
+import AgentNextActionLogDetail from 'components/AgentNextActionLogDetail'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 
 export interface Props {

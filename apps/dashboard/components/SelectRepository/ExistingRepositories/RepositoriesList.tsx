@@ -2,7 +2,7 @@ import {
   Github,
 } from 'lucide-react'
 
-import { Repos, RepoSetup } from 'apps/dashboard/utils/repoSetup'
+import { Repos, RepoSetup } from 'utils/repoSetup'
 
 export interface Props {
   repos: Repos

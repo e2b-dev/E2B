@@ -1,6 +1,6 @@
 import path from 'path-browserify'
 
-import { log_files } from 'apps/dashboard/db/prisma'
+import { log_files } from 'db/prisma'
 
 import { AgentNextActionLog, AgentPromptLogs } from './agentLogs'
 

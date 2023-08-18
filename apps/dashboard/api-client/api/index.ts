@@ -2,7 +2,7 @@ import 'cross-fetch/polyfill'
 import { Fetcher } from 'openapi-typescript-fetch'
 
 import type { components, paths } from './schema.gen'
-import { localURL } from 'apps/dashboard/db/credentials'
+import { localURL } from 'db/credentials'
 
 export const baseUrl = process.env.NEXT_PUBLIC_PROXY
   ? `${localURL}/api/service`

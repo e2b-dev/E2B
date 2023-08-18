@@ -4,9 +4,9 @@ import {
   ScrollText,
 } from 'lucide-react'
 
-import InstructionsEditor from 'apps/dashboard/components/InstructionsEditor'
-import { RepoSetup } from 'apps/dashboard/utils/repoSetup'
-import SpinnerIcon from 'apps/dashboard/components/Spinner'
+import InstructionsEditor from 'components/InstructionsEditor'
+import { RepoSetup } from 'utils/repoSetup'
+import SpinnerIcon from 'components/Spinner'
 import AlertError from './AlertError'
 
 export interface Props {

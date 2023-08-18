@@ -1,11 +1,11 @@
-import Tree from 'apps/dashboard/components/FilesystemTree'
+import Tree from 'components/FilesystemTree'
 export type {
   Props as FilesystemTreeProps,
   FileProps,
   SelectHandler,
-} from 'apps/dashboard/components/FilesystemTree'
+} from 'components/FilesystemTree'
 
-import DirWrapper from '../apps/dashboard/components/DirWrapper'
+import DirWrapper from '../components/DirWrapper'
 export type {
   Props as DirWrapperProps,
   DirProps,

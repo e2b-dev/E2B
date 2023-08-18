@@ -1,8 +1,8 @@
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { NextApiRequest, NextApiResponse } from 'next'
 
-import { prisma } from 'apps/dashboard/db/prisma'
-import { serverCreds } from 'apps/dashboard/db/credentials'
+import { prisma } from 'db/prisma'
+import { serverCreds } from 'db/credentials'
 import { PostFeedback } from 'hooks/useAddFeedback'
 
 async function postFeedback(req: NextApiRequest, res: NextApiResponse) {

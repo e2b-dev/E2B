@@ -5,7 +5,7 @@ import {
 import { usePostHog } from 'posthog-js/react'
 import clsx from 'clsx'
 
-import OpenAIKeyInput from 'apps/dashboard/components/OpenAIKeyInput'
+import OpenAIKeyInput from 'components/OpenAIKeyInput'
 
 export interface Props {
   selectedOpenAIKeyType: string

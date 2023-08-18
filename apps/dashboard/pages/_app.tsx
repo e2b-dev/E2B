@@ -10,9 +10,9 @@ import { useRouter } from 'next/router'
 
 import 'styles/global.css'
 
-import { Database } from 'apps/dashboard/db/supabase'
-import { clientCreds } from 'apps/dashboard/db/credentials'
-import Layout from 'apps/dashboard/components/Layout'
+import { Database } from 'db/supabase'
+import { clientCreds } from 'db/credentials'
+import Layout from 'components/Layout'
 
 // Initialize PostHog
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {

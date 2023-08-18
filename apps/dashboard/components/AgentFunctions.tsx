@@ -6,8 +6,8 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
-import JsonView from 'apps/dashboard/components/JsonView'
-import { AgentFunction } from 'apps/dashboard/utils/agentLogs'
+import JsonView from 'components/JsonView'
+import { AgentFunction } from 'utils/agentLogs'
 
 export interface Props {
   functions: AgentFunction[]

@@ -1,4 +1,4 @@
-import { GitHubAccount } from 'apps/dashboard/utils/github'
+import { GitHubAccount } from 'utils/github'
 
 export enum ActionType {
   Initial,

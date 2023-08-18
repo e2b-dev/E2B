@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 
-import { prisma } from 'apps/dashboard/db/prisma'
+import { prisma } from 'db/prisma'
 import { getGHInstallationClient } from 'github/installationClient'
 import { addCommentToPR } from 'github/pullRequest'
-import { client as posthog } from 'apps/dashboard/utils/posthog'
+import { client as posthog } from 'utils/posthog'
 
 import { DeploymentAuthData } from '.'
-import { smolDeveloperTemplateID } from 'apps/dashboard/utils/smolTemplates'
+import { smolDeveloperTemplateID } from 'utils/smolTemplates'
 
 // Indicate that the agent state changed (run finished)
 async function postRun(req: NextApiRequest, res: NextApiResponse) {

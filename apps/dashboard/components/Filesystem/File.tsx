@@ -7,7 +7,7 @@ import Link from 'next/link'
 import {
   FileProps,
   NodeType,
-} from '../../../../filesystem'
+} from '../../filesystem'
 import { useRouter } from 'next/router'
 
 function File({

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { AgentChallengeTag as AgentChallengeTagType } from 'apps/dashboard/utils/agentLogs'
+import { AgentChallengeTag as AgentChallengeTagType } from 'utils/agentLogs'
 
 export interface Props {
   tag: AgentChallengeTagType

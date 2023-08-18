@@ -8,10 +8,10 @@ import {
   ArrowRight,
 } from 'lucide-react'
 
-import smolTemplates from 'apps/dashboard/utils/smolTemplates'
-import InstructionsEditor, { InstructionsEditorRef } from 'apps/dashboard/components/InstructionsEditor'
-import InstructionsTemplateButton from 'apps/dashboard/components/InstructionsTemplateButton'
-import AlertError from 'apps/dashboard/components/AlertError'
+import smolTemplates from 'utils/smolTemplates'
+import InstructionsEditor, { InstructionsEditorRef } from 'components/InstructionsEditor'
+import InstructionsTemplateButton from 'components/InstructionsTemplateButton'
+import AlertError from 'components/AlertError'
 import { usePostHog } from 'posthog-js/react'
 
 export interface Props {

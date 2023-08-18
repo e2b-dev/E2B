@@ -1,6 +1,6 @@
-import { AgentNextActionLog } from 'apps/dashboard/utils/agentLogs'
+import { AgentNextActionLog } from 'utils/agentLogs'
 
-import JsonView from 'apps/dashboard/components/JsonView'
+import JsonView from 'components/JsonView'
 export interface Props {
   log: AgentNextActionLog
 }

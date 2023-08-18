@@ -10,8 +10,8 @@ import {
 } from '@supabase/auth-helpers-react'
 import { usePostHog } from 'posthog-js/react'
 
-import SpinnerIcon from 'apps/dashboard/components/Spinner'
-import StarUs from 'apps/dashboard/components/StarUs'
+import SpinnerIcon from 'components/Spinner'
+import StarUs from 'components/StarUs'
 
 function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()

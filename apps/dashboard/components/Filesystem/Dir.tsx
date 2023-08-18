@@ -11,10 +11,10 @@ import {
   useMetadata,
 } from 'hooks/filesystem'
 
-import { AgentChallengeTag as AgentChallengeTagType } from 'apps/dashboard/utils/agentLogs'
-import AgentChallengeTagButton from 'apps/dashboard/components/AgentChallengeTagButton'
-import { Severity } from 'apps/dashboard/components/AgentChallengeTagModal'
-import AgentChallengeTag from 'apps/dashboard/components/AgentChallengeTag'
+import { AgentChallengeTag as AgentChallengeTagType } from 'utils/agentLogs'
+import AgentChallengeTagButton from 'components/AgentChallengeTagButton'
+import { Severity } from 'components/AgentChallengeTagModal'
+import AgentChallengeTag from 'components/AgentChallengeTag'
 import {
   DirProps,
   NodeType,

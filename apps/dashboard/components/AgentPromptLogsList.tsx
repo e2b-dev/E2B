@@ -10,7 +10,7 @@ import {
   SystemPromptLog,
   UserPromptLog,
   AssistantPromptLog,
-} from 'apps/dashboard/utils/agentLogs'
+} from 'utils/agentLogs'
 
 export interface Props {
   logs: (SystemPromptLog | UserPromptLog | AssistantPromptLog)[]

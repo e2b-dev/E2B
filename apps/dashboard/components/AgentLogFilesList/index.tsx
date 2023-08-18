@@ -10,14 +10,14 @@ import { useRouter } from 'next/router'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
-import { log_uploads } from 'apps/dashboard/db/prisma'
+import { log_uploads } from 'db/prisma'
 import {
   LiteLogFile,
-} from 'apps/dashboard/utils/agentLogs'
-import AgentLogFileContent from 'apps/dashboard/components/AgentLogFileContent'
+} from 'utils/agentLogs'
+import AgentLogFileContent from 'components/AgentLogFileContent'
 import { useLocalStorage } from 'hooks/useLocalStorage'
-import { Database } from 'apps/dashboard/db/supabase'
-import { formatLogFileContent } from 'apps/dashboard/utils/formatLogFileContent'
+import { Database } from 'db/supabase'
+import { formatLogFileContent } from 'utils/formatLogFileContent'
 
 import Upload from './Upload'
 import UploadedLogsDetail from './UploadedLogsDetail'

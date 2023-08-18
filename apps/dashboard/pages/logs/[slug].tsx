@@ -2,11 +2,11 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { ParsedUrlQuery } from 'querystring'
 
-import { prisma, log_files, deployments } from 'apps/dashboard/db/prisma'
-import { serverCreds } from 'apps/dashboard/db/credentials'
-import { LiteDeploymentLog } from 'apps/dashboard/utils/agentLogs'
-import AgentRunLogContent from 'apps/dashboard/components/AgentRunLogContent'
-import { wait } from 'apps/dashboard/utils/wait'
+import { prisma, log_files, deployments } from 'db/prisma'
+import { serverCreds } from 'db/credentials'
+import { LiteDeploymentLog } from 'utils/agentLogs'
+import AgentRunLogContent from 'components/AgentRunLogContent'
+import { wait } from 'utils/wait'
 
 interface PathProps extends ParsedUrlQuery {
   slug: string

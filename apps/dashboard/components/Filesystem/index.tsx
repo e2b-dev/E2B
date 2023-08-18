@@ -12,11 +12,11 @@ import FilesystemPrimitive, {
   NodeType,
   SelectHandler,
   useFilesystem,
-} from '../../../../filesystem'
+} from '../../filesystem'
 
 import Dir from './Dir'
 import File from './File'
-import { AgentChallengeTag } from 'apps/dashboard/utils/agentLogs'
+import { AgentChallengeTag } from 'utils/agentLogs'
 
 export interface FileInfo {
   isDir: boolean

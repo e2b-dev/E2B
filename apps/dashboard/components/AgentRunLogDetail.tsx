@@ -1,4 +1,4 @@
-import JsonView from 'apps/dashboard/components/JsonView'
+import JsonView from 'components/JsonView'
 
 export interface Props {
   step?: any

@@ -11,7 +11,7 @@ import { GithubIcon } from 'lucide-react'
 import { DeploymentAuthData } from 'pages/api/agent'
 import {
   LiteDeploymentLog,
-} from 'apps/dashboard/utils/agentLogs'
+} from 'utils/agentLogs'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import useDeploymentRunLog from 'hooks/useDeploymentRunLog'
 

@@ -1,8 +1,8 @@
 import clsx from 'clsx'
 
-import ConfigureGitHubButton from 'apps/dashboard/components/ConfigureGitHubButton'
-import SpinnerIcon from 'apps/dashboard/components/Spinner'
-import { RepoSetup, Repos } from 'apps/dashboard/utils/repoSetup'
+import ConfigureGitHubButton from 'components/ConfigureGitHubButton'
+import SpinnerIcon from 'components/Spinner'
+import { RepoSetup, Repos } from 'utils/repoSetup'
 
 import RepositoriesList from './RepositoriesList'
 

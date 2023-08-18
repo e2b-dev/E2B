@@ -1,4 +1,4 @@
-import { log_files } from 'apps/dashboard/db/prisma'
+import { log_files } from 'db/prisma'
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
 

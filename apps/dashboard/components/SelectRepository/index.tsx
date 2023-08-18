@@ -11,10 +11,10 @@ import {
 import {
   configureGitHubApp,
   GitHubAccount,
-} from 'apps/dashboard/utils/github'
-import SpinnerIcon from 'apps/dashboard/components/Spinner'
+} from 'utils/github'
+import SpinnerIcon from 'components/Spinner'
 import { usePostHog } from 'posthog-js/react'
-import { RepoSetup, Repos } from 'apps/dashboard/utils/repoSetup'
+import { RepoSetup, Repos } from 'utils/repoSetup'
 
 import RepoSwitch from './RepoSwitch'
 import ExistingRepositories from './ExistingRepositories'

@@ -1,10 +1,10 @@
 import { useCallback } from 'react'
 import path from 'path-browserify'
 
-import Filesystem, { FileInfo } from 'apps/dashboard/components/Filesystem'
-import { AgentChallengeTag, LiteLogFile } from 'apps/dashboard/utils/agentLogs'
+import Filesystem, { FileInfo } from 'components/Filesystem'
+import { AgentChallengeTag, LiteLogFile } from 'utils/agentLogs'
 import { FiletreeProvider } from 'hooks/useFiletree'
-import { log_uploads } from 'apps/dashboard/db/prisma'
+import { log_uploads } from 'db/prisma'
 
 export interface Props {
   logUpload: log_uploads

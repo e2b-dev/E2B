@@ -4,10 +4,10 @@ import {
   createNodeMiddleware,
 } from '@octokit/webhooks'
 
-import { prisma } from 'apps/dashboard/db/prisma'
-import { client as posthog } from 'apps/dashboard/utils/posthog'
+import { prisma } from 'db/prisma'
+import { client as posthog } from 'utils/posthog'
 import { DeploymentAuthData } from 'pages/api/agent'
-import { smolDeveloperTemplateID } from 'apps/dashboard/utils/smolTemplates'
+import { smolDeveloperTemplateID } from 'utils/smolTemplates'
 
 import {
   disableAgentDeployment,

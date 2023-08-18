@@ -2,10 +2,10 @@ import type { GetServerSideProps } from 'next'
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import { nanoid } from 'nanoid'
 
-import { prisma, projects, log_uploads } from 'apps/dashboard/db/prisma'
-import { serverCreds } from 'apps/dashboard/db/credentials'
-import DashboardHome from 'apps/dashboard/components/DashboardHome'
-import { LiteDeployment } from 'apps/dashboard/utils/agentLogs'
+import { prisma, projects, log_uploads } from 'db/prisma'
+import { serverCreds } from 'db/credentials'
+import DashboardHome from 'components/DashboardHome'
+import { LiteDeployment } from 'utils/agentLogs'
 
 export interface Props {
   projects: (projects & { log_uploads: log_uploads[], deployments: LiteDeployment[] })[]

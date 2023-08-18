@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 
-import Text from 'apps/dashboard/components/Text'
+import Text from 'components/Text'
 
 export interface Props {
   onClick: () => void

@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 
-import Filesystem, { FileInfo } from 'apps/dashboard/components/Filesystem'
-import { LiteDeployment } from 'apps/dashboard/utils/agentLogs'
+import Filesystem, { FileInfo } from 'components/Filesystem'
+import { LiteDeployment } from 'utils/agentLogs'
 import { FiletreeProvider } from 'hooks/useFiletree'
 import RunItem from './RunItem'
 

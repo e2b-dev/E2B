@@ -1,14 +1,14 @@
 import React, { memo } from 'react'
 
-import Text from 'apps/dashboard/components/Text'
+import Text from 'components/Text'
 
 import {
   Metadata,
   NodeType,
-} from '../../../filesystem/node'
-import { useChildren } from '../../../hooks/filesystem'
-import Dir from '../../../filesystem/dir'
-import Filesystem from '../../../filesystem/filesystem'
+} from '../filesystem/node'
+import { useChildren } from '../hooks/filesystem'
+import Dir from '../filesystem/dir'
+import Filesystem from '../filesystem/filesystem'
 
 import {
   FileProps,

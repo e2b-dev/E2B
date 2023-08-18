@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 
 import { useUploadLogUpload } from 'hooks/useUploadLogUpload'
-import { log_files } from 'apps/dashboard/db/prisma'
+import { log_files } from 'db/prisma'
 import { useRouter } from 'next/router'
-import LogFolderUploadButton from 'apps/dashboard/components/LogFolderUploadButton'
+import LogFolderUploadButton from 'components/LogFolderUploadButton'
 
 export interface Props {
   defaultProjectID: string
