@@ -124,8 +124,9 @@
 - relative paths are not handled correctly for the session.filesystem?
 - on_ports should be better - not periodically reporting, and also need access to session fields?
 - process/terminal handling with await is confusing -
-- Add sync support to the python SDK
-
+- Add sync support to the python SDK and js sdk
+  - the ws pong is working now but the actuall message backpressure can still make problems
+- Add golangci-lint
 
 
 ### Python SDK
