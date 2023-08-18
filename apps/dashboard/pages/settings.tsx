@@ -52,17 +52,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           include: {
             teams: true,
           },
+          where: {
+            teams: {
+              is_default: {
+                equals: true,
+              },
+            }
+          },
         },
-      },
+      }
     })
-    let defaultTeam = user.users_teams.find((t) => t.teams.is_default)?.teams
-    if (!defaultTeam) {
-      defaultTeam = await prisma.teams.create({
-        data: {
-          name: session.user.email || session.user.id,
-          is_default: true,
-        },
-      })
+
+    let defaultTeam = user.users_teams[0].teams
 
     for (let i = 0; i < 5; i++) {
       apiKeyValue = generateApiKey()
@@ -94,8 +95,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
           throw e
         }
       }
-    }}
-
+    }
     posthog?.capture({
       distinctId: user.id,
       event: 'created API key',
