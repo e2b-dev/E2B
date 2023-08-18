@@ -20,11 +20,14 @@ import Feedback from 'components/Feedback'
 
 import * as gtag from '../utils/gtag'
 import StarUs from './StarUs'
+import { Navigation } from './Sidebar/navigation'
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
 })
+
+const navigation: Navigation = []
 
 function Layout({ children }: PropsWithChildren) {
   const supabaseClient = useSupabaseClient()
@@ -61,16 +64,6 @@ function Layout({ children }: PropsWithChildren) {
       })
     }
   }, [posthog, user])
-
-  const view = process.env.NEXT_PUBLIC_SHOW_UPLOADED_LOGS === '1'
-  const showView = router.query['view'] === 'logs' ? 'logs' : view
-
-  const navigation: any[] = []
-  //   {
-  //     name: showView === 'logs' ? 'Agent Logs' : 'Agent Deployments',
-  //     icon: List,
-  //   },
-  // ]
 
   return (
     <>

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { usePostHog } from 'posthog-js/react'
 
-import { Navigation } from './types'
+import { Navigation } from './navigation'
 
 export interface Props {
   onSignOut: () => void

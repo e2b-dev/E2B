@@ -1,7 +1,6 @@
 import crypto from 'crypto'
 import crc32 from 'crc/crc32'
 
-
 const base62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 function numberToBase62(num: number, length: number) {

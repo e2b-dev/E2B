@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/router'
 
-import { Navigation } from './types'
+import { Navigation } from './navigation'
 
 export interface Props {
   isSidebarOpen?: boolean
