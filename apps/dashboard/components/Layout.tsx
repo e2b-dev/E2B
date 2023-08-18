@@ -11,7 +11,6 @@ import { usePostHog } from 'posthog-js/react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import {
   Menu,
-  List,
 } from 'lucide-react'
 import Script from 'next/script'
 
@@ -66,12 +65,12 @@ function Layout({ children }: PropsWithChildren) {
   const view = process.env.NEXT_PUBLIC_SHOW_UPLOADED_LOGS === '1'
   const showView = router.query['view'] === 'logs' ? 'logs' : view
 
-  const navigation = [
-    {
-      name: showView === 'logs' ? 'Agent Logs' : 'Agent Deployments',
-      icon: List,
-    },
-  ]
+  const navigation = []
+  //   {
+  //     name: showView === 'logs' ? 'Agent Logs' : 'Agent Deployments',
+  //     icon: List,
+  //   },
+  // ]
 
   return (
     <>

@@ -221,6 +221,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     })
 
   return {
+    redirect: {
+      destination: '/settings',
+      permanent: false,
+    },
+  }
+
+  return {
     props: {
       view: showUploadedLogs ? 'logs' : 'deployments',
       defaultProjectID: defaultProject.id,
