@@ -99,15 +99,14 @@ class SessionRpc(BaseModel):
         future_connect = DeferredFuture(self._process_cleanup)
 
         async def handle_messages():
-            async for websocket in connect(
+            async with connect(
                 self.url,
                 ping_interval=None,
                 ping_timeout=None,
                 max_queue=None,
                 max_size=None,
-            ):
+            ) as websocket:
                 self._ws = websocket
-
                 cancel_event = Event()
 
                 self._process_cleanup.append(cancel_event.set)
@@ -131,8 +130,7 @@ class SessionRpc(BaseModel):
                     async for message in self._ws:
                         await self._receive_message(message)
                 except Exception as e:
-                    logger.info(f"Error: {e}")
-                    continue
+                    logger.error(f"Error: {e}")
 
             if not self._ws:
                 raise Exception("Not connected")
@@ -205,7 +203,6 @@ class SessionRpc(BaseModel):
             del handler
 
     async def close(self):
-        print("cancelling")
         self._close()
 
         if self._ws:
