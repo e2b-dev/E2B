@@ -1,11 +1,18 @@
-'use client'
 import { CopyIcon } from 'lucide-react'
+import {usePostHog} from 'posthog-js/react'
 
 interface Props {
   apiKey: string;
 }
 
 function APIKey({ apiKey }: Props) {
+  const posthog = usePostHog()
+
+  const onClick = () => {
+    navigator.clipboard.writeText(apiKey)
+    posthog?.capture('copied API key')
+  }
+  
   return (
     <div className="my-4 flex align-bottom justify-between w-3/4">
         <div
@@ -14,7 +21,7 @@ function APIKey({ apiKey }: Props) {
           <span className="p-2 font-semibold">{apiKey}</span>
         </div>
         <CopyIcon
-          onClick={() => navigator.clipboard.writeText(apiKey)}
+          onClick={() => onClick()}
           className="cursor-pointer place-self-center text-gray-200 hover:text-gray-400"
           size={24}
         />
