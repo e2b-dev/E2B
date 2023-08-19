@@ -17,7 +17,7 @@ function SignIn() {
   useEffect(() => {
     if (user) {
       router.push({
-        pathname: '/',
+        pathname: '/settings',
         query: {
           ...router.query['team'] && { team: router.query['team'] },
         },
