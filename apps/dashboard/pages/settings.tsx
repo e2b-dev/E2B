@@ -37,6 +37,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         },
       },
     },
+    where: {
+      teams: {
+        users_teams: {
+          some: {
+            user_id: {
+              equals: session.user.id,
+            },
+          }
+        }
+      }
+    }
   })
 
 
