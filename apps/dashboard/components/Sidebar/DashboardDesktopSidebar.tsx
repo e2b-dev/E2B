@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import { usePostHog } from 'posthog-js/react'
 
 import { Navigation } from './navigation'
+import { LogOut } from 'lucide-react'
 
 export interface Props {
   onSignOut: () => void
@@ -36,7 +37,7 @@ function DashboardDesktopSidebar({
                         router.pathname === '/'
                           ? 'bg-[#1F2437] text-white'
                           : 'text-gray-400 hover:text-white hover:bg-[#1F2437]',
-                        'group gap-x-3 rounded-md transition-all px-2 py-1 text-sm leading-6 font-semibold flex items-center'
+                        'group gap-x-3 rounded-md transition-all px-2 py-1 leading-6 font-semibold flex items-center'
                       )}
                       onClick={() => {
                         posthog?.capture('clicked navigation item', {
@@ -53,13 +54,14 @@ function DashboardDesktopSidebar({
             </li>
             <li className="-mx-6 mt-auto">
               <div
-                className="flex items-center gap-x-4 px-6 text-sm font-semibold leading-6 text-white"
+                className="flex items-center gap-x-4 px-6 font-semibold leading-6 text-white"
               >
                 <button
-                  className="text-sm font-semibold text-gray-400 hover:text-white transition-all"
+                  className="flex items-center align-middle space-x-3 font-semibold text-gray-400 hover:text-white transition-all"
                   onClick={onSignOut}
                 >
-                  Sign out
+                  <LogOut size={18} />
+                  <span>Sign out</span>
                 </button>
               </div>
             </li>
