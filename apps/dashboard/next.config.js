@@ -10,11 +10,11 @@ const nextConfig = {
       },
       {
         source: '/',
-        destination: process.env.NEXT_LANGING_PAGE_URL || '/',
+        destination: process.env.NEXT_PUBLIC_LANDING_PAGE_URL || '/',
       },
       {
         source: '/docs',
-        destination: process.env.NEXT_DOCS_URL || '/',
+        destination: process.env.NEXT_PUBLIC_DOCS_URL || '/',
       },
     ]
   },
