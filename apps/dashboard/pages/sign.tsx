@@ -18,9 +18,6 @@ function SignIn() {
     if (user) {
       router.push({
         pathname: '/settings',
-        query: {
-          ...router.query['team'] && { team: router.query['team'] },
-        },
       })
     }
   }, [user, router])

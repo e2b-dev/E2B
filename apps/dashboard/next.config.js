@@ -11,6 +11,10 @@ const nextConfig = {
       },
       {
         source: '/',
+        destination: '/settings',
+      },
+      {
+        source: '/',
         destination: process.env.NEXT_PUBLIC_LANDING_PAGE_URL || '/',
         basePath: false,
       },
