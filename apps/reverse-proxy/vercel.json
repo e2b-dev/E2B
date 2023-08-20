@@ -23,5 +23,40 @@
       "source": "/blog(/.*)?",
       "destination": "https://e2b-blog.framer.website$1"
     }
+  ],
+  "redirects": [
+    {
+      "source": "(/.*)?",
+      "has": [
+        {
+          "type": "host",
+          "value": "blog.e2b.dev"
+        }
+      ],
+      "destination": "/blog$1",
+      "permanent": false
+    },
+    {
+      "source": "(/.*)?",
+      "has": [
+        {
+          "type": "host",
+          "value": "changelog.e2b.dev"
+        }
+      ],
+      "destination": "/changelog$1",
+      "permanent": false
+    }
+    {
+      "source": "(/.*)?",
+      "has": [
+        {
+          "type": "host",
+          "value": "docs.e2b.dev"
+        }
+      ],
+      "destination": "/docs$1",
+      "permanent": false
+    }
   ]
 }
