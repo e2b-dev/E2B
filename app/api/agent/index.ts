@@ -6,7 +6,10 @@ import { client as posthog } from 'utils/posthog'
 import { serverCreds } from 'db/credentials'
 import { prisma } from 'db/prisma'
 
-import { PostAgentBody, PostAgentResponse } from 'app/agent/smol-developer/setup/page'
+import {
+  PostAgentBody,
+  PostAgentResponse
+} from 'app/agent/smol-developer/setup/page'
 import { getGHInstallationClient } from 'github/installationClient'
 import {
   createAgentDeployment,
@@ -19,19 +22,19 @@ import {
 
 export interface DeploymentAuthData {
   github: {
-    app_name: string
-    app_email: string
-    installation_id: number
-    repository_id: number
-    issue_id: number
-    pr_number: number
-    branch: string
-    owner: string
-    repo: string
-    pr_status: string
-    merged: boolean
-    closed_at: null | string
-  }
+    app_name: string;
+    app_email: string;
+    installation_id: number;
+    repository_id: number;
+    issue_id: number;
+    pr_number: number;
+    branch: string;
+    owner: string;
+    repo: string;
+    pr_status: string;
+    merged: boolean;
+    closed_at: null | string;
+  };
 }
 
 export const prInfoText = `

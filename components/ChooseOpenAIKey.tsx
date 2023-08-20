@@ -1,16 +1,16 @@
+import clsx from 'clsx'
 import {
   ArrowLeft,
-  ArrowRight,
+  ArrowRight
 } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
-import clsx from 'clsx'
 
 import OpenAIKeyInput from 'components/OpenAIKeyInput'
 
 export interface Props {
   selectedOpenAIKeyType: string
 
-  onSelectedOpenAIKeyTypeChange: (type: string) => void
+  onSelectedOpenAIKeyTypeChange: (type: 'e2b' | 'user') => void
   userOpenAIKey?: string
   onUserOpenAIKeyChange: (e: any) => void
 

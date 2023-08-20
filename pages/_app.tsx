@@ -1,18 +1,18 @@
-import { projects } from '@prisma/client'
-import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { Session, SessionContextProvider } from '@supabase/auth-helpers-react'
 import type { AppProps } from 'next/app'
-import Head from 'next/head'
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { SessionContextProvider, Session } from '@supabase/auth-helpers-react'
+import { useEffect, useState } from 'react'
+import { projects } from '@prisma/client'
 import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
-import { useEffect, useState } from 'react'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
 
 import 'styles/global.css'
 
-import Layout from 'components/Layout'
-import { clientCreds } from 'db/credentials'
 import { Database } from 'db/supabase'
-import { useRouter } from 'next/router'
+import { clientCreds } from 'db/credentials'
+import Layout from 'components/Layout'
 
 // Initialize PostHog
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {

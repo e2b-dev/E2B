@@ -10,7 +10,7 @@ import { useEffect } from 'react'
 
 import SpinnerIcon from 'components/Spinner'
 import StarUs from 'components/StarUs'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 function SmolDeveloper() {
   const supabaseClient = useSupabaseClient()

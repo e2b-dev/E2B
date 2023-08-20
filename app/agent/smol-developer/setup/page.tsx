@@ -25,6 +25,7 @@ import { useGitHubClient } from 'hooks/useGitHubClient'
 import useListenOnMessage from 'hooks/useListenOnMessage'
 import { useLocalStorage } from 'hooks/useLocalStorage'
 import { useRepositories } from 'hooks/useRepositories'
+import { useRouter } from 'next/navigation'
 import { GitHubAccount } from 'utils/github'
 import { RepoSetup } from 'utils/repoSetup'
 import { smolDeveloperTemplateID } from 'utils/smolTemplates'
@@ -116,9 +117,9 @@ function Setup() {
   const { repos, refetch } = useRepositories(github)
   const [instructions, setInstructions] = useState('')
   const posthog = usePostHog()
-  // const router = useRouter()
+  const router = useRouter()
   const [isDeploying, setIsDeploying] = useState(false)
-  const [selectedOpenAIKeyType, setSelectedOpenAIKeyType] = useState('e2b')
+  const [selectedOpenAIKeyType, setSelectedOpenAIKeyType] = useState<'e2b' | 'user'>('e2b')
   const [userOpenAIKey, setUserOpenAIKey] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [selectedOpenAIModel, setSelectedOpenAIModel] = useState(openAIModels[0])
