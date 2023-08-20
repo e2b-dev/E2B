@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "https://silly-badge-900014.framer.app"
+      "destination": "https://e2b-landing-page.framer.website"
     },
     {
       "source": "/docs(/.*)?",
