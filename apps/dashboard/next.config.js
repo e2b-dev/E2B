@@ -10,7 +10,7 @@ const nextConfig = {
       },
       {
         source: '/',
-        destination: '/docs',
+        destination: '/dashboard',
       },
     ]
   },
