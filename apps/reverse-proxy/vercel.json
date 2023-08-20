@@ -14,8 +14,8 @@
       ]
     },
     {
-      "source": "/docs(/.*)?",
-      "destination": "https://e2b-docs.vercel.app/docs$1",
+      "source": "/docs(\\/)?",
+      "destination": "https://e2b-docs.vercel.app/docs",
       "has": [
         {
           "type": "host",
@@ -24,8 +24,8 @@
       ]
     },
     {
-      "source": "/dashboard(/.*)?",
-      "destination": "https://e2b-dashboard.vercel.app/dashboard$1",
+      "source": "/docs/:path*",
+      "destination": "https://e2b-docs.vercel.app/docs/:path*",
       "has": [
         {
           "type": "host",
@@ -34,8 +34,8 @@
       ]
     },
     {
-      "source": "/changelog(/.*)?",
-      "destination": "https://e2b-changelog.framer.website$1",
+      "source": "/dashboard(\\/)?",
+      "destination": "https://e2b-dashboard.vercel.app/dashboard",
       "has": [
         {
           "type": "host",
@@ -44,7 +44,37 @@
       ]
     },
     {
-      "source": "/blog",
+      "source": "/dashboard/:path*",
+      "destination": "https://e2b-dashboard.vercel.app/dashboard/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/changelog(\\/)?",
+      "destination": "https://e2b-changelog.framer.website",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/changelog/:path*",
+      "destination": "https://e2b-changelog.framer.website/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/blog(\\/)?",
       "destination": "https://e2b-blog.framer.website",
       "has": [
         {
@@ -66,8 +96,14 @@
   ],
   "redirects": [
     {
-      "source": "/log/:path*",
-      "destination": "https://e2b.dev/blog/log/:path*",
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "blog.e2b.dev"
+        }
+      ],
+      "destination": "https://e2b.dev/blog",
       "permanent": true
     },
     {
@@ -82,36 +118,14 @@
       "permanent": true
     },
     {
-      "source": "/:path*",
+      "source": "/log/:path*",
+      "destination": "https://e2b.dev/blog/log/:path*",
       "has": [
         {
           "type": "host",
-          "value": "changelog.e2b.dev"
+          "value": "e2b.dev"
         }
       ],
-      "destination": "https://e2b.dev/changelog/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "docs.e2b.dev"
-        }
-      ],
-      "destination": "https://e2b.dev/docs/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "blog.e2b.dev"
-        }
-      ],
-      "destination": "https://e2b.dev/blog",
       "permanent": true
     },
     {
@@ -126,6 +140,17 @@
       "permanent": true
     },
     {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "changelog.e2b.dev"
+        }
+      ],
+      "destination": "https://e2b.dev/changelog/:path*",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [
         {
@@ -134,6 +159,17 @@
         }
       ],
       "destination": "https://e2b.dev/docs",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "docs.e2b.dev"
+        }
+      ],
+      "destination": "https://e2b.dev/docs/:path*",
       "permanent": true
     }
   ]
