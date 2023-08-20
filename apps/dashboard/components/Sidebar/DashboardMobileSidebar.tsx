@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Dialog, Transition } from '@headlessui/react'
 import clsx from 'clsx'
 import {
-  X,
+  X, LogOut
 } from 'lucide-react'
 import { useRouter } from 'next/router'
 
@@ -67,7 +67,7 @@ function DashboardMobileSidebar({
                 </div>
               </Transition.Child>
               {/* Sidebar component, swap this element with another sidebar if you like */}
-              <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-800 px-6 ring-1 ring-white/10">
+              <div className="flex grow flex-col gap-y-6 overflow-y-auto text-xl bg-gray-800 px-8 ring-1 ring-white/10">
                 {/* Logo */}
                 <nav className="flex flex-1 flex-col">
                   <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -81,7 +81,7 @@ function DashboardMobileSidebar({
                                 router.pathname === '/'
                                   ? 'bg-gray-800 text-white'
                                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                                'group gap-x-3 rounded-md px-2 py-1 text-sm leading-6 font-semibold flex items-center'
+                                'group gap-x-3 rounded-md px-2 py-1 leading-6 font-semibold flex items-center'
                               )}
                             >
                               <item.icon size={16} className="shrink-0" aria-hidden="true" />
@@ -91,15 +91,16 @@ function DashboardMobileSidebar({
                         ))}
                       </ul>
                     </li>
-                    <li className="-mx-6 mt-auto">
+                    <li className="mt-auto w-full">
                       <div
-                        className="flex items-center gap-x-4 p-8 text-sm font-semibold leading-6 text-white"
+                        className="w-full flex py-8 font-semibold text-white"
                       >
                         <button
-                          className="text-sm font-semibold text-gray-400 hover:text-white transition-all"
+                          className="flex items-center space-x-2 font-semibold text-gray-400 hover:text-white transition-all"
                           onClick={onSignOut}
                         >
-                          Sign out
+                          <LogOut size={18} />
+                          <span>Sign out</span>
                         </button>
                       </div>
                     </li>
