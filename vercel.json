@@ -1,0 +1,19 @@
+{
+  "github": {
+    "silent": true
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "https://silly-badge-900014.framer.app"
+    },
+    {
+      "source": "/docs(/.*)?",
+      "destination": "https://e2b-docs.vercel.app/docs$1"
+    },
+    {
+      "source": "/dashboard(/.*)?",
+      "destination": "https://e2b-dashboard.vercel.app/dashboard$1"
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 import { useRouter } from 'next/router'
 import { useSessionContext, useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 import { useEffect, useState } from 'react'
+import { Github } from 'lucide-react'
 
 import Spinner from 'components/Spinner'
-import { Github } from 'lucide-react'
 
 function SignIn() {
   const supabaseClient = useSupabaseClient()

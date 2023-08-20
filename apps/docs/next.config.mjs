@@ -17,6 +17,16 @@ const withMDX = nextMDX({
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '/docs',
+  async redirects() {
+    return [
+        {
+            source: '/',
+            destination: '/docs',
+            basePath: false,
+            permanent: false
+        }
+    ]
+}
 }
 
 export default withSearch(withMDX(nextConfig))
