@@ -1,4 +1,4 @@
-# E2B JavaScript/TypeScript SDK
+# E2B JavaScript & TypeScript SDK
 
 The E2B JS/TS SDK provides an interface for managing cloud environments for AI agents.
 

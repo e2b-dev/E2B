@@ -39,7 +39,7 @@ This just a few examples of what can be done with our agent cloud environments.
 This is a monorepo that contains:
 - Admin dashboard
 - Python SDK
-- JavaScript/TypeScript SDK
+- JavaScript & TypeScript SDK
 
 ## Getting Started & Documentation
 
