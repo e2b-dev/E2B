@@ -1,11 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   swcMinify: true,
+  basePath: '/dashboard',
   async rewrites() {
     return [
       {
         source: '/ingest/:path*',
         destination: 'https://app.posthog.com/:path*',
+      },
+      {
+        source: '/',
+        destination: process.env.NEXT_LANGING_PAGE_URL || '/',
+      },
+      {
+        source: '/docs',
+        destination: process.env.NEXT_DOCS_URL || '/',
       },
     ]
   },
