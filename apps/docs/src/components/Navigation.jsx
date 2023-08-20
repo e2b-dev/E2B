@@ -198,7 +198,8 @@ export const navigation = [
     title: 'Getting Started',
     links: [
       { title: 'Installation', href: '/getting-started/installation' },
-      { title: 'Basic Usage', href: '/getting-started/basic-usage' },
+      { title: 'Basics', href: '/getting-started/basics' },
+      { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
     ],
   },
   // {

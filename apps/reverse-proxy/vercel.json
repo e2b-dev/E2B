@@ -44,8 +44,18 @@
       ]
     },
     {
-      "source": "/blog(/.*)?",
-      "destination": "https://e2b-blog.framer.website$1",
+      "source": "/blog",
+      "destination": "https://e2b-blog.framer.website",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "https://e2b-blog.framer.website/:path*",
       "has": [
         {
           "type": "host",
@@ -56,36 +66,74 @@
   ],
   "redirects": [
     {
-      "source": "/(.*)?",
+      "source": "/log/:path*",
+      "destination": "https://e2b.dev/blog/log/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
       "has": [
         {
           "type": "host",
           "value": "blog.e2b.dev"
         }
       ],
-      "destination": "https://e2b.dev/blog/$1",
+      "destination": "https://e2b.dev/blog/:path*",
       "permanent": true
     },
     {
-      "source": "/(.*)?",
+      "source": "/:path*",
       "has": [
         {
           "type": "host",
           "value": "changelog.e2b.dev"
         }
       ],
-      "destination": "https://e2b.dev/changelog/$1",
+      "destination": "https://e2b.dev/changelog/:path*",
       "permanent": true
     },
     {
-      "source": "/(.*)?",
+      "source": "/:path*",
       "has": [
         {
           "type": "host",
           "value": "docs.e2b.dev"
         }
       ],
-      "destination": "https://e2b.dev/docs/$1",
+      "destination": "https://e2b.dev/docs/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "blog.e2b.dev"
+        }
+      ],
+      "destination": "https://e2b.dev/blog",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "changelog.e2b.dev"
+        }
+      ],
+      "destination": "https://e2b.dev/changelog",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "docs.e2b.dev"
+        }
+      ],
+      "destination": "https://e2b.dev/docs",
       "permanent": true
     }
   ]
