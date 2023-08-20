@@ -5,23 +5,53 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "https://e2b-landing-page.framer.website"
+      "destination": "https://e2b-landing-page.framer.website",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
     },
     {
       "source": "/docs(/.*)?",
-      "destination": "https://e2b-docs.vercel.app/docs$1"
+      "destination": "https://e2b-docs.vercel.app/docs$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
     },
     {
       "source": "/dashboard(/.*)?",
-      "destination": "https://e2b-dashboard.vercel.app/dashboard$1"
+      "destination": "https://e2b-dashboard.vercel.app/dashboard$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
     },
     {
       "source": "/changelog(/.*)?",
-      "destination": "https://e2b-changelog.framer.website$1"
+      "destination": "https://e2b-changelog.framer.website$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
     },
     {
       "source": "/blog(/.*)?",
-      "destination": "https://e2b-blog.framer.website$1"
+      "destination": "https://e2b-blog.framer.website$1",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ]
     }
   ],
   "redirects": [
