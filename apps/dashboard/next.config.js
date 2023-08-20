@@ -13,7 +13,7 @@ const nextConfig = {
         destination: '/dashboard',
       },
     ]
-  },
+  }
 }
 
 module.exports = nextConfig

@@ -56,37 +56,37 @@
   ],
   "redirects": [
     {
-      "source": "(/.*)?",
+      "source": "/(.*)?",
       "has": [
         {
           "type": "host",
           "value": "blog.e2b.dev"
         }
       ],
-      "destination": "/blog$1",
-      "permanent": false
+      "destination": "https://e2b.dev/blog/$1",
+      "permanent": true
     },
     {
-      "source": "(/.*)?",
+      "source": "/(.*)?",
       "has": [
         {
           "type": "host",
           "value": "changelog.e2b.dev"
         }
       ],
-      "destination": "/changelog$1",
-      "permanent": false
-    }
+      "destination": "https://e2b.dev/changelog/$1",
+      "permanent": true
+    },
     {
-      "source": "(/.*)?",
+      "source": "/(.*)?",
       "has": [
         {
           "type": "host",
           "value": "docs.e2b.dev"
         }
       ],
-      "destination": "/docs$1",
-      "permanent": false
+      "destination": "https://e2b.dev/docs/$1",
+      "permanent": true
     }
   ]
 }
