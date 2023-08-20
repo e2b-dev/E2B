@@ -1,0 +1,61 @@
+import { Guides } from '@/components/Guides'
+import { UseCases } from '@/components/UseCases'
+import { HeroPattern } from '@/components/HeroPattern'
+import { Code } from '@/components/Code'
+
+
+export const metadata = {
+  title: 'E2B Documentation',
+  description:
+    'Welcome to E2B documentation',
+}
+
+export const sections = [
+  // { title: 'Next Steps', id: 'next-steps' },
+  // { title: 'How It Works', id: 'how-it-works' },
+]
+
+<HeroPattern />
+
+# What is E2B?
+
+**E2B is a cloud operating system for AI agents.**{{ className: 'lead' }}
+
+With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
+- Run any code
+- Run any terminal command
+- Install dependencies and programs
+- Use filesystem
+- Upload and download files
+- Access the internet
+- Start a web server that's accessible from the internet
+- Clone git repositories
+- Start any process (even long-running such as a database)
+
+This just a few examples of what can be done with our agent cloud environments.
+
+Our SDK works with any AI agent (no matter what framework, you're using), and without the need to manage any infrastructure.
+
+<div className="not-prose mb-16 mt-6 flex gap-3">
+  <Button href="/getting-started/installation" arrow="right" children="Getting Started" />
+  {/* <Button href="/examples/overview" variant="outline" children="Explore Examples" /> */}
+</div>
+
+## Quickstart Example
+<CodeGroup>
+```bash {{ language: 'js', title: 'JavaScript & TypeScript' }}
+npm install @e2b/sdk
+```
+
+```bash {{ language: 'python' }}
+pip install e2b
+```
+</CodeGroup>
+
+<CodeGroup>
+```ts {{ language: 'js', title: 'JavaScript & TypeScript', snippet: 'quickstart.js'}}
+```
+
+```py {{ language: 'python', snippet: 'quickstart.py'}}
+```
+</CodeGroup>
