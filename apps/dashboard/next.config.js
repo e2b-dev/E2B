@@ -7,14 +7,17 @@ const nextConfig = {
       {
         source: '/ingest/:path*',
         destination: 'https://app.posthog.com/:path*',
+        basePath: false,
       },
       {
         source: '/',
         destination: process.env.NEXT_PUBLIC_LANDING_PAGE_URL || '/',
+        basePath: false,
       },
       {
         source: '/docs',
         destination: process.env.NEXT_PUBLIC_DOCS_URL || '/',
+        basePath: false,
       },
     ]
   },

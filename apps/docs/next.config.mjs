@@ -17,14 +17,6 @@ const withMDX = nextMDX({
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '/docs',
-  async rewrites() {
-    return [
-      {
-        source: '/',
-        destination: '/docs',
-      },
-    ]
-  },
 }
 
 export default withSearch(withMDX(nextConfig))
