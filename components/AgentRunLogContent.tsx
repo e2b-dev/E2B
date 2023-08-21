@@ -1,18 +1,18 @@
-import Splitter from "@devbookhq/splitter"
-import clsx from "clsx"
-import { GithubIcon } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/router"
-import { useCallback, useMemo } from "react"
+import Splitter from '@devbookhq/splitter'
+import clsx from 'clsx'
+import { GithubIcon } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
+import { useCallback, useMemo } from 'react'
 
-import { DeploymentAuthData } from "app/api/agent"
-import useDeploymentRunLog from "hooks/useDeploymentRunLog"
-import { useLocalStorage } from "hooks/useLocalStorage"
-import { LiteDeploymentLog } from "utils/agentLogs"
+import useDeploymentRunLog from 'hooks/useDeploymentRunLog'
+import { useLocalStorage } from 'hooks/useLocalStorage'
+import { LiteDeploymentLog } from 'utils/agentLogs'
 
-import AgentDeploymentStepsList from "./AgentDeploymentsStepsList"
-import AgentRunLogDetail from "./AgentRunLogDetail"
-import Spinner from "./Spinner"
+import { DeploymentAuthData } from 'pages/api/agent'
+import AgentDeploymentStepsList from './AgentDeploymentsStepsList'
+import AgentRunLogDetail from './AgentRunLogDetail'
+import Spinner from './Spinner'
 
 export interface Props {
   log: LiteDeploymentLog
@@ -20,7 +20,7 @@ export interface Props {
 
 function AgentRunLogContent({ log: initialLog }: Props) {
   const [splitterSizes, setSplitterSizes] = useLocalStorage(
-    "log-content-splitter",
+    'log-content-splitter',
     [40, 60]
   )
   const router = useRouter()
@@ -41,7 +41,7 @@ function AgentRunLogContent({ log: initialLog }: Props) {
   }, [log.content, selectedStepID])
 
   const runSteps =
-    log.content && log.content.filter((c: any) => c.type === "Run")
+    log.content && log.content.filter((c: any) => c.type === 'Run')
   const isRunOlderThanTimeout = useMemo(() => {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     return initialLog.created_at < oneHourAgo
@@ -95,12 +95,12 @@ function AgentRunLogContent({ log: initialLog }: Props) {
       <div className="flex-1 flex space-x-2 items-start justify-start overflow-hidden my-4">
         <Splitter
           gutterClassName={clsx(
-            "bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group"
+            'bg-gray-900 hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] px-0.5 rounded-sm group'
           )}
           draggerClassName={clsx(
-            "bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full"
+            'bg-gray-700 group-hover:bg-[#6366F1] transition-all delay-75 duration-[400ms] w-0.5 h-full'
           )}
-          classes={["pr-2 overflow-auto", "bg-gray-900 pl-2 pr-1"]}
+          classes={['pr-2 overflow-auto', 'bg-gray-900 pl-2 pr-1']}
           initialSizes={splitterSizes}
           onResizeFinished={setSizes}
           minWidths={[120, 120]}

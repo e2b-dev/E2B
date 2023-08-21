@@ -1,18 +1,18 @@
-import type { AppProps } from 'next/app'
-import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { SessionContextProvider, Session } from '@supabase/auth-helpers-react'
-import { useEffect, useState } from 'react'
 import { projects } from '@prisma/client'
-import posthog from 'posthog-js'
-import { PostHogProvider } from 'posthog-js/react'
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+import { Session, SessionContextProvider } from '@supabase/auth-helpers-react'
+import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
+import posthog from 'posthog-js'
+import { PostHogProvider } from 'posthog-js/react'
+import { useEffect, useState } from 'react'
 
 import 'styles/global.css'
 
-import { Database } from 'db/supabase'
-import { clientCreds } from 'db/credentials'
 import Layout from 'components/Layout'
+import { clientCreds } from 'db/credentials'
+import { Database } from 'db/supabase'
 
 // Initialize PostHog
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
@@ -32,7 +32,7 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
 }
 
 function App({ Component, pageProps }: AppProps<{ initialSession?: Session, project?: projects }>) {
-  const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
+  const [supabaseClient] = useState(() => createPagesBrowserClient<Database>(clientCreds))
   const router = useRouter()
 
   const isAgent = router.pathname.startsWith('/agent')

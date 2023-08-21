@@ -1,32 +1,30 @@
-import { createNodeMiddleware, Webhooks } from "@octokit/webhooks"
-import type { HandlerFunction } from "@octokit/webhooks/dist-types/types"
-
-import { DeploymentAuthData } from "app/api/agent"
-import { prisma } from "db/prisma"
-import { client as posthog } from "utils/posthog"
-import { smolDeveloperTemplateID } from "utils/smolTemplates"
-
-import { getGHInstallationClient } from "./installationClient"
+import { createNodeMiddleware, Webhooks } from '@octokit/webhooks'
+import type { HandlerFunction } from '@octokit/webhooks/dist-types/types'
+import { prisma } from 'db/prisma'
+import { DeploymentAuthData } from 'pages/api/agent'
+import { client as posthog } from 'utils/posthog'
+import { smolDeveloperTemplateID } from 'utils/smolTemplates'
+import { getGHInstallationClient } from './installationClient'
 import {
   disableAgentDeployment,
   getDeploymentsForPR,
   getGHAccessToken,
   getPromptFromPR,
-  triggerSmolDevAgentRun,
-} from "./pullRequest"
+  triggerSmolDevAgentRun
+} from './pullRequest'
 
 export async function getGitHubWebhooksMiddleware() {
   const webhooks = new Webhooks({
     secret: process.env.GITHUB_APP_WEBHOOK_SECRET!,
   })
 
-  webhooks.on("issue_comment", issueCommentHandler)
-  webhooks.on("pull_request.edited", pullRequestEditHandler)
-  webhooks.on("pull_request.reopened", pullRequestReopenedHandler)
-  webhooks.on("pull_request.closed", pullRequestClosedHandler)
+  webhooks.on('issue_comment', issueCommentHandler)
+  webhooks.on('pull_request.edited', pullRequestEditHandler)
+  webhooks.on('pull_request.reopened', pullRequestReopenedHandler)
+  webhooks.on('pull_request.closed', pullRequestClosedHandler)
 
   return createNodeMiddleware(webhooks, {
-    path: "/api/github/webhook",
+    path: '/api/github/webhook',
     log: {
       debug: console.log,
       info: console.log,
@@ -37,7 +35,7 @@ export async function getGitHubWebhooksMiddleware() {
 }
 
 const pullRequestReopenedHandler: HandlerFunction<
-  "pull_request.reopened",
+  'pull_request.reopened',
   unknown
 > = async (event) => {
   const { payload } = event
@@ -49,7 +47,7 @@ const pullRequestReopenedHandler: HandlerFunction<
   const issueID = payload.pull_request.id
 
   if (!installationID) {
-    throw new Error("InstallationID not found")
+    throw new Error('InstallationID not found')
   }
 
   const deployments = await getDeploymentsForPR({
@@ -60,7 +58,7 @@ const pullRequestReopenedHandler: HandlerFunction<
   })
 
   if (deployments.length === 0) {
-    console.log("No deployments found")
+    console.log('No deployments found')
     return
   }
 
@@ -100,7 +98,7 @@ const pullRequestReopenedHandler: HandlerFunction<
         .forEach((user) => {
           posthog?.capture({
             distinctId: user.id,
-            event: "reopened PR created by agent",
+            event: 'reopened PR created by agent',
             properties: {
               agent_deployment_id: d.id,
               agent: smolDeveloperTemplateID,
@@ -122,11 +120,11 @@ const pullRequestReopenedHandler: HandlerFunction<
 
   await posthog?.shutdownAsync()
 
-  console.log("Reopened PRs", res)
+  console.log('Reopened PRs', res)
 }
 
 const pullRequestClosedHandler: HandlerFunction<
-  "pull_request.closed",
+  'pull_request.closed',
   unknown
 > = async (event) => {
   const { payload } = event
@@ -137,7 +135,7 @@ const pullRequestClosedHandler: HandlerFunction<
   const issueID = payload.pull_request.id
 
   if (!installationID) {
-    throw new Error("InstallationID not found")
+    throw new Error('InstallationID not found')
   }
 
   const deployments = await getDeploymentsForPR({
@@ -148,7 +146,7 @@ const pullRequestClosedHandler: HandlerFunction<
   })
 
   if (deployments.length === 0) {
-    console.log("No deployments found")
+    console.log('No deployments found')
     return
   }
 
@@ -183,7 +181,7 @@ const pullRequestClosedHandler: HandlerFunction<
         .forEach((user) => {
           posthog?.capture({
             distinctId: user.id,
-            event: "closed PR created by agent",
+            event: 'closed PR created by agent',
             properties: {
               agent_deployment_id: d.id,
               agent: smolDeveloperTemplateID,
@@ -204,11 +202,11 @@ const pullRequestClosedHandler: HandlerFunction<
   )
 
   await posthog?.shutdownAsync()
-  console.log("Closed PRs", res)
+  console.log('Closed PRs', res)
 }
 
 const pullRequestEditHandler: HandlerFunction<
-  "pull_request.edited",
+  'pull_request.edited',
   unknown
 > = async (event) => {
   const { payload } = event
@@ -221,10 +219,10 @@ const pullRequestEditHandler: HandlerFunction<
   // Every PR is also an issues - GH API endpoint for issues is used for the shared functionality
   const issueID = payload.pull_request.id
   const issueNumber = payload.pull_request.number
-  const body = payload.pull_request.body || ""
+  const body = payload.pull_request.body || ''
 
   if (!installationID) {
-    throw new Error("InstallationID not found")
+    throw new Error('InstallationID not found')
   }
 
   const client = getGHInstallationClient({ installationID })
@@ -240,7 +238,7 @@ const pullRequestEditHandler: HandlerFunction<
   ])
 
   if (deployments.length === 0) {
-    console.log("No deployments found")
+    console.log('No deployments found')
     return
   }
 
@@ -255,7 +253,7 @@ const pullRequestEditHandler: HandlerFunction<
         prompt,
         deployment: d,
         accessToken,
-        commitMessage: "Update based on PR comments",
+        commitMessage: 'Update based on PR comments',
         owner,
         repo,
         client,
@@ -270,7 +268,7 @@ const pullRequestEditHandler: HandlerFunction<
         .forEach((user) => {
           posthog?.capture({
             distinctId: user.id,
-            event: "triggered agent with PR action",
+            event: 'triggered agent with PR action',
             properties: {
               agent_deployment_id: d.id,
               agent: smolDeveloperTemplateID,
@@ -291,23 +289,23 @@ const pullRequestEditHandler: HandlerFunction<
   )
 
   await posthog?.shutdownAsync()
-  console.log("Trigger results", res)
+  console.log('Trigger results', res)
 }
 
 function getPRNumber(pr_url?: string) {
-  const prNumber = pr_url?.split("/").pop()
+  const prNumber = pr_url?.split('/').pop()
   if (prNumber) {
     return parseInt(prNumber, 10)
   }
 }
 
-const issueCommentHandler: HandlerFunction<"issue_comment", unknown> = async (
+const issueCommentHandler: HandlerFunction<'issue_comment', unknown> = async (
   event
 ) => {
   const { payload } = event
 
-  if (payload.comment.user.type === "Bot") {
-    console.log("Comment was made by a GitHub bot, ignoring")
+  if (payload.comment.user.type === 'Bot') {
+    console.log('Comment was made by a GitHub bot, ignoring')
     return
   }
 
@@ -320,13 +318,13 @@ const issueCommentHandler: HandlerFunction<"issue_comment", unknown> = async (
   // Every PR is also an issues - GH API endpoint for issues is used for the shared functionality
   // This issueID is not the PR issue id though, it's the issue id of the comment
   if (!installationID) {
-    throw new Error("InstallationID not found")
+    throw new Error('InstallationID not found')
   }
 
   const client = getGHInstallationClient({ installationID })
   const pullNumber = getPRNumber(payload.issue.pull_request?.url)
   if (!pullNumber) {
-    throw new Error("PR number not found")
+    throw new Error('PR number not found')
   }
 
   const pr = await client.pulls.get({
@@ -335,7 +333,7 @@ const issueCommentHandler: HandlerFunction<"issue_comment", unknown> = async (
     pull_number: pullNumber,
   })
 
-  const body = pr.data.body || ""
+  const body = pr.data.body || ''
 
   const [prompt, deployments] = await Promise.all([
     getPromptFromPR({ client, issueNumber: pullNumber, repo, owner, body }),
@@ -348,7 +346,7 @@ const issueCommentHandler: HandlerFunction<"issue_comment", unknown> = async (
   ])
 
   if (deployments.length === 0) {
-    console.log("No deployments found")
+    console.log('No deployments found')
     return
   }
 
@@ -367,7 +365,7 @@ const issueCommentHandler: HandlerFunction<"issue_comment", unknown> = async (
         accessToken,
         owner,
         repo,
-        commitMessage: "Update based on PR comments",
+        commitMessage: 'Update based on PR comments',
         client,
         pullNumber,
       })
@@ -377,7 +375,7 @@ const issueCommentHandler: HandlerFunction<"issue_comment", unknown> = async (
         .forEach((user) => {
           posthog?.capture({
             distinctId: user.id,
-            event: "triggered agent by PR comment action",
+            event: 'triggered agent by PR comment action',
             properties: {
               agent_deployment_id: d.id,
               agent: smolDeveloperTemplateID,
@@ -399,5 +397,5 @@ const issueCommentHandler: HandlerFunction<"issue_comment", unknown> = async (
 
   await posthog?.shutdownAsync()
 
-  console.log("Trigger results", res)
+  console.log('Trigger results', res)
 }

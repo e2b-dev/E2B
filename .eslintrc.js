@@ -1,6 +1,6 @@
 module.exports = {
   extends: ['next'],
-  ignorePatterns: ['db/supabase.ts'],
+  ignorePatterns: ['db/supabase.ts', './'],
   rules: {
     '@next/next/no-html-link-for-pages': 'off',
     'react/jsx-key': 'off',
