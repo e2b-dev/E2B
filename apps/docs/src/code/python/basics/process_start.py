@@ -4,9 +4,9 @@ from e2b import Session
 async def main():
   session = await Session.create(id="Nodejs")
 
-  # Read file
-  file_content = await session.filesystem.read('/etc/hosts')
-  print(file_content)
+  npm_init = await session.process.start("npm init -y")
+  await npm_init
+  print(npm_init.stdout)
 
   await session.close()
 
