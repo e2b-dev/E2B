@@ -10,7 +10,7 @@ async def main():
   # This will fail because Golang isn't installed
   golang_version = await session.process.start(
     "go version",
-    on_stderr=lambda output: print_stderr(output),
+    on_stderr=print_stderr,
   )
   await golang_version
 
