@@ -25,7 +25,7 @@ function loadFileSnippet() {
 
       if (snippet && node.value === "") {
         fileLoadingPromises.push((async () => {
-          const file = path.resolve(`./src/snippets/${snippetFileName}`)
+          const file = path.resolve(`./src/code/${snippetFileName}`)
           const content = await readFile(file, 'utf8')
           node.value = content
         })())

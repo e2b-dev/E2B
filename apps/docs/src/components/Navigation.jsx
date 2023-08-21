@@ -75,7 +75,7 @@ function VisibleSectionHighlight({ group, pathname }) {
     ? Math.max(1, visibleSections.length) * itemHeight
     : itemHeight
   let top =
-    group.links.findIndex((link) => link.href === pathname) * itemHeight +
+    group.links.findIndex((link) => `/docs${link.href}` === pathname) * itemHeight +
     firstVisibleSectionIndex * itemHeight
 
   return (
@@ -93,7 +93,7 @@ function VisibleSectionHighlight({ group, pathname }) {
 function ActivePageMarker({ group, pathname }) {
   let itemHeight = remToPx(2)
   let offset = remToPx(0.25)
-  let activePageIndex = group.links.findIndex((link) => link.href === pathname)
+  let activePageIndex = group.links.findIndex((link) => `/docs${link.href}` === pathname)
   let top = offset + activePageIndex * itemHeight
 
   return (
@@ -119,7 +119,7 @@ function NavigationGroup({ group, className }) {
   )
 
   let isActiveGroup =
-    group.links.findIndex((link) => link.href === pathname) !== -1
+    group.links.findIndex((link) => `/docs${link.href}` === pathname) !== -1
 
   return (
     <li className={clsx('relative mt-6', className)}>
@@ -147,11 +147,11 @@ function NavigationGroup({ group, className }) {
         <ul role="list" className="border-l border-transparent">
           {group.links.map((link) => (
             <motion.li key={link.href} layout="position" className="relative">
-              <NavLink href={link.href} active={link.href === pathname} isFontMono={link.isFontMono}>
+              <NavLink href={link.href} active={`/docs${link.href}` === pathname} isFontMono={link.isFontMono}>
                 {link.title}
               </NavLink>
               <AnimatePresence mode="popLayout" initial={false}>
-                {link.href === pathname && sections.length > 0 && (
+                {`/docs${link.href}` === pathname && sections.length > 0 && (
                   <motion.ul
                     role="list"
                     initial={{ opacity: 0 }}
@@ -199,7 +199,7 @@ export const navigation = [
     links: [
       { title: 'Installation', href: '/getting-started/installation' },
       { title: 'Basics', href: '/getting-started/basics' },
-      { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
+      // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
     ],
   },
   // {
@@ -213,6 +213,7 @@ export const navigation = [
   // {
   //   title: 'Examples',
   //   links: [
+  //     { title: 'Dynamically install dependencies', href: '/examples/deps' },
   //     { title: 'Clone GitHub Repository', href: '/examples/clone-repo' },
   //     { title: 'Run Any Code', href: '/examples/run-code' },
   //     { title: 'Get Output From Linter', href: '/examples/linter' },
@@ -244,13 +245,14 @@ export const navigation = [
   // {
     // title: 'SDK Reference',
     // links: [
-    //   { title: 'E2B', href: '/reference/e2b', isFontMono: true },
-      //
+      // { title: 'E2B', href: '/reference/e2b', isFontMono: true },
+
       // Primitives
       // { title: 'e2b.process', href: '/reference/python/process', isFontMono: true },
       // { title: 'e2b.filesystem', href: '/reference/python/filesystem', isFontMono: true },
       // { title: 'e2b.http', href: '/reference/python/http', isFontMono: true },
-      //
+      // { title: 'e2b.code', href: '/reference/python/code', isFontMono: true },
+
       // High-level modules
       // { title: 'e2b.code', href: '/reference/code', isFontMono: true },
       // { title: 'e2b.browser', href: '/reference/browser', isFontMono: true },
