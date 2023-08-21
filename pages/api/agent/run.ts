@@ -5,8 +5,8 @@ import { getGHInstallationClient } from 'github/installationClient'
 import { addCommentToPR } from 'github/pullRequest'
 import { client as posthog } from 'utils/posthog'
 
-import { DeploymentAuthData } from '.'
 import { smolDeveloperTemplateID } from 'utils/smolTemplates'
+import { DeploymentAuthData } from '.'
 
 // Indicate that the agent state changed (run finished)
 async function postRun(req: NextApiRequest, res: NextApiResponse) {

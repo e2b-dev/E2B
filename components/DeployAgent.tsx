@@ -20,26 +20,27 @@ export interface Props {
   selectedOpenAIKeyType: 'e2b' | 'user'
 }
 
-function DeployAgent({
-  selectedRepo,
-  instructions,
-  onInstructionsChange,
-  onChangeTemplate,
-  onChangeRepo,
-  onBack,
-  onDeploy,
-  isDeploying,
-  selectedOpenAIKeyType,
-  error,
-}: Props) {
-  return (
-    <div className="flex-1 flex flex-col items-start space-y-2">
-      <div className="flex-1 w-full flex flex-col space-y-4 items-center justify-start">
+function DeployAgent(props: Props) {
+  const { selectedRepo,
+    instructions,
+    onInstructionsChange,
+    onChangeTemplate,
+    onChangeRepo,
+    onBack,
+    onDeploy,
+    isDeploying,
+    selectedOpenAIKeyType,
+    error } = props
 
+
+
+  return (
+    <div className="flex-1 flex flex-col">
+      <div className="flex-1 w-full flex flex-col space-y-4 items-center justify-start">
         {isDeploying && (
-          <div className="">
-            <SpinnerIcon className="" />
-            <span className="">Deploying...</span>
+          <div className="flex flex-col items-center gap-2 w-full">
+            <SpinnerIcon className="text-gray-400" />
+            <span className="text-gray-400 text-sm">Deploying...</span>
           </div>
         )}
         {!isDeploying && error && (
@@ -55,13 +56,12 @@ function DeployAgent({
               <span className="text-sm">
                 OpenAI API Key
               </span>
-              <span className="text-sm">
+              <span className="text-sm text-indigo-400">
                 {selectedOpenAIKeyType === 'user' && 'Use your own OpenAI API key'}
                 {selectedOpenAIKeyType === 'e2b' && 'Use e2b\'s OpenAI API key'}
               </span>
             </div>
             <hr className="w-full h-px bg-gray-700 my-8 border-0" />
-
 
             {/* Selected repo */}
             <div className=" w-full flex flex-col justify-start">
@@ -82,7 +82,7 @@ function DeployAgent({
                 </button>
               </div>
 
-              <span className="">
+              <span className="text-gray-400 text-sm">
                 {selectedRepo.fullName}
               </span>
             </div>
