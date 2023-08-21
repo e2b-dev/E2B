@@ -64,7 +64,7 @@ class SessionConnection:
     ):
         if api_key is None:
             warnings.warn(
-                "API key will be required, get yours at https://app.e2b.dev",
+                "API key will be required, please see https://e2b.dev/docs",
                 FutureWarning,
             )
 
