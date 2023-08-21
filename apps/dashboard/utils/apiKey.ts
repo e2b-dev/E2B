@@ -37,5 +37,5 @@ export function generateApiKey() {
   const randomString = generateBase62String(32)
   const checksum = crc32(randomString).toString(16)
   const checksumEncoded = numberToBase62(parseInt(checksum, 16), 6)
-  return 'pk_' + randomString + '_' + checksumEncoded
+  return 'e2b_' + randomString + '_' + checksumEncoded
 }
