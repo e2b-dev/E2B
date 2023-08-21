@@ -9,7 +9,7 @@ async def main():
 
   npm_init = await session.process.start(
     "npm init -y",
-    on_stdout=lambda output: print_stdout(output),
+    on_stdout=print_stdout,
   )
   await npm_init
 
