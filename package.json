@@ -1,0 +1,12 @@
+{
+  "name": "@e2b/monorepo",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "release": "changeset version && npm run prerelease --workspaces --if-present",
+    "version": ""
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}
