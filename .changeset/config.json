@@ -7,6 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["e2b-dashboard", "e2b-docs"],
   "privatePackages": { "version": true, "tag": true }
 }
