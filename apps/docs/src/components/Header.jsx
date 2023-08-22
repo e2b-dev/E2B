@@ -71,7 +71,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
         </nav>
         <HeaderSeparator />
         <MobileSearch />
-        <div className="hidden min-[416px]:contents">
+        <div className="hidden min-[540px]:contents">
           <Auth />
         </div>
       </div>

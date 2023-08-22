@@ -28,7 +28,7 @@ export const Auth = function () {
   async function signOut() {
     await supabase.auth.signOut()
     posthog?.reset(true)
-    router.push('/docs') // TODO: Not sure if there is a better page to redirect to
+    router.push('/') // TODO: Not sure if there is a better page to redirect to
   }
   
   if (error) return <div className="flex flex-row items-center gap-4">
@@ -47,7 +47,7 @@ export const Auth = function () {
 
   return (<>
       {user ? (
-        <div className="flex flex-row items-center gap-4">
+        <div className="flex flex-col min-[540px]:flex-row items-center gap-4">
           <div
             className="
               flex flex-row gap-2
@@ -55,8 +55,8 @@ export const Auth = function () {
               group relative
             "
           >
-            <span className="group-hover:opacity-25 text-zinc-400">API key</span>
-            <span className="group-hover:opacity-25 text-yellow-400 font-mono">{obfuscateKey(apiKey)}</span>
+            <span className="group-hover:opacity-25 text-zinc-400 whitespace-nowrap">API key</span>
+            <span className="group-hover:opacity-25 text-yellow-400 whitespace-nowrap font-mono">{obfuscateKey(apiKey)}</span>
             <span className="absolute inset-0">
               <CopyButton
                 code={apiKey}
@@ -72,17 +72,22 @@ export const Auth = function () {
             </span>
           </div>
           <HeaderSeparator />
-          <div className="text-xs font-bold">
-            {user.email}
-            {/* TODO: Add dropdown with more options: Dashboard, API keys, ... */}
+          <div className="flex items-center gap-2">
+            <div className="
+              text-xs font-bold whitespace-nowrap
+            ">
+              straaaaaaajk@gmail.com.us
+              {/*{user.email}*/}
+              {/* TODO: Add dropdown with more options: Dashboard, API keys, ... */}
+            </div>
+            <Button
+              variant="textSubtle"
+              title="Sign out"
+              onClick={() => signOut()}
+            >
+              <LogOutIcon className="w-5 h-5" />
+            </Button>
           </div>
-          <Button
-            variant="textSubtle"
-            title="Sign out"
-            onClick={() => signOut()}
-          >
-            <LogOutIcon className="w-5 h-5" />
-          </Button>
         </div>
       ) : (
         <div className="flex items-center gap-3">
@@ -100,5 +105,5 @@ export const Auth = function () {
  * @returns {string}
  */
 function obfuscateKey(apiKey) {
-  return apiKey.substring(0, 8) + '*'.repeat(4) + apiKey.substring(apiKey.length - 4)
+  return apiKey.substring(0, 7) + '*'.repeat(4) + apiKey.substring(apiKey.length - 3)
 }
