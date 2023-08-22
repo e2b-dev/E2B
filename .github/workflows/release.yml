@@ -3,6 +3,9 @@ name: Release
 on: push
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+permissions:
+  pull-requests: write
+
 jobs:
   release:
     name: Release
@@ -33,8 +36,7 @@ jobs:
       - name: Create Release Pull Request
         uses: changesets/action@v1
         with:
-          publish: npm run release
-          version: npm version
+          version: npm run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
