@@ -76,8 +76,7 @@ export const Auth = function () {
             <div className="
               text-xs font-bold whitespace-nowrap
             ">
-              straaaaaaajk@gmail.com.us
-              {/*{user.email}*/}
+              {user.email}
               {/* TODO: Add dropdown with more options: Dashboard, API keys, ... */}
             </div>
             <Button
