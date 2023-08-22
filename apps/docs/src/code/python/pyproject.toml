@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "e2b-docs-python-code"
+name = "python-snippets"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Vasek Mlejnsky <vasek.mlejnsky@gmail.com>"]
 readme = "README.md"
-packages = [{include = "e2b_docs_python_code"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 e2b = "^0.1.10"
+asyncio = "^3.4.3"
 
 
 [build-system]

@@ -4,10 +4,10 @@ from e2b import Session
 async def main():
   session = await Session.create(id="Nodejs")
 
-  # List directory
-  dir_content = await session.filesystem.list('/')
-  for item in dir_content:
-    print(item)
+  # List the root directory
+  content = await session.filesystem.list("/")
+  for item in content:
+    print(item.name, "Is directory?", item.is_dir)
 
   await session.close()
 
