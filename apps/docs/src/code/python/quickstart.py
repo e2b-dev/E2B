@@ -3,8 +3,8 @@ from e2b import Session
 
 async def main():
   # `id` can also be one of:
-
-  # We're working on customizable envs.
+  # 'Nodejs', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
+  # We're working on custom environments.
   session = await Session.create(id="Nodejs")
   await session.close()
 
