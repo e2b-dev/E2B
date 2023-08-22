@@ -1,6 +1,6 @@
 name: Release
 
-on: workflow_dispatch
+on: push
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
