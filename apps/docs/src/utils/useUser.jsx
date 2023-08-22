@@ -68,7 +68,7 @@ export const CustomUserContextProvider = (props) => {
   useEffect(() => {
     async function getUserCustom() {
       const { data: teams, teamsError } = await supabase
-        .from('users_teamsXXX')
+        .from('users_teams')
         .select('*')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (teamsError) Sentry.captureException(teamsError); 
