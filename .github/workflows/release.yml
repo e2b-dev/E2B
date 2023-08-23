@@ -1,11 +1,14 @@
 name: Release
 
-on: push
+on:
+  push:
+    branches:
+      - main
+
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   release:
@@ -23,6 +26,14 @@ jobs:
         with:
           node-version: 16
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        id: cache-modules
+        with:
+          path: node_modules
+          key: node_modules-${{hashFiles('package-lock.json')}}
+          restore-keys: node_modules-
+
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
@@ -34,10 +45,21 @@ jobs:
       - name: Install Dependencies
         run: npm i
 
-      - name: Create Release Pull Request
-        uses: changesets/action@v1
-        with:
-          createGithubReleases: false
-          version: npm run version
+      - name: Create new versions
+        run: npm run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit new versions
+        run: git commit -am "Release new versions"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release new versions
+        uses: changesets/action@v1
+        with:
+          publish: npm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PYPI_TOKEN: ${{ secrets.NPM_TOKEN }}

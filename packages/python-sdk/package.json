@@ -3,7 +3,7 @@
     "private": true,
     "version": "0.1.10",
     "scripts": {
-        "prerelease": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
-        "build":  "poetry build && poetry config pypi-token.pypi ${{ PYPI_TOKEN }} && poetry publish"
+        "postVersion": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
+        "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish"
     }
 }

@@ -1,5 +1,6 @@
 {
   "name": "@e2b/cli",
+  "private": true,
   "version": "0.0.1",
   "description": "CLI for managing e2b environments",
   "homepage": "https://usedevbook.com",

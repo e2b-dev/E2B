@@ -3,7 +3,8 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "version": "changeset version && npm run prerelease --workspaces --if-present"
+    "version": "changeset version && npm run postVersion --workspaces --if-present",
+    "publish": "changeset publish && npm run postPublish --workspaces --if-present"
   },
   "workspaces": [
     "packages/*"
