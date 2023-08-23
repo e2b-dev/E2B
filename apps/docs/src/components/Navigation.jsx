@@ -194,19 +194,18 @@ export const navigation = [
     links: [
       { title: 'What is E2B?', href: '/' },
       { title: 'Pricing', href: '/pricing' },
-      // { title: 'How It Works', href: '/how-it-works' },
     ],
   },
   {
     title: 'Getting Started',
     links: [
       { title: 'Installation', href: '/getting-started/installation' },
-      { title: 'Basics', href: '/getting-started/basics' },
-      // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
+      { title: 'Get Your API Key', href: '/getting-started/api-key' },
+      { title: 'SDK Basics', href: '/getting-started/basics' },
     ],
   },
   {
-    title: 'Cloud Playgrounds',
+    title: 'AI Playgrounds',
     links: [
       { title: 'Overview', href: '/playgrounds/overview' },
       { title: 'Limitations', href: '/playgrounds/limitations' },
