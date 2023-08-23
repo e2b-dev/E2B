@@ -4,6 +4,7 @@ import { PostHogProvider as OriginalPostHogProvider } from 'posthog-js/react'
 import posthog from 'posthog-js'
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { useUser } from "./useUser"
 
 export function maybeInit() {
   if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
@@ -14,10 +15,8 @@ export function maybeInit() {
     disable_session_recording: process.env.NODE_ENV !== 'production',
     advanced_disable_toolbar_metrics: true,
     loaded: (posthog) => {
-      console.log('PostHog loaded', process.env.NODE_ENV)
-      if (process.env.NODE_ENV === 'development') {
-        posthog.debug()
-      }
+      // console.log('PostHog loaded', process.env.NODE_ENV)
+      if (process.env.NODE_ENV === 'development') posthog.debug()
     }
   })
 }
@@ -36,15 +35,24 @@ export function PostHogProvider({ children }) {
 export function PostHogAnalytics() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { user } = useUser();
+  const defaultTeamId = user?.teams?.[0]?.team_id;
   useEffect(() => {
     if (pathname) {
       let url = window.origin + pathname
       if (searchParams.toString()) url = url + `?${searchParams.toString()}`
-      posthog.capture(
+      posthog?.capture(
         '$pageview',
         { '$current_url': url }
       )
     }
   }, [pathname, searchParams])
+  
+  useEffect(() => {
+    if (user) {
+      posthog?.identify(user.id, { email: user.email })
+      posthog?.group('team', defaultTeamId)
+    }
+  }, [user])
   
 }
