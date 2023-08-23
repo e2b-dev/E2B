@@ -34,7 +34,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
     posthog?.capture("survey sent", {
       $survey_id: "018a1df8-ae8d-0000-8925-9a76a5255a29",
       $survey_name: "Docs Feedback",
-      $survey_response: `"${pathname}":\n${feedback ?? `No feedback provided`}`,
+      $survey_response: `\`${pathname}\`\n${feedback ?? `No feedback provided`}`,
     })
     
     // Cleanup
