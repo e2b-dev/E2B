@@ -18,8 +18,9 @@ const withMDX = nextMDX({
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '/docs',
-  async rewrites() {
+  async redirects() {
     return [
+      // This is for local development and vercel previews - otherwise you would have to always add /docs to the url
       {
         source: '/ingest/:path*',
         destination: 'https://app.posthog.com/:path*',
@@ -27,6 +28,8 @@ const nextConfig = {
       {
         source: '/',
         destination: '/docs',
+        permanent: false,
+        basePath: false,
       }
     ]
   }
