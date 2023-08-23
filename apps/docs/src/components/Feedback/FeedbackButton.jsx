@@ -13,15 +13,17 @@ import {
 function FeedbackButton({
   onClick,
   isFinished,
+  className,
 }) {
   return (
     <button
-      className="
-        group w-full 
+      className={`
+        group w-full
         flex items-center justify-center space-x-1
         cursor-pointer py-1 px-2 rounded-md bg-gray-800 border border-white/5
         hover:border-white/10 transition-all hover:text-white
-      "
+        ` + className
+      }
       onMouseDown={onClick}
     >
       {isFinished
