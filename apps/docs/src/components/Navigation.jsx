@@ -12,6 +12,7 @@ import { useSectionStore } from '@/components/SectionProvider'
 import { Tag } from '@/components/Tag'
 import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth';
+import { Feedback } from '@/components/Feedback';
 
 function useInitialValue(value, condition = true) {
   let initialValue = useRef(value).current
@@ -281,6 +282,9 @@ export function Navigation(props) {
             className={groupIndex === 0 && 'md:mt-0'}
           />
         ))}
+        <li className="sticky bottom-0 z-10 mt-6">
+          <Feedback />
+        </li>
         <li className="sticky bottom-0 z-10 mt-6 min-[540px]:hidden">
           <Auth />
         </li>
