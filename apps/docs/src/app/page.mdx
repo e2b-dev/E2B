@@ -1,6 +1,8 @@
 import { Guides } from '@/components/Guides'
 import { UseCases } from '@/components/UseCases'
 import { HeroPattern } from '@/components/HeroPattern'
+import { Button } from '@/components/Button'
+import { ButtonLoginToken } from '@/components/ButtonLoginToken';
 
 export const metadata = {
   title: 'E2B Documentation',
@@ -33,9 +35,9 @@ This just a few examples of what can be done with our agent cloud environments.
 
 Our SDK works with any AI agent (no matter what framework you're using), and without the need to manage any infrastructure.
 
-<div className="not-prose mb-16 mt-6 flex gap-3">
+<div className="not-prose mb-16 mt-6 flex items-center gap-3">
   <Button href="/getting-started/installation" arrow="right" children="Getting Started" />
-  {/* <Button href="/examples/overview" variant="outline" children="Explore Examples" /> */}
+  <ButtonLoginToken />
 </div>
 
 ## Quickstart Example

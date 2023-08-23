@@ -29,6 +29,7 @@ export const Auth = function () {
     await supabase.auth.signOut()
     posthog?.reset(true)
     router.push('/')
+    window.location.reload()
   }
   
   if (error) return <div className="flex flex-row items-center gap-4">
@@ -90,7 +91,7 @@ export const Auth = function () {
         </div>
       ) : (
         <div className="flex items-center gap-3">
-          <Button onClick={() => signInWithGitHub()} variant="text" className="text-xs">Login to get your API key</Button>
+          <Button onClick={() => signInWithGitHub()} variant="textTernary" className="text-xs">Login to get your API key</Button>
           <Button onClick={() => signInWithGitHub()}>Login</Button>
         </div>
       )}
