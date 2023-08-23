@@ -5,8 +5,10 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { MobileNavigation, useIsInsideMobileNavigation, useMobileNavigationStore, } from '@/components/MobileNavigation'
 import { MobileSearch, Search } from '@/components/Search'
 import { Auth } from '@/components/Auth';
-import { IconsExtra } from '@/components/IconsExtra';
 import { HeaderSeparator } from '@/components/HeaderUtils';
+import { DiscordIcon } from '@/components/icons/DiscordIcon';
+import { TwitterIcon } from '@/components/icons/TwitterIcon';
+import { GitHubIcon } from '@/components/icons/GitHubIcon';
 
 function TopLevelNavItem({ href, children }) {
   return (
@@ -63,10 +65,10 @@ export const Header = forwardRef(function Header({ className }, ref) {
       </div>
       <div className="flex items-center gap-4">
         <nav className="hidden md:block">
-          <ul role="list" className="flex items-center gap-6">
-            <TopLevelNavItem href="https://discord.gg/U7KEcGErtQ"><IconsExtra.Discord className="h-5 w-5 fill-current" /></TopLevelNavItem>
-            <TopLevelNavItem href="https://twitter.com/e2b_dev"><IconsExtra.Twitter className="h-5 w-5 fill-current" /></TopLevelNavItem>
-            <TopLevelNavItem href="https://github.com/e2b-dev/e2b"><IconsExtra.GitHub className="h-5 w-5 fill-current" /></TopLevelNavItem>
+          <ul role="list" className="flex items-center gap-4">
+            <TopLevelNavItem href="https://discord.gg/U7KEcGErtQ"><DiscordIcon className="h-5 w-5 fill-current" /></TopLevelNavItem>
+            <TopLevelNavItem href="https://twitter.com/e2b_dev"><TwitterIcon className="h-5 w-5 fill-current" /></TopLevelNavItem>
+            <TopLevelNavItem href="https://github.com/e2b-dev/e2b"><GitHubIcon className="h-5 w-5 fill-current" /></TopLevelNavItem>
           </ul>
         </nav>
         <HeaderSeparator />
