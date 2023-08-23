@@ -90,7 +90,7 @@ export const Auth = function () {
         </div>
       ) : (
         <div className="flex items-center gap-3">
-          <span className="text-yellow-400 text-xs">Login to get your API key</span>
+          <Button onClick={() => signInWithGitHub()} variant="text" className="text-xs">Login to get your API key</Button>
           <Button onClick={() => signInWithGitHub()}>Login</Button>
         </div>
       )}
