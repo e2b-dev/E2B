@@ -19,9 +19,12 @@ pydantic = "^1.10.5, <2"
 aenum = ">=3.1.11"
 websockets = "^11.0.3"
 jsonrpcclient = "^4.0.3"
+pytest-xdist = "^3.3.1"
+pytest-asyncio = "^0.21.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
+pytest = "^7.4.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -29,3 +32,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
