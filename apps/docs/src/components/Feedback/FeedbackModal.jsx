@@ -10,8 +10,10 @@ import { useUser } from '@/utils/useUser';
 import { usePostHog } from 'posthog-js/react';
 import { DialogAnimated } from '@/components/DialogAnimated';
 import { Button } from '@/components/Button';
+import { usePathname } from 'next/navigation';
 
 function FeedbackModal({ open, setOpen, onSend }) {
+  const pathname = usePathname();
   const [feedback, setFeedback] = useState('')
   const [isSavingFeedback, setIsSavingFeedback] = useState(false)
   const { user } = useUser()
@@ -32,7 +34,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
     posthog?.capture("survey sent", {
       $survey_id: "018a1df8-ae8d-0000-8925-9a76a5255a29",
       $survey_name: "Docs Feedback",
-      $survey_response: feedback,
+      $survey_response: `${pathname}: ${feedback}`,
     })
     
     // Cleanup
