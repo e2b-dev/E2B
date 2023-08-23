@@ -11,7 +11,7 @@ export function maybeInit() {
 
   posthog?.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     // Note that PostHog will automatically capture page views and common events
-    api_host: `${window.location.protocol}//${window.location.host}/ingest`,
+    api_host: `${window.location.protocol}//${window.location.host}/docs/ingest`, // BEWARE: basePath "docs" is needed
     disable_session_recording: process.env.NODE_ENV !== 'production',
     advanced_disable_toolbar_metrics: true,
     capture_pageview: false, // we are handling this ourselves
