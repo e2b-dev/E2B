@@ -34,8 +34,8 @@ const nextConfig = {
 
 export default withSearch(withMDX(withSentryConfig(nextConfig, {
     silent: true,
-    org: 'devbook-7f',
-    project: 'agent-dashboard', // TODO: Create docs project and replace this
+    org: 'e2b',
+    project: 'docs'
   },
   {
     widenClientFileUpload: true,
