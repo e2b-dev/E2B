@@ -26,14 +26,6 @@ jobs:
         with:
           node-version: 16
 
-      - name: Cache node modules
-        uses: actions/cache@v3
-        id: cache-modules
-        with:
-          path: node_modules
-          key: node_modules-${{hashFiles('package-lock.json')}}
-          restore-keys: node_modules-
-
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
@@ -44,6 +36,14 @@ jobs:
 
       - name: Install Dependencies
         run: npm i
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        id: cache-modules
+        with:
+          path: node_modules
+          key: node_modules-${{hashFiles('package-lock.json')}}
+          restore-keys: node_modules-
 
       - name: Create new versions
         run: npm run version
