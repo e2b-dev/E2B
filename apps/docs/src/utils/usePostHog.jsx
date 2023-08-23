@@ -14,6 +14,7 @@ export function maybeInit() {
     api_host: `${window.location.protocol}//${window.location.host}/ingest`, // BEWARE: basePath "docs" is needed
     disable_session_recording: process.env.NODE_ENV !== 'production',
     advanced_disable_toolbar_metrics: true,
+    opt_in_site_apps: true,
     capture_pageview: false, // we are handling this ourselves
     loaded: (posthog) => {
       // console.log('PostHog loaded', process.env.NODE_ENV)
