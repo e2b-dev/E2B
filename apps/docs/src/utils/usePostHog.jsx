@@ -14,6 +14,7 @@ export function maybeInit() {
     api_host: `${window.location.protocol}//${window.location.host}/ingest`,
     disable_session_recording: process.env.NODE_ENV !== 'production',
     advanced_disable_toolbar_metrics: true,
+    capture_pageview: false, // we are handling this ourselves
     loaded: (posthog) => {
       // console.log('PostHog loaded', process.env.NODE_ENV)
       if (process.env.NODE_ENV === 'development') posthog.debug()
@@ -51,7 +52,7 @@ export function PostHogAnalytics() {
   useEffect(() => {
     if (user) {
       posthog?.identify(user.id, { email: user.email })
-      posthog?.group('team', defaultTeamId)
+      posthog?.group('team', defaultTeamId, { name: user?.teams?.[0]?.name })
     }
   }, [user])
   
