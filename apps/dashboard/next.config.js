@@ -8,10 +8,17 @@ const nextConfig = {
         source: '/ingest/:path*',
         destination: 'https://app.posthog.com/:path*',
       },
+    ]
+  },
+  async redirects() {
+    return [
+      // This is for local development and vercel previews - otherwise you would have to always add /dashboard to the url
       {
         source: '/',
         destination: '/dashboard',
-      },
+        permanent: false,
+        basePath: false,
+      }
     ]
   }
 }
