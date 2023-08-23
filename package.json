@@ -1,0 +1,15 @@
+{
+  "name": "@e2b/monorepo",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "version": "changeset version && npm run postVersion --workspaces --if-present",
+    "publish": "changeset publish && npm run postPublish --workspaces --if-present"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "@changesets/cli": "^2.26.2"
+  }
+}

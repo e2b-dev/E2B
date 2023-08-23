@@ -1,0 +1,9 @@
+{
+    "name": "@e2b/python-sdk",
+    "private": true,
+    "version": "0.1.10",
+    "scripts": {
+        "postVersion": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
+        "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish"
+    }
+}

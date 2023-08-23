@@ -1,5 +1,6 @@
 {
   "name": "@e2b/cli",
+  "private": true,
   "version": "0.0.1",
   "description": "CLI for managing e2b environments",
   "homepage": "https://usedevbook.com",
@@ -61,7 +62,7 @@
     "Etob": "dist/index.js"
   },
   "dependencies": {
-    "@devbookhq/sdk": "workspace:*",
+    "@devbookhq/sdk": "^2.6.88",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^1.2.8",
     "boxen": "^7.0.0",
