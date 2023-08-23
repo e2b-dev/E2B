@@ -6,9 +6,9 @@ import { motion } from 'framer-motion'
 
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
-import { Logo } from '@/components/Logo'
 import { Navigation } from '@/components/Navigation'
 import { SectionProvider } from '@/components/SectionProvider'
+import { Feedback } from '@/components/Feedback';
 
 export function Layout({ children, allSections = {} }) {
   let pathname = usePathname()
@@ -32,7 +32,9 @@ export function Layout({ children, allSections = {} }) {
           </div>
         </motion.header>
         <div className="relative flex h-full flex-col px-4 pt-14 sm:px-6 lg:px-8">
-          <main className="flex-auto">{children}</main>
+          <main className="flex-auto">
+            {children}
+          </main>
           <Footer />
         </div>
       </div>

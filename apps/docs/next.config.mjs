@@ -8,6 +8,7 @@ import { recmaPlugins } from './src/mdx/recma.mjs'
 import { rehypePlugins } from './src/mdx/rehype.mjs'
 import { remarkPlugins } from './src/mdx/remark.mjs'
 import withSearch from './src/mdx/search.mjs'
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withMDX = nextMDX({
   options: {
@@ -56,11 +57,33 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        source: '/ingest/:path*',
+        destination: 'https://app.posthog.com/:path*',
+        basePath: false,
+      },
+    ]
+  },
+  async redirects() {
+    return [
+      {
         source: '/',
         destination: '/docs',
+        permanent: false,
+        basePath: false,
       }
     ]
   }
 }
 
-export default withSearch(withMDX(nextConfig))
+export default withSearch(withMDX(withSentryConfig(nextConfig, {
+    silent: true,
+    org: 'e2b',
+    project: 'docs'
+  },
+  {
+    widenClientFileUpload: true,
+    transpileClientSDK: true,
+    tunnelRoute: '/monitoring',
+    hideSourceMaps: true,
+    disableLogger: true,
+  })))

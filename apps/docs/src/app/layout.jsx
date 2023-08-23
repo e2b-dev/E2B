@@ -6,6 +6,7 @@ import { Layout } from '@/components/Layout'
 
 
 import '@/styles/tailwind.css'
+import { PostHogAnalytics } from '@/utils/usePostHog';
 
 export const metadata = {
   title: {
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }) {
           <div className="w-full">
             <Layout allSections={allSections}>
               {children}
+              <PostHogAnalytics />
               <Analytics />
             </Layout>
           </div>

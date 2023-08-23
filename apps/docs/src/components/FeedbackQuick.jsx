@@ -61,7 +61,7 @@ const FeedbackThanks = forwardRef(function FeedbackThanks(_props, ref) {
   )
 })
 
-export function Feedback() {
+export function FeedbackQuick() {
   let [submitted, setSubmitted] = useState(false)
 
   function onSubmit(event) {
