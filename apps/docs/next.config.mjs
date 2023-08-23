@@ -1,4 +1,5 @@
 import nextMDX from '@next/mdx'
+import path from 'path'
 
 import { recmaPlugins } from './src/mdx/recma.mjs'
 import { rehypePlugins } from './src/mdx/rehype.mjs'
@@ -17,6 +18,19 @@ const withMDX = nextMDX({
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '/docs',
+  compiler: {
+
+  },
+  experimental: {
+    outputFileTracingIncludes: {
+      '/': [
+        path.resolve('./src/code/**/*'),
+      ],
+      '/docs': [
+        path.resolve('./src/code/**/*'),
+      ]
+    },
+  },
   async rewrites() {
     return [
       {
