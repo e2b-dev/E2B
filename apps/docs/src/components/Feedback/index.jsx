@@ -6,7 +6,7 @@ import FeedbackButton from './FeedbackButton'
 import FeedbackModal from './FeedbackModal'
 import useExpiringState from '@/utils/useExpiringState';
 
-export function Feedback({ className }) {
+export function Feedback({ className, variant }) {
   const [open, setOpen] = useState(false)
   const [isFinished, setIsFinished] = useExpiringState({ defaultValue: false, timeout: 4000 })
 
@@ -14,6 +14,7 @@ export function Feedback({ className }) {
     <>
       <FeedbackButton
         className={className}
+        variant={variant}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()

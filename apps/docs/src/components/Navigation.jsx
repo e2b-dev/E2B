@@ -283,7 +283,7 @@ export function Navigation(props) {
           />
         ))}
         <li className="sticky bottom-0 z-10 mt-6">
-          <Feedback />
+          <Feedback variant="secondary" className="w-full" />
         </li>
         <li className="sticky bottom-0 z-10 mt-6 min-[540px]:hidden">
           <Auth />
