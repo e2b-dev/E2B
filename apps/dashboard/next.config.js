@@ -2,9 +2,6 @@
 const nextConfig = {
   swcMinify: true,
   basePath: '/dashboard',
-  experimental: {
-    mdxRs: true,
-  },
   async rewrites() {
     return [
       {
