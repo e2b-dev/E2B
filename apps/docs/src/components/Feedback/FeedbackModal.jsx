@@ -29,7 +29,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
     setIsSavingFeedback(true)
 
     // https://app.posthog.com/data-management/actions/49309
-    posthog.capture("survey sent", {
+    posthog?.capture("survey sent", {
       $survey_id: "018a1df8-ae8d-0000-8925-9a76a5255a29",
       $survey_name: "Docs Feedback",
       $survey_response: feedback,

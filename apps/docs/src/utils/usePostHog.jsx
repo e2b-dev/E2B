@@ -9,7 +9,7 @@ import { useUser } from "./useUser"
 export function maybeInit() {
   if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
 
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+  posthog?.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     // Note that PostHog will automatically capture page views and common events
     api_host: `${window.location.protocol}//${window.location.host}/ingest`,
     disable_session_recording: process.env.NODE_ENV !== 'production',
