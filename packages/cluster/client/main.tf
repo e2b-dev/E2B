@@ -130,8 +130,8 @@ data "google_compute_ssl_certificate" "session_certificate" {
 }
 
 # This should be SSL cert for usage withotu Cloudflare
-data "google_compute_ssl_certificate" "ondevbook_certificate" {
-  name = "ondevbook"
+data "google_compute_ssl_certificate" "api_certificate" {
+  name = "e2b-api"
 }
 
 resource "google_compute_url_map" "client_map" {
@@ -139,12 +139,12 @@ resource "google_compute_url_map" "client_map" {
   default_service = module.gce_lb_http.backend_services["session"].self_link
 
   host_rule {
-    hosts        = ["ondevbook.com"]
+    hosts        = ["api.e2b.com"]
     path_matcher = "api-paths"
   }
 
   host_rule {
-    hosts        = ["*.ondevbook.com"]
+    hosts        = ["*.api.e2b.com"]
     path_matcher = "session-paths"
   }
 
@@ -171,7 +171,7 @@ module "gce_lb_http" {
   address = data.google_compute_global_address.orch_client_ip.address
   ssl_certificates = [
     data.google_compute_ssl_certificate.session_certificate.self_link,
-    data.google_compute_ssl_certificate.ondevbook_certificate.self_link,
+    data.google_compute_ssl_certificate.api_certificate.self_link,
   ]
   create_address       = false
   use_ssl_certificates = true

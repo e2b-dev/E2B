@@ -7,7 +7,7 @@ login-gcloud:
 .PHONY: login-gcloud-user
 login-gcloud-user:
 	gcloud auth login
-	gcloud config set project devbookhq
+	gcloud config set project e2b-prod
 	gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
 
 .PHONY: init

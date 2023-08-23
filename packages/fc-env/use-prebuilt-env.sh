@@ -40,7 +40,7 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
-API_URL="https://ondevbook.com"
+API_URL="https://api.e2b.dev"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state?api_key=$API_KEY"
 
 echo "==== Args ==========================================================================================="
@@ -78,9 +78,9 @@ function mk_template_files() {
   if [ -f "$TEMPLATE_BUILD_ID" ]; then
     echo "$TEMPLATE_BUILD_ID exists - the template environemnt was rebuilt in this directory so we must copy the current build_id."
 
-    echo -n "${TEMPLATE}" > ${FINAL_TEMPLATE_ID_FILE}
+    echo -n "${TEMPLATE}" >${FINAL_TEMPLATE_ID_FILE}
     cp $TEMPLATE_BUILD_ID $FINAL_TEMPLATE_BUILD_ID_FILE
-  else 
+  else
     echo "$TEMPLATE_BUILD_ID does not exist - the template environment uses build_id from its own template - we copy files pointing to its own template."
 
     cp $TEMPLATE_TEMPLATE_ID_FILE $FINAL_TEMPLATE_ID_FILE
@@ -110,13 +110,11 @@ curl $ENVS_ENDPOINT \
     \"state\": \"Building\"
   }"
 
-
 mkdirs
 link_env_files
 mk_template_files
 
 touch ${ALLOC_DIR}/main-done
-
 
 echo "==== Output ==========================================================================================="
 echo "| Code snippet ID:        $CODE_SNIPPET_ID"

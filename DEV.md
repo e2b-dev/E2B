@@ -2,8 +2,6 @@
 
 ## Infra
 
-- Clock drift
-  - https://github.com/firecracker-microvm/firecracker/blob/eb8de3ba1f7cb636d2aaa632fe96b234f3a302e6/FAQ.md#my-guest-wall-clock-is-drifting-how-can-i-fix-it
 - Change read/write file to allow other thatn utf-8 format so we don't break the files
 - Remove dnsmasq from cluster VM image if it is not needed
 - Remove need for provisioning during building env
@@ -23,8 +21,8 @@
 - Check if the kernel args we are using are what we want
 - Improve API (efficient calls Nomad calls, no polling, etc.)
 - Improve FC WS connection (subscriptions take additional calls, maybe we can improve that, etc.)
-- Move to ubuntu
 - Update kernel version
+- devbookd jsonrpc parameters could be objects instead of arrays (compatibility advantages)
 - Move to a better FS handling (filestore, fuse?)
 - Fix possible mutex problems in the firecracker task driver
 - Update devbookd in all envs automatically
@@ -53,17 +51,14 @@
 - Use the FC jailer properly
 - Rebuild only the changed templates on push
 - Update NodeJS version
-- Remove top package-lock
 - Remove gitpod deps and mentions (makefile, gitpod yaml)
 - Remove devbook specific code from the repo (allow move to new org or on prem deploy)
 - Improve caching of the GH actions
 - Add instance sizes and other things as variables in the GH actions and remove them from codes
 - API URL should be configurable
 - add testing/staging env
-- create proper monorepo for the packages (pnpm for Node) and improve release system
 - Add memory swap to Rust - OoM when compiling bigger programs
   - https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-22-04
-- Should we use ubuntu 22 for envs?
 - Does ubuntu need the newer kernel?
   - Using driver with multiple kernels
 - Cloud Hypervisor insted of FC - https://github.com/cloud-hypervisor/cloud-hypervisor
@@ -145,7 +140,7 @@
 - add tests
 - support lower python versions
 - Check if stderr and stdout are ordered
-- Myabe remove types (and timestamps?) from stdout/stderr
+- Myabe remove types (and timestamps?) from stdout/stderr (they are already fully identified by the subscription)
 - Use specific version (nodejs20) for the templates
 - Using pathlib for paths? windows support?
 - Flush all stdout/err after killing process or terminal in devbookd and also wait for the Stdout/err in the SDK
