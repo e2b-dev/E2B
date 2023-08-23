@@ -28,7 +28,7 @@ export const Auth = function () {
   async function signOut() {
     await supabase.auth.signOut()
     posthog?.reset(true)
-    router.push('/') // TODO: Not sure if there is a better page to redirect to
+    router.push('/')
   }
   
   if (error) return <div className="flex flex-row items-center gap-4">

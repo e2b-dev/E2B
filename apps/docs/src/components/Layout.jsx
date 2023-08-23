@@ -35,7 +35,6 @@ export function Layout({ children, allSections = {} }) {
           <main className="flex-auto">
             {children}
           </main>
-          <Feedback className="block mb-2 mt-2" />
           <Footer />
         </div>
       </div>
