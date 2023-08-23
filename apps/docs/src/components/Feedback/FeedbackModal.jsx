@@ -22,12 +22,13 @@ function FeedbackModal({ open, setOpen, onSend }) {
 
   async function saveFeedback(ev) {
     ev.preventDefault()
-    if (!user?.id) return console.error('User is not logged in')
+    // if (!user?.id) return console.error('User is not logged in') // for now, allow feedback from anonymous users
     if (!feedback) return console.error('Feedback is empty')
     if (isSavingFeedback) return console.error('Feedback is already being saved')
 
     setIsSavingFeedback(true)
 
+    // https://app.posthog.com/data-management/actions/49309
     posthog.capture("survey sent", {
       $survey_id: "018a1df8-ae8d-0000-8925-9a76a5255a29",
       $survey_name: "Docs Feedback",
@@ -65,6 +66,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
       />
       <Button
         onClick={saveFeedback}
+        type="submit"
         disabled={isSavingFeedback || feedback.trim() === ''}
         className="flex items-center gap-2 cursor-pointer"
       >
