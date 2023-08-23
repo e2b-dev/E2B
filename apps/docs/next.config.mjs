@@ -1,4 +1,8 @@
 import nextMDX from '@next/mdx'
+import * as crypto from 'crypto'
+import * as fsWalk from '@nodelib/fs.walk'
+import fs from 'fs'
+import path from 'path'
 
 import { recmaPlugins } from './src/mdx/recma.mjs'
 import { rehypePlugins } from './src/mdx/rehype.mjs'
@@ -14,10 +18,42 @@ const withMDX = nextMDX({
   },
 })
 
+const delimiter = '\0'
+
+function getFilesHash(rootPath) {
+  const shasum = crypto.createHash('sha1')
+
+  function processFile(name, content) {
+
+    shasum.update(name)
+    // Add delimiter to hash to prevent collisions between files where the join of the name and content is the same
+    shasum.update(delimiter)
+    shasum.update(content)
+    shasum.update(delimiter)
+  }
+
+  fsWalk.walkSync(rootPath, { stats: true })
+    .forEach(e => {
+      if (!e.stats.isDirectory()) {
+        const content = fs.readFileSync(e.path, 'utf8')
+        processFile(e.path, content)
+      }
+    })
+
+  return shasum.digest('base64')
+}
+
+const codeSnippetsDir = path.resolve('./src/code')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '/docs',
+  webpack: (config) => {
+    const codeFilesHash = getFilesHash(codeSnippetsDir)
+    config.cache.version = config.cache.version + delimiter + codeFilesHash
+    return config
+  },
   async rewrites() {
     return [
       {
