@@ -51,7 +51,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit new versions
-        run: git commit -am "Release new versions"
+        run: |
+          git commit -am "[skip ci] Release new versions"
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
