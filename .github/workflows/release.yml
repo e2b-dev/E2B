@@ -20,6 +20,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
       - name: Setup Node.js 16
         uses: actions/setup-node@v3
@@ -52,6 +54,8 @@ jobs:
 
       - name: Commit new versions
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -am "[skip ci] Release new versions"
           git push
         env:
