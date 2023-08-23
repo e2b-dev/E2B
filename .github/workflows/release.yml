@@ -37,7 +37,7 @@ jobs:
           installer-parallel: true
 
       - name: Install Dependencies
-        run: npm i
+        run: npm ci
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -64,7 +64,7 @@ jobs:
       - name: Release new versions
         uses: changesets/action@v1
         with:
-          publish: npm run release
+          publish: npm run publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
