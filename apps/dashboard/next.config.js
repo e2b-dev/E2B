@@ -32,8 +32,8 @@ module.exports = withSentryConfig(
     // Suppresses source map uploading logs during build
     silent: true,
 
-    org: 'devbook-7f',
-    project: 'agent-dashboard',
+    org: 'e2b-dev',
+    project: 'docs'
   },
   {
     // For all available options, see:
