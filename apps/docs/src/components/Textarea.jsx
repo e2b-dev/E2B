@@ -29,7 +29,8 @@ function Textarea({ value = '', className, placeholder, onChange, isOpen }) {
       autoComplete="off"
       className={clsx(
         'w-full',
-        'p-4',
+        'py-3',
+        'px-4',
         'rounded',
         'border',
         'min-h-[200px]',
