@@ -191,6 +191,7 @@ export const navigation = [
     title: 'Introduction',
     links: [
       { title: 'What is E2B?', href: '/' },
+      { title: 'Pricing', href: '/pricing' },
       // { title: 'How It Works', href: '/how-it-works' },
     ],
   },
@@ -199,6 +200,14 @@ export const navigation = [
     links: [
       { title: 'Installation', href: '/getting-started/installation' },
       { title: 'Basics', href: '/getting-started/basics' },
+      // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
+    ],
+  },
+  {
+    title: 'Cloud Playgrounds',
+    links: [
+      { title: 'Overview', href: '/playgrounds/overview' },
+      { title: 'Limitations', href: '/playgrounds/limitations' },
       // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
     ],
   },

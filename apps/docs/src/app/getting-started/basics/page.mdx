@@ -3,6 +3,7 @@ export const metadata = {
   description: 'SDK Usage',
 }
 
+{/* I think this stopped working work after adding Nextjs rewrites */}
 export const sections = [
   { title: 'Create Playground', id: 'create-playground' },
   { title: 'Use Filesystem', id: 'filesystem' },
@@ -12,10 +13,14 @@ export const sections = [
 
 # Basic Usage
 
-Following code snippets should get you going fast with our SDK.
-For more real-life scenarios head to the [Examples section](./examples/overview).
+Following code snippets should get you going fast with primitives in our SDK.
+For more real-life scenarios head to the [Examples section](./examples/overview). {{ clasName: 'lead' }}
 
-## Create Playground
+There are two main primitives in our SDK that you use to interact with the cloud playground:
+- [Filesystem](/getting-started/basics#filesystem)
+- [Process](/getting-started/basics#process)
+
+## Create Cloud Playground
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/init.py' }}
 ```
@@ -23,31 +28,49 @@ For more real-life scenarios head to the [Examples section](./examples/overview)
 
 ## Filesystem
 
-### List directory
+Here are the basic operations you can do with the filesystem inside a cloud playground:
+- [List directory](/getting-started/basics#list-directory-content)
+- [Create directory](/getting-started/basics#create-directory)
+- [Write to file](/getting-started/basics#write-to-file)
+- [Read file](/getting-started/basics#read-file)
+- [Watch directory for changes](/getting-started/basics#watch-directory-for-changes)
+
+
+## List directory content
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/fs_ls.py' }}
 ```
 </CodeGroup>
 
-### Create directory
+## Create directory
+
+A creation of a directory will fail if any directory on the path doesn't exist yet.
+For example, if you want to create a directory `/home/user/new_dir` and `/home/user` doesn't exist yet, you will get an error.
+
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/fs_mkdir.py' }}
 ```
 </CodeGroup>
 
-### Write to file
+## Write to file
+When writing to a file that doesn't exist, it will get created.
+
+When writing to a file that already exists, it will get overwritten.
+
+When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/fs_write.py' }}
 ```
 </CodeGroup>
 
-### Read file
+## Read file
 <CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/fs_write.py' }}
+```python {{ language: 'python', snippet: 'python/basics/fs_read.py' }}
 ```
 </CodeGroup>
 
-### Watch directory for changes
+## Watch directory for changes
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/fs_watch.py' }}
 ```
@@ -55,31 +78,38 @@ For more real-life scenarios head to the [Examples section](./examples/overview)
 
 ## Process
 
-### Start process
+Here are the basic operations you can do with the process inside a cloud playground:
+- [Start process](/getting-started/basics#start-process)
+- [Stop process](/getting-started/basics#stop-process)
+- [Stream stdout](/getting-started/basics#stream-stdout)
+- [Send stdin](/getting-started/basics#send-stdin)
+- [Stream stderr](/getting-started/basics#stream-stderr)
+
+## Start process
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/process_start.py' }}
 ```
 </CodeGroup>
 
-### Stop process
+## Stop process
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/process_stop.py' }}
 ```
 </CodeGroup>
 
-### Stream stdout
+## Stream stdout
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/process_stream_stdout.py' }}
 ```
 </CodeGroup>
 
-### Send stdin
+## Send stdin
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/process_stream_stdin.py' }}
 ```
 </CodeGroup>
 
-### Stream stderr
+## Stream stderr
 <CodeGroup>
 ```python {{ language: 'python', snippet: 'python/basics/process_stream_stderr.py' }}
 ```

@@ -7,7 +7,7 @@ def print_stderr(output):
 async def main():
   session = await Session.create(id="Nodejs")
 
-  # This will fail because Golang isn't installed
+  # This command will fail and output to stderr because Golang isn't installed in the cloud playground
   golang_version = await session.process.start(
     "go version",
     on_stderr=print_stderr,
