@@ -7,8 +7,7 @@ import { motion } from 'framer-motion'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { Navigation } from '@/components/Navigation'
-import { SectionProvider } from '@/components/SectionProvider'
-import { Feedback } from '@/components/Feedback'
+import { Section, SectionProvider } from '@/components/SectionProvider'
 
 export function Layout({
   children,
