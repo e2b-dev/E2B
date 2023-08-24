@@ -21,3 +21,7 @@ class ProcessException(SessionException):
 
 class TerminalException(SessionException):
     pass
+
+
+class AuthenticationException(SessionException):
+    pass
