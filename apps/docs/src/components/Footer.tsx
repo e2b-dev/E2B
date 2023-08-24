@@ -41,20 +41,19 @@ function PageLink({
 }
 
 function PageNavigation() {
-  let pathname = usePathname()
+  let initialPathname = usePathname();
+  // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
+  if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
+  
   let allPages = navigation.flatMap((group) => group.links)
-  let currentPageIndex = allPages.findIndex((page) => page.href === pathname)
+  let currentPageIndex = allPages.findIndex((page) => page.href === initialPathname)
 
-  if (currentPageIndex === -1) {
-    return null
-  }
+  if (currentPageIndex === -1) return null
 
   let previousPage = allPages[currentPageIndex - 1]
   let nextPage = allPages[currentPageIndex + 1]
 
-  if (!previousPage && !nextPage) {
-    return null
-  }
+  if (!previousPage && !nextPage) return null
 
   return (
     <div className="flex">
