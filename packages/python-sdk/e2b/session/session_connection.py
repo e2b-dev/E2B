@@ -66,7 +66,7 @@ class SessionConnection:
     ):
         if api_key is None:
             raise AuthenticationException(
-                "API key is required, get yours at https://app.e2b.dev"
+                "API key is required, please see https://e2b.dev/docs"
             )
 
         self._id = id
