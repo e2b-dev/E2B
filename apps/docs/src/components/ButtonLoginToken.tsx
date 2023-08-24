@@ -30,7 +30,7 @@ export function ButtonLoginToken() {
       variant="textTernary"
       className={extraClassName}
     >
-      Login to get your API key
+      Sign up to get your API key
     </Button>
   )
 }

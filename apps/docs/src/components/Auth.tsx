@@ -7,6 +7,7 @@ import { CopyButton } from '@/components/CopyButton'
 import clsx from 'clsx'
 import { HeaderSeparator } from '@/components/HeaderUtils'
 import { usePostHog } from 'posthog-js/react'
+import { obfuscateKey } from '@/utils/obfuscate'
 
 export const Auth = function () {
   const { user, isLoading, error } = useUser()
@@ -17,7 +18,7 @@ export const Auth = function () {
 
   async function signInWithGitHub() {
     await supabase.auth.signInWithOAuth({
-      // redirect to GitHub
+      // Redirect to GitHub
       provider: 'github',
       options: {
         redirectTo: window.location.href,
@@ -40,7 +41,7 @@ export const Auth = function () {
           Something went wrong
         </span>
         {/* @ts-ignore */}
-        <Button onClick={() => signInWithGitHub()}>Login</Button>
+        <Button onClick={() => signInWithGitHub()}>Sign In</Button>
       </div>
     )
 
@@ -108,23 +109,12 @@ export const Auth = function () {
             variant="textTernary"
             className="text-xs"
           >
-            Login to get your API key
+            Sign up to get your API key
           </Button>
           {/* @ts-ignore */}
-          <Button onClick={() => signInWithGitHub()}>Login</Button>
+          <Button onClick={() => signInWithGitHub()}>Sign In</Button>
         </div>
       )}
     </>
-  )
-}
-
-/**
- * Obfuscate the API key by replacing the middle part with asterisks
- * @param {string} apiKey
- * @returns {string}
- */
-function obfuscateKey(apiKey) {
-  return (
-    apiKey.substring(0, 7) + '*'.repeat(4) + apiKey.substring(apiKey.length - 3)
   )
 }
