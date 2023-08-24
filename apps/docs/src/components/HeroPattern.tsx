@@ -8,8 +8,8 @@ export function HeroPattern() {
           <GridPattern
             width={72}
             height={56}
-            x="-12"
-            y="4"
+            x={-12}
+            y={4}
             squares={[
               [4, 3],
               [2, 1],

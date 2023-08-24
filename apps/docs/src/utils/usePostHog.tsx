@@ -2,16 +2,17 @@
 
 import { PostHogProvider as OriginalPostHogProvider } from 'posthog-js/react'
 import posthog from 'posthog-js'
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
-import { useUser } from "./useUser"
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
+import { useUser } from './useUser'
 
 export function maybeInit() {
-  if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
+  if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY)
+    return
 
   posthog?.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     // Note that PostHog will automatically capture page views and common events
-    api_host: `${window.location.protocol}//${window.location.host}/ingest`, // BEWARE: basePath "docs" is needed
+    api_host: `/docs/ingest`, // BEWARE: basePath "docs" is needed
     disable_session_recording: process.env.NODE_ENV !== 'production',
     advanced_disable_toolbar_metrics: true,
     opt_in_site_apps: true,
@@ -19,7 +20,7 @@ export function maybeInit() {
     loaded: (posthog) => {
       // console.log('PostHog loaded', process.env.NODE_ENV)
       if (process.env.NODE_ENV === 'development') posthog.debug()
-    }
+    },
   })
 }
 
@@ -28,34 +29,33 @@ maybeInit()
 // Based on https://posthog.com/tutorials/nextjs-app-directory-analytics
 export function PostHogProvider({ children }) {
   return (
-    <OriginalPostHogProvider client={process.env.NEXT_PUBLIC_POSTHOG_KEY ? posthog : undefined}>
+    <OriginalPostHogProvider
+      client={process.env.NEXT_PUBLIC_POSTHOG_KEY ? posthog : undefined}
+    >
       {children}
     </OriginalPostHogProvider>
   )
 }
 
 export function PostHogAnalytics() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { user } = useUser();
-  const defaultTeamId = user?.teams?.[0]?.team_id;
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { user } = useUser()
+  const defaultTeamId = user?.teams?.[0]?.team_id
   useEffect(() => {
     if (pathname) {
       let url = window.origin + pathname
       if (searchParams.toString()) url = url + `?${searchParams.toString()}`
-      posthog?.capture(
-        '$pageview',
-        { '$current_url': url }
-      )
+      posthog?.capture('$pageview', { $current_url: url })
     }
   }, [pathname, searchParams])
-  
+
   useEffect(() => {
     if (user) {
       posthog?.identify(user.id, { email: user.email })
       posthog?.group('team', defaultTeamId, { name: user?.teams?.[0]?.name })
     }
-  }, [user])
-  
+  }, [user, defaultTeamId])
+
   return null
 }

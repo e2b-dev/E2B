@@ -6,20 +6,33 @@ import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion'
 
-import { Button } from '@/components/Button'
 import { useIsInsideMobileNavigation } from '@/components/MobileNavigation'
 import { useSectionStore } from '@/components/SectionProvider'
 import { Tag } from '@/components/Tag'
 import { remToPx } from '@/lib/remToPx'
-import { Auth } from '@/components/Auth';
-import { Feedback } from '@/components/Feedback';
+import { Auth } from '@/components/Auth'
+import { Feedback } from '@/components/Feedback'
 
-function useInitialValue(value, condition = true) {
+interface NavGroup {
+  title: string
+  links: Array<{
+    title: string
+    href: string
+  }>
+}
+
+function useInitialValue<T>(value: T, condition = true) {
   let initialValue = useRef(value).current
   return condition ? initialValue : value
 }
 
-function TopLevelNavItem({ href, children }) {
+function TopLevelNavItem({
+  href,
+  children,
+}: {
+  href: string
+  children: React.ReactNode
+}) {
   return (
     <li className="md:hidden">
       <Link
@@ -32,7 +45,21 @@ function TopLevelNavItem({ href, children }) {
   )
 }
 
-function NavLink({ isFontMono, href, tag, active, isAnchorLink = false, children }) {
+function NavLink({
+  href,
+  children,
+  tag,
+  active = false,
+  isAnchorLink = false,
+  isFontMono = false,
+}: {
+  href: string
+  children: React.ReactNode
+  tag?: string
+  active?: boolean
+  isAnchorLink?: boolean
+  isFontMono?: boolean
+}) {
   return (
     <Link
       href={href}
@@ -77,7 +104,8 @@ function VisibleSectionHighlight({ group, pathname }) {
     ? Math.max(1, visibleSections.length) * itemHeight
     : itemHeight
   let top =
-    group.links.findIndex((link) => `/docs${link.href}` === pathname) * itemHeight +
+    group.links.findIndex((link) => `/docs${link.href}` === pathname) *
+      itemHeight +
     firstVisibleSectionIndex * itemHeight
 
   return (
@@ -92,10 +120,18 @@ function VisibleSectionHighlight({ group, pathname }) {
   )
 }
 
-function ActivePageMarker({ group, pathname }) {
+function ActivePageMarker({
+  group,
+  pathname,
+}: {
+  group: NavGroup
+  pathname: string
+}) {
   let itemHeight = remToPx(2)
   let offset = remToPx(0.25)
-  let activePageIndex = group.links.findIndex((link) => `/docs${link.href}` === pathname)
+  let activePageIndex = group.links.findIndex(
+    (link) => `/docs${link.href}` === pathname
+  )
   let top = offset + activePageIndex * itemHeight
 
   return (
@@ -150,7 +186,11 @@ function NavigationGroup({ group, className }) {
           {group.links.map((link) => (
             <motion.li key={link.href} layout="position" className="relative">
               {/* @ts-ignore */}
-              <NavLink href={link.href} active={`/docs${link.href}` === pathname} isFontMono={link.isFontMono}>
+              <NavLink
+                href={link.href}
+                active={`/docs${link.href}` === pathname}
+                isFontMono={link.isFontMono}
+              >
                 {link.title}
               </NavLink>
               <AnimatePresence mode="popLayout" initial={false}>
@@ -255,26 +295,26 @@ export const navigation = [
   //   ],
   // },
   // {
-    // title: 'SDK Reference',
-    // links: [
-      // { title: 'E2B', href: '/reference/e2b', isFontMono: true },
+  // title: 'SDK Reference',
+  // links: [
+  // { title: 'E2B', href: '/reference/e2b', isFontMono: true },
 
-      // Primitives
-      // { title: 'e2b.process', href: '/reference/python/process', isFontMono: true },
-      // { title: 'e2b.filesystem', href: '/reference/python/filesystem', isFontMono: true },
-      // { title: 'e2b.http', href: '/reference/python/http', isFontMono: true },
-      // { title: 'e2b.code', href: '/reference/python/code', isFontMono: true },
+  // Primitives
+  // { title: 'e2b.process', href: '/reference/python/process', isFontMono: true },
+  // { title: 'e2b.filesystem', href: '/reference/python/filesystem', isFontMono: true },
+  // { title: 'e2b.http', href: '/reference/python/http', isFontMono: true },
+  // { title: 'e2b.code', href: '/reference/python/code', isFontMono: true },
 
-      // High-level modules
-      // { title: 'e2b.code', href: '/reference/code', isFontMono: true },
-      // { title: 'e2b.browser', href: '/reference/browser', isFontMono: true },
-      // { title: 'e2b.chart', href: '/reference/chart', isFontMono: true },
-      // { title: 'e2b.storage', href: '/reference/storage', isFontMono: true },
-      // { title: 'e2b.auth', href: '/reference/auth', isFontMono: true },
-      // { title: 'e2b.datasource', href: '/reference/data', isFontMono: true },
-      // { title: 'e2b.skills', href: '/reference/skills', isFontMono: true },
-      // { title: 'e2b.spreadsheet', href: '/reference/spreadsheet', isFontMono: true },
-    // ],
+  // High-level modules
+  // { title: 'e2b.code', href: '/reference/code', isFontMono: true },
+  // { title: 'e2b.browser', href: '/reference/browser', isFontMono: true },
+  // { title: 'e2b.chart', href: '/reference/chart', isFontMono: true },
+  // { title: 'e2b.storage', href: '/reference/storage', isFontMono: true },
+  // { title: 'e2b.auth', href: '/reference/auth', isFontMono: true },
+  // { title: 'e2b.datasource', href: '/reference/data', isFontMono: true },
+  // { title: 'e2b.skills', href: '/reference/skills', isFontMono: true },
+  // { title: 'e2b.spreadsheet', href: '/reference/spreadsheet', isFontMono: true },
+  // ],
   // },
 ]
 
