@@ -241,7 +241,7 @@ export class SessionConnection {
     return this.rpc.call(`${service}_${method}`, params)
   }
 
-  protected async handleSubscriptions<
+  async handleSubscriptions<
     T extends (ReturnType<SessionConnection['subscribe']> | undefined)[],
   >(
     ...subs: T
@@ -265,7 +265,7 @@ export class SessionConnection {
     throw new Error(formatSettledErrors(results))
   }
 
-  protected async unsubscribe(subID: string) {
+  async unsubscribe(subID: string) {
     const subscription = this.subscribers.find(s => s.subID === subID)
     if (!subscription) return
 
@@ -276,7 +276,7 @@ export class SessionConnection {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async subscribe(
+  async subscribe(
     service: Service,
     handler: SubscriptionHandler,
     method: string,
