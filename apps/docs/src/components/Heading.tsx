@@ -66,12 +66,11 @@ function Anchor({
   )
 }
 
-export function Heading({
-  level = 2,
+export function Heading<Level extends 2 | 3>({
   children,
-  id,
   tag,
   label,
+  level,
   anchor = true,
   ...props
 }: React.ComponentPropsWithoutRef<`h${Level}`> & {
@@ -81,8 +80,9 @@ export function Heading({
   level?: Level
   anchor?: boolean
 }) {
-  let Component = `h${level}`
-  let ref = useRef()
+  level = level ?? (2 as Level)
+  let Component = `h${level}` as 'h2' | 'h3'
+  let ref = useRef<HTMLHeadingElement>(null)
   let registerHeading = useSectionStore((s) => s.registerHeading)
 
   let inView = useInView(ref, {
@@ -92,23 +92,20 @@ export function Heading({
 
   useEffect(() => {
     if (level === 2) {
-      // @ts-ignore
-      registerHeading({ id, ref, offsetRem: tag || label ? 8 : 6 })
+      registerHeading({ id: props.id, ref, offsetRem: tag || label ? 8 : 6 })
     }
   })
 
   return (
     <>
       <Eyebrow tag={tag} label={label} />
-      {/* @ts-ignore */}
       <Component
         ref={ref}
-        id={anchor ? id : undefined}
         className={tag || label ? 'mt-2 scroll-mt-32' : 'scroll-mt-24'}
         {...props}
       >
         {anchor ? (
-          <Anchor id={id} inView={inView}>
+          <Anchor id={props.id} inView={inView}>
             {children}
           </Anchor>
         ) : (
