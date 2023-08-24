@@ -1,4 +1,5 @@
 import asyncio
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import traceback
@@ -61,6 +62,12 @@ class SessionConnection:
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
         on_close: Optional[Callable[[], Any]] = None,
     ):
+        if api_key is None:
+            warnings.warn(
+                "API key will be required, please see https://e2b.dev/docs",
+                FutureWarning,
+            )
+
         self._id = id
         self._api_key = api_key
         self._debug_hostname = _debug_hostname
@@ -146,6 +153,7 @@ class SessionConnection:
 
                 self._session = await api.sessions_post(
                     NewSession(codeSnippetID=self._id, editEnabled=self._edit_enabled),
+                    api_key=self._api_key,
                 )
                 logger.info(f"Acquired session: {self._session}")
 
