@@ -48,6 +48,11 @@ variable "supabase_key" {
   default = ""
 }
 
+variable "posthog_api_key" {
+  type = string
+  default = ""
+}
+
 variable "api_admin_key" {
   type = string
   default = ""
@@ -95,6 +100,7 @@ job "orchestration-api" {
         CONSUL_TOKEN       = var.consul_token
         SUPABASE_URL       = var.supabase_url
         SUPABASE_KEY       = var.supabase_key
+        POSTHOG_API_KEY    = var.posthog_api_key
         API_ADMIN_KEY      = var.api_admin_key
       }
 

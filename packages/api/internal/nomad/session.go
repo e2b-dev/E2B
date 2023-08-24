@@ -188,3 +188,15 @@ func (n *NomadClient) DeleteSession(sessionID string, purge bool) *api.APIError 
 	}
 	return nil
 }
+
+func (n *NomadClient) DeleteSessionWithDuration(sessionID string, purge bool) (*time.Duration, *api.APIError) {
+	_, meta, err := n.client.Jobs().Deregister(sessionsJobNameWithSlash+sessionID, purge, &nomadAPI.WriteOptions{})
+	if err != nil {
+		return nil, &api.APIError{
+			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", sessionsJobNameWithSlash, sessionID, err),
+			ClientMsg: "Cannot delete the session right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
+	return &meta.RequestTime, nil
+}

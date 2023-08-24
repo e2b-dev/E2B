@@ -149,7 +149,7 @@ func main() {
 	// The /ping route is used for the terminal extension to check if devbookd is running.
 	router.HandleFunc("/ping", pingHandler)
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
-	// router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 
 	server := &http.Server{
 		ReadTimeout:  40 * time.Second,

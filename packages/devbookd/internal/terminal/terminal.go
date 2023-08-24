@@ -38,7 +38,7 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
-	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid), Groups: []uint32{uint32(gid)}, NoSetGroups: true}
 
 	if rootdir == "" {
 		cmd.Dir = homedir
@@ -65,6 +65,7 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 		Cols: cols,
 		Rows: rows,
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %+v", cmd, rootdir, cols, rows, err)
 	}

@@ -16,6 +16,7 @@ type DB struct {
 func NewClient() (*DB, error) {
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_KEY")
+
 	parsedURL, err := url.Parse(supabaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse Supabase URL '%s': %s", supabaseURL, err)

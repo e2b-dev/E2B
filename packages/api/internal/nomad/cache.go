@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	sessionExpiration = time.Second * 11
+	sessionExpiration = time.Second * 12
 	cacheSyncTime     = time.Second * 180
 )
 
@@ -111,4 +111,39 @@ func (c *SessionCache) KeepInSync(client *NomadClient) {
 
 func (c *SessionCache) Count() int {
 	return c.cache.Len()
+}
+
+type TeamCache struct {
+	cache *ttlcache.Cache[string, string]
+}
+
+func (c *TeamCache) Add(sessionID string, teamID string) {
+	c.cache.Set(sessionID, teamID, ttlcache.DefaultTTL)
+}
+
+// Check if the session exists in the cache
+func (c *TeamCache) Exists(sessionID string) bool {
+	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, string]())
+	return item != nil
+}
+
+func (c *TeamCache) Get(sessionID string) (string, error) {
+	item := c.cache.Get(sessionID)
+	if item == nil {
+		return "", fmt.Errorf("no team for the session \"%s\" found", sessionID)
+
+	}
+	return item.Value(), nil
+}
+func NewTeamCache() *TeamCache {
+	cache := ttlcache.New(
+		ttlcache.WithTTL[string, string](sessionExpiration),
+	)
+
+	teamCache := &TeamCache{
+		cache: cache,
+	}
+	go cache.Start()
+
+	return teamCache
 }
