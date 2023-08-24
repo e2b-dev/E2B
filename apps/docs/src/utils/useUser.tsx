@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext, useMemo } from 'react'
+import { useEffect, useState, createContext, useContext, useMemo, useRef } from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
 
-/**
- * @typedef {Object} UserContextType
- * @property {boolean} isLoading
- * @property {Session|null} session
- * @property {User|null} user
- * @property {Error|null} error
- */
+type UserContextType = {
+  isLoading: boolean
+  session: Session | null
+  user: User & { teams: any[]; apiKeys: any[] } | null
+  error: Error | null
+}
+
 export const UserContext = createContext(undefined)
 
 export const CustomUserContextProvider = (props) => {
@@ -20,18 +21,17 @@ export const CustomUserContextProvider = (props) => {
   const [user, setUser] = useState(null)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
-
-  let mounted
+  const mounted = useRef<boolean>(false)
 
   useEffect(() => {
-    mounted = true
+    mounted.current = true
     async function getSession() {
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession()
 
-      if (mounted) {
+      if (mounted.current) {
         if (error) {
           setError(error)
           setIsLoading(false)
@@ -44,8 +44,9 @@ export const CustomUserContextProvider = (props) => {
     }
     void getSession()
     return () => {
-      mounted = false
+      mounted.current = false
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export const CustomUserContextProvider = (props) => {
     return () => {
       subscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -97,10 +99,10 @@ export const CustomUserContextProvider = (props) => {
       setIsLoading(false)
     }
     if (session) void getUserCustom()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
-  /** @type {UserContextType} */
-  const value = useMemo(() => {
+  const value: UserContextType = useMemo(() => {
     if (isLoading) {
       return {
         isLoading: true,
@@ -130,20 +132,14 @@ export const CustomUserContextProvider = (props) => {
   return <UserContext.Provider value={value} {...props} />
 }
 
-/**
- * @returns {UserContextType} user
- */
-export const useUser = () => {
+export const useUser = (): UserContextType => {
   const context = useContext(UserContext)
   if (context === undefined)
     throw new Error(`useUser must be used within a CustomUserContextProvider.`)
   return context
 }
 
-/**
- * @returns {string} apiKey
- */
-export const useApiKey = () => {
+export const useApiKey = (): string => {
   const { user } = useUser()
   return user?.apiKeys?.[0]?.api_key
 }

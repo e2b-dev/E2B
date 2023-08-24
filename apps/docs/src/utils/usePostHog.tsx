@@ -55,7 +55,7 @@ export function PostHogAnalytics() {
       posthog?.identify(user.id, { email: user.email })
       posthog?.group('team', defaultTeamId, { name: user?.teams?.[0]?.name })
     }
-  }, [user])
+  }, [user, defaultTeamId])
 
   return null
 }
