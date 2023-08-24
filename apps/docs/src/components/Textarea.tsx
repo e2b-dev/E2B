@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import {  useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 // export interface Props {
 //   value: string
@@ -12,12 +12,15 @@ import {  useEffect, useRef } from 'react'
 function Textarea({ value = '', className, placeholder, onChange, isOpen }) {
   const ref = useRef(null)
 
-  useEffect(function handleFocus() {
-    if (!ref) return
-    if (isOpen) {
-      ref.current?.focus()
-    }
-  }, [isOpen])
+  useEffect(
+    function handleFocus() {
+      if (!ref) return
+      if (isOpen) {
+        ref.current?.focus()
+      }
+    },
+    [isOpen]
+  )
 
   return (
     <textarea
@@ -44,7 +47,7 @@ function Textarea({ value = '', className, placeholder, onChange, isOpen }) {
         'transition-colors',
         'text-white',
         'placeholder:text-gray-500',
-        className,
+        className
       )}
       onChange={onChange}
     />

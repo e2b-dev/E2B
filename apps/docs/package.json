@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "prettier --write ."
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
@@ -22,6 +23,10 @@
     "@supabase/supabase-auth-helpers": "^1.4.2",
     "@supabase/supabase-js": "^2.32.0",
     "@tailwindcss/typography": "^0.5.8",
+    "@types/node": "20.4.7",
+    "@types/react": "18.2.18",
+    "@types/react-dom": "18.2.7",
+    "@types/react-highlight-words": "^0.16.4",
     "@vercel/analytics": "^1.0.2",
     "acorn": "^8.8.1",
     "autoprefixer": "^10.4.7",
@@ -46,6 +51,7 @@
     "shiki": "^0.11.1",
     "simple-functional-loader": "^1.2.1",
     "tailwindcss": "^3.3.3",
+    "typescript": "5.1.6",
     "unist-util-filter": "^4.0.1",
     "unist-util-visit": "^4.1.1",
     "usehooks-ts": "^2.9.1",
@@ -54,9 +60,11 @@
   "devDependencies": {
     "@e2b/sdk": "^0.1.0",
     "@nodelib/fs.walk": "^2.0.0",
+    "encoding": "^0.1.13",
     "eslint": "8.45.0",
     "eslint-config-next": "13.4.12",
     "prettier": "^2.8.7",
-    "prettier-plugin-tailwindcss": "^0.2.6"
+    "prettier-plugin-tailwindcss": "^0.2.6",
+    "sharp": "^0.32.0"
   }
 }

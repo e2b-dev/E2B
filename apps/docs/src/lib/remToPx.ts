@@ -1,8 +1,8 @@
-export function remToPx(remValue) {
+export function remToPx(remValue: number) {
   let rootFontSize =
     typeof window === 'undefined'
       ? 16
       : parseFloat(window.getComputedStyle(document.documentElement).fontSize)
 
-  return parseFloat(remValue) * rootFontSize
+  return remValue * rootFontSize
 }

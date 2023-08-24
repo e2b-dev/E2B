@@ -1,12 +1,12 @@
 import glob from 'fast-glob'
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from '@vercel/analytics/react'
 
 import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
 
-
 import '@/styles/tailwind.css'
-import { PostHogAnalytics } from '@/utils/usePostHog';
+import { PostHogAnalytics } from '@/utils/usePostHog'
+import { Section } from '@/components/SectionProvider'
 
 export const metadata = {
   title: {
@@ -17,13 +17,13 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   let pages = await glob('**/*.mdx', { cwd: 'src/app' })
-  let allSections = await Promise.all(
+  let allSectionsEntries = (await Promise.all(
     pages.map(async (filename) => [
       '/' + filename.replace(/(^|\/)page\.mdx$/, ''),
       (await import(`./${filename}`)).sections,
     ])
-  )
-  allSections = Object.fromEntries(allSections)
+  )) as Array<[string, Array<Section>]>
+  let allSections = Object.fromEntries(allSectionsEntries)
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>

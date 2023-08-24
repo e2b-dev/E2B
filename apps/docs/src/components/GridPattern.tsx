@@ -1,6 +1,19 @@
 import { useId } from 'react'
 
-export function GridPattern({ width, height, x, y, squares, ...props }) {
+export function GridPattern({
+  width,
+  height,
+  x,
+  y,
+  squares,
+  ...props
+}: React.ComponentPropsWithoutRef<'svg'> & {
+  width: number
+  height: number
+  x: string | number
+  y: string | number
+  squares: Array<[x: number, y: number]>
+}) {
   let patternId = useId()
 
   return (

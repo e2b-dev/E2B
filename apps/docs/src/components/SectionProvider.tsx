@@ -7,12 +7,35 @@ import {
   useLayoutEffect,
   useState,
 } from 'react'
-import { createStore, useStore } from 'zustand'
+import { type StoreApi, createStore, useStore } from 'zustand'
 
 import { remToPx } from '@/lib/remToPx'
 
-function createSectionStore(sections) {
-  return createStore((set) => ({
+export interface Section {
+  id: string
+  title: string
+  offsetRem?: number
+  tag?: string
+  headingRef?: React.RefObject<HTMLHeadingElement>
+}
+
+interface SectionState {
+  sections: Array<Section>
+  visibleSections: Array<string>
+  setVisibleSections: (visibleSections: Array<string>) => void
+  registerHeading: ({
+    id,
+    ref,
+    offsetRem,
+  }: {
+    id: string
+    ref: React.RefObject<HTMLHeadingElement>
+    offsetRem: number
+  }) => void
+}
+
+function createSectionStore(sections: Array<Section>) {
+  return createStore<SectionState>()((set) => ({
     sections,
     visibleSections: [],
     setVisibleSections: (visibleSections) =>
@@ -39,8 +62,7 @@ function createSectionStore(sections) {
   }))
 }
 
-function useVisibleSections(sectionStore) {
-  // @ts-ignore
+function useVisibleSections(sectionStore: StoreApi<SectionState>) {
   let setVisibleSections = useStore(sectionStore, (s) => s.setVisibleSections)
   // @ts-ignore
   let sections = useStore(sectionStore, (s) => s.sections)
@@ -55,7 +77,12 @@ function useVisibleSections(sectionStore) {
         sectionIndex < sections.length;
         sectionIndex++
       ) {
-        let { id, headingRef, offsetRem } = sections[sectionIndex]
+        let { id, headingRef, offsetRem = 0 } = sections[sectionIndex]
+
+        if (!headingRef?.current) {
+          continue
+        }
+
         let offset = remToPx(offsetRem)
         let top = headingRef.current.getBoundingClientRect().top + scrollY
 
@@ -65,7 +92,7 @@ function useVisibleSections(sectionStore) {
 
         let nextSection = sections[sectionIndex + 1]
         let bottom =
-          (nextSection?.headingRef.current.getBoundingClientRect().top ??
+          (nextSection?.headingRef?.current?.getBoundingClientRect().top ??
             Infinity) +
           scrollY -
           remToPx(nextSection?.offsetRem ?? 0)
@@ -94,13 +121,18 @@ function useVisibleSections(sectionStore) {
   }, [setVisibleSections, sections])
 }
 
-// @ts-ignore
-const SectionStoreContext = createContext()
+const SectionStoreContext = createContext<StoreApi<SectionState> | null>(null)
 
 const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect
 
-export function SectionProvider({ sections, children }) {
+export function SectionProvider({
+  sections,
+  children,
+}: {
+  sections: Array<Section>
+  children: React.ReactNode
+}) {
   let [sectionStore] = useState(() => createSectionStore(sections))
 
   useVisibleSections(sectionStore)
@@ -116,8 +148,7 @@ export function SectionProvider({ sections, children }) {
   )
 }
 
-export function useSectionStore(selector) {
+export function useSectionStore<T>(selector: (state: SectionState) => T) {
   let store = useContext(SectionStoreContext)
-  // @ts-ignore
-  return useStore(store, selector)
+  return useStore(store!, selector)
 }

@@ -5,14 +5,21 @@ import { usePathname } from 'next/navigation'
 
 import { Button } from '@/components/Button'
 import { navigation } from '@/components/Navigation'
-import { TwitterIcon } from '@/components/icons/TwitterIcon';
-import { GitHubIcon } from '@/components/icons/GitHubIcon';
-import { DiscordIcon } from '@/components/icons/DiscordIcon';
+import { TwitterIcon } from '@/components/icons/TwitterIcon'
+import { GitHubIcon } from '@/components/icons/GitHubIcon'
+import { DiscordIcon } from '@/components/icons/DiscordIcon'
 
-function PageLink({ label, page, previous = false }) {
+function PageLink({
+  label,
+  page,
+  previous = false,
+}: {
+  label: string
+  page: { href: string; title: string }
+  previous?: boolean
+}) {
   return (
     <>
-      {/* @ts-ignore */}
       <Button
         href={page.href}
         aria-label={`${label}: ${page.title}`}
@@ -65,7 +72,15 @@ function PageNavigation() {
   )
 }
 
-function SocialLink({ href, icon: Icon, children }) {
+function SocialLink({
+  href,
+  icon: Icon,
+  children,
+}: {
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  children: React.ReactNode
+}) {
   return (
     <Link href={href} className="group">
       <span className="sr-only">{children}</span>
@@ -78,7 +93,8 @@ function SmallPrint() {
   return (
     <div className="flex flex-col items-center justify-between gap-5 border-t border-zinc-900/5 pt-8 dark:border-white/5 sm:flex-row">
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
-        &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights reserved.
+        &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights
+        reserved.
       </p>
       <div className="flex gap-4">
         <SocialLink href="https://twitter.com/e2b_dev" icon={TwitterIcon}>
