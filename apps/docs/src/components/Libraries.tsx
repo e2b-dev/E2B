@@ -49,6 +49,7 @@ const libraries = [
 export function Libraries() {
   return (
     <div className="my-16 xl:max-w-none">
+      {/* @ts-ignore */}
       <Heading level={2} id="official-libraries">
         Official libraries
       </Heading>
@@ -63,6 +64,7 @@ export function Libraries() {
                 {library.description}
               </p>
               <p className="mt-4">
+                {/* @ts-ignore */}
                 <Button href={library.href} variant="text" arrow="right">
                   Read more
                 </Button>

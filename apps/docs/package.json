@@ -52,6 +52,7 @@
     "zustand": "^4.3.2"
   },
   "devDependencies": {
+    "@e2b/sdk": "^0.1.0",
     "@nodelib/fs.walk": "^2.0.0",
     "eslint": "8.45.0",
     "eslint-config-next": "13.4.12",

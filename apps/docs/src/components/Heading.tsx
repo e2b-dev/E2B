@@ -78,6 +78,7 @@ export function Heading({
 
   useEffect(() => {
     if (level === 2) {
+      // @ts-ignore
       registerHeading({ id, ref, offsetRem: tag || label ? 8 : 6 })
     }
   })
@@ -85,6 +86,7 @@ export function Heading({
   return (
     <>
       <Eyebrow tag={tag} label={label} />
+      {/* @ts-ignore */}
       <Component
         ref={ref}
         id={anchor ? id : undefined}

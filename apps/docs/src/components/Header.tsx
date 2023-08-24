@@ -23,7 +23,9 @@ function TopLevelNavItem({ href, children }) {
   )
 }
 
+// @ts-ignore
 export const Header = forwardRef(function Header({ className }, ref) {
+  // @ts-ignore
   let { isOpen: mobileNavIsOpen } = useMobileNavigationStore()
   let isInsideMobileNavigation = useIsInsideMobileNavigation()
 
@@ -33,6 +35,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
 
   return (
     <motion.div
+      // @ts-ignore
       ref={ref}
       className={clsx(
         className,
@@ -44,6 +47,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
           : 'bg-white/[var(--bg-opacity-light)] dark:bg-zinc-900/[var(--bg-opacity-dark)]'
       )}
       style={{
+        // @ts-ignore
         '--bg-opacity-light': bgOpacityLight,
         '--bg-opacity-dark': bgOpacityDark,
       }}

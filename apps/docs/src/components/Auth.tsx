@@ -36,6 +36,7 @@ export const Auth = function () {
     <span className="text-red-500 text-sm" title={error?.message}>
       Something went wrong
     </span>
+    {/* @ts-ignore */}
     <Button onClick={() => signInWithGitHub()}>Login</Button>
   </div> 
 
@@ -80,6 +81,7 @@ export const Auth = function () {
               {user.email}
               {/* TODO: Add dropdown with more options: Dashboard, API keys, ... */}
             </div>
+            {/* @ts-ignore */}
             <Button
               variant="textSubtle"
               title="Sign out"
@@ -91,7 +93,9 @@ export const Auth = function () {
         </div>
       ) : (
         <div className="flex items-center gap-3">
+          {/* @ts-ignore */}
           <Button onClick={() => signInWithGitHub()} variant="textTernary" className="text-xs">Login to get your API key</Button>
+          {/* @ts-ignore */}
           <Button onClick={() => signInWithGitHub()}>Login</Button>
         </div>
       )}

@@ -67,6 +67,7 @@ export const CustomUserContextProvider = (props) => {
   
   useEffect(() => {
     async function getUserCustom() {
+      // @ts-ignore
       const { data: teams, teamsError } = await supabase
         .from('users_teams')
         .select('*')

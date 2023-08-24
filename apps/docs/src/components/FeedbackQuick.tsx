@@ -28,9 +28,11 @@ function FeedbackButton(props) {
   )
 }
 
+// @ts-ignore
 const FeedbackForm = forwardRef(function FeedbackForm({ onSubmit }, ref) {
   return (
     <form
+      // @ts-ignore
       ref={ref}
       onSubmit={onSubmit}
       className="absolute inset-0 flex items-center justify-center gap-6 md:justify-start"
@@ -50,6 +52,7 @@ const FeedbackForm = forwardRef(function FeedbackForm({ onSubmit }, ref) {
 const FeedbackThanks = forwardRef(function FeedbackThanks(_props, ref) {
   return (
     <div
+      // @ts-ignore
       ref={ref}
       className="absolute inset-0 flex justify-center md:justify-start"
     >
@@ -82,6 +85,7 @@ export function FeedbackQuick() {
         leaveTo="opacity-0"
         leave="pointer-events-none duration-300"
       >
+        {/* @ts-ignore */}
         <FeedbackForm onSubmit={onSubmit} />
       </Transition>
       <Transition

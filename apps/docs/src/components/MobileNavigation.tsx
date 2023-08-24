@@ -52,6 +52,7 @@ export const useMobileNavigationStore = create((set) => ({
 
 export function MobileNavigation() {
   let isInsideMobileNavigation = useIsInsideMobileNavigation()
+  // @ts-ignore
   let { isOpen, toggle, close } = useMobileNavigationStore()
   let ToggleIcon = isOpen ? XIcon : MenuIcon
   let pathname = usePathname()

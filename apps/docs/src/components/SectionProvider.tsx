@@ -40,7 +40,9 @@ function createSectionStore(sections) {
 }
 
 function useVisibleSections(sectionStore) {
+  // @ts-ignore
   let setVisibleSections = useStore(sectionStore, (s) => s.setVisibleSections)
+  // @ts-ignore
   let sections = useStore(sectionStore, (s) => s.sections)
 
   useEffect(() => {
@@ -92,6 +94,7 @@ function useVisibleSections(sectionStore) {
   }, [setVisibleSections, sections])
 }
 
+// @ts-ignore
 const SectionStoreContext = createContext()
 
 const useIsomorphicLayoutEffect =
@@ -115,5 +118,6 @@ export function SectionProvider({ sections, children }) {
 
 export function useSectionStore(selector) {
   let store = useContext(SectionStoreContext)
+  // @ts-ignore
   return useStore(store, selector)
 }

@@ -21,7 +21,8 @@ export function ButtonLoginToken() {
   let extraClassName = 'duration-300'
   if (isLoading) extraClassName += ' opacity-0 pointer-events-none'
   if (user) return null
-  
+
+  // @ts-ignore
   return <Button
     onClick={() => signInWithGitHub()}
     variant="textTernary"

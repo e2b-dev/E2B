@@ -16,7 +16,6 @@ function FeedbackModal({ open, setOpen, onSend }) {
   const pathname = usePathname();
   const [feedback, setFeedback] = useState('')
   const [isSavingFeedback, setIsSavingFeedback] = useState(false)
-  const { user } = useUser()
   const posthog = usePostHog()
   const ref = useRef(null)
 
@@ -64,8 +63,10 @@ function FeedbackModal({ open, setOpen, onSend }) {
         value={feedback}
         placeholder="What should we improve?"
         onChange={e => setFeedback(e.target.value)}
+        // @ts-ignore
         open={open}
       />
+      {/* @ts-ignore */}
       <Button
         onClick={saveFeedback}
         type="submit"
@@ -73,6 +74,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
         className="flex items-center gap-2 cursor-pointer"
       >
         {isSavingFeedback
+          // @ts-ignore
           ? <SpinnerIcon />
           : <Send size="14px" />
         }
