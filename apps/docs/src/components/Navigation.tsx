@@ -202,18 +202,18 @@ export const navigation = [
     title: 'Getting Started',
     links: [
       { title: 'Installation', href: '/getting-started/installation' },
-      { title: 'Get Your API Key', href: '/getting-started/api-key' },
+      { title: 'API Key', href: '/getting-started/api-key' },
       { title: 'SDK Basics', href: '/getting-started/basics' },
     ],
   },
-  {
-    title: 'AI Playgrounds',
-    links: [
-      { title: 'Overview', href: '/playgrounds/overview' },
-      { title: 'Limitations', href: '/playgrounds/limitations' },
-      // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
-    ],
-  },
+  // {
+  //   title: 'AI Playgrounds',
+  //   links: [
+  //     { title: 'Overview', href: '/playgrounds/overview' },
+  //     { title: 'Limitations', href: '/playgrounds/limitations' },
+  //     // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
+  //   ],
+  // },
   // {
   //   title: 'AI Environments',
   //   links: [

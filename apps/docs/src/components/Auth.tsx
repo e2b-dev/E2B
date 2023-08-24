@@ -31,14 +31,14 @@ export const Auth = function () {
     router.push('/')
     window.location.reload()
   }
-  
+
   if (error) return <div className="flex flex-row items-center gap-4">
     <span className="text-red-500 text-sm" title={error?.message}>
       Something went wrong
     </span>
     {/* @ts-ignore */}
     <Button onClick={() => signInWithGitHub()}>Login</Button>
-  </div> 
+  </div>
 
   if (isLoading) return <div className="animate-pulse flex">
     <div
