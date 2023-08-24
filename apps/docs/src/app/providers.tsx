@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react'
 import { ThemeProvider, useTheme } from 'next-themes'
-import { CustomUserContextProvider } from '@/utils/useUser';
-import { PostHogProvider } from '@/utils/usePostHog';
+import { CustomUserContextProvider } from '@/utils/useUser'
+import { PostHogProvider } from '@/utils/usePostHog'
 
 function ThemeWatcher() {
   let { resolvedTheme, setTheme } = useTheme()
@@ -32,13 +32,15 @@ function ThemeWatcher() {
 export function Providers({ children }) {
   return (
     // Make the dark theme the default theme.
-    <ThemeProvider attribute="class" disableTransitionOnChange forcedTheme="dark">
+    <ThemeProvider
+      attribute="class"
+      disableTransitionOnChange
+      forcedTheme="dark"
+    >
       <ThemeWatcher />
-        <CustomUserContextProvider>
-          <PostHogProvider>
-            {children}
-          </PostHogProvider>
-        </CustomUserContextProvider>
+      <CustomUserContextProvider>
+        <PostHogProvider>{children}</PostHogProvider>
+      </CustomUserContextProvider>
     </ThemeProvider>
   )
 }

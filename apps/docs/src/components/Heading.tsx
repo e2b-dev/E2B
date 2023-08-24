@@ -8,7 +8,7 @@ import { useSectionStore } from '@/components/SectionProvider'
 import { Tag } from '@/components/Tag'
 import { remToPx } from '@/lib/remToPx'
 
-function AnchorIcon(props) {
+function AnchorIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -22,7 +22,7 @@ function AnchorIcon(props) {
   )
 }
 
-function Eyebrow({ tag, label }) {
+function Eyebrow({ tag, label }: { tag?: string; label?: string }) {
   if (!tag && !label) {
     return null
   }
@@ -40,7 +40,15 @@ function Eyebrow({ tag, label }) {
   )
 }
 
-function Anchor({ id, inView, children }) {
+function Anchor({
+  id,
+  inView,
+  children,
+}: {
+  id: string
+  inView: boolean
+  children: React.ReactNode
+}) {
   return (
     <Link
       href={`#${id}`}
@@ -66,6 +74,12 @@ export function Heading({
   label,
   anchor = true,
   ...props
+}: React.ComponentPropsWithoutRef<`h${Level}`> & {
+  id: string
+  tag?: string
+  label?: string
+  level?: Level
+  anchor?: boolean
 }) {
   let Component = `h${level}`
   let ref = useRef()

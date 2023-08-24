@@ -1,15 +1,23 @@
 'use client'
 
-import { Children, createContext, useContext, useEffect, useRef, useState, } from 'react'
+import {
+  Children,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 import { create } from 'zustand'
 
 import { Tag } from '@/components/Tag'
-import { CopyButton } from '@/components/CopyButton';
-import { useApiKey } from '@/utils/useUser';
+import { CopyButton } from '@/components/CopyButton'
+import { useApiKey } from '@/utils/useUser'
 
-const languageNames = {
+const languageNames: Record<string, string> = {
   js: 'JavaScript',
   ts: 'TypeScript',
   javascript: 'JavaScript',
@@ -20,8 +28,20 @@ const languageNames = {
   go: 'Go',
 }
 
-function getPanelTitle({ title, language }) {
-  return title ?? languageNames[language] ?? 'Code'
+function getPanelTitle({
+  title,
+  language,
+}: {
+  title?: string
+  language?: string
+}) {
+  if (title) {
+    return title
+  }
+  if (language && language in languageNames) {
+    return languageNames[language]
+  }
+  return 'Code'
 }
 
 function CodePanelHeader({ tag, label }) {
@@ -46,24 +66,51 @@ function CodePanelHeader({ tag, label }) {
   )
 }
 
-function CodePanel({ tag, label, code, children }) {
+function CodePanel({
+  children,
+  tag,
+  label,
+  code,
+}: {
+  children: React.ReactNode
+  tag?: string
+  label?: string
+  code?: string
+}) {
   let child = Children.only(children)
+
+  if (isValidElement(child)) {
+    tag = child.props.tag ?? tag
+    label = child.props.label ?? label
+    code = child.props.code ?? code
+  }
+
+  if (!code) {
+    throw new Error(
+      '`CodePanel` requires a `code` prop, or a child with a `code` prop.'
+    )
+  }
 
   return (
     <div className="group dark:bg-white/2.5">
-      <CodePanelHeader
-        tag={child.props.tag ?? tag}
-        label={child.props.label ?? label}
-      />
+      <CodePanelHeader tag={tag} label={label} />
       <div className="relative">
         <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
-        <CopyButton code={child.props.code ?? code} />
+        <CopyButton code={code} />
       </div>
     </div>
   )
 }
 
-function CodeGroupHeader({ title, children, selectedIndex }) {
+function CodeGroupHeader({
+  title,
+  children,
+  selectedIndex,
+}: {
+  title: string
+  children: React.ReactNode
+  selectedIndex: number
+}) {
   let hasTabs = Children.count(children) > 1
 
   if (!title && !hasTabs) {
@@ -88,7 +135,7 @@ function CodeGroupHeader({ title, children, selectedIndex }) {
                   : 'border-transparent text-zinc-400 hover:text-zinc-300'
               )}
             >
-              {getPanelTitle(child.props)}
+              {getPanelTitle(isValidElement(child) ? child.props : {})}
             </Tab>
           ))}
         </Tab.List>
@@ -97,7 +144,10 @@ function CodeGroupHeader({ title, children, selectedIndex }) {
   )
 }
 
-function CodeGroupPanels({ children, ...props }) {
+function CodeGroupPanels({
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CodePanel>) {
   let hasTabs = Children.count(children) > 1
 
   if (hasTabs) {
@@ -105,7 +155,6 @@ function CodeGroupPanels({ children, ...props }) {
       <Tab.Panels>
         {Children.map(children, (child) => (
           <Tab.Panel>
-            {/* @ts-ignore */}
             <CodePanel {...props}>{child}</CodePanel>
           </Tab.Panel>
         ))}
@@ -113,39 +162,45 @@ function CodeGroupPanels({ children, ...props }) {
     )
   }
 
-  // @ts-ignore
   return <CodePanel {...props}>{children}</CodePanel>
 }
 
 function usePreventLayoutShift() {
-  let positionRef = useRef()
-  let rafRef = useRef()
+  let positionRef = useRef<HTMLElement>(null)
+  let rafRef = useRef<number>()
 
   useEffect(() => {
     return () => {
-      window.cancelAnimationFrame(rafRef.current)
+      if (typeof rafRef.current !== 'undefined') {
+        window.cancelAnimationFrame(rafRef.current)
+      }
     }
   }, [])
 
   return {
     positionRef,
-    preventLayoutShift(callback) {
-      // @ts-ignore
+    preventLayoutShift(callback: () => void) {
+      if (!positionRef.current) {
+        return
+      }
+
       let initialTop = positionRef.current.getBoundingClientRect().top
 
       callback()
 
-      // @ts-ignore
       rafRef.current = window.requestAnimationFrame(() => {
-        // @ts-ignore
-        let newTop = positionRef.current.getBoundingClientRect().top
+        let newTop =
+          positionRef.current?.getBoundingClientRect().top ?? initialTop
         window.scrollBy(0, newTop - initialTop)
       })
     },
   }
 }
 
-const usePreferredLanguageStore = create((set) => ({
+const usePreferredLanguageStore = create<{
+  preferredLanguages: Array<string>
+  addPreferredLanguage: (language: string) => void
+}>()((set) => ({
   preferredLanguages: [],
   addPreferredLanguage: (language) =>
     set((state) => ({
@@ -158,8 +213,7 @@ const usePreferredLanguageStore = create((set) => ({
     })),
 }))
 
-function useTabGroupProps(availableLanguages) {
-  // @ts-ignore
+function useTabGroupProps(availableLanguages: Array<string>) {
   let { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
   let [selectedIndex, setSelectedIndex] = useState(0)
   let activeLanguage = [...availableLanguages].sort(
@@ -174,10 +228,10 @@ function useTabGroupProps(availableLanguages) {
   let { positionRef, preventLayoutShift } = usePreventLayoutShift()
 
   return {
-    as: 'div',
+    as: 'div' as const,
     ref: positionRef,
     selectedIndex,
-    onChange: (newSelectedIndex) => {
+    onChange: (newSelectedIndex: number) => {
       preventLayoutShift(() =>
         addPreferredLanguage(availableLanguages[newSelectedIndex])
       )
@@ -187,55 +241,76 @@ function useTabGroupProps(availableLanguages) {
 
 const CodeGroupContext = createContext(false)
 
-export function CodeGroup({ children, title, ...props }) {
-  let languages = Children.map(children, (child) => getPanelTitle(child.props))
+export function CodeGroup({
+  children,
+  title,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & { title: string }) {
+  let languages =
+    Children.map(children, (child) =>
+      getPanelTitle(isValidElement(child) ? child.props : {})
+    ) ?? []
   let tabGroupProps = useTabGroupProps(languages)
   let hasTabs = Children.count(children) > 1
-  let Container = hasTabs ? Tab.Group : 'div'
-  let containerProps = hasTabs ? tabGroupProps : {}
-  let headerProps = hasTabs
-    ? { selectedIndex: tabGroupProps.selectedIndex }
-    : {}
+
+  let containerClassName =
+    'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
+  let header = (
+    <CodeGroupHeader title={title} selectedIndex={tabGroupProps.selectedIndex}>
+      {children}
+    </CodeGroupHeader>
+  )
+  let panels = <CodeGroupPanels {...props}>{children}</CodeGroupPanels>
 
   return (
     <CodeGroupContext.Provider value={true}>
-      <Container
-        {...containerProps}
-        // @ts-ignore
-        className="not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10"
-      >
-        {/* @ts-ignore */}
-        <CodeGroupHeader title={title} {...headerProps}>
-          {children}
-        </CodeGroupHeader>
-        <CodeGroupPanels {...props}>{children}</CodeGroupPanels>
-      </Container>
+      {hasTabs ? (
+        <Tab.Group {...tabGroupProps} className={containerClassName}>
+          {header}
+          {panels}
+        </Tab.Group>
+      ) : (
+        <div className={containerClassName}>
+          {header}
+          {panels}
+        </div>
+      )}
     </CodeGroupContext.Provider>
   )
 }
 
-export function Code({ children, ...props }) {
-  let isGrouped = useContext(CodeGroupContext)
-  
+export function Code({
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<'code'>) {
   /* <DYNAMIC-API-REPLACEMENT> */
   // let apiKey = useApiKey()
   // if (children.replace && apiKey) children = children.replace(`{{API_KEY}}`, `${apiKey}`)
   /* </DYNAMIC-API-REPLACEMENT> */
 
+  let isGrouped = useContext(CodeGroupContext)
+
   if (isGrouped) {
+    if (typeof children !== 'string') {
+      throw new Error(
+        '`Code` children must be a string when nested inside a `CodeGroup`.'
+      )
+    }
     return <code {...props} dangerouslySetInnerHTML={{ __html: children }} />
   }
 
   return <code {...props}>{children}</code>
 }
 
-export function Pre({ children, ...props }) {
+export function Pre({
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CodeGroup>) {
   let isGrouped = useContext(CodeGroupContext)
 
   if (isGrouped) {
     return children
   }
 
-  // @ts-ignore
   return <CodeGroup {...props}>{children}</CodeGroup>
 }

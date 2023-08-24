@@ -1,4 +1,4 @@
-export function CogIcon(props) {
+export function CogIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
       <path

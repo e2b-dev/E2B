@@ -4,11 +4,20 @@ import { useState } from 'react'
 
 import FeedbackButton from './FeedbackButton'
 import FeedbackModal from './FeedbackModal'
-import useExpiringState from '@/utils/useExpiringState';
+import useExpiringState from '@/utils/useExpiringState'
 
-export function Feedback({ className, variant }: { className?: string, variant?: string }) {
+export function Feedback({
+  className,
+  variant,
+}: {
+  className?: string
+  variant?: string
+}) {
   const [open, setOpen] = useState(false)
-  const [isFinished, setIsFinished] = useExpiringState({ defaultValue: false, timeout: 4000 })
+  const [isFinished, setIsFinished] = useExpiringState({
+    defaultValue: false,
+    timeout: 4000,
+  })
 
   return (
     <>
@@ -18,7 +27,7 @@ export function Feedback({ className, variant }: { className?: string, variant?:
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          setOpen(f => !f)
+          setOpen((f) => !f)
         }}
         isFinished={isFinished}
       />
@@ -30,4 +39,3 @@ export function Feedback({ className, variant }: { className?: string, variant?:
     </>
   )
 }
-

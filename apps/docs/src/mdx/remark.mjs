@@ -7,7 +7,6 @@ import JSON5 from 'json5'
 
 function loadFileSnippet() {
   return async (tree) => {
-
     const fileLoadingPromises = []
 
     visit(tree, 'code', (node, _nodeIndex, parentNode) => {
@@ -20,16 +19,19 @@ function loadFileSnippet() {
       const snippetFileName = annotation.snippet
 
       if (snippet && node.value) {
-        throw new Error(`Snippet that should be loaded from file "${snippetFileName}" has content in the markdown file already specified. Please remove the content from the markdown file."`)
+        throw new Error(
+          `Snippet that should be loaded from file "${snippetFileName}" has content in the markdown file already specified. Please remove the content from the markdown file."`
+        )
       }
 
-      if (snippet && node.value === "") {
-        fileLoadingPromises.push((async () => {
-          const file = path.resolve(`./src/code/${snippetFileName}`)
-          const content = await readFile(file, 'utf8')
-          node.value = content
-        })())
-
+      if (snippet && node.value === '') {
+        fileLoadingPromises.push(
+          (async () => {
+            const file = path.resolve(`./src/code/${snippetFileName}`)
+            const content = await readFile(file, 'utf8')
+            node.value = content
+          })()
+        )
       }
     })
 
@@ -37,8 +39,4 @@ function loadFileSnippet() {
   }
 }
 
-export const remarkPlugins = [
-  mdxAnnotations.remark,
-  remarkGfm,
-  loadFileSnippet,
-]
+export const remarkPlugins = [mdxAnnotations.remark, remarkGfm, loadFileSnippet]

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import clsx from 'clsx';
+import { useEffect, useRef, useState } from 'react'
+import clsx from 'clsx'
 
 function ClipboardIcon(props) {
   return (
@@ -17,10 +17,10 @@ function ClipboardIcon(props) {
   )
 }
 
-export function CopyButton({ 
-   code,
-   customPositionClassNames = 'right-4 top-3.5', // default from TailwindUI, works great with code blocks
-   onAfterCopy = () => {}
+export function CopyButton({
+  code,
+  customPositionClassNames = 'right-4 top-3.5', // default from TailwindUI, works great with code blocks
+  onAfterCopy = () => {},
 }) {
   let buttonRef = useRef()
   let [copyCount, setCopyCount] = useState(0)
@@ -29,7 +29,7 @@ export function CopyButton({
   useEffect(() => {
     if (copyCount > 0) {
       let timeout = setTimeout(() => {
-        setCopyCount(0);
+        setCopyCount(0)
         // @ts-ignore
         buttonRef.current?.blur()
       }, 1000)

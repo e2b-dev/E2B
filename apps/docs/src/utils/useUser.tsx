@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext, useMemo } from 'react';
-import { User } from '@supabase/supabase-auth-helpers/react';
-import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
-import * as Sentry from "@sentry/nextjs";
+import { useEffect, useState, createContext, useContext, useMemo } from 'react'
+import { User } from '@supabase/supabase-auth-helpers/react'
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+import * as Sentry from '@sentry/nextjs'
 
 /**
  * @typedef {Object} UserContextType
@@ -12,59 +12,64 @@ import * as Sentry from "@sentry/nextjs";
  * @property {User|null} user
  * @property {Error|null} error
  */
-export const UserContext = createContext(undefined);
+export const UserContext = createContext(undefined)
 
 export const CustomUserContextProvider = (props) => {
-  const supabase = createPagesBrowserClient();
-  const [session, setSession] = useState(null);
-  const [user, setUser] = useState(null);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const supabase = createPagesBrowserClient()
+  const [session, setSession] = useState(null)
+  const [user, setUser] = useState(null)
+  const [error, setError] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  let mounted;
-  
+  let mounted
+
   useEffect(() => {
-    mounted = true;
+    mounted = true
     async function getSession() {
       const {
         data: { session },
-        error
-      } = await supabase.auth.getSession();
+        error,
+      } = await supabase.auth.getSession()
 
       if (mounted) {
         if (error) {
-          setError(error);
-          setIsLoading(false);
-          return;
+          setError(error)
+          setIsLoading(false)
+          return
         }
 
-        setSession(session);
-        if (!session) setIsLoading(false); // if session is present, we set setLoading to false in the second useEffect
+        setSession(session)
+        if (!session) setIsLoading(false) // if session is present, we set setLoading to false in the second useEffect
       }
     }
-    void getSession();
+    void getSession()
     return () => {
-      mounted = false;
-    };
-  }, []);
+      mounted = false
+    }
+  }, [])
 
   useEffect(() => {
     const {
-      data: { subscription }
+      data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED')) {
-        setSession(session);
+      if (
+        session &&
+        (event === 'SIGNED_IN' ||
+          event === 'TOKEN_REFRESHED' ||
+          event === 'USER_UPDATED')
+      ) {
+        setSession(session)
       }
 
       if (event === 'SIGNED_OUT') {
-        setSession(null);
+        setSession(null)
       }
-    });
+    })
     return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-  
+      subscription.unsubscribe()
+    }
+  }, [])
+
   useEffect(() => {
     async function getUserCustom() {
       // @ts-ignore
@@ -72,23 +77,26 @@ export const CustomUserContextProvider = (props) => {
         .from('users_teams')
         .select('*')
         .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
-      if (teamsError) Sentry.captureException(teamsError); 
-      
+      if (teamsError) Sentry.captureException(teamsError)
+
       const { data: apiKeys, error: apiKeysError } = await supabase
         .from('team_api_keys')
         .select('*')
-        .in('team_id', teams?.map(team => team.team_id)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
-      if (apiKeysError) Sentry.captureException(apiKeysError);
-      
+        .in(
+          'team_id',
+          teams?.map((team) => team.team_id)
+        ) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+      if (apiKeysError) Sentry.captureException(apiKeysError)
+
       setUser({
         ...session?.user,
         teams,
         apiKeys,
-        error: teamsError || apiKeysError
+        error: teamsError || apiKeysError,
       })
-      setIsLoading(false);
+      setIsLoading(false)
     }
-    if (session) void getUserCustom();
+    if (session) void getUserCustom()
   }, [session])
 
   /** @type {UserContextType} */
@@ -99,7 +107,7 @@ export const CustomUserContextProvider = (props) => {
         error: null,
         session: null,
         user: null,
-      };
+      }
     }
 
     if (error) {
@@ -108,7 +116,7 @@ export const CustomUserContextProvider = (props) => {
         error,
         session: null,
         user: null,
-      };
+      }
     }
 
     return {
@@ -116,25 +124,26 @@ export const CustomUserContextProvider = (props) => {
       error: null,
       session,
       user,
-    };
-  }, [isLoading, user, session, error]);
-  
-  return <UserContext.Provider value={value} {...props} />;
-};
+    }
+  }, [isLoading, user, session, error])
+
+  return <UserContext.Provider value={value} {...props} />
+}
 
 /**
  * @returns {UserContextType} user
  */
 export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) throw new Error(`useUser must be used within a CustomUserContextProvider.`);
-  return context;
-};
+  const context = useContext(UserContext)
+  if (context === undefined)
+    throw new Error(`useUser must be used within a CustomUserContextProvider.`)
+  return context
+}
 
 /**
  * @returns {string} apiKey
  */
 export const useApiKey = () => {
-  const { user } = useUser();
-  return user?.apiKeys?.[0]?.api_key;
+  const { user } = useUser()
+  return user?.apiKeys?.[0]?.api_key
 }

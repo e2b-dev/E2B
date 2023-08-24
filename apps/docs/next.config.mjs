@@ -8,7 +8,7 @@ import { recmaPlugins } from './src/mdx/recma.mjs'
 import { rehypePlugins } from './src/mdx/rehype.mjs'
 import { remarkPlugins } from './src/mdx/remark.mjs'
 import withSearch from './src/mdx/search.mjs'
-import { withSentryConfig } from '@sentry/nextjs';
+import { withSentryConfig } from '@sentry/nextjs'
 
 const withMDX = nextMDX({
   options: {
@@ -24,7 +24,6 @@ function getFilesHash(rootPath) {
   const shasum = crypto.createHash('sha1')
 
   function processFile(name, content) {
-
     shasum.update(name)
     // Add delimiter to hash to prevent collisions between files where the join of the name and content is the same
     shasum.update(delimiter)
@@ -32,13 +31,12 @@ function getFilesHash(rootPath) {
     shasum.update(delimiter)
   }
 
-  fsWalk.walkSync(rootPath, { stats: true })
-    .forEach(e => {
-      if (!e.stats.isDirectory()) {
-        const content = fs.readFileSync(e.path, 'utf8')
-        processFile(e.path, content)
-      }
-    })
+  fsWalk.walkSync(rootPath, { stats: true }).forEach((e) => {
+    if (!e.stats.isDirectory()) {
+      const content = fs.readFileSync(e.path, 'utf8')
+      processFile(e.path, content)
+    }
+  })
 
   return shasum.digest('base64')
 }
@@ -59,7 +57,7 @@ const nextConfig = {
       {
         source: '/ingest/:path*',
         destination: 'https://app.posthog.com/:path*',
-        basePath: false,
+        // BEWARE: setting basePath will break the analytics proxy 
       },
     ]
   },
@@ -70,20 +68,27 @@ const nextConfig = {
         destination: '/docs',
         permanent: false,
         basePath: false,
-      }
+      },
     ]
-  }
+  },
 }
 
-export default withSearch(withMDX(withSentryConfig(nextConfig, {
-    silent: true,
-    org: 'e2b',
-    project: 'docs'
-  },
-  {
-    widenClientFileUpload: true,
-    transpileClientSDK: true,
-    tunnelRoute: '/monitoring',
-    hideSourceMaps: true,
-    disableLogger: true,
-  })))
+export default withSearch(
+  withMDX(
+    withSentryConfig(
+      nextConfig,
+      {
+        silent: true,
+        org: 'e2b',
+        project: 'docs',
+      },
+      {
+        widenClientFileUpload: true,
+        transpileClientSDK: true,
+        tunnelRoute: '/monitoring',
+        hideSourceMaps: true,
+        disableLogger: true,
+      }
+    )
+  )
+)

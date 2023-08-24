@@ -1,5 +1,5 @@
-import debounce from "lodash.debounce"
-import { useCallback, useMemo, useState } from "react"
+import debounce from 'lodash.debounce'
+import { useCallback, useMemo, useState } from 'react'
 
 function useExpiringState({ defaultValue, timeout }) {
   const [value, setValue] = useState(defaultValue)
@@ -13,14 +13,14 @@ function useExpiringState({ defaultValue, timeout }) {
         timeout,
         {
           leading: false,
-          trailing: true
+          trailing: true,
         }
       ),
     [timeout, defaultValue]
   )
 
   const set = useCallback(
-    newValue => {
+    (newValue) => {
       setValue(newValue)
       enqueExpiration()
     },
