@@ -103,10 +103,8 @@ function VisibleSectionHighlight({ group, pathname }) {
   let height = isPresent
     ? Math.max(1, visibleSections.length) * itemHeight
     : itemHeight
-  let top =
-    group.links.findIndex((link) => `/docs${link.href}` === pathname) *
-      itemHeight +
-    firstVisibleSectionIndex * itemHeight
+  let activePageIndex = activeGroupIndex(group, pathname)
+  let top = activePageIndex * itemHeight + firstVisibleSectionIndex * itemHeight
 
   return (
     <motion.div
@@ -129,9 +127,7 @@ function ActivePageMarker({
 }) {
   let itemHeight = remToPx(2)
   let offset = remToPx(0.25)
-  let activePageIndex = group.links.findIndex(
-    (link) => `/docs${link.href}` === pathname
-  )
+  let activePageIndex = activeGroupIndex(group, pathname)
   let top = offset + activePageIndex * itemHeight
 
   return (
@@ -151,14 +147,18 @@ function NavigationGroup({ group, className }) {
   // state, so that the state does not change during the close animation.
   // The state will still update when we re-open (re-render) the navigation.
   let isInsideMobileNavigation = useIsInsideMobileNavigation()
+  let initialPathname = usePathname();
+
+  // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
+  if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
+  
   let [pathname, sections] = useInitialValue(
-    [usePathname(), useSectionStore((s) => s.sections)],
+    [initialPathname, useSectionStore((s) => s.sections)],
     isInsideMobileNavigation
   )
-
-  let isActiveGroup =
-    group.links.findIndex((link) => `/docs${link.href}` === pathname) !== -1
-
+  
+  let isActiveGroup = activeGroupIndex(group, pathname) !== -1
+  
   return (
     <li className={clsx('relative mt-6', className)}>
       <motion.h2
@@ -341,4 +341,11 @@ export function Navigation(props) {
       </ul>
     </nav>
   )
+}
+
+function activeGroupIndex(group: NavGroup, pathname: string) {
+  return group.links.findIndex((link) => {
+    if (link.href === `/` && pathname === `/docs`) return true // special case for index
+    return `/docs${link.href}` === pathname
+  })
 }

@@ -1,5 +1,4 @@
 import asyncio
-import warnings
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import traceback
@@ -7,9 +6,12 @@ import traceback
 from typing import Awaitable, Literal, Optional, Callable, List, Any
 from pydantic import BaseModel
 
-
 from e2b.api.client.rest import ApiException
-from e2b.session.exception import MultipleExceptions, SessionException
+from e2b.session.exception import (
+    MultipleExceptions,
+    SessionException,
+    AuthenticationException,
+)
 from e2b.utils.future import DeferredFuture
 from e2b.session.session_rpc import SessionRpc, Notification
 from e2b.api.client import NewSession, Session as SessionInfo
@@ -63,9 +65,8 @@ class SessionConnection:
         on_close: Optional[Callable[[], Any]] = None,
     ):
         if api_key is None:
-            warnings.warn(
-                "API key will be required, please see https://e2b.dev/docs",
-                FutureWarning,
+            raise AuthenticationException(
+                "API key is required, please see https://e2b.dev/docs"
             )
 
         self._id = id

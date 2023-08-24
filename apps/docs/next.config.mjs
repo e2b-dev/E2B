@@ -57,7 +57,7 @@ const nextConfig = {
       {
         source: '/ingest/:path*',
         destination: 'https://app.posthog.com/:path*',
-        // BEWARE: setting basePath will break the analytics proxy 
+        // BEWARE: setting basePath will break the analytics proxy
       },
     ]
   },
