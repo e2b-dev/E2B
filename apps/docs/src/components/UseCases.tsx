@@ -81,6 +81,7 @@ function UseCasePattern({ mouseX, mouseY, ...gridProps }) {
   return (
     <div className="pointer-events-none">
       <div className="absolute inset-0 rounded-2xl transition duration-300 [mask-image:linear-gradient(white,transparent)] group-hover:opacity-50">
+        {/* @ts-ignore */}
         <GridPattern
           width={72}
           height={56}
@@ -97,6 +98,7 @@ function UseCasePattern({ mouseX, mouseY, ...gridProps }) {
         className="absolute inset-0 rounded-2xl opacity-0 mix-blend-overlay transition duration-300 group-hover:opacity-100"
         style={style}
       >
+        {/* @ts-ignore */}
         <GridPattern
           width={72}
           height={56}
@@ -146,6 +148,7 @@ function UseCase({ useCase }) {
 export function UseCases() {
   return (
     <div className="xl:max-w-none">
+      {/* @ts-ignore */}
       <Heading level={1} id="useCases">
         Use Cases
       </Heading>

@@ -12,6 +12,7 @@ import { DiscordIcon } from '@/components/icons/DiscordIcon';
 function PageLink({ label, page, previous = false }) {
   return (
     <>
+      {/* @ts-ignore */}
       <Button
         href={page.href}
         aria-label={`${label}: ${page.title}`}

@@ -105,6 +105,7 @@ function CodeGroupPanels({ children, ...props }) {
       <Tab.Panels>
         {Children.map(children, (child) => (
           <Tab.Panel>
+            {/* @ts-ignore */}
             <CodePanel {...props}>{child}</CodePanel>
           </Tab.Panel>
         ))}
@@ -112,6 +113,7 @@ function CodeGroupPanels({ children, ...props }) {
     )
   }
 
+  // @ts-ignore
   return <CodePanel {...props}>{children}</CodePanel>
 }
 
@@ -128,11 +130,14 @@ function usePreventLayoutShift() {
   return {
     positionRef,
     preventLayoutShift(callback) {
+      // @ts-ignore
       let initialTop = positionRef.current.getBoundingClientRect().top
 
       callback()
 
+      // @ts-ignore
       rafRef.current = window.requestAnimationFrame(() => {
+        // @ts-ignore
         let newTop = positionRef.current.getBoundingClientRect().top
         window.scrollBy(0, newTop - initialTop)
       })
@@ -154,6 +159,7 @@ const usePreferredLanguageStore = create((set) => ({
 }))
 
 function useTabGroupProps(availableLanguages) {
+  // @ts-ignore
   let { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
   let [selectedIndex, setSelectedIndex] = useState(0)
   let activeLanguage = [...availableLanguages].sort(
@@ -195,8 +201,10 @@ export function CodeGroup({ children, title, ...props }) {
     <CodeGroupContext.Provider value={true}>
       <Container
         {...containerProps}
+        // @ts-ignore
         className="not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10"
       >
+        {/* @ts-ignore */}
         <CodeGroupHeader title={title} {...headerProps}>
           {children}
         </CodeGroupHeader>
@@ -228,5 +236,6 @@ export function Pre({ children, ...props }) {
     return children
   }
 
+  // @ts-ignore
   return <CodeGroup {...props}>{children}</CodeGroup>
 }

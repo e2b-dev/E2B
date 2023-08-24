@@ -6,7 +6,7 @@ import FeedbackButton from './FeedbackButton'
 import FeedbackModal from './FeedbackModal'
 import useExpiringState from '@/utils/useExpiringState';
 
-export function Feedback({ className, variant }) {
+export function Feedback({ className, variant }: { className?: string, variant?: string }) {
   const [open, setOpen] = useState(false)
   const [isFinished, setIsFinished] = useExpiringState({ defaultValue: false, timeout: 4000 })
 

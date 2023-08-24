@@ -149,6 +149,7 @@ function NavigationGroup({ group, className }) {
         <ul role="list" className="border-l border-transparent">
           {group.links.map((link) => (
             <motion.li key={link.href} layout="position" className="relative">
+              {/* @ts-ignore */}
               <NavLink href={link.href} active={`/docs${link.href}` === pathname} isFontMono={link.isFontMono}>
                 {link.title}
               </NavLink>
@@ -168,6 +169,7 @@ function NavigationGroup({ group, className }) {
                   >
                     {sections.map((section) => (
                       <li key={section.id}>
+                        {/* @ts-ignore */}
                         <NavLink
                           href={`${link.href}#${section.id}`}
                           tag={section.tag}

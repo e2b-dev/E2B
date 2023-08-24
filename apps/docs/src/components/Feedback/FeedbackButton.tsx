@@ -18,6 +18,7 @@ function FeedbackButton({
   className,
 }) {
   return (
+    // @ts-ignore
     <Button
       onMouseDown={onClick}
       variant={variant}

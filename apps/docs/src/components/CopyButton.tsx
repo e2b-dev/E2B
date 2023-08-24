@@ -30,6 +30,7 @@ export function CopyButton({
     if (copyCount > 0) {
       let timeout = setTimeout(() => {
         setCopyCount(0);
+        // @ts-ignore
         buttonRef.current?.blur()
       }, 1000)
       return () => {

@@ -57,4 +57,5 @@ export function PostHogAnalytics() {
     }
   }, [user])
   
+  return null
 }

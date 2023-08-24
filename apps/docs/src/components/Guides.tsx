@@ -29,6 +29,7 @@ const guides = [
 export function Guides() {
   return (
     <div className="my-16 xl:max-w-none">
+      {/* @ts-ignore */}
       <Heading level={2} id="guides">
         Guides
       </Heading>
@@ -42,6 +43,7 @@ export function Guides() {
               {guide.description}
             </p>
             <p className="mt-4">
+              {/* @ts-ignore */}
               <Button href={guide.href} variant="text" arrow="right">
                 Read more
               </Button>

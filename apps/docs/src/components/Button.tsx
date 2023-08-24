@@ -54,6 +54,7 @@ export function Button({
   )
 
   return (
+    // @ts-ignore
     <Component className={className} {...props}>
       {arrow === 'left' && arrowIcon}
       {children}

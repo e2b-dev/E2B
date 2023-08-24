@@ -47,7 +47,9 @@ function useAutocomplete({ close }) {
       navigator: {
         navigate,
       },
+      // @ts-ignore
       getSources({ query }) {
+        // @ts-ignore
         return import('@/mdx/search.mjs').then(({ search }) => {
           return [
             {
@@ -225,6 +227,7 @@ function SearchResults({ autocomplete, query, collection }) {
 }
 
 const SearchInput = forwardRef(function SearchInput(
+  // @ts-ignore
   { autocomplete, autocompleteState, onClose },
   inputRef
 ) {
@@ -248,6 +251,7 @@ const SearchInput = forwardRef(function SearchInput(
           ) {
             // In Safari, closing the dialog with the escape key can sometimes cause the scroll position to jump to the
             // bottom of the page. This is a workaround for that until we can figure out a proper fix in Headless UI.
+            // @ts-ignore
             document.activeElement?.blur()
 
             onClose()
@@ -308,6 +312,7 @@ function SearchDialog({ open, setOpen, className }) {
     afterLeave={() => autocomplete.setQuery('')}
     rootProps={autocomplete.getRootProps({})}
   >
+    {/* @ts-ignore */}
     <form
       ref={formRef}
       {...autocomplete.getFormProps({
@@ -316,19 +321,24 @@ function SearchDialog({ open, setOpen, className }) {
     >
       <SearchInput
         ref={inputRef}
+        // @ts-ignore
         autocomplete={autocomplete}
         autocompleteState={autocompleteState}
         onClose={() => setOpen(false)}
       />
+      {/* @ts-ignore */}
       <div
         ref={panelRef}
         className="border-t border-zinc-200 bg-white empty:hidden dark:border-zinc-100/5 dark:bg-white/2.5"
         {...autocomplete.getPanelProps({})}
       >
+        {/* @ts-ignore */}
         {autocompleteState.isOpen && (
           <SearchResults
             autocomplete={autocomplete}
+            // @ts-ignore
             query={autocompleteState.query}
+            // @ts-ignore
             collection={autocompleteState.collections[0]}
           />
         )}
@@ -358,6 +368,7 @@ function useSearchProps() {
       // },
       setOpen: useCallback(
         (open) => {
+          // @ts-ignore
           let { width, height } = buttonRef.current.getBoundingClientRect()
           if (!open || (width !== 0 && height !== 0)) {
             setOpen(open)
@@ -375,6 +386,7 @@ export function Search() {
 
   useEffect(() => {
     setModifierKey(
+      // @ts-ignore
       /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? '⌘' : 'Ctrl '
     )
   }, [])
