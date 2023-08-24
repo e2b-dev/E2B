@@ -128,6 +128,9 @@ function CodeGroupHeader({
         <Tab.List className="-mb-px flex gap-4 text-xs font-medium">
           {Children.map(children, (child, childIndex) => (
             <Tab
+              /* Set ID due to bug in Next https://github.com/vercel/next.js/issues/53110 */
+              /* Should ne fixed after updating Next to > 13.4.12 */
+              id={`code-tab-${childIndex}`}
               className={clsx(
                 'border-b py-3 transition ui-not-focus-visible:outline-none',
                 childIndex === selectedIndex
@@ -153,8 +156,10 @@ function CodeGroupPanels({
   if (hasTabs) {
     return (
       <Tab.Panels>
-        {Children.map(children, (child) => (
-          <Tab.Panel>
+        {/* Set ID due to bug in Next https://github.com/vercel/next.js/issues/53110 */}
+        {/* Should ne fixed after updating Next to > 13.4.12 */}
+        {Children.map(children, (child, childIndex) => (
+          <Tab.Panel id={`code-tab-${childIndex}`}>
             <CodePanel {...props}>{child}</CodePanel>
           </Tab.Panel>
         ))}
