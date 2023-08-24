@@ -29,6 +29,8 @@ type APIStore struct {
 	posthog       posthog.Client
 }
 
+var posthogAPIKey = os.Getenv("POSTHOG_API_KEY")
+
 func NewAPIStore() *APIStore {
 	fmt.Println("Initializing API store")
 
@@ -68,7 +70,6 @@ func NewAPIStore() *APIStore {
 	// Comment this line out if you are developing locally to prevent killing sessions in production
 	go cache.KeepInSync(nomadClient)
 
-	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
 	client, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
 		Interval:  30 * time.Second,
 		BatchSize: 100,
