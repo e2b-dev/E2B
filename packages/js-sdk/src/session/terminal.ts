@@ -1,13 +1,67 @@
 import { EnvVars } from './envVars'
+import { SessionConnection } from './sessionConnection'
 
 export const terminalService = 'terminal'
 
-export interface Terminal {
-  readonly sendData: (data: string) => Promise<void>
-  readonly resize: ({ cols, rows }: { cols: number; rows: number }) => Promise<void>
-  readonly kill: () => Promise<void>
-  readonly terminalID: string
-  readonly finished: Promise<void>
+export class TerminalOutput {
+  private _data = ''
+
+  get data() {
+    return this._data
+  }
+
+  addData(data: string) {
+    this._data += data
+  }
+}
+
+/**
+ * A terminal session running in the environment.
+ */
+export class Terminal {
+  constructor(
+    readonly terminalID: string,
+    private readonly session: SessionConnection,
+    private readonly triggerExit: () => void,
+    readonly finished: Promise<TerminalOutput>,
+    readonly output: TerminalOutput,
+  ) {}
+
+  get data() {
+    return this.output.data
+  }
+
+  /**
+   * Kills the terminal session.
+   */
+  async kill(): Promise<void> {
+    try {
+      // TODO: Change the "destroy" to "kill" in devbookd
+      await this.session.call(terminalService, 'destroy', [this.terminalID])
+    } finally {
+      this.triggerExit()
+      await this.finished
+    }
+  }
+
+  /**
+   * Sends data to the terminal standard input.
+   *
+   * @param data Data to send
+   */
+  async sendData(data: string): Promise<void> {
+    await this.session.call(terminalService, 'data', [this.terminalID, data])
+  }
+
+  /**
+   * Resizes the terminal tty.
+   *
+   * @param cols Number of columns
+   * @param rows Number of rows
+   */
+  async resize({ cols, rows }: { cols: number; rows: number }): Promise<void> {
+    await this.session.call(terminalService, 'resize', [this.terminalID, cols, rows])
+  }
 }
 
 export interface TerminalManager {

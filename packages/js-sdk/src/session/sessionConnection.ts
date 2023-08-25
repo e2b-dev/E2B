@@ -120,79 +120,6 @@ export class SessionConnection {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async call(service: Service, method: string, params?: any[]) {
-    return this.rpc.call(`${service}_${method}`, params)
-  }
-
-  async handleSubscriptions<
-    T extends (ReturnType<SessionConnection['subscribe']> | undefined)[],
-  >(
-    ...subs: T
-  ): Promise<{
-    [P in keyof T]: Awaited<T[P]>
-  }> {
-    const results = await Promise.allSettled(subs)
-
-    if (results.every(r => r.status === 'fulfilled')) {
-      return results.map(r => (r.status === 'fulfilled' ? r.value : undefined)) as {
-        [P in keyof T]: Awaited<T[P]>
-      }
-    }
-
-    await Promise.all(
-      results
-        .filter(assertFulfilled)
-        .map(r => (r.value ? this.unsubscribe(r.value) : undefined)),
-    )
-
-    throw new Error(formatSettledErrors(results))
-  }
-
-  async unsubscribe(subID: string) {
-    const subscription = this.subscribers.find(s => s.subID === subID)
-    if (!subscription) return
-
-    await this.call(subscription.service, 'unsubscribe', [subscription.subID])
-
-    this.subscribers = this.subscribers.filter(s => s !== subscription)
-    this.logger.log(`Unsubscribed '${subID}' from '${subscription.service}'`)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async subscribe(
-    service: Service,
-    handler: SubscriptionHandler,
-    method: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...params: any[]
-  ) {
-    const subID = await this.call(service, 'subscribe', [method, ...params])
-
-    if (typeof subID !== 'string') {
-      throw new Error(
-        // eslint-disable-next-line prettier/prettier
-        `Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
-        }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
-          subID,
-        )}`,
-      )
-    }
-
-    this.subscribers.push({
-      handler,
-      service,
-      subID,
-    })
-    this.logger.log(
-      // eslint-disable-next-line prettier/prettier
-      `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
-      } with id "${subID}"`,
-    )
-
-    return subID
-  }
-
   /**
    * Open a connection to a new session
    *
@@ -307,6 +234,79 @@ export class SessionConnection {
 
     await openingPromise
     return this
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async call(service: Service, method: string, params?: any[]) {
+    return this.rpc.call(`${service}_${method}`, params)
+  }
+
+  async handleSubscriptions<
+    T extends (ReturnType<SessionConnection['subscribe']> | undefined)[],
+  >(
+    ...subs: T
+  ): Promise<{
+    [P in keyof T]: Awaited<T[P]>
+  }> {
+    const results = await Promise.allSettled(subs)
+
+    if (results.every(r => r.status === 'fulfilled')) {
+      return results.map(r => (r.status === 'fulfilled' ? r.value : undefined)) as {
+        [P in keyof T]: Awaited<T[P]>
+      }
+    }
+
+    await Promise.all(
+      results
+        .filter(assertFulfilled)
+        .map(r => (r.value ? this.unsubscribe(r.value) : undefined)),
+    )
+
+    throw new Error(formatSettledErrors(results))
+  }
+
+  async unsubscribe(subID: string) {
+    const subscription = this.subscribers.find(s => s.subID === subID)
+    if (!subscription) return
+
+    await this.call(subscription.service, 'unsubscribe', [subscription.subID])
+
+    this.subscribers = this.subscribers.filter(s => s !== subscription)
+    this.logger.log(`Unsubscribed '${subID}' from '${subscription.service}'`)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async subscribe(
+    service: Service,
+    handler: SubscriptionHandler,
+    method: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...params: any[]
+  ) {
+    const subID = await this.call(service, 'subscribe', [method, ...params])
+
+    if (typeof subID !== 'string') {
+      throw new Error(
+        // eslint-disable-next-line prettier/prettier
+        `Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
+        }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
+          subID,
+        )}`,
+      )
+    }
+
+    this.subscribers.push({
+      handler,
+      service,
+      subID,
+    })
+    this.logger.log(
+      // eslint-disable-next-line prettier/prettier
+      `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
+      } with id "${subID}"`,
+    )
+
+    return subID
   }
 
   private handleNotification(data: IRpcNotification) {
