@@ -1,8 +1,10 @@
 import asyncio
 import json
 import logging
+from queue import Queue
 from threading import Event
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Union
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
+                    Union)
 
 from e2b.session.exception import SessionException
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
@@ -14,6 +16,8 @@ from websockets import WebSocketClientProtocol, connect
 from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
+
+PONG = object()
 
 
 class RpcException(SessionException):
@@ -78,7 +82,7 @@ class SessionRpc(BaseModel):
     _id_generator: Iterator[int] = PrivateAttr(default_factory=decimal_id_generator)
     _waiting_for_replies: Dict[int, DeferredFuture] = PrivateAttr(default_factory=dict)
     _ws: Optional[WebSocketClientProtocol] = PrivateAttr()
-
+    _queue: Queue = PrivateAttr(default_factory=Queue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
 
     class Config:
@@ -103,15 +107,35 @@ class SessionRpc(BaseModel):
                 async def keep_pong():
                     while not cancel_event.is_set():
                         await asyncio.sleep(5)
-                        await websocket.pong()
+                        self._queue.put(PONG)
+
+                async def send_message():
+                    while True:
+                        if self._queue.empty():
+                            await asyncio.sleep(0.1)
+                            continue
+                        m = self._queue.get()
+                        if m == PONG:
+                            logger.debug("Sending pong")
+                            await websocket.ping()
+                            continue
+                        else:
+                            logger.debug(f"Sending message: {m}")
+                            await websocket.send(m)
 
                 ponging = asyncio.to_thread(
                     run_async_func_in_new_loop,
                     keep_pong(),
                 )
+                messaging = asyncio.to_thread(
+                    run_async_func_in_new_loop,
+                    send_message(),
+                )
 
                 ponging_task = asyncio.create_task(ponging)
+                messaging_task = asyncio.create_task(messaging)
                 self._process_cleanup.append(ponging_task.cancel)
+                self._process_cleanup.append(messaging_task.cancel)
 
                 logger.info(f"Connected to {self.url}")
                 future_connect(None)
@@ -141,7 +165,7 @@ class SessionRpc(BaseModel):
         try:
             self._waiting_for_replies[id] = future_reply
             logger.info(f"Sending request: {request}")
-            await self._ws.send(request)
+            self._queue.put(request)
             r = await future_reply
             logger.info(f"Received reply: {r}")
             return r
