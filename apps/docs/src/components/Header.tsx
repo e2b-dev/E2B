@@ -81,14 +81,14 @@ export const Header = forwardRef(function Header({ className }, ref) {
       <div className="flex items-center gap-4">
         <nav className="hidden md:block">
           <ul role="list" className="flex items-center gap-4">
-            <TopLevelNavItem href="https://discord.gg/U7KEcGErtQ">
-              <DiscordIcon className="h-5 w-5 fill-current" />
-            </TopLevelNavItem>
             <TopLevelNavItem href="https://twitter.com/e2b_dev">
               <TwitterIcon className="h-5 w-5 fill-current" />
             </TopLevelNavItem>
             <TopLevelNavItem href="https://github.com/e2b-dev/e2b">
               <GitHubIcon className="h-5 w-5 fill-current" />
+            </TopLevelNavItem>
+            <TopLevelNavItem href="https://discord.gg/U7KEcGErtQ">
+              <DiscordIcon className="h-5 w-5 fill-current" />
             </TopLevelNavItem>
           </ul>
         </nav>

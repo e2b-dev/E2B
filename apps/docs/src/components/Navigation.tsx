@@ -151,14 +151,14 @@ function NavigationGroup({ group, className }) {
 
   // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
   if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
-  
+
   let [pathname, sections] = useInitialValue(
     [initialPathname, useSectionStore((s) => s.sections)],
     isInsideMobileNavigation
   )
-  
+
   let isActiveGroup = activeGroupIndex(group, pathname) !== -1
-  
+
   return (
     <li className={clsx('relative mt-6', className)}>
       <motion.h2
@@ -246,14 +246,14 @@ export const navigation = [
       { title: 'SDK Basics', href: '/getting-started/basics' },
     ],
   },
-  // {
-  //   title: 'AI Playgrounds',
-  //   links: [
-  //     { title: 'Overview', href: '/playgrounds/overview' },
-  //     { title: 'Limitations', href: '/playgrounds/limitations' },
-  //     // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
-  //   ],
-  // },
+  {
+    title: 'AI Playgrounds',
+    links: [
+      { title: 'Overview', href: '/playgrounds/overview' },
+      { title: 'Limitations', href: '/playgrounds/limitations' },
+      // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
+    ],
+  },
   // {
   //   title: 'AI Environments',
   //   links: [

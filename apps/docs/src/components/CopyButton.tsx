@@ -45,10 +45,10 @@ export function CopyButton({
       ref={buttonRef}
       className={clsx(
         customPositionClassNames,
-        'group/button absolute overflow-hidden rounded-full py-1 pl-2 pr-3 text-2xs font-medium opacity-0 backdrop-blur transition focus:opacity-100 group-hover:opacity-100',
+        'border border-zinc-700 group/button absolute overflow-hidden rounded-full py-1 pl-2 pr-3 text-2xs font-medium opacity-0 transition focus:opacity-100 group-hover:opacity-100',
         copied
-          ? 'bg-emerald-400/10 ring-1 ring-inset ring-emerald-400/20'
-          : 'bg-white/5 hover:bg-white/7.5 dark:bg-white/2.5 dark:hover:bg-white/5'
+          ? 'bg-emerald-400/20 ring-1 ring-inset ring-emerald-400/20'
+          : 'bg-white/5 hover:bg-white/7.5 dark:bg-white/2.5 dark:hover:bg-red-500/'
       )}
       onClick={() => {
         window.navigator.clipboard.writeText(code).then(() => {

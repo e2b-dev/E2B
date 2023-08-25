@@ -63,8 +63,8 @@ export const Auth = function () {
               gap-2 text-xs
             "
           >
-            <span className="whitespace-nowrap text-zinc-400 group-hover:opacity-25">
-              API key
+            <span className="font-bold whitespace-nowrap text-zinc-400 group-hover:opacity-25">
+              API Key
             </span>
             <span className="whitespace-nowrap font-mono text-yellow-400 group-hover:opacity-25">
               {obfuscateKey(apiKey)}
