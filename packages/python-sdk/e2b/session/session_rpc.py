@@ -1,13 +1,13 @@
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from queue import Queue
 from typing import Any, Callable, Dict, Iterator, List
 
 from e2b.session.event import Event
 from e2b.session.exception import RpcException
 from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
-from janus import Queue
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response
@@ -64,9 +64,12 @@ class SessionRpc(BaseModel):
 
     async def process_messages(self):
         while True:
-            data = await self._queue_out.async_q.get()
+            if self._queue_out.empty():
+                await asyncio.sleep(0.1)
+                continue
+            data = self._queue_out.get()
             await self._receive_message(data)
-            self._queue_out.async_q.task_done()
+            self._queue_out.task_done()
 
     async def connect(self):
         started = Event()
@@ -94,8 +97,8 @@ class SessionRpc(BaseModel):
         try:
             self._waiting_for_replies[id] = future_reply
             logger.info(f"Queueing: {request}")
-            await self._queue_in.async_q.put(request)
-            logger.info(f"Queue size: {self._queue_in.async_q.qsize()}")
+            self._queue_in.put(request)
+            logger.info(f"Queue size: {self._queue_in.qsize()}")
             logger.info(f"Waiting for reply: {request}")
             r = await future_reply
             return r
