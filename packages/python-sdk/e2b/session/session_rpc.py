@@ -1,28 +1,17 @@
 import asyncio
 import json
 import logging
-
 from threading import Event
-from websockets.client import WebSocketClientProtocol, connect
-from typing import (
-    Callable,
-    Optional,
-    Any,
-    Dict,
-    List,
-    Union,
-    Iterable,
-    Iterator,
-)
-from pydantic import BaseModel, PrivateAttr
-from jsonrpcclient import request_json, Ok
-from jsonrpcclient.id_generators import decimal as decimal_id_generator
-from jsonrpcclient.responses import Response, Error, Deserialized
-from websockets.typing import Data
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Union
 
 from e2b.session.exception import SessionException
-from e2b.utils.future import run_async_func_in_new_loop
-from e2b.utils.future import DeferredFuture
+from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+from jsonrpcclient import Ok, request_json
+from jsonrpcclient.id_generators import decimal as decimal_id_generator
+from jsonrpcclient.responses import Deserialized, Error, Response
+from pydantic import BaseModel, PrivateAttr
+from websockets import WebSocketClientProtocol, connect
+from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
 
@@ -99,13 +88,13 @@ class SessionRpc(BaseModel):
         future_connect = DeferredFuture(self._process_cleanup)
 
         async def handle_messages():
-            async with connect(
+            async for websocket in connect(
                 self.url,
                 ping_interval=None,
                 ping_timeout=None,
                 max_queue=None,
                 max_size=None,
-            ) as websocket:
+            ):
                 self._ws = websocket
                 cancel_event = Event()
 
