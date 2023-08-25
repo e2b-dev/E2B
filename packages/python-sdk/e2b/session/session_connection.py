@@ -58,10 +58,10 @@ class SessionConnection:
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
         on_close: Optional[Callable[[], Any]] = None,
     ):
-        # if api_key is None:
-        #     raise AuthenticationException(
-        #         "API key is required, please see https://e2b.dev/docs"
-        #     )
+        if api_key is None:
+            raise AuthenticationException(
+                "API key is required, please see https://e2b.dev/docs"
+            )
 
         self._id = id
         self._api_key = api_key
