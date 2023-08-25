@@ -274,9 +274,9 @@ class ProcessManager:
             )
             if unsub_all:
                 await unsub_all()
-            future_exit_handler_finish(output)
             if on_exit:
                 on_exit()
+            future_exit_handler_finish(output)
 
         exit_task = asyncio.create_task(exit_handler())
         self._process_cleanup.append(exit_task.cancel)
