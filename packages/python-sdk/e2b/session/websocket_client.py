@@ -1,12 +1,12 @@
 import asyncio
 import json
 import logging
+from queue import Queue
 from threading import Event
 from typing import Any, Callable, Dict, List
 
 from e2b.session.exception import RpcException
 from e2b.utils.future import DeferredFuture
-from janus import AsyncQueue, Queue
 from jsonrpcclient import Ok
 from jsonrpcclient.responses import Error, Response
 from pydantic import BaseModel
@@ -14,13 +14,6 @@ from websockets import connect
 from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
-
-
-class Pong:
-    pass
-
-
-PONG = Pong()
 
 
 class Notification(BaseModel):
@@ -33,25 +26,6 @@ class Notification(BaseModel):
 Message = Response | Notification
 
 
-def to_response_or_notification(response: Dict[str, Any]) -> Message:
-    """Create a Response namedtuple from a dict"""
-    logger.info(f"Received response: {response}")
-    if "error" in response:
-        return Error(
-            response["error"]["code"],
-            response["error"]["message"],
-            response["error"].get("data"),
-            response["id"],
-        )
-    elif "result" in response and "id" in response:
-        return Ok(response["result"], response["id"])
-
-    elif "params" in response:
-        return Notification(method=response["method"], params=response["params"])
-
-    raise ValueError("Invalid response", response)
-
-
 class WebSocket:
     def __init__(
         self,
@@ -59,7 +33,8 @@ class WebSocket:
         on_message: Callable[[Notification], None],
         started: Event,
         cancelled: Event,
-        queue: AsyncQueue[dict | Pong],
+        queue_in: Queue[dict],
+        queue_out: Queue[dict],
         waiting_for_replies: Dict[int, DeferredFuture],
     ):
         self._ws = None
@@ -68,14 +43,12 @@ class WebSocket:
         self.started = started
         self.cancelled = cancelled
         self._process_cleanup: List[Callable[[], Any]] = []
-        self._queue = queue
+        self._queue_in = queue_in
+        self._queue_out = queue_out
         self._waiting_for_replies = waiting_for_replies
 
     async def run(self):
         await self.connect()
-        while not self.cancelled.is_set():
-            await asyncio.sleep(5)
-            await self.pong()
         await self.close()
 
     async def connect(self):
@@ -84,27 +57,26 @@ class WebSocket:
         async def handle_messages():
             async for websocket in connect(
                 self.url,
-                ping_interval=None,
-                ping_timeout=None,
                 max_queue=None,
                 max_size=None,
             ):
+                logger.info("WS Connected")
                 self._ws = websocket
                 cancel_event = Event()
 
                 self._process_cleanup.append(cancel_event.set)
 
                 async def send_message():
+                    logger.info("Starting to send messages")
                     while True:
-                        if self._queue.empty():
+                        logger.info("While true")
+                        if self._queue_in.empty():
+                            logger.info("Queue is empty")
                             await asyncio.sleep(0.1)
-                            continue
-                        m = await self._queue.get()
-                        logger.info(f"Sending message: {m}")
-                        if m == PONG:
-                            logger.debug("Sending pong")
-                            await websocket.pong()
-                        else:
+                        logger.info("Queue is not empty")
+                        m = self._queue_in.get(block=False)
+                        logger.info(f"Got message: {m}")
+                        if m:
                             logger.debug(f"Sending message: {m}")
                             await websocket.send(m)
 
@@ -115,51 +87,19 @@ class WebSocket:
                 future_connect(None)
                 try:
                     async for message in self._ws:
-                        await self._receive_message(message)
+                        logger.debug(f"Received message: {message}")
+                        self._queue_out.put(message)
                 except Exception as e:
                     logger.error(f"Error: {e}")
 
-            if not self._ws:
-                raise Exception("Not connected")
-            async for message in self._ws:
-                await self._receive_message(message)
-
         handle_messages_task = asyncio.create_task(handle_messages())
         self._process_cleanup.append(handle_messages_task.cancel)
+        logger.info("Future Connecting")
         await future_connect
+        logger.info("Future Connected")
         self.started.set()
-
-    async def _receive_message(self, data: Data):
-        message = to_response_or_notification(json.loads(data))
-
-        logger.info(f"Current waiting handlers: {self._waiting_for_replies}")
-        if isinstance(message, Ok):
-            if (
-                message.id in self._waiting_for_replies
-                and self._waiting_for_replies[message.id]
-            ):
-                self._waiting_for_replies[message.id](message.result)
-                return
-        elif isinstance(message, Error):
-            if (
-                message.id in self._waiting_for_replies
-                and self._waiting_for_replies[message.id]
-            ):
-                self._waiting_for_replies[message.id].reject(
-                    RpcException(
-                        code=message.code,
-                        message=message.message,
-                        id=message.id,
-                        data=message.data,
-                    )
-                )
-                return
-
-        elif isinstance(message, Notification):
-            self.on_message(message)
-
-    async def pong(self):
-        await self._queue.put(PONG)
+        logger.info("Started")
+        await asyncio.sleep(1000)
 
     def _close(self):
         for cancel in self._process_cleanup:
@@ -174,10 +114,11 @@ class WebSocket:
             await self._ws.close()
 
 
-def start_websocket(
+async def start_websocket(
     url,
     on_message: Callable[[Notification], None],
-    queue: Queue,
+    queue_in: Queue,
+    queue_out: Queue,
     waiting_for_replies: Dict[int, DeferredFuture],
     started: Event,
     cancel_event: Event,
@@ -187,7 +128,8 @@ def start_websocket(
         on_message=on_message,
         cancelled=cancel_event,
         started=started,
-        queue=queue.async_q,
+        queue_in=queue_in,
+        queue_out=queue_out,
         waiting_for_replies=waiting_for_replies,
     )
-    asyncio.run(websocket.run())
+    await websocket.run()
