@@ -10,6 +10,7 @@ class OpenPort(BaseModel):
     port: int
     state: str
 
+
 ScanOpenedPortsHandler = Callable[[List[OpenPort]], Any]
 
 

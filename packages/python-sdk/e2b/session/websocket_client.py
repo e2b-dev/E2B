@@ -1,16 +1,11 @@
 import asyncio
 import logging
-
-from websockets import WebSocketClientProtocol
-from janus import Queue
 from typing import Any, Callable, List
-from websockets.typing import Data
-
-from websockets import connect
 
 from e2b.session.event import Event
-from e2b.utils.future import DeferredFuture
-
+from janus import Queue
+from websockets import WebSocketClientProtocol, connect
+from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
 
@@ -37,51 +32,36 @@ class WebSocket:
         await self.cancelled.wait()
         await self.close()
 
+    async def send_message(self):
+        logger.info("Starting to send messages")
+        while True:
+            message = await self._queue_in.async_q.get()
+            logger.debug(f"Got message: {message}")
+            if self._ws:
+                await self._ws.send(message)
+                self._queue_in.async_q.task_done()
+            else:
+                logger.error("No websocket connection")
+
+    async def handle_messages(self):
+        async for websocket in connect(self.url, max_queue=None, max_size=None):
+            self._ws = websocket
+
+            messaging_task = asyncio.create_task(self.send_message())
+            self._process_cleanup.append(messaging_task.cancel)
+
+            logger.info(f"Connected to {self.url}")
+            self.started.set()
+            try:
+                async for message in self._ws:
+                    logger.debug(f"Received message: {message}")
+                    await self._queue_out.async_q.put(message)
+            except Exception as e:
+                logger.error(f"Error: {e}")
+
     async def connect(self):
-        future_connect = DeferredFuture(self._process_cleanup)
-
-        async def handle_messages():
-            async for websocket in connect(
-                self.url,
-                max_queue=None,
-                max_size=None,
-            ):
-                logger.info("WS Connected")
-                self._ws = websocket
-                cancel_event = Event()
-
-                self._process_cleanup.append(cancel_event.set)
-
-                async def send_message():
-                    logger.info("Starting to send messages")
-                    while True:
-                        message = await self._queue_in.async_q.get()
-                        logger.info(f"Got message: {message}")
-                        if self._ws:
-                            await self._ws.send(message)
-                            self._queue_in.async_q.task_done()
-                        else:
-                            logger.error("No websocket connection")
-
-                messaging_task = asyncio.create_task(send_message())
-                self._process_cleanup.append(messaging_task.cancel)
-
-                logger.info(f"Connected to {self.url}")
-                future_connect(None)
-                try:
-                    async for message in self._ws:
-                        logger.debug(f"Received message: {message}")
-                        await self._queue_out.async_q.put(message)
-                except Exception as e:
-                    logger.error(f"Error: {e}")
-
-        handle_messages_task = asyncio.create_task(handle_messages())
+        handle_messages_task = asyncio.create_task(self.handle_messages())
         self._process_cleanup.append(handle_messages_task.cancel)
-        logger.info("Future Connecting")
-        await future_connect
-        logger.info("Future Connected")
-        self.started.set()
-        logger.info("Started")
 
     def _close(self):
         for cancel in self._process_cleanup:
@@ -112,4 +92,3 @@ class WebSocket:
             queue_out=queue_out,
         )
         await websocket.run()
-        return websocket

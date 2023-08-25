@@ -2,6 +2,7 @@ import asyncio
 
 from janus import Queue
 
+
 class _Event(asyncio.Event):
     # TODO: clear() method
     def set(self):

@@ -1,22 +1,18 @@
 import json
 import logging
-
-
 from concurrent.futures import ThreadPoolExecutor
-from janus import Queue
 from typing import Any, Callable, Dict, Iterator, List
-
-from jsonrpcclient import Error, Ok, request_json
-from jsonrpcclient.id_generators import decimal as decimal_id_generator
-from jsonrpcclient.responses import Response
-from pydantic import BaseModel, PrivateAttr
-from websockets.typing import Data
 
 from e2b.session.event import Event
 from e2b.session.exception import RpcException
 from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
-
+from janus import Queue
+from jsonrpcclient import Error, Ok, request_json
+from jsonrpcclient.id_generators import decimal as decimal_id_generator
+from jsonrpcclient.responses import Response
+from pydantic import BaseModel, PrivateAttr
+from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +28,7 @@ class Notification(BaseModel):
 
 
 Message = Response | Notification
+
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
     """Create a Response namedtuple from a dict"""
@@ -71,27 +68,22 @@ class SessionRpc(BaseModel):
             await self._receive_message(data)
             self._queue_out.async_q.task_done()
 
-
     async def connect(self):
         started = Event()
         cancelled = Event()
         task = asyncio.create_task(self.process_messages())
-        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="e2b_ws")
-        websocket_task = asyncio.get_running_loop().run_in_executor(
-            executor,
-            run_async_func_in_new_loop,
+        websocket_task = asyncio.create_task(
             WebSocket.start(
                 self.url,
                 self._queue_in,
                 self._queue_out,
                 started,
                 cancelled,
-            ),
+            )
         )
+        self._process_cleanup.append(websocket_task.cancel)
         self._process_cleanup.append(task.cancel)
         self._process_cleanup.append(cancelled.set)
-        self._process_cleanup.append(websocket_task.cancel)
-        self._process_cleanup.append(lambda: executor.shutdown(wait=False, cancel_futures=True))
         await started.wait()
 
     async def send_message(self, method: str, params: List[Any]) -> Any:
@@ -142,7 +134,6 @@ class SessionRpc(BaseModel):
 
         elif isinstance(message, Notification):
             self.on_message(message)
-
 
     def _close(self):
         for cancel in self._process_cleanup:
