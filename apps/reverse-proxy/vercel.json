@@ -2,6 +2,7 @@
   "github": {
     "silent": true
   },
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/",
@@ -64,16 +65,6 @@
       ]
     },
     {
-      "source": "/changelog/:path*",
-      "destination": "https://e2b-changelog.framer.website/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ]
-    },
-    {
       "source": "/blog(\\/)?",
       "destination": "https://e2b-blog.framer.website",
       "has": [
@@ -85,7 +76,7 @@
     },
     {
       "source": "/blog/:path*",
-      "destination": "https://e2b-blog.framer.website/:path*",
+      "destination": "https://e2b-blog.framer.website/blog/:path*",
       "has": [
         {
           "type": "host",
@@ -119,7 +110,18 @@
     },
     {
       "source": "/log/:path*",
-      "destination": "https://e2b.dev/blog/log/:path*",
+      "destination": "https://e2b.dev/blog/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "e2b.dev"
+        }
+      ],
+      "permanent": true
+    },
+    {
+      "source": "/blog/log/:path*",
+      "destination": "https://e2b.dev/blog/:path*",
       "has": [
         {
           "type": "host",
@@ -137,17 +139,6 @@
         }
       ],
       "destination": "https://e2b.dev/changelog",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "changelog.e2b.dev"
-        }
-      ],
-      "destination": "https://e2b.dev/changelog/:path*",
       "permanent": true
     },
     {

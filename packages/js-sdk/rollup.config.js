@@ -32,7 +32,9 @@ export default {
   external: ['cross-fetch', 'cross-fetch/polyfill'],
   plugins: [
     autoExternal({ builtins: false }),
-    typescript(),
+    typescript({
+      clean: false,
+    }),
     nodePolyfills(),
     nodeResolve({
       preferBuiltins: true,

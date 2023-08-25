@@ -4,7 +4,7 @@
 </h1>
 
 <h4 align="center">
-  <a href="https://docs.e2b.dev">Docs</a> |
+  <a href="https://e2b.dev/docs">Docs</a> |
   <a href="https://e2b.dev">Website</a> |
   <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
   <a href="https://twitter.com/e2b_dev">Twitter</a>
@@ -43,7 +43,7 @@ This is a monorepo that contains:
 
 ## Getting Started & Documentation
 
-Visit [docs.e2b.dev](https://docs.e2b.dev/) to get started with the SDK.
+Visit [docs](https://e2b.dev/docs) to get started with the SDK.
 
 ### Python
 ```bash

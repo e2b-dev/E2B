@@ -74,7 +74,6 @@ export class ProcessOutput {
 
 /**
  * A process running in the environment.
- *
  */
 export class Process {
   constructor(

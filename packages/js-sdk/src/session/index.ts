@@ -17,7 +17,7 @@ import {
   processService,
 } from './process'
 import { SessionConnection, SessionConnectionOpts } from './sessionConnection'
-import { TerminalManager, terminalService } from './terminal'
+import { Terminal, TerminalManager, TerminalOutput, terminalService } from './terminal'
 
 export type Environment = components['schemas']['Template']
 
@@ -126,13 +126,20 @@ export class Session extends SessionConnection {
       }) => {
         const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
 
+        const output = new TerminalOutput()
+
+        function handleData(data: string) {
+          output.addData(data)
+          onData?.(data)
+        }
+
         const [onDataSubID, onExitSubID] = await this.handleSubscriptions(
-          this.subscribe(terminalService, onData, 'onData', terminalID),
+          this.subscribe(terminalService, handleData, 'onData', terminalID),
           this.subscribe(terminalService, triggerExit, 'onExit', terminalID),
         )
 
         const { promise: unsubscribing, resolve: handleFinishUnsubscribing } =
-          createDeferredPromise()
+          createDeferredPromise<TerminalOutput>()
 
         terminalExited.then(async () => {
           const results = await Promise.allSettled([
@@ -146,7 +153,7 @@ export class Session extends SessionConnection {
           }
 
           onExit?.()
-          handleFinishUnsubscribing()
+          handleFinishUnsubscribing(output)
         })
 
         try {
@@ -163,24 +170,7 @@ export class Session extends SessionConnection {
           throw err
         }
 
-        return {
-          finished: unsubscribing,
-          kill: async () => {
-            try {
-              await this.call(terminalService, 'destroy', [terminalID])
-            } finally {
-              triggerExit()
-              await unsubscribing
-            }
-          },
-          resize: async ({ cols, rows }) => {
-            await this.call(terminalService, 'resize', [terminalID, cols, rows])
-          },
-          sendData: async data => {
-            await this.call(terminalService, 'data', [terminalID, data])
-          },
-          terminalID,
-        }
+        return new Terminal(terminalID, this, triggerExit, unsubscribing, output)
       },
     }
 
@@ -233,8 +223,8 @@ export class Session extends SessionConnection {
             this.logger.error(errMsg)
           }
 
-          handleFinishUnsubscribing(output)
           onExit?.()
+          handleFinishUnsubscribing(output)
         })
 
         try {

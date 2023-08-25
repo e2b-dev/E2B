@@ -2,7 +2,8 @@ export { Session } from './session'
 export type { Environment } from './session'
 export type { SessionOpts } from './session'
 export type { OpenPort } from './session/codeSnippet'
-export type { TerminalManager, Terminal as TerminalSession } from './session/terminal'
+export { Terminal, TerminalOutput } from './session/terminal'
+export type { TerminalManager } from './session/terminal'
 export type { FilesystemManager, FileInfo } from './session/filesystem'
 export {
   default as FilesystemWatcher,
