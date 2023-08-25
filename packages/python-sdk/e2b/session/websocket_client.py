@@ -1,17 +1,16 @@
 import asyncio
-import json
 import logging
-from queue import Queue
-from threading import Event
-from typing import Any, Callable, Dict, List
 
-from e2b.session.exception import RpcException
-from e2b.utils.future import DeferredFuture
-from jsonrpcclient import Ok
-from jsonrpcclient.responses import Error, Response
+from websockets.client import WebSocketClientProtocol, connect
+from janus import Queue
+from typing import Any, Callable, Dict, List
+from jsonrpcclient.responses import Response
 from pydantic import BaseModel
-from websockets import connect
 from websockets.typing import Data
+
+from e2b.session.event import Event
+from e2b.utils.future import DeferredFuture
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +29,14 @@ class WebSocket:
     def __init__(
         self,
         url: str,
-        on_message: Callable[[Notification], None],
         started: Event,
         cancelled: Event,
         queue_in: Queue[dict],
-        queue_out: Queue[dict],
+        queue_out: Queue[Data],
         waiting_for_replies: Dict[int, DeferredFuture],
     ):
-        self._ws = None
+        self._ws: WebSocketClientProtocol | None = None
         self.url = url
-        self.on_message = on_message
         self.started = started
         self.cancelled = cancelled
         self._process_cleanup: List[Callable[[], Any]] = []
@@ -69,16 +66,12 @@ class WebSocket:
                 async def send_message():
                     logger.info("Starting to send messages")
                     while True:
-                        logger.info("While true")
-                        if self._queue_in.empty():
-                            logger.info("Queue is empty")
-                            await asyncio.sleep(0.1)
-                        logger.info("Queue is not empty")
-                        m = self._queue_in.get(block=False)
-                        logger.info(f"Got message: {m}")
-                        if m:
-                            logger.debug(f"Sending message: {m}")
-                            await websocket.send(m)
+                        message = await self._queue_in.async_q.get()
+                        logger.info(f"Got message: {message}")
+                        if self._ws:
+                            await self._ws.send(message)
+                        else:
+                            logger.error("No websocket connection")
 
                 messaging_task = asyncio.create_task(send_message())
                 self._process_cleanup.append(messaging_task.cancel)
@@ -88,7 +81,7 @@ class WebSocket:
                 try:
                     async for message in self._ws:
                         logger.debug(f"Received message: {message}")
-                        self._queue_out.put(message)
+                        await self._queue_out.async_q.put(message)
                 except Exception as e:
                     logger.error(f"Error: {e}")
 
@@ -113,23 +106,23 @@ class WebSocket:
         if self._ws:
             await self._ws.close()
 
-
-async def start_websocket(
-    url,
-    on_message: Callable[[Notification], None],
-    queue_in: Queue,
-    queue_out: Queue,
-    waiting_for_replies: Dict[int, DeferredFuture],
-    started: Event,
-    cancel_event: Event,
-):
-    websocket = WebSocket(
-        url=url,
-        on_message=on_message,
-        cancelled=cancel_event,
-        started=started,
-        queue_in=queue_in,
-        queue_out=queue_out,
-        waiting_for_replies=waiting_for_replies,
-    )
-    await websocket.run()
+    @classmethod
+    async def start(
+        cls,
+        url,
+        queue_in: Queue[dict],
+        queue_out: Queue[Data],
+        waiting_for_replies: Dict[int, DeferredFuture],
+        started: Event,
+        cancel_event: Event,
+    ):
+        websocket = cls(
+            url=url,
+            cancelled=cancel_event,
+            started=started,
+            queue_in=queue_in,
+            queue_out=queue_out,
+            waiting_for_replies=waiting_for_replies,
+        )
+        await websocket.run()
+        return websocket

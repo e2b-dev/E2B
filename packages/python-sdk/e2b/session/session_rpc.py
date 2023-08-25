@@ -1,29 +1,22 @@
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
-from queue import Queue
-from threading import Event
-from typing import Any, Callable, Dict, Iterator, List
+import asyncio
 
-from e2b.session.exception import RpcException
-from e2b.session.websocket_client import Message, Notification, start_websocket
-from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+from concurrent.futures import ThreadPoolExecutor
+from janus import Queue
+from typing import Any, Callable, Dict, Iterator, List
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from pydantic import BaseModel, PrivateAttr
+from websockets.typing import Data
+
+from e2b.session.event import Event
+from e2b.session.exception import RpcException
+from e2b.session.websocket_client import Message, Notification, WebSocket
+from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+
 
 logger = logging.getLogger(__name__)
-
-
-import asyncio
-
-
-class Event_ts(asyncio.Event):
-    # TODO: clear() method
-    def set(self):
-        # FIXME: The _loop attribute is not documented as public api!
-        self._loop.call_soon_threadsafe(super().set)
-
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
     """Create a Response namedtuple from a dict"""
@@ -50,8 +43,8 @@ class SessionRpc(BaseModel):
 
     _id_generator: Iterator[int] = PrivateAttr(default_factory=decimal_id_generator)
     _waiting_for_replies: Dict[int, DeferredFuture] = PrivateAttr(default_factory=dict)
-    _queue_in: Queue = PrivateAttr(default_factory=Queue)
-    _queue_out: Queue = PrivateAttr(default_factory=Queue)
+    _queue_in: Queue[dict] = PrivateAttr(default_factory=Queue)
+    _queue_out: Queue[Data] = PrivateAttr(default_factory=Queue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
 
     class Config:
@@ -59,46 +52,20 @@ class SessionRpc(BaseModel):
 
     async def process_messages(self):
         while True:
-            data = await self._queue_out.get()
-            message = to_response_or_notification(json.loads(data))
+            data = await self._queue_out.async_q.get()
+            await self._receive_message(data)
 
-            logger.info(f"Current waiting handlers: {self._waiting_for_replies}")
-            if isinstance(message, Ok):
-                if (
-                    message.id in self._waiting_for_replies
-                    and self._waiting_for_replies[message.id]
-                ):
-                    self._waiting_for_replies[message.id](message.result)
-                    return
-            elif isinstance(message, Error):
-                if (
-                    message.id in self._waiting_for_replies
-                    and self._waiting_for_replies[message.id]
-                ):
-                    self._waiting_for_replies[message.id].reject(
-                        RpcException(
-                            code=message.code,
-                            message=message.message,
-                            id=message.id,
-                            data=message.data,
-                        )
-                    )
-                    return
-
-            elif isinstance(message, Notification):
-                self.on_message(message)
 
     async def connect(self):
-        started = Event_ts()
-        cancelled = Event_ts()
+        started = Event()
+        cancelled = Event()
         task = asyncio.create_task(self.process_messages())
         executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="e2b_ws")
         websocket_task = asyncio.get_running_loop().run_in_executor(
             executor,
             run_async_func_in_new_loop,
-            start_websocket(
+            WebSocket.start(
                 self.url,
-                self.on_message,
                 self._queue_in,
                 self._queue_out,
                 self._waiting_for_replies,
@@ -120,8 +87,8 @@ class SessionRpc(BaseModel):
         try:
             self._waiting_for_replies[id] = future_reply
             logger.info(f"Queueing: {request}")
-            self._queue_in.put(request)
-            logger.info(f"Queue size: {self._queue_in.qsize()}")
+            await self._queue_in.async_q.put(request)
+            logger.info(f"Queue size: {self._queue_in.async_q.qsize()}")
             logger.info(f"Waiting for reply: {request}")
             r = await future_reply
             return r
@@ -131,6 +98,36 @@ class SessionRpc(BaseModel):
         finally:
             del self._waiting_for_replies[id]
             logger.info(f"Removed waiting handler for {id}")
+
+    async def _receive_message(self, data: Data):
+        message = to_response_or_notification(json.loads(data))
+
+        logger.info(f"Current waiting handlers: {self._waiting_for_replies}")
+        if isinstance(message, Ok):
+            if (
+                message.id in self._waiting_for_replies
+                and self._waiting_for_replies[message.id]
+            ):
+                self._waiting_for_replies[message.id](message.result)
+                return
+        elif isinstance(message, Error):
+            if (
+                message.id in self._waiting_for_replies
+                and self._waiting_for_replies[message.id]
+            ):
+                self._waiting_for_replies[message.id].reject(
+                    RpcException(
+                        code=message.code,
+                        message=message.message,
+                        id=message.id,
+                        data=message.data,
+                    )
+                )
+                return
+
+        elif isinstance(message, Notification):
+            self.on_message(message)
+
 
     def _close(self):
         for cancel in self._process_cleanup:
