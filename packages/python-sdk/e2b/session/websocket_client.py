@@ -1,28 +1,18 @@
 import asyncio
 import logging
 
-from websockets.client import WebSocketClientProtocol, connect
+from websockets import WebSocketClientProtocol
 from janus import Queue
-from typing import Any, Callable, Dict, List
-from jsonrpcclient.responses import Response
-from pydantic import BaseModel
+from typing import Any, Callable, List
 from websockets.typing import Data
+
+from websockets import connect
 
 from e2b.session.event import Event
 from e2b.utils.future import DeferredFuture
 
 
 logger = logging.getLogger(__name__)
-
-
-class Notification(BaseModel):
-    """Nofification"""
-
-    method: str
-    params: Dict
-
-
-Message = Response | Notification
 
 
 class WebSocket:
@@ -33,7 +23,6 @@ class WebSocket:
         cancelled: Event,
         queue_in: Queue[dict],
         queue_out: Queue[Data],
-        waiting_for_replies: Dict[int, DeferredFuture],
     ):
         self._ws: WebSocketClientProtocol | None = None
         self.url = url
@@ -42,10 +31,10 @@ class WebSocket:
         self._process_cleanup: List[Callable[[], Any]] = []
         self._queue_in = queue_in
         self._queue_out = queue_out
-        self._waiting_for_replies = waiting_for_replies
 
     async def run(self):
         await self.connect()
+        await self.cancelled.wait()
         await self.close()
 
     async def connect(self):
@@ -70,6 +59,7 @@ class WebSocket:
                         logger.info(f"Got message: {message}")
                         if self._ws:
                             await self._ws.send(message)
+                            self._queue_in.async_q.task_done()
                         else:
                             logger.error("No websocket connection")
 
@@ -92,7 +82,6 @@ class WebSocket:
         logger.info("Future Connected")
         self.started.set()
         logger.info("Started")
-        await asyncio.sleep(1000)
 
     def _close(self):
         for cancel in self._process_cleanup:
@@ -112,7 +101,6 @@ class WebSocket:
         url,
         queue_in: Queue[dict],
         queue_out: Queue[Data],
-        waiting_for_replies: Dict[int, DeferredFuture],
         started: Event,
         cancel_event: Event,
     ):
@@ -122,7 +110,6 @@ class WebSocket:
             started=started,
             queue_in=queue_in,
             queue_out=queue_out,
-            waiting_for_replies=waiting_for_replies,
         )
         await websocket.run()
         return websocket

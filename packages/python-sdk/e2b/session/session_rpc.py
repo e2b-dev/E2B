@@ -1,22 +1,37 @@
 import json
 import logging
-import asyncio
+
 
 from concurrent.futures import ThreadPoolExecutor
 from janus import Queue
 from typing import Any, Callable, Dict, Iterator, List
+
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
+from jsonrpcclient.responses import Response
 from pydantic import BaseModel, PrivateAttr
 from websockets.typing import Data
 
 from e2b.session.event import Event
 from e2b.session.exception import RpcException
-from e2b.session.websocket_client import Message, Notification, WebSocket
+from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 
 
 logger = logging.getLogger(__name__)
+
+
+import asyncio
+
+
+class Notification(BaseModel):
+    """Nofification"""
+
+    method: str
+    params: Dict
+
+
+Message = Response | Notification
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
     """Create a Response namedtuple from a dict"""
@@ -54,6 +69,7 @@ class SessionRpc(BaseModel):
         while True:
             data = await self._queue_out.async_q.get()
             await self._receive_message(data)
+            self._queue_out.async_q.task_done()
 
 
     async def connect(self):
@@ -68,7 +84,6 @@ class SessionRpc(BaseModel):
                 self.url,
                 self._queue_in,
                 self._queue_out,
-                self._waiting_for_replies,
                 started,
                 cancelled,
             ),
@@ -76,7 +91,7 @@ class SessionRpc(BaseModel):
         self._process_cleanup.append(task.cancel)
         self._process_cleanup.append(cancelled.set)
         self._process_cleanup.append(websocket_task.cancel)
-        self._process_cleanup.append(executor.shutdown)
+        self._process_cleanup.append(lambda: executor.shutdown(wait=False, cancel_futures=True))
         await started.wait()
 
     async def send_message(self, method: str, params: List[Any]) -> Any:
