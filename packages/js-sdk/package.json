@@ -27,6 +27,8 @@
     "watch": "rollup -c -w",
     "measure": "node test/performance.mjs",
     "run": "node test/run.mjs",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
     "fix": "npx eslint **/src/**/*.{ts,js} --fix",
     "format": "prettier --check --ignore-path .gitignore .",
     "format:fix": "prettier --write --ignore-path .gitignore .",
@@ -50,7 +52,8 @@
     "rollup-plugin-polyfill-node": "^0.10.2",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.34.0",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "vitest": "^0.34.2"
   },
   "files": [
     "dist",
