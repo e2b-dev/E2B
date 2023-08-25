@@ -1,78 +1,16 @@
-import asyncio
-import json
 import logging
-from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
 from threading import Event
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Union)
+from typing import Any, Callable, Dict, Iterator, List
 
-from e2b.session.exception import SessionException
-from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
-from jsonrpcclient import Ok, request_json
+from e2b.session.websocket_client import Notification, start_websocket
+from e2b.utils.future import DeferredFuture
+from janus import Queue
+from jsonrpcclient import request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
-from jsonrpcclient.responses import Deserialized, Error, Response
 from pydantic import BaseModel, PrivateAttr
-from websockets import WebSocketClientProtocol, connect
-from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
-
-PONG = object()
-
-
-class RpcException(SessionException):
-    def __init__(
-        self,
-        message: str,
-        code: int,
-        id: str,
-        data: Optional[Dict] = None,
-    ):
-        super().__init__(message)
-        self.data = data
-        self.code = code
-        self.message = message
-        self.id = id
-
-
-class Notification(BaseModel):
-    """Nofification"""
-
-    method: str
-    params: Dict
-
-
-Message = Response | Notification
-
-
-def to_response_or_notification(response: Dict[str, Any]) -> Message:
-    """Create a Response namedtuple from a dict"""
-    logger.info(f"Received response: {response}")
-    if "error" in response:
-        return Error(
-            response["error"]["code"],
-            response["error"]["message"],
-            response["error"].get("data"),
-            response["id"],
-        )
-    elif "result" in response and "id" in response:
-        return Ok(response["result"], response["id"])
-
-    elif "params" in response:
-        return Notification(method=response["method"], params=response["params"])
-
-    raise ValueError("Invalid response", response)
-
-
-def parse(deserialized: Deserialized) -> Union[Message, Iterable[Message]]:
-    """Create a Response or list of Responses from a dict or list of dicts"""
-    if isinstance(deserialized, str):
-        raise TypeError("Use parse_json on strings")
-    return (
-        map(to_response_or_notification, deserialized)
-        if isinstance(deserialized, list)
-        else to_response_or_notification(deserialized)
-    )
 
 
 class SessionRpc(BaseModel):
@@ -81,7 +19,6 @@ class SessionRpc(BaseModel):
 
     _id_generator: Iterator[int] = PrivateAttr(default_factory=decimal_id_generator)
     _waiting_for_replies: Dict[int, DeferredFuture] = PrivateAttr(default_factory=dict)
-    _ws: Optional[WebSocketClientProtocol] = PrivateAttr()
     _queue: Queue = PrivateAttr(default_factory=Queue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
 
@@ -89,75 +26,23 @@ class SessionRpc(BaseModel):
         arbitrary_types_allowed = True
 
     async def connect(self):
-        future_connect = DeferredFuture(self._process_cleanup)
-
-        async def handle_messages():
-            async for websocket in connect(
-                self.url,
-                ping_interval=None,
-                ping_timeout=None,
-                max_queue=None,
-                max_size=None,
-            ):
-                self._ws = websocket
-                cancel_event = Event()
-
-                self._process_cleanup.append(cancel_event.set)
-
-                async def keep_pong():
-                    while not cancel_event.is_set():
-                        await asyncio.sleep(5)
-                        self._queue.put(PONG)
-
-                async def send_message():
-                    while True:
-                        if self._queue.empty():
-                            await asyncio.sleep(0.1)
-                            continue
-                        m = self._queue.get()
-                        if m == PONG:
-                            logger.debug("Sending pong")
-                            await websocket.ping()
-                            continue
-                        else:
-                            logger.debug(f"Sending message: {m}")
-                            await websocket.send(m)
-
-                ponging = asyncio.to_thread(
-                    run_async_func_in_new_loop,
-                    keep_pong(),
-                )
-                messaging = asyncio.to_thread(
-                    run_async_func_in_new_loop,
-                    send_message(),
-                )
-
-                ponging_task = asyncio.create_task(ponging)
-                messaging_task = asyncio.create_task(messaging)
-                self._process_cleanup.append(ponging_task.cancel)
-                self._process_cleanup.append(messaging_task.cancel)
-
-                logger.info(f"Connected to {self.url}")
-                future_connect(None)
-                try:
-                    async for message in self._ws:
-                        await self._receive_message(message)
-                except Exception as e:
-                    logger.error(f"Error: {e}")
-
-            if not self._ws:
-                raise Exception("Not connected")
-            async for message in self._ws:
-                await self._receive_message(message)
-
-        handle_messages_task = asyncio.create_task(handle_messages())
-        self._process_cleanup.append(handle_messages_task.cancel)
-        await future_connect
+        started = Event()
+        cancelled = Event()
+        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="e2b_ws_")
+        executor.submit(
+            start_websocket,
+            self.url,
+            self.on_message,
+            self._queue,
+            self._waiting_for_replies,
+            started,
+            cancelled,
+        )
+        self._process_cleanup.append(cancelled.set)
+        self._process_cleanup.append(executor.shutdown)
+        started.wait()
 
     async def send_message(self, method: str, params: List[Any]) -> Any:
-        if not self._ws:
-            raise Exception("Not connected")
-
         id = next(self._id_generator)
         request = request_json(method, params, id)
         future_reply = DeferredFuture(self._process_cleanup)
@@ -165,7 +50,8 @@ class SessionRpc(BaseModel):
         try:
             self._waiting_for_replies[id] = future_reply
             logger.info(f"Sending request: {request}")
-            self._queue.put(request)
+            await self._queue.async_q.put(request)
+            logger.info(f"Waiting for reply: {request}")
             r = await future_reply
             logger.info(f"Received reply: {r}")
             return r
@@ -175,35 +61,6 @@ class SessionRpc(BaseModel):
         finally:
             del self._waiting_for_replies[id]
             logger.info(f"Removed waiting handler for {id}")
-
-    async def _receive_message(self, data: Data):
-        message = to_response_or_notification(json.loads(data))
-
-        logger.info(f"Current waiting handlers: {self._waiting_for_replies}")
-        if isinstance(message, Ok):
-            if (
-                message.id in self._waiting_for_replies
-                and self._waiting_for_replies[message.id]
-            ):
-                self._waiting_for_replies[message.id](message.result)
-                return
-        elif isinstance(message, Error):
-            if (
-                message.id in self._waiting_for_replies
-                and self._waiting_for_replies[message.id]
-            ):
-                self._waiting_for_replies[message.id].reject(
-                    RpcException(
-                        code=message.code,
-                        message=message.message,
-                        id=message.id,
-                        data=message.data,
-                    )
-                )
-                return
-
-        elif isinstance(message, Notification):
-            self.on_message(message)
 
     def _close(self):
         for cancel in self._process_cleanup:
@@ -217,6 +74,3 @@ class SessionRpc(BaseModel):
 
     async def close(self):
         self._close()
-
-        if self._ws:
-            await self._ws.close()

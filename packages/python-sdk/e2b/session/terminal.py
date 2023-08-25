@@ -1,15 +1,12 @@
 import asyncio
+from typing import Any, Awaitable, Callable, Coroutine, List, Optional
 
-from typing import Awaitable, Callable, Optional, Coroutine, Any, List
-from pydantic import BaseModel
-
-from e2b.utils.noop import noop
-from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
+from e2b.session.exception import MultipleExceptions, RpcException, TerminalException
 from e2b.session.session_connection import SessionConnection
+from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
-from e2b.session.exception import TerminalException, MultipleExceptions
-from e2b.session.session_rpc import RpcException
+from pydantic import BaseModel
 
 
 class TerminalOutput(BaseModel):

@@ -1,10 +1,9 @@
 from enum import Enum
-from typing import Callable, Set, Any, Awaitable, Optional
-from pydantic import BaseModel
+from typing import Any, Awaitable, Callable, Optional, Set
 
+from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.session_connection import SessionConnection
-from e2b.session.exception import FilesystemException
-from e2b.session.session_rpc import RpcException
+from pydantic import BaseModel
 
 
 class FilesystemOperation(str, Enum):

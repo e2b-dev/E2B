@@ -1,12 +1,10 @@
 import base64
+from typing import Any, List
 
-from typing import List, Any
-from pydantic import BaseModel
-
-from e2b.session.session_connection import SessionConnection
+from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.filesystem_watcher import FilesystemWatcher
-from e2b.session.session_rpc import RpcException
-from e2b.session.exception import FilesystemException
+from e2b.session.session_connection import SessionConnection
+from pydantic import BaseModel
 
 
 class FileInfo(BaseModel):

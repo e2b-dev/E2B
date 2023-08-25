@@ -1,9 +1,8 @@
-from typing import Optional, ClassVar, Callable, List, Any
-from pydantic import BaseModel
+from typing import Any, Callable, ClassVar, List, Optional
 
-from e2b.session.exception import SessionException, MultipleExceptions
+from e2b.session.exception import MultipleExceptions, RpcException, SessionException
 from e2b.session.session_connection import SessionConnection
-from e2b.session.session_rpc import RpcException
+from pydantic import BaseModel
 
 
 class OpenPort(BaseModel):
