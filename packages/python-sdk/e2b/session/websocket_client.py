@@ -174,14 +174,6 @@ class WebSocket:
             await self._ws.close()
 
 
-async def connect_websocket(websocket: WebSocket, cancel_event: Event):
-    await websocket.connect()
-    while not cancel_event.is_set():
-        await asyncio.sleep(5)
-        await websocket.pong()
-    await websocket.close()
-
-
 def start_websocket(
     url,
     on_message: Callable[[Notification], None],
