@@ -83,6 +83,9 @@ class SessionRpc(BaseModel):
         self._process_cleanup.append(stopped.set)
         self._process_cleanup.append(websocket_task.cancel)
         self._process_cleanup.append(task.cancel)
+        self._process_cleanup.append(
+            lambda: executor.shutdown(wait=False, cancel_futures=True)
+        )
         while not started.is_set():
             await asyncio.sleep(0)
 
