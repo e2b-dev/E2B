@@ -1,9 +1,9 @@
 import asyncio
 import logging
+from queue import Queue
+from threading import Event
 from typing import Any, Callable, List
 
-from e2b.session.event import Event
-from janus import Queue
 from websockets import WebSocketClientProtocol, connect
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Data
@@ -35,14 +35,14 @@ class WebSocket:
     async def _send_message(self):
         logger.info("Starting to send messages")
         while True:
-            if self._queue_in.async_q.empty():
-                await asyncio.sleep(0.1)
+            if self._queue_in.empty():
+                await asyncio.sleep(0)
                 continue
-            message = await self._queue_in.async_q.get()
+            message = self._queue_in.get()
             logger.debug(f"Got message: {message}")
             if self._ws:
                 await self._ws.send(message)
-                self._queue_in.async_q.task_done()
+                self._queue_in.task_done()
             else:
                 logger.error("No websocket connection")
 
@@ -50,7 +50,7 @@ class WebSocket:
         try:
             async for message in self._ws:
                 logger.debug(f"Received message: {message}")
-                await self._queue_out.async_q.put(message)
+                self._queue_out.put(message)
 
         except Exception as e:
             logger.error(f"Error: {e}")
@@ -74,7 +74,8 @@ class WebSocket:
                     self._process_cleanup.append(receive_task.cancel)
 
                     while not self.stopped.is_set():
-                        await asyncio.sleep(0.1)
+                        await asyncio.sleep(0)
+
                     logger.info("WebSocket stopped")
                     break
                 except ConnectionClosed:
