@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 from threading import Event
-from typing import Any, Callable, Dict, Iterator, List
+from typing import Any, Callable, Dict, Iterator, List, Union
 
 from e2b.session.exception import RpcException
 from e2b.session.websocket_client import WebSocket
@@ -26,7 +28,7 @@ class Notification(BaseModel):
     params: Dict
 
 
-Message = Response | Notification
+Message = Union[Response, Notification]
 
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
@@ -54,8 +56,8 @@ class SessionRpc(BaseModel):
 
     _id_generator: Iterator[int] = PrivateAttr(default_factory=decimal_id_generator)
     _waiting_for_replies: Dict[int, DeferredFuture] = PrivateAttr(default_factory=dict)
-    _queue_in: Queue[dict] = PrivateAttr(default_factory=Queue)
-    _queue_out: JanusQueue[Data] = PrivateAttr(default_factory=JanusQueue)
+    _queue_in: Queue = PrivateAttr(default_factory=Queue)
+    _queue_out: JanusQueue = PrivateAttr(default_factory=JanusQueue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
 
     class Config:

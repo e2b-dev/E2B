@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from queue import Queue
 from threading import Event
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 
 from janus import SyncQueue as JanusQueue
 from websockets import WebSocketClientProtocol, connect
@@ -21,7 +23,7 @@ class WebSocket:
         queue_in: Queue[dict],
         queue_out: JanusQueue[Data],
     ):
-        self._ws: WebSocketClientProtocol | None = None
+        self._ws: Optional[WebSocketClientProtocol] = None
         self.url = url
         self.started = started
         self.stopped = stopped

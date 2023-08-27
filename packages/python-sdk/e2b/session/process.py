@@ -186,9 +186,9 @@ class ProcessManager:
         on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[], Any]] = None,
-        env_vars: Optional[EnvVars] = {},
+        env_vars: Optional[EnvVars] = None,
         rootdir: str = "",
-        process_id: str | None = None,
+        process_id: Optional[str] = None,
     ) -> Process:
         """
         Starts a process in the environment.
@@ -203,6 +203,8 @@ class ProcessManager:
 
         :return: A process object.
         """
+        if not env_vars:
+            env_vars = {}
 
         future_exit = DeferredFuture(self._process_cleanup)
         process_id = process_id or create_id(12)

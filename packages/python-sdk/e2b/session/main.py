@@ -1,12 +1,11 @@
 import logging
+from typing import Any, Callable, List, Literal, Optional, Union
 
-from typing import Literal, Optional, Callable, List, Any
-
-from e2b.session.session_connection import SessionConnection
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
-from e2b.session.terminal import TerminalManager
 from e2b.session.filesystem import FilesystemManager
 from e2b.session.process import ProcessManager
+from e2b.session.session_connection import SessionConnection
+from e2b.session.terminal import TerminalManager
 
 Environment = Literal[
     "Nodejs",
@@ -57,7 +56,7 @@ class Session(SessionConnection):
 
     def __init__(
         self,
-        id: Environment | str,
+        id: Union[Environment, str],
         api_key: Optional[str] = None,
         edit_enabled: bool = False,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
@@ -125,7 +124,7 @@ class Session(SessionConnection):
     @classmethod
     async def create(
         cls,
-        id: Environment | str,
+        id: Union[Environment, str],
         api_key: Optional[str] = None,
         edit_enabled: bool = False,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,

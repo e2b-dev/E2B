@@ -1,13 +1,13 @@
 import asyncio
-from typing import Any, Awaitable, Callable, Generic, List, TypeVar
+from typing import Any, Awaitable, Callable, Generic, List, Optional, TypeVar
 
 T = TypeVar("T")
 
 
 # Check if using event is not better for most use cases
 class DeferredFuture(Generic[T]):
-    def __init__(self, cleanup_list: List[Callable[[], Any]] | None = None):
-        self._future = asyncio.Future[T]()
+    def __init__(self, cleanup_list: Optional[List[Callable[[], Any]]] = None):
+        self._future = asyncio.Future()
         if cleanup_list is not None:
             cleanup_list.append(self.cancel)
 

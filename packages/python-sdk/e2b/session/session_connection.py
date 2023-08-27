@@ -2,7 +2,7 @@ import asyncio
 import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Awaitable, Callable, List, Literal, Optional
+from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 
 from e2b.api.client import NewSession
 from e2b.api.client import Session as SessionInfo
@@ -210,10 +210,10 @@ class SessionConnection:
 
     async def _handle_subscriptions(
         self,
-        *subs: Awaitable[Callable[[], Awaitable[None]]] | None,
+        *subs: Optional[Awaitable[Callable[[], Awaitable[None]]]],
     ):
         results: List[
-            Callable[[], Awaitable[None]] | None | Exception
+            Union[Callable[[], Awaitable[None]], None, Exception]
         ] = await asyncio.gather(
             *[sub if sub else noop() for sub in subs],
             return_exceptions=True,

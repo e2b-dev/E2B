@@ -133,7 +133,7 @@ class TerminalManager:
         cols: int,
         rows: int,
         rootdir: str = "",
-        terminal_id: str | None = None,
+        terminal_id: Optional[str] = None,
         on_exit: Optional[Callable[[], Any]] = None,
         cmd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
