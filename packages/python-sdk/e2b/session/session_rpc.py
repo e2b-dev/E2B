@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Iterator, List
 from e2b.session.exception import RpcException
 from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+from janus import Queue as JanusQueue
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response
@@ -56,7 +57,7 @@ class SessionRpc(BaseModel):
     _id_generator: Iterator[int] = PrivateAttr(default_factory=decimal_id_generator)
     _waiting_for_replies: Dict[int, DeferredFuture] = PrivateAttr(default_factory=dict)
     _queue_in: Queue[dict] = PrivateAttr(default_factory=Queue)
-    _queue_out: Queue[Data] = PrivateAttr(default_factory=Queue)
+    _queue_out: JanusQueue[Data] = PrivateAttr(default_factory=JanusQueue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
 
     class Config:
@@ -64,12 +65,9 @@ class SessionRpc(BaseModel):
 
     async def process_messages(self):
         while True:
-            if self._queue_out.empty():
-                await asyncio.sleep(0)
-                continue
-            data = self._queue_out.get()
+            data = await self._queue_out.async_q.get()
             await self._receive_message(data)
-            self._queue_out.task_done()
+            self._queue_out.async_q.task_done()
 
     async def connect(self):
         started = Event()
@@ -79,7 +77,7 @@ class SessionRpc(BaseModel):
         websocket_task = executor.submit(
             run_async_func_in_new_loop,
             WebSocket.start(
-                self.url, self._queue_in, self._queue_out, started, stopped
+                self.url, self._queue_in, self._queue_out.sync_q, started, stopped
             ),
         )
         self._process_cleanup.append(stopped.set)
