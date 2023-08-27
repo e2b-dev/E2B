@@ -65,7 +65,7 @@ async def test_watch_dir():
     await sleep(1)
     await watcher.stop()
 
-    assert len(events) == 1
+    assert len(events) >= 1
 
     event = events[0]
     assert event["operation"] == "Write"

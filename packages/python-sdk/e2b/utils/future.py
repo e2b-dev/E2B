@@ -1,6 +1,5 @@
 import asyncio
-
-from typing import Awaitable, TypeVar, Generic, List, Callable, Any, Optional
+from typing import Any, Awaitable, Callable, Generic, List, TypeVar
 
 T = TypeVar("T")
 
@@ -29,11 +28,9 @@ class DeferredFuture(Generic[T]):
             self._future.set_exception(reason)
 
 
-def run_async_func_in_new_loop(
-    coro: Awaitable, loop: Optional[asyncio.AbstractEventLoop] = None
-):
+def run_async_func_in_new_loop(coro: Awaitable):
     # Create a new loop
-    loop = loop or asyncio.new_event_loop()
+    loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     try:

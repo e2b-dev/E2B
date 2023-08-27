@@ -19,6 +19,7 @@ pydantic = "^1.10.5, <2"
 aenum = ">=3.1.11"
 websockets = "^11.0.3"
 jsonrpcclient = "^4.0.3"
+janus = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"

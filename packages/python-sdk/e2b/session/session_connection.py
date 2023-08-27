@@ -1,29 +1,23 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import logging
 import traceback
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Awaitable, Callable, List, Literal, Optional
 
-from typing import Awaitable, Literal, Optional, Callable, List, Any
-from pydantic import BaseModel
-
+from e2b.api.client import NewSession
+from e2b.api.client import Session as SessionInfo
 from e2b.api.client.rest import ApiException
+from e2b.api.main import client, configuration
+from e2b.constants import SESSION_DOMAIN, SESSION_REFRESH_PERIOD, WS_PORT, WS_ROUTE
 from e2b.session.exception import (
+    AuthenticationException,
     MultipleExceptions,
     SessionException,
-    AuthenticationException,
 )
-from e2b.utils.future import DeferredFuture
-from e2b.session.session_rpc import SessionRpc, Notification
-from e2b.api.client import NewSession, Session as SessionInfo
+from e2b.session.session_rpc import Notification, SessionRpc
+from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
-from e2b.utils.future import run_async_func_in_new_loop
-from e2b.api.main import client, configuration
-from e2b.constants import (
-    SESSION_DOMAIN,
-    WS_PORT,
-    WS_ROUTE,
-    SESSION_REFRESH_PERIOD,
-)
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

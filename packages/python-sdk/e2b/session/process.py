@@ -1,18 +1,14 @@
 import asyncio
 import logging
+from typing import Any, Awaitable, Callable, ClassVar, Coroutine, Dict, List, Optional
 
-from typing import Awaitable, ClassVar, Optional, Callable, Any, Coroutine, List, Dict
-from pydantic import BaseModel
-
-from e2b.utils.noop import noop
-from e2b.session.out import OutStdoutResponse, OutStderrResponse
-from e2b.utils.future import DeferredFuture
 from e2b.session.env_vars import EnvVars
+from e2b.session.exception import MultipleExceptions, ProcessException, RpcException
+from e2b.session.out import OutStderrResponse, OutStdoutResponse
 from e2b.session.session_connection import SessionConnection
+from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
-from e2b.session.session_rpc import RpcException
-from e2b.session.exception import ProcessException, MultipleExceptions
-
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
