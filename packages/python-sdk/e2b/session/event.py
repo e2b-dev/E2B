@@ -15,7 +15,7 @@ class Event:
         self._is_set = True
 
     def is_set(self):
-        return self._is_set or (not self._queue.async_q.empty())
+        return self._is_set or self._queue.async_q.qsize() > 0
 
     def set(self):
         self._queue.sync_q.put(True)
