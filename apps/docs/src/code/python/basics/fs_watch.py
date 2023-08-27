@@ -9,7 +9,6 @@ async def create_watcher(session):
 async def main():
   session = await Session.create(id="Nodejs")
 
-
   create_watcher(session)
 
   for i in range(10):

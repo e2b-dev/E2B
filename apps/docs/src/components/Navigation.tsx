@@ -265,8 +265,8 @@ export const navigation = [
   // {
   //   title: 'Examples',
   //   links: [
-  //     { title: 'Dynamically install dependencies', href: '/examples/deps' },
   //     { title: 'Clone GitHub Repository', href: '/examples/clone-repo' },
+  //     { title: 'Dynamically install dependencies', href: '/examples/deps' },
   //     { title: 'Run Any Code', href: '/examples/run-code' },
   //     { title: 'Get Output From Linter', href: '/examples/linter' },
   //     { title: 'Static Code Analysis', href: '/examples/static-code-analysis' },
