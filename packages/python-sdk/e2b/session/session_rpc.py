@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Iterator, List
 from e2b.session.event import Event
 from e2b.session.exception import RpcException
 from e2b.session.websocket_client import WebSocket
-from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+from e2b.utils.future import DeferredFuture
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response
@@ -73,20 +73,19 @@ class SessionRpc(BaseModel):
 
     async def connect(self):
         started = Event()
-        cancelled = Event()
+        stopped = Event()
         task = asyncio.create_task(self.process_messages())
-        websocket_task = asyncio.create_task(
+        executor = ThreadPoolExecutor()
+        websocket_task = executor.submit(
+            asyncio.new_event_loop().run_until_complete,
             WebSocket.start(
-                self.url,
-                self._queue_in,
-                self._queue_out,
-                started,
-                cancelled,
-            )
+                self.url, self._queue_in, self._queue_out, started, stopped
+            ),
         )
+        self._process_cleanup.append(stopped.set)
         self._process_cleanup.append(websocket_task.cancel)
+        self._process_cleanup.append(executor.shutdown)
         self._process_cleanup.append(task.cancel)
-        self._process_cleanup.append(cancelled.set)
         await started.wait()
 
     async def send_message(self, method: str, params: List[Any]) -> Any:
