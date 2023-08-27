@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
@@ -16,9 +17,6 @@ from pydantic import BaseModel, PrivateAttr
 from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
-
-
-import asyncio
 
 
 class Notification(BaseModel):
@@ -76,16 +74,20 @@ class SessionRpc(BaseModel):
         executor = ThreadPoolExecutor()
         websocket_task = executor.submit(
             run_async_func_in_new_loop,
-            WebSocket.start(
-                self.url, self._queue_in, self._queue_out.sync_q, started, stopped
-            ),
+            WebSocket(
+                url=self.url,
+                queue_in=self._queue_in,
+                queue_out=self._queue_out.sync_q,
+                started=started,
+                stopped=stopped,
+            ).run(),
         )
         self._process_cleanup.append(stopped.set)
         self._process_cleanup.append(websocket_task.cancel)
-        self._process_cleanup.append(task.cancel)
         self._process_cleanup.append(
             lambda: executor.shutdown(wait=False, cancel_futures=True)
         )
+        self._process_cleanup.append(task.cancel)
         while not started.is_set():
             await asyncio.sleep(0)
 

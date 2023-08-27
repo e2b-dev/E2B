@@ -52,65 +52,40 @@ class WebSocket:
             async for message in self._ws:
                 logger.debug(f"Received message: {message}")
                 self._queue_out.put(message)
-
         except Exception as e:
             logger.error(f"Error: {e}")
 
     async def _connect(self):
-        try:
-            async for websocket in connect(self.url, max_size=None, max_queue=None):
-                try:
-                    self._ws = websocket
-                    self.started.set()
-                    logger.info(f"Connected to {self.url}")
+        async for websocket in connect(self.url, max_size=None, max_queue=None):
+            try:
+                self._ws = websocket
+                self.started.set()
+                logger.info(f"Connected to {self.url}")
 
-                    send_task = asyncio.create_task(
-                        self._send_message(), name="send_message"
-                    )
-                    self._process_cleanup.append(send_task.cancel)
+                send_task = asyncio.create_task(
+                    self._send_message(), name="send_message"
+                )
+                self._process_cleanup.append(send_task.cancel)
 
-                    receive_task = asyncio.create_task(
-                        self._receive_message(), name="receive_message"
-                    )
-                    self._process_cleanup.append(receive_task.cancel)
+                receive_task = asyncio.create_task(
+                    self._receive_message(), name="receive_message"
+                )
+                self._process_cleanup.append(receive_task.cancel)
 
-                    while not self.stopped.is_set():
-                        await asyncio.sleep(0)
+                while not self.stopped.is_set():
+                    await asyncio.sleep(0)
 
-                    logger.info("WebSocket stopped")
-                    break
-                except ConnectionClosed:
-                    logger.warning("Reconnecting...")
-                    continue
-        except BaseException as e:
-            logger.error(f"Error: {e}")
+                logger.info("WebSocket stopped")
+                break
+            except ConnectionClosed:
+                logger.warning("Reconnecting...")
+                continue
 
-    def _close(self):
+    async def close(self):
         for cancel in self._process_cleanup:
             cancel()
 
         self._process_cleanup.clear()
 
-    async def close(self):
-        self._close()
-
         if self._ws:
             await self._ws.close()
-
-    @classmethod
-    async def start(
-        cls,
-        url,
-        queue_in: Queue[dict],
-        queue_out: JanusQueue[Data],
-        started: Event,
-        stopped: Event,
-    ):
-        websocket = cls(
-            url=url,
-            stopped=stopped,
-            started=started,
-            queue_in=queue_in,
-            queue_out=queue_out,
-        )
-        await websocket.run()
