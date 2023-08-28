@@ -50,7 +50,7 @@ async def test_process_send_stdin():
     session = await Session.create("Nodejs", api_key=E2B_API_KEY)
 
     proc = await session.process.start(
-        'while IFS= read -r line; do echo "$line"; sleep 1; done',
+        'read -r line; echo "$line"',
         rootdir="/code",
     )
     await proc.send_stdin("ping\n")
