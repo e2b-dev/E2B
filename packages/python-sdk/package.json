@@ -1,9 +1,11 @@
 {
-    "name": "@e2b/python-sdk",
-    "private": true,
-    "version": "0.2.2",
-    "scripts": {
-        "postVersion": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
-        "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish"
-    }
+  "name": "@e2b/python-sdk",
+  "private": true,
+  "version": "0.2.2",
+  "scripts": {
+    "test": "pytest -n auto",
+    "postVersion": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
+    "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish",
+    "postInstall": "poetry install"
+  }
 }

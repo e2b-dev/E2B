@@ -27,7 +27,7 @@
     "watch": "rollup -c -w",
     "measure": "node test/performance.mjs",
     "run": "node test/run.mjs",
-    "test": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "fix": "npx eslint **/src/**/*.{ts,js} --fix",
     "format": "prettier --check --ignore-path .gitignore .",
