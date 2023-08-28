@@ -52,8 +52,7 @@ class SessionConnection:
     def __init__(
         self,
         id: str,
-        api_key: Optional[str] = None,
-        edit_enabled: bool = False,
+        api_key: str,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -61,7 +60,7 @@ class SessionConnection:
     ):
         if api_key is None:
             raise AuthenticationException(
-                "API key is required, please see https://e2b.dev/docs"
+                'API key is required, please visit https://e2b.dev/docs to get your API key',
             )
 
         self._id = id
@@ -69,7 +68,6 @@ class SessionConnection:
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env
-        self._edit_enabled = edit_enabled
         self._on_close_child = on_close
 
         self._session: Optional[SessionInfo] = None
@@ -148,7 +146,7 @@ class SessionConnection:
                 api = client.SessionsApi(api_client)
 
                 self._session = await api.sessions_post(
-                    NewSession(codeSnippetID=self._id, editEnabled=self._edit_enabled),
+                    NewSession(codeSnippetID=self._id, editEnabled=False),
                     api_key=self._api_key,
                 )
                 logger.info(f"Acquired session: {self._session}")
