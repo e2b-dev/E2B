@@ -1,10 +1,13 @@
 from asyncio import sleep
+from os import getenv
 
 from e2b import Session
 
+E2B_API_KEY = getenv("E2B_API_KEY")
+
 
 async def test_list_files():
-    session = await Session.create("Nodejs")
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
     await session.filesystem.make_dir("/test/new")
 
     ls = await session.filesystem.list("/test")
@@ -14,7 +17,7 @@ async def test_list_files():
 
 
 async def test_create_file():
-    session = await Session.create("Nodejs")
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
     await session.filesystem.make_dir("/test")
     await session.filesystem.write("/test/test.txt", "Hello World!")
 
@@ -25,7 +28,7 @@ async def test_create_file():
 
 
 async def test_read_and_write():
-    session = await Session.create("Nodejs")
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
 
     await session.filesystem.write("/tmp/test.txt", "Hello World!")
 
@@ -36,7 +39,7 @@ async def test_read_and_write():
 
 
 async def test_list_delete_files():
-    session = await Session.create("Nodejs")
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
     await session.filesystem.make_dir("/test/new")
 
     ls = await session.filesystem.list("/test")
@@ -51,8 +54,7 @@ async def test_list_delete_files():
 
 
 async def test_watch_dir():
-    session = Session("Nodejs")
-    await session.open()
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
     await session.filesystem.write("/tmp/test.txt", "Hello")
 
     watcher = await session.filesystem.watch_dir("/tmp")

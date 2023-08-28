@@ -1,11 +1,13 @@
-from asyncio import sleep
+from os import getenv
 from unittest.mock import MagicMock
 
 from e2b import Session
 
+E2B_API_KEY = getenv("E2B_API_KEY")
+
 
 async def test_process_on_stdout_stderr():
-    session = await Session.create("Nodejs")
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
 
     stdout = []
     stderr = []
@@ -29,7 +31,7 @@ async def test_process_on_stdout_stderr():
 
 
 async def test_process_on_exit():
-    session = await Session.create("Nodejs")
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
 
     on_exit = MagicMock()
 
@@ -45,7 +47,7 @@ async def test_process_on_exit():
 
 
 async def test_process_send_stdin():
-    session = await Session.create("Nodejs")
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
 
     proc = await session.process.start(
         'while IFS= read -r line; do echo "$line"; sleep 1; done',
