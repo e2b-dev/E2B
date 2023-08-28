@@ -34,7 +34,6 @@ Message = Union[Response, Notification]
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
     """Create a Response namedtuple from a dict"""
-    logger.info(f"Received response: {response}")
     if "error" in response:
         return Error(
             response["error"]["code"],
@@ -67,7 +66,7 @@ class SessionRpc(BaseModel):
     async def process_messages(self):
         while True:
             data = await self._queue_out.async_q.get()
-            logger.debug(f"WebSocket received message: {data}")
+            logger.debug(f"WebSocket received message: {data}".strip())
             await self._receive_message(data)
             self._queue_out.async_q.task_done()
 
@@ -114,9 +113,13 @@ class SessionRpc(BaseModel):
             logger.debug(f"WebSocket removed waiting handler for {id}")
 
     async def _receive_message(self, data: Data):
+        logger.debug(f"Processing message: {data}".strip())
+
         message = to_response_or_notification(json.loads(data))
 
-        logger.debug(f"Current waiting handlers: {self._waiting_for_replies}")
+        logger.debug(
+            f"Current waiting handlers: {list(self._waiting_for_replies.keys())}"
+        )
         if isinstance(message, Ok):
             if (
                 message.id in self._waiting_for_replies

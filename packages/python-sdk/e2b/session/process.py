@@ -280,7 +280,7 @@ class ProcessManager:
             async def exit_handler():
                 await future_exit
                 logger.info(
-                    f"Handling process exit {process_id} - {future_exit._future.done()}",
+                    f"Handling process exit {self._service_name} (id: {process_id})",
                 )
                 if unsub_all:
                     await unsub_all()
@@ -292,7 +292,7 @@ class ProcessManager:
             self._process_cleanup.append(exit_task.cancel)
 
             async def trigger_exit():
-                logger.info("Triggering exit")
+                logger.info(f"Exiting the process {self._service_name} (id: {process_id})")
                 future_exit(None)
                 await future_exit_handler_finish
 

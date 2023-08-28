@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from typing import Any, Awaitable, Callable, Optional, Set
 
@@ -5,6 +6,8 @@ from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.session_connection import SessionConnection
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class FilesystemOperation(str, Enum):
@@ -55,6 +58,7 @@ class FilesystemWatcher:
         if self._unsubscribe:
             return
 
+        logger.debug("Starting filesystem watcher for %s", self.path)
         try:
             self._unsubscribe = await self._connection._subscribe(
                 self._service_name,
@@ -70,6 +74,8 @@ class FilesystemWatcher:
         """
         Stops the filesystem watcher.
         """
+        logger.debug("Stopping filesystem watcher for %s", self.path)
+
         self._listeners.clear()
         if self._unsubscribe:
             try:
@@ -86,6 +92,8 @@ class FilesystemWatcher:
 
         :return: Function that removes the listener
         """
+        logger.debug("Adding filesystem watcher listener for %s", self.path)
+
         self._listeners.add(listener)
 
         def delete_listener() -> None:

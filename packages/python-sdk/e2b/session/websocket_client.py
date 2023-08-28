@@ -36,7 +36,7 @@ class WebSocket:
         await self.close()
 
     async def _send_message(self):
-        logger.info("WebSocket starting to send messages")
+        logger.debug("WebSocket starting to send messages")
         while True:
             if self._queue_in.empty():
                 await asyncio.sleep(0)
@@ -53,7 +53,7 @@ class WebSocket:
     async def _receive_message(self):
         try:
             async for message in self._ws:
-                logger.debug(f"WebSocket received message: {message}")
+                logger.debug(f"WebSocket received message: {message}".strip())
                 self._queue_out.put(message)
         except Exception as e:
             logger.error(f"WebSocket received error while receiving messages: {e}")

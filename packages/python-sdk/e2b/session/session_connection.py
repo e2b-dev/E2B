@@ -24,6 +24,7 @@ from e2b.session.exception import (
 from e2b.session.session_rpc import Notification, SessionRpc
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
+from e2b.utils.str import camel_case_to_snake_case
 from e2b.utils.threads import shutdown_executor
 from pydantic import BaseModel
 
@@ -120,12 +121,17 @@ class SessionConnection:
         Close the session and unsubscribe from all the subscriptions.
         """
         if self._is_open:
-            logger.info(f"Closing session {self._session}")
+            logger.info(
+                f"Closing session {self._session.code_snippet_id} (id: {self._session.session_id})"
+            )
             self._is_open = False
             if self._rpc:
                 await self._rpc.close()
 
         self._close()
+        logger.info(
+            f"Session {self._session.code_snippet_id} closed (id: {self._session.session_id})"
+        )
 
     def _close(self):
         if self._on_close_child:
@@ -156,7 +162,9 @@ class SessionConnection:
                     NewSession(codeSnippetID=self._id, editEnabled=False),
                     api_key=self._api_key,
                 )
-                logger.info(f"Acquired session: {self._session}")
+                logger.info(
+                    f"Session {self._session.code_snippet_id} created (id:{self._session.session_id})"
+                )
 
                 # We could potentially use asyncio.to_thread() but that requires Python 3.9+
                 executor = ThreadPoolExecutor()
@@ -176,7 +184,7 @@ class SessionConnection:
                     finally:
                         if self._session:
                             logger.info(
-                                f"Stopped refreshing session {self._session.session_id}"
+                                f"Stopped refreshing session (id: {self._session.session_id})"
                             )
                         else:
                             logger.info(
@@ -198,7 +206,6 @@ class SessionConnection:
         session_url = f"{protocol}://{hostname}{WS_ROUTE}"
 
         try:
-            logger.info(f"Connection to session: {self._session}")
             self._rpc = SessionRpc(
                 url=session_url,
                 on_message=self._handle_notification,
@@ -271,7 +278,7 @@ class SessionConnection:
         sub = self._subscribers[sub_id]
         await self._call(sub.service, "unsubscribe", [sub.id], timeout=timeout)
         del self._subscribers[sub_id]
-        logger.info(f"Unsubscribed from {sub_id}")
+        logger.debug(f"Unsubscribed (sub_id: {sub_id})")
 
     async def _subscribe(
         self,
@@ -285,14 +292,12 @@ class SessionConnection:
             service, "subscribe", [method, *params], timeout=timeout
         )
         if not isinstance(sub_id, str):
-            raise Exception(f"Failed to subscribe: ${sub_id}")
+            raise Exception(f"Failed to subscribe: {camel_case_to_snake_case(method)}")
 
         self._subscribers[sub_id] = Subscription(
             service=service, id=sub_id, handler=handler
         )
-        logger.info(
-            f"Subscribed to {service}_{method} with params [{', '.join(params)}] and with id {sub_id}"
-        )
+        logger.info(f"Subscribed to {service} {camel_case_to_snake_case(method)}")
 
         async def unsub():
             await self._unsubscribe(sub_id, timeout=timeout)
@@ -307,7 +312,9 @@ class SessionConnection:
                 sub.handler(data.params["result"])
 
     async def _refresh(self, session_id: str):
-        logger.info(f"Started refreshing session {session_id}")
+        logger.info(
+            f"Started refreshing session {self._session.code_snippet_id} (id: {session_id})"
+        )
 
         current_retry = 0
 
@@ -315,7 +322,7 @@ class SessionConnection:
             api = client.SessionsApi(api_client)
             while True:
                 if not self._is_open:
-                    logger.info(
+                    logger.debug(
                         f"Cannot refresh session - it was closed. {self._session}"
                     )
                     return
