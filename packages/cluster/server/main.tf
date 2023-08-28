@@ -116,7 +116,11 @@ resource "google_compute_instance_template" "server" {
 # LOAD BALANCERS
 
 data "google_compute_global_address" "orch_server_ip" {
-  name = "orch-server-ip"
+  name = "orch-server-nomad-ip"
+}
+
+data "google_compute_ssl_certificate" "nomad_certificate" {
+  name = "e2b-nomad-api"
 }
 
 module "gce_lb_http_nomad" {
@@ -129,6 +133,13 @@ module "gce_lb_http_nomad" {
   target_tags = [
     var.cluster_tag_name,
   ]
+  ssl_certificates = [
+    data.google_compute_ssl_certificate.nomad_certificate.self_link,
+  ]
+  use_ssl_certificates = true
+  ssl                  = true
+
+
   firewall_networks = [var.network_name]
 
   backends = {
@@ -191,6 +202,10 @@ data "google_compute_global_address" "orch_server_consul_ip" {
   name = "orch-server-consul-ip"
 }
 
+data "google_compute_ssl_certificate" "consul_certificate" {
+  name = "e2b-consul-api"
+}
+
 module "gce_lb_http_consul" {
   source         = "GoogleCloudPlatform/lb-http/google"
   version        = "~> 5.1"
@@ -201,6 +216,13 @@ module "gce_lb_http_consul" {
   target_tags = [
     var.cluster_tag_name,
   ]
+
+  ssl_certificates = [
+    data.google_compute_ssl_certificate.consul_certificate.self_link,
+  ]
+  use_ssl_certificates = true
+  ssl                  = true
+
   firewall_networks = [var.network_name]
 
   backends = {

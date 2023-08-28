@@ -126,7 +126,7 @@ resource "google_compute_instance_template" "client" {
 
 # This cert is for proxying throught Cloudflare only
 data "google_compute_ssl_certificate" "session_certificate" {
-  name = "sessions"
+  name = "e2b-sessions"
 }
 
 # This should be SSL cert for usage withotu Cloudflare
@@ -139,12 +139,12 @@ resource "google_compute_url_map" "client_map" {
   default_service = module.gce_lb_http.backend_services["session"].self_link
 
   host_rule {
-    hosts        = ["api.e2b.com"]
+    hosts        = ["api.e2b.dev"]
     path_matcher = "api-paths"
   }
 
   host_rule {
-    hosts        = ["*.api.e2b.com"]
+    hosts        = ["*.e2b.dev"]
     path_matcher = "session-paths"
   }
 
@@ -159,8 +159,8 @@ resource "google_compute_url_map" "client_map" {
   }
 }
 
-data "google_compute_global_address" "orch_client_ip" {
-  name = "orch-client-ip"
+data "google_compute_global_address" "orch_client_api_ip" {
+  name = "orch-client-api-ip"
 }
 
 module "gce_lb_http" {
@@ -168,7 +168,7 @@ module "gce_lb_http" {
   version = "~> 5.1"
   name    = "orch-external-session"
   project = var.gcp_project_id
-  address = data.google_compute_global_address.orch_client_ip.address
+  address = data.google_compute_global_address.orch_client_api_ip.address
   ssl_certificates = [
     data.google_compute_ssl_certificate.session_certificate.self_link,
     data.google_compute_ssl_certificate.api_certificate.self_link,
