@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "version": "changeset version && npm run postVersion --workspaces --if-present",
-    "publish": "changeset publish && npm run postPublish --workspaces --if-present"
+    "publish": "changeset publish && npm run postPublish --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   },
   "workspaces": [
     "packages/*"

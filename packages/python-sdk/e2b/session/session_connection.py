@@ -175,7 +175,7 @@ class SessionConnection:
                             )
                         else:
                             logger.info(
-                                f"No session to stop refreshing. Session was not created"
+                                "No session to stop refreshing. Session was not created"
                             )
 
                         await self.close()
