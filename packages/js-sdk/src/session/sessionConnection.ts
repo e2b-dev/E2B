@@ -159,7 +159,7 @@ export class SessionConnection {
           }
           if (error.status === 401) {
             throw new Error(
-              `Error creating session - (${error.status}) unauthenticated (you need to be authenticated to start an session with persistent edits): ${error.data.message}`,
+              `Error creating session - (${error.status}) unauthenticated: ${error.data.message}`,
             )
           }
           if (error.status === 500) {
