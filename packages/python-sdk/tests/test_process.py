@@ -21,7 +21,7 @@ async def test_process_on_stdout_stderr():
 
     output = await proc
 
-    assert output.error == False
+    assert not output.error
     assert output.stdout == "/tmp"
     assert output.stderr == ""
     assert list(map(lambda message: message.line, stdout)) == ["/tmp"]
@@ -61,6 +61,6 @@ async def test_process_send_stdin():
     assert len(proc.output_messages) == 1
     message = proc.output_messages[0]
     assert message.line == "ping"
-    assert message.error == False
+    assert not message.error
 
     await session.close()
