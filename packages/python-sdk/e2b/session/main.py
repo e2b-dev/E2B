@@ -85,7 +85,7 @@ class Session(SessionConnection):
         :param on_scan_ports: A callback to handle opened ports
         """
 
-        logging.info(f"Session {id if isinstance(id, str) else type(id)}")
+        logging.info(f"Creating session {id if isinstance(id, str) else type(id)}")
         super().__init__(
             id=id,
             api_key=api_key,
@@ -108,6 +108,7 @@ class Session(SessionConnection):
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
+        logging.info(f"Opening session {self._id}")
         async with async_timeout(timeout):
             await super().open()
             await self._code_snippet._subscribe()
@@ -154,12 +155,10 @@ class Session(SessionConnection):
         - `DotNET`
 
         :param api_key: The API key to use
-        :param edit_enabled: Whether the session state will be saved after exit
         :param on_scan_ports: A callback to handle opened ports
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
 
-        logging.info(f"Session {id if isinstance(id, str) else type(id)}")
         session = cls(
             id=id,
             api_key=api_key,

@@ -300,7 +300,7 @@ class SessionConnection:
         return unsub
 
     def _handle_notification(self, data: Notification):
-        logger.info(f"Notification {data}")
+        logger.debug(f"Notification {data}")
 
         for id, sub in self._subscribers.items():
             if id == data.params["subscription"]:
@@ -324,7 +324,7 @@ class SessionConnection:
                     await api.sessions_session_id_refresh_post(
                         session_id,
                     )
-                    logger.info(f"Refreshed session {session_id}")
+                    logger.debug(f"Refreshed session {session_id}")
                 except ApiException as e:
                     if e.status == 404:
                         logger.error(f"Session {session_id} not found {e}")
