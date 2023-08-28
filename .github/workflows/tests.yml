@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  release:
-    name: Release
+  tests:
+    name: Periodic tests
     runs-on: ubuntu-latest
     defaults:
       run:
