@@ -17,6 +17,7 @@ from e2b.session.exception import (
 from e2b.session.session_rpc import Notification, SessionRpc
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
+from e2b.utils.threads import shutdown_executor
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -161,9 +162,7 @@ class SessionConnection:
                 )
 
                 self._process_cleanup.append(self._refreshing_task.cancel)
-                self._process_cleanup.append(
-                    lambda: executor.shutdown(wait=False, cancel_futures=True)
-                )
+                self._process_cleanup.append(lambda: shutdown_executor(executor))
 
                 async def refresh_cleanup():
                     try:

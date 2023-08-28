@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, Iterator, List, Union
 from e2b.session.exception import RpcException
 from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+from e2b.utils.threads import shutdown_executor
 from janus import Queue as JanusQueue
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
@@ -86,9 +87,7 @@ class SessionRpc(BaseModel):
         )
         self._process_cleanup.append(stopped.set)
         self._process_cleanup.append(websocket_task.cancel)
-        self._process_cleanup.append(
-            lambda: executor.shutdown(wait=False, cancel_futures=True)
-        )
+        self._process_cleanup.append(lambda: shutdown_executor(executor))
         self._process_cleanup.append(task.cancel)
         while not started.is_set():
             await asyncio.sleep(0)
