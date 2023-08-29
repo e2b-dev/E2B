@@ -49,6 +49,8 @@ jobs:
 
       - name: Run tests
         run: npm run test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Create new versions
         run: npm run version
