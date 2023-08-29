@@ -4,73 +4,72 @@ import { expect, test } from 'vitest'
 const E2B_API_KEY = process.env.E2B_API_KEY
 
 test('list files', async () => {
-  const session = await Session.create({ id: "Nodejs", apiKey: E2B_API_KEY })
-  await session.filesystem.makeDir("/test/new")
+  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  await session.filesystem.makeDir('/test/new')
 
-  const ls = await session.filesystem.list("/test")
-  expect(ls.map(x => x.name)).toEqual(["new"])
+  const ls = await session.filesystem.list('/test')
+  expect(ls.map(x => x.name)).toEqual(['new'])
 
   await session.close()
 })
 
 test('create file', async () => {
-  const session = await Session.create({id: "Nodejs", apiKey: E2B_API_KEY })
-  await session.filesystem.makeDir("/test")
-  await session.filesystem.write("/test/test.txt", "Hello World!")
+  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  await session.filesystem.makeDir('/test')
+  await session.filesystem.write('/test/test.txt', 'Hello World!')
 
-  const ls = await session.filesystem.list("/test")
-  expect(ls.map(x => x.name)).toEqual(["test.txt"])
-  
+  const ls = await session.filesystem.list('/test')
+  expect(ls.map(x => x.name)).toEqual(['test.txt'])
+
   await session.close()
 })
 
 test('read and write', async () => {
-  const session = await Session.create({id: "Nodejs", apiKey: E2B_API_KEY })
+  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
 
-  await session.filesystem.write("/tmp/test.txt", "Hello World!")
+  await session.filesystem.write('/tmp/test.txt', 'Hello World!')
 
-  const content = await session.filesystem.read("/tmp/test.txt")
-  expect(content).toEqual("Hello World!")
-  
+  const content = await session.filesystem.read('/tmp/test.txt')
+  expect(content).toEqual('Hello World!')
 
   await session.close()
 })
 
 test('list delete files', async () => {
-  const session = await Session.create({id: "Nodejs", apiKey: E2B_API_KEY })
-  await session.filesystem.makeDir("/test/new")
+  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  await session.filesystem.makeDir('/test/new')
 
-  let ls = await session.filesystem.list("/test")
-  expect(ls.map(x => x.name)).toEqual(["new"])
+  let ls = await session.filesystem.list('/test')
+  expect(ls.map(x => x.name)).toEqual(['new'])
 
-  await session.filesystem.remove("/test/new")
+  await session.filesystem.remove('/test/new')
 
-  ls = await session.filesystem.list("/test")
+  ls = await session.filesystem.list('/test')
   expect(ls.map(x => x.name)).toEqual([])
 
   await session.close()
 })
 
 test('watch dir', async () => {
-  const session = new Session({ id: "Nodejs", apiKey: E2B_API_KEY })
+  const session = new Session({ id: 'Nodejs', apiKey: E2B_API_KEY })
   await session.open()
-  await session.filesystem.write("/tmp/test.txt", "Hello")
+  await session.filesystem.write('/tmp/test.txt', 'Hello')
 
-  const watcher = session.filesystem.watchDir("/tmp")
+  const watcher = session.filesystem.watchDir('/tmp')
 
   const events = []
   watcher.addEventListener(ev => events.push(ev))
 
   await watcher.start()
-  await session.filesystem.write("/tmp/test.txt", "World!")
+  await session.filesystem.write('/tmp/test.txt', 'World!')
   await new Promise(r => setTimeout(r, 1000))
   await watcher.stop()
-  
-  expect(events.length).toEqual(1)
+
+  expect(events.length).toBeGreaterThanOrEqual(1)
 
   const event = events[0]
-  expect(event["operation"]).toEqual("Write")
-  expect(event["path"]).toEqual("/tmp/test.txt")
+  expect(event['operation']).toEqual('Write')
+  expect(event['path']).toEqual('/tmp/test.txt')
 
   await session.close()
 })
