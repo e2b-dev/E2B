@@ -1,9 +1,5 @@
 <h1 align="center">
-  <font size="30">
-  <b>
-    E2B Python SDK
-  </b>
-  </font>
+<span style="font-size:48px;"><b>E2B Python SDK</b></span>
 </h1>
 
 <h4 align="center">
