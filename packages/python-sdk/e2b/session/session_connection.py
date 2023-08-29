@@ -5,13 +5,17 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 
 import async_timeout
-from pydantic import BaseModel
-
 from e2b.api.client import NewSession
 from e2b.api.client import Session as SessionInfo
 from e2b.api.client.rest import ApiException
 from e2b.api.main import client, configuration
-from e2b.constants import SESSION_DOMAIN, SESSION_REFRESH_PERIOD, WS_PORT, WS_ROUTE, TIMEOUT
+from e2b.constants import (
+    SESSION_DOMAIN,
+    SESSION_REFRESH_PERIOD,
+    TIMEOUT,
+    WS_PORT,
+    WS_ROUTE,
+)
 from e2b.session.exception import (
     AuthenticationException,
     MultipleExceptions,
@@ -21,7 +25,7 @@ from e2b.session.session_rpc import Notification, SessionRpc
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
 from e2b.utils.threads import shutdown_executor
-
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +67,7 @@ class SessionConnection:
     ):
         if api_key is None:
             raise AuthenticationException(
-                'API key is required, please visit https://e2b.dev/docs to get your API key',
+                "API key is required, please visit https://e2b.dev/docs to get your API key",
             )
 
         self._id = id
@@ -205,7 +209,11 @@ class SessionConnection:
             raise e
 
     async def _call(
-        self, service: str, method: str, params: List[Any] = None, timeout: Optional[int] = TIMEOUT
+        self,
+        service: str,
+        method: str,
+        params: List[Any] = None,
+        timeout: Optional[int] = TIMEOUT,
     ):
         if not params:
             params = []

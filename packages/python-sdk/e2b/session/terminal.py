@@ -3,7 +3,6 @@ import logging
 from typing import Any, Awaitable, Callable, Coroutine, List, Optional
 
 import async_timeout
-
 from e2b.constants import TIMEOUT
 from e2b.session.env_vars import EnvVars
 from e2b.session.exception import MultipleExceptions, RpcException, TerminalException
@@ -11,7 +10,6 @@ from e2b.session.session_connection import SessionConnection
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
 from pydantic import BaseModel
-
 
 logger = logging.getLogger(__file__)
 
@@ -90,7 +88,9 @@ class Terminal:
         except RpcException as e:
             raise TerminalException(e.message) from e
 
-    async def resize(self, cols: int, rows: int, timeout: Optional[int] = TIMEOUT) -> None:
+    async def resize(
+        self, cols: int, rows: int, timeout: Optional[int] = TIMEOUT
+    ) -> None:
         """
         Resizes the terminal tty.
 
