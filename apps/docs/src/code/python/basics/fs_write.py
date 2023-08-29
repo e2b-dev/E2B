@@ -7,7 +7,7 @@ E2B_API_KEY = getenv("E2B_API_KEY")
 async def main():
   session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
 
-  # `filesystem.writre()` will:
+  # `filesystem.write()` will:
   # - create the file if it doesn't exist
   # - fail if any directory in the path doesn't exist
   # - overwrite the file if it exists
