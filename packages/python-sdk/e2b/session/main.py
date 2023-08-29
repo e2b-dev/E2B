@@ -124,7 +124,6 @@ class Session(SessionConnection):
         cls,
         id: Union[Environment, str],
         api_key: Optional[str] = None,
-        edit_enabled: bool = False,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
@@ -154,7 +153,6 @@ class Session(SessionConnection):
         session = cls(
             id=id,
             api_key=api_key,
-            edit_enabled=edit_enabled,
             on_scan_ports=on_scan_ports,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,

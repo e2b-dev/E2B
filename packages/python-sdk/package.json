@@ -6,6 +6,6 @@
     "test": "pytest -n auto",
     "postVersion": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
     "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish",
-    "postInstall": "poetry install"
+    "pretest": "poetry install"
   }
 }
