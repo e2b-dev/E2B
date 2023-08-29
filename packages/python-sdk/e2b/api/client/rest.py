@@ -20,14 +20,13 @@ import ssl
 from urllib.parse import urlencode
 
 import aiohttp
-
 from e2b.api.client.exceptions import (
     ApiException,
     ApiValueError,
-    UnauthorizedException,
     ForbiddenException,
     NotFoundException,
     ServiceException,
+    UnauthorizedException,
 )
 
 logger = logging.getLogger(__name__)
@@ -177,9 +176,7 @@ class RESTClientObject(object):
 
             if not 200 <= r.status <= 299:
                 if r.status == 401:
-                    raise UnauthorizedException(
-                        status=r.status, data=r.data
-                    )
+                    raise UnauthorizedException(status=r.status, data=r.data)
                 elif r.status == 403:
                     raise ForbiddenException(status=r.status, data=r.data)
                 elif r.status == 404:

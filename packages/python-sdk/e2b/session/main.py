@@ -112,6 +112,7 @@ class Session(SessionConnection):
         async with async_timeout(timeout):
             await super().open()
             await self._code_snippet._subscribe()
+        logging.info(f"Session {self._id} opened")
 
     def _close_services(self):
         self._terminal._close()

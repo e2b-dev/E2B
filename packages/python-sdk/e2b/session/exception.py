@@ -20,7 +20,7 @@ class RpcException(SessionException):
         self.id = id
 
 
-class MultipleExceptions(Exception):
+class MultipleExceptions(SessionException):
     def __init__(self, message: str, exceptions: List[Exception]):
         super().__init__(f"Multiple exceptions occurred: {message}")
         self.exceptions = exceptions

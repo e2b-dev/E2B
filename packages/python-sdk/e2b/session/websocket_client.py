@@ -59,6 +59,7 @@ class WebSocket:
             logger.error(f"WebSocket received error while receiving messages: {e}")
 
     async def _connect(self):
+        logger.debug(f"WebSocket connecting to {self.url}")
         async for websocket in connect(self.url, max_size=None, max_queue=None):
             try:
                 self._ws = websocket

@@ -68,6 +68,7 @@ class FilesystemManager:
             result: str = await self._session._call(
                 self._service_name, "read", [path], timeout=timeout
             )
+            logger.debug(f"Read file {path}")
             return result
         except RpcException as e:
             raise FilesystemException(e.message) from e
@@ -87,6 +88,7 @@ class FilesystemManager:
             await self._session._call(
                 self._service_name, "write", [path, content], timeout=timeout
             )
+            logger.debug(f"Wrote file {path}")
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
@@ -102,6 +104,7 @@ class FilesystemManager:
             await self._session._call(
                 self._service_name, "remove", [path], timeout=timeout
             )
+            logger.debug(f"Removed file {path}")
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
@@ -119,6 +122,7 @@ class FilesystemManager:
             result: List[Any] = await self._session._call(
                 self._service_name, "list", [path], timeout=timeout
             )
+            logger.debug(f"Listed files in {path}, result: {result}")
             return [
                 FileInfo(is_dir=file_info["isDir"], name=file_info["name"])
                 for file_info in result
@@ -138,6 +142,7 @@ class FilesystemManager:
             await self._session._call(
                 self._service_name, "makeDir", [path], timeout=timeout
             )
+            logger.debug(f"Created directory {path}")
         except RpcException as e:
             raise FilesystemException(e.message) from e
 

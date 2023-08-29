@@ -83,7 +83,7 @@ class SessionConnection:
         self._process_cleanup: List[Callable[[], Any]] = []
         self._refreshing_task: Optional[asyncio.Future] = None
         self._subscribers = {}
-        self._rpc: SessionRpc
+        self._rpc: Optional[SessionRpc] = None
         self._finished = DeferredFuture(self._process_cleanup)
 
         logger.info(f"Session for code snippet {self._id} initialized")
@@ -97,7 +97,7 @@ class SessionConnection:
         :return: Hostname of the session or session's port
         """
         if not self._session:
-            raise Exception(
+            raise SessionException(
                 "Session is not running. You have to run `await session.open()` first or create the session with `await Session.create()"
             )
 
@@ -150,7 +150,7 @@ class SessionConnection:
         You must call this method before using the session.
         """
         if self._is_open or self._session:
-            raise Exception("Session connect was already called")
+            raise SessionException("Session connect was already called")
         else:
             self._is_open = True
 
@@ -196,7 +196,7 @@ class SessionConnection:
                 refresh_handler = asyncio.create_task(refresh_cleanup())
                 self._process_cleanup.append(refresh_handler.cancel)
         except Exception as e:
-            logger.error(f"Failed to acquire session: {e}")
+            logger.error(f"Failed to acquire session")
             await self.close()
             raise e
 
@@ -334,7 +334,6 @@ class SessionConnection:
                     logger.debug(f"Refreshed session {session_id}")
                 except ApiException as e:
                     if e.status == 404:
-                        logger.error(f"Session {session_id} not found {e}")
                         raise SessionException(
                             f"Session {session_id} failed because it cannot be found"
                         ) from e

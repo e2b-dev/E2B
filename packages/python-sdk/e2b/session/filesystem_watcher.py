@@ -67,6 +67,7 @@ class FilesystemWatcher:
                 self.path,
                 timeout=timeout,
             )
+            logger.debug("Started filesystem watcher for %s", self.path)
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
@@ -81,6 +82,7 @@ class FilesystemWatcher:
             try:
                 await self._unsubscribe()
                 self._unsubscribe = None
+                logger.debug("Stopped filesystem watcher for %s", self.path)
             except RpcException as e:
                 raise FilesystemException(e.message) from e
 

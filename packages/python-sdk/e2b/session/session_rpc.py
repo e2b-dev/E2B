@@ -92,6 +92,7 @@ class SessionRpc(BaseModel):
         logger.info("WebSocket waiting to start")
         while not started.is_set():
             await asyncio.sleep(0)
+        logger.info("WebSocket started")
 
     async def send_message(self, method: str, params: List[Any]) -> Any:
         id = next(self._id_generator)
