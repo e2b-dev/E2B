@@ -43,5 +43,5 @@ jobs:
 
       - name: Upload Results
         run: poetry run scripts/upload_test_results.py
-        with:
+        env:
           SUPABASE_POSTGRES_URL: ${{ secrets.SUPABASE_POSTGRES_URL }}
