@@ -22,7 +22,7 @@
   </a>
 </h4>
 
-[e2b](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
+[E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
 
 With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
 - Run any code
