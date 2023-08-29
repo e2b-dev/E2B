@@ -1,8 +1,10 @@
 import { Session } from '../src'
 import { expect, test, vi } from 'vitest'
 
+const E2B_API_KEY = process.env.E2B_API_KEY
+
 test('process on stdout/stderr', async () => {
-  const session = await Session.create({ id: "Nodejs" })
+  const session = await Session.create({ id: "Nodejs", apiKey: E2B_API_KEY })
 
   const stdout = []
   const stderr = []
@@ -25,7 +27,7 @@ test('process on stdout/stderr', async () => {
 })
 
 test('process on exit', async () => {
-  const session = await Session.create({ id: "Nodejs" })
+  const session = await Session.create({ id: "Nodejs", apiKey: E2B_API_KEY })
 
   const onExit = vi.fn(() => {})
 
@@ -41,7 +43,7 @@ test('process on exit', async () => {
 })
 
 test('process send stdin', async () => {
-  const session = await Session.create({ id: "Nodejs" })
+  const session = await Session.create({ id: "Nodejs", apiKey: E2B_API_KEY })
 
   const process = await session.process.start({
     cmd: 'while IFS= read -r line; do echo "$line"; sleep 1; done',
