@@ -1,16 +1,17 @@
 import asyncio
-import logging
 from asyncio.exceptions import TimeoutError
+import logging
 from typing import Any, Awaitable, Callable, ClassVar, Coroutine, Dict, List, Optional
 
 import async_timeout
+from pydantic import BaseModel
+
 from e2b.session.env_vars import EnvVars
 from e2b.session.exception import MultipleExceptions, ProcessException, RpcException
 from e2b.session.out import OutStderrResponse, OutStdoutResponse
 from e2b.session.session_connection import SessionConnection
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

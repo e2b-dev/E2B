@@ -1,11 +1,12 @@
 import asyncio
 import logging
 import traceback
-from asyncio import CancelledError, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 
 import async_timeout
+from pydantic import BaseModel
+
 from e2b.api.client import NewSession
 from e2b.api.client import Session as SessionInfo
 from e2b.api.client.rest import ApiException
@@ -20,7 +21,7 @@ from e2b.session.session_rpc import Notification, SessionRpc
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
 from e2b.utils.threads import shutdown_executor
-from pydantic import BaseModel
+
 
 logger = logging.getLogger(__name__)
 
