@@ -57,8 +57,7 @@ class Session(SessionConnection):
     def __init__(
         self,
         id: Union[Environment, str],
-        api_key: Optional[str] = None,
-        edit_enabled: bool = False,
+        api_key: str,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
@@ -88,7 +87,6 @@ class Session(SessionConnection):
         super().__init__(
             id=id,
             api_key=api_key,
-            edit_enabled=edit_enabled,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,

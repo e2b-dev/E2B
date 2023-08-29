@@ -1,7 +1,6 @@
 import nodeResolve from '@rollup/plugin-node-resolve'
 import autoExternal from 'rollup-plugin-auto-external'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
-import { terser } from 'rollup-plugin-terser'
 import typescript from 'rollup-plugin-typescript2'
 
 import pkg from './package.json'
@@ -40,6 +39,5 @@ export default {
       preferBuiltins: true,
       browser: true,
     }),
-    terser(),
   ],
 }

@@ -12,6 +12,7 @@ import Logger from '../utils/logger'
 import { assertFulfilled, formatSettledErrors } from '../utils/promise'
 import wait from '../utils/wait'
 import { codeSnippetService } from './codeSnippet'
+import { AuthenticationError } from './error'
 import { filesystemService } from './filesystem'
 import { processService } from './process'
 import { terminalService } from './terminal'
@@ -33,9 +34,8 @@ interface Subscriber {
 
 export interface SessionConnectionOpts {
   id: string
-  apiKey?: string
+  apiKey: string
   debug?: boolean
-  editEnabled?: boolean
   __debug_hostname?: string
   __debug_port?: number
   __debug_devEnv?: 'remote' | 'local'
@@ -56,6 +56,12 @@ export class SessionConnection {
   private subscribers: Subscriber[] = []
 
   constructor(private readonly opts: SessionConnectionOpts) {
+    if (!opts.apiKey) {
+      throw new AuthenticationError(
+        'API key is required, please visit https://e2b.dev/docs to get your API key',
+      )
+    }
+
     this.logger = new Logger('Session', opts.debug)
     this.logger.log(`Session for code snippet "${opts.id}" initialized`)
   }
@@ -137,7 +143,7 @@ export class SessionConnection {
         const res = await createSession({
           api_key: this.opts.apiKey,
           codeSnippetID: this.opts.id,
-          editEnabled: this.opts.editEnabled,
+          editEnabled: false,
         })
         this.session = res.data
         this.logger.log('Aquired session:', this.session)
@@ -153,7 +159,7 @@ export class SessionConnection {
           }
           if (error.status === 401) {
             throw new Error(
-              `Error creating session - (${error.status}) unauthenticated (you need to be authenticated to start an session with persistent edits): ${error.data.message}`,
+              `Error creating session - (${error.status}) unauthenticated: ${error.data.message}`,
             )
           }
           if (error.status === 500) {
