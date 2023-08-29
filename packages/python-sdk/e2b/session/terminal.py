@@ -78,7 +78,7 @@ class Terminal:
         Sends data to the terminal standard input.
 
         :param data: Data to send
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
@@ -96,7 +96,7 @@ class Terminal:
 
         :param cols: Number of columns
         :param rows: Number of rows
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
@@ -112,7 +112,7 @@ class Terminal:
         """
         Kill the terminal session.
 
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
@@ -167,7 +167,7 @@ class TerminalManager:
         :param cmd: If the `cmd` parameter is defined it will be executed as a command
         and this terminal session will exit when the command exits
         :param env_vars: Environment variables that will be accessible inside of the terminal
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
 
         :return: Terminal session
         """

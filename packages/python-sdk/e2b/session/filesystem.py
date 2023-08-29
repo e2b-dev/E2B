@@ -76,7 +76,7 @@ class FilesystemManager:
 
         :param path: Path to a file
         :param content: Content to write
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
@@ -90,7 +90,7 @@ class FilesystemManager:
         Removes a file or a directory.
 
         :param path: Path to a file or a directory
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
@@ -104,7 +104,7 @@ class FilesystemManager:
         List files in a directory.
 
         :param path: Path to a directory
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
 
         :return: Array of files in a directory
         """
@@ -124,7 +124,7 @@ class FilesystemManager:
         Creates a new directory and all directories along the way if needed on the specified path.
 
         :param path: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(

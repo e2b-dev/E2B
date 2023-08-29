@@ -146,7 +146,7 @@ class Process:
         Sends data to the process stdin.
 
         :param data: Data to send
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
@@ -162,7 +162,7 @@ class Process:
         """
         Kills the process.
 
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
@@ -211,7 +211,7 @@ class ProcessManager:
         :param env_vars: A dictionary of environment variables to set for the process
         :param rootdir: The root directory for the process
         :param process_id: The process id to use for the process. If not provided, a random id is generated
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
 
         :return: A process object
         """

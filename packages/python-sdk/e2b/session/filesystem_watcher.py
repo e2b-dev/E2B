@@ -50,7 +50,7 @@ class FilesystemWatcher:
         """
         Starts the filesystem watcher.
 
-        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         if self._unsubscribe:
             return
