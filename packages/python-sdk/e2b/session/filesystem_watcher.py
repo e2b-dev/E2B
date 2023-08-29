@@ -45,9 +45,11 @@ class FilesystemWatcher:
         self._unsubscribe: Optional[Callable[[], Awaitable[Any]]] = None
         self._listeners: Set[Callable[[FilesystemEvent], Any]] = set()
 
-    async def start(self) -> None:
+    async def start(self, timeout: int = None) -> None:
         """
         Starts the filesystem watcher.
+
+        :param timeout: The timeout in seconds to wait for the subscription to be confirmed
         """
         if self._unsubscribe:
             return
@@ -58,6 +60,7 @@ class FilesystemWatcher:
                 self._handle_filesystem_events,
                 "watchDir",
                 self.path,
+                timeout=timeout,
             )
         except RpcException as e:
             raise FilesystemException(e.message) from e

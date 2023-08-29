@@ -1,9 +1,11 @@
 import asyncio
 import logging
 import traceback
+from asyncio import CancelledError, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 
+import async_timeout
 from e2b.api.client import NewSession
 from e2b.api.client import Session as SessionInfo
 from e2b.api.client.rest import ApiException
@@ -182,6 +184,7 @@ class SessionConnection:
                 self._process_cleanup.append(refresh_handler.cancel)
         except Exception as e:
             logger.error(f"Failed to acquire session: {e}")
+            await self.close()
             raise e
 
         hostname = self.get_hostname(self._debug_port or WS_PORT)
@@ -197,13 +200,20 @@ class SessionConnection:
             )
             await self._rpc.connect()
         except Exception as e:
+            await self.close()
             raise e
 
-    async def _call(self, service: str, method: str, params: List[Any] = []):
+    async def _call(
+        self, service: str, method: str, params: List[Any] = None, timeout: int = None
+    ):
+        if not params:
+            params = []
+
         if not self.is_open:
             raise SessionException("Session is not open")
 
-        return await self._rpc.send_message(f"{service}_{method}", params)
+        async with async_timeout.timeout(timeout):
+            return await self._rpc.send_message(f"{service}_{method}", params)
 
     async def _handle_subscriptions(
         self,
@@ -248,9 +258,9 @@ class SessionConnection:
 
         return unsub_all
 
-    async def _unsubscribe(self, sub_id: str):
+    async def _unsubscribe(self, sub_id: str, timeout: int = None):
         sub = self._subscribers[sub_id]
-        await self._call(sub.service, "unsubscribe", [sub.id])
+        await self._call(sub.service, "unsubscribe", [sub.id], timeout=timeout)
         del self._subscribers[sub_id]
         logger.info(f"Unsubscribed from {sub_id}")
 
@@ -260,8 +270,11 @@ class SessionConnection:
         handler: Callable[[Any], Any],
         method: str,
         *params,
+        timeout: int = None,
     ):
-        sub_id = await self._call(service, "subscribe", [method, *params])
+        sub_id = await self._call(
+            service, "subscribe", [method, *params], timeout=timeout
+        )
         if not isinstance(sub_id, str):
             raise Exception(f"Failed to subscribe: ${sub_id}")
 
@@ -273,7 +286,7 @@ class SessionConnection:
         )
 
         async def unsub():
-            await self._unsubscribe(sub_id)
+            await self._unsubscribe(sub_id, timeout=timeout)
 
         return unsub
 

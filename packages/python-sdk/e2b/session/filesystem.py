@@ -52,43 +52,52 @@ class FilesystemManager:
     #         self.service_name, "writeBase64", [path, base64_content]
     #     )
 
-    async def read(self, path: str) -> str:
+    async def read(self, path: str, timeout: int = None) -> str:
         """
         Reads the whole content of a file as an array of bytes.
 
         :param path: path to a file
+        :param timeout: Timeout for the call
         :return: content of a file
         """
         try:
-            result: str = await self._session._call(self._service_name, "read", [path])
+            result: str = await self._session._call(
+                self._service_name, "read", [path], timeout=timeout
+            )
             return result
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def write(self, path: str, content: str) -> None:
+    async def write(self, path: str, content: str, timeout: int = None) -> None:
         """
         Writes content to a file.
 
         :param path: path to a file
         :param content: content to write
+        :param timeout: Timeout for the call
         """
         try:
-            await self._session._call(self._service_name, "write", [path, content])
+            await self._session._call(
+                self._service_name, "write", [path, content], timeout=timeout
+            )
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def remove(self, path: str) -> None:
+    async def remove(self, path: str, timeout: int = None) -> None:
         """
         Removes a file or a directory.
 
         :param path: path to a file or a directory
+        :param timeout: Timeout for the call
         """
         try:
-            await self._session._call(self._service_name, "remove", [path])
+            await self._session._call(
+                self._service_name, "remove", [path], timeout=timeout
+            )
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def list(self, path: str) -> List[FileInfo]:
+    async def list(self, path: str, timeout: int = None) -> List[FileInfo]:
         """
         List files in a directory.
 
@@ -97,7 +106,7 @@ class FilesystemManager:
         """
         try:
             result: List[Any] = await self._session._call(
-                self._service_name, "list", [path]
+                self._service_name, "list", [path], timeout=timeout
             )
             return [
                 FileInfo(is_dir=file_info["isDir"], name=file_info["name"])
@@ -106,14 +115,16 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def make_dir(self, path: str) -> None:
+    async def make_dir(self, path: str, timeout: int = None) -> None:
         """
         Creates a new directory and all directories along the way if needed on the specified path.
 
         :param path: path to a new directory. For example '/dirA/dirB' when creating 'dirB'
         """
         try:
-            await self._session._call(self._service_name, "makeDir", [path])
+            await self._session._call(
+                self._service_name, "makeDir", [path], timeout=timeout
+            )
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
