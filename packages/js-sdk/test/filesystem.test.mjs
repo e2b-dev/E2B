@@ -14,7 +14,7 @@ test('list files', async () => {
 })
 
 test('create file', async () => {
-  const session = await Session.create({id: "Nodejs", , apiKey: E2B_API_KEY })
+  const session = await Session.create({id: "Nodejs", apiKey: E2B_API_KEY })
   await session.filesystem.makeDir("/test")
   await session.filesystem.write("/test/test.txt", "Hello World!")
 
