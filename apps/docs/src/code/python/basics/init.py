@@ -8,4 +8,4 @@ async def main():
   session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
   await session.close()
 
-asyncio.new_event_loop().run_until_complete(main())
+asyncio.run(main())

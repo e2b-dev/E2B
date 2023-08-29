@@ -21,4 +21,4 @@ async def main():
 
   await session.close()
 
-asyncio.new_event_loop().run_until_complete(main())
+asyncio.run(main())
