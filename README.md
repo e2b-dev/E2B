@@ -1,7 +1,11 @@
 <h1 align="center">
-  <img width="200" src="docs-assets/logoname-black.svg#gh-light-mode-only" alt="e2b">
-  <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
+  <font size="30">
+  <b>
+    E2B
+  </b>
+  </font>
 </h1>
+
 
 <h4 align="center">
   <a href="https://e2b.dev/docs">Docs</a> |

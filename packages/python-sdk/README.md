@@ -1,111 +1,49 @@
-# E2B Python SDK
-The E2B Python SDK provides an interface for managing cloud environments for AI agents.
+<h1 align="center">
+  <font size="30">
+  <b>
+    E2B Python SDK
+  </b>
+  </font>
+</h1>
 
-This SDK gives your agent a full cloud development environment that's sandboxed. That means:
+<h4 align="center">
+  <a href="https://e2b.dev/docs">Docs</a> |
+  <a href="https://e2b.dev">Website</a> |
+  <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
+  <a href="https://twitter.com/e2b_dev">Twitter</a>
+</h4>
 
-- Access to Linux OS
-- Using filesystem (create, list, and delete files and dirs)
-- Run processes
-- Sandboxed - you can run any code
-- Access to the internet
+<h4 align="center">
+  <a href="https://discord.gg/U7KEcGErtQ">
+    <img src="https://img.shields.io/badge/chat-on%20Discord-blue" alt="Discord community server" />
+  </a>
+  <a href="https://twitter.com/e2b_dev">
+    <img src="https://img.shields.io/twitter/follow/infisical?label=Follow" alt="e2b Twitter" />
+  </a>
+</h4>
 
-These cloud environments are meant to be used for agents. Like a sandboxed playgrounds, where the agent can do whatever it wants.
+[e2b](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
 
-## Installation
+With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
+- Run any code
+- Run any terminal command
+- Install dependencies and programs
+- Use filesystem
+- Upload and download files
+- Access the internet
+- Start a web server that's accessible from the internet
+- Clone git repositories
+- Start any process (even long-running such as a database)
 
-```sh
+This just a few examples of what can be done with our agent cloud environments.
+
+**Our SDK works with any AI agent (no matter what framework, you're using), and without the need to manage any infrastructure.**
+
+## Getting Started & Documentation
+
+Visit [docs](https://e2b.dev/docs) to get started with the SDK.
+
+### Installation
+```bash
 pip install e2b
-```
-
-## Usage
-
-### Initialize new cloud environment session
-```python
-from e2b import Session
-# You can use some of the predefined environments by using specific id:
-# 'Nodejs', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-session = Session(id="Nodejs", on_scan_ports=lambda ports: print("Open ports", ports))
-
-# Start a session and create a connection to it
-await session.open()
-
-...
-
-# Close the session after you are done
-await session.close()
-```
-
-### Use filesystem inside cloud environment
-```python
-# List
-dir_b_content = await session.filesystem.list("/dirA/dirB")
-
-# Write
-# This will create a new file "file.txt" inside the dir "dirB" with the content "Hello world".
-await session.filesystem.write("/dirA/dirB/file.txt", "Hello World")
-
-# Read
-file_content = await session.filesystem.read("/dirA/dirB/file.txt")
-
-# Remove
-# Remove a file.
-await session.filesystem.remove("/dirA/dirB/file.txt")
-# Remove a directory and all of its content.
-await session.filesystem.remove("/dirA")
-
-# Make dir
-# Creates a new directory "dirC" and also "dirA" and "dirB" if those directories don"t already exist.
-await session.filesystem.make_dir("/dirA/dirB/dirC")
-
-# Watch dir for changes
-watcher = session.filesystem.watch_dir("/dirA/dirB")
-watcher.add_event_listener(lambda e: print("Event", e))
-await watcher.start()
-```
-
-### Start process inside cloud environment
-```python
-proc = await session.process.start(
-  cmd="echo Hello World",
-  on_stdout=on_stdout,
-  on_stderr=on_stderr,
-  on_exit=lambda: print("Exit"),
-  rootdir="/code",
-)
-
-await proc.send_stdin("\n")
-
-print(proc.process_id)
-
-await proc.kill()
-
-# Wait for process to finish
-await proc.finished
-```
-
-### Create interactive terminal inside cloud environment
-```python
-term = await session.terminal.start(
-    on_data=lambda data: print("Data", data),
-    on_exit=lambda: print("Exit"),
-    cols=80,
-    rows=24,
-    rootdir="/code",
-    # If you specify a command, the terminal will be closed after the command finishes.
-    # cmd="echo Hello World",
-)
-
-await term.send_data("echo 1\n")
-
-await term.resize(80, 30)
-
-print(term.terminal_id)
-
-await term.kill()
-```
-
-### Get public hostname for an exposed port inside cloud environment
-```python
-# Get hostname for port 3000. The hostname is without the protocol (http://).
-hostname = session.get_hostname(3000)
 ```
