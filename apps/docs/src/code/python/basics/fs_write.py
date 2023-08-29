@@ -1,10 +1,13 @@
 import asyncio
+from os import getenv
 from e2b import Session
 
-async def main():
-  session = await Session.create(id="Nodejs")
+E2B_API_KEY = getenv("E2B_API_KEY")
 
-  # `filesystem.writre()` will:
+async def main():
+  session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
+
+  # `filesystem.write()` will:
   # - create the file if it doesn't exist
   # - fail if any directory in the path doesn't exist
   # - overwrite the file if it exists
@@ -17,4 +20,4 @@ async def main():
 
   await session.close()
 
-asyncio.new_event_loop().run_until_complete(main())
+asyncio.run(main())
