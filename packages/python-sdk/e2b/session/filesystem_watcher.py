@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, Awaitable, Callable, Optional, Set
 
+from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.session_connection import SessionConnection
 from pydantic import BaseModel
@@ -45,11 +46,11 @@ class FilesystemWatcher:
         self._unsubscribe: Optional[Callable[[], Awaitable[Any]]] = None
         self._listeners: Set[Callable[[FilesystemEvent], Any]] = set()
 
-    async def start(self, timeout: int = None) -> None:
+    async def start(self, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Starts the filesystem watcher.
 
-        :param timeout: The timeout in seconds to wait for the subscription to be confirmed
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         if self._unsubscribe:
             return
@@ -81,9 +82,9 @@ class FilesystemWatcher:
         """
         Adds a listener for filesystem events.
 
-        :param listener: a listener to add
+        :param listener: Listener to add
 
-        :return: a function that removes the listener
+        :return: Function that removes the listener
         """
         self._listeners.add(listener)
 

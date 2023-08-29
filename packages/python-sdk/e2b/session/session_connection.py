@@ -11,7 +11,7 @@ from e2b.api.client import NewSession
 from e2b.api.client import Session as SessionInfo
 from e2b.api.client.rest import ApiException
 from e2b.api.main import client, configuration
-from e2b.constants import SESSION_DOMAIN, SESSION_REFRESH_PERIOD, WS_PORT, WS_ROUTE
+from e2b.constants import SESSION_DOMAIN, SESSION_REFRESH_PERIOD, WS_PORT, WS_ROUTE, TIMEOUT
 from e2b.session.exception import (
     AuthenticationException,
     MultipleExceptions,
@@ -87,9 +87,9 @@ class SessionConnection:
         """
         Get the hostname for the session or for the specified session's port.
 
-        :param port: specify if you want to connect to a specific port of the session
+        :param port: Specify if you want to connect to a specific port of the session
 
-        :return: hostname of the session or session's port
+        :return: Hostname of the session or session's port
         """
         if not self._session:
             raise Exception(
@@ -205,7 +205,7 @@ class SessionConnection:
             raise e
 
     async def _call(
-        self, service: str, method: str, params: List[Any] = None, timeout: int = None
+        self, service: str, method: str, params: List[Any] = None, timeout: Optional[int] = TIMEOUT
     ):
         if not params:
             params = []
@@ -259,7 +259,7 @@ class SessionConnection:
 
         return unsub_all
 
-    async def _unsubscribe(self, sub_id: str, timeout: int = None):
+    async def _unsubscribe(self, sub_id: str, timeout: Optional[int] = TIMEOUT):
         sub = self._subscribers[sub_id]
         await self._call(sub.service, "unsubscribe", [sub.id], timeout=timeout)
         del self._subscribers[sub_id]
@@ -271,7 +271,7 @@ class SessionConnection:
         handler: Callable[[Any], Any],
         method: str,
         *params,
-        timeout: int = None,
+        timeout: Optional[int] = TIMEOUT,
     ):
         sub_id = await self._call(
             service, "subscribe", [method, *params], timeout=timeout

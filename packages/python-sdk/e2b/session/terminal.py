@@ -4,6 +4,7 @@ from typing import Any, Awaitable, Callable, Coroutine, List, Optional
 
 import async_timeout
 
+from e2b.constants import TIMEOUT
 from e2b.session.env_vars import EnvVars
 from e2b.session.exception import MultipleExceptions, RpcException, TerminalException
 from e2b.session.session_connection import SessionConnection
@@ -72,12 +73,12 @@ class Terminal:
         self._finished = finished
         self._output = output
 
-    async def send_data(self, data: str, timeout: int = None) -> None:
+    async def send_data(self, data: str, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Sends data to the terminal standard input.
 
         :param data: Data to send
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -89,13 +90,13 @@ class Terminal:
         except RpcException as e:
             raise TerminalException(e.message) from e
 
-    async def resize(self, cols: int, rows: int, timeout=None) -> None:
+    async def resize(self, cols: int, rows: int, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Resizes the terminal tty.
 
         :param cols: Number of columns
         :param rows: Number of rows
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -107,11 +108,11 @@ class Terminal:
         except RpcException as e:
             raise TerminalException(e.message) from e
 
-    async def kill(self, timeout: int = None) -> None:
+    async def kill(self, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Kill the terminal session.
 
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -152,13 +153,12 @@ class TerminalManager:
         on_exit: Optional[Callable[[], Any]] = None,
         cmd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
-        timeout: int = None,
+        timeout: Optional[int] = TIMEOUT,
     ) -> Terminal:
         """
         Start a new terminal session.
 
         :param on_data: Callback that will be called when the terminal sends data
-        :param size: Initial size of the terminal
         :param rootdir: Working directory where will the terminal start
         :param terminal_id: Unique identifier of the terminal session
         :param on_exit: Callback that will be called when the terminal exits
@@ -167,7 +167,7 @@ class TerminalManager:
         :param cmd: If the `cmd` parameter is defined it will be executed as a command
         and this terminal session will exit when the command exits
         :param env_vars: Environment variables that will be accessible inside of the terminal
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
 
         :return: Terminal session
         """

@@ -1,6 +1,6 @@
-import base64
-from typing import Any, List
+from typing import Any, List, Optional
 
+from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.filesystem_watcher import FilesystemWatcher
 from e2b.session.session_connection import SessionConnection
@@ -52,13 +52,13 @@ class FilesystemManager:
     #         self.service_name, "writeBase64", [path, base64_content]
     #     )
 
-    async def read(self, path: str, timeout: int = None) -> str:
+    async def read(self, path: str, timeout: Optional[int] = TIMEOUT) -> str:
         """
         Reads the whole content of a file as an array of bytes.
 
-        :param path: path to a file
+        :param path: Path to a file
         :param timeout: Timeout for the call
-        :return: content of a file
+        :return: Content of a file
         """
         try:
             result: str = await self._session._call(
@@ -68,13 +68,15 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def write(self, path: str, content: str, timeout: int = None) -> None:
+    async def write(
+        self, path: str, content: str, timeout: Optional[int] = TIMEOUT
+    ) -> None:
         """
         Writes content to a file.
 
-        :param path: path to a file
-        :param content: content to write
-        :param timeout: Timeout for the call
+        :param path: Path to a file
+        :param content: Content to write
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -83,12 +85,12 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def remove(self, path: str, timeout: int = None) -> None:
+    async def remove(self, path: str, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Removes a file or a directory.
 
-        :param path: path to a file or a directory
-        :param timeout: Timeout for the call
+        :param path: Path to a file or a directory
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -97,12 +99,14 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def list(self, path: str, timeout: int = None) -> List[FileInfo]:
+    async def list(self, path: str, timeout: Optional[int] = TIMEOUT) -> List[FileInfo]:
         """
         List files in a directory.
 
-        :param path: path to a directory
-        :return: array of files in a directory
+        :param path: Path to a directory
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+
+        :return: Array of files in a directory
         """
         try:
             result: List[Any] = await self._session._call(
@@ -115,11 +119,12 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def make_dir(self, path: str, timeout: int = None) -> None:
+    async def make_dir(self, path: str, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Creates a new directory and all directories along the way if needed on the specified path.
 
-        :param path: path to a new directory. For example '/dirA/dirB' when creating 'dirB'
+        :param path: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -132,7 +137,7 @@ class FilesystemManager:
         """
         Watches directory for filesystem events.
 
-        :param path: path to a directory that will be watched
+        :param path: Path to a directory that will be watched
 
         :return: New watcher
         """

@@ -6,6 +6,7 @@ from typing import Any, Awaitable, Callable, ClassVar, Coroutine, Dict, List, Op
 import async_timeout
 from pydantic import BaseModel
 
+from e2b.constants import TIMEOUT
 from e2b.session.env_vars import EnvVars
 from e2b.session.exception import MultipleExceptions, ProcessException, RpcException
 from e2b.session.out import OutStderrResponse, OutStdoutResponse
@@ -140,12 +141,12 @@ class Process:
         self._finished = finished
         self._output = output
 
-    async def send_stdin(self, data: str, timeout: int = None) -> None:
+    async def send_stdin(self, data: str, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Sends data to the process stdin.
 
         :param data: Data to send
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -157,11 +158,11 @@ class Process:
         except RpcException as e:
             raise ProcessException(e.message) from e
 
-    async def kill(self, timeout: int = None) -> None:
+    async def kill(self, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Kills the process.
 
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
         try:
             await self._session._call(
@@ -198,7 +199,7 @@ class ProcessManager:
         env_vars: Optional[EnvVars] = None,
         rootdir: str = "",
         process_id: Optional[str] = None,
-        timeout: int = None,
+        timeout: Optional[int] = TIMEOUT,
     ) -> Process:
         """
         Starts a process in the environment.
@@ -210,9 +211,9 @@ class ProcessManager:
         :param env_vars: A dictionary of environment variables to set for the process
         :param rootdir: The root directory for the process
         :param process_id: The process id to use for the process. If not provided, a random id is generated
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
 
-        :return: A process object.
+        :return: A process object
         """
         with async_timeout.timeout(timeout):
             if not env_vars:

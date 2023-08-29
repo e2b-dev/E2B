@@ -1,8 +1,8 @@
 import logging
-import time
 from typing import Any, Callable, List, Literal, Optional, Union
 
 from async_timeout import timeout as async_timeout
+from e2b.constants import TIMEOUT
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
 from e2b.session.filesystem import FilesystemManager
 from e2b.session.process import ProcessManager
@@ -102,9 +102,13 @@ class Session(SessionConnection):
         self._filesystem = FilesystemManager(session=self)
         self._process = ProcessManager(session=self)
 
-    async def open(self, timeout: int = None) -> None:
+    async def open(self, timeout: Optional[int] = TIMEOUT) -> None:
+        """
+        Opens the session.
+
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
+        """
         async with async_timeout(timeout):
-            time.sleep(3)
             await super().open()
             await self._code_snippet._subscribe()
 
@@ -130,7 +134,7 @@ class Session(SessionConnection):
         api_key: Optional[str] = None,
         edit_enabled: bool = False,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        timeout: int = None,
+        timeout: Optional[int] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -153,7 +157,7 @@ class Session(SessionConnection):
         :param api_key: The API key to use
         :param edit_enabled: Whether the session state will be saved after exit
         :param on_scan_ports: A callback to handle opened ports
-        :param timeout: Timeout for the call
+        :param timeout: How many seconds to wait for the server to send data before giving up (defaults to 60 seconds). Setting it to None has the effect of infinite timeout
         """
 
         logging.info(f"Session {id if isinstance(id, str) else type(id)}")
