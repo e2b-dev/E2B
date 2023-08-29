@@ -262,18 +262,19 @@ files = [
 
 [[package]]
 name = "e2b"
-version = "0.1.10"
+version = "0.2.2"
 description = "E2B SDK that give agents cloud environments"
 optional = false
-python-versions = ">=3.9,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "e2b-0.1.10-py3-none-any.whl", hash = "sha256:a433bfde0a928f52734b132b030a861e9d702d424ca7f67042be310b6cd48e18"},
-    {file = "e2b-0.1.10.tar.gz", hash = "sha256:f6c796107fc7aa2b6caa60033f6009f571ae011f640859557a4c1944a1404add"},
+    {file = "e2b-0.2.2-py3-none-any.whl", hash = "sha256:d659106d5235d47d662673a175c32597d5bddd05d98eeecc2401298e2fa92df3"},
+    {file = "e2b-0.2.2.tar.gz", hash = "sha256:e286f7af95e1d233b2479983d9ab4fdd41e1288856cfacf49620e4a9c1d4b1ff"},
 ]
 
 [package.dependencies]
 aenum = ">=3.1.11"
 aiohttp = ">=3.8.4"
+janus = ">=1.0.0,<2.0.0"
 jsonrpcclient = ">=4.0.3,<5.0.0"
 pydantic = ">=1.10.5,<2.0.0"
 python-dateutil = ">=2.8.2"
@@ -360,6 +361,20 @@ files = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},
     {file = "idna-3.4.tar.gz", hash = "sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4"},
 ]
+
+[[package]]
+name = "janus"
+version = "1.0.0"
+description = "Mixed sync-async queue to interoperate between asyncio tasks and classic threads"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "janus-1.0.0-py3-none-any.whl", hash = "sha256:2596ea5482711c1ee3ef2df6c290aaf370a13c55a007826e8f7c32d696d1d00a"},
+    {file = "janus-1.0.0.tar.gz", hash = "sha256:df976f2cdcfb034b147a2d51edfc34ff6bfb12d4e2643d3ad0e10de058cb1612"},
+]
+
+[package.dependencies]
+typing-extensions = ">=3.7.4.3"
 
 [[package]]
 name = "jsonrpcclient"
@@ -731,4 +746,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "76ea2d1c3a6cf238092d0a139dd1f4e6ed6f7ebf96191e75376286b718ec778d"
+content-hash = "52dfbf4eec758a9a720d82088f9ad86a532374acdb7fa8879a171675ef4e134b"
