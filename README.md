@@ -22,6 +22,10 @@
   </a>
 </h4>
 
+<h3 align="center">
+  Try out E2B's <a href="https://e2b.dev/docs">AI Playgrounds</a> for agents, copilots, and AI apps
+</h3>
+
 [E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
 
 With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
