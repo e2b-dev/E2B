@@ -6,9 +6,8 @@ authors = ["Vasek Mlejnsky <vasek.mlejnsky@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.8"
 e2b = "^0.2.2"
-asyncio = "^3.4.3"
 
 
 [build-system]
