@@ -3,7 +3,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "gh:version": "echo ::set-output name=changes::$(npx changeset version 2>&1 | grep -q 'No unreleased changesets found' && echo 'false' || echo 'true') && npm run postVersion --workspaces --if-present",
+    "gh:version": "echo \"name=$(npx changeset version 2>&1 | grep -q 'No unreleased changesets found' && echo 'false' || echo 'true')\" >> $GITHUB_OUTPUT && npm run postVersion --workspaces --if-present",
     "version": "changeset version && npm run postVersion --workspaces --if-present",
     "publish": "changeset publish && npm run postPublish --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
