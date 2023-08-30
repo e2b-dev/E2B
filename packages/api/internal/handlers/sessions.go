@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/devbookhq/devbook-api/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
@@ -122,6 +123,7 @@ func (a *APIStore) PostSessions(
 		a.sendAPIStoreError(c, err.Code, err.ClientMsg)
 		return
 	}
+	startTime := time.Now()
 	ReportEvent(ctx, "created session")
 	if teamID != nil {
 		err := a.posthog.Enqueue(posthog.GroupIdentify{
@@ -148,7 +150,6 @@ func (a *APIStore) PostSessions(
 		if err != nil {
 			fmt.Printf("Error when sending event to Posthog: %+v\n", err)
 		}
-		a.teamCache.Add(session.SessionID, *teamID)
 	}
 
 	if *newSession.EditEnabled {
@@ -175,7 +176,7 @@ func (a *APIStore) PostSessions(
 		}
 	}
 
-	if err := a.sessionsCache.Add(session); err != nil {
+	if err := a.sessionsCache.Add(session, teamID, &startTime); err != nil {
 		errMsg := fmt.Errorf("error when adding session to cache: %v", err)
 		ReportError(ctx, errMsg)
 
