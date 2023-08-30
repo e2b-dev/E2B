@@ -36,12 +36,20 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
+      - name: Create new versions
+        id: version
+        run: npm run gh:version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install dependencies
+        if: steps.version.outputs.changes == 'true'
         run: npm ci
 
       - name: Cache node modules
         uses: actions/cache@v3
         id: cache-modules
+        if: steps.version.outputs.changes == 'true'
         with:
           path: node_modules
           key: node_modules-${{hashFiles('package-lock.json')}}
@@ -49,16 +57,13 @@ jobs:
 
       - name: Run tests
         run: npm run test
+        if: steps.version.outputs.changes == 'true'
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
-      - name: Create new versions
-        run: npm run version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Release new versions
         uses: changesets/action@v1
+        if: steps.version.outputs.changes == 'true'
         with:
           publish: npm run publish
         env:
@@ -67,6 +72,7 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Commit new versions
+        if: steps.version.outputs.changes == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
