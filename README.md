@@ -1,6 +1,9 @@
 <h1 align="center">
-  <img width="200" src="docs-assets/logoname-black.svg#gh-light-mode-only" alt="e2b">
-  <img width="200" src="docs-assets/logoname-white.svg#gh-dark-mode-only" alt="e2b">
+  <font size="30">
+  <b>
+    E2B
+  </b>
+  </font>
 </h1>
 
 <h4 align="center">
@@ -19,7 +22,11 @@
   </a>
 </h4>
 
-[e2b](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
+<h3 align="center">
+  Try out E2B's <a href="https://e2b.dev/docs?ref=e2b-repo">AI Playgrounds</a> for agents, copilots, and AI apps
+</h3>
+
+[E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
 
 With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
 - Run any code
