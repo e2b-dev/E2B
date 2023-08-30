@@ -13,6 +13,7 @@ import {
 import { usePostHog } from 'posthog-js/react'
 import { nanoid } from 'nanoid'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 
 import Steps from 'components/Steps'
 import SelectRepository from 'components/SelectRepository'
@@ -253,7 +254,17 @@ function Setup() {
         >
           Sign out
         </button>
-        <StarUs />
+        <div className="flex space-x-4">
+          <Link
+            href="https://e2b.dev/docs?ref=smol-developer-setup" className="inline-flex space-x-6"
+            onMouseDown={() => posthog?.capture('clicked SDK link')}
+          >
+            <span className="rounded-full hover:bg-indigo-400/20 transition-all bg-indigo-400/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-400/20">
+              Try <b>E2B</b> SDK
+            </span>
+          </Link>
+          <StarUs />
+        </div>
       </div>
       <div className="overflow-hidden flex-1 mx-auto w-full max-w-lg flex flex-col">
         <Steps

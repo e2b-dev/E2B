@@ -59,7 +59,7 @@ function ChooseOpenAIKey({
         Select OpenAI API Key
       </h2>
       <p className="mt-2 mb-6 text-lg leading-8 text-gray-400">
-        Pass your own OpenAI key or use the e2b key.
+        Pass your own OpenAI key.
       </p>
 
       <div className="flex-1 w-full flex flex-col space-y-4 items-center justify-start">
@@ -104,7 +104,6 @@ function ChooseOpenAIKey({
           <div className="flex flex-col space-y-2">
             <ul className="list-disc p-4 border border-indigo-400/40 rounded-md text-sm">
               <li className="ml-4">Use your own OpenAI API key</li>
-              <li className="ml-4">Using your own key might help when e2b is hitting the OpenAI&apos;s API rate limits</li>
               <li className="ml-4 text-red-500"><b>All costs running the smol developer will be billed to your OpenAI account</b></li>
             </ul>
             <OpenAIKeyInput

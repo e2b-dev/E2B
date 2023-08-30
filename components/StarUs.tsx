@@ -6,7 +6,6 @@ function StarUs() {
     <Link
       href="https://github.com/e2b-dev/e2b"
       target="_blank"
-      rel="noreferrer"
       className="flex items-center space-x-1 text-xs text-gray-400 hover:text-white transition-all"
     >
       <StarIcon size="14px" />

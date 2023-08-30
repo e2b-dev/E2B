@@ -76,7 +76,7 @@ function AgentLogFileContent({
         </div>
       ) : (
         <div>
-          Unexpected JSON format. Please reach out to the e2b team.
+          Unexpected JSON format. Please reach out to the E2B team.
         </div>
       )}
     </div>

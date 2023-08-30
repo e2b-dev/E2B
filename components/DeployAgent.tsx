@@ -129,7 +129,7 @@ function DeployAgent({
                 className="px-2 py-1 font-medium rounded-md text-sm border border-green-400/30 bg-green-400/10 text-green-400 hover:bg-transparent hover:border-green-400 transition-all"
                 onClick={onDeploy}
               >
-                Deploy on <b>e2b</b>
+                Deploy on <b>E2B</b>
               </button>
             </div>
           </>

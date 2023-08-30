@@ -14,6 +14,7 @@ import {
   List,
 } from 'lucide-react'
 import Script from 'next/script'
+import Link from 'next/link'
 
 import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
 import DashboardMobileSidebar from 'components/Sidebar/DashboardMobileSidebar'
@@ -156,6 +157,14 @@ function Layout({ children }: PropsWithChildren) {
               {/* Header` */}
               <div className="hidden xl:flex px-4 py-2 border border-white/5 justify-end bg-gray-900 rounded-md">
                 <div className="flex justify-end space-x-4">
+                  <Link
+                    href="https://e2b.dev/docs?ref=smol-developer-dashboard" className="inline-flex space-x-6"
+                    onMouseDown={() => posthog?.capture('clicked SDK link')}
+                  >
+                    <span className="rounded-full bg-indigo-400/10 hover:bg-indigo-400/20 transition-all px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-400/20">
+                      Try <b>E2B</b> SDK
+                    </span>
+                  </Link>
                   <StarUs />
                   <Feedback />
                 </div>

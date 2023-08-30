@@ -23,7 +23,7 @@ function DashboardDesktopSidebar({
         {/* Logo */}
         <nav className="flex flex-1 flex-col space-y-8 py-4">
           <div className="font-bold text-gray-100">
-            e2b
+            E2B
           </div>
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>

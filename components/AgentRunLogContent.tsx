@@ -75,7 +75,7 @@ function AgentRunLogContent({
           }
           {!log.deployments.secrets &&
             <span className="text-xs text-gray-500">
-              {'Open AI API - using e2b\'s API key'}
+              {'Open AI API - using E2B\'s OpenAI API key'}
             </span>
           }
           <Link

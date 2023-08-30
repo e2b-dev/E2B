@@ -57,11 +57,11 @@ function SmolDeveloper() {
             <div className="flex flex-col space-y-4 items-center lg:items-start">
               <span className="flex space-x-4">
                 <Link
-                  href="/" className="inline-flex space-x-6"
-                  onMouseDown={() => posthog?.capture('clicked link to e2b homepage')}
+                  href="https://e2b.dev/docs?ref=smol-developer-landing-page" className="inline-flex space-x-6"
+                  onMouseDown={() => posthog?.capture('clicked SDK link')}
                 >
-                  <span className="rounded-full bg-indigo-400/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-400/20">
-                    Runs on <b>e2b</b>
+                  <span className="rounded-full hover:bg-indigo-400/20 transition-all bg-indigo-400/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-400/20">
+                    Powered by <b>E2B</b> SDK
                   </span>
                 </Link>
                 <StarUs />

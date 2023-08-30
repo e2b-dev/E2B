@@ -6,7 +6,7 @@ import {
   X,
 } from 'lucide-react'
 import { useRouter } from 'next/router'
-
+import { usePostHog } from 'posthog-js/react'
 import { Navigation } from './types'
 
 export interface Props {
@@ -23,6 +23,8 @@ function DashboardMobileSidebar({
   navigation,
 }: Props) {
   const router = useRouter()
+
+  const posthog = usePostHog()
 
   return (
     <Transition.Root show={isSidebarOpen} as={Fragment}>
@@ -91,6 +93,16 @@ function DashboardMobileSidebar({
                         ))}
                       </ul>
                     </li>
+                    <div className="flex justify-center">
+                      <Link
+                        href="https://e2b.dev/docs?ref=smol-developer-dashboard" className="inline-flex space-x-6"
+                        onMouseDown={() => posthog?.capture('clicked SDK link')}
+                      >
+                        <span className="rounded-full hover:bg-indigo-400/20 transition-all bg-indigo-400/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-400/20">
+                          Try <b>E2B</b> SDK
+                        </span>
+                      </Link>
+                    </div>
                     <li className="-mx-6 mt-auto">
                       <div
                         className="flex items-center gap-x-4 p-8 text-sm font-semibold leading-6 text-white"
@@ -110,7 +122,7 @@ function DashboardMobileSidebar({
           </Transition.Child>
         </div>
       </Dialog>
-    </Transition.Root>
+    </Transition.Root >
   )
 }
 

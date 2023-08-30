@@ -53,25 +53,11 @@ function AgentDeploymentsList({
     }
   }
 
-  function captureSDKLinkClick() {
-    posthog?.capture('clicked SDK coming soon link')
-    console.log('clicked')
-  }
-
   return (
     <main className="overflow-hidden flex flex-col max-h-full flex-1 rounded-md">
       <header className="flex items-center justify-between px-4 py-3 border-b border-b-white/5">
         <h1 className="text-xl font-semibold text-white">Agent Deployments</h1>
         <div className="flex items-center space-x-4">
-          <a
-            className="text-sm font-medium text-indigo-400 hover:text-indigo-500 cursor-pointer transition-all"
-            href="https://github.com/e2b-dev/sdk"
-            target="_blank"
-            rel="noreferrer noopener"
-            onClick={captureSDKLinkClick}
-          >
-            SDK Coming Soon
-          </a>
 
           <Link href="/agent/smol-developer">
             <button

@@ -38,8 +38,8 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
   const isAgent = router.pathname.startsWith('/agent')
 
   const meta = {
-    title: isAgent ? 'Smol Developer | e2b' : 'Dashboard | e2b',
-    description: isAgent ? 'Smol Developer on e2b' : 'e2b Dashboard',
+    title: isAgent ? 'Smol Developer | E2B' : 'Dashboard | E2B',
+    description: isAgent ? 'Smol Developer on E2B' : 'E2B Dashboard',
   }
 
   useEffect(function trackPageViews() {
