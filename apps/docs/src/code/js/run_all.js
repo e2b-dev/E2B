@@ -1,4 +1,7 @@
 import * as quickstart from './quickstart.js'
+import * as get_url from './basics/get_url.js'
+import * as get_url_port from './basics/get_url_port.js'
+import * as scan_ports from './basics/scan_ports.js'
 import * as init from './basics/init.js'
 import * as fs_ls from './basics/fs_ls.js'
 import * as fs_mkdir from './basics/fs_mkdir.js'

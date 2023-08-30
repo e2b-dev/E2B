@@ -1,5 +1,8 @@
 from quickstart import main as quickstart_main
 from basics.init import main as init_main
+from basics.get_url import main as get_url_main
+from basics.get_url_port import main as get_url_port_main
+from basics.scan_ports import main as scan_ports_main
 from basics.fs_ls import main as fs_ls_main
 from basics.fs_mkdir import main as fs_mkdir_main
 from basics.fs_read import main as fs_read_main

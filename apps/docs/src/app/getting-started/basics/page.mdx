@@ -27,6 +27,34 @@ There are two main primitives in our SDK that you use to interact with the cloud
 ```
 </CodeGroup>
 
+## Get playground URL
+Each playground is accessible from the internet via a unique URL of that playground.
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/basics/get_url.py' }}
+```
+```js {{ language: 'js', snippet: 'js/basics/get_url.js' }}
+```
+</CodeGroup>
+
+### Get URL for a specific port inside playground
+Below is an example showing how to get a URL for a port 3000. If there's any server inside the playground listening on port 3000 this would be its URL.
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/basics/get_url_port.py' }}
+```
+```js {{ language: 'js', snippet: 'js/basics/get_url_port.js' }}
+```
+</CodeGroup>
+
+## Scan open ports inside playground
+The following example continuosly scan open ports inside the playground and prints new ones to the console.
+
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/basics/scan_ports.py' }}
+```
+```js {{ language: 'js', snippet: 'js/basics/scan_ports.js' }}
+```
+</CodeGroup>
+
 ## Filesystem
 
 Here are the basic operations you can do with the filesystem inside a cloud playground:
