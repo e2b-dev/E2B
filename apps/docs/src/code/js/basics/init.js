@@ -7,5 +7,4 @@ const session = await Session.create({
   id: 'Nodejs',
   apiKey: process.env.E2B_API_KEY,
 })
-
 await session.close()

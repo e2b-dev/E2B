@@ -29,7 +29,7 @@ function loadFileSnippet() {
           (async () => {
             const file = path.resolve(`./src/code/${snippetFileName}`)
             const content = await readFile(file, 'utf8')
-            node.value = content
+            node.value = content.trim()
           })()
         )
       }
