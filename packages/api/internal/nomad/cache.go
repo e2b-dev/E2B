@@ -15,17 +15,27 @@ const (
 	cacheSyncTime     = time.Second * 180
 )
 
+type SessionData struct {
+	Session   *api.Session
+	TeamID    *string
+	StartTime *time.Time
+}
+
 type SessionCache struct {
-	cache *ttlcache.Cache[string, *api.Session]
+	cache *ttlcache.Cache[string, SessionData]
 }
 
 // Add the session to the cache and start expiration timer
-func (c *SessionCache) Add(session *api.Session) error {
+func (c *SessionCache) Add(session *api.Session, teamID *string, startTime *time.Time) error {
 	if c.Exists(session.SessionID) {
 		return fmt.Errorf("session \"%s\" already exists", session.SessionID)
 	}
-
-	c.cache.Set(session.SessionID, session, ttlcache.DefaultTTL)
+	sessionData := SessionData{
+		Session:   session,
+		TeamID:    teamID,
+		StartTime: startTime,
+	}
+	c.cache.Set(session.SessionID, sessionData, ttlcache.DefaultTTL)
 	return nil
 }
 
@@ -39,21 +49,31 @@ func (c *SessionCache) Refresh(sessionID string) error {
 	return nil
 }
 
+// Get the session from the cache
+func (c *SessionCache) Get(sessionID string) SessionData {
+	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, SessionData]())
+	if item != nil {
+		return item.Value()
+	} else {
+		panic(fmt.Errorf("session \"%s\" doesn't exist", sessionID))
+	}
+}
+
 // Check if the session exists in the cache
 func (c *SessionCache) Exists(sessionID string) bool {
-	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, *api.Session]())
+	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, SessionData]())
 	return item != nil
 }
 
 func (c *SessionCache) FindEditSession(codeSnippetID string) (*api.Session, error) {
 	for _, item := range c.cache.Items() {
-		if item.Value() == nil {
+		if item.Value().Session == nil {
 			continue
 		}
 
-		if item.Value().EditEnabled && item.Value().CodeSnippetID == codeSnippetID {
+		if item.Value().Session.EditEnabled && item.Value().Session.CodeSnippetID == codeSnippetID {
 			c.Refresh(item.Key())
-			return item.Value(), nil
+			return item.Value().Session, nil
 		}
 	}
 	return nil, fmt.Errorf("error edit session for code snippet '%s' not found", codeSnippetID)
@@ -62,21 +82,21 @@ func (c *SessionCache) FindEditSession(codeSnippetID string) (*api.Session, erro
 func (c *SessionCache) Sync(sessions []*api.Session) {
 	for _, session := range sessions {
 		if !c.Exists(session.SessionID) {
-			c.Add(session)
+			c.Add(session, nil, nil)
 		}
 	}
 }
 
 // We will need to either use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now
-func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api.APIError, initialSessions []*api.Session) *SessionCache {
+func NewSessionCache(handleDeleteSession func(sessionData SessionData, purge bool) *api.APIError, initialSessions []*api.Session) *SessionCache {
 	cache := ttlcache.New(
-		ttlcache.WithTTL[string, *api.Session](sessionExpiration),
+		ttlcache.WithTTL[string, SessionData](sessionExpiration),
 	)
 
-	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, *api.Session]) {
+	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, SessionData]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
-			err := handleDeleteSession(i.Key(), true)
+			err := handleDeleteSession(i.Value(), true)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error deleting session (%v)\n: %s", er, err.Error())
 			}
@@ -88,7 +108,7 @@ func NewSessionCache(handleDeleteSession func(sessionID string, purge bool) *api
 	}
 
 	for _, session := range initialSessions {
-		sessionCache.Add(session)
+		sessionCache.Add(session, nil, nil)
 	}
 
 	go cache.Start()
@@ -111,39 +131,4 @@ func (c *SessionCache) KeepInSync(client *NomadClient) {
 
 func (c *SessionCache) Count() int {
 	return c.cache.Len()
-}
-
-type TeamCache struct {
-	cache *ttlcache.Cache[string, string]
-}
-
-func (c *TeamCache) Add(sessionID string, teamID string) {
-	c.cache.Set(sessionID, teamID, ttlcache.DefaultTTL)
-}
-
-// Check if the session exists in the cache
-func (c *TeamCache) Exists(sessionID string) bool {
-	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, string]())
-	return item != nil
-}
-
-func (c *TeamCache) Get(sessionID string) (string, error) {
-	item := c.cache.Get(sessionID)
-	if item == nil {
-		return "", fmt.Errorf("no team for the session \"%s\" found", sessionID)
-
-	}
-	return item.Value(), nil
-}
-func NewTeamCache() *TeamCache {
-	cache := ttlcache.New(
-		ttlcache.WithTTL[string, string](sessionExpiration),
-	)
-
-	teamCache := &TeamCache{
-		cache: cache,
-	}
-	go cache.Start()
-
-	return teamCache
 }
