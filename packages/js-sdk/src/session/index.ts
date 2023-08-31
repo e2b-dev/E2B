@@ -185,6 +185,10 @@ export class Session extends SessionConnection {
         rootdir = '',
         processID = id(12),
       }) => {
+        if (!cmd) {
+          throw new Error('cmd is required')
+        }
+
         const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
         const output = new ProcessOutput()
