@@ -120,7 +120,7 @@ class SessionConnection:
         """
         Close the session and unsubscribe from all the subscriptions.
         """
-        if self._is_open:
+        if self._is_open and self._session:
             logger.info(
                 f"Closing session {self._session.code_snippet_id} (id: {self._session.session_id})"
             )
