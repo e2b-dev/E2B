@@ -4,11 +4,18 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 
+import async_timeout
 from e2b.api.client import NewSession
 from e2b.api.client import Session as SessionInfo
 from e2b.api.client.rest import ApiException
 from e2b.api.main import client, configuration
-from e2b.constants import SESSION_DOMAIN, SESSION_REFRESH_PERIOD, WS_PORT, WS_ROUTE
+from e2b.constants import (
+    SESSION_DOMAIN,
+    SESSION_REFRESH_PERIOD,
+    TIMEOUT,
+    WS_PORT,
+    WS_ROUTE,
+)
 from e2b.session.exception import (
     AuthenticationException,
     MultipleExceptions,
@@ -60,7 +67,7 @@ class SessionConnection:
     ):
         if api_key is None:
             raise AuthenticationException(
-                'API key is required, please visit https://e2b.dev/docs to get your API key',
+                "API key is required, please visit https://e2b.dev/docs to get your API key",
             )
 
         self._id = id
@@ -84,9 +91,9 @@ class SessionConnection:
         """
         Get the hostname for the session or for the specified session's port.
 
-        :param port: specify if you want to connect to a specific port of the session
+        :param port: Specify if you want to connect to a specific port of the session
 
-        :return: hostname of the session or session's port
+        :return: Hostname of the session or session's port
         """
         if not self._session:
             raise Exception(
@@ -182,6 +189,7 @@ class SessionConnection:
                 self._process_cleanup.append(refresh_handler.cancel)
         except Exception as e:
             logger.error(f"Failed to acquire session: {e}")
+            await self.close()
             raise e
 
         hostname = self.get_hostname(self._debug_port or WS_PORT)
@@ -197,13 +205,24 @@ class SessionConnection:
             )
             await self._rpc.connect()
         except Exception as e:
+            await self.close()
             raise e
 
-    async def _call(self, service: str, method: str, params: List[Any] = []):
+    async def _call(
+        self,
+        service: str,
+        method: str,
+        params: List[Any] = None,
+        timeout: Optional[int] = TIMEOUT,
+    ):
+        if not params:
+            params = []
+
         if not self.is_open:
             raise SessionException("Session is not open")
 
-        return await self._rpc.send_message(f"{service}_{method}", params)
+        async with async_timeout.timeout(timeout):
+            return await self._rpc.send_message(f"{service}_{method}", params)
 
     async def _handle_subscriptions(
         self,
@@ -248,9 +267,9 @@ class SessionConnection:
 
         return unsub_all
 
-    async def _unsubscribe(self, sub_id: str):
+    async def _unsubscribe(self, sub_id: str, timeout: Optional[int] = TIMEOUT):
         sub = self._subscribers[sub_id]
-        await self._call(sub.service, "unsubscribe", [sub.id])
+        await self._call(sub.service, "unsubscribe", [sub.id], timeout=timeout)
         del self._subscribers[sub_id]
         logger.info(f"Unsubscribed from {sub_id}")
 
@@ -260,8 +279,11 @@ class SessionConnection:
         handler: Callable[[Any], Any],
         method: str,
         *params,
+        timeout: Optional[int] = TIMEOUT,
     ):
-        sub_id = await self._call(service, "subscribe", [method, *params])
+        sub_id = await self._call(
+            service, "subscribe", [method, *params], timeout=timeout
+        )
         if not isinstance(sub_id, str):
             raise Exception(f"Failed to subscribe: ${sub_id}")
 
@@ -273,7 +295,7 @@ class SessionConnection:
         )
 
         async def unsub():
-            await self._unsubscribe(sub_id)
+            await self._unsubscribe(sub_id, timeout=timeout)
 
         return unsub
 

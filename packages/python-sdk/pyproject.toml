@@ -20,6 +20,7 @@ aenum = ">=3.1.11"
 websockets = "^11.0.3"
 jsonrpcclient = "^4.0.3"
 janus = "^1.0.0"
+async-timeout = "^4.0.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"

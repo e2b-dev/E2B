@@ -1,7 +1,10 @@
 import asyncio
 import logging
+from asyncio.exceptions import TimeoutError
 from typing import Any, Awaitable, Callable, ClassVar, Coroutine, Dict, List, Optional
 
+import async_timeout
+from e2b.constants import TIMEOUT
 from e2b.session.env_vars import EnvVars
 from e2b.session.exception import MultipleExceptions, ProcessException, RpcException
 from e2b.session.out import OutStderrResponse, OutStdoutResponse
@@ -137,26 +140,32 @@ class Process:
         self._finished = finished
         self._output = output
 
-    async def send_stdin(self, data: str) -> None:
+    async def send_stdin(self, data: str, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Sends data to the process stdin.
 
         :param data: Data to send
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
-                ProcessManager._service_name, "stdin", [self.process_id, data]
+                ProcessManager._service_name,
+                "stdin",
+                [self.process_id, data],
+                timeout=timeout,
             )
         except RpcException as e:
             raise ProcessException(e.message) from e
 
-    async def kill(self) -> None:
+    async def kill(self, timeout: Optional[int] = TIMEOUT) -> None:
         """
         Kills the process.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         try:
             await self._session._call(
-                ProcessManager._service_name, "kill", [self.process_id]
+                ProcessManager._service_name, "kill", [self.process_id], timeout=timeout
             )
         except RpcException as e:
             raise ProcessException(e.message) from e
@@ -189,6 +198,7 @@ class ProcessManager:
         env_vars: Optional[EnvVars] = None,
         rootdir: str = "",
         process_id: Optional[str] = None,
+        timeout: Optional[int] = TIMEOUT,
     ) -> Process:
         """
         Starts a process in the environment.
@@ -200,108 +210,114 @@ class ProcessManager:
         :param env_vars: A dictionary of environment variables to set for the process
         :param rootdir: The root directory for the process
         :param process_id: The process id to use for the process. If not provided, a random id is generated
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
 
-        :return: A process object.
+        :return: A process object
         """
-        if not env_vars:
-            env_vars = {}
+        with async_timeout.timeout(timeout):
+            if not env_vars:
+                env_vars = {}
 
-        future_exit = DeferredFuture(self._process_cleanup)
-        process_id = process_id or create_id(12)
+            future_exit = DeferredFuture(self._process_cleanup)
+            process_id = process_id or create_id(12)
 
-        unsub_all: Optional[Callable[[], Awaitable[Any]]] = None
+            unsub_all: Optional[Callable[[], Awaitable[Any]]] = None
 
-        output = ProcessOutput()
+            output = ProcessOutput()
 
-        def handle_stdout(data: Dict[Any, Any]):
-            out = OutStdoutResponse(**data)
+            def handle_stdout(data: Dict[Any, Any]):
+                out = OutStdoutResponse(**data)
 
-            message = ProcessMessage(
-                line=out.line,
-                timestamp=out.timestamp,
-                error=False,
+                message = ProcessMessage(
+                    line=out.line,
+                    timestamp=out.timestamp,
+                    error=False,
+                )
+
+                output._add_stdout(message)
+                if on_stdout:
+                    on_stdout(message)
+
+            def handle_stderr(data: Dict[Any, Any]):
+                out = OutStderrResponse(**data)
+
+                message = ProcessMessage(
+                    line=out.line,
+                    timestamp=out.timestamp,
+                    error=True,
+                )
+
+                output._add_stderr(message)
+                if on_stderr:
+                    on_stderr(message)
+
+            try:
+                unsub_all = await self._session._handle_subscriptions(
+                    self._session._subscribe(
+                        self._service_name, future_exit, "onExit", process_id
+                    ),
+                    self._session._subscribe(
+                        self._service_name, handle_stdout, "onStdout", process_id
+                    ),
+                    self._session._subscribe(
+                        self._service_name, handle_stderr, "onStderr", process_id
+                    ),
+                )
+            except (RpcException, MultipleExceptions) as e:
+                future_exit.cancel()
+
+                if isinstance(e, RpcException):
+                    raise ProcessException(e.message) from e
+                elif isinstance(e, MultipleExceptions):
+                    raise ProcessException(
+                        "Failed to subscribe to RPC services necessary for starting process"
+                    ) from e
+
+            future_exit_handler_finish = DeferredFuture[ProcessOutput](
+                self._process_cleanup
             )
 
-            output._add_stdout(message)
-            if on_stdout:
-                on_stdout(message)
+            async def exit_handler():
+                await future_exit
+                logger.info(
+                    f"Handling process exit {process_id} - {future_exit._future.done()}",
+                )
+                if unsub_all:
+                    await unsub_all()
+                if on_exit:
+                    on_exit()
+                future_exit_handler_finish(output)
 
-        def handle_stderr(data: Dict[Any, Any]):
-            out = OutStderrResponse(**data)
+            exit_task = asyncio.create_task(exit_handler())
+            self._process_cleanup.append(exit_task.cancel)
 
-            message = ProcessMessage(
-                line=out.line,
-                timestamp=out.timestamp,
-                error=True,
-            )
+            async def trigger_exit():
+                logger.info("Triggering exit")
+                future_exit(None)
+                await future_exit_handler_finish
 
-            output._add_stderr(message)
-            if on_stderr:
-                on_stderr(message)
-
-        try:
-            unsub_all = await self._session._handle_subscriptions(
-                self._session._subscribe(
-                    self._service_name, future_exit, "onExit", process_id
-                ),
-                self._session._subscribe(
-                    self._service_name, handle_stdout, "onStdout", process_id
-                ),
-                self._session._subscribe(
-                    self._service_name, handle_stderr, "onStderr", process_id
-                ),
-            )
-        except (RpcException, MultipleExceptions) as e:
-            future_exit.cancel()
-
-            if isinstance(e, RpcException):
+            try:
+                await self._session._call(
+                    self._service_name,
+                    "start",
+                    [
+                        process_id,
+                        cmd,
+                        env_vars,
+                        rootdir,
+                    ],
+                )
+                return Process(
+                    output=output,
+                    session=self._session,
+                    process_id=process_id,
+                    trigger_exit=trigger_exit,
+                    finished=future_exit_handler_finish,
+                )
+            except RpcException as e:
+                await trigger_exit()
                 raise ProcessException(e.message) from e
-            elif isinstance(e, MultipleExceptions):
-                raise ProcessException(
-                    "Failed to subscribe to RPC services necessary for starting process"
-                ) from e
-
-        future_exit_handler_finish = DeferredFuture[ProcessOutput](
-            self._process_cleanup
-        )
-
-        async def exit_handler():
-            await future_exit
-            logger.info(
-                f"Handling process exit {process_id} - {future_exit._future.done()}",
-            )
-            if unsub_all:
-                await unsub_all()
-            if on_exit:
-                on_exit()
-            future_exit_handler_finish(output)
-
-        exit_task = asyncio.create_task(exit_handler())
-        self._process_cleanup.append(exit_task.cancel)
-
-        async def trigger_exit():
-            logger.info("Triggering exit")
-            future_exit(None)
-            await future_exit_handler_finish
-
-        try:
-            await self._session._call(
-                self._service_name,
-                "start",
-                [
-                    process_id,
-                    cmd,
-                    env_vars,
-                    rootdir,
-                ],
-            )
-            return Process(
-                output=output,
-                session=self._session,
-                process_id=process_id,
-                trigger_exit=trigger_exit,
-                finished=future_exit_handler_finish,
-            )
-        except RpcException as e:
-            await trigger_exit()
-            raise ProcessException(e.message) from e
+            except TimeoutError as e:
+                logger.error(f"Timeout error during starting the process: {cmd}")
+                await trigger_exit()
+                raise e
