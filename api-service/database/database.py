@@ -126,14 +126,17 @@ class Database:
         Returns the team API key for a project.
         """
         result = (
-            await self.client.table(TABLE_PROJECTS).select("teams(id)").eq(
-                "id", project_id
-            ).execute()
+            await self.client.table(TABLE_PROJECTS)
+            .select("teams(id)")
+            .eq("id", project_id)
+            .execute()
         )
-        print(result)
 
         team_id = result.data[0]["teams"]["id"]
         result = (
-            await self.client.table(TABLE_TEAM_API_KEYS).select("api_key").eq("team_id", team_id).execute()
+            await self.client.table(TABLE_TEAM_API_KEYS)
+            .select("api_key")
+            .eq("team_id", team_id)
+            .execute()
         )
         return result.data[0]["api_key"]

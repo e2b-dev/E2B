@@ -1,10 +1,10 @@
 from typing import Any, Dict
 
-from opentelemetry.metrics import Observation
-from database.base import db
-from deployment.manager import AgentDeploymentManager, AgentDeployment
 from agent.from_template import get_agent_factory_from_template
+from database.base import db
+from deployment.manager import AgentDeployment, AgentDeploymentManager
 from observability import meter
+from opentelemetry.metrics import Observation
 
 
 # TODO: Interemediate step between implementing the FC agent deployment
@@ -81,7 +81,7 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
     ):
         print(">>>> Updating deployment", id, config)
         try:
-            await self.remove_deployment(id, e2b_api_key)
+            await self.remove_deployment(id)
         except:
             print("Failed to remove deployment", id)
             pass
@@ -89,9 +89,9 @@ class InMemoryDeploymentManager(AgentDeploymentManager):
             id, project_id, config, secrets, e2b_api_key
         )
 
-    async def remove_deployment(self, id: str, e2b_api_key: str):
+    async def remove_deployment(self, id: str):
         deployment = await self.get_deployment(id)
-        await db.update_deployment(id, enabled=False, e2b_api_key=e2b_api_key)
+        await db.update_deployment(id, enabled=False)
         if deployment:
             await deployment.agent.stop()
             del self._deployments[deployment.id]
