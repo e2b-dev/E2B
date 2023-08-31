@@ -215,7 +215,7 @@ class ProcessManager:
         :return: A process object
         """
         logger.info(f"Starting process (id: {process_id})")
-        with async_timeout.timeout(timeout):
+        async with async_timeout.timeout(timeout):
             if not env_vars:
                 env_vars = {}
 
