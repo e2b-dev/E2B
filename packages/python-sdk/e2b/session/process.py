@@ -214,7 +214,8 @@ class ProcessManager:
 
         :return: A process object
         """
-        with async_timeout.timeout(timeout):
+        logger.info(f"Starting process (id: {process_id})")
+        async with async_timeout.timeout(timeout):
             if not env_vars:
                 env_vars = {}
 
@@ -236,7 +237,10 @@ class ProcessManager:
 
                 output._add_stdout(message)
                 if on_stdout:
-                    on_stdout(message)
+                    try:
+                        on_stdout(message)
+                    except TypeError as error:
+                        logger.exception(f"Error in on_stdout callback: {error}")
 
             def handle_stderr(data: Dict[Any, Any]):
                 out = OutStderrResponse(**data)
@@ -249,7 +253,10 @@ class ProcessManager:
 
                 output._add_stderr(message)
                 if on_stderr:
-                    on_stderr(message)
+                    try:
+                        on_stderr(message)
+                    except TypeError as error:
+                        logger.exception(f"Error in on_stdout callback: {error}")
 
             try:
                 unsub_all = await self._session._handle_subscriptions(
@@ -280,21 +287,25 @@ class ProcessManager:
             async def exit_handler():
                 await future_exit
                 logger.info(
-                    f"Handling process exit {process_id} - {future_exit._future.done()}",
+                    f"Handling process exit {self._service_name} (id: {process_id})",
                 )
                 if unsub_all:
                     await unsub_all()
                 if on_exit:
-                    on_exit()
+                    try:
+                        on_exit()
+                    except TypeError as error:
+                        logger.exception(f"Error in on_exit callback: {error}")
                 future_exit_handler_finish(output)
 
             exit_task = asyncio.create_task(exit_handler())
             self._process_cleanup.append(exit_task.cancel)
 
             async def trigger_exit():
-                logger.info("Triggering exit")
+                logger.info(f"Exiting the process {self._service_name} (id: {process_id})")
                 future_exit(None)
                 await future_exit_handler_finish
+                logger.debug(f"Exited the process (id: {process_id})")
 
             try:
                 await self._session._call(
@@ -307,6 +318,7 @@ class ProcessManager:
                         rootdir,
                     ],
                 )
+                logger.info(f"Started process (id: {process_id})")
                 return Process(
                     output=output,
                     session=self._session,

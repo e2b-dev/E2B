@@ -36,33 +36,35 @@ class WebSocket:
         await self.close()
 
     async def _send_message(self):
-        logger.info("Starting to send messages")
+        logger.debug("WebSocket starting to send messages")
         while True:
             if self._queue_in.empty():
                 await asyncio.sleep(0)
                 continue
             message = self._queue_in.get()
-            logger.debug(f"Got message: {message}")
+            logger.debug(f"WebSocket message to send: {message}")
             if self._ws:
                 await self._ws.send(message)
+                logger.debug(f"WebSocket message sent: {message}")
                 self._queue_in.task_done()
             else:
-                logger.error("No websocket connection")
+                logger.error("No WebSocket connection")
 
     async def _receive_message(self):
         try:
             async for message in self._ws:
-                logger.debug(f"Received message: {message}")
+                logger.debug(f"WebSocket received message: {message}".strip())
                 self._queue_out.put(message)
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"WebSocket received error while receiving messages: {e}")
 
     async def _connect(self):
+        logger.debug(f"WebSocket connecting to {self.url}")
         async for websocket in connect(self.url, max_size=None, max_queue=None):
             try:
                 self._ws = websocket
                 self.started.set()
-                logger.info(f"Connected to {self.url}")
+                logger.info(f"WebSocket connected to {self.url}")
 
                 send_task = asyncio.create_task(
                     self._send_message(), name="send_message"
@@ -80,7 +82,7 @@ class WebSocket:
                 logger.info("WebSocket stopped")
                 break
             except ConnectionClosed:
-                logger.warning("Reconnecting...")
+                logger.warning("WebSocket disconnected, it will try to reconnect")
                 continue
 
     async def close(self):
