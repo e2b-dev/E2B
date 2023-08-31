@@ -122,6 +122,7 @@
 - Add sync support to the python SDK and js sdk
   - the ws pong is working now but the actuall message backpressure can still make problems
 - Add golangci-lint
+- use dnsmasq instead of /etc/hosts and second proxy
 
 
 ### Python SDK

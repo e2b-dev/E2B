@@ -19,7 +19,6 @@ import (
 
 type APIStore struct {
 	sessionsCache *nomad.SessionCache
-	teamCache     *nomad.TeamCache
 	nomad         *nomad.NomadClient
 	supabase      *supabase.DB
 	NextId        int64
@@ -65,12 +64,8 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", sessionErr)
 	}
 
-	cache := nomad.NewSessionCache(nomadClient.DeleteSession, initialSessions)
-	teamCache := nomad.NewTeamCache()
-	// Comment this line out if you are developing locally to prevent killing sessions in production
-	go cache.KeepInSync(nomadClient)
-
-	client, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
+	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
+	posthogClient, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
 		Interval:  30 * time.Second,
 		BatchSize: 100,
 		Verbose:   true,
@@ -81,15 +76,18 @@ func NewAPIStore() *APIStore {
 		panic(posthogErr)
 	}
 
+	cache := nomad.NewSessionCache(getDeleteSessionFunction(nomadClient, posthogClient), initialSessions)
+	// Comment this line out if you are developing locally to prevent killing sessions in production
+	go cache.KeepInSync(nomadClient)
+
 	return &APIStore{
 		nomad:         nomadClient,
 		supabase:      supabaseClient,
 		NextId:        1000,
 		sessionsCache: cache,
-		teamCache:     teamCache,
 		tracer:        tracer,
 		templates:     templates,
-		posthog:       client,
+		posthog:       posthogClient,
 	}
 }
 
@@ -179,7 +177,19 @@ func (a *APIStore) validateTeamAPIKey(apiKey *string) *string {
 }
 
 func (a *APIStore) DeleteSession(sessionID string, purge bool) *api.APIError {
-	duration, err := a.nomad.DeleteSessionWithDuration(sessionID, purge)
+	sessionData := a.sessionsCache.Get(sessionID)
+	return deleteSession(a.nomad, a.posthog, sessionID, sessionData.TeamID, sessionData.StartTime, purge)
+}
+
+type sessionData = nomad.SessionData
+
+func getDeleteSessionFunction(nomad *nomad.NomadClient, posthogClient posthog.Client) func(sessionData sessionData, purge bool) *api.APIError {
+	return func(sessionData sessionData, purge bool) *api.APIError {
+		return deleteSession(nomad, posthogClient, sessionData.Session.SessionID, sessionData.TeamID, sessionData.StartTime, purge)
+	}
+}
+func deleteSession(nomad *nomad.NomadClient, posthogClient posthog.Client, sessionID string, teamID *string, startTime *time.Time, purge bool) *api.APIError {
+	err := nomad.DeleteSession(sessionID, purge)
 	if err != nil {
 		return &api.APIError{
 			Msg:       fmt.Sprintf("cannot delete session '%s': %+v", sessionID, err),
@@ -187,13 +197,13 @@ func (a *APIStore) DeleteSession(sessionID string, purge bool) *api.APIError {
 			Code:      http.StatusInternalServerError,
 		}
 	}
-	teamID, teamErr := a.teamCache.Get(sessionID)
-	if teamErr != nil {
-		err := a.posthog.Enqueue(posthog.Capture{
-			DistinctId: "backend_infra",
+
+	if teamID != nil && startTime != nil {
+		err := posthogClient.Enqueue(posthog.Capture{
+			DistinctId: "backend",
 			Event:      "closed_session",
 			Properties: posthog.NewProperties().
-				Set("session_id", sessionID).Set("duration", duration),
+				Set("session_id", sessionID).Set("duration", time.Since(*startTime).Seconds()),
 			Groups: posthog.NewGroups().
 				Set("team", teamID),
 		})
