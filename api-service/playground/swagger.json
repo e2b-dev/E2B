@@ -594,10 +594,14 @@
 								"properties": {
 									"envID": {
 										"type": "string"
+									},
+									"apiKey": {
+										"type": "string"
 									}
 								},
 								"required": [
-									"envID"
+									"envID",
+									"apiKey"
 								],
 								"type": "object"
 							}

@@ -50,7 +50,6 @@ class CreateDeploymentBody(BaseModel):
     config: Any
     secrets: Any
 
-
 @app.put("/deployments")
 async def create_agent_deployment(
     body: CreateDeploymentBody,
@@ -59,7 +58,7 @@ async def create_agent_deployment(
 ):
     check_token(token)
     db_deployment = await db.get_deployment(project_id)
-
+    api_key = await db.get_team_api_key_by_project_id(db_deployment["project_id"])
     if db_deployment:
         secrets = (
             json.loads(db_deployment["decrypted_secrets"])
@@ -78,6 +77,7 @@ async def create_agent_deployment(
                 **secrets,
                 **body.secrets,
             },
+            e2b_api_key=api_key
         )
         current_span = trace.get_current_span()
         current_span.set_attributes(
@@ -103,6 +103,8 @@ async def create_agent_deployment(
             project_id,
             body.config,
             body.secrets,
+            e2b_api_key
+
         )
         current_span = trace.get_current_span()
         current_span.set_attributes(
@@ -166,6 +168,7 @@ async def interact_with_agent_deployment(
             and db_deployment.get("config", None)
             and db_deployment.get("project_id", None)
         ):
+            api_key = await db.get_team_api_key_by_project_id(db_deployment["project_id"])
             deployment = await deployment_manager.create_deployment(
                 db_deployment["id"],
                 db_deployment["project_id"],
@@ -173,6 +176,7 @@ async def interact_with_agent_deployment(
                 json.loads(db_deployment["decrypted_secrets"])
                 if db_deployment.get("decrypted_secrets", None)
                 else {},
+                e2b_api_key=api_key
             )
         else:
             raise HTTPException(status_code=404, detail="Deployment not found")

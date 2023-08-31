@@ -38,11 +38,13 @@ class TestCreateSessionsRequest(unittest.TestCase):
         model = playground_client.models.create_sessions_request.CreateSessionsRequest()  # noqa: E501
         if include_optional :
             return CreateSessionsRequest(
-                env_id = ''
+                env_id = '', 
+                api_key = ''
             )
         else :
             return CreateSessionsRequest(
                 env_id = '',
+                api_key = '',
         )
         """
 

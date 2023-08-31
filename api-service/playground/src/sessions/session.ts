@@ -33,12 +33,13 @@ export class CachedSession {
    * 
    * @param envID 
    */
-  constructor(envID: string) {
+  constructor(envID: string, apiKey: string) {
     this.session = new Session({
       id: envID,
       onClose: () => {
         this.delete()
       },
+      apiKey,
       codeSnippet: {
         onScanPorts: (ports) => {
           // We need to remap the ports because there is a lot of hidden properties

@@ -8,6 +8,7 @@ TABLE_DECRYPTED_DEPLOYMENTS = "decrypted_deployments"
 TABLE_DEPLOYMENTS = "deployments"
 TABLE_LOGS = "log_files"
 TABLE_PROJECTS = "projects"
+TABLE_TEAM_API_KEYS = "team_api_keys"
 
 
 class Database:
@@ -119,3 +120,23 @@ class Database:
         if "envs" in state:
             return state["envs"]
         return []
+
+    async def get_team_api_key_by_project_id(self, project_id) -> str:
+        """
+        Returns the team API key for a project.
+        """
+        result = (
+            await self.client.table(TABLE_PROJECTS)
+            .select("teams(id)")
+            .eq("id", project_id)
+            .execute()
+        )
+
+        team_id = result.data[0]["teams"]["id"]
+        result = (
+            await self.client.table(TABLE_TEAM_API_KEYS)
+            .select("api_key")
+            .eq("team_id", team_id)
+            .execute()
+        )
+        return result.data[0]["api_key"]

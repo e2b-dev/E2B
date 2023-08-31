@@ -27,7 +27,8 @@ class CreateSessionsRequest(BaseModel):
     Do not edit the class manually.
     """
     env_id: StrictStr = Field(..., alias="envID")
-    __properties = ["envID"]
+    api_key: StrictStr = Field(..., alias="apiKey")
+    __properties = ["envID", "apiKey"]
 
     class Config:
         allow_population_by_field_name = True
@@ -69,7 +70,8 @@ class CreateSessionsRequest(BaseModel):
                 raise ValueError("Error due to additional fields (not defined in CreateSessionsRequest) in the input: " + obj)
 
         _obj = CreateSessionsRequest.parse_obj({
-            "env_id": obj.get("envID")
+            "env_id": obj.get("envID"),
+            "api_key": obj.get("apiKey")
         })
         return _obj
 

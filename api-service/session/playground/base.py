@@ -24,8 +24,8 @@ class Playground(Session):
 
     run_command_timeout_frequency = 1  # in Hz
 
-    def __init__(self, env_id: str, get_envs: GetEnvs, rootdir="/"):
-        super().__init__(env_id, get_envs)
+    def __init__(self, env_id: str, get_envs: GetEnvs, api_key: str, rootdir="/"):
+        super().__init__(env_id, get_envs, api_key=api_key)
         self.rootdir = rootdir
 
     async def get_open_ports(self):
