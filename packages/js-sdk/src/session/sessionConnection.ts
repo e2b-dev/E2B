@@ -8,7 +8,7 @@ import {
   WS_RECONNECT_INTERVAL,
   WS_ROUTE,
 } from '../constants'
-import Logger from '../utils/logger'
+import Logger, { LogLevel } from '../utils/logger'
 import { assertFulfilled, formatSettledErrors } from '../utils/promise'
 import wait from '../utils/wait'
 import { codeSnippetService } from './codeSnippet'
@@ -34,8 +34,11 @@ interface Subscriber {
 
 export interface SessionConnectionOpts {
   id: string
-  apiKey: string
-  debug?: boolean
+  apiKey?: string
+  consoleLogLevel?: LogLevel
+  customLogger?: Logger
+  debug?: boolean // deprecated, use consoleLogLevel instead
+  editEnabled?: boolean
   __debug_hostname?: string
   __debug_port?: number
   __debug_devEnv?: 'remote' | 'local'
@@ -62,8 +65,20 @@ export class SessionConnection {
       )
     }
 
-    this.logger = new Logger('Session', opts.debug)
-    this.logger.log(`Session for code snippet "${opts.id}" initialized`)
+    if (opts.debug) {
+      console.warn(
+        '[DEPRECATED] debug option is deprecated, use consoleLogLevel: "debug" instead',
+      )
+      if (opts.consoleLogLevel) {
+        console.warn(
+          'Both debug and consoleLogLevel are set. Use only consoleLogLevel. Setting consoleLogLevel to "debug" for now.',
+        )
+      }
+      opts.consoleLogLevel = 'debug'
+    }
+
+    this.logger = new Logger('Session', opts.consoleLogLevel, opts.customLogger)
+    this.logger.info(`Session for code snippet "${opts.id}" initialized`)
   }
 
   /**
@@ -105,16 +120,16 @@ export class SessionConnection {
    */
   async close() {
     if (this.isOpen) {
-      this.logger.log('Closing', this.session)
+      this.logger.info('Closing', this.session)
       this.isOpen = false
 
-      this.logger.log('Unsubscribing...')
+      this.logger.debug('Unsubscribing...')
       const results = await Promise.allSettled(
         this.subscribers.map(s => this.unsubscribe(s.subID)),
       )
       results.forEach(r => {
         if (r.status === 'rejected') {
-          this.logger.log(`Failed to unsubscribe: "${r.reason}"`)
+          this.logger.error(`Failed to unsubscribe: "${r.reason}"`) // or just warn?
         }
       })
 
@@ -122,7 +137,7 @@ export class SessionConnection {
       this.rpc.ws?.terminate?.()
       // This is the browser WebSocket way of closing connection
       this.rpc.ws?.close?.()
-      this.logger.log('Disconected from the session')
+      this.logger.debug('Disconnected from the session')
     }
   }
 
@@ -146,7 +161,7 @@ export class SessionConnection {
           editEnabled: false,
         })
         this.session = res.data
-        this.logger.log('Aquired session:', this.session)
+        this.logger.info('Acquired session:', this.session)
 
         this.refresh(this.session.sessionID)
       } catch (e) {
@@ -182,7 +197,7 @@ export class SessionConnection {
     const sessionURL = `${protocol}://${hostname}${WS_ROUTE}`
 
     this.rpc.onError(e => {
-      this.logger.log('Error in WS session:', this.session, e)
+      this.logger.info('Error in WS session:', this.session, e)
     })
 
     let isFinished = false
@@ -203,24 +218,24 @@ export class SessionConnection {
     })
 
     this.rpc.onOpen(() => {
-      this.logger.log('Connected to session:', this.session)
+      this.logger.info('Connected to session:', this.session)
       resolveOpening?.()
     })
 
     this.rpc.onClose(async e => {
-      this.logger.log('Closing WS connection to session:', this.session, e)
+      this.logger.info('Closing WS connection to session:', this.session, e)
       if (this.isOpen) {
         await wait(WS_RECONNECT_INTERVAL)
-        this.logger.log('Reconnecting to session:', this.session)
+        this.logger.info('Reconnecting to session:', this.session)
         try {
           // When the WS connection closes the subscribers in devbookd are removed.
           // We want to delete the subscriber handlers here so there are no orphans.
           this.subscribers = []
           await this.rpc.connect(sessionURL)
-          this.logger.log('Reconnected to session:', this.session)
+          this.logger.info('Reconnected to session:', this.session)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
-          this.logger.log('Failed reconnecting to session:', this.session, e)
+          this.logger.error('Failed reconnecting to session:', this.session, e)
         }
       } else {
         rejectOpening?.()
@@ -230,12 +245,12 @@ export class SessionConnection {
     this.rpc.onNotification.push(this.handleNotification.bind(this))
 
     try {
-      this.logger.log('Connection to session:', this.session)
+      this.logger.info('Connection to session:', this.session)
       await this.rpc.connect(sessionURL)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      this.logger.log('Error connecting to session', this.session, e)
+      this.logger.error('Error connecting to session', this.session, e)
     }
 
     await openingPromise
@@ -279,7 +294,7 @@ export class SessionConnection {
     await this.call(subscription.service, 'unsubscribe', [subscription.subID])
 
     this.subscribers = this.subscribers.filter(s => s !== subscription)
-    this.logger.log(`Unsubscribed '${subID}' from '${subscription.service}'`)
+    this.logger.info(`Unsubscribed '${subID}' from '${subscription.service}'`)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/member-ordering
@@ -307,7 +322,7 @@ export class SessionConnection {
       service,
       subID,
     })
-    this.logger.log(
+    this.logger.info(
       // eslint-disable-next-line prettier/prettier
       `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
       } with id "${subID}"`,
@@ -323,20 +338,20 @@ export class SessionConnection {
   }
 
   private async refresh(sessionID: string) {
-    this.logger.log(`Started refreshing session "${sessionID}"`)
+    this.logger.info(`Started refreshing session "${sessionID}"`)
 
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
-          this.logger.log('Cannot refresh session - it was closed', this.session)
+          this.logger.info('Cannot refresh session - it was closed', this.session)
           return
         }
 
         await wait(SESSION_REFRESH_PERIOD)
 
         try {
-          this.logger.log(`Refreshed session "${sessionID}"`)
+          this.logger.info(`Refreshed session "${sessionID}"`)
           await refreshSession({
             api_key: this.opts.apiKey,
             sessionID,
@@ -357,7 +372,7 @@ export class SessionConnection {
         }
       }
     } finally {
-      this.logger.log(`Stopped refreshing session "${sessionID}"`)
+      this.logger.info(`Stopped refreshing session "${sessionID}"`)
       this.close()
     }
   }
