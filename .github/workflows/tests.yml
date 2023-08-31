@@ -44,6 +44,6 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Upload Results
-        run: poetry run scripts/upload_test_results.py
+        run: poetry run python scripts/upload_test_results.py
         env:
           SUPABASE_POSTGRES_URL: ${{ secrets.SUPABASE_POSTGRES_URL }}
