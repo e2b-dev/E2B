@@ -21,7 +21,7 @@ from agent.base import (
 )
 
 AgentFactory = Callable[
-    [Any, GetEnvs, SetRun, OnLogs, OnInteractionRequest],
+    [Any, GetEnvs, SetRun, OnLogs, OnInteractionRequest, str],
     Coroutine[None, None, AgentBase],
 ]
 
@@ -128,6 +128,7 @@ class AgentDeployment:
         factory: AgentFactory,
         project_id: str,
         config: Any,
+        e2b_api_key: str,
     ):
         event_handler = AgentEvents(deployment_id=deployment_id, project_id=project_id)
         agent = await factory(
@@ -136,6 +137,7 @@ class AgentDeployment:
             event_handler.set_run_id,
             event_handler.add_log,
             event_handler.add_interaction_request,
+            e2b_api_key,
         )
         return cls(deployment_id, agent, event_handler)
 

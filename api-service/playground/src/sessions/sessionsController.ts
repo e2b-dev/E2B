@@ -21,8 +21,9 @@ export class SessionsController extends Controller {
   @Post()
   public async createSessions(
     @BodyProp() envID: string,
+    @BodyProp() apiKey: string,
   ): Promise<SessionResponse> {
-    const cachedSession = await new CachedSession(envID).init()
+    const cachedSession = await new CachedSession(envID, apiKey).init()
 
     return {
       id: cachedSession.id!,

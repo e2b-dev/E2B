@@ -100,6 +100,7 @@ class SmolAgent(AgentBase):
         on_interaction_request: OnInteractionRequest,
         model: BaseLanguageModel,
         model_name: str,
+        e2b_api_key: str,
     ):
         super().__init__()
         self._dev_loop: asyncio.Task | None = None
@@ -110,6 +111,7 @@ class SmolAgent(AgentBase):
         self.on_logs = on_logs
         self.set_run_id = set_run_id
         self.model = model
+        self.e2b_api_key = e2b_api_key
 
     @classmethod
     async def create(
@@ -119,6 +121,7 @@ class SmolAgent(AgentBase):
         set_run_id: Callable[[str], None],
         on_logs: OnLogs,
         on_interaction_request: OnInteractionRequest,
+        e2b_api_key: str,
     ):
         callback_manager = AsyncCallbackManager([])
         model_name = config.get("openAIModel") or default_openai_model
@@ -144,6 +147,7 @@ class SmolAgent(AgentBase):
             on_interaction_request,
             model,
             model_name,
+            e2b_api_key
         )
 
     async def generate_file(
@@ -277,7 +281,7 @@ Begin generating the code now.
             playground = None
             tasks: List[asyncio.Task[Any]] = []
             try:
-                playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs)
+                playground = Playground(env_id="PPSrlH5TIvFx", get_envs=self.get_envs, api_key=self.e2b_api_key)
                 rootdir = "/repo"
 
                 async def initialize_playground():

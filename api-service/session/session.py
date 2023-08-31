@@ -29,7 +29,7 @@ async def get_result(result: ApplyResult[Any]):
 
 
 class Session:
-    def __init__(self, env_id: str, get_envs: GetEnvs):
+    def __init__(self, env_id: str, get_envs: GetEnvs, api_key: str):
         self.client = playground_client.ApiClient(configuration, pool_threads=3)
         self.api = playground_client.DefaultApi(self.client)
         self.env_id = env_id
@@ -37,10 +37,11 @@ class Session:
         self.env_vars = {}
         self.get_envs = get_envs
         self.id: str = ""
+        self.api_key = api_key
 
     async def open(self):
         thread: ApplyResult[Any] = self.api.create_sessions(
-            playground_client.CreateSessionsRequest(envID=self.env_id),
+            playground_client.CreateSessionsRequest(envID=self.env_id, api_key=self.api_key),
             _request_timeout=10,
             async_req=True,
         )  # type: ignore

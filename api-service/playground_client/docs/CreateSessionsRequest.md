@@ -5,6 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **env_id** | **str** |  | 
+**api_key** | **str** |  | 
 
 ## Example
 

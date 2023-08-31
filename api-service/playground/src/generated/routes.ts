@@ -374,6 +374,7 @@ export function RegisterRoutes(app: Router) {
             function SessionsController_createSessions(request: any, response: any, next: any) {
             const args = {
                     envID: {"in":"body-prop","name":"envID","required":true,"dataType":"string"},
+                    apiKey: {"in":"body-prop","name":"apiKey","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
