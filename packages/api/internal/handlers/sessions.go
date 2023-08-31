@@ -103,14 +103,15 @@ func (a *APIStore) PostSessions(
 	}
 
 	var teamID *string
-	if a.isPredefinedTemplate(newSession.CodeSnippetID) {
+	// PPSrlH5TIvFx is smol development environment id
+	if a.isPredefinedTemplate(newSession.CodeSnippetID) || newSession.CodeSnippetID == "PPSrlH5TIvFx" {
 		teamID = a.validateTeamAPIKey(params.ApiKey)
-		if teamID == nil && params.ApiKey != nil {
+		if teamID == nil {
 			_, _, userErr := a.validateAPIKey(params.ApiKey)
 			if userErr != nil {
 				errMsg := fmt.Errorf("invalid API key: %+v", params.ApiKey)
 				ReportCriticalError(ctx, errMsg)
-				a.sendAPIStoreError(c, 401, "Invalid API key")
+				a.sendAPIStoreError(c, 401, "Invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key.")
 				return
 			}
 		}
