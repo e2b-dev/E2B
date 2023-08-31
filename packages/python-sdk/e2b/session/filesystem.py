@@ -55,7 +55,7 @@ class FilesystemManager:
     #         self.service_name, "writeBase64", [path, base64_content]
     #     )
 
-    async def read(self, path: str, timeout: Optional[int] = TIMEOUT) -> str:
+    async def read(self, path: str, timeout: Optional[float] = TIMEOUT) -> str:
         """
         Reads the whole content of a file as an array of bytes.
 
@@ -74,7 +74,7 @@ class FilesystemManager:
             raise FilesystemException(e.message) from e
 
     async def write(
-        self, path: str, content: str, timeout: Optional[int] = TIMEOUT
+        self, path: str, content: str, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
         Writes content to a file.
@@ -92,7 +92,7 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def remove(self, path: str, timeout: Optional[int] = TIMEOUT) -> None:
+    async def remove(self, path: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Removes a file or a directory.
 
@@ -108,7 +108,7 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def list(self, path: str, timeout: Optional[int] = TIMEOUT) -> List[FileInfo]:
+    async def list(self, path: str, timeout: Optional[float] = TIMEOUT) -> List[FileInfo]:
         """
         List files in a directory.
 
@@ -130,7 +130,7 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def make_dir(self, path: str, timeout: Optional[int] = TIMEOUT) -> None:
+    async def make_dir(self, path: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Creates a new directory and all directories along the way if needed on the specified path.
 

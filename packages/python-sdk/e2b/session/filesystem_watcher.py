@@ -49,7 +49,7 @@ class FilesystemWatcher:
         self._unsubscribe: Optional[Callable[[], Awaitable[Any]]] = None
         self._listeners: Set[Callable[[FilesystemEvent], Any]] = set()
 
-    async def start(self, timeout: Optional[int] = TIMEOUT) -> None:
+    async def start(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Starts the filesystem watcher.
 

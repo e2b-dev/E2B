@@ -102,7 +102,7 @@ class Session(SessionConnection):
         self._filesystem = FilesystemManager(session=self)
         self._process = ProcessManager(session=self)
 
-    async def open(self, timeout: Optional[int] = TIMEOUT) -> None:
+    async def open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Opens the session.
 
@@ -135,7 +135,7 @@ class Session(SessionConnection):
         id: Union[Environment, str],
         api_key: Optional[str] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        timeout: Optional[int] = TIMEOUT,
+        timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,

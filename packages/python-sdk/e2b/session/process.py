@@ -140,7 +140,7 @@ class Process:
         self._finished = finished
         self._output = output
 
-    async def send_stdin(self, data: str, timeout: Optional[int] = TIMEOUT) -> None:
+    async def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Sends data to the process stdin.
 
@@ -157,7 +157,7 @@ class Process:
         except RpcException as e:
             raise ProcessException(e.message) from e
 
-    async def kill(self, timeout: Optional[int] = TIMEOUT) -> None:
+    async def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Kills the process.
 
@@ -198,7 +198,7 @@ class ProcessManager:
         env_vars: Optional[EnvVars] = None,
         rootdir: str = "",
         process_id: Optional[str] = None,
-        timeout: Optional[int] = TIMEOUT,
+        timeout: Optional[float] = TIMEOUT,
     ) -> Process:
         """
         Starts a process in the environment.
@@ -287,7 +287,7 @@ class ProcessManager:
             async def exit_handler():
                 await future_exit
                 logger.info(
-                    f"Handling process exit {self._service_name} (id: {process_id})",
+                    f"Handling process exit (id: {process_id})",
                 )
                 if unsub_all:
                     await unsub_all()
@@ -302,7 +302,7 @@ class ProcessManager:
             self._process_cleanup.append(exit_task.cancel)
 
             async def trigger_exit():
-                logger.info(f"Exiting the process {self._service_name} (id: {process_id})")
+                logger.info(f"Exiting the process (id: {process_id})")
                 future_exit(None)
                 await future_exit_handler_finish
                 logger.debug(f"Exited the process (id: {process_id})")

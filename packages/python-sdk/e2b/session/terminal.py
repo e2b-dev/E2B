@@ -71,7 +71,7 @@ class Terminal:
         self._finished = finished
         self._output = output
 
-    async def send_data(self, data: str, timeout: Optional[int] = TIMEOUT) -> None:
+    async def send_data(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Sends data to the terminal standard input.
 
@@ -89,7 +89,7 @@ class Terminal:
             raise TerminalException(e.message) from e
 
     async def resize(
-        self, cols: int, rows: int, timeout: Optional[int] = TIMEOUT
+        self, cols: int, rows: int, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
         Resizes the terminal tty.
@@ -108,7 +108,7 @@ class Terminal:
         except RpcException as e:
             raise TerminalException(e.message) from e
 
-    async def kill(self, timeout: Optional[int] = TIMEOUT) -> None:
+    async def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Kill the terminal session.
 
@@ -153,7 +153,7 @@ class TerminalManager:
         on_exit: Optional[Callable[[], Any]] = None,
         cmd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
-        timeout: Optional[int] = TIMEOUT,
+        timeout: Optional[float] = TIMEOUT,
     ) -> Terminal:
         """
         Start a new terminal session.

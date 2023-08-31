@@ -220,7 +220,7 @@ class SessionConnection:
         service: str,
         method: str,
         params: List[Any] = None,
-        timeout: Optional[int] = TIMEOUT,
+        timeout: Optional[float] = TIMEOUT,
     ):
         if not params:
             params = []
@@ -274,7 +274,7 @@ class SessionConnection:
 
         return unsub_all
 
-    async def _unsubscribe(self, sub_id: str, timeout: Optional[int] = TIMEOUT):
+    async def _unsubscribe(self, sub_id: str, timeout: Optional[float] = TIMEOUT):
         sub = self._subscribers[sub_id]
         await self._call(sub.service, "unsubscribe", [sub.id], timeout=timeout)
         del self._subscribers[sub_id]
@@ -286,7 +286,7 @@ class SessionConnection:
         handler: Callable[[Any], Any],
         method: str,
         *params,
-        timeout: Optional[int] = TIMEOUT,
+        timeout: Optional[float] = TIMEOUT,
     ):
         sub_id = await self._call(
             service, "subscribe", [method, *params], timeout=timeout
