@@ -3,6 +3,7 @@ import os
 from urllib.parse import urlparse
 
 import psycopg2
+from psycopg2.extras import execute_values
 
 database_url = urlparse(os.getenv("SUPABASE_POSTGRES_URL"))
 
@@ -28,10 +29,12 @@ conn = psycopg2.connect(
 # Create a cursor
 cur = conn.cursor()
 
+# Get values to insert
+result_values = [[result["test_name"], result["duration"]] for result in results]
+
 # Insert all results into the database
-cur.execute(
-    "INSERT INTO tests.test_results (test_name, duration) VALUES (%s, %s)",
-    [(result["test_name"], result["duration"]) for result in results],
+execute_values(
+    cur, "INSERT INTO tests.test_results (test_name, duration) VALUES %s", result_values
 )
 
 # Commit the changes
