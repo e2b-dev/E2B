@@ -30,11 +30,11 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 # Get values to insert
-result_values = [[result["test_name"], result["duration"]] for result in results]
+result_values = [[result["test_name"], result["duration"], result['outcome']] for result in results]
 
 # Insert all results into the database
 execute_values(
-    cur, "INSERT INTO tests.test_results (test_name, duration) VALUES %s", result_values
+    cur, "INSERT INTO tests.test_results (test_name, duration, outcome) VALUES %s", result_values
 )
 
 # Commit the changes
