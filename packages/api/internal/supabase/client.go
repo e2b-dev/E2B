@@ -20,6 +20,7 @@ var (
 
 func NewClient() (*DB, error) {
 
+	// The /rest/v1/ at the end of url is required
 	parsedURL, err := url.Parse(supabaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse Supabase URL '%s': %s", supabaseURL, err)

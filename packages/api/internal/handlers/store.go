@@ -28,7 +28,7 @@ type APIStore struct {
 	posthog       posthog.Client
 }
 
-var posthogAPIKey = os.Getenv("POSTHOG_API_KEY")
+// var posthogAPIKey = os.Getenv("POSTHOG_API_KEY")
 
 func NewAPIStore() *APIStore {
 	fmt.Println("Initializing API store")

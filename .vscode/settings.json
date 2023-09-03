@@ -5,14 +5,9 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "lib/**": true,
-    "**/.venv/**": true,
-    ".next/**": true,
+    ".terraform/**": true,
     ".vscode/**": true,
     ".git/**": true,
-    "**/node_modules/**": true,
-    "**/package-lock.json": true,
-    "**/yarl.lock": true
   },
   "files.watcherExclude": {
     "**/.git": true,
@@ -20,43 +15,15 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "lib/**": true,
-    ".next/**": true,
+    ".terraform/**": true,
     ".vscode/**": true,
-    "**/.venv/**": true,
     ".git/**": true,
-    "**/node_modules/**": true,
-    "**/package-lock.json": true,
-    "**/yarl.lock": true
   },
-  "typescript.tsdk": "node_modules/typescript/lib",
   "editor.quickSuggestions": {
     "strings": true
   },
   "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
-  },
-  "eslint.validate": ["javascript", "typescript"],
   "[terraform]": {
     "editor.tabSize": 2
-  },
-  "python.formatting.provider": "black",
-  "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
-  },
-  "python.autoComplete.extraPaths": [
-    "packages/python-sdk/**",
-    "packages/python-sdk/.venv/bin/python",
-    "packages/python-sdk/.venv/bin"
-  ],
-  "python.defaultInterpreterPath": "packages/python-sdk/.venv/bin/python",
-  "python.analysis.extraPaths": [
-    "packages/python-sdk/**",
-    "packages/python-sdk/.venv/bin/python",
-    "packages/python-sdk/.venv/bin"
-  ],
-  // Disable Pylint and use just Pylance
-  "python.linting.enabled": false,
-  "python.analysis.typeCheckingMode": "basic"
+  }
 }

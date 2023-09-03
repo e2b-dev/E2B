@@ -1,7 +1,2 @@
 .terraform
-core.3071
-node_modules
-# Ignore Vale.sh styles directory
-vale-styles
-
-.env
+.idea

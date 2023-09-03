@@ -2,7 +2,8 @@
 
 ## Infra
 
-- Change read/write file to allow other thatn utf-8 format so we don't break the files
+- Change read/write file to allow other than utf-8 format so we don't break the files
+- Permissions and default directory for filesystem operations
 - Remove dnsmasq from cluster VM image if it is not needed
 - Remove need for provisioning during building env
 - Create the FC rootfs without using Docker just by unpacking the tarballs
@@ -123,58 +124,45 @@
   - the ws pong is working now but the actuall message backpressure can still make problems
 - Add golangci-lint
 - use dnsmasq instead of /etc/hosts and second proxy
-
+- Try to remove need for the websocket backoff/reconnect
+- Add better error if the env was not found
+- Fix namespace cannot be transfered error
+- use .env for better DX
+- make the instance image minimal -- put the kernel, fc, etc to the nomad artifacts
+- move shell scripts to the
+- improve reliability, monitoring,
+  - Logs from every environment, the whole lifecycle of the session needs to be searchable with just an ID of the session
+  - Being able to see all the sessions and logs for each session for the given API keys
+  - Add continuous benchmarks/test
+  - Long running events notification
+  - Status pages for different parts of our infra
+- How to create a custom env from dockerfile if you want to use local files during the build step?
+  - It's either you build the dockerfile locally or you package and upload the files to our infra so it can be used during the build step.
+- Can we has the dockerfile+files+scripts/config to get the unique env hash that we can use to start identical envs in the future?
+- Check debian vs ubuntu
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)
 - fix template/id type
-- improve docstrings
-- use yield/generators instead of callback handlers
-- should callback handlers be async?
-- add release action setup
-- use attrs or dataclasses?
-- Check double slash `//dir` in file watcher event data
-- better readme
-- start filesystem watcher automatically
-- improve DX - clearly communicate instantiation+initialization flow, awaiting object for exit, etc
-- sync flow? Sync version
-- add tests
-- support lower python versions
-- Check if stderr and stdout are ordered
 - Myabe remove types (and timestamps?) from stdout/stderr (they are already fully identified by the subscription)
 - Use specific version (nodejs20) for the templates
-- Using pathlib for paths? windows support?
 - Flush all stdout/err after killing process or terminal in devbookd and also wait for the Stdout/err in the SDK
-- Add formatting
-- handle when user passes async handler for on_stdout, exit, etc.
 - pam_env(sudo:session): Unable to open env file: /etc/default/locale: No such file or directory -- fix locale
-- Change wait system in SDKs (explicit wait()). Add async context management
-
 
 ## CLI
 - fix error whe disconnecting from `connect`
-- `template is a required field` error when trying to `use [envID]`
 - Add a warning about scanning local fs when the ls command takes too long
 - CLI program name should be obvious from the NPM package name
-- Fix CI/CD deployment (pnpm, SDK)
-- Integrate with environmentID in `guide.json`
-- Add published/unpublished label to `env list` output
-- Add disclaimer when the env is unpublished to `env push`
+- still default templates for quick use
 - Change `/` root to `/code` root in 
   - Handle deleting files that were removed in local filesystem - how can we recognize that the file was deleted? Saving what was pushed last and only manipulating with these files? (lock) If the file changed since then we should probably ignore it (save name+hash that we already calculate for everyting together)
-- Allow custom string for template (--select option for the current list?)
 - Fix size and dependencies - packaging could work better
-- Change template option description
-- Finish CLI README
-- Warn about having multiple configs for the same environment
 - Put template field from dbk.toml in a separate [] category so it is not confused with id because they can look the same
 - Add default "empty" template that is used if you don't define anything
-- Ignore "files" directory when pushing if it is not present
-- Connect with id may be creating toml?
 - Enable auth flow/creating tokens from CLI?
-
-### FC mutation limit
-> With a microVM configured with a minimal Linux kernel, single-core CPU, and 128 MiB of RAM, Firecracker supports a steady mutation rate of 5 microVMs per host core per second (e.g., one can create 180 microVMs per second on a host with 36 physical cores).
+- Ensure the terminal completion works well
+- supabase/ws for build status/logs
+- create golang cli but let people install it via npm (https://github.com/supabase/cli)
 
 ### CLI Feedback
 > How can I create the DEVBOOK_KEY? It seems I can’t create resources without it
@@ -196,7 +184,7 @@
 
 > Would updating one environment and publishing it cascade to the other environments that depend on it?
 
-## Uptime/reliability
+## Uptime/reliability/rolling deployment
 - We can potentially solve this by using firecracker snapshots to migrate active sessions more seamlessly.
 
 ## Envs system

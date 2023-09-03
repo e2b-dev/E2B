@@ -6,7 +6,7 @@ info:
 servers:
   - url: https://api.e2b.dev/
     description: API endpoint
-  - url: https://{sessionID}-{clientID}.api.e2b.dev/
+  - url: https://{sessionID}-{clientID}..e2b.dev/
     description: Session endpoint without a specified port
     variables:
       sessionID:
@@ -15,7 +15,7 @@ servers:
       clientID:
         description: ID of the client
         default: _clientID
-  - url: https://{port}-{sessionID}-{clientID}.api.e2b.dev/
+  - url: https://{port}-{sessionID}-{clientID}.e2b.dev/
     description: Session endpoint with a specificed port
     variables:
       sessionID:

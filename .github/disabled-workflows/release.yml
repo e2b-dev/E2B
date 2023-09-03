@@ -1,9 +1,9 @@
-name: API release
+name: API deploy
 
 on:
   push:
     branches:
-      - master
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

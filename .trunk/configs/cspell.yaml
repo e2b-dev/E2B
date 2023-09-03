@@ -1,0 +1,4 @@
+version: "0.2"
+# Suggestions can sometimes take longer on CI machines,
+# leading to inconsistent results.
+suggestionsTimeout: 5000 # ms
