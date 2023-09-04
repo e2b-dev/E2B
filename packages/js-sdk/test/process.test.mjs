@@ -50,8 +50,8 @@ test('process send stdin', async () => {
     rootdir: "/code"
   })
   await process.sendStdin("ping\n")
-  await process
-  
+  await process.finished
+
   expect(process.output.stdout).toEqual("ping")
   // TODO: Parity with Python SDK
   // expect(process.output.messages.length).toEqual(1) 
