@@ -14,9 +14,11 @@
 
 import atexit
 import datetime
+from importlib import metadata
 import json
 import mimetypes
 import os
+import platform
 import re
 import tempfile
 from multiprocessing.pool import ThreadPool
@@ -76,7 +78,17 @@ class ApiClient(object):
         self.pool_threads = pool_threads
 
         self.rest_client = rest.RESTClientObject(configuration)
-        self.default_headers = {}
+        self.default_headers = {
+            "package_version": metadata.version("e2b"),
+            "lang": "python",
+            "lang_version": platform.python_version(),
+            "system": platform.system(),
+            "os": platform.platform(),
+            "publisher": "e2b",
+            "release": platform.release(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+        }
         if header_name is not None:
             self.default_headers[header_name] = header_value
         self.cookie = cookie
