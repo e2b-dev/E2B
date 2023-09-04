@@ -46,11 +46,11 @@ test('process send stdin', async () => {
   const session = await Session.create({ id: "Nodejs", apiKey: E2B_API_KEY })
 
   const process = await session.process.start({
-    cmd: 'while IFS= read -r line; do echo "$line"; sleep 1; done',
+    cmd: 'read -r line; echo "$line"',
     rootdir: "/code"
   })
   await process.sendStdin("ping\n")
-  await process.kill()
+  await process
   
   expect(process.output.stdout).toEqual("ping")
   // TODO: Parity with Python SDK
