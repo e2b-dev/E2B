@@ -10,9 +10,6 @@ login-gcloud:
 .PHONY: init
 init:
 	terraform init -input=false
-	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
-	go install honnef.co/go/tools/cmd/staticcheck@latest
-	go install github.com/goreleaser/goreleaser@latest
 	$(MAKE) -C packages/cluster-disk-image init
 
 .PHONY: plan

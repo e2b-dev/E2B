@@ -27,15 +27,46 @@ linters-settings:
     require-explanation: true # require an explanation for nolint directives
     require-specific: false # don't require nolint directives to be specific about which linter is being skipped
   revive:
+    rules:
+      - name: exported
+        disabled: true
+      - name: package-comments
+        disabled: true
     confidence: 0
+  stylecheck:
+    checks: [all, -ST1000, -ST1020]
 
 linters:
   disable-all: true
   enable:
+    - asciicheck
+    - bidichk
+    - errorlint
     - bodyclose
     - dogsled
     - dupl
     - errcheck
+    - exhaustive
+    - exhaustruct
+    - gci
+    - gocheckcompilerdirectives
+    - goconst
+    - makezero
+    - mirror
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - importas
+    - reassign
+    - tagalign
+    - tenv
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - wsl
+    - wrapcheck
     - exportloopref
     - funlen
     - gochecknoinits
@@ -47,7 +78,6 @@ linters:
     - goimports
     - revive
     - gomnd
-    - maligned # Deprecated but the go vet fieldalignment is not working right now
     - goprintffuncname
     - gosec
     - gosimple

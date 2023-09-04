@@ -62,7 +62,7 @@
   - https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-22-04
 - Does ubuntu need the newer kernel?
   - Using driver with multiple kernels
-- Cloud Hypervisor insted of FC - https://github.com/cloud-hypervisor/cloud-hypervisor
+- Cloud Hypervisor instead of FC - https://github.com/cloud-hypervisor/cloud-hypervisor
 - Add installation instructions for all tools used in the repo
 - API for creating snapshots
 - eBPF
@@ -83,7 +83,7 @@
 - Add supabase config to this repo so the backend is codified
 - Generated types in go?
 - Clarify naming in the sdk -- fs, filesystem, session, environment, instance?
-- "Pluging" to the SDK - linters, git, the agent protocol
+- "Plugging" to the SDK - linters, git, the agent protocol
 - Better SDK errors and exceptions
 - Allow running commands as user (homedir + sudo) instead of root
 - Use CNI for FC networking
@@ -140,6 +140,9 @@
   - It's either you build the dockerfile locally or you package and upload the files to our infra so it can be used during the build step.
 - Can we has the dockerfile+files+scripts/config to get the unique env hash that we can use to start identical envs in the future?
 - Check debian vs ubuntu
+- Using haproxy?
+- Devbookd api versioning to SDK
+- hash api keys in the DB
 
 ### Python SDK
 - devbookd scan lines problem (vs scan bytes)

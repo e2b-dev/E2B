@@ -1,4 +1,4 @@
-# Devbook API
+# E2B API
 
 Monorepo with backend services for handling VM sessions, environment pipelines, and the API for them.
 
@@ -10,7 +10,7 @@ Monorepo with backend services for handling VM sessions, environment pipelines, 
 
 ## Deployment
 
-Run `make increment-version` and commit the changes the command generates.
-Then push to `master` to deploy these changes. Changed packages will be automatically deployed.
+Run `make version` and commit the changes the command generates.
+Then push to `main` to deploy these changes. Changed packages will be automatically deployed.
 
-**If the deployment fails don't run the previous commands again, just fix the error and push to `master`.**
+**If the deployment fails don't run the previous commands again, just fix the error and push to `main`.**

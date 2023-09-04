@@ -10,19 +10,20 @@ runtimes:
   enabled:
     - go@1.21.0
 lint:
-  disabled:
-    - cspell
+  ignore:
+    - linters: [ALL]
+      paths:
+        - packages/api/internal/api/api.gen.go
+        - packages/api/internal/api/spec.gen.go
+        - packages/api/internal/api/types.gen.go
+        - packages/firecracker-task-driver/internal/client/**
   enabled:
-    - gofumpt@0.5.0
-    - golines@0.11.0
     - actionlint@1.6.25
     - gitleaks@8.18.0
-    - goimports@0.9.1
-    - semgrep@1.37.0
+    - semgrep@1.38.2
     - codespell@2.2.5
     - checkov@2.4.9
     - git-diff-check
-    - gofmt@1.20.4
     - gokart@0.5.1
     - golangci-lint@1.54.2
     - hadolint@2.12.0
@@ -34,7 +35,7 @@ lint:
     - tflint@0.47.0
     - tfsec@1.28.1
     - trivy@0.44.1
-    - trufflehog@3.54.1
+    - trufflehog@3.54.3
     - yamllint@1.32.0
 actions:
   disabled:

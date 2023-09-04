@@ -4,29 +4,10 @@ info:
   title: E2B API
 
 servers:
-  - url: https://api.e2b.dev/
-    description: API endpoint
-  - url: https://{sessionID}-{clientID}..e2b.dev/
-    description: Session endpoint without a specified port
+  - url: "{server}/v1"
     variables:
-      sessionID:
-        description: ID of the session
-        default: _sessionID
-      clientID:
-        description: ID of the client
-        default: _clientID
-  - url: https://{port}-{sessionID}-{clientID}.e2b.dev/
-    description: Session endpoint with a specificed port
-    variables:
-      sessionID:
-        description: ID of the session
-        default: _sessionID
-      clientID:
-        description: ID of the client
-        default: _clientID
-      port:
-        description: Devbook Daemon default port
-        default: "49982"
+      server:
+        default: https://api.e2b.dev
 
 components:
   securitySchemes:
@@ -36,26 +17,20 @@ components:
       in: query
 
   parameters:
-    apiKeyOpt:
-      name: api_key
-      in: query
-      required: false
-      schema:
-        type: string
-    apiKeyReq:
+    apiKey:
       name: api_key
       in: query
       required: true
       schema:
         type: string
-    codeSnippetID:
-      name: codeSnippetID
+    envID:
+      name: envID
       in: path
       required: true
       schema:
         type: string
-    sessionID:
-      name: sessionID
+    instanceID:
+      name: instanceID
       in: path
       required: true
       schema:
@@ -82,85 +57,41 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
-    Template:
-      type: string
-      enum:
-        - Nodejs
-        - Go
-        - Bash
-        - Rust
-        - Python3
-        - PHP
-        - Java
-        - Perl
-        - DotNET
-
-    EnvironmentState:
-      type: string
-      enum:
-        - Building
-        - Failed
-        - Done
-
-    Environment:
+    BuildConfig:
+      type: object
       required:
-        - id
+        - Dockerfile
       properties:
-        id:
+        Dockerfile:
           type: string
-        template:
-          type: string
-        title:
-          type: string
+          description: Dockerfile content
 
     NewEnvironment:
       required:
-        - template
+        - buildConfig
       properties:
-        title:
-          type: string
-        template:
+        buildConfig:
+          $ref: "#/components/schemas/BuildConfig"
+
+    Environment:
+      required:
+        - envID
+      properties:
+        envID:
           type: string
 
-    EnvironmentStateUpdate:
+    Instance:
       required:
-        - state
-      properties:
-        state:
-          $ref: "#/components/schemas/EnvironmentState"
-
-    EnvironmentTitleUpdate:
-      properties:
-        title:
-          type: string
-
-    NewSession:
-      required:
-        - codeSnippetID
-      properties:
-        editEnabled:
-          type: boolean
-          default: false
-          description: Option determining if the session is a shared persistent edit session
-        codeSnippetID:
-          type: string
-          description: Identifier of a code snippet which which is the environment associated
-    Session:
-      required:
-        - sessionID
+        - envID
+        - instanceID
         - clientID
-        - editEnabled
-        - codeSnippetID
       properties:
-        codeSnippetID:
+        envID:
           type: string
-          description: Identifier of a code snippet which which is the environment associated
-        editEnabled:
-          type: boolean
-          description: Information if the session is a shared persistent edit session
-        sessionID:
+          description: Identifier of the environment from which is the instance created
+        instanceID:
           type: string
-          description: Identifier of the session
+          description: Identifier of the instance
         clientID:
           type: string
           description: Identifier of the client
@@ -179,10 +110,8 @@ components:
           description: Error
 
 tags:
-  - name: sessions
-    description: Managing VM sessions
+  - name: instances
   - name: envs
-    description: Environment for VM
 
 paths:
   /health:
@@ -194,80 +123,35 @@ paths:
         401:
           $ref: "#/components/responses/401"
 
-  /sessions:
-    get:
-      description: List all sessions
-      tags: [sessions]
-      parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
-      responses:
-        200:
-          description: Successfully returned all sessions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/Session"
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
-    post:
-      description: Create a session on the server
-      tags: [sessions]
-      parameters:
-        - $ref: "#/components/parameters/apiKeyOpt"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/NewSession"
-      responses:
-        201:
-          description: Successfully created a session
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Session"
-        401:
-          $ref: "#/components/responses/401"
-        400:
-          $ref: "#/components/responses/400"
-        500:
-          $ref: "#/components/responses/500"
-
-  /sessions/{sessionID}:
+  /instances/{instanceID}:
     delete:
-      description: Delete a session on the server
-      tags: [sessions]
+      description: Delete an environment instance
+      tags: [instances]
       parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
-        - $ref: "#/components/parameters/sessionID"
+        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/instanceID"
       responses:
         204:
-          description: Successfully deleted the session
+          description: Successfully deleted the instance
         401:
           $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
 
-  /sessions/{sessionID}/refresh:
+  /instances/{instanceID}/refreshes:
     post:
-      description: Refresh the session extending its time to live
-      tags: [sessions]
+      description: Refresh the instance extending its time to live
+      tags: [instances]
       parameters:
-        - $ref: "#/components/parameters/apiKeyOpt"
-        - $ref: "#/components/parameters/sessionID"
+        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/instanceID"
       responses:
         204:
-          description: Successfully refreshed the session
+          description: Successfully refreshed the instance
         401:
           $ref: "#/components/responses/401"
         404:
-          description: Error refreshing session - session not found
+          description: Error refreshing instance - not found
           content:
             application/json:
               schema:
@@ -277,8 +161,6 @@ paths:
     get:
       description: List all environments
       tags: [envs]
-      parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
       responses:
         200:
           description: Successfully returned all environments
@@ -296,8 +178,6 @@ paths:
     post:
       description: Create a new environment
       tags: [envs]
-      parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
       requestBody:
         required: true
         content:
@@ -306,47 +186,25 @@ paths:
               $ref: "#/components/schemas/NewEnvironment"
       responses:
         200:
-          description: Successfully created an environment
+          description: Successfully returned all environments
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Environment"
-        400:
-          $ref: "#/components/responses/400"
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Environment"
         401:
           $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
 
-  # This method will be replaced by POST /envs
-  /envs/{codeSnippetID}:
-    post:
-      description: Create a new env for a code snippet
-      tags: [envs]
-      parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
-        - $ref: "#/components/parameters/codeSnippetID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/NewEnvironment"
-      responses:
-        204:
-          description: Successfully created an environment
-        400:
-          $ref: "#/components/responses/400"
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
+  /envs/{envID}:
     delete:
-      description: Delete the code snippet environment
+      description: Delete the environment
       tags: [envs]
       parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
-        - $ref: "#/components/parameters/codeSnippetID"
+        - $ref: "#/components/parameters/envID"
       responses:
         204:
           description: Successfully deleted the environment
@@ -360,60 +218,30 @@ paths:
           $ref: "#/components/responses/401"
         500:
           $ref: "#/components/responses/500"
-    patch:
-      description: Update the environment of the code snippet to match the edit environment
-      tags: [envs]
+
+  /envs/{envID}/instances:
+    post:
+      description: Create a instance from the environment
+      tags: [instances]
       parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
-        - $ref: "#/components/parameters/codeSnippetID"
+        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/envID"
       responses:
-        204:
-          description: Updated the edit environment for code snippet
-        400:
-          $ref: "#/components/responses/400"
+        201:
+          description: Successfully created an environment instance
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+                description: URI of the created instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
         401:
           $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
         500:
           $ref: "#/components/responses/500"
-
-  /envs/{codeSnippetID}/state:
-    put:
-      description: Update the state of the environment
-      tags: [envs]
-      parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
-        - $ref: "#/components/parameters/codeSnippetID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EnvironmentStateUpdate"
-      responses:
-        204:
-          description: Updated the state of environment
-        400:
-          $ref: "#/components/responses/400"
-        401:
-          $ref: "#/components/responses/401"
-
-  /envs/{codeSnippetID}/title:
-    put:
-      description: Update the title of the environment
-      tags: [envs]
-      parameters:
-        - $ref: "#/components/parameters/apiKeyReq"
-        - $ref: "#/components/parameters/codeSnippetID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EnvironmentTitleUpdate"
-      responses:
-        204:
-          description: Updated the title of the code snippet
-        400:
-          $ref: "#/components/responses/400"
-        401:
-          $ref: "#/components/responses/401"

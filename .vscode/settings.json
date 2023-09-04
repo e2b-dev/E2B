@@ -25,5 +25,8 @@
   "editor.formatOnSave": true,
   "[terraform]": {
     "editor.tabSize": 2
+  },
+  "yaml.schemas": {
+    "https://json.schemastore.org/golangci-lint.json": "file:///Users/valenta.and.thomas/Developer/e2b-api/.trunk/configs/.golangci.yml"
   }
 }
