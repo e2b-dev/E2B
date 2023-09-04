@@ -17,6 +17,10 @@ lint:
         - packages/api/internal/api/spec.gen.go
         - packages/api/internal/api/types.gen.go
         - packages/firecracker-task-driver/internal/client/**
+    - linters: [codespell]
+      paths:
+        - "**/go.work.sum"
+        - "**/go.sum"
   enabled:
     - actionlint@1.6.25
     - gitleaks@8.18.0
