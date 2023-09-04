@@ -13,5 +13,8 @@ from basics.process_stop import main as process_stop_main
 from basics.process_stream_stderr import main as process_stream_stderr_main
 from basics.process_stream_stdout import main as process_stream_stdout_main
 from basics.process_write_stdin import main as process_write_stdin_main
+from timeout.timeout_session import main as timeout_session_main
+from timeout.timeout_process import main as timeout_process_main
+from timeout.timeout_filesystem import main as timeout_filesystem_main
 
 print("Done")

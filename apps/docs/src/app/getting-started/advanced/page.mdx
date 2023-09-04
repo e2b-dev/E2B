@@ -1,0 +1,38 @@
+import {LanguageSpecificText} from "../../../components/LanguageSpecificText.tsx";
+export const metadata = {
+  title: 'E2B Documentation',
+  description: 'SDK Advanced Usage',
+}
+
+# Advanced Usage
+
+## Timeouts
+
+The SDK has a number of timeouts that can be configured to control how long the SDK will wait for a response from the E2B API. The default is 60 seconds.
+There are some examples:
+
+### Timeout creating session
+
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/timeout/timeout_session.py' }}
+```
+```js {{ language: 'js', snippet: 'js/timeout/timeout_session.js' }}
+```
+</CodeGroup>
+
+### Timeout process
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/timeout/timeout_process.py' }}
+```
+```js {{ language: 'js', snippet: 'js/timeout/timeout_process.js' }}
+```
+</CodeGroup>
+
+### Timeout filesystem operations
+
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/timeout/timeout_filesystem.py' }}
+```
+```js {{ language: 'js', snippet: 'js/timeout/timeout_filesystem.js' }}
+```
+</CodeGroup>
