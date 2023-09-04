@@ -8,7 +8,7 @@ require (
 	github.com/getkin/kin-openapi v0.119.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/hashicorp/nomad/api v0.0.0-20230901144200-b614ef3b01c3
+	github.com/hashicorp/nomad/api v0.0.0-20230904103155-290a310544f7
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/lightstep/otel-launcher-go v1.19.0
 	github.com/nedpals/postgrest-go v0.1.3

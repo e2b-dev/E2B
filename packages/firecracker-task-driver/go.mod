@@ -1,6 +1,6 @@
 module github.com/devbookhq/devbook-api/packages/firecracker-task-driver
 
-go 1.19
+go 1.21
 
 require (
 	github.com/KarpelesLab/reflink v0.0.2

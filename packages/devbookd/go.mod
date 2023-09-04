@@ -1,6 +1,6 @@
 module github.com/devbookhq/devbook-api/packages/devbookd
 
-go 1.19
+go 1.21
 
 require (
 	github.com/creack/pty v1.1.18
