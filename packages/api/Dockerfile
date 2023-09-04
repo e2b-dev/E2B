@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine3.15 as builder
+FROM golang:1.21-alpine3.17 as builder
 
 RUN apk add --no-cache make
 
@@ -12,7 +12,7 @@ COPY main.go main.go
 
 RUN make build
 
-FROM alpine:3.15
+FROM alpine:3.17
 
 COPY --from=builder /build/bin/api .
 COPY go-templates go-templates
