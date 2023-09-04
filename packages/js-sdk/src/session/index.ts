@@ -52,7 +52,7 @@ export class Session extends SessionConnection {
     this.filesystem = {
       /**
        * List files in a directory.
-       * @param path P}ath to a directory
+       * @param path Path to a directory
        * @param opts Call options
        * @param {timeout} [opts.timeout] Timeout in milliseconds
        * @returns Array of files in a directory
