@@ -130,7 +130,7 @@ class SessionConnection:
 
         self._close()
         logger.info(
-            f"Session {self._session.code_snippet_id} closed (id: {self._session.session_id})"
+            f"Session closed"
         )
 
     def _close(self):

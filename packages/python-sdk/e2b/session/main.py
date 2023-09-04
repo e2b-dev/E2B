@@ -9,6 +9,9 @@ from e2b.session.process import ProcessManager
 from e2b.session.session_connection import SessionConnection
 from e2b.session.terminal import TerminalManager
 
+
+logger = logging.getLogger(__name__)
+
 Environment = Literal[
     "Nodejs",
     "Bash",
@@ -85,7 +88,7 @@ class Session(SessionConnection):
         :param on_scan_ports: A callback to handle opened ports
         """
 
-        logging.info(f"Creating session {id if isinstance(id, str) else type(id)}")
+        logger.info(f"Creating session {id if isinstance(id, str) else type(id)}")
         super().__init__(
             id=id,
             api_key=api_key,
@@ -108,11 +111,11 @@ class Session(SessionConnection):
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
-        logging.info(f"Opening session {self._id}")
+        logger.info(f"Opening session {self._id}")
         async with async_timeout(timeout):
             await super().open()
             await self._code_snippet._subscribe()
-        logging.info(f"Session {self._id} opened")
+        logger.info(f"Session {self._id} opened")
 
     def _close_services(self):
         self._terminal._close()
