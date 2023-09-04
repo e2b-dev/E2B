@@ -1,4 +1,3 @@
-import {LanguageSpecificText} from "../../../components/LanguageSpecificText.tsx";
 export const metadata = {
   title: 'E2B Documentation',
   description: 'SDK Advanced Usage',
@@ -35,4 +34,21 @@ There are some examples:
 ```
 ```js {{ language: 'js', snippet: 'js/timeout/timeout_filesystem.js' }}
 ```
+</CodeGroup>
+
+## Logging
+
+<LanguageSpecificText>
+  ```python {{ language: 'python', text: "E2B package uses the standard Python logging module You can configure the logging level, handlers and format as you would with any other Python application. \n\nBellow is an example of how to configure the logging module to log to the console." }}
+  ```
+  ```js {{ language: 'js', text: "TBD"}}
+  ```
+</LanguageSpecificText>
+
+
+<CodeGroup>
+  ```python {{ language: 'python', snippet: 'python/logging/e2b_logging.py' }}
+  ```
+  ```js {{ language: 'js', snippet: 'js/logging/e2b_logging.js' }}
+  ```
 </CodeGroup>
