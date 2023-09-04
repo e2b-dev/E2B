@@ -1,5 +1,5 @@
 import FilesystemWatcher from './filesystemWatcher'
-import { CallOpts } from './sessionConnection.ts'
+import { CallOpts } from './sessionConnection'
 
 export const filesystemService = 'filesystem'
 
