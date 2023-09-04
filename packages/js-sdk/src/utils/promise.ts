@@ -41,7 +41,6 @@ export function createDeferredPromise<T = void>() {
 }
 
 export async function timeoutHelper<T>(func: Promise<T>, timeout?: number): Promise<T> {
-  console.log(timeout)
   if (!timeout) return await func
 
   const timer = new Promise((resolve, reject) => {
