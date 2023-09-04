@@ -1,3 +1,5 @@
+import { TimeoutError } from '../error'
+
 export function assertFulfilled<T>(
   item: PromiseSettledResult<T>,
 ): item is PromiseFulfilledResult<T> {
@@ -36,4 +38,22 @@ export function createDeferredPromise<T = void>() {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     resolve: resolve!,
   }
+}
+
+export async function timeoutHelper<T>(func: Promise<T>, timeout?: number): Promise<T> {
+  console.log(timeout)
+  if (!timeout) return await func
+
+  const timer = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      reject(new TimeoutError('The process took too long.')) // Throw an error if it takes too long
+    }, timeout)
+  })
+
+  const funcWithCleanUp = func.then(result => {
+    clearTimeout(timer as unknown as NodeJS.Timeout)
+    return result
+  })
+
+  return await Promise.race([funcWithCleanUp, timer])
 }
