@@ -17,8 +17,8 @@ import {
   Process,
   ProcessManager,
   ProcessMessage,
+  ProcessOpts,
   ProcessOutput,
-  ProcessProps,
   processService,
 } from './process'
 import { CallOpts, SessionConnection, SessionConnectionOpts } from './sessionConnection'
@@ -225,7 +225,7 @@ export class Session extends SessionConnection {
 
     // Init Process handler
     this.process = {
-      start: async (props: ProcessProps) => {
+      start: async (props: ProcessOpts) => {
         const start = async ({
           cmd,
           onStdout,
@@ -234,7 +234,7 @@ export class Session extends SessionConnection {
           envVars = {},
           rootdir = '',
           processID = id(12),
-        }: Omit<ProcessProps, 'timeout'>) => {
+        }: Omit<ProcessOpts, 'timeout'>) => {
           if (!cmd) {
             throw new Error('cmd is required')
           }

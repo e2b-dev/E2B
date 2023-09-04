@@ -107,7 +107,7 @@ export class Process {
     await this.session.call(processService, 'stdin', [this.processID, data], opts)
   }
 }
-export interface ProcessProps {
+export interface ProcessOpts {
   cmd: string
   onStdout?: (out: ProcessMessage) => void
   onStderr?: (out: ProcessMessage) => void
@@ -119,5 +119,5 @@ export interface ProcessProps {
 }
 
 export interface ProcessManager {
-  readonly start: (opts: ProcessProps) => Promise<Process>
+  readonly start: (opts: ProcessOpts) => Promise<Process>
 }

@@ -34,7 +34,7 @@ class FilesystemWatcher {
 
   // Starts watching the path that was passed to the contructor
   async start(opts: CallOpts) {
-    const _start = async () => {
+    const start = async () => {
       // Already started.
       if (this.rpcSubscriptionID) return
 
@@ -47,7 +47,7 @@ class FilesystemWatcher {
         this.path,
       )
     }
-    return await timeoutHelper(_start(), opts?.timeout)
+    return await timeoutHelper(start(), opts?.timeout)
   }
 
   // Stops watching the path and removes all listeners.
