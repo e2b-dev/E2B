@@ -11,6 +11,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "@changesets/cli": "^2.26.2"
+    "@changesets/cli": "^2.26.2",
+    "@changesets/read": "^0.5.9"
   }
 }
