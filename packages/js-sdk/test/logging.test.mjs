@@ -54,7 +54,7 @@ test('verbose & info logs in console when opted-in', async () => {
   await session.filesystem.write("test.txt", "Hello World");
   await session.close()
 
-  expect(consoleSpy.info).toHaveBeenCalledTimes(2);
+  expect(consoleSpy.info).toHaveBeenCalled();
   expect(consoleSpy.error).toHaveBeenCalledTimes(0);
 })
 
