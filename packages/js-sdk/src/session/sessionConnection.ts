@@ -253,6 +253,7 @@ export class SessionConnection {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async call(service: Service, method: string, params?: any[]) {
+    this.logger.debug?.(`Calling "${service}_${method}" with params:`, params)
     return this.rpc.call(`${service}_${method}`, params)
   }
 
@@ -326,6 +327,7 @@ export class SessionConnection {
   }
 
   private handleNotification(data: IRpcNotification) {
+    this.logger.debug?.('Handling notification:', data)
     this.subscribers
       .filter(s => s.subID === data.params?.subscription)
       .forEach(s => s.handler(data.params?.result))
