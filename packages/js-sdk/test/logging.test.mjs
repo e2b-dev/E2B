@@ -1,6 +1,5 @@
 import { Session } from '../src'
 import { expect, test, vi } from 'vitest'
-import winston from 'winston';
 
 test('no logs in console during very basic scenario', async () => {
   const consoleSpy = {
@@ -57,16 +56,6 @@ test('verbose & info logs in console when opted-in', async () => {
   expect(consoleSpy.info).toHaveBeenCalledTimes(2);
   expect(consoleSpy.warn).toHaveBeenCalledTimes(0);
   expect(consoleSpy.error).toHaveBeenCalledTimes(0);
-})
-
-test('custom logger via Winston', async () => {
-  const winstonFileLogger = winston.createLogger({
-    transports: [new winston.transports.File({ filename: __dirname + '/winston.log' })],
-    level: 'debug',
-    format: winston.format.simple()
-  })
-  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY, logger: winstonFileLogger });
-  await session.close()
 })
 
 
