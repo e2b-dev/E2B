@@ -54,5 +54,5 @@ export async function timeoutHelper<T>(func: Promise<T>, timeout?: number): Prom
     return result
   })
 
-  return await Promise.race([funcWithCleanUp, timer])
+  return (await Promise.race([funcWithCleanUp, timer])) as T
 }

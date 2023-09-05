@@ -57,7 +57,7 @@ export class Session extends SessionConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds
        * @returns Array of files in a directory
        */
-      list: async (path, opts: CallOpts) => {
+      list: async (path, opts?: CallOpts) => {
         return (await this.call(filesystemService, 'list', [path], opts)) as FileInfo[]
       },
       /**
@@ -67,7 +67,7 @@ export class Session extends SessionConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds
        * @returns Content of a file
        */
-      read: async (path, opts: CallOpts) => {
+      read: async (path, opts?: CallOpts) => {
         return (await this.call(filesystemService, 'read', [path], opts)) as string
       },
       /**
@@ -76,7 +76,7 @@ export class Session extends SessionConnection {
        * @param opts Call options
        * @param {timeout} [opts.timeout] Timeout in milliseconds
        */
-      remove: async (path, opts: CallOpts) => {
+      remove: async (path, opts?: CallOpts) => {
         await this.call(filesystemService, 'remove', [path], opts)
       },
       /**
@@ -86,7 +86,7 @@ export class Session extends SessionConnection {
        * @param opts Call options
        * @param {timeout} [opts.timeout] Timeout in milliseconds
        */
-      write: async (path, content, opts: CallOpts) => {
+      write: async (path, content, opts?: CallOpts) => {
         await this.call(filesystemService, 'write', [path, content], opts)
       },
       // /**
@@ -121,7 +121,7 @@ export class Session extends SessionConnection {
        * @param opts Call options
        * @param {timeout} [opts.timeout] Timeout in milliseconds
        */
-      makeDir: async (path, opts: CallOpts) => {
+      makeDir: async (path, opts?: CallOpts) => {
         await this.call(filesystemService, 'makeDir', [path], opts)
       },
       /**
