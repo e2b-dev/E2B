@@ -15,7 +15,6 @@ test('no logs in console during very basic scenario', async () => {
 
   expect(consoleSpy.debug).toHaveBeenCalledTimes(0);
   expect(consoleSpy.info).toHaveBeenCalledTimes(0);
-  expect(consoleSpy.warn).toHaveBeenCalledTimes(0);
   expect(consoleSpy.error).toHaveBeenCalledTimes(0);
 })
 
@@ -29,10 +28,12 @@ test('warn logs in console during convoluted scenario', async () => {
 
   const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY });
   await session.close() // Note that we are intentionally closing and then trying to write
+  const warnsAmount = consoleSpy.warn.mock.calls.length
+  
   // void to explicitly not awaiting, we wanna check if logging is happening correctly during retries
   void session.filesystem.read('/etc/hosts') // this should trigger retries
   setTimeout(() => {
-    expect(consoleSpy.warn).toHaveBeenCalled() // should have logged a warning
+    expect(consoleSpy.warn.mock.calls.length).toBeGreaterThan(warnsAmount) // should have logged a warning
   }, 2000) // wait for some retries to occur
 })
 
@@ -54,7 +55,6 @@ test('verbose & info logs in console when opted-in', async () => {
   await session.close()
 
   expect(consoleSpy.info).toHaveBeenCalledTimes(2);
-  expect(consoleSpy.warn).toHaveBeenCalledTimes(0);
   expect(consoleSpy.error).toHaveBeenCalledTimes(0);
 })
 

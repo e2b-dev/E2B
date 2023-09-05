@@ -146,6 +146,7 @@ export class SessionConnection {
     } else {
       this.isOpen = true
     }
+    this.logger.debug?.('Opening session:', this.session)
 
     if (!this.opts.__debug_hostname) {
       try {
