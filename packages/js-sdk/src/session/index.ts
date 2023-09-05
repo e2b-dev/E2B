@@ -2,11 +2,7 @@ import normalizePath from 'normalize-path'
 
 import { components } from '../api'
 import { id } from '../utils/id'
-import {
-  createDeferredPromise,
-  formatSettledErrors,
-  timeoutHelper,
-} from '../utils/promise'
+import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
 import {
   ScanOpenedPortsHandler as ScanOpenPortsHandler,
   codeSnippetService,
@@ -208,18 +204,18 @@ export class Session extends SessionConnection {
 
           return new Terminal(terminalID, this, triggerExit, unsubscribing, output)
         }
-        return await timeoutHelper(
-          start({
-            onData,
-            size,
-            onExit,
-            envVars,
-            cmd,
-            rootdir,
-            terminalID,
-          }),
+        return await withTimeout(
+          start,
           timeout,
-        )
+        )({
+          onData,
+          size,
+          onExit,
+          envVars,
+          cmd,
+          rootdir,
+          terminalID,
+        })
       },
     }
 
@@ -294,7 +290,7 @@ export class Session extends SessionConnection {
           return new Process(processID, this, triggerExit, unsubscribing, output)
         }
         const timeout = props.timeout
-        return await timeoutHelper(start(props), timeout)
+        return await withTimeout(start, timeout)(props)
       },
     }
   }

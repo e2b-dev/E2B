@@ -40,19 +40,20 @@ export function createDeferredPromise<T = void>() {
   }
 }
 
-export async function timeoutHelper<T>(func: Promise<T>, timeout?: number): Promise<T> {
-  if (!timeout) return await func
+export function withTimeout<T extends (...args: any[]) => any>(
+  fn: T,
+  timeout: number | undefined,
+): T {
+  if (timeout === undefined || timeout <= 0 || timeout === Number.POSITIVE_INFINITY) {
+    return fn
+  }
 
+  // Throw an error if it takes too long
   const timer = new Promise((resolve, reject) => {
-    setTimeout(() => {
-      reject(new TimeoutError('The process took too long.')) // Throw an error if it takes too long
-    }, timeout)
+    setTimeout(() => reject(new TimeoutError('The process took too long.')), timeout)
   })
 
-  const funcWithCleanUp = func.then(result => {
-    clearTimeout(timer as unknown as NodeJS.Timeout)
-    return result
-  })
-
-  return (await Promise.race([funcWithCleanUp, timer])) as T
+  return ((...args: T extends (...args: infer A) => any ? A : never) => {
+    return Promise.race([timer, fn(...args)])
+  }) as T
 }

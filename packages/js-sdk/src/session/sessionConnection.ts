@@ -9,7 +9,7 @@ import {
   WS_ROUTE,
 } from '../constants'
 import { AuthenticationError } from '../error'
-import { assertFulfilled, formatSettledErrors, timeoutHelper } from '../utils/promise'
+import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise'
 import wait from '../utils/wait'
 import { codeSnippetService } from './codeSnippet'
 import { filesystemService } from './filesystem'
@@ -270,13 +270,18 @@ export class SessionConnection {
       await openingPromise
       return this
     }
-    return await timeoutHelper(open(), opts?.timeout)
+    return await withTimeout(open, opts?.timeout)()
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async call(service: Service, method: string, params?: any[], opts?: CallOpts){
+  async call(service: Service, method: string, params?: any[], opts?: CallOpts) {
     this.logger.debug?.(`Calling "${service}_${method}" with params:`, params)
-    return timeoutHelper(this.rpc.call(`${service}_${method}`, params), opts?.timeout)
+
+    // Without the async function, the `this` context is lost.
+    const call = async (method: string, params?: any[]) =>
+      await this.rpc.call(method, params)
+
+    return await withTimeout(call, opts?.timeout)(`${service}_${method}`, params)
   }
 
   async handleSubscriptions<

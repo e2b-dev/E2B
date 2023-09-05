@@ -1,4 +1,4 @@
-import { timeoutHelper } from '../utils/promise'
+import { withTimeout } from '../utils/promise'
 import { filesystemService } from './filesystem'
 import { CallOpts, SessionConnection } from './sessionConnection'
 
@@ -47,7 +47,7 @@ class FilesystemWatcher {
         this.path,
       )
     }
-    return await timeoutHelper(start(), opts?.timeout)
+    return await withTimeout(start, opts?.timeout)()
   }
 
   // Stops watching the path and removes all listeners.
