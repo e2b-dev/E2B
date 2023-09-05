@@ -195,7 +195,7 @@ export class SessionConnection {
       this.logger.warn?.(
         `Error in WS session "${this.session?.sessionID}": ${
           err.message ?? err.code ?? err.toString()
-        }`,
+        }. Trying to reconnect...`,
       )
     })
 
