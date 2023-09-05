@@ -1,0 +1,72 @@
+import { Session } from '../src'
+import { expect, test, vi } from 'vitest'
+import winston from 'winston';
+
+test('no logs in console during very basic scenario', async () => {
+  const consoleSpy = {
+    debug: vi.spyOn(console, "debug"),
+    info: vi.spyOn(console, "info"),
+    warn: vi.spyOn(console, "warn"),
+    error: vi.spyOn(console, "error"),
+  }
+
+  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY });
+  await session.filesystem.write("test.txt", "Hello World");
+  await session.close()
+
+  expect(consoleSpy.debug).toHaveBeenCalledTimes(0);
+  expect(consoleSpy.info).toHaveBeenCalledTimes(0);
+  expect(consoleSpy.warn).toHaveBeenCalledTimes(0);
+  expect(consoleSpy.error).toHaveBeenCalledTimes(0);
+})
+
+test('warn logs in console during convoluted scenario', async () => {
+  const consoleSpy = {
+    debug: vi.spyOn(console, "debug"),
+    info: vi.spyOn(console, "info"),
+    warn: vi.spyOn(console, "warn"),
+    error: vi.spyOn(console, "error"),
+  }
+
+  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY });
+  await session.close() // Note that we are intentionally closing and then trying to write
+  // void to explicitly not awaiting, we wanna check if logging is happening correctly during retries
+  void session.filesystem.read('/etc/hosts') // this should trigger retries
+  setTimeout(() => {
+    expect(consoleSpy.warn).toHaveBeenCalled() // should have logged a warning
+  }, 2000) // wait for some retries to occur
+})
+
+test('verbose & info logs in console when opted-in', async () => {
+  const consoleSpy = {
+    info: vi.spyOn(console, "info"),
+    warn: vi.spyOn(console, "warn"),
+    error: vi.spyOn(console, "error"),
+  }
+  
+  const logger = {
+    info: console.info,
+    warn: console.warn,
+    error: console.error,
+  }
+
+  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY, logger });
+  await session.filesystem.write("test.txt", "Hello World");
+  await session.close()
+
+  expect(consoleSpy.info).toHaveBeenCalledTimes(2);
+  expect(consoleSpy.warn).toHaveBeenCalledTimes(0);
+  expect(consoleSpy.error).toHaveBeenCalledTimes(0);
+})
+
+test('custom logger via Winston', async () => {
+  const winstonFileLogger = winston.createLogger({
+    transports: [new winston.transports.File({ filename: __dirname + '/winston.log' })],
+    level: 'debug',
+    format: winston.format.simple()
+  })
+  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY, logger: winstonFileLogger });
+  await session.close()
+})
+
+
