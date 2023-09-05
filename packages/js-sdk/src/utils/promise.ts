@@ -1,3 +1,4 @@
+import { TIMEOUT } from '../constants'
 import { TimeoutError } from '../error'
 
 export function assertFulfilled<T>(
@@ -42,7 +43,7 @@ export function createDeferredPromise<T = void>() {
 
 export function withTimeout<T extends (...args: any[]) => any>(
   fn: T,
-  timeout: number | undefined,
+  timeout: number = TIMEOUT,
 ): T {
   if (timeout === undefined || timeout <= 0 || timeout === Number.POSITIVE_INFINITY) {
     return fn

@@ -144,7 +144,7 @@ export class SessionConnection {
    *
    * `open` method requires `this` context - you may need to bind it.
    * @param opts Call options
-   * @param {timeout} [opts.timeout] Timeout in milliseconds
+   * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
    */
   async open(opts: CallOpts) {
     const open = async () => {

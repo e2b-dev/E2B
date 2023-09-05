@@ -83,7 +83,7 @@ export type TerminalProps = {
    */
   envVars?: EnvVars
   /**
-   * Timeout in milliseconds.
+   * Timeout in milliseconds (default is 60 seconds)
    */
   timeout?: number
 }

@@ -101,7 +101,7 @@ export class Process {
    *
    * @param data Data to send
    * @param opts Call options
-   * @param {timeout} [opts.timeout] Timeout in milliseconds
+   * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
    */
   async sendStdin(data: string, opts?: CallOpts): Promise<void> {
     await this.session.call(processService, 'stdin', [this.processID, data], opts)

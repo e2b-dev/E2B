@@ -50,7 +50,7 @@ export class Session extends SessionConnection {
        * List files in a directory.
        * @param path Path to a directory
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds
+       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        * @returns Array of files in a directory
        */
       list: async (path, opts?: CallOpts) => {
@@ -60,7 +60,7 @@ export class Session extends SessionConnection {
        * Reads the whole content of a file.
        * @param path Path to a file
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds
+       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        * @returns Content of a file
        */
       read: async (path, opts?: CallOpts) => {
@@ -70,7 +70,7 @@ export class Session extends SessionConnection {
        * Removes a file or a directory.
        * @param path Path to a file or a directory
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds
+       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       remove: async (path, opts?: CallOpts) => {
         await this.call(filesystemService, 'remove', [path], opts)
@@ -80,7 +80,7 @@ export class Session extends SessionConnection {
        * @param path Path to a new file. For example '/dirA/dirB/newFile.txt' when creating 'newFile.txt'
        * @param content Content to write to a new file
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds
+       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       write: async (path, content, opts?: CallOpts) => {
         await this.call(filesystemService, 'write', [path, content], opts)
@@ -115,7 +115,7 @@ export class Session extends SessionConnection {
        * Creates a new directory and all directories along the way if needed on the specified pth.
        * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
        * @param opts Call options
-       * @param {timeout} [opts.timeout] Timeout in milliseconds
+       * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       makeDir: async (path, opts?: CallOpts) => {
         await this.call(filesystemService, 'makeDir', [path], opts)
