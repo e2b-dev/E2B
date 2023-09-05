@@ -108,7 +108,7 @@ export class Session extends SessionConnection {
        * @returns new watcher
        */
       watchDir: (path: string) => {
-        this.logger.debug?.(`Watching directory ${path}`)
+        this.logger.debug?.(`Watching directory "${path}"`)
         const npath = normalizePath(path)
         return new FilesystemWatcher(this, npath)
       },
@@ -125,7 +125,7 @@ export class Session extends SessionConnection {
         rootdir = '',
         terminalID = id(12),
       }) => {
-        this.logger.debug?.(`Starting terminal ${terminalID}`)
+        this.logger.debug?.(`Starting terminal "${terminalID}"`)
         const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
 
         const output = new TerminalOutput()
@@ -148,7 +148,7 @@ export class Session extends SessionConnection {
             this.unsubscribe(onExitSubID),
             this.unsubscribe(onDataSubID),
           ])
-          this.logger.debug?.(`Terminal ${terminalID} exited`)
+          this.logger.debug?.(`Terminal "${terminalID}" exited`)
 
           const errMsg = formatSettledErrors(results)
           if (errMsg) {
@@ -191,7 +191,7 @@ export class Session extends SessionConnection {
         if (!cmd) {
           throw new Error('cmd is required')
         }
-        this.logger.debug?.(`Starting process ${processID}`)
+        this.logger.debug?.(`Starting process "${processID}"`)
 
         const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
@@ -225,7 +225,7 @@ export class Session extends SessionConnection {
             onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
             onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
           ])
-          this.logger.debug?.(`Process ${processID} exited`)
+          this.logger.debug?.(`Process "${processID}" exited`)
 
           const errMsg = formatSettledErrors(results)
           if (errMsg) {

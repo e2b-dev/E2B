@@ -114,7 +114,7 @@ export class SessionConnection {
    */
   async close() {
     if (this.isOpen) {
-      this.logger.debug?.('Closing', this.session)
+      this.logger.debug?.(`Closing session "${this.session?.sessionID}"`)
       this.isOpen = false
 
       this.logger.debug?.('Unsubscribing...')
@@ -146,7 +146,7 @@ export class SessionConnection {
     } else {
       this.isOpen = true
     }
-    this.logger.debug?.('Opening session:', this.session)
+    this.logger.debug?.('Opening session...')
 
     if (!this.opts.__debug_hostname) {
       try {
@@ -156,7 +156,7 @@ export class SessionConnection {
           editEnabled: false,
         })
         this.session = res.data
-        this.logger.debug?.('Acquired session:', this.session)
+        this.logger.debug?.(`Acquired session "${this.session.sessionID}"`)
 
         this.refresh(this.session.sessionID)
       } catch (e) {
@@ -191,8 +191,12 @@ export class SessionConnection {
     const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
     const sessionURL = `${protocol}://${hostname}${WS_ROUTE}`
 
-    this.rpc.onError(e => {
-      this.logger.warn?.('Error in WS session:', this.session, e)
+    this.rpc.onError(err => {
+      this.logger.warn?.(
+        `Error in WS session "${this.session?.sessionID}": ${
+          err.message ?? err.code ?? err.toString()
+        }`,
+      )
     })
 
     let isFinished = false
@@ -213,24 +217,28 @@ export class SessionConnection {
     })
 
     this.rpc.onOpen(() => {
-      this.logger.debug?.('Connected to session:', this.session)
+      this.logger.debug?.(`Connected to session "${this.session?.sessionID}"`)
       resolveOpening?.()
     })
 
     this.rpc.onClose(async e => {
-      this.logger.debug?.('Closing WS connection to session:', this.session, e)
+      this.logger.debug?.(`Closing WS connection to session "${this.session?.sessionID}"`)
       if (this.isOpen) {
         await wait(WS_RECONNECT_INTERVAL)
-        this.logger.debug?.('Reconnecting to session:', this.session)
+        this.logger.debug?.(`Reconnecting to session "${this.session?.sessionID}"`)
         try {
           // When the WS connection closes the subscribers in devbookd are removed.
           // We want to delete the subscriber handlers here so there are no orphans.
           this.subscribers = []
           await this.rpc.connect(sessionURL)
-          this.logger.debug?.('Reconnected to session:', this.session)
+          this.logger.debug?.(`Reconnected to session "${this.session?.sessionID}"`)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-          this.logger.warn?.('Failed reconnecting to session:', this.session, e)
+        } catch (err: any) {
+          this.logger.warn?.(
+            `Failed reconnecting to session "${this.session?.sessionID}": ${
+              err.message ?? err.code ?? err.toString()
+            }`,
+          )
         }
       } else {
         rejectOpening?.()
@@ -240,12 +248,16 @@ export class SessionConnection {
     this.rpc.onNotification.push(this.handleNotification.bind(this))
 
     try {
-      this.logger.debug?.('Connection to session:', this.session)
+      this.logger.debug?.(`Connection to session "${this.session?.sessionID}"`)
       await this.rpc.connect(sessionURL)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      this.logger.warn?.('Error connecting to session', this.session, e)
+    } catch (err: any) {
+      this.logger.warn?.(
+        `Error connecting to session "${this.session?.sessionID}": ${
+          err.message ?? err.code ?? err.toString()
+        }`,
+      )
     }
 
     await openingPromise
@@ -341,7 +353,9 @@ export class SessionConnection {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
-          this.logger.warn?.('Cannot refresh session - it was closed', this.session)
+          this.logger.warn?.(
+            `Cannot refresh session ${this.session?.sessionID} - it was closed`,
+          )
           return
         }
 
