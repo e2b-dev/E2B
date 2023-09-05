@@ -1,213 +1,112 @@
 # DEV
 
-## Infra
+## Reading
 
+- https://blog.cloudkernels.net/posts/kata-fc-k3s-k8s/
+- https://ongres.com/blog/automation-to-run-vms-based-on-vanilla-cloud-images-on-firecracker/
+- https://news.ycombinator.com/item?id=36666782
+- https://github.com/weaveworks-liquidmetal/flintlock
+- https://github.com/magmastonealex/firedocker
+- https://github.com/weaveworks/ignite
+- https://github.com/superfly/init-snapshot
+- https://franck.verrot.fr/blog/2019/03/16/request-routing-with-nomad-and-consul
+
+## [Architecture](https://www.figma.com/file/pr02o1okRpScOmNpAmgvCL/Architecture)
+
+## Issues
+
+### General
+
+- Separate cluster server and client images
+- Stop timestamping cluster disk images
+- Remove devbook specific code from the repo (allow move to new org or on prem deploy)
+- Add instance sizes and other things as variables in the GH actions and remove them from code
+- Add more detailed observability/analytics to all parts of the system
+- Add supabase config to this repo so the backend is codified
+- Try to remove need for the websocket backoff/reconnect
+- use .env for better DX
+- improve reliability, monitoring,
+  - Logs from every environment, the whole lifecycle of the session needs to be searchable with just an ID of the session
+  - Being able to see all the sessions and logs for each session for the given team
+  - Long running events notification
+  - Status pages for different parts of our infra
+- Add sentry for better monitoring
+- Explore lightstep alternatives
+- VM instances should not have external IPs
+
+### API
+- Add monitoring to the envs routes
+- Remove Nomad Polling from API
+- Move API keys to header from query params
+- Make the API server stateless by moving the session state to the DB
+- embed all hcl tasks in the API code (also the fc-env scripts?)
+- Change FC env building system - not having separate fc-env dir/package - inline?
+- Add better error if the env was not found
+- Improve request logging
+
+### Devbookd
+- devbookd jsonrpc parameters could be objects instead of arrays (compatibility advantages)
+- Check FC env devbookd freeze bug (probably OOM)
+- Update devbookd in all envs automatically
+- remove code snippet service from the devbookd
+- remove .dbk env vars and code snippet functionality from the devbookd
+- fix empty error logs from devbookd that we can see in the betterstack logs
+- envs vars in SDK/devbookd are not working correctly (terminal, process)
+- Start tty in devbookd only after hooking it to the onData subscribers!
+- Explore GRPC for communication between devbookd and SDK
+- devbookd scan lines problem (vs scan bytes)
+- Change casing of the reported ports fields from the devbookd
+- Use binary data streaming over websocket instead of using the jsonrpc in devbookd - maybe use REST API for this
+- How to monitor devbookd OOM and similar errors remotely?
+- Devbookd api versioning to SDK
+- Flush all stdout/err after killing process or terminal in devbookd and also wait for the Stdout/err in the SDK
 - Change read/write file to allow other than utf-8 format so we don't break the files
 - Permissions and default directory for filesystem operations
-- Remove dnsmasq from cluster VM image if it is not needed
+- Improve FC WS connection (subscriptions take additional calls, maybe we can improve that, etc.)
+- pam_env(sudo:session): Unable to open env file: /etc/default/locale: No such file or directory -- fix locale
+- Fix correct user permission for home dir (chown setup problem before FC startup)
+- relative paths are not handled correctly for the session.filesystem
+- on_ports should be better - not periodically reporting, but more on change? or on request
+- Remove types (and timestamps?) from stdout/stderr (they are already fully identified by the subscription)
+- "~" is not working in the filesystem service
+
+### Build system
+- Use overlays instead of cp reflink so we can use any FS type
 - Remove need for provisioning during building env
 - Create the FC rootfs without using Docker just by unpacking the tarballs
-- Improve generating of FC API client in the firecracker task driver
 - Can we skip starting the FC during the build process?
   - Maybe running the FC is necessary because we really want to have the memory snapshot of the core FC env to be able to use it for the new envs immediately.
 - Disable public read access to the bucket with kernel
-- Separate cluster server and client images
-- Stop timestamping cluster disk images
 - Use rootfs diffs
 - Use FC memory diffs
-- Use task drivers instead of shell scripts for managing envs
+- Use task driver instead of shell scripts for managing envs
 - Can we use ignite for FC handling or at least building of envs?
-- Make separate package from fc snapshot managing in task driver?
-- Stop handling part of the instance's sessions networking via `/etc/hosts` - this is potential slowdown and lock
 - Check if the kernel args we are using are what we want
-- Improve API (efficient calls Nomad calls, no polling, etc.)
-- Improve FC WS connection (subscriptions take additional calls, maybe we can improve that, etc.)
 - Update kernel version
-- devbookd jsonrpc parameters could be objects instead of arrays (compatibility advantages)
 - Move to a better FS handling (filestore, fuse?)
-- Fix possible mutex problems in the firecracker task driver
-- Update devbookd in all envs automatically
-- remove .dbk env vars and code snippet functionality from the devbookd
-- fix empty error logs from devbookd that we can see in the betterstack logs
-- sync OpenAPI schema version with the release version
-- Move API keys to header from query params
-- Fix API rotues so they make sense (no code snippet, just envs)
-- Add automatic refreshing of edit sessions that are currently being snapshotted, so they don't expire
-- Wait for the end of `POST /envs` and `PATCH /envs/{codeSnippetID}` operations - the mechanism is already implemented
-- Add access control to the remaining envs routes and for the edit session request
-- Add monitoring to the envs routes
-- Make the API server stateless by moving the session state to the DB
-- Fix the DB schema - right now it reflects the use case with code snippets we started with
-- Improve release pipeline so the SDK/CLI is not released every time (triggered by version increase)
-- Use CNI to handle networking - https://github.com/containernetworking/cni
 - Limit build/update env CPU and memory or build the envs in a separate machine
-- Limit session length - is a session runnign 48 hours really something we want to allow? These sessions also accumulate over time
-- Add snapshotting on demand
-  - We should maybe delete unused snapshots after some time to save space
-- Add memory balooning
-- Check problem with releasing memory when using Firecracker
 - Delete files after a failed build/update env
   - Stop possible running containers and delete docker image
 - fc-envs build scripts are sometimes cached
-- Use the FC jailer properly
 - Rebuild only the changed templates on push
-- Update NodeJS version
-- Remove gitpod deps and mentions (makefile, gitpod yaml)
-- Remove devbook specific code from the repo (allow move to new org or on prem deploy)
-- Improve caching of the GH actions
-- Add instance sizes and other things as variables in the GH actions and remove them from codes
-- API URL should be configurable
-- add testing/staging env
-- Add memory swap to Rust - OoM when compiling bigger programs
-  - https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-22-04
-- Does ubuntu need the newer kernel?
-  - Using driver with multiple kernels
-- Cloud Hypervisor instead of FC - https://github.com/cloud-hypervisor/cloud-hypervisor
-- Add installation instructions for all tools used in the repo
-- API for creating snapshots
-- eBPF
-- using devbookd locally for development of agent without remote
-- Send usage metadata from the SDK to the session server (observability)
-- **How to handle users/api keys when we have multiple projects?**
-- Store old snapshots when publishing so you can rollback (both prod and edit version)
-- Add more detailed observability/analytics
-- envs vars in SDK/devbookd are not working correctly
-- in JS SDK spawn api client for each instance
-- in JS SDK improve the types/usage API
-- Can process/terminal stdin accept non utf-8 data? We may want to handle this in the SDKs and devobookd
-- process stdout reading on char or on line? (on line could block and return only each second)
-- the terminal and process id should be automatically assigned in devbookd
-- Agents passing envs around between each other
-- Auth for access to env by agents
-- Security checks/deps - paid GH?
-- Add supabase config to this repo so the backend is codified
-- Generated types in go?
-- Clarify naming in the sdk -- fs, filesystem, session, environment, instance?
-- "Plugging" to the SDK - linters, git, the agent protocol
-- Better SDK errors and exceptions
-- Allow running commands as user (homedir + sudo) instead of root
-- Use CNI for FC networking
-- FC alternatives
-- Change casing of the reported ports from the devbookd
-- Use binary data streaming over websocket instead of using the jsonrpc in devbookd
-- Decide if we want to have the REST API alongside the SDKs
-- Exceptions are part of the SDK API!
-- remove undefined from JS SDK services
-- What was the FC alternative that supported Windows?
-- Start tty in devbookd only after hooking it to the onData subscribers!
-- vale for text linting
-- embed all hcl tasks in the API code (also the fc-env scripts?)
-- Do we need provisioning script now? Without it it could be easier to build custom envs. Also think about how flyio solved the daemon - I think they just injected the daemon into the environment. Codesandbox also has a daemon in the env but they don't have a update pipeline for the old envs because it is not needed.
-- Should we mount special filesystems on boots
-- Change FC env building system - not having separate fc-env dir/package - inline?
-- Fix correct user permission for home dir (chown problem in FC)
-- Add linter for unhandled go errors (https://stackoverflow.com/questions/43898074/is-there-a-way-to-find-not-handled-errors-in-go-code)
-- Should we just do "stubs" of fs libraries from various languages so our code can be used exactly like that?
-- Session performance periodic monitoring
-- Local vs remote building from Dockerfile + logs streaming
-- Improve env vars handling for process and terminal in devbookd
-- rename process to command?
-- automatic codebase multirepo sync (git tree?) in GH actions?
-- longer session ids + security
-- should we use use REST instead of JSONRPC or streaming there for saving/loading bigger data (files, byte files)
-- should we support graphql for our API
-- GH action for the CLI
-- change `id` in SDK to something more descriptive (envID?) and maybe change `session` too so there is no confusion
-  - What about `await Session.from_env(id=id)` + `await Session.from_snapshot(id=id)`
-- How to monitor devbookd OOM and similar errors remotely?
-- Lint also the docstrings
-- Generate docs from SDKs
-- relative paths are not handled correctly for the session.filesystem?
-- on_ports should be better - not periodically reporting, and also need access to session fields?
-- process/terminal handling with await is confusing -
-- Add sync support to the python SDK and js sdk
-  - the ws pong is working now but the actuall message backpressure can still make problems
-- Add golangci-lint
-- use dnsmasq instead of /etc/hosts and second proxy
-- Try to remove need for the websocket backoff/reconnect
-- Add better error if the env was not found
-- Fix namespace cannot be transfered error
-- use .env for better DX
 - make the instance image minimal -- put the kernel, fc, etc to the nomad artifacts
-- move shell scripts to the
-- improve reliability, monitoring,
-  - Logs from every environment, the whole lifecycle of the session needs to be searchable with just an ID of the session
-  - Being able to see all the sessions and logs for each session for the given API keys
-  - Add continuous benchmarks/test
-  - Long running events notification
-  - Status pages for different parts of our infra
-- How to create a custom env from dockerfile if you want to use local files during the build step?
-  - It's either you build the dockerfile locally or you package and upload the files to our infra so it can be used during the build step.
-- Can we has the dockerfile+files+scripts/config to get the unique env hash that we can use to start identical envs in the future?
 - Check debian vs ubuntu
-- Using haproxy?
-- Devbookd api versioning to SDK
-- hash api keys in the DB
+- Use specific versions (nodejs20) in the templates' names
 
-### Python SDK
-- devbookd scan lines problem (vs scan bytes)
-- fix template/id type
-- Myabe remove types (and timestamps?) from stdout/stderr (they are already fully identified by the subscription)
-- Use specific version (nodejs20) for the templates
-- Flush all stdout/err after killing process or terminal in devbookd and also wait for the Stdout/err in the SDK
-- pam_env(sudo:session): Unable to open env file: /etc/default/locale: No such file or directory -- fix locale
-
-## CLI
-- fix error whe disconnecting from `connect`
-- Add a warning about scanning local fs when the ls command takes too long
-- CLI program name should be obvious from the NPM package name
-- still default templates for quick use
-- Change `/` root to `/code` root in 
-  - Handle deleting files that were removed in local filesystem - how can we recognize that the file was deleted? Saving what was pushed last and only manipulating with these files? (lock) If the file changed since then we should probably ignore it (save name+hash that we already calculate for everyting together)
-- Fix size and dependencies - packaging could work better
-- Put template field from dbk.toml in a separate [] category so it is not confused with id because they can look the same
-- Add default "empty" template that is used if you don't define anything
-- Enable auth flow/creating tokens from CLI?
-- Ensure the terminal completion works well
-- supabase/ws for build status/logs
-- create golang cli but let people install it via npm (https://github.com/supabase/cli)
-
-### CLI Feedback
-> How can I create the DEVBOOK_KEY? It seems I can’t create resources without it
-
-> I haven’t used the dashboard before and I presumed I might have needed an invite to a team or sth of the sort.
-
-> Can I change my email? (dashboard)
-
-> Should I store the .dbk files in the repo?
-
-> I just realized the only way I can edit a file in an environment is using vim. I’m not familiar with vim, and editing files might be tedious. Is there a way I can connect to an environment using VS Code Remote - SSH extension?
-
-> Should the ./files directory mimic the file system on the environment? i.e. have a code/prisma/migrations directory and other files?
-- It should contain just the files you want to be there. Right now the command finds all the files and uploads them — if overwrites the old files but if there were some files or directories already it will not delete them — for now you can do that via the “connect” and rm command in the env.
-
-> I’ve only connected to the environment to create the initial migration and install dependencies. I might also set up a seed script/ file to seed the database with data. (that might be an extra step)
-
-> Can I update an environment once I’ve published it?
-
-> Would updating one environment and publishing it cascade to the other environments that depend on it?
-
-## Uptime/reliability/rolling deployment
-- We can potentially solve this by using firecracker snapshots to migrate active sessions more seamlessly.
-
-## Envs system
-- "ad-hoc" no provision if hashes match
-- git based workflow
-- unlimited forking
-- minimal overhead with diff snapshots
-
-The system would work similarly to git - you have env config inside a repository and every time you push a new environment will be forked from the old environment - its whole id will be <envID>-<changeToEnvHash> where change to env has represents the changes made by push. The has will be also saved to the config identifying environment so we know what environment to fork next time we push.
-
-We would need to keep all environments forks because wa want to be able to access it like in a git -- when you checkout old commit you can get the old environment. This will also help with the diff snapshots - if you start the environment the actual snpashot would be made by composing all the snapshots of the fork's "parents", reducing space needed.
-
-We need to use rootfs CoW **and** diff snapshots for this, because otherwise each change and push would need at least [amount of FC RAM] data of extra space.
-
-This will allow you to create "common base" environments just by copying environent that you want to base the new env on and doing push.
-
-Even setup from terminal/installed packages can be cached this way if we just modify the env cache either by diggesting all the input you entered into terminal or naively by just diggesting some randomized value everytime you connect to the edit session (maybe there are no edit sessions now?) by terminal, creating a new hash. Maybe the fork will happen everytime jsut before you connect to edit session so we can keep the environments immutable.
-
-There will be no "templates", just other envs you want to base the current env on and you don't have to explicitly say "base this new env on existing env with <envID>", you just start using the old env and make changes to it and a new environment with the changes will be automatically created.
-
-The template field that each environment will be used for composing the diff snapshots and can be also used for constructing the "tree of snapshots".
-
-- How to turn this into "stateful serverless"?
+### FC
+- Improve generating of FC API client in the firecracker task driver
+- Stop handling part of the instance's sessions networking via `/etc/hosts` - this is potential slowdown and lock
+  - Use dnsmasq instead of /etc/hosts and second proxy
+  - Remove dnsmasq from cluster VM image if it is not needed
+  - Can se skip all proxies and just use consul for routing all traffic to the right clients and fc instances?
+- Fix possible mutex problems in the firecracker task driver
+- Fix ip address space distribution via fc task driver
+- Use CNI to handle networking - https://github.com/containernetworking/cni
+- Add memory balooning
+- Check problem with releasing memory when using Firecracker
+- Use the FC jailer properly
+- Add memory swapping to compensate for RAM limitations
+- Explore Cloud Hypervisor and QEMU alternatives
+- rpc error: code = Unknown desc = failed to get IP slot: failed to write to Consul KV: Unexpected response code: 429 (Your IP is issuing too many concurrent connections, please rate limit your calls)
+- Fix "namespace cannot be transferred" error
+- Use haproxy or envoy proxy?

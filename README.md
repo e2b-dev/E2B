@@ -2,12 +2,6 @@
 
 Monorepo with backend services for handling VM sessions, environment pipelines, and the API for them.
 
-## Development
-
-### Architecture
-
-[FigmaJam overview](https://www.figma.com/file/pr02o1okRpScOmNpAmgvCL/Architecture)
-
 ## Deployment
 
 Run `make version` and commit the changes the command generates.
