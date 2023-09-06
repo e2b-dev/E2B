@@ -64,7 +64,7 @@ export class Terminal {
   }
 }
 
-export type TerminalProps = {
+export type TerminalOpts = {
   onData: (data: string) => void
   onExit?: () => void
   size: { cols: number; rows: number }
@@ -89,5 +89,5 @@ export type TerminalProps = {
 }
 
 export interface TerminalManager {
-  readonly start: (opts: TerminalProps) => Promise<Terminal>
+  readonly start: (opts: TerminalOpts) => Promise<Terminal>
 }

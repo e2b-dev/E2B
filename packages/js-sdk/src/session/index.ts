@@ -21,8 +21,8 @@ import { CallOpts, SessionConnection, SessionConnectionOpts } from './sessionCon
 import {
   Terminal,
   TerminalManager,
+  TerminalOpts,
   TerminalOutput,
-  TerminalProps,
   terminalService,
 } from './terminal'
 
@@ -143,7 +143,7 @@ export class Session extends SessionConnection {
         rootdir = '',
         terminalID = id(12),
         timeout = undefined,
-      }: TerminalProps) => {
+      }: TerminalOpts) => {
         const start = async ({
           onData,
           size,
@@ -152,7 +152,7 @@ export class Session extends SessionConnection {
           cmd,
           rootdir = '',
           terminalID = id(12),
-        }: Omit<TerminalProps, 'timeout'>) => {
+        }: Omit<TerminalOpts, 'timeout'>) => {
           this.logger.debug?.(`Starting terminal "${terminalID}"`)
           const { promise: terminalExited, resolve: triggerExit } =
             createDeferredPromise()
@@ -221,7 +221,7 @@ export class Session extends SessionConnection {
 
     // Init Process handler
     this.process = {
-      start: async (props: ProcessOpts) => {
+      start: async (opts: ProcessOpts) => {
         const start = async ({
           cmd,
           onStdout,
@@ -289,8 +289,8 @@ export class Session extends SessionConnection {
 
           return new Process(processID, this, triggerExit, unsubscribing, output)
         }
-        const timeout = props.timeout
-        return await withTimeout(start, timeout)(props)
+        const timeout = opts.timeout
+        return await withTimeout(start, timeout)(opts)
       },
     }
   }
