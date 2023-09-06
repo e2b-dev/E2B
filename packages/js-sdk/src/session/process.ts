@@ -1,5 +1,5 @@
 import { EnvVars } from './envVars'
-import { SessionConnection } from './sessionConnection'
+import { CallOpts, SessionConnection } from './sessionConnection'
 
 export const processService = 'process'
 
@@ -100,20 +100,24 @@ export class Process {
    * Sends data to the process stdin.
    *
    * @param data Data to send
+   * @param opts Call options
+   * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
    */
-  async sendStdin(data: string): Promise<void> {
-    await this.session.call(processService, 'stdin', [this.processID, data])
+  async sendStdin(data: string, opts?: CallOpts): Promise<void> {
+    await this.session.call(processService, 'stdin', [this.processID, data], opts)
   }
+}
+export interface ProcessOpts {
+  cmd: string
+  onStdout?: (out: ProcessMessage) => void
+  onStderr?: (out: ProcessMessage) => void
+  onExit?: () => void
+  envVars?: EnvVars
+  rootdir?: string
+  processID?: string
+  timeout?: number
 }
 
 export interface ProcessManager {
-  readonly start: (opts: {
-    cmd: string
-    onStdout?: (out: ProcessMessage) => void
-    onStderr?: (out: ProcessMessage) => void
-    onExit?: () => void
-    envVars?: EnvVars
-    rootdir?: string
-    processID?: string
-  }) => Promise<Process>
+  readonly start: (opts: ProcessOpts) => Promise<Process>
 }

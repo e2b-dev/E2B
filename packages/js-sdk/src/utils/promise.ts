@@ -1,3 +1,6 @@
+import { TIMEOUT } from '../constants'
+import { TimeoutError } from '../error'
+
 export function assertFulfilled<T>(
   item: PromiseSettledResult<T>,
 ): item is PromiseFulfilledResult<T> {
@@ -36,4 +39,28 @@ export function createDeferredPromise<T = void>() {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     resolve: resolve!,
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function withTimeout<T extends (...args: any[]) => any>(
+  fn: T,
+  timeout: number = TIMEOUT,
+): T {
+  if (timeout === undefined || timeout <= 0 || timeout === Number.POSITIVE_INFINITY) {
+    return fn
+  }
+
+  // Throw an error if it takes too long
+  const timer = new Promise((resolve, reject) => {
+    setTimeout(
+      () =>
+        reject(new TimeoutError(`Calling "${fn.name}" timeouted after ${timeout}ms.`)),
+      timeout,
+    )
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((...args: T extends (...args: infer A) => any ? A : never) => {
+    return Promise.race([timer, fn(...args)])
+  }) as T
 }
