@@ -127,11 +127,11 @@ func (a *APIStore) PostSessions(
 	startTime := time.Now()
 	ReportEvent(ctx, "created session")
 	if teamID != nil {
+		properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 		err := a.posthog.Enqueue(posthog.GroupIdentify{
-			Type: "team",
-			Key:  *teamID,
-			Properties: posthog.NewProperties().
-				Set("session_tried", true),
+			Type:       "team",
+			Key:        *teamID,
+			Properties: properties.Set("session_tried", true),
 		},
 		)
 		if err != nil {
