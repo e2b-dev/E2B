@@ -8,7 +8,6 @@ import {
   WS_RECONNECT_INTERVAL,
   WS_ROUTE,
 } from '../constants'
-import Logger from '../utils/logger'
 import { assertFulfilled, formatSettledErrors } from '../utils/promise'
 import wait from '../utils/wait'
 import { codeSnippetService } from './codeSnippet'
@@ -32,10 +31,17 @@ interface Subscriber {
   handler: SubscriptionHandler
 }
 
+interface Logger {
+  debug?: (message: string, ...args: unknown[]) => void
+  info?: (message: string, ...args: unknown[]) => void
+  warn?: (message: string, ...args: unknown[]) => void
+  error?: (message: string, ...args: unknown[]) => void
+}
+
 export interface SessionConnectionOpts {
   id: string
   apiKey: string
-  debug?: boolean
+  logger?: Logger
   __debug_hostname?: string
   __debug_port?: number
   __debug_devEnv?: 'remote' | 'local'
@@ -61,9 +67,12 @@ export class SessionConnection {
         'API key is required, please visit https://e2b.dev/docs to get your API key',
       )
     }
-
-    this.logger = new Logger('Session', opts.debug)
-    this.logger.log(`Session for code snippet "${opts.id}" initialized`)
+    this.logger = opts.logger ?? {
+      // by default, we log to the console, only warnings and errors
+      warn: console.warn,
+      error: console.error,
+    }
+    this.logger.info?.(`Session for code snippet "${opts.id}" initialized`)
   }
 
   /**
@@ -105,16 +114,16 @@ export class SessionConnection {
    */
   async close() {
     if (this.isOpen) {
-      this.logger.log('Closing', this.session)
+      this.logger.debug?.(`Closing session "${this.session?.sessionID}"`)
       this.isOpen = false
 
-      this.logger.log('Unsubscribing...')
+      this.logger.debug?.('Unsubscribing...')
       const results = await Promise.allSettled(
         this.subscribers.map(s => this.unsubscribe(s.subID)),
       )
       results.forEach(r => {
         if (r.status === 'rejected') {
-          this.logger.log(`Failed to unsubscribe: "${r.reason}"`)
+          this.logger.warn?.(`Failed to unsubscribe: "${r.reason}"`)
         }
       })
 
@@ -122,7 +131,7 @@ export class SessionConnection {
       this.rpc.ws?.terminate?.()
       // This is the browser WebSocket way of closing connection
       this.rpc.ws?.close?.()
-      this.logger.log('Disconected from the session')
+      this.logger.info?.('Disconnected from the session')
     }
   }
 
@@ -137,6 +146,7 @@ export class SessionConnection {
     } else {
       this.isOpen = true
     }
+    this.logger.debug?.('Opening session...')
 
     if (!this.opts.__debug_hostname) {
       try {
@@ -146,7 +156,7 @@ export class SessionConnection {
           editEnabled: false,
         })
         this.session = res.data
-        this.logger.log('Aquired session:', this.session)
+        this.logger.debug?.(`Acquired session "${this.session.sessionID}"`)
 
         this.refresh(this.session.sessionID)
       } catch (e) {
@@ -181,8 +191,12 @@ export class SessionConnection {
     const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
     const sessionURL = `${protocol}://${hostname}${WS_ROUTE}`
 
-    this.rpc.onError(e => {
-      this.logger.log('Error in WS session:', this.session, e)
+    this.rpc.onError(err => {
+      this.logger.warn?.(
+        `Error in WS session "${this.session?.sessionID}": ${
+          err.message ?? err.code ?? err.toString()
+        }. Trying to reconnect...`,
+      )
     })
 
     let isFinished = false
@@ -203,24 +217,28 @@ export class SessionConnection {
     })
 
     this.rpc.onOpen(() => {
-      this.logger.log('Connected to session:', this.session)
+      this.logger.debug?.(`Connected to session "${this.session?.sessionID}"`)
       resolveOpening?.()
     })
 
     this.rpc.onClose(async e => {
-      this.logger.log('Closing WS connection to session:', this.session, e)
+      this.logger.debug?.(`Closing WS connection to session "${this.session?.sessionID}"`)
       if (this.isOpen) {
         await wait(WS_RECONNECT_INTERVAL)
-        this.logger.log('Reconnecting to session:', this.session)
+        this.logger.debug?.(`Reconnecting to session "${this.session?.sessionID}"`)
         try {
           // When the WS connection closes the subscribers in devbookd are removed.
           // We want to delete the subscriber handlers here so there are no orphans.
           this.subscribers = []
           await this.rpc.connect(sessionURL)
-          this.logger.log('Reconnected to session:', this.session)
+          this.logger.debug?.(`Reconnected to session "${this.session?.sessionID}"`)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-          this.logger.log('Failed reconnecting to session:', this.session, e)
+        } catch (err: any) {
+          this.logger.warn?.(
+            `Failed reconnecting to session "${this.session?.sessionID}": ${
+              err.message ?? err.code ?? err.toString()
+            }`,
+          )
         }
       } else {
         rejectOpening?.()
@@ -230,12 +248,16 @@ export class SessionConnection {
     this.rpc.onNotification.push(this.handleNotification.bind(this))
 
     try {
-      this.logger.log('Connection to session:', this.session)
+      this.logger.debug?.(`Connection to session "${this.session?.sessionID}"`)
       await this.rpc.connect(sessionURL)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      this.logger.log('Error connecting to session', this.session, e)
+    } catch (err: any) {
+      this.logger.warn?.(
+        `Error connecting to session "${this.session?.sessionID}": ${
+          err.message ?? err.code ?? err.toString()
+        }`,
+      )
     }
 
     await openingPromise
@@ -244,6 +266,7 @@ export class SessionConnection {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async call(service: Service, method: string, params?: any[]) {
+    this.logger.debug?.(`Calling "${service}_${method}" with params:`, params)
     return this.rpc.call(`${service}_${method}`, params)
   }
 
@@ -279,7 +302,7 @@ export class SessionConnection {
     await this.call(subscription.service, 'unsubscribe', [subscription.subID])
 
     this.subscribers = this.subscribers.filter(s => s !== subscription)
-    this.logger.log(`Unsubscribed '${subID}' from '${subscription.service}'`)
+    this.logger.debug?.(`Unsubscribed '${subID}' from '${subscription.service}'`)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/member-ordering
@@ -307,7 +330,7 @@ export class SessionConnection {
       service,
       subID,
     })
-    this.logger.log(
+    this.logger.debug?.(
       // eslint-disable-next-line prettier/prettier
       `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
       } with id "${subID}"`,
@@ -317,26 +340,29 @@ export class SessionConnection {
   }
 
   private handleNotification(data: IRpcNotification) {
+    this.logger.debug?.('Handling notification:', data)
     this.subscribers
       .filter(s => s.subID === data.params?.subscription)
       .forEach(s => s.handler(data.params?.result))
   }
 
   private async refresh(sessionID: string) {
-    this.logger.log(`Started refreshing session "${sessionID}"`)
+    this.logger.debug?.(`Started refreshing session "${sessionID}"`)
 
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
-          this.logger.log('Cannot refresh session - it was closed', this.session)
+          this.logger.warn?.(
+            `Cannot refresh session ${this.session?.sessionID} - it was closed`,
+          )
           return
         }
 
         await wait(SESSION_REFRESH_PERIOD)
 
         try {
-          this.logger.log(`Refreshed session "${sessionID}"`)
+          this.logger.debug?.(`Refreshed session "${sessionID}"`)
           await refreshSession({
             api_key: this.opts.apiKey,
             sessionID,
@@ -345,19 +371,19 @@ export class SessionConnection {
           if (e instanceof refreshSession.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
-              this.logger.error(
+              this.logger.warn?.(
                 `Error refreshing session - (${error.status}): ${error.data.message}`,
               )
               return
             }
-            this.logger.error(
+            this.logger.warn?.(
               `Refreshing session "${sessionID}" failed - (${error.status})`,
             )
           }
         }
       }
     } finally {
-      this.logger.log(`Stopped refreshing session "${sessionID}"`)
+      this.logger.debug?.(`Stopped refreshing session "${sessionID}"`)
       this.close()
     }
   }

@@ -108,6 +108,7 @@ export class Session extends SessionConnection {
        * @returns new watcher
        */
       watchDir: (path: string) => {
+        this.logger.debug?.(`Watching directory "${path}"`)
         const npath = normalizePath(path)
         return new FilesystemWatcher(this, npath)
       },
@@ -124,6 +125,7 @@ export class Session extends SessionConnection {
         rootdir = '',
         terminalID = id(12),
       }) => {
+        this.logger.debug?.(`Starting terminal "${terminalID}"`)
         const { promise: terminalExited, resolve: triggerExit } = createDeferredPromise()
 
         const output = new TerminalOutput()
@@ -146,10 +148,11 @@ export class Session extends SessionConnection {
             this.unsubscribe(onExitSubID),
             this.unsubscribe(onDataSubID),
           ])
+          this.logger.debug?.(`Terminal "${terminalID}" exited`)
 
           const errMsg = formatSettledErrors(results)
           if (errMsg) {
-            this.logger.error(errMsg)
+            this.logger.error?.(errMsg)
           }
 
           onExit?.()
@@ -188,6 +191,7 @@ export class Session extends SessionConnection {
         if (!cmd) {
           throw new Error('cmd is required')
         }
+        this.logger.debug?.(`Starting process "${processID}"`)
 
         const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
@@ -221,10 +225,11 @@ export class Session extends SessionConnection {
             onStdoutSubID ? this.unsubscribe(onStdoutSubID) : undefined,
             onStderrSubID ? this.unsubscribe(onStderrSubID) : undefined,
           ])
+          this.logger.debug?.(`Process "${processID}" exited`)
 
           const errMsg = formatSettledErrors(results)
           if (errMsg) {
-            this.logger.error(errMsg)
+            this.logger.error?.(errMsg)
           }
 
           onExit?.()
@@ -251,14 +256,14 @@ export class Session extends SessionConnection {
   override async open() {
     await super.open()
 
-    const portsHander = this.onScanPorts
+    const portsHandler = this.onScanPorts
       ? (ports: { State: string; Ip: string; Port: number }[]) =>
           this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
       : undefined
 
     await this.handleSubscriptions(
-      portsHander
-        ? this.subscribe(codeSnippetService, portsHander, 'scanOpenedPorts')
+      portsHandler
+        ? this.subscribe(codeSnippetService, portsHandler, 'scanOpenedPorts')
         : undefined,
     )
 
