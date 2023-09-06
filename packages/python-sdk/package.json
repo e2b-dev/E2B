@@ -5,7 +5,7 @@
   "scripts": {
     "test": "poetry run pytest -n auto",
     "postVersion": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
-    "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish",
+    "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",
     "pretest": "poetry install"
   }
 }
