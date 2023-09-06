@@ -198,7 +198,7 @@ export class SessionConnection {
       const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
       const sessionURL = `${protocol}://${hostname}${WS_ROUTE}`
 
-      this.rpc.onError(e => {
+      this.rpc.onError(err => {
         this.logger.warn?.(
           `Error in WS session "${this.session?.sessionID}": ${
             err.message ?? err.code ?? err.toString()
@@ -228,8 +228,10 @@ export class SessionConnection {
         resolveOpening?.()
       })
 
-      this.rpc.onClose(async e => {
-        this.logger.debug?.(`Closing WS connection to session "${this.session?.sessionID}"`)
+      this.rpc.onClose(async () => {
+        this.logger.debug?.(
+          `Closing WS connection to session "${this.session?.sessionID}"`,
+        )
         if (this.isOpen) {
           await wait(WS_RECONNECT_INTERVAL)
           this.logger.debug?.(`Reconnecting to session "${this.session?.sessionID}"`)
@@ -240,7 +242,7 @@ export class SessionConnection {
             await this.rpc.connect(sessionURL)
             this.logger.debug?.(`Reconnected to session "${this.session?.sessionID}"`)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (e: any) {
+          } catch (err: any) {
             this.logger.warn?.(
               `Failed reconnecting to session "${this.session?.sessionID}": ${
                 err.message ?? err.code ?? err.toString()
@@ -259,7 +261,7 @@ export class SessionConnection {
         await this.rpc.connect(sessionURL)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (e: any) {
+      } catch (err: any) {
         this.logger.warn?.(
           `Error connecting to session "${this.session?.sessionID}": ${
             err.message ?? err.code ?? err.toString()
@@ -278,6 +280,7 @@ export class SessionConnection {
     this.logger.debug?.(`Calling "${service}_${method}" with params:`, params)
 
     // Without the async function, the `this` context is lost.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const call = async (method: string, params?: any[]) =>
       await this.rpc.call(method, params)
 
