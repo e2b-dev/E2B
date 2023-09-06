@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from e2b import Session
 
@@ -7,12 +8,13 @@ id = "Python3"
 
 logging.basicConfig(level=logging.ERROR)
 
+E2B_API_KEY = os.getenv("E2B_API_KEY")
+
 
 async def main():
     print("a")
-    s = Session("Nodejs")
-    await s.open()
-    print("b")
+    s = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    await s.filesystem.write("test.txt", "Hello World")
     proc = await s.process.start(
         cmd="echo testing",
         on_stderr=lambda data: print(data),
