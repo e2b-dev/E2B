@@ -4,6 +4,12 @@ import { visit } from 'unist-util-visit'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import JSON5 from 'json5'
+import fs from 'fs';
+
+const lang2ext = {
+  js: 'js',
+  python: 'py'
+}
 
 function loadFileSnippet() {
   return async (tree) => {
@@ -39,4 +45,44 @@ function loadFileSnippet() {
   }
 }
 
-export const remarkPlugins = [mdxAnnotations.remark, remarkGfm, loadFileSnippet]
+/**
+ * Process <CodeGroupAutoload /> to add code snippets for each language
+ * Depends on loadFileSnippet() to load the actual code
+ */
+function processCodeGroupAutoload() {
+  return (tree) => {
+    visit(tree, 'mdxJsxFlowElement', (node) => {
+      if (node.name !== 'CodeGroupAutoload') return // only process <CodeGroupAutoload />
+      const { attributes, children } = node
+      const attrPath  = attributes.find(({ name }) => name === 'path')?.value
+      if (children.length) throw new Error(`CodeGroupAutoload should not have children`)
+      if (!attrPath) throw new Error(`CodeGroupAutoload should have "path" attribute`)
+      node.name = `CodeGroup` // rename to <CodeGroup />
+      for (const lang of [`js`, `python`]) {
+        const snippetPath = `${lang}/${attrPath}.${lang2ext[lang]}`
+        const fileExists = fs.existsSync(path.resolve(`./src/code/${snippetPath}`))
+        if (!fileExists) {
+          console.warn(`CodeGroupAutoload: snippet "${attrPath}" does not exist for language "${lang}"`)
+          continue
+        }
+        node.children.push({
+          type: 'code',
+          value: '', // loadFileSnippet() is checking for this
+          lang,
+          data: {
+            hProperties: {
+              annotation: `{ language: '${lang}', snippet: '${snippetPath}' }`
+            }
+          }
+        })
+      }
+    })
+  }
+}
+
+export const remarkPlugins = [
+  processCodeGroupAutoload,
+  mdxAnnotations.remark,
+  remarkGfm,
+  loadFileSnippet
+]

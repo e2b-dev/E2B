@@ -78,7 +78,6 @@ function CodePanel({
   code?: string
 }) {
   let child = Children.only(children)
-
   if (isValidElement(child)) {
     tag = child.props.tag ?? tag
     label = child.props.label ?? label
@@ -250,14 +249,13 @@ export function CodeGroup({
   children,
   title,
   ...props
-}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & { title: string }) {
+}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & { title?: string }) {
   let languages =
     Children.map(children, (child) =>
       getPanelTitle(isValidElement(child) ? child.props : {})
     ) ?? []
   let tabGroupProps = useTabGroupProps(languages)
   let hasTabs = Children.count(children) > 1
-
   let containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
   let header = (
@@ -318,4 +316,15 @@ export function Pre({
   }
 
   return <CodeGroup {...props}>{children}</CodeGroup>
+}
+
+/**
+ * Special Component just for MDX files, processed by Remark
+ */
+export function CodeGroupAutoload({children}) {
+  if (!children) {
+    console.warn(`CodeGroupAutoload: No children provided – something is wrong with your MDX file`)
+    return null
+  }
+  return <CodeGroup>{children}</CodeGroup>
 }
