@@ -14,6 +14,8 @@ jobs:
   is_release:
     name: Is release?
     runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.version.outputs.release }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -28,10 +30,12 @@ jobs:
 
       - name: Check if new version
         id: version
-        run: .github/scripts/is_release.sh
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release.sh)
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
   release:
-    needs: [is_release]
+    needs: [ is_release ]
     if: needs.is_release.outputs.release == 'true'
     name: Release
     runs-on: ubuntu-latest

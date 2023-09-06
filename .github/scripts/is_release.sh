@@ -6,4 +6,4 @@ set -eu
 
 CHANGES=$(node -e "require('@changesets/read').default(process.cwd()).then(result => console.log(!!result.length))")
 
-echo "::set-output name=release::${CHANGES}"
+echo "${CHANGES}"
