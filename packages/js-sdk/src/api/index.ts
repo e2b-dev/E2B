@@ -3,12 +3,13 @@ import { Fetcher } from 'openapi-typescript-fetch'
 import platform from 'platform'
 
 import pjson from '../../package.json'
+import { SESSION_DOMAIN } from '../constants'
 import type { components, paths } from './schema.gen'
 
 const client = Fetcher.for<paths>()
 
 client.configure({
-  baseUrl: 'https://enimjo9gwjv9o.x.pipedream.net',
+  baseUrl: `https://${SESSION_DOMAIN}`,
   init: {
     headers: {
       package_version: pjson.version,
