@@ -199,7 +199,8 @@ export class SessionConnection {
       const sessionURL = `${protocol}://${hostname}${WS_ROUTE}`
 
       this.rpc.onError(err => {
-        this.logger.warn?.(
+        // not warn, because this is somewhat expected behaviour during initialization
+        this.logger.debug?.(
           `Error in WS session "${this.session?.sessionID}": ${
             err.message ?? err.code ?? err.toString()
           }. Trying to reconnect...`,
@@ -243,7 +244,8 @@ export class SessionConnection {
             this.logger.debug?.(`Reconnected to session "${this.session?.sessionID}"`)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (err: any) {
-            this.logger.warn?.(
+            // not warn, because this is somewhat expected behaviour during initialization
+            this.logger.debug?.(
               `Failed reconnecting to session "${this.session?.sessionID}": ${
                 err.message ?? err.code ?? err.toString()
               }`,
@@ -262,7 +264,8 @@ export class SessionConnection {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
-        this.logger.warn?.(
+        // not warn, because this is somewhat expected behaviour during initialization
+        this.logger.debug?.(
           `Error connecting to session "${this.session?.sessionID}": ${
             err.message ?? err.code ?? err.toString()
           }`,
@@ -372,7 +375,7 @@ export class SessionConnection {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
-          this.logger.warn?.(
+          this.logger.debug?.(
             `Cannot refresh session ${this.session?.sessionID} - it was closed`,
           )
           return
