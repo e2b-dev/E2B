@@ -6,37 +6,24 @@ async function main() {
     apiKey: process.env.E2B_API_KEY
   })
   
-  await session.filesystem.write(
-    '/code/package.json',
-    JSON.stringify({
-      dependencies: {
-        "is-odd": '3.0.1',
-      },
-    }),
-  )
+  const { stdout: time } = await (await session.process.start({ cmd: `echo $(date)` })).finished
+  console.log(time)
+
+  // Thanks to refreshing in the service worker, this should not cause the session to close
+  blockingSleep(20000)
   
-  const proc = await session.process.start({
-    cmd: 'npm i --silent',
-    envVars: { NPM_CONFIG_UPDATE_NOTIFIER: "false" },
-    rootdir: '/code',
-    onStdout: ({ line }) => console.log('STDOUT', line),
-    onStderr: ({ line }) => console.log('STDERR', line),
-  })
-  
-  await proc.finished
-  
-  // list node_modules
-  const files = await session.filesystem.list('/code/node_modules')
-  console.log(
-    'installed node_modules (first 10 of them):',
-    files
-      .map(f => f.name)
-      .slice(0, 10)
-      .join(', '),
-  )
-  
+  const { stdout: time2 } = await (await session.process.start({ cmd: `echo $(date)` })).finished
+  console.log(time)
+
   await session.close()
 }
 
 main().catch(console.error)
+
+function blockingSleep(sleepDuration){
+  let now = new Date().getTime();
+  while(new Date().getTime() < now + sleepDuration){
+    /* Do nothing */
+  }
+}
 

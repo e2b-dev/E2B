@@ -3,6 +3,7 @@ import nodeResolve from '@rollup/plugin-node-resolve'
 import autoExternal from 'rollup-plugin-auto-external'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
 import typescript from 'rollup-plugin-typescript2'
+import webWorkerLoader from 'rollup-plugin-web-worker-loader'
 
 import pkg from './package.json'
 
@@ -39,6 +40,10 @@ export default {
     nodeResolve({
       preferBuiltins: true,
       browser: true,
+    }),
+    webWorkerLoader({
+      inline: false, // output separate file
+      external: [], // no external dependencies
     }),
     json(),
   ],

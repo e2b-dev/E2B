@@ -1,4 +1,7 @@
 import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
+import Worker from 'web-worker'
+// @ts-ignore
+import RefreshWorker from 'web-worker:../utils/refreshWorker.ts'
 
 import api, { components } from '../api'
 import {
@@ -61,6 +64,7 @@ export class SessionConnection {
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
   protected isOpen = false
+  protected isBeingRefreshed = false
 
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
@@ -165,7 +169,7 @@ export class SessionConnection {
           this.session = res.data
           this.logger.debug?.(`Acquired session "${this.session.sessionID}"`)
 
-          this.refresh(this.session.sessionID)
+          this.startRefreshing(this.session.sessionID)
         } catch (e) {
           if (e instanceof createSession.Error) {
             const error = e.getActualType()
@@ -368,11 +372,37 @@ export class SessionConnection {
       .forEach(s => s.handler(data.params?.result))
   }
 
-  private async refresh(sessionID: string) {
-    this.logger.debug?.(`Started refreshing session "${sessionID}"`)
+  private async startRefreshing(sessionID: string, method = 'WEB_WORKER') {
+    if (this.isBeingRefreshed) {
+      console.warn('Session is already being refreshed')
+      return
+    }
+    this.isBeingRefreshed = true
 
+    if (method === 'WEB_WORKER') {
+      // @ts-ignore
+      let workerUrl = new URL('./web-worker-0.js', import.meta.url) // TODO: Magic filename
+      const worker = new Worker(workerUrl)
+      // console.log('🧠 Worker started')
+      worker.postMessage([sessionID, this.opts.apiKey]) // Start refreshing!
+      worker.addEventListener('message', (ev: any) => {
+        // TODO: Add types to actions!
+        // console.log('🧠 Worker message', JSON.stringify(ev.data))
+        if (ev.data.action === 'log') {
+          let method = ev.data.args[0] as keyof Logger
+          let args = ev.data.args.slice(1) as any[]
+          // @ts-ignore
+          this.logger[method]?.(...args)
+        } else if (ev.data.action === 'close') {
+          worker.terminate()
+          this.close()
+        }
+      })
+      return
+    }
+
+    this.logger.debug?.(`Started refreshing session "${sessionID}"`)
     try {
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
           this.logger.debug?.(
