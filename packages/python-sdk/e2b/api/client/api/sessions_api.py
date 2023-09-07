@@ -184,7 +184,7 @@ class SessionsApi(object):
         )  # noqa: E501
 
         # authentication setting
-        _auth_settings = []  # noqa: E501
+        _auth_settings = ["bearerAuth"]  # noqa: E501
 
         _response_types_map = {
             "200": "List[SessionsGet200ResponseInner]",
@@ -371,7 +371,7 @@ class SessionsApi(object):
             _header_params["Content-Type"] = _content_types_list
 
         # authentication setting
-        _auth_settings = []  # noqa: E501
+        _auth_settings = ["bearerAuth"]  # noqa: E501
 
         _response_types_map = {
             "201": "Session",
@@ -550,7 +550,7 @@ class SessionsApi(object):
         )  # noqa: E501
 
         # authentication setting
-        _auth_settings = []  # noqa: E501
+        _auth_settings = ["bearerAuth"]  # noqa: E501
 
         _response_types_map = {}
 
@@ -724,7 +724,7 @@ class SessionsApi(object):
         )  # noqa: E501
 
         # authentication setting
-        _auth_settings = []  # noqa: E501
+        _auth_settings = ["bearerAuth"]  # noqa: E501
 
         _response_types_map = {}
 

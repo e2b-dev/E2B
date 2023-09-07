@@ -5,10 +5,12 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 
 import async_timeout
+from pydantic import BaseModel
+
 from e2b.api.client import NewSession
 from e2b.api.client import Session as SessionInfo
 from e2b.api.client.rest import ApiException
-from e2b.api.main import client, configuration
+from e2b.api.main import client, get_configuration
 from e2b.constants import (
     SESSION_DOMAIN,
     SESSION_REFRESH_PERIOD,
@@ -26,7 +28,6 @@ from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
 from e2b.utils.str import camel_case_to_snake_case
 from e2b.utils.threads import shutdown_executor
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,7 @@ class SessionConnection:
                 "API key is required, please visit https://e2b.dev/docs to get your API key",
             )
 
+        self.configuration = get_configuration(api_key)
         self._id = id
         self._api_key = api_key
         self._debug_hostname = _debug_hostname
@@ -129,9 +131,7 @@ class SessionConnection:
                 await self._rpc.close()
 
         self._close()
-        logger.info(
-            f"Session closed"
-        )
+        logger.info(f"Session closed")
 
     def _close(self):
         if self._on_close_child:
@@ -155,7 +155,7 @@ class SessionConnection:
             self._is_open = True
 
         try:
-            async with client.ApiClient(configuration) as api_client:
+            async with client.ApiClient(self.configuration) as api_client:
                 api = client.SessionsApi(api_client)
 
                 self._session = await api.sessions_post(
@@ -318,7 +318,7 @@ class SessionConnection:
 
         current_retry = 0
 
-        async with client.ApiClient(configuration) as api_client:
+        async with client.ApiClient(self.configuration) as api_client:
             api = client.SessionsApi(api_client)
             while True:
                 if not self._is_open:

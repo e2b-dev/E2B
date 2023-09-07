@@ -11,14 +11,12 @@
     Do not edit the class manually.
 """
 
-
 import copy
+import http.client as httplib
 import logging
 import sys
-import urllib3
 
-import http.client as httplib
-from e2b.api.client.exceptions import ApiValueError
+import urllib3
 
 JSON_SCHEMA_VALIDATION_KEYWORDS = {
     "multipleOf",
@@ -396,6 +394,14 @@ class Configuration(object):
                 "value": self.get_api_key_with_prefix(
                     "ApiKeyAuth",
                 ),
+            }
+        if self.access_token is not None:
+            auth["bearerAuth"] = {
+                "type": "bearer",
+                "in": "header",
+                "format": "apiKey",
+                "key": "Authorization",
+                "value": "Bearer " + self.access_token,
             }
         return auth
 

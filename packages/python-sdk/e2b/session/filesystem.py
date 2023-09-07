@@ -108,7 +108,9 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def list(self, path: str, timeout: Optional[float] = TIMEOUT) -> List[FileInfo]:
+    async def list(
+        self, path: str, timeout: Optional[float] = TIMEOUT
+    ) -> List[FileInfo]:
         """
         List files in a directory.
 
