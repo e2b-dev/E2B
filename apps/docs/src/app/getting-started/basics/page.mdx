@@ -20,40 +20,25 @@ There are two main primitives in our SDK that you use to interact with the cloud
 - [Process](/getting-started/basics#process)
 
 ## Create AI Playground
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/init.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/init.js' }}
-```
-</CodeGroup>
+
+<CodeGroupAutoload path="basics/init" />
+
 
 ## Get playground URL
 Each playground is accessible from the internet via a unique URL of that playground.
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/get_url.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/get_url.js' }}
-```
-</CodeGroup>
+
+<CodeGroupAutoload path="basics/get_url" />
 
 ### Get URL for a specific port inside playground
 Below is an example showing how to get a URL for a port 3000. If there's any server inside the playground listening on port 3000 this would be its URL.
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/get_url_port.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/get_url_port.js' }}
-```
-</CodeGroup>
+
+<CodeGroupAutoload path="basics/get_url_port" />
 
 ## Scan open ports inside playground
-The following example continuosly scan open ports inside the playground and prints new ones to the console.
+The following example continuously scan open ports inside the playground and prints new ones to the console.
 
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/scan_ports.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/scan_ports.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/scan_ports" /> 
+
 
 ## Filesystem
 
@@ -66,24 +51,14 @@ Here are the basic operations you can do with the filesystem inside a cloud play
 
 
 ## List directory content
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/fs_ls.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/fs_ls.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/fs_ls" />
 
 ## Create directory
 
 A creation of a directory will fail if any directory on the path doesn't exist yet.
 For example, if you want to create a directory `/home/user/new_dir` and `/home/user` doesn't exist yet, you will get an error.
 
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/fs_mkdir.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/fs_mkdir.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/fs_mkdir" />
 
 ## Write to file
 When writing to a file that doesn't exist, it will get created.
@@ -92,28 +67,14 @@ When writing to a file that already exists, it will get overwritten.
 
 When writing to a file that's in a directory that doesn't exist, you'll get an error.
 
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/fs_write.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/fs_write.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/fs_write" />
 
 ## Read file
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/fs_read.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/fs_read.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/fs_read" />
 
 ## Watch directory for changes
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/fs_watch.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/fs_watch.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/fs_watch" />
+
 
 ## Process
 Here are the basic operations you can do with the process inside a cloud playground:
@@ -124,41 +85,16 @@ Here are the basic operations you can do with the process inside a cloud playgro
 - [Stream stderr](/getting-started/basics#stream-stderr)
 
 ## Start process
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/process_start.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/process_start.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/process_start" />
 
 ## Stop process
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/process_stop.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/process_stop.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/process_stop" />
 
 ## Stream stdout
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/process_stream_stdout.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/process_stream_stdout.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/process_stream_stdout" />
 
 ## Send stdin
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/process_write_stdin.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/process_write_stdin.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/process_write_stdin" />
 
 ## Stream stderr
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/basics/process_stream_stderr.py' }}
-```
-```js {{ language: 'js', snippet: 'js/basics/process_stream_stderr.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="basics/process_stream_stderr" />
