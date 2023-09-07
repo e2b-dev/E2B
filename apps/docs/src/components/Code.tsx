@@ -15,7 +15,6 @@ import { create } from 'zustand'
 
 import { Tag } from '@/components/Tag'
 import { CopyButton } from '@/components/CopyButton'
-import { useApiKey } from '@/utils/useUser'
 
 const languageNames: Record<string, string> = {
   js: 'JavaScript',
@@ -28,7 +27,7 @@ const languageNames: Record<string, string> = {
   go: 'Go',
 }
 
-function getPanelTitle({
+export function getPanelTitle({
   title,
   language,
 }: {
@@ -101,7 +100,7 @@ function CodePanel({
   )
 }
 
-function CodeGroupHeader({
+export function CodeGroupHeader({
   title,
   children,
   selectedIndex,
@@ -217,7 +216,7 @@ const usePreferredLanguageStore = create<{
     })),
 }))
 
-function useTabGroupProps(availableLanguages: Array<string>) {
+export function useTabGroupProps(availableLanguages: Array<string>) {
   let { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
   let [selectedIndex, setSelectedIndex] = useState(0)
   let activeLanguage = [...availableLanguages].sort(

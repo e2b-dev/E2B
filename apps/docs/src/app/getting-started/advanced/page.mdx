@@ -1,0 +1,54 @@
+export const metadata = {
+  title: 'E2B Documentation',
+  description: 'SDK Advanced Usage',
+}
+
+# Advanced Usage
+
+## Timeouts
+
+The SDK has a number of timeouts that can be configured to control how long the SDK will wait for a response from the E2B API. The default is 60 seconds.
+There are some examples:
+
+### Timeout creating session
+
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/timeout/timeout_session.py' }}
+```
+```js {{ language: 'js', snippet: 'js/timeout/timeout_session.js' }}
+```
+</CodeGroup>
+
+### Timeout process
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/timeout/timeout_process.py' }}
+```
+```js {{ language: 'js', snippet: 'js/timeout/timeout_process.js' }}
+```
+</CodeGroup>
+
+### Timeout filesystem operations
+
+<CodeGroup>
+```python {{ language: 'python', snippet: 'python/timeout/timeout_filesystem.py' }}
+```
+```js {{ language: 'js', snippet: 'js/timeout/timeout_filesystem.js' }}
+```
+</CodeGroup>
+
+## Logging
+
+<LanguageSpecificText>
+  ```python {{ language: 'python', text: "E2B package uses the standard Python logging module You can configure the logging level, handlers and format as you would with any other Python application. \n\nBelow is an example of how to configure the logging module to log to the console." }}
+  ```
+  ```js {{ language: 'js', text: "E2B package logs only warnings & errors to the console by default. Below is an example of how to fully customize the logging levels.\n\nFeel free to override the logger with your own implementation with debug, info, warn, and error methods." }}
+  ```
+</LanguageSpecificText>
+
+
+<CodeGroup>
+  ```python {{ language: 'python', snippet: 'python/logging/e2b_logging.py' }}
+  ```
+  ```js {{ language: 'js', snippet: 'js/logging/e2b_logging.js' }}
+  ```
+</CodeGroup>

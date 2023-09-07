@@ -8,6 +8,7 @@ import { Prose } from '@/components/Prose'
 export const a = Link
 export { Button } from '@/components/Button'
 export { CodeGroupAutoload, CodeGroup, Code as code, Pre as pre } from '@/components/Code'
+export { LanguageSpecificText } from '@/components/LanguageSpecificText'
 
 export function wrapper({ children }: { children: React.ReactNode }) {
   return (

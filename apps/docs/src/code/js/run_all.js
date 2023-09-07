@@ -13,5 +13,8 @@ import * as process_stop from './basics/process_stop.js'
 import * as process_stream_stdout from './basics/process_stream_stdout.js'
 import * as process_stream_stderr from './basics/process_stream_stderr.js'
 import * as process_write_stdin from './basics/process_write_stdin.js'
+import * as timeout_session from './timeout/timeout_session.js'
+import * as timeout_process from './timeout/timeout_process.js'
+import * as timeout_filesystem from './timeout/timeout_filesystem.js'
 
 console.log('Done')

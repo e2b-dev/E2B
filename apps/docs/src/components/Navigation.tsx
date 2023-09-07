@@ -147,10 +147,11 @@ function NavigationGroup({ group, className }) {
   // state, so that the state does not change during the close animation.
   // The state will still update when we re-open (re-render) the navigation.
   let isInsideMobileNavigation = useIsInsideMobileNavigation()
-  let initialPathname = usePathname();
+  let initialPathname = usePathname()
 
   // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
-  if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
+  if (typeof window === 'undefined' && initialPathname === '/')
+    initialPathname = '/docs'
 
   let [pathname, sections] = useInitialValue(
     [initialPathname, useSectionStore((s) => s.sections)],
@@ -244,6 +245,7 @@ export const navigation = [
       { title: 'Installation', href: '/getting-started/installation' },
       { title: 'API Key', href: '/getting-started/api-key' },
       { title: 'SDK Basics', href: '/getting-started/basics' },
+      { title: 'Advanced SDK Usage', href: '/getting-started/advanced' },
     ],
   },
   {
