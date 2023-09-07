@@ -1,6 +1,6 @@
 {
   "name": "@e2b/sdk",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -76,7 +76,6 @@
     "typescript"
   ],
   "dependencies": {
-
     "cross-fetch": "^3.1.5",
     "normalize-path": "^3.0.0",
     "openapi-typescript-fetch": "^1.1.3",
