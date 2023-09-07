@@ -49,8 +49,27 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 		gin.Recovery(),
 	)
 
+	config := cors.DefaultConfig()
 	// Allow all origins
-	r.Use(cors.Default())
+	config.AllowAllOrigins = true
+	config.AllowHeaders = []string{
+		// Default headers
+		"Origin",
+		"Content-Length",
+		"Content-Type",
+		// Custom headers sent from SDK
+		"engine",
+		"lang",
+		"lang_version",
+		"machine",
+		"os",
+		"package_version",
+		"processor",
+		"publisher",
+		"release",
+		"system",
+	}
+	r.Use(cors.New(config))
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
