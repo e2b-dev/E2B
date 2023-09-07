@@ -46,7 +46,7 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
-API_URL="https://ondevbook.com"
+API_URL="https://api.e2b.dev"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state?api_key=$API_KEY"
 
 echo "==== Args ==========================================================================================="
@@ -89,7 +89,7 @@ function mkdirs() {
 }
 
 function get_snapshot() {
-  EDIT_ID=`cat $EDIT_ID_PATH`
+  EDIT_ID=$(cat $EDIT_ID_PATH)
   EDIT_ID_DIR="$EDIT_DIR/$EDIT_ID"
 
   if [[ "$SESSION_ID" == "" ]]; then
@@ -104,18 +104,18 @@ function get_snapshot() {
     echo "Running edit sessions rootfs path $SESSION_ROOTFS"
 
     curl --unix-socket $EDIT_FC_SOCK -i \
-        -X PATCH 'http://localhost/vm' \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json' \
-        -d '{
+      -X PATCH 'http://localhost/vm' \
+      -H 'Accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d '{
                 "state": "Paused"
         }'
 
     curl --unix-socket $EDIT_FC_SOCK -i \
-        -X PUT 'http://localhost/snapshot/create' \
-        -H  'Accept: application/json' \
-        -H  'Content-Type: application/json' \
-        -d "{
+      -X PUT 'http://localhost/snapshot/create' \
+      -H 'Accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d "{
               \"snapshot_type\": \"Full\",
               \"snapshot_path\": \"$BUILD_FC_SNAPFILE\",
               \"mem_file_path\": \"$BUILD_FC_MEMFILE\"
@@ -124,10 +124,10 @@ function get_snapshot() {
     cp -pRd --reflink $SESSION_ROOTFS $BUILD_FC_ROOTFS
 
     curl --unix-socket $EDIT_FC_SOCK -i \
-        -X PATCH 'http://localhost/vm' \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json' \
-        -d '{
+      -X PATCH 'http://localhost/vm' \
+      -H 'Accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d '{
                 "state": "Resumed"
         }'
   fi
@@ -154,7 +154,6 @@ mkdirs
 get_snapshot
 mv_env_files
 del_build_dir
-
 
 touch ${ALLOC_DIR}/main-done
 

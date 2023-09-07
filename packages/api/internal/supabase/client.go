@@ -13,9 +13,12 @@ type DB struct {
 	Client *postgrest.Client
 }
 
+var (
+	supabaseURL = os.Getenv("SUPABASE_URL")
+	supabaseKey = os.Getenv("SUPABASE_KEY")
+)
+
 func NewClient() (*DB, error) {
-	supabaseURL := os.Getenv("SUPABASE_URL")
-	supabaseKey := os.Getenv("SUPABASE_KEY")
 
 	parsedURL, err := url.Parse(supabaseURL)
 	if err != nil {

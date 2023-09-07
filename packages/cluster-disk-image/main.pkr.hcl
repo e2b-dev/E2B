@@ -1,5 +1,5 @@
 packer {
-  required_version = "1.8.4"
+  required_version = ">=1.8.4"
   required_plugins {
     googlecompute = {
       version = "1.0.16"
@@ -52,7 +52,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y docker.io=20.10.12-0ubuntu2~20.04.1",
+      "sudo apt-get install -y docker.io",
       "sudo systemctl start docker",
       "sudo usermod -aG docker $USER",
     ]
@@ -90,7 +90,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /opt/nomad/plugins",
-      "sudo curl https://storage.googleapis.com/devbook-environment-pipeline/firecracker-task-driver -o /opt/nomad/plugins/firecracker-task-driver",
+      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/firecracker-task-driver -o /opt/nomad/plugins/firecracker-task-driver",
       "sudo chmod +x /opt/nomad/plugins/firecracker-task-driver",
     ]
   }
@@ -98,7 +98,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /fc-vm",
-      "sudo curl https://storage.googleapis.com/devbook-snapshot/vmlinux.bin -o /fc-vm/vmlinux.bin",
+      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/vmlinux.bin -o /fc-vm/vmlinux.bin",
     ]
   }
 }

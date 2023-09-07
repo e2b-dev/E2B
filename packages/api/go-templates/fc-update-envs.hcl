@@ -30,7 +30,7 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
       }
 
       artifact {
-        source = "https://storage.googleapis.com/devbook-environment-pipeline/env.tar.gz"
+        source = "https://storage.googleapis.com/e2b-fc-env-pipeline/env.tar.gz"
         destination = "local"
       }
 
@@ -83,7 +83,7 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
-API_URL="https://ondevbook.com"
+API_URL="https://api.e2b.dev"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state?api_key=$API_KEY"
 
 # Main didn't finish successfully.

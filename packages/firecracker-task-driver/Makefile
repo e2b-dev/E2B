@@ -4,10 +4,10 @@ upload:
 	./upload.sh
 
 build:
-	CGO_ENABLED=0 go build -o bin/ .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/ .
 
 set-project-gcloud:
-	gcloud config set project devbookhq
+	gcloud config set project e2b-prod
 
 generate:
 	cd internal/client && swagger generate client -f firecracker.yml -A firecracker

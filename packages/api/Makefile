@@ -1,6 +1,6 @@
 openapi := ../../openapi.yml
 
-GCP_PROJECT := devbookhq
+GCP_PROJECT := e2b-prod
 IMAGE := orchestration/api
 
 generate:
@@ -9,7 +9,7 @@ generate:
 	oapi-codegen -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
 
 build:
-	CGO_ENABLED=0 go build -o bin/api .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/api .
 
 build-debug:
 	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/api .

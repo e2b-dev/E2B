@@ -18,7 +18,7 @@ variable "logs_port_name" {
   type = string
 }
 
-variable "logtail_api_key" {
+variable "betterstack_logs_api_key" {
   type = string
 }
 
@@ -114,7 +114,7 @@ inputs = [ "logtail_transform_Ng2hNptjHFG5TLHYJnMKdrAY" ]
 uri = "https://in.logtail.com/"
 encoding.codec = "json"
 auth.strategy = "bearer"
-auth.token = "${var.logtail_api_key}"
+auth.token = "${var.betterstack_logs_api_key}"
         EOH
       }
     }

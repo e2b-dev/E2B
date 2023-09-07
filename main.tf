@@ -1,7 +1,7 @@
 terraform {
   required_version = ">=1.1.9"
   backend "gcs" {
-    bucket = "devbook-terraform-state"
+    bucket = "e2b-terraform-state"
     prefix = "terraform/orchestration/state"
   }
   required_providers {
@@ -77,7 +77,7 @@ resource "consul_acl_token_policy_attachment" "attachment" {
 }
 
 data "google_compute_global_address" "orch_server_ip" {
-  name = "orch-server-ip"
+  name = "orch-server-nomad-ip"
 }
 
 data "google_secret_manager_secret_version" "nomad_acl_token" {
@@ -93,18 +93,18 @@ data "google_secret_manager_secret_version" "lightstep_api_key" {
   secret = "lightstep-api-key"
 }
 
-data "google_secret_manager_secret_version" "logtail_api_key" {
-  secret = "logtail-api-key"
+data "google_secret_manager_secret_version" "betterstack_logs_api_key" {
+  secret = "betterstack-logs-api-key"
 }
 
 module "telemetry" {
   source = "./packages/telemetry"
 
-  logs_health_proxy_port = var.logs_health_proxy_port
-  logs_proxy_port        = var.logs_proxy_port
-  lightstep_api_key      = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
-  logtail_api_key        = data.google_secret_manager_secret_version.logtail_api_key.secret_data
-  gcp_zone               = var.gcp_zone
+  logs_health_proxy_port   = var.logs_health_proxy_port
+  logs_proxy_port          = var.logs_proxy_port
+  lightstep_api_key        = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
+  betterstack_logs_api_key = data.google_secret_manager_secret_version.betterstack_logs_api_key.secret_data
+  gcp_zone                 = var.gcp_zone
 }
 
 module "session_proxy" {

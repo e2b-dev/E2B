@@ -1,13 +1,12 @@
 openapi: 3.0.0
 info:
-  version: 1.0.0
-  title: Devbook
-  description: Devbook API
+  version: 0.1.0
+  title: E2B API
 
 servers:
-  - url: https://ondevbook.com/
+  - url: https://api.e2b.dev/
     description: API endpoint
-  - url: https://{sessionID}-{clientID}.ondevbook.com/
+  - url: https://{sessionID}-{clientID}.api.e2b.dev/
     description: Session endpoint without a specified port
     variables:
       sessionID:
@@ -16,7 +15,7 @@ servers:
       clientID:
         description: ID of the client
         default: _clientID
-  - url: https://{port}-{sessionID}-{clientID}.ondevbook.com/
+  - url: https://{port}-{sessionID}-{clientID}.api.e2b.dev/
     description: Session endpoint with a specificed port
     variables:
       sessionID:

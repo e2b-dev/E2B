@@ -6,7 +6,7 @@ variable "lightstep_api_key" {
   type = string
 }
 
-variable "logtail_api_key" {
+variable "betterstack_logs_api_key" {
   type = string
 }
 

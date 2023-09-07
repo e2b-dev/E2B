@@ -10,14 +10,19 @@ import (
 	"github.com/hashicorp/nomad/api"
 )
 
+var (
+	nomadAddress = os.Getenv("NOMAD_ADDRESS")
+	nomadToken   = os.Getenv("NOMAD_TOKEN")
+)
+
 type NomadClient struct {
 	client *api.Client
 }
 
 func InitNomadClient() *NomadClient {
 	config := api.Config{
-		Address:  os.Getenv("NOMAD_ADDRESS"),
-		SecretID: os.Getenv("NOMAD_TOKEN"),
+		Address:  nomadAddress,
+		SecretID: nomadToken,
 	}
 
 	client, err := api.NewClient(&config)

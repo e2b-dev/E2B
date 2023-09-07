@@ -57,7 +57,7 @@ if [ -z "$DEVBOOKD" ]; then
   exit 1
 fi
 
-API_URL="https://ondevbook.com"
+API_URL="https://api.e2b.dev"
 ENVS_ENDPOINT="${API_URL}/envs/${CODE_SNIPPET_ID}/state?api_key=$API_KEY"
 
 echo "==== Args ==========================================================================================="
