@@ -12,43 +12,23 @@ There are some examples:
 
 ### Timeout creating session
 
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/timeout/timeout_session.py' }}
-```
-```js {{ language: 'js', snippet: 'js/timeout/timeout_session.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="timeout/timeout_session" />
+
 
 ### Timeout process
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/timeout/timeout_process.py' }}
-```
-```js {{ language: 'js', snippet: 'js/timeout/timeout_process.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="timeout/timeout_process" />
 
 ### Timeout filesystem operations
 
-<CodeGroup>
-```python {{ language: 'python', snippet: 'python/timeout/timeout_filesystem.py' }}
-```
-```js {{ language: 'js', snippet: 'js/timeout/timeout_filesystem.js' }}
-```
-</CodeGroup>
+<CodeGroupAutoload path="timeout/timeout_filesystem" />
 
 ## Logging
 
 <LanguageSpecificText>
-  ```python {{ language: 'python', text: "E2B package uses the standard Python logging module You can configure the logging level, handlers and format as you would with any other Python application. \n\nBelow is an example of how to configure the logging module to log to the console." }}
-  ```
   ```js {{ language: 'js', text: "E2B package logs only warnings & errors to the console by default. Below is an example of how to fully customize the logging levels.\n\nFeel free to override the logger with your own implementation with debug, info, warn, and error methods." }}
+  ```
+  ```python {{ language: 'python', text: "E2B package uses the standard Python logging module You can configure the logging level, handlers and format as you would with any other Python application. \n\nBelow is an example of how to configure the logging module to log to the console." }}
   ```
 </LanguageSpecificText>
 
-
-<CodeGroup>
-  ```python {{ language: 'python', snippet: 'python/logging/e2b_logging.py' }}
-  ```
-  ```js {{ language: 'js', snippet: 'js/logging/e2b_logging.js' }}
-  ```
-</CodeGroup>
+<CodeGroupAutoload path="logging/e2b_logging" />
