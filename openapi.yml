@@ -221,7 +221,7 @@ paths:
 
   /envs/{envID}/instances:
     post:
-      description: Create a instance from the environment
+      description: Create an instance from the environment
       tags: [instances]
       parameters:
         - $ref: "#/components/parameters/apiKey"

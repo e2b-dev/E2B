@@ -10,6 +10,7 @@
 - https://github.com/weaveworks/ignite
 - https://github.com/superfly/init-snapshot
 - https://franck.verrot.fr/blog/2019/03/16/request-routing-with-nomad-and-consul
+- https://github.com/modal-labs/modal-client/blob/main/modal/sandbox.py
 
 ## [Architecture](https://www.figma.com/file/pr02o1okRpScOmNpAmgvCL/Architecture)
 
@@ -33,6 +34,9 @@
 - Add sentry for better monitoring
 - Explore lightstep alternatives
 - VM instances should not have external IPs
+- Golang monorepo + terraform setup practices
+- How to decouple terraform and domains
+- Enable advanced security scanning via GH
 
 ### API
 - Add monitoring to the envs routes
@@ -69,6 +73,7 @@
 - on_ports should be better - not periodically reporting, but more on change? or on request
 - Remove types (and timestamps?) from stdout/stderr (they are already fully identified by the subscription)
 - "~" is not working in the filesystem service
+- Using vsock for managing logs
 
 ### Build system
 - Use overlays instead of cp reflink so we can use any FS type
@@ -92,6 +97,8 @@
 - make the instance image minimal -- put the kernel, fc, etc to the nomad artifacts
 - Check debian vs ubuntu
 - Use specific versions (nodejs20) in the templates' names
+- Improve CLI packaging
+- How to get cli to brew, PyPi
 
 ### FC
 - Improve generating of FC API client in the firecracker task driver
