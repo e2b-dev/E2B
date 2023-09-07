@@ -69,6 +69,11 @@ variable "api_admin_key" {
   default = ""
 }
 
+variable "environment" {
+  type = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -115,6 +120,7 @@ job "orchestration-api" {
         E2B_SUPABASE_KEY   = var.e2b_supabase_key
         POSTHOG_API_KEY    = var.posthog_cloud_environments
         API_ADMIN_KEY      = var.api_admin_key
+        ENVIRONMENT        = var.environment
       }
 
       config {

@@ -56,10 +56,16 @@ func NewAPIStore() *APIStore {
 		panic(templatesErr)
 	}
 	var initialSessions []*api.Session
-	initialSessions, sessionErr := nomadClient.GetSessions()
-	if sessionErr != nil {
-		initialSessions = []*api.Session{}
-		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", sessionErr)
+
+	if os.Getenv("ENVIRONMENT") == "prod" {
+		sessions, sessionErr := nomadClient.GetSessions()
+		if sessionErr != nil {
+			initialSessions = []*api.Session{}
+			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", sessionErr)
+		}
+		initialSessions = sessions
+	} else {
+		fmt.Println("Skipping loading sessions from Nomad, running locally")
 	}
 
 	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
@@ -75,8 +81,12 @@ func NewAPIStore() *APIStore {
 	}
 
 	cache := nomad.NewSessionCache(getDeleteSessionFunction(nomadClient, posthogClient), initialSessions)
-	// Comment this line out if you are developing locally to prevent killing sessions in production
-	go cache.KeepInSync(nomadClient)
+
+	if os.Getenv("ENVIRONMENT") == "prod" {
+		go cache.KeepInSync(nomadClient)
+	} else {
+		fmt.Println("Skipping syncing sessions with Nomad, running locally")
+	}
 
 	return &APIStore{
 		nomad:         nomadClient,
