@@ -1,3 +1,4 @@
+import json from '@rollup/plugin-json'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import autoExternal from 'rollup-plugin-auto-external'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
@@ -39,5 +40,6 @@ export default {
       preferBuiltins: true,
       browser: true,
     }),
+    json(),
   ],
 }

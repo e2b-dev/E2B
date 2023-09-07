@@ -11,7 +11,32 @@ permissions:
   contents: write
 
 jobs:
+  is_release:
+    name: Is release?
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install npm dependencies
+        run: npm ci --workspaces=false
+
+      - name: Check if new version
+        id: version
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release.sh)
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
   release:
+    needs: [ is_release ]
+    if: needs.is_release.outputs.release == 'true'
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -23,11 +48,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Setup Node.js 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
@@ -35,6 +55,13 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
+
+
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
 
       - name: Install dependencies
         run: npm ci
