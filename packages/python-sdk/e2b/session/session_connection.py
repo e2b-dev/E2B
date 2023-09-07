@@ -328,9 +328,7 @@ class SessionConnection:
                     return
                 await asyncio.sleep(SESSION_REFRESH_PERIOD)
                 try:
-                    await api.sessions_session_id_refresh_post(
-                        session_id,
-                    )
+                    await api.sessions_session_id_refresh_post(session_id)
                     logger.debug(f"Refreshed session {session_id}")
                 except ApiException as e:
                     if e.status == 404:
