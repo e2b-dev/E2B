@@ -42,6 +42,7 @@ export interface SessionConnectionOpts {
   id: string
   apiKey: string
   logger?: Logger
+  maxSessionDuration?: number
   __debug_hostname?: string
   __debug_port?: number
   __debug_devEnv?: 'remote' | 'local'
@@ -61,7 +62,7 @@ export class SessionConnection {
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
   protected isOpen = false
-
+  protected readonly maxSessionDuration?: number
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
 
@@ -71,6 +72,7 @@ export class SessionConnection {
         'API key is required, please visit https://e2b.dev/docs to get your API key',
       )
     }
+    this.maxSessionDuration = opts.maxSessionDuration
     this.logger = opts.logger ?? {
       // by default, we log to the console, only warnings and errors
       warn: console.warn,
@@ -165,7 +167,7 @@ export class SessionConnection {
           this.session = res.data
           this.logger.debug?.(`Acquired session "${this.session.sessionID}"`)
 
-          this.refresh(this.session.sessionID)
+          this.refresh(this.session.sessionID, this.maxSessionDuration)
         } catch (e) {
           if (e instanceof createSession.Error) {
             const error = e.getActualType()
@@ -368,12 +370,19 @@ export class SessionConnection {
       .forEach(s => s.handler(data.params?.result))
   }
 
-  private async refresh(sessionID: string) {
+  private async refresh(sessionID: string, maxSessionDuration?: number) {
+    const startTime = Date.now()
     this.logger.debug?.(`Started refreshing session "${sessionID}"`)
 
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
+        if (maxSessionDuration && Date.now() - startTime > maxSessionDuration) {
+          this.logger.warn?.(
+            `Session "${sessionID}" has reached its maximum duration of ${maxSessionDuration}ms`,
+          )
+          return
+        }
         if (!this.isOpen) {
           this.logger.debug?.(
             `Cannot refresh session ${this.session?.sessionID} - it was closed`,
