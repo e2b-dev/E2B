@@ -3,6 +3,7 @@ import { Fetcher } from 'openapi-typescript-fetch'
 import platform from 'platform'
 
 import { API_DOMAIN } from '../constants'
+import pjson from '../../package.json'
 import type { components, paths } from './schema.gen'
 
 const client = Fetcher.for<paths>()
