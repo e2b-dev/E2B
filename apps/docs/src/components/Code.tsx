@@ -490,12 +490,12 @@ export function Pre({
 /**
  * Special Component just for MDX files, processed by Remark
  */
-export function CodeGroupAutoload({ children }) {
+export function CodeGroupAutoload({ children, isRunnable = true }) {
   if (!children) {
     console.warn(
       `CodeGroupAutoload: No children provided – something is wrong with your MDX file`
     )
     return null
   }
-  return <CodeGroup isRunnable={true}>{children}</CodeGroup>
+  return <CodeGroup isRunnable={isRunnable}>{children}</CodeGroup>
 }
