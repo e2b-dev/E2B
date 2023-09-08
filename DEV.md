@@ -99,6 +99,7 @@
 - Use specific versions (nodejs20) in the templates' names
 - Improve CLI packaging
 - How to get cli to brew, PyPi
+- https://github.com/superfly/flyctl/blob/2cd869f333b12b6a1360fdbe4c2208d81b666894/internal/build/imgsrc/dockerfile_builder.go#L184
 
 ### FC
 - Improve generating of FC API client in the firecracker task driver

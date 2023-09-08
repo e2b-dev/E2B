@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/api/internal/utils"
+	"github.com/e2b-dev/api/packages/api/internal/utils"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -18,17 +18,16 @@ const (
 	dockerfileSuffix = ".Dockerfile"
 	jobFileSuffix    = ".hcl"
 
-	templateTaskName     = "build-env"
-	buildTemplateTimeout = time.Minute * 5
+	templateTaskName           = "build-env"
+	buildTemplateTimeout       = time.Minute * 5
+	templateParallelBuildLimit = 2
 )
 
-var (
-	escapeReplacer = strings.NewReplacer(
-		// HCL doesn't allow newlines in strings. We have to escape them.
-		"\n", "\\\\n",
-		// " -> \"
-		`"`, `\"`,
-	)
+var escapeReplacer = strings.NewReplacer(
+	// HCL doesn't allow newlines in strings. We have to escape them.
+	"\n", "\\\\n",
+	// " -> \"
+	`"`, `\"`,
 )
 
 // Escapes various characters that need to be escaped in the HCL files.
@@ -70,23 +69,30 @@ func (n *NomadClient) RebuildTemplates(t trace.Tracer) error {
 	}
 
 	// Limit number of concurrent template builds to 2
-	templateParallelBuildLock := utils.CreateRequestLimitLock(2)
+	templateParallelBuildLock := utils.CreateLimitLock(templateParallelBuildLimit)
 
 	for _, template := range *templates {
+		if template != "Nodejs" {
+			continue
+		}
+
 		go func(template string) {
 			unlock := templateParallelBuildLock()
 			defer unlock()
 
 			fmt.Printf("Rebuilding %s\n", template)
-			job, err := n.BuildEnv(template, template)
-			if err != nil {
-				fmt.Printf("error starting template '%s' building: %+v\n", template, err)
+
+			job, buildErr := n.BuildEnv(template, template)
+			if buildErr != nil {
+				fmt.Printf("error starting template '%s' building: %+v\n", template, buildErr)
 				return
 			}
+
 			fmt.Printf("Rebuilding template '%s' started\n", template)
-			err = n.WaitForEnvBuild(*job, buildTemplateTimeout)
-			if err != nil {
-				fmt.Printf("error waiting for template '%s' to build: %+v\n", template, err)
+
+			buildErr = n.WaitForEnvBuild(*job, buildTemplateTimeout)
+			if buildErr != nil {
+				fmt.Printf("error waiting for template '%s' to build: %+v\n", template, buildErr)
 				return
 			}
 

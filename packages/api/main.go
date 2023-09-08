@@ -4,26 +4,27 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/api/internal/api"
-	"github.com/devbookhq/devbook-api/packages/api/internal/handlers"
-	customMiddleware "github.com/devbookhq/devbook-api/packages/api/internal/middleware"
+	"github.com/e2b-dev/api/packages/api/internal/api"
+	"github.com/e2b-dev/api/packages/api/internal/handlers"
+	customMiddleware "github.com/e2b-dev/api/packages/api/internal/middleware"
 	"github.com/gin-contrib/cors"
+	"github.com/lightstep/otel-launcher-go/launcher"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
+)
 
-	"github.com/lightstep/otel-launcher-go/launcher"
+const (
+	serviceName               = "orchestration-api"
+	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
 var (
-	ignoreLoggingForPaths     = []string{"/health"}
-	serviceName               = "orchestration-api"
-	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
+	ignoreLoggingForPaths = []string{"/health"}
 )
 
 func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
@@ -57,7 +58,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	r.Use(middleware.OapiRequestValidator(swagger))
 
 	// We now register our store above as the handler for the interface
-	r = api.RegisterHandlers(r, apiStore)
+	api.RegisterHandlers(r, apiStore)
 
 	s := &http.Server{
 		Handler: r,
@@ -78,8 +79,6 @@ func main() {
 	if *debug != "true" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-
-	rand.Seed(time.Now().UnixNano())
 
 	if *telemetryAPIKey == "" {
 		otelLauncher := launcher.ConfigureOpentelemetry(

@@ -6,129 +6,127 @@ import (
 	"os"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/api/internal/api"
+	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/jellydator/ttlcache/v3"
 )
 
 const (
-	sessionExpiration = time.Second * 12
-	cacheSyncTime     = time.Second * 180
+	instanceExpiration = time.Second * 12
+	cacheSyncTime      = time.Second * 180
 )
 
-type SessionData struct {
-	Session   *api.Session
+type InstanceInfo struct {
+	Instance  *api.Instance
 	TeamID    *string
 	StartTime *time.Time
 }
 
-type SessionCache struct {
-	cache *ttlcache.Cache[string, SessionData]
+type InstanceCache struct {
+	cache *ttlcache.Cache[string, InstanceInfo]
 }
 
-// Add the session to the cache and start expiration timer
-func (c *SessionCache) Add(session *api.Session, teamID *string, startTime *time.Time) error {
-	if c.Exists(session.SessionID) {
-		return fmt.Errorf("session \"%s\" already exists", session.SessionID)
+// Add the instance to the cache and start expiration timer.
+func (c *InstanceCache) Add(instance *api.Instance, teamID *string, startTime *time.Time) error {
+	if c.Exists(instance.InstanceID) {
+		return fmt.Errorf("instance \"%s\" already exists", instance.InstanceID)
 	}
-	sessionData := SessionData{
-		Session:   session,
+
+	instanceData := InstanceInfo{
+		Instance:  instance,
 		TeamID:    teamID,
 		StartTime: startTime,
 	}
-	c.cache.Set(session.SessionID, sessionData, ttlcache.DefaultTTL)
+
+	c.cache.Set(instance.InstanceID, instanceData, ttlcache.DefaultTTL)
+
 	return nil
 }
 
-// Refresh the session's expiration timer
-func (c *SessionCache) Refresh(sessionID string) error {
-	item := c.cache.Get(sessionID)
+// Refresh the instance's expiration timer.
+func (c *InstanceCache) Refresh(instanceID string) error {
+	item := c.cache.Get(instanceID)
 
 	if item == nil {
-		return fmt.Errorf("session \"%s\" doesn't exist", sessionID)
+		return fmt.Errorf("instance \"%s\" doesn't exist", instanceID)
 	}
+
 	return nil
 }
 
-// Get the session from the cache
-func (c *SessionCache) Get(sessionID string) SessionData {
-	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, SessionData]())
+// Get the instance from the cache.
+func (c *InstanceCache) Get(instanceID string) InstanceInfo {
+	item := c.cache.Get(instanceID, ttlcache.WithDisableTouchOnHit[string, InstanceInfo]())
 	if item != nil {
 		return item.Value()
 	} else {
-		panic(fmt.Errorf("session \"%s\" doesn't exist", sessionID))
+		panic(fmt.Errorf("instance \"%s\" doesn't exist", instanceID))
 	}
 }
 
-// Check if the session exists in the cache
-func (c *SessionCache) Exists(sessionID string) bool {
-	item := c.cache.Get(sessionID, ttlcache.WithDisableTouchOnHit[string, SessionData]())
+// Check if the instance exists in the cache.
+func (c *InstanceCache) Exists(instanceID string) bool {
+	item := c.cache.Get(instanceID, ttlcache.WithDisableTouchOnHit[string, InstanceInfo]())
+
 	return item != nil
 }
 
-func (c *SessionCache) FindEditSession(codeSnippetID string) (*api.Session, error) {
-	for _, item := range c.cache.Items() {
-		if item.Value().Session == nil {
-			continue
-		}
-
-		if item.Value().Session.EditEnabled && item.Value().Session.CodeSnippetID == codeSnippetID {
-			c.Refresh(item.Key())
-			return item.Value().Session, nil
-		}
-	}
-	return nil, fmt.Errorf("error edit session for code snippet '%s' not found", codeSnippetID)
-}
-
-func (c *SessionCache) Sync(sessions []*api.Session) {
-	for _, session := range sessions {
-		if !c.Exists(session.SessionID) {
-			c.Add(session, nil, nil)
+func (c *InstanceCache) Sync(instances []*api.Instance) {
+	for _, instance := range instances {
+		if !c.Exists(instance.InstanceID) {
+			err := c.Add(instance, nil, nil)
+			if err != nil {
+				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
+			}
 		}
 	}
 }
 
-// We will need to either use Redis for storing active sessions OR retrieve them from Nomad when we start API to keep everything in sync
+// We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now
-func NewSessionCache(handleDeleteSession func(sessionData SessionData, purge bool) *api.APIError, initialSessions []*api.Session) *SessionCache {
+func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*api.Instance) *InstanceCache {
 	cache := ttlcache.New(
-		ttlcache.WithTTL[string, SessionData](sessionExpiration),
+		ttlcache.WithTTL[string, InstanceInfo](instanceExpiration),
 	)
 
-	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, SessionData]) {
+	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
-			err := handleDeleteSession(i.Value(), true)
+			err := deleteInstance(i.Value(), true)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error deleting session (%v)\n: %s", er, err.Error())
+				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %s", er, err.Error())
 			}
 		}
 	})
 
-	sessionCache := &SessionCache{
+	instanceCache := &InstanceCache{
 		cache: cache,
 	}
 
-	for _, session := range initialSessions {
-		sessionCache.Add(session, nil, nil)
+	for _, instance := range initialInstances {
+		err := instanceCache.Add(instance, nil, nil)
+		if err != nil {
+			fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
+		}
 	}
 
 	go cache.Start()
 
-	return sessionCache
+	return instanceCache
 }
 
-// Sync the cache with the actual sessions in Nomad to handle sessions that died.
-func (c *SessionCache) KeepInSync(client *NomadClient) {
+// Sync the cache with the actual instances in Nomad to handle instances that died.
+func (c *InstanceCache) KeepInSync(client *NomadClient) {
 	for {
 		time.Sleep(cacheSyncTime)
-		activeSessions, err := client.GetSessions()
+
+		activeInstances, err := client.GetInstances()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", err)
+			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %s", err)
 		} else {
-			c.Sync(activeSessions)
+			c.Sync(activeInstances)
 		}
 	}
 }
 
-func (c *SessionCache) Count() int {
+func (c *InstanceCache) Count() int {
 	return c.cache.Len()
 }

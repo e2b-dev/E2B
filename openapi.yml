@@ -158,23 +158,23 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /envs:
-    get:
-      description: List all environments
-      tags: [envs]
-      responses:
-        200:
-          description: Successfully returned all environments
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/Environment"
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
+    #   get:
+    #     description: List all environments
+    #     tags: [envs]
+    #     responses:
+    #       200:
+    #         description: Successfully returned all environments
+    #         content:
+    #           application/json:
+    #             schema:
+    #               type: array
+    #               items:
+    #                 allOf:
+    #                   - $ref: "#/components/schemas/Environment"
+    #       401:
+    #         $ref: "#/components/responses/401"
+    #       500:
+    #         $ref: "#/components/responses/500"
     post:
       description: Create a new environment
       tags: [envs]
@@ -199,25 +199,25 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
-  /envs/{envID}:
-    delete:
-      description: Delete the environment
-      tags: [envs]
-      parameters:
-        - $ref: "#/components/parameters/envID"
-      responses:
-        204:
-          description: Successfully deleted the environment
-        400:
-          description: Cannot delete the environment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
+  # /envs/{envID}:
+  #   delete:
+  #     description: Delete the environment
+  #     tags: [envs]
+  #     parameters:
+  #       - $ref: "#/components/parameters/envID"
+  #     responses:
+  #       204:
+  #         description: Successfully deleted the environment
+  #       400:
+  #         description: Cannot delete the environment
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: "#/components/schemas/Error"
+  #       401:
+  #         $ref: "#/components/responses/401"
+  #       500:
+  #         $ref: "#/components/responses/500"
 
   /envs/{envID}/instances:
     post:
