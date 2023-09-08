@@ -1,19 +1,38 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext, useMemo, useRef } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
+import { Session as Playground } from '@e2b/sdk'
 
 type UserContextType = {
   isLoading: boolean
   session: Session | null
-  user: User & { teams: any[]; apiKeys: any[] } | null
+  user: (User & { teams: any[]; apiKeys: any[] }) | null
   error: Error | null
+  pythonPlayground: Playground | Promise<Playground> | null
+  jsPlayground: Playground | Promise<Playground> | null
 }
 
 export const UserContext = createContext(undefined)
+
+function stdHandler({ line, timestamp, error }) {
+  const timestampHumanFriendly = new Date(timestamp / 1000000) // timestamp is in nanoseconds
+    .toISOString()
+    .split('T')[1] // only time, date is not relevant for debugging
+    .split('.')[0] // remove ms
+  const emoji = error ? '🟥' : '🟦'
+  console.log(`${emoji} [${timestampHumanFriendly}] ${line}`)
+}
 
 export const CustomUserContextProvider = (props) => {
   const supabase = createPagesBrowserClient()
@@ -22,9 +41,15 @@ export const CustomUserContextProvider = (props) => {
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
+  const [jsPlayground, setJSPlayground] = useState<Promise<Playground> | null>(
+    null
+  )
+  const [pythonPlayground, setPythonPlayground] =
+    useState<Promise<Playground> | null>(null)
 
   useEffect(() => {
     mounted.current = true
+
     async function getSession() {
       const {
         data: { session },
@@ -42,12 +67,12 @@ export const CustomUserContextProvider = (props) => {
         if (!session) setIsLoading(false) // if session is present, we set setLoading to false in the second useEffect
       }
     }
+
     void getSession()
     return () => {
       mounted.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const {
@@ -90,6 +115,38 @@ export const CustomUserContextProvider = (props) => {
         ) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
+      if (apiKeys && apiKeys[0]?.api_key) {
+        // const apiKey = apiKeys[0].api_key
+        // const sharedOpts = {
+        //   onStdout: stdHandler,
+        //   onStderr: stdHandler,
+        //   rootdir: '/code',
+        // }
+        // const { preferredLanguages } = usePreferredLanguageStore.getState()
+        // console.log('Creating playgrounds...', preferredLanguages)
+        //
+        // const jsSessionP = Playground.create({ id: 'Nodejs', apiKey })
+        // jsSessionP.then(async (pl) => {
+        //     console.log('JS playground created 🟡')
+        //     const process = await pl.process.start({ cmd: 'npm init es6 -y && npm install @e2b/sdk', ...sharedOpts })
+        //     await process.finished
+        //     console.log('JS playground ready 🟢')
+        //     return pl
+        //   })
+        //
+        // const pySessionP = Playground.create({ id: 'Python', apiKey })
+        // pySessionP.then(async (pl) => {
+        //     console.log('Python playground created 🟡')
+        //     const process = await pl.process.start({ cmd: 'pip install e2b', ...sharedOpts })
+        //     await process.finished
+        //     console.log('Python playground ready 🟢')
+        //     return pl
+        //   })
+        //
+        // setJSPlayground(jsSessionP)
+        // setPythonPlayground(pySessionP)
+      }
+
       setUser({
         ...session?.user,
         teams,
@@ -98,6 +155,7 @@ export const CustomUserContextProvider = (props) => {
       })
       setIsLoading(false)
     }
+
     if (session) void getUserCustom()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
@@ -109,6 +167,8 @@ export const CustomUserContextProvider = (props) => {
         error: null,
         session: null,
         user: null,
+        pythonPlayground: null,
+        jsPlayground: null,
       }
     }
 
@@ -118,6 +178,8 @@ export const CustomUserContextProvider = (props) => {
         error,
         session: null,
         user: null,
+        pythonPlayground: null,
+        jsPlayground: null,
       }
     }
 
@@ -126,8 +188,10 @@ export const CustomUserContextProvider = (props) => {
       error: null,
       session,
       user,
+      pythonPlayground,
+      jsPlayground,
     }
-  }, [isLoading, user, session, error])
+  }, [isLoading, user, session, error, pythonPlayground, jsPlayground])
 
   return <UserContext.Provider value={value} {...props} />
 }
