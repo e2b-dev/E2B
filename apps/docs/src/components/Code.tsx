@@ -429,17 +429,16 @@ export function CodeGroup({
         <Tab.Group {...tabGroupProps} className={containerClassName}>
           {header}
           {panels}
-          {outputLines.length > 0 ||
-            (isRunning && (
-              <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
-                <span className="font-mono text-xs text-zinc-500">
-                  Output{isRunning ? '...' : ''} {/* TODO: Animation */}
-                </span>
-                <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
-                  {outputLines.join('\n')}
-                </pre>
-              </div>
-            ))}
+          {(outputLines.length > 0 || isRunning) && (
+            <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
+              <span className="font-mono text-xs text-zinc-500">
+                Output{isRunning ? '...' : ''} {/* TODO: Animation */}
+              </span>
+              <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
+                {outputLines.join('\n')}
+              </pre>
+            </div>
+          )}
         </Tab.Group>
       ) : (
         <div className={containerClassName}>
