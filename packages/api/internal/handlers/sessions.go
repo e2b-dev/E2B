@@ -131,7 +131,7 @@ func (a *APIStore) PostSessions(
 		err := a.posthog.Enqueue(posthog.GroupIdentify{
 			Type:       "team",
 			Key:        *teamID,
-			Properties: properties.Set("session_tried", true),
+			Properties: posthog.NewProperties().Set("session_tried", true),
 		},
 		)
 		if err != nil {
@@ -141,7 +141,7 @@ func (a *APIStore) PostSessions(
 		err = a.posthog.Enqueue(posthog.Capture{
 			DistinctId: "backend",
 			Event:      "created_session",
-			Properties: posthog.NewProperties().
+			Properties: properties.
 				Set("environment", newSession.CodeSnippetID).
 				Set("session_id", session.SessionID),
 			Groups: posthog.NewGroups().
