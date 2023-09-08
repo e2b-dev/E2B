@@ -58,11 +58,16 @@ func NewAPIStore() *APIStore {
 		panic(templatesErr)
 	}
 
-	initialSessions, sessionErr := nomadClient.GetInstances()
-	if sessionErr != nil {
-		initialSessions = []*api.Instance{}
+	var initialInstances []*api.Instance
 
-		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", sessionErr)
+	if os.Getenv("ENVIRONMENT") == "prod" {
+		var instancesErr error
+		initialInstances, instancesErr = nomadClient.GetInstances()
+		if instancesErr != nil {
+			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", instancesErr)
+		}
+	} else {
+		fmt.Println("Skipping loading sessions from Nomad, running locally")
 	}
 
 	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
@@ -77,9 +82,13 @@ func NewAPIStore() *APIStore {
 		panic(posthogErr)
 	}
 
-	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialSessions)
-	// Comment this line out if you are developing locally to prevent killing sessions in production
-	go cache.KeepInSync(nomadClient)
+	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances)
+
+	if os.Getenv("ENVIRONMENT") == "prod" {
+		go cache.KeepInSync(nomadClient)
+	} else {
+		fmt.Println("Skipping syncing sessions with Nomad, running locally")
+	}
 
 	return &APIStore{
 		nomad:     nomadClient,
@@ -173,4 +182,19 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 		}
 	}
 	return nil
+}
+
+func (a *APIStore) GetPackageToPosthogProperties(header *http.Header) posthog.Properties {
+	properties := posthog.NewProperties().
+		Set("package_version", header.Get("package_version")).
+		Set("lang", header.Get("lang")).
+		Set("lang_version", header.Get("lang_version")).
+		Set("system", header.Get("system")).
+		Set("os", header.Get("os")).
+		Set("publisher", header.Get("publisher")).
+		Set("release", header.Get("release")).
+		Set("machine", header.Get("machine")).
+		Set("processor", header.Get("processor"))
+
+	return properties
 }

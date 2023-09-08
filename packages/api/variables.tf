@@ -31,3 +31,7 @@ variable "image_name" {
 variable "logs_proxy_address" {
   type = string
 }
+
+variable "environment" {
+  type    = string
+}

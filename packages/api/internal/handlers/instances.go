@@ -7,7 +7,6 @@ import (
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
-	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -42,7 +41,8 @@ func (a *APIStore) PostEnvsEnvIDInstances(
 	ReportEvent(ctx, "created environment instance")
 
 	a.IdentifyAnalyticsTeam(teamID)
-	a.CreateAnalyticsTeamEvent(teamID, "created_session", posthog.NewProperties().
+	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
+	a.CreateAnalyticsTeamEvent(teamID, "created_session", properties.
 		Set("environment", envID).
 		Set("session_id", instance.InstanceID))
 

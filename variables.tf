@@ -111,3 +111,8 @@ variable "api_port" {
     health_path = "/health"
   }
 }
+
+variable "environment" {
+  type    = string
+  default = "prod"
+}
