@@ -1,10 +1,9 @@
-package supabase
+package db
 
 import (
-	"os"
-
 	"fmt"
 	"net/url"
+	"os"
 
 	postgrest "github.com/nedpals/postgrest-go/pkg"
 )
@@ -19,10 +18,10 @@ var (
 )
 
 func NewClient() (*DB, error) {
-
+	// The /rest/v1/ at the end of url is required
 	parsedURL, err := url.Parse(supabaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse Supabase URL '%s': %s", supabaseURL, err)
+		return nil, fmt.Errorf("failed to parse Supabase URL '%s': %w", supabaseURL, err)
 	}
 
 	client := postgrest.NewClient(

@@ -32,7 +32,6 @@ job "{{ .JobName }}/{{ .SessionID }}" {
         CodeSnippetID = "{{ .CodeSnippetID }}"
         ConsulToken   = "{{ .ConsulToken }}"
         SessionID   = "{{ .SessionID }}"
-        EditEnabled = "{{ .EditEnabled }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"
         LogsProxyAddress = "{{ .LogsProxyAddress }}"

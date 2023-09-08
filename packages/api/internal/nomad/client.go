@@ -56,6 +56,7 @@ func (n *NomadClient) WaitForJob(ctx context.Context, job JobInfo, timeout time.
 	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, job.index, &api.QueryOptions{
 		Filter:     fmt.Sprintf("EvalID == \"%s\"", job.evalID),
 		AllowStale: true,
+		// The following commented field could probably be used for improving the event stream handling.
 		// WaitIndex:  meta.LastIndex,
 		// WaitTime:   timeout,
 		NextToken: meta.NextToken,

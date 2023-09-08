@@ -50,7 +50,7 @@ func Otel(service string) gin.HandlerFunc {
 	}
 	tracer := cfg.TracerProvider.Tracer(
 		tracerName,
-		oteltrace.WithInstrumentationVersion(otelgin.SemVersion()),
+		oteltrace.WithInstrumentationVersion(otelgin.Version()),
 	)
 	if cfg.Propagators == nil {
 		cfg.Propagators = otel.GetTextMapPropagator()

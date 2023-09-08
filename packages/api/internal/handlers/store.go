@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/api/internal/api"
-	"github.com/devbookhq/devbook-api/packages/api/internal/nomad"
-	"github.com/devbookhq/devbook-api/packages/api/internal/supabase"
+	"github.com/e2b-dev/api/packages/api/internal/api"
+	"github.com/e2b-dev/api/packages/api/internal/db"
+	"github.com/e2b-dev/api/packages/api/internal/nomad"
 
 	"github.com/gin-gonic/gin"
 	"github.com/posthog/posthog-go"
@@ -18,17 +18,15 @@ import (
 )
 
 type APIStore struct {
-	sessionsCache *nomad.SessionCache
-	nomad         *nomad.NomadClient
-	supabase      *supabase.DB
-	NextId        int64
-	Lock          sync.Mutex
-	tracer        trace.Tracer
-	templates     *[]string
-	posthog       posthog.Client
+	cache     *nomad.InstanceCache
+	nomad     *nomad.NomadClient
+	supabase  *db.DB
+	posthog   posthog.Client
+	NextId    int64
+	Lock      sync.Mutex
+	tracer    trace.Tracer
+	templates *[]string
 }
-
-var posthogAPIKey = os.Getenv("POSTHOG_API_KEY")
 
 func NewAPIStore() *APIStore {
 	fmt.Println("Initializing API store")
@@ -36,8 +34,10 @@ func NewAPIStore() *APIStore {
 	tracer := otel.Tracer("api")
 
 	nomadClient := nomad.InitNomadClient()
+
 	fmt.Println("Initialized Nomad client")
-	supabaseClient, err := supabase.NewClient()
+
+	supabaseClient, err := db.NewClient()
 	if err != nil {
 		panic(err)
 	}
@@ -57,10 +57,11 @@ func NewAPIStore() *APIStore {
 		fmt.Fprintf(os.Stderr, "Error loading templates\n: %s", templatesErr)
 		panic(templatesErr)
 	}
-	var initialSessions []*api.Session
-	initialSessions, sessionErr := nomadClient.GetSessions()
+
+	initialSessions, sessionErr := nomadClient.GetInstances()
 	if sessionErr != nil {
-		initialSessions = []*api.Session{}
+		initialSessions = []*api.Instance{}
+
 		fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", sessionErr)
 	}
 
@@ -76,50 +77,29 @@ func NewAPIStore() *APIStore {
 		panic(posthogErr)
 	}
 
-	cache := nomad.NewSessionCache(getDeleteSessionFunction(nomadClient, posthogClient), initialSessions)
+	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialSessions)
 	// Comment this line out if you are developing locally to prevent killing sessions in production
 	go cache.KeepInSync(nomadClient)
 
 	return &APIStore{
-		nomad:         nomadClient,
-		supabase:      supabaseClient,
-		NextId:        1000,
-		sessionsCache: cache,
-		tracer:        tracer,
-		templates:     templates,
-		posthog:       posthogClient,
+		nomad:     nomadClient,
+		supabase:  supabaseClient,
+		NextId:    1000,
+		cache:     cache,
+		tracer:    tracer,
+		templates: templates,
+		posthog:   posthogClient,
 	}
 }
 
 func (a *APIStore) Close() {
 	a.nomad.Close()
 	a.supabase.Close()
+
 	err := a.posthog.Close()
 	if err != nil {
 		fmt.Printf("Error closing Posthog client\n: %s", err)
 	}
-}
-
-func (a *APIStore) validateAPIKey(apiKey *string) (string, bool, error) {
-	if apiKey == nil {
-		return "", false, fmt.Errorf("no API key")
-	}
-
-	if *apiKey == "" {
-		return "", false, fmt.Errorf("no API key")
-	}
-
-	if *apiKey == api.APIAdminKey {
-		return "admin", true, nil
-	}
-
-	user, err := a.supabase.GetUserID(*apiKey)
-
-	if err != nil || user == nil {
-		return "", false, fmt.Errorf("error validating API key: %+v", err)
-	}
-
-	return user.ID, false, nil
 }
 
 // This function wraps sending of an error in the Error format, and
@@ -130,7 +110,11 @@ func (a *APIStore) sendAPIStoreError(c *gin.Context, code int, message string) {
 		Message: message,
 	}
 
-	c.Error(fmt.Errorf(message))
+	err := c.Error(fmt.Errorf(message))
+	if err != nil {
+		fmt.Printf("Error sending error: %s", err)
+	}
+
 	c.JSON(code, apiErr)
 }
 
@@ -138,61 +122,38 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) isOwner(codeSnippetID string, userID string) (bool, error) {
-	codeSnippets, err := a.supabase.GetCodeSnippets(userID)
+func (a *APIStore) getTeamFromAPIKey(apiKey string) (string, error) {
+	team, err := a.supabase.GetTeamID(apiKey)
 	if err != nil {
-		return false, fmt.Errorf("error getting code snippets from Supabase: %+v", err)
+		return "", fmt.Errorf("failed to get get team from db for api key: %w", err)
 	}
 
-	found := false
-	for _, v := range *codeSnippets {
-		if v.ID == codeSnippetID {
-			found = true
-		}
+	if team == nil {
+		return "", fmt.Errorf("failed to get a team from api key")
 	}
 
-	return found, nil
+	return team.ID, nil
 }
 
-func (a *APIStore) isPredefinedTemplate(codeSnippetID string) bool {
-	for _, s := range *a.templates {
-		if s == codeSnippetID {
-			return true
-		}
-	}
-	return false
+func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
+	info := a.cache.Get(instanceID)
+
+	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
 }
 
-func (a *APIStore) validateTeamAPIKey(apiKey *string) *string {
-	if apiKey == nil {
-		fmt.Println("No api key provided")
-		return nil
-	}
-	team, err := a.supabase.GetTeamID(*apiKey)
-	if err != nil {
-		fmt.Printf("Failed to get a team from api key: %+v\n", err)
-		return nil
-	}
-	return &team.ID
-}
+type InstanceInfo = nomad.InstanceInfo
 
-func (a *APIStore) DeleteSession(sessionID string, purge bool) *api.APIError {
-	sessionData := a.sessionsCache.Get(sessionID)
-	return deleteSession(a.nomad, a.posthog, sessionID, sessionData.TeamID, sessionData.StartTime, purge)
-}
-
-type sessionData = nomad.SessionData
-
-func getDeleteSessionFunction(nomad *nomad.NomadClient, posthogClient posthog.Client) func(sessionData sessionData, purge bool) *api.APIError {
-	return func(sessionData sessionData, purge bool) *api.APIError {
-		return deleteSession(nomad, posthogClient, sessionData.Session.SessionID, sessionData.TeamID, sessionData.StartTime, purge)
+func getDeleteInstanceFunction(nomad *nomad.NomadClient, posthogClient posthog.Client) func(info nomad.InstanceInfo, purge bool) *api.APIError {
+	return func(info InstanceInfo, purge bool) *api.APIError {
+		return deleteInstance(nomad, posthogClient, info.Instance.InstanceID, info.TeamID, info.StartTime, purge)
 	}
 }
-func deleteSession(nomad *nomad.NomadClient, posthogClient posthog.Client, sessionID string, teamID *string, startTime *time.Time, purge bool) *api.APIError {
-	err := nomad.DeleteSession(sessionID, purge)
+
+func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, instanceID string, teamID *string, startTime *time.Time, purge bool) *api.APIError {
+	err := nomad.DeleteInstance(instanceID, purge)
 	if err != nil {
 		return &api.APIError{
-			Msg:       fmt.Sprintf("cannot delete session '%s': %+v", sessionID, err),
+			Msg:       fmt.Sprintf("cannot delete session '%s': %+v", instanceID, err),
 			ClientMsg: "Cannot delete the session right now",
 			Code:      http.StatusInternalServerError,
 		}
@@ -203,7 +164,7 @@ func deleteSession(nomad *nomad.NomadClient, posthogClient posthog.Client, sessi
 			DistinctId: "backend",
 			Event:      "closed_session",
 			Properties: posthog.NewProperties().
-				Set("session_id", sessionID).Set("duration", time.Since(*startTime).Seconds()),
+				Set("session_id", instanceID).Set("duration", time.Since(*startTime).Seconds()),
 			Groups: posthog.NewGroups().
 				Set("team", teamID),
 		})
