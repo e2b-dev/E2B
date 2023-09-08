@@ -15,17 +15,7 @@ import { create } from 'zustand'
 
 import { Tag } from '@/components/Tag'
 import { CopyButton } from '@/components/CopyButton'
-
-const languageNames: Record<string, string> = {
-  js: 'JavaScript',
-  ts: 'TypeScript',
-  javascript: 'JavaScript',
-  typescript: 'TypeScript',
-  php: 'PHP',
-  python: 'Python',
-  ruby: 'Ruby',
-  go: 'Go',
-}
+import { languageNames } from '@/utils/consts'
 
 export function getPanelTitle({
   title,
@@ -248,7 +238,9 @@ export function CodeGroup({
   children,
   title,
   ...props
-}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & { title?: string }) {
+}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
+  title?: string
+}) {
   let languages =
     Children.map(children, (child) =>
       getPanelTitle(isValidElement(child) ? child.props : {})
@@ -320,9 +312,11 @@ export function Pre({
 /**
  * Special Component just for MDX files, processed by Remark
  */
-export function CodeGroupAutoload({children}) {
+export function CodeGroupAutoload({ children }) {
   if (!children) {
-    console.warn(`CodeGroupAutoload: No children provided – something is wrong with your MDX file`)
+    console.warn(
+      `CodeGroupAutoload: No children provided – something is wrong with your MDX file`
+    )
     return null
   }
   return <CodeGroup>{children}</CodeGroup>
