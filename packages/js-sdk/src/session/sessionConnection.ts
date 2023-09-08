@@ -1,6 +1,6 @@
 import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
 
-import api, { components } from '../api'
+import api, { components, configureClient } from '../api'
 import {
   SESSION_DOMAIN,
   SESSION_REFRESH_PERIOD,
@@ -71,6 +71,7 @@ export class SessionConnection {
         'API key is required, please visit https://e2b.dev/docs to get your API key',
       )
     }
+    configureClient({ Authorization: `Bearer ${opts.apiKey}` })
     this.logger = opts.logger ?? {
       // by default, we log to the console, only warnings and errors
       warn: console.warn,
