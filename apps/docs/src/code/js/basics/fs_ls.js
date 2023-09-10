@@ -5,9 +5,9 @@ const session = await Session.create({
   apiKey: process.env.E2B_API_KEY,
 })
 
-const dirContent = await session.filesystem.list('/')
-dirContent.forEach((item) => {
-  console.log(item.name)
+const dirContent = await session.filesystem.list('/') // $HighlightLine
+dirContent.forEach((item) => { // $HighlightLine
+  console.log(item.name) // $HighlightLine
 })
 
 await session.close()
