@@ -1,0 +1,247 @@
+openapi: 3.0.0
+info:
+  version: 0.1.0
+  title: E2B API
+
+servers:
+  - url: "{server}/v1"
+    variables:
+      server:
+        default: https://api.e2b.dev
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      name: api_key
+      type: apiKey
+      in: query
+
+  parameters:
+    apiKey:
+      name: api_key
+      in: query
+      required: true
+      schema:
+        type: string
+    envID:
+      name: envID
+      in: path
+      required: true
+      schema:
+        type: string
+    instanceID:
+      name: instanceID
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    400:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    401:
+      description: Authentication error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    500:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    BuildConfig:
+      type: object
+      required:
+        - Dockerfile
+      properties:
+        Dockerfile:
+          type: string
+          description: Dockerfile content
+
+    NewEnvironment:
+      required:
+        - buildConfig
+      properties:
+        buildConfig:
+          $ref: "#/components/schemas/BuildConfig"
+
+    Environment:
+      required:
+        - envID
+      properties:
+        envID:
+          type: string
+
+    Instance:
+      required:
+        - envID
+        - instanceID
+        - clientID
+      properties:
+        envID:
+          type: string
+          description: Identifier of the environment from which is the instance created
+        instanceID:
+          type: string
+          description: Identifier of the instance
+        clientID:
+          type: string
+          description: Identifier of the client
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error
+
+tags:
+  - name: instances
+  - name: envs
+
+paths:
+  /health:
+    get:
+      description: Health check
+      responses:
+        200:
+          description: Request was successful
+        401:
+          $ref: "#/components/responses/401"
+
+  /instances/{instanceID}:
+    delete:
+      description: Delete an environment instance
+      tags: [instances]
+      parameters:
+        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/instanceID"
+      responses:
+        204:
+          description: Successfully deleted the instance
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  /instances/{instanceID}/refreshes:
+    post:
+      description: Refresh the instance extending its time to live
+      tags: [instances]
+      parameters:
+        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/instanceID"
+      responses:
+        204:
+          description: Successfully refreshed the instance
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          description: Error refreshing instance - not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /envs:
+    #   get:
+    #     description: List all environments
+    #     tags: [envs]
+    #     responses:
+    #       200:
+    #         description: Successfully returned all environments
+    #         content:
+    #           application/json:
+    #             schema:
+    #               type: array
+    #               items:
+    #                 allOf:
+    #                   - $ref: "#/components/schemas/Environment"
+    #       401:
+    #         $ref: "#/components/responses/401"
+    #       500:
+    #         $ref: "#/components/responses/500"
+    post:
+      description: Create a new environment
+      tags: [envs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewEnvironment"
+      responses:
+        200:
+          description: Successfully returned all environments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  # /envs/{envID}:
+  #   delete:
+  #     description: Delete the environment
+  #     tags: [envs]
+  #     parameters:
+  #       - $ref: "#/components/parameters/envID"
+  #     responses:
+  #       204:
+  #         description: Successfully deleted the environment
+  #       400:
+  #         description: Cannot delete the environment
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: "#/components/schemas/Error"
+  #       401:
+  #         $ref: "#/components/responses/401"
+  #       500:
+  #         $ref: "#/components/responses/500"
+
+  /envs/{envID}/instances:
+    post:
+      description: Create an instance from the environment
+      tags: [instances]
+      parameters:
+        - $ref: "#/components/parameters/apiKey"
+        - $ref: "#/components/parameters/envID"
+      responses:
+        201:
+          description: Successfully created an environment instance
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+                description: URI of the created instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
