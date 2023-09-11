@@ -79,7 +79,7 @@ function CodePanel({
 
   async function onRun() {
     if (!apiKey) {
-      window.alert('Please sign in to run code') // TODO: Toast
+      window.alert('You need to sign in to run code snippets')
       void signIn()
       return
     }
