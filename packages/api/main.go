@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"log"
 	"net/http"
 	"os"
