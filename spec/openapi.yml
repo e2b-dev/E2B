@@ -12,17 +12,11 @@ servers:
 components:
   securitySchemes:
     ApiKeyAuth:
-      name: api_key
       type: apiKey
-      in: query
+      in: header
+      name: X-API-Key
 
   parameters:
-    apiKey:
-      name: api_key
-      in: query
-      required: true
-      schema:
-        type: string
     envID:
       name: envID
       in: path
@@ -126,9 +120,8 @@ paths:
   /instances/{instanceID}/refreshes:
     post:
       description: Refresh the instance extending its time to live
-      tags: [instances]
+      tags: [ instances ]
       parameters:
-        - $ref: "#/components/parameters/apiKey"
         - $ref: "#/components/parameters/instanceID"
       responses:
         204:
@@ -162,7 +155,7 @@ paths:
     #         $ref: "#/components/responses/500"
     post:
       description: Create a new environment
-      tags: [envs]
+      tags: [ envs ]
       requestBody:
         required: true
         content:
@@ -207,9 +200,8 @@ paths:
   /envs/{envID}/instances:
     post:
       description: Create an instance from the environment
-      tags: [instances]
+      tags: [ instances ]
       parameters:
-        - $ref: "#/components/parameters/apiKey"
         - $ref: "#/components/parameters/envID"
       responses:
         201:
@@ -230,3 +222,6 @@ paths:
           $ref: "#/components/responses/400"
         500:
           $ref: "#/components/responses/500"
+
+security:
+  - ApiKeyAuth: [ ]

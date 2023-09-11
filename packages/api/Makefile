@@ -1,3 +1,5 @@
+include .env
+
 openapi := ../../spec/openapi.yml
 codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 

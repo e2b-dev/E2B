@@ -132,7 +132,7 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) getTeamFromAPIKey(apiKey string) (string, error) {
+func (a *APIStore) GetTeamFromAPIKey(apiKey string) (string, error) {
 	team, err := a.supabase.GetTeamID(apiKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get get team from db for api key: %w", err)

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -13,18 +12,12 @@ import (
 func (a *APIStore) PostEnvsEnvIDInstances(
 	c *gin.Context,
 	envID string,
-	params api.PostEnvsEnvIDInstancesParams,
 ) {
 	ctx := c.Request.Context()
 
-	teamID, err := a.getTeamFromAPIKey(params.ApiKey)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid API key: %+v: %w", params.ApiKey, err)
-		ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, http.StatusUnauthorized, "Invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key.")
-
-		return
-	}
+	// Get team id from context, use TeamIDContextKey
+	teamID := c.Value(constants.TeamIDContextKey).(string)
+	fmt.Println("Team ID:", teamID)
 
 	ReportEvent(ctx, "validated API key")
 	SetAttributes(ctx, attribute.String("instance.team_id", teamID))
@@ -74,7 +67,6 @@ func (a *APIStore) PostEnvsEnvIDInstances(
 func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	c *gin.Context,
 	instanceID string,
-	params api.PostInstancesInstanceIDRefreshesParams,
 ) {
 	ctx := c.Request.Context()
 
