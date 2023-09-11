@@ -1,28 +1,9 @@
 export const metadata = {
   title: 'E2B Documentation',
-  description: 'SDK Advanced Usage',
+  description: 'SDK Logging',
 }
 
-# Advanced Usage
-
-## Timeouts
-
-The SDK has a number of timeouts that can be configured to control how long the SDK will wait for a response from the E2B API. The default is 60 seconds.
-There are some examples:
-
-### Timeout creating session
-
-<CodeGroupAutoload path="timeout/timeout_session" />
-
-
-### Timeout process
-<CodeGroupAutoload path="timeout/timeout_process" />
-
-### Timeout filesystem operations
-
-<CodeGroupAutoload path="timeout/timeout_filesystem" />
-
-## Logging
+# Logging
 
 <LanguageSpecificText>
   ```js {{ language: 'js', text: "E2B package logs only warnings & errors to the console by default. Below is an example of how to fully customize the logging levels.\n\nFeel free to override the logger with your own implementation with debug, info, warn, and error methods." }}
