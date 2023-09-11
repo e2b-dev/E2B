@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // NewPatchVMParams creates a new PatchVMParams object,
@@ -54,10 +54,12 @@ func NewPatchVMParamsWithHTTPClient(client *http.Client) *PatchVMParams {
 	}
 }
 
-/* PatchVMParams contains all the parameters to send to the API endpoint
-   for the patch Vm operation.
+/*
+PatchVMParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch Vm operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchVMParams struct {
 

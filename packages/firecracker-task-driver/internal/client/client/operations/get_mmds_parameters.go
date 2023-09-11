@@ -52,10 +52,12 @@ func NewGetMmdsParamsWithHTTPClient(client *http.Client) *GetMmdsParams {
 	}
 }
 
-/* GetMmdsParams contains all the parameters to send to the API endpoint
-   for the get mmds operation.
+/*
+GetMmdsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get mmds operation.
+
+	Typically these are written to a http.Request.
 */
 type GetMmdsParams struct {
 	timeout    time.Duration

@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // NewPatchGuestNetworkInterfaceByIDParams creates a new PatchGuestNetworkInterfaceByIDParams object,
@@ -54,10 +54,12 @@ func NewPatchGuestNetworkInterfaceByIDParamsWithHTTPClient(client *http.Client) 
 	}
 }
 
-/* PatchGuestNetworkInterfaceByIDParams contains all the parameters to send to the API endpoint
-   for the patch guest network interface by ID operation.
+/*
+PatchGuestNetworkInterfaceByIDParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch guest network interface by ID operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchGuestNetworkInterfaceByIDParams struct {
 

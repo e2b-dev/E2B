@@ -327,6 +327,11 @@ func (m *FullVMConfiguration) ContextValidate(ctx context.Context, formats strfm
 func (m *FullVMConfiguration) contextValidateBalloon(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Balloon != nil {
+
+		if swag.IsZero(m.Balloon) { // not required
+			return nil
+		}
+
 		if err := m.Balloon.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("balloon")
@@ -343,6 +348,11 @@ func (m *FullVMConfiguration) contextValidateBalloon(ctx context.Context, format
 func (m *FullVMConfiguration) contextValidateBootSource(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.BootSource != nil {
+
+		if swag.IsZero(m.BootSource) { // not required
+			return nil
+		}
+
 		if err := m.BootSource.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("boot-source")
@@ -361,6 +371,11 @@ func (m *FullVMConfiguration) contextValidateDrives(ctx context.Context, formats
 	for i := 0; i < len(m.Drives); i++ {
 
 		if m.Drives[i] != nil {
+
+			if swag.IsZero(m.Drives[i]) { // not required
+				return nil
+			}
+
 			if err := m.Drives[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("drives" + "." + strconv.Itoa(i))
@@ -379,6 +394,11 @@ func (m *FullVMConfiguration) contextValidateDrives(ctx context.Context, formats
 func (m *FullVMConfiguration) contextValidateLogger(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Logger != nil {
+
+		if swag.IsZero(m.Logger) { // not required
+			return nil
+		}
+
 		if err := m.Logger.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("logger")
@@ -395,6 +415,11 @@ func (m *FullVMConfiguration) contextValidateLogger(ctx context.Context, formats
 func (m *FullVMConfiguration) contextValidateMachineConfig(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.MachineConfig != nil {
+
+		if swag.IsZero(m.MachineConfig) { // not required
+			return nil
+		}
+
 		if err := m.MachineConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("machine-config")
@@ -411,6 +436,11 @@ func (m *FullVMConfiguration) contextValidateMachineConfig(ctx context.Context, 
 func (m *FullVMConfiguration) contextValidateMetrics(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Metrics != nil {
+
+		if swag.IsZero(m.Metrics) { // not required
+			return nil
+		}
+
 		if err := m.Metrics.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("metrics")
@@ -427,6 +457,11 @@ func (m *FullVMConfiguration) contextValidateMetrics(ctx context.Context, format
 func (m *FullVMConfiguration) contextValidateMmdsConfig(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.MmdsConfig != nil {
+
+		if swag.IsZero(m.MmdsConfig) { // not required
+			return nil
+		}
+
 		if err := m.MmdsConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mmds-config")
@@ -445,6 +480,11 @@ func (m *FullVMConfiguration) contextValidateNetworkInterfaces(ctx context.Conte
 	for i := 0; i < len(m.NetworkInterfaces); i++ {
 
 		if m.NetworkInterfaces[i] != nil {
+
+			if swag.IsZero(m.NetworkInterfaces[i]) { // not required
+				return nil
+			}
+
 			if err := m.NetworkInterfaces[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("network-interfaces" + "." + strconv.Itoa(i))
@@ -463,6 +503,11 @@ func (m *FullVMConfiguration) contextValidateNetworkInterfaces(ctx context.Conte
 func (m *FullVMConfiguration) contextValidateVsock(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Vsock != nil {
+
+		if swag.IsZero(m.Vsock) { // not required
+			return nil
+		}
+
 		if err := m.Vsock.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsock")

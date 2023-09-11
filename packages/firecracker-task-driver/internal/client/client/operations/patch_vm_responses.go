@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // PatchVMReader is a Reader for the PatchVM structure.
@@ -52,14 +52,49 @@ func NewPatchVMNoContent() *PatchVMNoContent {
 	return &PatchVMNoContent{}
 }
 
-/* PatchVMNoContent describes a response with status code 204, with default header values.
+/*
+PatchVMNoContent describes a response with status code 204, with default header values.
 
 Vm state updated
 */
 type PatchVMNoContent struct {
 }
 
+// IsSuccess returns true when this patch Vm no content response has a 2xx status code
+func (o *PatchVMNoContent) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch Vm no content response has a 3xx status code
+func (o *PatchVMNoContent) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch Vm no content response has a 4xx status code
+func (o *PatchVMNoContent) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch Vm no content response has a 5xx status code
+func (o *PatchVMNoContent) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch Vm no content response a status code equal to that given
+func (o *PatchVMNoContent) IsCode(code int) bool {
+	return code == 204
+}
+
+// Code gets the status code for the patch Vm no content response
+func (o *PatchVMNoContent) Code() int {
+	return 204
+}
+
 func (o *PatchVMNoContent) Error() string {
+	return fmt.Sprintf("[PATCH /vm][%d] patchVmNoContent ", 204)
+}
+
+func (o *PatchVMNoContent) String() string {
 	return fmt.Sprintf("[PATCH /vm][%d] patchVmNoContent ", 204)
 }
 
@@ -73,7 +108,8 @@ func NewPatchVMBadRequest() *PatchVMBadRequest {
 	return &PatchVMBadRequest{}
 }
 
-/* PatchVMBadRequest describes a response with status code 400, with default header values.
+/*
+PatchVMBadRequest describes a response with status code 400, with default header values.
 
 Vm state cannot be updated due to bad input
 */
@@ -81,9 +117,44 @@ type PatchVMBadRequest struct {
 	Payload *models.Error
 }
 
+// IsSuccess returns true when this patch Vm bad request response has a 2xx status code
+func (o *PatchVMBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch Vm bad request response has a 3xx status code
+func (o *PatchVMBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch Vm bad request response has a 4xx status code
+func (o *PatchVMBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch Vm bad request response has a 5xx status code
+func (o *PatchVMBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch Vm bad request response a status code equal to that given
+func (o *PatchVMBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the patch Vm bad request response
+func (o *PatchVMBadRequest) Code() int {
+	return 400
+}
+
 func (o *PatchVMBadRequest) Error() string {
 	return fmt.Sprintf("[PATCH /vm][%d] patchVmBadRequest  %+v", 400, o.Payload)
 }
+
+func (o *PatchVMBadRequest) String() string {
+	return fmt.Sprintf("[PATCH /vm][%d] patchVmBadRequest  %+v", 400, o.Payload)
+}
+
 func (o *PatchVMBadRequest) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -107,7 +178,8 @@ func NewPatchVMDefault(code int) *PatchVMDefault {
 	}
 }
 
-/* PatchVMDefault describes a response with status code -1, with default header values.
+/*
+PatchVMDefault describes a response with status code -1, with default header values.
 
 Internal server error
 */
@@ -115,6 +187,31 @@ type PatchVMDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this patch Vm default response has a 2xx status code
+func (o *PatchVMDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch Vm default response has a 3xx status code
+func (o *PatchVMDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch Vm default response has a 4xx status code
+func (o *PatchVMDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch Vm default response has a 5xx status code
+func (o *PatchVMDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch Vm default response a status code equal to that given
+func (o *PatchVMDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the patch Vm default response
@@ -125,6 +222,11 @@ func (o *PatchVMDefault) Code() int {
 func (o *PatchVMDefault) Error() string {
 	return fmt.Sprintf("[PATCH /vm][%d] patchVm default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchVMDefault) String() string {
+	return fmt.Sprintf("[PATCH /vm][%d] patchVm default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchVMDefault) GetPayload() *models.Error {
 	return o.Payload
 }

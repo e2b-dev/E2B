@@ -52,10 +52,12 @@ func NewDescribeBalloonStatsParamsWithHTTPClient(client *http.Client) *DescribeB
 	}
 }
 
-/* DescribeBalloonStatsParams contains all the parameters to send to the API endpoint
-   for the describe balloon stats operation.
+/*
+DescribeBalloonStatsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the describe balloon stats operation.
+
+	Typically these are written to a http.Request.
 */
 type DescribeBalloonStatsParams struct {
 	timeout    time.Duration

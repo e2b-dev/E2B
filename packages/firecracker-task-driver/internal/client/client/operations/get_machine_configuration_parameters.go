@@ -52,10 +52,12 @@ func NewGetMachineConfigurationParamsWithHTTPClient(client *http.Client) *GetMac
 	}
 }
 
-/* GetMachineConfigurationParams contains all the parameters to send to the API endpoint
-   for the get machine configuration operation.
+/*
+GetMachineConfigurationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get machine configuration operation.
+
+	Typically these are written to a http.Request.
 */
 type GetMachineConfigurationParams struct {
 	timeout    time.Duration

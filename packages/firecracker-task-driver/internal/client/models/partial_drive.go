@@ -93,6 +93,11 @@ func (m *PartialDrive) ContextValidate(ctx context.Context, formats strfmt.Regis
 func (m *PartialDrive) contextValidateRateLimiter(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.RateLimiter != nil {
+
+		if swag.IsZero(m.RateLimiter) { // not required
+			return nil
+		}
+
 		if err := m.RateLimiter.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("rate_limiter")

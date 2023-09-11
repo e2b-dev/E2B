@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // NewPutGuestBootSourceParams creates a new PutGuestBootSourceParams object,
@@ -54,10 +54,12 @@ func NewPutGuestBootSourceParamsWithHTTPClient(client *http.Client) *PutGuestBoo
 	}
 }
 
-/* PutGuestBootSourceParams contains all the parameters to send to the API endpoint
-   for the put guest boot source operation.
+/*
+PutGuestBootSourceParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the put guest boot source operation.
+
+	Typically these are written to a http.Request.
 */
 type PutGuestBootSourceParams struct {
 

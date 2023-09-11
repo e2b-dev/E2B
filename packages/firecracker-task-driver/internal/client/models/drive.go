@@ -245,6 +245,11 @@ func (m *Drive) ContextValidate(ctx context.Context, formats strfmt.Registry) er
 func (m *Drive) contextValidateRateLimiter(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.RateLimiter != nil {
+
+		if swag.IsZero(m.RateLimiter) { // not required
+			return nil
+		}
+
 		if err := m.RateLimiter.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("rate_limiter")

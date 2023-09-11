@@ -1,4 +1,4 @@
-module github.com/devbookhq/devbook-api/packages/firecracker-task-driver
+module github.com/e2b-dev/api/packages/firecracker-task-driver
 
 go 1.21
 
@@ -11,7 +11,6 @@ require (
 	github.com/go-openapi/strfmt v0.21.2
 	github.com/go-openapi/swag v0.21.1
 	github.com/go-openapi/validate v0.21.0
-	github.com/google/uuid v1.3.0
 	github.com/hashicorp/consul/api v1.13.0
 	github.com/hashicorp/go-hclog v1.2.0
 	github.com/hashicorp/nomad v1.3.2
@@ -20,7 +19,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/txn2/txeh v1.3.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	github.com/vishvananda/netns v0.0.1
+	github.com/vishvananda/netns v0.0.4
 	go.opentelemetry.io/otel v1.9.0
 	go.opentelemetry.io/otel/trace v1.9.0
 )
@@ -50,6 +49,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.1-0.20200228141219-3ce3d519df39 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
 	github.com/hashicorp/cronexpr v1.1.1 // indirect
@@ -124,7 +124,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
-	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

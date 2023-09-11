@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // CreateSyncActionReader is a Reader for the CreateSyncAction structure.
@@ -52,14 +52,49 @@ func NewCreateSyncActionNoContent() *CreateSyncActionNoContent {
 	return &CreateSyncActionNoContent{}
 }
 
-/* CreateSyncActionNoContent describes a response with status code 204, with default header values.
+/*
+CreateSyncActionNoContent describes a response with status code 204, with default header values.
 
 The update was successful
 */
 type CreateSyncActionNoContent struct {
 }
 
+// IsSuccess returns true when this create sync action no content response has a 2xx status code
+func (o *CreateSyncActionNoContent) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create sync action no content response has a 3xx status code
+func (o *CreateSyncActionNoContent) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create sync action no content response has a 4xx status code
+func (o *CreateSyncActionNoContent) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create sync action no content response has a 5xx status code
+func (o *CreateSyncActionNoContent) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create sync action no content response a status code equal to that given
+func (o *CreateSyncActionNoContent) IsCode(code int) bool {
+	return code == 204
+}
+
+// Code gets the status code for the create sync action no content response
+func (o *CreateSyncActionNoContent) Code() int {
+	return 204
+}
+
 func (o *CreateSyncActionNoContent) Error() string {
+	return fmt.Sprintf("[PUT /actions][%d] createSyncActionNoContent ", 204)
+}
+
+func (o *CreateSyncActionNoContent) String() string {
 	return fmt.Sprintf("[PUT /actions][%d] createSyncActionNoContent ", 204)
 }
 
@@ -73,7 +108,8 @@ func NewCreateSyncActionBadRequest() *CreateSyncActionBadRequest {
 	return &CreateSyncActionBadRequest{}
 }
 
-/* CreateSyncActionBadRequest describes a response with status code 400, with default header values.
+/*
+CreateSyncActionBadRequest describes a response with status code 400, with default header values.
 
 The action cannot be executed due to bad input
 */
@@ -81,9 +117,44 @@ type CreateSyncActionBadRequest struct {
 	Payload *models.Error
 }
 
+// IsSuccess returns true when this create sync action bad request response has a 2xx status code
+func (o *CreateSyncActionBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create sync action bad request response has a 3xx status code
+func (o *CreateSyncActionBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create sync action bad request response has a 4xx status code
+func (o *CreateSyncActionBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create sync action bad request response has a 5xx status code
+func (o *CreateSyncActionBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create sync action bad request response a status code equal to that given
+func (o *CreateSyncActionBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the create sync action bad request response
+func (o *CreateSyncActionBadRequest) Code() int {
+	return 400
+}
+
 func (o *CreateSyncActionBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /actions][%d] createSyncActionBadRequest  %+v", 400, o.Payload)
 }
+
+func (o *CreateSyncActionBadRequest) String() string {
+	return fmt.Sprintf("[PUT /actions][%d] createSyncActionBadRequest  %+v", 400, o.Payload)
+}
+
 func (o *CreateSyncActionBadRequest) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -107,7 +178,8 @@ func NewCreateSyncActionDefault(code int) *CreateSyncActionDefault {
 	}
 }
 
-/* CreateSyncActionDefault describes a response with status code -1, with default header values.
+/*
+CreateSyncActionDefault describes a response with status code -1, with default header values.
 
 Internal Server Error
 */
@@ -115,6 +187,31 @@ type CreateSyncActionDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this create sync action default response has a 2xx status code
+func (o *CreateSyncActionDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create sync action default response has a 3xx status code
+func (o *CreateSyncActionDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create sync action default response has a 4xx status code
+func (o *CreateSyncActionDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create sync action default response has a 5xx status code
+func (o *CreateSyncActionDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create sync action default response a status code equal to that given
+func (o *CreateSyncActionDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the create sync action default response
@@ -125,6 +222,11 @@ func (o *CreateSyncActionDefault) Code() int {
 func (o *CreateSyncActionDefault) Error() string {
 	return fmt.Sprintf("[PUT /actions][%d] createSyncAction default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateSyncActionDefault) String() string {
+	return fmt.Sprintf("[PUT /actions][%d] createSyncAction default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateSyncActionDefault) GetPayload() *models.Error {
 	return o.Payload
 }

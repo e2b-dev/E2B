@@ -118,3 +118,4 @@
 - rpc error: code = Unknown desc = failed to get IP slot: failed to write to Consul KV: Unexpected response code: 429 (Your IP is issuing too many concurrent connections, please rate limit your calls)
 - Fix "namespace cannot be transferred" error
 - Use haproxy or envoy proxy?
+- Use balloning device to reclaim memore before making the snapshot to reduce the size of the snapshot

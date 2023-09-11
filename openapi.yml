@@ -123,21 +123,6 @@ paths:
         401:
           $ref: "#/components/responses/401"
 
-  /instances/{instanceID}:
-    delete:
-      description: Delete an environment instance
-      tags: [instances]
-      parameters:
-        - $ref: "#/components/parameters/apiKey"
-        - $ref: "#/components/parameters/instanceID"
-      responses:
-        204:
-          description: Successfully deleted the instance
-        401:
-          $ref: "#/components/responses/401"
-        500:
-          $ref: "#/components/responses/500"
-
   /instances/{instanceID}/refreshes:
     post:
       description: Refresh the instance extending its time to live

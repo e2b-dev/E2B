@@ -1,4 +1,4 @@
-job "{{ .JobName }}/{{ .SessionID }}" {
+job "{{ .JobName }}/{{ .InstanceID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
@@ -29,12 +29,12 @@ job "{{ .JobName }}/{{ .SessionID }}" {
       }
 
       config {
-        CodeSnippetID = "{{ .CodeSnippetID }}"
+        EnvID = "{{ .EnvID }}"
+        InstanceID   = "{{ .InstanceID }}"
         ConsulToken   = "{{ .ConsulToken }}"
-        SessionID   = "{{ .SessionID }}"
+        LogsProxyAddress = "{{ .LogsProxyAddress }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"
-        LogsProxyAddress = "{{ .LogsProxyAddress }}"
       }
     }
   }

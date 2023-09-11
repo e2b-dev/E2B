@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // PutGuestVsockReader is a Reader for the PutGuestVsock structure.
@@ -52,14 +52,49 @@ func NewPutGuestVsockNoContent() *PutGuestVsockNoContent {
 	return &PutGuestVsockNoContent{}
 }
 
-/* PutGuestVsockNoContent describes a response with status code 204, with default header values.
+/*
+PutGuestVsockNoContent describes a response with status code 204, with default header values.
 
 Vsock created/updated
 */
 type PutGuestVsockNoContent struct {
 }
 
+// IsSuccess returns true when this put guest vsock no content response has a 2xx status code
+func (o *PutGuestVsockNoContent) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this put guest vsock no content response has a 3xx status code
+func (o *PutGuestVsockNoContent) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put guest vsock no content response has a 4xx status code
+func (o *PutGuestVsockNoContent) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this put guest vsock no content response has a 5xx status code
+func (o *PutGuestVsockNoContent) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put guest vsock no content response a status code equal to that given
+func (o *PutGuestVsockNoContent) IsCode(code int) bool {
+	return code == 204
+}
+
+// Code gets the status code for the put guest vsock no content response
+func (o *PutGuestVsockNoContent) Code() int {
+	return 204
+}
+
 func (o *PutGuestVsockNoContent) Error() string {
+	return fmt.Sprintf("[PUT /vsock][%d] putGuestVsockNoContent ", 204)
+}
+
+func (o *PutGuestVsockNoContent) String() string {
 	return fmt.Sprintf("[PUT /vsock][%d] putGuestVsockNoContent ", 204)
 }
 
@@ -73,7 +108,8 @@ func NewPutGuestVsockBadRequest() *PutGuestVsockBadRequest {
 	return &PutGuestVsockBadRequest{}
 }
 
-/* PutGuestVsockBadRequest describes a response with status code 400, with default header values.
+/*
+PutGuestVsockBadRequest describes a response with status code 400, with default header values.
 
 Vsock cannot be created due to bad input
 */
@@ -81,9 +117,44 @@ type PutGuestVsockBadRequest struct {
 	Payload *models.Error
 }
 
+// IsSuccess returns true when this put guest vsock bad request response has a 2xx status code
+func (o *PutGuestVsockBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this put guest vsock bad request response has a 3xx status code
+func (o *PutGuestVsockBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put guest vsock bad request response has a 4xx status code
+func (o *PutGuestVsockBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this put guest vsock bad request response has a 5xx status code
+func (o *PutGuestVsockBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put guest vsock bad request response a status code equal to that given
+func (o *PutGuestVsockBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the put guest vsock bad request response
+func (o *PutGuestVsockBadRequest) Code() int {
+	return 400
+}
+
 func (o *PutGuestVsockBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /vsock][%d] putGuestVsockBadRequest  %+v", 400, o.Payload)
 }
+
+func (o *PutGuestVsockBadRequest) String() string {
+	return fmt.Sprintf("[PUT /vsock][%d] putGuestVsockBadRequest  %+v", 400, o.Payload)
+}
+
 func (o *PutGuestVsockBadRequest) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -107,7 +178,8 @@ func NewPutGuestVsockDefault(code int) *PutGuestVsockDefault {
 	}
 }
 
-/* PutGuestVsockDefault describes a response with status code -1, with default header values.
+/*
+PutGuestVsockDefault describes a response with status code -1, with default header values.
 
 Internal server error
 */
@@ -115,6 +187,31 @@ type PutGuestVsockDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this put guest vsock default response has a 2xx status code
+func (o *PutGuestVsockDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this put guest vsock default response has a 3xx status code
+func (o *PutGuestVsockDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this put guest vsock default response has a 4xx status code
+func (o *PutGuestVsockDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this put guest vsock default response has a 5xx status code
+func (o *PutGuestVsockDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this put guest vsock default response a status code equal to that given
+func (o *PutGuestVsockDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the put guest vsock default response
@@ -125,6 +222,11 @@ func (o *PutGuestVsockDefault) Code() int {
 func (o *PutGuestVsockDefault) Error() string {
 	return fmt.Sprintf("[PUT /vsock][%d] putGuestVsock default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PutGuestVsockDefault) String() string {
+	return fmt.Sprintf("[PUT /vsock][%d] putGuestVsock default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PutGuestVsockDefault) GetPayload() *models.Error {
 	return o.Payload
 }

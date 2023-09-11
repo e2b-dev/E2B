@@ -52,10 +52,12 @@ func NewGetExportVMConfigParamsWithHTTPClient(client *http.Client) *GetExportVMC
 	}
 }
 
-/* GetExportVMConfigParams contains all the parameters to send to the API endpoint
-   for the get export Vm config operation.
+/*
+GetExportVMConfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get export Vm config operation.
+
+	Typically these are written to a http.Request.
 */
 type GetExportVMConfigParams struct {
 	timeout    time.Duration

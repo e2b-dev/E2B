@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // GetMmdsReader is a Reader for the GetMmds structure.
@@ -52,7 +52,8 @@ func NewGetMmdsOK() *GetMmdsOK {
 	return &GetMmdsOK{}
 }
 
-/* GetMmdsOK describes a response with status code 200, with default header values.
+/*
+GetMmdsOK describes a response with status code 200, with default header values.
 
 The MMDS data store JSON.
 */
@@ -60,9 +61,44 @@ type GetMmdsOK struct {
 	Payload interface{}
 }
 
+// IsSuccess returns true when this get mmds o k response has a 2xx status code
+func (o *GetMmdsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get mmds o k response has a 3xx status code
+func (o *GetMmdsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get mmds o k response has a 4xx status code
+func (o *GetMmdsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get mmds o k response has a 5xx status code
+func (o *GetMmdsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get mmds o k response a status code equal to that given
+func (o *GetMmdsOK) IsCode(code int) bool {
+	return code == 200
+}
+
+// Code gets the status code for the get mmds o k response
+func (o *GetMmdsOK) Code() int {
+	return 200
+}
+
 func (o *GetMmdsOK) Error() string {
 	return fmt.Sprintf("[GET /mmds][%d] getMmdsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetMmdsOK) String() string {
+	return fmt.Sprintf("[GET /mmds][%d] getMmdsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetMmdsOK) GetPayload() interface{} {
 	return o.Payload
 }
@@ -82,7 +118,8 @@ func NewGetMmdsNotFound() *GetMmdsNotFound {
 	return &GetMmdsNotFound{}
 }
 
-/* GetMmdsNotFound describes a response with status code 404, with default header values.
+/*
+GetMmdsNotFound describes a response with status code 404, with default header values.
 
 The MMDS data store content can not be found.
 */
@@ -90,9 +127,44 @@ type GetMmdsNotFound struct {
 	Payload *models.Error
 }
 
+// IsSuccess returns true when this get mmds not found response has a 2xx status code
+func (o *GetMmdsNotFound) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get mmds not found response has a 3xx status code
+func (o *GetMmdsNotFound) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get mmds not found response has a 4xx status code
+func (o *GetMmdsNotFound) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get mmds not found response has a 5xx status code
+func (o *GetMmdsNotFound) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get mmds not found response a status code equal to that given
+func (o *GetMmdsNotFound) IsCode(code int) bool {
+	return code == 404
+}
+
+// Code gets the status code for the get mmds not found response
+func (o *GetMmdsNotFound) Code() int {
+	return 404
+}
+
 func (o *GetMmdsNotFound) Error() string {
 	return fmt.Sprintf("[GET /mmds][%d] getMmdsNotFound  %+v", 404, o.Payload)
 }
+
+func (o *GetMmdsNotFound) String() string {
+	return fmt.Sprintf("[GET /mmds][%d] getMmdsNotFound  %+v", 404, o.Payload)
+}
+
 func (o *GetMmdsNotFound) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -116,7 +188,8 @@ func NewGetMmdsDefault(code int) *GetMmdsDefault {
 	}
 }
 
-/* GetMmdsDefault describes a response with status code -1, with default header values.
+/*
+GetMmdsDefault describes a response with status code -1, with default header values.
 
 Internal server error
 */
@@ -124,6 +197,31 @@ type GetMmdsDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this get mmds default response has a 2xx status code
+func (o *GetMmdsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get mmds default response has a 3xx status code
+func (o *GetMmdsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get mmds default response has a 4xx status code
+func (o *GetMmdsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get mmds default response has a 5xx status code
+func (o *GetMmdsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get mmds default response a status code equal to that given
+func (o *GetMmdsDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the get mmds default response
@@ -134,6 +232,11 @@ func (o *GetMmdsDefault) Code() int {
 func (o *GetMmdsDefault) Error() string {
 	return fmt.Sprintf("[GET /mmds][%d] getMmds default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetMmdsDefault) String() string {
+	return fmt.Sprintf("[GET /mmds][%d] getMmds default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetMmdsDefault) GetPayload() *models.Error {
 	return o.Payload
 }

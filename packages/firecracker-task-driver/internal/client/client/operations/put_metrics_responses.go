@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // PutMetricsReader is a Reader for the PutMetrics structure.
@@ -52,14 +52,49 @@ func NewPutMetricsNoContent() *PutMetricsNoContent {
 	return &PutMetricsNoContent{}
 }
 
-/* PutMetricsNoContent describes a response with status code 204, with default header values.
+/*
+PutMetricsNoContent describes a response with status code 204, with default header values.
 
 Metrics system created.
 */
 type PutMetricsNoContent struct {
 }
 
+// IsSuccess returns true when this put metrics no content response has a 2xx status code
+func (o *PutMetricsNoContent) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this put metrics no content response has a 3xx status code
+func (o *PutMetricsNoContent) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put metrics no content response has a 4xx status code
+func (o *PutMetricsNoContent) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this put metrics no content response has a 5xx status code
+func (o *PutMetricsNoContent) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put metrics no content response a status code equal to that given
+func (o *PutMetricsNoContent) IsCode(code int) bool {
+	return code == 204
+}
+
+// Code gets the status code for the put metrics no content response
+func (o *PutMetricsNoContent) Code() int {
+	return 204
+}
+
 func (o *PutMetricsNoContent) Error() string {
+	return fmt.Sprintf("[PUT /metrics][%d] putMetricsNoContent ", 204)
+}
+
+func (o *PutMetricsNoContent) String() string {
 	return fmt.Sprintf("[PUT /metrics][%d] putMetricsNoContent ", 204)
 }
 
@@ -73,17 +108,53 @@ func NewPutMetricsBadRequest() *PutMetricsBadRequest {
 	return &PutMetricsBadRequest{}
 }
 
-/* PutMetricsBadRequest describes a response with status code 400, with default header values.
+/*
+PutMetricsBadRequest describes a response with status code 400, with default header values.
 
-Metrics system cannot be initialized due to bad input.
+Metrics system cannot be initialized due to bad input request or metrics system already initialized.
 */
 type PutMetricsBadRequest struct {
 	Payload *models.Error
 }
 
+// IsSuccess returns true when this put metrics bad request response has a 2xx status code
+func (o *PutMetricsBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this put metrics bad request response has a 3xx status code
+func (o *PutMetricsBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put metrics bad request response has a 4xx status code
+func (o *PutMetricsBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this put metrics bad request response has a 5xx status code
+func (o *PutMetricsBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put metrics bad request response a status code equal to that given
+func (o *PutMetricsBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the put metrics bad request response
+func (o *PutMetricsBadRequest) Code() int {
+	return 400
+}
+
 func (o *PutMetricsBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /metrics][%d] putMetricsBadRequest  %+v", 400, o.Payload)
 }
+
+func (o *PutMetricsBadRequest) String() string {
+	return fmt.Sprintf("[PUT /metrics][%d] putMetricsBadRequest  %+v", 400, o.Payload)
+}
+
 func (o *PutMetricsBadRequest) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -107,7 +178,8 @@ func NewPutMetricsDefault(code int) *PutMetricsDefault {
 	}
 }
 
-/* PutMetricsDefault describes a response with status code -1, with default header values.
+/*
+PutMetricsDefault describes a response with status code -1, with default header values.
 
 Internal server error.
 */
@@ -115,6 +187,31 @@ type PutMetricsDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this put metrics default response has a 2xx status code
+func (o *PutMetricsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this put metrics default response has a 3xx status code
+func (o *PutMetricsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this put metrics default response has a 4xx status code
+func (o *PutMetricsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this put metrics default response has a 5xx status code
+func (o *PutMetricsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this put metrics default response a status code equal to that given
+func (o *PutMetricsDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the put metrics default response
@@ -125,6 +222,11 @@ func (o *PutMetricsDefault) Code() int {
 func (o *PutMetricsDefault) Error() string {
 	return fmt.Sprintf("[PUT /metrics][%d] putMetrics default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PutMetricsDefault) String() string {
+	return fmt.Sprintf("[PUT /metrics][%d] putMetrics default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PutMetricsDefault) GetPayload() *models.Error {
 	return o.Payload
 }
