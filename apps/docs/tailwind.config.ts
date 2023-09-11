@@ -40,6 +40,17 @@ export default {
         7.5: '0.075',
         15: '0.15',
       },
+      animation: {
+        loaderDots: 'loaderDots 0.5s infinite alternate'
+      },
+      keyframes: {
+        loaderDots: {
+          to: {
+            opacity: '0.1',
+            transform: 'translate3d(0, -0.3rem, 0)' // TODO: More parametric
+          }
+        }
+      }
     },
   },
   plugins: [typographyPlugin, headlessuiPlugin],

@@ -20,7 +20,10 @@ import { useApiKey } from '@/utils/useUser'
 import { ProcessMessage } from '@e2b/sdk'
 import { useSessionsStore } from '@/utils/useSessions'
 import { useSignIn } from '@/utils/useSignIn'
-import {LangShort, languageNames, languageToLangShort, mdLangToLangShort} from '@/utils/consts'
+import { LangShort, languageNames, languageToLangShort, mdLangToLangShort } from '@/utils/consts'
+import { usePostHog } from "posthog-js/react";
+import { LoadingDots} from "@/components/Spinner";
+
 
 export function getPanelTitle({
   title,
@@ -51,6 +54,9 @@ function CodePanel({
 }) {
   const signIn = useSignIn()
   const apiKey = useApiKey()
+  const posthog = usePostHog()
+  const codeGroupContext = useContext(CodeGroupContext) 
+  
   const sessionDef = useSessionsStore((s) => s.sessions[lang])
   const initSession = useSessionsStore((s) => s.initSession)
   const { outputLines, dispatch } = useOutputReducer()
@@ -81,6 +87,11 @@ function CodePanel({
     }
     dispatch({ type: 'clear' })
     setIsRunning(true)
+    posthog?.capture('run code snippet', {
+      language: lang,
+      snippetPath: codeGroupContext?.path ?? 'unknown snippet',
+    })
+
 
     let session = sessionDef?.session
     try {
@@ -177,12 +188,14 @@ function CodePanel({
       <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
       {(outputLines.length > 0 || isRunning) && (
         <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
-              <span className="font-mono text-xs text-zinc-500">
-                Output {isRunning && '(running on e2b infrastructure)'}
-              </span>
-              <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
-                {outputLines.join('\n')}
-              </pre>
+          <span className="font-mono text-xs text-zinc-500">
+            <b>Output</b>
+            {" "}
+            <LoadingDots /> 
+          </span>
+          <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
+            {outputLines.join('\n')}
+          </pre>
         </div>
       )}
       <CopyButton code={code} />
@@ -333,7 +346,7 @@ export function useTabGroupProps(availableLanguages: Array<string>) {
   }
 }
 
-const CodeGroupContext = createContext(false)
+const CodeGroupContext = createContext(null)
 
 function useOutputReducer() {
   const [outputLines, dispatch] = useReducer(
@@ -359,9 +372,11 @@ function useOutputReducer() {
 export function CodeGroup({
   children,
   title,
+  path,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
   title?: string
+  path?: string // For analytics
 }) {
   let hasTabs = Children.count(children) > 1
   let containerClassName =
@@ -383,7 +398,9 @@ export function CodeGroup({
   let panels = <CodeGroupPanels {...props}>{children}</CodeGroupPanels>
 
   return (
-    <CodeGroupContext.Provider value={true}>
+    <CodeGroupContext.Provider value={{
+      path,
+    }}>
       {hasTabs ? (
         <Tab.Group {...tabGroupProps} className={containerClassName}>
           {header}
@@ -408,7 +425,7 @@ export function Code({
   // if (children.replace && apiKey) children = children.replace(`{{API_KEY}}`, `${apiKey}`)
   /* </DYNAMIC-API-REPLACEMENT> */
 
-  let isGrouped = useContext(CodeGroupContext)
+  let isGrouped = !!useContext(CodeGroupContext)
 
   if (isGrouped) {
     if (typeof children !== 'string') {

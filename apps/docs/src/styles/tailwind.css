@@ -38,6 +38,19 @@
   }
 }
 
+@layer utilities {
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+}
+
+.circle {
+  @apply w-[5px] h-[5px] mx-[2px] relative top-[-1px] bg-gray-500 rounded-full;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
