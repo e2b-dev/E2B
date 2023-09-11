@@ -18,10 +18,15 @@ type OtelHook struct {
 func (hook *OtelHook) Fire(entry *log.Entry) error {
 	switch entry.Level {
 	case log.ErrorLevel:
+	case log.FatalLevel:
+	case log.PanicLevel:
 		hook.span.SetStatus(codes.Error, "critical error")
 		hook.span.RecordError(fmt.Errorf(entry.Message))
 	case log.WarnLevel:
 		hook.span.RecordError(fmt.Errorf(entry.Message))
+	case log.InfoLevel:
+	case log.DebugLevel:
+	case log.TraceLevel:
 	default:
 		hook.span.AddEvent(entry.Message)
 	}

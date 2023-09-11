@@ -41,6 +41,7 @@ func NewAPIStore() *APIStore {
 	if err != nil {
 		panic(err)
 	}
+
 	fmt.Println("Initialized Supabase client")
 
 	// Uncomment this to rebuild templates

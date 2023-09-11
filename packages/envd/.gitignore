@@ -1,0 +1,7 @@
+bin
+bin/**
+test/**
+debug/.env
+dist
+envd-env/
+envd-env.tar.gz

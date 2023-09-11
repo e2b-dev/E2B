@@ -19,7 +19,7 @@ EOF
 # Because this script runs in a container we can't use `systemctl`.
 # Containers don't run init daemons. We have to enable the runner service manually.
 mkdir -p /etc/systemd/system/multi-user.target.wants
-ln -s /etc/systemd/system/devbookd.service /etc/systemd/system/multi-user.target.wants/devbookd.service
+ln -s /etc/systemd/system/envd.service /etc/systemd/system/multi-user.target.wants/envd.service
 # ------------------------------- #
 
 echo "export SHELL='/bin/bash'" >/etc/profile.d/shell.sh
@@ -55,7 +55,7 @@ chmod -R 777 /home/user
 echo "nameserver 8.8.8.8" >/etc/resolv.conf
 
 # Start systemd services
-systemctl enable devbookd
+systemctl enable envd
 systemctl enable chrony
 
 # Delete itself once done.

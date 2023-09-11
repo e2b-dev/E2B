@@ -23,7 +23,7 @@ const (
 	EnvInstancesDirName = "env-instances"
 )
 
-type EnvInstance struct {
+type InstanceFilesystem struct {
 	BuildDirPath    string
 	EnvPath         string
 	EnvInstancePath string
@@ -35,7 +35,7 @@ func New(
 	envID string,
 	fcEnvsDisk string,
 	tracer trace.Tracer,
-) (*EnvInstance, error) {
+) (*InstanceFilesystem, error) {
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
@@ -52,8 +52,6 @@ func New(
 		telemetry.ReportError(childCtx, err)
 	}
 
-	var buildDirPath string
-
 	// Mount overlay
 	buildIDPath := filepath.Join(envPath, BuildIDName)
 
@@ -61,8 +59,9 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("failed reading build id for the code snippet %s: %w", envID, err)
 	}
+
 	buildID := string(data)
-	buildDirPath = filepath.Join(envPath, BuildDirName, buildID)
+	buildDirPath := filepath.Join(envPath, BuildDirName, buildID)
 
 	mkdirErr := os.MkdirAll(buildDirPath, 0777)
 	if mkdirErr != nil {
@@ -86,14 +85,14 @@ func New(
 		attribute.String("env_path", envPath),
 	)
 
-	return &EnvInstance{
+	return &InstanceFilesystem{
 		EnvInstancePath: envInstancePath,
 		BuildDirPath:    buildDirPath,
 		EnvPath:         envPath,
 	}, nil
 }
 
-func (env *EnvInstance) Delete(
+func (env *InstanceFilesystem) Delete(
 	ctx context.Context,
 	tracer trace.Tracer,
 ) error {

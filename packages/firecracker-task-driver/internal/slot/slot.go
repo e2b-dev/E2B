@@ -11,11 +11,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// We are using a more debuggable IP address allocation for now.
-const IPSlotRange = 255
-const HostSnapshotMask = 32
-const VMask = 32
-const TapMask = 32
+// We are using a more debuggable IP address allocation for now that only covers 255 addresses.
+const (
+	IPSlotRange      = 255
+	HostSnapshotMask = 32
+	VMask            = 32
+	TapMask          = 32
+)
 
 type IPSlot struct {
 	InstanceID  string
@@ -116,12 +118,12 @@ func New(ctx context.Context, nodeID, sessionID, consulToken string, tracer trac
 	for {
 		for slotIdx := 0; slotIdx <= IPSlotRange; slotIdx++ {
 			key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
+
 			status, _, err := kv.CAS(&consul.KVPair{
 				Key:         key,
 				ModifyIndex: 0,
 				Value:       []byte(sessionID),
 			}, nil)
-
 			if err != nil {
 				errMsg := fmt.Errorf("failed to write to Consul KV: %w", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
@@ -160,12 +162,12 @@ func New(ctx context.Context, nodeID, sessionID, consulToken string, tracer trac
 	return slot, nil
 }
 
-func (slot *IPSlot) Release(ctx context.Context, consulToken string, tracer trace.Tracer) error {
+func (ips *IPSlot) Release(ctx context.Context, consulToken string, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
 		trace.WithAttributes(
-			attribute.String("kv_key", slot.KVKey),
-			attribute.String("node_short_id", slot.NodeShortID),
-			attribute.String("session_id", slot.InstanceID),
+			attribute.String("kv_key", ips.KVKey),
+			attribute.String("node_short_id", ips.NodeShortID),
+			attribute.String("session_id", ips.InstanceID),
 		),
 	)
 	defer childSpan.End()
@@ -185,7 +187,7 @@ func (slot *IPSlot) Release(ctx context.Context, consulToken string, tracer trac
 
 	kv := consulClient.KV()
 
-	pair, _, err := kv.Get(slot.KVKey, nil)
+	pair, _, err := kv.Get(ips.KVKey, nil)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to release IPSlot: Failed to read Consul KV: %w", err)
 
@@ -195,21 +197,21 @@ func (slot *IPSlot) Release(ctx context.Context, consulToken string, tracer trac
 	}
 
 	if pair == nil {
-		errMsg := fmt.Errorf("IP slot %d for session %s was already released", slot.SlotIdx, slot.InstanceID)
+		errMsg := fmt.Errorf("IP slot %d for session %s was already released", ips.SlotIdx, ips.InstanceID)
 		telemetry.ReportError(childCtx, errMsg)
 
 		return nil
 	}
 
-	if string(pair.Value) != slot.InstanceID {
-		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.InstanceID, string(pair.Value))
+	if string(pair.Value) != ips.InstanceID {
+		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", ips.SlotIdx, ips.InstanceID, string(pair.Value))
 		telemetry.ReportError(childCtx, errMsg)
 
 		return nil
 	}
 
 	status, _, err := kv.DeleteCAS(&consul.KVPair{
-		Key:         slot.KVKey,
+		Key:         ips.KVKey,
 		ModifyIndex: pair.ModifyIndex,
 	}, nil)
 	if err != nil {
@@ -220,7 +222,7 @@ func (slot *IPSlot) Release(ctx context.Context, consulToken string, tracer trac
 	}
 
 	if !status {
-		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.InstanceID, string(pair.Value))
+		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", ips.SlotIdx, ips.InstanceID, string(pair.Value))
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg

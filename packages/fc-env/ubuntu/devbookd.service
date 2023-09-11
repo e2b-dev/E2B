@@ -8,7 +8,7 @@ User=root
 Group=root
 Environment=GOTRACEBACK=all
 LimitCORE=infinity
-ExecStart=/usr/bin/bash -l -c "/usr/bin/devbookd"
+ExecStart=/usr/bin/bash -l -c "/usr/bin/envd"
 OOMPolicy=continue
 OOMScoreAdjust=-999
 

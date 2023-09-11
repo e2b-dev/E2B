@@ -21,7 +21,7 @@ jobs:
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
       fc-env: ${{ steps.filter.outputs.fc-env }}
       api-image: ${{ steps.filter.outputs.api-image }}
-      devbookd: ${{ steps.filter.outputs.devbookd }}
+      envd: ${{ steps.filter.outputs.envd }}
       firecracker-task-driver: ${{ steps.filter.outputs.firecracker-task-driver }}
       version: ${{ steps.filter.outputs.version }}
     steps:
@@ -55,9 +55,9 @@ jobs:
             api-image:
               - 'packages/api/**'
               - '.github/workflows/api-image.yml'
-            devbookd:
-              - 'packages/devbookd/**'
-              - '.github/workflows/devbookd.yml'
+            envd:
+              - 'packages/envd/**'
+              - '.github/workflows/envd.yml'
             firecracker-task-driver:
               - 'packages/firecracker-task-driver/**'
               - '.github/workflows/firecracker-task-driver.yml'
@@ -91,13 +91,13 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  devbookd:
+  envd:
     name: Devbook Daemon
     needs: changes
     if: |
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.devbookd == 'true'
-    uses: ./.github/workflows/devbookd.yml
+      needs.changes.outputs.envd == 'true'
+    uses: ./.github/workflows/envd.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
@@ -134,7 +134,7 @@ jobs:
         cluster-disk-image,
         fc-env,
         api-image,
-        devbookd,
+        envd,
         firecracker-task-driver,
       ]
     if: |
@@ -143,7 +143,7 @@ jobs:
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.fc-env.result == 'success' || needs.fc-env.result == 'skipped') &&
-      (needs.devbookd.result == 'success' || needs.devbookd.result == 'skipped') &&
+      (needs.envd.result == 'success' || needs.envd.result == 'skipped') &&
       (needs.firecracker-task-driver.result == 'success' || needs.firecracker-task-driver.result == 'skipped') &&
       (needs.api-image.result == 'success' || needs.api-image.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
@@ -168,4 +168,4 @@ jobs:
           tag: v${{ needs.changes.outputs.get-version }}
           commit: master
           generateReleaseNotes: true
-          # TODO: Add release artifacts for devbookd
+          # TODO: Add release artifacts for envd

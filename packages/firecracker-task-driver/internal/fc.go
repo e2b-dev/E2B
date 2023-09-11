@@ -10,12 +10,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/client"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/client/operations"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/env"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/telemetry"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/client"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/client/operations"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/env"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/slot"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
 	hclog "github.com/hashicorp/go-hclog"
@@ -31,20 +31,20 @@ const (
 	containerMonitorIntv = 4 * time.Second
 )
 
-type vminfo struct {
-	Machine *firecracker.Machine
-	Info    Instance_info
+type fc struct {
+	Machine  *firecracker.Machine
+	Instance Instance
 }
-type Instance_info struct {
-	AllocId              string
-	Pid                  string
-	SnapshotRootPath     string
-	EditID               *string
-	SocketPath           string
-	CodeSnippetID        string
-	CodeSnippetDirectory string
-	BuildDirPath         string
-	Cmd                  *exec.Cmd
+
+type Instance struct {
+	AllocId          string
+	Pid              string
+	SnapshotRootPath string
+	SocketPath       string
+	EnvID            string
+	EnvPath          string
+	BuildDirPath     string
+	Cmd              *exec.Cmd
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -56,18 +56,18 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 	return httpClient
 }
 
-func loadSnapshot(ctx context.Context, socketPath, snapshotRootPath string, d *Driver, metadata interface{}) error {
+func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, metadata interface{}) error {
 	childCtx, childSpan := d.tracer.Start(ctx, "load-snapshot", trace.WithAttributes(
 		attribute.String("socket_path", socketPath),
-		attribute.String("snapshot_root_path", snapshotRootPath),
+		attribute.String("snapshot_root_path", envPath),
 	))
 	defer childSpan.End()
 
 	httpClient := newFirecrackerClient(socketPath)
 	telemetry.ReportEvent(childCtx, "created FC socket client")
 
-	memfilePath := filepath.Join(snapshotRootPath, env.MemfileName)
-	snapfilePath := filepath.Join(snapshotRootPath, env.SnapfileName)
+	memfilePath := filepath.Join(envPath, env.MemfileName)
+	snapfilePath := filepath.Join(envPath, env.SnapfileName)
 
 	childSpan.SetAttributes(
 		attribute.String("memfile_path", memfilePath),
@@ -117,17 +117,17 @@ func (d *Driver) initializeFC(
 	cfg *drivers.TaskConfig,
 	taskConfig TaskConfig,
 	slot *slot.IPSlot,
-	env *env.Env,
-) (*vminfo, error) {
+	env *env.InstanceFilesystem,
+) (*fc, error) {
 	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
-		attribute.String("session_id", slot.SessionID),
+		attribute.String("instance_id", slot.InstanceID),
 		attribute.Int("ip_slot_index", slot.SlotIdx),
 	))
 	defer childSpan.End()
 
 	opts := newOptions()
 
-	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID, slot.SessionID)
+	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID, slot.InstanceID)
 	if err != nil {
 		errMsg := fmt.Errorf("error assembling FC config: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -159,7 +159,7 @@ func (d *Driver) initializeFC(
 
 	mountCmd := fmt.Sprintf(
 		"mount --bind  %s %s && ",
-		env.SessionEnvPath,
+		env.EnvInstancePath,
 		env.BuildDirPath,
 	)
 
@@ -283,18 +283,19 @@ func (d *Driver) initializeFC(
 	}
 	telemetry.ReportEvent(childCtx, "started FC in preboot")
 
+	// TODO: We need to change this in the envd OR move the logging to the driver
 	if err := loadSnapshot(
 		childCtx,
 		fcCfg.SocketPath,
-		env.SnapshotRootPath,
+		env.EnvPath,
 		d,
 		struct {
 			SessionID     string `json:"sessionID"`
 			CodeSnippetID string `json:"codeSnippetID"`
 			Address       string `json:"address"`
 		}{
-			SessionID:     slot.SessionID,
-			CodeSnippetID: taskConfig.CodeSnippetID,
+			SessionID:     slot.InstanceID,
+			CodeSnippetID: taskConfig.EnvID,
 			Address:       taskConfig.LogsProxyAddress,
 		},
 	); err != nil {
@@ -323,36 +324,27 @@ func (d *Driver) initializeFC(
 		return nil, errMsg
 	}
 
-	info := Instance_info{
-		Cmd:                  cmd,
-		AllocId:              cfg.AllocID,
-		Pid:                  strconv.Itoa(pid),
-		SnapshotRootPath:     env.SnapshotRootPath,
-		EditID:               env.EditID,
-		SocketPath:           fcCfg.SocketPath,
-		CodeSnippetID:        taskConfig.CodeSnippetID,
-		CodeSnippetDirectory: env.CodeSnippetEnvPath,
-		BuildDirPath:         env.BuildDirPath,
+	info := Instance{
+		Cmd:          cmd,
+		AllocId:      cfg.AllocID,
+		Pid:          strconv.Itoa(pid),
+		SocketPath:   fcCfg.SocketPath,
+		EnvID:        taskConfig.EnvID,
+		EnvPath:      env.EnvPath,
+		BuildDirPath: env.BuildDirPath,
 	}
 
 	childSpan.SetAttributes(
 		attribute.String("alloc_id", info.AllocId),
 		attribute.String("pid", info.Pid),
-		attribute.String("snapshot_root_path", info.SnapshotRootPath),
 		attribute.String("socket_path", info.SocketPath),
-		attribute.String("code_snippet_id", info.CodeSnippetID),
-		attribute.String("code_snippet_directory", info.CodeSnippetDirectory),
+		attribute.String("env_id", info.EnvID),
+		attribute.String("env_path", info.EnvPath),
 		attribute.String("build_dir_path", info.BuildDirPath),
 		attribute.String("cmd", info.Cmd.String()),
 		attribute.String("cmd.dir", info.Cmd.Dir),
 		attribute.String("cmd.path", info.Cmd.Path),
 	)
 
-	if info.EditID != nil {
-		childSpan.SetAttributes(
-			attribute.String("edit_id", *info.EditID),
-		)
-	}
-
-	return &vminfo{Machine: m, Info: info}, nil
+	return &fc{Machine: m, Instance: info}, nil
 }
