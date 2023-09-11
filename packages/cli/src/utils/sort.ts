@@ -1,4 +1,4 @@
-import * as sdk from '@devbookhq/sdk'
+import * as sdk from '@e2b/sdk'
 
 export function sortEnvs<E extends sdk.components['schemas']['Environment']>(a: E, b: E) {
   if (!a.title || !b.title) return 0

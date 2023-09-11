@@ -1,4 +1,4 @@
-import * as sdk from '@devbookhq/sdk'
+import * as sdk from '@e2b/sdk'
 
 import { createDeferredPromise } from './utils/promise'
 
@@ -21,7 +21,9 @@ export async function spawnConnectedTerminal(
 
   console.log(introText)
 
+  // @ts-ignore
   const terminal = await manager.createSession({
+    // @ts-ignore
     onData: data => process.stdout.write(data),
     size: getStdoutSize(),
     onExit,

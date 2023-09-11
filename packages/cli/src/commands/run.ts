@@ -1,4 +1,4 @@
-import * as sdk from '@devbookhq/sdk'
+import * as sdk from '@e2b/sdk'
 import * as commander from 'commander'
 import chokidar from 'chokidar'
 import fs from 'fs/promises'

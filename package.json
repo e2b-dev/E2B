@@ -3,15 +3,17 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "version": "changeset version && npm run postVersion --workspaces --if-present",
-    "publish": "changeset publish && npm run postPublish --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "version": "changeset version && pnpm run postVersion --workspaces --if-present",
+    "publish": "changeset publish && pnpm run postPublish --workspaces --if-present",
+    "test": "pnpm run test --workspaces --if-present"
   },
   "workspaces": [
+    "apps/*",
     "packages/*"
   ],
   "dependencies": {
     "@changesets/cli": "^2.26.2",
     "@changesets/read": "^0.5.9"
-  }
+  },
+  "packageManager": "pnpm@8.7.4"
 }

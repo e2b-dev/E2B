@@ -21,7 +21,7 @@
     "lint:fix": "next lint --fix",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
-    "postinstall": "npm run db:generate",
+    "postinstall": "pnpm run db:generate",
     "knip": "knip"
   },
   "dependencies": {

@@ -1,8 +1,9 @@
-import * as sdk from '@devbookhq/sdk'
+import * as sdk from '@e2b/sdk'
 import * as boxen from 'boxen'
 
 import { asBold } from './utils/format'
 
+// @ts-ignore
 const client: sdk.ClientType = sdk.api
 
 // client.configure({

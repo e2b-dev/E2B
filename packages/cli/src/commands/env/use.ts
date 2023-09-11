@@ -1,4 +1,4 @@
-import * as sdk from '@devbookhq/sdk'
+import * as sdk from '@e2b/sdk'
 import * as commander from 'commander'
 import * as fs from 'fs'
 

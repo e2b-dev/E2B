@@ -75,19 +75,19 @@ jobs:
           restore-keys: node_modules-
 
       - name: Run tests
-        run: npm run test
+        run: pnpm run test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Create new versions
-        run: npm run version
+        run: pnpm run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release new versions
         uses: changesets/action@v1
         with:
-          publish: npm run publish
+          publish: pnpm run publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
