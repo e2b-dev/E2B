@@ -50,9 +50,9 @@ export function withTimeout<T extends (...args: any[]) => any>(
     return fn
   }
 
-  // Throw an error if it takes too long
+  let timerId: NodeJS.Timeout;
   const timer = new Promise((resolve, reject) => {
-    setTimeout(
+    timerId = setTimeout(
       () =>
         reject(new TimeoutError(`Calling "${fn.name}" timeouted after ${timeout}ms.`)),
       timeout,
@@ -61,6 +61,9 @@ export function withTimeout<T extends (...args: any[]) => any>(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return ((...args: T extends (...args: infer A) => any ? A : never) => {
-    return Promise.race([timer, fn(...args)])
+    const result = Promise.race([timer, fn(...args)])
+    result.finally(() => clearTimeout(timerId));
+    return result;
   }) as T
 }
+
