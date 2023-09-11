@@ -1,5 +1,5 @@
 [Unit]
-Description=Devbook Daemon Service
+Description=Env Daemon Service
 
 [Service]
 Type=simple

@@ -44,7 +44,7 @@ type Forwarder struct {
 
 func NewForwarder(
 	logger *zap.SugaredLogger,
-	env *env.Env,
+	env *env.EnvConfig,
 	scanner *Scanner,
 ) *Forwarder {
 
@@ -59,7 +59,7 @@ func NewForwarder(
 
 	return &Forwarder{
 		logger:            logger,
-		sourceIP:          env.DefaultGatewayIP(),
+		sourceIP:          env.GatewayIP,
 		ports:             make(map[string]*PortToForward),
 		scannerSubscriber: scannerSub,
 	}
@@ -146,34 +146,34 @@ func (f *Forwarder) starPortForwarding(p *PortToForward) {
 	p.socat = cmd
 }
 
-func (pf *Forwarder) stopPortForwarding(p *PortToForward) {
+func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 	if p.socat == nil {
 		return
 	}
 	defer func() { p.socat = nil }()
 
-	pf.logger.Infow("About to stop port forwarding",
+	f.logger.Infow("About to stop port forwarding",
 		"socatCmd", p.socat.String(),
 		"pid", p.pid,
-		"sourceIP", pf.sourceIP.To4(),
+		"sourceIP", f.sourceIP.To4(),
 		"port", p.port,
 	)
 
 	if err := p.socat.Process.Kill(); err != nil {
-		pf.logger.Infow("Error when stopping port forwarding",
+		f.logger.Infow("Error when stopping port forwarding",
 			"socatCmd", p.socat.String(),
 			"pid", p.pid,
-			"sourceIP", pf.sourceIP.To4(),
+			"sourceIP", f.sourceIP.To4(),
 			"port", p.port,
 			"error", err,
 		)
 		return
 	}
 
-	pf.logger.Infow("Stopped port forwarding",
+	f.logger.Infow("Stopped port forwarding",
 		"socatCmd", p.socat.String(),
 		"pid", p.pid,
-		"sourceIP", pf.sourceIP.To4(),
+		"sourceIP", f.sourceIP.To4(),
 		"port", p.port,
 	)
 }

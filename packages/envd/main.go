@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/e2b-dev/api/packages/envd/internal/codeSnippet"
+	codesnippet "github.com/e2b-dev/api/packages/envd/internal/codeSnippet"
 	"github.com/e2b-dev/api/packages/envd/internal/env"
 	"github.com/e2b-dev/api/packages/envd/internal/filesystem"
 	"github.com/e2b-dev/api/packages/envd/internal/port"
@@ -27,10 +27,9 @@ var (
 	logger    *zap.SugaredLogger
 	wsHandler http.Handler
 
-	rawRuntimeMode string
-	debug          bool
-	serverPort     uint
-	versionFlag    bool
+	debug       bool
+	serverPort  uint
+	versionFlag bool
 
 	Version                = "dev"
 	defaultServerPort uint = 49982
@@ -48,15 +47,6 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseFlags() {
-	// -mode="user" or -mode="server"
-	// "server" is default
-	flag.StringVar(
-		&rawRuntimeMode,
-		"mode",
-		string(env.RuntimeModeServer),
-		"a runtime mode in which the daemon should run. Affects things like logs and loading env vars. Accepted values are either 'server' or 'user'",
-	)
-
 	flag.BoolVar(
 		&debug,
 		"debug",
@@ -90,7 +80,7 @@ func main() {
 		return
 	}
 
-	newEnv, l, err := env.NewEnv(rawRuntimeMode, debug)
+	envConfig, l, err := env.NewEnv(debug)
 	if err != nil {
 		panic(err)
 	}
@@ -108,38 +98,36 @@ func main() {
 	// This server is for the Websocket-RPC communication.
 	rpcServer := rpc.NewServer()
 
-	if newEnv.RuntimeMode() == env.RuntimeModeServer {
-		portScanner := port.NewScanner(1000 * time.Millisecond)
-		defer portScanner.Destroy()
+	portScanner := port.NewScanner(1000 * time.Millisecond)
+	defer portScanner.Destroy()
 
-		portForwarder := port.NewForwarder(logger, newEnv, portScanner)
-		go portForwarder.StartForwarding()
+	portForwarder := port.NewForwarder(logger, envConfig, portScanner)
+	go portForwarder.StartForwarding()
 
-		go portScanner.ScanAndBroadcast()
+	go portScanner.ScanAndBroadcast()
 
-		codeSnippetService := codeSnippet.NewService(logger.Named("codeSnippetSvc"), newEnv, portScanner)
-		if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
-			logger.Panicw("failed to register code snippet service", "error", err)
-		}
-
-		if filesystemService, err := filesystem.NewService(logger.Named("filesystemSvc")); err == nil {
-			if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
-				logger.Panicw("failed to register filesystem service", "error", err)
-			}
-		} else {
-			logger.Panicw(
-				"failed to create filesystem service",
-				"err", err,
-			)
-		}
-
-		processService := process.NewService(logger.Named("processSvc"))
-		if err := rpcServer.RegisterName("process", processService); err != nil {
-			logger.Panicw("failed to register process service", "error", err)
-		}
+	codeSnippetService := codesnippet.NewService(logger.Named("codeSnippetSvc"), portScanner)
+	if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
+		logger.Panicw("failed to register code snippet service", "error", err)
 	}
 
-	terminalService := terminal.NewService(logger.Named("terminalSvc"), newEnv)
+	if filesystemService, err := filesystem.NewService(logger.Named("filesystemSvc")); err == nil {
+		if err := rpcServer.RegisterName("filesystem", filesystemService); err != nil {
+			logger.Panicw("failed to register filesystem service", "error", err)
+		}
+	} else {
+		logger.Panicw(
+			"failed to create filesystem service",
+			"err", err,
+		)
+	}
+
+	processService := process.NewService(logger.Named("processSvc"))
+	if err := rpcServer.RegisterName("process", processService); err != nil {
+		logger.Panicw("failed to register process service", "error", err)
+	}
+
+	terminalService := terminal.NewService(logger.Named("terminalSvc"), envConfig)
 	if err := rpcServer.RegisterName("terminal", terminalService); err != nil {
 		logger.Panicw("failed to register terminal service", "error", err)
 	}
@@ -162,6 +150,7 @@ func main() {
 	logger.Infow("Starting server",
 		"port", serverPort,
 	)
+
 	if err := server.ListenAndServe(); err != nil {
 		logger.Panicw("Failed to start the server", "error", err)
 	}

@@ -14,7 +14,7 @@ import (
 
 type Service struct {
 	logger *zap.SugaredLogger
-	env    *env.Env
+	env    *env.EnvConfig
 
 	terminals *Manager
 
@@ -22,7 +22,7 @@ type Service struct {
 	exitSubs *subscriber.Manager
 }
 
-func NewService(logger *zap.SugaredLogger, env *env.Env) *Service {
+func NewService(logger *zap.SugaredLogger, env *env.EnvConfig) *Service {
 	return &Service{
 		logger: logger,
 
@@ -77,12 +77,12 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 		if rootdir != nil {
 			validRootdir = *rootdir
 		} else {
-			validRootdir = s.env.Workdir()
+			validRootdir = s.env.Workdir
 		}
 
 		newTerm, err := s.terminals.Add(
 			id,
-			s.env.Shell(),
+			s.env.Shell,
 			validRootdir,
 			cols,
 			rows,

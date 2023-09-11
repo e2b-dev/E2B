@@ -37,6 +37,7 @@
 - Golang monorepo + terraform setup practices
 - How to decouple terraform and domains
 - Enable advanced security scanning via GH
+- Better release system
 
 ### API
 - Add monitoring to the envs routes
