@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // NewPatchBalloonParams creates a new PatchBalloonParams object,
@@ -54,10 +54,12 @@ func NewPatchBalloonParamsWithHTTPClient(client *http.Client) *PatchBalloonParam
 	}
 }
 
-/* PatchBalloonParams contains all the parameters to send to the API endpoint
-   for the patch balloon operation.
+/*
+PatchBalloonParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch balloon operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchBalloonParams struct {
 

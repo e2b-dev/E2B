@@ -12,7 +12,7 @@ CODE_SNIPPET_ID="$4"
 ALLOC_DIR="$5"
 FC_ENVS_DISK="$6"
 API_KEY="$7"
-DEVBOOKD="$8"
+ENVD="$8"
 
 set -euo pipefail
 
@@ -52,8 +52,8 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
-if [ -z "$DEVBOOKD" ]; then
-  echo "ERROR: Expected devbookd path as the eighth argument"
+if [ -z "$ENVD" ]; then
+  echo "ERROR: Expected envd path as the eighth argument"
   exit 1
 fi
 
@@ -67,7 +67,7 @@ echo "| CODE_SNIPPET_ID:    $CODE_SNIPPET_ID"
 echo "| ALLOC_DIR:          $ALLOC_DIR"
 echo "| FC_ENVS_DISK:       $FC_ENVS_DISK"
 echo "| API_KEY:            $API_KEY"
-echo "| DEVBOOKD:           $DEVBOOKD"
+echo "| ENVD:           $ENVD"
 echo "======================================================================================================="
 echo
 
@@ -121,7 +121,7 @@ function mkrootfs() {
     free=3300000000 # 3300MB in B
   fi
 
-  cp $DEVBOOKD $SCRIPTDIR/devbookd
+  cp $ENVD $SCRIPTDIR/envd
 
   echo -e "$DOCKERFILE" | docker build -t $tag -f - $SCRIPTDIR
   local container_id=$(docker run -dt $tag /bin/sh)

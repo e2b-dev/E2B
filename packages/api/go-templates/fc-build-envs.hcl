@@ -34,8 +34,8 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
       }
 
       artifact {
-        source = "https://storage.googleapis.com/e2b-fc-env-pipeline/devbookd"
-        destination = "local/devbookd"
+        source = "https://storage.googleapis.com/e2b-fc-env-pipeline/envd"
+        destination = "local/envd"
         mode = "file"
       }
 
@@ -49,7 +49,7 @@ job "{{ .JobName }}/{{ .CodeSnippetID }}" {
           "${NOMAD_ALLOC_DIR}",
           "{{ .FCEnvsDisk }}",
           "{{ .APIKey }}",
-          "local/devbookd",
+          "local/envd",
         ]
       }
     }

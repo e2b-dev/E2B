@@ -1,0 +1,30 @@
+{
+	"name": "Ubuntu",
+	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/terraform:1": {},
+		"ghcr.io/devcontainers-contrib/features/packer-asdf:2": {},
+		"ghcr.io/dhoeric/features/google-cloud-cli:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"GitHub.vscode-pull-request-github",
+				"golang.go",
+				"hashicorp.hcl",
+				"42Crunch.vscode-openapi",
+				"foxundermoon.shell-format",
+				"trunk.io",
+				"ms-vscode.makefile-tools",
+				"hashicorp.terraform",
+				"redhat.vscode-yaml",
+				"christian-kohler.path-intellisense",
+				"googlecloudtools.cloudcode",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"ms-azuretools.vscode-docker"
+			]
+		}
+	}
+}

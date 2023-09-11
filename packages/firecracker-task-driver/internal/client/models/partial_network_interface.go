@@ -120,6 +120,11 @@ func (m *PartialNetworkInterface) ContextValidate(ctx context.Context, formats s
 func (m *PartialNetworkInterface) contextValidateRxRateLimiter(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.RxRateLimiter != nil {
+
+		if swag.IsZero(m.RxRateLimiter) { // not required
+			return nil
+		}
+
 		if err := m.RxRateLimiter.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("rx_rate_limiter")
@@ -136,6 +141,11 @@ func (m *PartialNetworkInterface) contextValidateRxRateLimiter(ctx context.Conte
 func (m *PartialNetworkInterface) contextValidateTxRateLimiter(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.TxRateLimiter != nil {
+
+		if swag.IsZero(m.TxRateLimiter) { // not required
+			return nil
+		}
+
 		if err := m.TxRateLimiter.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("tx_rate_limiter")

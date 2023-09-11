@@ -3,15 +3,12 @@ package internal
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/env"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/telemetry"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/env"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/slot"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/telemetry"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
 	"github.com/hashicorp/nomad/plugins/base"
 	"github.com/hashicorp/nomad/plugins/drivers"
@@ -50,13 +47,12 @@ var (
 	// taskConfigSpec is the hcl specification for the driver config section of
 	// a task within a job. It is returned in the TaskConfigSchema RPC
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"SessionID":        hclspec.NewAttr("SessionID", "string", false),
-		"CodeSnippetID":    hclspec.NewAttr("CodeSnippetID", "string", false),
-		"EditEnabled":      hclspec.NewAttr("EditEnabled", "bool", false),
-		"SpanID":           hclspec.NewAttr("SpanID", "string", false),
-		"TraceID":          hclspec.NewAttr("TraceID", "string", false),
-		"LogsProxyAddress": hclspec.NewAttr("LogsProxyAddress", "string", false),
-		"ConsulToken": 			hclspec.NewAttr("ConsulToken", "string", false),
+		"InstanceID":       hclspec.NewAttr("InstanceID", "string", true),
+		"EnvID":            hclspec.NewAttr("EnvID", "string", true),
+		"SpanID":           hclspec.NewAttr("SpanID", "string", true),
+		"TraceID":          hclspec.NewAttr("TraceID", "string", true),
+		"LogsProxyAddress": hclspec.NewAttr("LogsProxyAddress", "string", true),
+		"ConsulToken":      hclspec.NewAttr("ConsulToken", "string", true),
 	})
 
 	// capabilities is returned by the Capabilities RPC and indicates what
@@ -112,11 +108,10 @@ type Nic struct {
 type TaskConfig struct {
 	TraceID          string `codec:"TraceID"`
 	SpanID           string `codec:"SpanID"`
-	SessionID        string `codec:"SessionID"`
+	InstanceID       string `codec:"InstanceID"`
 	LogsProxyAddress string `codec:"LogsProxyAddress"`
-	ConsulToken 		 string `codec:"ConsulToken"`
-	EditEnabled      bool   `codec:"EditEnabled"`
-	CodeSnippetID    string `codec:"CodeSnippetID"`
+	ConsulToken      string `codec:"ConsulToken"`
+	EnvID            string `codec:"EnvID"`
 }
 
 // TaskState is the state which is encoded in the handle returned in
@@ -229,7 +224,7 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 }
 
 func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
-	ctx, span := d.tracer.Start(d.ctx, "recover-session-task")
+	ctx, span := d.tracer.Start(d.ctx, "recover-env-instance-task")
 	defer span.End()
 
 	if handle == nil {
@@ -242,7 +237,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 }
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-	ctx, span := d.tracer.Start(d.ctx, "start-session-task-validation", trace.WithAttributes(
+	ctx, span := d.tracer.Start(d.ctx, "start-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("alloc_id", cfg.AllocID),
 	))
 	defer span.End()
@@ -290,7 +285,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	childCtx, childSpan := d.tracer.Start(
 		trace.ContextWithRemoteSpanContext(d.ctx, remoteCtx),
-		"start-session-task",
+		"start-env-instance-task",
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
 		),
@@ -299,10 +294,9 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	childSpan.SetAttributes(
 		attribute.String("alloc_id", cfg.AllocID),
-		attribute.String("code_snippet_id", driverConfig.CodeSnippetID),
-		attribute.String("session_id", driverConfig.SessionID),
+		attribute.String("env_id", driverConfig.EnvID),
+		attribute.String("instance_id", driverConfig.InstanceID),
 		attribute.String("client_id", cfg.Env["NOMAD_NODE_ID"]),
-		attribute.Bool("edit_enabled", driverConfig.EditEnabled),
 	)
 
 	d.logger.Info("starting firecracker task", "driver_cfg", hclog.Fmt("%+v", driverConfig))
@@ -313,7 +307,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	ipSlot, err := slot.New(
 		childCtx,
 		cfg.Env["NOMAD_NODE_ID"],
-		driverConfig.SessionID,
+		driverConfig.InstanceID,
 		driverConfig.ConsulToken,
 		d.tracer,
 	)
@@ -328,7 +322,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		if err != nil {
 			slotErr := ipSlot.Release(childCtx, driverConfig.ConsulToken, d.tracer)
 			if slotErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed session start %v", slotErr)
+				errMsg := fmt.Errorf("error removing network namespace after failed instance start %v", slotErr)
 				telemetry.ReportError(childCtx, errMsg)
 			}
 		}
@@ -338,7 +332,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		if err != nil {
 			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, driverConfig.ConsulToken, d.tracer)
 			if ntErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed session start %v", ntErr)
+				errMsg := fmt.Errorf("error removing network namespace after failed instance start %v", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
 			}
 		}
@@ -355,9 +349,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	fsEnv, err := env.New(
 		childCtx,
 		ipSlot,
-		driverConfig.CodeSnippetID,
+		driverConfig.EnvID,
 		cfg.Env["FC_ENVS_DISK"],
-		driverConfig.EditEnabled,
 		d.tracer,
 	)
 	if err != nil {
@@ -377,7 +370,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		}
 	}()
 
-	m, err := d.initializeFC(
+	fc, err := d.initializeFC(
 		childCtx,
 		cfg,
 		driverConfig,
@@ -393,20 +386,16 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	telemetry.ReportEvent(childCtx, "initialized FC")
 
 	h := &taskHandle{
-		ctx:             childCtx,
-		taskConfig:      cfg,
-		State:           drivers.TaskStateRunning,
-		startedAt:       time.Now().Round(time.Millisecond),
-		MachineInstance: m.Machine,
-		Slot:            ipSlot,
-		Env:             fsEnv,
-		Info:            m.Info,
-		EditEnabled:     driverConfig.EditEnabled,
-		ConsulToken:     driverConfig.ConsulToken,
-		logger:          d.logger,
-		cpuStatsSys:     stats.NewCpuStats(),
-		cpuStatsUser:    stats.NewCpuStats(),
-		cpuStatsTotal:   stats.NewCpuStats(),
+		ctx:                   childCtx,
+		taskConfig:            cfg,
+		State:                 drivers.TaskStateRunning,
+		startedAt:             time.Now().Round(time.Millisecond),
+		MachineInstance:       fc.Machine,
+		Slot:                  ipSlot,
+		EnvInstanceFilesystem: fsEnv,
+		EnvInstance:           fc.Instance,
+		ConsulToken:           driverConfig.ConsulToken,
+		logger:                d.logger,
 	}
 
 	driverState := TaskState{
@@ -416,7 +405,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	if err = handle.SetDriverState(&driverState); err != nil {
-		m.Machine.StopVMM()
+		fc.Machine.StopVMM()
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
 		errMsg := fmt.Errorf("failed to set driver state: %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -431,7 +420,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 }
 
 func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.ExitResult, error) {
-	validationCtx, validationSpan := d.tracer.Start(ctx, "wait-session-task-validation", trace.WithAttributes(
+	validationCtx, validationSpan := d.tracer.Start(ctx, "wait-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task_id", taskID),
 	))
 	defer validationSpan.End()
@@ -442,13 +431,13 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 		return nil, drivers.ErrTaskNotFound
 	}
 
-	childCtx, childSpan := d.tracer.Start(d.ctx, "wait-session-task",
+	childCtx, childSpan := d.tracer.Start(d.ctx, "wait-env-instance-task",
 		trace.WithAttributes(
 			attribute.String("task_id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(validationCtx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.ctx, attribute.String("link", "start-session-task")),
+			trace.LinkFromContext(h.ctx, attribute.String("link", "start-env-instance-task")),
 		),
 	)
 	defer childSpan.End()
@@ -482,7 +471,7 @@ func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *dr
 }
 
 func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) error {
-	ctx, span := d.tracer.Start(d.ctx, "stop-session-task-validation", trace.WithAttributes(
+	ctx, span := d.tracer.Start(d.ctx, "stop-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task_id", taskID),
 	))
 	defer span.End()
@@ -493,43 +482,16 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 		return drivers.ErrTaskNotFound
 	}
 
-	childCtx, childSpan := d.tracer.Start(d.ctx, "stop-session-task",
+	childCtx, childSpan := d.tracer.Start(d.ctx, "stop-env-instance-task",
 		trace.WithAttributes(
 			attribute.String("task_id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.ctx, attribute.String("link", "start-session-task")),
+			trace.LinkFromContext(h.ctx, attribute.String("link", "start-instance-task")),
 		),
 	)
 	defer childSpan.End()
-
-	snapshotOk := false
-	if h.EditEnabled {
-		// if the build id and template id doesn't exist the code snippet was deleted
-		buildIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.BuildIDName)
-		if _, err := os.Stat(buildIDPath); err != nil {
-			// build id doesn't exist - the code snippet may be using template
-			templateIDPath := filepath.Join(h.Info.CodeSnippetDirectory, env.TemplateIDName)
-			if _, err := os.Stat(templateIDPath); err != nil {
-				// template id doesn't exist
-			} else {
-				saveEditErr := saveEditSnapshot(childCtx, h.Slot, h.Env, &h.Info, d.tracer)
-				if saveEditErr != nil {
-					telemetry.ReportCriticalError(childCtx, fmt.Errorf("error persisting edit session %v", err))
-				} else {
-					snapshotOk = true
-				}
-			}
-		} else {
-			saveEditErr := saveEditSnapshot(childCtx, h.Slot, h.Env, &h.Info, d.tracer)
-			if saveEditErr != nil {
-				telemetry.ReportCriticalError(childCtx, fmt.Errorf("error persisting edit session %v", err))
-			} else {
-				snapshotOk = true
-			}
-		}
-	}
 
 	if err := h.shutdown(childCtx, d); err != nil {
 		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
@@ -538,22 +500,11 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 	}
 	telemetry.ReportEvent(childCtx, "shutdown task")
 
-	if h.EditEnabled && snapshotOk {
-		oldEditDirPath := filepath.Join(h.Info.CodeSnippetDirectory, env.EditDirName, *h.Info.EditID)
-		err := os.RemoveAll(oldEditDirPath)
-		if err != nil {
-			errMsg := fmt.Errorf("error deleting old edit dir %v", err)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "deleted old edit directory", attribute.String("old_edit_dir", oldEditDirPath))
-		}
-	}
-
 	return nil
 }
 
 func (d *Driver) DestroyTask(taskID string, force bool) error {
-	ctx, span := d.tracer.Start(d.ctx, "destroy-session-task-validation", trace.WithAttributes(
+	ctx, span := d.tracer.Start(d.ctx, "destroy-env-instance-task-validation", trace.WithAttributes(
 		attribute.String("task_id", taskID),
 	))
 	defer span.End()
@@ -564,13 +515,13 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		return drivers.ErrTaskNotFound
 	}
 
-	childCtx, childSpan := d.tracer.Start(d.ctx, "destroy-session-task",
+	childCtx, childSpan := d.tracer.Start(d.ctx, "destroy-env-instance-task",
 		trace.WithAttributes(
 			attribute.String("task_id", taskID),
 		),
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
-			trace.LinkFromContext(h.ctx, attribute.String("link", "start-session-task")),
+			trace.LinkFromContext(h.ctx, attribute.String("link", "start-env-instance-task")),
 		),
 	)
 	defer childSpan.End()
@@ -589,7 +540,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
-	err = h.Env.Delete(childCtx, d.tracer)
+	err = h.EnvInstanceFilesystem.Delete(childCtx, d.tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("cannot remove env when destroying task %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

@@ -102,6 +102,11 @@ func (m *RateLimiter) ContextValidate(ctx context.Context, formats strfmt.Regist
 func (m *RateLimiter) contextValidateBandwidth(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Bandwidth != nil {
+
+		if swag.IsZero(m.Bandwidth) { // not required
+			return nil
+		}
+
 		if err := m.Bandwidth.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("bandwidth")
@@ -118,6 +123,11 @@ func (m *RateLimiter) contextValidateBandwidth(ctx context.Context, formats strf
 func (m *RateLimiter) contextValidateOps(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Ops != nil {
+
+		if swag.IsZero(m.Ops) { // not required
+			return nil
+		}
+
 		if err := m.Ops.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("ops")

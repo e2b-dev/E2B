@@ -86,9 +86,9 @@ type ClientService interface {
 }
 
 /*
-  CreateSnapshot creates a full or diff snapshot post boot only
+CreateSnapshot creates a full or diff snapshot post boot only
 
-  Creates a snapshot of the microVM state. The microVM should be in the `Paused` state.
+Creates a snapshot of the microVM state. The microVM should be in the `Paused` state.
 */
 func (a *Client) CreateSnapshot(params *CreateSnapshotParams, opts ...ClientOption) (*CreateSnapshotNoContent, error) {
 	// TODO: Validate the params before sending
@@ -125,7 +125,7 @@ func (a *Client) CreateSnapshot(params *CreateSnapshotParams, opts ...ClientOpti
 }
 
 /*
-  CreateSyncAction creates a synchronous action
+CreateSyncAction creates a synchronous action
 */
 func (a *Client) CreateSyncAction(params *CreateSyncActionParams, opts ...ClientOption) (*CreateSyncActionNoContent, error) {
 	// TODO: Validate the params before sending
@@ -162,7 +162,7 @@ func (a *Client) CreateSyncAction(params *CreateSyncActionParams, opts ...Client
 }
 
 /*
-  DescribeBalloonConfig returns the current balloon device configuration
+DescribeBalloonConfig returns the current balloon device configuration
 */
 func (a *Client) DescribeBalloonConfig(params *DescribeBalloonConfigParams, opts ...ClientOption) (*DescribeBalloonConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -199,7 +199,7 @@ func (a *Client) DescribeBalloonConfig(params *DescribeBalloonConfigParams, opts
 }
 
 /*
-  DescribeBalloonStats returns the latest balloon device statistics only if enabled pre boot
+DescribeBalloonStats returns the latest balloon device statistics only if enabled pre boot
 */
 func (a *Client) DescribeBalloonStats(params *DescribeBalloonStatsParams, opts ...ClientOption) (*DescribeBalloonStatsOK, error) {
 	// TODO: Validate the params before sending
@@ -236,7 +236,7 @@ func (a *Client) DescribeBalloonStats(params *DescribeBalloonStatsParams, opts .
 }
 
 /*
-  DescribeInstance returns general information about an instance
+DescribeInstance returns general information about an instance
 */
 func (a *Client) DescribeInstance(params *DescribeInstanceParams, opts ...ClientOption) (*DescribeInstanceOK, error) {
 	// TODO: Validate the params before sending
@@ -273,9 +273,9 @@ func (a *Client) DescribeInstance(params *DescribeInstanceParams, opts ...Client
 }
 
 /*
-  GetExportVMConfig gets the full VM configuration
+GetExportVMConfig gets the full VM configuration
 
-  Gets configuration for all VM resources. If the VM is restored from a snapshot, the boot-source, machine-config.smt and machine-config.cpu_template will be empty.
+Gets configuration for all VM resources. If the VM is restored from a snapshot, the boot-source, machine-config.smt and machine-config.cpu_template will be empty.
 */
 func (a *Client) GetExportVMConfig(params *GetExportVMConfigParams, opts ...ClientOption) (*GetExportVMConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -312,7 +312,7 @@ func (a *Client) GetExportVMConfig(params *GetExportVMConfigParams, opts ...Clie
 }
 
 /*
-  GetFirecrackerVersion gets the firecracker version
+GetFirecrackerVersion gets the firecracker version
 */
 func (a *Client) GetFirecrackerVersion(params *GetFirecrackerVersionParams, opts ...ClientOption) (*GetFirecrackerVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -349,9 +349,9 @@ func (a *Client) GetFirecrackerVersion(params *GetFirecrackerVersionParams, opts
 }
 
 /*
-  GetMachineConfiguration gets the machine configuration of the VM
+GetMachineConfiguration gets the machine configuration of the VM
 
-  Gets the machine configuration of the VM. When called before the PUT operation, it will return the default values for the vCPU count (=1), memory size (=128 MiB). By default SMT is disabled and there is no CPU Template.
+Gets the machine configuration of the VM. When called before the PUT operation, it will return the default values for the vCPU count (=1), memory size (=128 MiB). By default SMT is disabled and there is no CPU Template.
 */
 func (a *Client) GetMachineConfiguration(params *GetMachineConfigurationParams, opts ...ClientOption) (*GetMachineConfigurationOK, error) {
 	// TODO: Validate the params before sending
@@ -388,7 +388,7 @@ func (a *Client) GetMachineConfiguration(params *GetMachineConfigurationParams, 
 }
 
 /*
-  GetMmds gets the m m d s data store
+GetMmds gets the m m d s data store
 */
 func (a *Client) GetMmds(params *GetMmdsParams, opts ...ClientOption) (*GetMmdsOK, error) {
 	// TODO: Validate the params before sending
@@ -425,9 +425,9 @@ func (a *Client) GetMmds(params *GetMmdsParams, opts ...ClientOption) (*GetMmdsO
 }
 
 /*
-  LoadSnapshot loads a snapshot pre boot only
+LoadSnapshot loads a snapshot pre boot only
 
-  Loads the microVM state from a snapshot. Only accepted on a fresh Firecracker process (before configuring any resource other than the Logger and Metrics).
+Loads the microVM state from a snapshot. Only accepted on a fresh Firecracker process (before configuring any resource other than the Logger and Metrics).
 */
 func (a *Client) LoadSnapshot(params *LoadSnapshotParams, opts ...ClientOption) (*LoadSnapshotNoContent, error) {
 	// TODO: Validate the params before sending
@@ -464,9 +464,9 @@ func (a *Client) LoadSnapshot(params *LoadSnapshotParams, opts ...ClientOption) 
 }
 
 /*
-  PatchBalloon updates a balloon device
+PatchBalloon updates a balloon device
 
-  Updates an existing balloon device, before or after machine startup. Will fail if update is not possible.
+Updates an existing balloon device, before or after machine startup. Will fail if update is not possible.
 */
 func (a *Client) PatchBalloon(params *PatchBalloonParams, opts ...ClientOption) (*PatchBalloonNoContent, error) {
 	// TODO: Validate the params before sending
@@ -503,9 +503,9 @@ func (a *Client) PatchBalloon(params *PatchBalloonParams, opts ...ClientOption) 
 }
 
 /*
-  PatchBalloonStatsInterval updates a balloon device statistics polling interval
+PatchBalloonStatsInterval updates a balloon device statistics polling interval
 
-  Updates an existing balloon device statistics interval, before or after machine startup. Will fail if update is not possible.
+Updates an existing balloon device statistics interval, before or after machine startup. Will fail if update is not possible.
 */
 func (a *Client) PatchBalloonStatsInterval(params *PatchBalloonStatsIntervalParams, opts ...ClientOption) (*PatchBalloonStatsIntervalNoContent, error) {
 	// TODO: Validate the params before sending
@@ -542,9 +542,9 @@ func (a *Client) PatchBalloonStatsInterval(params *PatchBalloonStatsIntervalPara
 }
 
 /*
-  PatchGuestDriveByID updates the properties of a drive post boot only
+PatchGuestDriveByID updates the properties of a drive post boot only
 
-  Updates the properties of the drive with the ID specified by drive_id path parameter. Will fail if update is not possible.
+Updates the properties of the drive with the ID specified by drive_id path parameter. Will fail if update is not possible.
 */
 func (a *Client) PatchGuestDriveByID(params *PatchGuestDriveByIDParams, opts ...ClientOption) (*PatchGuestDriveByIDNoContent, error) {
 	// TODO: Validate the params before sending
@@ -581,9 +581,9 @@ func (a *Client) PatchGuestDriveByID(params *PatchGuestDriveByIDParams, opts ...
 }
 
 /*
-  PatchGuestNetworkInterfaceByID updates the rate limiters applied to a network interface post boot only
+PatchGuestNetworkInterfaceByID updates the rate limiters applied to a network interface post boot only
 
-  Updates the rate limiters applied to a network interface.
+Updates the rate limiters applied to a network interface.
 */
 func (a *Client) PatchGuestNetworkInterfaceByID(params *PatchGuestNetworkInterfaceByIDParams, opts ...ClientOption) (*PatchGuestNetworkInterfaceByIDNoContent, error) {
 	// TODO: Validate the params before sending
@@ -620,9 +620,9 @@ func (a *Client) PatchGuestNetworkInterfaceByID(params *PatchGuestNetworkInterfa
 }
 
 /*
-  PatchMachineConfiguration partiallies updates the machine configuration of the VM pre boot only
+PatchMachineConfiguration partiallies updates the machine configuration of the VM pre boot only
 
-  Partially updates the Virtual Machine Configuration with the specified input. If any of the parameters has an incorrect value, the whole update fails.
+Partially updates the Virtual Machine Configuration with the specified input. If any of the parameters has an incorrect value, the whole update fails.
 */
 func (a *Client) PatchMachineConfiguration(params *PatchMachineConfigurationParams, opts ...ClientOption) (*PatchMachineConfigurationNoContent, error) {
 	// TODO: Validate the params before sending
@@ -659,7 +659,7 @@ func (a *Client) PatchMachineConfiguration(params *PatchMachineConfigurationPara
 }
 
 /*
-  PatchMmds updates the m m d s data store
+PatchMmds updates the m m d s data store
 */
 func (a *Client) PatchMmds(params *PatchMmdsParams, opts ...ClientOption) (*PatchMmdsNoContent, error) {
 	// TODO: Validate the params before sending
@@ -696,9 +696,9 @@ func (a *Client) PatchMmds(params *PatchMmdsParams, opts ...ClientOption) (*Patc
 }
 
 /*
-  PatchVM updates the micro VM state
+PatchVM updates the micro VM state
 
-  Sets the desired state (Paused or Resumed) for the microVM.
+Sets the desired state (Paused or Resumed) for the microVM.
 */
 func (a *Client) PatchVM(params *PatchVMParams, opts ...ClientOption) (*PatchVMNoContent, error) {
 	// TODO: Validate the params before sending
@@ -735,9 +735,9 @@ func (a *Client) PatchVM(params *PatchVMParams, opts ...ClientOption) (*PatchVMN
 }
 
 /*
-  PutBalloon creates or updates a balloon device
+PutBalloon creates or updates a balloon device
 
-  Creates a new balloon device if one does not already exist, otherwise updates it, before machine startup. This will fail after machine startup. Will fail if update is not possible.
+Creates a new balloon device if one does not already exist, otherwise updates it, before machine startup. This will fail after machine startup. Will fail if update is not possible.
 */
 func (a *Client) PutBalloon(params *PutBalloonParams, opts ...ClientOption) (*PutBalloonNoContent, error) {
 	// TODO: Validate the params before sending
@@ -774,9 +774,9 @@ func (a *Client) PutBalloon(params *PutBalloonParams, opts ...ClientOption) (*Pu
 }
 
 /*
-  PutGuestBootSource creates or updates the boot source pre boot only
+PutGuestBootSource creates or updates the boot source pre boot only
 
-  Creates new boot source if one does not already exist, otherwise updates it. Will fail if update is not possible.
+Creates new boot source if one does not already exist, otherwise updates it. Will fail if update is not possible.
 */
 func (a *Client) PutGuestBootSource(params *PutGuestBootSourceParams, opts ...ClientOption) (*PutGuestBootSourceNoContent, error) {
 	// TODO: Validate the params before sending
@@ -813,9 +813,9 @@ func (a *Client) PutGuestBootSource(params *PutGuestBootSourceParams, opts ...Cl
 }
 
 /*
-  PutGuestDriveByID creates or updates a drive pre boot only
+PutGuestDriveByID creates or updates a drive pre boot only
 
-  Creates new drive with ID specified by drive_id path parameter. If a drive with the specified ID already exists, updates its state based on new input. Will fail if update is not possible.
+Creates new drive with ID specified by drive_id path parameter. If a drive with the specified ID already exists, updates its state based on new input. Will fail if update is not possible.
 */
 func (a *Client) PutGuestDriveByID(params *PutGuestDriveByIDParams, opts ...ClientOption) (*PutGuestDriveByIDNoContent, error) {
 	// TODO: Validate the params before sending
@@ -852,9 +852,9 @@ func (a *Client) PutGuestDriveByID(params *PutGuestDriveByIDParams, opts ...Clie
 }
 
 /*
-  PutGuestNetworkInterfaceByID creates a network interface pre boot only
+PutGuestNetworkInterfaceByID creates a network interface pre boot only
 
-  Creates new network interface with ID specified by iface_id path parameter.
+Creates new network interface with ID specified by iface_id path parameter.
 */
 func (a *Client) PutGuestNetworkInterfaceByID(params *PutGuestNetworkInterfaceByIDParams, opts ...ClientOption) (*PutGuestNetworkInterfaceByIDNoContent, error) {
 	// TODO: Validate the params before sending
@@ -891,9 +891,9 @@ func (a *Client) PutGuestNetworkInterfaceByID(params *PutGuestNetworkInterfaceBy
 }
 
 /*
-  PutGuestVsock creates updates a vsock device pre boot only
+PutGuestVsock creates updates a vsock device pre boot only
 
-  The first call creates the device with the configuration specified in body. Subsequent calls will update the device configuration. May fail if update is not possible.
+The first call creates the device with the configuration specified in body. Subsequent calls will update the device configuration. May fail if update is not possible.
 */
 func (a *Client) PutGuestVsock(params *PutGuestVsockParams, opts ...ClientOption) (*PutGuestVsockNoContent, error) {
 	// TODO: Validate the params before sending
@@ -930,7 +930,7 @@ func (a *Client) PutGuestVsock(params *PutGuestVsockParams, opts ...ClientOption
 }
 
 /*
-  PutLogger initializes the logger by specifying a named pipe or a file for the logs output
+PutLogger initializes the logger by specifying a named pipe or a file for the logs output
 */
 func (a *Client) PutLogger(params *PutLoggerParams, opts ...ClientOption) (*PutLoggerNoContent, error) {
 	// TODO: Validate the params before sending
@@ -967,9 +967,9 @@ func (a *Client) PutLogger(params *PutLoggerParams, opts ...ClientOption) (*PutL
 }
 
 /*
-  PutMachineConfiguration updates the machine configuration of the VM pre boot only
+PutMachineConfiguration updates the machine configuration of the VM pre boot only
 
-  Updates the Virtual Machine Configuration with the specified input. Firecracker starts with default values for vCPU count (=1) and memory size (=128 MiB). The vCPU count is restricted to the [1, 32] range. With SMT enabled, the vCPU count is required to be either 1 or an even number in the range. otherwise there are no restrictions regarding the vCPU count. If any of the parameters has an incorrect value, the whole update fails. All parameters that are optional and are not specified are set to their default values (smt = false, track_dirty_pages = false, cpu_template = None).
+Updates the Virtual Machine Configuration with the specified input. Firecracker starts with default values for vCPU count (=1) and memory size (=128 MiB). The vCPU count is restricted to the [1, 32] range. With SMT enabled, the vCPU count is required to be either 1 or an even number in the range. otherwise there are no restrictions regarding the vCPU count. If any of the parameters has an incorrect value, the whole update fails. All parameters that are optional and are not specified are set to their default values (smt = false, track_dirty_pages = false, cpu_template = None).
 */
 func (a *Client) PutMachineConfiguration(params *PutMachineConfigurationParams, opts ...ClientOption) (*PutMachineConfigurationNoContent, error) {
 	// TODO: Validate the params before sending
@@ -1006,7 +1006,7 @@ func (a *Client) PutMachineConfiguration(params *PutMachineConfigurationParams, 
 }
 
 /*
-  PutMetrics initializes the metrics system by specifying a named pipe or a file for the metrics output
+PutMetrics initializes the metrics system by specifying a named pipe or a file for the metrics output
 */
 func (a *Client) PutMetrics(params *PutMetricsParams, opts ...ClientOption) (*PutMetricsNoContent, error) {
 	// TODO: Validate the params before sending
@@ -1043,7 +1043,7 @@ func (a *Client) PutMetrics(params *PutMetricsParams, opts ...ClientOption) (*Pu
 }
 
 /*
-  PutMmds creates a m m d s microvm metadata service data store
+PutMmds creates a m m d s microvm metadata service data store
 */
 func (a *Client) PutMmds(params *PutMmdsParams, opts ...ClientOption) (*PutMmdsNoContent, error) {
 	// TODO: Validate the params before sending
@@ -1080,9 +1080,9 @@ func (a *Client) PutMmds(params *PutMmdsParams, opts ...ClientOption) (*PutMmdsN
 }
 
 /*
-  PutMmdsConfig sets m m d s configuration pre boot only
+PutMmdsConfig sets m m d s configuration pre boot only
 
-  Configures MMDS version, IPv4 address used by the MMDS network stack and interfaces that allow MMDS requests.
+Configures MMDS version, IPv4 address used by the MMDS network stack and interfaces that allow MMDS requests.
 */
 func (a *Client) PutMmdsConfig(params *PutMmdsConfigParams, opts ...ClientOption) (*PutMmdsConfigNoContent, error) {
 	// TODO: Validate the params before sending

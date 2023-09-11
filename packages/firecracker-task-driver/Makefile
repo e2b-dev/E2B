@@ -30,11 +30,11 @@ dev-start-consul:
 dev-update-driver:
 	make build
 	gcloud compute ssh $(client) -- 'sudo rm -f /opt/nomad/plugins/firecracker-task-driver'
-	gcloud compute scp /workspace/devbook-api/packages/firecracker-task-driver/bin/firecracker-task-driver root@$(client):/opt/nomad/plugins/firecracker-task-driver
+	gcloud compute scp ./packages/firecracker-task-driver/bin/firecracker-task-driver root@$(client):/opt/nomad/plugins/firecracker-task-driver
 	gcloud compute ssh $(client) -- 'sudo pgrep firecracker | xargs -n1 sudo kill -9'
 
 dev-run-session:
-	gcloud compute scp /workspace/devbook-api/packages/firecracker-task-driver/session.hcl root@$(client):/opt/nomad/session.hcl
+	gcloud compute scp ./packages/firecracker-task-driver/session.hcl root@$(client):/opt/nomad/session.hcl
 	gcloud compute ssh $(client) -- 'nomad system gc && nomad job run /opt/nomad/session.hcl'
 
 dev-session-status:

@@ -21,7 +21,7 @@ func (a *APIStore) PostEnvsEnvIDInstances(
 	if err != nil {
 		errMsg := fmt.Errorf("invalid API key: %+v: %w", params.ApiKey, err)
 		ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, 401, "Invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key.")
+		a.sendAPIStoreError(c, http.StatusUnauthorized, "Invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key.")
 
 		return
 	}
@@ -69,35 +69,6 @@ func (a *APIStore) PostEnvsEnvIDInstances(
 	)
 
 	c.JSON(http.StatusCreated, &instance)
-}
-
-func (a *APIStore) DeleteInstancesInstanceID(
-	c *gin.Context,
-	instanceID string,
-	params api.DeleteInstancesInstanceIDParams,
-) {
-	ctx := c.Request.Context()
-
-	SetAttributes(ctx,
-		attribute.String("instance_id", instanceID),
-	)
-
-	// TODO: Require auth for deleting instances
-
-	err := a.DeleteInstance(instanceID, true)
-	if err != nil {
-		errMsg := fmt.Errorf("error when deleting instance: %w", err)
-		ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, err.Code, err.ClientMsg)
-
-		return
-	}
-
-	ReportEvent(ctx, "deleted instance")
-
-	// TODO: Delete instance from cache
-
-	c.Status(http.StatusNoContent)
 }
 
 func (a *APIStore) PostInstancesInstanceIDRefreshes(

@@ -5,20 +5,25 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/telemetry"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/telemetry"
 	consul "github.com/hashicorp/consul/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
-// We are using a more debuggable IP address allocation for now
-const IPSlotRange = 255
+// We are using a more debuggable IP address allocation for now that only covers 255 addresses.
+const (
+	IPSlotRange      = 255
+	HostSnapshotMask = 32
+	VMask            = 32
+	TapMask          = 32
+)
 
 type IPSlot struct {
-	SlotIdx     int
-	SessionID   string
+	InstanceID  string
 	NodeShortID string
 	KVKey       string
+	SlotIdx     int
 }
 
 const slotCheckWaitTime = 2
@@ -36,7 +41,7 @@ func (ips *IPSlot) VethIP() string {
 }
 
 func (ips *IPSlot) VMask() int {
-	return 24
+	return VMask
 }
 
 func (ips *IPSlot) VethName() string {
@@ -56,7 +61,7 @@ func (ips *IPSlot) HostSnapshotCIDR() string {
 }
 
 func (ips *IPSlot) HostSnapshotMask() int {
-	return 32
+	return HostSnapshotMask
 }
 
 func (ips *IPSlot) HostSnapshotIP() string {
@@ -80,7 +85,7 @@ func (ips *IPSlot) TapIP() string {
 }
 
 func (ips *IPSlot) TapMask() int {
-	return 30
+	return TapMask
 }
 
 func (ips *IPSlot) TapCIDR() string {
@@ -96,10 +101,12 @@ func New(ctx context.Context, nodeID, sessionID, consulToken string, tracer trac
 
 	consulClient, err := consul.NewClient(config)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to initialize Consul client: %v", err)
+		errMsg := fmt.Errorf("failed to initialize Consul client: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return nil, errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "initialized Consul client")
 
 	kv := consulClient.KV()
@@ -111,25 +118,27 @@ func New(ctx context.Context, nodeID, sessionID, consulToken string, tracer trac
 	for {
 		for slotIdx := 0; slotIdx <= IPSlotRange; slotIdx++ {
 			key := fmt.Sprintf("%s/%d", nodeShortID, slotIdx)
+
 			status, _, err := kv.CAS(&consul.KVPair{
 				Key:         key,
 				ModifyIndex: 0,
 				Value:       []byte(sessionID),
-			}, &consul.WriteOptions{})
-
+			}, nil)
 			if err != nil {
-				errMsg := fmt.Errorf("failed to write to Consul KV: %v", err)
+				errMsg := fmt.Errorf("failed to write to Consul KV: %w", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
+
 				return nil, errMsg
 			}
 
 			if status {
 				slot = &IPSlot{
-					SessionID:   sessionID,
+					InstanceID:  sessionID,
 					SlotIdx:     slotIdx,
 					NodeShortID: nodeShortID,
 					KVKey:       key,
 				}
+
 				break
 			}
 		}
@@ -147,18 +156,18 @@ func New(ctx context.Context, nodeID, sessionID, consulToken string, tracer trac
 	childSpan.SetAttributes(
 		attribute.String("kv_key", slot.KVKey),
 		attribute.String("node_short_id", slot.NodeShortID),
-		attribute.String("session_id", slot.SessionID),
+		attribute.String("session_id", slot.InstanceID),
 	)
 
 	return slot, nil
 }
 
-func (slot *IPSlot) Release(ctx context.Context, consulToken string, tracer trace.Tracer) error {
+func (ips *IPSlot) Release(ctx context.Context, consulToken string, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "release-ip-slot",
 		trace.WithAttributes(
-			attribute.String("kv_key", slot.KVKey),
-			attribute.String("node_short_id", slot.NodeShortID),
-			attribute.String("session_id", slot.SessionID),
+			attribute.String("kv_key", ips.KVKey),
+			attribute.String("node_short_id", ips.NodeShortID),
+			attribute.String("session_id", ips.InstanceID),
 		),
 	)
 	defer childSpan.End()
@@ -168,48 +177,57 @@ func (slot *IPSlot) Release(ctx context.Context, consulToken string, tracer trac
 
 	consulClient, err := consul.NewClient(config)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to initialize Consul client: %v", err)
+		errMsg := fmt.Errorf("failed to initialize Consul client: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "initialized Consul client")
 
 	kv := consulClient.KV()
 
-	pair, _, err := kv.Get(slot.KVKey, &consul.QueryOptions{})
+	pair, _, err := kv.Get(ips.KVKey, nil)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to release IPSlot: Failed to read Consul KV: %v", err)
+		errMsg := fmt.Errorf("failed to release IPSlot: Failed to read Consul KV: %w", err)
+
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
 
 	if pair == nil {
-		errMsg := fmt.Errorf("IP slot %d for session %s was already released", slot.SlotIdx, slot.SessionID)
+		errMsg := fmt.Errorf("IP slot %d for session %s was already released", ips.SlotIdx, ips.InstanceID)
 		telemetry.ReportError(childCtx, errMsg)
+
 		return nil
 	}
 
-	if string(pair.Value) != slot.SessionID {
-		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.SessionID, string(pair.Value))
+	if string(pair.Value) != ips.InstanceID {
+		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", ips.SlotIdx, ips.InstanceID, string(pair.Value))
 		telemetry.ReportError(childCtx, errMsg)
+
 		return nil
 	}
 
 	status, _, err := kv.DeleteCAS(&consul.KVPair{
-		Key:         slot.KVKey,
+		Key:         ips.KVKey,
 		ModifyIndex: pair.ModifyIndex,
-	}, &consul.WriteOptions{})
+	}, nil)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to release IPSlot: Failed to delete slot from Consul KV: %v", err)
+		errMsg := fmt.Errorf("failed to release IPSlot: Failed to delete slot from Consul KV: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
 
 	if !status {
-		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", slot.SlotIdx, slot.SessionID, string(pair.Value))
+		errMsg := fmt.Errorf("IP slot %d for session %s was already realocated to session %s", ips.SlotIdx, ips.InstanceID, string(pair.Value))
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "ip slot released")
 
 	return nil

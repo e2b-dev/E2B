@@ -95,8 +95,8 @@ func (n *NomadClient) CreateInstance(
 		SpanID           string
 		ConsulToken      string
 		TraceID          string
-		CodeSnippetID    string
-		SessionID        string
+		EnvID            string
+		InstanceID       string
 		LogsProxyAddress string
 		FCTaskName       string
 		JobName          string
@@ -106,8 +106,8 @@ func (n *NomadClient) CreateInstance(
 		TraceID:          traceID,
 		LogsProxyAddress: logsProxyAddress,
 		ConsulToken:      consulToken,
-		CodeSnippetID:    envID,
-		SessionID:        instanceID,
+		EnvID:            envID,
+		InstanceID:       instanceID,
 		FCTaskName:       fcTaskName,
 		JobName:          instanceJobName,
 		FCEnvsDisk:       fcEnvsDisk,
@@ -133,7 +133,7 @@ func (n *NomadClient) CreateInstance(
 
 	res, _, err := n.client.Jobs().Register(job, nil)
 	if err != nil {
-		fmt.Printf("Failed to register '%s%s' job: %+v", instanceJobNameWithSlash, jobVars.SessionID, err)
+		fmt.Printf("Failed to register '%s%s' job: %+v", instanceJobNameWithSlash, jobVars.InstanceID, err)
 
 		return nil, &api.APIError{
 			Msg:       err.Error(),

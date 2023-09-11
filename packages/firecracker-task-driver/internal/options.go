@@ -1,11 +1,10 @@
 package internal
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
@@ -75,7 +74,7 @@ type options struct {
 }
 
 // Converts options to a usable firecracker config
-func (opts *options) getFirecrackerConfig(AllocId string, sessionID string) (firecracker.Config, error) {
+func (opts *options) getFirecrackerConfig(AllocId string, instanceID string) (firecracker.Config, error) {
 	// validate metadata json
 	if opts.FcMetadata != "" {
 		if err := json.Unmarshal([]byte(opts.FcMetadata), &opts.validMetadata); err != nil {
@@ -110,7 +109,7 @@ func (opts *options) getFirecrackerConfig(AllocId string, sessionID string) (fir
 	if opts.FcSocketPath != "" {
 		socketPath = opts.FcSocketPath
 	} else {
-		socket, sockErr := getSocketPath(sessionID)
+		socket, sockErr := getSocketPath(instanceID)
 		if sockErr != nil {
 			return firecracker.Config{}, sockErr
 		}
@@ -250,7 +249,7 @@ func (opts *options) handleFifos() (io.Writer, error) {
 	}
 
 	if generateFifoFilename || generateMetricFifoFilename {
-		dir, err := ioutil.TempDir(os.TempDir(), "fcfifo")
+		dir, err := os.MkdirTemp(os.TempDir(), "fcfifo")
 		if err != nil {
 			return fifo, fmt.Errorf("failed to create temporary directory: %v", err)
 		}
@@ -345,14 +344,14 @@ func createFifoFileLogs(fifoPath string) (*os.File, error) {
 	return os.OpenFile(fifoPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 }
 
-// getSocketPath provides a randomized socket path by building a unique fielname
-// and searching for the existance of directories {$HOME, os.TempDir()} and returning
+// getSocketPath provides a randomized socket path by building a unique filename
+// and searching for the existence of directories {$HOME, os.TempDir()} and returning
 // the path with the first directory joined with the unique filename. If we can't
 // find a good path panics.
-func getSocketPath(sessionID string) (string, error) {
+func getSocketPath(instanceID string) (string, error) {
 	filename := strings.Join([]string{
 		"firecracker-",
-		sessionID,
+		instanceID,
 		".socket",
 	}, "")
 

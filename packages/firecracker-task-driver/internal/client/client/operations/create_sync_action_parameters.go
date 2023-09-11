@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // NewCreateSyncActionParams creates a new CreateSyncActionParams object,
@@ -54,10 +54,12 @@ func NewCreateSyncActionParamsWithHTTPClient(client *http.Client) *CreateSyncAct
 	}
 }
 
-/* CreateSyncActionParams contains all the parameters to send to the API endpoint
-   for the create sync action operation.
+/*
+CreateSyncActionParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create sync action operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateSyncActionParams struct {
 

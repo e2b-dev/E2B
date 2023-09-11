@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // PutGuestNetworkInterfaceByIDReader is a Reader for the PutGuestNetworkInterfaceByID structure.
@@ -52,14 +52,49 @@ func NewPutGuestNetworkInterfaceByIDNoContent() *PutGuestNetworkInterfaceByIDNoC
 	return &PutGuestNetworkInterfaceByIDNoContent{}
 }
 
-/* PutGuestNetworkInterfaceByIDNoContent describes a response with status code 204, with default header values.
+/*
+PutGuestNetworkInterfaceByIDNoContent describes a response with status code 204, with default header values.
 
 Network interface created/updated
 */
 type PutGuestNetworkInterfaceByIDNoContent struct {
 }
 
+// IsSuccess returns true when this put guest network interface by Id no content response has a 2xx status code
+func (o *PutGuestNetworkInterfaceByIDNoContent) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this put guest network interface by Id no content response has a 3xx status code
+func (o *PutGuestNetworkInterfaceByIDNoContent) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put guest network interface by Id no content response has a 4xx status code
+func (o *PutGuestNetworkInterfaceByIDNoContent) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this put guest network interface by Id no content response has a 5xx status code
+func (o *PutGuestNetworkInterfaceByIDNoContent) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put guest network interface by Id no content response a status code equal to that given
+func (o *PutGuestNetworkInterfaceByIDNoContent) IsCode(code int) bool {
+	return code == 204
+}
+
+// Code gets the status code for the put guest network interface by Id no content response
+func (o *PutGuestNetworkInterfaceByIDNoContent) Code() int {
+	return 204
+}
+
 func (o *PutGuestNetworkInterfaceByIDNoContent) Error() string {
+	return fmt.Sprintf("[PUT /network-interfaces/{iface_id}][%d] putGuestNetworkInterfaceByIdNoContent ", 204)
+}
+
+func (o *PutGuestNetworkInterfaceByIDNoContent) String() string {
 	return fmt.Sprintf("[PUT /network-interfaces/{iface_id}][%d] putGuestNetworkInterfaceByIdNoContent ", 204)
 }
 
@@ -73,7 +108,8 @@ func NewPutGuestNetworkInterfaceByIDBadRequest() *PutGuestNetworkInterfaceByIDBa
 	return &PutGuestNetworkInterfaceByIDBadRequest{}
 }
 
-/* PutGuestNetworkInterfaceByIDBadRequest describes a response with status code 400, with default header values.
+/*
+PutGuestNetworkInterfaceByIDBadRequest describes a response with status code 400, with default header values.
 
 Network interface cannot be created due to bad input
 */
@@ -81,9 +117,44 @@ type PutGuestNetworkInterfaceByIDBadRequest struct {
 	Payload *models.Error
 }
 
+// IsSuccess returns true when this put guest network interface by Id bad request response has a 2xx status code
+func (o *PutGuestNetworkInterfaceByIDBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this put guest network interface by Id bad request response has a 3xx status code
+func (o *PutGuestNetworkInterfaceByIDBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put guest network interface by Id bad request response has a 4xx status code
+func (o *PutGuestNetworkInterfaceByIDBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this put guest network interface by Id bad request response has a 5xx status code
+func (o *PutGuestNetworkInterfaceByIDBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put guest network interface by Id bad request response a status code equal to that given
+func (o *PutGuestNetworkInterfaceByIDBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the put guest network interface by Id bad request response
+func (o *PutGuestNetworkInterfaceByIDBadRequest) Code() int {
+	return 400
+}
+
 func (o *PutGuestNetworkInterfaceByIDBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /network-interfaces/{iface_id}][%d] putGuestNetworkInterfaceByIdBadRequest  %+v", 400, o.Payload)
 }
+
+func (o *PutGuestNetworkInterfaceByIDBadRequest) String() string {
+	return fmt.Sprintf("[PUT /network-interfaces/{iface_id}][%d] putGuestNetworkInterfaceByIdBadRequest  %+v", 400, o.Payload)
+}
+
 func (o *PutGuestNetworkInterfaceByIDBadRequest) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -107,7 +178,8 @@ func NewPutGuestNetworkInterfaceByIDDefault(code int) *PutGuestNetworkInterfaceB
 	}
 }
 
-/* PutGuestNetworkInterfaceByIDDefault describes a response with status code -1, with default header values.
+/*
+PutGuestNetworkInterfaceByIDDefault describes a response with status code -1, with default header values.
 
 Internal server error
 */
@@ -115,6 +187,31 @@ type PutGuestNetworkInterfaceByIDDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this put guest network interface by ID default response has a 2xx status code
+func (o *PutGuestNetworkInterfaceByIDDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this put guest network interface by ID default response has a 3xx status code
+func (o *PutGuestNetworkInterfaceByIDDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this put guest network interface by ID default response has a 4xx status code
+func (o *PutGuestNetworkInterfaceByIDDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this put guest network interface by ID default response has a 5xx status code
+func (o *PutGuestNetworkInterfaceByIDDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this put guest network interface by ID default response a status code equal to that given
+func (o *PutGuestNetworkInterfaceByIDDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the put guest network interface by ID default response
@@ -125,6 +222,11 @@ func (o *PutGuestNetworkInterfaceByIDDefault) Code() int {
 func (o *PutGuestNetworkInterfaceByIDDefault) Error() string {
 	return fmt.Sprintf("[PUT /network-interfaces/{iface_id}][%d] putGuestNetworkInterfaceByID default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PutGuestNetworkInterfaceByIDDefault) String() string {
+	return fmt.Sprintf("[PUT /network-interfaces/{iface_id}][%d] putGuestNetworkInterfaceByID default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PutGuestNetworkInterfaceByIDDefault) GetPayload() *models.Error {
 	return o.Payload
 }

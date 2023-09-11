@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // GetMachineConfigurationReader is a Reader for the GetMachineConfiguration structure.
@@ -46,7 +46,8 @@ func NewGetMachineConfigurationOK() *GetMachineConfigurationOK {
 	return &GetMachineConfigurationOK{}
 }
 
-/* GetMachineConfigurationOK describes a response with status code 200, with default header values.
+/*
+GetMachineConfigurationOK describes a response with status code 200, with default header values.
 
 OK
 */
@@ -54,9 +55,44 @@ type GetMachineConfigurationOK struct {
 	Payload *models.MachineConfiguration
 }
 
+// IsSuccess returns true when this get machine configuration o k response has a 2xx status code
+func (o *GetMachineConfigurationOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get machine configuration o k response has a 3xx status code
+func (o *GetMachineConfigurationOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get machine configuration o k response has a 4xx status code
+func (o *GetMachineConfigurationOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get machine configuration o k response has a 5xx status code
+func (o *GetMachineConfigurationOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get machine configuration o k response a status code equal to that given
+func (o *GetMachineConfigurationOK) IsCode(code int) bool {
+	return code == 200
+}
+
+// Code gets the status code for the get machine configuration o k response
+func (o *GetMachineConfigurationOK) Code() int {
+	return 200
+}
+
 func (o *GetMachineConfigurationOK) Error() string {
 	return fmt.Sprintf("[GET /machine-config][%d] getMachineConfigurationOK  %+v", 200, o.Payload)
 }
+
+func (o *GetMachineConfigurationOK) String() string {
+	return fmt.Sprintf("[GET /machine-config][%d] getMachineConfigurationOK  %+v", 200, o.Payload)
+}
+
 func (o *GetMachineConfigurationOK) GetPayload() *models.MachineConfiguration {
 	return o.Payload
 }
@@ -80,7 +116,8 @@ func NewGetMachineConfigurationDefault(code int) *GetMachineConfigurationDefault
 	}
 }
 
-/* GetMachineConfigurationDefault describes a response with status code -1, with default header values.
+/*
+GetMachineConfigurationDefault describes a response with status code -1, with default header values.
 
 Internal server error
 */
@@ -88,6 +125,31 @@ type GetMachineConfigurationDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this get machine configuration default response has a 2xx status code
+func (o *GetMachineConfigurationDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get machine configuration default response has a 3xx status code
+func (o *GetMachineConfigurationDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get machine configuration default response has a 4xx status code
+func (o *GetMachineConfigurationDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get machine configuration default response has a 5xx status code
+func (o *GetMachineConfigurationDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get machine configuration default response a status code equal to that given
+func (o *GetMachineConfigurationDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the get machine configuration default response
@@ -98,6 +160,11 @@ func (o *GetMachineConfigurationDefault) Code() int {
 func (o *GetMachineConfigurationDefault) Error() string {
 	return fmt.Sprintf("[GET /machine-config][%d] getMachineConfiguration default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetMachineConfigurationDefault) String() string {
+	return fmt.Sprintf("[GET /machine-config][%d] getMachineConfiguration default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetMachineConfigurationDefault) GetPayload() *models.Error {
 	return o.Payload
 }

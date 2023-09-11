@@ -4,6 +4,6 @@ toolchain go1.21.0
 
 use (
 	./packages/api
-	./packages/devbookd
+	./packages/envd
 	./packages/firecracker-task-driver
 )

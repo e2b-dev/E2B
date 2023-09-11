@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // PutMmdsConfigReader is a Reader for the PutMmdsConfig structure.
@@ -52,14 +52,49 @@ func NewPutMmdsConfigNoContent() *PutMmdsConfigNoContent {
 	return &PutMmdsConfigNoContent{}
 }
 
-/* PutMmdsConfigNoContent describes a response with status code 204, with default header values.
+/*
+PutMmdsConfigNoContent describes a response with status code 204, with default header values.
 
 MMDS configuration was created/updated.
 */
 type PutMmdsConfigNoContent struct {
 }
 
+// IsSuccess returns true when this put mmds config no content response has a 2xx status code
+func (o *PutMmdsConfigNoContent) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this put mmds config no content response has a 3xx status code
+func (o *PutMmdsConfigNoContent) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put mmds config no content response has a 4xx status code
+func (o *PutMmdsConfigNoContent) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this put mmds config no content response has a 5xx status code
+func (o *PutMmdsConfigNoContent) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put mmds config no content response a status code equal to that given
+func (o *PutMmdsConfigNoContent) IsCode(code int) bool {
+	return code == 204
+}
+
+// Code gets the status code for the put mmds config no content response
+func (o *PutMmdsConfigNoContent) Code() int {
+	return 204
+}
+
 func (o *PutMmdsConfigNoContent) Error() string {
+	return fmt.Sprintf("[PUT /mmds/config][%d] putMmdsConfigNoContent ", 204)
+}
+
+func (o *PutMmdsConfigNoContent) String() string {
 	return fmt.Sprintf("[PUT /mmds/config][%d] putMmdsConfigNoContent ", 204)
 }
 
@@ -73,7 +108,8 @@ func NewPutMmdsConfigBadRequest() *PutMmdsConfigBadRequest {
 	return &PutMmdsConfigBadRequest{}
 }
 
-/* PutMmdsConfigBadRequest describes a response with status code 400, with default header values.
+/*
+PutMmdsConfigBadRequest describes a response with status code 400, with default header values.
 
 MMDS configuration cannot be updated due to bad input.
 */
@@ -81,9 +117,44 @@ type PutMmdsConfigBadRequest struct {
 	Payload *models.Error
 }
 
+// IsSuccess returns true when this put mmds config bad request response has a 2xx status code
+func (o *PutMmdsConfigBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this put mmds config bad request response has a 3xx status code
+func (o *PutMmdsConfigBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this put mmds config bad request response has a 4xx status code
+func (o *PutMmdsConfigBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this put mmds config bad request response has a 5xx status code
+func (o *PutMmdsConfigBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this put mmds config bad request response a status code equal to that given
+func (o *PutMmdsConfigBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the put mmds config bad request response
+func (o *PutMmdsConfigBadRequest) Code() int {
+	return 400
+}
+
 func (o *PutMmdsConfigBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /mmds/config][%d] putMmdsConfigBadRequest  %+v", 400, o.Payload)
 }
+
+func (o *PutMmdsConfigBadRequest) String() string {
+	return fmt.Sprintf("[PUT /mmds/config][%d] putMmdsConfigBadRequest  %+v", 400, o.Payload)
+}
+
 func (o *PutMmdsConfigBadRequest) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -107,7 +178,8 @@ func NewPutMmdsConfigDefault(code int) *PutMmdsConfigDefault {
 	}
 }
 
-/* PutMmdsConfigDefault describes a response with status code -1, with default header values.
+/*
+PutMmdsConfigDefault describes a response with status code -1, with default header values.
 
 Internal server error
 */
@@ -115,6 +187,31 @@ type PutMmdsConfigDefault struct {
 	_statusCode int
 
 	Payload *models.Error
+}
+
+// IsSuccess returns true when this put mmds config default response has a 2xx status code
+func (o *PutMmdsConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this put mmds config default response has a 3xx status code
+func (o *PutMmdsConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this put mmds config default response has a 4xx status code
+func (o *PutMmdsConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this put mmds config default response has a 5xx status code
+func (o *PutMmdsConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this put mmds config default response a status code equal to that given
+func (o *PutMmdsConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
 }
 
 // Code gets the status code for the put mmds config default response
@@ -125,6 +222,11 @@ func (o *PutMmdsConfigDefault) Code() int {
 func (o *PutMmdsConfigDefault) Error() string {
 	return fmt.Sprintf("[PUT /mmds/config][%d] putMmdsConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PutMmdsConfigDefault) String() string {
+	return fmt.Sprintf("[PUT /mmds/config][%d] putMmdsConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PutMmdsConfigDefault) GetPayload() *models.Error {
 	return o.Payload
 }

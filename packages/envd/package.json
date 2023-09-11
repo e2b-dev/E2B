@@ -1,0 +1,18 @@
+{
+  "name": "@e2b/envd",
+  "version": "0.0.0-automated",
+  "description": "E2B Env Daemon",
+  "repository": "https://github.com/e2b-dev/api",
+  "homepage": "https://e2b.dev",
+  "bugs": "https://github.com/e2b-dev/api/issues",
+  "license": "MIT",
+  "author": "E2B",
+  "type": "module",
+  "url": "https://github.com/e2b-dev/api/releases/download/v{{version}}/{{bin_name}}_{{version}}_{{platform}}_{{arch}}.tar.gz",
+  "bin": "bin/envd",
+  "release": {
+    "branches": [
+      "master"
+    ]
+  }
+}

@@ -123,6 +123,11 @@ func (m *MachineConfiguration) ContextValidate(ctx context.Context, formats strf
 func (m *MachineConfiguration) contextValidateCPUTemplate(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.CPUTemplate != nil {
+
+		if swag.IsZero(m.CPUTemplate) { // not required
+			return nil
+		}
+
 		if err := m.CPUTemplate.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cpu_template")

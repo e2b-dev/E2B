@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/client/models"
 )
 
 // NewPutGuestVsockParams creates a new PutGuestVsockParams object,
@@ -54,10 +54,12 @@ func NewPutGuestVsockParamsWithHTTPClient(client *http.Client) *PutGuestVsockPar
 	}
 }
 
-/* PutGuestVsockParams contains all the parameters to send to the API endpoint
-   for the put guest vsock operation.
+/*
+PutGuestVsockParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the put guest vsock operation.
+
+	Typically these are written to a http.Request.
 */
 type PutGuestVsockParams struct {
 

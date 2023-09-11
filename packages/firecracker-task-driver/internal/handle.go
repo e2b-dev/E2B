@@ -10,12 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/env"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/telemetry"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/env"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/slot"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/nomad/client/stats"
 	"github.com/hashicorp/nomad/plugins/drivers"
 )
 
@@ -27,21 +26,16 @@ type taskHandle struct {
 	// stateLock syncs access to all fields below
 	stateLock sync.RWMutex
 
-	taskConfig      *drivers.TaskConfig
-	State           drivers.TaskState
-	MachineInstance *firecracker.Machine
-	Slot            *slot.IPSlot
-	Env             *env.Env
-	Info            Instance_info
-	EditEnabled     bool
-	ConsulToken     string
-	startedAt       time.Time
-	completedAt     time.Time
-	exitResult      *drivers.ExitResult
-
-	cpuStatsSys   *stats.CpuStats
-	cpuStatsUser  *stats.CpuStats
-	cpuStatsTotal *stats.CpuStats
+	taskConfig            *drivers.TaskConfig
+	State                 drivers.TaskState
+	MachineInstance       *firecracker.Machine
+	Slot                  *slot.IPSlot
+	EnvInstanceFilesystem *env.InstanceFilesystem
+	EnvInstance           Instance
+	ConsulToken           string
+	startedAt             time.Time
+	completedAt           time.Time
+	exitResult            *drivers.ExitResult
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
@@ -56,15 +50,15 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 		CompletedAt: h.completedAt,
 		ExitResult:  h.exitResult,
 		DriverAttributes: map[string]string{
-			"Pid": h.Info.Pid,
+			"Pid": h.EnvInstance.Pid,
 		},
 	}
 }
 
 func (h *taskHandle) run(ctx context.Context, driver *Driver) {
-	pid, err := strconv.Atoi(h.Info.Pid)
+	pid, err := strconv.Atoi(h.EnvInstance.Pid)
 	if err != nil {
-		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.Info.Pid))
+		h.logger.Info(fmt.Sprintf("ERROR Firecracker-task-driver Could not parse pid=%s after initialization", h.EnvInstance.Pid))
 		h.stateLock.Lock()
 		h.exitResult = &drivers.ExitResult{}
 		h.exitResult.ExitCode = 127
@@ -74,8 +68,6 @@ func (h *taskHandle) run(ctx context.Context, driver *Driver) {
 		h.stateLock.Unlock()
 		return
 	}
-
-	// maxSessionLength := time.NewTimer(24 * time.Hour)
 
 	for {
 		time.Sleep(containerMonitorIntv)
@@ -110,10 +102,10 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	childCtx, childSpan := driver.tracer.Start(ctx, "shutdown")
 	defer childSpan.End()
 
-	h.Info.Cmd.Process.Signal(syscall.SIGTERM)
+	h.EnvInstance.Cmd.Process.Signal(syscall.SIGTERM)
 	telemetry.ReportEvent(childCtx, "sent SIGTERM to FC process")
 
-	pid, pErr := strconv.Atoi(h.Info.Pid)
+	pid, pErr := strconv.Atoi(h.EnvInstance.Pid)
 	if pErr == nil {
 		timeout := time.After(10 * time.Second)
 
@@ -121,7 +113,7 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 		for {
 			select {
 			case <-timeout:
-				h.Info.Cmd.Process.Kill()
+				h.EnvInstance.Cmd.Process.Kill()
 				break pidCheck
 			default:
 				process, err := os.FindProcess(int(pid))
@@ -137,7 +129,7 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 		}
 	}
 
-	_, err := h.Info.Cmd.Process.Wait()
+	_, err := h.EnvInstance.Cmd.Process.Wait()
 	if err != nil {
 		errMsg := fmt.Errorf("error waiting for FC process end %v", err)
 		telemetry.ReportError(childCtx, errMsg)

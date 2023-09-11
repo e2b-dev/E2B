@@ -7,8 +7,8 @@ import (
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/slot"
-	"github.com/devbookhq/devbook-api/packages/firecracker-task-driver/internal/telemetry"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/slot"
+	"github.com/e2b-dev/api/packages/firecracker-task-driver/internal/telemetry"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
@@ -53,7 +53,7 @@ func CreateNetwork(
 		}
 	}()
 
-	// Create NS for the session
+	// Create NS for the env instance
 	ns, err := netns.NewNamed(ipSlot.NamespaceID())
 	if err != nil {
 		return fmt.Errorf("cannot create new namespace %v", err)
@@ -279,12 +279,12 @@ func CreateNetwork(
 	telemetry.ReportEvent(childCtx, "Created postrouting rule")
 
 	// Add entry to etc hosts
-	hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.SessionID)
+	hosts.AddHost(ipSlot.HostSnapshotIP(), ipSlot.InstanceID)
 	err = hosts.Save()
 	if err != nil {
-		return fmt.Errorf("error adding session to etc hosts %v", err)
+		return fmt.Errorf("error adding env instance to etc hosts %v", err)
 	}
-	telemetry.ReportEvent(childCtx, "Added session to etc hosts")
+	telemetry.ReportEvent(childCtx, "Added env instance to etc hosts")
 
 	return nil
 }
@@ -293,10 +293,10 @@ func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, 
 	childCtx, childSpan := tracer.Start(ctx, "remove-network")
 	defer childSpan.End()
 
-	hosts.RemoveHost(ipSlot.SessionID)
+	hosts.RemoveHost(ipSlot.InstanceID)
 	err := hosts.Save()
 	if err != nil {
-		errMsg := fmt.Errorf("error removing session to etc hosts %v", err)
+		errMsg := fmt.Errorf("error removing env instance to etc hosts %v", err)
 		telemetry.ReportError(childCtx, errMsg)
 	}
 

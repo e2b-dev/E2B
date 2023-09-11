@@ -37,6 +37,7 @@
 - Golang monorepo + terraform setup practices
 - How to decouple terraform and domains
 - Enable advanced security scanning via GH
+- Better release system
 
 ### API
 - Add monitoring to the envs routes
@@ -48,22 +49,22 @@
 - Add better error if the env was not found
 - Improve request logging
 
-### Devbookd
-- devbookd jsonrpc parameters could be objects instead of arrays (compatibility advantages)
-- Check FC env devbookd freeze bug (probably OOM)
-- Update devbookd in all envs automatically
-- remove code snippet service from the devbookd
-- remove .dbk env vars and code snippet functionality from the devbookd
-- fix empty error logs from devbookd that we can see in the betterstack logs
-- envs vars in SDK/devbookd are not working correctly (terminal, process)
-- Start tty in devbookd only after hooking it to the onData subscribers!
-- Explore GRPC for communication between devbookd and SDK
-- devbookd scan lines problem (vs scan bytes)
-- Change casing of the reported ports fields from the devbookd
-- Use binary data streaming over websocket instead of using the jsonrpc in devbookd - maybe use REST API for this
-- How to monitor devbookd OOM and similar errors remotely?
-- Devbookd api versioning to SDK
-- Flush all stdout/err after killing process or terminal in devbookd and also wait for the Stdout/err in the SDK
+### Envd
+- envd jsonrpc parameters could be objects instead of arrays (compatibility advantages)
+- Check FC env envd freeze bug (probably OOM)
+- Update envd in all envs automatically
+- remove code snippet service from the envd
+- remove .dbk env vars and code snippet functionality from the envd
+- fix empty error logs from envd that we can see in the betterstack logs
+- envs vars in SDK/envd are not working correctly (terminal, process)
+- Start tty in envd only after hooking it to the onData subscribers!
+- Explore GRPC for communication between envd and SDK
+- envd scan lines problem (vs scan bytes)
+- Change casing of the reported ports fields from the envd
+- Use binary data streaming over websocket instead of using the jsonrpc in envd - maybe use REST API for this
+- How to monitor envd OOM and similar errors remotely?
+- Envd api versioning to SDK
+- Flush all stdout/err after killing process or terminal in envd and also wait for the Stdout/err in the SDK
 - Change read/write file to allow other than utf-8 format so we don't break the files
 - Permissions and default directory for filesystem operations
 - Improve FC WS connection (subscriptions take additional calls, maybe we can improve that, etc.)
@@ -118,3 +119,6 @@
 - rpc error: code = Unknown desc = failed to get IP slot: failed to write to Consul KV: Unexpected response code: 429 (Your IP is issuing too many concurrent connections, please rate limit your calls)
 - Fix "namespace cannot be transferred" error
 - Use haproxy or envoy proxy?
+- Use balloning device to reclaim memore before making the snapshot to reduce the size of the snapshot
+- Use library for FS mounting in firecracker task driver
+- Reattach to fc process on recover in task driver

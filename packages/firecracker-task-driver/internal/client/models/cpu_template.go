@@ -36,6 +36,9 @@ const (
 	// CPUTemplateT2 captures enum value "T2"
 	CPUTemplateT2 CPUTemplate = "T2"
 
+	// CPUTemplateT2S captures enum value "T2S"
+	CPUTemplateT2S CPUTemplate = "T2S"
+
 	// CPUTemplateNone captures enum value "None"
 	CPUTemplateNone CPUTemplate = "None"
 )
@@ -45,7 +48,7 @@ var cpuTemplateEnum []interface{}
 
 func init() {
 	var res []CPUTemplate
-	if err := json.Unmarshal([]byte(`["C3","T2","None"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["C3","T2","T2S","None"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

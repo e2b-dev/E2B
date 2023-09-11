@@ -52,10 +52,12 @@ func NewDescribeInstanceParamsWithHTTPClient(client *http.Client) *DescribeInsta
 	}
 }
 
-/* DescribeInstanceParams contains all the parameters to send to the API endpoint
-   for the describe instance operation.
+/*
+DescribeInstanceParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the describe instance operation.
+
+	Typically these are written to a http.Request.
 */
 type DescribeInstanceParams struct {
 	timeout    time.Duration

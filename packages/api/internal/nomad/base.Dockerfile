@@ -17,13 +17,13 @@ RUN yes | unminimize
 COPY ubuntu/provision-env.ubuntu.sh /provision-env.sh
 RUN chmod +x /provision-env.sh
 
-# Prepare the devbookd binary
-COPY ./devbookd /usr/bin/devbookd
-RUN chmod +x /usr/bin/devbookd
+# Prepare the envd binary
+COPY ./envd /usr/bin/envd
+RUN chmod +x /usr/bin/envd
 
-# Add devbookd to systemd
+# Add envd to systemd
 RUN mkdir -p /etc/systemd/system
-COPY ubuntu/devbookd.service /etc/systemd/system/devbookd.service
+COPY ubuntu/envd.service /etc/systemd/system/envd.service
 
 # Chrony configuration
 RUN mkdir -p /etc/chrony
