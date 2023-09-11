@@ -15,7 +15,6 @@ import clsx from 'clsx'
 import { create } from 'zustand'
 import { LoaderIcon, PlayIcon } from 'lucide-react'
 
-import { Tag } from '@/components/Tag'
 import { CopyButton } from '@/components/CopyButton'
 import { useApiKey } from '@/utils/useUser'
 import { ProcessMessage } from '@e2b/sdk'
@@ -39,59 +38,21 @@ export function getPanelTitle({
   return 'Code'
 }
 
-function CodePanelHeader({ tag, label }) {
-  if (!tag && !label) {
-    return null
-  }
-
-  return (
-    <div className="flex h-9 items-center gap-2 border-y border-b-white/7.5 border-t-transparent bg-white/2.5 bg-zinc-900 px-4 dark:border-b-white/5 dark:bg-white/1">
-      {tag && (
-        <div className="dark flex">
-          <Tag variant="small">{tag}</Tag>
-        </div>
-      )}
-      {tag && label && (
-        <span className="h-0.5 w-0.5 rounded-full bg-zinc-500" />
-      )}
-      {label && (
-        <span className="font-mono text-xs text-zinc-400">{label}</span>
-      )}
-    </div>
-  )
-}
-
 function CodePanel({
   children,
-  tag,
-  label,
   code,
 }: {
   children: React.ReactNode
-  tag?: string
-  label?: string
   code?: string
 }) {
   let child = Children.only(children)
-  if (isValidElement(child)) {
-    tag = child.props.tag ?? tag
-    label = child.props.label ?? label
-    code = child.props.code ?? code
-  }
-
-  if (!code) {
-    throw new Error(
-      '`CodePanel` requires a `code` prop, or a child with a `code` prop.'
-    )
-  }
+  if (isValidElement(child)) code = child.props.code ?? code // Get code from child if available
+  if (!code) throw new Error('`CodePanel` requires a `code` prop, or a child with a `code` prop.')
 
   return (
-    <div className="group dark:bg-white/2.5">
-      <CodePanelHeader tag={tag} label={label} />
-      <div className="relative">
-        <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
-        <CopyButton code={code} />
-      </div>
+    <div className="group dark:bg-white/2.5 relative">
+      <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
+      <CopyButton code={code} />
     </div>
   )
 }
@@ -302,7 +263,7 @@ export function CodeGroup({
 }) {
   const signIn = useSignIn()
   const apiKey = useApiKey()
-  const jsSessionDef = useSessionsStore((s) => s.sessions.js) // TODO
+  const jsSessionDef = useSessionsStore((s) => s.sessions.js)
   const pySessionDef = useSessionsStore((s) => s.sessions.py)
   const initSession = useSessionsStore((s) => s.initSession)
   const { outputLines, dispatch } = useOutputReducer()
