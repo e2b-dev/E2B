@@ -21,7 +21,6 @@ export function LanguageSpecificText({ children, title }) {
     <CodeGroupHeader
       title={title}
       selectedIndex={tabGroupProps.selectedIndex}
-      isRunnable={false}
     >
       {children}
     </CodeGroupHeader>
