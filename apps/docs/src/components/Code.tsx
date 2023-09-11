@@ -16,12 +16,12 @@ import { create } from 'zustand'
 import { LoaderIcon, PlayIcon } from 'lucide-react'
 
 import { CopyButton } from '@/components/CopyButton'
-import { useApiKey } from '@/utils/useUser'
+import {useApiKey, useUser} from '@/utils/useUser'
 import { ProcessMessage } from '@e2b/sdk'
 import { useSessionsStore } from '@/utils/useSessions'
 import { useSignIn } from '@/utils/useSignIn'
-import { LangShort, languageNames, languageToLangShort, mdLangToLangShort } from '@/utils/consts'
-import { usePostHog } from "posthog-js/react";
+import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
+import { useFeatureFlagEnabled, usePostHog } from "posthog-js/react";
 
 export function getPanelTitle({
   title,
@@ -51,8 +51,11 @@ function CodePanel({
   isRunnable?: boolean
 }) {
   const signIn = useSignIn()
+  const user = useUser()
   const apiKey = useApiKey()
   const posthog = usePostHog()
+  const runnableCodeSnippetsFF = useFeatureFlagEnabled('runnableCodeSnippets') // https://app.posthog.com/feature_flags/17443
+  
   const codeGroupContext = useContext(CodeGroupContext) 
   
   const sessionDef = useSessionsStore((s) => s.sessions[lang])
@@ -143,6 +146,7 @@ function CodePanel({
   // @ts-ignore
   if (isValidElement(child)) lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
   if (!code) throw new Error('`CodePanel` requires a `code` prop, or a child with a `code` prop.')
+
   
   return (
     <div className="group dark:bg-white/2.5 relative">
@@ -151,7 +155,7 @@ function CodePanel({
         top-[-40px]
         right-3
       ">
-        {isRunnable && (
+        {(runnableCodeSnippetsFF && isRunnable) && (
           <button
             className={clsx(`
                 group
