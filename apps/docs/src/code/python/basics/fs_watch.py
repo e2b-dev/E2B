@@ -5,16 +5,16 @@ from e2b import Session
 E2B_API_KEY = getenv("E2B_API_KEY")
 
 watcher = None
-async def create_watcher(session):
-  # Start filesystem watcher for the /home directory
-  watcher = await session.filesystem.watch_dir("/home")
-  watcher.add_event_listener(lambda event: print(event))
-  await watcher.start()
+async def create_watcher(session): # $HighlightLine
+  # Start filesystem watcher for the /home directory # $HighlightLine
+  watcher = await session.filesystem.watch_dir("/home") # $HighlightLine
+  watcher.add_event_listener(lambda event: print(event)) # $HighlightLine
+  await watcher.start() # $HighlightLine
 
 async def main():
   session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
 
-  await create_watcher(session)
+  await create_watcher(session) # $HighlightLine
 
   # Create files in the /home directory inside the playground
   # We'll receive notifications for these events through the watcher we created above.

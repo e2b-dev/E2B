@@ -6,11 +6,11 @@ const session = await Session.create({
 })
 
 // Start filesystem watcher for the /home directory
-const watcher = session.filesystem.watchDir('/home')
+const watcher = session.filesystem.watchDir('/home') // $HighlightLine
 watcher.addEventListener(event => {
   console.log('Filesystem event', event)
 })
-await watcher.start()
+await watcher.start() // $HighlightLine
 
 
 // Create files in the /home directory inside the playground

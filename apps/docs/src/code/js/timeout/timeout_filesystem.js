@@ -6,12 +6,12 @@ const session = await Session.create({
 })
 
 // Timeout for the write operation
-await session.filesystem.write('hello.txt', 'Hello World!', { timeout: 3000 })
+await session.filesystem.write('hello.txt', 'Hello World!', { timeout: 3000 }) // $HighlightLine
 
 // Timeout for the list operation
-const files = await session.filesystem.list('.', { timeout: 3000 })
+const files = await session.filesystem.list('.', { timeout: 3000 }) // $HighlightLine
 
 // Timeout for the read operation
-const content = await session.filesystem.read('hello.txt', { timeout: 3000 })
+const content = await session.filesystem.read('hello.txt', { timeout: 3000 }) // $HighlightLine
 
 await session.close()

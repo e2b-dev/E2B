@@ -4,7 +4,7 @@ import { Session } from '@e2b/sdk'
 const session = await Session.create({
   id: 'Nodejs',
   apiKey: process.env.E2B_API_KEY,
-  timeout: 3000,
+  timeout: 3000, // $HighlightLine
 })
 
 await session.close()
