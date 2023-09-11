@@ -22,8 +22,6 @@ import { useSessionsStore } from '@/utils/useSessions'
 import { useSignIn } from '@/utils/useSignIn'
 import { LangShort, languageNames, languageToLangShort, mdLangToLangShort } from '@/utils/consts'
 import { usePostHog } from "posthog-js/react";
-import { LoadingDots} from "@/components/Spinner";
-
 
 export function getPanelTitle({
   title,
@@ -189,9 +187,7 @@ function CodePanel({
       {(outputLines.length > 0 || isRunning) && (
         <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
           <span className="font-mono text-xs text-zinc-500">
-            <b>Output</b>
-            {" "}
-            <LoadingDots /> 
+            Output
           </span>
           <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
             {outputLines.join('\n')}
