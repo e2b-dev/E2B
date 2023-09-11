@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 class WebSocket:
     def __init__(
-        self,
-        url: str,
-        started: Event,
-        stopped: Event,
-        queue_in: Queue[dict],
-        queue_out: JanusQueue[Data],
+            self,
+            url: str,
+            started: Event,
+            stopped: Event,
+            queue_in: Queue[dict],
+            queue_out: JanusQueue[Data],
     ):
         self._ws: Optional[WebSocketClientProtocol] = None
         self.url = url
@@ -60,7 +60,11 @@ class WebSocket:
 
     async def _connect(self):
         logger.debug(f"WebSocket connecting to {self.url}")
-        async for websocket in connect(self.url, max_size=None, max_queue=None):
+        websocket_connector = connect(self.url, max_size=None, max_queue=None)
+        websocket_connector.BACKOFF_MIN = 1
+        websocket_connector.BACKOFF_FACTOR = 1
+        websocket_connector.BACKOFF_INITIAL = 1
+        async for websocket in websocket_connector:
             try:
                 self._ws = websocket
                 self.started.set()

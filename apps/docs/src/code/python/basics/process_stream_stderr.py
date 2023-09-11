@@ -13,7 +13,7 @@ async def main():
   # This command will fail and output to stderr because Golang isn't installed in the cloud playground
   golang_version = await session.process.start(
     "go version",
-    on_stderr=print_stderr,
+    on_stderr=print_stderr, # $HighlightLine
   )
   await golang_version
 

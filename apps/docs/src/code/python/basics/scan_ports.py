@@ -26,7 +26,7 @@ async def main():
   session = await Session.create(
     id="Python3",
     api_key=E2B_API_KEY,
-    on_scan_ports=lambda open_ports: print_new_port_and_url(open_ports, session)
+    on_scan_ports=lambda open_ports: print_new_port_and_url(open_ports, session) # $HighlightLine
   )
 
   # Start a new server on port 8000 inside the playground.

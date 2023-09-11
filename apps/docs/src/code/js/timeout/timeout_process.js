@@ -8,7 +8,7 @@ const session = await Session.create({
 // Timeout for the process to start
 const npmInit = await session.process.start({
   cmd: 'npm init -y',
-  timeout: 3000,
+  timeout: 3000, // $HighlightLine
 })
 await npmInit.finished
 

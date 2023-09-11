@@ -8,8 +8,8 @@ const session = await Session.create({
 const npmInit = await session.process.start({
   cmd: 'npm init -y'
 })
-await npmInit.kill()
-// There will be no output because we immediatelly kill the `npm_init` process
+await npmInit.kill() // $HighlightLine
+// There will be no output because we immediately kill the `npm_init` process
 console.log(npmInit.output.stdout)
 
 await session.close()

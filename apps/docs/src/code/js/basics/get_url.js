@@ -5,7 +5,7 @@ const session = await Session.create({
   apiKey: process.env.E2B_API_KEY,
 })
 
-const url = session.getHostname()
+const url = session.getHostname() // $HighlightLine
 console.log('https://' + url)
 
 await session.close()
