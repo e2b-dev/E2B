@@ -15,20 +15,9 @@ import { create } from 'zustand'
 
 import { Tag } from '@/components/Tag'
 import { CopyButton } from '@/components/CopyButton'
-import { useApiKey } from '@/utils/useUser'
+import { languageNames } from '@/utils/consts'
 
-const languageNames: Record<string, string> = {
-  js: 'JavaScript',
-  ts: 'TypeScript',
-  javascript: 'JavaScript',
-  typescript: 'TypeScript',
-  php: 'PHP',
-  python: 'Python',
-  ruby: 'Ruby',
-  go: 'Go',
-}
-
-function getPanelTitle({
+export function getPanelTitle({
   title,
   language,
 }: {
@@ -78,7 +67,6 @@ function CodePanel({
   code?: string
 }) {
   let child = Children.only(children)
-
   if (isValidElement(child)) {
     tag = child.props.tag ?? tag
     label = child.props.label ?? label
@@ -102,7 +90,7 @@ function CodePanel({
   )
 }
 
-function CodeGroupHeader({
+export function CodeGroupHeader({
   title,
   children,
   selectedIndex,
@@ -218,7 +206,7 @@ const usePreferredLanguageStore = create<{
     })),
 }))
 
-function useTabGroupProps(availableLanguages: Array<string>) {
+export function useTabGroupProps(availableLanguages: Array<string>) {
   let { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
   let [selectedIndex, setSelectedIndex] = useState(0)
   let activeLanguage = [...availableLanguages].sort(
@@ -250,14 +238,15 @@ export function CodeGroup({
   children,
   title,
   ...props
-}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & { title: string }) {
+}: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
+  title?: string
+}) {
   let languages =
     Children.map(children, (child) =>
       getPanelTitle(isValidElement(child) ? child.props : {})
     ) ?? []
   let tabGroupProps = useTabGroupProps(languages)
   let hasTabs = Children.count(children) > 1
-
   let containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
   let header = (
@@ -318,4 +307,17 @@ export function Pre({
   }
 
   return <CodeGroup {...props}>{children}</CodeGroup>
+}
+
+/**
+ * Special Component just for MDX files, processed by Remark
+ */
+export function CodeGroupAutoload({ children }) {
+  if (!children) {
+    console.warn(
+      `CodeGroupAutoload: No children provided – something is wrong with your MDX file`
+    )
+    return null
+  }
+  return <CodeGroup>{children}</CodeGroup>
 }

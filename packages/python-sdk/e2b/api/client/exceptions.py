@@ -10,6 +10,7 @@
 
     Do not edit the class manually.
 """
+import json
 
 
 class OpenApiException(Exception):
@@ -99,48 +100,37 @@ class ApiKeyError(OpenApiException, KeyError):
 
 
 class ApiException(OpenApiException):
-    def __init__(self, status=None, reason=None, http_resp=None):
-        if http_resp:
-            self.status = http_resp.status
-            self.reason = http_resp.reason
-            self.body = http_resp.data
-            self.headers = http_resp.getheaders()
+    def __init__(self, status, data=None, message=None):
+        self.status = status
+        if data:
+            body = json.loads(data.decode("utf-8"))
+            self.message = body.get("message", body.get("error", "Unknown error"))
         else:
-            self.status = status
-            self.reason = reason
-            self.body = None
-            self.headers = None
+            self.message = message
 
     def __str__(self):
         """Custom error messages for exception"""
-        error_message = "({0})\n" "Reason: {1}\n".format(self.status, self.reason)
-        if self.headers:
-            error_message += "HTTP response headers: {0}\n".format(self.headers)
-
-        if self.body:
-            error_message += "HTTP response body: {0}\n".format(self.body)
-
-        return error_message
+        return "HTTP Status code ({0}) - {1}".format(self.status, self.message)
 
 
 class NotFoundException(ApiException):
-    def __init__(self, status=None, reason=None, http_resp=None):
-        super(NotFoundException, self).__init__(status, reason, http_resp)
+    def __init__(self, status, data):
+        super(NotFoundException, self).__init__(status, data)
 
 
 class UnauthorizedException(ApiException):
-    def __init__(self, status=None, reason=None, http_resp=None):
-        super(UnauthorizedException, self).__init__(status, reason, http_resp)
+    def __init__(self, status, data):
+        super(UnauthorizedException, self).__init__(status, data)
 
 
 class ForbiddenException(ApiException):
-    def __init__(self, status=None, reason=None, http_resp=None):
-        super(ForbiddenException, self).__init__(status, reason, http_resp)
+    def __init__(self, status, data):
+        super(ForbiddenException, self).__init__(status, data)
 
 
 class ServiceException(ApiException):
-    def __init__(self, status=None, reason=None, http_resp=None):
-        super(ServiceException, self).__init__(status, reason, http_resp)
+    def __init__(self, status, data):
+        super(ServiceException, self).__init__(status, data)
 
 
 def render_path(path_to_item):

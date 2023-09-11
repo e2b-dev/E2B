@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "0.2.5"
+version = "0.2.8"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -20,6 +20,7 @@ aenum = ">=3.1.11"
 websockets = "^11.0.3"
 jsonrpcclient = "^4.0.3"
 janus = "^1.0.0"
+async-timeout = "^4.0.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"

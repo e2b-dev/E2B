@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "rm-next-cache": "rm -rf .next/cache"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {

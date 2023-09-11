@@ -1,11 +1,16 @@
 import logging
 from typing import Any, Callable, List, Literal, Optional, Union
 
+from async_timeout import timeout as async_timeout
+from e2b.constants import TIMEOUT
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
 from e2b.session.filesystem import FilesystemManager
 from e2b.session.process import ProcessManager
 from e2b.session.session_connection import SessionConnection
 from e2b.session.terminal import TerminalManager
+
+
+logger = logging.getLogger(__name__)
 
 Environment = Literal[
     "Nodejs",
@@ -83,7 +88,7 @@ class Session(SessionConnection):
         :param on_scan_ports: A callback to handle opened ports
         """
 
-        logging.info(f"Session {id if isinstance(id, str) else type(id)}")
+        logger.info(f"Creating session {id if isinstance(id, str) else type(id)}")
         super().__init__(
             id=id,
             api_key=api_key,
@@ -100,9 +105,17 @@ class Session(SessionConnection):
         self._filesystem = FilesystemManager(session=self)
         self._process = ProcessManager(session=self)
 
-    async def open(self) -> None:
-        await super().open()
-        await self._code_snippet._subscribe()
+    async def open(self, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Opens the session.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        logger.info(f"Opening session {self._id}")
+        async with async_timeout(timeout):
+            await super().open()
+            await self._code_snippet._subscribe()
+        logger.info(f"Session {self._id} opened")
 
     def _close_services(self):
         self._terminal._close()
@@ -125,6 +138,7 @@ class Session(SessionConnection):
         id: Union[Environment, str],
         api_key: Optional[str] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -145,11 +159,10 @@ class Session(SessionConnection):
         - `DotNET`
 
         :param api_key: The API key to use
-        :param edit_enabled: Whether the session state will be saved after exit
         :param on_scan_ports: A callback to handle opened ports
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
 
-        logging.info(f"Session {id if isinstance(id, str) else type(id)}")
         session = cls(
             id=id,
             api_key=api_key,
@@ -158,5 +171,5 @@ class Session(SessionConnection):
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
         )
-        await session.open()
+        await session.open(timeout=timeout)
         return session

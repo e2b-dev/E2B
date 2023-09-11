@@ -7,7 +7,7 @@ const session = await Session.create({
 
 const npmInit = await session.process.start({
   cmd: 'npm init -y',
-  onStdout: output => console.log(output),
+  onStdout: output => console.log(output), // $HighlightLine
 })
 await npmInit.finished
 

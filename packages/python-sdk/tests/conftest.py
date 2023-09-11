@@ -1,5 +1,4 @@
 import csv
-import time
 
 import pytest
 
@@ -7,16 +6,18 @@ import pytest
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure():
     with open("results.csv", "w") as f:
-        writer = csv.DictWriter(f, ["test_name", "duration"])
+        writer = csv.DictWriter(f, ["test_name", "duration", "outcome"])
         writer.writeheader()
 
 
-@pytest.fixture(autouse=True)
-def record(request):
-    test_name = request.node.name
-    start = time.time()
-    yield
-    end = time.time()
-    with open("results.csv", "a") as f:
-        writer = csv.DictWriter(f, ["test_name", "duration"])
-        writer.writerow({"test_name": test_name, "duration": round(end - start, 4)})
+def pytest_report_teststatus(report):
+    if report.when == "call":  # <-- Added this line
+        with open("results.csv", "a") as f:
+            writer = csv.DictWriter(f, ["test_name", "duration", "outcome"])
+            writer.writerow(
+                {
+                    "test_name": report.nodeid,
+                    "duration": round(report.duration, 4),
+                    "outcome": report.outcome,
+                }
+            )

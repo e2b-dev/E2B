@@ -34,7 +34,6 @@ Message = Union[Response, Notification]
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
     """Create a Response namedtuple from a dict"""
-    logger.info(f"Received response: {response}")
     if "error" in response:
         return Error(
             response["error"]["code"],
@@ -67,6 +66,7 @@ class SessionRpc(BaseModel):
     async def process_messages(self):
         while True:
             data = await self._queue_out.async_q.get()
+            logger.debug(f"WebSocket received message: {data}".strip())
             await self._receive_message(data)
             self._queue_out.async_q.task_done()
 
@@ -89,8 +89,10 @@ class SessionRpc(BaseModel):
         self._process_cleanup.append(websocket_task.cancel)
         self._process_cleanup.append(lambda: shutdown_executor(executor))
         self._process_cleanup.append(task.cancel)
+        logger.info("WebSocket waiting to start")
         while not started.is_set():
             await asyncio.sleep(0)
+        logger.info("WebSocket started")
 
     async def send_message(self, method: str, params: List[Any]) -> Any:
         id = next(self._id_generator)
@@ -99,22 +101,26 @@ class SessionRpc(BaseModel):
 
         try:
             self._waiting_for_replies[id] = future_reply
-            logger.info(f"Queueing: {request}")
+            logger.debug(f"WebSocket queueing message: {request}")
             self._queue_in.put(request)
-            logger.info(f"Waiting for reply: {request}")
+            logger.debug(f"WebSocket waiting for reply: {request}")
             r = await future_reply
             return r
         except Exception as e:
-            logger.error(f"Error: {request} {e}")
+            logger.error(f"WebSocket received error while waiting for: {request} {e}")
             raise e
         finally:
             del self._waiting_for_replies[id]
-            logger.info(f"Removed waiting handler for {id}")
+            logger.debug(f"WebSocket removed waiting handler for {id}")
 
     async def _receive_message(self, data: Data):
+        logger.debug(f"Processing message: {data}".strip())
+
         message = to_response_or_notification(json.loads(data))
 
-        logger.info(f"Current waiting handlers: {self._waiting_for_replies}")
+        logger.debug(
+            f"Current waiting handlers: {list(self._waiting_for_replies.keys())}"
+        )
         if isinstance(message, Ok):
             if (
                 message.id in self._waiting_for_replies
