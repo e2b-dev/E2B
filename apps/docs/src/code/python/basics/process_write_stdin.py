@@ -13,7 +13,7 @@ async def main():
       "while IFS= read -r line; do echo \"$line\"; sleep 1; done",
       on_stdout=print,
   )
-  await proc.send_stdin("AI Playground\n")
+  await proc.send_stdin("AI Playground\n") # $HighlightLine
   await proc.kill()
 
   await session.close()

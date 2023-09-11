@@ -13,7 +13,7 @@ async def main():
   # - overwrite the file if it exists
 
   # Write the content of the file '/hello.txt'
-  await session.filesystem.write("/hello.txt", "Hello World!")
+  await session.filesystem.write("/hello.txt", "Hello World!") # $HighlightLine
 
   # The following would fail because '/dir' doesn't exist
   # await session.filesystem.write("/dir/hello.txt", "Hello World!")

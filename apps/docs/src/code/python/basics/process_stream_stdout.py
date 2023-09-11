@@ -12,7 +12,7 @@ async def main():
 
   npm_init = await session.process.start(
     "npm init -y",
-    on_stdout=print_stdout,
+    on_stdout=print_stdout, # $HighlightLine
   )
   await npm_init
 

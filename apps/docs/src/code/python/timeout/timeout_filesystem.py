@@ -8,13 +8,13 @@ async def main():
   session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
 
   # Timeout for the write operation
-  await session.filesystem.write("test.txt", "Hello World", timeout=3)
+  await session.filesystem.write("test.txt", "Hello World", timeout=3) # $HighlightLine
 
   # Timeout for the list operation
-  await session.filesystem.list(".", timeout=3)
+  await session.filesystem.list(".", timeout=3) # $HighlightLine
 
   # Timeout for the read operation
-  await session.filesystem.read("test.txt", timeout=3)
+  await session.filesystem.read("test.txt", timeout=3) # $HighlightLine
 
   await session.close()
 
