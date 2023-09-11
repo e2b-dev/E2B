@@ -4,7 +4,7 @@ import { Loader2 as Loader } from 'lucide-react'
 //   className?: string
 // }
 
-function Spinner({ className }) {
+function Spinner({ className = '' }) {
   return (
     <Loader
       className={`animate-spin ${className ? className : ''}`}

@@ -20,7 +20,7 @@ import { useApiKey } from '@/utils/useUser'
 import { ProcessMessage } from '@e2b/sdk'
 import { useSessionsStore } from '@/utils/useSessions'
 import { useSignIn } from '@/utils/useSignIn'
-import { LangShort, languageNames, languageToLangShort } from '@/utils/consts'
+import {LangShort, languageNames, languageToLangShort, mdLangToLangShort} from '@/utils/consts'
 
 export function getPanelTitle({
   title,
@@ -41,17 +41,150 @@ export function getPanelTitle({
 function CodePanel({
   children,
   code,
+  lang,
+  isRunnable = true,
 }: {
   children: React.ReactNode
   code?: string
+  lang?: LangShort
+  isRunnable?: boolean
 }) {
+  const signIn = useSignIn()
+  const apiKey = useApiKey()
+  const sessionDef = useSessionsStore((s) => s.sessions[lang])
+  const initSession = useSessionsStore((s) => s.initSession)
+  const { outputLines, dispatch } = useOutputReducer()
+  const [isRunning, setIsRunning] = useState(false)
+
+  function appendOutput(out: ProcessMessage) {
+    dispatch({ type: 'push', payload: out.line })
+  }
+
+  function filterAndMaybeAppendOutput(out: ProcessMessage) {
+    if (out.line.includes('Cannot refresh session')) return
+    if (out.line.includes(`Trying to reconnect`)) return
+    console.log(`⚠️ Session stderr ${out.line}`)
+    // appendOutput(out) // TODO: Reconsider logging to console after making the runs more stable
+  }
+
+  function handleSessionCreationError(err: Error) {
+    console.error(err)
+    setIsRunning(false)
+    dispatch({ type: 'clear' })
+  }
+
+  async function onRun() {
+    if (!apiKey) {
+      window.alert('Please sign in to run code') // TODO: Toast
+      void signIn()
+      return
+    }
+    dispatch({ type: 'clear' })
+    setIsRunning(true)
+
+    let session = sessionDef?.session
+    try {
+      if (!session) {
+        if (sessionDef?.promise) {
+          console.log(
+            `Session for "${lang}" is still opening, waiting...`
+          )
+          session = await sessionDef.promise
+        } else {
+          console.log(
+            `Session not ready yet for "${lang}", opening...`
+          )
+          session = await initSession(lang, apiKey)
+        }
+      }
+    } catch (err) {
+      handleSessionCreationError(err)
+      return
+    }
+
+    let runtime = `E2B_API_KEY=${apiKey}`
+    if (lang === LangShort.js) {
+      runtime += ' node'
+      const filename = '/code/index.js'
+      await session.filesystem.write(filename, code)
+      session.process.start({
+        cmd: `${runtime} ${filename}`,
+        onStdout: appendOutput,
+        onStderr: filterAndMaybeAppendOutput,
+        onExit: () => setIsRunning(false), // TODO: Inspect why it's exiting so late
+      })
+    } else if (lang === LangShort.py) {
+      runtime += ' python3'
+      const filename = '/main.py'
+      await session.filesystem.write(filename, code)
+      session.process.start({
+        cmd: `${runtime} ${filename}`,
+        rootdir: '/code',
+        onStdout: appendOutput,
+        onStderr: filterAndMaybeAppendOutput,
+        onExit: () => setIsRunning(false),
+      })
+    } else {
+      throw new Error('Unsupported runtime for playground')
+    }
+  }
+
   let child = Children.only(children)
   if (isValidElement(child)) code = child.props.code ?? code // Get code from child if available
+  // @ts-ignore
+  if (isValidElement(child)) lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
   if (!code) throw new Error('`CodePanel` requires a `code` prop, or a child with a `code` prop.')
-
+  
   return (
     <div className="group dark:bg-white/2.5 relative">
+      <div className="
+        absolute
+        top-[-40px]
+        right-3
+      ">
+        {isRunnable && (
+          <button
+            className={clsx(`
+                group
+                flex cursor-pointer
+                items-center
+                space-x-2 rounded-md bg-transparent p-1 transition-all
+                text-xs
+              `, 
+              isRunning && `cursor-wait`
+            )}
+            disabled={isRunning}
+            onClick={onRun}
+          >
+            {isRunning ? <>
+              <span>Running</span>
+              <LoaderIcon
+                className="h-4 w-4 animate-spin text-emerald-400 transition-all group-hover:text-emerald-300"
+                strokeWidth={2.5}
+              />
+            </> : <>
+                <span>Run</span>
+                <PlayIcon
+                  className="h-4 w-4 text-emerald-400 transition-all group-hover:text-emerald-300"
+                  strokeWidth={2.5}
+                />
+              </>
+            }
+          </button>
+        )}
+      </div>
+
       <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
+      {(outputLines.length > 0 || isRunning) && (
+        <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
+              <span className="font-mono text-xs text-zinc-500">
+                Output {isRunning && '(running on e2b infrastructure)'}
+              </span>
+              <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
+                {outputLines.join('\n')}
+              </pre>
+        </div>
+      )}
       <CopyButton code={code} />
     </div>
   )
@@ -61,22 +194,13 @@ export function CodeGroupHeader({
   title,
   children,
   selectedIndex,
-  onRun,
-  isRunning,
-  isRunnable,
 }: {
   title: string
   children: React.ReactNode
   selectedIndex: number
-  onRun?: (e: any) => void
-  isRunnable: boolean
-  isRunning?: boolean
 }) {
   let hasTabs = Children.count(children) > 1
-
-  if (!title && !hasTabs) {
-    return null
-  }
+  if (!title && !hasTabs) return null
 
   return (
     <div className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
@@ -106,29 +230,6 @@ export function CodeGroupHeader({
           </Tab.List>
         )}
       </div>
-      {isRunnable && (
-        <>
-          {isRunning ? (
-            <LoaderIcon
-              className="h-4 w-4 animate-spin text-emerald-400 transition-all group-hover:text-emerald-300"
-              strokeWidth={2.5}
-            />
-          ) : (
-            <button
-              className="group flex cursor-pointer items-center space-x-2 rounded-md bg-transparent p-1 transition-all"
-              onClick={onRun}
-            >
-              <span className="relative top-[-0.5px] text-xs font-medium text-zinc-400 transition-all group-hover:text-zinc-300">
-                Run
-              </span>
-              <PlayIcon
-                className="h-4 w-4 text-emerald-400 transition-all group-hover:text-emerald-300"
-                strokeWidth={2.5}
-              />
-            </button>
-          )}
-        </>
-      )}
     </div>
   )
 }
@@ -144,11 +245,14 @@ function CodeGroupPanels({
       <Tab.Panels>
         {/* Set ID due to bug in Next https://github.com/vercel/next.js/issues/53110 */}
         {/* Should ne fixed after updating Next to > 13.4.12 */}
-        {Children.map(children, (child, childIndex) => (
-          <Tab.Panel id={`code-tab-${childIndex}`}>
-            <CodePanel {...props}>{child}</CodePanel>
-          </Tab.Panel>
-        ))}
+        {Children.map(children, (child, childIndex) => {
+          
+          return (
+            <Tab.Panel id={`code-tab-${childIndex}`}>
+              <CodePanel {...props}>{child}</CodePanel>
+            </Tab.Panel>
+          )
+        })}
       </Tab.Panels>
     )
   }
@@ -255,21 +359,10 @@ function useOutputReducer() {
 export function CodeGroup({
   children,
   title,
-  isRunnable = true,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
   title?: string
-  isRunnable: boolean
 }) {
-  const signIn = useSignIn()
-  const apiKey = useApiKey()
-  const jsSessionDef = useSessionsStore((s) => s.sessions.js)
-  const pySessionDef = useSessionsStore((s) => s.sessions.py)
-  const initSession = useSessionsStore((s) => s.initSession)
-  const { outputLines, dispatch } = useOutputReducer()
-
-  const [isRunning, setIsRunning] = useState(false)
-
   let hasTabs = Children.count(children) > 1
   let containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
@@ -278,106 +371,11 @@ export function CodeGroup({
       getPanelTitle(isValidElement(child) ? child.props : {})
     ) ?? []
   let tabGroupProps = useTabGroupProps(languages)
-
-  useEffect(() => {
-    setIsRunning(false)
-    dispatch({ type: 'clear' })
-    // FIXME: Close session and stop listening for output
-  }, [tabGroupProps.selectedIndex])
-
-  function appendOutput(out: ProcessMessage) {
-    dispatch({ type: 'push', payload: out.line })
-  }
-
-  function filterAndMaybeAppendOutput(out: ProcessMessage) {
-    if (out.line.includes('Cannot refresh session')) return
-    if (out.line.includes(`Trying to reconnect`)) return
-    console.log(`⚠️ Session stderr ${out.line}`)
-    // appendOutput(out) // TODO: Reconsider logging to console after making the runs more stable
-  }
-
-  function handleSessionCreationError(err: Error) {
-    console.error(err)
-    setIsRunning(false)
-    dispatch({ type: 'clear' })
-  }
-
-  async function handleRunClick() {
-    if (!apiKey) {
-      window.alert('Please sign in to run code') // TODO: Toast
-      void signIn()
-      return
-    }
-
-    let selectedIndex = tabGroupProps.selectedIndex
-    let selectedLanguage = languages[selectedIndex] // `Python` or `JavaScript & TypeScript`
-    let selectedLanguageShort = languageToLangShort[selectedLanguage] // `py` or `js`
-    let code = children[selectedIndex].props.code // language specific code
-
-    dispatch({ type: 'clear' })
-    setIsRunning(true)
-
-    const sessionDef = {
-      js: jsSessionDef,
-      py: pySessionDef,
-    }[selectedLanguageShort]
-
-    let session = sessionDef?.session
-    try {
-      if (!session) {
-        if (sessionDef?.promise) {
-          console.log(
-            `Session for "${selectedLanguageShort}" is still opening, waiting...`
-          )
-          session = await sessionDef.promise
-        } else {
-          console.log(
-            `Session not ready yet for "${selectedLanguageShort}", opening...`
-          )
-          session = await initSession(selectedLanguageShort, apiKey)
-        }
-      }
-    } catch (err) {
-      handleSessionCreationError(err)
-      return
-    }
-
-    let runtime = `E2B_API_KEY=${apiKey}`
-    console.log(`Running "${selectedLanguageShort}" code...`)
-    console.log(code)
-    if (selectedLanguageShort === LangShort.js) {
-      runtime += ' node'
-      const filename = '/code/index.js'
-      await session.filesystem.write(filename, code)
-      session.process.start({
-        cmd: `${runtime} ${filename}`,
-        onStdout: appendOutput,
-        onStderr: filterAndMaybeAppendOutput,
-        onExit: () => setIsRunning(false), // TODO: Inspect why it's exiting so late
-      })
-    } else if (selectedLanguageShort === LangShort.py) {
-      runtime += ' python3'
-      const filename = '/main.py'
-      await session.filesystem.write(filename, code)
-      session.process.start({
-        cmd: `${runtime} ${filename}`,
-        rootdir: '/code',
-        onStdout: appendOutput,
-        onStderr: filterAndMaybeAppendOutput,
-        onExit: () => setIsRunning(false),
-      })
-    } else {
-      throw new Error('Unsupported runtime for playground')
-    }
-  }
-
+  
   let header = (
     <CodeGroupHeader
-      isRunnable={isRunnable}
-      isRunning={isRunning}
       title={title}
       selectedIndex={tabGroupProps.selectedIndex}
-      onRun={handleRunClick}
     >
       {children}
     </CodeGroupHeader>
@@ -390,16 +388,6 @@ export function CodeGroup({
         <Tab.Group {...tabGroupProps} className={containerClassName}>
           {header}
           {panels}
-          {(outputLines.length > 0 || isRunning) && (
-            <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
-              <span className="font-mono text-xs text-zinc-500">
-                Output{isRunning ? '...' : ''} {/* TODO: Animation */}
-              </span>
-              <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
-                {outputLines.join('\n')}
-              </pre>
-            </div>
-          )}
         </Tab.Group>
       ) : (
         <div className={containerClassName}>
