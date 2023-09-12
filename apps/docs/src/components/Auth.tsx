@@ -32,7 +32,7 @@ export const Auth = function () {
           Something went wrong
         </span>
         {/* @ts-ignore */}
-        <Button onClick={() => signInWithGitHub()}>Sign In</Button>
+        <Button onClick={() => signIn()}>Sign In</Button>
       </div>
     )
 
@@ -99,7 +99,7 @@ export const Auth = function () {
             Sign up to get your API key
           </Button>
           {/* @ts-ignore */}
-          <Button onClick={() => signInWithGitHub()}>Sign In</Button>
+          <Button onClick={() => signIn()}>Sign In</Button>
         </div>
       )}
     </>
