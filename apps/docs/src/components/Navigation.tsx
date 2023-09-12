@@ -247,6 +247,7 @@ export const navigation = [
       { title: 'SDK Basics', href: '/getting-started/basics' },
       { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
       { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
+      { title: 'SDK Multiple Processes', href: '/getting-started/sdk-multiple-processes' },
     ],
   },
   {

@@ -1,0 +1,18 @@
+export const metadata = {
+  title: 'E2B Documentation',
+  description: 'SDK Multiple Processes',
+}
+
+# Multiple Processes
+
+The SDK supports starting multiple processes in the playground. You don't have to use any special parameters to enable this.
+
+## Background Processes
+
+If you want to start a long running process (for example a server) in the background you should use `session.process.start` to start the process but after that you should not `await` for the process to finish.
+
+After you start this background process you can continue to use the SDK.
+
+At any time you can kill the background process by calling the `kill()` method on the `Process` object and then retrieve the output of the process by accessing the `output` property of the `Process` object.
+
+<CodeGroupAutoload path="processes/background_processes" />
