@@ -17,7 +17,7 @@ var (
 	ErrInvalidAuthHeader = errors.New("authorization header is malformed")
 )
 
-// getApiKeyFromRequest extracts a JWS string from the header.
+// getApiKeyFromRequest extracts an API key from the header.
 func getAPIKeyFromRequest(req *http.Request) (string, error) {
 	apiKey := req.Header.Get("X-API-Key")
 	// Check for the Authorization header.
