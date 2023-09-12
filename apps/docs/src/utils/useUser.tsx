@@ -1,6 +1,13 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext, useMemo, useRef } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
@@ -9,11 +16,20 @@ import * as Sentry from '@sentry/nextjs'
 type UserContextType = {
   isLoading: boolean
   session: Session | null
-  user: User & { teams: any[]; apiKeys: any[] } | null
+  user: (User & { teams: any[]; apiKeys: any[] }) | null
   error: Error | null
 }
 
 export const UserContext = createContext(undefined)
+
+function stdHandler({ line, timestamp, error }) {
+  const timestampHumanFriendly = new Date(timestamp / 1000000) // timestamp is in nanoseconds
+    .toISOString()
+    .split('T')[1] // only time, date is not relevant for debugging
+    .split('.')[0] // remove ms
+  const emoji = error ? '🟥' : '🟦'
+  console.log(`${emoji} [${timestampHumanFriendly}] ${line}`)
+}
 
 export const CustomUserContextProvider = (props) => {
   const supabase = createPagesBrowserClient()
@@ -25,6 +41,7 @@ export const CustomUserContextProvider = (props) => {
 
   useEffect(() => {
     mounted.current = true
+
     async function getSession() {
       const {
         data: { session },
@@ -42,12 +59,12 @@ export const CustomUserContextProvider = (props) => {
         if (!session) setIsLoading(false) // if session is present, we set setLoading to false in the second useEffect
       }
     }
+
     void getSession()
     return () => {
       mounted.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const {
@@ -98,6 +115,7 @@ export const CustomUserContextProvider = (props) => {
       })
       setIsLoading(false)
     }
+
     if (session) void getUserCustom()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])

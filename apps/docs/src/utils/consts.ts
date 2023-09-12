@@ -4,6 +4,28 @@
 // - use `javascript` for explicitly JavaScript
 // - use `typescript` for explicitly TypeScript
 
+export enum LangShort {
+  js = 'js',
+  py = 'py',
+}
+
+export const languageToLangShort: Record<string, LangShort> = {
+  // TODO: Nicer
+  'JavaScript & TypeScript': LangShort.js,
+  JavaScript: LangShort.js,
+  TypeScript: LangShort.js,
+
+  Python: LangShort.py,
+}
+
+export const mdLangToLangShort: Record<string, LangShort> = {
+  js: LangShort.js,
+  javascript: LangShort.js,
+  ts: LangShort.js,
+  typescript: LangShort.js,
+  python: LangShort.py,
+}
+
 export const languageNames: Record<string, string> = {
   js: 'JavaScript & TypeScript',
   ts: '⚠️ FIXME See note in apps/docs/src/utils/consts.ts', // Please avoid using `ts`, see note above
