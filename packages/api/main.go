@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3filter"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/getkin/kin-openapi/openapi3filter"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/handlers"
@@ -73,15 +74,17 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	}
 	r.Use(cors.New(config))
 
-	// Create an auth validator
-	validator := customMiddleware.NewAuthenticator(apiStore.GetTeamFromAPIKey)
+	// Create a team API Key auth validator
+	AuthenticationFunc := customMiddleware.CreateAuthenticationFunc(apiStore.GetTeamFromAPIKey, apiStore.GetUserFromAccessToken)
+
+	// Create a user access token auth validator
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
 	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
 		&middleware.Options{
 			Options: openapi3filter.Options{
-				AuthenticationFunc: validator,
+				AuthenticationFunc: AuthenticationFunc,
 			},
 		}))
 

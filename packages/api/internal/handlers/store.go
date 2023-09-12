@@ -145,6 +145,19 @@ func (a *APIStore) GetTeamFromAPIKey(apiKey string) (string, error) {
 	return team.ID, nil
 }
 
+func (a *APIStore) GetUserFromAccessToken(accessToken string) (string, error) {
+	user, err := a.supabase.GetUserID(accessToken)
+	if err != nil {
+		return "", fmt.Errorf("failed to get get user from db for access token: %w", err)
+	}
+
+	if user == nil {
+		return "", fmt.Errorf("failed to get a user from access token")
+	}
+
+	return user.ID, nil
+}
+
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	info := a.cache.Get(instanceID)
 

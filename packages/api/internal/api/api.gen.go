@@ -39,7 +39,7 @@ type MiddlewareFunc func(c *gin.Context)
 // PostEnvs operation middleware
 func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 
-	c.Set(ApiKeyAuthScopes, []string{})
+	c.Set(AccessTokenAuthScopes, []string{})
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -53,8 +53,6 @@ func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
-
-	c.Set(ApiKeyAuthScopes, []string{})
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
