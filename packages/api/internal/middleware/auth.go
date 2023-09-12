@@ -26,7 +26,6 @@ func getAPIKeyFromRequest(req *http.Request) (string, error) {
 	}
 
 	// We expect a header value of the form "e2b_<token>"
-	// Bearer, per spec.
 	prefix := "e2b_"
 	if !strings.HasPrefix(apiKey, prefix) {
 		return "", ErrInvalidAuthHeader
@@ -54,8 +53,7 @@ func authenticate(getTeamFromAPIKey func(string) (string, error), ctx context.Co
 		return fmt.Errorf("invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key: %w", err)
 	}
 
-	// Set the property on the gin context so the handler is able to
-	// access the claims data we generate in here.
+	// Set the property on the gin context
 	middleware.GetGinContext(ctx).Set(constants.TeamIDContextKey, teamID)
 
 	return nil
