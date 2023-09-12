@@ -245,7 +245,8 @@ export const navigation = [
       { title: 'Installation', href: '/getting-started/installation' },
       { title: 'API Key', href: '/getting-started/api-key' },
       { title: 'SDK Basics', href: '/getting-started/basics' },
-      { title: 'Advanced SDK Usage', href: '/getting-started/advanced' },
+      { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
+      { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
     ],
   },
   {
