@@ -17,6 +17,7 @@ lint:
         - packages/api/internal/api/spec.gen.go
         - packages/api/internal/api/types.gen.go
         - packages/firecracker-task-driver/internal/client/**
+        - packages/build-task-driver/internal/client/**
     - linters: [codespell]
       paths:
         - "**/go.work.sum"

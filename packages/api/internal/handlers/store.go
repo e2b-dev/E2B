@@ -44,21 +44,6 @@ func NewAPIStore() *APIStore {
 
 	fmt.Println("Initialized Supabase client")
 
-	// Uncomment this to rebuild templates
-	// Keep this commented out in production to prevent rebuilding templates on restart
-	// TODO: Build only templates that changed
-	// go func() {
-	// 	err := nomadClient.RebuildTemplates(tracer)
-	// 	if err != nil {
-	// 		fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
-	// 	}
-	// }()
-	templates, templatesErr := nomad.GetTemplates()
-	if templatesErr != nil {
-		fmt.Fprintf(os.Stderr, "Error loading templates\n: %s", templatesErr)
-		panic(templatesErr)
-	}
-
 	var initialInstances []*api.Instance
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
@@ -92,13 +77,12 @@ func NewAPIStore() *APIStore {
 	}
 
 	return &APIStore{
-		nomad:     nomadClient,
-		supabase:  supabaseClient,
-		NextId:    1000,
-		cache:     cache,
-		tracer:    tracer,
-		templates: templates,
-		posthog:   posthogClient,
+		nomad:    nomadClient,
+		supabase: supabaseClient,
+		NextId:   1000,
+		cache:    cache,
+		tracer:   tracer,
+		posthog:  posthogClient,
 	}
 }
 

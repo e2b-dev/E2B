@@ -6,4 +6,5 @@ use (
 	./packages/api
 	./packages/envd
 	./packages/firecracker-task-driver
+	./packages/build-task-driver
 )
