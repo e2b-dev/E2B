@@ -39,7 +39,7 @@ func getAPIKeyFromRequest(req *http.Request) (string, error) {
 func authenticate(getTeamFromAPIKey func(string) (string, error), ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 	// Our security scheme is named ApiKeyAuth, ensure this is the case
 	if input.SecuritySchemeName != "ApiKeyAuth" {
-		return fmt.Errorf("security scheme %s != 'BearerAuth'", input.SecuritySchemeName)
+		return fmt.Errorf("security scheme %s != 'ApiKeyAuth'", input.SecuritySchemeName)
 	}
 
 	// Now, we need to get the API key from the request
