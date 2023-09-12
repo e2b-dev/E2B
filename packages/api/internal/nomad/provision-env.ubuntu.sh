@@ -5,8 +5,6 @@
 
 set -euo pipefail
 
-# TODO: Add swap
-
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
 cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
@@ -14,6 +12,42 @@ cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
 ExecStart=
 ExecStart=-/sbin/agetty --noissue --autologin root %I 115200,38400,9600 vt102
 EOF
+
+mkdir -p /etc/systemd/system
+
+cat <<EOF >/etc/systemd/system/envd.service
+[Unit]
+Description=Env Daemon Service
+
+[Service]
+Type=simple
+Restart=always
+User=root
+Group=root
+Environment=GOTRACEBACK=all
+LimitCORE=infinity
+ExecStart=/usr/bin/bash -l -c "/usr/bin/envd"
+OOMPolicy=continue
+OOMScoreAdjust=-999
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Chrony configuration
+mkdir -p /etc/chrony
+echo "refclock PHC /dev/ptp0 poll -1 dpoll -1 offset 0 trust prefer" >/etc/chrony/chrony.conf
+echo "makestep 1 -1" >>/etc/chrony/chrony.conf
+
+# Add chrony to systemd
+mkdir -p /etc/systemd/system/chrony.service.d
+echo "[Service]" >/etc/systemd/system/chrony.service.d/override.conf
+echo "ExecStart=" >>/etc/systemd/system/chrony.service.d/override.conf
+echo "ExecStart=/usr/sbin/chronyd" >>/etc/systemd/system/chrony.service.d/override.conf
+
+# TODO: Copy or download the specified envd version (this could be a variable)
+./envd /usr/bin/envd
+chmod +x /usr/bin/envd
 
 # --- Enable systemd services --- #
 # Because this script runs in a container we can't use `systemctl`.
@@ -39,7 +73,7 @@ passwd -d root
 # TODO: Change the directory for core dumps.
 # bash -c 'echo "kernel.core_pattern=/tmp/%e.%t.%p.%s.core" > /proc/sys/kernel/core_pattern'
 
-# Create defaul user.
+# Create default user.
 adduser --disabled-password --gecos "" user
 usermod -aG sudo user
 passwd -d user

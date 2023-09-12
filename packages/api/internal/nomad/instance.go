@@ -23,14 +23,8 @@ import (
 const (
 	instanceJobName          = "env-instance"
 	instanceJobNameWithSlash = instanceJobName + "/"
-	instanceJobFile          = instanceJobName + jobFileSuffix
 	jobRegisterTimeout       = time.Second * 30
-	allocationCheckTimeout   = time.Second * 30
-	fcTaskName               = "start"
 	instanceIDPrefix         = "i"
-	shortNodeIDLength        = 8
-	NomadTaskRunningState    = "running"
-	NomadTaskDeadState       = "dead"
 )
 
 var (
@@ -40,12 +34,12 @@ var (
 
 //go:embed env-instance.hcl
 var envInstanceFile string
-var envInstanceTemplate = template.Must(template.New(instanceJobName).Parse(envInstanceFile))
+var envInstanceTemplate = template.Must(template.New(buildJobName).Parse(envInstanceFile))
 
 func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
 	// trunk-ignore(golangci-lint/exhaustruct)
 	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
-		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, fcTaskName, NomadTaskRunningState),
+		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", buildJobNameWithSlash, defaultTaskName, taskRunningState),
 	})
 	if err != nil {
 		return nil, &api.APIError{
@@ -59,7 +53,7 @@ func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
 	for _, alloc := range allocations {
 		instances = append(instances, &api.Instance{
 			ClientID:   alloc.NodeID[:shortNodeIDLength],
-			InstanceID: alloc.JobID[len(instanceJobNameWithSlash):],
+			InstanceID: alloc.JobID[len(buildJobNameWithSlash):],
 			// TODO: Add envID from the job meta
 		})
 	}
@@ -98,9 +92,9 @@ func (n *NomadClient) CreateInstance(
 		EnvID            string
 		InstanceID       string
 		LogsProxyAddress string
-		FCTaskName       string
+		TaskName         string
 		JobName          string
-		FCEnvsDisk       string
+		EnvsDisk         string
 	}{
 		SpanID:           spanID,
 		TraceID:          traceID,
@@ -108,9 +102,9 @@ func (n *NomadClient) CreateInstance(
 		ConsulToken:      consulToken,
 		EnvID:            envID,
 		InstanceID:       instanceID,
-		FCTaskName:       fcTaskName,
-		JobName:          instanceJobName,
-		FCEnvsDisk:       fcEnvsDisk,
+		TaskName:         defaultTaskName,
+		JobName:          buildJobName,
+		EnvsDisk:         envsDisk,
 	}
 
 	err := envInstanceTemplate.Execute(&jobDef, jobVars)
@@ -125,7 +119,7 @@ func (n *NomadClient) CreateInstance(
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to parse the `%s` HCL job file: %+v", instanceJobFile, err),
+			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %+w", jobDef.String(), err),
 			ClientMsg: "Cannot create instance",
 			Code:      http.StatusInternalServerError,
 		}
@@ -133,7 +127,7 @@ func (n *NomadClient) CreateInstance(
 
 	res, _, err := n.client.Jobs().Register(job, nil)
 	if err != nil {
-		fmt.Printf("Failed to register '%s%s' job: %+v", instanceJobNameWithSlash, jobVars.InstanceID, err)
+		fmt.Printf("Failed to register '%s%s' job: %+v", buildJobNameWithSlash, jobVars.InstanceID, err)
 
 		return nil, &api.APIError{
 			Msg:       err.Error(),
@@ -146,14 +140,13 @@ func (n *NomadClient) CreateInstance(
 	evalID := res.EvalID
 	index := res.JobModifyIndex
 
-	alloc, err := n.WaitForJob(
+	alloc, err := n.WaitForJobStart(
 		ctx,
 		JobInfo{
-			name:   instanceJobNameWithSlash + instanceID,
+			name:   buildJobNameWithSlash + instanceID,
 			evalID: evalID,
 			index:  index,
 		},
-		allocationCheckTimeout,
 		meta,
 	)
 	if err != nil {
@@ -183,10 +176,10 @@ func (n *NomadClient) CreateInstance(
 }
 
 func (n *NomadClient) DeleteInstance(instanceID string, purge bool) *api.APIError {
-	_, _, err := n.client.Jobs().Deregister(instanceJobNameWithSlash+instanceID, purge, nil)
+	_, _, err := n.client.Jobs().Deregister(buildJobNameWithSlash+instanceID, purge, nil)
 	if err != nil {
 		return &api.APIError{
-			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", instanceJobNameWithSlash, instanceID, err),
+			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", buildJobNameWithSlash, instanceID, err),
 			ClientMsg: "Cannot delete the environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}

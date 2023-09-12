@@ -38,6 +38,9 @@
 - How to decouple terraform and domains
 - Enable advanced security scanning via GH
 - Better release system
+- Prose linting in the docs
+- create shared golang libs, rename package?
+- rename everything from sessions
 
 ### API
 - Add monitoring to the envs routes
@@ -122,3 +125,4 @@
 - Use balloning device to reclaim memore before making the snapshot to reduce the size of the snapshot
 - Use library for FS mounting in firecracker task driver
 - Reattach to fc process on recover in task driver
+- Should FC driver download/setup both FC and kernel?

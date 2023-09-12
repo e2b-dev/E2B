@@ -1,10 +1,10 @@
-job "{{ .JobName }}/{{ .InstanceID }}" {
+job "{{ .JobName }}/{{ .EnvID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 
-  priority = 40
+  priority = 20
 
-  group "instance" {
+  group "build" {
     reschedule {
       attempts  = 0
       unlimited = false
@@ -16,23 +16,16 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
     }
 
     task {{ .TaskName }} {
-      driver = "firecracker-task-driver"
+      driver = "build-task-driver"
 
       env {
-        NOMAD_NODE_ID = "${node.unique.id}"
         FC_ENVS_DISK = "{{ .EnvsDisk }}"
-      }
-
-      resources {
-        memory = 128
-        cpu = 200
       }
 
       config {
         EnvID = "{{ .EnvID }}"
-        InstanceID   = "{{ .InstanceID }}"
-        ConsulToken   = "{{ .ConsulToken }}"
-        LogsProxyAddress = "{{ .LogsProxyAddress }}"
+        ProvisionScript   = "{{ escapeHCL .ProvisionScript }}"
+        DockerContextPath   = "{{ .DockerContextPath }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"
       }
