@@ -31,6 +31,4 @@ await backgroundServer.kill() // $HighlightLine
 // Access the server output after the server process is killed
 const serverOutput = backgroundServer.output  // $HighlightLine
 
-console.log(requestOutput)
-
 await session.close()
