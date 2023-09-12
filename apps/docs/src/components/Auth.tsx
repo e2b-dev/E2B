@@ -8,24 +8,15 @@ import clsx from 'clsx'
 import { HeaderSeparator } from '@/components/HeaderUtils'
 import { usePostHog } from 'posthog-js/react'
 import { obfuscateKey } from '@/utils/obfuscate'
+import { useSignIn } from '@/utils/useSignIn'
 
 export const Auth = function () {
   const { user, isLoading, error } = useUser()
+  const signIn = useSignIn()
   const apiKey = useApiKey()
   const posthog = usePostHog()
   const router = useRouter()
   const supabase = createClientComponentClient()
-
-  async function signInWithGitHub() {
-    await supabase.auth.signInWithOAuth({
-      // Redirect to GitHub
-      provider: 'github',
-      options: {
-        redirectTo: window.location.href,
-        scopes: 'email',
-      },
-    })
-  }
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -63,7 +54,7 @@ export const Auth = function () {
               gap-2 text-xs
             "
           >
-            <span className="font-bold whitespace-nowrap text-zinc-400 group-hover:opacity-25">
+            <span className="whitespace-nowrap font-bold text-zinc-400 group-hover:opacity-25">
               API Key
             </span>
             <span className="whitespace-nowrap font-mono text-yellow-400 group-hover:opacity-25">
@@ -104,11 +95,7 @@ export const Auth = function () {
       ) : (
         <div className="flex items-center gap-3">
           {/* @ts-ignore */}
-          <Button
-            onClick={() => signInWithGitHub()}
-            variant="textTernary"
-            className="text-xs"
-          >
+          <Button onClick={() => signIn()} variant="textTernary" className="text-xs">
             Sign up to get your API key
           </Button>
           {/* @ts-ignore */}
