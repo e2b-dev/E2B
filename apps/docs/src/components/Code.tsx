@@ -21,7 +21,7 @@ import { ProcessMessage } from '@e2b/sdk'
 import { useSessionsStore } from '@/utils/useSessions'
 import { useSignIn } from '@/utils/useSignIn'
 import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
-import { useFeatureFlagEnabled, usePostHog } from "posthog-js/react";
+import { usePostHog } from "posthog-js/react";
 
 export function getPanelTitle({
   title,
@@ -51,10 +51,8 @@ function CodePanel({
   isRunnable?: boolean
 }) {
   const signIn = useSignIn()
-  const user = useUser()
   const apiKey = useApiKey()
   const posthog = usePostHog()
-  const runnableCodeSnippetsFF = useFeatureFlagEnabled('runnableCodeSnippets') // https://app.posthog.com/feature_flags/17443
   
   const codeGroupContext = useContext(CodeGroupContext) 
   
@@ -155,7 +153,7 @@ function CodePanel({
         top-[-40px]
         right-3
       ">
-        {(runnableCodeSnippetsFF && isRunnable) && (
+        {(isRunnable) && (
           <button
             className={clsx(`
                 group
