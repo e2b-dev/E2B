@@ -27,7 +27,7 @@ async def main():
   # Wait for the server request to finish running
   request_output = await server_request.finished
 
-  # Stop the background process (it would otherwise run indefinitely). After this the background_server.output should be populated with stdout and stderr that were outputted until the server was killed
+  # Stop the background process (it would otherwise run indefinitely)
   await background_server.kill() # $HighlightLine
 
   # Access the server output after the server process is killed
