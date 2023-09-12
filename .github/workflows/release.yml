@@ -19,10 +19,10 @@ jobs:
     outputs:
       get-version: ${{ steps.getversion.outputs.version }}
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
-      fc-env: ${{ steps.filter.outputs.fc-env }}
       api-image: ${{ steps.filter.outputs.api-image }}
       envd: ${{ steps.filter.outputs.envd }}
-      firecracker-task-driver: ${{ steps.filter.outputs.firecracker-task-driver }}
+      fc-instance-task-driver: ${{ steps.filter.outputs.fc-instance-task-driver }}
+      fc-build-task-driver: ${{ steps.filter.outputs.fc-build-task-driver }}
       version: ${{ steps.filter.outputs.version }}
     steps:
       - name: Checkout repository
@@ -49,18 +49,18 @@ jobs:
             cluster-disk-image:
               - 'packages/cluster-disk-image/**'
               - '.github/workflows/cluster-disk-image.yml'
-            fc-env:
-              - 'packages/fc-env/**'
-              - '.github/workflows/fc-env.yml'
             api-image:
               - 'packages/api/**'
               - '.github/workflows/api-image.yml'
             envd:
               - 'packages/envd/**'
               - '.github/workflows/envd.yml'
-            firecracker-task-driver:
-              - 'packages/firecracker-task-driver/**'
-              - '.github/workflows/firecracker-task-driver.yml'
+            fc-instance-task-driver:
+              - 'packages/fc-instance-task-driver/**'
+              - '.github/workflows/fc-instance-task-driver.yml'
+            fc-build-task-driver:
+              - 'packages/fc-build-task-driver/**'
+              - '.github/workflows/fc-build-task-driver.yml'
             version:
               - 'VERSION'
 
@@ -68,31 +68,42 @@ jobs:
         id: getversion
         run: echo "::set-output name=version::$(cat VERSION)"
 
-  firecracker-task-driver:
-    name: Devbook Firecracker Task Driver
+  fc-instance-task-driver:
+    name: FC Instance Task Driver
     needs: changes
     if: |
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.firecracker-task-driver == 'true'
-    uses: ./.github/workflows/firecracker-task-driver.yml
+      needs.changes.outputs.fc-instance-task-driver == 'true'
+    uses: ./.github/workflows/fc-instance-task-driver.yml
+    secrets:
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+  fc-build-task-driver:
+    name: FC Build Task Driver
+    needs: changes
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.fc-build-task-driver == 'true'
+    uses: ./.github/workflows/fc-build-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   cluster-disk-image:
     name: Cluster disk image
-    needs: [changes, firecracker-task-driver]
+    needs: [changes, fc-instance-task-driver, fc-build-task-driver]
     if: |
       always() &&
       needs.changes.outputs.version == 'true' &&
-      (needs.changes.outputs.cluster-disk-image == 'true' || needs.firecracker-task-driver.result == 'success')
+      (needs.changes.outputs.cluster-disk-image == 'true' || needs.fc-instance-task-driver.result == 'success' || needs.fc-build-task-driver.result == 'success')
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   envd:
-    name: Devbook Daemon
+    name: Env Daemon
     needs: changes
     if: |
       needs.changes.outputs.version == 'true' &&
@@ -102,17 +113,6 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
       version: ${{ needs.changes.outputs.get-version }}
-
-  fc-env:
-    name: FC env (pipeline scripts)
-    needs: changes
-    if: |
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.fc-env == 'true'
-    uses: ./.github/workflows/fc-env.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   api-image:
     name: API image
@@ -132,19 +132,19 @@ jobs:
       [
         changes,
         cluster-disk-image,
-        fc-env,
         api-image,
         envd,
-        firecracker-task-driver,
+        fc-instance-task-driver,
+        fc-build-task-driver,
       ]
     if: |
       always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
-      (needs.fc-env.result == 'success' || needs.fc-env.result == 'skipped') &&
       (needs.envd.result == 'success' || needs.envd.result == 'skipped') &&
-      (needs.firecracker-task-driver.result == 'success' || needs.firecracker-task-driver.result == 'skipped') &&
+      (needs.fc-instance-task-driver.result == 'success' || needs.fc-instance-task-driver.result == 'skipped') &&
+      (needs.fc-build-task-driver.result == 'success' || needs.fc-build-task-driver.result == 'skipped') &&
       (needs.api-image.result == 'success' || needs.api-image.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
@@ -164,8 +164,7 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          name: Devbook API v${{ needs.changes.outputs.get-version }}
+          name: API v${{ needs.changes.outputs.get-version }}
           tag: v${{ needs.changes.outputs.get-version }}
-          commit: master
+          commit: main
           generateReleaseNotes: true
-          # TODO: Add release artifacts for envd

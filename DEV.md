@@ -47,8 +47,6 @@
 - Remove Nomad Polling from API
 - Move API keys to header from query params
 - Make the API server stateless by moving the session state to the DB
-- embed all hcl tasks in the API code (also the fc-env scripts?)
-- Change FC env building system - not having separate fc-env dir/package - inline?
 - Add better error if the env was not found
 - Improve request logging
 
@@ -96,7 +94,6 @@
 - Limit build/update env CPU and memory or build the envs in a separate machine
 - Delete files after a failed build/update env
   - Stop possible running containers and delete docker image
-- fc-envs build scripts are sometimes cached
 - Rebuild only the changed templates on push
 - make the instance image minimal -- put the kernel, fc, etc to the nomad artifacts
 - Check debian vs ubuntu

@@ -1,0 +1,44 @@
+name: FC Build Task Driver
+
+on:
+  workflow_call:
+    secrets:
+      service_account_email:
+        required: true
+      workload_identity_provider:
+        required: true
+
+jobs:
+  publish:
+    name: Build, upload and release
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: ./packages/fc-build-task-driver/go.mod
+          cache: true
+          cache-dependency-path: ./packages/fc-build-task-driver/go.sum
+
+      - name: Download deps
+        working-directory: ./packages/fc-build-task-driver
+        run: go mod tidy
+
+      - name: Build
+        working-directory: ./packages/fc-build-task-driver
+        run: make build
+
+      - name: Setup Service Account
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account_email }}
+
+      - name: Upload firecracker task driver
+        uses: "google-github-actions/upload-cloud-storage@v1"
+        with:
+          path: "./packages/fc-build-task-driver/bin/fc-build-task-driver"
+          destination: "e2b-fc-env-pipeline"

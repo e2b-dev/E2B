@@ -16,7 +16,7 @@ job "{{ .JobName }}/{{ .EnvID }}" {
     }
 
     task {{ .TaskName }} {
-      driver = "build-task-driver"
+      driver = "fc-build-task-driver"
 
       env {
         FC_ENVS_DISK = "{{ .EnvsDisk }}"
