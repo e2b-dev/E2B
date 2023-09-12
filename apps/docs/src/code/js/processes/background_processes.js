@@ -25,7 +25,7 @@ const serverRequest = await session.process.start({ cmd: 'curl localhost:8000' }
 // Wait for the server request to finish running
 const requestOutput = await serverRequest.finished
 
-// Stops the background process (it would otherwise run indefinitely)
+// Stop the background process (it would otherwise run indefinitely)
 await backgroundServer.kill() // $HighlightLine
 
 // Access the server output after the server process is killed
