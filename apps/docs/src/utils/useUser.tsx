@@ -12,15 +12,12 @@ import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
-import { Session as Playground } from '@e2b/sdk'
 
 type UserContextType = {
   isLoading: boolean
   session: Session | null
   user: (User & { teams: any[]; apiKeys: any[] }) | null
   error: Error | null
-  pythonPlayground: Playground | Promise<Playground> | null
-  jsPlayground: Playground | Promise<Playground> | null
 }
 
 export const UserContext = createContext(undefined)
@@ -41,11 +38,6 @@ export const CustomUserContextProvider = (props) => {
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
-  const [jsPlayground, setJSPlayground] = useState<Promise<Playground> | null>(
-    null
-  )
-  const [pythonPlayground, setPythonPlayground] =
-    useState<Promise<Playground> | null>(null)
 
   useEffect(() => {
     mounted.current = true
@@ -135,8 +127,6 @@ export const CustomUserContextProvider = (props) => {
         error: null,
         session: null,
         user: null,
-        pythonPlayground: null,
-        jsPlayground: null,
       }
     }
 
@@ -146,8 +136,6 @@ export const CustomUserContextProvider = (props) => {
         error,
         session: null,
         user: null,
-        pythonPlayground: null,
-        jsPlayground: null,
       }
     }
 
@@ -156,10 +144,8 @@ export const CustomUserContextProvider = (props) => {
       error: null,
       session,
       user,
-      pythonPlayground,
-      jsPlayground,
     }
-  }, [isLoading, user, session, error, pythonPlayground, jsPlayground])
+  }, [isLoading, user, session, error])
 
   return <UserContext.Provider value={value} {...props} />
 }
