@@ -45,7 +45,7 @@ function APIKey() {
       ) : (
         <>
           <span>You can get your API key by signing up.</span>
-          <Button onClick={signIn}>Sign up to get your API key</Button>
+          <Button onClick={() => signIn()}>Sign up to get your API key</Button>
         </>
       )}
     </div>

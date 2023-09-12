@@ -13,7 +13,7 @@ export function ButtonLoginToken() {
   if (user) return null
 
   return (
-    <Button onClick={signIn} variant="textTernary" className={extraClassName}>
+    <Button onClick={() => signIn()} variant="textTernary" className={extraClassName}>
       Sign up to get your API key
     </Button>
   )
