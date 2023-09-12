@@ -115,38 +115,6 @@ export const CustomUserContextProvider = (props) => {
         ) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
-      if (apiKeys && apiKeys[0]?.api_key) {
-        // const apiKey = apiKeys[0].api_key
-        // const sharedOpts = {
-        //   onStdout: stdHandler,
-        //   onStderr: stdHandler,
-        //   rootdir: '/code',
-        // }
-        // const { preferredLanguages } = usePreferredLanguageStore.getState()
-        // console.log('Creating playgrounds...', preferredLanguages)
-        //
-        // const jsSessionP = Playground.create({ id: 'Nodejs', apiKey })
-        // jsSessionP.then(async (pl) => {
-        //     console.log('JS playground created 🟡')
-        //     const process = await pl.process.start({ cmd: 'npm init es6 -y && npm install @e2b/sdk', ...sharedOpts })
-        //     await process.finished
-        //     console.log('JS playground ready 🟢')
-        //     return pl
-        //   })
-        //
-        // const pySessionP = Playground.create({ id: 'Python', apiKey })
-        // pySessionP.then(async (pl) => {
-        //     console.log('Python playground created 🟡')
-        //     const process = await pl.process.start({ cmd: 'pip install e2b', ...sharedOpts })
-        //     await process.finished
-        //     console.log('Python playground ready 🟢')
-        //     return pl
-        //   })
-        //
-        // setJSPlayground(jsSessionP)
-        // setPythonPlayground(pySessionP)
-      }
-
       setUser({
         ...session?.user,
         teams,
