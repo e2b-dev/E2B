@@ -4,24 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-)
 
-const teamApiKeysTableName = "team_api_keys"
-const accessTokenTableName = "access_tokens"
+	"github.com/e2b-dev/api/packages/api/internal/db/models"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+)
 
 type team struct {
 	ID string `json:"team_id"`
 }
 
 func (db *DB) GetTeamID(apiKey string) (*team, error) {
-	var result team
-
-	err := db.Client.
-		From(teamApiKeysTableName).
-		Select("team_id").
-		Single().
-		Eq("api_key", apiKey).
-		Execute(&result)
+	result, err := models.TeamAPIKeys(qm.Where("api_key = ?", apiKey)).One(db.Client)
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
 		if errors.As(err, &jsonSyntaxErr) {
@@ -33,7 +26,7 @@ func (db *DB) GetTeamID(apiKey string) (*team, error) {
 		return nil, fmt.Errorf("failed to get team from API key: %w", err)
 	}
 
-	return &result, nil
+	return &team{result.TeamID}, nil
 }
 
 type user struct {
@@ -41,14 +34,7 @@ type user struct {
 }
 
 func (db *DB) GetUserID(accessToken string) (*user, error) {
-	var result user
-
-	err := db.Client.
-		From(accessTokenTableName).
-		Select("user_id").
-		Single().
-		Eq("access_token", accessToken).
-		Execute(&result)
+	result, err := models.AccessTokens(qm.Where("access_token = ?", accessToken)).One(db.Client)
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
 		if errors.As(err, &jsonSyntaxErr) {
@@ -60,5 +46,5 @@ func (db *DB) GetUserID(accessToken string) (*user, error) {
 		return nil, fmt.Errorf("failed to get user from access token: %w", err)
 	}
 
-	return &result, nil
+	return &user{result.UserID}, nil
 }

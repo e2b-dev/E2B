@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/e2b-dev/api/packages/api/internal/constants"
-
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
+	"github.com/e2b-dev/api/packages/api/internal/constants"
 	"github.com/getkin/kin-openapi/openapi3filter"
 )
 
@@ -29,7 +28,7 @@ type authenticator struct {
 }
 
 // getApiKeyFromRequest extracts an API key from the header.
-func (a *authenticator) getApiKeyFromRequest(req *http.Request) (string, error) {
+func (a *authenticator) getAPIKeyFromRequest(req *http.Request) (string, error) {
 	apiKey := req.Header.Get(a.headerKey)
 	// Check for the Authorization header.
 	if apiKey == "" {
@@ -57,7 +56,7 @@ func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.
 	}
 
 	// Now, we need to get the API key from the request
-	apiKey, err := a.getApiKeyFromRequest(input.RequestValidationInput.Request)
+	apiKey, err := a.getAPIKeyFromRequest(input.RequestValidationInput.Request)
 	if err != nil {
 		return fmt.Errorf("%v %w", a.errorMessage, err)
 	}
@@ -98,8 +97,11 @@ func CreateAuthenticationFunc(teamValidationFunction func(string) (string, error
 		if input.SecuritySchemeName == apiKeyValidator.securitySchemeName {
 			return apiKeyValidator.Authenticate(ctx, input)
 		}
+
 		if input.SecuritySchemeName == accessTokenValidator.securitySchemeName {
 			return accessTokenValidator.Authenticate(ctx, input)
 		}
+
+		return fmt.Errorf("invalid security scheme name '%s'", input.SecuritySchemeName)
 	}
 }

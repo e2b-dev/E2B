@@ -6,17 +6,14 @@ import (
 	"fmt"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/utils"
+	"github.com/e2b-dev/api/packages/api/internal/db/models"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-const envsTableName = "envs"
-
 func (db *DB) DeleteEnv(envID string) error {
-	err := db.Client.
-		From(envsTableName).
-		Delete().
-		Eq("id", envID).
-		Execute(nil)
+	_, err := models.Envs(qm.Where("ID = ?", envID)).DeleteAll(db.Client)
+
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
 		if errors.As(err, &jsonSyntaxErr) {
@@ -32,10 +29,7 @@ func (db *DB) DeleteEnv(envID string) error {
 }
 
 func (db *DB) GetEnvs() (result []*api.Environment, err error) {
-	err = db.Client.
-		From(envsTableName).
-		Select("*").
-		Execute(result)
+	envs, err := models.Envs().All(db.Client)
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
 		if errors.As(err, &jsonSyntaxErr) {
@@ -47,26 +41,28 @@ func (db *DB) GetEnvs() (result []*api.Environment, err error) {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
 
+	for _, env := range envs {
+		result = append(result, &api.Environment{
+			EnvID: env.ID,
+		})
+	}
+
 	return result, nil
 }
 
 type newEnv struct {
-	BuildConfig *api.BuildConfig `json:"build_config"`
-	ID          string           `json:"id"`
+	ID string `json:"id"`
 }
 
-func (db *DB) CreateEnv(buildConfig *api.BuildConfig) (*newEnv, error) {
-	envID := utils.GenerateID()
-
-	body := newEnv{
-		ID:          envID,
-		BuildConfig: buildConfig,
+func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*newEnv, error) {
+	// trunk-ignore(golangci-lint/exhaustruct)
+	env := &models.Env{
+		ID:         envID,
+		TeamID:     teamID,
+		Dockerfile: dockerfile,
 	}
+	err := env.Insert(db.Client, boil.Infer())
 
-	err := db.Client.
-		From(envsTableName).
-		Insert(&body).
-		Execute(nil)
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
 		if errors.As(err, &jsonSyntaxErr) {
@@ -75,8 +71,8 @@ func (db *DB) CreateEnv(buildConfig *api.BuildConfig) (*newEnv, error) {
 
 		fmt.Printf("error: %v\n", err)
 
-		return nil, fmt.Errorf("failed to create env with id '%s' with build config '%s': %w", envID, buildConfig, err)
+		return nil, fmt.Errorf("failed to create env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
 	}
 
-	return &body, nil
+	return &newEnv{envID}, nil
 }

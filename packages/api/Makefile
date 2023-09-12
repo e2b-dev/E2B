@@ -2,6 +2,7 @@ include .env
 
 openapi := ../../spec/openapi.yml
 codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+sqlboiler := go run github.com/volatiletech/sqlboiler/v4@latest
 
 GCP_PROJECT := e2b-prod
 IMAGE := orchestration/api
@@ -11,6 +12,12 @@ generate:
 	$(codegen) -old-config-style -generate gin --package api $(openapi) > internal/api/api.gen.go
 	$(codegen) -old-config-style -generate types --package api $(openapi) > internal/api/types.gen.go
 	$(codegen) -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
+	PSQL_PASS=$(PSQL_PASS) \
+	PSQL_HOST=$(PSQL_HOST) \
+	PSQL_PORT=$(PSQL_PORT) \
+	PSQL_USER=$(PSQL_USER) \
+	PSQL_DBNAME=$(PSQL_DBNAME) \
+	$(sqlboiler) psql -o ./internal/db/models --no-context
 
 .PHONY: build
 build:
@@ -26,9 +33,8 @@ run:
 	API_ADMIN_KEY=test \
 	NOMAD_ADDRESS=http://34.96.124.39 \
 	NOMAD_TOKEN=$(NOMAD_TOKEN) \
-	SUPABASE_KEY=$(SUPABASE_KEY) \
-	SUPABASE_URL=$(SUPABASE_URL) \
 	CONSUL_TOKEN=$(CONSUL_TOKEN) \
+	DATABASE_CONNECTION_STRING=$(DATABASE_CONNECTION_STRING) \
 	GOTRACEBACK=crash \
 	GODEBUG=madvdontneed=1 \
 	./bin/api --port 3000 -telemetry-api=$(telemetry-api)

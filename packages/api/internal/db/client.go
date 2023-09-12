@@ -1,42 +1,36 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
-	"net/url"
 	"os"
 
-	postgrest "github.com/nedpals/postgrest-go/pkg"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	_ "github.com/volatiletech/sqlboiler/v4/drivers/sqlboiler-psql/driver"
 )
 
 type DB struct {
-	Client *postgrest.Client
+	Client *sql.DB
 }
 
 var (
-	supabaseURL = os.Getenv("SUPABASE_URL")
-	supabaseKey = os.Getenv("SUPABASE_KEY")
+	databaseURL = os.Getenv("DATABASE_CONNECTION_STRING")
 )
 
 func NewClient() (*DB, error) {
-	// The /rest/v1/ at the end of url is required
-	parsedURL, err := url.Parse(supabaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse Supabase URL '%s': %w", supabaseURL, err)
-	}
+	fmt.Println("databaseURL", databaseURL)
+	db, err := sql.Open("postgres", databaseURL)
 
-	client := postgrest.NewClient(
-		*parsedURL,
-		postgrest.WithTokenAuth(supabaseKey),
-		func(c *postgrest.Client) {
-			c.AddHeader("apikey", supabaseKey)
-		},
-	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	boil.SetDB(db)
 
 	return &DB{
-		Client: client,
+		Client: db,
 	}, nil
 }
 
 func (db *DB) Close() {
-	db.Client.CloseIdleConnections()
+	_ = db.Client.Close()
 }
