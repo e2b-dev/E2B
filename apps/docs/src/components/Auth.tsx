@@ -95,7 +95,7 @@ export const Auth = function () {
       ) : (
         <div className="flex items-center gap-3">
           {/* @ts-ignore */}
-          <Button onClick={signIn()} variant="textTernary" className="text-xs">
+          <Button onClick={() => signIn()} variant="textTernary" className="text-xs">
             Sign up to get your API key
           </Button>
           {/* @ts-ignore */}
