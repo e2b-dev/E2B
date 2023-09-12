@@ -12,7 +12,7 @@ import { configName } from 'src/config'
 import { setCommand } from './set'
 
 export const envCommand = new commander.Command('env')
-  .description(`Manage Devbook environments and their ${asLocal(configName)} configs`)
+  .description(`Manage e2b environments and their ${asLocal(configName)} configs`)
   .addCommand(createCommand)
   .addCommand(pushCommand)
   .addCommand(publishCommand)
