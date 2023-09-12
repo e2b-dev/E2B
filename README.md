@@ -9,8 +9,8 @@ Then push to `main` to deploy these changes. Changed packages will be automatica
 
 **If the deployment fails don't run the previous commands again, just fix the error and push to `main`.**
 
-### Errors in the fc-instance-task-driver
-If you are not developing fc-instance-task-driver module on a unix machine you won't be able to complile the module because you will miss constants like "netlink.SCOPE_UNIVERSE".
+### Errors in the env-instance-task-driver
+If you are not developing env-instance-task-driver module on a unix machine you won't be able to complile the module because you will miss constants like "netlink.SCOPE_UNIVERSE".
 Use the ubuntu devcontainer to develop this module.
 
 ### Resizing fc-envs disk (XFS)

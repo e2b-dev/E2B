@@ -1,7 +1,0 @@
-*.out
-.plan
-alloc
-plugin
-fc-instance-task-driver
-
-bin

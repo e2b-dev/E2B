@@ -21,8 +21,8 @@ jobs:
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
       api-image: ${{ steps.filter.outputs.api-image }}
       envd: ${{ steps.filter.outputs.envd }}
-      fc-instance-task-driver: ${{ steps.filter.outputs.fc-instance-task-driver }}
-      fc-build-task-driver: ${{ steps.filter.outputs.fc-build-task-driver }}
+      env-instance-task-driver: ${{ steps.filter.outputs.env-instance-task-driver }}
+      env-build-task-driver: ${{ steps.filter.outputs.env-build-task-driver }}
       version: ${{ steps.filter.outputs.version }}
     steps:
       - name: Checkout repository
@@ -55,12 +55,12 @@ jobs:
             envd:
               - 'packages/envd/**'
               - '.github/workflows/envd.yml'
-            fc-instance-task-driver:
-              - 'packages/fc-instance-task-driver/**'
-              - '.github/workflows/fc-instance-task-driver.yml'
-            fc-build-task-driver:
-              - 'packages/fc-build-task-driver/**'
-              - '.github/workflows/fc-build-task-driver.yml'
+            env-instance-task-driver:
+              - 'packages/env-instance-task-driver/**'
+              - '.github/workflows/env-instance-task-driver.yml'
+            env-build-task-driver:
+              - 'packages/env-build-task-driver/**'
+              - '.github/workflows/env-build-task-driver.yml'
             version:
               - 'VERSION'
 
@@ -68,35 +68,35 @@ jobs:
         id: getversion
         run: echo "::set-output name=version::$(cat VERSION)"
 
-  fc-instance-task-driver:
-    name: FC Instance Task Driver
+  env-instance-task-driver:
+    name: Env Instance Task Driver
     needs: changes
     if: |
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.fc-instance-task-driver == 'true'
-    uses: ./.github/workflows/fc-instance-task-driver.yml
+      needs.changes.outputs.env-instance-task-driver == 'true'
+    uses: ./.github/workflows/env-instance-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  fc-build-task-driver:
-    name: FC Build Task Driver
+  env-build-task-driver:
+    name: Env Build Task Driver
     needs: changes
     if: |
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.fc-build-task-driver == 'true'
-    uses: ./.github/workflows/fc-build-task-driver.yml
+      needs.changes.outputs.env-build-task-driver == 'true'
+    uses: ./.github/workflows/env-build-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   cluster-disk-image:
     name: Cluster disk image
-    needs: [changes, fc-instance-task-driver, fc-build-task-driver]
+    needs: [changes, env-instance-task-driver, env-build-task-driver]
     if: |
       always() &&
       needs.changes.outputs.version == 'true' &&
-      (needs.changes.outputs.cluster-disk-image == 'true' || needs.fc-instance-task-driver.result == 'success' || needs.fc-build-task-driver.result == 'success')
+      (needs.changes.outputs.cluster-disk-image == 'true' || needs.env-instance-task-driver.result == 'success' || needs.env-build-task-driver.result == 'success')
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -134,8 +134,8 @@ jobs:
         cluster-disk-image,
         api-image,
         envd,
-        fc-instance-task-driver,
-        fc-build-task-driver,
+        env-instance-task-driver,
+        env-build-task-driver,
       ]
     if: |
       always() &&
@@ -143,8 +143,8 @@ jobs:
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.envd.result == 'success' || needs.envd.result == 'skipped') &&
-      (needs.fc-instance-task-driver.result == 'success' || needs.fc-instance-task-driver.result == 'skipped') &&
-      (needs.fc-build-task-driver.result == 'success' || needs.fc-build-task-driver.result == 'skipped') &&
+      (needs.env-instance-task-driver.result == 'success' || needs.env-instance-task-driver.result == 'skipped') &&
+      (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
       (needs.api-image.result == 'success' || needs.api-image.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:

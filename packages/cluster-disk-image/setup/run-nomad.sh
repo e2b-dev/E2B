@@ -206,8 +206,8 @@ $client_config
 $server_config
 
 plugin_dir = "/opt/nomad/plugins"
-plugin "fc-instance-task-driver" {}
-plugin "fc-build-task-driver" {}
+plugin "env-instance-task-driver" {}
+plugin "env-build-task-driver" {}
 
 plugin "raw_exec" {
   config {

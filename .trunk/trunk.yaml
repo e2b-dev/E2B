@@ -16,8 +16,8 @@ lint:
         - packages/api/internal/api/api.gen.go
         - packages/api/internal/api/spec.gen.go
         - packages/api/internal/api/types.gen.go
-        - packages/fc-instance-task-driver/internal/client/**
-        - packages/fc-build-task-driver/internal/client/**
+        - packages/env-instance-task-driver/internal/client/**
+        - packages/env-build-task-driver/internal/client/**
     - linters: [codespell]
       paths:
         - "**/go.work.sum"

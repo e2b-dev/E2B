@@ -16,7 +16,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
     }
 
     task {{ .TaskName }} {
-      driver = "fc-instance-task-driver"
+      driver = "env-instance-task-driver"
 
       env {
         NOMAD_NODE_ID = "${node.unique.id}"
