@@ -12,17 +12,11 @@ servers:
 components:
   securitySchemes:
     ApiKeyAuth:
-      name: api_key
       type: apiKey
-      in: query
+      in: header
+      name: X-API-Key
 
   parameters:
-    apiKey:
-      name: api_key
-      in: query
-      required: true
-      schema:
-        type: string
     envID:
       name: envID
       in: path
@@ -57,21 +51,22 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
-    BuildConfig:
-      type: object
-      required:
-        - Dockerfile
-      properties:
-        Dockerfile:
-          type: string
-          description: Dockerfile content
-
-    NewEnvironment:
+    EnvironmentToBuild:
       required:
         - buildConfig
+        - dockerfile
       properties:
-        buildConfig:
-          $ref: "#/components/schemas/BuildConfig"
+        buildContext:
+          description: Docker build context
+          type: string
+          format: binary
+        dockerfile:
+          type: string
+          description: Dockerfile content
+        envID:
+          type: string
+          description: ID of the environment, only present if the environment should be rebuilt
+
 
     Environment:
       required:
@@ -123,12 +118,36 @@ paths:
         401:
           $ref: "#/components/responses/401"
 
+
+  /instances:
+    post:
+      description: Create an instance from the environment
+      tags: [instances]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Environment"
+      responses:
+        202:
+          description: The build has started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
+
   /instances/{instanceID}/refreshes:
     post:
       description: Refresh the instance extending its time to live
-      tags: [instances]
+      tags: [ instances ]
       parameters:
-        - $ref: "#/components/parameters/apiKey"
         - $ref: "#/components/parameters/instanceID"
       responses:
         204:
@@ -162,23 +181,23 @@ paths:
     #         $ref: "#/components/responses/500"
     post:
       description: Create a new environment
-      tags: [envs]
+      tags: [ envs ]
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/NewEnvironment"
+              $ref: "#/components/schemas/EnvironmentToBuild"
+            encoding:
+              buildContext:
+                contentType: application/gzip
       responses:
         200:
           description: Successfully returned all environments
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/Environment"
+                $ref: "#/components/schemas/Environment"
         401:
           $ref: "#/components/responses/401"
         500:
@@ -204,29 +223,5 @@ paths:
   #       500:
   #         $ref: "#/components/responses/500"
 
-  /envs/{envID}/instances:
-    post:
-      description: Create an instance from the environment
-      tags: [instances]
-      parameters:
-        - $ref: "#/components/parameters/apiKey"
-        - $ref: "#/components/parameters/envID"
-      responses:
-        201:
-          description: Successfully created an environment instance
-          headers:
-            Location:
-              schema:
-                type: string
-                format: uri
-                description: URI of the created instance
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Instance"
-        401:
-          $ref: "#/components/responses/401"
-        400:
-          $ref: "#/components/responses/400"
-        500:
-          $ref: "#/components/responses/500"
+security:
+  - ApiKeyAuth: [ ]
