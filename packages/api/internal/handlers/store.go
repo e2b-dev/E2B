@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"cloud.google.com/go/storage"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,14 +20,15 @@ import (
 )
 
 type APIStore struct {
-	cache     *nomad.InstanceCache
-	nomad     *nomad.NomadClient
-	supabase  *db.DB
-	posthog   posthog.Client
-	NextId    int64
-	Lock      sync.Mutex
-	tracer    trace.Tracer
-	templates *[]string
+	cache        *nomad.InstanceCache
+	nomad        *nomad.NomadClient
+	supabase     *db.DB
+	posthog      posthog.Client
+	NextId       int64
+	Lock         sync.Mutex
+	tracer       trace.Tracer
+	templates    *[]string
+	cloudStorage *cloudStorage
 }
 
 func NewAPIStore() *APIStore {
@@ -92,14 +95,28 @@ func NewAPIStore() *APIStore {
 		fmt.Println("Skipping syncing sessions with Nomad, running locally")
 	}
 
+	ctx := context.Background()
+	storageClient, err := storage.NewClient(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %s", err)
+		panic(err)
+	}
+
+	cStorage := &cloudStorage{
+		bucket:  os.Getenv("GOOGLE_CLOUD_STORAGE_BUCKET"),
+		client:  storageClient,
+		context: ctx,
+	}
+
 	return &APIStore{
-		nomad:     nomadClient,
-		supabase:  supabaseClient,
-		NextId:    1000,
-		cache:     cache,
-		tracer:    tracer,
-		templates: templates,
-		posthog:   posthogClient,
+		nomad:        nomadClient,
+		supabase:     supabaseClient,
+		NextId:       1000,
+		cache:        cache,
+		tracer:       tracer,
+		templates:    templates,
+		posthog:      posthogClient,
+		cloudStorage: cStorage,
 	}
 }
 
@@ -110,6 +127,10 @@ func (a *APIStore) Close() {
 	err := a.posthog.Close()
 	if err != nil {
 		fmt.Printf("Error closing Posthog client\n: %s", err)
+	}
+	err = a.cloudStorage.client.Close()
+	if err != nil {
+		fmt.Printf("Error closing Cloud Storage client\n: %s", err)
 	}
 }
 

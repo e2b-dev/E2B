@@ -2,12 +2,11 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/e2b-dev/api/packages/api/internal/constants"
 	"github.com/e2b-dev/api/packages/api/internal/utils"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
-
-	"github.com/e2b-dev/api/packages/api/internal/constants"
-	"github.com/gin-gonic/gin"
 )
 
 func (a *APIStore) PostEnvs(
@@ -15,15 +14,25 @@ func (a *APIStore) PostEnvs(
 ) {
 	ctx := c.Request.Context()
 
-	file, err := c.FormFile("buildContext")
+	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
 	if err != nil {
 		formErr := fmt.Errorf("error when parsing form data: %w", err)
 		ReportCriticalError(ctx, formErr)
 		return
 	}
+	defer fileContent.Close()
 
-	if !strings.HasSuffix(file.Filename, ".tar.gz") {
+	// Check if file is a tar.gz file
+	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz") {
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz file")
+
+		return
+	}
+
+	// Upload file to cloud storage
+	err = a.uploadFile(fileHandler.Filename, fileContent)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file: %s", err))
 
 		return
 	}
@@ -36,6 +45,7 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
+	// Prepare info for new env
 	envID = utils.GenerateID()
 	userID := c.Value(constants.UserIDContextKey).(string)
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
@@ -46,6 +56,7 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
+	// Save env to database
 	newEnv, err := a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when creating env: %s", err))
