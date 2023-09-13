@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	ApiKeyAuthScopes = "ApiKeyAuth.Scopes"
+	AccessTokenAuthScopes = "AccessTokenAuth.Scopes"
+	ApiKeyAuthScopes      = "ApiKeyAuth.Scopes"
 )
 
 // Environment defines model for Environment.
