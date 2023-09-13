@@ -3,6 +3,7 @@ package env
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/client"
@@ -51,8 +52,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		client:     client,
 	}
 
-	// TODO: Add more detailed tracing here
-
 	err := snapshot.start(ctx, tracer)
 	if err != nil {
 		return nil, err
@@ -84,13 +83,20 @@ func (s *Snapshot) start(ctx context.Context, tracer trace.Tracer) error {
 			KernelImagePath: &s.env.KernelImagePath,
 		},
 	}
+	_, err := s.client.Operations.PutGuestBootSource(&bootSourceConfig)
+	if err != nil {
+		errMsg := fmt.Errorf("error setting fc boot source config %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
+	}
 
-	rootfs := rootfsName
+	rootfs := "rootfs"
 	isRootDevice := true
 	isReadOnly := false
-	pathOnHost := s.env.BuildRootfs
+	pathOnHost := s.env.tmpRootfsPath
 	driversConfig := operations.PutGuestDriveByIDParams{
 		Context: childCtx,
+		DriveID: rootfs,
 		Body: &models.Drive{
 			DriveID:      &rootfs,
 			PathOnHost:   &pathOnHost,
@@ -98,16 +104,29 @@ func (s *Snapshot) start(ctx context.Context, tracer trace.Tracer) error {
 			IsReadOnly:   &isReadOnly,
 		},
 	}
+	_, err = s.client.Operations.PutGuestDriveByID(&driversConfig)
+	if err != nil {
+		errMsg := fmt.Errorf("error setting fc drivers config %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
+	}
 
 	ifaceID := fcIfaceID
 	hostDevName := fcTapName
 	networkConfig := operations.PutGuestNetworkInterfaceByIDParams{
 		Context: childCtx,
+		IfaceID: ifaceID,
 		Body: &models.NetworkInterface{
 			IfaceID:     &ifaceID,
 			GuestMac:    fcMacAddress,
 			HostDevName: &hostDevName,
 		},
+	}
+	_, err = s.client.Operations.PutGuestNetworkInterfaceByID(&networkConfig)
+	if err != nil {
+		errMsg := fmt.Errorf("error setting fc network config %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
 	}
 
 	smt := true
@@ -121,6 +140,12 @@ func (s *Snapshot) start(ctx context.Context, tracer trace.Tracer) error {
 			TrackDirtyPages: &trackDirtyPages,
 		},
 	}
+	_, err = s.client.Operations.PutMachineConfiguration(&machineConfig)
+	if err != nil {
+		errMsg := fmt.Errorf("error setting fc machine config %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
+	}
 
 	mmdsVersion := "V2"
 	mmdsConfig := operations.PutMmdsConfigParams{
@@ -130,59 +155,32 @@ func (s *Snapshot) start(ctx context.Context, tracer trace.Tracer) error {
 			NetworkInterfaces: []string{fcIfaceID},
 		},
 	}
+	_, err = s.client.Operations.PutMmdsConfig(&mmdsConfig)
+	if err != nil {
+		errMsg := fmt.Errorf("error setting fc mmds config %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
+	}
 
-	// function startfc() {
-	//   local kernel_args="ip=$FC_ADDR::$TAP_ADDR:$MASK_LONG:instance:eth0:off:8.8.8.8"
-	//   kernel_args="$kernel_args reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on"
+	// We may need to sleep 0.015s before start - previous configuration is processes asynchronously. How to do this sync or in one go?
 
-	//	local config="vmconfig.json"
-	//	cat <<EOF >$config
-	//
-	//	{
-	//	  "boot-source": {
-	//	    "kernel_image_path": "/fc-vm/vmlinux.bin",
-	//	    "boot_args": "$kernel_args"
-	//	  },
-	//	  "drives":[
-	//	   {
-	//	      "drive_id": "rootfs",
-	//	      "path_on_host": "$BUILD_FC_ROOTFS",
-	//	      "is_root_device": true,
-	//	      "is_read_only": false
-	//	    }
-	//	  ],
-	//	  "network-interfaces": [
-	//	    {
-	//	      "iface_id": "eth0",
-	//	      "guest_mac": "$FC_MAC",
-	//	      "host_dev_name": "$TAP_NAME"
-	//	    }
-	//	  ],
-	//	  "machine-config": {
-	//	    "vcpu_count": 2,
-	//	    "smt": true,
-	//	    "mem_size_mib": 1024,
-	//	    "track_dirty_pages": true
-	//	  },
-	//	  "mmds-config": {
-	//	    "network_interfaces": ["eth0"],
-	//	    "version": "V2"
-	//	  }
-	//	}
-	//
-	// EOF
-
-	// How to call this with normal API?
-
-	// We may need to sleep 0.015 befores start
+	start := models.InstanceActionInfoActionTypeInstanceStart
+	startActionParams := operations.CreateSyncActionParams{
+		Context: childCtx,
+		Info: &models.InstanceActionInfo{
+			ActionType: &start,
+		},
+	}
 
 	// TODO: Do we need to change namespace here?
+	startAction, err := s.client.Operations.CreateSyncAction(&startActionParams)
+	if err != nil {
+		errMsg := fmt.Errorf("error starting fc %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
+	}
 
-	//	ip netns exec $NS_NAME firecracker \
-	//	--api-sock $FC_SOCK \
-	//	--config-file $config &
-	//
-	// FC_PID=$!
+	// TODO: How to get the PID or how to kill the FC process via socket?
 }
 
 func (s *Snapshot) pause(ctx context.Context, tracer trace.Tracer) error {
@@ -215,8 +213,8 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 		Context: childCtx,
 		Body: &models.SnapshotCreateParams{
 			SnapshotType: models.SnapshotCreateParamsSnapshotTypeFull,
-			MemFilePath:  &s.env.MemfilePath,
-			SnapshotPath: &s.env.SnapfilePath,
+			MemFilePath:  &s.env.tmpMemfilePath,
+			SnapshotPath: &s.env.tmpSnapfilePath,
 		},
 	}
 	_, err := s.client.Operations.CreateSnapshot(&snapshotConfig)
@@ -231,6 +229,12 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 }
 
 func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) error {
+	// TODO: Kill FC process
 
-	// Remove TMP files
+	err := os.RemoveAll(s.socketPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
