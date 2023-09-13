@@ -25,7 +25,6 @@ func (a *APIStore) PostInstances(
 	envID := body.EnvID
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
-	fmt.Println("Team ID:", teamID)
 
 	ReportEvent(ctx, "validated API key")
 	SetAttributes(ctx, attribute.String("instance.team_id", teamID))
