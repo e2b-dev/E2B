@@ -39,7 +39,7 @@ func New(
 	childCtx, childSpan := tracer.Start(ctx, "create-env-instance",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
-			attribute.String("fc_envs_disk", fcEnvsDisk),
+			attribute.String("envs_disk", fcEnvsDisk),
 		),
 	)
 	defer childSpan.End()

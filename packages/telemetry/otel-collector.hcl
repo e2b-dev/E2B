@@ -74,7 +74,7 @@ job "otel-collector" {
 
       template {
         data = <<EOF
-# Ops agent uses some additional otel recivers like file, syslog, tcp.
+# Ops agent uses some additional otel receivers like file, syslog, tcp.
 receivers:
   otlp:
     protocols:

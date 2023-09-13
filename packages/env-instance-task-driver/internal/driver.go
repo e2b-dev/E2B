@@ -243,31 +243,31 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		return nil, nil, errMsg
 	}
 
-	var driverConfig TaskConfig
-	if err := cfg.DecodeDriverConfig(&driverConfig); err != nil {
+	var taskConfig TaskConfig
+	if err := cfg.DecodeDriverConfig(&taskConfig); err != nil {
 		errMsg := fmt.Errorf("failed to decode driver config: %v", err)
 
 		telemetry.ReportCriticalError(ctx, errMsg)
 		return nil, nil, errMsg
 	}
 
-	tid, traceIDErr := trace.TraceIDFromHex(driverConfig.TraceID)
+	tid, traceIDErr := trace.TraceIDFromHex(taskConfig.TraceID)
 	if traceIDErr != nil {
 		telemetry.ReportError(
 			ctx,
 			traceIDErr,
-			attribute.String("trace_id", driverConfig.TraceID),
-			attribute.Int("trace_id.length", len(driverConfig.TraceID)),
+			attribute.String("trace_id", taskConfig.TraceID),
+			attribute.Int("trace_id.length", len(taskConfig.TraceID)),
 		)
 	}
 
-	sid, spanIDErr := trace.SpanIDFromHex(driverConfig.SpanID)
+	sid, spanIDErr := trace.SpanIDFromHex(taskConfig.SpanID)
 	if spanIDErr != nil {
 		telemetry.ReportError(
 			ctx,
 			spanIDErr,
-			attribute.String("span_id", driverConfig.SpanID),
-			attribute.Int("span_id.length", len(driverConfig.SpanID)),
+			attribute.String("span_id", taskConfig.SpanID),
+			attribute.Int("span_id.length", len(taskConfig.SpanID)),
 		)
 	}
 
@@ -288,12 +288,12 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	childSpan.SetAttributes(
 		attribute.String("alloc_id", cfg.AllocID),
-		attribute.String("env_id", driverConfig.EnvID),
-		attribute.String("instance_id", driverConfig.InstanceID),
+		attribute.String("env_id", taskConfig.EnvID),
+		attribute.String("instance_id", taskConfig.InstanceID),
 		attribute.String("client_id", cfg.Env["NOMAD_NODE_ID"]),
 	)
 
-	d.logger.Info("starting firecracker task", "driver_cfg", hclog.Fmt("%+v", driverConfig))
+	d.logger.Info("starting firecracker task", "task_cfg", hclog.Fmt("%+v", taskConfig))
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
@@ -301,8 +301,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	ipSlot, err := slot.New(
 		childCtx,
 		cfg.Env["NOMAD_NODE_ID"],
-		driverConfig.InstanceID,
-		driverConfig.ConsulToken,
+		taskConfig.InstanceID,
+		taskConfig.ConsulToken,
 		d.tracer,
 	)
 	if err != nil {
@@ -314,7 +314,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			slotErr := ipSlot.Release(childCtx, driverConfig.ConsulToken, d.tracer)
+			slotErr := ipSlot.Release(childCtx, taskConfig.ConsulToken, d.tracer)
 			if slotErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed instance start %v", slotErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -324,7 +324,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	defer func() {
 		if err != nil {
-			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, driverConfig.ConsulToken, d.tracer)
+			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, taskConfig.ConsulToken, d.tracer)
 			if ntErr != nil {
 				errMsg := fmt.Errorf("error removing network namespace after failed instance start %v", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
@@ -343,8 +343,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	fsEnv, err := env.New(
 		childCtx,
 		ipSlot,
-		driverConfig.EnvID,
-		cfg.Env["FC_ENVS_DISK"],
+		taskConfig.EnvID,
+		cfg.Env["ENVS_DISK"],
 		d.tracer,
 	)
 	if err != nil {
@@ -367,7 +367,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	fc, err := d.initializeFC(
 		childCtx,
 		cfg,
-		driverConfig,
+		taskConfig,
 		ipSlot,
 		fsEnv,
 	)
@@ -388,7 +388,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		Slot:                  ipSlot,
 		EnvInstanceFilesystem: fsEnv,
 		EnvInstance:           fc.Instance,
-		ConsulToken:           driverConfig.ConsulToken,
+		ConsulToken:           taskConfig.ConsulToken,
 		logger:                d.logger,
 	}
 
