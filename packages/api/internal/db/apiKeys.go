@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/e2b-dev/api/packages/api/internal/db/models"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type team struct {
@@ -14,7 +13,7 @@ type team struct {
 }
 
 func (db *DB) GetTeamID(apiKey string) (*team, error) {
-	result, err := models.TeamAPIKeys(qm.Where("api_key = ?", apiKey)).One(db.Client)
+	result, err := models.TeamAPIKeys(models.TeamAPIKeyWhere.APIKey.EQ(apiKey)).One(db.Client)
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
 		if errors.As(err, &jsonSyntaxErr) {
@@ -34,7 +33,7 @@ type user struct {
 }
 
 func (db *DB) GetUserID(accessToken string) (*user, error) {
-	result, err := models.AccessTokens(qm.Where("access_token = ?", accessToken)).One(db.Client)
+	result, err := models.AccessTokens(models.AccessTokenWhere.AccessToken.EQ(accessToken)).One(db.Client)
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
 		if errors.As(err, &jsonSyntaxErr) {

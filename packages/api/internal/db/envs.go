@@ -8,11 +8,10 @@ import (
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/db/models"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (db *DB) DeleteEnv(envID string) error {
-	_, err := models.Envs(qm.Where("ID = ?", envID)).DeleteAll(db.Client)
+	_, err := models.Envs(models.EnvWhere.ID.EQ(envID)).DeleteAll(db.Client)
 
 	if err != nil {
 		var jsonSyntaxErr *json.SyntaxError
