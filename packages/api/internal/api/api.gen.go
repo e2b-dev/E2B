@@ -17,14 +17,11 @@ type ServerInterface interface {
 	// (POST /envs)
 	PostEnvs(c *gin.Context)
 
-	// (POST /envs/{envID}/instances)
-	PostEnvsEnvIDInstances(c *gin.Context, envID EnvID)
-
 	// (GET /health)
 	GetHealth(c *gin.Context)
 
-	// (DELETE /instances/{instanceID})
-	DeleteInstancesInstanceID(c *gin.Context, instanceID InstanceID)
+	// (POST /instances)
+	PostInstances(c *gin.Context)
 
 	// (POST /instances/{instanceID}/refreshes)
 	PostInstancesInstanceIDRefreshes(c *gin.Context, instanceID InstanceID)
@@ -54,32 +51,6 @@ func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 	siw.Handler.PostEnvs(c)
 }
 
-// PostEnvsEnvIDInstances operation middleware
-func (siw *ServerInterfaceWrapper) PostEnvsEnvIDInstances(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "envID" -------------
-	var envID EnvID
-
-	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	c.Set(ApiKeyAuthScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostEnvsEnvIDInstances(c, envID)
-}
-
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 
@@ -95,19 +66,8 @@ func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 	siw.Handler.GetHealth(c)
 }
 
-// DeleteInstancesInstanceID operation middleware
-func (siw *ServerInterfaceWrapper) DeleteInstancesInstanceID(c *gin.Context) {
-
-	var err error
-
-	// ------------- Path parameter "instanceID" -------------
-	var instanceID InstanceID
-
-	err = runtime.BindStyledParameter("simple", false, "instanceID", c.Param("instanceID"), &instanceID)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter instanceID: %w", err), http.StatusBadRequest)
-		return
-	}
+// PostInstances operation middleware
+func (siw *ServerInterfaceWrapper) PostInstances(c *gin.Context) {
 
 	c.Set(ApiKeyAuthScopes, []string{})
 
@@ -118,7 +78,7 @@ func (siw *ServerInterfaceWrapper) DeleteInstancesInstanceID(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.DeleteInstancesInstanceID(c, instanceID)
+	siw.Handler.PostInstances(c)
 }
 
 // PostInstancesInstanceIDRefreshes operation middleware
@@ -175,8 +135,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
-	router.POST(options.BaseURL+"/envs/:envID/instances", wrapper.PostEnvsEnvIDInstances)
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
-	router.DELETE(options.BaseURL+"/instances/:instanceID", wrapper.DeleteInstancesInstanceID)
+	router.POST(options.BaseURL+"/instances", wrapper.PostInstances)
 	router.POST(options.BaseURL+"/instances/:instanceID/refreshes", wrapper.PostInstancesInstanceIDRefreshes)
 }
