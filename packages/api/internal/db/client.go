@@ -14,7 +14,7 @@ type DB struct {
 }
 
 var (
-	databaseURL = os.Getenv("DATABASE_CONNECTION_STRING")
+	databaseURL = os.Getenv("SUPABASE_CONNECTION_STRING")
 )
 
 func NewClient() (*DB, error) {

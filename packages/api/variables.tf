@@ -33,5 +33,5 @@ variable "logs_proxy_address" {
 }
 
 variable "environment" {
-  type    = string
+  type = string
 }
