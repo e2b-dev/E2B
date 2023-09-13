@@ -67,7 +67,6 @@ components:
           type: string
           description: ID of the environment, only present if the environment should be rebuilt
 
-
     Environment:
       required:
         - envID
