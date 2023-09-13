@@ -1,5 +1,5 @@
-import json from '@rollup/plugin-json'
 import nodeResolve from '@rollup/plugin-node-resolve'
+import replace from '@rollup/plugin-replace'
 import autoExternal from 'rollup-plugin-auto-external'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
 import typescript from 'rollup-plugin-typescript2'
@@ -40,6 +40,11 @@ export default {
       preferBuiltins: true,
       browser: true,
     }),
-    json(),
+    // Beware: Using @rollup/plugin-json caused wrong structure of dist directory
+    // It should be dist/cjs/*files* and with json plugin it's dist/cjs/src/*files*
+    // That's why we opted for using replace plugin instead of importing package.json with json plugin
+    replace({
+      __pkgVersion__: pkg.version,
+    }),
   ],
 }
