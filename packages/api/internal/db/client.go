@@ -18,7 +18,6 @@ var (
 )
 
 func NewClient() (*DB, error) {
-	fmt.Println("databaseURL", databaseURL)
 	db, err := sql.Open("postgres", databaseURL)
 
 	if err != nil {
