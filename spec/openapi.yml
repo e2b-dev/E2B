@@ -57,7 +57,7 @@ components:
   schemas:
     EnvironmentToBuild:
       required:
-        - buildConfig
+        - buildContext
         - dockerfile
       properties:
         buildContext:
