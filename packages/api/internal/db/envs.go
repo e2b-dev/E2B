@@ -1,8 +1,6 @@
 package db
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
@@ -14,12 +12,6 @@ func (db *DB) DeleteEnv(envID string) error {
 	_, err := models.Envs(models.EnvWhere.ID.EQ(envID)).DeleteAll(db.Client)
 
 	if err != nil {
-		var jsonSyntaxErr *json.SyntaxError
-		if errors.As(err, &jsonSyntaxErr) {
-			fmt.Printf("syntax error at byte offset %d", jsonSyntaxErr.Offset)
-		}
-
-		fmt.Printf("error: %v\n", err)
 
 		return fmt.Errorf("failed to delete env '%s': %w", envID, err)
 	}
@@ -30,12 +22,6 @@ func (db *DB) DeleteEnv(envID string) error {
 func (db *DB) GetEnvs() (result []*api.Environment, err error) {
 	envs, err := models.Envs().All(db.Client)
 	if err != nil {
-		var jsonSyntaxErr *json.SyntaxError
-		if errors.As(err, &jsonSyntaxErr) {
-			fmt.Printf("syntax error at byte offset %d", jsonSyntaxErr.Offset)
-		}
-
-		fmt.Printf("error: %v\n", err)
 
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
@@ -63,11 +49,6 @@ func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*newEnv
 	err := env.Insert(db.Client, boil.Infer())
 
 	if err != nil {
-		var jsonSyntaxErr *json.SyntaxError
-		if errors.As(err, &jsonSyntaxErr) {
-			fmt.Printf("syntax error at byte offset %d", jsonSyntaxErr.Offset)
-		}
-
 		fmt.Printf("error: %v\n", err)
 
 		return nil, fmt.Errorf("failed to create env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)

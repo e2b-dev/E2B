@@ -1,8 +1,6 @@
 package db
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/volatiletech/null/v8"
 
@@ -17,15 +15,12 @@ func (db *DB) GetDefaultTeamFromUserID(userID string) (result *models.Team, err 
 	userTeam, err := models.UsersTeams(joinTeam, userWhere, defaultTeamWhere).One(db.Client)
 
 	if err != nil {
-		var jsonSyntaxErr *json.SyntaxError
-		if errors.As(err, &jsonSyntaxErr) {
-			fmt.Printf("syntax error at byte offset %d", jsonSyntaxErr.Offset)
-		}
-
 		fmt.Printf("error: %v\n", err)
 
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
+
 	result = userTeam.R.Team
+
 	return result, nil
 }
