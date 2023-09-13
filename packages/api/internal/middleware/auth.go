@@ -51,7 +51,6 @@ func (a *authenticator) getAPIKeyFromRequest(req *http.Request) (string, error) 
 // Authenticate uses the specified validator to ensure an API key is valid.
 func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 	// Our security scheme is named ApiKeyAuth, ensure this is the case
-	fmt.Println(input.SecuritySchemeName)
 	if input.SecuritySchemeName != a.securitySchemeName {
 		return fmt.Errorf("security scheme %s != '%s'", a.securitySchemeName, input.SecuritySchemeName)
 	}
@@ -63,13 +62,13 @@ func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.
 	}
 
 	// If the API key is valid, we will get a ID back
-	teamID, err := a.validationFunction(apiKey)
+	id, err := a.validationFunction(apiKey)
 	if err != nil {
 		return fmt.Errorf("%s %w", a.errorMessage, err)
 	}
 
 	// Set the property on the gin context
-	middleware.GetGinContext(ctx).Set(a.contextKey, teamID)
+	middleware.GetGinContext(ctx).Set(a.contextKey, id)
 
 	return nil
 }
@@ -95,7 +94,6 @@ func CreateAuthenticationFunc(teamValidationFunction func(string) (string, error
 	}
 
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
-		fmt.Println("input", input.SecuritySchemeName)
 		if input.SecuritySchemeName == apiKeyValidator.securitySchemeName {
 			return apiKeyValidator.Authenticate(ctx, input)
 		}

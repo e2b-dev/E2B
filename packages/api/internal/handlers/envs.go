@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
-
 	"github.com/e2b-dev/api/packages/api/internal/constants"
 	"github.com/gin-gonic/gin"
 )
@@ -16,28 +14,28 @@ func (a *APIStore) PostEnvs(
 ) {
 	ctx := c.Request.Context()
 
-	body, err := parseBody[api.PostEnvsMultipartRequestBody](ctx, c)
-
+	file, err := c.FormFile("buildContext")
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
-
+		formErr := fmt.Errorf("error when parsing form data: %w", err)
+		ReportCriticalError(ctx, formErr)
 		return
 	}
 
-	if !strings.HasSuffix(body.BuildContext.Filename(), ".tar.gz") {
+	if !strings.HasSuffix(file.Filename, ".tar.gz") {
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz file")
 
 		return
 	}
 
 	// Not implemented yet
-	if body.EnvID != nil {
+	envID := c.PostForm("envID")
+	if envID != "" {
 		a.sendAPIStoreError(c, http.StatusNotImplemented, "Updating envs is not implemented yet")
 
 		return
 	}
 
-	userID := ctx.Value(constants.UserIDContextKey).(string)
+	userID := c.Value(constants.UserIDContextKey).(string)
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
 
 	if err != nil {
@@ -46,7 +44,7 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
-	newEnv, err := a.supabase.CreateEnv(*body.EnvID, team.ID, body.Dockerfile)
+	newEnv, err := a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when creating env: %s", err))
 
