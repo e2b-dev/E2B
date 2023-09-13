@@ -16,108 +16,128 @@ const (
 )
 
 type EnvSetup struct {
-	EnvID   string
+	// Unique ID of the env.
+	EnvID string
+	// Unique ID of the build - this is used to distinguish builds of the same env that can start simultaneously.
 	BuildID string
 
+	// Path to the directory where all envs are stored.
 	EnvsPath string
 
+	// Path to the directory where all docker contexts are stored. This directory is a FUSE mounted bucket where the contexts were uploaded.
 	DockerContextsPath string
-	DockerRegistry     string
 
+	// Docker registry where the docker images are uploaded for archivation/caching.
+	DockerRegistry string
+
+	// Path to where the kernel image is stored.
 	KernelImagePath string
 
+	// The number of vCPUs to allocate to the VM.
 	VCpuCount int64
-	MemoryMB  int64
+
+	// The amount of memory to allocate to the VM, in MiB.
+	MemoryMB int64
 }
 
-// Represent the env stored on the host.
-// Can be passed to specify location of the env where we want to build artifacts.
-// Is also used for moving the env.
+// Represent the env stored on the filesystem.
+// Is also used for moving the env to the final directory where it will be stored.
 type Env struct {
 	EnvSetup
 
-	DirPath string
+	// Path to the directory where the build files are mounted.
+	TmpBuildMountDirPath string
 
-	BuildDirPath      string
-	BuildMountDirPath string
-
+	// Path to the docker context.
 	DockerContextPath string
-	DockerTag         string
+	// Docker tag of the docker image for this env.
+	DockerTag string
 
-	buildIDFilePath string
+	// Path to the directory where the temporary files for the build are stored.
+	TmpBuildDirPath string
+
+	// Path to the file where the build ID is stored. This is used for setting up the namespaces when starting the FC snapshot for this build/env.
+	tmpBuildIDFilePath string
+	tmpRootfsPath      string
+	tmpMemfilePath     string
+	tmpSnapfilePath    string
+
+	// Path to the directory where the env is stored.
+	EnvDirPath string
+
+	envBuildIDFilePath string
+	envRootfsPath      string
+	envMemfilePath     string
+	envSnapfilePath    string
 }
 
 func NewEnv(setup EnvSetup) (*Env, error) {
 	envDirPath := filepath.Join(setup.EnvsPath, setup.EnvID)
-	buildDirPath := filepath.Join(envDirPath, buildDirName, setup.BuildID)
+	tmpBuildDirPath := filepath.Join(envDirPath, buildDirName, setup.BuildID)
 
 	env := &Env{
 		EnvSetup: setup,
 
-		DirPath: envDirPath,
-
-		BuildDirPath:      buildDirPath,
-		BuildMountDirPath: filepath.Join(buildDirPath, mntDirName),
+		TmpBuildMountDirPath: filepath.Join(tmpBuildDirPath, mntDirName),
 
 		DockerContextPath: filepath.Join(setup.DockerContextsPath, setup.EnvID),
 		DockerTag:         setup.DockerRegistry + "/" + setup.EnvID,
 
-		buildIDFilePath: filepath.Join(buildDirPath, buildIDName),
+		TmpBuildDirPath: tmpBuildDirPath,
+
+		tmpBuildIDFilePath: filepath.Join(tmpBuildDirPath, buildIDName),
+		tmpRootfsPath:      filepath.Join(tmpBuildDirPath, rootfsName),
+		tmpMemfilePath:     filepath.Join(tmpBuildDirPath, memfileName),
+		tmpSnapfilePath:    filepath.Join(tmpBuildDirPath, snapfileName),
+
+		EnvDirPath: envDirPath,
+
+		envBuildIDFilePath: filepath.Join(envDirPath, buildIDName),
+		envRootfsPath:      filepath.Join(envDirPath, rootfsName),
+		envMemfilePath:     filepath.Join(envDirPath, memfileName),
+		envSnapfilePath:    filepath.Join(envDirPath, snapfileName),
 	}
 
-	// We don't need to create build dir because by creating the build mountdir we create the build dir.
-	err := os.MkdirAll(env.BuildMountDirPath, 0777)
-	if err != nil {
-		return nil, err
-	}
-
-	err = os.WriteFile(env.buildIDFilePath, []byte(env.BuildID), 0777)
-	if err != nil {
-		return nil, err
-	}
-
-	return env, nil
+	err := env.initializeFS()
+	return env, err
 }
 
-func (e *Env) MoveToFinalEnvDir() error {
-	os.Rename()
+func (e *Env) initializeFS() error {
+	// We don't need to create build dir because by creating the build mountdir we create the build dir.
+	err := os.MkdirAll(e.TmpBuildMountDirPath, 0777)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(e.tmpBuildIDFilePath, []byte(e.BuildID), 0777)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Env) MoveToEnvDir() error {
+	err := os.Rename(e.tmpSnapfilePath, e.envSnapfilePath)
+	if err != nil {
+		return nil
+	}
+	err = os.Rename(e.tmpMemfilePath, e.envMemfilePath)
+	if err != nil {
+		return nil
+	}
+	err = os.Rename(e.tmpRootfsPath, e.envRootfsPath)
+	if err != nil {
+		return nil
+	}
+	err = os.Rename(e.tmpBuildIDFilePath, e.envBuildIDFilePath)
+	if err != nil {
+		return nil
+	}
+
+	return nil
 }
 
 func (e *Env) Cleanup() error {
-	return os.RemoveAll(e.BuildDirPath)
+	return os.RemoveAll(e.TmpBuildDirPath)
 }
-
-// BUILD_DIR="$FC_ENVS_DISK/$CODE_SNIPPET_ID/builds/$RUN_UUID"
-// BUILD_MNT_DIR="$BUILD_DIR/mnt"
-
-// BUILD_FC_ROOTFS="$BUILD_DIR/rootfs.ext4"
-// BUILD_FC_SNAPFILE="$BUILD_DIR/snapfile"
-// BUILD_FC_MEMFILE="$BUILD_DIR/memfile"
-// BUILD_BUILD_ID_FILE="$BUILD_DIR/build_id"
-
-// FINAL_DIR="$FC_ENVS_DISK/$CODE_SNIPPET_ID"
-// FINAL_FC_ROOTFS="$FINAL_DIR/rootfs.ext4"
-// FINAL_FC_SNAPFILE="$FINAL_DIR/snapfile"
-// FINAL_FC_MEMFILE="$FINAL_DIR/memfile"
-// FINAL_BUILD_ID_FILE="$FINAL_DIR/build_id"
-
-// function mkdirs() {
-//   mkdir -p $BUILD_DIR
-//   mkdir -p $BUILD_MNT_DIR
-//   # `$FINAL_DIR` is now already created because we created the `$BUILD_DIR` or from the previous runs.
-// }
-
-// function mkbuildidfile() {
-//   echo -n "${RUN_UUID}" >${BUILD_BUILD_ID_FILE}
-// }
-
-// function mv_env_files() {
-//   mv $BUILD_FC_ROOTFS $FINAL_FC_ROOTFS
-//   mv $BUILD_FC_SNAPFILE $FINAL_FC_SNAPFILE
-//   mv $BUILD_FC_MEMFILE $FINAL_FC_MEMFILE
-//   mv $BUILD_BUILD_ID_FILE $FINAL_BUILD_ID_FILE
-// }
-
-// function del_build_dir() {
-//   rm -rf $BUILD_DIR
-// }
