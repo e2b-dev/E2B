@@ -48,9 +48,10 @@ func (a *authenticator) getAPIKeyFromRequest(req *http.Request) (string, error) 
 	return apiKey, nil
 }
 
-// authenticate uses the specified validator to ensure an API key is valid.
+// Authenticate uses the specified validator to ensure an API key is valid.
 func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 	// Our security scheme is named ApiKeyAuth, ensure this is the case
+	fmt.Println(input.SecuritySchemeName)
 	if input.SecuritySchemeName != a.securitySchemeName {
 		return fmt.Errorf("security scheme %s != '%s'", a.securitySchemeName, input.SecuritySchemeName)
 	}
@@ -84,7 +85,7 @@ func CreateAuthenticationFunc(teamValidationFunction func(string) (string, error
 		errorMessage:       "invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key:",
 	}
 	accessTokenValidator := authenticator{
-		securitySchemeName: "BearerAuth",
+		securitySchemeName: "AccessTokenAuth",
 		headerKey:          "Authorization",
 		prefix:             "sk_e2b_",
 		removePrefix:       "Bearer ",
@@ -94,6 +95,7 @@ func CreateAuthenticationFunc(teamValidationFunction func(string) (string, error
 	}
 
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
+		fmt.Println("input", input.SecuritySchemeName)
 		if input.SecuritySchemeName == apiKeyValidator.securitySchemeName {
 			return apiKeyValidator.Authenticate(ctx, input)
 		}
