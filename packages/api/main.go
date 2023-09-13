@@ -84,6 +84,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
 		&middleware.Options{
 			Options: openapi3filter.Options{
+				ExcludeRequestBody: true,
 				AuthenticationFunc: AuthenticationFunc,
 			},
 		}))

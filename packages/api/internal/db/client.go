@@ -18,11 +18,16 @@ var (
 )
 
 func NewClient() (*DB, error) {
+	if databaseURL == "" {
+		return nil, fmt.Errorf("database URL is empty")
+	}
+
 	db, err := sql.Open("postgres", databaseURL)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+
 	boil.SetDB(db)
 
 	return &DB{
