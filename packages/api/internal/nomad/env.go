@@ -16,9 +16,13 @@ import (
 )
 
 const (
+	envsDisk = "/mnt/disks/fc-envs"
+
 	buildJobName          = "env-build"
 	buildJobNameWithSlash = buildJobName + "/"
-	envsDisk              = "/mnt/disks/fc-envs"
+
+	defaultVCpuCount = 4
+	defaultMemoryMB  = 1024
 )
 
 //go:embed env-build.hcl
@@ -34,7 +38,8 @@ func (n *NomadClient) StartBuildingEnv(
 	t trace.Tracer,
 	ctx context.Context,
 	envID string,
-	dockerContextPath string,
+	// build is is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
+	buildID string,
 ) (func() *nomadAPI.Allocation, error) {
 	_, childSpan := t.Start(ctx, "build-env",
 		trace.WithAttributes(
@@ -54,23 +59,27 @@ func (n *NomadClient) StartBuildingEnv(
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
-		EnvID             string
-		ProvisionScript   string
-		DockerContextPath string
-		SpanID            string
-		TraceID           string
-		TaskName          string
-		JobName           string
-		EnvsDisk          string
+		BuildID         string
+		EnvID           string
+		ProvisionScript string
+		SpanID          string
+		TraceID         string
+		JobName         string
+		TaskName        string
+		EnvsDisk        string
+		VCpuCount       int
+		MemoryMB        int
 	}{
-		SpanID:            spanID,
-		DockerContextPath: dockerContextPath,
-		ProvisionScript:   provisionEnvScriptFile,
-		TraceID:           traceID,
-		EnvID:             envID,
-		TaskName:          defaultTaskName,
-		JobName:           buildJobName,
-		EnvsDisk:          envsDisk,
+		BuildID:         buildID,
+		SpanID:          spanID,
+		VCpuCount:       defaultVCpuCount,
+		MemoryMB:        defaultMemoryMB,
+		ProvisionScript: provisionEnvScriptFile,
+		TraceID:         traceID,
+		EnvID:           envID,
+		TaskName:        defaultTaskName,
+		JobName:         buildJobName,
+		EnvsDisk:        envsDisk,
 	}
 
 	err := envBuildTemplate.Execute(&jobDef, jobVars)
@@ -85,7 +94,7 @@ func (n *NomadClient) StartBuildingEnv(
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %w", jobDef.String(), err),
+			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %+v", jobDef.String(), err),
 			ClientMsg: "Cannot create env build job right now",
 			Code:      http.StatusInternalServerError,
 		}
@@ -130,6 +139,8 @@ func (n *NomadClient) StartBuildingEnv(
 		}
 	}
 
+	// TODO: Rewrite to return just a channel that signals the end of the build
+	// TODO: This wait should be started right as we start the job or before
 	waitForFinish := func() *nomadAPI.Allocation {
 		alloc, finishErr := n.WaitForJobFinish(
 			ctx,
@@ -138,7 +149,7 @@ func (n *NomadClient) StartBuildingEnv(
 		)
 		if finishErr != nil {
 			// TODO: Cleanup
-			fmt.Printf("error waiting for env '%s' build: %+w", envID, finishErr)
+			fmt.Printf("error waiting for env '%s' build: %+v", envID, finishErr)
 		}
 
 		return alloc

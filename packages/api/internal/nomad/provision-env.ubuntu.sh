@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+apt-get update
+
+apt-get install -y \
+  build-essential \
+  curl socat util-linux openssh-server git chrony nano sudo htop
+
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
 cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf

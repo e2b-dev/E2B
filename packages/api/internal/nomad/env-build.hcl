@@ -4,6 +4,12 @@ job "{{ .JobName }}/{{ .EnvID }}" {
 
   priority = 20
 
+  meta {
+    # This makes sure the job always runs even though nothing has changed in the job spec file.
+    # See section "Always Deploy a New Job Version" in https://storiesfromtheherd.com/nomad-tips-and-tricks-766878dfebf4
+    run_uuid = "{{ .BuildID }}"
+  }
+
   group "build" {
     reschedule {
       attempts  = 0
@@ -19,13 +25,17 @@ job "{{ .JobName }}/{{ .EnvID }}" {
       driver = "env-build-task-driver"
 
       env {
-        FC_ENVS_DISK = "{{ .EnvsDisk }}"
+        ENVS_DISK = "{{ .EnvsDisk }}"
+        DOCKER_REGISTRY = "us-central1-docker.pkg.dev/e2b-prod/custom-environments"
+        DOCKER_CONTEXTS_PATH = "/mnt/disks/docker-contexts"
       }
 
       config {
+        BuildID = "{{ .BuildID }}"
         EnvID = "{{ .EnvID }}"
-        ProvisionScript   = "{{ escapeHCL .ProvisionScript }}"
-        DockerContextPath   = "{{ .DockerContextPath }}"
+        ProvisionScript = "{{ escapeHCL .ProvisionScript }}"
+        VCpuCount = "{{ .VCpuCount }}"
+        MemoryMB = "{{ .MemoryMB }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"
       }
