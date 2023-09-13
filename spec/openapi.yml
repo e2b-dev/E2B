@@ -15,6 +15,10 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
+    AccessTokenAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: access_token
 
   parameters:
     envID:
@@ -53,7 +57,7 @@ components:
   schemas:
     EnvironmentToBuild:
       required:
-        - buildConfig
+        - buildContext
         - dockerfile
       properties:
         buildContext:
@@ -66,7 +70,6 @@ components:
         envID:
           type: string
           description: ID of the environment, only present if the environment should be rebuilt
-
 
     Environment:
       required:
@@ -123,6 +126,8 @@ paths:
     post:
       description: Create an instance from the environment
       tags: [instances]
+      security:
+        - ApiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -146,6 +151,8 @@ paths:
   /instances/{instanceID}/refreshes:
     post:
       description: Refresh the instance extending its time to live
+      security:
+        - ApiKeyAuth: [ ]
       tags: [ instances ]
       parameters:
         - $ref: "#/components/parameters/instanceID"
@@ -182,6 +189,8 @@ paths:
     post:
       description: Create a new environment
       tags: [ envs ]
+      security:
+        - AccessTokenAuth: [ ]
       requestBody:
         required: true
         content:
@@ -222,6 +231,3 @@ paths:
   #         $ref: "#/components/responses/401"
   #       500:
   #         $ref: "#/components/responses/500"
-
-security:
-  - ApiKeyAuth: [ ]
