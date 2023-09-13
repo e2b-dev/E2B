@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/e2b-dev/api/packages/api/internal/utils"
 	"net/http"
 	"strings"
 
@@ -35,6 +36,7 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
+	envID = utils.GenerateID()
 	userID := c.Value(constants.UserIDContextKey).(string)
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
 

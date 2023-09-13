@@ -55,6 +55,22 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
+    EnvironmentToBuild:
+      required:
+        - buildContext
+        - dockerfile
+      properties:
+        buildContext:
+          description: Docker build context
+          type: string
+          format: binary
+        dockerfile:
+          type: string
+          description: Dockerfile content
+        envID:
+          type: string
+          description: ID of the environment, only present if the environment should be rebuilt
+
     Environment:
       required:
         - envID
@@ -180,21 +196,10 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              required:
-                - buildContext
-                - dockerfile
-              properties:
-                buildContext:
-                  description: Docker build context
-                  type: string
-                  format: binary
-                dockerfile:
-                  type: string
-                  description: Dockerfile content
-                envID:
-                  type: string
-                  description: ID of the environment, only present if the environment should be rebuilt
+              $ref: "#/components/schemas/EnvironmentToBuild"
+            encoding:
+              buildContext:
+                contentType: application/gzip
       responses:
         200:
           description: Successfully returned all environments
