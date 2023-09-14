@@ -58,6 +58,11 @@ variable "environment" {
   default = ""
 }
 
+variable "bucket_name" {
+  type    = string
+  default = ""
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -94,14 +99,15 @@ job "orchestration-api" {
       }
 
       env {
-        LOGS_PROXY_ADDRESS         = var.logs_proxy_address
-        NOMAD_ADDRESS              = var.nomad_address
-        NOMAD_TOKEN                = var.nomad_token
-        CONSUL_TOKEN               = var.consul_token
-        SUPABASE_CONNECTION_STRING = var.supabase_connection_string
-        POSTHOG_API_KEY            = var.posthog_api_key
-        API_ADMIN_KEY              = var.api_admin_key
-        ENVIRONMENT                = var.environment
+        LOGS_PROXY_ADDRESS          = var.logs_proxy_address
+        NOMAD_ADDRESS               = var.nomad_address
+        NOMAD_TOKEN                 = var.nomad_token
+        CONSUL_TOKEN                = var.consul_token
+        SUPABASE_CONNECTION_STRING  = var.supabase_connection_string
+        POSTHOG_API_KEY             = var.posthog_api_key
+        API_ADMIN_KEY               = var.api_admin_key
+        ENVIRONMENT                 = var.environment
+        GOOGLE_CLOUD_STORAGE_BUCKET = var.bucket_name
       }
 
       config {

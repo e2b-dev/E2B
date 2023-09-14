@@ -127,6 +127,13 @@ module "client_proxy" {
   client_proxy_health_port = var.client_proxy_health_port
 }
 
+resource "google_storage_bucket" "e2b-envs-docker-context" {
+  name          = "e2b-envs-docker-context"
+  location      = "us-central1"
+
+  uniform_bucket_level_access = true
+}
+
 module "api" {
   source = "./packages/api"
 
@@ -138,4 +145,5 @@ module "api" {
   consul_token       = data.google_secret_manager_secret_version.consul_acl_token.secret_data
   api_port           = var.api_port
   environment        = var.environment
+  bucket_name        = google_storage_bucket.e2b-envs-docker-context.name
 }

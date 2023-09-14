@@ -47,6 +47,7 @@ resource "nomad_job" "api" {
       nomad_token                = var.nomad_token
       consul_token               = var.consul_token
       environment                = var.environment
+      bucket_name                = var.bucket_name
     }
   }
 }

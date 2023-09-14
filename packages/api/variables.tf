@@ -14,6 +14,10 @@ variable "nomad_token" {
   type = string
 }
 
+variable "bucket_name" {
+  type = string
+}
+
 variable "api_port" {
   type = object({
     name        = string
