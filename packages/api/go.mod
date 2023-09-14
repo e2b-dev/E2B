@@ -13,7 +13,6 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/lightstep/otel-launcher-go v1.10.1
 	github.com/oapi-codegen/runtime v1.0.0
-	github.com/tus/tusd v1.13.0
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/sqlboiler/v4 v4.15.0
 	github.com/volatiletech/strmangle v0.0.5
