@@ -63,6 +63,10 @@ variable "bucket_name" {
   default = ""
 }
 
+variable "google_service_account_credentials" {
+  type    = string
+}
+
 job "orchestration-api" {
   datacenters = [var.gcp_zone]
 
@@ -108,6 +112,7 @@ job "orchestration-api" {
         API_ADMIN_KEY               = var.api_admin_key
         ENVIRONMENT                 = var.environment
         GOOGLE_CLOUD_STORAGE_BUCKET = var.bucket_name
+        GOOGLE_APPLICATION_CREDENTIALS = var.google_service_account_credentials
       }
 
       config {

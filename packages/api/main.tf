@@ -29,6 +29,7 @@ data "google_secret_manager_secret_version" "api_admin_key" {
   secret = "api-admin-key"
 }
 
+
 resource "nomad_job" "api" {
   jobspec = file("${path.module}/api.hcl")
 
@@ -48,6 +49,7 @@ resource "nomad_job" "api" {
       consul_token               = var.consul_token
       environment                = var.environment
       bucket_name                = var.bucket_name
+      google_service_account_credentials = var.google_service_account_credentials
     }
   }
 }

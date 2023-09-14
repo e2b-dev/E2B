@@ -134,16 +134,33 @@ resource "google_storage_bucket" "e2b-envs-docker-context" {
   uniform_bucket_level_access = true
 }
 
+resource "google_service_account" "e2b-api-service-account" {
+  account_id   = "e2b-api-service-account"
+  display_name = "E2B API Service Account"
+}
+
+
+resource "google_project_iam_member" "e2b-api-service-account-storage-permissions" {
+  project = var.gcp_project_id
+  role    = "roles/storage.editor"
+  member  = "serviceAccount:${google_service_account.e2b-api-service-account.email}"
+}
+
+resource "google_service_account_key" "e2b-api-service-account-key" {
+  service_account_id = google_service_account.e2b-api-service-account.name
+}
+
 module "api" {
   source = "./packages/api"
 
   gcp_zone = var.gcp_zone
 
-  logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
-  nomad_address      = "http://${module.cluster.server_proxy_ip}"
-  nomad_token        = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-  consul_token       = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-  api_port           = var.api_port
-  environment        = var.environment
-  bucket_name        = google_storage_bucket.e2b-envs-docker-context.name
+  logs_proxy_address                 = "http://${module.cluster.logs_proxy_ip}"
+  nomad_address                      = "http://${module.cluster.server_proxy_ip}"
+  nomad_token                        = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
+  consul_token                       = data.google_secret_manager_secret_version.consul_acl_token.secret_data
+  api_port                           = var.api_port
+  environment                        = var.environment
+  bucket_name                        = google_storage_bucket.e2b-envs-docker-context.name
+  google_service_account_credentials = base64decode(google_service_account_key.e2b-api-service-account-key.private_key)
 }
