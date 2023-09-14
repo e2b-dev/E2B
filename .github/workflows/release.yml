@@ -107,7 +107,6 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: '#ff0000'
-          SLACK_MESSAGE: ':bob-the-destroyer: See more in here:\n
-          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          SLACK_MESSAGE: ':here-we-go-again: :bob-the-destroyer: We need :fix-parrot: ASAP :pray:'
           SLACK_TITLE: Release Failed
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
