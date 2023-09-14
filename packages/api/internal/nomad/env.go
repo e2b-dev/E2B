@@ -10,7 +10,6 @@ import (
 	"text/template"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
-	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -40,7 +39,7 @@ func (n *NomadClient) StartBuildingEnv(
 	envID string,
 	// build is is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
 	buildID string,
-) (func() *nomadAPI.Allocation, error) {
+) error {
 	_, childSpan := t.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
@@ -84,7 +83,7 @@ func (n *NomadClient) StartBuildingEnv(
 
 	err := envBuildTemplate.Execute(&jobDef, jobVars)
 	if err != nil {
-		return nil, &api.APIError{
+		return &api.APIError{
 			Msg:       fmt.Sprintf("failed to `envBuildJobTemp.Execute()`: %+v", err),
 			ClientMsg: "Cannot build env right now",
 			Code:      http.StatusInternalServerError,
@@ -93,7 +92,7 @@ func (n *NomadClient) StartBuildingEnv(
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
-		return nil, &api.APIError{
+		return &api.APIError{
 			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %+v", jobDef.String(), err),
 			ClientMsg: "Cannot create env build job right now",
 			Code:      http.StatusInternalServerError,
@@ -104,7 +103,7 @@ func (n *NomadClient) StartBuildingEnv(
 	if err != nil {
 		fmt.Printf("Failed to register '%s%s' job: %+v", buildJobNameWithSlash, jobVars.EnvID, err)
 
-		return nil, &api.APIError{
+		return &api.APIError{
 			Msg:       err.Error(),
 			ClientMsg: "Cannot create env build job right now",
 			Code:      http.StatusInternalServerError,
@@ -132,28 +131,26 @@ func (n *NomadClient) StartBuildingEnv(
 			fmt.Printf("error in cleanup after failing to create instance of environment '%s':%+v", envID, apiErr.Msg)
 		}
 
-		return nil, &api.APIError{
+		return &api.APIError{
 			Msg:       err.Error(),
 			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
 	}
 
-	// TODO: Rewrite to return just a channel that signals the end of the build
-	// TODO: This wait should be started right as we start the job or before
-	waitForFinish := func() *nomadAPI.Allocation {
-		alloc, finishErr := n.WaitForJobFinish(
-			ctx,
-			jobInfo,
-			meta,
-		)
-		if finishErr != nil {
-			// TODO: Cleanup
-			fmt.Printf("error waiting for env '%s' build: %+v", envID, finishErr)
-		}
+	// Handler for job finish
+	// go func() {
+	// 	alloc, finishErr := n.WaitForJobFinish(
+	// 		ctx,
+	// 		jobInfo,
+	// 		meta,
+	// 	)
+	// 	if finishErr != nil {
+	// 		// TODO: Cleanup
+	// 		fmt.Printf("error waiting for env '%s' build: %+v", envID, finishErr)
+	// 	}
+	// 	// TODO: Update DB
+	// }()
 
-		return alloc
-	}
-
-	return waitForFinish, nil
+	return nil
 }
