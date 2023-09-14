@@ -73,6 +73,7 @@
 - Remove types (and timestamps?) from stdout/stderr (they are already fully identified by the subscription)
 - "~" is not working in the filesystem service
 - Using vsock for managing logs
+- Check close "allUnsubscribed" in envd sub manager
 
 ### Build system
 - Use overlays instead of cp reflink so we can use any FS type
