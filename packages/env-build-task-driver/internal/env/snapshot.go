@@ -93,7 +93,7 @@ func (s *Snapshot) start(ctx context.Context, tracer trace.Tracer) error {
 	rootfs := "rootfs"
 	isRootDevice := true
 	isReadOnly := false
-	pathOnHost := s.env.tmpRootfsPath
+	pathOnHost := s.env.tmpRootfsPath()
 	driversConfig := operations.PutGuestDriveByIDParams{
 		Context: childCtx,
 		DriveID: rootfs,
@@ -209,12 +209,14 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "snapshot-fc")
 	defer childSpan.End()
 
+	memfilePath := s.env.tmpMemfilePath()
+	snapfilePath := s.env.tmpSnapfilePath()
 	snapshotConfig := operations.CreateSnapshotParams{
 		Context: childCtx,
 		Body: &models.SnapshotCreateParams{
 			SnapshotType: models.SnapshotCreateParamsSnapshotTypeFull,
-			MemFilePath:  &s.env.tmpMemfilePath,
-			SnapshotPath: &s.env.tmpSnapfilePath,
+			MemFilePath:  &memfilePath,
+			SnapshotPath: &snapfilePath,
 		},
 	}
 	_, err := s.client.Operations.CreateSnapshot(&snapshotConfig)
@@ -225,7 +227,6 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	}
 
 	return nil
-
 }
 
 func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) error {
