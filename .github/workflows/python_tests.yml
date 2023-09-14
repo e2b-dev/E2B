@@ -1,0 +1,46 @@
+name: Test Python SDK
+
+on:
+  push:
+    paths:
+      - packages/python-sdk/**/*
+      - .github/workflows/python_tests.yml
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    defaults:
+      run:
+        working-directory: ./packages/python-sdk
+    name: Build and test SDK
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.5.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Build Package
+        run: poetry install
+
+
+      - name: Build Package
+        run: poetry build
+
+      - name: Run tests
+        run: poetry run pytest -n auto
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
