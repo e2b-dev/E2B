@@ -77,14 +77,11 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	// Create a team API Key auth validator
 	AuthenticationFunc := customMiddleware.CreateAuthenticationFunc(apiStore.GetTeamFromAPIKey, apiStore.GetUserFromAccessToken)
 
-	// Create a user access token auth validator
-
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
 	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
 		&middleware.Options{
 			Options: openapi3filter.Options{
-				ExcludeRequestBody: true,
 				AuthenticationFunc: AuthenticationFunc,
 			},
 		}))
