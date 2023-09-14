@@ -8,24 +8,13 @@ import (
 )
 
 const (
-	ApiKeyAuthScopes = "ApiKeyAuth.Scopes"
+	AccessTokenAuthScopes = "AccessTokenAuth.Scopes"
+	ApiKeyAuthScopes      = "ApiKeyAuth.Scopes"
 )
 
 // Environment defines model for Environment.
 type Environment struct {
 	EnvID string `json:"envID"`
-}
-
-// EnvironmentToBuild defines model for EnvironmentToBuild.
-type EnvironmentToBuild struct {
-	// BuildContext Docker build context
-	BuildContext *openapi_types.File `json:"buildContext,omitempty"`
-
-	// Dockerfile Dockerfile content
-	Dockerfile string `json:"dockerfile"`
-
-	// EnvID ID of the environment, only present if the environment should be rebuilt
-	EnvID *string `json:"envID,omitempty"`
 }
 
 // Error defines model for Error.
@@ -61,8 +50,20 @@ type N401 = Error
 // N500 defines model for 500.
 type N500 = Error
 
+// PostEnvsMultipartBody defines parameters for PostEnvs.
+type PostEnvsMultipartBody struct {
+	// BuildContext Docker build context
+	BuildContext openapi_types.File `json:"buildContext"`
+
+	// Dockerfile Dockerfile content
+	Dockerfile string `json:"dockerfile"`
+
+	// EnvID ID of the environment, only present if the environment should be rebuilt
+	EnvID *string `json:"envID,omitempty"`
+}
+
 // PostEnvsMultipartRequestBody defines body for PostEnvs for multipart/form-data ContentType.
-type PostEnvsMultipartRequestBody = EnvironmentToBuild
+type PostEnvsMultipartRequestBody PostEnvsMultipartBody
 
 // PostInstancesJSONRequestBody defines body for PostInstances for application/json ContentType.
 type PostInstancesJSONRequestBody = Environment

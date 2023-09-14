@@ -1,66 +1,70 @@
 variable "gcp_zone" {
-  type = string
+  type    = string
   default = "us-central1-a"
 }
 
 variable "image_name" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "api_port_name" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "api_port_number" {
-  type = number
+  type    = number
   default = 0
 }
 
 variable "consul_token" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "nomad_token" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "nomad_address" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "logs_proxy_address" {
-  type = string
+  type    = string
   default = ""
 }
 
-variable "supabase_url" {
-  type = string
-  default = ""
-}
-
-variable "supabase_key" {
-  type = string
+variable "supabase_connection_string" {
+  type    = string
   default = ""
 }
 
 variable "posthog_api_key" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "api_admin_key" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "environment" {
-  type = string
+  type    = string
   default = ""
+}
+
+variable "bucket_name" {
+  type    = string
+  default = ""
+}
+
+variable "google_service_account_credentials" {
+  type    = string
 }
 
 job "orchestration-api" {
@@ -93,21 +97,22 @@ job "orchestration-api" {
       driver = "docker"
 
       resources {
-        memory = 256
+        memory     = 256
         memory_max = 2048
-        cpu    = 500
+        cpu        = 500
       }
 
       env {
-        LOGS_PROXY_ADDRESS = var.logs_proxy_address
-        NOMAD_ADDRESS      = var.nomad_address
-        NOMAD_TOKEN        = var.nomad_token
-        CONSUL_TOKEN       = var.consul_token
-        SUPABASE_URL       = var.supabase_url
-        SUPABASE_KEY       = var.supabase_key
-        POSTHOG_API_KEY    = var.posthog_api_key
-        API_ADMIN_KEY      = var.api_admin_key
-        ENVIRONMENT        = var.environment
+        LOGS_PROXY_ADDRESS          = var.logs_proxy_address
+        NOMAD_ADDRESS               = var.nomad_address
+        NOMAD_TOKEN                 = var.nomad_token
+        CONSUL_TOKEN                = var.consul_token
+        SUPABASE_CONNECTION_STRING  = var.supabase_connection_string
+        POSTHOG_API_KEY             = var.posthog_api_key
+        API_ADMIN_KEY               = var.api_admin_key
+        ENVIRONMENT                 = var.environment
+        GOOGLE_CLOUD_STORAGE_BUCKET = var.bucket_name
+        GOOGLE_APPLICATION_CREDENTIALS = var.google_service_account_credentials
       }
 
       config {
