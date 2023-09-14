@@ -66,7 +66,7 @@ export function getUserConfig(): UserConfig | null {
 async function signInWithBrowser(): Promise<UserConfig> {
   const server = http.createServer()
   const { port } = await listen(server, 0, '127.0.0.1')
-  const loginUrl = new URL(DOCS_BASE + '/docs/api/cli')
+  const loginUrl = new URL(`${DOCS_BASE}/api/cli`)
   loginUrl.searchParams.set('next', `http://localhost:${port}`)
   loginUrl.searchParams.set('cliVersion', pkg.version)
 
@@ -74,7 +74,7 @@ async function signInWithBrowser(): Promise<UserConfig> {
     server.once('request', (req, res) => {
       // Close the HTTP connection to prevent `server.close()` from hanging
       res.setHeader('connection', 'close')
-      const followUpUrl = new URL(DOCS_BASE + '/docs/api/cli')
+      const followUpUrl = new URL(`${DOCS_BASE}/api/cli`)
       const searchParams = new URL(req.url || '/', 'http://localhost').searchParams
       const searchParamsObj = Object.fromEntries(searchParams.entries()) as UserConfig & {
         error?: string
