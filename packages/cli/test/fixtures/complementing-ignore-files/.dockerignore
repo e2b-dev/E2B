@@ -1,0 +1,5 @@
+.dockerignore
+.gitignore
+Dockerfile
+README.md
+assets-to-be-ignored

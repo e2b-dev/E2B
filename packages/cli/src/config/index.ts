@@ -10,11 +10,9 @@ const dockerNames = require('docker-names')
 import { getFiles } from '../utils/filesystem'
 import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
 
-export const configName = 'e2b.toml'
+export const configName = 'e2b.json'
 
-const configCommentHeader = `# This is a config for a e2b environment
-
-`
+const configCommentHeader = `# This is a config for a e2b environment`
 
 export function randomTitle() {
   return dockerNames.getRandomName().replace('_', '-')

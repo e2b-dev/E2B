@@ -25,6 +25,7 @@
     "prepublishOnly": "rollup -c",
     "build": "rollup -c",
     "watch": "rollup -c -w",
+    "dev": "rollup -c -w",
     "measure": "node test/performance.mjs",
     "run": "node test/run.mjs",
     "test": "vitest run",
