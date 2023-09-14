@@ -14,29 +14,6 @@ func (a *APIStore) PostEnvs(
 ) {
 	ctx := c.Request.Context()
 
-	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
-	if err != nil {
-		formErr := fmt.Errorf("error when parsing form data: %w", err)
-		ReportCriticalError(ctx, formErr)
-		return
-	}
-	defer fileContent.Close()
-
-	// Check if file is a tar.gz file
-	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz") {
-		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz file")
-
-		return
-	}
-
-	// Upload file to cloud storage
-	err = a.uploadFile(fileHandler.Filename, fileContent)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file: %s", err))
-
-		return
-	}
-
 	// Not implemented yet
 	envID := c.PostForm("envID")
 	if envID != "" {
@@ -56,6 +33,32 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
+	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
+	if err != nil {
+		formErr := fmt.Errorf("error when parsing form data: %w", err)
+		ReportCriticalError(ctx, formErr)
+		return
+	}
+	defer fileContent.Close()
+
+	// Check if file is a tar.gz file
+	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz") {
+		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz file")
+
+		return
+	}
+
+	// Upload file to cloud storage
+	url, err := a.uploadDockerContextFile(envID, team.ID, fileHandler.Filename, fileContent)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file: %s", err))
+
+		return
+	}
+
+	// TODO: Create env, replace the print statement
+	fmt.Println("Creating env", url)
+	//a.nomad.StartBuildingEnv(a.tracer, ctx, envID, url)
 	// Save env to database
 	newEnv, err := a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
 	if err != nil {
