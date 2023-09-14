@@ -70,6 +70,7 @@
     "get-port": "^7.0.0",
     "ignore": "^5.2.4",
     "inquirer": "^8.0.0",
+    "open": "^9.1.0",
     "node-fetch": "^3.3.2",
     "parse-gitignore": "^2.0.0",
     "tar-fs": "^3.0.4",
