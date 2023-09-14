@@ -42,8 +42,8 @@ func (a *APIStore) PostEnvs(
 	defer fileContent.Close()
 
 	// Check if file is a tar.gz file
-	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz") {
-		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz file")
+	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz.e2b") {
+		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
 
 		return
 	}
