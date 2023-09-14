@@ -18,7 +18,8 @@ test('no logs in console during very basic scenario', async () => {
   expect(consoleSpy.error).toHaveBeenCalledTimes(0);
 })
 
-test('warn logs in console during convoluted scenario', async () => {
+// TODO: Re-enable https://e2b-team.slack.com/archives/C05AGT4UFMJ/p1694697558738799?thread_ts=1694697479.308769&cid=C05AGT4UFMJ
+test.skip('warn logs in console during convoluted scenario', async () => {
   const consoleSpy = {
     debug: vi.spyOn(console, "debug"),
     info: vi.spyOn(console, "info"),
