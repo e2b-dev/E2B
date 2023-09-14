@@ -128,8 +128,8 @@ module "client_proxy" {
 }
 
 resource "google_storage_bucket" "e2b-envs-docker-context" {
-  name          = "e2b-envs-docker-context"
-  location      = "us-central1"
+  name     = "e2b-envs-docker-context"
+  location = "us-central1"
 
   uniform_bucket_level_access = true
 }
