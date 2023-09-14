@@ -101,3 +101,13 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Failed - Slack Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#ff0000'
+          SLACK_MESSAGE: ':bob-the-destroyer: See more in here:\n
+          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          SLACK_TITLE: Release Failed
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
