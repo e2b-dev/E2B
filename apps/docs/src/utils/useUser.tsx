@@ -16,20 +16,16 @@ import * as Sentry from '@sentry/nextjs'
 type UserContextType = {
   isLoading: boolean
   session: Session | null
-  user: (User & { teams: any[]; apiKeys: any[] }) | null
+  user: User & { 
+    teams: any[];
+    apiKeys: any[];
+    accessToken: string;
+    defaultTeamId: string;
+  } | null
   error: Error | null
 }
 
 export const UserContext = createContext(undefined)
-
-function stdHandler({ line, timestamp, error }) {
-  const timestampHumanFriendly = new Date(timestamp / 1000000) // timestamp is in nanoseconds
-    .toISOString()
-    .split('T')[1] // only time, date is not relevant for debugging
-    .split('.')[0] // remove ms
-  const emoji = error ? '🟥' : '🟦'
-  console.log(`${emoji} [${timestampHumanFriendly}] ${line}`)
-}
 
 export const CustomUserContextProvider = (props) => {
   const supabase = createPagesBrowserClient()
@@ -41,7 +37,6 @@ export const CustomUserContextProvider = (props) => {
 
   useEffect(() => {
     mounted.current = true
-
     async function getSession() {
       const {
         data: { session },
@@ -59,7 +54,6 @@ export const CustomUserContextProvider = (props) => {
         if (!session) setIsLoading(false) // if session is present, we set setLoading to false in the second useEffect
       }
     }
-
     void getSession()
     return () => {
       mounted.current = false
@@ -107,15 +101,26 @@ export const CustomUserContextProvider = (props) => {
         ) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
+      const defaultTeamId = teams?.[0]?.team_id // TODO: Adjust when user can be part of multiple teams
+      
+      const { data: accessToken, error: accessTokenError } = await supabase
+        .from('access_tokens')
+        .select('*')
+        .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+        .limit(1)
+        .single()
+      if (accessTokenError) Sentry.captureException(accessTokenError)
+
       setUser({
         ...session?.user,
         teams,
         apiKeys,
+        accessToken: accessToken?.access_token,
+        defaultTeamId,
         error: teamsError || apiKeysError,
       })
       setIsLoading(false)
     }
-
     if (session) void getUserCustom()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
@@ -157,7 +162,7 @@ export const useUser = (): UserContextType => {
   return context
 }
 
-export const useApiKey = (): string => {
+export const useApiKey = (): string => { // for convenience 
   const { user } = useUser()
   return user?.apiKeys?.[0]?.api_key
 }
