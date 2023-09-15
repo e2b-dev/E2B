@@ -147,8 +147,8 @@ paths:
             schema:
               $ref: "#/components/schemas/NewInstance"
       responses:
-        202:
-          description: The build has started
+        201:
+          description: The instance was created successfully
           content:
             application/json:
               schema:
@@ -230,8 +230,8 @@ paths:
                 contentType: application/octet-stream
 
       responses:
-        200:
-          description: Successfully returned all environments
+        202:
+          description: The build has started
           content:
             application/json:
               schema:
