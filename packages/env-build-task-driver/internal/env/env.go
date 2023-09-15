@@ -36,8 +36,11 @@ type Env struct {
 	// The number of vCPUs to allocate to the VM.
 	VCpuCount int64
 
-	// The amount of memory to allocate to the VM, in MiB.
+	// The amount of RAM memory to allocate to the VM, in MiB.
 	MemoryMB int64
+
+	// The amount of disk memory to allocate to the VM, in MiB.
+	DiskSizeMB int64
 }
 
 // Path to the directory where the build files are mounted.

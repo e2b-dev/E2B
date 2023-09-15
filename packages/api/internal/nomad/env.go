@@ -21,8 +21,9 @@ const (
 	buildJobName          = "env-build"
 	buildJobNameWithSlash = buildJobName + "/"
 
-	defaultVCpuCount = 4
-	defaultMemoryMB  = 1024
+	defaultVCpuCount  = 4
+	defaultMemoryMB   = 1024
+	defaultDiskSizeMB = 3000
 )
 
 //go:embed env-build.hcl
@@ -69,9 +70,11 @@ func (n *NomadClient) StartBuildingEnv(
 		EnvsDisk        string
 		VCpuCount       int
 		MemoryMB        int
+		DiskSizeMB      int
 	}{
 		BuildID:         buildID,
 		SpanID:          spanID,
+		DiskSizeMB:      defaultDiskSizeMB,
 		VCpuCount:       defaultVCpuCount,
 		MemoryMB:        defaultMemoryMB,
 		ProvisionScript: provisionEnvScriptFile,

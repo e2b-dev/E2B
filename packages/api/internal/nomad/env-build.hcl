@@ -36,6 +36,7 @@ job "{{ .JobName }}/{{ .EnvID }}" {
         EnvID = "{{ .EnvID }}"
         ProvisionScript = "{{ escapeHCL .ProvisionScript }}"
         VCpuCount = "{{ .VCpuCount }}"
+        DiskSizeMB = "{{ .DiskSizeMB }}"
         MemoryMB = "{{ .MemoryMB }}"
         SpanID = "{{ .SpanID }}"
         TraceID = "{{ .TraceID }}"
