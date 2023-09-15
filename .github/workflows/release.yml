@@ -143,7 +143,7 @@ jobs:
     needs: [changes, terraform]
     if: |
       always() &&
-      needs.terraform.result == 'success' &&
+      needs.terraform.result == 'success'
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
