@@ -3,22 +3,26 @@ import { Session } from '../dist/cjs/index.js'
 async function main() {
   const session = await Session.create({
     id: 'Nodejs',
+    apiKey: process.env.E2B_API_KEY,
   })
 
   try {
-    await session.filesystem.write('/code/file', 'test')
-    const content = await session.filesystem.read('/code/file')
-    console.log('content', content)
+    // await session.filesystem.write('/code/file', 'test')
+    // const content = await session.filesystem.read('/code/file')
+    // console.log('content', content)
 
-    const process = await session.process.start({
-      cmd: 'while true; do echo "Hello, World!"; sleep 1; done',
-      onExit: () => console.log('exit'),
-      onStdout: data => console.log(data.line),
-    })
+    // const process = await session.process.start({
+    //   cmd: 'npm init -y',
+    //   // onExit: () => console.log('exit'),
+    //   // onStdout: data => console.log(data.line),
+    // })
+    const process = await session.process.start('npm init -y')
 
     const output = await process.finished
 
-    console.log('stdout', output.stdout)
+    console.log('output:', output)
+    console.log('stdout:', output.stdout)
+    console.log('stderr:', output.stderr)
 
     await session.close()
     // const cmd = 'npm i'

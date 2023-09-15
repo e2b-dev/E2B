@@ -11,9 +11,44 @@
     --shiki-token-punctuation: theme('colors.zinc.200');
   }
 
+  code[class*='language-'] .Code-line_highlighted {
+    position: relative; /* holds highlight element */
+    z-index: 1; /* force above the highlight defined below */
+  }
+  
+  code[class*='language-'] .Code-line_highlighted:before {
+    content: '';
+    position: absolute;
+    left: -16px; /* align nicely with code border */
+    top: -5px; bottom: -5px; /* breathing space */
+    border-left: 3px solid theme('colors.emerald.500');
+    width: 300px; /* arbitrary value, looks nice */
+    /* TODO: Theme colors */
+    background: linear-gradient(
+      to right,
+      hsl(240, 3%, 21%),
+      #1d1d20
+    );
+    pointer-events: none;
+    z-index: -1; /* force below code */
+  }
+
   [inert] ::-webkit-scrollbar {
     display: none;
   }
+}
+
+@layer utilities {
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+}
+
+.circle {
+  @apply w-[5px] h-[5px] mx-[2px] relative top-[-1px] bg-gray-500 rounded-full;
 }
 
 @tailwind base;

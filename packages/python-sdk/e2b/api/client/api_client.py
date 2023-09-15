@@ -14,21 +14,22 @@
 
 import atexit
 import datetime
-from dateutil.parser import parse
+from importlib import metadata
 import json
 import mimetypes
-from multiprocessing.pool import ThreadPool
 import os
+import platform
 import re
 import tempfile
-
+from multiprocessing.pool import ThreadPool
 from urllib.parse import quote
 
-from e2b.api.client.configuration import Configuration
-from e2b.api.client.api_response import ApiResponse
 import e2b.api.client.models
+from dateutil.parser import parse
 from e2b.api.client import rest
-from e2b.api.client.exceptions import ApiValueError, ApiException
+from e2b.api.client.api_response import ApiResponse
+from e2b.api.client.configuration import Configuration
+from e2b.api.client.exceptions import ApiValueError
 
 
 class ApiClient(object):
@@ -77,7 +78,17 @@ class ApiClient(object):
         self.pool_threads = pool_threads
 
         self.rest_client = rest.RESTClientObject(configuration)
-        self.default_headers = {}
+        self.default_headers = {
+            "package_version": metadata.version("e2b"),
+            "lang": "python",
+            "lang_version": platform.python_version(),
+            "system": platform.system(),
+            "os": platform.platform(),
+            "publisher": "e2b",
+            "release": platform.release(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+        }
         if header_name is not None:
             self.default_headers[header_name] = header_value
         self.cookie = cookie
@@ -225,22 +236,17 @@ class ApiClient(object):
             url_query = self.parameters_to_url_query(query_params, collection_formats)
             url += "?" + url_query
 
-        try:
-            # perform request and return response
-            response_data = await self.request(
-                method,
-                url,
-                query_params=query_params,
-                headers=header_params,
-                post_params=post_params,
-                body=body,
-                _preload_content=_preload_content,
-                _request_timeout=_request_timeout,
-            )
-        except ApiException as e:
-            if e.body:
-                e.body = e.body.decode("utf-8")
-            raise e
+        # perform request and return response
+        response_data = await self.request(
+            method,
+            url,
+            query_params=query_params,
+            headers=header_params,
+            post_params=post_params,
+            body=body,
+            _preload_content=_preload_content,
+            _request_timeout=_request_timeout,
+        )
 
         self.last_response = response_data
 
@@ -806,7 +812,7 @@ class ApiClient(object):
             return string
         except ValueError:
             raise rest.ApiException(
-                status=0, reason="Failed to parse `{0}` as date object".format(string)
+                status=0, message="Failed to parse `{0}` as date object".format(string)
             )
 
     def __deserialize_datetime(self, string):
@@ -824,7 +830,7 @@ class ApiClient(object):
         except ValueError:
             raise rest.ApiException(
                 status=0,
-                reason=("Failed to parse `{0}` as datetime object".format(string)),
+                message="Failed to parse `{0}` as datetime object".format(string),
             )
 
     def __deserialize_model(self, data, klass):

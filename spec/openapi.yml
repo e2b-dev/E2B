@@ -1,0 +1,256 @@
+openapi: 3.0.0
+info:
+  version: 0.1.0
+  title: E2B API
+
+servers:
+  - url: "{server}/v1"
+    variables:
+      server:
+        default: https://api.e2b.dev
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    AccessTokenAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: access_token
+
+  parameters:
+    envID:
+      name: envID
+      in: path
+      required: true
+      schema:
+        type: string
+    instanceID:
+      name: instanceID
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    400:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    401:
+      description: Authentication error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    404:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    500:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Environment:
+      required:
+        - envID
+        - status
+        - public
+      properties:
+        envID:
+          type: string
+          description: Identifier of the environment
+        status:
+          type: string
+          description: Status of the environment
+          enum:
+            - building
+            - ready
+            - error
+        public:
+          type: boolean
+          description: Whether the environment is public or only accessible by the team
+
+    Instance:
+      required:
+        - envID
+        - instanceID
+        - clientID
+      properties:
+        envID:
+          type: string
+          description: Identifier of the environment from which is the instance created
+        instanceID:
+          type: string
+          description: Identifier of the instance
+        clientID:
+          type: string
+          description: Identifier of the client
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error
+
+tags:
+  - name: instances
+  - name: envs
+
+paths:
+  /health:
+    get:
+      description: Health check
+      responses:
+        200:
+          description: Request was successful
+        401:
+          $ref: "#/components/responses/401"
+
+
+  /instances:
+    post:
+      description: Create an instance from the environment
+      tags: [instances]
+      security:
+        - ApiKeyAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Environment"
+      responses:
+        202:
+          description: The build has started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+        401:
+          $ref: "#/components/responses/401"
+        400:
+          $ref: "#/components/responses/400"
+        500:
+          $ref: "#/components/responses/500"
+
+  /instances/{instanceID}/refreshes:
+    post:
+      description: Refresh the instance extending its time to live
+      security:
+        - ApiKeyAuth: [ ]
+      tags: [ instances ]
+      parameters:
+        - $ref: "#/components/parameters/instanceID"
+      responses:
+        204:
+          description: Successfully refreshed the instance
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          description: Error refreshing instance - not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /envs:
+    get:
+      description: List all environments
+      tags: [envs]
+      security:
+        - AccessTokenAuth: [ ]
+      responses:
+        200:
+          description: Successfully returned all environments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      description: Create a new environment
+      tags: [ envs ]
+      security:
+        - AccessTokenAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - buildContext
+                - dockerfile
+              properties:
+                buildContext:
+                  description: Docker build context
+                  type: string
+                  format: binary
+                dockerfile:
+                  type: string
+                  description: Dockerfile content
+                envID:
+                  type: string
+                  description: ID of the environment, only present if the environment should be rebuilt
+            encoding:
+              buildContext:
+                contentType: application/octet-stream
+
+      responses:
+        200:
+          description: Successfully returned all environments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  /envs/{envID}:
+    get:
+      description: Get environment info
+      tags: [envs]
+      security:
+        - AccessTokenAuth: [ ]
+      parameters:
+        - $ref: "#/components/parameters/envID"
+      responses:
+        200:
+          description: Successfully returned the environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"

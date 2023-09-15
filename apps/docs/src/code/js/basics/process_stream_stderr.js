@@ -8,7 +8,7 @@ const session = await Session.create({
 // This command will fail and output to stderr because Golang isn't installed in the cloud playground
 const golangVersion = await session.process.start({
   cmd: 'go version',
-  onStderr: output => console.log(output), // Print stderr to console
+  onStderr: output => console.log(output), // $HighlightLine
 })
 await golangVersion.finished
 

@@ -1,5 +1,6 @@
+import { withTimeout } from '../utils/promise'
 import { filesystemService } from './filesystem'
-import { SessionConnection } from './sessionConnection'
+import { CallOpts, SessionConnection } from './sessionConnection'
 
 export enum FilesystemOperation {
   Create = 'Create',
@@ -32,18 +33,21 @@ class FilesystemWatcher {
   }
 
   // Starts watching the path that was passed to the contructor
-  async start() {
-    // Already started.
-    if (this.rpcSubscriptionID) return
+  async start(opts: CallOpts) {
+    const start = async () => {
+      // Already started.
+      if (this.rpcSubscriptionID) return
 
-    this.handleFilesystemEvents = this.handleFilesystemEvents.bind(this)
+      this.handleFilesystemEvents = this.handleFilesystemEvents.bind(this)
 
-    this.rpcSubscriptionID = await this.sessConn.subscribe(
-      filesystemService,
-      this.handleFilesystemEvents,
-      'watchDir',
-      this.path,
-    )
+      this.rpcSubscriptionID = await this.sessConn.subscribe(
+        filesystemService,
+        this.handleFilesystemEvents,
+        'watchDir',
+        this.path,
+      )
+    }
+    return await withTimeout(start, opts?.timeout)()
   }
 
   // Stops watching the path and removes all listeners.

@@ -147,10 +147,11 @@ function NavigationGroup({ group, className }) {
   // state, so that the state does not change during the close animation.
   // The state will still update when we re-open (re-render) the navigation.
   let isInsideMobileNavigation = useIsInsideMobileNavigation()
-  let initialPathname = usePathname();
+  let initialPathname = usePathname()
 
   // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
-  if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
+  if (typeof window === 'undefined' && initialPathname === '/')
+    initialPathname = '/docs'
 
   let [pathname, sections] = useInitialValue(
     [initialPathname, useSectionStore((s) => s.sections)],
@@ -244,6 +245,9 @@ export const navigation = [
       { title: 'Installation', href: '/getting-started/installation' },
       { title: 'API Key', href: '/getting-started/api-key' },
       { title: 'SDK Basics', href: '/getting-started/basics' },
+      { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
+      { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
+      { title: 'SDK Multiple Processes', href: '/getting-started/sdk-multiple-processes' },
     ],
   },
   {
@@ -322,9 +326,9 @@ export function Navigation(props) {
   return (
     <nav {...props}>
       <ul role="list">
-        <TopLevelNavItem href="/">API</TopLevelNavItem>
+        {/* <TopLevelNavItem href="/">API</TopLevelNavItem>
         <TopLevelNavItem href="#">Documentation</TopLevelNavItem>
-        <TopLevelNavItem href="#">Support</TopLevelNavItem>
+        <TopLevelNavItem href="#">Support</TopLevelNavItem> */}
         {navigation.map((group, groupIndex) => (
           <NavigationGroup
             key={group.title}

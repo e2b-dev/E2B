@@ -64,24 +64,30 @@ export class Terminal {
   }
 }
 
+export type TerminalOpts = {
+  onData: (data: string) => void
+  onExit?: () => void
+  size: { cols: number; rows: number }
+  terminalID?: string
+  /**
+   * If the `cmd` parameter is defined it will be executed as a command
+   * and this terminal session will exit when the command exits.
+   */
+  cmd?: string
+  /**
+   * Working directory where will the terminal start.
+   */
+  rootdir?: string
+  /**
+   * Environment variables that will be accessible inside of the terminal.
+   */
+  envVars?: EnvVars
+  /**
+   * Timeout in milliseconds (default is 60 seconds)
+   */
+  timeout?: number
+}
+
 export interface TerminalManager {
-  readonly start: (opts: {
-    onData: (data: string) => void
-    onExit?: () => void
-    size: { cols: number; rows: number }
-    terminalID?: string
-    /**
-     * If the `cmd` parameter is defined it will be executed as a command
-     * and this terminal session will exit when the command exits.
-     */
-    cmd?: string
-    /**
-     * Working directory where will the terminal start.
-     */
-    rootdir?: string
-    /**
-     * Environment variables that will be accessible inside of the terminal.
-     */
-    envVars?: EnvVars
-  }) => Promise<Terminal>
+  readonly start: (opts: TerminalOpts) => Promise<Terminal>
 }

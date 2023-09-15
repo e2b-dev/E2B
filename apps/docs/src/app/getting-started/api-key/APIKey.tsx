@@ -4,26 +4,15 @@ import clsx from 'clsx'
 import { Button } from '@/components/Button'
 import { useApiKey, useUser } from '@/utils/useUser'
 import { obfuscateKey } from '@/utils/obfuscate'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { CopyButton } from '@/components/CopyButton'
 import { usePostHog } from 'posthog-js/react'
+import { useSignIn } from '@/utils/useSignIn'
 
 function APIKey() {
-  const supabase = createClientComponentClient()
+  const signIn = useSignIn()
   const { user, isLoading, error } = useUser()
   const apiKey = useApiKey()
   const posthog = usePostHog()
-
-  async function signInWithGitHub() {
-    await supabase.auth.signInWithOAuth({
-      // redirect to GitHub
-      provider: 'github',
-      options: {
-        redirectTo: window.location.href,
-        scopes: 'email',
-      },
-    })
-  }
 
   return (
     <div className="flex flex-col items-start justify-start space-y-4">
@@ -35,7 +24,7 @@ function APIKey() {
             gap-2 text-xs
           "
         >
-          <span className="whitespace-nowrap text-zinc-400 group-hover:opacity-25 font-bold">
+          <span className="whitespace-nowrap font-bold text-zinc-400 group-hover:opacity-25">
             API Key
           </span>
           <span className="whitespace-nowrap font-mono text-yellow-400 group-hover:opacity-25">
@@ -56,9 +45,7 @@ function APIKey() {
       ) : (
         <>
           <span>You can get your API key by signing up.</span>
-          <Button onClick={signInWithGitHub}>
-            Sign up to get your API key
-          </Button>
+          <Button onClick={() => signIn()}>Sign up to get your API key</Button>
         </>
       )}
     </div>

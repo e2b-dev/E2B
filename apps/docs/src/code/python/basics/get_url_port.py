@@ -7,7 +7,7 @@ E2B_API_KEY = getenv("E2B_API_KEY")
 async def main():
   session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
 
-  url = session.get_hostname(3000)
+  url = session.get_hostname(3000) # $HighlightLine
   print("https://" + url)
 
   await session.close()

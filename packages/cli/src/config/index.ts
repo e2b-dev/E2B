@@ -10,9 +10,9 @@ const dockerNames = require('docker-names')
 import { getFiles } from '../utils/filesystem'
 import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
 
-export const configName = 'dbk.toml'
+export const configName = 'e2b.toml'
 
-const configCommentHeader = `# This is a config for a Devbook environment
+const configCommentHeader = `# This is a config for a e2b environment
 
 `
 
@@ -30,7 +30,7 @@ export const configSchema = yup.object({
   }),
 })
 
-export type DevbookConfig = yup.InferType<typeof configSchema>
+export type E2bConfig = yup.InferType<typeof configSchema>
 
 export async function loadConfig(configPath: string) {
   try {
@@ -41,10 +41,10 @@ export async function loadConfig(configPath: string) {
 
     const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
     const config = toml.parse(tomlRaw)
-    return (await configSchema.validate(config)) as DevbookConfig
+    return (await configSchema.validate(config)) as E2bConfig
   } catch (err: any) {
     throw new Error(
-      `Devbook environment config ${asLocalRelative(configPath)} cannot be loaded: ${
+      `E2b environment config ${asLocalRelative(configPath)} cannot be loaded: ${
         err.message
       }`,
     )
@@ -53,7 +53,7 @@ export async function loadConfig(configPath: string) {
 
 export async function saveConfig(
   configPath: string,
-  config: DevbookConfig,
+  config: E2bConfig,
   overwrite?: boolean,
 ) {
   try {
@@ -72,7 +72,7 @@ export async function saveConfig(
     await fsPromise.writeFile(configPath, configCommentHeader + tomlRaw)
   } catch (err: any) {
     throw new Error(
-      `Devbook environment config ${asFormattedEnvironment(
+      `e2b environment config ${asFormattedEnvironment(
         config,
         configPath,
       )} cannot be saved: ${err.message}`,

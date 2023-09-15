@@ -17,11 +17,17 @@ import json
 import logging
 import re
 import ssl
+from urllib.parse import urlencode
 
 import aiohttp
-from urllib.parse import urlencode, quote_plus
-
-from e2b.api.client.exceptions import ApiException, ApiValueError
+from e2b.api.client.exceptions import (
+    ApiException,
+    ApiValueError,
+    ForbiddenException,
+    NotFoundException,
+    ServiceException,
+    UnauthorizedException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +164,7 @@ class RESTClientObject(object):
                 msg = """Cannot prepare a request message for provided
                          arguments. Please check that your arguments match
                          declared content type."""
-                raise ApiException(status=0, reason=msg)
+                raise ApiException(status=0, message=msg)
 
         r = await self.pool_manager.request(**args)
         if _preload_content:
@@ -169,7 +175,16 @@ class RESTClientObject(object):
             logger.debug("response body: %s", r.data)
 
             if not 200 <= r.status <= 299:
-                raise ApiException(http_resp=r)
+                if r.status == 401:
+                    raise UnauthorizedException(status=r.status, data=r.data)
+                elif r.status == 403:
+                    raise ForbiddenException(status=r.status, data=r.data)
+                elif r.status == 404:
+                    raise NotFoundException(status=r.status, data=r.data)
+                elif r.status == 500:
+                    raise ServiceException(status=r.status, data=r.data)
+                else:
+                    raise ApiException(status=r.status, data=r.data)
 
         return r
 

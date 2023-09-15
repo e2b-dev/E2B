@@ -54,7 +54,7 @@ async def test_process_send_stdin():
         rootdir="/code",
     )
     await proc.send_stdin("ping\n")
-    await proc.kill()
+    await proc
 
     assert proc.output.stdout == "ping"
 

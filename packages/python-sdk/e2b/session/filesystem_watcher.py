@@ -1,9 +1,13 @@
+import logging
 from enum import Enum
 from typing import Any, Awaitable, Callable, Optional, Set
 
+from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.session_connection import SessionConnection
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class FilesystemOperation(str, Enum):
@@ -45,20 +49,25 @@ class FilesystemWatcher:
         self._unsubscribe: Optional[Callable[[], Awaitable[Any]]] = None
         self._listeners: Set[Callable[[FilesystemEvent], Any]] = set()
 
-    async def start(self) -> None:
+    async def start(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Starts the filesystem watcher.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         if self._unsubscribe:
             return
 
+        logger.debug("Starting filesystem watcher for %s", self.path)
         try:
             self._unsubscribe = await self._connection._subscribe(
                 self._service_name,
                 self._handle_filesystem_events,
                 "watchDir",
                 self.path,
+                timeout=timeout,
             )
+            logger.debug("Started filesystem watcher for %s", self.path)
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
@@ -66,11 +75,14 @@ class FilesystemWatcher:
         """
         Stops the filesystem watcher.
         """
+        logger.debug("Stopping filesystem watcher for %s", self.path)
+
         self._listeners.clear()
         if self._unsubscribe:
             try:
                 await self._unsubscribe()
                 self._unsubscribe = None
+                logger.debug("Stopped filesystem watcher for %s", self.path)
             except RpcException as e:
                 raise FilesystemException(e.message) from e
 
@@ -78,10 +90,12 @@ class FilesystemWatcher:
         """
         Adds a listener for filesystem events.
 
-        :param listener: a listener to add
+        :param listener: Listener to add
 
-        :return: a function that removes the listener
+        :return: Function that removes the listener
         """
+        logger.debug("Adding filesystem watcher listener for %s", self.path)
+
         self._listeners.add(listener)
 
         def delete_listener() -> None:

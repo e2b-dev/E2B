@@ -8,4 +8,4 @@ import * as packageJSON from '../package.json'
 
 updateNotifier.default({ pkg: packageJSON }).notify()
 
-program.version(packageJSON.version, undefined, 'Display Devbook CLI version').parse()
+program.version(packageJSON.version, undefined, 'Display e2b CLI version').parse()

@@ -10,7 +10,7 @@ async def main():
   # `filesystem.make_dir()` will fail if any directory in the path doesn't exist
 
   # Create a new directory '/dir'
-  await session.filesystem.make_dir("/dir")
+  await session.filesystem.make_dir("/dir") # $HighlightLine
 
   await session.close()
 

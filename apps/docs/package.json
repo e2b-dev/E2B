@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "rm-next-cache": "rm -rf .next/cache"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
@@ -58,7 +59,7 @@
     "zustand": "^4.3.2"
   },
   "devDependencies": {
-    "@e2b/sdk": "^0.1.0",
+    "@e2b/sdk": "^0.2.4",
     "@nodelib/fs.walk": "^2.0.0",
     "encoding": "^0.1.13",
     "eslint": "8.45.0",

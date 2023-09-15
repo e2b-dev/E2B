@@ -1,11 +1,11 @@
 {
   "name": "@e2b/python-sdk",
   "private": true,
-  "version": "0.2.5",
+  "version": "0.2.9",
   "scripts": {
     "test": "poetry run pytest -n auto",
     "postVersion": "poetry version $(npm pkg get version --workspaces=false | tr -d \\\")",
-    "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish",
+    "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",
     "pretest": "poetry install"
   }
 }

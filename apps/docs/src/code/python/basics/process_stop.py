@@ -8,8 +8,8 @@ async def main():
   session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
 
   npm_init = await session.process.start("npm init -y")
-  await npm_init.kill()
-  # There will be no output because we immediatelly kill the `npm_init` process
+  await npm_init.kill() # $HighlightLine
+  # There will be no output because we immediately kill the `npm_init` process
   print(npm_init.stdout)
 
   await session.close()

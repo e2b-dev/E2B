@@ -23,11 +23,11 @@ function printNewPortAndURL(openPorts, session) {
 const session = await Session.create({
   id: 'Python3',
   apiKey: process.env.E2B_API_KEY,
-  onScanPorts: openPorts => printNewPortAndURL(openPorts, session)
+  onScanPorts: openPorts => printNewPortAndURL(openPorts, session) // $HighlightLine
 })
 
 // Start a new server on port 8000 inside the playground.
-const proc = await session.process.start({ cmd: 'python3 -m http.server 8000' })
+const proc = await session.process.start({ cmd: 'python3 -m http.server 8000' }) // $HighlightLine
 
 
 // Wait 10 seconds and then kill the server and close the session.

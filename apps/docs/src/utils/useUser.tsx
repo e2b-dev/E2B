@@ -1,6 +1,13 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext, useMemo, useRef } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
@@ -9,7 +16,12 @@ import * as Sentry from '@sentry/nextjs'
 type UserContextType = {
   isLoading: boolean
   session: Session | null
-  user: User & { teams: any[]; apiKeys: any[] } | null
+  user: User & { 
+    teams: any[];
+    apiKeys: any[];
+    accessToken: string;
+    defaultTeamId: string;
+  } | null
   error: Error | null
 }
 
@@ -46,8 +58,7 @@ export const CustomUserContextProvider = (props) => {
     return () => {
       mounted.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const {
@@ -90,10 +101,22 @@ export const CustomUserContextProvider = (props) => {
         ) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
+      const defaultTeamId = teams?.[0]?.team_id // TODO: Adjust when user can be part of multiple teams
+      
+      const { data: accessToken, error: accessTokenError } = await supabase
+        .from('access_tokens')
+        .select('*')
+        .eq('user_id', session?.user.id) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+        .limit(1)
+        .single()
+      if (accessTokenError) Sentry.captureException(accessTokenError)
+
       setUser({
         ...session?.user,
         teams,
         apiKeys,
+        accessToken: accessToken?.access_token,
+        defaultTeamId,
         error: teamsError || apiKeysError,
       })
       setIsLoading(false)
@@ -139,7 +162,7 @@ export const useUser = (): UserContextType => {
   return context
 }
 
-export const useApiKey = (): string => {
+export const useApiKey = (): string => { // for convenience 
   const { user } = useUser()
   return user?.apiKeys?.[0]?.api_key
 }

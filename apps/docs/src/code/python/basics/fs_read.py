@@ -8,7 +8,7 @@ async def main():
   session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
 
   # Read the '/etc/hosts' file
-  file_content = await session.filesystem.read('/etc/hosts')
+  file_content = await session.filesystem.read('/etc/hosts') # $HighlightLine
 
   # Prints something like:
   # 127.0.0.1       localhost

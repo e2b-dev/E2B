@@ -50,26 +50,19 @@
     "package.json"
   ],
   "bin": {
-    "dbk": "dist/index.js",
-    "devbook": "dist/index.js",
-    "devbookctl": "dist/index.js",
-    "dbkctl": "dist/index.js",
-    "e2b": "dist/index.js",
-    "E2B": "dist/index.js",
-    "E2b": "dist/index.js",
-    "etob": "dist/index.js",
-    "EtoB": "dist/index.js",
-    "Etob": "dist/index.js"
+    "e2b": "dist/index.js"
   },
   "dependencies": {
     "@devbookhq/sdk": "^2.6.88",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^1.2.8",
+    "async-listen": "^3.0.1",
     "boxen": "^7.0.0",
     "chalk": "^5.1.2",
     "chokidar": "^3.5.3",
     "commander": "^9.4.1",
     "docker-names": "^1.2.1",
+    "get-port": "^7.0.0",
     "inquirer": "^8.0.0",
     "parse-gitignore": "^2.0.0",
     "update-notifier": "5.1.0",
