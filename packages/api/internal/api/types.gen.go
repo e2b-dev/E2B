@@ -55,6 +55,12 @@ type Instance struct {
 	InstanceID string `json:"instanceID"`
 }
 
+// NewInstance defines model for NewInstance.
+type NewInstance struct {
+	// EnvID Identifier of the required environment
+	EnvID string `json:"envID"`
+}
+
 // EnvID defines model for envID.
 type EnvID = string
 
@@ -89,4 +95,4 @@ type PostEnvsMultipartBody struct {
 type PostEnvsMultipartRequestBody PostEnvsMultipartBody
 
 // PostInstancesJSONRequestBody defines body for PostInstances for application/json ContentType.
-type PostInstancesJSONRequestBody = Environment
+type PostInstancesJSONRequestBody = NewInstance
