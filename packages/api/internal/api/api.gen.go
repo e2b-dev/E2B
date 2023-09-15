@@ -14,8 +14,14 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
+	// (GET /envs)
+	GetEnvs(c *gin.Context)
+
 	// (POST /envs)
 	PostEnvs(c *gin.Context)
+
+	// (GET /envs/{envID})
+	GetEnvsEnvID(c *gin.Context, envID EnvID)
 
 	// (GET /health)
 	GetHealth(c *gin.Context)
@@ -36,6 +42,21 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(c *gin.Context)
 
+// GetEnvs operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvs(c *gin.Context) {
+
+	c.Set(AccessTokenAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetEnvs(c)
+}
+
 // PostEnvs operation middleware
 func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 
@@ -49,6 +70,32 @@ func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 	}
 
 	siw.Handler.PostEnvs(c)
+}
+
+// GetEnvsEnvID operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "envID" -------------
+	var envID EnvID
+
+	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(AccessTokenAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetEnvsEnvID(c, envID)
 }
 
 // GetHealth operation middleware
@@ -132,7 +179,9 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
+	router.GET(options.BaseURL+"/envs", wrapper.GetEnvs)
 	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
+	router.GET(options.BaseURL+"/envs/:envID", wrapper.GetEnvsEnvID)
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
 	router.POST(options.BaseURL+"/instances", wrapper.PostInstances)
 	router.POST(options.BaseURL+"/instances/:instanceID/refreshes", wrapper.PostInstancesInstanceIDRefreshes)

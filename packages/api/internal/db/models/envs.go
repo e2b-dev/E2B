@@ -22,10 +22,12 @@ import (
 
 // Env is an object representing the database table.
 type Env struct {
-	ID         string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	TeamID     string    `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
-	Dockerfile string    `boil:"dockerfile" json:"dockerfile" toml:"dockerfile" yaml:"dockerfile"`
+	ID         string        `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt  time.Time     `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	TeamID     string        `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
+	Dockerfile string        `boil:"dockerfile" json:"dockerfile" toml:"dockerfile" yaml:"dockerfile"`
+	Status     EnvStatusEnum `boil:"status" json:"status" toml:"status" yaml:"status"`
+	Public     bool          `boil:"public" json:"public" toml:"public" yaml:"public"`
 
 	R *envR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L envL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -36,11 +38,15 @@ var EnvColumns = struct {
 	CreatedAt  string
 	TeamID     string
 	Dockerfile string
+	Status     string
+	Public     string
 }{
 	ID:         "id",
 	CreatedAt:  "created_at",
 	TeamID:     "team_id",
 	Dockerfile: "dockerfile",
+	Status:     "status",
+	Public:     "public",
 }
 
 var EnvTableColumns = struct {
@@ -48,25 +54,77 @@ var EnvTableColumns = struct {
 	CreatedAt  string
 	TeamID     string
 	Dockerfile string
+	Status     string
+	Public     string
 }{
 	ID:         "envs.id",
 	CreatedAt:  "envs.created_at",
 	TeamID:     "envs.team_id",
 	Dockerfile: "envs.dockerfile",
+	Status:     "envs.status",
+	Public:     "envs.public",
 }
 
 // Generated where
+
+type whereHelperEnvStatusEnum struct{ field string }
+
+func (w whereHelperEnvStatusEnum) EQ(x EnvStatusEnum) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelperEnvStatusEnum) NEQ(x EnvStatusEnum) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelperEnvStatusEnum) LT(x EnvStatusEnum) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelperEnvStatusEnum) LTE(x EnvStatusEnum) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelperEnvStatusEnum) GT(x EnvStatusEnum) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelperEnvStatusEnum) GTE(x EnvStatusEnum) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelperEnvStatusEnum) IN(slice []EnvStatusEnum) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelperEnvStatusEnum) NIN(slice []EnvStatusEnum) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 var EnvWhere = struct {
 	ID         whereHelperstring
 	CreatedAt  whereHelpertime_Time
 	TeamID     whereHelperstring
 	Dockerfile whereHelperstring
+	Status     whereHelperEnvStatusEnum
+	Public     whereHelperbool
 }{
 	ID:         whereHelperstring{field: "\"envs\".\"id\""},
 	CreatedAt:  whereHelpertime_Time{field: "\"envs\".\"created_at\""},
 	TeamID:     whereHelperstring{field: "\"envs\".\"team_id\""},
 	Dockerfile: whereHelperstring{field: "\"envs\".\"dockerfile\""},
+	Status:     whereHelperEnvStatusEnum{field: "\"envs\".\"status\""},
+	Public:     whereHelperbool{field: "\"envs\".\"public\""},
 }
 
 // EnvRels is where relationship names are stored.
@@ -97,9 +155,9 @@ func (r *envR) GetTeam() *Team {
 type envL struct{}
 
 var (
-	envAllColumns            = []string{"id", "created_at", "team_id", "dockerfile"}
+	envAllColumns            = []string{"id", "created_at", "team_id", "dockerfile", "status", "public"}
 	envColumnsWithoutDefault = []string{"id", "team_id", "dockerfile"}
-	envColumnsWithDefault    = []string{"created_at"}
+	envColumnsWithDefault    = []string{"created_at", "status", "public"}
 	envPrimaryKeyColumns     = []string{"id"}
 	envGeneratedColumns      = []string{}
 )

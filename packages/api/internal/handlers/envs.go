@@ -69,3 +69,49 @@ func (a *APIStore) PostEnvs(
 
 	c.JSON(http.StatusOK, newEnv)
 }
+
+func (a *APIStore) GetEnvs(
+	c *gin.Context,
+) {
+	userID := c.Value(constants.UserIDContextKey).(string)
+	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
+
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
+
+		return
+	}
+
+	envs, err := a.supabase.GetEnvs(team.ID)
+
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting envs: %s", err))
+
+		return
+	}
+	c.JSON(http.StatusOK, envs)
+}
+
+func (a *APIStore) GetEnvsEnvID(
+	c *gin.Context,
+	envID string,
+
+) {
+	userID := c.Value(constants.UserIDContextKey).(string)
+	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
+
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
+
+		return
+	}
+
+	env, err := a.supabase.GetEnv(envID, team.ID)
+
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting envs: %s", err))
+
+		return
+	}
+	c.JSON(http.StatusOK, env)
+}

@@ -50,3 +50,33 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 	strmangle.PutBuffer(buf)
 	return str
 }
+
+type EnvStatusEnum string
+
+// Enum values for EnvStatusEnum
+const (
+	EnvStatusEnumBuilding EnvStatusEnum = "building"
+	EnvStatusEnumReady    EnvStatusEnum = "ready"
+	EnvStatusEnumError    EnvStatusEnum = "error"
+)
+
+func AllEnvStatusEnum() []EnvStatusEnum {
+	return []EnvStatusEnum{
+		EnvStatusEnumBuilding,
+		EnvStatusEnumReady,
+		EnvStatusEnumError,
+	}
+}
+
+func (e EnvStatusEnum) IsValid() error {
+	switch e {
+	case EnvStatusEnumBuilding, EnvStatusEnumReady, EnvStatusEnumError:
+		return nil
+	default:
+		return errors.New("enum is not valid")
+	}
+}
+
+func (e EnvStatusEnum) String() string {
+	return string(e)
+}

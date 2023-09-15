@@ -47,6 +47,13 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    404:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
     500:
       description: Server error
       content:
@@ -58,9 +65,22 @@ components:
     Environment:
       required:
         - envID
+        - status
+        - public
       properties:
         envID:
           type: string
+          description: Identifier of the environment
+        status:
+          type: string
+          description: Status of the environment
+          enum:
+            - building
+            - ready
+            - error
+        public:
+          type: boolean
+          description: Whether the environment is public or only accessible by the team
 
     Instance:
       required:
@@ -153,23 +173,25 @@ paths:
                 $ref: "#/components/schemas/Error"
 
   /envs:
-    #   get:
-    #     description: List all environments
-    #     tags: [envs]
-    #     responses:
-    #       200:
-    #         description: Successfully returned all environments
-    #         content:
-    #           application/json:
-    #             schema:
-    #               type: array
-    #               items:
-    #                 allOf:
-    #                   - $ref: "#/components/schemas/Environment"
-    #       401:
-    #         $ref: "#/components/responses/401"
-    #       500:
-    #         $ref: "#/components/responses/500"
+    get:
+      description: List all environments
+      tags: [envs]
+      security:
+        - AccessTokenAuth: [ ]
+      responses:
+        200:
+          description: Successfully returned all environments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
     post:
       description: Create a new environment
       tags: [ envs ]
@@ -211,22 +233,24 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
-  # /envs/{envID}:
-  #   delete:
-  #     description: Delete the environment
-  #     tags: [envs]
-  #     parameters:
-  #       - $ref: "#/components/parameters/envID"
-  #     responses:
-  #       204:
-  #         description: Successfully deleted the environment
-  #       400:
-  #         description: Cannot delete the environment
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: "#/components/schemas/Error"
-  #       401:
-  #         $ref: "#/components/responses/401"
-  #       500:
-  #         $ref: "#/components/responses/500"
+  /envs/{envID}:
+    get:
+      description: Get environment info
+      tags: [envs]
+      security:
+        - AccessTokenAuth: [ ]
+      parameters:
+        - $ref: "#/components/parameters/envID"
+      responses:
+        200:
+          description: Successfully returned the environment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          $ref: "#/components/responses/404"
+        500:
+          $ref: "#/components/responses/500"
