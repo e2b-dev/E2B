@@ -47,12 +47,24 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 
 	client := newFirecrackerClient(socketPath)
 
+	var err error
+
 	snapshot := &Snapshot{
 		socketPath: socketPath,
 		client:     client,
 	}
 
-	err := snapshot.start(ctx, tracer)
+	defer func() {
+		if err != nil {
+			cleanupErr := snapshot.Cleanup(ctx, tracer)
+			if cleanupErr != nil {
+				errMsg := fmt.Errorf("error cleaning up snapshot %v", cleanupErr)
+				telemetry.ReportError(ctx, errMsg)
+			}
+		}
+	}()
+
+	err = snapshot.start(ctx, tracer)
 	if err != nil {
 		return nil, err
 	}
