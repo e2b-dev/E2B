@@ -33,7 +33,7 @@
     "fix": "npx eslint **/src/**/*.{ts,js} --fix",
     "format": "prettier --check --ignore-path .gitignore .",
     "format:fix": "prettier --write --ignore-path .gitignore .",
-    "generate": "openapi-typescript ../../openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts"
+    "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^14.1.0",

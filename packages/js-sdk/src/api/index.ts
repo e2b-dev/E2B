@@ -5,23 +5,38 @@ import platform from 'platform'
 import { API_DOMAIN } from '../constants'
 import type { components, paths } from './schema.gen'
 
-const client = Fetcher.for<paths>()
+interface Headers {
+  [key: string]: string
+}
 
-client.configure({
-  baseUrl: `https://${API_DOMAIN}`,
-  init: {
-    headers: {
-      package_version: '__pkgVersion__',
-      lang: 'js',
-      engine: platform.name || 'unknown',
-      lang_version: platform.version || 'unknown',
-      system: platform.os?.family || 'unknown',
-      publisher: 'e2b',
-    },
-  },
-})
+export class E2BClient {
+  public client = Fetcher.for<paths>()
+  public createSession = this.client
+    .path('/instances')
+    .method('post')
+    .create()
+  public refreshSession = this.client
+    .path('/instances/{instanceID}/refreshes')
+    .method('post')
+    .create()
 
-type ClientType = typeof client
+  constructor(additional_headers?: Headers) {
+    this.client.configure({
+      baseUrl: `https://${API_DOMAIN}`,
+      init: {
+        headers: {
+          package_version: '__pkgVersion__',
+          lang: 'js',
+          engine: platform.name || 'unknown',
+          lang_version: platform.version || 'unknown',
+          system: platform.os?.family || 'unknown',
+          publisher: 'e2b',
+          ...additional_headers,
+        },
+      },
+    })
+  }
+}
 
-export default client
-export type { components, paths, ClientType }
+export default E2BClient
+export type { components, paths }

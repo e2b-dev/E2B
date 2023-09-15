@@ -1,4 +1,4 @@
-export const SESSION_REFRESH_PERIOD = 5_000 // 5s
+export const INSTANCE_REFRESH_PERIOD = 5_000 // 5s
 export const WS_RECONNECT_INTERVAL = 600 // 600ms
 
 export const TIMEOUT = 60_000 // 60s

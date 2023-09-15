@@ -1,6 +1,5 @@
 import normalizePath from 'normalize-path'
 
-import { components } from '../api'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
 import {
@@ -26,7 +25,16 @@ import {
   terminalService,
 } from './terminal'
 
-export type Environment = components['schemas']['Template']
+export type Environment =
+  | 'Nodejs'
+  | 'Go'
+  | 'Bash'
+  | 'Rust'
+  | 'Python3'
+  | 'PHP'
+  | 'Java'
+  | 'Perl'
+  | 'DotNET'
 
 export interface SessionOpts extends SessionConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler
