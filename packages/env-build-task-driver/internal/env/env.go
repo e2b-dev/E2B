@@ -100,7 +100,16 @@ func (e *Env) envSnapfilePath() string {
 
 func (e *Env) Initialize() error {
 	// We don't need to create build dir because by creating the build mountdir we create the build dir.
-	err := os.MkdirAll(e.tmpBuildMountDirPath(), 0777)
+
+	var err error
+
+	defer func() {
+		if err != nil {
+			e.Cleanup()
+		}
+	}()
+
+	err = os.MkdirAll(e.tmpBuildMountDirPath(), 0777)
 	if err != nil {
 		return err
 	}

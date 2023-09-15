@@ -31,7 +31,16 @@ func NewFCNetwork(ctx context.Context, tracer trace.Tracer, env *Env) (*FCNetwor
 	network := &FCNetwork{
 		namespaceID: namespaceNamePrefix + env.BuildID,
 	}
-	err := network.setup(ctx, tracer)
+
+	var err error
+
+	defer func() {
+		if err != nil {
+			network.Cleanup(ctx, tracer)
+		}
+	}()
+
+	err = network.setup(ctx, tracer)
 	return network, err
 }
 
