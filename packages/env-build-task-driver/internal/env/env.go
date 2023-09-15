@@ -22,13 +22,13 @@ type Env struct {
 	BuildID string
 
 	// Path to the directory where all envs are stored.
-	envsPath string
+	EnvsPath string
 
 	// Path to the directory where all docker contexts are stored. This directory is a FUSE mounted bucket where the contexts were uploaded.
-	dockerContextsPath string
+	DockerContextsPath string
 
 	// Docker registry where the docker images are uploaded for archivation/caching.
-	dockerRegistry string
+	DockerRegistry string
 
 	// Path to where the kernel image is stored.
 	KernelImagePath string
@@ -47,12 +47,12 @@ func (e *Env) tmpBuildMountDirPath() string {
 
 // Path to the docker context.
 func (e *Env) DockerContextPath() string {
-	return filepath.Join(e.dockerContextsPath, e.EnvID)
+	return filepath.Join(e.DockerContextsPath, e.EnvID)
 }
 
 // Docker tag of the docker image for this env.
 func (e *Env) DockerTag() string {
-	return e.dockerRegistry + "/" + e.EnvID
+	return e.DockerRegistry + "/" + e.EnvID
 }
 
 // Path to the directory where the temporary files for the build are stored.
@@ -79,7 +79,7 @@ func (e *Env) tmpSnapfilePath() string {
 
 // Path to the directory where the env is stored.
 func (e *Env) envDirPath() string {
-	return filepath.Join(e.envsPath, e.EnvID)
+	return filepath.Join(e.EnvsPath, e.EnvID)
 }
 
 func (e *Env) envBuildIDFilePath() string {
