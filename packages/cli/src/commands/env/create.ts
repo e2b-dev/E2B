@@ -110,7 +110,36 @@ export const createCommand = new commander.Command('create')
 
       if (!apiRes.ok) throw new Error(`API request failed: ${apiRes.statusText}`)
       const resJson = (await apiRes.json()) as { id: string }
-      console.log(`✅ Env created: ${resJson?.id}`)
+      console.log(`✅ Env created: ${resJson?.id}, waiting for build to finish...`)
+      
+      let startedAt = new Date()
+      let completed = false
+      while (!completed) {
+        await wait(5000)
+        const apiResPoll = await fetch(`${apiBaseUrl}/envs/${resJson?.id}`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (!apiResPoll.ok) throw new Error(`API request failed: ${apiResPoll.statusText}`)
+        const env = (await apiResPoll.json()) as { status: string, created_at: string }
+        if (env.status === 'building') {
+          const now = new Date()
+          const elapsed = now.getTime() - startedAt.getTime()
+          const elapsedStr = new Date(elapsed).toISOString().substr(11, 8)
+          console.log(`⏳ Build started ${elapsedStr} ago`) // nicer
+          if (elapsed > 1000 * 60 * 2) { // TODO
+            console.log(stripIndent`
+              ⚠️ Build taking longer than 2 minutes, something might be wrong.\n
+              Stopping to wait for result, but it might still finish -\n
+              Check by yourself by running ${asLocal(`e2b env list`)}\n
+            `)
+          }
+        } else if (env.status === 'completed') {
+          completed = true
+          console.log(`✅ Build completed at ${env.created_at}`) // TODO: Nicer
+        }
+        
+      }
 
       // if (shouldSaveConfig) {
       //   await ensureDir(root)
@@ -166,3 +195,5 @@ const deleteFile = async (filePath: string) => {
   const stat = await fs.promises.stat(filePath)
   if (stat.isFile()) await fs.promises.unlink(filePath)
 }
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
