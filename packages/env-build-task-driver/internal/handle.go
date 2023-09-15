@@ -2,13 +2,14 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/env"
+	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/go-plugin"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -18,13 +19,16 @@ type taskHandle struct {
 
 	env *env.Env
 
-	logger       hclog.Logger
-	pluginClient *plugin.Client
-	taskConfig   *drivers.TaskConfig
-	procState    drivers.TaskState
-	startedAt    time.Time
-	completedAt  time.Time
-	exitResult   *drivers.ExitResult
+	logger      hclog.Logger
+	taskConfig  *drivers.TaskConfig
+	procState   drivers.TaskState
+	startedAt   time.Time
+	completedAt time.Time
+	exitResult  *drivers.ExitResult
+
+	cancel context.CancelFunc
+
+	exited chan struct{}
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
@@ -52,56 +56,83 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 	childCtx, childSpan := tracer.Start(ctx, "run-build")
 	defer childSpan.End()
 
+	defer func() {
+		h.stateLock.Lock()
+		close(h.exited)
+		h.stateLock.Unlock()
+	}()
+
 	h.stateLock.Lock()
 	if h.exitResult == nil {
 		h.exitResult = &drivers.ExitResult{}
 	}
 	h.stateLock.Unlock()
 
-	err := h.env.Initialize()
-	if err != nil {
+	failTask := func(err error) {
 		h.stateLock.Lock()
 		defer h.stateLock.Unlock()
 		h.exitResult.Err = err
-		h.procState = drivers.TaskStateUnknown
+		h.procState = drivers.TaskStateExited
 		h.completedAt = time.Now()
+	}
+
+	err := h.env.Initialize(childCtx, tracer)
+	if err != nil {
+		failTask(err)
 		return
 	}
-	defer h.env.MoveToEnvDir()
-	defer h.env.Cleanup()
+	defer func() {
+		cleanupErr := h.env.Cleanup()
+		if cleanupErr != nil {
+			errMsg := fmt.Errorf("error cleaning up env initialization %v", cleanupErr)
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}()
 
 	rootfs, err := env.NewRootfs(ctx, tracer, h.env, docker)
 	if err != nil {
-		h.stateLock.Lock()
-		defer h.stateLock.Unlock()
-		h.exitResult.Err = err
-		h.procState = drivers.TaskStateUnknown
-		h.completedAt = time.Now()
+		failTask(err)
 		return
 	}
-	defer rootfs.Cleanup()
+	defer func() {
+		cleanupErr := rootfs.Cleanup()
+		if cleanupErr != nil {
+			errMsg := fmt.Errorf("error cleaning up rootfs %v", cleanupErr)
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}()
 
 	network, err := env.NewFCNetwork(ctx, tracer, h.env)
 	if err != nil {
-		h.stateLock.Lock()
-		defer h.stateLock.Unlock()
-		h.exitResult.Err = err
-		h.procState = drivers.TaskStateUnknown
-		h.completedAt = time.Now()
+		failTask(err)
 		return
 	}
-	defer network.Cleanup(childCtx, tracer)
+	defer func() {
+		cleanupErr := network.Cleanup(childCtx, tracer)
+		if cleanupErr != nil {
+			errMsg := fmt.Errorf("error cleaning up env network %v", cleanupErr)
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}()
 
 	snapshot, err := env.NewSnapshot(ctx, tracer, h.env, network, rootfs)
 	if err != nil {
-		h.stateLock.Lock()
-		defer h.stateLock.Unlock()
-		h.exitResult.Err = err
-		h.procState = drivers.TaskStateUnknown
-		h.completedAt = time.Now()
+		failTask(err)
 		return
 	}
-	defer snapshot.Cleanup(childCtx, tracer)
+	defer func() {
+		cleanupErr := snapshot.Cleanup(childCtx, tracer)
+		if cleanupErr != nil {
+			errMsg := fmt.Errorf("error cleaning up env snapshot %v", cleanupErr)
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}()
+
+	err = h.env.MoveSnapshotToEnvDir()
+	if err != nil {
+		failTask(err)
+		return
+	}
 
 	h.stateLock.Lock()
 	defer h.stateLock.Unlock()

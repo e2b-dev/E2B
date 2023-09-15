@@ -36,7 +36,11 @@ func NewFCNetwork(ctx context.Context, tracer trace.Tracer, env *Env) (*FCNetwor
 
 	defer func() {
 		if err != nil {
-			network.Cleanup(ctx, tracer)
+			cleanupErr := network.Cleanup(ctx, tracer)
+			if cleanupErr != nil {
+				errMsg := fmt.Errorf("error cleaning up network %v", cleanupErr)
+				telemetry.ReportError(ctx, errMsg)
+			}
 		}
 	}()
 

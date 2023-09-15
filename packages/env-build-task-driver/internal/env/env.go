@@ -1,8 +1,13 @@
 package env
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -101,14 +106,18 @@ func (e *Env) envSnapfilePath() string {
 	return filepath.Join(e.envDirPath(), snapfileName)
 }
 
-func (e *Env) Initialize() error {
+func (e *Env) Initialize(ctx context.Context, tracer trace.Tracer) error {
 	// We don't need to create build dir because by creating the build mountdir we create the build dir.
 
 	var err error
 
 	defer func() {
 		if err != nil {
-			e.Cleanup()
+			cleanupErr := e.Cleanup()
+			if cleanupErr != nil {
+				errMsg := fmt.Errorf("error cleaning up env %v", cleanupErr)
+				telemetry.ReportError(ctx, errMsg)
+			}
 		}
 	}()
 
@@ -125,7 +134,7 @@ func (e *Env) Initialize() error {
 	return nil
 }
 
-func (e *Env) MoveToEnvDir() error {
+func (e *Env) MoveSnapshotToEnvDir() error {
 	err := os.Rename(e.tmpSnapfilePath(), e.envSnapfilePath())
 	if err != nil {
 		return nil
