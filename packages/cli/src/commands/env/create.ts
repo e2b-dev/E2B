@@ -1,6 +1,8 @@
-import fetch from 'node-fetch'
 import * as commander from 'commander'
+import { stripIndent } from 'common-tags'
 import * as fs from 'fs'
+import fsPromise from 'fs/promises'
+import fetch from 'node-fetch'
 import { apiBaseUrl, ensureAccessToken } from 'src/api'
 import { configName } from 'src/config'
 import { pathOption } from 'src/options'
@@ -13,8 +15,6 @@ import {
   asLocalRelative,
 } from 'src/utils/format'
 import * as yup from 'yup'
-import fsPromise from 'fs/promises'
-import { stripIndent } from 'common-tags'
 
 export const createCommand = new commander.Command('create')
   .description(`Create new environment and ${asLocal(configName)} config`)
@@ -24,10 +24,10 @@ export const createCommand = new commander.Command('create')
       '<id>',
     )} to override already existing environment, otherwise new environment will be created`,
   )
-  .option('--respect-gitignore', `Respect .gitignore file in the root directory`, true)
+  .option('--respect-gitignore', 'Respect .gitignore file in the root directory', true)
   .option(
     '--respect-dockerignore',
-    `Respect .dockerignore file in the root directory`,
+    'Respect .dockerignore file in the root directory',
     true,
   )
   // TODO: Future
@@ -70,7 +70,7 @@ export const createCommand = new commander.Command('create')
       }
 
       // const hash = getFilesHash(files) // TODO: Future
-      console.log(`📦 Files to be uploaded to environment:`)
+      console.log('📦 Files to be uploaded to environment:')
       filePaths.map(filePath => {
         console.log(`• ${filePath.rootPath}`)
       })
@@ -98,7 +98,7 @@ export const createCommand = new commander.Command('create')
       // client.path('/envs').method('post').create(...)
 
       const formData = new FormData()
-      formData.append('buildContext', buildContextBlob, 'buildContext.tar.gz')
+      formData.append('buildContext', buildContextBlob)
       if (dockerfileContent) formData.append('dockerfile', dockerfileContent)
       // if (envID) formData.append('envID', envID); // TODO: Future
 
@@ -109,7 +109,7 @@ export const createCommand = new commander.Command('create')
       })
 
       if (!apiRes.ok) throw new Error(`API request failed: ${apiRes.statusText}`)
-      const resJson = (await apiRes.json()) as any
+      const resJson = (await apiRes.json()) as { id: string }
       console.log(`✅ Env created: ${resJson?.id}`)
 
       // if (shouldSaveConfig) {
@@ -117,8 +117,8 @@ export const createCommand = new commander.Command('create')
       //   const configPath = getConfigPath(root)
       //   await saveConfig(configPath, config)
       // }
-    } catch (err: any) {
-      console.error(asFormattedError(err.message))
+    } catch (err: unknown) {
+      console.error(asFormattedError((err as Error).message))
       process.exit(1)
     }
   })

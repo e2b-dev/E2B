@@ -14,7 +14,7 @@ import { setCommand } from './set'
 export const envCommand = new commander.Command('env')
   .description(`Manage e2b environments and their ${asLocal(configName)} configs`)
   .addCommand(createCommand)
-  // .addCommand(listCommand)
+  .addCommand(listCommand)
   // .addCommand(pushCommand)
   // .addCommand(publishCommand)
   // .addCommand(deleteCommand)
