@@ -26,7 +26,16 @@ func (a *APIStore) PostInstances(
 	// Get team id from context, use TeamIDContextKey
 	teamID := c.Value(constants.TeamIDContextKey).(string)
 
-	ReportEvent(ctx, "validated API key")
+	hasAccess, err := a.CheckTeamAccessEnv(envID, teamID)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", err))
+		return
+	}
+	if !hasAccess {
+		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+		return
+	}
+
 	SetAttributes(ctx, attribute.String("instance.team_id", teamID))
 
 	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID)

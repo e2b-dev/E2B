@@ -75,3 +75,8 @@ func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.En
 
 	return &api.Environment{EnvID: envID, Status: api.EnvironmentStatusBuilding, Public: false}, nil
 }
+
+func (db *DB) HasEnvAccess(envID string, teamID string) (bool, error) {
+	env, err := db.GetEnv(envID, teamID)
+	return env != nil, err
+}
