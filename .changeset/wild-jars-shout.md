@@ -1,5 +1,5 @@
 ---
-"@e2b/sdk": patch
+"@e2b/sdk": minor
 ---
 
-Add auth header to JS SDK
+Move auth to header in JS SDK

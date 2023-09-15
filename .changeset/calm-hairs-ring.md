@@ -1,5 +1,5 @@
 ---
-"@e2b/python-sdk": patch
+"@e2b/python-sdk": minor
 ---
 
-Add auth header
+Move auth to header
