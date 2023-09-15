@@ -5,10 +5,11 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 
 import async_timeout
-from e2b.api.client import NewSession
-from e2b.api.client import Session as SessionInfo
+from pydantic import BaseModel
+
+from e2b.api.client import Instance as SessionInfo, NewInstance
 from e2b.api.client.rest import ApiException
-from e2b.api.main import client, configuration
+from e2b.api.main import client, E2BApiClient
 from e2b.constants import (
     SESSION_DOMAIN,
     SESSION_REFRESH_PERIOD,
@@ -26,7 +27,6 @@ from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
 from e2b.utils.str import camel_case_to_snake_case
 from e2b.utils.threads import shutdown_executor
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class SessionConnection:
                 return self._debug_hostname
 
         hostname = (
-            f"{self._session.session_id}-{self._session.client_id}.{SESSION_DOMAIN}"
+            f"{self._session.instance_id}-{self._session.client_id}.{SESSION_DOMAIN}"
         )
         if port:
             return f"{port}-{hostname}"
@@ -122,16 +122,14 @@ class SessionConnection:
         """
         if self._is_open and self._session:
             logger.info(
-                f"Closing session {self._session.code_snippet_id} (id: {self._session.session_id})"
+                f"Closing session {self._session.env_id} (id: {self._session.instance_id})"
             )
             self._is_open = False
             if self._rpc:
                 await self._rpc.close()
 
         self._close()
-        logger.info(
-            f"Session closed"
-        )
+        logger.info(f"Session closed")
 
     def _close(self):
         if self._on_close_child:
@@ -155,15 +153,12 @@ class SessionConnection:
             self._is_open = True
 
         try:
-            async with client.ApiClient(configuration) as api_client:
-                api = client.SessionsApi(api_client)
+            async with E2BApiClient(api_key=self._api_key) as api_client:
+                api = client.InstancesApi(api_client)
 
-                self._session = await api.sessions_post(
-                    NewSession(codeSnippetID=self._id, editEnabled=False),
-                    api_key=self._api_key,
-                )
+                self._session = await api.instances_post(new_instance=NewInstance(env_id=self._id))
                 logger.info(
-                    f"Session {self._session.code_snippet_id} created (id:{self._session.session_id})"
+                    f"Session {self._session.env_id} created (id:{self._session.instance_id})"
                 )
 
                 # We could potentially use asyncio.to_thread() but that requires Python 3.9+
@@ -171,7 +166,7 @@ class SessionConnection:
                 self._refreshing_task = asyncio.get_running_loop().run_in_executor(
                     executor,
                     run_async_func_in_new_loop,
-                    self._refresh(self._session.session_id),
+                    self._refresh(self._session.instance_id),
                 )
 
                 self._process_cleanup.append(self._refreshing_task.cancel)
@@ -184,7 +179,7 @@ class SessionConnection:
                     finally:
                         if self._session:
                             logger.info(
-                                f"Stopped refreshing session (id: {self._session.session_id})"
+                                f"Stopped refreshing session (id: {self._session.instance_id})"
                             )
                         else:
                             logger.info(
@@ -311,15 +306,15 @@ class SessionConnection:
             if id == data.params["subscription"]:
                 sub.handler(data.params["result"])
 
-    async def _refresh(self, session_id: str):
+    async def _refresh(self, instance_id: str):
         logger.info(
-            f"Started refreshing session {self._session.code_snippet_id} (id: {session_id})"
+            f"Started refreshing session {self._session.instance_id} (id: {instance_id})"
         )
 
         current_retry = 0
 
-        async with client.ApiClient(configuration) as api_client:
-            api = client.SessionsApi(api_client)
+        async with E2BApiClient(api_key=self._api_key) as api_client:
+            api = client.InstancesApi(api_client)
             while True:
                 if not self._is_open:
                     logger.debug(
@@ -328,21 +323,23 @@ class SessionConnection:
                     return
                 await asyncio.sleep(SESSION_REFRESH_PERIOD)
                 try:
-                    await api.sessions_session_id_refresh_post(session_id)
-                    logger.debug(f"Refreshed session {session_id}")
+                    await api.instances_instance_id_refreshes_post(
+                        instance_id=instance_id
+                    )
+                    logger.debug(f"Refreshed session {instance_id}")
                 except ApiException as e:
                     if e.status == 404:
                         raise SessionException(
-                            f"Session {session_id} failed because it cannot be found"
+                            f"Session {instance_id} failed because it cannot be found"
                         ) from e
                     else:
                         if current_retry < self._refresh_retries:
                             logger.error(
-                                f"Refreshing session {session_id} failed. Retrying..."
+                                f"Refreshing session {instance_id} failed. Retrying..."
                             )
                             current_retry += 1
                         else:
                             logger.error(
-                                f"Refreshing session {session_id} failed. Max retries exceeded"
+                                f"Refreshing session {instance_id} failed. Max retries exceeded"
                             )
                             raise e

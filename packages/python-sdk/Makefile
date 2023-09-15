@@ -2,7 +2,7 @@
 generate:
 	rm -rf ./e2b/api/client
 	npx -yes @openapitools/openapi-generator-cli generate \
-	-i ../../openapi.yml  \
+	-i ../../spec/openapi.yml  \
 	--library asyncio \
 	-g python-nextgen \
 	-o ./e2b/api \
@@ -12,4 +12,6 @@ generate:
 	--additional-properties=packageName=e2b.api.client
 	mv ./e2b/api/e2b/api/* ./e2b/api/
 	rm -r ./e2b/api/e2b
+	rm -r ./e2b/api/client/docs
+	rm -r ./e2b/api/client/test
 	black .
