@@ -18,7 +18,10 @@ export function LanguageSpecificText({ children, title }) {
   let containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
   let header = (
-    <CodeGroupHeader title={title} selectedIndex={tabGroupProps.selectedIndex}>
+    <CodeGroupHeader
+      title={title}
+      selectedIndex={tabGroupProps.selectedIndex}
+    >
       {children}
     </CodeGroupHeader>
   )

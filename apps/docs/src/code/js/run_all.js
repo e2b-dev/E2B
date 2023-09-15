@@ -16,5 +16,6 @@ import * as process_write_stdin from './basics/process_write_stdin.js'
 import * as timeout_session from './timeout/timeout_session.js'
 import * as timeout_process from './timeout/timeout_process.js'
 import * as timeout_filesystem from './timeout/timeout_filesystem.js'
+import * as background_processes from './processes/background_processes.js'
 
 console.log('Done')
