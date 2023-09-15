@@ -36,11 +36,7 @@ func NewFCNetwork(ctx context.Context, tracer trace.Tracer, env *Env) (*FCNetwor
 
 	defer func() {
 		if err != nil {
-			cleanupErr := network.Cleanup(ctx, tracer)
-			if cleanupErr != nil {
-				errMsg := fmt.Errorf("error cleaning up network %v", cleanupErr)
-				telemetry.ReportError(ctx, errMsg)
-			}
+			network.Cleanup(ctx, tracer)
 		}
 	}()
 
@@ -132,15 +128,10 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	return nil
 }
 
-func (n *FCNetwork) Cleanup(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "delete-network")
-	defer childSpan.End()
-
+func (n *FCNetwork) Cleanup(ctx context.Context, tracer trace.Tracer) {
 	err := netns.DeleteNamed(n.namespaceID)
 	if err != nil {
-		return fmt.Errorf("error setting address of the tap device %v", err)
+		errMsg := fmt.Errorf("error deleting namespace %v", err)
+		telemetry.ReportError(ctx, errMsg)
 	}
-	telemetry.ReportEvent(childCtx, "Set tap device address")
-
-	return nil
 }

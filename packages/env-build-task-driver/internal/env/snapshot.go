@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/client"
@@ -28,6 +29,8 @@ const (
 type Snapshot struct {
 	socketPath string
 	client     *client.Firecracker
+
+	fc *exec.Cmd
 
 	env *Env
 }
@@ -56,15 +59,16 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 
 	defer func() {
 		if err != nil {
-			cleanupErr := snapshot.Cleanup(ctx, tracer)
-			if cleanupErr != nil {
-				errMsg := fmt.Errorf("error cleaning up snapshot %v", cleanupErr)
-				telemetry.ReportError(ctx, errMsg)
-			}
+			snapshot.Cleanup(ctx, tracer)
 		}
 	}()
 
-	err = snapshot.start(ctx, tracer)
+	err = snapshot.startFCProcess(ctx, tracer, env.FirecrackerBinaryPath, network.namespaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = snapshot.configure(ctx, tracer)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +78,8 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, err
 	}
 
+	// TODO: Wait for all necessary things in FC to start
+
 	err = snapshot.snapshot(ctx, tracer)
 	if err != nil {
 		return nil, err
@@ -82,7 +88,36 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 	return snapshot, nil
 }
 
-func (s *Snapshot) start(ctx context.Context, tracer trace.Tracer) error {
+func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBinaryPath, networkNamespaceID string) error {
+	childCtx, childSpan := tracer.Start(ctx, "start-fc")
+	defer childSpan.End()
+
+	fcCmd := fmt.Sprintf("%s --api-sock %s", fcBinaryPath, s.socketPath)
+	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", networkNamespaceID)
+
+	s.fc = exec.CommandContext(childCtx, inNetNSCmd+fcCmd)
+	s.fc.Stderr = os.Stderr
+	s.fc.Stdout = os.Stdout
+
+	err := s.fc.Start()
+	if err != nil {
+		errMsg := fmt.Errorf("error starting fc process %v", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+		return errMsg
+	}
+
+	go func() {
+		err := s.fc.Wait()
+		if err != nil {
+			errMsg := fmt.Errorf("error waiting for fc process %v", err)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+	}()
+
+	return nil
+}
+
+func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "start-fc")
 	defer childSpan.End()
 
@@ -184,15 +219,14 @@ func (s *Snapshot) start(ctx context.Context, tracer trace.Tracer) error {
 		},
 	}
 
-	// TODO: Do we need to change namespace here?
-	startAction, err := s.client.Operations.CreateSyncAction(&startActionParams)
+	_, err = s.client.Operations.CreateSyncAction(&startActionParams)
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
 
-	// TODO: How to get the PID or how to kill the FC process via socket?
+	return nil
 }
 
 func (s *Snapshot) pause(ctx context.Context, tracer trace.Tracer) error {
@@ -241,13 +275,18 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	return nil
 }
 
-func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) error {
-	// TODO: Kill FC process
+func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
+	if s.fc != nil {
+		err := s.fc.Cancel()
+		if err != nil {
+			errMsg := fmt.Errorf("error killing fc process %v", err)
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}
 
 	err := os.RemoveAll(s.socketPath)
 	if err != nil {
-		return err
+		errMsg := fmt.Errorf("error removing fc socket %v", err)
+		telemetry.ReportError(ctx, errMsg)
 	}
-
-	return nil
 }

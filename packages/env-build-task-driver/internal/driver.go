@@ -268,17 +268,19 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	registry := cfg.Env["DOCKER_REGISTRY"]
 	envsPath := cfg.Env["ENVS_PATH"]
 	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
+	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
 
 	env := env.Env{
-		BuildID:            taskConfig.BuildID,
-		EnvID:              taskConfig.EnvID,
-		EnvsPath:           envsPath,
-		VCpuCount:          taskConfig.VCpuCount,
-		MemoryMB:           taskConfig.MemoryMB,
-		DockerContextsPath: contextsPath,
-		DockerRegistry:     registry,
-		KernelImagePath:    kernelImagePath,
-		DiskSizeMB:         taskConfig.DiskSizeMB,
+		BuildID:               taskConfig.BuildID,
+		EnvID:                 taskConfig.EnvID,
+		EnvsPath:              envsPath,
+		VCpuCount:             taskConfig.VCpuCount,
+		MemoryMB:              taskConfig.MemoryMB,
+		DockerContextsPath:    contextsPath,
+		DockerRegistry:        registry,
+		KernelImagePath:       kernelImagePath,
+		DiskSizeMB:            taskConfig.DiskSizeMB,
+		FirecrackerBinaryPath: firecrackerBinaryPath,
 	}
 
 	cancellableContext, cancel := context.WithCancel(childCtx)

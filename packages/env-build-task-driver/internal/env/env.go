@@ -46,6 +46,9 @@ type Env struct {
 
 	// The amount of disk memory to allocate to the VM, in MiB.
 	DiskSizeMB int64
+
+	// Path to the firecracker binary.
+	FirecrackerBinaryPath string
 }
 
 // Path to the directory where the build files are mounted.
@@ -113,11 +116,7 @@ func (e *Env) Initialize(ctx context.Context, tracer trace.Tracer) error {
 
 	defer func() {
 		if err != nil {
-			cleanupErr := e.Cleanup()
-			if cleanupErr != nil {
-				errMsg := fmt.Errorf("error cleaning up env %v", cleanupErr)
-				telemetry.ReportError(ctx, errMsg)
-			}
+			e.Cleanup()
 		}
 	}()
 
@@ -155,6 +154,10 @@ func (e *Env) MoveSnapshotToEnvDir() error {
 	return nil
 }
 
-func (e *Env) Cleanup() error {
-	return os.RemoveAll(e.tmpBuildDirPath())
+func (e *Env) Cleanup(ctx context.Context, tracer trace.Tracer) {
+	err := os.RemoveAll(e.tmpBuildDirPath())
+	if err != nil {
+		errMsg := fmt.Errorf("error killing fc process %v", err)
+		telemetry.ReportError(ctx, errMsg)
+	}
 }
