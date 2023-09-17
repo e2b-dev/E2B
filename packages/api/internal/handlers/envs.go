@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/constants"
 	"github.com/e2b-dev/api/packages/api/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -14,16 +15,7 @@ func (a *APIStore) PostEnvs(
 ) {
 	ctx := c.Request.Context()
 
-	// Not implemented yet
-	envID := c.PostForm("envID")
-	if envID != "" {
-		a.sendAPIStoreError(c, http.StatusNotImplemented, "Updating envs is not implemented yet")
-
-		return
-	}
-
 	// Prepare info for new env
-	envID = utils.GenerateID()
 	userID := c.Value(constants.UserIDContextKey).(string)
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
 
@@ -48,26 +40,41 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
-	// Upload file to cloud storage
-	url, err := a.uploadDockerContextFile(envID, team.ID, fileHandler.Filename, fileContent)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when uploading file: %s", err))
+	var env *api.Environment
+	envID := c.PostForm("envID")
+	if envID == "" {
+		envID = utils.GenerateID()
+		env, err = a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
 
-		return
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when creating env: %s", err))
+
+			return
+		}
+	} else {
+		hasAccess, err := a.supabase.HasEnvAccess(envID, team.ID, false)
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", err))
+
+			return
+		}
+		if !hasAccess {
+			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+
+			return
+		}
+		env, err = a.supabase.UpdateEnv(envID, c.PostForm("dockerfile"))
+
+		if err != nil {
+			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating envs: %s", err))
+
+			return
+		}
 	}
 
-	// TODO: Create env, replace the print statement
-	fmt.Println("Creating env", url)
-	//a.nomad.StartBuildingEnv(a.tracer, ctx, envID, url)
-	// Save env to database
-	newEnv, err := a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when creating env: %s", err))
-
-		return
-	}
-
-	c.JSON(http.StatusOK, newEnv)
+	// Upload and build env
+	go a.buildEnvs(ctx, envID, fileHandler.Filename, fileContent)
+	c.JSON(http.StatusOK, env)
 }
 
 func (a *APIStore) GetEnvs(
@@ -95,7 +102,6 @@ func (a *APIStore) GetEnvs(
 func (a *APIStore) GetEnvsEnvID(
 	c *gin.Context,
 	envID string,
-
 ) {
 	userID := c.Value(constants.UserIDContextKey).(string)
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
