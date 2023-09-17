@@ -47,27 +47,36 @@ func (a *APIStore) buildEnvs(ctx context.Context, envID string, filename string,
 	buildID, err := uuid.GenerateUUID()
 
 	if err != nil {
-		fmt.Println(err)
+		err = fmt.Errorf("error when generating build id: %w", err)
+		ReportCriticalError(ctx, err)
 
 		return
 	}
 
 	url, err := a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, ""}, "/"), filename, content)
 	if err != nil {
-		fmt.Println(err)
+		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
+		ReportCriticalError(ctx, err)
 
 		return
 	}
 
 	// TODO: Start building env
 	// buildResultChan, err := a.nomad.StartBuildingEnv(a.tracer, ctx, envID, url)
+	// if err != nil {
+	// 	err = fmt.Errorf("error when starting build: %w", err)
+	// 	ReportCriticalError(ctx, err)
+	//
+	// 	return
+	// }
 	// buildResult := <-buildResultChan
 	// _, err = a.supabase.UpdateDockerfileEnv(&models.Env{
 	// 	ID:     envID,
 	// 	Status: buildResult,
 	// })
 	// if err != nil {
-	// 	panic(err)
+	// 	err = fmt.Errorf("error when updating env: %w", err)
+	// 	ReportCriticalError(ctx, err)
 	// }
 	println(url)
 }
