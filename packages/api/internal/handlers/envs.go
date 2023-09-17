@@ -63,7 +63,7 @@ func (a *APIStore) PostEnvs(
 
 			return
 		}
-		env, err = a.supabase.UpdateEnv(envID, c.PostForm("dockerfile"))
+		env, err = a.supabase.UpdateDockerfileEnv(envID, c.PostForm("dockerfile"))
 
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating envs: %s", err))

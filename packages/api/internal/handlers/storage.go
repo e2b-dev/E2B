@@ -60,7 +60,14 @@ func (a *APIStore) buildEnvs(ctx context.Context, envID string, filename string,
 	}
 
 	// TODO: Start building env
+	// buildResultChan, err := a.nomad.StartBuildingEnv(a.tracer, ctx, envID, url)
+	// buildResult := <-buildResultChan
+	// _, err = a.supabase.UpdateDockerfileEnv(&models.Env{
+	// 	ID:     envID,
+	// 	Status: buildResult,
+	// })
+	// if err != nil {
+	// 	panic(err)
+	// }
 	println(url)
-	//a.nomad.StartBuildingEnv(a.tracer, ctx, envID, url)
-	//a.supabase.MarkEnvAsReady(envID)
 }
