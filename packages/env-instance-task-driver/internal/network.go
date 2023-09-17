@@ -7,16 +7,19 @@ import (
 	"runtime"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 )
 
-const hostDefaultGateway = "ens4"
-const loNS = "lo"
+const (
+	hostDefaultGateway = "ens4"
+	loNS               = "lo"
+)
 
 func CreateNetwork(
 	ctx context.Context,

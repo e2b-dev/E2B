@@ -6,10 +6,11 @@ import (
 	"net"
 	"runtime"
 
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 )
 
 const (
@@ -19,9 +20,7 @@ const (
 	namespaceNamePrefix = "fc-env-"
 )
 
-var (
-	fcTapCIDR = fmt.Sprintf("%s/%d", fcTapAddress, fcTapMask)
-)
+var fcTapCIDR = fmt.Sprintf("%s/%s", fcTapAddress, fcTapMask)
 
 type FCNetwork struct {
 	namespaceID string

@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/env"
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/env"
+	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 )
 
 type taskHandle struct {
@@ -89,7 +90,6 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 		failTask(err)
 		return
 	}
-	defer rootfs.Cleanup(childCtx, tracer)
 
 	network, err := env.NewFCNetwork(ctx, tracer, h.env)
 	if err != nil {
@@ -105,7 +105,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 	}
 	defer snapshot.Cleanup(childCtx, tracer)
 
-	err = h.env.MoveSnapshotToEnvDir()
+	err = h.env.MoveSnapshotToEnvDir(childCtx, tracer)
 	if err != nil {
 		failTask(err)
 		return

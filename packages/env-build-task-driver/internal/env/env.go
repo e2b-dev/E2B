@@ -6,8 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 )
 
 const (
@@ -17,7 +18,6 @@ const (
 	memfileName  = "memfile"
 
 	buildDirName = "builds"
-	mntDirName   = "mnt"
 )
 
 type Env struct {
@@ -49,11 +49,6 @@ type Env struct {
 
 	// Path to the firecracker binary.
 	FirecrackerBinaryPath string
-}
-
-// Path to the directory where the build files are mounted.
-func (e *Env) tmpBuildMountDirPath() string {
-	return filepath.Join(e.tmpBuildDirPath(), mntDirName)
 }
 
 // Path to the docker context.
@@ -110,46 +105,59 @@ func (e *Env) envSnapfilePath() string {
 }
 
 func (e *Env) Initialize(ctx context.Context, tracer trace.Tracer) error {
-	// We don't need to create build dir because by creating the build mountdir we create the build dir.
+	childCtx, childSpan := tracer.Start(ctx, "initialize-env")
+	defer childSpan.End()
 
 	var err error
 
 	defer func() {
 		if err != nil {
-			e.Cleanup()
+			e.Cleanup(childCtx, tracer)
 		}
 	}()
 
-	err = os.MkdirAll(e.tmpBuildMountDirPath(), 0777)
+	err = os.MkdirAll(e.tmpBuildDirPath(), 0o777)
 	if err != nil {
 		return err
 	}
+	telemetry.ReportEvent(childCtx, "created tmp build dir")
 
-	err = os.WriteFile(e.tmpBuildIDFilePath(), []byte(e.BuildID), 0777)
+	err = os.WriteFile(e.tmpBuildIDFilePath(), []byte(e.BuildID), 0o777)
 	if err != nil {
 		return err
 	}
+	telemetry.ReportEvent(childCtx, "wrote build ID")
 
 	return nil
 }
 
-func (e *Env) MoveSnapshotToEnvDir() error {
+func (e *Env) MoveSnapshotToEnvDir(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "move-snapshot-to-env-dir")
+	defer childSpan.End()
+
 	err := os.Rename(e.tmpSnapfilePath(), e.envSnapfilePath())
 	if err != nil {
 		return nil
 	}
+	telemetry.ReportEvent(childCtx, "moved snapshot file")
+
 	err = os.Rename(e.tmpMemfilePath(), e.envMemfilePath())
 	if err != nil {
 		return nil
 	}
+	telemetry.ReportEvent(childCtx, "moved memfile")
+
 	err = os.Rename(e.tmpRootfsPath(), e.envRootfsPath())
 	if err != nil {
 		return nil
 	}
+	telemetry.ReportEvent(childCtx, "moved rootfs")
+
 	err = os.Rename(e.tmpBuildIDFilePath(), e.envBuildIDFilePath())
 	if err != nil {
 		return nil
 	}
+	telemetry.ReportEvent(childCtx, "moved build ID")
 
 	return nil
 }

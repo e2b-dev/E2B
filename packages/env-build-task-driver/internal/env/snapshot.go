@@ -7,13 +7,14 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
+	"github.com/go-openapi/strfmt"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/client"
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/client/operations"
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/models"
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
-	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
-	"github.com/go-openapi/strfmt"
-	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -105,6 +106,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "started fc process")
 
 	go func() {
 		err := s.fc.Wait()
@@ -136,6 +138,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "set fc boot source config")
 
 	rootfs := "rootfs"
 	isRootDevice := true
@@ -157,6 +160,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "set fc drivers config")
 
 	ifaceID := fcIfaceID
 	hostDevName := fcTapName
@@ -175,6 +179,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "set fc network config")
 
 	smt := true
 	trackDirtyPages := true
@@ -193,6 +198,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "set fc machine config")
 
 	mmdsVersion := "V2"
 	mmdsConfig := operations.PutMmdsConfigParams{
@@ -208,6 +214,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "set fc mmds config")
 
 	// We may need to sleep 0.015s before start - previous configuration is processes asynchronously. How to do this sync or in one go?
 
@@ -218,13 +225,13 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 			ActionType: &start,
 		},
 	}
-
 	_, err = s.client.Operations.CreateSyncAction(&startActionParams)
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "started fc")
 
 	return nil
 }
@@ -240,13 +247,13 @@ func (s *Snapshot) pause(ctx context.Context, tracer trace.Tracer) error {
 			State: &state,
 		},
 	}
-
 	_, err := s.client.Operations.PatchVM(&pauseConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error pausing vm %v", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "paused vm")
 
 	return nil
 }
@@ -271,6 +278,7 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+	telemetry.ReportEvent(childCtx, "created vm snapshot")
 
 	return nil
 }
