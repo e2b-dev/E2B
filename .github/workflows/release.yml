@@ -73,7 +73,6 @@ jobs:
     needs: changes
     if: |
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.env-instance-task-driver == 'true'
     uses: ./.github/workflows/env-instance-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -84,7 +83,6 @@ jobs:
     needs: changes
     if: |
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.env-build-task-driver == 'true'
     uses: ./.github/workflows/env-build-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -150,7 +148,6 @@ jobs:
     needs: [changes, terraform]
     if: |
       always() &&
-      needs.terraform.result == 'success'
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
