@@ -21,10 +21,14 @@ export const listCommand = new commander.Command('list')
       const envs = await apiRes.json()
 
       console.log(chalk.default.underline(chalk.default.green('Environments')))
-
-      envs.sort(sortEnvs).forEach((env: { envID: string }) => {
-        console.log(env.envID)
-      })
+      
+      if (!envs?.length) {
+        console.log('No environments found')
+      } else {
+        envs.sort(sortEnvs).forEach((env: { envID: string }) => {
+          console.log(env.envID)
+        })
+      }
 
       process.stdout.write('\n')
     } catch (err: unknown) {

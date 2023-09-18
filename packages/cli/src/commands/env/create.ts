@@ -70,7 +70,7 @@ export const createCommand = new commander.Command('create')
       }
 
       // const hash = getFilesHash(files) // TODO: Future
-      console.log('📦 Files to be uploaded to environment:')
+      console.log('📦 Files to be uploaded to create environment:')
       filePaths.map(filePath => {
         console.log(`• ${filePath.rootPath}`)
       })
@@ -98,7 +98,7 @@ export const createCommand = new commander.Command('create')
       // client.path('/envs').method('post').create(...)
 
       const formData = new FormData()
-      formData.append('buildContext', buildContextBlob)
+      formData.append('buildContext', buildContextBlob, 'env.tar.gz.e2b')
       if (dockerfileContent) formData.append('dockerfile', dockerfileContent)
       // if (envID) formData.append('envID', envID); // TODO: Future
 
@@ -108,7 +108,10 @@ export const createCommand = new commander.Command('create')
         body: formData,
       })
 
-      if (!apiRes.ok) throw new Error(`API request failed: ${apiRes.statusText}`)
+      if (!apiRes.ok) {
+        const resJson = (await apiRes.json()) as { message: string }
+        throw new Error(`API request failed: ${apiRes.statusText}, ${resJson?.message}`)
+      }
       const resJson = (await apiRes.json()) as { id: string }
       console.log(`✅ Env created: ${resJson?.id}, waiting for build to finish...`)
       
