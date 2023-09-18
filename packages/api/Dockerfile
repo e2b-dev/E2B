@@ -15,7 +15,6 @@ RUN make build
 FROM alpine:3.17
 
 COPY --from=builder /build/bin/api .
-COPY go-templates go-templates
 
 RUN chmod +x api
 

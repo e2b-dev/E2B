@@ -2,13 +2,15 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/constants"
 	"github.com/e2b-dev/api/packages/api/internal/utils"
-	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel/attribute"
-	"net/http"
-	"strings"
 )
 
 func (a *APIStore) PostEnvs(
@@ -19,7 +21,6 @@ func (a *APIStore) PostEnvs(
 	// Prepare info for new env
 	userID := c.Value(constants.UserIDContextKey).(string)
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
-
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
@@ -116,7 +117,6 @@ func (a *APIStore) GetEnvs(
 
 	userID := c.Value(constants.UserIDContextKey).(string)
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
-
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
@@ -128,7 +128,6 @@ func (a *APIStore) GetEnvs(
 	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", team.ID))
 
 	envs, err := a.supabase.GetEnvs(team.ID)
-
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting envs: %s", err))
 
@@ -166,7 +165,6 @@ func (a *APIStore) GetEnvsEnvID(
 	}
 
 	env, err := a.supabase.GetEnv(envID, team.ID)
-
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
 

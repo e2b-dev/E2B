@@ -27,7 +27,6 @@ variable "api_port" {
     name        = string
     port        = number
     health_path = string
-    health_path = string
   })
 }
 

@@ -1,0 +1,10 @@
+logging:
+  service:
+    pipelines:
+      default_pipeline:
+        receivers: []
+metrics:
+  receivers:
+    hostmetrics:
+      type: hostmetrics
+      collection_interval: 30s

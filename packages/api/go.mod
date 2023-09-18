@@ -10,6 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/nomad/api v0.0.0-20230908215034-ef24e40b392c
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/lightstep/otel-launcher-go v1.10.1
@@ -27,7 +28,6 @@ require (
 	cloud.google.com/go/compute v1.23.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.1 // indirect
-	github.com/bmizerany/pat v0.0.0-20170815010413-6226ea591a40 // indirect
 	github.com/bytedance/sonic v1.10.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
@@ -40,7 +40,6 @@ require (
 	github.com/googleapis/gax-go/v2 v2.11.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/lib/pq v1.10.6 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect

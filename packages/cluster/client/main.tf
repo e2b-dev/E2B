@@ -59,6 +59,12 @@ data "google_compute_image" "source_image" {
   family = var.image_family
 }
 
+
+resource "google_service_account" "client_instance_service_account" {
+  account_id   = "client-instance"
+  display_name = "Client Instance Service Account"
+}
+
 resource "google_compute_instance_template" "client" {
   name_prefix = "${var.cluster_name}-"
 
@@ -105,6 +111,7 @@ resource "google_compute_instance_template" "client" {
 
   # For a full list of oAuth 2.0 Scopes, see https://developers.google.com/identity/protocols/googlescopes
   service_account {
+    email = resource.google_service_account.client_instance_service_account.email
     scopes = [
       "userinfo-email",
       "compute-ro",
@@ -120,6 +127,19 @@ resource "google_compute_instance_template" "client" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+
+resource "google_storage_bucket_iam_member" "envs-docker-context-iam" {
+  bucket = "e2b-envs-docker-context"
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${resource.google_service_account.client_instance_service_account.email}"
+}
+
+resource "google_storage_bucket_iam_member" "envs-pipeline-iam" {
+  bucket = "e2b-fc-env-pipeline"
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${resource.google_service_account.client_instance_service_account.email}"
 }
 
 # LOAD BALANCERS

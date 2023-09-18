@@ -9,14 +9,15 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/utils"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/api/internal/api"
+	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
 
 const (
-	envsDisk = "/mnt/disks/fc-envs"
+	envsDisk = "/mnt/disks/fc-envs/v1"
 
 	buildJobName          = "env-build"
 	buildJobNameWithSlash = buildJobName + "/"
@@ -28,6 +29,7 @@ const (
 
 //go:embed env-build.hcl
 var envBuildFile string
+
 var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.FuncMap{
 	"escapeHCL": escapeHCL,
 }).Parse(envBuildFile))

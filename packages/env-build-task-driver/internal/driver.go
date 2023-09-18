@@ -26,6 +26,7 @@ const (
 	pluginVersion     = "v0.1.0"
 	fingerprintPeriod = 30 * time.Second
 	taskHandleVersion = 1
+	envBuildTimeout   = 30 * time.Minute
 )
 
 var (
@@ -153,18 +154,6 @@ func (d *Driver) SetConfig(cfg *base.Config) error {
 		d.nomadConfig = cfg.AgentConfig.Driver
 	}
 
-	// Initialize shared resources by all tasks here
-
-	// Should we connect fuse here?
-
-	// Should we download firecracker here?
-
-	// Should we download envd here?
-
-	// Should we download kernel here?
-
-	// Should we mount the fc-envs here?
-
 	return nil
 }
 
@@ -269,6 +258,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	envsPath := cfg.Env["ENVS_PATH"]
 	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
+	envsPipelinePath := cfg.Env["ENVS_PIPELINE_PATH"]
 
 	env := env.Env{
 		BuildID:               taskConfig.BuildID,
@@ -281,9 +271,11 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		KernelImagePath:       kernelImagePath,
 		DiskSizeMB:            taskConfig.DiskSizeMB,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
+		ProvisionScript:       taskConfig.ProvisionScript,
+		EnvsPipelinePath:      envsPipelinePath,
 	}
 
-	cancellableContext, cancel := context.WithCancel(childCtx)
+	cancellableContext, cancel := context.WithTimeout(childCtx, envBuildTimeout)
 
 	h := &taskHandle{
 		taskConfig: cfg,

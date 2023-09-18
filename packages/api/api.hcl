@@ -65,6 +65,7 @@ variable "bucket_name" {
 
 variable "google_service_account_credentials" {
   type    = string
+  default = ""
 }
 
 job "orchestration-api" {

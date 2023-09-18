@@ -27,7 +27,8 @@ job "{{ .JobName }}/{{ .EnvID }}" {
       env {
         ENVS_DISK = "{{ .EnvsDisk }}"
         DOCKER_REGISTRY = "us-central1-docker.pkg.dev/e2b-prod/custom-environments"
-        DOCKER_CONTEXTS_PATH = "/mnt/disks/docker-contexts"
+        DOCKER_CONTEXTS_PATH = "/mnt/disks/docker-contexts/v1"
+        ENVS_PIPELINE_PATH = "/mnt/disks/envs-pipeline"
         KERNEL_IMAGE_PATH = "/fc-vm/vmlinux.bin"
         FIRECRACKER_BINARY_PATH = "/usr/bin/firecracker"
       }

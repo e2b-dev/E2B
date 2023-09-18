@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-uuid"
 	"io"
 	"strings"
 	"time"
+
+	"cloud.google.com/go/storage"
+	"github.com/hashicorp/go-uuid"
 
 	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
@@ -45,7 +46,6 @@ func (cs *cloudStorage) streamFileUpload(folder string, name string, content io.
 
 func (a *APIStore) buildEnvs(ctx context.Context, envID string, filename string, content io.Reader) {
 	buildID, err := uuid.GenerateUUID()
-
 	if err != nil {
 		err = fmt.Errorf("error when generating build id: %w", err)
 		ReportCriticalError(ctx, err)

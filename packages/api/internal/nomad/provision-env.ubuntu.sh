@@ -5,6 +5,13 @@
 
 set -euo pipefail
 
+# TODO: Copy or download the specified envd version (this could be a variable)
+# ./envd /usr/bin/envd
+
+
+
+chmod +x /usr/bin/envd
+
 apt-get update
 
 apt-get install -y \
@@ -50,10 +57,6 @@ mkdir -p /etc/systemd/system/chrony.service.d
 echo "[Service]" >/etc/systemd/system/chrony.service.d/override.conf
 echo "ExecStart=" >>/etc/systemd/system/chrony.service.d/override.conf
 echo "ExecStart=/usr/sbin/chronyd" >>/etc/systemd/system/chrony.service.d/override.conf
-
-# TODO: Copy or download the specified envd version (this could be a variable)
-./envd /usr/bin/envd
-chmod +x /usr/bin/envd
 
 # --- Enable systemd services --- #
 # Because this script runs in a container we can't use `systemctl`.

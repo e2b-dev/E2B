@@ -18,6 +18,8 @@ const (
 	memfileName  = "memfile"
 
 	buildDirName = "builds"
+
+	envdName = "envd"
 )
 
 type Env struct {
@@ -49,6 +51,17 @@ type Env struct {
 
 	// Path to the firecracker binary.
 	FirecrackerBinaryPath string
+
+	// Provision script to run to set necessary things in the env.
+	ProvisionScript string
+
+	// Path to the directory where files for the envs pipeline are stored.
+	EnvsPipelinePath string
+}
+
+// Path to the envd.
+func (e *Env) EnvdPath() string {
+	return filepath.Join(e.EnvsPipelinePath, envdName)
 }
 
 // Path to the docker context.

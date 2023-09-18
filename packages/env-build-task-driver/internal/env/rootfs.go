@@ -16,7 +16,10 @@ import (
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 )
 
-const dockerfileName = "Dockerfile"
+const (
+	dockerfileName = "Dockerfile"
+	envdRootfsPath = "/usr/bin/envd"
+)
 
 type Rootfs struct {
 	client *client.Client
@@ -67,7 +70,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "opened docker context file")
 	defer dockerContextFile.Close()
 
-	// TODO: Add timeout via context
 	buildResponse, err := r.client.ImageBuild(
 		childCtx,
 		dockerContextFile,
@@ -118,9 +120,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:      r.dockerTag(),
-		Entrypoint: []string{"/bin/sh"},
+		Entrypoint: []string{"/bin/sh -c"},
 		User:       "root",
-		Cmd:        []string{"/provision-env.sh"},
+		Cmd:        []string{r.ProvisionScript},
 	}, nil, nil, &v1.Platform{}, "")
 	if err != nil {
 		return fmt.Errorf("error creating container %v", err)
@@ -137,6 +139,20 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			telemetry.ReportError(ctx, errMsg)
 		}
 	}()
+
+	envdFile, err := os.Open(r.EnvdPath())
+	if err != nil {
+		return fmt.Errorf("error opening envd file %v", err)
+	}
+	defer envdFile.Close()
+	telemetry.ReportEvent(childCtx, "opened envd file")
+
+	// Copy envd to the container
+	err = r.client.CopyToContainer(childCtx, cont.ID, envdRootfsPath, envdFile, types.CopyToContainerOptions{})
+	if err != nil {
+		return fmt.Errorf("error copying envd to container %v", err)
+	}
+	telemetry.ReportEvent(childCtx, "copied envd to container")
 
 	err = r.client.ContainerStart(childCtx, cont.ID, types.ContainerStartOptions{})
 	if err != nil {

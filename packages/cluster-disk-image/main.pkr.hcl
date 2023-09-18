@@ -40,11 +40,19 @@ build {
     destination = "/tmp"
   }
 
+  provisioner "shell" {
+    inline = [
+      "export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`",
+      "echo \"deb https://packages.cloud.google.com/apt $GCSFUSE_REPO main\" | sudo tee /etc/apt/sources.list.d/gcsfuse.list",
+      "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
+    ]
+  }
+
   # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq net-tools qemu-utils",
+      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse",
     ]
   }
 
@@ -89,16 +97,28 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo mkdir -p /opt/nomad/plugins",
-      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/env-instance-task-driver -o /opt/nomad/plugins/env-instance-task-driver",
-      "sudo chmod +x /opt/nomad/plugins/env-instance-task-driver",
+      "sudo mkdir -p /fc-vm",
+      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/vmlinux.bin -o /fc-vm/vmlinux.bin",
     ]
   }
 
   provisioner "shell" {
     inline = [
-      "sudo mkdir -p /fc-vm",
-      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/vmlinux.bin -o /fc-vm/vmlinux.bin",
+      "sudo mkdir -p /opt/nomad/plugins",
+    ]
+  }
+
+  provisioner "file" {
+    source      = "${path.root}/setup/gc-ops.config.yaml"
+    destination = "/tmp/gc-ops.config.yaml"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh",
+      "sudo bash add-google-cloud-ops-agent-repo.sh --also-install",
+      "sudo mkdir -p /etc/google-cloud-ops-agent",
+      "sudo mv /tmp/gc-ops.config.yaml /etc/google-cloud-ops-agent/config.yaml",
     ]
   }
 }
