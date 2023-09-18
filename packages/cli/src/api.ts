@@ -9,7 +9,7 @@ import {getUserConfig} from "./commands/auth";
 //   baseUrl: 'http://localhost:3003',
 // })
 
-export const apiBaseUrl = process.env.E2B_API_BASE ?? 'http://localhost:3003'; // FIXME
+export const apiBaseUrl = process.env.E2B_API_BASE ?? 'https://ondevbook.com';
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 

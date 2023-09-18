@@ -4,7 +4,7 @@ import * as util from 'util'
 import * as fsPromise from 'fs/promises'
 import * as fs from 'fs'
 import gitIgnore, { Ignore } from 'ignore';
-import dockerIgnore from '@zeit/dockerignore';
+import dockerIgnore from "@balena/dockerignore";
 import tar from "tar-fs";
 
 const walk = util.promisify(fsWalk.walk)
