@@ -1,4 +1,4 @@
-name: API deploy
+name: Release
 
 on:
   push:
@@ -69,7 +69,7 @@ jobs:
         run: echo "::set-output name=version::$(cat VERSION)"
 
   env-instance-task-driver:
-    name: Env Instance Task Driver
+    name: Env instance task driver
     needs: changes
     if: |
       always() &&
@@ -81,7 +81,7 @@ jobs:
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   env-build-task-driver:
-    name: Env Build Task Driver
+    name: Env build task driver
     needs: changes
     if: |
       always() &&

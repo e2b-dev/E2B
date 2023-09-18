@@ -1,4 +1,4 @@
-name: Env Instance Task Driver
+name: Env instance task driver
 
 on:
   workflow_call:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   publish:
-    name: Build, upload and release
+    name: Build & upload
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository

@@ -10,7 +10,7 @@ on:
 
 jobs:
   publish:
-    name: Create and publish cluster disk image
+    name: Build
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
