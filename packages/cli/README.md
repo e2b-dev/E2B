@@ -1,4 +1,4 @@
-# Devbook CLI
+# e2b CLI
 CLI for managing Devbook environments.
 
 An environment is a virtual machine image that you can customize through our CLI. You can add files, install dependencies, and set env vars in the environment. Then with Devbook, every user visiting your website will get a new copy of the environment they can use.

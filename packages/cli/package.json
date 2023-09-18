@@ -1,7 +1,6 @@
 {
   "name": "@e2b/cli",
-  "private": true,
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "CLI for managing e2b environments",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -56,7 +55,6 @@
   },
   "dependencies": {
     "@devbookhq/sdk": "^2.6.88",
-    "@e2b/sdk": "file:../js-sdk/dist",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^1.2.8",
     "@types/tar-fs": "^2.0.2",
@@ -72,13 +70,13 @@
     "ignore": "^5.2.4",
     "inquirer": "^8.0.0",
     "node-fetch": "^3.3.2",
-    "open": "^9.1.0",
+    "open": "^8.4.2",
     "parse-gitignore": "^2.0.0",
     "tar-fs": "^3.0.4",
     "update-notifier": "5.1.0",
     "yup": "^0.32.11"
   },
   "engines": {
-    "node": "~16"
+    "node": ">=16"
   }
 }

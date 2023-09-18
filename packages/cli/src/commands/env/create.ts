@@ -112,14 +112,14 @@ export const createCommand = new commander.Command('create')
         const resJson = (await apiRes.json()) as { message: string }
         throw new Error(`API request failed: ${apiRes.statusText}, ${resJson?.message}`)
       }
-      const resJson = (await apiRes.json()) as { id: string }
-      console.log(`✅ Env created: ${resJson?.id}, waiting for build to finish...`)
+      const resJson = (await apiRes.json()) as { envID: string, Public: boolean, Status: 'building' | 'error' | 'ready' }
+      console.log(`✅ Env created: ${resJson?.envID}, waiting for build to finish...`)
       
       let startedAt = new Date()
       let completed = false
       while (!completed) {
         await wait(5000)
-        const apiResPoll = await fetch(`${apiBaseUrl}/envs/${resJson?.id}`, {
+        const apiResPoll = await fetch(`${apiBaseUrl}/envs/${resJson?.envID}`, {
           method: 'GET',
           headers: { Authorization: `Bearer ${accessToken}` },
         })
@@ -128,8 +128,8 @@ export const createCommand = new commander.Command('create')
         if (env.status === 'building') {
           const now = new Date()
           const elapsed = now.getTime() - startedAt.getTime()
-          const elapsedStr = new Date(elapsed).toISOString().substr(11, 8)
-          console.log(`⏳ Build started ${elapsedStr} ago`) // nicer
+          const elapsedStr = `${Math.floor(elapsed / 1000)}s` 
+          console.log(`⏳ Building… (started ${elapsedStr} ago)`) // nicer
           if (elapsed > 1000 * 60 * 2) { // TODO
             console.log(stripIndent`
               ⚠️ Build taking longer than 2 minutes, something might be wrong.\n
