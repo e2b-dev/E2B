@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/constants"
 	"net/http"
 	"time"
 
@@ -11,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
+	"github.com/e2b-dev/api/packages/api/internal/constants"
 )
 
 func (a *APIStore) PostInstances(

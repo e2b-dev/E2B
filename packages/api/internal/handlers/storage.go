@@ -7,8 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/storage"
 	"github.com/hashicorp/go-uuid"
+
+	"github.com/e2b-dev/api/packages/api/internal/db/models"
+
+	"cloud.google.com/go/storage"
 
 	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
@@ -53,7 +56,7 @@ func (a *APIStore) buildEnvs(ctx context.Context, envID string, filename string,
 		return
 	}
 
-	url, err := a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, ""}, "/"), filename, content)
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, ""}, "/"), filename, content)
 	if err != nil {
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
 		ReportCriticalError(ctx, err)
@@ -61,22 +64,26 @@ func (a *APIStore) buildEnvs(ctx context.Context, envID string, filename string,
 		return
 	}
 
-	// TODO: Start building env
-	// buildResultChan, err := a.nomad.StartBuildingEnv(a.tracer, ctx, envID, url)
-	// if err != nil {
-	// 	err = fmt.Errorf("error when starting build: %w", err)
-	// 	ReportCriticalError(ctx, err)
-	//
-	// 	return
-	// }
-	// buildResult := <-buildResultChan
-	// _, err = a.supabase.UpdateDockerfileEnv(&models.Env{
-	// 	ID:     envID,
-	// 	Status: buildResult,
-	// })
-	// if err != nil {
-	// 	err = fmt.Errorf("error when updating env: %w", err)
-	// 	ReportCriticalError(ctx, err)
-	// }
-	println(url)
+	buildResultChan, err := a.nomad.StartBuildingEnv(a.tracer, ctx, envID, buildID)
+	if err != nil {
+		err = fmt.Errorf("error when starting build: %w", err)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
+	buildResult := <-buildResultChan
+	var buildStatus models.EnvStatusEnum
+	if buildResult.Error != nil {
+		buildStatus = models.EnvStatusEnumError
+
+		err = fmt.Errorf("error when updating env: %w", err)
+		ReportCriticalError(ctx, err)
+	} else {
+		buildStatus = models.EnvStatusEnumReady
+	}
+	_, err = a.supabase.UpdateStatusEnv(envID, buildStatus)
+	if err != nil {
+		err = fmt.Errorf("error when updating env: %w", err)
+		ReportCriticalError(ctx, err)
+	}
 }
