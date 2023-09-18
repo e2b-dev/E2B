@@ -72,7 +72,8 @@ jobs:
     name: Env Instance Task Driver
     needs: changes
     if: |
-      needs.changes.result == 'success'
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.env-instance-task-driver == 'true'
     uses: ./.github/workflows/env-instance-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -82,7 +83,8 @@ jobs:
     name: Env Build Task Driver
     needs: changes
     if: |
-      needs.changes.result == 'success'
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.env-build-task-driver == 'true'
     uses: ./.github/workflows/env-build-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -93,6 +95,7 @@ jobs:
     needs: [changes, env-instance-task-driver, env-build-task-driver]
     if: |
       always() &&
+      needs.changes.outputs.version == 'true' &&
       (needs.changes.outputs.cluster-disk-image == 'true' || needs.env-instance-task-driver.result == 'success' || needs.env-build-task-driver.result == 'success')
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
@@ -102,6 +105,9 @@ jobs:
   envd:
     name: Env Daemon
     needs: changes
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.envd == 'true'
     uses: ./.github/workflows/envd.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -111,6 +117,9 @@ jobs:
   api-image:
     name: API image
     needs: changes
+    if: |
+      needs.changes.outputs.version == 'true' &&
+      needs.changes.outputs.api-image == 'true'
     uses: ./.github/workflows/api-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -130,6 +139,7 @@ jobs:
       ]
     if: |
       always() &&
+      needs.changes.outputs.version == 'true' &&
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.envd.result == 'success' || needs.envd.result == 'skipped') &&
@@ -147,7 +157,8 @@ jobs:
     needs: [changes, terraform]
     if: |
       always() &&
-      needs.terraform.result == 'success'
+      needs.terraform.result == 'success' &&
+      needs.changes.outputs.version == 'true'
     runs-on: ubuntu-20.04
     steps:
       - name: Create release
