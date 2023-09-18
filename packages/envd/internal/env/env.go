@@ -1,4 +1,3 @@
-// env package tries to load the Devbook environment variables.
 package env
 
 import (

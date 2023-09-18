@@ -90,8 +90,8 @@ build {
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /opt/nomad/plugins",
-      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/firecracker-task-driver -o /opt/nomad/plugins/firecracker-task-driver",
-      "sudo chmod +x /opt/nomad/plugins/firecracker-task-driver",
+      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/env-instance-task-driver -o /opt/nomad/plugins/env-instance-task-driver",
+      "sudo chmod +x /opt/nomad/plugins/env-instance-task-driver",
     ]
   }
 

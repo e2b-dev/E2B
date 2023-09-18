@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/storage"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/db"
@@ -27,7 +28,6 @@ type APIStore struct {
 	NextId       int64
 	Lock         sync.Mutex
 	tracer       trace.Tracer
-	templates    *[]string
 	cloudStorage *cloudStorage
 }
 
@@ -47,21 +47,6 @@ func NewAPIStore() *APIStore {
 	}
 
 	fmt.Println("Initialized Supabase client")
-
-	// Uncomment this to rebuild templates
-	// Keep this commented out in production to prevent rebuilding templates on restart
-	// TODO: Build only templates that changed
-	// go func() {
-	// 	err := nomadClient.RebuildTemplates(tracer)
-	// 	if err != nil {
-	// 		fmt.Fprintf(os.Stderr, "Error rebuilding templates\n: %s", err)
-	// 	}
-	// }()
-	templates, templatesErr := nomad.GetTemplates()
-	if templatesErr != nil {
-		fmt.Fprintf(os.Stderr, "Error loading templates\n: %s", templatesErr)
-		panic(templatesErr)
-	}
 
 	var initialInstances []*api.Instance
 
@@ -114,7 +99,6 @@ func NewAPIStore() *APIStore {
 		NextId:       1000,
 		cache:        cache,
 		tracer:       tracer,
-		templates:    templates,
 		posthog:      posthogClient,
 		cloudStorage: cStorage,
 	}

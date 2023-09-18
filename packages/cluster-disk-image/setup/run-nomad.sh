@@ -40,7 +40,7 @@ function log {
   local readonly level="$1"
   local readonly message="$2"
   local readonly timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-  >&2 echo -e "${timestamp} [${level}] [$SCRIPT_NAME] ${message}"
+  echo >&2 -e "${timestamp} [${level}] [$SCRIPT_NAME] ${message}"
 }
 
 function log_info {
@@ -161,19 +161,21 @@ function generate_nomad_config {
 
   local server_config=""
   if [[ "$server" == "true" ]]; then
-    server_config=$(cat <<EOF
+    server_config=$(
+      cat <<EOF
 server {
   enabled = true
   bootstrap_expect = $num_servers
 }
 
 EOF
-)
+    )
   fi
 
   local client_config=""
   if [[ "$client" == "true" ]]; then
-    client_config=$(cat <<EOF
+    client_config=$(
+      cat <<EOF
 client {
   enabled = true
   host_volume "fc-envs" {
@@ -183,11 +185,11 @@ client {
 }
 leave_on_terminate = true
 EOF
-)
+    )
   fi
 
   log_info "Creating default Nomad config file in $config_path"
-  cat > "$config_path" <<EOF
+  cat >"$config_path" <<EOF
 datacenter = "$zone"
 name       = "$instance_name"
 region     = "$instance_region"
@@ -204,7 +206,8 @@ $client_config
 $server_config
 
 plugin_dir = "/opt/nomad/plugins"
-plugin "firecracker-task-driver" {}
+plugin "env-instance-task-driver" {}
+plugin "env-build-task-driver" {}
 
 plugin "raw_exec" {
   config {
@@ -254,7 +257,7 @@ function generate_supervisor_config {
   fi
 
   log_info "Creating Supervisor config file to run Nomad in $supervisor_config_path"
-  cat > "$supervisor_config_path" <<EOF
+  cat >"$supervisor_config_path" <<EOF
 [program:nomad]
 command=$nomad_bin_dir/nomad agent -config $nomad_config_dir -data-dir $nomad_data_dir
 stdout_logfile=$nomad_log_dir/nomad-stdout.log
@@ -296,66 +299,66 @@ function run {
     local key="$1"
 
     case "$key" in
-      --server)
-        server="true"
-        ;;
-      --client)
-        client="true"
-        ;;
-      --num-servers)
-        num_servers="$2"
-        shift
-        ;;
-      --config-dir)
-        assert_not_empty "$key" "$2"
-        config_dir="$2"
-        shift
-        ;;
-      --data-dir)
-        assert_not_empty "$key" "$2"
-        data_dir="$2"
-        shift
-        ;;
-      --bin-dir)
-        assert_not_empty "$key" "$2"
-        bin_dir="$2"
-        shift
-        ;;
-      --log-dir)
-        assert_not_empty "$key" "$2"
-        log_dir="$2"
-        shift
-        ;;
-      --user)
-        assert_not_empty "$key" "$2"
-        user="$2"
-        shift
-        ;;
-      --cluster-tag-key)
-        assert_not_empty "$key" "$2"
-        cluster_tag_key="$2"
-        shift
-        ;;
-      --cluster-tag-value)
-        assert_not_empty "$key" "$2"
-        cluster_tag_value="$2"
-        shift
-        ;;
-      --skip-nomad-config)
-        skip_nomad_config="true"
-        ;;
-      --use-sudo)
-        use_sudo="true"
-        ;;
-      --help)
-        print_usage
-        exit
-        ;;
-      *)
-        log_error "Unrecognized argument: $key"
-        print_usage
-        exit 1
-        ;;
+    --server)
+      server="true"
+      ;;
+    --client)
+      client="true"
+      ;;
+    --num-servers)
+      num_servers="$2"
+      shift
+      ;;
+    --config-dir)
+      assert_not_empty "$key" "$2"
+      config_dir="$2"
+      shift
+      ;;
+    --data-dir)
+      assert_not_empty "$key" "$2"
+      data_dir="$2"
+      shift
+      ;;
+    --bin-dir)
+      assert_not_empty "$key" "$2"
+      bin_dir="$2"
+      shift
+      ;;
+    --log-dir)
+      assert_not_empty "$key" "$2"
+      log_dir="$2"
+      shift
+      ;;
+    --user)
+      assert_not_empty "$key" "$2"
+      user="$2"
+      shift
+      ;;
+    --cluster-tag-key)
+      assert_not_empty "$key" "$2"
+      cluster_tag_key="$2"
+      shift
+      ;;
+    --cluster-tag-value)
+      assert_not_empty "$key" "$2"
+      cluster_tag_value="$2"
+      shift
+      ;;
+    --skip-nomad-config)
+      skip_nomad_config="true"
+      ;;
+    --use-sudo)
+      use_sudo="true"
+      ;;
+    --help)
+      print_usage
+      exit
+      ;;
+    *)
+      log_error "Unrecognized argument: $key"
+      print_usage
+      exit 1
+      ;;
     esac
 
     shift

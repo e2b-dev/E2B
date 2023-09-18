@@ -1,10 +1,10 @@
 version: 0.1
 cli:
-  version: 1.14.2
+  version: 1.15.0
 plugins:
   sources:
     - id: trunk
-      ref: v1.2.2
+      ref: v1.2.3
       uri: https://github.com/trunk-io/plugins
 runtimes:
   enabled:
@@ -16,7 +16,8 @@ lint:
         - packages/api/internal/api/api.gen.go
         - packages/api/internal/api/spec.gen.go
         - packages/api/internal/api/types.gen.go
-        - packages/firecracker-task-driver/internal/client/**
+        - packages/env-instance-task-driver/internal/client/**
+        - packages/env-build-task-driver/internal/client/**
     - linters: [codespell]
       paths:
         - "**/go.work.sum"
@@ -24,22 +25,22 @@ lint:
   enabled:
     - actionlint@1.6.25
     - gitleaks@8.18.0
-    - semgrep@1.38.2
+    - semgrep@1.40.0
     - codespell@2.2.5
     - checkov@2.4.9
     - git-diff-check
     - gokart@0.5.1
     - golangci-lint@1.54.2
     - hadolint@2.12.0
-    - markdownlint@0.35.0
-    - osv-scanner@1.3.6
+    - markdownlint@0.36.0
+    - osv-scanner@1.4.0
     - shellcheck@0.9.0
     - shfmt@3.6.0
     - terrascan@1.18.3
-    - tflint@0.47.0
-    - tfsec@1.28.1
-    - trivy@0.44.1
-    - trufflehog@3.54.3
+    - tflint@0.48.0
+    - tfsec@1.28.4
+    - trivy@0.45.0
+    - trufflehog@3.56.0
     - yamllint@1.32.0
 actions:
   disabled:

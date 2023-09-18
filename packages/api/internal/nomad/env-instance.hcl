@@ -4,7 +4,7 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
 
   priority = 40
 
-  group "session" {
+  group "instance" {
     reschedule {
       attempts  = 0
       unlimited = false
@@ -15,12 +15,12 @@ job "{{ .JobName }}/{{ .InstanceID }}" {
       mode = "fail"
     }
 
-    task {{ .FCTaskName }} {
-      driver = "firecracker-task-driver"
+    task {{ .TaskName }} {
+      driver = "env-instance-task-driver"
 
       env {
         NOMAD_NODE_ID = "${node.unique.id}"
-        FC_ENVS_DISK = "{{ .FCEnvsDisk }}"
+        ENVS_DISK = "{{ .EnvsDisk }}"
       }
 
       resources {

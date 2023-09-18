@@ -5,9 +5,15 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/hashicorp/nomad/api"
+)
+
+const (
+	shortNodeIDLength = 8
+	taskRunningState  = "running"
+	taskDeadState     = "dead"
+	defaultTaskName   = "start"
 )
 
 var (
@@ -45,7 +51,7 @@ type JobInfo struct {
 	index  uint64
 }
 
-func (n *NomadClient) WaitForJob(ctx context.Context, job JobInfo, timeout time.Duration, meta api.QueryMeta) (*api.Allocation, error) {
+func (n *NomadClient) getJobEventStream(ctx context.Context, job JobInfo, meta api.QueryMeta) (<-chan *api.Events, error) {
 	topics := map[api.Topic][]string{
 		api.TopicAllocation: {job.name},
 	}
@@ -62,69 +68,72 @@ func (n *NomadClient) WaitForJob(ctx context.Context, job JobInfo, timeout time.
 		NextToken: meta.NextToken,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Nomad event stream for: %+v", err)
+		return nil, fmt.Errorf("failed to get Nomad event stream for: %+w", err)
 	}
 
-	for event := range eventCh {
+	return eventCh, nil
+}
+
+func (n *NomadClient) WaitForJobStart(ctx context.Context, job JobInfo, meta api.QueryMeta) (*api.Allocation, error) {
+	jobEvents, err := n.getJobEventStream(ctx, job, meta)
+	if err != nil {
+		return nil, err
+	}
+
+	for event := range jobEvents {
 		for _, e := range event.Events {
-			alloc, err := e.Allocation()
-			if err != nil {
-				return nil, fmt.Errorf("cannot retrieve allocations for '%s' job: %+v", job.name, err)
+			alloc, allocErr := e.Allocation()
+			if allocErr != nil {
+				return nil, fmt.Errorf("cannot retrieve allocations for '%s' job: %+w", job.name, allocErr)
 			}
 
-			if alloc.TaskStates[fcTaskName] == nil {
+			if alloc.TaskStates[defaultTaskName] == nil {
 				continue
 			}
 
-			if alloc.TaskStates[fcTaskName].State == NomadTaskDeadState {
-				return nil, fmt.Errorf("allocation is %s for '%s' job", alloc.TaskStates[fcTaskName].State, job.name)
+			if alloc.TaskStates[defaultTaskName].State == taskDeadState {
+				return nil, fmt.Errorf("allocation is %s for '%s' job", alloc.TaskStates[defaultTaskName].State, job.name)
 			}
 
-			if alloc.TaskStates[fcTaskName].State == NomadTaskRunningState {
+			if alloc.TaskStates[defaultTaskName].State == taskRunningState {
 				return alloc, nil
 			}
+
 			continue
 		}
 	}
-	return nil, fmt.Errorf("timeout retrieving allocations")
+
+	return nil, fmt.Errorf("failed retrieving allocations")
 }
 
-func (n *NomadClient) WaitForEnvBuild(job JobInfo, timeout time.Duration) error {
-	allocationWait := make(chan error, 1)
+func (n *NomadClient) WaitForJobFinish(ctx context.Context, job JobInfo, meta api.QueryMeta) (*api.Allocation, error) {
+	jobEvents, err := n.getJobEventStream(ctx, job, meta)
+	if err != nil {
+		return nil, err
+	}
 
-	go func() {
-		ticker := time.NewTicker(4000 * time.Millisecond)
-		for {
-			select {
-			case <-time.After(timeout):
-				allocationWait <- fmt.Errorf("cannot retrieve allocations for '%s' job: Timeout - %s", job.name, timeout.String())
-				return
-			case <-ticker.C:
-				filter := fmt.Sprintf("EvalID == \"%s\"", job.evalID)
-				allocations, _, err := n.client.Allocations().List(&api.QueryOptions{
-					Filter: filter,
-				})
-				if err != nil {
-					allocationWait <- fmt.Errorf("cannot retrieve allocations from nomad %+v", err)
-					return
-				}
+	for event := range jobEvents {
+		for _, e := range event.Events {
+			alloc, allocErr := e.Allocation()
+			if allocErr != nil {
+				return nil, fmt.Errorf("cannot retrieve allocations for '%s' job: %+w", job.name, allocErr)
+			}
 
-				for _, alloc := range allocations {
-					if alloc.TaskStates[templateTaskName] == nil {
-						continue
-					}
-					if alloc.TaskStates[templateTaskName].State == NomadTaskDeadState {
-						if alloc.TaskStates[templateTaskName].Failed {
-							allocationWait <- fmt.Errorf("building env failed")
-						} else {
-							close(allocationWait)
-						}
-						return
-					}
+			if alloc.TaskStates[defaultTaskName] == nil {
+				continue
+			}
+
+			if alloc.TaskStates[defaultTaskName].State == taskDeadState {
+				if alloc.TaskStates[defaultTaskName].Failed {
+					return nil, fmt.Errorf("allocation is %s for '%s' job", alloc.TaskStates[defaultTaskName].State, job.name)
+				} else {
+					return alloc, nil
 				}
 			}
-		}
-	}()
 
-	return <-allocationWait
+			continue
+		}
+	}
+
+	return nil, fmt.Errorf("failed retrieving allocations")
 }
