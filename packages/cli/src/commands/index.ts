@@ -6,7 +6,7 @@ import { loginCommand, logoutCommand } from './auth'
 
 export const program = new commander.Command()
   .description('Tool for interacting with e2b from command line')
-  .addCommand(envCommand, { isDefault: true })
+  .addCommand(envCommand)
   // .addCommand(runCommand, { hidden: true }) // Re-enable later
   .addCommand(loginCommand)
   .addCommand(logoutCommand)
