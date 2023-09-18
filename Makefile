@@ -27,10 +27,12 @@ apply:
 version:
 	./scripts/increment-version.sh
 
+.PHONY: bootstrap-consul
 bootstrap-consul:
 	gcloud compute ssh $$($(server)) -- \
 	'consul acl bootstrap'
 
+.PHONY: bootstrap-nomad
 bootstrap-nomad:
 	gcloud compute ssh $$($(server)) -- \
 	'nomad acl bootstrap'
