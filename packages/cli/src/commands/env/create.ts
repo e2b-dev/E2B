@@ -136,6 +136,7 @@ export const createCommand = new commander.Command('create')
               Stopping to wait for result, but it might still finish -\n
               Check by yourself by running ${asLocal(`e2b env list`)}\n
             `)
+            completed = true
           }
         } else if (env.status === 'completed') {
           completed = true
