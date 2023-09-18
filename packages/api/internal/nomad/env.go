@@ -41,7 +41,7 @@ func (n *NomadClient) StartBuildingEnv(
 	t trace.Tracer,
 	ctx context.Context,
 	envID string,
-	// build is is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
+	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
 	buildID string,
 ) (<-chan utils.Result, error) {
 	_, childSpan := t.Start(ctx, "build-env",
