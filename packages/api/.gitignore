@@ -1,2 +1,3 @@
 bin
 mkfcenv.tar.gz
+.env

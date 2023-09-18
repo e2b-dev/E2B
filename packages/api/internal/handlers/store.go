@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"cloud.google.com/go/storage"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,14 +20,15 @@ import (
 )
 
 type APIStore struct {
-	cache     *nomad.InstanceCache
-	nomad     *nomad.NomadClient
-	supabase  *db.DB
-	posthog   posthog.Client
-	NextId    int64
-	Lock      sync.Mutex
-	tracer    trace.Tracer
-	templates *[]string
+	cache        *nomad.InstanceCache
+	nomad        *nomad.NomadClient
+	supabase     *db.DB
+	posthog      posthog.Client
+	NextId       int64
+	Lock         sync.Mutex
+	tracer       trace.Tracer
+	templates    *[]string
+	cloudStorage *cloudStorage
 }
 
 func NewAPIStore() *APIStore {
@@ -39,6 +42,7 @@ func NewAPIStore() *APIStore {
 
 	supabaseClient, err := db.NewClient()
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing Supabase client\n: %s", err)
 		panic(err)
 	}
 
@@ -91,14 +95,28 @@ func NewAPIStore() *APIStore {
 		fmt.Println("Skipping syncing sessions with Nomad, running locally")
 	}
 
+	ctx := context.Background()
+	storageClient, err := storage.NewClient(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %s", err)
+		panic(err)
+	}
+
+	cStorage := &cloudStorage{
+		bucket:  os.Getenv("GOOGLE_CLOUD_STORAGE_BUCKET"),
+		client:  storageClient,
+		context: ctx,
+	}
+
 	return &APIStore{
-		nomad:     nomadClient,
-		supabase:  supabaseClient,
-		NextId:    1000,
-		cache:     cache,
-		tracer:    tracer,
-		templates: templates,
-		posthog:   posthogClient,
+		nomad:        nomadClient,
+		supabase:     supabaseClient,
+		NextId:       1000,
+		cache:        cache,
+		tracer:       tracer,
+		templates:    templates,
+		posthog:      posthogClient,
+		cloudStorage: cStorage,
 	}
 }
 
@@ -109,6 +127,10 @@ func (a *APIStore) Close() {
 	err := a.posthog.Close()
 	if err != nil {
 		fmt.Printf("Error closing Posthog client\n: %s", err)
+	}
+	err = a.cloudStorage.client.Close()
+	if err != nil {
+		fmt.Printf("Error closing Cloud Storage client\n: %s", err)
 	}
 }
 
@@ -132,7 +154,7 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 	c.String(http.StatusOK, "Health check successful")
 }
 
-func (a *APIStore) getTeamFromAPIKey(apiKey string) (string, error) {
+func (a *APIStore) GetTeamFromAPIKey(apiKey string) (string, error) {
 	team, err := a.supabase.GetTeamID(apiKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get get team from db for api key: %w", err)
@@ -145,10 +167,40 @@ func (a *APIStore) getTeamFromAPIKey(apiKey string) (string, error) {
 	return team.ID, nil
 }
 
+func (a *APIStore) GetUserFromAccessToken(accessToken string) (string, error) {
+	user, err := a.supabase.GetUserID(accessToken)
+	if err != nil {
+		return "", fmt.Errorf("failed to get get user from db for access token: %w", err)
+	}
+
+	if user == nil {
+		return "", fmt.Errorf("failed to get a user from access token")
+	}
+
+	return user.ID, nil
+}
+
+func (a *APIStore) GetTeamIDFromUserID(userID string) (string, error) {
+	user, err := a.supabase.GetTeamID(userID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get get user from db for access token: %w", err)
+	}
+
+	if user == nil {
+		return "", fmt.Errorf("failed to get a user from access token")
+	}
+
+	return user.ID, nil
+}
+
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	info := a.cache.Get(instanceID)
 
 	return deleteInstance(a.nomad, a.posthog, instanceID, info.TeamID, info.StartTime, purge)
+}
+
+func (a *APIStore) CheckTeamAccessEnv(envID string, teamID string, public bool) (bool, error) {
+	return a.supabase.HasEnvAccess(envID, teamID, public)
 }
 
 type InstanceInfo = nomad.InstanceInfo

@@ -2,31 +2,40 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/e2b-dev/api/packages/api/internal/api"
+	"github.com/e2b-dev/api/packages/api/internal/constants"
 	"net/http"
 	"time"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func (a *APIStore) PostEnvsEnvIDInstances(
+func (a *APIStore) PostInstances(
 	c *gin.Context,
-	envID string,
-	params api.PostEnvsEnvIDInstancesParams,
 ) {
 	ctx := c.Request.Context()
 
-	teamID, err := a.getTeamFromAPIKey(params.ApiKey)
+	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid API key: %+v: %w", params.ApiKey, err)
-		ReportCriticalError(ctx, errMsg)
-		a.sendAPIStoreError(c, http.StatusUnauthorized, "Invalid API key, please visit https://e2b.dev/docs?reason=sdk-missing-api-key to get your API key.")
-
+		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
 		return
 	}
 
-	ReportEvent(ctx, "validated API key")
+	envID := body.EnvID
+	// Get team id from context, use TeamIDContextKey
+	teamID := c.Value(constants.TeamIDContextKey).(string)
+
+	hasAccess, err := a.CheckTeamAccessEnv(envID, teamID, true)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", err))
+		return
+	}
+	if !hasAccess {
+		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+		return
+	}
+
 	SetAttributes(ctx, attribute.String("instance.team_id", teamID))
 
 	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID)
@@ -74,7 +83,6 @@ func (a *APIStore) PostEnvsEnvIDInstances(
 func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	c *gin.Context,
 	instanceID string,
-	params api.PostInstancesInstanceIDRefreshesParams,
 ) {
 	ctx := c.Request.Context()
 

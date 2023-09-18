@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3filter"
+
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/api/packages/api/internal/middleware"
@@ -72,9 +74,17 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	}
 	r.Use(cors.New(config))
 
+	// Create a team API Key auth validator
+	AuthenticationFunc := customMiddleware.CreateAuthenticationFunc(apiStore.GetTeamFromAPIKey, apiStore.GetUserFromAccessToken)
+
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidator(swagger))
+	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
+		&middleware.Options{
+			Options: openapi3filter.Options{
+				AuthenticationFunc: AuthenticationFunc,
+			},
+		}))
 
 	// We now register our store above as the handler for the interface
 	api.RegisterHandlers(r, apiStore)

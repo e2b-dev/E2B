@@ -71,9 +71,6 @@ jobs:
   firecracker-task-driver:
     name: Devbook Firecracker Task Driver
     needs: changes
-    if: |
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.firecracker-task-driver == 'true'
     uses: ./.github/workflows/firecracker-task-driver.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -84,7 +81,6 @@ jobs:
     needs: [changes, firecracker-task-driver]
     if: |
       always() &&
-      needs.changes.outputs.version == 'true' &&
       (needs.changes.outputs.cluster-disk-image == 'true' || needs.firecracker-task-driver.result == 'success')
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
@@ -94,9 +90,6 @@ jobs:
   envd:
     name: Devbook Daemon
     needs: changes
-    if: |
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.envd == 'true'
     uses: ./.github/workflows/envd.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -106,9 +99,6 @@ jobs:
   fc-env:
     name: FC env (pipeline scripts)
     needs: changes
-    if: |
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.fc-env == 'true'
     uses: ./.github/workflows/fc-env.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -117,9 +107,6 @@ jobs:
   api-image:
     name: API image
     needs: changes
-    if: |
-      needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.api-image == 'true'
     uses: ./.github/workflows/api-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -139,7 +126,6 @@ jobs:
       ]
     if: |
       always() &&
-      needs.changes.outputs.version == 'true' &&
       needs.changes.result == 'success' &&
       (needs.cluster-disk-image.result == 'success' || needs.cluster-disk-image.result == 'skipped') &&
       (needs.fc-env.result == 'success' || needs.fc-env.result == 'skipped') &&
@@ -151,14 +137,13 @@ jobs:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-  # The last succeesful release is used for determining which changed and what should be deployed in this release.
+  # The last successful release is used for determining which changed and what should be deployed in this release.
   release:
     name: Release
     needs: [changes, terraform]
     if: |
       always() &&
-      needs.terraform.result == 'success' &&
-      needs.changes.outputs.version == 'true'
+      needs.terraform.result == 'success'
     runs-on: ubuntu-20.04
     steps:
       - name: Create release

@@ -14,6 +14,14 @@ variable "nomad_token" {
   type = string
 }
 
+variable "bucket_name" {
+  type = string
+}
+
+variable "google_service_account_credentials" {
+  type = string
+}
+
 variable "api_port" {
   type = object({
     name        = string
@@ -33,5 +41,5 @@ variable "logs_proxy_address" {
 }
 
 variable "environment" {
-  type    = string
+  type = string
 }
