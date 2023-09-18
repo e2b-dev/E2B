@@ -1,3 +1,5 @@
+server := gcloud compute instances list --format='csv(name)' | grep "server"
+
 # Login for Packer and Docker (uses gcloud user creds)
 # Login for Terraform (uses application default creds)
 .PHONY: login-gcloud
@@ -24,3 +26,13 @@ apply:
 .PHONY: version
 version:
 	./scripts/increment-version.sh
+
+.PHONY: bootstrap-consul
+bootstrap-consul:
+	gcloud compute ssh $$($(server)) -- \
+	'consul acl bootstrap'
+
+.PHONY: bootstrap-nomad
+bootstrap-nomad:
+	gcloud compute ssh $$($(server)) -- \
+	'nomad acl bootstrap'

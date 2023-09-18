@@ -95,7 +95,8 @@ resource "google_compute_instance_template" "server" {
         "compute-ro",
         "https://www.googleapis.com/auth/monitoring.write",
         "https://www.googleapis.com/auth/logging.write",
-        "https://www.googleapis.com/auth/trace.append"
+        "https://www.googleapis.com/auth/trace.append",
+        "https://www.googleapis.com/auth/cloud-platform"
       ],
       var.service_account_scopes,
     )

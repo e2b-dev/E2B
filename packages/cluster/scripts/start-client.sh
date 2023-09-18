@@ -19,7 +19,10 @@ mount /dev/$disk_name /mnt/disks/fc-envs
 chmod a+w /mnt/disks/$mount_dir
 
 # Mount env buckets
+mkdir -p /mnt/disks/envs-pipeline
 gcsfuse e2b-fc-env-pipeline /mnt/disks/envs-pipeline
+
+mkdir -p /mnt/disks/docker-contexts
 gcsfuse e2b-envs-docker-context /mnt/disks/docker-contexts
 
 # Setup Nomad task drivers

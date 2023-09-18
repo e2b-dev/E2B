@@ -72,6 +72,7 @@ jobs:
     name: Env Instance Task Driver
     needs: changes
     if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.env-instance-task-driver == 'true'
     uses: ./.github/workflows/env-instance-task-driver.yml
@@ -83,6 +84,7 @@ jobs:
     name: Env Build Task Driver
     needs: changes
     if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.env-build-task-driver == 'true'
     uses: ./.github/workflows/env-build-task-driver.yml
@@ -92,11 +94,11 @@ jobs:
 
   cluster-disk-image:
     name: Cluster disk image
-    needs: [changes, env-instance-task-driver, env-build-task-driver]
+    needs: changes
     if: |
       always() &&
       needs.changes.outputs.version == 'true' &&
-      (needs.changes.outputs.cluster-disk-image == 'true' || needs.env-instance-task-driver.result == 'success' || needs.env-build-task-driver.result == 'success')
+      needs.changes.outputs.cluster-disk-image == 'true'
     uses: ./.github/workflows/cluster-disk-image.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
@@ -106,6 +108,7 @@ jobs:
     name: Env Daemon
     needs: changes
     if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.envd == 'true'
     uses: ./.github/workflows/envd.yml
@@ -118,6 +121,7 @@ jobs:
     name: API image
     needs: changes
     if: |
+      always() &&
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.api-image == 'true'
     uses: ./.github/workflows/api-image.yml

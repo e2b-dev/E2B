@@ -117,7 +117,8 @@ resource "google_compute_instance_template" "client" {
       "compute-ro",
       "https://www.googleapis.com/auth/logging.write",
       "https://www.googleapis.com/auth/monitoring.write",
-      "https://www.googleapis.com/auth/trace.append"
+      "https://www.googleapis.com/auth/trace.append",
+      "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
 
@@ -144,12 +145,12 @@ resource "google_storage_bucket_iam_member" "envs-pipeline-iam" {
 
 # LOAD BALANCERS
 
-# This cert is for proxying throught Cloudflare only
+# This cert is for proxying through Cloudflare only
 data "google_compute_ssl_certificate" "session_certificate" {
   name = "e2b-sessions"
 }
 
-# This should be SSL cert for usage withotu Cloudflare
+# This should be SSL cert for usage without Cloudflare
 data "google_compute_ssl_certificate" "api_certificate" {
   name = "e2b-api"
 }

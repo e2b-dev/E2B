@@ -10,11 +10,12 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3filter"
 
+	"github.com/gin-contrib/cors"
+	"github.com/lightstep/otel-launcher-go/launcher"
+
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/api/packages/api/internal/middleware"
-	"github.com/gin-contrib/cors"
-	"github.com/lightstep/otel-launcher-go/launcher"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"
@@ -25,9 +26,7 @@ const (
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
-var (
-	ignoreLoggingForPaths = []string{"/health"}
-)
+var ignoreLoggingForPaths = []string{"/health"}
 
 func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	swagger, err := api.GetSwagger()
@@ -93,6 +92,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 		Handler: r,
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 	}
+
 	return s
 }
 

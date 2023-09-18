@@ -17,9 +17,9 @@ import (
 )
 
 type cloudStorage struct {
-	bucket  string
 	client  *storage.Client
 	context context.Context
+	bucket  string
 }
 
 // streamFileUpload uploads an object via a stream and returns the path to the file.

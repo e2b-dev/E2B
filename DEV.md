@@ -42,6 +42,7 @@
 - rename everything from sessions and fc-...
 - share tracing modules between task drivers
 - parametrize buckets and mount paths
+- enable simpler debugging
 
 ### API
 - Add monitoring to the envs routes
