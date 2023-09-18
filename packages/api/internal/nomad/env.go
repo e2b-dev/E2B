@@ -132,7 +132,7 @@ func (n *NomadClient) StartBuildingEnv(
 		meta,
 	)
 	if err != nil {
-		apiErr := n.DeleteInstance(envID, false)
+		apiErr := n.DeleteEnvBuild(*job.ID, false)
 		if apiErr != nil {
 			fmt.Printf("error in cleanup after failing to create instance of environment '%s':%+v", envID, apiErr.Msg)
 		}
@@ -168,4 +168,17 @@ func (n *NomadClient) StartBuildingEnv(
 	}()
 
 	return buildResult, nil
+}
+
+func (n *NomadClient) DeleteEnvBuild(jobID string, purge bool) *api.APIError {
+	_, _, err := n.client.Jobs().Deregister(jobID, purge, nil)
+	if err != nil {
+		return &api.APIError{
+			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", buildJobNameWithSlash, jobID, err),
+			ClientMsg: "Cannot delete the environment instance right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
+
+	return nil
 }
