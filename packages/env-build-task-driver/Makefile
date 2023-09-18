@@ -1,4 +1,4 @@
-client := orch-client-34kx
+client := gcloud compute instances list --format='csv(name)' | grep "client"
 
 upload:
 	./upload.sh
@@ -15,30 +15,10 @@ generate:
 run-profiler:
 	go tool pprof -http :9991 http://$(client-ip):6061/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
 
-test-docker:
-	docker build -t test.fc-driver . -f debug.Dockerfile
-
-dev-start-nomad:
-	gcloud compute ssh $(client) -- 'sudo nomad agent -config=/etc/nomad/config.hcl -dev -bind 0.0.0.0 -log-level INFO'
-
-dev-start-consul:
-	gcloud compute ssh $(client) -- 'consul agent -dev'
-
-# This is just for development - changes to fc-driver are lost when you redeploy
-# You run the parametrized command like this:
-# gcloud compute ssh $(client) -- 'sudo pgrep nomad | xargs sudo kill'
-dev-update-driver:
+update-build-driver:
 	make build
-	gcloud compute ssh $(client) -- 'sudo rm -f /opt/nomad/plugins/env-instance-task-driver'
-	gcloud compute scp ./packages/env-instance-task-driver/bin/env-instance-task-driver root@$(client):/opt/nomad/plugins/env-instance-task-driver
-	gcloud compute ssh $(client) -- 'sudo pgrep firecracker | xargs -n1 sudo kill -9'
-
-dev-run-session:
-	gcloud compute scp ./packages/env-instance-task-driver/session.hcl root@$(client):/opt/nomad/session.hcl
-	gcloud compute ssh $(client) -- 'nomad system gc && nomad job run /opt/nomad/session.hcl'
-
-dev-session-status:
-	gcloud compute ssh $(client) -- 'nomad job status session/dev'
-
-dev-session-alloc:
-	gcloud compute ssh $(client) -- 'nomad alloc status $(alloc)'
+	./upload.sh
+	gcloud compute ssh $$($(client)) -- \
+	'sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
+	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
+	sudo pgrep nomad | xargs sudo kill'
