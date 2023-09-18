@@ -41,6 +41,7 @@ func NewDirWatcher(logger *zap.SugaredLogger) (*DirWatcher, error) {
 	}
 
 	go dw.watchLoop()
+
 	return dw, nil
 }
 
