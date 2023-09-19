@@ -21,14 +21,14 @@ e2b login
 ```
 
 <details>
-<summary>🔜 Authenticate without the ability to open browser</summary>
+<summary>Authenticate without the ability to open browser</summary>
 
 
 To authenticate without the ability to open browser, you can provide E2B_ACCESS_TOKEN as an environment variable.
 Obtain your E2B_ACCESS_TOKEN from at [e2b.dev/docs](https://e2b.dev/docs).
 
 ```sh
-E2B_ACCESS_TOKEN=e2b_sk_... e2b login
+E2B_ACCESS_TOKEN=sk_e2b_... e2b login
 ```
 
 </details>
