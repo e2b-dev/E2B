@@ -77,7 +77,7 @@ data "google_project" "gcp_project" {}
 resource "google_service_account_iam_member" "gha-service-account-wif-tokencreator-iam-member" {
   service_account_id = google_service_account.github-action-service-account.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/projects/${data.google_project.gcp_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github-actions-wip.workload_identity_pool_id}/attribute.repository/${var.github_organization}/${var.github_repository}/attribute.ref/refs/heads/main"
+  member             = "principalSet://iam.googleapis.com/projects/${data.google_project.gcp_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github-actions-wip.workload_identity_pool_id}/attribute.repository/${var.github_organization}/${var.github_repository}"
 }
 
 
