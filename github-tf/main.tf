@@ -37,8 +37,14 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
+data "google_secret_manager_secret_version" "github-token-google-secret"{
+  secret = "github-repo-token"
+}
+
+
 provider "github" {
   owner = var.github_organization
+  token = data.google_secret_manager_secret_version.github-token-google-secret.secret_data
 }
 
 
@@ -103,19 +109,20 @@ resource "google_project_iam_member" "service-account-roles" {
 
 }
 
-resource "github_actions_secret" "wif-token" {
+resource "github_actions_secret" "wif-token-secret" {
   repository      = var.github_repository
   secret_name     = "WORKLOAD_IDENTITY_PROVIDER"
   plaintext_value = "projects/${data.google_project.gcp_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github-actions-wip.workload_identity_pool_id}/providers/${google_iam_workload_identity_pool_provider.gha-identity-pool-provider.workload_identity_pool_provider_id}"
 
 }
 
-resource "github_actions_secret" "service-account-email" {
+resource "github_actions_secret" "service-account-email-secret" {
   repository      = var.github_repository
   secret_name     = "SERVICE_ACCOUNT_EMAIL"
   plaintext_value = google_service_account.github-action-service-account.email
 }
-resource "github_actions_secret" "service-account-project-id" {
+
+resource "github_actions_secret" "project-id-secret" {
   repository      = var.github_repository
   secret_name     = "GCE_PROJECT"
   plaintext_value = var.gcp_project_id

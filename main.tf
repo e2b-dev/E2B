@@ -164,9 +164,10 @@ module "api" {
 module "github-tf" {
   source = "./github-tf"
 
-  gcp_project_id         = var.gcp_project_id
-  gcp_region             = var.gcp_region
-  gcp_zone               = var.gcp_zone
-  github_organization        = var.github_organization
-  github_repository = var.github_repository
+  gcp_project_id      = var.gcp_project_id
+  gcp_region          = var.gcp_region
+  gcp_zone            = var.gcp_zone
+
+  github_organization = var.github_organization
+  github_repository   = var.github_repository
 }

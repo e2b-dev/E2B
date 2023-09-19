@@ -122,7 +122,6 @@ variable "github_organization" {
   default = "e2b-dev"
 }
 
-
 variable "github_repository" {
   type    = string
   default = "api"
