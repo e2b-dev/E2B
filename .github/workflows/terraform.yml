@@ -7,6 +7,8 @@ on:
         required: true
       workload_identity_provider:
         required: true
+      github_token:
+        required: true
 
 jobs:
   deploy:
