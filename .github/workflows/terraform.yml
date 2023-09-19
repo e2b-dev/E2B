@@ -28,19 +28,19 @@ jobs:
         with:
           terraform_version: 1.1.9
 
-      - name: Config Terraform plugin cache
-        run: |
-          echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' >~/.terraformrc
-          mkdir --parents ~/.terraform.d/plugin-cache
+      # - name: Config Terraform plugin cache
+      #   run: |
+      #     echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' >~/.terraformrc
+      #     mkdir --parents ~/.terraform.d/plugin-cache
 
-      - name: Cache Terraform
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.terraform.d/plugin-cache
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-
+      # - name: Cache Terraform
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       ~/.terraform.d/plugin-cache
+      #     key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-terraform-
 
       - name: Init Terraform
         run: make init
