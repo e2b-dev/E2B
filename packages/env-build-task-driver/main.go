@@ -20,7 +20,7 @@ const (
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
-func main() {
+func main2() {
 	// Create pprof endpoint for profiling
 	go func() {
 		http.ListenAndServe(":6062", nil)
@@ -53,4 +53,8 @@ func main() {
 
 func factory(log log.Logger) interface{} {
 	return driver.NewPlugin(log)
+}
+
+func main() {
+	driver.BuidlCheck()
 }

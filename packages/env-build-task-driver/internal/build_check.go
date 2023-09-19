@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"testing"
 
 	"github.com/docker/docker/client"
 	"go.opentelemetry.io/otel"
@@ -15,14 +14,14 @@ import (
 //go:embed test-provision-env.ubuntu.sh
 var provisionEnvScriptFile string
 
-func TestBuildEnv(t *testing.T) {
+func BuidlCheck() {
 	ctx := context.Background()
 
 	tracer := otel.Tracer("test")
 
 	client, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 
 	contextsPath := "/mnt/disks/docker-contexts/v1"
@@ -49,29 +48,29 @@ func TestBuildEnv(t *testing.T) {
 
 	err = e.Initialize(ctx, tracer)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 	defer e.Cleanup(ctx, tracer)
 
 	rootfs, err := env.NewRootfs(ctx, tracer, &e, client)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 
 	network, err := env.NewFCNetwork(ctx, tracer, &e)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 	defer network.Cleanup(ctx, tracer)
 
 	snapshot, err := env.NewSnapshot(ctx, tracer, &e, network, rootfs)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 	defer snapshot.Cleanup(ctx, tracer)
 
 	err = e.MoveSnapshotToEnvDir(ctx, tracer)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 }

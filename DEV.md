@@ -44,6 +44,7 @@
 - parametrize buckets and mount paths
 - enable simpler debugging
 - Remove supervisord and just use systemd for both nomad and consul
+- Enable terraform cache again later
 
 ### API
 - Add monitoring to the envs routes
