@@ -1,7 +1,6 @@
 {
   "name": "@e2b/cli",
-  "private": true,
-  "version": "0.0.1",
+  "version": "0.0.8",
   "description": "CLI for managing e2b environments",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -29,9 +28,12 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^3.3.0",
+    "@types/common-tags": "^1.8.2",
     "@types/inquirer": "^8.0.0",
     "@types/node": "16.11",
+    "@types/node-fetch": "^2.6.5",
     "@types/parse-gitignore": "^1.0.0",
+    "@types/platform": "^1.3.4",
     "@types/update-notifier": "5.1.0",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
@@ -39,6 +41,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-unused-imports": "^2.0.0",
+    "platform": "^1.3.6",
     "prettier": "^2.7.1",
     "tsup": "^6.5.0",
     "typescript": "^4.9.3"
@@ -53,22 +56,29 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
+    "@balena/dockerignore": "^1.0.2",
     "@devbookhq/sdk": "^2.6.88",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^1.2.8",
+    "@types/tar-fs": "^2.0.2",
     "async-listen": "^3.0.1",
     "boxen": "^7.0.0",
     "chalk": "^5.1.2",
     "chokidar": "^3.5.3",
     "commander": "^9.4.1",
+    "common-tags": "^1.8.2",
     "docker-names": "^1.2.1",
     "get-port": "^7.0.0",
+    "ignore": "^5.2.4",
     "inquirer": "^8.0.0",
+    "node-fetch": "^3.3.2",
+    "open": "^8.4.2",
     "parse-gitignore": "^2.0.0",
+    "tar-fs": "^3.0.4",
     "update-notifier": "5.1.0",
     "yup": "^0.32.11"
   },
   "engines": {
-    "node": "~16"
+    "node": ">=16"
   }
 }

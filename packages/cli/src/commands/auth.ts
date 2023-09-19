@@ -45,6 +45,7 @@ export const loginCommand = new commander.Command('login')
       fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
     }
     console.log(`Logged in as ${asBold(userConfig.email)}`)
+    process.exit(0)
   })
 
 export const logoutCommand = new commander.Command('logout')

@@ -1,150 +1,203 @@
-import * as chalk from 'chalk'
 import * as commander from 'commander'
+import { stripIndent } from 'common-tags'
 import * as fs from 'fs'
-import * as path from 'path'
-
-import { client, ensureAPIKey } from 'src/api'
-import {
-  configName,
-  configSchema,
-  DevbookConfig,
-  getConfigPath,
-  randomTitle,
-  saveConfig,
-} from 'src/config'
-import { templates } from 'src/config/template'
+import fsPromise from 'fs/promises'
+import fetch from 'node-fetch'
+import { apiBaseUrl, ensureAccessToken } from 'src/api'
+import { configName } from 'src/config'
 import { pathOption } from 'src/options'
-import { ensureDir, getRoot } from 'src/utils/filesystem'
+import { getFiles, getRoot, packToTar } from 'src/utils/filesystem'
 import {
-  asTemplate,
   asBold,
   asFormattedEnvironment,
   asFormattedError,
   asLocal,
   asLocalRelative,
 } from 'src/utils/format'
+import * as yup from 'yup'
 
 export const createCommand = new commander.Command('create')
   .description(`Create new environment and ${asLocal(configName)} config`)
   .option(
-    '-T, --template <template>',
-    `Use ${asBold('<template>')} as a base for the environment`,
+    '-id, --id <id>',
+    `Use ${asBold(
+      '<id>',
+    )} to override already existing environment, otherwise new environment will be created`,
   )
-  .option('-t, --title <title>', `Use ${asBold('<title>')} as environment title`)
-  .option('-n, --no-config', `Skip creating ${asLocal(configName)} config`)
+  .option('--respect-gitignore', 'Respect .gitignore file in the root directory', true)
+  .option(
+    '--respect-dockerignore',
+    'Respect .dockerignore file in the root directory',
+    true,
+  )
+  // TODO: Future
+  // .option(
+  //   '-t, --title <title>',
+  //   `Use ${asBold('<title>')} as environment title`
+  // )
+  // .option(
+  //   '-n, --no-config',
+  //   `Skip creating ${asLocal(configName)} config`
+  // )
   .addOption(pathOption)
   .alias('cr')
   .action(async opts => {
     try {
-      const apiKey = ensureAPIKey()
+      const accessToken = ensureAccessToken()
       process.stdout.write('\n')
 
       const root = getRoot(opts.path)
-      const configPath = getConfigPath(root)
+      // const configPath = getConfigPath(root) // TODO: Future
 
-      let template = opts.template as string | undefined
-      let title = opts.title as string | undefined
+      // TODO: Future
+      // let title = opts.title as string | undefined
+      // const inquirer = await import('inquirer')
+      // if (!title) {
+      //   title = randomTitle() // TODO: Infer from path
+      // }
 
-      if (opts.config) {
-        if (fs.existsSync(configPath)) {
-          throw new Error(
-            `Devbook config on path ${asLocalRelative(
-              configPath,
-            )} already exists - cannot create new config`,
-          )
-        }
-      }
-
-      const inquirer = await import('inquirer')
-      if (!template) {
-        const envsAnwsers = await inquirer.default.prompt([
-          {
-            name: 'template',
-            message: chalk.default.underline('Choose base template for environment'),
-            type: 'list',
-            choices: templates,
-          },
-        ])
-        template = envsAnwsers['template'] as string
-      }
-
-      if (!title) {
-        const envsAnwsers = await inquirer.default.prompt([
-          {
-            name: 'title',
-            message: chalk.default.underline('Choose title for environment'),
-            type: 'input',
-            default: path.basename(root),
-          },
-        ])
-        title = (envsAnwsers['title'] as string | undefined) || randomTitle()
-      }
-
-      if (opts.config) {
-        console.log(
-          `Creating new environment titled "${title}" from ${asTemplate`[${template}]`} template with config ${asLocalRelative(
-            configPath,
-          )}`,
-        )
-      } else {
-        console.log(
-          `Creating new environment titled "${title}" from ${asTemplate`[${template}]`} template`,
-        )
-      }
-
-      const config = await createEnvironment({
-        template,
-        title,
-        apiKey,
-        root,
-        shouldSaveConfig: opts.config,
+      const filePaths = await getFiles(root, {
+        respectGitignore: opts.respectGitignore,
+        respectDockerignore: opts.respectDockerignore,
       })
-      console.log(
-        `Environment ${asFormattedEnvironment(
-          config,
-          opts.config ? configPath : undefined,
-        )} created\n`,
+      if (!filePaths.length) {
+        console.log(stripIndent`
+          No files found in ${asLocalRelative(root)}.
+          Note that .gitignore and .dockerignore files are respected by default,
+          use --respect-gitignore=false and --respect-dockerignore=false to override.
+       `)
+        return
+      }
+
+      // const hash = getFilesHash(files) // TODO: Future
+      console.log('📦 Files to be uploaded to create environment:')
+      filePaths.map(filePath => {
+        console.log(`• ${filePath.rootPath}`)
+      })
+
+      // TODO: Create in temp dir
+      const tarPath = 'env.tar.gz'
+
+      await packToTar(
+        root,
+        filePaths.map(({ rootPath }) => rootPath),
+        tarPath,
       )
-    } catch (err: any) {
-      console.error(asFormattedError(err.message))
+
+      if (!fs.existsSync(tarPath)) throw new Error(`Tar file ${tarPath} does not exist`)
+
+      const buildContextBlob = new Blob([fs.readFileSync(tarPath)], {
+        type: 'application/gzip',
+      })
+      let dockerfileContent
+      if (fs.existsSync(`${root}/Dockerfile`)) {
+        dockerfileContent = fs.readFileSync(`${root}/Dockerfile`, 'utf-8')
+      }
+
+      // TODO: Use SDK client
+      // client.path('/envs').method('post').create(...)
+
+      const formData = new FormData()
+      formData.append('buildContext', buildContextBlob, 'env.tar.gz.e2b')
+      if (dockerfileContent) formData.append('dockerfile', dockerfileContent)
+      // if (envID) formData.append('envID', envID); // TODO: Future
+
+      const apiRes = await fetch(`${apiBaseUrl}/envs`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
+      })
+
+      if (!apiRes.ok) {
+        const resJson = (await apiRes.json()) as { message: string }
+        throw new Error(`API request failed: ${apiRes.statusText}, ${resJson?.message ?? 'no message'}`)
+      }
+      const resJson = (await apiRes.json()) as { envID: string, Public: boolean, Status: 'building' | 'error' | 'ready' }
+      console.log(`✅ Env created: ${resJson?.envID}, waiting for build to finish...`)
+      
+      let startedAt = new Date()
+      let completed = false
+      while (!completed) {
+        await wait(5000)
+        const apiResPoll = await fetch(`${apiBaseUrl}/envs/${resJson?.envID}`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (!apiResPoll.ok) throw new Error(`API request failed: ${apiResPoll.statusText}`)
+        const env = (await apiResPoll.json()) as { status: string, created_at: string }
+        if (env.status === 'building') {
+          const now = new Date()
+          const elapsed = now.getTime() - startedAt.getTime()
+          const elapsedStr = `${Math.floor(elapsed / 1000)}s` 
+          console.log(`⏳ Building… (started ${elapsedStr} ago)`) // nicer
+          if (elapsed > 1000 * 60 * 2) { // TODO
+            console.log(stripIndent`
+              ⚠️ Build taking longer than 2 minutes, something might be wrong.\n
+              Stopping to wait for result, but it might still finish -\n
+              Check by yourself by running ${asLocal(`e2b env list`)}\n
+            `)
+            completed = true
+          }
+        } else if (env.status === 'completed') {
+          completed = true
+          console.log(`✅ Build completed at ${env.created_at}`) // TODO: Nicer
+        }
+        
+      }
+
+      // if (shouldSaveConfig) {
+      //   await ensureDir(root)
+      //   const configPath = getConfigPath(root)
+      //   await saveConfig(configPath, config)
+      // }
+    } catch (err: unknown) {
+      console.error(asFormattedError((err as Error).message))
       process.exit(1)
     }
   })
 
-export async function createEnvironment({
-  template,
-  title,
-  apiKey,
-  root,
-  shouldSaveConfig,
-}: {
-  template: string
-  title?: string
-  root: string
-  apiKey: string
-  shouldSaveConfig: boolean
-}): Promise<DevbookConfig> {
-  const env = await createEnv({
-    template,
-    title,
-    api_key: apiKey,
-  })
+// TODO: Move to config/index.ts after refactoring
+// ===
+const envConfigSchema = yup.object({
+  id: yup.string().required(),
+  // TODO: Not MVP
+  // title: yup.string().default(randomTitle),
+  // filesystem: yup.object({
+  //   change_hash: yup.string(),
+  //   local_root: yup.string().required().default('./files'),
+  // }),
+})
 
-  if (!env.ok) {
+export type EnvConfig = yup.InferType<typeof envConfigSchema>
+
+async function saveConfig(configPath: string, config: EnvConfig, overwrite?: boolean) {
+  try {
+    if (!overwrite) {
+      const configExists = fs.existsSync(configPath)
+      if (configExists)
+        throw new Error(`Config already exists on path ${asLocalRelative(configPath)}`)
+    }
+
+    const validatedConfig: any = await envConfigSchema.validate(config, {
+      stripUnknown: true,
+    })
+    const jsonRaw = JSON.stringify(validatedConfig, null, 2)
+    await fsPromise.writeFile(configPath, jsonRaw)
+  } catch (err: any) {
     throw new Error(
-      `Failed to create new environment for template ${asTemplate`[${template}]`}`,
+      `e2b environment config ${asFormattedEnvironment(
+        config,
+        configPath,
+      )} cannot be saved: ${err.message}`,
     )
   }
-
-  const config = configSchema.cast(env.data) as DevbookConfig
-
-  if (shouldSaveConfig) {
-    await ensureDir(root)
-    const configPath = getConfigPath(root)
-    await saveConfig(configPath, config)
-  }
-
-  return config
 }
 
-const createEnv = client.path('/envs').method('post').create({ api_key: true })
+// TODO: Move to utils after refactoring
+// ===
+const deleteFile = async (filePath: string) => {
+  const stat = await fs.promises.stat(filePath)
+  if (stat.isFile()) await fs.promises.unlink(filePath)
+}
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
