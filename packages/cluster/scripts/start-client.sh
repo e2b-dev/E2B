@@ -20,18 +20,18 @@ chmod a+w /mnt/disks/$mount_dir
 
 # Mount env buckets
 mkdir -p /mnt/disks/envs-pipeline
-gcsfuse e2b-fc-env-pipeline /mnt/disks/envs-pipeline
+gcsfuse -o=allow_other --implicit-dirs e2b-fc-env-pipeline /mnt/disks/envs-pipeline
 
 mkdir -p /mnt/disks/docker-contexts
-gcsfuse e2b-envs-docker-context /mnt/disks/docker-contexts
+gcsfuse -o=allow_other --implicit-dirs e2b-envs-docker-context /mnt/disks/docker-contexts
 
 # Setup Nomad task drivers
-sudo cp /mnt/disks/envs-pipeline/env-build-task-driver -o /opt/nomad/plugins/env-build-task-driver
+sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
 sudo chmod +x /opt/nomad/plugins/env-build-task-driver
 
-sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver -o /opt/nomad/plugins/env-instance-task-driver
+sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver
 sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
 
-# These variables are passed in via Terraform template interplation
+# These variables are passed in via Terraform template interpolation
 /opt/consul/bin/run-consul.sh --client --cluster-tag-name "${cluster_tag_name}" &
 /opt/nomad/bin/run-nomad.sh --client &
