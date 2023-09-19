@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -50,9 +51,12 @@ func main() {
 
 	flag.Parse()
 
-	if envID != nil && buildID != nil {
-		configurePlugin()
-	} else {
+	fmt.Println("envID: ", *envID)
+	fmt.Println("buildID: ", *buildID)
+
+	if *envID != "" && *buildID != "" {
 		driver.TestBuildProcess(*envID, *buildID)
+	} else {
+		configurePlugin()
 	}
 }

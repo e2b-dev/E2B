@@ -52,6 +52,7 @@
 - improve no attributes trace (if branch for zero)
 - fix vscode setup errors
 - make buckets not public
+- check api build
 
 ### API
 - Add monitoring to the envs routes
