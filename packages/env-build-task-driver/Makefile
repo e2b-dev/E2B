@@ -24,3 +24,9 @@ update-build-driver:
 	chmod +x /opt/nomad/plugins/env-build-task-driver && \
 	pgrep nomad | xargs kill && \
 	exit'
+
+run-build-check:
+	make build
+	gcloud compute scp ./bin/env-build-task-driver root@$$($(client)):/tmp/build-task-driver
+	gcloud compute ssh $$($(client)) -- 'sudo -s && \
+	chmod +x /tmp/build-task-driver'

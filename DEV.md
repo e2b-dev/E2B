@@ -44,12 +44,21 @@
 - parametrize buckets and mount paths
 - enable simpler debugging
 - Remove supervisord and just use systemd for both nomad and consul
+- Enable terraform cache again later (cca 16 blocking seconds saved per GHA run)
+- Secure docker building (+container start problem?)
+- Install golang to the vm for easier remote debugging
+- add otel logs
+- add more otel events
+- improve no attributes trace (if branch for zero)
+- fix vscode setup errors
+- make buckets not public
 
 ### API
 - Add monitoring to the envs routes
 - Make the API server stateless by moving the session state to the DB
 - Add better error if the env was not found
 - Improve request logging
+
 
 ### Envd
 - envd jsonrpc parameters could be objects instead of arrays (compatibility advantages)

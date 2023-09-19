@@ -81,8 +81,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		},
 	)
 
-	// Handle fuse mount
-
 	// TODO: Stream the logs somewhere
 	_, err = io.Copy(os.Stdout, buildResponse.Body)
 	if err != nil {
@@ -148,7 +146,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "opened envd file")
 
 	// Copy envd to the container
-	err = r.client.CopyToContainer(childCtx, cont.ID, envdRootfsPath, envdFile, types.CopyToContainerOptions{})
+	err = r.client.CopyToContainer(childCtx, cont.ID, envdRootfsPath, envdFile, types.CopyToContainerOptions{
+		AllowOverwriteDirWithFile: true,
+	})
 	if err != nil {
 		return fmt.Errorf("error copying envd to container %v", err)
 	}
