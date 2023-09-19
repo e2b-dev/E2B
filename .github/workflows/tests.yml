@@ -47,3 +47,12 @@ jobs:
         run: poetry run python scripts/upload_test_results.py
         env:
           SUPABASE_POSTGRES_URL: ${{ secrets.SUPABASE_POSTGRES_URL }}
+
+      - name: Release Failed - Slack Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#ff0000'
+          SLACK_MESSAGE: ':this-is-fine: :meow-code: We need :fix-parrot: ASAP :pray:'
+          SLACK_TITLE: Tasts Failed
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

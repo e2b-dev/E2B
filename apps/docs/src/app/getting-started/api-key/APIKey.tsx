@@ -3,7 +3,7 @@
 import clsx from 'clsx'
 import { Button } from '@/components/Button'
 import { useApiKey, useUser } from '@/utils/useUser'
-import { obfuscateKey } from '@/utils/obfuscate'
+import { obfuscateSecret } from '@/utils/obfuscate'
 import { CopyButton } from '@/components/CopyButton'
 import { usePostHog } from 'posthog-js/react'
 import { useSignIn } from '@/utils/useSignIn'
@@ -28,7 +28,7 @@ function APIKey() {
             API Key
           </span>
           <span className="whitespace-nowrap font-mono text-yellow-400 group-hover:opacity-25">
-            {obfuscateKey(apiKey)}
+            {obfuscateSecret(apiKey)}
           </span>
           <span className="absolute inset-0">
             <CopyButton

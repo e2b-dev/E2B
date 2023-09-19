@@ -43,12 +43,13 @@ export function CopyButton({
     <button
       type="button"
       ref={buttonRef}
+      tabIndex={-1} /* hide from tab order */
       className={clsx(
         customPositionClassNames,
-        'border border-zinc-700 group/button absolute overflow-hidden rounded-full py-1 pl-2 pr-3 text-2xs font-medium opacity-0 transition focus:opacity-100 group-hover:opacity-100',
+        'group/button absolute overflow-hidden rounded-full border border-zinc-700 py-1 pl-2 pr-3 text-2xs font-medium opacity-0 transition focus:opacity-100 group-hover:opacity-100',
         copied
           ? 'bg-emerald-400/20 ring-1 ring-inset ring-emerald-400/20'
-          : 'bg-white/5 hover:bg-white/7.5 dark:bg-white/2.5 dark:hover:bg-red-500/'
+          : 'dark:hover:bg-red-500/ bg-white/5 hover:bg-white/7.5 dark:bg-white/2.5'
       )}
       onClick={() => {
         window.navigator.clipboard.writeText(code).then(() => {
