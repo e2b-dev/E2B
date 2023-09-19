@@ -1,18 +1,18 @@
-import * as yup from 'yup'
 import * as toml from '@iarna/toml'
-import * as fsPromise from 'fs/promises'
 import * as fs from 'fs'
+import * as fsPromise from 'fs/promises'
 import * as path from 'path'
+import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
+import * as yup from 'yup'
+
+import { getFiles } from '../utils/filesystem'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const dockerNames = require('docker-names')
 
-import { getFiles } from '../utils/filesystem'
-import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
-
 export const configName = 'e2b.json'
 
-const configCommentHeader = `# This is a config for a e2b environment`
+const configCommentHeader = '# This is a config for a e2b environment'
 
 export function randomTitle() {
   return dockerNames.getRandomName().replace('_', '-')
@@ -92,11 +92,11 @@ export async function getNestedConfigs(rootPath: string) {
 
 export async function loadConfigs(rootPath: string, nested?: boolean) {
   const configPaths = nested
-    ? (await getNestedConfigs(rootPath)).map(c => c.path)
+    ? (await getNestedConfigs(rootPath)).map((c: { path: any }) => c.path)
     : [getConfigPath(rootPath)]
 
   return Promise.all(
-    configPaths.map(async configPath => {
+    configPaths.map(async (configPath: string) => {
       const config = await loadConfig(configPath)
       return {
         ...config,

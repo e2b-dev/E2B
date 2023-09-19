@@ -21,7 +21,7 @@ export default function Page() {
   const searchParams = useSearchParams()
   const searchParamsObj = Object.fromEntries(searchParams)
   const { next, state } = searchParamsObj
-  
+
   // TODO: Consider sending back onetime code to be used to get access token
   function redirectToCli() {
     if (!next) return

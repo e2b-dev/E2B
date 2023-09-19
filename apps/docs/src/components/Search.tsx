@@ -34,9 +34,9 @@ type Autocomplete = AutocompleteApi<
 >
 
 function useAutocomplete({ close }: { close: () => void }) {
-  let id = useId()
-  let router = useRouter()
-  let [autocompleteState, setAutocompleteState] = useState<
+  const id = useId()
+  const router = useRouter()
+  const [autocompleteState, setAutocompleteState] = useState<
     AutocompleteState<Result> | EmptyObject
   >({})
 
@@ -55,7 +55,7 @@ function useAutocomplete({ close }: { close: () => void }) {
     }
   }
 
-  let [autocomplete] = useState<Autocomplete>(() =>
+  const [autocomplete] = useState<Autocomplete>(() =>
     createAutocomplete<
       Result,
       React.SyntheticEvent,
@@ -90,7 +90,7 @@ function useAutocomplete({ close }: { close: () => void }) {
           ]
         })
       },
-    })
+    }),
   )
 
   return { autocomplete, autocompleteState }
@@ -98,7 +98,12 @@ function useAutocomplete({ close }: { close: () => void }) {
 
 function SearchIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      {...props}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -110,7 +115,12 @@ function SearchIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 function NoResultsIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      {...props}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -121,11 +131,21 @@ function NoResultsIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 }
 
 function LoadingIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-  let id = useId()
+  const id = useId()
 
   return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
-      <circle cx="10" cy="10" r="5.5" strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      {...props}
+    >
+      <circle
+        cx="10"
+        cy="10"
+        r="5.5"
+        strokeLinejoin="round"
+      />
       <path
         stroke={`url(#${id})`}
         strokeLinecap="round"
@@ -142,7 +162,11 @@ function LoadingIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="currentColor" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          <stop
+            offset="1"
+            stopColor="currentColor"
+            stopOpacity="0"
+          />
         </linearGradient>
       </defs>
     </svg>
@@ -173,20 +197,20 @@ function SearchResult({
   collection: AutocompleteCollection<Result>
   query: string
 }) {
-  let id = useId()
+  const id = useId()
 
-  let sectionTitle = navigation.find((section) =>
-    section.links.find((link) => link.href === result.url.split('#')[0])
+  const sectionTitle = navigation.find(section =>
+    section.links.find(link => link.href === result.url.split('#')[0]),
   )?.title
-  let hierarchy = [sectionTitle, result.pageTitle].filter(
-    (x): x is string => typeof x === 'string'
+  const hierarchy = [sectionTitle, result.pageTitle].filter(
+    (x): x is string => typeof x === 'string',
   )
 
   return (
     <li
       className={clsx(
         'group block cursor-default px-4 py-3 aria-selected:bg-zinc-50 dark:aria-selected:bg-zinc-800/50',
-        resultIndex > 0 && 'border-t border-zinc-100 dark:border-zinc-800'
+        resultIndex > 0 && 'border-t border-zinc-100 dark:border-zinc-800',
       )}
       aria-labelledby={`${id}-hierarchy ${id}-title`}
       {...autocomplete.getItemProps({
@@ -199,7 +223,10 @@ function SearchResult({
         aria-hidden="true"
         className="text-sm font-medium text-zinc-900 group-aria-selected:text-emerald-500 dark:text-white"
       >
-        <HighlightQuery text={result.title} query={query} />
+        <HighlightQuery
+          text={result.title}
+          query={query}
+        />
       </div>
       {hierarchy.length > 0 && (
         <div
@@ -209,7 +236,10 @@ function SearchResult({
         >
           {hierarchy.map((item, itemIndex, items) => (
             <Fragment key={itemIndex}>
-              <HighlightQuery text={item} query={query} />
+              <HighlightQuery
+                text={item}
+                query={query}
+              />
               <span
                 className={
                   itemIndex === items.length - 1
@@ -275,7 +305,7 @@ const SearchInput = forwardRef<
     onClose: () => void
   }
 >(function SearchInput({ autocomplete, autocompleteState, onClose }, inputRef) {
-  let inputProps = autocomplete.getInputProps({ inputElement: null })
+  const inputProps = autocomplete.getInputProps({ inputElement: null })
 
   return (
     <div className="group relative flex h-12">
@@ -284,10 +314,10 @@ const SearchInput = forwardRef<
         ref={inputRef}
         className={clsx(
           'flex-auto appearance-none bg-transparent pl-10 text-zinc-900 outline-none placeholder:text-zinc-500 focus:w-full focus:flex-none dark:text-white sm:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden',
-          autocompleteState.status === 'stalled' ? 'pr-11' : 'pr-4'
+          autocompleteState.status === 'stalled' ? 'pr-11' : 'pr-4',
         )}
         {...inputProps}
-        onKeyDown={(event) => {
+        onKeyDown={event => {
           if (
             event.key === 'Escape' &&
             !autocompleteState.isOpen &&
@@ -323,16 +353,16 @@ function SearchDialog({
   setOpen: (open: boolean) => void
   className?: string
 }) {
-  let formRef = useRef<React.ElementRef<'form'>>(null)
-  let panelRef = useRef<React.ElementRef<'div'>>(null)
-  let inputRef = useRef<React.ElementRef<typeof SearchInput>>(null)
-  let { autocomplete, autocompleteState } = useAutocomplete({
+  const formRef = useRef<React.ElementRef<'form'>>(null)
+  const panelRef = useRef<React.ElementRef<'div'>>(null)
+  const inputRef = useRef<React.ElementRef<typeof SearchInput>>(null)
+  const { autocomplete, autocompleteState } = useAutocomplete({
     close() {
       setOpen(false)
     },
   })
-  let pathname = usePathname()
-  let searchParams = useSearchParams()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     setOpen(false)
@@ -403,8 +433,8 @@ function SearchDialog({
 }
 
 function useSearchProps() {
-  let buttonRef = useRef<React.ElementRef<'button'>>(null)
-  let [open, setOpen] = useState(false)
+  const buttonRef = useRef<React.ElementRef<'button'>>(null)
+  const [open, setOpen] = useState(false)
 
   return {
     buttonProps: {
@@ -417,26 +447,24 @@ function useSearchProps() {
       open,
       setOpen: useCallback(
         (open: boolean) => {
-          let { width = 0, height = 0 } =
+          const { width = 0, height = 0 } =
             buttonRef.current?.getBoundingClientRect() ?? {}
           if (!open || (width !== 0 && height !== 0)) {
             setOpen(open)
           }
         },
-        [setOpen]
+        [setOpen],
       ),
     },
   }
 }
 
 export function Search() {
-  let [modifierKey, setModifierKey] = useState<string>()
-  let { buttonProps, dialogProps } = useSearchProps()
+  const [modifierKey, setModifierKey] = useState<string>()
+  const { buttonProps, dialogProps } = useSearchProps()
 
   useEffect(() => {
-    setModifierKey(
-      /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? '⌘' : 'Ctrl '
-    )
+    setModifierKey(/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? '⌘' : 'Ctrl ')
   }, [])
 
   return (
@@ -454,14 +482,17 @@ export function Search() {
         </kbd>
       </button>
       <Suspense fallback={null}>
-        <SearchDialog className="hidden lg:block" {...dialogProps} />
+        <SearchDialog
+          className="hidden lg:block"
+          {...dialogProps}
+        />
       </Suspense>
     </div>
   )
 }
 
 export function MobileSearch() {
-  let { buttonProps, dialogProps } = useSearchProps()
+  const { buttonProps, dialogProps } = useSearchProps()
 
   return (
     <div className="contents lg:hidden">
@@ -474,7 +505,10 @@ export function MobileSearch() {
         <SearchIcon className="h-5 w-5 stroke-zinc-900 dark:stroke-white" />
       </button>
       <Suspense fallback={null}>
-        <SearchDialog className="lg:hidden" {...dialogProps} />
+        <SearchDialog
+          className="lg:hidden"
+          {...dialogProps}
+        />
       </Suspense>
     </div>
   )

@@ -7,17 +7,16 @@ import { useEffect } from 'react'
 import { useUser } from './useUser'
 
 export function maybeInit() {
-  if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY)
-    return
+  if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return
 
   posthog?.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     // Note that PostHog will automatically capture page views and common events
-    api_host: `/docs/ingest`, // BEWARE: basePath "docs" is needed
+    api_host: '/docs/ingest', // BEWARE: basePath "docs" is needed
     disable_session_recording: process.env.NODE_ENV !== 'production',
     advanced_disable_toolbar_metrics: true,
     opt_in_site_apps: true,
     capture_pageview: false, // we are handling this ourselves
-    loaded: (posthog) => {
+    loaded: posthog => {
       // console.log('PostHog loaded', process.env.NODE_ENV)
       if (process.env.NODE_ENV === 'development') posthog.debug()
     },

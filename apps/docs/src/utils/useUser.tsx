@@ -1,13 +1,6 @@
 'use client'
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
@@ -31,14 +24,14 @@ type UserContextType = {
 
 export const UserContext = createContext(undefined)
 
-export const CustomUserContextProvider = (props) => {
+export const CustomUserContextProvider = props => {
   const supabase = createPagesBrowserClient()
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
-  const initSession = useSessionsStore((state) => state.initSession)
+  const initSession = useSessionsStore(state => state.initSession)
 
   useEffect(() => {
     mounted.current = true
@@ -71,9 +64,7 @@ export const CustomUserContextProvider = (props) => {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (
         session &&
-        (event === 'SIGNED_IN' ||
-          event === 'TOKEN_REFRESHED' ||
-          event === 'USER_UPDATED')
+        (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED')
       ) {
         setSession(session)
       }
@@ -100,10 +91,7 @@ export const CustomUserContextProvider = (props) => {
       const { data: apiKeys, error: apiKeysError } = await supabase
         .from('team_api_keys')
         .select('*')
-        .in(
-          'team_id',
-          teams?.map((team) => team.team_id)
-        ) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
+        .in('team_id', teams?.map(team => team.team_id)) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
       // as soon as we have apiKey, start initializing sessions, so they are ready when user wanna use them
@@ -165,13 +153,18 @@ export const CustomUserContextProvider = (props) => {
     }
   }, [isLoading, user, session, error])
 
-  return <UserContext.Provider value={value} {...props} />
+  return (
+    <UserContext.Provider
+      value={value}
+      {...props}
+    />
+  )
 }
 
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext)
   if (context === undefined)
-    throw new Error(`useUser must be used within a CustomUserContextProvider.`)
+    throw new Error('useUser must be used within a CustomUserContextProvider.')
   return context
 }
 

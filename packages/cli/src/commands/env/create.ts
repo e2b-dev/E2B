@@ -71,6 +71,7 @@ export const createCommand = new commander.Command('create')
 
       // const hash = getFilesHash(files) // TODO: Future
       console.log('📦 Files to be uploaded to create environment:')
+      // @ts-ignore
       filePaths.map(filePath => {
         console.log(`• ${filePath.rootPath}`)
       })
@@ -80,6 +81,7 @@ export const createCommand = new commander.Command('create')
 
       await packToTar(
         root,
+        // @ts-ignore
         filePaths.map(({ rootPath }) => rootPath),
         tarPath,
       )
@@ -110,12 +112,18 @@ export const createCommand = new commander.Command('create')
 
       if (!apiRes.ok) {
         const resJson = (await apiRes.json()) as { message: string }
-        throw new Error(`API request failed: ${apiRes.statusText}, ${resJson?.message ?? 'no message'}`)
+        throw new Error(
+          `API request failed: ${apiRes.statusText}, ${resJson?.message ?? 'no message'}`,
+        )
       }
-      const resJson = (await apiRes.json()) as { envID: string, Public: boolean, Status: 'building' | 'error' | 'ready' }
+      const resJson = (await apiRes.json()) as {
+        envID: string
+        Public: boolean
+        Status: 'building' | 'error' | 'ready'
+      }
       console.log(`✅ Env created: ${resJson?.envID}, waiting for build to finish...`)
-      
-      let startedAt = new Date()
+
+      const startedAt = new Date()
       let completed = false
       while (!completed) {
         await wait(5000)
@@ -123,18 +131,20 @@ export const createCommand = new commander.Command('create')
           method: 'GET',
           headers: { Authorization: `Bearer ${accessToken}` },
         })
-        if (!apiResPoll.ok) throw new Error(`API request failed: ${apiResPoll.statusText}`)
-        const env = (await apiResPoll.json()) as { status: string, created_at: string }
+        if (!apiResPoll.ok)
+          throw new Error(`API request failed: ${apiResPoll.statusText}`)
+        const env = (await apiResPoll.json()) as { status: string; created_at: string }
         if (env.status === 'building') {
           const now = new Date()
           const elapsed = now.getTime() - startedAt.getTime()
-          const elapsedStr = `${Math.floor(elapsed / 1000)}s` 
+          const elapsedStr = `${Math.floor(elapsed / 1000)}s`
           console.log(`⏳ Building… (started ${elapsedStr} ago)`) // nicer
-          if (elapsed > 1000 * 60 * 2) { // TODO
+          if (elapsed > 1000 * 60 * 2) {
+            // TODO
             console.log(stripIndent`
               ⚠️ Build taking longer than 2 minutes, something might be wrong.\n
               Stopping to wait for result, but it might still finish -\n
-              Check by yourself by running ${asLocal(`e2b env list`)}\n
+              Check by yourself by running ${asLocal('e2b env list')}\n
             `)
             completed = true
           }
@@ -142,7 +152,6 @@ export const createCommand = new commander.Command('create')
           completed = true
           console.log(`✅ Build completed at ${env.created_at}`) // TODO: Nicer
         }
-        
       }
 
       // if (shouldSaveConfig) {
@@ -170,6 +179,7 @@ const envConfigSchema = yup.object({
 
 export type EnvConfig = yup.InferType<typeof envConfigSchema>
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function saveConfig(configPath: string, config: EnvConfig, overwrite?: boolean) {
   try {
     if (!overwrite) {
@@ -195,6 +205,7 @@ async function saveConfig(configPath: string, config: EnvConfig, overwrite?: boo
 
 // TODO: Move to utils after refactoring
 // ===
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const deleteFile = async (filePath: string) => {
   const stat = await fs.promises.stat(filePath)
   if (stat.isFile()) await fs.promises.unlink(filePath)

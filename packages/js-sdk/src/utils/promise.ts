@@ -50,7 +50,7 @@ export function withTimeout<T extends (...args: any[]) => any>(
     return fn
   }
 
-  let timerId: NodeJS.Timeout;
+  let timerId: NodeJS.Timeout
   const timer = new Promise((resolve, reject) => {
     timerId = setTimeout(
       () =>
@@ -62,8 +62,7 @@ export function withTimeout<T extends (...args: any[]) => any>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return ((...args: T extends (...args: infer A) => any ? A : never) => {
     const result = Promise.race([timer, fn(...args)])
-    result.finally(() => clearTimeout(timerId));
-    return result;
+    result.finally(() => clearTimeout(timerId))
+    return result
   }) as T
 }
-

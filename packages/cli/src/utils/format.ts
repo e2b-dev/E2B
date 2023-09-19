@@ -1,5 +1,6 @@
 import * as sdk from '@devbookhq/sdk'
 import * as chalk from 'chalk'
+
 import { cwdRelative } from './filesystem'
 
 export function asFormattedEnvironment(

@@ -1,13 +1,6 @@
 'use client'
 
-import {
-  createContext,
-  Fragment,
-  Suspense,
-  useContext,
-  useEffect,
-  useRef,
-} from 'react'
+import { createContext, Fragment, Suspense, useContext, useEffect, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { Dialog, Transition } from '@headlessui/react'
 import { motion } from 'framer-motion'
@@ -53,10 +46,10 @@ function MobileNavigationDialog({
   isOpen: boolean
   close: () => void
 }) {
-  let pathname = usePathname()
-  let searchParams = useSearchParams()
-  let initialPathname = useRef(pathname).current
-  let initialSearchParams = useRef(searchParams).current
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const initialPathname = useRef(pathname).current
+  const initialSearchParams = useRef(searchParams).current
 
   useEffect(() => {
     if (pathname !== initialPathname || searchParams !== initialSearchParams) {
@@ -69,7 +62,7 @@ function MobileNavigationDialog({
       return
     }
 
-    let link = event.target.closest('a')
+    const link = event.target.closest('a')
     if (
       link &&
       link.pathname + link.search + link.hash ===
@@ -80,7 +73,10 @@ function MobileNavigationDialog({
   }
 
   return (
-    <Transition.Root show={isOpen} as={Fragment}>
+    <Transition.Root
+      show={isOpen}
+      as={Fragment}
+    >
       <Dialog
         onClickCapture={onClickDialog}
         onClose={close}
@@ -142,17 +138,17 @@ export const useMobileNavigationStore = create<{
   open: () => void
   close: () => void
   toggle: () => void
-}>()((set) => ({
+}>()(set => ({
   isOpen: false,
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
-  toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+  toggle: () => set(state => ({ isOpen: !state.isOpen })),
 }))
 
 export function MobileNavigation() {
-  let isInsideMobileNavigation = useIsInsideMobileNavigation()
-  let { isOpen, toggle, close } = useMobileNavigationStore()
-  let ToggleIcon = isOpen ? XIcon : MenuIcon
+  const isInsideMobileNavigation = useIsInsideMobileNavigation()
+  const { isOpen, toggle, close } = useMobileNavigationStore()
+  const ToggleIcon = isOpen ? XIcon : MenuIcon
 
   return (
     <IsInsideMobileNavigationContext.Provider value={true}>
@@ -166,7 +162,10 @@ export function MobileNavigation() {
       </button>
       {!isInsideMobileNavigation && (
         <Suspense fallback={null}>
-          <MobileNavigationDialog isOpen={isOpen} close={close} />
+          <MobileNavigationDialog
+            isOpen={isOpen}
+            close={close}
+          />
         </Suspense>
       )}
     </IsInsideMobileNavigationContext.Provider>

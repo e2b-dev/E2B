@@ -33,9 +33,7 @@ function Eyebrow({ tag, label }: { tag?: string; label?: string }) {
       {tag && label && (
         <span className="h-0.5 w-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
       )}
-      {label && (
-        <span className="font-mono text-xs text-zinc-400">{label}</span>
-      )}
+      {label && <span className="font-mono text-xs text-zinc-400">{label}</span>}
     </div>
   )
 }
@@ -81,11 +79,11 @@ export function Heading<Level extends 2 | 3>({
   anchor?: boolean
 }) {
   level = level ?? (2 as Level)
-  let Component = `h${level}` as 'h2' | 'h3'
-  let ref = useRef<HTMLHeadingElement>(null)
-  let registerHeading = useSectionStore((s) => s.registerHeading)
+  const Component = `h${level}` as 'h2' | 'h3'
+  const ref = useRef<HTMLHeadingElement>(null)
+  const registerHeading = useSectionStore(s => s.registerHeading)
 
-  let inView = useInView(ref, {
+  const inView = useInView(ref, {
     margin: `${remToPx(-3.5)}px 0px 0px 0px`,
     amount: 'all',
   })
@@ -98,14 +96,20 @@ export function Heading<Level extends 2 | 3>({
 
   return (
     <>
-      <Eyebrow tag={tag} label={label} />
+      <Eyebrow
+        tag={tag}
+        label={label}
+      />
       <Component
         ref={ref}
         className={tag || label ? 'mt-2 scroll-mt-32' : 'scroll-mt-24'}
         {...props}
       >
         {anchor ? (
-          <Anchor id={props.id} inView={inView}>
+          <Anchor
+            id={props.id}
+            inView={inView}
+          >
             {children}
           </Anchor>
         ) : (

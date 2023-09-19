@@ -41,17 +41,17 @@ function PageLink({
 }
 
 function PageNavigation() {
-  let initialPathname = usePathname();
+  let initialPathname = usePathname()
   // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
   if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
-  
-  let allPages = navigation.flatMap((group) => group.links)
-  let currentPageIndex = allPages.findIndex((page) => page.href === initialPathname)
+
+  const allPages = navigation.flatMap(group => group.links)
+  const currentPageIndex = allPages.findIndex(page => page.href === initialPathname)
 
   if (currentPageIndex === -1) return null
 
-  let previousPage = allPages[currentPageIndex - 1]
-  let nextPage = allPages[currentPageIndex + 1]
+  const previousPage = allPages[currentPageIndex - 1]
+  const nextPage = allPages[currentPageIndex + 1]
 
   if (!previousPage && !nextPage) return null
 
@@ -59,12 +59,19 @@ function PageNavigation() {
     <div className="flex">
       {previousPage && (
         <div className="flex flex-col items-start gap-3">
-          <PageLink label="Previous" page={previousPage} previous />
+          <PageLink
+            label="Previous"
+            page={previousPage}
+            previous
+          />
         </div>
       )}
       {nextPage && (
         <div className="ml-auto flex flex-col items-end gap-3">
-          <PageLink label="Next" page={nextPage} />
+          <PageLink
+            label="Next"
+            page={nextPage}
+          />
         </div>
       )}
     </div>
@@ -81,7 +88,10 @@ function SocialLink({
   children: React.ReactNode
 }) {
   return (
-    <Link href={href} className="group">
+    <Link
+      href={href}
+      className="group"
+    >
       <span className="sr-only">{children}</span>
       <Icon className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-zinc-500" />
     </Link>
@@ -92,17 +102,25 @@ function SmallPrint() {
   return (
     <div className="flex flex-col items-center justify-between gap-5 border-t border-zinc-900/5 pt-8 dark:border-white/5 sm:flex-row">
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
-        &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights
-        reserved.
+        &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights reserved.
       </p>
       <div className="flex gap-4">
-        <SocialLink href="https://twitter.com/e2b_dev" icon={TwitterIcon}>
+        <SocialLink
+          href="https://twitter.com/e2b_dev"
+          icon={TwitterIcon}
+        >
           Follow us on Twitter
         </SocialLink>
-        <SocialLink href="https://github.com/e2b-dev" icon={GitHubIcon}>
+        <SocialLink
+          href="https://github.com/e2b-dev"
+          icon={GitHubIcon}
+        >
           Follow us on GitHub
         </SocialLink>
-        <SocialLink href="https://discord.gg/U7KEcGErtQ" icon={DiscordIcon}>
+        <SocialLink
+          href="https://discord.gg/U7KEcGErtQ"
+          icon={DiscordIcon}
+        >
           Join our Discord server
         </SocialLink>
       </div>

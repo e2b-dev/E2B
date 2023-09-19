@@ -34,7 +34,7 @@ function CopyableSecret({
           customPositionClassNames={clsx(
             'top-[-2px] bottom-[2px]' /* nudge 2px up*/,
             'left-[-6px] right-[-6px]' /* widen a little to fit nicely */,
-            'min-h-[28px]'
+            'min-h-[28px]',
           )}
         />
       </span>
@@ -61,7 +61,10 @@ export const Auth = function () {
   if (error)
     return (
       <div className="flex flex-row items-center gap-4">
-        <span className="text-sm text-red-500" title={error?.message}>
+        <span
+          className="text-sm text-red-500"
+          title={error?.message}
+        >
           Something went wrong
         </span>
         {/* @ts-ignore */}
@@ -72,7 +75,10 @@ export const Auth = function () {
   if (isLoading)
     return (
       <div className="flex animate-pulse">
-        <div title="Loading..." className="h-2 w-40 rounded bg-slate-500"></div>
+        <div
+          title="Loading..."
+          className="h-2 w-40 rounded bg-slate-500"
+        ></div>
       </div>
     )
 
@@ -121,8 +127,8 @@ export const Auth = function () {
                       />
                     </div>
                     <span className="text-xs text-gray-400">
-                      TIP: Set as <code>E2B_API_KEY</code> env var to avoid
-                      passing it every time.
+                      TIP: Set as <code>E2B_API_KEY</code> env var to avoid passing it
+                      every time.
                     </span>
                   </div>
                   <div className="flex flex-col">
@@ -132,22 +138,19 @@ export const Auth = function () {
                       (creating/listing/deleting).
                     </span>
                     <span className="text-xs text-gray-200">
-                      Not needed when logging in via CLI via{' '}
-                      <code>e2b login</code>
+                      Not needed when logging in via CLI via <code>e2b login</code>
                     </span>
                     <div className="group relative text-xs">
                       <CopyableSecret
                         secret={accessToken}
-                        onAfterCopy={() =>
-                          posthog?.capture('copied Access Token')
-                        }
+                        onAfterCopy={() => posthog?.capture('copied Access Token')}
                         obfuscateStart={12}
                         obfuscateEnd={5}
                       />
                     </div>
                     <span className="text-xs text-gray-400">
-                      TIP: Set as <code>E2B_ACCESS_TOKEN</code> env var to avoid
-                      passing it every time.
+                      TIP: Set as <code>E2B_ACCESS_TOKEN</code> env var to avoid passing
+                      it every time.
                     </span>
                   </div>
                 </div>

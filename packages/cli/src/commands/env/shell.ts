@@ -42,7 +42,7 @@ export const shellCommand = new commander.Command('shell')
         // const envs = await listEnvironments({ apiKey })
         // env = await getPromptEnv(envs, 'Select environment to connect to')
       } else {
-        throw new Error(`No environment ID provided, use "e2b env shell --id <envID>"`)
+        throw new Error('No environment ID provided, use "e2b env shell --id <envID>"')
         // env = await getRootEnv(root)
       }
 

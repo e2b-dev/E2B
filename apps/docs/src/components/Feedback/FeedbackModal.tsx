@@ -23,15 +23,14 @@ function FeedbackModal({ open, setOpen, onSend }) {
     () => {
       setOpen(false)
     },
-    'mousedown'
+    'mousedown',
   )
 
   async function saveFeedback(ev) {
     ev.preventDefault()
     // if (!user?.id) return console.error('User is not logged in') // for now, allow feedback from anonymous users
     if (!feedback) return console.error('Feedback is empty')
-    if (isSavingFeedback)
-      return console.error('Feedback is already being saved')
+    if (isSavingFeedback) return console.error('Feedback is already being saved')
 
     setIsSavingFeedback(true)
 
@@ -39,9 +38,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
     posthog?.capture('survey sent', {
       $survey_id: '018a1df8-ae8d-0000-8925-9a76a5255a29',
       $survey_name: 'Docs Feedback',
-      $survey_response: `\`${pathname}\`\n${
-        feedback ?? `No feedback provided`
-      }`,
+      $survey_response: `\`${pathname}\`\n${feedback ?? 'No feedback provided'}`,
     })
 
     // Cleanup
@@ -52,7 +49,11 @@ function FeedbackModal({ open, setOpen, onSend }) {
   }
 
   return (
-    <DialogAnimated open={open} setOpen={setOpen} as={Fragment}>
+    <DialogAnimated
+      open={open}
+      setOpen={setOpen}
+      as={Fragment}
+    >
       <form
         ref={ref}
         autoCapitalize="off"
@@ -67,7 +68,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
         <Textarea
           value={feedback}
           placeholder="What should we improve?"
-          onChange={(e) => setFeedback(e.target.value)}
+          onChange={e => setFeedback(e.target.value)}
           // @ts-ignore
           open={open}
         />

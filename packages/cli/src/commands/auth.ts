@@ -1,11 +1,12 @@
+import { listen } from 'async-listen'
 import * as commander from 'commander'
-import open from 'open'
-import {listen} from 'async-listen'
-import {asBold, asFormattedError} from 'src/utils/format'
-import path from 'path'
-import * as os from 'os'
 import fs from 'fs'
 import http from 'http'
+import open from 'open'
+import * as os from 'os'
+import path from 'path'
+import { asBold, asFormattedError } from 'src/utils/format'
+
 import pkg from '../../package.json'
 
 type UserConfig = {
@@ -16,7 +17,7 @@ type UserConfig = {
 }
 
 const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
-const DOCS_BASE = process.env.E2B_DOCS_BASE || `https://e2b.dev/docs`
+const DOCS_BASE = process.env.E2B_DOCS_BASE || 'https://e2b.dev/docs'
 
 export const loginCommand = new commander.Command('login')
   .description('Login to e2b')
@@ -25,7 +26,7 @@ export const loginCommand = new commander.Command('login')
     try {
       userConfig = getUserConfig()
     } catch (err) {
-      console.error(asFormattedError(`Failed to read user config`, err))
+      console.error(asFormattedError('Failed to read user config', err))
     }
     if (userConfig) {
       console.log(
@@ -53,9 +54,9 @@ export const logoutCommand = new commander.Command('logout')
   .action(() => {
     if (fs.existsSync(USER_CONFIG_PATH)) {
       fs.unlinkSync(USER_CONFIG_PATH) // Delete user config
-      console.log(`Logged out.`)
+      console.log('Logged out.')
     } else {
-      console.log(`Not logged in, nothing to do`)
+      console.log('Not logged in, nothing to do')
     }
   })
 
@@ -80,7 +81,7 @@ async function signInWithBrowser(): Promise<UserConfig> {
       const searchParamsObj = Object.fromEntries(searchParams.entries()) as UserConfig & {
         error?: string
       }
-      const { error } = searchParamsObj      
+      const { error } = searchParamsObj
       if (error) {
         reject(new Error(error))
         followUpUrl.searchParams.set('state', 'error')
