@@ -51,8 +51,8 @@ func main() {
 	flag.Parse()
 
 	if envID != nil && buildID != nil {
-		driver.TestBuildProcess(*envID, *buildID)
-	} else {
 		configurePlugin()
+	} else {
+		driver.TestBuildProcess(*envID, *buildID)
 	}
 }
