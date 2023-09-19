@@ -49,7 +49,6 @@ resource "nomad_job" "api" {
       consul_token                       = var.consul_token
       environment                        = var.environment
       bucket_name                        = var.bucket_name
-      google_service_account_credentials = var.google_service_account_credentials
     }
   }
 }
