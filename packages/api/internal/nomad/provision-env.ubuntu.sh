@@ -5,8 +5,6 @@
 
 set -euo pipefail
 
-chmod +x /usr/bin/envd
-
 apt-get update
 
 apt-get install -y \

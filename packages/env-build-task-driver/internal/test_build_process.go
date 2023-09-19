@@ -50,17 +50,20 @@ func TestBuildProcess(envID, buildID string) {
 		ContextFileName:       contextFileName,
 	}
 
+	// OK
 	err = e.Initialize(ctx, tracer)
 	if err != nil {
 		panic(err)
 	}
 	defer e.Cleanup(ctx, tracer)
 
+	// PROBLEM: Container start hangs
 	rootfs, err := env.NewRootfs(ctx, tracer, &e, client)
 	if err != nil {
 		panic(err)
 	}
 
+	// OK
 	network, err := env.NewFCNetwork(ctx, tracer, &e)
 	if err != nil {
 		panic(err)

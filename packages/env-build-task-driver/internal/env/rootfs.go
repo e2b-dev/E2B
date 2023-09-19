@@ -1,6 +1,8 @@
 package env
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -118,9 +120,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:      r.dockerTag(),
-		Entrypoint: []string{"/bin/sh -c"},
+		Entrypoint: []string{"/bin/sh", "-c"},
 		User:       "root",
-		Cmd:        []string{r.ProvisionScript},
+		// Cmd:        []string{r.ProvisionScript},
+		Tty: true,
 	}, nil, nil, &v1.Platform{}, "")
 	if err != nil {
 		return fmt.Errorf("error creating container %v", err)
@@ -145,14 +148,61 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	defer envdFile.Close()
 	telemetry.ReportEvent(childCtx, "opened envd file")
 
+	envdStat, err := envdFile.Stat()
+	if err != nil {
+		return fmt.Errorf("error statting envd file %v", err)
+	}
+	telemetry.ReportEvent(childCtx, "statted envd file")
+
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	hdr := &tar.Header{
+		Name: envdRootfsPath, // The name of the file in the tar archive
+		Mode: 0o777,
+		Size: envdStat.Size(),
+	}
+
+	err = tw.WriteHeader(hdr)
+	if err != nil {
+		return fmt.Errorf("error writing tar header %v", err)
+	}
+	telemetry.ReportEvent(childCtx, "wrote tar header")
+
+	_, err = io.Copy(tw, envdFile)
+	if err != nil {
+		return fmt.Errorf("error copying envd to tar %v", err)
+	}
+	telemetry.ReportEvent(childCtx, "copied envd to tar")
+
+	err = tw.Close()
+	if err != nil {
+		return fmt.Errorf("error closing tar writer %v", err)
+	}
+	telemetry.ReportEvent(childCtx, "closed tar writer")
+
 	// Copy envd to the container
-	err = r.client.CopyToContainer(childCtx, cont.ID, envdRootfsPath, envdFile, types.CopyToContainerOptions{
+	err = r.client.CopyToContainer(childCtx, cont.ID, "/", &buf, types.CopyToContainerOptions{
 		AllowOverwriteDirWithFile: true,
 	})
 	if err != nil {
 		return fmt.Errorf("error copying envd to container %v", err)
 	}
 	telemetry.ReportEvent(childCtx, "copied envd to container")
+
+	data, err := r.client.ContainerLogs(childCtx, cont.ID, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true})
+	if err != nil {
+		return fmt.Errorf("error getting container logs %v", err)
+	}
+	telemetry.ReportEvent(childCtx, "got container logs")
+	defer data.Close()
+
+	go func() {
+		_, err := io.Copy(os.Stdout, data)
+		if err != nil {
+			errMsg := fmt.Errorf("error copying container logs %v", err)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+	}()
 
 	err = r.client.ContainerStart(childCtx, cont.ID, types.ContainerStartOptions{})
 	if err != nil {

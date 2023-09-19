@@ -52,7 +52,9 @@
 - improve no attributes trace (if branch for zero)
 - fix vscode setup errors
 - make buckets not public
-- check api build
+- check api build speed
+- Update architecture diagram in figma
+
 
 ### API
 - Add monitoring to the envs routes
@@ -87,6 +89,7 @@
 - "~" is not working in the filesystem service
 - Using vsock for managing logs
 - Check close "allUnsubscribed" in envd sub manager
+- The read/write bytes should be by chunk (we can implement it via ws or a new endpoint?)
 
 ### Build system
 - Use overlays instead of cp reflink so we can use any FS type
@@ -111,6 +114,7 @@
 - Starting user's dockers on our infra during build could be INSECURE (https://blog.gitguardian.com/how-to-improve-your-docker-containers-security-cheat-sheet/)
 - We need to remove the entrypoint and cmd from docker
 - start the fc vm more efficiently (not separate requests to the API, wait before last, etc.)
+- Run the env build parts in parallel (network + rootfs)
 
 ### FC
 - Improve generating of FC API client in the firecracker task driver

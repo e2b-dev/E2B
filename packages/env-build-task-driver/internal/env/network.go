@@ -15,7 +15,7 @@ import (
 
 const (
 	fcTapAddress        = "169.254.0.22"
-	fcTapMask           = "/30"
+	fcTapMask           = "30"
 	fcTapName           = "tap0"
 	namespaceNamePrefix = "fc-env-"
 )
