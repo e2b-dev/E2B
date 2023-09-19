@@ -160,3 +160,13 @@ module "api" {
   bucket_name                        = data.google_storage_bucket.e2b-envs-docker-context.name
   google_service_account_credentials = base64decode(google_service_account_key.e2b-api-service-account-key.private_key)
 }
+
+module "github-tf" {
+  source = "./github-tf"
+
+  gcp_project_id         = var.gcp_project_id
+  gcp_region             = var.gcp_region
+  gcp_zone               = var.gcp_zone
+  github_organization        = var.github_organization
+  github_repository = var.github_repository
+}

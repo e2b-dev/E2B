@@ -116,3 +116,14 @@ variable "environment" {
   type    = string
   default = "prod"
 }
+
+variable "github_organization" {
+  type    = string
+  default = "e2b-dev"
+}
+
+
+variable "github_repository" {
+  type    = string
+  default = "api"
+}

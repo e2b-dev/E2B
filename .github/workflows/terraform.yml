@@ -47,3 +47,5 @@ jobs:
 
       - name: Deploy Terraform
         run: make apply
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
