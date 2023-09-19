@@ -106,7 +106,6 @@ resource "google_project_iam_member" "service-account-roles" {
   project = var.gcp_project_id
   role    = each.value
   member = "serviceAccount:${google_service_account.github-action-service-account.email}"
-
 }
 
 resource "github_actions_secret" "wif-token-secret" {

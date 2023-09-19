@@ -1,5 +1,31 @@
 # Server cluster instances are not currently automatically updated when you create a new
 # orchestrator image with Packer.
+resource "google_service_account" "infra_instances_service_account" {
+  account_id   = "infra-instances"
+  display_name = "Infra Instances Service Account"
+}
+
+
+resource "google_storage_bucket_iam_member" "envs-docker-context-iam" {
+  bucket = "e2b-envs-docker-context"
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${resource.google_service_account.infra_instances_service_account.email}"
+}
+
+resource "google_storage_bucket_iam_member" "envs-pipeline-iam" {
+  bucket = "e2b-fc-env-pipeline"
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${resource.google_service_account.infra_instances_service_account.email}"
+}
+
+
+
+resource "google_project_iam_member" "service-account-roles" {
+  project = var.gcp_project_id
+  role    =     "roles/editor"
+  member = "serviceAccount:${google_service_account.infra_instances_service_account.email}"
+}
+
 module "server_cluster" {
   source = "./server"
 
@@ -18,6 +44,8 @@ module "server_cluster" {
 
   gcp_project_id = var.gcp_project_id
   network_name   = var.network_name
+
+  service_account_email = google_service_account.infra_instances_service_account.email
 }
 
 module "client_cluster" {
@@ -45,6 +73,8 @@ module "client_cluster" {
   client_proxy_health_port = var.client_proxy_health_port
 
   api_port = var.api_port
+
+  service_account_email = google_service_account.infra_instances_service_account.email
 }
 
 resource "google_compute_firewall" "orchstrator_firewall_ingress" {

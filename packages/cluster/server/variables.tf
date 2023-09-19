@@ -32,6 +32,12 @@ variable "cluster_tag_name" {
   type = string
 }
 
+variable "service_account_email" {
+  description = "The email of the service account for the instance template."
+  type        = string
+}
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.
@@ -82,12 +88,6 @@ variable "custom_tags" {
   description = "A list of tags that will be added to the Compute Instance Template in addition to the tags automatically added by this module."
   type        = list(string)
   default     = []
-}
-
-variable "service_account_email" {
-  description = "The email of the service account for the instance template. If none is provided the google cloud provider project service account is used."
-  type        = string
-  default     = null
 }
 
 variable "allowed_inbound_cidr_blocks_http_api" {

@@ -32,6 +32,12 @@ variable "cluster_tag_name" {
   type = string
 }
 
+variable "service_account_email" {
+  description = "The email of the service account for the instance template."
+  type        = string
+}
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.
