@@ -42,3 +42,4 @@ jobs:
         with:
           path: "./packages/env-build-task-driver/bin/env-build-task-driver"
           destination: "e2b-fc-env-pipeline"
+          gzip: false

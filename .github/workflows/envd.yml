@@ -46,3 +46,4 @@ jobs:
         with:
           path: "./packages/envd/dist/envd_linux_amd64_v1/envd"
           destination: "e2b-fc-env-pipeline"
+          gzip: false
