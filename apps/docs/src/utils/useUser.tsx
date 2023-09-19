@@ -12,6 +12,8 @@ import { User } from '@supabase/supabase-auth-helpers/react'
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { type Session } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
+import { useSessionsStore } from './useSessions'
+import { LangShort } from './consts'
 
 type UserContextType = {
   isLoading: boolean
@@ -36,6 +38,7 @@ export const CustomUserContextProvider = (props) => {
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const mounted = useRef<boolean>(false)
+  const initSession = useSessionsStore((state) => state.initSession)
 
   useEffect(() => {
     mounted.current = true
@@ -102,6 +105,14 @@ export const CustomUserContextProvider = (props) => {
           teams?.map((team) => team.team_id)
         ) // Due to RLS, we could also safely just fetch all, but let's be explicit for sure
       if (apiKeysError) Sentry.captureException(apiKeysError)
+
+      // as soon as we have apiKey, start initializing sessions, so they are ready when user wanna use them
+      const apiKey = apiKeys?.[0]?.api_key
+      if (apiKey) {
+        // We don't care about awaiting these, we just want to start them
+        void initSession(LangShort.js, apiKey)
+        void initSession(LangShort.py, apiKey)
+      }
 
       const defaultTeamId = teams?.[0]?.team_id // TODO: Adjust when user can be part of multiple teams
 
