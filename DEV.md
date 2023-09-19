@@ -45,6 +45,7 @@
 - enable simpler debugging
 - Remove supervisord and just use systemd for both nomad and consul
 - Enable terraform cache again later
+- Install golang to the vm for easier remote debugging
 
 ### API
 - Add monitoring to the envs routes
