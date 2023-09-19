@@ -30,5 +30,4 @@ run-build-check:
 	gcloud compute scp ./bin/env-build-task-driver root@$$($(client)):/tmp/build-task-driver-test
 	gcloud compute ssh $$($(client)) -- 'sudo -s && \
 	chmod +x /tmp/build-task-driver-test && \
-	/tmp/build-task-driver-test && \
-	exit'
+	/tmp/build-task-driver-test'

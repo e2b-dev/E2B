@@ -56,5 +56,5 @@ func factory(log log.Logger) interface{} {
 }
 
 func main() {
-	driver.BuidlCheck()
+	driver.BuildCheck()
 }

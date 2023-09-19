@@ -259,6 +259,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
 	envsPipelinePath := cfg.Env["ENVS_PIPELINE_PATH"]
+	envdName := cfg.Env["ENVD_NAME"]
+	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 
 	env := env.Env{
 		BuildID:               taskConfig.BuildID,
@@ -273,6 +275,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		FirecrackerBinaryPath: firecrackerBinaryPath,
 		ProvisionScript:       taskConfig.ProvisionScript,
 		EnvsPipelinePath:      envsPipelinePath,
+		EnvdName:              envdName,
+		ContextFileName:       contextFileName,
 	}
 
 	cancellableContext, cancel := context.WithTimeout(childCtx, envBuildTimeout)

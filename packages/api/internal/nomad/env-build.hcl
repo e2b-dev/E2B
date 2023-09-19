@@ -31,6 +31,8 @@ job "{{ .JobName }}/{{ .EnvID }}" {
         ENVS_PIPELINE_PATH = "/mnt/disks/envs-pipeline"
         KERNEL_IMAGE_PATH = "/fc-vm/vmlinux.bin"
         FIRECRACKER_BINARY_PATH = "/usr/bin/firecracker"
+        ENVD_NAME = "envd"
+        CONTEXT_FILE_NAME = "context.tar.gz"
       }
 
       config {

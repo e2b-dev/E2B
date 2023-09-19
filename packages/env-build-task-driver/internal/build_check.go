@@ -14,7 +14,7 @@ import (
 //go:embed test-provision-env.ubuntu.sh
 var provisionEnvScriptFile string
 
-func BuidlCheck() {
+func BuildCheck() {
 	ctx := context.Background()
 
 	tracer := otel.Tracer("test")
@@ -30,6 +30,8 @@ func BuidlCheck() {
 	kernelImagePath := "/fc-vm/vmlinux.bin"
 	firecrackerBinaryPath := "/usr/bin/firecracker"
 	envsPipelinePath := "/mnt/disks/envs-pipeline"
+	envdName := "envd"
+	contextFileName := "context.tar.gz"
 
 	e := env.Env{
 		BuildID:               "testing-build-id",
@@ -44,6 +46,8 @@ func BuidlCheck() {
 		FirecrackerBinaryPath: firecrackerBinaryPath,
 		ProvisionScript:       provisionEnvScriptFile,
 		EnvsPipelinePath:      envsPipelinePath,
+		EnvdName:              envdName,
+		ContextFileName:       contextFileName,
 	}
 
 	err = e.Initialize(ctx, tracer)

@@ -43,6 +43,7 @@
     "formatting.local": "github.com/e2b-dev/api",
     "formatting.gofumpt": true,
     "ui.completion.usePlaceholders": true,
+    "experimentalWorkspaceModule": true
 },
 "go.lintTool": "golangci-lint",
 "go.lintFlags": [

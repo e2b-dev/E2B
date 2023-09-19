@@ -18,8 +18,6 @@ const (
 	memfileName  = "memfile"
 
 	buildDirName = "builds"
-
-	envdName = "envd"
 )
 
 type Env struct {
@@ -57,16 +55,19 @@ type Env struct {
 
 	// Path to the directory where files for the envs pipeline are stored.
 	EnvsPipelinePath string
+
+	EnvdName        string
+	ContextFileName string
 }
 
 // Path to the envd.
 func (e *Env) EnvdPath() string {
-	return filepath.Join(e.EnvsPipelinePath, envdName)
+	return filepath.Join(e.EnvsPipelinePath, e.EnvdName)
 }
 
 // Path to the docker context.
 func (e *Env) DockerContextPath() string {
-	return filepath.Join(e.DockerContextsPath, e.EnvID)
+	return filepath.Join(e.DockerContextsPath, e.EnvID, e.ContextFileName)
 }
 
 // Docker tag of the docker image for this env.

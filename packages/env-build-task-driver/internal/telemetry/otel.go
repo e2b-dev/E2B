@@ -51,9 +51,13 @@ func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) 
 
 	fmt.Println(name, attrs)
 
-	span.AddEvent(name,
-		trace.WithAttributes(attrs...),
-	)
+	if len(attrs) == 0 {
+		span.AddEvent(name)
+	} else {
+		span.AddEvent(name,
+			trace.WithAttributes(attrs...),
+		)
+	}
 }
 
 func ReportCriticalError(ctx context.Context, err error) {
@@ -72,10 +76,16 @@ func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 
 	fmt.Fprint(os.Stderr, err.Error())
 
-	span.RecordError(err,
-		trace.WithStackTrace(true),
-		trace.WithAttributes(
-			attrs...,
-		),
-	)
+	if len(attrs) == 0 {
+		span.RecordError(err,
+			trace.WithStackTrace(true),
+		)
+	} else {
+		span.RecordError(err,
+			trace.WithStackTrace(true),
+			trace.WithAttributes(
+				attrs...,
+			),
+		)
+	}
 }
