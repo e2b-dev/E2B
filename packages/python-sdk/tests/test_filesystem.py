@@ -1,5 +1,6 @@
+import filecmp
 from asyncio import sleep
-from os import getenv
+from os import getenv, path
 
 from e2b import Session
 
@@ -72,5 +73,61 @@ async def test_watch_dir():
     event = events[0]
     assert event["operation"] == "Write"
     assert event["path"] == "/tmp/test.txt"
+
+    await session.close()
+
+
+async def test_write_bytes():
+    file_name = "video.webm"
+    local_dir = "tests/assets"
+    remote_dir = "/tmp"
+
+    local_path = path.join(local_dir, file_name)
+    remote_path = path.join(remote_dir, file_name)
+
+    # TODO: This test isn't complete since we can't verify the size of the file inside session.
+    # We don't have any SDK function to get the size of a file inside session.
+
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+
+    # Upload the file
+    with open(local_path, "rb") as f:
+        content = f.read()
+        await session.filesystem.write_bytes(remote_path, content)
+
+    # Check if the file exists inside session
+    files = await session.filesystem.list(remote_dir)
+    assert file_name in [x.name for x in files]
+
+    await session.close()
+
+async def test_read_bytes():
+    file_name = "video.webm"
+    local_dir = "tests/assets"
+    remote_dir = "/tmp"
+
+    local_path = path.join(local_dir, file_name)
+    remote_path = path.join(remote_dir, file_name)
+
+    # TODO: This test isn't complete since we can't verify the size of the file inside session.
+    # We don't have any SDK function to get the size of a file inside session.
+
+    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+
+    # Upload the file first
+    with open(local_path, "rb") as f:
+        content = f.read()
+        await session.filesystem.write_bytes(remote_path, content)
+
+    # Download the file
+    content = await session.filesystem.read_bytes(remote_path)
+
+    # Save the file
+    downloaded_path = path.join(local_dir, "video-downloaded.webm")
+    with open(downloaded_path, "wb") as f:
+        f.write(content)
+
+    # Compare if both files are equal
+    assert filecmp.cmp(local_path, downloaded_path)
 
     await session.close()

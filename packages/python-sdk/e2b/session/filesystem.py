@@ -1,4 +1,5 @@
 import logging
+import base64
 from typing import Any, List, Optional
 
 from e2b.constants import TIMEOUT
@@ -29,31 +30,32 @@ class FilesystemManager:
     def __init__(self, session: SessionConnection):
         self._session = session
 
-    # async def read_bytes(self, path: str) -> bytearray:
-    #     """
-    #     Reads the whole content of a file as a byte array.
-    #     This can be used when you cannot represent the data as an UTF-8 string.
+    async def read_bytes(self, path: str) -> bytearray:
+        """
+        Reads the whole content of a file as a byte array.
+        This can be used when you cannot represent the data as an UTF-8 string.
 
-    #     :param path: path to a file
-    #     :return: byte array representing the content of a file
-    #     """
-    #     result: str = await self.session.call(
-    #         self.service_name, "readBase64", [path]
-    #     )
-    #     return bytearray(result, "base64")
+        :param path: path to a file
+        :return: byte array representing the content of a file
+        """
+        result: str = await self._session._call(
+            self._service_name, "readBase64", [path]
+        )
+        return base64.b64decode(result)
+        # return bytearray(result, "base64")
 
-    # async def write_bytes(self, path: str, content: bytearray) -> None:
-    #     """
-    #     Writes content to a file as a byte array.
-    #     This can be used when you cannot represent the data as an UTF-8 string.
+    async def write_bytes(self, path: str, content: bytearray) -> None:
+        """
+        Writes content to a file as a byte array.
+        This can be used when you cannot represent the data as an UTF-8 string.
 
-    #     :param path: path to a file
-    #     :param content: byte array representing the content to write
-    #     """
-    #     base64_content = base64.b64encode(content).decode("utf-8")
-    #     await self.session.call(
-    #         self.service_name, "writeBase64", [path, base64_content]
-    #     )
+        :param path: path to a file
+        :param content: byte array representing the content to write
+        """
+        base64_content = base64.b64encode(content).decode("utf-8")
+        await self._session._call(
+            self._service_name, "writeBase64", [path, base64_content]
+        )
 
     async def read(self, path: str, timeout: Optional[float] = TIMEOUT) -> str:
         """
