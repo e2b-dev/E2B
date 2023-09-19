@@ -14,7 +14,7 @@ import (
 //go:embed test-provision-env.ubuntu.sh
 var provisionEnvScriptFile string
 
-func BuildCheck() {
+func TestBuildProcess() {
 	ctx := context.Background()
 
 	tracer := otel.Tracer("test")

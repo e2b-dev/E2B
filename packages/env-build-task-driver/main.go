@@ -20,47 +20,17 @@ const (
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
-func main() {
-	// Create pprof endpoint for profiling
-	go func() {
-		http.ListenAndServe(":6062", nil)
-	}()
-	
-	testMode := flag.Bool("test", false, "run in testing mode")
-	flag.Parse()
-
-	if *testMode {
-		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
-			launcher.WithMetricReportingPeriod(10*time.Second),
-			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterInsecure(true),
-			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-			launcher.WithSpanExporterInsecure(true),
-		)
-		defer otelLauncher.Shutdown()
-	} else {
-		
-	}
-
-		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
-			launcher.WithMetricReportingPeriod(10*time.Second),
-			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterInsecure(true),
-			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-			launcher.WithSpanExporterInsecure(true),
-		)
-		defer otelLauncher.Shutdown()
-	} else {
-		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
-			launcher.WithAccessToken(*telemetryAPIKey),
-		)
-		defer otelLauncher.Shutdown()
-	}
+func configurePlugin() {
+	otelLauncher := launcher.ConfigureOpentelemetry(
+		launcher.WithServiceName(serviceName),
+		launcher.WithMetricReportingPeriod(10*time.Second),
+		launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
+		launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
+		launcher.WithMetricExporterInsecure(true),
+		launcher.WithPropagators([]string{"tracecontext", "baggage"}),
+		launcher.WithSpanExporterInsecure(true),
+	)
+	defer otelLauncher.Shutdown()
 
 	plugins.Serve(factory)
 }
@@ -70,5 +40,17 @@ func factory(log log.Logger) interface{} {
 }
 
 func main() {
-	driver.BuildCheck()
+	// Create pprof endpoint for profiling
+	go func() {
+		http.ListenAndServe(":6062", nil)
+	}()
+
+	testMode := flag.Bool("test", false, "run in testing mode")
+	flag.Parse()
+
+	if *testMode {
+		configurePlugin()
+	} else {
+		driver.TestBuildProcess()
+	}
 }

@@ -67,7 +67,7 @@ func (e *Env) EnvdPath() string {
 
 // Path to the docker context.
 func (e *Env) DockerContextPath() string {
-	return filepath.Join(e.DockerContextsPath, e.EnvID, e.ContextFileName)
+	return filepath.Join(e.DockerContextsPath, e.EnvID, e.BuildID, e.ContextFileName)
 }
 
 // Docker tag of the docker image for this env.

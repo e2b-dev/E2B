@@ -51,6 +51,7 @@
 - add more otel events
 - improve no attributes trace (if branch for zero)
 - fix vscode setup errors
+- make buckets not public
 
 ### API
 - Add monitoring to the envs routes
