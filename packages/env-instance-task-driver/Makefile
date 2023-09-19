@@ -18,8 +18,10 @@ run-profiler:
 update-instance-driver:
 	make build
 	./upload.sh
-	gcloud compute ssh $$($(client)) -- \
-	'sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver && \
-	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver && \
-	sudo pgrep firecracker | xargs -n1 sudo kill -9 && \
-	sudo pgrep nomad | xargs sudo kill'
+	gcloud compute ssh $$($(client)) -- 'sudo -s && \
+	rm -f /opt/nomad/plugins/env-instance-task-driver && \
+	cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver && \
+	chmod +x /opt/nomad/plugins/env-instance-task-driver && \
+	pgrep firecracker | xargs -n1 kill -9 && \
+	pgrep nomad | xargs kill && \
+	exit'
