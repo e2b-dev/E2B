@@ -16,12 +16,14 @@ import * as Sentry from '@sentry/nextjs'
 type UserContextType = {
   isLoading: boolean
   session: Session | null
-  user: User & { 
-    teams: any[];
-    apiKeys: any[];
-    accessToken: string;
-    defaultTeamId: string;
-  } | null
+  user:
+    | (User & {
+        teams: any[]
+        apiKeys: any[]
+        accessToken: string
+        defaultTeamId: string
+      })
+    | null
   error: Error | null
 }
 
@@ -102,7 +104,7 @@ export const CustomUserContextProvider = (props) => {
       if (apiKeysError) Sentry.captureException(apiKeysError)
 
       const defaultTeamId = teams?.[0]?.team_id // TODO: Adjust when user can be part of multiple teams
-      
+
       const { data: accessToken, error: accessTokenError } = await supabase
         .from('access_tokens')
         .select('*')
@@ -162,7 +164,14 @@ export const useUser = (): UserContextType => {
   return context
 }
 
-export const useApiKey = (): string => { // for convenience 
+export const useApiKey = (): string => {
+  // for convenience
   const { user } = useUser()
   return user?.apiKeys?.[0]?.api_key
+}
+
+export const useAccessToken = (): string => {
+  // for convenience
+  const { user } = useUser()
+  return user?.accessToken
 }
