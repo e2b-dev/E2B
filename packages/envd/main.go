@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	codesnippet "github.com/e2b-dev/api/packages/envd/internal/codeSnippet"
+	codesnippet "github.com/e2b-dev/api/packages/envd/internal/codesnippet"
 	"github.com/e2b-dev/api/packages/envd/internal/env"
 	"github.com/e2b-dev/api/packages/envd/internal/filesystem"
 	"github.com/e2b-dev/api/packages/envd/internal/port"

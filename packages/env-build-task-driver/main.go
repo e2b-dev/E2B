@@ -20,16 +20,30 @@ const (
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
-func main2() {
+func main() {
 	// Create pprof endpoint for profiling
 	go func() {
 		http.ListenAndServe(":6062", nil)
 	}()
-
-	telemetryAPIKey := flag.String("telemetry-api", "", "api key for telemetry")
+	
+	testMode := flag.Bool("test", false, "run in testing mode")
 	flag.Parse()
 
-	if *telemetryAPIKey == "" {
+	if *testMode {
+		otelLauncher := launcher.ConfigureOpentelemetry(
+			launcher.WithServiceName(serviceName),
+			launcher.WithMetricReportingPeriod(10*time.Second),
+			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterInsecure(true),
+			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
+			launcher.WithSpanExporterInsecure(true),
+		)
+		defer otelLauncher.Shutdown()
+	} else {
+		
+	}
+
 		otelLauncher := launcher.ConfigureOpentelemetry(
 			launcher.WithServiceName(serviceName),
 			launcher.WithMetricReportingPeriod(10*time.Second),
