@@ -43,6 +43,7 @@
 - share tracing modules between task drivers
 - parametrize buckets and mount paths
 - enable simpler debugging
+- Remove supervisord and just use systemd for both nomad and consul
 
 ### API
 - Add monitoring to the envs routes
