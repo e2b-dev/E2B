@@ -2,7 +2,8 @@
   "compilerOptions": {
     "target": "ES2020",
     "lib": [
-      "ES2020"
+      "ES2020",
+      "webworker"
     ],
     "module": "CommonJS",
     "allowJs": true,
@@ -26,7 +27,10 @@
     "outDir": "dist",
     "baseUrl": ".",
     "rootDirs": [
-      "src",
+      "src"
     ],
+    "paths": {
+      "@e2b/sdk": ["../js-sdk/src"],
+    }
   }
 }

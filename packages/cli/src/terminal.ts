@@ -1,4 +1,4 @@
-import * as sdk from '@devbookhq/sdk'
+import * as sdk from '@e2b/sdk'
 
 import { createDeferredPromise } from './utils/promise'
 
@@ -10,7 +10,7 @@ function getStdoutSize() {
 }
 
 export async function spawnConnectedTerminal(
-  manager: sdk.TerminalManager,
+  terminal: sdk.TerminalManager,
   introText: string,
   exitText: string,
 ) {
@@ -21,8 +21,8 @@ export async function spawnConnectedTerminal(
 
   console.log(introText)
 
-  const terminal = await manager.createSession({
-    onData: data => process.stdout.write(data),
+  const terminalSession = await terminal.start({
+    onData: (data: any) => process.stdout.write(data),
     size: getStdoutSize(),
     onExit,
     envVars: {
@@ -36,11 +36,11 @@ export async function spawnConnectedTerminal(
   process.stdout.setEncoding('utf8')
 
   const resizeListener = process.stdout.on('resize', () =>
-    terminal.resize(getStdoutSize()),
+    terminalSession.resize(getStdoutSize()),
   )
 
   const stdinListener = process.stdin.on('data', data =>
-    terminal.sendData(data.toString('utf8')),
+    terminalSession.sendData(data.toString('utf8')),
   )
 
   exited.then(() => {
@@ -50,7 +50,7 @@ export async function spawnConnectedTerminal(
   })
 
   return {
-    destroy: terminal.destroy.bind(terminal),
+    // destroy: terminalSession.destroy.bind(terminalSession), FIXME
     exited,
   }
 }

@@ -16,12 +16,12 @@ import { create } from 'zustand'
 import { LoaderIcon, PlayIcon } from 'lucide-react'
 
 import { CopyButton } from '@/components/CopyButton'
-import {useApiKey, useUser} from '@/utils/useUser'
+import { useApiKey } from '@/utils/useUser'
 import { ProcessMessage } from '@e2b/sdk'
 import { useSessionsStore } from '@/utils/useSessions'
 import { useSignIn } from '@/utils/useSignIn'
 import { LangShort, languageNames, mdLangToLangShort } from '@/utils/consts'
-import { usePostHog } from "posthog-js/react";
+import { usePostHog } from 'posthog-js/react'
 
 export function getPanelTitle({
   title,
@@ -53,9 +53,9 @@ function CodePanel({
   const signIn = useSignIn()
   const apiKey = useApiKey()
   const posthog = usePostHog()
-  
-  const codeGroupContext = useContext(CodeGroupContext) 
-  
+
+  const codeGroupContext = useContext(CodeGroupContext)
+
   const sessionDef = useSessionsStore((s) => s.sessions[lang])
   const initSession = useSessionsStore((s) => s.initSession)
   const { outputLines, dispatch } = useOutputReducer()
@@ -91,24 +91,27 @@ function CodePanel({
       snippetPath: codeGroupContext?.path ?? 'unknown snippet',
     })
 
-
     let session = sessionDef?.session
     try {
       if (!session) {
         if (sessionDef?.promise) {
-          console.log(
-            `Session for "${lang}" is still opening, waiting...`
-          )
+          console.log(`Session for "${lang}" is still opening, waiting...`)
           session = await sessionDef.promise
         } else {
-          console.log(
-            `Session not ready yet for "${lang}", opening...`
-          )
+          console.log(`Session not ready yet for "${lang}", opening...`)
           session = await initSession(lang, apiKey)
         }
       }
     } catch (err) {
       handleSessionCreationError(err)
+      return
+    }
+
+    if (!session) {
+      console.warn(
+        `This should not happen, session is null, debug & fix properly later`
+      )
+      setIsRunning(false)
       return
     }
 
@@ -141,46 +144,57 @@ function CodePanel({
 
   let child = Children.only(children)
   if (isValidElement(child)) code = child.props.code ?? code // Get code from child if available
-  // @ts-ignore
-  if (isValidElement(child)) lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
-  if (!code) throw new Error('`CodePanel` requires a `code` prop, or a child with a `code` prop.')
+  if (isValidElement(child)) {
+    // @ts-ignore
+    lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
+  }
+  if (!code) {
+    throw new Error(
+      '`CodePanel` requires a `code` prop, or a child with a `code` prop.'
+    )
+  }
 
-  
   return (
-    <div className="group dark:bg-white/2.5 relative">
-      <div className="
+    <div className="group relative dark:bg-white/2.5">
+      <div
+        className="
         absolute
-        top-[-40px]
         right-3
-      ">
-        {(isRunnable) && (
+        top-[-40px]
+      "
+      >
+        {isRunnable && (
           <button
-            className={clsx(`
+            className={clsx(
+              `
                 group
                 flex cursor-pointer
                 items-center
-                space-x-2 rounded-md bg-transparent p-1 transition-all
-                text-xs
-              `, 
+                space-x-2 rounded-md bg-transparent p-1 text-xs
+                transition-all
+              `,
               isRunning && `cursor-wait`
             )}
             disabled={isRunning}
             onClick={onRun}
           >
-            {isRunning ? <>
-              <span>Running</span>
-              <LoaderIcon
-                className="h-4 w-4 animate-spin text-emerald-400 transition-all group-hover:text-emerald-300"
-                strokeWidth={2.5}
-              />
-            </> : <>
+            {isRunning ? (
+              <>
+                <span>Running</span>
+                <LoaderIcon
+                  className="h-4 w-4 animate-spin text-emerald-400 transition-all group-hover:text-emerald-300"
+                  strokeWidth={2.5}
+                />
+              </>
+            ) : (
+              <>
                 <span>Run</span>
                 <PlayIcon
                   className="h-4 w-4 text-emerald-400 transition-all group-hover:text-emerald-300"
                   strokeWidth={2.5}
                 />
               </>
-            }
+            )}
           </button>
         )}
       </div>
@@ -188,9 +202,7 @@ function CodePanel({
       <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
       {(outputLines.length > 0 || isRunning) && (
         <div className="flex max-h-[200px] flex-col items-start justify-start bg-zinc-800 px-4 py-1 font-mono">
-          <span className="font-mono text-xs text-zinc-500">
-            Output
-          </span>
+          <span className="font-mono text-xs text-zinc-500">Output</span>
           <pre className="h-full w-full overflow-auto whitespace-pre text-xs text-white">
             {outputLines.join('\n')}
           </pre>
@@ -257,7 +269,6 @@ function CodeGroupPanels({
         {/* Set ID due to bug in Next https://github.com/vercel/next.js/issues/53110 */}
         {/* Should ne fixed after updating Next to > 13.4.12 */}
         {Children.map(children, (child, childIndex) => {
-          
           return (
             <Tab.Panel id={`code-tab-${childIndex}`}>
               <CodePanel {...props}>{child}</CodePanel>
@@ -384,21 +395,20 @@ export function CodeGroup({
       getPanelTitle(isValidElement(child) ? child.props : {})
     ) ?? []
   let tabGroupProps = useTabGroupProps(languages)
-  
+
   let header = (
-    <CodeGroupHeader
-      title={title}
-      selectedIndex={tabGroupProps.selectedIndex}
-    >
+    <CodeGroupHeader title={title} selectedIndex={tabGroupProps.selectedIndex}>
       {children}
     </CodeGroupHeader>
   )
   let panels = <CodeGroupPanels {...props}>{children}</CodeGroupPanels>
 
   return (
-    <CodeGroupContext.Provider value={{
-      path,
-    }}>
+    <CodeGroupContext.Provider
+      value={{
+        path,
+      }}
+    >
       {hasTabs ? (
         <Tab.Group {...tabGroupProps} className={containerClassName}>
           {header}
