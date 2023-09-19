@@ -131,21 +131,6 @@ data "google_storage_bucket" "e2b-envs-docker-context" {
   name = "e2b-envs-docker-context"
 }
 
-resource "google_service_account" "e2b-api-service-account" {
-  account_id   = "e2b-api-service-account"
-  display_name = "E2B API Service Account"
-}
-
-resource "google_service_account_key" "e2b-api-service-account-key" {
-  service_account_id = google_service_account.e2b-api-service-account.email
-}
-
-resource "google_project_iam_member" "e2b-api-service-account-storage-permissions" {
-  project = var.gcp_project_id
-  role    = "roles/storage.objectAdmin"
-  member  = "serviceAccount:${google_service_account.e2b-api-service-account.email}"
-}
-
 module "api" {
   source = "./packages/api"
 
@@ -158,7 +143,6 @@ module "api" {
   api_port                           = var.api_port
   environment                        = var.environment
   bucket_name                        = data.google_storage_bucket.e2b-envs-docker-context.name
-  google_service_account_credentials = base64decode(google_service_account_key.e2b-api-service-account-key.private_key)
 }
 
 module "github-tf" {

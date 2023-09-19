@@ -18,10 +18,6 @@ variable "bucket_name" {
   type = string
 }
 
-variable "google_service_account_credentials" {
-  type = string
-}
-
 variable "api_port" {
   type = object({
     name        = string
