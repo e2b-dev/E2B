@@ -1,4 +1,4 @@
-# e2b CLI
+# e2b CLI (WIP)
 
 Command line interface for [e2b](https://e2b.dev/).
 

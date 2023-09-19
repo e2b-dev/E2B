@@ -1,9 +1,9 @@
 import * as sdk from '@e2b/sdk'
 import * as commander from 'commander'
-
 import { ensureAPIKey } from 'src/api'
 import { idArgument } from 'src/arguments'
 import { pathOption, selectOption } from 'src/options'
+import { spawnConnectedTerminal } from 'src/terminal'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asBold,
@@ -11,7 +11,6 @@ import {
   asFormattedError,
   asLocalRelative,
 } from 'src/utils/format'
-import { spawnConnectedTerminal } from 'src/terminal'
 
 export const shellCommand = new commander.Command('shell')
   .description('Connect terminal to environment')
