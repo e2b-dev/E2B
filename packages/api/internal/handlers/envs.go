@@ -52,7 +52,6 @@ func (a *APIStore) PostEnvs(
 
 		return
 	}
-	filename := fileHandler.Filename[:len(fileHandler.Filename)-4]
 
 	var env *api.Environment
 	envID := c.PostForm("envID")
@@ -102,7 +101,7 @@ func (a *APIStore) PostEnvs(
 	}
 
 	// Upload and build env
-	go a.buildEnvs(ctx, envID, filename, fileContent)
+	go a.buildEnvs(ctx, envID, fileContent)
 	a.IdentifyAnalyticsTeam(team.ID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	a.CreateAnalyticsUserEvent(userID, team.ID, "created environment", properties.

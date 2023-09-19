@@ -12,8 +12,6 @@ import (
 	"github.com/e2b-dev/api/packages/api/internal/db/models"
 
 	"cloud.google.com/go/storage"
-
-	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
 
 type cloudStorage struct {
@@ -23,15 +21,12 @@ type cloudStorage struct {
 }
 
 // streamFileUpload uploads an object via a stream and returns the path to the file.
-func (cs *cloudStorage) streamFileUpload(folder string, name string, content io.Reader) (*string, error) {
+func (cs *cloudStorage) streamFileUpload(name string, content io.Reader) (*string, error) {
 	ctx, cancel := context.WithTimeout(cs.context, time.Second*50)
 	defer cancel()
 
-	prefix := utils.GenerateID() + "-"
-	objectName := folder + prefix + name
-
 	// Upload an object with storage.Writer.
-	object := cs.client.Bucket(cs.bucket).Object(objectName)
+	object := cs.client.Bucket(cs.bucket).Object(name)
 	wc := object.NewWriter(ctx)
 	wc.ChunkSize = 0 // note retries are not supported for chunk size 0.
 
@@ -42,12 +37,12 @@ func (cs *cloudStorage) streamFileUpload(folder string, name string, content io.
 	if err := wc.Close(); err != nil {
 		return nil, fmt.Errorf("Writer.Close: %w", err)
 	}
-	url := fmt.Sprintf("gs://%s/%s", cs.bucket, objectName)
+	url := fmt.Sprintf("gs://%s/%s", cs.bucket, name)
 
 	return &url, nil
 }
 
-func (a *APIStore) buildEnvs(ctx context.Context, envID string, filename string, content io.Reader) {
+func (a *APIStore) buildEnvs(ctx context.Context, envID string, content io.Reader) {
 	buildID, err := uuid.GenerateUUID()
 	if err != nil {
 		err = fmt.Errorf("error when generating build id: %w", err)
@@ -56,7 +51,7 @@ func (a *APIStore) buildEnvs(ctx context.Context, envID string, filename string,
 		return
 	}
 
-	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, ""}, "/"), filename, content)
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), content)
 	if err != nil {
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
 		ReportCriticalError(ctx, err)
