@@ -9,7 +9,7 @@ export function obfuscateSecret(
   secret: string,
   start: number = 7,
   end: number = 3,
-  asterisks: number = 4
+  asterisks: number = 4,
 ) {
   return (
     secret.substring(0, start) +

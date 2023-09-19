@@ -19,7 +19,7 @@ function Textarea({ value = '', className, placeholder, onChange, isOpen }) {
         ref.current?.focus()
       }
     },
-    [isOpen]
+    [isOpen],
   )
 
   return (
@@ -47,7 +47,7 @@ function Textarea({ value = '', className, placeholder, onChange, isOpen }) {
         'transition-colors',
         'text-white',
         'placeholder:text-gray-500',
-        className
+        className,
       )}
       onChange={onChange}
     />

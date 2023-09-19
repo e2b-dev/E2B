@@ -1,4 +1,5 @@
 import { Option } from 'commander'
+
 import { asBold } from './utils/format'
 
 export const allOption = new Option(

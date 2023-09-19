@@ -1,17 +1,16 @@
+import dockerIgnore from '@balena/dockerignore'
 import * as fsWalk from '@nodelib/fs.walk'
-import * as path from 'path'
-import * as util from 'util'
-import * as fsPromise from 'fs/promises'
 import * as fs from 'fs'
-import gitIgnore, { Ignore } from 'ignore';
-import dockerIgnore from "@balena/dockerignore";
-import tar from "tar-fs";
+import * as fsPromise from 'fs/promises'
+import gitIgnore, { Ignore } from 'ignore'
+import * as path from 'path'
+import tar from 'tar-fs'
 
 const walk = util.promisify(fsWalk.walk)
 
 /**
  * Asynchronously retrieves files from a specified root path.
- * 
+ *
  * @param rootPath - The root directory from which to retrieve files.
  * @param opts - Optional parameters to filter the files by extension and/or name.
  * @param opts.extension - If specified, only files with this extension will be returned.
@@ -21,26 +20,27 @@ const walk = util.promisify(fsWalk.walk)
  */
 export async function getFiles(
   rootPath: string,
-  opts?: { 
-    extension?: string;
-    name?: string;
-    respectGitignore?: boolean;
-    respectDockerignore?: boolean;
-}) {
-  let gitignore: Ignore | undefined;
+  opts?: {
+    extension?: string
+    name?: string
+    respectGitignore?: boolean
+    respectDockerignore?: boolean
+  },
+) {
+  let gitignore: Ignore | undefined
   if (opts?.respectGitignore) {
-    const gitignorePath = path.join(rootPath, '.gitignore');
+    const gitignorePath = path.join(rootPath, '.gitignore')
     if (fs.existsSync(gitignorePath)) {
-      gitignore = gitIgnore().add(fs.readFileSync(gitignorePath).toString());
+      gitignore = gitIgnore().add(fs.readFileSync(gitignorePath).toString())
     }
   }
-  
-  let dockerignore: { ignores: (path: string) => boolean } | undefined;
+
+  let dockerignore: { ignores: (path: string) => boolean } | undefined
   if (opts?.respectDockerignore) {
-    const dockerignorePath = path.join(rootPath, '.dockerignore');
+    const dockerignorePath = path.join(rootPath, '.dockerignore')
     if (fs.existsSync(dockerignorePath)) {
-      const dockerIgnoreContent = fs.readFileSync(dockerignorePath, 'utf-8');
-      const dockerIgnoreLines = dockerIgnoreContent.split('\n').map(line => line.trim());
+      const dockerIgnoreContent = fs.readFileSync(dockerignorePath, 'utf-8')
+      const dockerIgnoreLines = dockerIgnoreContent.split('\n').map(line => line.trim())
       dockerignore = dockerIgnore().add(dockerIgnoreLines)
     }
   }
@@ -52,7 +52,7 @@ export async function getFiles(
         opts?.extension ? e.name.endsWith(opts.extension) : true,
         opts?.name ? e.name === opts.name : true,
         !(gitignore && gitignore.ignores(path.relative(rootPath, e.path))),
-        !(dockerignore && dockerignore.ignores(path.relative(rootPath, e.path)))
+        !(dockerignore && dockerignore.ignores(path.relative(rootPath, e.path))),
       ].every(Boolean)
     },
     stats: true,
@@ -90,10 +90,11 @@ export const packToTar = (
   rootPath: string,
   filePaths: string[],
   tarPath: string | Buffer | URL,
-) => new Promise((resolve, reject) => {
-  tar
-    .pack(rootPath, { entries: filePaths })
-    .pipe(fs.createWriteStream(tarPath))
-    .on('error', reject)
-    .on('finish', resolve);
-});
+) =>
+  new Promise((resolve, reject) => {
+    tar
+      .pack(rootPath, { entries: filePaths })
+      .pipe(fs.createWriteStream(tarPath))
+      .on('error', reject)
+      .on('finish', resolve)
+  })

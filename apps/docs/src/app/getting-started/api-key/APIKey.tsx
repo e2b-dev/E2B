@@ -37,7 +37,7 @@ function APIKey() {
               customPositionClassNames={clsx(
                 'top-[-2px] bottom-[2px]' /* nudge 2px up*/,
                 'left-[-6px] right-[-6px]' /* widen a little to fit nicely */,
-                'min-h-[28px]'
+                'min-h-[28px]',
               )}
             />
           </span>

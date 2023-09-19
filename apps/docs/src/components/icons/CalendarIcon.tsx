@@ -1,6 +1,10 @@
 export function CalendarIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      {...props}
+    >
       <path
         fill="none"
         strokeLinecap="round"

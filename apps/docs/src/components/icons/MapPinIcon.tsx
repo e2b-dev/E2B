@@ -1,6 +1,10 @@
 export function MapPinIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      {...props}
+    >
       <path
         strokeWidth="0"
         fillRule="evenodd"
@@ -13,7 +17,12 @@ export function MapPinIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         strokeLinejoin="round"
         d="M4.5 8a5.5 5.5 0 1 1 11 0c0 3.038-5.5 9.5-5.5 9.5S4.5 11.038 4.5 8Z"
       />
-      <circle cx="10" cy="8" r="1.5" fill="none" />
+      <circle
+        cx="10"
+        cy="8"
+        r="1.5"
+        fill="none"
+      />
     </svg>
   )
 }

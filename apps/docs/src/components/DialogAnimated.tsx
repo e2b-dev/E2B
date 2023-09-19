@@ -12,7 +12,11 @@ export function DialogAnimated({
   children,
 }) {
   return (
-    <Transition.Root show={open} as={as} afterLeave={afterLeave}>
+    <Transition.Root
+      show={open}
+      as={as}
+      afterLeave={afterLeave}
+    >
       <Dialog
         onClose={setOpen}
         className={clsx('fixed inset-0 z-50', className)}

@@ -5,8 +5,17 @@ import { Transition } from '@headlessui/react'
 
 function CheckIcon(props) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
-      <circle cx="10" cy="10" r="10" strokeWidth="0" />
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      {...props}
+    >
+      <circle
+        cx="10"
+        cy="10"
+        r="10"
+        strokeWidth="0"
+      />
       <path
         fill="none"
         strokeLinecap="round"
@@ -37,9 +46,7 @@ const FeedbackForm = forwardRef(function FeedbackForm({ onSubmit }, ref) {
       onSubmit={onSubmit}
       className="absolute inset-0 flex items-center justify-center gap-6 md:justify-start"
     >
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Was this page helpful?
-      </p>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">Was this page helpful?</p>
       <div className="group grid h-8 grid-cols-[1fr,1px,1fr] overflow-hidden rounded-full border border-zinc-900/10 dark:border-white/10">
         <FeedbackButton data-response="yes">Yes</FeedbackButton>
         <div className="bg-zinc-900/10 dark:bg-white/10" />
@@ -65,7 +72,7 @@ const FeedbackThanks = forwardRef(function FeedbackThanks(_props, ref) {
 })
 
 export function FeedbackQuick() {
-  let [submitted, setSubmitted] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   function onSubmit(event) {
     event.preventDefault()

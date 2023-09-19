@@ -2,22 +2,18 @@
 
 import { Children, isValidElement } from 'react'
 import { Tab } from '@headlessui/react'
-import {
-  CodeGroupHeader,
-  getPanelTitle,
-  useTabGroupProps,
-} from '@/components/Code'
+import { CodeGroupHeader, getPanelTitle, useTabGroupProps } from '@/components/Code'
 
 export function LanguageSpecificText({ children, title }) {
-  let languages =
-    Children.map(children, (child) =>
-      getPanelTitle(isValidElement(child) ? child.props : {})
+  const languages =
+    Children.map(children, child =>
+      getPanelTitle(isValidElement(child) ? child.props : {}),
     ) ?? []
-  let tabGroupProps = useTabGroupProps(languages)
+  const tabGroupProps = useTabGroupProps(languages)
 
-  let containerClassName =
+  const containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
-  let header = (
+  const header = (
     <CodeGroupHeader
       title={title}
       selectedIndex={tabGroupProps.selectedIndex}
@@ -28,7 +24,10 @@ export function LanguageSpecificText({ children, title }) {
 
   return (
     <div>
-      <Tab.Group {...tabGroupProps} className={containerClassName}>
+      <Tab.Group
+        {...tabGroupProps}
+        className={containerClassName}
+      >
         {header}
         <div>
           <div className="group dark:bg-white/2.5">

@@ -1,3 +1,4 @@
+/* eslint-disable unused-imports/no-unused-imports,@typescript-eslint/no-unused-vars */
 import * as quickstart from './quickstart.js'
 import * as get_url from './basics/get_url.js'
 import * as get_url_port from './basics/get_url_port.js'

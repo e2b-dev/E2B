@@ -56,8 +56,8 @@ function CodePanel({
 
   const codeGroupContext = useContext(CodeGroupContext)
 
-  const sessionDef = useSessionsStore((s) => s.sessions[lang])
-  const initSession = useSessionsStore((s) => s.initSession)
+  const sessionDef = useSessionsStore(s => s.sessions[lang])
+  const initSession = useSessionsStore(s => s.initSession)
   const { outputLines, dispatch } = useOutputReducer()
   const [isRunning, setIsRunning] = useState(false)
 
@@ -67,7 +67,7 @@ function CodePanel({
 
   function filterAndMaybeAppendOutput(out: ProcessMessage) {
     if (out.line.includes('Cannot refresh session')) return
-    if (out.line.includes(`Trying to reconnect`)) return
+    if (out.line.includes('Trying to reconnect')) return
     console.log(`⚠️ Session stderr ${out.line}`)
     // appendOutput(out) // TODO: Reconsider logging to console after making the runs more stable
   }
@@ -108,9 +108,7 @@ function CodePanel({
     }
 
     if (!session) {
-      console.warn(
-        `This should not happen, session is null, debug & fix properly later`
-      )
+      console.warn('This should not happen, session is null, debug & fix properly later')
       setIsRunning(false)
       return
     }
@@ -142,16 +140,14 @@ function CodePanel({
     }
   }
 
-  let child = Children.only(children)
+  const child = Children.only(children)
   if (isValidElement(child)) code = child.props.code ?? code // Get code from child if available
   if (isValidElement(child)) {
     // @ts-ignore
     lang = mdLangToLangShort[child.props.language ?? lang] // Get lang from child if available
   }
   if (!code) {
-    throw new Error(
-      '`CodePanel` requires a `code` prop, or a child with a `code` prop.'
-    )
+    throw new Error('`CodePanel` requires a `code` prop, or a child with a `code` prop.')
   }
 
   return (
@@ -173,7 +169,7 @@ function CodePanel({
                 space-x-2 rounded-md bg-transparent p-1 text-xs
                 transition-all
               `,
-              isRunning && `cursor-wait`
+              isRunning && 'cursor-wait',
             )}
             disabled={isRunning}
             onClick={onRun}
@@ -222,16 +218,14 @@ export function CodeGroupHeader({
   children: React.ReactNode
   selectedIndex: number
 }) {
-  let hasTabs = Children.count(children) > 1
+  const hasTabs = Children.count(children) > 1
   if (!title && !hasTabs) return null
 
   return (
     <div className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-700 bg-zinc-800 px-4 dark:border-zinc-800 dark:bg-transparent">
       <div className="flex items-start space-x-4">
         {title && (
-          <h3 className="mr-auto pt-3 text-xs font-semibold text-white">
-            {title}
-          </h3>
+          <h3 className="mr-auto pt-3 text-xs font-semibold text-white">{title}</h3>
         )}
         {hasTabs && (
           <Tab.List className="-mb-px flex gap-4 text-xs font-medium">
@@ -244,7 +238,7 @@ export function CodeGroupHeader({
                   'border-b py-3 transition ui-not-focus-visible:outline-none',
                   childIndex === selectedIndex
                     ? 'border-emerald-500 text-emerald-400'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-300'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-300',
                 )}
               >
                 {getPanelTitle(isValidElement(child) ? child.props : {})}
@@ -261,7 +255,7 @@ function CodeGroupPanels({
   children,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodePanel>) {
-  let hasTabs = Children.count(children) > 1
+  const hasTabs = Children.count(children) > 1
 
   if (hasTabs) {
     return (
@@ -283,8 +277,8 @@ function CodeGroupPanels({
 }
 
 function usePreventLayoutShift() {
-  let positionRef = useRef<HTMLElement>(null)
-  let rafRef = useRef<number>()
+  const positionRef = useRef<HTMLElement>(null)
+  const rafRef = useRef<number>()
 
   useEffect(() => {
     return () => {
@@ -301,13 +295,12 @@ function usePreventLayoutShift() {
         return
       }
 
-      let initialTop = positionRef.current.getBoundingClientRect().top
+      const initialTop = positionRef.current.getBoundingClientRect().top
 
       callback()
 
       rafRef.current = window.requestAnimationFrame(() => {
-        let newTop =
-          positionRef.current?.getBoundingClientRect().top ?? initialTop
+        const newTop = positionRef.current?.getBoundingClientRect().top ?? initialTop
         window.scrollBy(0, newTop - initialTop)
       })
     },
@@ -317,13 +310,13 @@ function usePreventLayoutShift() {
 const usePreferredLanguageStore = create<{
   preferredLanguages: Array<string>
   addPreferredLanguage: (language: string) => void
-}>()((set) => ({
+}>()(set => ({
   preferredLanguages: [],
-  addPreferredLanguage: (language) =>
-    set((state) => ({
+  addPreferredLanguage: language =>
+    set(state => ({
       preferredLanguages: [
         ...state.preferredLanguages.filter(
-          (preferredLanguage) => preferredLanguage !== language
+          preferredLanguage => preferredLanguage !== language,
         ),
         language,
       ],
@@ -331,26 +324,24 @@ const usePreferredLanguageStore = create<{
 }))
 
 export function useTabGroupProps(availableLanguages: Array<string>) {
-  let { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
-  let [selectedIndex, setSelectedIndex] = useState(0)
-  let activeLanguage = [...availableLanguages].sort(
-    (a, z) => preferredLanguages.indexOf(z) - preferredLanguages.indexOf(a)
+  const { preferredLanguages, addPreferredLanguage } = usePreferredLanguageStore()
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const activeLanguage = [...availableLanguages].sort(
+    (a, z) => preferredLanguages.indexOf(z) - preferredLanguages.indexOf(a),
   )[0]
 
-  let languageIndex = availableLanguages.indexOf(activeLanguage)
-  let newSelectedIndex = languageIndex === -1 ? selectedIndex : languageIndex
+  const languageIndex = availableLanguages.indexOf(activeLanguage)
+  const newSelectedIndex = languageIndex === -1 ? selectedIndex : languageIndex
   if (newSelectedIndex !== selectedIndex) setSelectedIndex(newSelectedIndex)
 
-  let { positionRef, preventLayoutShift } = usePreventLayoutShift()
+  const { positionRef, preventLayoutShift } = usePreventLayoutShift()
 
   return {
     as: 'div' as const,
     ref: positionRef,
     selectedIndex,
     onChange: (newSelectedIndex: number) => {
-      preventLayoutShift(() =>
-        addPreferredLanguage(availableLanguages[newSelectedIndex])
-      )
+      preventLayoutShift(() => addPreferredLanguage(availableLanguages[newSelectedIndex]))
     },
   }
 }
@@ -364,7 +355,7 @@ function useOutputReducer() {
       action: {
         type: 'push' | 'clear'
         payload?: string
-      }
+      },
     ) => {
       switch (action.type) {
         case 'push':
@@ -373,7 +364,7 @@ function useOutputReducer() {
           return []
       }
     },
-    []
+    [],
   )
   return { outputLines, dispatch }
 }
@@ -387,21 +378,24 @@ export function CodeGroup({
   title?: string
   path?: string // For analytics
 }) {
-  let hasTabs = Children.count(children) > 1
-  let containerClassName =
+  const hasTabs = Children.count(children) > 1
+  const containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
-  let languages =
-    Children.map(children, (child) =>
-      getPanelTitle(isValidElement(child) ? child.props : {})
+  const languages =
+    Children.map(children, child =>
+      getPanelTitle(isValidElement(child) ? child.props : {}),
     ) ?? []
-  let tabGroupProps = useTabGroupProps(languages)
+  const tabGroupProps = useTabGroupProps(languages)
 
-  let header = (
-    <CodeGroupHeader title={title} selectedIndex={tabGroupProps.selectedIndex}>
+  const header = (
+    <CodeGroupHeader
+      title={title}
+      selectedIndex={tabGroupProps.selectedIndex}
+    >
       {children}
     </CodeGroupHeader>
   )
-  let panels = <CodeGroupPanels {...props}>{children}</CodeGroupPanels>
+  const panels = <CodeGroupPanels {...props}>{children}</CodeGroupPanels>
 
   return (
     <CodeGroupContext.Provider
@@ -410,7 +404,10 @@ export function CodeGroup({
       }}
     >
       {hasTabs ? (
-        <Tab.Group {...tabGroupProps} className={containerClassName}>
+        <Tab.Group
+          {...tabGroupProps}
+          className={containerClassName}
+        >
           {header}
           {panels}
         </Tab.Group>
@@ -424,24 +421,26 @@ export function CodeGroup({
   )
 }
 
-export function Code({
-  children,
-  ...props
-}: React.ComponentPropsWithoutRef<'code'>) {
+export function Code({ children, ...props }: React.ComponentPropsWithoutRef<'code'>) {
   /* <DYNAMIC-API-REPLACEMENT> */
   // let apiKey = useApiKey()
   // if (children.replace && apiKey) children = children.replace(`{{API_KEY}}`, `${apiKey}`)
   /* </DYNAMIC-API-REPLACEMENT> */
 
-  let isGrouped = !!useContext(CodeGroupContext)
+  const isGrouped = !!useContext(CodeGroupContext)
 
   if (isGrouped) {
     if (typeof children !== 'string') {
       throw new Error(
-        '`Code` children must be a string when nested inside a `CodeGroup`.'
+        '`Code` children must be a string when nested inside a `CodeGroup`.',
       )
     }
-    return <code {...props} dangerouslySetInnerHTML={{ __html: children }} />
+    return (
+      <code
+        {...props}
+        dangerouslySetInnerHTML={{ __html: children }}
+      />
+    )
   }
 
   return <code {...props}>{children}</code>
@@ -451,7 +450,7 @@ export function Pre({
   children,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodeGroup>) {
-  let isGrouped = useContext(CodeGroupContext)
+  const isGrouped = useContext(CodeGroupContext)
 
   if (isGrouped) {
     return children
@@ -466,7 +465,7 @@ export function Pre({
 export function CodeGroupAutoload({ children, isRunnable = true }) {
   if (!children) {
     console.warn(
-      `CodeGroupAutoload: No children provided – something is wrong with your MDX file`
+      'CodeGroupAutoload: No children provided – something is wrong with your MDX file',
     )
     return null
   }

@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --write .",
     "rm-next-cache": "rm -rf .next/cache"
   },
   "browserslist": "defaults, not ie <= 11",
@@ -66,10 +65,7 @@
     "@e2b/sdk": "^0.2.4",
     "@nodelib/fs.walk": "^2.0.0",
     "encoding": "^0.1.13",
-    "eslint": "8.45.0",
-    "eslint-config-next": "13.4.12",
-    "prettier": "^2.8.7",
-    "prettier-plugin-tailwindcss": "^0.2.6",
-    "sharp": "^0.32.0"
+    "sharp": "^0.32.0",
+    "eslint-config-next": "13.4.19"
   }
 }

@@ -11,15 +11,25 @@ import { Button } from '@/components/Button'
 function FeedbackButton({ onClick, isFinished, variant, className }) {
   return (
     // @ts-ignore
-    <Button onMouseDown={onClick} variant={variant} className={className}>
+    <Button
+      onMouseDown={onClick}
+      variant={variant}
+      className={className}
+    >
       {isFinished ? (
         <>
-          <Check size={14} className="" />
+          <Check
+            size={14}
+            className=""
+          />
           <span className="text-sm">Thank you!</span>
         </>
       ) : (
         <div className="flex flex-row items-center gap-2">
-          <MessageCircle size={14} className="" />
+          <MessageCircle
+            size={14}
+            className=""
+          />
           <span className="text-sm">Send feedback to CEO</span>
         </div>
       )}

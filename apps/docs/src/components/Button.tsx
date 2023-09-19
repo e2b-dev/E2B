@@ -3,7 +3,12 @@ import clsx from 'clsx'
 
 function ArrowIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      {...props}
+    >
       <path
         stroke="currentColor"
         strokeLinecap="round"
@@ -53,21 +58,21 @@ export function Button({
     'inline-flex gap-0.5 justify-center overflow-hidden text-sm font-medium transition',
     variantStyles[variant],
     disabled && 'opacity-50 pointer-events-none',
-    className
+    className,
   )
 
-  let arrowIcon = (
+  const arrowIcon = (
     <ArrowIcon
       className={clsx(
         'mt-0.5 h-5 w-5',
         variant === 'text' && 'relative top-px',
         arrow === 'left' && '-ml-1 rotate-180',
-        arrow === 'right' && '-mr-1'
+        arrow === 'right' && '-mr-1',
       )}
     />
   )
 
-  let inner = (
+  const inner = (
     <>
       {arrow === 'left' && arrowIcon}
       {children}
@@ -78,7 +83,10 @@ export function Button({
   if (typeof props.href === 'undefined') {
     return (
       // @ts-ignore
-      <button className={className} {...props}>
+      <button
+        className={className}
+        {...props}
+      >
         {inner}
       </button>
     )
@@ -86,7 +94,10 @@ export function Button({
 
   return (
     // @ts-ignore
-    <Link className={className} {...props}>
+    <Link
+      className={className}
+      {...props}
+    >
       {inner}
     </Link>
   )
