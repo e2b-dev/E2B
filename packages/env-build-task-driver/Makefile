@@ -27,7 +27,6 @@ update-build-driver:
 
 run-build-check:
 	make build
-	gcloud compute scp ./bin/env-build-task-driver root@$$($(client)):/tmp/build-task-driver-test
+	gcloud compute scp ./bin/env-build-task-driver root@$$($(client)):/tmp/build-task-driver
 	gcloud compute ssh $$($(client)) -- 'sudo -s && \
-	chmod +x /tmp/build-task-driver-test && \
-	/tmp/build-task-driver-test'
+	chmod +x /tmp/build-task-driver'

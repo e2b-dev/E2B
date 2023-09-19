@@ -45,12 +45,14 @@ func main() {
 		http.ListenAndServe(":6062", nil)
 	}()
 
-	testMode := flag.Bool("test", false, "run in testing mode")
+	envID := flag.String("env", "", "env id")
+	buildID := flag.String("build", "", "build id")
+
 	flag.Parse()
 
-	if *testMode {
-		configurePlugin()
+	if envID != nil && buildID != nil {
+		driver.TestBuildProcess(*envID, *buildID)
 	} else {
-		driver.TestBuildProcess()
+		configurePlugin()
 	}
 }

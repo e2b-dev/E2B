@@ -44,7 +44,7 @@
 - parametrize buckets and mount paths
 - enable simpler debugging
 - Remove supervisord and just use systemd for both nomad and consul
-- Enable terraform cache again later
+- Enable terraform cache again later (cca 16 blocking seconds saved per GHA run)
 - Secure docker building (+container start problem?)
 - Install golang to the vm for easier remote debugging
 - add otel logs

@@ -14,7 +14,7 @@ import (
 //go:embed test-provision-env.ubuntu.sh
 var provisionEnvScriptFile string
 
-func TestBuildProcess() {
+func TestBuildProcess(envID, buildID string) {
 	ctx := context.Background()
 
 	tracer := otel.Tracer("test")
@@ -34,8 +34,8 @@ func TestBuildProcess() {
 	contextFileName := "context.tar.gz"
 
 	e := env.Env{
-		BuildID:               "testing-build-id",
-		EnvID:                 "testing-env-id",
+		BuildID:               buildID,
+		EnvID:                 envID,
 		EnvsPath:              envsPath,
 		VCpuCount:             1,
 		MemoryMB:              512,
