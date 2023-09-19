@@ -7,8 +7,7 @@ on:
         required: true
       workload_identity_provider:
         required: true
-      github_token:
-        required: true
+
 
 jobs:
   deploy:
@@ -50,4 +49,4 @@ jobs:
       - name: Deploy Terraform
         run: make apply
         env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

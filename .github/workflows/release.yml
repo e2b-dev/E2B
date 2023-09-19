@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - _test
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -154,7 +154,6 @@ jobs:
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
 
 
   # The last successful release is used for determining which changed and what should be deployed in this release.
