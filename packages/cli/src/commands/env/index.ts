@@ -5,7 +5,7 @@ import { createCommand } from './create'
 import { listCommand } from './list'
 import { publishCommand } from './publish'
 import { pushCommand } from './push'
-import { connectCommand } from './connect'
+import { shellCommand } from './shell'
 import { useCommand } from './use'
 import { asLocal } from 'src/utils/format'
 import { configName } from 'src/config'
@@ -15,10 +15,11 @@ export const envCommand = new commander.Command('env')
   .description(`Manage e2b environments`)
   .addCommand(createCommand)
   .addCommand(listCommand)
+  .addCommand(shellCommand)
+  
   // .addCommand(pushCommand)
   // .addCommand(publishCommand)
   // .addCommand(deleteCommand)
   // .addCommand(useCommand)
-  // .addCommand(connectCommand)
   // .addCommand(setCommand)
   .alias('environment')

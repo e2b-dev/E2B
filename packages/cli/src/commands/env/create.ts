@@ -110,7 +110,7 @@ export const createCommand = new commander.Command('create')
 
       if (!apiRes.ok) {
         const resJson = (await apiRes.json()) as { message: string }
-        throw new Error(`API request failed: ${apiRes.statusText}, ${resJson?.message}`)
+        throw new Error(`API request failed: ${apiRes.statusText}, ${resJson?.message ?? 'no message'}`)
       }
       const resJson = (await apiRes.json()) as { envID: string, Public: boolean, Status: 'building' | 'error' | 'ready' }
       console.log(`✅ Env created: ${resJson?.envID}, waiting for build to finish...`)

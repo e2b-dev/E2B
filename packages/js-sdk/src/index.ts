@@ -1,5 +1,5 @@
 export { default as api } from './api'
-export type { ClientType } from './api'
+export type { ClientType, components } from './api'
 
 export { Session } from './session'
 export type { Environment } from './session'

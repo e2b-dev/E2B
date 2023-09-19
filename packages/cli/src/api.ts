@@ -9,9 +9,14 @@ import {getUserConfig} from "./commands/auth";
 //   baseUrl: 'http://localhost:3003',
 // })
 
-export const apiBaseUrl = process.env.E2B_API_BASE ?? 'https://ondevbook.com';
+export const apiBaseDefault = 'https://ondevbook.com';
+export const apiBaseUrl = process.env.E2B_API_BASE ?? apiBaseDefault;
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
+
+if (apiBaseUrl !== apiBaseDefault) {
+  console.warn(`\nBeware: Using custom API base URL: ${asBold(apiBaseUrl)}\n`)
+}
 
 const authErrorBox = boxen.default(
   `You must be logged in to use this command. Run ${asBold(`e2b login`)}.`,

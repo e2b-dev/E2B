@@ -28,6 +28,9 @@
     "baseUrl": ".",
     "rootDirs": [
       "src"
-    ]
+    ],
+    "paths": {
+      "@e2b/sdk": ["../js-sdk/src"],
+    }
   }
 }
