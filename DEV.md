@@ -54,7 +54,9 @@
 - make buckets not public
 - check api build speed
 - Update architecture diagram in figma
-- Make all the shellscript more resilent
+- Make all the shellscript more resilent (best practices)
+- Configure hyperthreading for better FC performance? https://cloud.google.com/compute/docs/instances/set-threads-per-core?authuser=1
+
 
 
 ### API
