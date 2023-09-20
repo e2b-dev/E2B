@@ -150,6 +150,8 @@ function NavigationGroup({ group, className }) {
 
   const isActiveGroup = activeGroupIndex(group, pathname) !== -1
 
+  console.log({ pathname, group, sections })
+
   return (
     <li className={clsx('relative mt-6', className)}>
       <motion.h2
@@ -201,8 +203,22 @@ function NavigationGroup({ group, className }) {
                 mode="popLayout"
                 initial={false}
               >
-                {`/docs${link.href}` === pathname && sections.length > 0 && (
-                  <motion.ul
+                <ul>
+                  {sections.map(section => (
+                    <li key={section.id}>
+                      {/* @ts-ignore */}
+                      <NavLink
+                        href={`${link.href}#${section.id}`}
+                        tag={section.tag}
+                        isAnchorLink
+                      >
+                        {section.title}
+                      </NavLink>
+                    </li>
+                  ))}
+                 </ul>
+                {/* {`/docs${link.href}` === pathname && sections.length > 0 && ( */}
+                  {/* <motion.ul
                     role="list"
                     initial={{ opacity: 0 }}
                     animate={{
@@ -213,21 +229,8 @@ function NavigationGroup({ group, className }) {
                       opacity: 0,
                       transition: { duration: 0.15 },
                     }}
-                  >
-                    {sections.map(section => (
-                      <li key={section.id}>
-                        {/* @ts-ignore */}
-                        <NavLink
-                          href={`${link.href}#${section.id}`}
-                          tag={section.tag}
-                          isAnchorLink
-                        >
-                          {section.title}
-                        </NavLink>
-                      </li>
-                    ))}
-                  </motion.ul>
-                )}
+                  > */}
+                  {/* </motion.ul> */}
               </AnimatePresence>
             </motion.li>
           ))}

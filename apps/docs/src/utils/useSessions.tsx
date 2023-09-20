@@ -3,12 +3,19 @@ import { create } from 'zustand'
 import { LangShort } from '@/utils/consts'
 
 function stdHandler({ line, timestamp, error }) {
+  if (process.env.NODE_ENV === 'production') return
+
   const timestampHumanFriendly = new Date(timestamp / 1000000) // timestamp is in nanoseconds
     .toISOString()
     .split('T')[1] // only time, date is not relevant for debugging
     .split('.')[0] // remove ms
-  const emoji = error ? 'ERROR' : 'INFO'
+  const emoji = error ? '\x1B[31mERROR' : '\x1B[34mINFO'
   console.log(`☁️ ${timestampHumanFriendly} ${emoji} ${line}`)
+}
+
+function log(message?: any, ...optionalParams: any[]) {
+  if (process.env.NODE_ENV === 'production') return
+  else console.log(message, optionalParams)
 }
 
 const envIds = {
@@ -32,15 +39,15 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     return new Promise(async (resolve, reject) => {
       const maybeExistingSession = get().sessions[lang]
       if (maybeExistingSession?.session) {
-        console.log(`${lang} session already ready`)
+        log(`${lang} session already ready`)
         resolve(maybeExistingSession.session)
         return
       } else if (maybeExistingSession?.promise) {
-        console.log(`${lang} session in progress, waiting...`)
+        log(`${lang} session in progress, waiting...`)
         await maybeExistingSession.promise
         resolve(maybeExistingSession.session)
       } else {
-        console.log(`${lang} session creating...`)
+        log(`${lang} session creating...`)
         try {
           const sessionP = Session.create({ id: envIds[lang], apiKey })
           // set promise to store so that other calls to initSession will wait for this one to finish
@@ -54,7 +61,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
             },
           }))
           const newSession = await sessionP // await creation
-          console.log(`${lang} session created, starting prep process...`)
+          log(`${lang} session created, starting prep process...`)
           const proc = await newSession.process.start({
             cmd: preps[lang],
             onStdout: stdHandler,
@@ -62,7 +69,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
             rootdir: '/code',
           })
           await proc.finished // await prep process to finish
-          console.log(`${lang} session created and started`)
+          log(`${lang} session created and started`)
           // set session to store so it can be used instead of creating a new one
           set(state => ({
             sessions: {
