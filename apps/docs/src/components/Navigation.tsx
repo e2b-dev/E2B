@@ -256,9 +256,10 @@ export const navigation = [
       { title: 'Execute Code', href: '/agents/exec' },
       // { title: 'Install Packages', href: '/agents/pkg' },
       { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
-      // { title: 'Start Process', href: '/agents/process' },
+      { title: 'Run Shell Commands', href: '/agents/shell-commands' },
       // { title: 'Read File', href: '/agents/read' },
       // { title: 'Write File', href: '/agents/write' },
+      // TODO: Guide for building ffmpeg agent
     ]
   },
   {
