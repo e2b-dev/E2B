@@ -17,9 +17,10 @@ export function Layout({
   allSections: Record<string, Array<Section>>
 }) {
   const pathname = usePathname()
+  const relativePathname = pathname.replace(new RegExp('^/docs'), '')
 
   return (
-    <SectionProvider sections={allSections[pathname] ?? []}>
+    <SectionProvider sections={allSections[relativePathname] ?? []}>
       <div className="h-full lg:ml-72 xl:ml-80">
         <motion.header
           layoutScroll

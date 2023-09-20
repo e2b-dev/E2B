@@ -44,8 +44,7 @@ function extractSections() {
   }
 }
 
-// eslint-disable-next-line i
-// mport/no-anonymous-default-export
+// eslint-disable-next-line import/no-anonymous-default-export
 export default function (nextConfig = {}) {
   let cache = new Map()
 
