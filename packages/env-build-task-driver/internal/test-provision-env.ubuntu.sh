@@ -6,9 +6,9 @@ DEBIAN_FRONTEND=noninteractive
 
 echo "Starting provisioning script..."
 
-# apt-get update
+apt-get update
 
-apt-get install -y openssh-server chrony sudo systemd
+apt-get install -y --no-install-recommends openssh-server chrony sudo systemd
 
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d

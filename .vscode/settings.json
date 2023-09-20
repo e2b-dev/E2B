@@ -38,22 +38,7 @@
         "source.organizeImports": true,
     },
 },
-"remote.SSH.defaultExtensions": [
-  "GitHub.vscode-pull-request-github",
-  "golang.go",
-  "hashicorp.hcl",
-  "42Crunch.vscode-openapi",
-  "foxundermoon.shell-format",
-  "trunk.io",
-  "ms-vscode.makefile-tools",
-  "hashicorp.terraform",
-  "redhat.vscode-yaml",
-  "christian-kohler.path-intellisense",
-  "googlecloudtools.cloudcode",
-  "GitHub.copilot",
-  "GitHub.copilot-chat",
-  "ms-azuretools.vscode-docker"
-],
+"editor.tabCompletion": "on",
 "go.useLanguageServer": true,
 "gopls": {
     "formatting.local": "github.com/e2b-dev/api",
