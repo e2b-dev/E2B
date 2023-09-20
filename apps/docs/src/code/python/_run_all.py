@@ -18,5 +18,6 @@ from timeout.timeout_process import main as timeout_process_main
 from timeout.timeout_filesystem import main as timeout_filesystem_main
 from processes.background_processes import main as background_processes_main
 
+from agents.code_exec import main as code_exec_main
 
 print("Done")
