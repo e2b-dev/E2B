@@ -127,11 +127,11 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	defer childSpan.End()
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
-		Image:           r.dockerTag(),
-		Entrypoint:      []string{"/bin/sh", "-c"},
-		User:            "root",
-		Cmd:             []string{r.ProvisionScript},
-		Tty:             true,
+		Image:      r.dockerTag(),
+		Entrypoint: []string{"/bin/sh", "-c", "sleep 10000000"},
+		User:       "root",
+		// Cmd:             []string{r.ProvisionScript},
+		Tty:             false,
 		NetworkDisabled: false,
 		AttachStdout:    true,
 		AttachStderr:    true,
@@ -204,8 +204,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		data, err := r.client.ContainerLogs(childCtx, cont.ID, types.ContainerLogsOptions{
 			ShowStdout: true,
 			ShowStderr: true,
-			Follow:     true,
-			Tail:       "40",
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error getting container logs %w", err)

@@ -1,19 +1,12 @@
-#! /bin/bash
-
-# This script is supposed to be executed in a running *Ubuntu* container.
-# The container is then extracted to a rootfs image for the Firecracker VM.
-
 set -eu
 
-# apt-get update
+# yes | unminimize
 
-# TODO: Add systemd
+apt-get update
 
-# apt-get install -y \
-#   build-essential \
-#   curl socat util-linux openssh-server git chrony nano sudo htop
-
-apt install -y sudo
+apt-get install -y \
+  build-essential \
+  curl socat util-linux openssh-server git chrony nano sudo htop
 
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -99,6 +92,3 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 # Start systemd services
 systemctl enable envd
 systemctl enable chrony
-
-# Delete itself once done.
-rm -- "$0"
