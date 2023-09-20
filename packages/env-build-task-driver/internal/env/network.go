@@ -56,19 +56,19 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	// Save the original (host) namespace and restore it upon function exit
 	hostNS, err := netns.Get()
 	if err != nil {
-		errMsg := fmt.Errorf("cannot get current (host) namespace %v", err)
+		errMsg := fmt.Errorf("cannot get current (host) namespace %w", err)
 		return errMsg
 	}
 	telemetry.ReportEvent(childCtx, "Saved original ns")
 	defer func() {
 		err = netns.Set(hostNS)
 		if err != nil {
-			errMsg := fmt.Errorf("error resetting network namespace back to the host namespace %v", err)
+			errMsg := fmt.Errorf("error resetting network namespace back to the host namespace %w", err)
 			telemetry.ReportError(childCtx, errMsg)
 		}
 		err = hostNS.Close()
 		if err != nil {
-			errMsg := fmt.Errorf("error closing host network namespace %v", err)
+			errMsg := fmt.Errorf("error closing host network namespace %w", err)
 			telemetry.ReportError(childCtx, errMsg)
 		}
 	}()
@@ -77,7 +77,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	//   ip netns add $NS_NAME
 	ns, err := netns.NewNamed(n.namespaceID)
 	if err != nil {
-		return fmt.Errorf("cannot create new namespace %v", err)
+		return fmt.Errorf("cannot create new namespace %w", err)
 	}
 	telemetry.ReportEvent(childCtx, "Created ns")
 	defer ns.Close()
@@ -93,7 +93,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	}
 	err = netlink.LinkAdd(tap)
 	if err != nil {
-		return fmt.Errorf("error creating tap device %v", err)
+		return fmt.Errorf("error creating tap device %w", err)
 	}
 	telemetry.ReportEvent(childCtx, "Created tap device")
 
@@ -101,7 +101,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	//   ip netns exec $NS_NAME ip link set $TAP_NAME up
 	err = netlink.LinkSetUp(tap)
 	if err != nil {
-		return fmt.Errorf("error setting tap device up %v", err)
+		return fmt.Errorf("error setting tap device up %w", err)
 	}
 	telemetry.ReportEvent(childCtx, "Set tap device up")
 
@@ -109,7 +109,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	//   ip netns exec $NS_NAME ip addr add $TAP_ADDR$TAP_MASK dev $TAP_NAME
 	ip, ipNet, err := net.ParseCIDR(fcTapCIDR)
 	if err != nil {
-		return fmt.Errorf("error parsing tap CIDR %v", err)
+		return fmt.Errorf("error parsing tap CIDR %w", err)
 	}
 	telemetry.ReportEvent(childCtx, "Parsed CIDR")
 
@@ -120,7 +120,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("error setting address of the tap device %v", err)
+		return fmt.Errorf("error setting address of the tap device %w", err)
 	}
 	telemetry.ReportEvent(childCtx, "Set tap device address")
 
@@ -130,7 +130,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 func (n *FCNetwork) Cleanup(ctx context.Context, tracer trace.Tracer) {
 	err := netns.DeleteNamed(n.namespaceID)
 	if err != nil {
-		errMsg := fmt.Errorf("error deleting namespace %v", err)
+		errMsg := fmt.Errorf("error deleting namespace %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
 }

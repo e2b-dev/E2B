@@ -1,6 +1,6 @@
 set -euo xtrace
 
-DEBIAN_FRONTEND=noninteractive
+# DEBIAN_FRONTEND=noninteractive
 
 # yes | unminimize
 
@@ -8,7 +8,7 @@ echo "Starting provisioning script..."
 
 apt-get update
 
-apt-get install -y --no-install-recommends openssh-server chrony sudo systemd
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openssh-server chrony sudo systemd
 
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
