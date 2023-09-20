@@ -85,32 +85,32 @@ export class Session extends SessionConnection {
       write: async (path, content, opts?: CallOpts) => {
         await this.call(filesystemService, 'write', [path, content], opts)
       },
-      // /**
-      //  * Write array of bytes to a file.
-      //  * This can be used when you cannot represent the data as an UTF-8 string.
-      //  *
-      //  * @param path path to a file
-      //  * @param content byte array representing the content to write
-      //  */
-      // writeBytes: async (path, content) => {
-      //   // We need to convert the byte array to base64 string without using browser or node specific APIs.
-      //   // This should be achieved by the node polyfills.
-      //   const base64Content = Buffer.from(content).toString('base64')
-      //   await this.call(filesystemService, 'writeBase64', [path, base64Content])
-      // },
-      // /**
-      //  * Reads the whole content of a file as an array of bytes.
-      //  * @param path path to a file
-      //  * @returns byte array representing the content of a file
-      //  */
-      // readBytes: async path => {
-      //   const base64Content = (await this.call(filesystemService, 'readBase64', [
-      //     path,
-      //   ])) as string
-      //   // We need to convert the byte array to base64 string without using browser or node specific APIs.
-      //   // This should be achieved by the node polyfills.
-      //   return Buffer.from(base64Content, 'base64')
-      // },
+      /**
+       * Write array of bytes to a file.
+       * This can be used when you cannot represent the data as an UTF-8 string.
+       *
+       * @param path path to a file
+       * @param content byte array representing the content to write
+       */
+      writeBytes: async (path: string, content: Uint8Array) => {
+        // We need to convert the byte array to base64 string without using browser or node specific APIs.
+        // This should be achieved by the node polyfills.
+        const base64Content = Buffer.from(content).toString('base64')
+        await this.call(filesystemService, 'writeBase64', [path, base64Content])
+      },
+      /**
+       * Reads the whole content of a file as an array of bytes.
+       * @param path path to a file
+       * @returns byte array representing the content of a file
+       */
+      readBytes: async (path: string) => {
+        const base64Content = (await this.call(filesystemService, 'readBase64', [
+          path,
+        ])) as string
+        // We need to convert the byte array to base64 string without using browser or node specific APIs.
+        // This should be achieved by the node polyfills.
+        return Buffer.from(base64Content, 'base64')
+      },
       /**
        * Creates a new directory and all directories along the way if needed on the specified pth.
        * @param path Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.

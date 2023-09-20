@@ -1,5 +1,7 @@
 import { Session } from '../src'
 import { expect, test } from 'vitest'
+import * as fs from "node:fs"
+import * as path from 'node:path';
 
 const E2B_API_KEY = process.env.E2B_API_KEY
 
@@ -26,11 +28,17 @@ test('create file', async () => {
 
 test('read and write', async () => {
   const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
-
+  
+  // String
   await session.filesystem.write('/tmp/test.txt', 'Hello World!')
-
   const content = await session.filesystem.read('/tmp/test.txt')
   expect(content).toEqual('Hello World!')
+  
+  // Binary file
+  const binaryFile = fs.readFileSync(path.join(__dirname, '/assets/video.webm'))
+  await session.filesystem.writeBytes('/tmp/video.webm', binaryFile)
+  const binaryContent = await session.filesystem.readBytes('/tmp/video.webm')
+  expect(binaryContent).toEqual(binaryFile)
 
   await session.close()
 })
