@@ -103,7 +103,7 @@ export const Auth = function () {
           </div>
           <HeaderSeparator />
           <div className="flex items-center gap-2">
-            <Popover defaultOpen={true}>
+            <Popover>
               <PopoverTrigger
                 className="
                 whitespace-nowrap text-xs font-bold
