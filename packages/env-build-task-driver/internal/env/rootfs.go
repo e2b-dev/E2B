@@ -13,7 +13,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
@@ -47,7 +46,6 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		}
 	}()
 
-	// TODO: Push to registry later
 	err = rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		return nil, err
@@ -202,6 +200,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		data, err := r.client.ContainerLogs(childCtx, cont.ID, types.ContainerLogsOptions{
 			ShowStdout: true,
 			ShowStderr: true,
+			Timestamps: false,
+			Follow:     true,
+			Tail:       "40",
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error getting container logs %w", err)
@@ -237,14 +238,11 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			return fmt.Errorf("error waiting for container %v", waitErr)
 		}
 	case response := <-wait:
-		telemetry.ReportEvent(childCtx, "waited for container exit", attribute.String("env_id", fmt.Sprintf("response %+v", response)))
+		if response.Error != nil {
+			return fmt.Errorf("error waiting for container - code %d: %w", response.StatusCode, response.Error.Message)
+		}
 	}
 	telemetry.ReportEvent(childCtx, "waited for container exit")
-
-	exitResponse := <-wait
-	if exitResponse.Error != nil {
-		return fmt.Errorf("error waiting for container %v", exitResponse.Error)
-	}
 
 	containerReader, stat, err := r.client.CopyFromContainer(childCtx, cont.ID, "/")
 	if err != nil {

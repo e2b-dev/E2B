@@ -61,7 +61,7 @@
 "go.inlayHints.parameterNames": true,
 "go.buildOnSave": "off",
 "go.formatTool": "gofumpt",
-"go.lintOnSave": "file",
+"go.lintOnSave": "package",
 "go.survey.prompt": false,
 "go.useCodeSnippetsOnFunctionSuggestWithoutType": true,
 "go.useCodeSnippetsOnFunctionSuggest": true
