@@ -2,6 +2,7 @@ package env
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
@@ -70,7 +72,13 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		return err
 	}
 	telemetry.ReportEvent(childCtx, "opened docker context file")
-	defer dockerContextFile.Close()
+	defer func() {
+		closeErr := dockerContextFile.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error closing docker context file %w", closeErr)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+	}()
 
 	buildResponse, err := r.client.ImageBuild(
 		childCtx,
@@ -119,11 +127,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	defer childSpan.End()
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
-		Image:      r.dockerTag(),
-		Entrypoint: []string{"/bin/sh", "-c"},
-		User:       "root",
-		// Cmd:        []string{r.ProvisionScript},
-		Tty: true,
+		Image:           r.dockerTag(),
+		Entrypoint:      []string{"/bin/sh", "-c"},
+		User:            "root",
+		Cmd:             []string{r.ProvisionScript},
+		Tty:             true,
+		NetworkDisabled: false,
+		AttachStdout:    true,
+		AttachStderr:    true,
 	}, nil, nil, &v1.Platform{}, "")
 	if err != nil {
 		return fmt.Errorf("error creating container %v", err)
@@ -141,7 +152,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 	}()
 
-	envdFile, err := os.Open(r.EnvdPath())
+	envdFile, err := os.Open("/usr/bin/ping")
 	if err != nil {
 		return fmt.Errorf("error opening envd file %v", err)
 	}
@@ -189,18 +200,30 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
-	data, err := r.client.ContainerLogs(childCtx, cont.ID, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true})
-	if err != nil {
-		return fmt.Errorf("error getting container logs %v", err)
-	}
-	telemetry.ReportEvent(childCtx, "got container logs")
-	defer data.Close()
-
 	go func() {
-		_, err := io.Copy(os.Stdout, data)
+		data, err := r.client.ContainerLogs(childCtx, cont.ID, types.ContainerLogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+			Follow:     true,
+			Tail:       "40",
+		})
 		if err != nil {
-			errMsg := fmt.Errorf("error copying container logs %v", err)
+			errMsg := fmt.Errorf("error getting container logs %w", err)
 			telemetry.ReportError(childCtx, errMsg)
+			return
+		}
+		telemetry.ReportEvent(childCtx, "got container logs")
+		defer func() {
+			closeErr := data.Close()
+			if closeErr != nil {
+				errMsg := fmt.Errorf("error closing container logs %w", closeErr)
+				telemetry.ReportError(childCtx, errMsg)
+			}
+		}()
+
+		scanner := bufio.NewScanner(data)
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
 		}
 	}()
 
@@ -210,13 +233,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}
 	telemetry.ReportEvent(childCtx, "started container")
 
-	wait, errWait := r.client.ContainerWait(childCtx, cont.ID, container.WaitConditionNextExit)
+	wait, errWait := r.client.ContainerWait(childCtx, cont.ID, container.WaitConditionNotRunning)
 	select {
-	case err := <-errWait:
-		if err != nil {
-			return fmt.Errorf("error waiting for container %v", err)
+	case waitErr := <-errWait:
+		if waitErr != nil {
+			return fmt.Errorf("error waiting for container %v", waitErr)
 		}
-	case <-wait:
+	case response := <-wait:
+		telemetry.ReportEvent(childCtx, "waited for container exit", attribute.String("env_id", fmt.Sprintf("response %+v", response)))
 	}
 	telemetry.ReportEvent(childCtx, "waited for container exit")
 

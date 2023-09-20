@@ -123,7 +123,6 @@ func (e *Env) Initialize(ctx context.Context, tracer trace.Tracer) error {
 	defer childSpan.End()
 
 	var err error
-
 	defer func() {
 		if err != nil {
 			e.Cleanup(childCtx, tracer)

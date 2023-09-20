@@ -3,13 +3,17 @@
 # This script is supposed to be executed in a running *Ubuntu* container.
 # The container is then extracted to a rootfs image for the Firecracker VM.
 
-set -euo pipefail
+set -eu
 
-apt-get update
+# apt-get update
 
-apt-get install -y \
-  build-essential \
-  curl socat util-linux openssh-server git chrony nano sudo htop
+# TODO: Add systemd
+
+# apt-get install -y \
+#   build-essential \
+#   curl socat util-linux openssh-server git chrony nano sudo htop
+
+apt install -y sudo
 
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -80,6 +84,8 @@ adduser --disabled-password --gecos "" user
 usermod -aG sudo user
 passwd -d user
 echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
+
+mkdir /code
 
 chmod -R 777 /code
 chmod -R 777 /home/user

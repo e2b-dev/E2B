@@ -115,6 +115,8 @@
 - We need to remove the entrypoint and cmd from docker
 - start the fc vm more efficiently (not separate requests to the API, wait before last, etc.)
 - Run the env build parts in parallel (network + rootfs)
+- Improve envd copying (now we need to convert to tar before copying)
+- Do the provisioning in a separate tar and extract after the rest of the build finishes?
 
 ### FC
 - Improve generating of FC API client in the firecracker task driver

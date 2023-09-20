@@ -29,3 +29,6 @@ run-build-check:
 	make build && \
 	gcloud compute scp ./bin/env-build-task-driver root@$$($(client)):/tmp/build-task-driver
 	gcloud compute ssh $$($(client)) -- 'sudo -s && chmod +x /tmp/build-task-driver'
+
+test:
+	sudo go run main.go -env ggjp0khvwwoqeoghu19o -build 08c6d485-ae68-6d98-c9c1-adafb9f488ed
