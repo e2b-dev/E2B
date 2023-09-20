@@ -47,3 +47,8 @@ Right now you need to manually check and update the [firecracker yml](./internal
 11. Configure git identifiers
 - `git config --global user.email "MY_NAME@example.com"`
 - `git config --global user.name "NAME"`
+
+
+### Shell script best practices
+
+https://sharats.me/posts/shell-script-best-practices/

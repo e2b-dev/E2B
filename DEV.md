@@ -54,6 +54,7 @@
 - make buckets not public
 - check api build speed
 - Update architecture diagram in figma
+- Make all the shellscript more resilent
 
 
 ### API
