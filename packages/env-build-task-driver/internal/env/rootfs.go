@@ -2,7 +2,6 @@ package env
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -127,14 +126,13 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	defer childSpan.End()
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
-		Image:      r.dockerTag(),
-		Entrypoint: []string{"/bin/sh", "-c", "sleep 10000000"},
-		User:       "root",
-		// Cmd:             []string{r.ProvisionScript},
-		Tty:             false,
-		NetworkDisabled: false,
-		AttachStdout:    true,
-		AttachStderr:    true,
+		Image:        r.dockerTag(),
+		Entrypoint:   []string{"/bin/sh", "-c"},
+		User:         "root",
+		Cmd:          []string{r.ProvisionScript},
+		Tty:          true,
+		AttachStdout: true,
+		AttachStderr: true,
 	}, nil, nil, &v1.Platform{}, "")
 	if err != nil {
 		return fmt.Errorf("error creating container %v", err)
@@ -219,9 +217,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			}
 		}()
 
-		scanner := bufio.NewScanner(data)
-		for scanner.Scan() {
-			fmt.Println(scanner.Text())
+		_, err = io.Copy(os.Stdout, data)
+		if err != nil {
+			errMsg := fmt.Errorf("error copying container logs %v", err)
+			telemetry.ReportError(childCtx, errMsg)
 		}
 	}()
 

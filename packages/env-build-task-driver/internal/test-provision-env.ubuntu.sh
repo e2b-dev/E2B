@@ -1,12 +1,14 @@
-set -eu
+set -euo xtrace
+
+DEBIAN_FRONTEND=noninteractive
 
 # yes | unminimize
 
-apt-get update
+echo "Starting provisioning script..."
 
-apt-get install -y \
-  build-essential \
-  curl socat util-linux openssh-server git chrony nano sudo htop
+# apt-get update
+
+apt-get install -y openssh-server chrony sudo systemd
 
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -92,3 +94,5 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 # Start systemd services
 systemctl enable envd
 systemctl enable chrony
+
+echo "Finished provisioning script."

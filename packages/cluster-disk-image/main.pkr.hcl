@@ -52,15 +52,19 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make",
+      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make docker.io",
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo snap install go --classic"
     ]
   }
 
   # Install Docker
   provisioner "shell" {
     inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y docker.io",
       "sudo systemctl start docker",
       "sudo usermod -aG docker $USER",
     ]
