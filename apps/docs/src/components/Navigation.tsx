@@ -26,6 +26,7 @@ function useInitialValue<T>(value: T, condition = true) {
   return condition ? initialValue : value
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TopLevelNavItem({
   href,
   children,
@@ -268,7 +269,7 @@ export const navigation = [
       // { title: 'Read File', href: '/agents/read' },
       // { title: 'Write File', href: '/agents/write' },
       // TODO: Guide for building ffmpeg agent
-    ]
+    ],
   },
   {
     title: 'AI Playgrounds',

@@ -39,14 +39,14 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off', // "move fast" mode
     'linebreak-style': ['error', 'unix'],
     'unused-imports/no-unused-imports': 'error',
-    'unused-imports/no-unused-vars': [
-      'warn',
-      {
-        args: 'none',
-        argsIgnorePattern: '^_',
-        vars: 'all',
-        varsIgnorePattern: '^_',
-      },
-    ],
+    // 'unused-imports/no-unused-vars': [
+    //   'warn',
+    //   {
+    //     args: 'none',
+    //     argsIgnorePattern: '^_',
+    //     vars: 'all',
+    //     varsIgnorePattern: '^_',
+    //   },
+    // ],
   },
 }

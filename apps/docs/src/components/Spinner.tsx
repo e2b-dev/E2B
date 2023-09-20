@@ -16,7 +16,7 @@ function Spinner({ className = '' }) {
 export default Spinner
 
 // TODO: Nicer loading dots, I don't like these much
-export function LoadingDots({ className = '' }) {
+export function LoadingDots() {
   return (
     <div className="inline-flex align-middle">
       <span className="circle animate-loaderDots"></span>

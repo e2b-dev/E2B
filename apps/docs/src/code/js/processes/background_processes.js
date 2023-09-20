@@ -6,7 +6,7 @@ const session = await Session.create({
 })
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 // Start a server process in the background

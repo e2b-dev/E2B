@@ -28,6 +28,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     py: null,
   },
   initSession: async (lang: LangShort, apiKey: string): Promise<Session> => {
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const maybeExistingSession = get().sessions[lang]
       if (maybeExistingSession?.session) {

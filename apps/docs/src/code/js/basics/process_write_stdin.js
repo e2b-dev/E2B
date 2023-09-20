@@ -11,7 +11,7 @@ const proc = await session.process.start({
   cmd: 'while IFS= read -r line; do echo \"$line\"; sleep 1; done',
   onStdout: output => console.log(output),
 })
-await proc.sendStdin("AI Playground\n") // $HighlightLine
+await proc.sendStdin('AI Playground\n') // $HighlightLine
 await proc.kill()
 
 await session.close()

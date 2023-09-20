@@ -152,8 +152,8 @@ function UseCase({ useCase }) {
 export function UseCases() {
   return (
     <div className="xl:max-w-none">
-      {/* @ts-ignore */}
       <Heading
+        /* @ts-ignore */
         level={1}
         id="useCases"
       >

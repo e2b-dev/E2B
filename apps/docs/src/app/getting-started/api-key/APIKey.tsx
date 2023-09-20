@@ -10,7 +10,7 @@ import { useSignIn } from '@/utils/useSignIn'
 
 function APIKey() {
   const signIn = useSignIn()
-  const { user, isLoading, error } = useUser()
+  const { user } = useUser()
   const apiKey = useApiKey()
   const posthog = usePostHog()
 

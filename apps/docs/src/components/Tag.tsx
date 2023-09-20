@@ -45,6 +45,7 @@ export function Tag({
   variant = 'medium',
   color = valueColorMap[children] ?? 'emerald',
 }: {
+  // eslint-disable-next-line @typescript-eslint/ban-types
   children: keyof typeof valueColorMap & (string | {})
   variant?: keyof typeof variantStyles
   color?: keyof typeof colorStyles
