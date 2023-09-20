@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	fswatcher "github.com/e2b-dev/api/packages/envd/internal/filesystem/watcher"
-	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
+
+	fswatcher "github.com/e2b-dev/api/packages/envd/internal/filesystem/watcher"
+	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
 )
 
 type FileInfoResponse struct {
@@ -123,7 +124,7 @@ func (s *Service) List(dirpath string) (*[]FileInfoResponse, error) {
 			"directoryPath", dirpath,
 			"error", err,
 		)
-		return nil, fmt.Errorf("error listing files in '%s': %+v", dirpath, err)
+		return nil, fmt.Errorf("error listing files in '%s': %w", dirpath, err)
 	}
 
 	results := []FileInfoResponse{}
@@ -148,7 +149,7 @@ func (s *Service) Remove(path string) error {
 			"path", path,
 			"error", err,
 		)
-		return fmt.Errorf("error removing file or directory '%s': %+v", path, err)
+		return fmt.Errorf("error removing file or directory '%s': %w", path, err)
 	}
 	return nil
 }
@@ -165,7 +166,7 @@ func (s *Service) Read(path string) (string, error) {
 			"path", path,
 			"error", err,
 		)
-		return "", fmt.Errorf("error reading file '%s': %+v", path, err)
+		return "", fmt.Errorf("error reading file '%s': %w", path, err)
 	}
 
 	return string(data), nil
@@ -184,7 +185,7 @@ func (s *Service) ReadBase64(path string) (string, error) {
 			"path", path,
 			"error", err,
 		)
-		return "", fmt.Errorf("error reading file '%s': %+v", path, err)
+		return "", fmt.Errorf("error reading file '%s': %w", path, err)
 	}
 
 	content := base64.StdEncoding.EncodeToString(data)
@@ -198,13 +199,13 @@ func (s *Service) Write(path string, content string) error {
 		"path", path,
 	)
 
-	if err := os.WriteFile(path, []byte(content), 0755); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
 		s.logger.Errorw("Failed to write to a file",
 			"path", path,
 			"content", content,
 			"error", err,
 		)
-		return fmt.Errorf("error writing to file '%s': %+v", path, err)
+		return fmt.Errorf("error writing to file '%s': %w", path, err)
 	}
 	return nil
 }
@@ -222,16 +223,16 @@ func (s *Service) WriteBase64(path string, content string) error {
 			"content", content,
 			"error", err,
 		)
-		return fmt.Errorf("error decoding bytes from base64 '%s': %+v", bytes, err)
+		return fmt.Errorf("error decoding bytes from base64 '%s': %w", bytes, err)
 	}
 
-	if err := os.WriteFile(path, bytes, 0755); err != nil {
+	if err := os.WriteFile(path, bytes, 0o755); err != nil {
 		s.logger.Errorw("Failed to write to a file",
 			"path", path,
 			"content", content,
 			"error", err,
 		)
-		return fmt.Errorf("error writing to file '%s': %+v", path, err)
+		return fmt.Errorf("error writing to file '%s': %w", path, err)
 	}
 	return nil
 }
@@ -241,12 +242,12 @@ func (s *Service) MakeDir(dirpath string) error {
 		"dirpath", dirpath,
 	)
 
-	if err := os.MkdirAll(dirpath, 0755); err != nil {
+	if err := os.MkdirAll(dirpath, 0o755); err != nil {
 		s.logger.Errorw("Failed to create a new directory",
 			"dirpath", dirpath,
 			"error", err,
 		)
-		return fmt.Errorf("error creating a new directory '%s': %+v", dirpath, err)
+		return fmt.Errorf("error creating a new directory '%s': %w", dirpath, err)
 	}
 
 	return nil

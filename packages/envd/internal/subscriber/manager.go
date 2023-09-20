@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/e2b-dev/api/packages/envd/internal/smap"
 	"go.uber.org/zap"
+
+	"github.com/e2b-dev/api/packages/envd/internal/smap"
 )
 
 type Manager struct {
@@ -27,7 +28,7 @@ func (m *Manager) Notify(topic string, data interface{}) error {
 		if sub.Topic == topic {
 			err := sub.Notify(data)
 			if err != nil {
-				return fmt.Errorf("error sending data notification for subID %s, %+v", sub.Subscription.ID, err)
+				return fmt.Errorf("error sending data notification for subID %s, %w", sub.Subscription.ID, err)
 			}
 		}
 	}

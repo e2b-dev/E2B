@@ -3,8 +3,9 @@ package terminal
 import (
 	"fmt"
 
-	"github.com/e2b-dev/api/packages/envd/internal/smap"
 	"go.uber.org/zap"
+
+	"github.com/e2b-dev/api/packages/envd/internal/smap"
 )
 
 type Manager struct {
@@ -46,7 +47,7 @@ func (m *Manager) Add(
 ) (*Terminal, error) {
 	term, err := New(id, shell, rootdir, cols, rows, envVars, cmd, m.logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating new terminal: %+v", err)
+		return nil, fmt.Errorf("error creating new terminal: %w", err)
 	}
 
 	m.terms.Insert(term.ID, term)

@@ -3,8 +3,9 @@ package process
 import (
 	"fmt"
 
-	"github.com/e2b-dev/api/packages/envd/internal/smap"
 	"go.uber.org/zap"
+
+	"github.com/e2b-dev/api/packages/envd/internal/smap"
 )
 
 type Manager struct {
@@ -37,7 +38,7 @@ func (m *Manager) Get(id ID) (*Process, bool) {
 func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
 	proc, err := New(id, cmd, envVars, rootdir, m.logger)
 	if err != nil {
-		return nil, fmt.Errorf("error configuring new process with id '%s': %+v", id, err)
+		return nil, fmt.Errorf("error configuring new process with id '%s': %w", id, err)
 	}
 
 	m.procs.Insert(proc.ID, proc)
