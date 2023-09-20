@@ -12,15 +12,9 @@ async def main():
     print("a")
     s = Session("Nodejs")
     await s.open()
-    print("b")
-    proc = await s.process.start(
-        cmd="echo testing",
-        on_stderr=lambda data: print(data),
-        on_stdout=lambda data: print(data),
-        on_exit=lambda: print("exit"),
-    )
 
-    await proc
+
+
     await s.close()
 
     return
