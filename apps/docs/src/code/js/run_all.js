@@ -19,5 +19,6 @@ import * as timeout_filesystem from './timeout/timeout_filesystem.js'
 import * as background_processes from './processes/background_processes.js'
 
 import * as agents_code_exec from './agents/code_exec.js'
+import * as agents_clone_repo from './agents/clone_repo.js'
 
 console.log('Done')

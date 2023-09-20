@@ -36,7 +36,7 @@ async def main():
   ) # $HighlightLine
 
   # 4. Wait for the process to finish
-  await proc.finished
+  await proc
 
   # 5. Or you can access output after the process has finished
   output = proc.output
