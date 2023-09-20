@@ -10,12 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/client"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/client/operations"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/models"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
 	hclog "github.com/hashicorp/go-hclog"
@@ -23,6 +17,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/client"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/client/operations"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/models"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/env"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 )
 
 const (
@@ -129,7 +130,7 @@ func (d *Driver) initializeFC(
 
 	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID, slot.InstanceID)
 	if err != nil {
-		errMsg := fmt.Errorf("error assembling FC config: %v", err)
+		errMsg := fmt.Errorf("error assembling FC config: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
@@ -192,7 +193,7 @@ func (d *Driver) initializeFC(
 
 		readerErr := cmdStdoutReader.Close()
 		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm stdout reader %v", readerErr)
+			errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
 			telemetry.ReportError(vmmChildCtx, errMsg)
 		}
 	}()
@@ -212,7 +213,7 @@ func (d *Driver) initializeFC(
 
 		readerErr := cmdStderrReader.Close()
 		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm stderr reader %v", readerErr)
+			errMsg := fmt.Errorf("error closing vmm stderr reader %w", readerErr)
 			telemetry.ReportError(vmmChildCtx, errMsg)
 		}
 	}()
@@ -233,7 +234,7 @@ func (d *Driver) initializeFC(
 
 		readerErr := vmmLogsReader.Close()
 		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm setup reader %v", readerErr)
+			errMsg := fmt.Errorf("error closing vmm setup reader %w", readerErr)
 			telemetry.ReportError(vmmChildCtx, errMsg)
 		}
 	}()
@@ -261,23 +262,22 @@ func (d *Driver) initializeFC(
 
 	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, machineOpts...)
 	if err != nil {
-		errMsg := fmt.Errorf("failed creating machine: %v", err)
+		errMsg := fmt.Errorf("failed creating machine: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
 	telemetry.ReportEvent(childCtx, "created vmm")
 
 	m.Handlers.Validation = m.Handlers.Validation.Clear()
-	m.Handlers.FcInit =
-		m.Handlers.FcInit.Clear().
-			Append(
-				firecracker.StartVMMHandler,
-				firecracker.BootstrapLoggingHandler,
-			)
+	m.Handlers.FcInit = m.Handlers.FcInit.Clear().
+		Append(
+			firecracker.StartVMMHandler,
+			firecracker.BootstrapLoggingHandler,
+		)
 
 	err = m.Handlers.Run(childCtx, m)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to start preboot FC: %v", err)
+		errMsg := fmt.Errorf("failed to start preboot FC: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
@@ -300,7 +300,7 @@ func (d *Driver) initializeFC(
 		},
 	); err != nil {
 		m.StopVMM()
-		errMsg := fmt.Errorf("failed to load snapshot: %v", err)
+		errMsg := fmt.Errorf("failed to load snapshot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
@@ -310,7 +310,7 @@ func (d *Driver) initializeFC(
 		if err != nil {
 			stopErr := m.StopVMM()
 			if stopErr != nil {
-				errMsg := fmt.Errorf("error stopping machine after error: %+v", stopErr)
+				errMsg := fmt.Errorf("error stopping machine after error: %w", stopErr)
 				telemetry.ReportError(childCtx, errMsg)
 				logger.Error(errMsg)
 			}
@@ -319,7 +319,7 @@ func (d *Driver) initializeFC(
 
 	pid, errpid := m.PID()
 	if errpid != nil {
-		errMsg := fmt.Errorf("failed getting pid for machine: %v", errpid)
+		errMsg := fmt.Errorf("failed getting pid for machine: %w", errpid)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}

@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
 	"github.com/hashicorp/nomad/plugins/base"
@@ -15,6 +12,10 @@ import (
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	pstructs "github.com/hashicorp/nomad/plugins/shared/structs"
 	"github.com/txn2/txeh"
+
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/env"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -89,8 +90,7 @@ type Driver struct {
 }
 
 // Config is the driver configuration set by the SetConfig RPC call
-type Config struct {
-}
+type Config struct{}
 type Nic struct {
 	Ip          string // CIDR
 	Gateway     string
@@ -245,7 +245,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	var taskConfig TaskConfig
 	if err := cfg.DecodeDriverConfig(&taskConfig); err != nil {
-		errMsg := fmt.Errorf("failed to decode driver config: %v", err)
+		errMsg := fmt.Errorf("failed to decode driver config: %w", err)
 
 		telemetry.ReportCriticalError(ctx, errMsg)
 		return nil, nil, errMsg
@@ -306,7 +306,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		d.tracer,
 	)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get IP slot: %v", err)
+		errMsg := fmt.Errorf("failed to get IP slot: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
@@ -316,7 +316,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		if err != nil {
 			slotErr := ipSlot.Release(childCtx, taskConfig.ConsulToken, d.tracer)
 			if slotErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed instance start %v", slotErr)
+				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", slotErr)
 				telemetry.ReportError(childCtx, errMsg)
 			}
 		}
@@ -326,7 +326,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		if err != nil {
 			ntErr := RemoveNetwork(childCtx, ipSlot, d.hosts, taskConfig.ConsulToken, d.tracer)
 			if ntErr != nil {
-				errMsg := fmt.Errorf("error removing network namespace after failed instance start %v", ntErr)
+				errMsg := fmt.Errorf("error removing network namespace after failed instance start %w", ntErr)
 				telemetry.ReportError(childCtx, errMsg)
 			}
 		}
@@ -334,7 +334,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	err = CreateNetwork(childCtx, ipSlot, d.hosts, d.tracer)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create namespaces %v", err)
+		errMsg := fmt.Errorf("failed to create namespaces %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
@@ -348,7 +348,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		d.tracer,
 	)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create env for FC %v", err)
+		errMsg := fmt.Errorf("failed to create env for FC %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
@@ -358,7 +358,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		if err != nil {
 			envErr := fsEnv.Delete(childCtx, d.tracer)
 			if envErr != nil {
-				errMsg := fmt.Errorf("error deleting env after failed fc start %v", err)
+				errMsg := fmt.Errorf("error deleting env after failed fc start %w", err)
 				telemetry.ReportCriticalError(childCtx, errMsg)
 			}
 		}
@@ -401,7 +401,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	if err = handle.SetDriverState(&driverState); err != nil {
 		fc.Machine.StopVMM()
 		d.logger.Error("failed to start task, error setting driver state", "error", err)
-		errMsg := fmt.Errorf("failed to set driver state: %v", err)
+		errMsg := fmt.Errorf("failed to set driver state: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, nil, errMsg
 	}
@@ -488,7 +488,7 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 	defer childSpan.End()
 
 	if err := h.shutdown(childCtx, d); err != nil {
-		errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
+		errMsg := fmt.Errorf("executor Shutdown failed: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
@@ -522,7 +522,7 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 
 	if force {
 		if err := h.shutdown(childCtx, d); err != nil {
-			errMsg := fmt.Errorf("executor Shutdown failed: %v", err)
+			errMsg := fmt.Errorf("executor Shutdown failed: %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 		}
 		telemetry.ReportEvent(childCtx, "shutdown task")
@@ -530,19 +530,19 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 
 	err := RemoveNetwork(childCtx, h.Slot, d.hosts, h.ConsulToken, d.tracer)
 	if err != nil {
-		errMsg := fmt.Errorf("cannot remove network when destroying task %v", err)
+		errMsg := fmt.Errorf("cannot remove network when destroying task %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	err = h.EnvInstanceFilesystem.Delete(childCtx, d.tracer)
 	if err != nil {
-		errMsg := fmt.Errorf("cannot remove env when destroying task %v", err)
+		errMsg := fmt.Errorf("cannot remove env when destroying task %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	err = h.Slot.Release(childCtx, h.ConsulToken, d.tracer)
 	if err != nil {
-		errMsg := fmt.Errorf("cannot release ip slot when destroying task %v", err)
+		errMsg := fmt.Errorf("cannot release ip slot when destroying task %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
