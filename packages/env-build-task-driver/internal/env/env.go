@@ -38,15 +38,6 @@ type Env struct {
 	// Path to where the kernel image is stored.
 	KernelImagePath string
 
-	// The number of vCPUs to allocate to the VM.
-	VCpuCount int64
-
-	// The amount of RAM memory to allocate to the VM, in MiB.
-	MemoryMB int64
-
-	// The amount of disk memory to allocate to the VM, in MiB.
-	DiskSizeMB int64
-
 	// Path to the firecracker binary.
 	FirecrackerBinaryPath string
 
@@ -58,6 +49,15 @@ type Env struct {
 
 	EnvdName        string
 	ContextFileName string
+
+	// The number of vCPUs to allocate to the VM.
+	VCpuCount int64
+
+	// The amount of RAM memory to allocate to the VM, in MiB.
+	MemoryMB int64
+
+	// The amount of disk memory to allocate to the VM, in MiB.
+	DiskSizeMB int64
 }
 
 // Path to the envd.
@@ -134,12 +134,14 @@ func (e *Env) Initialize(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		return err
 	}
+
 	telemetry.ReportEvent(childCtx, "created tmp build dir")
 
 	err = os.WriteFile(e.tmpBuildIDFilePath(), []byte(e.BuildID), 0o777)
 	if err != nil {
 		return err
 	}
+
 	telemetry.ReportEvent(childCtx, "wrote build ID")
 
 	return nil
@@ -153,24 +155,28 @@ func (e *Env) MoveSnapshotToEnvDir(ctx context.Context, tracer trace.Tracer) err
 	if err != nil {
 		return nil
 	}
+
 	telemetry.ReportEvent(childCtx, "moved snapshot file")
 
 	err = os.Rename(e.tmpMemfilePath(), e.envMemfilePath())
 	if err != nil {
 		return nil
 	}
+
 	telemetry.ReportEvent(childCtx, "moved memfile")
 
 	err = os.Rename(e.tmpRootfsPath(), e.envRootfsPath())
 	if err != nil {
 		return nil
 	}
+
 	telemetry.ReportEvent(childCtx, "moved rootfs")
 
 	err = os.Rename(e.tmpBuildIDFilePath(), e.envBuildIDFilePath())
 	if err != nil {
 		return nil
 	}
+
 	telemetry.ReportEvent(childCtx, "moved build ID")
 
 	return nil
@@ -179,7 +185,7 @@ func (e *Env) MoveSnapshotToEnvDir(ctx context.Context, tracer trace.Tracer) err
 func (e *Env) Cleanup(ctx context.Context, tracer trace.Tracer) {
 	err := os.RemoveAll(e.tmpBuildDirPath())
 	if err != nil {
-		errMsg := fmt.Errorf("error killing fc process %v", err)
+		errMsg := fmt.Errorf("error cleaning up env files %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
 }
