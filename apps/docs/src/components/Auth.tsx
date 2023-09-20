@@ -167,7 +167,7 @@ export const Auth = function () {
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           {/* @ts-ignore */}
           <Button
             onClick={() => signIn()}
