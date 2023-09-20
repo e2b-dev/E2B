@@ -14,17 +14,17 @@ function useExpiringState({ defaultValue, timeout }) {
         {
           leading: false,
           trailing: true,
-        }
+        },
       ),
-    [timeout, defaultValue]
+    [timeout, defaultValue],
   )
 
   const set = useCallback(
-    (newValue) => {
+    newValue => {
       setValue(newValue)
       enqueExpiration()
     },
-    [enqueExpiration]
+    [enqueExpiration],
   )
 
   return [value, set]

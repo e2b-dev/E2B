@@ -22,14 +22,14 @@ function isObjectExpression(node) {
 }
 
 function excludeObjectExpressions(tree) {
-  return filter(tree, (node) => !isObjectExpression(node))
+  return filter(tree, node => !isObjectExpression(node))
 }
 
 function extractSections() {
   return (tree, { sections }) => {
     slugify.reset()
 
-    visit(tree, (node) => {
+    visit(tree, node => {
       if (node.type === 'heading' || node.type === 'paragraph') {
         let content = toString(excludeObjectExpressions(node))
         if (node.type === 'heading' && node.depth <= 2) {
@@ -44,6 +44,8 @@ function extractSections() {
   }
 }
 
+// eslint-disable-next-line i
+// mport/no-anonymous-default-export
 export default function (nextConfig = {}) {
   let cache = new Map()
 
@@ -57,7 +59,7 @@ export default function (nextConfig = {}) {
             this.addContextDependency(appDir)
 
             let files = glob.sync('**/*.mdx', { cwd: appDir })
-            let data = files.map((file) => {
+            let data = files.map(file => {
               let url = '/' + file.replace(/(^|\/)page\.mdx$/, '')
               let mdx = fs.readFileSync(path.join(appDir, file), 'utf8')
 

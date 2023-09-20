@@ -22,10 +22,11 @@ interface NavGroup {
 }
 
 function useInitialValue<T>(value: T, condition = true) {
-  let initialValue = useRef(value).current
+  const initialValue = useRef(value).current
   return condition ? initialValue : value
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TopLevelNavItem({
   href,
   children,
@@ -70,12 +71,15 @@ function NavLink({
         active
           ? 'text-zinc-900 dark:text-white'
           : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
-        isFontMono ? 'font-mono text-xs' : ''
+        isFontMono ? 'font-mono text-xs' : '',
       )}
     >
       <span className="truncate">{children}</span>
       {tag && (
-        <Tag variant="small" color="zinc">
+        <Tag
+          variant="small"
+          color="zinc"
+        >
           {tag}
         </Tag>
       )}
@@ -84,27 +88,20 @@ function NavLink({
 }
 
 function VisibleSectionHighlight({ group, pathname }) {
-  let [sections, visibleSections] = useInitialValue(
-    [
-      useSectionStore((s) => s.sections),
-      useSectionStore((s) => s.visibleSections),
-    ],
-    useIsInsideMobileNavigation()
+  const [sections, visibleSections] = useInitialValue(
+    [useSectionStore(s => s.sections), useSectionStore(s => s.visibleSections)],
+    useIsInsideMobileNavigation(),
   )
 
-  let isPresent = useIsPresent()
-  let firstVisibleSectionIndex = Math.max(
+  const isPresent = useIsPresent()
+  const firstVisibleSectionIndex = Math.max(
     0,
-    [{ id: '_top' }, ...sections].findIndex(
-      (section) => section.id === visibleSections[0]
-    )
+    [{ id: '_top' }, ...sections].findIndex(section => section.id === visibleSections[0]),
   )
-  let itemHeight = remToPx(2)
-  let height = isPresent
-    ? Math.max(1, visibleSections.length) * itemHeight
-    : itemHeight
-  let activePageIndex = activeGroupIndex(group, pathname)
-  let top = activePageIndex * itemHeight + firstVisibleSectionIndex * itemHeight
+  const itemHeight = remToPx(2)
+  const height = isPresent ? Math.max(1, visibleSections.length) * itemHeight : itemHeight
+  const activePageIndex = activeGroupIndex(group, pathname)
+  const top = activePageIndex * itemHeight + firstVisibleSectionIndex * itemHeight
 
   return (
     <motion.div
@@ -118,17 +115,11 @@ function VisibleSectionHighlight({ group, pathname }) {
   )
 }
 
-function ActivePageMarker({
-  group,
-  pathname,
-}: {
-  group: NavGroup
-  pathname: string
-}) {
-  let itemHeight = remToPx(2)
-  let offset = remToPx(0.25)
-  let activePageIndex = activeGroupIndex(group, pathname)
-  let top = offset + activePageIndex * itemHeight
+function ActivePageMarker({ group, pathname }: { group: NavGroup; pathname: string }) {
+  const itemHeight = remToPx(2)
+  const offset = remToPx(0.25)
+  const activePageIndex = activeGroupIndex(group, pathname)
+  const top = offset + activePageIndex * itemHeight
 
   return (
     <motion.div
@@ -146,19 +137,18 @@ function NavigationGroup({ group, className }) {
   // If this is the mobile navigation then we always render the initial
   // state, so that the state does not change during the close animation.
   // The state will still update when we re-open (re-render) the navigation.
-  let isInsideMobileNavigation = useIsInsideMobileNavigation()
+  const isInsideMobileNavigation = useIsInsideMobileNavigation()
   let initialPathname = usePathname()
 
   // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
-  if (typeof window === 'undefined' && initialPathname === '/')
-    initialPathname = '/docs'
+  if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
 
-  let [pathname, sections] = useInitialValue(
-    [initialPathname, useSectionStore((s) => s.sections)],
-    isInsideMobileNavigation
+  const [pathname, sections] = useInitialValue(
+    [initialPathname, useSectionStore(s => s.sections)],
+    isInsideMobileNavigation,
   )
 
-  let isActiveGroup = activeGroupIndex(group, pathname) !== -1
+  const isActiveGroup = activeGroupIndex(group, pathname) !== -1
 
   return (
     <li className={clsx('relative mt-6', className)}>
@@ -171,7 +161,10 @@ function NavigationGroup({ group, className }) {
       <div className="relative mt-3 pl-2">
         <AnimatePresence initial={!isInsideMobileNavigation}>
           {isActiveGroup && (
-            <VisibleSectionHighlight group={group} pathname={pathname} />
+            <VisibleSectionHighlight
+              group={group}
+              pathname={pathname}
+            />
           )}
         </AnimatePresence>
         <motion.div
@@ -180,12 +173,22 @@ function NavigationGroup({ group, className }) {
         />
         <AnimatePresence initial={false}>
           {isActiveGroup && (
-            <ActivePageMarker group={group} pathname={pathname} />
+            <ActivePageMarker
+              group={group}
+              pathname={pathname}
+            />
           )}
         </AnimatePresence>
-        <ul role="list" className="border-l border-transparent">
-          {group.links.map((link) => (
-            <motion.li key={link.href} layout="position" className="relative">
+        <ul
+          role="list"
+          className="border-l border-transparent"
+        >
+          {group.links.map(link => (
+            <motion.li
+              key={link.href}
+              layout="position"
+              className="relative"
+            >
               {/* @ts-ignore */}
               <NavLink
                 href={link.href}
@@ -194,7 +197,10 @@ function NavigationGroup({ group, className }) {
               >
                 {link.title}
               </NavLink>
-              <AnimatePresence mode="popLayout" initial={false}>
+              <AnimatePresence
+                mode="popLayout"
+                initial={false}
+              >
                 {`/docs${link.href}` === pathname && sections.length > 0 && (
                   <motion.ul
                     role="list"
@@ -208,7 +214,7 @@ function NavigationGroup({ group, className }) {
                       transition: { duration: 0.15 },
                     }}
                   >
-                    {sections.map((section) => (
+                    {sections.map(section => (
                       <li key={section.id}>
                         {/* @ts-ignore */}
                         <NavLink
@@ -247,7 +253,10 @@ export const navigation = [
       { title: 'SDK Basics', href: '/getting-started/basics' },
       { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
       { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
-      { title: 'SDK Multiple Processes', href: '/getting-started/sdk-multiple-processes' },
+      {
+        title: 'SDK Multiple Processes',
+        href: '/getting-started/sdk-multiple-processes',
+      },
     ],
   },
   {
@@ -260,7 +269,7 @@ export const navigation = [
       // { title: 'Read File', href: '/agents/read' },
       // { title: 'Write File', href: '/agents/write' },
       // TODO: Guide for building ffmpeg agent
-    ]
+    ],
   },
   {
     title: 'AI Playgrounds',
@@ -349,7 +358,10 @@ export function Navigation(props) {
           />
         ))}
         <li className="sticky bottom-0 z-10 mt-6">
-          <Feedback variant="secondary" className="w-full" />
+          <Feedback
+            variant="secondary"
+            className="w-full"
+          />
         </li>
         <li className="sticky bottom-0 z-10 mt-6 min-[540px]:hidden">
           <Auth />
@@ -360,8 +372,8 @@ export function Navigation(props) {
 }
 
 function activeGroupIndex(group: NavGroup, pathname: string) {
-  return group.links.findIndex((link) => {
-    if (link.href === `/` && pathname === `/docs`) return true // special case for index
+  return group.links.findIndex(link => {
+    if (link.href === '/' && pathname === '/docs') return true // special case for index
     return `/docs${link.href}` === pathname
   })
 }

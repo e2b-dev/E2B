@@ -75,8 +75,8 @@ function UseCaseIcon({ icon: Icon }) {
 }
 
 function UseCasePattern({ mouseX, mouseY, ...gridProps }) {
-  let maskImage = useMotionTemplate`radial-gradient(180px at ${mouseX}px ${mouseY}px, white, transparent)`
-  let style = { maskImage, WebkitMaskImage: maskImage }
+  const maskImage = useMotionTemplate`radial-gradient(180px at ${mouseX}px ${mouseY}px, white, transparent)`
+  const style = { maskImage, WebkitMaskImage: maskImage }
 
   return (
     <div className="pointer-events-none">
@@ -112,11 +112,11 @@ function UseCasePattern({ mouseX, mouseY, ...gridProps }) {
 }
 
 function UseCase({ useCase }) {
-  let mouseX = useMotionValue(0)
-  let mouseY = useMotionValue(0)
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
 
   function onMouseMove({ currentTarget, clientX, clientY }) {
-    let { left, top } = currentTarget.getBoundingClientRect()
+    const { left, top } = currentTarget.getBoundingClientRect()
     mouseX.set(clientX - left)
     mouseY.set(clientY - top)
   }
@@ -127,7 +127,11 @@ function UseCase({ useCase }) {
       onMouseMove={onMouseMove}
       className="group relative flex rounded-2xl bg-zinc-50 transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
     >
-      <UseCasePattern {...useCase.pattern} mouseX={mouseX} mouseY={mouseY} />
+      <UseCasePattern
+        {...useCase.pattern}
+        mouseX={mouseX}
+        mouseY={mouseY}
+      />
       <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
       <div className="relative rounded-2xl px-4 pb-4 pt-16">
         <UseCaseIcon icon={useCase.icon} />
@@ -148,13 +152,19 @@ function UseCase({ useCase }) {
 export function UseCases() {
   return (
     <div className="xl:max-w-none">
-      {/* @ts-ignore */}
-      <Heading level={1} id="useCases">
+      <Heading
+        /* @ts-ignore */
+        level={1}
+        id="useCases"
+      >
         Use Cases
       </Heading>
       <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
-        {useCases.map((useCase) => (
-          <UseCase key={useCase.href} useCase={useCase} />
+        {useCases.map(useCase => (
+          <UseCase
+            key={useCase.href}
+            useCase={useCase}
+          />
         ))}
       </div>
     </div>

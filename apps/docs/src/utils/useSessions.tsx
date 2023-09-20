@@ -17,8 +17,8 @@ const envIds = {
 }
 
 const preps = {
-  js: `npm init es6 -y && npm install @e2b/sdk`,
-  py: `pip install e2b`,
+  js: 'npm init es6 -y && npm install @e2b/sdk',
+  py: 'pip install e2b',
 }
 
 // TODO: Consider using immer for easier state updates
@@ -28,6 +28,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     py: null,
   },
   initSession: async (lang: LangShort, apiKey: string): Promise<Session> => {
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const maybeExistingSession = get().sessions[lang]
       if (maybeExistingSession?.session) {
@@ -43,7 +44,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         try {
           const sessionP = Session.create({ id: envIds[lang], apiKey })
           // set promise to store so that other calls to initSession will wait for this one to finish
-          set((state) => ({
+          set(state => ({
             sessions: {
               ...state.sessions,
               [lang]: {
@@ -63,7 +64,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
           await proc.finished // await prep process to finish
           console.log(`${lang} session created and started`)
           // set session to store so it can be used instead of creating a new one
-          set((state) => ({
+          set(state => ({
             sessions: {
               ...state.sessions,
               [lang]: {

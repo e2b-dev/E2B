@@ -28,7 +28,10 @@ class FilesystemWatcher {
   private listeners: Set<FilesystemEventListener>
   private rpcSubscriptionID?: string
 
-  constructor(private sessConn: SessionConnection, private path: string) {
+  constructor(
+    private sessConn: SessionConnection,
+    private path: string,
+  ) {
     this.listeners = new Set<FilesystemEventListener>()
   }
 

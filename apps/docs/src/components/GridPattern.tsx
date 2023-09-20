@@ -14,10 +14,13 @@ export function GridPattern({
   y: string | number
   squares: Array<[x: number, y: number]>
 }) {
-  let patternId = useId()
+  const patternId = useId()
 
   return (
-    <svg aria-hidden="true" {...props}>
+    <svg
+      aria-hidden="true"
+      {...props}
+    >
       <defs>
         <pattern
           id={patternId}
@@ -27,7 +30,10 @@ export function GridPattern({
           x={x}
           y={y}
         >
-          <path d={`M.5 ${height}V.5H${width}`} fill="none" />
+          <path
+            d={`M.5 ${height}V.5H${width}`}
+            fill="none"
+          />
         </pattern>
       </defs>
       <rect
@@ -37,7 +43,11 @@ export function GridPattern({
         fill={`url(#${patternId})`}
       />
       {squares && (
-        <svg x={x} y={y} className="overflow-visible">
+        <svg
+          x={x}
+          y={y}
+          className="overflow-visible"
+        >
           {squares.map(([x, y]) => (
             <rect
               strokeWidth="0"

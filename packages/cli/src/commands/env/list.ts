@@ -21,7 +21,7 @@ export const listCommand = new commander.Command('list')
       const envs = await apiRes.json()
 
       console.log(chalk.default.underline(chalk.default.green('Environments')))
-      
+
       if (!envs?.length) {
         console.log('No environments found')
       } else {

@@ -16,7 +16,7 @@ let proc = await session.process.start({ // $HighlightLine
 // 3. Wait for the process to finish
 await proc.finished
 
-// Optional: 4. List the cntent of cloned repo
+// Optional: 4. List the content of cloned repo
 const content = await session.filesystem.list('/code/open-react-template')
 console.log(content)
 

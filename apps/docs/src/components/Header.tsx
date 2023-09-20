@@ -36,12 +36,12 @@ function TopLevelNavItem({
 // @ts-ignore
 export const Header = forwardRef(function Header({ className }, ref) {
   // @ts-ignore
-  let { isOpen: mobileNavIsOpen } = useMobileNavigationStore()
-  let isInsideMobileNavigation = useIsInsideMobileNavigation()
+  const { isOpen: mobileNavIsOpen } = useMobileNavigationStore()
+  const isInsideMobileNavigation = useIsInsideMobileNavigation()
 
-  let { scrollY } = useScroll()
-  let bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9])
-  let bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
+  const { scrollY } = useScroll()
+  const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9])
+  const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
 
   return (
     <motion.div
@@ -54,7 +54,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
           'backdrop-blur-sm dark:backdrop-blur lg:left-72 xl:left-80',
         isInsideMobileNavigation
           ? 'bg-white dark:bg-zinc-900'
-          : 'bg-white/[var(--bg-opacity-light)] dark:bg-zinc-900/[var(--bg-opacity-dark)]'
+          : 'bg-white/[var(--bg-opacity-light)] dark:bg-zinc-900/[var(--bg-opacity-dark)]',
       )}
       style={
         {
@@ -67,20 +67,26 @@ export const Header = forwardRef(function Header({ className }, ref) {
         className={clsx(
           'absolute inset-x-0 top-full h-px transition',
           (isInsideMobileNavigation || !mobileNavIsOpen) &&
-            'bg-zinc-900/7.5 dark:bg-white/7.5'
+            'bg-zinc-900/7.5 dark:bg-white/7.5',
         )}
       />
       <Search />
       <div className="flex items-center gap-5 lg:hidden">
         <MobileNavigation />
-        <Link href="/" aria-label="Home">
+        <Link
+          href="/"
+          aria-label="Home"
+        >
           {/* <Logo className="h-6" /> */}
           <h1 className="font-tile text-xl font-bold">E2B</h1>
         </Link>
       </div>
       <div className="flex items-center gap-4">
         <nav className="hidden md:block">
-          <ul role="list" className="flex items-center gap-4">
+          <ul
+            role="list"
+            className="flex items-center gap-4"
+          >
             <TopLevelNavItem href="https://twitter.com/e2b_dev">
               <TwitterIcon className="h-5 w-5 fill-current" />
             </TopLevelNavItem>

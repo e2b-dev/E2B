@@ -1,6 +1,10 @@
 export function CartIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      {...props}
+    >
       <path
         strokeWidth="0"
         d="M5.98 11.288 3.5 5.5h14l-2.48 5.788A2 2 0 0 1 13.18 12.5H7.82a2 2 0 0 1-1.838-1.212Z"

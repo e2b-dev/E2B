@@ -19,7 +19,7 @@ if (apiBaseUrl !== apiBaseDefault) {
 }
 
 const authErrorBox = boxen.default(
-  `You must be logged in to use this command. Run ${asBold(`e2b login`)}.`,
+  `You must be logged in to use this command. Run ${asBold('e2b login')}.`,
   {
     width: 70,
     float: 'center',

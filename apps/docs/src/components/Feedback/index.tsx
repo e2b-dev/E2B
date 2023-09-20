@@ -24,10 +24,10 @@ export function Feedback({
       <FeedbackButton
         className={className}
         variant={variant}
-        onClick={(e) => {
+        onClick={e => {
           e.preventDefault()
           e.stopPropagation()
-          setOpen((f) => !f)
+          setOpen(f => !f)
         }}
         isFinished={isFinished}
       />

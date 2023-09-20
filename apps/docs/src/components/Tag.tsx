@@ -45,6 +45,7 @@ export function Tag({
   variant = 'medium',
   color = valueColorMap[children] ?? 'emerald',
 }: {
+  // eslint-disable-next-line @typescript-eslint/ban-types
   children: keyof typeof valueColorMap & (string | {})
   variant?: keyof typeof variantStyles
   color?: keyof typeof colorStyles
@@ -54,7 +55,7 @@ export function Tag({
       className={clsx(
         'font-mono text-[0.625rem] font-semibold leading-6',
         variantStyles[variant],
-        colorStyles[color][variant]
+        colorStyles[color][variant],
       )}
     >
       {children}

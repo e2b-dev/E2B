@@ -3,7 +3,6 @@
 import { Session } from '@e2b/sdk'
 import { useEffect, useState } from 'react'
 
-
 function Playground() {
   const [playground, setPlayground] = useState(null)
   const [url, setURL] = useState('')

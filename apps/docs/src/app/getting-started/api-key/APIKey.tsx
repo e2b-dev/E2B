@@ -10,7 +10,7 @@ import { useSignIn } from '@/utils/useSignIn'
 
 function APIKey() {
   const signIn = useSignIn()
-  const { user, isLoading, error } = useUser()
+  const { user } = useUser()
   const apiKey = useApiKey()
   const posthog = usePostHog()
 
@@ -37,7 +37,7 @@ function APIKey() {
               customPositionClassNames={clsx(
                 'top-[-2px] bottom-[2px]' /* nudge 2px up*/,
                 'left-[-6px] right-[-6px]' /* widen a little to fit nicely */,
-                'min-h-[28px]'
+                'min-h-[28px]',
               )}
             />
           </span>

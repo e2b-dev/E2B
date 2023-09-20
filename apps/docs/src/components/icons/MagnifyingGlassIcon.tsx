@@ -1,9 +1,14 @@
-export function MagnifyingGlassIcon(
-  props: React.ComponentPropsWithoutRef<'svg'>
-) {
+export function MagnifyingGlassIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
-      <path strokeWidth="0" d="M2.5 8.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" />
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        strokeWidth="0"
+        d="M2.5 8.5a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"
+      />
       <path
         fill="none"
         strokeLinecap="round"
