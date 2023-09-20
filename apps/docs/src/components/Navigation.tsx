@@ -357,13 +357,20 @@ export function Navigation(props) {
             className={groupIndex === 0 && 'md:mt-0'}
           />
         ))}
-        <li className="sticky bottom-0 z-10 mt-6">
+        <li className="z-10 mt-6">
           <Feedback
             variant="secondary"
             className="w-full"
           />
         </li>
-        <li className="sticky bottom-0 z-10 mt-6 min-[540px]:hidden">
+        <li
+          /* -1.5rem to stretch outside the padding of the parent list */
+          className="
+            sticky bottom-[-1.5rem] z-10 mx-[-1.5rem] mt-[1.5rem] py-3
+            backdrop-blur-lg backdrop-filter
+            min-[540px]:hidden
+          "
+        >
           <Auth />
         </li>
       </ul>
