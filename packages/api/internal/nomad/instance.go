@@ -34,12 +34,12 @@ var (
 
 //go:embed env-instance.hcl
 var envInstanceFile string
-var envInstanceTemplate = template.Must(template.New(buildJobName).Parse(envInstanceFile))
+var envInstanceTemplate = template.Must(template.New(instanceJobName).Parse(envInstanceFile))
 
 func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
 	// trunk-ignore(golangci-lint/exhaustruct)
 	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
-		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", buildJobNameWithSlash, defaultTaskName, taskRunningState),
+		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, defaultTaskName, taskRunningState),
 	})
 	if err != nil {
 		return nil, &api.APIError{
@@ -53,7 +53,7 @@ func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
 	for _, alloc := range allocations {
 		instances = append(instances, &api.Instance{
 			ClientID:   alloc.NodeID[:shortNodeIDLength],
-			InstanceID: alloc.JobID[len(buildJobNameWithSlash):],
+			InstanceID: alloc.JobID[len(instanceJobNameWithSlash):],
 			// TODO: Add envID from the job meta
 		})
 	}
@@ -103,7 +103,7 @@ func (n *NomadClient) CreateInstance(
 		EnvID:            envID,
 		InstanceID:       instanceID,
 		TaskName:         defaultTaskName,
-		JobName:          buildJobName,
+		JobName:          instanceJobName,
 		EnvsDisk:         envsDisk,
 	}
 
@@ -127,7 +127,7 @@ func (n *NomadClient) CreateInstance(
 
 	res, _, err := n.client.Jobs().Register(job, nil)
 	if err != nil {
-		fmt.Printf("Failed to register '%s%s' job: %+v", buildJobNameWithSlash, jobVars.InstanceID, err)
+		fmt.Printf("Failed to register '%s%s' job: %+v", instanceJobNameWithSlash, jobVars.InstanceID, err)
 
 		return nil, &api.APIError{
 			Msg:       err.Error(),
@@ -143,7 +143,7 @@ func (n *NomadClient) CreateInstance(
 	alloc, err := n.WaitForJobStart(
 		ctx,
 		JobInfo{
-			name:   buildJobNameWithSlash + instanceID,
+			name:   instanceJobNameWithSlash + instanceID,
 			evalID: evalID,
 			index:  index,
 		},
@@ -176,10 +176,10 @@ func (n *NomadClient) CreateInstance(
 }
 
 func (n *NomadClient) DeleteInstance(instanceID string, purge bool) *api.APIError {
-	_, _, err := n.client.Jobs().Deregister(buildJobNameWithSlash+instanceID, purge, nil)
+	_, _, err := n.client.Jobs().Deregister(instanceJobNameWithSlash+instanceID, purge, nil)
 	if err != nil {
 		return &api.APIError{
-			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", buildJobNameWithSlash, instanceID, err),
+			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", instanceJobNameWithSlash, instanceID, err),
 			ClientMsg: "Cannot delete the environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
