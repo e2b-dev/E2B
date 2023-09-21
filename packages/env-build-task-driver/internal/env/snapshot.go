@@ -94,9 +94,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	defer childSpan.End()
 
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fcBinaryPath, s.socketPath)
-	fcCmdInNS := fmt.Sprintf("ip netns exec %s %s", networkNamespaceID, fcCmd)
-
-	s.fc = exec.CommandContext(childCtx, fcCmdInNS)
+	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcCmd)
 	s.fc.Stderr = os.Stderr
 	s.fc.Stdout = os.Stdout
 
@@ -106,6 +104,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "started fc process")
 
 	go func() {
@@ -125,11 +124,12 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
 	kernelArgs := fmt.Sprintf("ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
+	kernelImagePath := s.env.KernelImagePath
 	bootSourceConfig := operations.PutGuestBootSourceParams{
 		Context: childCtx,
 		Body: &models.BootSource{
 			BootArgs:        kernelArgs,
-			KernelImagePath: &s.env.KernelImagePath,
+			KernelImagePath: &kernelImagePath,
 		},
 	}
 	_, err := s.client.Operations.PutGuestBootSource(&bootSourceConfig)
@@ -285,11 +285,12 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 
 func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
 	if s.fc != nil {
-		err := s.fc.Cancel()
-		if err != nil {
-			errMsg := fmt.Errorf("error killing fc process %w", err)
-			telemetry.ReportError(ctx, errMsg)
-		}
+		// err := s.fc.Cancel()
+		// if err != nil {
+		// 	errMsg := fmt.Errorf("error killing fc process %w", err)
+		// 	telemetry.ReportError(ctx, errMsg)
+		// }
+		// telemetry.ReportEvent(ctx, "killed fc process")
 	}
 
 	err := os.RemoveAll(s.socketPath)
@@ -297,4 +298,5 @@ func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error removing fc socket %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
+	telemetry.ReportEvent(ctx, "removed fc socket")
 }

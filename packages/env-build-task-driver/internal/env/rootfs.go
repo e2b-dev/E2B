@@ -113,6 +113,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error removing image %v", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
+	telemetry.ReportEvent(ctx, "removed image")
 }
 
 func (r *Rootfs) dockerTag() string {
@@ -138,9 +139,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "created container")
 	defer func() {
 		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
-			Force:         true,
-			RemoveLinks:   true,
-			RemoveVolumes: true,
+			Force: true,
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error removing container %v", err)
@@ -239,7 +238,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 	case response := <-wait:
 		if response.Error != nil {
-			return fmt.Errorf("error waiting for container - code %d: %w", response.StatusCode, response.Error.Message)
+			return fmt.Errorf("error waiting for container - code %d: %s", response.StatusCode, response.Error.Message)
 		}
 	}
 	telemetry.ReportEvent(childCtx, "waited for container exit")

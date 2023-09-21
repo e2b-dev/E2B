@@ -187,4 +187,5 @@ func (e *Env) Cleanup(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error cleaning up env files %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
+	telemetry.ReportEvent(ctx, "cleaned up env files")
 }
