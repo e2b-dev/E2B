@@ -56,6 +56,7 @@
 - Update architecture diagram in figma
 - Make all the shellscript more resilent (best practices)
 - Configure hyperthreading for better FC performance? https://cloud.google.com/compute/docs/instances/set-threads-per-core?authuser=1
+- Change min CPU platform of the client instance to be only 1 possible CPU type (now it is 2)
 
 
 

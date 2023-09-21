@@ -3,6 +3,9 @@ client := gcloud compute instances list --format='csv(name)' | grep "client"
 upload:
 	./upload.sh
 
+build-debug:
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -race -gcflags=all="-N -l" -o bin/debug/ .
+
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/ .
 
