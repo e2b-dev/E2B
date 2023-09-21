@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	envsDisk = "/mnt/disks/fc-envs/v1"
+	envsDisk = "/mnt/disks/fc-envs"
 
 	buildJobName          = "env-build"
 	buildJobNameWithSlash = buildJobName + "/"

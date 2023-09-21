@@ -42,6 +42,7 @@ run:
 
 .PHONY: push-docker
 push-docker:
+	docker buildx install # sets up the buildx as default docker builder (otherwise the command below won't work)
 	docker build --platform linux/amd64 --tag us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE) --push .
 
 # You run the parametrized command like this:
