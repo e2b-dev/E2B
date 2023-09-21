@@ -20,7 +20,7 @@ const (
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
-func main() {
+func configurePlugin() {
 	// Create pprof endpoint for profiling
 	go func() {
 		http.ListenAndServe(":6061", nil)
@@ -53,4 +53,21 @@ func main() {
 
 func factory(log log.Logger) interface{} {
 	return driver.NewFirecrackerDriver(log)
+}
+
+func main() {
+	// Create pprof endpoint for profiling
+	go func() {
+		http.ListenAndServe(":6062", nil)
+	}()
+
+	test := flag.Bool("test", false, "test")
+
+	flag.Parse()
+
+	if *test {
+		driver.TestCreateNetwork()
+	} else {
+		configurePlugin()
+	}
 }

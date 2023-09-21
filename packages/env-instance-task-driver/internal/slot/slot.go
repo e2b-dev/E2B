@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 	consul "github.com/hashicorp/consul/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
 )
 
 // We are using a more debuggable IP address allocation for now that only covers 255 addresses.
 const (
 	IPSlotRange      = 255
 	HostSnapshotMask = 32
-	VMask            = 32
-	TapMask          = 32
+	VMask            = 24
+	TapMask          = 30
 )
 
 type IPSlot struct {
