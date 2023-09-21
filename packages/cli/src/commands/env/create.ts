@@ -88,9 +88,7 @@ export const createCommand = new commander.Command('create')
 
       if (!fs.existsSync(tarPath)) throw new Error(`Tar file ${tarPath} does not exist`)
 
-      const buildContextBlob = new Blob([fs.readFileSync(tarPath)], {
-        type: 'application/gzip',
-      })
+      const buildContextBlob = new Blob([fs.readFileSync(tarPath)])
       let dockerfileContent
       if (fs.existsSync(`${root}/Dockerfile`)) {
         dockerfileContent = fs.readFileSync(`${root}/Dockerfile`, 'utf-8')
