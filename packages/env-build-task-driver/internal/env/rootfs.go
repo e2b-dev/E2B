@@ -64,24 +64,17 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "build-docker-image")
 	defer childSpan.End()
 
+	// File should be automatically closed by the docker image build
 	dockerContextFile, err := os.Open(r.DockerContextPath())
 	if err != nil {
 		return err
 	}
 	telemetry.ReportEvent(childCtx, "opened docker context file")
-	defer func() {
-		closeErr := dockerContextFile.Close()
-		if closeErr != nil {
-			errMsg := fmt.Errorf("error closing docker context file %w", closeErr)
-			telemetry.ReportError(childCtx, errMsg)
-		}
-	}()
 
 	buildResponse, err := r.client.ImageBuild(
 		childCtx,
 		dockerContextFile,
 		types.ImageBuildOptions{
-			Context:    dockerContextFile,
 			Dockerfile: dockerfileName,
 			Remove:     true,
 			Tags:       []string{r.dockerTag()},
