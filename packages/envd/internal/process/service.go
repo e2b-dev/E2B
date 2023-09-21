@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/e2b-dev/api/packages/envd/internal/output"
-	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
+
+	"github.com/e2b-dev/api/packages/envd/internal/output"
+	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
 )
 
 type Service struct {
@@ -110,7 +111,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				"error", err,
 			)
 
-			return "", fmt.Errorf("error setting up stderr pipe for the process '%s': %+v", newProc.ID, err)
+			return "", fmt.Errorf("error setting up stderr pipe for the process '%s': %w", newProc.ID, err)
 		}
 		go s.scanRunCmdOut(stderr, output.OutTypeStderr, newProc)
 
@@ -128,7 +129,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				"processID", newProc.ID,
 				"error", err,
 			)
-			return "", fmt.Errorf("error setting up stdout pipe for the process '%s': %+v", newProc.ID, err)
+			return "", fmt.Errorf("error setting up stdout pipe for the process '%s': %w", newProc.ID, err)
 		}
 		go s.scanRunCmdOut(stdout, output.OutTypeStdout, newProc)
 
@@ -153,7 +154,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				"error", err,
 			)
 
-			return "", fmt.Errorf("error setting up stdin pipe for the process '%s': %+v", newProc.ID, err)
+			return "", fmt.Errorf("error setting up stdin pipe for the process '%s': %w", newProc.ID, err)
 		}
 		newProc.Stdin = &stdin
 
@@ -185,7 +186,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				"error", err,
 				"cmd", newProc.cmd,
 			)
-			return "", fmt.Errorf("error starting process '%s': %+v", newProc.ID, err)
+			return "", fmt.Errorf("error starting process '%s': %w", newProc.ID, err)
 		}
 
 		go func() {
@@ -241,14 +242,13 @@ func (s *Service) Stdin(id ID, data string) error {
 	}
 
 	err := proc.WriteStdin(data)
-
 	if err != nil {
 		s.logger.Errorw("Failed to write stdin",
 			"processID", id,
 			"error", err,
 			"stdin", data,
 		)
-		return fmt.Errorf("error writing stdin to process '%s': %+v", id, err)
+		return fmt.Errorf("error writing stdin to process '%s': %w", id, err)
 	}
 
 	return nil

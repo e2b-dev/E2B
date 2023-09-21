@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/e2b-dev/api/packages/envd/internal/env"
-	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
+
+	"github.com/e2b-dev/api/packages/envd/internal/env"
+	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
 )
 
 type Service struct {
@@ -94,7 +95,7 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 				"terminalID", id,
 				"error", err,
 			)
-			return "", fmt.Errorf("error starting new terminal '%s': %+v", id, err)
+			return "", fmt.Errorf("error starting new terminal '%s': %w", id, err)
 		}
 
 		s.logger.Infow("New terminal created",
@@ -153,7 +154,7 @@ func (s *Service) Data(id ID, data string) error {
 			"error", err,
 			"data", data,
 		)
-		return fmt.Errorf("error writing data to terminal '%s': %+v", id, err)
+		return fmt.Errorf("error writing data to terminal '%s': %w", id, err)
 	}
 
 	return nil
@@ -180,7 +181,7 @@ func (s *Service) Resize(id ID, cols, rows uint16) error {
 			"cols", cols,
 			"rows", rows,
 		)
-		return fmt.Errorf("error resizing terminal '%s': %+v", id, err)
+		return fmt.Errorf("error resizing terminal '%s': %w", id, err)
 	}
 
 	return nil

@@ -27,7 +27,7 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 
 	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
 	if err != nil {
-		return nil, fmt.Errorf("error getting user '%s': %+v", user.DefaultUser, err)
+		return nil, fmt.Errorf("error getting user '%s': %w", user.DefaultUser, err)
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{}

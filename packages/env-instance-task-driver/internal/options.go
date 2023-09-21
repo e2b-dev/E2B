@@ -27,7 +27,7 @@ func genmacaddr() (string, error) {
 	buf := make([]byte, 6)
 	_, err := rand.Read(buf)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate mac address: %v", err)
+		return "", fmt.Errorf("failed to generate mac address: %w", err)
 	}
 	buf[0] |= 2
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
@@ -37,7 +37,7 @@ func RandomVethName() (string, error) {
 	entropy := make([]byte, 4)
 	_, err := rand.Read(entropy)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate random veth name: %v", err)
+		return "", fmt.Errorf("failed to generate random veth name: %w", err)
 	}
 
 	// NetworkManager (recent versions) will ignore veth devices that start with "veth"
@@ -82,7 +82,7 @@ func (opts *options) getFirecrackerConfig(AllocId string, instanceID string) (fi
 				errors.Wrap(err, errInvalidMetadata.Error())
 		}
 	}
-	//setup NICs
+	// setup NICs
 	NICs, err := opts.getNetwork(AllocId)
 	if err != nil {
 		return firecracker.Config{}, err
@@ -99,7 +99,7 @@ func (opts *options) getFirecrackerConfig(AllocId string, instanceID string) (fi
 		return firecracker.Config{}, err
 	}
 
-	//fifos
+	// fifos
 	fifo, err := opts.handleFifos()
 	if err != nil {
 		return firecracker.Config{}, err
@@ -164,7 +164,7 @@ func (opts *options) getNetwork(AllocId string) ([]firecracker.NetworkInterface,
 	if len(opts.FcNicConfig.Ip) > 0 {
 		_, Net, err := net.ParseCIDR(opts.FcNicConfig.Ip)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse CIDR address: %v", err)
+			return nil, fmt.Errorf("failed to parse CIDR address: %w", err)
 		}
 		mockMacAddrString, err := genmacaddr()
 		if err != nil {
@@ -251,7 +251,7 @@ func (opts *options) handleFifos() (io.Writer, error) {
 	if generateFifoFilename || generateMetricFifoFilename {
 		dir, err := os.MkdirTemp(os.TempDir(), "fcfifo")
 		if err != nil {
-			return fifo, fmt.Errorf("failed to create temporary directory: %v", err)
+			return fifo, fmt.Errorf("failed to create temporary directory: %w", err)
 		}
 		opts.addCloser(func() error {
 			return os.RemoveAll(dir)
@@ -341,7 +341,7 @@ func parseVsocks(devices []string) ([]firecracker.VsockDevice, error) {
 }
 
 func createFifoFileLogs(fifoPath string) (*os.File, error) {
-	return os.OpenFile(fifoPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	return os.OpenFile(fifoPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 }
 
 // getSocketPath provides a randomized socket path by building a unique filename

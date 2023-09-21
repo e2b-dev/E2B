@@ -6,16 +6,16 @@ import (
 	"os"
 	"strconv"
 	"sync"
-
 	"syscall"
 	"time"
+
+	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
+	hclog "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/nomad/plugins/drivers"
 
 	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/env"
 	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
 	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
-	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
-	hclog "github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/nomad/plugins/drivers"
 )
 
 type taskHandle struct {
@@ -131,7 +131,7 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 
 	_, err := h.EnvInstance.Cmd.Process.Wait()
 	if err != nil {
-		errMsg := fmt.Errorf("error waiting for FC process end %v", err)
+		errMsg := fmt.Errorf("error waiting for FC process end %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	}
 

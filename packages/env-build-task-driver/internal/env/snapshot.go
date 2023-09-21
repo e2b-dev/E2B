@@ -94,15 +94,15 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	defer childSpan.End()
 
 	fcCmd := fmt.Sprintf("%s --api-sock %s", fcBinaryPath, s.socketPath)
-	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", networkNamespaceID)
+	fcCmdInNS := fmt.Sprintf("ip netns exec %s %s", networkNamespaceID, fcCmd)
 
-	s.fc = exec.CommandContext(childCtx, inNetNSCmd+fcCmd)
+	s.fc = exec.CommandContext(childCtx, fcCmdInNS)
 	s.fc.Stderr = os.Stderr
 	s.fc.Stdout = os.Stdout
 
 	err := s.fc.Start()
 	if err != nil {
-		errMsg := fmt.Errorf("error starting fc process %v", err)
+		errMsg := fmt.Errorf("error starting fc process %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
@@ -111,7 +111,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	go func() {
 		err := s.fc.Wait()
 		if err != nil {
-			errMsg := fmt.Errorf("error waiting for fc process %v", err)
+			errMsg := fmt.Errorf("error waiting for fc process %w", err)
 			telemetry.ReportError(childCtx, errMsg)
 		}
 	}()
@@ -249,7 +249,7 @@ func (s *Snapshot) pause(ctx context.Context, tracer trace.Tracer) error {
 	}
 	_, err := s.client.Operations.PatchVM(&pauseConfig)
 	if err != nil {
-		errMsg := fmt.Errorf("error pausing vm %v", err)
+		errMsg := fmt.Errorf("error pausing vm %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
@@ -274,7 +274,7 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	}
 	_, err := s.client.Operations.CreateSnapshot(&snapshotConfig)
 	if err != nil {
-		errMsg := fmt.Errorf("error creating vm snapshot %v", err)
+		errMsg := fmt.Errorf("error creating vm snapshot %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
@@ -287,14 +287,14 @@ func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
 	if s.fc != nil {
 		err := s.fc.Cancel()
 		if err != nil {
-			errMsg := fmt.Errorf("error killing fc process %v", err)
+			errMsg := fmt.Errorf("error killing fc process %w", err)
 			telemetry.ReportError(ctx, errMsg)
 		}
 	}
 
 	err := os.RemoveAll(s.socketPath)
 	if err != nil {
-		errMsg := fmt.Errorf("error removing fc socket %v", err)
+		errMsg := fmt.Errorf("error removing fc socket %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
 }

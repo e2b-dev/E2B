@@ -211,7 +211,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	var taskConfig TaskConfig
 	if err := cfg.DecodeDriverConfig(&taskConfig); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode driver config: %v", err)
+		return nil, nil, fmt.Errorf("failed to decode driver config: %w", err)
 	}
 
 	d.logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
@@ -334,7 +334,7 @@ func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *dr
 	if handle.exitResult != nil {
 		if handle.exitResult.Err != nil {
 			result = &drivers.ExitResult{
-				Err: fmt.Errorf("executor: error waiting on process: %v", handle.exitResult.Err),
+				Err: fmt.Errorf("executor: error waiting on process: %w", handle.exitResult.Err),
 			}
 		}
 	}

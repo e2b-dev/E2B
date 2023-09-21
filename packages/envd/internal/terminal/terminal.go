@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/creack/pty"
+
 	"github.com/e2b-dev/api/packages/envd/internal/user"
 )
 
@@ -34,7 +35,7 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 
 	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
 	if err != nil {
-		return nil, fmt.Errorf("error getting user '%s': %+v", user.DefaultUser, err)
+		return nil, fmt.Errorf("error getting user '%s': %w", user.DefaultUser, err)
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
@@ -65,9 +66,8 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 		Cols: cols,
 		Rows: rows,
 	})
-
 	if err != nil {
-		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %+v", cmd, rootdir, cols, rows, err)
+		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, rootdir, cols, rows, err)
 	}
 
 	return &Terminal{

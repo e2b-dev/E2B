@@ -13,9 +13,7 @@ const (
 	mmdsDefaultAddress = "169.254.169.254"
 )
 
-var (
-	mmdsTokenExpiration = 60 * time.Second
-)
+var mmdsTokenExpiration = 60 * time.Second
 
 type sessionWriter struct{}
 
@@ -132,7 +130,7 @@ func sendLogs(logs []byte) {
 
 	mmdsToken, err := getMMDSToken(client)
 	if err != nil {
-		fmt.Printf("error getting mmds token: %+v", err)
+		fmt.Printf("error getting mmds token: %w", err)
 		return
 	}
 
