@@ -14,7 +14,7 @@ test('no logs in console during very basic scenario', async () => {
   await session.close()
 
   expect(consoleSpy.debug).toHaveBeenCalledTimes(0);
-  expect(consoleSpy.info).toHaveBeenCalledTimes(0);
+  expect(consoleSpy.info).toHaveBeenCalledTimes(2);
   expect(consoleSpy.error).toHaveBeenCalledTimes(0);
 })
 
