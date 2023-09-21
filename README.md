@@ -1,10 +1,14 @@
 <h1 align="center">
   <font size="30">
   <b>
-    E2B
+    E2B - Cloud for AI Agents & Apps
   </b>
   </font>
 </h1>
+
+<h3 align="center">
+  Sandboxed cloud environments for AI agents & apps with a single line of code
+</h3>
 
 <h4 align="center">
   <a href="https://e2b.dev/docs">Docs</a> |
@@ -22,15 +26,8 @@
   </a>
 </h4>
 
-<h3 align="center">
-  Try out E2B's <a href="https://e2b.dev/docs?ref=e2b-repo">AI Playgrounds</a> for agents, copilots, and AI apps
-</h3>
-
-[E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
-
-With a single line of our SDK, you can give your AI agent a sandboxed cloud environment where your agent can do any of the following:
-- Run any code
-- Run any terminal command
+[E2B](https://e2b.dev) is cloud for AI agents and AI apps. With E2B, you can create AI playgrounds. In these AI playgrounds, you can let your AI agents and apps:
+- Run any code and terminal command in a sandboxed environment
 - Install dependencies and programs
 - Use filesystem
 - Upload and download files
@@ -43,10 +40,6 @@ This just a few examples of what can be done with our agent cloud environments.
 
 **Our SDK works with any AI agent (no matter what framework, you're using), and without the need to manage any infrastructure.**
 
-This is a monorepo that contains:
-- Admin dashboard
-- Python SDK
-- JavaScript & TypeScript SDK
 
 ## Getting Started & Documentation
 
