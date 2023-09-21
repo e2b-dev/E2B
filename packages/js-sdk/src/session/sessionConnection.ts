@@ -72,11 +72,13 @@ export class SessionConnection {
       )
     }
     this.logger = opts.logger ?? {
-      // by default, we log to the console, only warnings and errors
+      // by default, we log to the console
+      // we don't log debug messages by default
+      info: console.info,
       warn: console.warn,
       error: console.error,
     }
-    this.logger.info?.(`Session for code snippet "${opts.id}" initialized`)
+    this.logger.info?.(`Session "${opts.id}" initialized`)
   }
 
   /**
