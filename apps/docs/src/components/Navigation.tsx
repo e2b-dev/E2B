@@ -359,7 +359,7 @@ export const navigation = [
   {
     title: 'AI Agents Use Case',
     links: [
-      { title: 'Overview', href: '/agents/overview' },
+      // { title: 'Overview', href: '/agents/overview' },
       { title: 'Execute Code', href: '/agents/exec' },
       // { title: 'Install Packages', href: '/agents/pkg' },
       { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
