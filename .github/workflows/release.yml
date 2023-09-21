@@ -20,14 +20,17 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
+      - uses: pnpm/action-setup@v2
+
       - name: Setup Node.js 16
         uses: actions/setup-node@v3
         with:
           node-version: 16
+          cache: pnpm
 
       - name: Install npm dependencies
-        run: npm ci --workspaces=false
-
+        run: pnpm install --frozen-lockfile
+        
       - name: Check if new version
         id: version
         run: |
@@ -56,15 +59,16 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
+      - uses: pnpm/action-setup@v2
 
       - name: Setup Node.js 16
         uses: actions/setup-node@v3
         with:
           node-version: 16
-
-
+          cache: pnpm
+          
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -75,19 +79,19 @@ jobs:
           restore-keys: node_modules-
 
       - name: Run tests
-        run: npm run test
+        run: pnpm run test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Create new versions
-        run: npm run version
+        run: pnpm run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release new versions
         uses: changesets/action@v1
         with:
-          publish: npm run publish
+          publish: pnpm run publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
