@@ -19,7 +19,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "pnpm build",
+    "prepublishOnly": "npm run build",
     "build": "rm -rf ./dist && tsup --minify",
     "dev": "tsup --watch"
   },
