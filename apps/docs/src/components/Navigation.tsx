@@ -12,6 +12,17 @@ import { Tag } from '@/components/Tag'
 import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth'
 import { Feedback } from '@/components/Feedback'
+import {
+  Bug,
+  Timer,
+  FileUp,
+  FileDown,
+  ChevronRightSquare,
+  FolderTree,
+  ShieldAlert,
+  KeyRound,
+  Settings,
+} from 'lucide-react'
 
 interface NavGroup {
   title: string
@@ -47,17 +58,21 @@ function TopLevelNavItem({
 }
 
 function NavLink({
+  className,
   href,
   children,
   tag,
+  icon,
   active = false,
   isAnchorLink = false,
   isFontMono = false,
 }: {
+  className?: string
   href: string
   children: React.ReactNode
   tag?: string
   active?: boolean
+  icon?: React.ReactNode
   isAnchorLink?: boolean
   isFontMono?: boolean
 }) {
@@ -72,17 +87,21 @@ function NavLink({
           ? 'text-zinc-900 dark:text-white'
           : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
         isFontMono ? 'font-mono text-xs' : '',
+        className,
       )}
     >
-      <span className="truncate">{children}</span>
-      {tag && (
-        <Tag
-          variant="small"
-          color="zinc"
-        >
-          {tag}
-        </Tag>
-      )}
+      <div className="flex items-center justify-start gap-1">
+        {icon}
+        <span className="truncate">{children}</span>
+        {tag && (
+          <Tag
+            variant="small"
+            color="zinc"
+          >
+            {tag}
+          </Tag>
+        )}
+      </div>
     </Link>
   )
 }
@@ -150,8 +169,6 @@ function NavigationGroup({ group, className }) {
 
   const isActiveGroup = activeGroupIndex(group, pathname) !== -1
 
-  console.log({ pathname, group, sections })
-
   return (
     <li className={clsx('relative mt-6', className)}>
       <motion.h2
@@ -193,9 +210,12 @@ function NavigationGroup({ group, className }) {
             >
               {/* @ts-ignore */}
               <NavLink
+                className="font-medium"
                 href={link.href}
                 active={`/docs${link.href}` === pathname}
                 isFontMono={link.isFontMono}
+                icon={link.icon}
+                tag={link.tag}
               >
                 {link.title}
               </NavLink>
@@ -203,22 +223,8 @@ function NavigationGroup({ group, className }) {
                 mode="popLayout"
                 initial={false}
               >
-                <ul>
-                  {sections.map(section => (
-                    <li key={section.id}>
-                      {/* @ts-ignore */}
-                      <NavLink
-                        href={`${link.href}#${section.id}`}
-                        tag={section.tag}
-                        isAnchorLink
-                      >
-                        {section.title}
-                      </NavLink>
-                    </li>
-                  ))}
-                 </ul>
-                {/* {`/docs${link.href}` === pathname && sections.length > 0 && ( */}
-                  {/* <motion.ul
+                {`/docs${link.href}` === pathname && sections.length > 0 && (
+                  <motion.ul
                     role="list"
                     initial={{ opacity: 0 }}
                     animate={{
@@ -229,8 +235,21 @@ function NavigationGroup({ group, className }) {
                       opacity: 0,
                       transition: { duration: 0.15 },
                     }}
-                  > */}
-                  {/* </motion.ul> */}
+                  >
+                    {sections.map(section => (
+                      <li key={section.id}>
+                        {/* @ts-ignore */}
+                        <NavLink
+                          href={`${link.href}#${section.id}`}
+                          tag={section.tag}
+                          isAnchorLink
+                        >
+                          {section.title}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
               </AnimatePresence>
             </motion.li>
           ))}
@@ -244,27 +263,42 @@ export const navigation = [
   {
     title: 'Introduction',
     links: [
-      { title: 'What is E2B?', href: '/' },
+      { title: 'What is E2B & AI Playgrounds?', href: '/' },
       { title: 'Pricing', href: '/pricing' },
+      { title: 'Open Source', href: '/oss' },
     ],
   },
   {
     title: 'Getting Started',
     links: [
-      { title: 'Installation', href: '/getting-started/installation' },
-      { title: 'API Key', href: '/getting-started/api-key' },
-      { title: 'SDK Basics', href: '/getting-started/basics' },
-      { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
-      { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
-      {
-        title: 'SDK Multiple Processes',
-        href: '/getting-started/sdk-multiple-processes',
-      },
+      { icon: <Settings strokeWidth={1} size={20}/>, title: 'Installation', href: '/getting-started/installation' },
+      { icon: <KeyRound strokeWidth={1} size={20}/>, title: 'API Key', href: '/getting-started/api-key' },
+      // { title: 'SDK Basics', href: '/getting-started/basics' },
+      // { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
+      // { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
+      // {
+      //   title: 'SDK Multiple Processes',
+      //   href: '/getting-started/sdk-multiple-processes',
+      // },
+    ],
+  },
+  {
+    title: 'AI Playgrounds',
+    links: [
+      { title: 'Overview', href: '/playgrounds/overview' },
+      { icon: <ShieldAlert strokeWidth={1} size={20}/>, title: 'Limitations', href: '/playgrounds/limitations' },
+      { icon: <FolderTree strokeWidth={1} size={20}/>, title: 'Filesystem', href: '/playgrounds/filesystem' },
+      { icon: <ChevronRightSquare strokeWidth={1} size={20}/>,title: 'Running Processes', href: '/playgrounds/process' },
+      // { icon: <FileUp strokeWidth={1} size={20}/>, title: 'Upload Files', href: '/playgrounds/upload' },
+      // { icon: <FileDown strokeWidth={1} size={20}/>, title: 'Download Files', href: '/playgrounds/download' },
+      { icon: <Bug strokeWidth={1} size={20}/>, title: 'Debugging', href: '/playgrounds/debugging' },
+      { icon: <Timer strokeWidth={1} size={20}/>, title: 'Timeouts', href: '/playgrounds/timeouts' },
     ],
   },
   {
     title: 'AI Agents Use Case',
     links: [
+      { title: 'Overview', href: '/agents/overview' },
       { title: 'Execute Code', href: '/agents/exec' },
       // { title: 'Install Packages', href: '/agents/pkg' },
       { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
@@ -274,14 +308,7 @@ export const navigation = [
       // TODO: Guide for building ffmpeg agent
     ],
   },
-  {
-    title: 'AI Playgrounds',
-    links: [
-      { title: 'Overview', href: '/playgrounds/overview' },
-      { title: 'Limitations', href: '/playgrounds/limitations' },
-      // { title: 'Use with AI Agents & Copilots', href: '/getting-started/how-to' },
-    ],
-  },
+
   // {
   //   title: 'AI Environments',
   //   links: [
