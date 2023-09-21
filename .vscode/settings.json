@@ -42,7 +42,7 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "css.validate": false,
   "tailwindCSS.validate": true,
-  "editor.formatOnSave": false,
+  "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
