@@ -15,15 +15,15 @@
     "@changesets/read": "^0.5.9"
   },
   "devDependencies": {
-    "changeset": "^0.2.6",
-    "prettier": "^3.0.3",
-    "prettier-plugin-tailwindcss": "^0.5.4",
+    "@trivago/prettier-plugin-sort-imports": "^4.2.0",
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
+    "changeset": "^0.2.6",
     "eslint": "^8.49.0",
     "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-unused-imports": "^3.0.0",
-    "@trivago/prettier-plugin-sort-imports": "^4.2.0"
+    "prettier": "^3.0.3",
+    "prettier-plugin-tailwindcss": "^0.5.4"
   }
 }

@@ -15,8 +15,6 @@ import { Feedback } from '@/components/Feedback'
 import {
   Bug,
   Timer,
-  FileUp,
-  FileDown,
   ChevronRightSquare,
   FolderTree,
   ShieldAlert,
@@ -271,8 +269,26 @@ export const navigation = [
   {
     title: 'Getting Started',
     links: [
-      { icon: <Settings strokeWidth={1} size={20}/>, title: 'Installation', href: '/getting-started/installation' },
-      { icon: <KeyRound strokeWidth={1} size={20}/>, title: 'API Key', href: '/getting-started/api-key' },
+      {
+        icon: (
+          <Settings
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Installation',
+        href: '/getting-started/installation',
+      },
+      {
+        icon: (
+          <KeyRound
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'API Key',
+        href: '/getting-started/api-key',
+      },
       // { title: 'SDK Basics', href: '/getting-started/basics' },
       // { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
       // { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
@@ -286,13 +302,58 @@ export const navigation = [
     title: 'AI Playgrounds',
     links: [
       { title: 'Overview', href: '/playgrounds/overview' },
-      { icon: <ShieldAlert strokeWidth={1} size={20}/>, title: 'Limitations', href: '/playgrounds/limitations' },
-      { icon: <FolderTree strokeWidth={1} size={20}/>, title: 'Filesystem', href: '/playgrounds/filesystem' },
-      { icon: <ChevronRightSquare strokeWidth={1} size={20}/>,title: 'Running Processes', href: '/playgrounds/process' },
+      {
+        icon: (
+          <ShieldAlert
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Limitations',
+        href: '/playgrounds/limitations',
+      },
+      {
+        icon: (
+          <FolderTree
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Filesystem',
+        href: '/playgrounds/filesystem',
+      },
+      {
+        icon: (
+          <ChevronRightSquare
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Running Processes',
+        href: '/playgrounds/process',
+      },
       // { icon: <FileUp strokeWidth={1} size={20}/>, title: 'Upload Files', href: '/playgrounds/upload' },
       // { icon: <FileDown strokeWidth={1} size={20}/>, title: 'Download Files', href: '/playgrounds/download' },
-      { icon: <Bug strokeWidth={1} size={20}/>, title: 'Debugging', href: '/playgrounds/debugging' },
-      { icon: <Timer strokeWidth={1} size={20}/>, title: 'Timeouts', href: '/playgrounds/timeouts' },
+      {
+        icon: (
+          <Bug
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Debugging',
+        href: '/playgrounds/debugging',
+      },
+      {
+        icon: (
+          <Timer
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Timeouts',
+        href: '/playgrounds/timeouts',
+      },
     ],
   },
   {
