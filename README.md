@@ -26,9 +26,7 @@
   </a>
 </h4>
 
-[E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents. 
-
-With E2B, you can create AI playgrounds. In these AI playgrounds, you can let your AI agents and apps:
+[E2B](https://e2b.dev) is cloud for AI agents and AI apps. With E2B, you can create AI playgrounds. In these AI playgrounds, you can let your AI agents and apps:
 - Run any code and terminal command in a sandboxed environment
 - Install dependencies and programs
 - Use filesystem
