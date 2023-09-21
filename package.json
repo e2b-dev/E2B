@@ -3,12 +3,15 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "version": "changeset version && npm run postVersion --workspaces --if-present",
-    "publish": "changeset publish && npm run postPublish --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "dev:docs": "npm --prefix apps/docs run dev"
+    "version": "changeset version && pnpm run postVersion --workspaces --if-present",
+    "publish": "changeset publish && pnpm run postPublish --workspaces --if-present",
+    "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
+    "test": "pnpm test --recursive --if-present",
+    "dev:docs": "pnpm --prefix apps/docs run dev"
   },
+  "packageManager": "pnpm@8.7.6",
   "workspaces": [
+    "apps/*",
     "packages/*"
   ],
   "dependencies": {

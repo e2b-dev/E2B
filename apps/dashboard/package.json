@@ -21,7 +21,7 @@
     "lint:fix": "next lint --fix",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
-    "postinstall": "npm run db:generate",
+    "postinstall": "pnpm run db:generate",
     "knip": "knip"
   },
   "dependencies": {
@@ -49,9 +49,9 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.9",
     "@types/lodash.debounce": "^4.0.7",
-    "@types/node": "^18.14.6",
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11",
+    "@types/node": "20.6.3",
+    "@types/react": "18.2.22",
+    "@types/react-dom": "18.2.7",
     "autoprefixer": "^10.4.13",
     "cssnano": "^6.0.0",
     "eslint": "^8.35.0",

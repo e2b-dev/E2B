@@ -54,6 +54,7 @@
   "editor.codeLens": true,
   "editor.suggest.localityBonus": true,
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  "npm.packageManager": "pnpm",
   "python.formatting.provider": "black",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"

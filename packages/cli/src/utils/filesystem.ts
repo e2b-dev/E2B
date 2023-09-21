@@ -5,6 +5,7 @@ import * as fsPromise from 'fs/promises'
 import gitIgnore, { Ignore } from 'ignore'
 import * as path from 'path'
 import tar from 'tar-fs'
+import * as util from 'util'
 
 const walk = util.promisify(fsWalk.walk)
 

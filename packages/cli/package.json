@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "CLI for managing e2b environments",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
@@ -19,7 +19,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "pnpm build",
+    "prepublishOnly": "npm run build",
     "build": "rm -rf ./dist && tsup --minify",
     "dev": "tsup --watch"
   },
