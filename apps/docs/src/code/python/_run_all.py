@@ -7,6 +7,8 @@ from basics.fs_ls import main as fs_ls_main
 from basics.fs_mkdir import main as fs_mkdir_main
 from basics.fs_read import main as fs_read_main
 from basics.fs_write import main as fs_write_main
+from basics.fs_read_bytes import main as fs_read_bytes_main
+from basics.fs_write_bytes import main as fs_write_bytes_main
 from basics.fs_watch import main as fs_watch_main
 from basics.process_start import main as process_start_main
 from basics.process_stop import main as process_stop_main

@@ -332,8 +332,26 @@ export const navigation = [
         title: 'Running Processes',
         href: '/playgrounds/process',
       },
-      // { icon: <FileUp strokeWidth={1} size={20}/>, title: 'Upload Files', href: '/playgrounds/upload' },
-      // { icon: <FileDown strokeWidth={1} size={20}/>, title: 'Download Files', href: '/playgrounds/download' },
+      // {
+      //   icon: (
+      //     <FileUp
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Upload Files',
+      //   href: '/playgrounds/upload',
+      // },
+      // {
+      //   icon: (
+      //     <FileDown
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Download Files',
+      //   href: '/playgrounds/download',
+      // },
       {
         icon: (
           <Bug
