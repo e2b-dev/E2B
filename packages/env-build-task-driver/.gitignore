@@ -5,3 +5,4 @@ plugin
 env-build-task-driver
 
 bin
+__debug_*
