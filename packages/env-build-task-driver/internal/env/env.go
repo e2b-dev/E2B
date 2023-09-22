@@ -121,7 +121,7 @@ func (e *Env) envSnapfilePath() string {
 }
 
 func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Client) error {
-	childCtx, childSpan := tracer.Start(ctx, "build-env")
+	childCtx, childSpan := tracer.Start(ctx, "build")
 	defer childSpan.End()
 
 	err := e.initialize(childCtx, tracer)
@@ -157,7 +157,7 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 }
 
 func (e *Env) initialize(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "initialize-env")
+	childCtx, childSpan := tracer.Start(ctx, "initialize")
 	defer childSpan.End()
 
 	var err error
@@ -169,14 +169,20 @@ func (e *Env) initialize(ctx context.Context, tracer trace.Tracer) error {
 
 	err = os.MkdirAll(e.tmpBuildDirPath(), 0o777)
 	if err != nil {
-		return err
+		errMsg := fmt.Errorf("error creating tmp build dir: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "created tmp build dir")
 
-	err = os.WriteFile(e.tmpBuildIDFilePath(), []byte(e.BuildID), 0o777)
+	err = os.WriteFile(e.tmpBuildIDFilePath(), []byte(e.BuildID), 0o644)
 	if err != nil {
-		return err
+		errMsg := fmt.Errorf("error writing build ID file: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "wrote build ID")
@@ -185,33 +191,45 @@ func (e *Env) initialize(ctx context.Context, tracer trace.Tracer) error {
 }
 
 func (e *Env) MoveToEnvDir(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "move-snapshot-to-env-dir")
+	childCtx, childSpan := tracer.Start(ctx, "move-to-env-dir")
 	defer childSpan.End()
 
 	err := os.Rename(e.tmpSnapfilePath(), e.envSnapfilePath())
 	if err != nil {
-		return nil
+		errMsg := fmt.Errorf("error moving snapshot file: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "moved snapshot file")
 
 	err = os.Rename(e.tmpMemfilePath(), e.envMemfilePath())
 	if err != nil {
-		return nil
+		errMsg := fmt.Errorf("error moving memfile: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "moved memfile")
 
 	err = os.Rename(e.tmpRootfsPath(), e.envRootfsPath())
 	if err != nil {
-		return nil
+		errMsg := fmt.Errorf("error moving rootfs: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "moved rootfs")
 
 	err = os.Rename(e.tmpBuildIDFilePath(), e.envBuildIDFilePath())
 	if err != nil {
-		return nil
+		errMsg := fmt.Errorf("error moving build ID: %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "moved build ID")
@@ -220,11 +238,14 @@ func (e *Env) MoveToEnvDir(ctx context.Context, tracer trace.Tracer) error {
 }
 
 func (e *Env) Cleanup(ctx context.Context, tracer trace.Tracer) {
+	childCtx, childSpan := tracer.Start(ctx, "cleanup")
+	defer childSpan.End()
+
 	err := os.RemoveAll(e.tmpBuildDirPath())
 	if err != nil {
 		errMsg := fmt.Errorf("error cleaning up env files %w", err)
-		telemetry.ReportError(ctx, errMsg)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "cleaned up env files")
 	}
-
-	telemetry.ReportEvent(ctx, "cleaned up env files")
 }

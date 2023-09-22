@@ -29,12 +29,11 @@ const (
 )
 
 type Snapshot struct {
+	fc     *exec.Cmd
+	client *client.Firecracker
+
+	env        *Env
 	socketPath string
-	client     *client.Firecracker
-
-	fc *exec.Cmd
-
-	env *Env
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -47,12 +46,13 @@ func newFirecrackerClient(socketPath string) *client.Firecracker {
 }
 
 func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FCNetwork, rootfs *Rootfs) (*Snapshot, error) {
+	childCtx, childSpan := tracer.Start(ctx, "new-snapshot")
+	defer childSpan.End()
+
 	socketFileName := fmt.Sprintf("fc-sock-%s.sock", env.BuildID)
 	socketPath := filepath.Join(tmpDirPath, socketFileName)
 
 	client := newFirecrackerClient(socketPath)
-
-	var err error
 
 	snapshot := &Snapshot{
 		socketPath: socketPath,
@@ -61,35 +61,43 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		fc:         nil,
 	}
 
-	defer snapshot.cleanupFC(ctx, tracer)
+	defer snapshot.cleanupFC(childCtx, tracer)
 
-	err = snapshot.startFCProcess(ctx, tracer, env.FirecrackerBinaryPath, network.namespaceID)
+	err := snapshot.startFCProcess(childCtx, tracer, env.FirecrackerBinaryPath, network.namespaceID)
 	if err != nil {
-		return nil, err
+		errMsg := fmt.Errorf("error starting fc process %w", err)
+
+		return nil, errMsg
 	}
 
-	err = snapshot.configure(ctx, tracer)
+	err = snapshot.configureFC(childCtx, tracer)
 	if err != nil {
-		return nil, err
+		errMsg := fmt.Errorf("error configuring fc %w", err)
+
+		return nil, errMsg
 	}
 
-	err = snapshot.pause(ctx, tracer)
+	err = snapshot.pauseFC(childCtx, tracer)
 	if err != nil {
-		return nil, err
+		errMsg := fmt.Errorf("error pausing fc %w", err)
+
+		return nil, errMsg
 	}
 
 	// TODO: Wait for all necessary things in FC to start
 
-	err = snapshot.snapshot(ctx, tracer)
+	err = snapshot.snapshotFC(childCtx, tracer)
 	if err != nil {
-		return nil, err
+		errMsg := fmt.Errorf("error snapshotting fc %w", err)
+
+		return nil, errMsg
 	}
 
 	return snapshot, nil
 }
 
 func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBinaryPath, networkNamespaceID string) error {
-	childCtx, childSpan := tracer.Start(ctx, "start-fc")
+	childCtx, childSpan := tracer.Start(ctx, "start-fc-process")
 	defer childSpan.End()
 
 	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
@@ -110,18 +118,23 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	telemetry.ReportEvent(childCtx, "started fc process")
 
 	go func() {
-		err := s.fc.Wait()
+		anonymousChildCtx, childSpan := tracer.Start(ctx, "handle-fc-process-wait")
+		defer childSpan.End()
+
+		waitErr := s.fc.Wait()
 		if err != nil {
-			errMsg := fmt.Errorf("error waiting for fc process %w", err)
-			telemetry.ReportError(childCtx, errMsg)
+			errMsg := fmt.Errorf("error waiting for fc process %w", waitErr)
+			telemetry.ReportError(anonymousChildCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(anonymousChildCtx, "fc process exited")
 		}
 	}()
 
 	return nil
 }
 
-func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "start-fc")
+func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "configure-fc")
 	defer childSpan.End()
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
@@ -142,6 +155,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "set fc boot source config")
 
 	rootfs := "rootfs"
@@ -163,8 +177,10 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		errMsg := fmt.Errorf("error setting fc drivers config %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "set fc drivers config")
 
 	ifaceID := fcIfaceID
@@ -178,12 +194,15 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 			HostDevName: &hostDevName,
 		},
 	}
+
 	_, err = s.client.Operations.PutGuestNetworkInterfaceByID(&networkConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error setting fc network config %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "set fc network config")
 
 	smt := true
@@ -197,12 +216,15 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 			TrackDirtyPages: &trackDirtyPages,
 		},
 	}
+
 	_, err = s.client.Operations.PutMachineConfiguration(&machineConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error setting fc machine config %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "set fc machine config")
 
 	mmdsVersion := "V2"
@@ -213,12 +235,15 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 			NetworkInterfaces: []string{fcIfaceID},
 		},
 	}
+
 	_, err = s.client.Operations.PutMmdsConfig(&mmdsConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error setting fc mmds config %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "set fc mmds config")
 
 	// We may need to sleep 0.015s before start - previous configuration is processes asynchronously. How to do this sync or in one go?
@@ -230,18 +255,21 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 			ActionType: &start,
 		},
 	}
+
 	_, err = s.client.Operations.CreateSyncAction(&startActionParams)
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "started fc")
 
 	return nil
 }
 
-func (s *Snapshot) pause(ctx context.Context, tracer trace.Tracer) error {
+func (s *Snapshot) pauseFC(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "pause-fc")
 	defer childSpan.End()
 
@@ -257,14 +285,16 @@ func (s *Snapshot) pause(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		errMsg := fmt.Errorf("error pausing vm %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "paused vm")
 
 	return nil
 }
 
-func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
+func (s *Snapshot) snapshotFC(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "snapshot-fc")
 	defer childSpan.End()
 
@@ -283,27 +313,34 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		errMsg := fmt.Errorf("error creating vm snapshot %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
+
 	telemetry.ReportEvent(childCtx, "created vm snapshot")
 
 	return nil
 }
 
 func (s *Snapshot) cleanupFC(ctx context.Context, tracer trace.Tracer) {
+	childCtx, childSpan := tracer.Start(ctx, "cleanup-fc")
+	defer childSpan.End()
+
 	if s.fc != nil {
 		err := s.fc.Cancel()
 		if err != nil {
 			errMsg := fmt.Errorf("error killing fc process %w", err)
-			telemetry.ReportError(ctx, errMsg)
+			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "killed fc process")
 		}
-		telemetry.ReportEvent(ctx, "killed fc process")
 	}
 
 	err := os.RemoveAll(s.socketPath)
 	if err != nil {
 		errMsg := fmt.Errorf("error removing fc socket %w", err)
-		telemetry.ReportError(ctx, errMsg)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "removed fc socket")
 	}
-	telemetry.ReportEvent(ctx, "removed fc socket")
 }

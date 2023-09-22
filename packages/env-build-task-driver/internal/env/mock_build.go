@@ -27,17 +27,20 @@ func MockBuild(envID, buildID, provisionEnvScript string) {
 	envsPipelinePath := "/mnt/disks/envs-pipeline"
 	envdName := "envd"
 	contextFileName := "context.tar.gz"
+	vCPUCount := int64(1)
+	memoryMB := int64(512)
+	diskSizeMB := int64(512)
 
 	e := Env{
 		BuildID:               buildID,
 		EnvID:                 envID,
 		EnvsPath:              envsPath,
-		VCpuCount:             1,
-		MemoryMB:              512,
+		VCpuCount:             vCPUCount,
+		MemoryMB:              memoryMB,
 		DockerContextsPath:    contextsPath,
 		DockerRegistry:        registry,
 		KernelImagePath:       kernelImagePath,
-		DiskSizeMB:            512,
+		DiskSizeMB:            diskSizeMB,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
 		ProvisionScript:       provisionEnvScript,
 		EnvsPipelinePath:      envsPipelinePath,

@@ -15,20 +15,20 @@ import (
 )
 
 type taskHandle struct {
-	stateLock sync.RWMutex
-
-	env *env.Env
-
 	logger      hclog.Logger
 	taskConfig  *drivers.TaskConfig
 	procState   drivers.TaskState
+	exitResult  *drivers.ExitResult
 	startedAt   time.Time
 	completedAt time.Time
-	exitResult  *drivers.ExitResult
 
 	cancel context.CancelFunc
 
+	env *env.Env
+
 	exited chan struct{}
+
+	stateLock sync.RWMutex
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
@@ -53,7 +53,7 @@ func (h *taskHandle) IsRunning() bool {
 }
 
 func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *client.Client) {
-	childCtx, childSpan := tracer.Start(ctx, "run-build")
+	childCtx, childSpan := tracer.Start(ctx, "run")
 	defer childSpan.End()
 
 	defer func() {

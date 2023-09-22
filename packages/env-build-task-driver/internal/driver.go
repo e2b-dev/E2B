@@ -200,7 +200,7 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 
 // StartTask returns a task handle and a driver network if necessary.
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
-	ctx, span := d.tracer.Start(d.ctx, "start-env-build-task-validation", trace.WithAttributes(
+	ctx, span := d.tracer.Start(d.ctx, "start-task-validation", trace.WithAttributes(
 		attribute.String("alloc_id", cfg.AllocID),
 	))
 	defer span.End()
@@ -246,7 +246,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	childCtx, childSpan := d.tracer.Start(
 		trace.ContextWithRemoteSpanContext(d.ctx, remoteCtx),
-		"start-env-instance-task",
+		"start-task",
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
 		),

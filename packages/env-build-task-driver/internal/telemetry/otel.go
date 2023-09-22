@@ -60,13 +60,20 @@ func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) 
 	)
 }
 
-func ReportCriticalError(ctx context.Context, err error) {
+func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
+	if len(attrs) == 0 {
+		fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
+	} else {
+		fmt.Fprintf(os.Stderr, "Critical error: %v - %v\n", err, attrs)
+	}
 
 	span.RecordError(err,
 		trace.WithStackTrace(true),
+		trace.WithAttributes(
+			attrs...,
+		),
 	)
 	span.SetStatus(codes.Error, "critical error")
 }
