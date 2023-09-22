@@ -289,12 +289,12 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 
 func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
 	if s.fc != nil {
-		// err := s.fc.Cancel()
-		// if err != nil {
-		// 	errMsg := fmt.Errorf("error killing fc process %w", err)
-		// 	telemetry.ReportError(ctx, errMsg)
-		// }
-		// telemetry.ReportEvent(ctx, "killed fc process")
+		err := s.fc.Cancel()
+		if err != nil {
+			errMsg := fmt.Errorf("error killing fc process %w", err)
+			telemetry.ReportError(ctx, errMsg)
+		}
+		telemetry.ReportEvent(ctx, "killed fc process")
 	}
 
 	err := os.RemoveAll(s.socketPath)
