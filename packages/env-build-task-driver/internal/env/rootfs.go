@@ -64,24 +64,17 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "build-docker-image")
 	defer childSpan.End()
 
+	// File should be automatically closed by the docker image build
 	dockerContextFile, err := os.Open(r.DockerContextPath())
 	if err != nil {
 		return err
 	}
 	telemetry.ReportEvent(childCtx, "opened docker context file")
-	defer func() {
-		closeErr := dockerContextFile.Close()
-		if closeErr != nil {
-			errMsg := fmt.Errorf("error closing docker context file %w", closeErr)
-			telemetry.ReportError(childCtx, errMsg)
-		}
-	}()
 
 	buildResponse, err := r.client.ImageBuild(
 		childCtx,
 		dockerContextFile,
 		types.ImageBuildOptions{
-			Context:    dockerContextFile,
 			Dockerfile: dockerfileName,
 			Remove:     true,
 			Tags:       []string{r.dockerTag()},
@@ -113,6 +106,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error removing image %v", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
+	telemetry.ReportEvent(ctx, "removed image")
 }
 
 func (r *Rootfs) dockerTag() string {
@@ -138,9 +132,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "created container")
 	defer func() {
 		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
-			Force:         true,
-			RemoveLinks:   true,
-			RemoveVolumes: true,
+			Force: true,
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error removing container %v", err)
@@ -239,7 +231,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 	case response := <-wait:
 		if response.Error != nil {
-			return fmt.Errorf("error waiting for container - code %d: %w", response.StatusCode, response.Error.Message)
+			return fmt.Errorf("error waiting for container - code %d: %s", response.StatusCode, response.Error.Message)
 		}
 	}
 	telemetry.ReportEvent(childCtx, "waited for container exit")

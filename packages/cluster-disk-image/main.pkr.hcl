@@ -52,7 +52,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make docker.io",
+      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make docker.io build-essential",
     ]
   }
 

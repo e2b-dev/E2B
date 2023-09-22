@@ -49,21 +49,21 @@ func NewOtelHook(span trace.Span) *OtelHook {
 func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	fmt.Println(name, attrs)
-
 	if len(attrs) == 0 {
-		span.AddEvent(name)
+		fmt.Printf("-> %s\n", name)
 	} else {
-		span.AddEvent(name,
-			trace.WithAttributes(attrs...),
-		)
+		fmt.Printf("-> %s - %v\n", name, attrs)
 	}
+
+	span.AddEvent(name,
+		trace.WithAttributes(attrs...),
+	)
 }
 
 func ReportCriticalError(ctx context.Context, err error) {
 	span := trace.SpanFromContext(ctx)
 
-	fmt.Fprint(os.Stderr, err.Error())
+	fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
 
 	span.RecordError(err,
 		trace.WithStackTrace(true),
@@ -74,18 +74,16 @@ func ReportCriticalError(ctx context.Context, err error) {
 func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	fmt.Fprint(os.Stderr, err.Error())
-
 	if len(attrs) == 0 {
-		span.RecordError(err,
-			trace.WithStackTrace(true),
-		)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	} else {
-		span.RecordError(err,
-			trace.WithStackTrace(true),
-			trace.WithAttributes(
-				attrs...,
-			),
-		)
+		fmt.Fprintf(os.Stderr, "Error: %v - %v\n", err, attrs)
 	}
+
+	span.RecordError(err,
+		trace.WithStackTrace(true),
+		trace.WithAttributes(
+			attrs...,
+		),
+	)
 }

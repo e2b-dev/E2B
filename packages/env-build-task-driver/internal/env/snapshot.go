@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
@@ -33,7 +34,7 @@ type Snapshot struct {
 
 	fc *exec.Cmd
 
-	env *Env
+	*Env
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -56,6 +57,7 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 	snapshot := &Snapshot{
 		socketPath: socketPath,
 		client:     client,
+		Env:        env,
 	}
 
 	defer func() {
@@ -93,10 +95,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	childCtx, childSpan := tracer.Start(ctx, "start-fc")
 	defer childSpan.End()
 
-	fcCmd := fmt.Sprintf("%s --api-sock %s", fcBinaryPath, s.socketPath)
-	fcCmdInNS := fmt.Sprintf("ip netns exec %s %s", networkNamespaceID, fcCmd)
-
-	s.fc = exec.CommandContext(childCtx, fcCmdInNS)
+	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
 	s.fc.Stderr = os.Stderr
 	s.fc.Stdout = os.Stdout
 
@@ -106,6 +105,10 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
 	}
+
+	// TODO: Need to check and wait if the FC is alive
+	time.Sleep(500 * time.Millisecond)
+
 	telemetry.ReportEvent(childCtx, "started fc process")
 
 	go func() {
@@ -125,11 +128,12 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
 	kernelArgs := fmt.Sprintf("ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
+	kernelImagePath := s.KernelImagePath
 	bootSourceConfig := operations.PutGuestBootSourceParams{
 		Context: childCtx,
 		Body: &models.BootSource{
 			BootArgs:        kernelArgs,
-			KernelImagePath: &s.env.KernelImagePath,
+			KernelImagePath: &kernelImagePath,
 		},
 	}
 	_, err := s.client.Operations.PutGuestBootSource(&bootSourceConfig)
@@ -143,7 +147,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 	rootfs := "rootfs"
 	isRootDevice := true
 	isReadOnly := false
-	pathOnHost := s.env.tmpRootfsPath()
+	pathOnHost := s.tmpRootfsPath()
 	driversConfig := operations.PutGuestDriveByIDParams{
 		Context: childCtx,
 		DriveID: rootfs,
@@ -186,8 +190,8 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 	machineConfig := operations.PutMachineConfigurationParams{
 		Context: childCtx,
 		Body: &models.MachineConfiguration{
-			VcpuCount:       &s.env.VCpuCount,
-			MemSizeMib:      &s.env.MemoryMB,
+			VcpuCount:       &s.VCpuCount,
+			MemSizeMib:      &s.MemoryMB,
 			Smt:             &smt,
 			TrackDirtyPages: &trackDirtyPages,
 		},
@@ -262,8 +266,8 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "snapshot-fc")
 	defer childSpan.End()
 
-	memfilePath := s.env.tmpMemfilePath()
-	snapfilePath := s.env.tmpSnapfilePath()
+	memfilePath := s.tmpMemfilePath()
+	snapfilePath := s.tmpSnapfilePath()
 	snapshotConfig := operations.CreateSnapshotParams{
 		Context: childCtx,
 		Body: &models.SnapshotCreateParams{
@@ -285,11 +289,12 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 
 func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
 	if s.fc != nil {
-		err := s.fc.Cancel()
-		if err != nil {
-			errMsg := fmt.Errorf("error killing fc process %w", err)
-			telemetry.ReportError(ctx, errMsg)
-		}
+		// err := s.fc.Cancel()
+		// if err != nil {
+		// 	errMsg := fmt.Errorf("error killing fc process %w", err)
+		// 	telemetry.ReportError(ctx, errMsg)
+		// }
+		// telemetry.ReportEvent(ctx, "killed fc process")
 	}
 
 	err := os.RemoveAll(s.socketPath)
@@ -297,4 +302,5 @@ func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error removing fc socket %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
+	telemetry.ReportEvent(ctx, "removed fc socket")
 }

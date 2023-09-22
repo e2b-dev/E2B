@@ -133,4 +133,5 @@ func (n *FCNetwork) Cleanup(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error deleting namespace %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
+	telemetry.ReportEvent(ctx, "Deleted namespace")
 }
