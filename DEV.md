@@ -58,6 +58,7 @@
 - Configure hyperthreading for better FC performance? https://cloud.google.com/compute/docs/instances/set-threads-per-core?authuser=1
 - Check the FC rootfs build https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md#creating-a-rootfs-image - make sure the special filesystems are mounted!
 - Change min CPU platform of the client instance to be only 1 possible CPU type (now it is 2)
+- Check with race condition build
 
 
 
