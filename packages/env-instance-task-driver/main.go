@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"time"
 
-	driver "github.com/e2b-dev/api/packages/env-instance-task-driver/internal"
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
 
-	"net/http"
+	driver "github.com/e2b-dev/api/packages/env-instance-task-driver/internal"
 
 	_ "net/http/pprof"
 
@@ -66,7 +66,7 @@ func main() {
 	flag.Parse()
 
 	if *test {
-		driver.TestCreateNetwork()
+		// driver.TestCreateNetwork()
 	} else {
 		configurePlugin()
 	}
