@@ -59,7 +59,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 		errMsg := fmt.Errorf("cannot get current (host) namespace %w", err)
 		return errMsg
 	}
-	telemetry.ReportEvent(childCtx, "Saved original ns")
+	telemetry.ReportEvent(childCtx, "saved original ns")
 	defer func() {
 		err = netns.Set(hostNS)
 		if err != nil {
@@ -79,7 +79,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		return fmt.Errorf("cannot create new namespace %w", err)
 	}
-	telemetry.ReportEvent(childCtx, "Created ns")
+	telemetry.ReportEvent(childCtx, "created ns")
 	defer ns.Close()
 
 	// Create tap device
@@ -95,7 +95,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		return fmt.Errorf("error creating tap device %w", err)
 	}
-	telemetry.ReportEvent(childCtx, "Created tap device")
+	telemetry.ReportEvent(childCtx, "created tap device")
 
 	// Active tap device
 	//   ip netns exec $NS_NAME ip link set $TAP_NAME up
@@ -103,7 +103,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		return fmt.Errorf("error setting tap device up %w", err)
 	}
-	telemetry.ReportEvent(childCtx, "Set tap device up")
+	telemetry.ReportEvent(childCtx, "set tap device up")
 
 	// Add ip address to tap device
 	//   ip netns exec $NS_NAME ip addr add $TAP_ADDR$TAP_MASK dev $TAP_NAME
@@ -111,7 +111,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		return fmt.Errorf("error parsing tap CIDR %w", err)
 	}
-	telemetry.ReportEvent(childCtx, "Parsed CIDR")
+	telemetry.ReportEvent(childCtx, "parsed CIDR")
 
 	err = netlink.AddrAdd(tap, &netlink.Addr{
 		IPNet: &net.IPNet{
@@ -122,7 +122,7 @@ func (n *FCNetwork) setup(ctx context.Context, tracer trace.Tracer) error {
 	if err != nil {
 		return fmt.Errorf("error setting address of the tap device %w", err)
 	}
-	telemetry.ReportEvent(childCtx, "Set tap device address")
+	telemetry.ReportEvent(childCtx, "set tap device address")
 
 	return nil
 }
@@ -133,5 +133,5 @@ func (n *FCNetwork) Cleanup(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error deleting namespace %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
-	telemetry.ReportEvent(ctx, "Deleted namespace")
+	telemetry.ReportEvent(ctx, "deleted namespace")
 }

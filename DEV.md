@@ -95,6 +95,7 @@
 - Using vsock for managing logs
 - Check close "allUnsubscribed" in envd sub manager
 - The read/write bytes should be by chunk (we can implement it via ws or a new endpoint?)
+- mount envd on separate volume?
 
 ### Build system
 - Use overlays instead of cp reflink so we can use any FS type

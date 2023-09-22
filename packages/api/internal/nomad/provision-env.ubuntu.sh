@@ -1,15 +1,14 @@
-#! /bin/bash
+set -euo xtrace
 
-# This script is supposed to be executed in a running *Ubuntu* container.
-# The container is then extracted to a rootfs image for the Firecracker VM.
+# DEBIAN_FRONTEND=noninteractive
 
-set -euo pipefail
+# yes | unminimize
+
+echo "Starting provisioning script..."
 
 apt-get update
 
-apt-get install -y \
-  build-essential \
-  curl socat util-linux openssh-server git chrony nano sudo htop
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openssh-server chrony sudo systemd
 
 # Set up autologin.
 mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
@@ -81,6 +80,8 @@ usermod -aG sudo user
 passwd -d user
 echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 
+mkdir /code
+
 chmod -R 777 /code
 chmod -R 777 /home/user
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
@@ -94,5 +95,4 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 systemctl enable envd
 systemctl enable chrony
 
-# Delete itself once done.
-rm -- "$0"
+echo "Finished provisioning script."

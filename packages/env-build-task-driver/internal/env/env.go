@@ -8,6 +8,8 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/docker/docker/client"
+
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
 )
 
@@ -118,7 +120,43 @@ func (e *Env) envSnapfilePath() string {
 	return filepath.Join(e.envDirPath(), snapfileName)
 }
 
-func (e *Env) Initialize(ctx context.Context, tracer trace.Tracer) error {
+func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Client) error {
+	childCtx, childSpan := tracer.Start(ctx, "build-env")
+	defer childSpan.End()
+
+	err := e.initialize(childCtx, tracer)
+	if err != nil {
+		return fmt.Errorf("error initializing directories for building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+	}
+
+	defer e.Cleanup(childCtx, tracer)
+
+	rootfs, err := NewRootfs(childCtx, tracer, e, docker)
+	if err != nil {
+		return fmt.Errorf("error creating rootfs for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+	}
+
+	network, err := NewFCNetwork(childCtx, tracer, e)
+	if err != nil {
+		return fmt.Errorf("error network setup for FC while building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+	}
+
+	defer network.Cleanup(childCtx, tracer)
+
+	_, err = NewSnapshot(childCtx, tracer, e, network, rootfs)
+	if err != nil {
+		return fmt.Errorf("error snapshot for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+	}
+
+	err = e.MoveToEnvDir(childCtx, tracer)
+	if err != nil {
+		return fmt.Errorf("error moving env files to their final destination during while building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+	}
+
+	return nil
+}
+
+func (e *Env) initialize(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "initialize-env")
 	defer childSpan.End()
 
@@ -146,7 +184,7 @@ func (e *Env) Initialize(ctx context.Context, tracer trace.Tracer) error {
 	return nil
 }
 
-func (e *Env) MoveSnapshotToEnvDir(ctx context.Context, tracer trace.Tracer) error {
+func (e *Env) MoveToEnvDir(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "move-snapshot-to-env-dir")
 	defer childSpan.End()
 
@@ -187,5 +225,6 @@ func (e *Env) Cleanup(ctx context.Context, tracer trace.Tracer) {
 		errMsg := fmt.Errorf("error cleaning up env files %w", err)
 		telemetry.ReportError(ctx, errMsg)
 	}
+
 	telemetry.ReportEvent(ctx, "cleaned up env files")
 }

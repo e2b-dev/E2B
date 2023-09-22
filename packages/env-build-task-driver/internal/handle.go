@@ -68,53 +68,24 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 	}
 	h.stateLock.Unlock()
 
-	failTask := func(err error) {
+	err := h.env.Build(childCtx, tracer, docker)
+	if err != nil {
 		h.stateLock.Lock()
-		defer h.stateLock.Unlock()
 
 		h.exitResult.Err = err
 		h.procState = drivers.TaskStateExited
 		h.completedAt = time.Now()
+
 		telemetry.ReportCriticalError(childCtx, err)
-	}
 
-	err := h.env.Initialize(childCtx, tracer)
-	if err != nil {
-		failTask(err)
-		return
-	}
-	defer h.env.Cleanup(childCtx, tracer)
-
-	rootfs, err := env.NewRootfs(ctx, tracer, h.env, docker)
-	if err != nil {
-		failTask(err)
-		return
-	}
-
-	network, err := env.NewFCNetwork(ctx, tracer, h.env)
-	if err != nil {
-		failTask(err)
-		return
-	}
-	defer network.Cleanup(childCtx, tracer)
-
-	snapshot, err := env.NewSnapshot(ctx, tracer, h.env, network, rootfs)
-	if err != nil {
-		failTask(err)
-		return
-	}
-	defer snapshot.Cleanup(childCtx, tracer)
-
-	err = h.env.MoveSnapshotToEnvDir(childCtx, tracer)
-	if err != nil {
-		failTask(err)
-		return
+		h.stateLock.Unlock()
 	}
 
 	h.stateLock.Lock()
-	defer h.stateLock.Unlock()
 
 	h.procState = drivers.TaskStateExited
 	h.exitResult.ExitCode = 0
 	h.completedAt = time.Now()
+
+	h.stateLock.Unlock()
 }

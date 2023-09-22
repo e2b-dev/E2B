@@ -26,7 +26,7 @@ const (
 type Rootfs struct {
 	client *client.Client
 
-	Env
+	env *Env
 }
 
 func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *client.Client) (*Rootfs, error) {
@@ -35,18 +35,10 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 
 	rootfs := &Rootfs{
 		client: docker,
-		Env:    *env,
+		env:    env,
 	}
 
-	var err error
-
-	defer func() {
-		if err != nil {
-			rootfs.Cleanup(childCtx, tracer)
-		}
-	}()
-
-	err = rootfs.buildDockerImage(childCtx, tracer)
+	err := rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		return nil, err
 	}
@@ -65,10 +57,17 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	defer childSpan.End()
 
 	// File should be automatically closed by the docker image build
-	dockerContextFile, err := os.Open(r.DockerContextPath())
+	dockerContextFile, err := os.Open(r.env.DockerContextPath())
 	if err != nil {
 		return err
 	}
+	defer func() {
+		closeErr := dockerContextFile.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error closing docker context file %w", closeErr)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+	}()
 	telemetry.ReportEvent(childCtx, "opened docker context file")
 
 	buildResponse, err := r.client.ImageBuild(
@@ -110,7 +109,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 }
 
 func (r *Rootfs) dockerTag() string {
-	return r.DockerRegistry + "/" + r.EnvID
+	return r.env.DockerRegistry + "/" + r.env.EnvID
 }
 
 func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
@@ -121,7 +120,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		Image:        r.dockerTag(),
 		Entrypoint:   []string{"/bin/sh", "-c"},
 		User:         "root",
-		Cmd:          []string{r.ProvisionScript},
+		Cmd:          []string{r.env.ProvisionScript},
 		Tty:          true,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -242,14 +241,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}
 	telemetry.ReportEvent(childCtx, "started copying from container")
 
-	rootfsFile, err := os.Create(r.tmpRootfsPath())
+	rootfsFile, err := os.Create(r.env.tmpRootfsPath())
 	if err != nil {
 		return fmt.Errorf("error creating rootfs file %v", err)
 	}
 	telemetry.ReportEvent(childCtx, "created rootfs file")
 
 	// In bytes
-	rootfsSize := stat.Size + r.DiskSizeMB<<20
+	rootfsSize := stat.Size + r.env.DiskSizeMB<<20
 
 	err = rootfsFile.Truncate(rootfsSize)
 	if err != nil {

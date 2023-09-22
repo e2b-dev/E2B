@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/nomad/plugins"
 
 	driver "github.com/e2b-dev/api/packages/env-build-task-driver/internal"
+	env "github.com/e2b-dev/api/packages/env-build-task-driver/internal/env"
 
 	_ "net/http/pprof"
 
@@ -20,21 +21,6 @@ const (
 	serviceName               = "env-build-task-driver"
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
-
-func configurePlugin() {
-	otelLauncher := launcher.ConfigureOpentelemetry(
-		launcher.WithServiceName(serviceName),
-		launcher.WithMetricReportingPeriod(10*time.Second),
-		launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-		launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-		launcher.WithMetricExporterInsecure(true),
-		launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-		launcher.WithSpanExporterInsecure(true),
-	)
-	defer otelLauncher.Shutdown()
-
-	plugins.Serve(factory)
-}
 
 func factory(log log.Logger) interface{} {
 	return driver.NewPlugin(log)
@@ -48,15 +34,29 @@ func main() {
 
 	envID := flag.String("env", "", "env id")
 	buildID := flag.String("build", "", "build id")
+	provisionEnvScript := flag.String("provision", "", "provision script content")
 
 	flag.Parse()
 
 	fmt.Println("envID: ", *envID)
 	fmt.Println("buildID: ", *buildID)
 
-	if *envID != "" && *buildID != "" {
-		driver.TestBuildProcess(*envID, *buildID)
+	if *envID != "" && *buildID != "" && *provisionEnvScript != "" {
+		// Start of mock build for testing
+		env.MockBuild(*envID, *buildID, *provisionEnvScript)
 	} else {
-		configurePlugin()
+		// Regular Nomad Plugin initialization
+		otelLauncher := launcher.ConfigureOpentelemetry(
+			launcher.WithServiceName(serviceName),
+			launcher.WithMetricReportingPeriod(10*time.Second),
+			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
+			launcher.WithMetricExporterInsecure(true),
+			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
+			launcher.WithSpanExporterInsecure(true),
+		)
+		defer otelLauncher.Shutdown()
+
+		plugins.Serve(factory)
 	}
 }

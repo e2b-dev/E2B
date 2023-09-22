@@ -1,4 +1,4 @@
-package internal
+package env
 
 import (
 	"context"
@@ -7,14 +7,9 @@ import (
 	"go.opentelemetry.io/otel"
 
 	_ "embed"
-
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/env"
 )
 
-//go:embed test-provision-env.ubuntu.sh
-var provisionEnvScriptFile string
-
-func TestBuildProcess(envID, buildID string) {
+func MockBuild(envID, buildID, provisionEnvScript string) {
 	ctx := context.Background()
 
 	tracer := otel.Tracer("test")
@@ -33,7 +28,7 @@ func TestBuildProcess(envID, buildID string) {
 	envdName := "envd"
 	contextFileName := "context.tar.gz"
 
-	e := env.Env{
+	e := Env{
 		BuildID:               buildID,
 		EnvID:                 envID,
 		EnvsPath:              envsPath,
@@ -44,39 +39,13 @@ func TestBuildProcess(envID, buildID string) {
 		KernelImagePath:       kernelImagePath,
 		DiskSizeMB:            512,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
-		ProvisionScript:       provisionEnvScriptFile,
+		ProvisionScript:       provisionEnvScript,
 		EnvsPipelinePath:      envsPipelinePath,
 		EnvdName:              envdName,
 		ContextFileName:       contextFileName,
 	}
 
-	// OK
-	err = e.Initialize(ctx, tracer)
-	if err != nil {
-		panic(err)
-	}
-	defer e.Cleanup(ctx, tracer)
-
-	// PROBLEM: Container start hangs
-	rootfs, err := env.NewRootfs(ctx, tracer, &e, client)
-	if err != nil {
-		panic(err)
-	}
-
-	// OK
-	network, err := env.NewFCNetwork(ctx, tracer, &e)
-	if err != nil {
-		panic(err)
-	}
-	defer network.Cleanup(ctx, tracer)
-
-	snapshot, err := env.NewSnapshot(ctx, tracer, &e, network, rootfs)
-	if err != nil {
-		panic(err)
-	}
-	defer snapshot.Cleanup(ctx, tracer)
-
-	err = e.MoveSnapshotToEnvDir(ctx, tracer)
+	err = e.Build(ctx, tracer, client)
 	if err != nil {
 		panic(err)
 	}

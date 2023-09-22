@@ -34,7 +34,7 @@ type Snapshot struct {
 
 	fc *exec.Cmd
 
-	*Env
+	env *Env
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -57,14 +57,11 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 	snapshot := &Snapshot{
 		socketPath: socketPath,
 		client:     client,
-		Env:        env,
+		env:        env,
+		fc:         nil,
 	}
 
-	defer func() {
-		if err != nil {
-			snapshot.Cleanup(ctx, tracer)
-		}
-	}()
+	defer snapshot.cleanupFC(ctx, tracer)
 
 	err = snapshot.startFCProcess(ctx, tracer, env.FirecrackerBinaryPath, network.namespaceID)
 	if err != nil {
@@ -103,6 +100,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc process %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
 
@@ -128,7 +126,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
 	kernelArgs := fmt.Sprintf("ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
-	kernelImagePath := s.KernelImagePath
+	kernelImagePath := s.env.KernelImagePath
 	bootSourceConfig := operations.PutGuestBootSourceParams{
 		Context: childCtx,
 		Body: &models.BootSource{
@@ -136,10 +134,12 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 			KernelImagePath: &kernelImagePath,
 		},
 	}
+
 	_, err := s.client.Operations.PutGuestBootSource(&bootSourceConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error setting fc boot source config %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+
 		return errMsg
 	}
 	telemetry.ReportEvent(childCtx, "set fc boot source config")
@@ -147,7 +147,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 	rootfs := "rootfs"
 	isRootDevice := true
 	isReadOnly := false
-	pathOnHost := s.tmpRootfsPath()
+	pathOnHost := s.env.tmpRootfsPath()
 	driversConfig := operations.PutGuestDriveByIDParams{
 		Context: childCtx,
 		DriveID: rootfs,
@@ -158,6 +158,7 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 			IsReadOnly:   &isReadOnly,
 		},
 	}
+
 	_, err = s.client.Operations.PutGuestDriveByID(&driversConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error setting fc drivers config %w", err)
@@ -190,8 +191,8 @@ func (s *Snapshot) configure(ctx context.Context, tracer trace.Tracer) error {
 	machineConfig := operations.PutMachineConfigurationParams{
 		Context: childCtx,
 		Body: &models.MachineConfiguration{
-			VcpuCount:       &s.VCpuCount,
-			MemSizeMib:      &s.MemoryMB,
+			VcpuCount:       &s.env.VCpuCount,
+			MemSizeMib:      &s.env.MemoryMB,
 			Smt:             &smt,
 			TrackDirtyPages: &trackDirtyPages,
 		},
@@ -251,6 +252,7 @@ func (s *Snapshot) pause(ctx context.Context, tracer trace.Tracer) error {
 			State: &state,
 		},
 	}
+
 	_, err := s.client.Operations.PatchVM(&pauseConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error pausing vm %w", err)
@@ -266,8 +268,8 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "snapshot-fc")
 	defer childSpan.End()
 
-	memfilePath := s.tmpMemfilePath()
-	snapfilePath := s.tmpSnapfilePath()
+	memfilePath := s.env.tmpMemfilePath()
+	snapfilePath := s.env.tmpSnapfilePath()
 	snapshotConfig := operations.CreateSnapshotParams{
 		Context: childCtx,
 		Body: &models.SnapshotCreateParams{
@@ -276,6 +278,7 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 			SnapshotPath: &snapfilePath,
 		},
 	}
+
 	_, err := s.client.Operations.CreateSnapshot(&snapshotConfig)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating vm snapshot %w", err)
@@ -287,7 +290,7 @@ func (s *Snapshot) snapshot(ctx context.Context, tracer trace.Tracer) error {
 	return nil
 }
 
-func (s *Snapshot) Cleanup(ctx context.Context, tracer trace.Tracer) {
+func (s *Snapshot) cleanupFC(ctx context.Context, tracer trace.Tracer) {
 	if s.fc != nil {
 		err := s.fc.Cancel()
 		if err != nil {
