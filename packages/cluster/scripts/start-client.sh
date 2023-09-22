@@ -25,6 +25,10 @@ chmod a+w $mount_path
 mkdir -p /mnt/disks/envs-pipeline
 gcsfuse -o=allow_other --implicit-dirs e2b-fc-env-pipeline /mnt/disks/envs-pipeline
 
+# Copy the kernel
+mkdir -p /fc-vm
+sudo cp /mnt/disks/envs-pipeline/vmlinux.bin /fc-vm/vmlinux.bin
+
 mkdir -p /mnt/disks/docker-contexts
 gcsfuse -o=allow_other --implicit-dirs e2b-envs-docker-context /mnt/disks/docker-contexts
 
