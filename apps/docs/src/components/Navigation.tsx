@@ -299,7 +299,7 @@ export const navigation = [
     ],
   },
   {
-    title: 'AI Playgrounds',
+    title: 'AI Playgrounds SDK',
     links: [
       { title: 'Overview', href: '/playgrounds/overview' },
       {
@@ -378,7 +378,7 @@ export const navigation = [
     title: 'AI Agents Use Case',
     links: [
       { title: 'Execute Code', href: '/agents/exec' },
-      // { title: 'Install Packages', href: '/agents/pkg' },
+      { title: 'Installing Dependencies', href: '/agents/deps' },
       { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
       { title: 'Run Shell Commands', href: '/agents/shell-commands' },
       // { title: 'Read File', href: '/agents/read' },
