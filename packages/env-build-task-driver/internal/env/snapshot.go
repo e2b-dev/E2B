@@ -79,8 +79,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	time.Sleep(100 * time.Second)
-
 	err = snapshot.configureFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error configuring fc %w", err)
@@ -88,23 +86,22 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	// TODO: Wait for all necessary things in FC to start
+	
+	if !snapshot.isRunning() {
+		errMsg := fmt.Errorf("fc process is not running")
+		
+		return nil, errMsg
+	}
+	
+	// Wait for all necessary things in FC to start
+	// TODO: Maybe init should signalize when it's ready?
+	time.Sleep(6 * time.Second)
 
 	if !snapshot.isRunning() {
 		errMsg := fmt.Errorf("fc process is not running")
 
 		return nil, errMsg
 	}
-
-
-	time.Sleep(100 * time.Second)
-
-	if !snapshot.isRunning() {
-		errMsg := fmt.Errorf("fc process is not running")
-
-		return nil, errMsg
-	}
-
 
 	err = snapshot.pauseFC(childCtx, tracer)
 	if err != nil {
@@ -188,7 +185,7 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 	defer childSpan.End()
 
 	ip := fmt.Sprintf("%s::%s:%s:instance:eth0:off:8.8.8.8", fcAddr, fcTapAddress, fcMaskLong)
-	kernelArgs := fmt.Sprintf("ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
+	kernelArgs := fmt.Sprintf("console=ttyS0 ip=%s reboot=k panic=1 pci=off nomodules i8042.nokbd i8042.noaux ipv6.disable=1 random.trust_cpu=on", ip)
 	kernelImagePath := s.env.KernelImagePath
 	bootSourceConfig := operations.PutGuestBootSourceParams{
 		Context: childCtx,
