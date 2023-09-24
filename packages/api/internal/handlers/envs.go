@@ -1,17 +1,66 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/go-uuid"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/constants"
+	"github.com/e2b-dev/api/packages/api/internal/db/models"
 	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
+
+func (a *APIStore) buildEnvs(ctx context.Context, envID string, content io.Reader) {
+	buildID, err := uuid.GenerateUUID()
+	if err != nil {
+		err = fmt.Errorf("error when generating build id: %w", err)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
+
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), content)
+	if err != nil {
+		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
+
+	buildResultChan, err := a.nomad.StartBuildingEnv(a.tracer, ctx, envID, buildID)
+	if err != nil {
+		err = fmt.Errorf("error when starting build: %w", err)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
+
+	buildResult := <-buildResultChan
+
+	var buildStatus models.EnvStatusEnum
+
+	if buildResult.Error != nil {
+		buildStatus = models.EnvStatusEnumError
+
+		err = fmt.Errorf("error when updating env: %w", err)
+		ReportCriticalError(ctx, err)
+	} else {
+		buildStatus = models.EnvStatusEnumReady
+	}
+
+	_, err = a.supabase.UpdateStatusEnv(envID, buildStatus)
+	if err != nil {
+		err = fmt.Errorf("error when updating env: %w", err)
+		ReportCriticalError(ctx, err)
+	}
+}
 
 func (a *APIStore) PostEnvs(
 	c *gin.Context,
@@ -20,6 +69,7 @@ func (a *APIStore) PostEnvs(
 
 	// Prepare info for new env
 	userID := c.Value(constants.UserIDContextKey).(string)
+
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
