@@ -63,6 +63,8 @@
 - Use hashes
 - Fix bytes/bytearray types in python SDK
 - Check quota limits for all our needs!! (N2 are separate)
+- make rootfs readwrite
+- add jailer as soon as possible (before snapshots)
 
 ### API
 - Add monitoring to the envs routes
