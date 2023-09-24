@@ -67,7 +67,7 @@ func (n *NomadClient) CreateInstance(
 	ctx context.Context,
 	envID string,
 ) (*api.Instance, *api.APIError) {
-	_, childSpan := t.Start(ctx, "create-instance",
+	childCtx, childSpan := t.Start(ctx, "create-instance",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
 		),
@@ -142,7 +142,7 @@ func (n *NomadClient) CreateInstance(
 	index := res.JobModifyIndex
 
 	alloc, err := n.WaitForJobStart(
-		ctx,
+		childCtx,
 		JobInfo{
 			name:   instanceJobNameWithSlash + instanceID,
 			evalID: evalID,
