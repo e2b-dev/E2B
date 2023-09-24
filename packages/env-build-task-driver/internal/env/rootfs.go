@@ -350,6 +350,17 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "started copying from container")
 
+	defer func() {
+		containerErr := containerReader.Close()
+		if containerErr != nil {
+			errMsg := fmt.Errorf("error closing container reader %w", containerErr)
+			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "closed container reader")
+		}
+	}()
+
+
 	rootfsFile, err := os.Create(r.env.tmpRootfsPath())
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
@@ -359,6 +370,17 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}
 
 	telemetry.ReportEvent(childCtx, "created rootfs file")
+
+	defer func() {
+		rootfsErr := rootfsFile.Close()
+		if rootfsErr != nil {
+			errMsg := fmt.Errorf("error closing rootfs file %w", rootfsErr)
+			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "closed rootfs file")
+		}
+	}()
+
 
 	err = tar2ext4.ConvertTarToExt4(containerReader, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
 	if err != nil {
