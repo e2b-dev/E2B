@@ -2,7 +2,6 @@ package env
 
 import (
 	"archive/tar"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -22,6 +21,7 @@ const (
 	dockerfileName = "Dockerfile"
 	envdRootfsPath = "/usr/bin/envd"
 	toMBShift      = 20
+	maxRootfsSize = 5000 << toMBShift
 )
 
 type Rootfs struct {
@@ -176,7 +176,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 	}()
 
-	envdFile, err := os.Open(r.env.EnvdPath())
+	envdFile, err := os.Open(r.env.EnvdPath)
 	if err != nil {
 		errMsg := fmt.Errorf("error opening envd file %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -203,58 +203,72 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 		return errMsg
 	}
-
+	
 	telemetry.ReportEvent(childCtx, "statted envd file")
+	
+	pr, pw := io.Pipe()
+	
+	tw := tar.NewWriter(pw)
+	
+	go func() {		
+		hdr := &tar.Header{
+			Name: envdRootfsPath, // The name of the file in the tar archive
+			Mode: 0o777,
+			Size: envdStat.Size(),
+		}
 
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
-	hdr := &tar.Header{
-		Name: envdRootfsPath, // The name of the file in the tar archive
-		Mode: 0o777,
-		Size: envdStat.Size(),
-	}
+		err = tw.WriteHeader(hdr)
+		if err != nil {
+			errMsg := fmt.Errorf("error writing tar header %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+	
+			return
+		}
+	
+		telemetry.ReportEvent(childCtx, "wrote tar header")
+	
+		_, err = io.Copy(tw, envdFile)
+		if err != nil {
+			errMsg := fmt.Errorf("error copying envd to tar %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+	
+			return
+		}
 
-	err = tw.WriteHeader(hdr)
-	if err != nil {
-		errMsg := fmt.Errorf("error writing tar header %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
+		telemetry.ReportEvent(childCtx, "copied envd to tar")
 
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "wrote tar header")
-
-	_, err = io.Copy(tw, envdFile)
-	if err != nil {
-		errMsg := fmt.Errorf("error copying envd to tar %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "copied envd to tar")
-
-	err = tw.Close()
-	if err != nil {
-		errMsg := fmt.Errorf("error closing tar writer %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "closed tar writer")
+		err = tw.Close()
+		if err != nil {
+			errMsg := fmt.Errorf("error closing tar writer %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+	
+			return
+		}
+	
+		telemetry.ReportEvent(childCtx, "closed tar writer")
+	
+		err = pw.Close()
+		if err != nil {
+			errMsg := fmt.Errorf("error closing pipe %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+	
+			return
+		}
+	
+		telemetry.ReportEvent(childCtx, "closed pipe")
+	}()
 
 	// Copy envd to the container
-	err = r.client.CopyToContainer(childCtx, cont.ID, "/", &buf, types.CopyToContainerOptions{
+	err = r.client.CopyToContainer(childCtx, cont.ID, "/", pr, types.CopyToContainerOptions{
 		AllowOverwriteDirWithFile: true,
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error copying envd to container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
-
+		
 		return errMsg
 	}
-
+	
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
 	go func() {
@@ -326,7 +340,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "waited for container exit")
 
-	containerReader, stat, err := r.client.CopyFromContainer(childCtx, cont.ID, "/")
+	containerReader, err := r.client.ContainerExport(childCtx, cont.ID)
 	if err != nil {
 		errMsg := fmt.Errorf("error copying from container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -346,28 +360,36 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "created rootfs file")
 
-	// In bytes
-	rootfsSize := stat.Size + r.env.DiskSizeMB<<toMBShift
-
-	err = rootfsFile.Truncate(rootfsSize)
-	if err != nil {
-		errMsg := fmt.Errorf("error truncating rootfs file %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "truncated rootfs file")
-
-	err = tar2ext4.ConvertTarToExt4(containerReader, rootfsFile, tar2ext4.MaximumDiskSize(rootfsSize))
+	err = tar2ext4.ConvertTarToExt4(containerReader, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
 	if err != nil {
 		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
+		
+		return errMsg
+	}
+	
+	telemetry.ReportEvent(childCtx, "converted container tar to ext4")
+
+	rootfsStats, err := rootfsFile.Stat()
+	if err != nil {
+		errMsg := fmt.Errorf("error statting rootfs file %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "converted container tar to ext4")
+	// In bytes
+	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<toMBShift
+
+	err = rootfsFile.Truncate(rootfsSize)
+	if err != nil {
+		errMsg := fmt.Errorf("error truncating rootfs file %w to size of build + defaultDiskSizeMB", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "truncated rootfs file to size of build + defaultDiskSizeMB")
 
 	return nil
 }
