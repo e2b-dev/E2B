@@ -120,7 +120,7 @@ func (n *NomadClient) CreateInstance(
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %+w", jobDef.String(), err),
+			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %+v", jobDef.String(), err),
 			ClientMsg: "Cannot create instance",
 			Code:      http.StatusInternalServerError,
 		}

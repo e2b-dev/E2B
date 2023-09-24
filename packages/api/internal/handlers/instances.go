@@ -20,6 +20,7 @@ func (a *APIStore) PostInstances(
 	body, err := parseBody[api.PostInstancesJSONRequestBody](ctx, c)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when parsing request: %s", err))
+
 		return
 	}
 
@@ -30,10 +31,13 @@ func (a *APIStore) PostInstances(
 	hasAccess, err := a.CheckTeamAccessEnv(envID, teamID, true)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when checking team access: %s", err))
+
 		return
 	}
+
 	if !hasAccess {
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
+
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-uuid"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/constants"
@@ -17,7 +18,14 @@ import (
 	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
 
-func (a *APIStore) buildEnvs(ctx context.Context, envID string, content io.Reader) {
+func (a *APIStore) buildEnv(ctx context.Context, envID string, content io.Reader) {
+	_, childSpan := a.tracer.Start(ctx, "build-env",
+		trace.WithAttributes(
+			attribute.String("env_id", envID),
+		),
+	)
+	defer childSpan.End()
+
 	buildID, err := uuid.GenerateUUID()
 	if err != nil {
 		err = fmt.Errorf("error when generating build id: %w", err)
@@ -66,9 +74,12 @@ func (a *APIStore) PostEnvs(
 	c *gin.Context,
 ) {
 	ctx := c.Request.Context()
+	span := trace.SpanFromContext(ctx)
 
 	// Prepare info for new env
 	userID := c.Value(constants.UserIDContextKey).(string)
+
+	SetAttributes(ctx, attribute.String("env.user_id", userID))
 
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
 	if err != nil {
@@ -80,7 +91,7 @@ func (a *APIStore) PostEnvs(
 		return
 	}
 
-	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", team.ID))
+	SetAttributes(ctx, attribute.String("env.team_id", team.ID))
 
 	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
 	if err != nil {
@@ -91,7 +102,15 @@ func (a *APIStore) PostEnvs(
 
 		return
 	}
-	defer fileContent.Close()
+
+	defer func() {
+		closeErr := fileContent.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error when closing file: %w", closeErr)
+
+			ReportError(ctx, errMsg)
+		}
+	}()
 
 	// Check if file is a tar.gz file
 	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz.e2b") {
@@ -104,7 +123,9 @@ func (a *APIStore) PostEnvs(
 	}
 
 	var env *api.Environment
+
 	envID := c.PostForm("envID")
+
 	if envID == "" {
 		envID = utils.GenerateID()
 		env, err = a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
@@ -112,27 +133,28 @@ func (a *APIStore) PostEnvs(
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when creating env: %s", err))
 
-			err = fmt.Errorf("error when creating env: %w", err)
-			ReportCriticalError(ctx, err)
+			errMsg := fmt.Errorf("error when creating env: %w", err)
+			ReportCriticalError(ctx, errMsg)
 
 			return
 		}
+
 		ReportEvent(ctx, "created new environment")
 	} else {
 		hasAccess, err := a.supabase.HasEnvAccess(envID, team.ID, false)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The environment '%s' does not exist", envID))
 
-			err = fmt.Errorf("error env not found: %w", err)
-			ReportError(ctx, err)
+			errMsg := fmt.Errorf("error env not found: %w", err)
+			ReportError(ctx, errMsg)
 
 			return
 		}
 		if !hasAccess {
 			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
-			err = fmt.Errorf("user doesn't have access to env: %w", err)
-			ReportError(ctx, err)
+			errMsg := fmt.Errorf("user doesn't have access to env: %w", err)
+			ReportError(ctx, errMsg)
 
 			return
 		}
@@ -141,17 +163,32 @@ func (a *APIStore) PostEnvs(
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating envs: %s", err))
 
-			err = fmt.Errorf("error when updating envs: %w", err)
-			ReportCriticalError(ctx, err)
+			errMsg := fmt.Errorf("error when updating envs: %w", err)
+			ReportCriticalError(ctx, errMsg)
 
 			return
 		}
-		ReportEvent(ctx, "updated environment")
 
+		ReportEvent(ctx, "updated environment")
 	}
 
 	// Upload and build env
-	go a.buildEnvs(ctx, envID, fileContent)
+	longLivingSpanContext := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    span.SpanContext().TraceID(),
+		SpanID:     span.SpanContext().SpanID(),
+		TraceFlags: 0x0,
+	})
+
+	go func() {
+		buildContext, childSpan := a.tracer.Start(
+			trace.ContextWithSpanContext(context.Background(), longLivingSpanContext),
+			"background-build-env",
+		)
+		defer childSpan.End()
+
+		a.buildEnv(buildContext, envID, fileContent)
+	}()
+
 	a.IdentifyAnalyticsTeam(team.ID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 	a.CreateAnalyticsUserEvent(userID, team.ID, "created environment", properties.
@@ -175,6 +212,7 @@ func (a *APIStore) GetEnvs(
 
 		return
 	}
+
 	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", team.ID))
 
 	envs, err := a.supabase.GetEnvs(team.ID)
@@ -211,6 +249,7 @@ func (a *APIStore) GetEnvsEnvID(
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
 		err = fmt.Errorf("error when getting default team: %w", err)
+
 		return
 	}
 
@@ -219,7 +258,8 @@ func (a *APIStore) GetEnvsEnvID(
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
 
 		err = fmt.Errorf("error when getting env: %w", err)
-		ReportError(ctx, err)
+		ReportCriticalError(ctx, err)
+
 		return
 	}
 
