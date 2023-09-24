@@ -28,10 +28,9 @@ job "{{ .JobName }}/{{ .EnvID }}" {
         ENVS_DISK = "{{ .EnvsDisk }}"
         DOCKER_REGISTRY = "us-central1-docker.pkg.dev/e2b-prod/custom-environments"
         DOCKER_CONTEXTS_PATH = "/mnt/disks/docker-contexts/v1"
-        ENVS_PIPELINE_PATH = "/mnt/disks/envs-pipeline"
+        ENVD_PATH = "/fc-vm/envd"
         KERNEL_IMAGE_PATH = "/fc-vm/vmlinux.bin"
         FIRECRACKER_BINARY_PATH = "/usr/bin/firecracker"
-        ENVD_NAME = "envd"
         CONTEXT_FILE_NAME = "context.tar.gz"
       }
 

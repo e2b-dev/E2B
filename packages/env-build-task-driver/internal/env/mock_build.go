@@ -24,8 +24,7 @@ func MockBuild(envID, buildID, provisionEnvScript string) {
 	envsPath := "/mnt/disks/fc-envs/v1"
 	kernelImagePath := "/fc-vm/vmlinux.bin"
 	firecrackerBinaryPath := "/usr/bin/firecracker"
-	envsPipelinePath := "/mnt/disks/envs-pipeline"
-	envdName := "envd"
+	envdPath := "/fc-vm/envd"
 	contextFileName := "context.tar.gz"
 	vCPUCount := int64(1)
 	memoryMB := int64(512)
@@ -43,8 +42,7 @@ func MockBuild(envID, buildID, provisionEnvScript string) {
 		DiskSizeMB:            diskSizeMB,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
 		ProvisionScript:       provisionEnvScript,
-		EnvsPipelinePath:      envsPipelinePath,
-		EnvdName:              envdName,
+		EnvdPath:      				 envdPath,
 		ContextFileName:       contextFileName,
 	}
 

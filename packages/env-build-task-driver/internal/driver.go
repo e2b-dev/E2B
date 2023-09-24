@@ -257,9 +257,8 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	registry := cfg.Env["DOCKER_REGISTRY"]
 	envsPath := cfg.Env["ENVS_PATH"]
 	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
+	envdPath := cfg.Env["ENVD_PATH"]
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
-	envsPipelinePath := cfg.Env["ENVS_PIPELINE_PATH"]
-	envdName := cfg.Env["ENVD_NAME"]
 	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 
 	env := env.Env{
@@ -274,8 +273,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		DiskSizeMB:            taskConfig.DiskSizeMB,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
 		ProvisionScript:       taskConfig.ProvisionScript,
-		EnvsPipelinePath:      envsPipelinePath,
-		EnvdName:              envdName,
+		EnvdPath:              envdPath,
 		ContextFileName:       contextFileName,
 	}
 
