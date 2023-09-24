@@ -2,7 +2,7 @@
 
 set -euo xtrace pipefail
 
-yes | unminimize
+# yes | unminimize
 
 echo "Starting provisioning script..."
 
