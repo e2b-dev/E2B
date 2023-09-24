@@ -19,7 +19,7 @@ import (
 )
 
 func (a *APIStore) buildEnv(ctx context.Context, envID string, content io.Reader) {
-	_, childSpan := a.tracer.Start(ctx, "build-env",
+	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
 		),
@@ -29,7 +29,7 @@ func (a *APIStore) buildEnv(ctx context.Context, envID string, content io.Reader
 	buildID, err := uuid.GenerateUUID()
 	if err != nil {
 		err = fmt.Errorf("error when generating build id: %w", err)
-		ReportCriticalError(ctx, err)
+		ReportCriticalError(childCtx, err)
 
 		return
 	}
@@ -37,28 +37,19 @@ func (a *APIStore) buildEnv(ctx context.Context, envID string, content io.Reader
 	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), content)
 	if err != nil {
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
-		ReportCriticalError(ctx, err)
+		ReportCriticalError(childCtx, err)
 
 		return
 	}
-
-	buildResultChan, err := a.nomad.StartBuildingEnv(a.tracer, ctx, envID, buildID)
-	if err != nil {
-		err = fmt.Errorf("error when starting build: %w", err)
-		ReportCriticalError(ctx, err)
-
-		return
-	}
-
-	buildResult := <-buildResultChan
 
 	var buildStatus models.EnvStatusEnum
 
-	if buildResult.Error != nil {
-		buildStatus = models.EnvStatusEnumError
+	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID)
+	if err != nil {
+		err = fmt.Errorf("error when starting build: %w", err)
+		ReportCriticalError(childCtx, err)
 
-		err = fmt.Errorf("error when updating env: %w", err)
-		ReportCriticalError(ctx, err)
+		buildStatus = models.EnvStatusEnumError
 	} else {
 		buildStatus = models.EnvStatusEnumReady
 	}
@@ -66,13 +57,11 @@ func (a *APIStore) buildEnv(ctx context.Context, envID string, content io.Reader
 	_, err = a.supabase.UpdateStatusEnv(envID, buildStatus)
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)
-		ReportCriticalError(ctx, err)
+		ReportCriticalError(childCtx, err)
 	}
 }
 
-func (a *APIStore) PostEnvs(
-	c *gin.Context,
-) {
+func (a *APIStore) PostEnvs(c *gin.Context) {
 	ctx := c.Request.Context()
 	span := trace.SpanFromContext(ctx)
 

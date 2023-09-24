@@ -6,14 +6,10 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"net/http"
 	"text/template"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
 
 const (
@@ -37,14 +33,14 @@ var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.F
 //go:embed provision-env.ubuntu.sh
 var provisionEnvScriptFile string
 
-func (n *NomadClient) StartBuildingEnv(
+func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
 	ctx context.Context,
 	envID string,
 	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
 	buildID string,
-) (<-chan utils.Result, error) {
-	_, childSpan := t.Start(ctx, "build-env",
+) error {
+	childCtx, childSpan := t.Start(ctx, "build-env-job",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
 		),
@@ -89,31 +85,17 @@ func (n *NomadClient) StartBuildingEnv(
 
 	err := envBuildTemplate.Execute(&jobDef, jobVars)
 	if err != nil {
-		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to `envBuildJobTemp.Execute()`: %+v", err),
-			ClientMsg: "Cannot build env right now",
-			Code:      http.StatusInternalServerError,
-		}
+		return fmt.Errorf("failed to `envBuildJobTemp.Execute()`: %w", err)
 	}
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
-		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %+v", jobDef.String(), err),
-			ClientMsg: "Cannot create env build job right now",
-			Code:      http.StatusInternalServerError,
-		}
+		return fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
 	}
 
 	res, _, err := n.client.Jobs().Register(job, nil)
 	if err != nil {
-		fmt.Printf("Failed to register '%s%s' job: %+v", buildJobNameWithSlash, jobVars.EnvID, err)
-
-		return nil, &api.APIError{
-			Msg:       err.Error(),
-			ClientMsg: "Cannot create env build job right now",
-			Code:      http.StatusInternalServerError,
-		}
+		return fmt.Errorf("failed to register '%s%s' job: %w", buildJobNameWithSlash, jobVars.EnvID, err)
 	}
 
 	meta := res.QueryMeta
@@ -127,7 +109,7 @@ func (n *NomadClient) StartBuildingEnv(
 	}
 
 	_, err = n.WaitForJobStart(
-		ctx,
+		childCtx,
 		jobInfo,
 		meta,
 		jobStartTimeout,
@@ -135,50 +117,27 @@ func (n *NomadClient) StartBuildingEnv(
 	if err != nil {
 		apiErr := n.DeleteEnvBuild(*job.ID, false)
 		if apiErr != nil {
-			fmt.Printf("error in cleanup after failing to create instance of environment '%s':%+v", envID, apiErr.Msg)
-		}
-
-		return nil, &api.APIError{
-			Msg:       err.Error(),
-			ClientMsg: "Cannot create a environment instance right now",
-			Code:      http.StatusInternalServerError,
+			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w: :%w", envID, err, apiErr)
 		}
 	}
 
-	buildResult := make(chan utils.Result)
+	_, finishErr := n.WaitForJobFinish(
+		childCtx,
+		jobInfo,
+		meta,
+	)
 
-	go func() {
-		_, finishErr := n.WaitForJobFinish(
-			ctx,
-			jobInfo,
-			meta,
-		)
-		if finishErr != nil {
-			result := utils.Result{
-				Error: fmt.Errorf("error waiting for env '%s' build: %+w", envID, finishErr),
-			}
-			buildResult <- result
-		} else {
-			result := utils.Result{
-				Error: nil,
-			}
-			buildResult <- result
-		}
+	if finishErr != nil {
+		return fmt.Errorf("error waiting for env '%s' build: %+w", envID, finishErr)
+	}
 
-		close(buildResult)
-	}()
-
-	return buildResult, nil
+	return nil
 }
 
-func (n *NomadClient) DeleteEnvBuild(jobID string, purge bool) *api.APIError {
+func (n *NomadClient) DeleteEnvBuild(jobID string, purge bool) error {
 	_, _, err := n.client.Jobs().Deregister(jobID, purge, nil)
 	if err != nil {
-		return &api.APIError{
-			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", buildJobNameWithSlash, jobID, err),
-			ClientMsg: "Cannot delete the environment instance right now",
-			Code:      http.StatusInternalServerError,
-		}
+		return fmt.Errorf("cannot delete job '%s%s' job: %w", buildJobNameWithSlash, jobID, err)
 	}
 
 	return nil
