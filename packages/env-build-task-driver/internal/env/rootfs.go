@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -360,7 +361,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 	}()
 
-
 	rootfsFile, err := os.Create(r.env.tmpRootfsPath())
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
@@ -380,7 +380,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			telemetry.ReportEvent(childCtx, "closed rootfs file")
 		}
 	}()
-
 
 	err = tar2ext4.ConvertTarToExt4(containerReader, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
 	if err != nil {
@@ -412,6 +411,21 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}
 
 	telemetry.ReportEvent(childCtx, "truncated rootfs file to size of build + defaultDiskSizeMB")
+
+	// Run the resize2fs command to extend the filesystem.
+	cmd := exec.Command("resize2fs", r.env.tmpRootfsPath())
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil {
+		errMsg := fmt.Errorf("error resizing rootfs file %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return nil
 }

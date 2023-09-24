@@ -65,6 +65,7 @@
 - Check quota limits for all our needs!! (N2 are separate)
 - make rootfs readwrite
 - add jailer as soon as possible (before snapshots)
+- how to solve snapshot storage problem?
 
 ### API
 - Add monitoring to the envs routes
