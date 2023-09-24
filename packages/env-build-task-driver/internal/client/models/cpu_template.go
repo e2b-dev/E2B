@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// CPUTemplate The CPU Template defines a set of flags to be disabled from the microvm so that the features exposed to the guest are the same as in the selected instance type. Works only on Intel.
+// CPUTemplate The CPU Template defines a set of flags to be disabled from the microvm so that the features exposed to the guest are the same as in the selected instance type.
 //
 // swagger:model CpuTemplate
 type CPUTemplate string
@@ -39,6 +39,15 @@ const (
 	// CPUTemplateT2S captures enum value "T2S"
 	CPUTemplateT2S CPUTemplate = "T2S"
 
+	// CPUTemplateT2CL captures enum value "T2CL"
+	CPUTemplateT2CL CPUTemplate = "T2CL"
+
+	// CPUTemplateT2A captures enum value "T2A"
+	CPUTemplateT2A CPUTemplate = "T2A"
+
+	// CPUTemplateV1N1 captures enum value "V1N1"
+	CPUTemplateV1N1 CPUTemplate = "V1N1"
+
 	// CPUTemplateNone captures enum value "None"
 	CPUTemplateNone CPUTemplate = "None"
 )
@@ -48,7 +57,7 @@ var cpuTemplateEnum []interface{}
 
 func init() {
 	var res []CPUTemplate
-	if err := json.Unmarshal([]byte(`["C3","T2","T2S","None"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["C3","T2","T2S","T2CL","T2A","V1N1","None"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

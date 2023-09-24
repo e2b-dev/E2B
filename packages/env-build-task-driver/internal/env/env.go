@@ -47,7 +47,7 @@ type Env struct {
 	ProvisionScript string
 
 	// Path to the envd.
-	EnvdPath        string
+	EnvdPath string
 
 	ContextFileName string
 

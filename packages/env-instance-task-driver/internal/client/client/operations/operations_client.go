@@ -64,6 +64,10 @@ type ClientService interface {
 
 	PutBalloon(params *PutBalloonParams, opts ...ClientOption) (*PutBalloonNoContent, error)
 
+	PutCPUConfiguration(params *PutCPUConfigurationParams, opts ...ClientOption) (*PutCPUConfigurationNoContent, error)
+
+	PutEntropyDevice(params *PutEntropyDeviceParams, opts ...ClientOption) (*PutEntropyDeviceNoContent, error)
+
 	PutGuestBootSource(params *PutGuestBootSourceParams, opts ...ClientOption) (*PutGuestBootSourceNoContent, error)
 
 	PutGuestDriveByID(params *PutGuestDriveByIDParams, opts ...ClientOption) (*PutGuestDriveByIDNoContent, error)
@@ -770,6 +774,84 @@ func (a *Client) PutBalloon(params *PutBalloonParams, opts ...ClientOption) (*Pu
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PutBalloonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+PutCPUConfiguration configures CPU features flags for the v c p us of the guest VM pre boot only
+
+Provides configuration to the Firecracker process to specify vCPU resource configuration prior to launching the guest machine.
+*/
+func (a *Client) PutCPUConfiguration(params *PutCPUConfigurationParams, opts ...ClientOption) (*PutCPUConfigurationNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPutCPUConfigurationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "putCpuConfiguration",
+		Method:             "PUT",
+		PathPattern:        "/cpu-config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &PutCPUConfigurationReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PutCPUConfigurationNoContent)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PutCPUConfigurationDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+PutEntropyDevice creates an entropy device pre boot only
+
+Enables an entropy device that provides high-quality random data to the guest.
+*/
+func (a *Client) PutEntropyDevice(params *PutEntropyDeviceParams, opts ...ClientOption) (*PutEntropyDeviceNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPutEntropyDeviceParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "putEntropyDevice",
+		Method:             "PUT",
+		PathPattern:        "/entropy",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &PutEntropyDeviceReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PutEntropyDeviceNoContent)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PutEntropyDeviceDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
