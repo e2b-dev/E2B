@@ -21,12 +21,10 @@ run-profiler:
 update-build-driver:
 	make build
 	./upload.sh
-	gcloud compute ssh $$($(client)) -- 'sudo -s && \
-	rm -f /opt/nomad/plugins/env-build-task-driver && \
-	cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
-	chmod +x /opt/nomad/plugins/env-build-task-driver && \
-	pgrep nomad | xargs kill && \
-	exit'
+	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
+	sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
+	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
+	pgrep nomad | xargs sudo kill'
 
 run-build-check:
 	make build && \

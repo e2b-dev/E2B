@@ -78,6 +78,5 @@ run-env:
 update-envd:
 	make build
 	./upload-local.sh
-	gcloud compute ssh $$($(client)) -- 'sudo -s && \
-	cp /mnt/disks/envs-pipeline/envd /fc-vm/envd && \
-	exit'
+	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /fc-vm/envd && \
+	sudo cp /mnt/disks/envs-pipeline/envd /fc-vm/envd'
