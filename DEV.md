@@ -62,6 +62,7 @@
 - Nomad server sizes + number + disk io
 - Use hashes
 - Fix bytes/bytearray types in python SDK
+- Check quota limits for all our needs!! (N2 are separate)
 
 ### API
 - Add monitoring to the envs routes
