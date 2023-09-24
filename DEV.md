@@ -67,6 +67,7 @@
 - how to solve snapshot storage problem?
 - Add local apt-get mirror for provisioning
 - Update nomad
+- CLI upload the context while archiving in stream
 
 ### API
 - Add monitoring to the envs routes
