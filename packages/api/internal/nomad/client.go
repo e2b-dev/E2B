@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/hashicorp/nomad/api"
 )
@@ -14,6 +15,7 @@ const (
 	taskRunningState  = "running"
 	taskDeadState     = "dead"
 	defaultTaskName   = "start"
+	jobStartTimeout   = time.Second * 20
 )
 
 var (
@@ -56,10 +58,7 @@ func (n *NomadClient) getJobEventStream(ctx context.Context, job JobInfo, meta a
 		api.TopicAllocation: {job.name},
 	}
 
-	streamCtx, streamCancel := context.WithCancel(ctx)
-	defer streamCancel()
-
-	eventCh, err := n.client.EventStream().Stream(streamCtx, topics, job.index, &api.QueryOptions{
+	eventCh, err := n.client.EventStream().Stream(ctx, topics, job.index, &api.QueryOptions{
 		Filter:     fmt.Sprintf("EvalID == \"%s\"", job.evalID),
 		AllowStale: true,
 		// The following commented field could probably be used for improving the event stream handling.
@@ -74,8 +73,11 @@ func (n *NomadClient) getJobEventStream(ctx context.Context, job JobInfo, meta a
 	return eventCh, nil
 }
 
-func (n *NomadClient) WaitForJobStart(ctx context.Context, job JobInfo, meta api.QueryMeta) (*api.Allocation, error) {
-	jobEvents, err := n.getJobEventStream(ctx, job, meta)
+func (n *NomadClient) WaitForJobStart(ctx context.Context, job JobInfo, meta api.QueryMeta, timeout time.Duration) (*api.Allocation, error) {
+	streamCtx, streamCancel := context.WithTimeout(ctx, timeout)
+	defer streamCancel()
+
+	jobEvents, err := n.getJobEventStream(streamCtx, job, meta)
 	if err != nil {
 		return nil, err
 	}

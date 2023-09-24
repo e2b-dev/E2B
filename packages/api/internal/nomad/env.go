@@ -17,14 +17,14 @@ import (
 )
 
 const (
-	envsDisk = "/mnt/disks/fc-envs"
+	envsDisk = "/mnt/disks/fc-envs/v1"
 
 	buildJobName          = "env-build"
 	buildJobNameWithSlash = buildJobName + "/"
 
-	defaultVCpuCount  = 4
-	defaultMemoryMB   = 1024
-	defaultDiskSizeMB = 3000
+	defaultVCpuCount  = 2
+	defaultMemoryMB   = 512
+	defaultDiskSizeMB = 512
 )
 
 //go:embed env-build.hcl
@@ -130,6 +130,7 @@ func (n *NomadClient) StartBuildingEnv(
 		ctx,
 		jobInfo,
 		meta,
+		jobStartTimeout,
 	)
 	if err != nil {
 		apiErr := n.DeleteEnvBuild(*job.ID, false)

@@ -13,11 +13,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/utils"
 	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/api/packages/api/internal/api"
+	"github.com/e2b-dev/api/packages/api/internal/utils"
 )
 
 const (
@@ -148,6 +149,7 @@ func (n *NomadClient) CreateInstance(
 			index:  index,
 		},
 		meta,
+		jobStartTimeout,
 	)
 	if err != nil {
 		apiErr := n.DeleteInstance(instanceID, false)

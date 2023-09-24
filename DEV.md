@@ -59,15 +59,18 @@
 - Check the FC rootfs build https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md#creating-a-rootfs-image - make sure the special filesystems are mounted!
 - Change min CPU platform of the client instance to be only 1 possible CPU type (now it is 2)
 - Check with race condition build
-
-
+- Nomad server sizes + number + disk io
+- Use hashes
+- Fix bytes/bytearray types in python SDK
 
 ### API
 - Add monitoring to the envs routes
 - Make the API server stateless by moving the session state to the DB
 - Add better error if the env was not found
 - Improve request logging
-
+- Check if stream is not causing Nomad timeouts in the API?
+- Check keep in sync sessions
+- Check if the wait for job always works
 
 ### Envd
 - envd jsonrpc parameters could be objects instead of arrays (compatibility advantages)
@@ -124,6 +127,7 @@
 - Run the env build parts in parallel (network + rootfs)
 - Improve envd copying (now we need to convert to tar before copying)
 - Do the provisioning in a separate tar and extract after the rest of the build finishes?
+- Add logs from vm process start + FC logs
 
 ### FC
 - Improve generating of FC API client in the firecracker task driver
@@ -153,3 +157,5 @@
 - Lambda is using multilayered cache for storage of the snapshots/source
 - Resuming more than one snapshots can be insecure because the random seed is not changed
 - use FC go sdk instead of the generated client?
+- Add critical error report to the origin span in FC driver
+- move FC start logic to separate dir for testing
