@@ -67,6 +67,8 @@
 - how to solve snapshot storage problem?
 - Add local apt-get mirror for provisioning
 - Update nomad
+- Ensure required programs and files are ready during each driver init
+- Improve CLI errors
 
 ### API
 - Add monitoring to the envs routes
