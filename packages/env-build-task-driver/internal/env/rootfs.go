@@ -77,7 +77,8 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	defer func() {
 		closeErr := dockerContextFile.Close()
 		if closeErr != nil {
-			errMsg := fmt.Errorf("error closing docker context file %w", closeErr)
+			// We can probably disregard 'already closed' erorr if we are reading file from gcsfuse bucket because gcsfuse files behave this way - they look closed after reading
+			errMsg := fmt.Errorf("error closing docker context file (we can probably disregard 'already closed' erorr if we are reading file from gcsfuse bucket because gcsfuse files behave this way): %w", closeErr)
 			telemetry.ReportError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed docker context file")
@@ -392,9 +393,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "converted container tar to ext4")
 
 	cmd := exec.Command("tune2fs", "-O ^read-only", r.env.tmpRootfsPath())
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
+	// cmd.Stdout = os.Stdout
 	err = cmd.Run()
 	if err != nil {
 		errMsg := fmt.Errorf("error making rootfs file writable %w", err)
@@ -429,8 +428,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "truncated rootfs file to size of build + defaultDiskSizeMB")
 
 	cmd = exec.Command("resize2fs", r.env.tmpRootfsPath())
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
 	err = cmd.Run()
 	if err != nil {

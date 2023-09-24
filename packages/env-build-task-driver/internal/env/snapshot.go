@@ -86,13 +86,12 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	
 	if !snapshot.isRunning() {
 		errMsg := fmt.Errorf("fc process is not running")
-		
+
 		return nil, errMsg
 	}
-	
+
 	// Wait for all necessary things in FC to start
 	// TODO: Maybe init should signalize when it's ready?
 	time.Sleep(6 * time.Second)
@@ -116,7 +115,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-
 	err = snapshot.snapshotFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error snapshotting fc %w", err)
@@ -133,7 +131,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 	return snapshot, nil
 }
 
-
 func (s *Snapshot) isRunning() bool {
 	return s.running.Load()
 }
@@ -147,9 +144,6 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	defer childSpan.End()
 
 	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
-	s.fc.Stderr = os.Stderr
-	s.fc.Stdout = os.Stdout
-
 	err := s.fc.Start()
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc process %w", err)
