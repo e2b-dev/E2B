@@ -90,13 +90,15 @@ type Driver struct {
 }
 
 // Config is the driver configuration set by the SetConfig RPC call
-type Config struct{}
-type Nic struct {
-	Ip          string // CIDR
-	Gateway     string
-	Interface   string
-	Nameservers []string
-}
+type (
+	Config struct{}
+	Nic    struct {
+		Ip          string // CIDR
+		Gateway     string
+		Interface   string
+		Nameservers []string
+	}
+)
 
 // TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
@@ -206,7 +208,7 @@ func (d *Driver) handleFingerprint(ctx context.Context, ch chan<- *drivers.Finge
 func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 	var health drivers.HealthState
 	var desc string
-	attrs := map[string]*pstructs.Attribute{"driver.firecracker-task": pstructs.NewStringAttribute("1")}
+	attrs := map[string]*pstructs.Attribute{"driver.env-instance-task": pstructs.NewStringAttribute("1")}
 	health = drivers.HealthStateHealthy
 	desc = "ready"
 	d.logger.Info("buildFingerprint()", "driver.FingerPrint", hclog.Fmt("%+v", health))

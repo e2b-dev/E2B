@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/nomad/plugins/base"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
-	"github.com/hashicorp/nomad/plugins/shared/structs"
+	pstructs "github.com/hashicorp/nomad/plugins/shared/structs"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -173,7 +173,6 @@ func (d *Driver) Fingerprint(ctx context.Context) (<-chan *drivers.Fingerprint, 
 
 func (d *Driver) handleFingerprint(ctx context.Context, ch chan<- *drivers.Fingerprint) {
 	defer close(ch)
-
 	ticker := time.NewTimer(0)
 	for {
 		select {
@@ -189,13 +188,17 @@ func (d *Driver) handleFingerprint(ctx context.Context, ch chan<- *drivers.Finge
 }
 
 func (d *Driver) buildFingerprint() *drivers.Fingerprint {
-	fp := &drivers.Fingerprint{
-		Attributes:        map[string]*structs.Attribute{},
-		Health:            drivers.HealthStateHealthy,
-		HealthDescription: drivers.DriverHealthy,
+	var health drivers.HealthState
+	var desc string
+	attrs := map[string]*pstructs.Attribute{"driver.env-build-task": pstructs.NewStringAttribute("1")}
+	health = drivers.HealthStateHealthy
+	desc = "ready"
+	d.logger.Info("buildFingerprint()", "driver.FingerPrint", hclog.Fmt("%+v", health))
+	return &drivers.Fingerprint{
+		Attributes:        attrs,
+		Health:            health,
+		HealthDescription: desc,
 	}
-
-	return fp
 }
 
 // StartTask returns a task handle and a driver network if necessary.
