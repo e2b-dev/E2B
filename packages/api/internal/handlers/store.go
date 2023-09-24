@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"sync"
@@ -61,10 +62,20 @@ func NewAPIStore() *APIStore {
 	}
 
 	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
+	posthogVerbose := true
+	posthogLogger := posthog.StdLogger(log.New(os.Stderr, "posthog ", log.LstdFlags))
+
+	if posthogAPIKey == "" {
+		fmt.Println("No Posthog API key provided, silencing posthog client logs")
+		posthogVerbose = false
+		posthogLogger = nil
+	}
+
 	posthogClient, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
 		Interval:  30 * time.Second,
 		BatchSize: 100,
-		Verbose:   true,
+		Verbose:   posthogVerbose,
+		Logger:    posthogLogger,
 	})
 
 	if posthogErr != nil {
