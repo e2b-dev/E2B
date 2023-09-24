@@ -129,6 +129,7 @@
 - Do the provisioning in a separate tar and extract after the rest of the build finishes?
 - Add logs from vm process start + FC logs
 - Add channel for better build still running Fc signalization
+- Make init signalize when it is ready
 
 ### FC
 - Improve generating of FC API client in the firecracker task driver
