@@ -14,6 +14,7 @@ import (
 	"github.com/e2b-dev/api/packages/api/internal/api"
 	"github.com/e2b-dev/api/packages/api/internal/db"
 	"github.com/e2b-dev/api/packages/api/internal/nomad"
+	"github.com/e2b-dev/api/packages/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/posthog/posthog-go"
@@ -49,26 +50,16 @@ func NewAPIStore() *APIStore {
 
 	fmt.Println("Initialized Supabase client")
 
-	var initialInstances []*api.Instance
-
-	if os.Getenv("ENVIRONMENT") == "prod" {
-		var instancesErr error
-		initialInstances, instancesErr = nomadClient.GetInstances()
-		if instancesErr != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", instancesErr)
-		}
-	} else {
-		fmt.Println("Skipping loading sessions from Nomad, running locally")
-	}
-
 	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
 	posthogVerbose := true
 	posthogLogger := posthog.StdLogger(log.New(os.Stderr, "posthog ", log.LstdFlags))
 
 	if posthogAPIKey == "" {
-		fmt.Println("No Posthog API key provided, silencing posthog client logs")
+		fmt.Println("No Posthog API key provided, silencing logs")
+
 		posthogVerbose = false
-		posthogLogger = nil
+		writer := &utils.NoOpWriter{}
+		posthogLogger = posthog.StdLogger(log.New(writer, "posthog ", log.LstdFlags))
 	}
 
 	posthogClient, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
@@ -81,6 +72,18 @@ func NewAPIStore() *APIStore {
 	if posthogErr != nil {
 		fmt.Printf("Error initializing Posthog client\n: %s", posthogErr)
 		panic(posthogErr)
+	}
+
+	var initialInstances []*api.Instance
+
+	if os.Getenv("ENVIRONMENT") == "prod" {
+		var instancesErr error
+		initialInstances, instancesErr = nomadClient.GetInstances()
+		if instancesErr != nil {
+			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", instancesErr)
+		}
+	} else {
+		fmt.Println("Skipping loading sessions from Nomad, running locally")
 	}
 
 	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances)
@@ -123,6 +126,7 @@ func (a *APIStore) Close() {
 	if err != nil {
 		fmt.Printf("Error closing Posthog client\n: %s", err)
 	}
+
 	err = a.cloudStorage.client.Close()
 	if err != nil {
 		fmt.Printf("Error closing Cloud Storage client\n: %s", err)
