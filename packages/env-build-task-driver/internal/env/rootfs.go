@@ -22,7 +22,7 @@ const (
 	dockerfileName = "Dockerfile"
 	envdRootfsPath = "/usr/bin/envd"
 	toMBShift      = 20
-	maxRootfsSize = 5000 << toMBShift
+	maxRootfsSize  = 5000 << toMBShift
 )
 
 type Rootfs struct {
@@ -204,14 +204,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 		return errMsg
 	}
-	
+
 	telemetry.ReportEvent(childCtx, "statted envd file")
-	
+
 	pr, pw := io.Pipe()
-	
+
 	tw := tar.NewWriter(pw)
-	
-	go func() {		
+
+	go func() {
 		hdr := &tar.Header{
 			Name: envdRootfsPath, // The name of the file in the tar archive
 			Mode: 0o777,
@@ -222,17 +222,17 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		if err != nil {
 			errMsg := fmt.Errorf("error writing tar header %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
-	
+
 			return
 		}
-	
+
 		telemetry.ReportEvent(childCtx, "wrote tar header")
-	
+
 		_, err = io.Copy(tw, envdFile)
 		if err != nil {
 			errMsg := fmt.Errorf("error copying envd to tar %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
-	
+
 			return
 		}
 
@@ -242,20 +242,20 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		if err != nil {
 			errMsg := fmt.Errorf("error closing tar writer %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
-	
+
 			return
 		}
-	
+
 		telemetry.ReportEvent(childCtx, "closed tar writer")
-	
+
 		err = pw.Close()
 		if err != nil {
 			errMsg := fmt.Errorf("error closing pipe %w", err)
 			telemetry.ReportCriticalError(childCtx, errMsg)
-	
+
 			return
 		}
-	
+
 		telemetry.ReportEvent(childCtx, "closed pipe")
 	}()
 
@@ -266,10 +266,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	if err != nil {
 		errMsg := fmt.Errorf("error copying envd to container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
-		
+
 		return errMsg
 	}
-	
+
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
 	go func() {
@@ -385,11 +385,25 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	if err != nil {
 		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
-		
+
 		return errMsg
 	}
-	
+
 	telemetry.ReportEvent(childCtx, "converted container tar to ext4")
+
+	cmd := exec.Command("tune2fs", "-O ^read-only", r.env.tmpRootfsPath())
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil {
+		errMsg := fmt.Errorf("error making rootfs file writable %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "made rootfs file writable")
 
 	rootfsStats, err := rootfsFile.Stat()
 	if err != nil {
@@ -398,6 +412,8 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 		return errMsg
 	}
+
+	telemetry.ReportEvent(childCtx, "statted rootfs file")
 
 	// In bytes
 	rootfsSize := rootfsStats.Size() + r.env.DiskSizeMB<<toMBShift
@@ -412,8 +428,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "truncated rootfs file to size of build + defaultDiskSizeMB")
 
-	// Run the resize2fs command to extend the filesystem.
-	cmd := exec.Command("resize2fs", r.env.tmpRootfsPath())
+	cmd = exec.Command("resize2fs", r.env.tmpRootfsPath())
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
