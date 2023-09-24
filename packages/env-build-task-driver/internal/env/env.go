@@ -46,10 +46,9 @@ type Env struct {
 	// Provision script to run to set necessary things in the env.
 	ProvisionScript string
 
-	// Path to the directory where files for the envs pipeline are stored.
-	EnvsPipelinePath string
+	// Path to the envd.
+	EnvdPath        string
 
-	EnvdName        string
 	ContextFileName string
 
 	// The number of vCPUs to allocate to the VM.
@@ -58,13 +57,8 @@ type Env struct {
 	// The amount of RAM memory to allocate to the VM, in MiB.
 	MemoryMB int64
 
-	// The amount of disk memory to allocate to the VM, in MiB.
+	// The amount of free disk to allocate to the VM, in MiB.
 	DiskSizeMB int64
-}
-
-// Path to the envd.
-func (e *Env) EnvdPath() string {
-	return filepath.Join(e.EnvsPipelinePath, e.EnvdName)
 }
 
 // Path to the docker context.
