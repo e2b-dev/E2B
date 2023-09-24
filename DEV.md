@@ -69,6 +69,7 @@
 - Update nomad
 - Ensure required programs and files are ready during each driver init
 - Improve CLI errors
+- CLI upload the context while archiving in stream
 
 ### API
 - Add monitoring to the envs routes
