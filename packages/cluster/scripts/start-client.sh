@@ -26,7 +26,7 @@ mkdir -p /mnt/disks/envs-pipeline
 gcsfuse -o=allow_other --implicit-dirs e2b-fc-env-pipeline /mnt/disks/envs-pipeline
 
 # Copy the kernel
-env_pipeline_local_dir="/fc-envs"
+env_pipeline_local_dir="/fc-vm"
 mkdir -p $env_pipeline_local_dir
 sudo cp /mnt/disks/envs-pipeline/vmlinux.bin $env_pipeline_local_dir/vmlinux.bin
 sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
