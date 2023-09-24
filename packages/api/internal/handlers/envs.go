@@ -117,6 +117,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	if envID == "" {
 		envID = utils.GenerateID()
+		SetAttributes(ctx, attribute.String("env.id", envID))
 		env, err = a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
 
 		if err != nil {
@@ -130,6 +131,8 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 		ReportEvent(ctx, "created new environment")
 	} else {
+		SetAttributes(ctx, attribute.String("env.id", envID))
+
 		hasAccess, err := a.supabase.HasEnvAccess(envID, team.ID, false)
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The environment '%s' does not exist", envID))
