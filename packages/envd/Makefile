@@ -1,3 +1,5 @@
+client := gcloud compute instances list --format='csv(name)' | grep "client"
+
 upload:
 	./upload.sh
 
@@ -72,3 +74,10 @@ run-envd:
 run-env:
 	make build-docker
 	make start-docker
+
+update-envd:
+	make build
+	./upload-local.sh
+	gcloud compute ssh $$($(client)) -- 'sudo -s && \
+	cp /mnt/disks/envs-pipeline/envd /fc-vm/envd && \
+	exit'
