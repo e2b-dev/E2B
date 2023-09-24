@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -37,9 +36,6 @@ func main() {
 	provisionEnvScript := flag.String("provision", "", "provision script content")
 
 	flag.Parse()
-
-	fmt.Println("envID: ", *envID)
-	fmt.Println("buildID: ", *buildID)
 
 	if *envID != "" && *buildID != "" && *provisionEnvScript != "" {
 		// Start of mock build for testing
