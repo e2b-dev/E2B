@@ -66,6 +66,7 @@
 - add jailer as soon as possible (before snapshots)
 - how to solve snapshot storage problem?
 - Add local apt-get mirror for provisioning
+- Update nomad
 
 ### API
 - Add monitoring to the envs routes
