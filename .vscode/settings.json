@@ -29,40 +29,44 @@
   "[go]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.organizeImports": true,
+      "source.organizeImports": true,
     },
-},
-"[go.mod]": {
+  },
+  "[go.mod]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.organizeImports": true,
+      "source.organizeImports": true,
     },
-},
-"editor.tabCompletion": "on",
-"go.useLanguageServer": true,
-"gopls": {
+  },
+  "editor.tabCompletion": "on",
+  "go.useLanguageServer": true,
+  "gopls": {
     "formatting.local": "github.com/e2b-dev/api",
     "formatting.gofumpt": true,
     "ui.completion.usePlaceholders": true
-},
-"go.lintTool": "golangci-lint",
-"go.lintFlags": [
+  },
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": [
     "--fast"
-],
-"go.autocompleteUnimportedPackages": true,
-"go.toolsManagement.autoUpdate": true,
-"go.testOnSave": false,
-"go.inlayHints.assignVariableTypes": true,
-"go.inlayHints.compositeLiteralFields": true,
-"go.inlayHints.compositeLiteralTypes": true,
-"go.inlayHints.constantValues": true,
-"go.inlayHints.functionTypeParameters": true,
-"go.inlayHints.rangeVariableTypes": true,
-"go.inlayHints.parameterNames": true,
-"go.buildOnSave": "off",
-"go.formatTool": "gofumpt",
-"go.lintOnSave": "package",
-"go.survey.prompt": false,
-"go.useCodeSnippetsOnFunctionSuggestWithoutType": true,
-"go.useCodeSnippetsOnFunctionSuggest": true
+  ],
+  "remote.SSH.defaultExtensions": [
+    "golang.go",
+    "GitHub.copilot",
+  ],
+  "go.autocompleteUnimportedPackages": true,
+  "go.toolsManagement.autoUpdate": true,
+  "go.testOnSave": false,
+  "go.inlayHints.assignVariableTypes": true,
+  "go.inlayHints.compositeLiteralFields": true,
+  "go.inlayHints.compositeLiteralTypes": true,
+  "go.inlayHints.constantValues": true,
+  "go.inlayHints.functionTypeParameters": true,
+  "go.inlayHints.rangeVariableTypes": true,
+  "go.inlayHints.parameterNames": true,
+  "go.buildOnSave": "off",
+  "go.formatTool": "gofumpt",
+  "go.lintOnSave": "package",
+  "go.survey.prompt": false,
+  "go.useCodeSnippetsOnFunctionSuggestWithoutType": true,
+  "go.useCodeSnippetsOnFunctionSuggest": true
 }

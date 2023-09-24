@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
@@ -34,6 +35,8 @@ type Snapshot struct {
 
 	env        *Env
 	socketPath string
+
+	running atomic.Bool
 }
 
 func newFirecrackerClient(socketPath string) *client.Firecracker {
@@ -70,12 +73,38 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
+	if !snapshot.isRunning() {
+		errMsg := fmt.Errorf("fc process is not running")
+
+		return nil, errMsg
+	}
+
+	time.Sleep(100 * time.Second)
+
 	err = snapshot.configureFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error configuring fc %w", err)
 
 		return nil, errMsg
 	}
+
+	// TODO: Wait for all necessary things in FC to start
+
+	if !snapshot.isRunning() {
+		errMsg := fmt.Errorf("fc process is not running")
+
+		return nil, errMsg
+	}
+
+
+	time.Sleep(100 * time.Second)
+
+	if !snapshot.isRunning() {
+		errMsg := fmt.Errorf("fc process is not running")
+
+		return nil, errMsg
+	}
+
 
 	err = snapshot.pauseFC(childCtx, tracer)
 	if err != nil {
@@ -84,7 +113,12 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	// TODO: Wait for all necessary things in FC to start
+	if !snapshot.isRunning() {
+		errMsg := fmt.Errorf("fc process is not running")
+
+		return nil, errMsg
+	}
+
 
 	err = snapshot.snapshotFC(childCtx, tracer)
 	if err != nil {
@@ -93,7 +127,22 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
+	if !snapshot.isRunning() {
+		errMsg := fmt.Errorf("fc process is not running")
+
+		return nil, errMsg
+	}
+
 	return snapshot, nil
+}
+
+
+func (s *Snapshot) isRunning() bool {
+	return s.running.Load()
+}
+
+func (s *Snapshot) setIsRunning(value bool) {
+	s.running.Store(value)
 }
 
 func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBinaryPath, networkNamespaceID string) error {
@@ -112,14 +161,13 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		return errMsg
 	}
 
-	// TODO: Need to check and wait if the FC is alive
-	time.Sleep(500 * time.Millisecond)
+	s.setIsRunning(true)
 
 	telemetry.ReportEvent(childCtx, "started fc process")
 
 	go func() {
-		anonymousChildCtx, childSpan := tracer.Start(ctx, "handle-fc-process-wait")
-		defer childSpan.End()
+		anonymousChildCtx, anonymousChildSpan := tracer.Start(ctx, "handle-fc-process-wait")
+		defer anonymousChildSpan.End()
 
 		waitErr := s.fc.Wait()
 		if err != nil {
@@ -128,6 +176,8 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		} else {
 			telemetry.ReportEvent(anonymousChildCtx, "fc process exited")
 		}
+
+		s.setIsRunning(false)
 	}()
 
 	return nil
@@ -246,7 +296,8 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 
 	telemetry.ReportEvent(childCtx, "set fc mmds config")
 
-	// We may need to sleep 0.015s before start - previous configuration is processes asynchronously. How to do this sync or in one go?
+	// We may need to sleep before start - previous configuration is processes asynchronously. How to do this sync or in one go?
+	time.Sleep(500 * time.Millisecond)
 
 	start := models.InstanceActionInfoActionTypeInstanceStart
 	startActionParams := operations.CreateSyncActionParams{
