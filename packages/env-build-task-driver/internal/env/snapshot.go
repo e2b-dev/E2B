@@ -39,6 +39,32 @@ type Snapshot struct {
 	running atomic.Bool
 }
 
+func waitForSocket(socketPath string, timeout time.Duration) error {
+	start := time.Now()
+
+	for {
+			_, err := os.Stat(socketPath)
+			if err == nil {
+					// Socket file exists
+					return nil
+			} else if os.IsNotExist(err) {
+					// Socket file doesn't exist yet
+
+					// Check if timeout has been reached
+					elapsed := time.Since(start)
+					if elapsed >= timeout {
+							return fmt.Errorf("timeout reached while waiting for socket file")
+					}
+
+					// Wait for a short duration before checking again
+					time.Sleep(100 * time.Millisecond)
+			} else {
+					// Error occurred while checking for socket file
+					return err
+			}
+	}
+}
+
 func newFirecrackerClient(socketPath string) *client.Firecracker {
 	httpClient := client.NewHTTPClient(strfmt.NewFormats())
 
@@ -170,6 +196,16 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 
 		s.setIsRunning(false)
 	}()
+
+	// Wait for the FC process to start so we can use FC API
+	err = waitForSocket(s.socketPath, 2*time.Second)
+	if err != nil {
+		errMsg := fmt.Errorf("error waiting for fc socket %w", err)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "fc process created socket")
 
 	return nil
 }
@@ -331,7 +367,7 @@ func (s *Snapshot) pauseFC(ctx context.Context, tracer trace.Tracer) error {
 		return errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "paused vm")
+	telemetry.ReportEvent(childCtx, "paused fc")
 
 	return nil
 }
