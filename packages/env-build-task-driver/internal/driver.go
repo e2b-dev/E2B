@@ -168,12 +168,15 @@ func (d *Driver) Capabilities() (*drivers.Capabilities, error) {
 func (d *Driver) Fingerprint(ctx context.Context) (<-chan *drivers.Fingerprint, error) {
 	ch := make(chan *drivers.Fingerprint)
 	go d.handleFingerprint(ctx, ch)
+
 	return ch, nil
 }
 
 func (d *Driver) handleFingerprint(ctx context.Context, ch chan<- *drivers.Fingerprint) {
 	defer close(ch)
+
 	ticker := time.NewTimer(0)
+
 	for {
 		select {
 		case <-ctx.Done():

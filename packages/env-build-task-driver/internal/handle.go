@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -62,30 +63,35 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 		h.stateLock.Unlock()
 	}()
 
-	h.stateLock.Lock()
-	if h.exitResult == nil {
-		h.exitResult = &drivers.ExitResult{}
-	}
-	h.stateLock.Unlock()
-
 	err := h.env.Build(childCtx, tracer, docker)
 	if err != nil {
+		telemetry.ReportCriticalError(childCtx, err)
+
+		h.logger.Error(fmt.Sprintf("ERROR Env-build-task-driver Could not build env '%s' during build '%s': %s", h.env.EnvID, h.env.BuildID, err.Error()))
+
 		h.stateLock.Lock()
 
 		h.exitResult.Err = err
 		h.procState = drivers.TaskStateExited
 		h.completedAt = time.Now()
 
-		telemetry.ReportCriticalError(childCtx, err)
+		h.exitResult = &drivers.ExitResult{
+			Err: err,
+			ExitCode: 1,
+		}
 
 		h.stateLock.Unlock()
+	} else {
+		h.logger.Info(fmt.Sprintf("Env '%s' during build '%s' was built successfully", h.env.EnvID, h.env.BuildID))
+		h.stateLock.Lock()
+	
+		h.exitResult = &drivers.ExitResult{
+			ExitCode: 0,
+		}
+
+		h.procState = drivers.TaskStateExited
+		h.completedAt = time.Now()
+	
+		h.stateLock.Unlock()
 	}
-
-	h.stateLock.Lock()
-
-	h.procState = drivers.TaskStateExited
-	h.exitResult.ExitCode = 0
-	h.completedAt = time.Now()
-
-	h.stateLock.Unlock()
 }
