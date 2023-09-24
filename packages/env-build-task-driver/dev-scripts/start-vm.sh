@@ -38,6 +38,7 @@ cat <<EOF > vmconfig.json
   ],
   "machine-config": {
     "vcpu_count": 1,
+    "smt": true,
     "mem_size_mib": 512
   },
   "mmds-config": {
