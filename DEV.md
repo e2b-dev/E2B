@@ -82,6 +82,7 @@
 - Check keep in sync sessions
 - Check if the wait for job always works
 - improve escaping in the API jobs so it is not possible to break the API
+- Fix api panic [./debug.log)](./debug.log)
 
 ### Envd
 - envd jsonrpc parameters could be objects instead of arrays (compatibility advantages)
