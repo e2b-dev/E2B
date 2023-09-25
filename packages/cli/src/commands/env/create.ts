@@ -142,9 +142,9 @@ export const createCommand = new commander.Command('create')
           if (elapsed > 1000 * 60 * 2) {
             // TODO
             console.log(stripIndent`
-              ⚠️ Build taking longer than 2 minutes, something might be wrong.\n
-              Stopping to wait for result, but it might still finish -\n
-              Check by yourself by running ${asLocal('e2b env list')}\n
+              ⚠️ Build taking longer than 2 minutes, something might be wrong.
+              Stopping to wait for result, but it might still finish.
+              Check by yourself by running ${asLocal('e2b env list')}
             `)
             completed = true
           }
