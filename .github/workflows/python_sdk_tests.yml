@@ -4,7 +4,7 @@ on:
   push:
     # Tests are already running on main before release
     branches:
-      - '*'
+      - '**'
       - '!main'
     paths:
       - packages/python-sdk/**/*

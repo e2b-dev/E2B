@@ -4,7 +4,7 @@ on:
   push:
     # Tests should already be run on PRs
     branches:
-      - '*'
+      - '**'
       - '!main'
     paths:
       - packages/js-sdk/**/*
