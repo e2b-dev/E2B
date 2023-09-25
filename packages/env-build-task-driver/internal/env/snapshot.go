@@ -1,16 +1,18 @@
 package env
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync/atomic"
 	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/client"
@@ -35,8 +37,6 @@ type Snapshot struct {
 
 	env        *Env
 	socketPath string
-
-	running atomic.Bool
 }
 
 func waitForSocket(socketPath string, timeout time.Duration) error {
@@ -99,21 +99,9 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	if !snapshot.isRunning() {
-		errMsg := fmt.Errorf("fc process is not running")
-
-		return nil, errMsg
-	}
-
 	err = snapshot.configureFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error configuring fc %w", err)
-
-		return nil, errMsg
-	}
-
-	if !snapshot.isRunning() {
-		errMsg := fmt.Errorf("fc process is not running")
 
 		return nil, errMsg
 	}
@@ -122,12 +110,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 	// TODO: Maybe init should signalize when it's ready?
 	time.Sleep(6 * time.Second)
 
-	if !snapshot.isRunning() {
-		errMsg := fmt.Errorf("fc process is not running")
-
-		return nil, errMsg
-	}
-
 	err = snapshot.pauseFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error pausing fc %w", err)
@@ -135,11 +117,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	if !snapshot.isRunning() {
-		errMsg := fmt.Errorf("fc process is not running")
-
-		return nil, errMsg
-	}
 
 	err = snapshot.snapshotFC(childCtx, tracer)
 	if err != nil {
@@ -148,28 +125,61 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-	if !snapshot.isRunning() {
-		errMsg := fmt.Errorf("fc process is not running")
-
-		return nil, errMsg
-	}
-
 	return snapshot, nil
-}
-
-func (s *Snapshot) isRunning() bool {
-	return s.running.Load()
-}
-
-func (s *Snapshot) setIsRunning(value bool) {
-	s.running.Store(value)
 }
 
 func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBinaryPath, networkNamespaceID string) error {
 	childCtx, childSpan := tracer.Start(ctx, "start-fc-process")
 	defer childSpan.End()
 
+	
 	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
+	
+	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
+	cmdStderrReader, cmdStderrWriter := io.Pipe()
+
+	s.fc.Stdout = cmdStdoutWriter
+	s.fc.Stderr = cmdStderrWriter
+
+	go func() {
+		scanner := bufio.NewScanner(cmdStdoutReader)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			telemetry.ReportEvent(childCtx, "vmm log",
+				attribute.String("type", "stdout"),
+				attribute.String("message", line),
+			)
+		}
+
+		readerErr := cmdStdoutReader.Close()
+		if readerErr != nil {
+			errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+	}()
+
+	// TODO: Make the log collecting long running
+	go func() {
+		scanner := bufio.NewScanner(cmdStderrReader)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			telemetry.ReportEvent(childCtx, "vmm log",
+				attribute.String("type", "stderr"),
+				attribute.String("message", line),
+			)
+		}
+
+		readerErr := cmdStderrReader.Close()
+		if readerErr != nil {
+			errMsg := fmt.Errorf("error closing vmm stderr reader %w", readerErr)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+	}()
+
 	err := s.fc.Start()
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc process %w", err)
@@ -177,8 +187,6 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 
 		return errMsg
 	}
-
-	s.setIsRunning(true)
 
 	telemetry.ReportEvent(childCtx, "started fc process")
 
@@ -193,8 +201,6 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		} else {
 			telemetry.ReportEvent(anonymousChildCtx, "fc process exited")
 		}
-
-		s.setIsRunning(false)
 	}()
 
 	// Wait for the FC process to start so we can use FC API
