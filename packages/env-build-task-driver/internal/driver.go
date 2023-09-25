@@ -377,13 +377,9 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 
 // DestroyTask cleans up and removes a task that has terminated.
 func (d *Driver) DestroyTask(taskID string, force bool) error {
-	handle, ok := d.tasks.Get(taskID)
+	_, ok := d.tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
-	}
-
-	if handle.IsRunning() && !force {
-		return errors.New("cannot destroy running task")
 	}
 
 	d.tasks.Delete(taskID)

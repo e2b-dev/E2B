@@ -45,12 +45,6 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 	}
 }
 
-func (h *taskHandle) IsRunning() bool {
-	h.stateLock.RLock()
-	defer h.stateLock.RUnlock()
-	return h.procState == drivers.TaskStateRunning
-}
-
 func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *client.Client) {
 	childCtx, childSpan := tracer.Start(ctx, "run")
 	defer childSpan.End()
@@ -74,7 +68,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 		h.completedAt = time.Now()
 
 		h.exitResult = &drivers.ExitResult{
-			Err: err,
+			Err:      err,
 			ExitCode: 1,
 		}
 
@@ -82,14 +76,14 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 	} else {
 		h.logger.Info(fmt.Sprintf("Env '%s' during build '%s' was built successfully", h.env.EnvID, h.env.BuildID))
 		h.stateLock.Lock()
-	
+
 		h.exitResult = &drivers.ExitResult{
 			ExitCode: 0,
 		}
 
 		h.procState = drivers.TaskStateExited
 		h.completedAt = time.Now()
-	
+
 		h.stateLock.Unlock()
 	}
 }
