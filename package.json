@@ -3,8 +3,8 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "version": "changeset version && pnpm run postVersion --workspaces --if-present",
-    "publish": "changeset publish && pnpm run postPublish --workspaces --if-present",
+    "version": "changeset version && pnpm run -r postVersion",
+    "publish": "changeset publish && pnpm run -r postPublish",
     "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
     "test": "pnpm test --recursive --if-present",
     "dev:docs": "pnpm --prefix apps/docs run dev"
