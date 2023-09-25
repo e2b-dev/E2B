@@ -12,7 +12,7 @@ const session = await Session.create({
 console.log('Installing lodash...')
 const proc = await session.process.start({
   cmd: 'npm install lodash', // $HighlightLine
-  rootdir: '/code', // $HighlightLine
+  cwd: '/code', // $HighlightLine
   onStdout: (data) => console.log('[INFO] ', data.line),
   onStderr: (data) => console.log('[WARN | ERROR] ', data.line),
 })

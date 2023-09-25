@@ -16,7 +16,7 @@ async def test_process_on_stdout_stderr():
         "pwd",
         on_stdout=lambda data: stdout.append(data),
         on_stderr=lambda data: stderr.append(data),
-        rootdir="/tmp",
+        cwd="/tmp",
     )
 
     output = await proc
@@ -51,7 +51,7 @@ async def test_process_send_stdin():
 
     proc = await session.process.start(
         'read -r line; echo "$line"',
-        rootdir="/code",
+        cwd="/code",
     )
     await proc.send_stdin("ping\n")
     await proc

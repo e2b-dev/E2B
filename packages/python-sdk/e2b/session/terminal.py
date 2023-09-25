@@ -148,7 +148,7 @@ class TerminalManager:
         on_data: Callable[[str], Any],
         cols: int,
         rows: int,
-        rootdir: str = "",
+        cwd: str = "",
         terminal_id: Optional[str] = None,
         on_exit: Optional[Callable[[], Any]] = None,
         cmd: Optional[str] = None,
@@ -159,7 +159,7 @@ class TerminalManager:
         Start a new terminal session.
 
         :param on_data: Callback that will be called when the terminal sends data
-        :param rootdir: Working directory where will the terminal start
+        :param cwd: Working directory where will the terminal start
         :param terminal_id: Unique identifier of the terminal session
         :param on_exit: Callback that will be called when the terminal exits
         :param cols: Number of columns the terminal will have. This affects rendering
@@ -238,7 +238,7 @@ class TerminalManager:
                         rows,
                         env_vars if env_vars else {},
                         cmd,
-                        rootdir,
+                        cwd,
                     ],
                     timeout=timeout,
                 )

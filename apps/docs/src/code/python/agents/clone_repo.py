@@ -34,7 +34,7 @@ async def main():
     cmd="npm install",
     on_stdout=print_out,
     on_stderr=print_out,
-    rootdir="/code/open-react-template"
+    cwd="/code/open-react-template"
   )
 
   await proc

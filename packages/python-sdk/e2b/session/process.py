@@ -196,7 +196,8 @@ class ProcessManager:
         on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
         on_exit: Optional[Callable[[], Any]] = None,
         env_vars: Optional[EnvVars] = None,
-        rootdir: str = "",
+        cwd: str = "",
+        rootdir: str = "", # DEPRECATED
         process_id: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> Process:
@@ -208,7 +209,8 @@ class ProcessManager:
         :param on_stderr: A callback that is called when stderr with a newline is received from the process
         :param on_exit: A callback that is called when the process exits
         :param env_vars: A dictionary of environment variables to set for the process
-        :param rootdir: The root directory for the process
+        :param cwd: The root directory for the process
+        :param rootdir: (DEPRECATED - use cwd) The root directory for the process
         :param process_id: The process id to use for the process. If not provided, a random id is generated
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
 
@@ -308,6 +310,10 @@ class ProcessManager:
                 logger.debug(f"Exited the process (id: {process_id})")
 
             try:
+                if not cwd and rootdir:
+                    cwd = rootdir
+                    logger.warning("The rootdir parameter is deprecated, use cwd instead.")
+                
                 await self._session._call(
                     self._service_name,
                     "start",
@@ -315,7 +321,7 @@ class ProcessManager:
                         process_id,
                         cmd,
                         env_vars,
-                        rootdir,
+                        cwd,
                     ],
                 )
                 logger.info(f"Started process (id: {process_id})")

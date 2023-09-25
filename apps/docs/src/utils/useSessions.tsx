@@ -66,7 +66,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
             cmd: preps[lang],
             onStdout: stdHandler,
             onStderr: stdHandler,
-            rootdir: '/code',
+            cwd: '/code',
           })
           await proc.finished // await prep process to finish
           log(`${lang} session created and started`)

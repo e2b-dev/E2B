@@ -77,7 +77,11 @@ export type TerminalOpts = {
   /**
    * Working directory where will the terminal start.
    */
-  rootdir?: string
+  cwd?: string
+  /**
+   * @deprecated use cwd instead
+   */
+  rootDir?: string
   /**
    * Environment variables that will be accessible inside of the terminal.
    */

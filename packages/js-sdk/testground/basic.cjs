@@ -18,7 +18,7 @@ async function main() {
   const proc = await session.process.start({
     cmd: 'npm i --silent',
     envVars: { NPM_CONFIG_UPDATE_NOTIFIER: "false" },
-    rootdir: '/code',
+    cwd: '/code',
     onStdout: ({ line }) => console.log('STDOUT', line),
     onStderr: ({ line }) => console.log('STDERR', line),
   })
