@@ -43,25 +43,25 @@ func waitForSocket(socketPath string, timeout time.Duration) error {
 	start := time.Now()
 
 	for {
-			_, err := os.Stat(socketPath)
-			if err == nil {
-					// Socket file exists
-					return nil
-			} else if os.IsNotExist(err) {
-					// Socket file doesn't exist yet
+		_, err := os.Stat(socketPath)
+		if err == nil {
+			// Socket file exists
+			return nil
+		} else if os.IsNotExist(err) {
+			// Socket file doesn't exist yet
 
-					// Check if timeout has been reached
-					elapsed := time.Since(start)
-					if elapsed >= timeout {
-							return fmt.Errorf("timeout reached while waiting for socket file")
-					}
-
-					// Wait for a short duration before checking again
-					time.Sleep(100 * time.Millisecond)
-			} else {
-					// Error occurred while checking for socket file
-					return err
+			// Check if timeout has been reached
+			elapsed := time.Since(start)
+			if elapsed >= timeout {
+				return fmt.Errorf("timeout reached while waiting for socket file")
 			}
+
+			// Wait for a short duration before checking again
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			// Error occurred while checking for socket file
+			return err
+		}
 	}
 }
 
@@ -117,7 +117,6 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 		return nil, errMsg
 	}
 
-
 	err = snapshot.snapshotFC(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error snapshotting fc %w", err)
@@ -132,9 +131,8 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	childCtx, childSpan := tracer.Start(ctx, "start-fc-process")
 	defer childSpan.End()
 
-	
 	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
-	
+
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
 	cmdStderrReader, cmdStderrWriter := io.Pipe()
 
@@ -157,6 +155,8 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		if readerErr != nil {
 			errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
 			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "closed vmm stdout reader")
 		}
 	}()
 
@@ -177,6 +177,8 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 		if readerErr != nil {
 			errMsg := fmt.Errorf("error closing vmm stderr reader %w", readerErr)
 			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "closed vmm stderr reader")
 		}
 	}()
 

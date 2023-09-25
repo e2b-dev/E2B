@@ -24,7 +24,7 @@ update-build-driver:
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-build-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-build-task-driver /opt/nomad/plugins/env-build-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
-	pgrep nomad | xargs sudo kill'
+	supervisorctl restart nomad'
 
 run-build-check:
 	make build && \
@@ -32,11 +32,11 @@ run-build-check:
 	gcloud compute ssh $$($(client)) -- 'sudo -s && chmod +x /tmp/build-task-driver'
 
 test:
-	sudo go run main.go -env fihwyog4sk9ap9lc618x -build c53d8e6a-5abc-2de4-b56d-8de67b64161d -provision "$$(cat ../api/internal/nomad/provision-env.ubuntu.sh)"
+	sudo go run main.go -env fihwyog4sk9ap9lc618x -build c53d8e6a-5abc-2de4-b56d-8de67b64161d
 
 replace-local-build-driver:
 	make build-debug
 	sudo rm -rf /opt/nomad/plugins/env-build-task-driver
 	sudo cp ./bin/debug/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver
-	pgrep nomad | xargs kill
+	supervisorctl restart nomad

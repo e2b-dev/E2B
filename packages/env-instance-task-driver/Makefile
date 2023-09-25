@@ -22,4 +22,4 @@ update-instance-driver:
 	sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver && \
 	pgrep firecracker | xargs -n1 sudo kill -9 && \
-	pgrep nomad | xargs sudo kill'
+	supervisorctl restart nomad'
