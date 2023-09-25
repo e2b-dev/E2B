@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "CLI for managing e2b environments",
   "homepage": "https://usedevbook.com",
   "license": "SEE LICENSE IN LICENSE",
