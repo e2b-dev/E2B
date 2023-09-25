@@ -23,8 +23,6 @@ type taskHandle struct {
 	startedAt   time.Time
 	completedAt time.Time
 
-	cancel context.CancelFunc
-
 	env *env.Env
 
 	exited chan struct{}

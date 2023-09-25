@@ -250,7 +250,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		TraceFlags: 0x0,
 	})
 
-	childCtx, childSpan := d.tracer.Start(
+	_, childSpan := d.tracer.Start(
 		trace.ContextWithRemoteSpanContext(d.ctx, remoteCtx),
 		"start-task",
 		trace.WithLinks(
@@ -283,15 +283,12 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		ContextFileName:       contextFileName,
 	}
 
-	cancellableContext, cancel := context.WithTimeout(childCtx, envBuildTimeout)
-
 	h := &taskHandle{
 		taskConfig: cfg,
 		procState:  drivers.TaskStateRunning,
 		startedAt:  time.Now().Round(time.Millisecond),
 		logger:     d.logger,
 		env:        &env,
-		cancel:     cancel,
 	}
 
 	driverState := TaskState{
@@ -304,7 +301,16 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	d.tasks.Set(cfg.ID, h)
-	go h.run(cancellableContext, d.tracer, d.docker)
+
+	go func() {
+		buildContext, childBuildSpan := d.tracer.Start(
+			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
+			"background-build-env",
+		)
+		h.run(buildContext, d.tracer, d.docker)
+		childBuildSpan.End()
+	}()
+
 	return handle, nil, nil
 }
 
@@ -324,11 +330,13 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 
 	ch := make(chan *drivers.ExitResult)
 	go d.handleWait(ctx, handle, ch)
+
 	return ch, nil
 }
 
 func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
+
 	var result *drivers.ExitResult
 
 	<-handle.exited
@@ -361,12 +369,10 @@ func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *dr
 }
 
 func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) error {
-	handle, ok := d.tasks.Get(taskID)
+	_, ok := d.tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
 	}
-
-	handle.cancel()
 
 	return nil
 }
@@ -382,9 +388,8 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 		return errors.New("cannot destroy running task")
 	}
 
-	handle.cancel()
-
 	d.tasks.Delete(taskID)
+
 	return nil
 }
 
