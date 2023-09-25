@@ -39,11 +39,11 @@ E2B_ACCESS_TOKEN=sk_e2b_... e2b login
 
 ```
 -V, --version    Display e2b CLI version
--h, --help       display help for command
+-h, --help       Display help for command
 ```
 
 ```
-help [command]   display help for command
+help [command]   Display help for command
 
 login            Login to e2b
 logout           Logout of e2b

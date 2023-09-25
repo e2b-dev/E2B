@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  rpc-websocket-client@1.1.4:
+    hash: xglacoyxfizoxmjtct7czgourm
+    path: patches/rpc-websocket-client@1.1.4.patch
+
 importers:
 
   .:
@@ -446,7 +451,7 @@ importers:
         version: 1.3.6
       rpc-websocket-client:
         specifier: ^1.1.4
-        version: 1.1.4(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+        version: 1.1.4(patch_hash=xglacoyxfizoxmjtct7czgourm)(bufferutil@4.0.7)(utf-8-validate@5.0.10)
       utf-8-validate:
         specifier: ^5.0.10
         version: 5.0.10
@@ -945,7 +950,7 @@ packages:
       cross-fetch: 3.1.8(encoding@0.1.13)
       normalize-path: 3.0.0
       openapi-typescript-fetch: 1.1.3
-      rpc-websocket-client: 1.1.4(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+      rpc-websocket-client: 1.1.4(patch_hash=xglacoyxfizoxmjtct7czgourm)(bufferutil@4.0.7)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -960,7 +965,7 @@ packages:
       normalize-path: 3.0.0
       openapi-typescript-fetch: 1.1.3
       platform: 1.3.6
-      rpc-websocket-client: 1.1.4(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+      rpc-websocket-client: 1.1.4(patch_hash=xglacoyxfizoxmjtct7czgourm)(bufferutil@4.0.7)(utf-8-validate@5.0.10)
       utf-8-validate: 5.0.10
     transitivePeerDependencies:
       - encoding
@@ -9695,7 +9700,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /rpc-websocket-client@1.1.4(bufferutil@4.0.7)(utf-8-validate@5.0.10):
+  /rpc-websocket-client@1.1.4(patch_hash=xglacoyxfizoxmjtct7czgourm)(bufferutil@4.0.7)(utf-8-validate@5.0.10):
     resolution: {integrity: sha512-UDMVcsNDJ3WET+0EFdmseYX+60MOCA3BpgpZ5dbtiGsqHo+9uWfgNbPZ4iGDtNcX+EUhCt/Y7C0fTmUU3CkkWA==}
     engines: {node: '>=6.0.0'}
     dependencies:
@@ -9705,6 +9710,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    patched: true
 
   /run-applescript@5.0.0:
     resolution: {integrity: sha512-XcT5rBksx1QdIhlFOCtgZkB99ZEouFZ1E2Kc2LHqNW13U3/74YGdkQRmThTwxy4QIyookibDKYZOPqX//6BlAg==}

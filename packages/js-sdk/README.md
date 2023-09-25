@@ -43,3 +43,22 @@ Visit [docs](https://e2b.dev/docs) to get started with the SDK.
 ```bash
 npm install @e2b/sdk
 ```
+
+
+## Development
+
+#### Note about uuid package
+
+Our `js-sdk` use `rpc-websocket-client` package, which depends on `uuid@3` package.
+`uuid@3` is deprecated for a long time and causing security warnings when installing e2b cli (because it depends on this package – js-sdk).
+To quickfix this, but also to avoid forking `rpc-websocket-client`, we use pnpm patching feature to replace uuid@3 with uuid@9 within `rpc-websocket-client` package.
+
+```
+cd packages/js-sdk
+pnpm patch rpc-websocket-client
+code <generated-path>
+// edit package.json to replace uuid@3 with uuid@8
+// replace every `var v1 = require('uuid/v1');` with `var { v1 } = require('uuid');`
+pnpm patch-commit <generated-path>
+git commit -m "patch uuid@3 to uuid@9"
+```
