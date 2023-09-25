@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"time"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -177,8 +176,6 @@ func (r *Rootfs) dockerTag() string {
 func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
-
-	time.Sleep(2 * time.Second)
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:        r.dockerTag(),

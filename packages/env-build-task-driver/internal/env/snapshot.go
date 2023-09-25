@@ -108,7 +108,7 @@ func NewSnapshot(ctx context.Context, tracer trace.Tracer, env *Env, network *FC
 
 	// Wait for all necessary things in FC to start
 	// TODO: Maybe init should signalize when it's ready?
-	time.Sleep(6 * time.Second)
+	time.Sleep(7 * time.Second)
 
 	err = snapshot.pauseFC(childCtx, tracer)
 	if err != nil {
