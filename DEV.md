@@ -72,6 +72,7 @@
 - CLI upload the context while archiving in stream
 - Setup the linter (exhaustruct is useful)
 - Move provisioning script to api for DX (escaping problems)
+- Using docker "commit container" to store provisioned containers
 
 ### API
 - Add monitoring to the envs routes
