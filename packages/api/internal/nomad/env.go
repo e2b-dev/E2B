@@ -30,9 +30,6 @@ var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.F
 	"escapeHCL": escapeHCL,
 }).Parse(envBuildFile))
 
-//go:embed provision-env.ubuntu.sh
-var provisionEnvScriptFile string
-
 func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
 	ctx context.Context,
@@ -58,29 +55,27 @@ func (n *NomadClient) BuildEnvJob(
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
-		BuildID         string
-		EnvID           string
-		// ProvisionScript string
-		SpanID          string
-		TraceID         string
-		JobName         string
-		TaskName        string
-		EnvsDisk        string
-		VCpuCount       int
-		MemoryMB        int
-		DiskSizeMB      int
+		BuildID    string
+		EnvID      string
+		SpanID     string
+		TraceID    string
+		JobName    string
+		TaskName   string
+		EnvsDisk   string
+		VCpuCount  int
+		MemoryMB   int
+		DiskSizeMB int
 	}{
-		BuildID:         buildID,
-		SpanID:          spanID,
-		DiskSizeMB:      defaultDiskSizeMB,
-		VCpuCount:       defaultVCpuCount,
-		MemoryMB:        defaultMemoryMB,
-		// ProvisionScript: provisionEnvScriptFile,
-		TraceID:         traceID,
-		EnvID:           envID,
-		TaskName:        defaultTaskName,
-		JobName:         buildJobName,
-		EnvsDisk:        envsDisk,
+		BuildID:    buildID,
+		SpanID:     spanID,
+		DiskSizeMB: defaultDiskSizeMB,
+		VCpuCount:  defaultVCpuCount,
+		MemoryMB:   defaultMemoryMB,
+		TraceID:    traceID,
+		EnvID:      envID,
+		TaskName:   defaultTaskName,
+		JobName:    buildJobName,
+		EnvsDisk:   envsDisk,
 	}
 
 	err := envBuildTemplate.Execute(&jobDef, jobVars)
