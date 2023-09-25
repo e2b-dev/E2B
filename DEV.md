@@ -73,6 +73,7 @@
 - Setup the linter (exhaustruct is useful)
 - Move provisioning script to api for DX (escaping problems)
 - Using docker "commit container" to store provisioned containers
+- Catch and parse errors from the docker build to inform us and users about the state of the build - right now the docker build fails silently and the error is on the next step where container start cannot find image with the specific name
 
 ### API
 - Add monitoring to the envs routes
