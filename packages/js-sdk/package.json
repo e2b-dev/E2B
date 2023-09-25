@@ -30,6 +30,7 @@
     "run": "node test/run.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test-smoke": "vitest run _smoke",
     "generate": "openapi-typescript ../../openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts"
   },
   "devDependencies": {
