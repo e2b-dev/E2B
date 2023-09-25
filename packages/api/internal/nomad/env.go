@@ -26,9 +26,7 @@ const (
 //go:embed env-build.hcl
 var envBuildFile string
 
-var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.FuncMap{
-	"escapeHCL": escapeHCL,
-}).Parse(envBuildFile))
+var envBuildTemplate = template.Must(template.New(buildJobName).Funcs(template.FuncMap{}).Parse(envBuildFile))
 
 func (n *NomadClient) BuildEnvJob(
 	t trace.Tracer,
