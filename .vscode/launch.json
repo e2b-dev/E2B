@@ -21,7 +21,11 @@
       "type": "go",
       "request": "attach",
       "mode": "local",
-      "processId": 24262
+      "processId": 143099,
+      "apiVersion": 2,
+      "showLog": true,
+      "console": "integratedTerminal",
+      "asRoot": true
     },
     {
       "name": "Launch Package",
