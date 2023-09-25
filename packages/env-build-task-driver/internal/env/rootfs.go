@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 
+	_ "embed"
+
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -24,6 +26,9 @@ const (
 	toMBShift      = 20
 	maxRootfsSize  = 5000 << toMBShift
 )
+
+//go:embed provision.sh
+var provisionEnvScriptFile string
 
 type Rootfs struct {
 	client *client.Client
@@ -154,7 +159,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		Image:        r.dockerTag(),
 		Entrypoint:   []string{"/bin/sh", "-c"},
 		User:         "root",
-		Cmd:          []string{r.env.ProvisionScript},
+		Cmd:          []string{provisionEnvScriptFile},
 		Tty:          true,
 		AttachStdout: true,
 		AttachStderr: true,
