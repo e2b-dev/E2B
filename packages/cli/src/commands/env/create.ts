@@ -2,6 +2,7 @@ import * as commander from 'commander'
 import { stripIndent } from 'common-tags'
 import * as fs from 'fs'
 import Blob from 'cross-blob' // Remove cross-blob when dropping node 16 support
+import { FormData } from 'formdata-node' // Remove cross-blob when dropping node 16 support
 import fsPromise from 'fs/promises'
 import fetch from 'node-fetch'
 import { apiBaseUrl, ensureAccessToken } from 'src/api'
