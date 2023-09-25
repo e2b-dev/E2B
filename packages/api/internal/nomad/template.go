@@ -13,7 +13,7 @@ var escapeReplacer = strings.NewReplacer(
 	`"`, `\"`,
 
 	// Escape the \$ sequence
-	"\\$", "\\\\$",
+	"$", "$$",
 )
 
 // Escapes various characters that need to be escaped in the HCL files.
