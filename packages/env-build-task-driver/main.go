@@ -33,13 +33,12 @@ func main() {
 
 	envID := flag.String("env", "", "env id")
 	buildID := flag.String("build", "", "build id")
-	provisionEnvScript := flag.String("provision", "", "provision script content")
 
 	flag.Parse()
 
-	if *envID != "" && *buildID != "" && *provisionEnvScript != "" {
+	if *envID != "" && *buildID != "" {
 		// Start of mock build for testing
-		env.MockBuild(*envID, *buildID, *provisionEnvScript)
+		env.MockBuild(*envID, *buildID)
 	} else {
 		// Regular Nomad Plugin initialization
 		otelLauncher := launcher.ConfigureOpentelemetry(

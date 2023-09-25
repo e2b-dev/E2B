@@ -9,7 +9,7 @@ import (
 	_ "embed"
 )
 
-func MockBuild(envID, buildID, provisionEnvScript string) {
+func MockBuild(envID, buildID string) {
 	ctx := context.Background()
 
 	tracer := otel.Tracer("test")
@@ -21,7 +21,7 @@ func MockBuild(envID, buildID, provisionEnvScript string) {
 
 	contextsPath := "/mnt/disks/docker-contexts/v1"
 	registry := "us-central1-docker.pkg.dev/e2b-prod/custom-environments"
-	envsPath := "/mnt/disks/fc-envs/v1"
+	envsDisk := "/mnt/disks/fc-envs/v1"
 	kernelImagePath := "/fc-vm/vmlinux.bin"
 	firecrackerBinaryPath := "/usr/bin/firecracker"
 	envdPath := "/fc-vm/envd"
@@ -33,7 +33,7 @@ func MockBuild(envID, buildID, provisionEnvScript string) {
 	e := Env{
 		BuildID:               buildID,
 		EnvID:                 envID,
-		EnvsPath:              envsPath,
+		EnvsDiskPath:          envsDisk,
 		VCpuCount:             vCPUCount,
 		MemoryMB:              memoryMB,
 		DockerContextsPath:    contextsPath,
@@ -41,8 +41,7 @@ func MockBuild(envID, buildID, provisionEnvScript string) {
 		KernelImagePath:       kernelImagePath,
 		DiskSizeMB:            diskSizeMB,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
-		ProvisionScript:       provisionEnvScript,
-		EnvdPath:      				 envdPath,
+		EnvdPath:              envdPath,
 		ContextFileName:       contextFileName,
 	}
 

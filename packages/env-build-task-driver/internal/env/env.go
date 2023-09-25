@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	_ "embed"
+
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/docker/docker/client"
@@ -29,7 +31,7 @@ type Env struct {
 	BuildID string
 
 	// Path to the directory where all envs are stored.
-	EnvsPath string
+	EnvsDiskPath string
 
 	// Path to the directory where all docker contexts are stored. This directory is a FUSE mounted bucket where the contexts were uploaded.
 	DockerContextsPath string
@@ -42,9 +44,6 @@ type Env struct {
 
 	// Path to the firecracker binary.
 	FirecrackerBinaryPath string
-
-	// Provision script to run to set necessary things in the env.
-	ProvisionScript string
 
 	// Path to the envd.
 	EnvdPath string
@@ -59,6 +58,14 @@ type Env struct {
 
 	// The amount of free disk to allocate to the VM, in MiB.
 	DiskSizeMB int64
+}
+
+//go:embed provision.sh
+var provisionEnvScriptFile string
+
+// Provision script to run to set necessary things in the env.
+func (e *Env) ProvisionScript() string {
+	return provisionEnvScriptFile
 }
 
 // Path to the docker context.
@@ -95,7 +102,7 @@ func (e *Env) tmpSnapfilePath() string {
 
 // Path to the directory where the env is stored.
 func (e *Env) envDirPath() string {
-	return filepath.Join(e.EnvsPath, e.EnvID)
+	return filepath.Join(e.EnvsDiskPath, e.EnvID)
 }
 
 func (e *Env) envBuildIDFilePath() string {
