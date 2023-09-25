@@ -164,21 +164,15 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		ReportEvent(ctx, "updated environment")
 	}
 
-	// Upload and build env
-	longLivingSpanContext := trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID:    span.SpanContext().TraceID(),
-		SpanID:     span.SpanContext().SpanID(),
-		TraceFlags: 0x0,
-	})
-
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
-			trace.ContextWithSpanContext(context.Background(), longLivingSpanContext),
+			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
-		defer childSpan.End()
 
 		a.buildEnv(buildContext, envID, fileContent)
+
+		childSpan.End()
 	}()
 
 	a.IdentifyAnalyticsTeam(team.ID)
