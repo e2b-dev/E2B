@@ -120,31 +120,46 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 
 	err := e.initialize(childCtx, tracer)
 	if err != nil {
-		return fmt.Errorf("error initializing directories for building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		errMsg := fmt.Errorf("error initializing directories for building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	defer e.Cleanup(childCtx, tracer)
 
 	rootfs, err := NewRootfs(childCtx, tracer, e, docker)
 	if err != nil {
-		return fmt.Errorf("error creating rootfs for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		errMsg := fmt.Errorf("error creating rootfs for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	network, err := NewFCNetwork(childCtx, tracer, e)
 	if err != nil {
-		return fmt.Errorf("error network setup for FC while building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		errMsg := fmt.Errorf("error network setup for FC while building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	defer network.Cleanup(childCtx, tracer)
 
 	_, err = NewSnapshot(childCtx, tracer, e, network, rootfs)
 	if err != nil {
-		return fmt.Errorf("error snapshot for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		errMsg := fmt.Errorf("error snapshot for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	err = e.MoveToEnvDir(childCtx, tracer)
 	if err != nil {
-		return fmt.Errorf("error moving env files to their final destination during while building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		errMsg := fmt.Errorf("error moving env files to their final destination during while building env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	}
 
 	return nil

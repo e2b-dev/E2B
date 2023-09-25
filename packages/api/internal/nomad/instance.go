@@ -11,7 +11,6 @@ import (
 
 	// trunk-ignore(semgrep/go.lang.security.audit.xss.import-text-template.import-text-template)
 	"text/template"
-	"time"
 
 	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
@@ -24,7 +23,6 @@ import (
 const (
 	instanceJobName          = "env-instance"
 	instanceJobNameWithSlash = instanceJobName + "/"
-	jobRegisterTimeout       = time.Second * 30
 	instanceIDPrefix         = "i"
 )
 

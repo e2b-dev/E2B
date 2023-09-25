@@ -75,6 +75,7 @@ func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyV
 			attrs...,
 		),
 	)
+
 	span.SetStatus(codes.Error, "critical error")
 }
 
