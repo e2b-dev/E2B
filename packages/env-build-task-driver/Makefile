@@ -32,7 +32,7 @@ run-build-check:
 	gcloud compute ssh $$($(client)) -- 'sudo -s && chmod +x /tmp/build-task-driver'
 
 test:
-	sudo go run main.go -env fihwyog4sk9ap9lc618x -build c53d8e6a-5abc-2de4-b56d-8de67b64161d -provision "$$(cat ../api/internal/nomad/provision-env.ubuntu.sh)"
+	sudo go run main.go -env fihwyog4sk9ap9lc618x -build c53d8e6a-5abc-2de4-b56d-8de67b64161d
 
 replace-local-build-driver:
 	make build-debug

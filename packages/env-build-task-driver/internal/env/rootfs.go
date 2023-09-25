@@ -2,17 +2,20 @@ package env
 
 import (
 	"archive/tar"
+	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
@@ -63,7 +66,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "build-docker-image")
 	defer childSpan.End()
 
-	// File should be automatically closed by the docker image build
 	dockerContextFile, err := os.Open(r.env.DockerContextPath())
 	if err != nil {
 		errMsg := fmt.Errorf("error opening docker context file %w", err)
@@ -89,6 +91,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		childCtx,
 		dockerContextFile,
 		types.ImageBuildOptions{
+			Context:    dockerContextFile,
 			Dockerfile: dockerfileName,
 			Remove:     true,
 			Tags:       []string{r.dockerTag()},
@@ -101,9 +104,34 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		return errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "started docker image build")
+	telemetry.ReportEvent(childCtx, "started docker image build", attribute.String("tag", r.dockerTag()))
 
-	_, err = io.Copy(os.Stdout, buildResponse.Body)
+	buildReader, buildWriter := io.Pipe()
+
+	go func() {
+		logsCtx, logsSpan := tracer.Start(childCtx, "handle-build-logs", trace.WithSpanKind(trace.SpanKindConsumer))
+		defer logsSpan.End()
+
+		scanner := bufio.NewScanner(buildReader)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			telemetry.ReportEvent(logsCtx, "docker build logs",
+				attribute.String("message", line),
+			)
+		}
+
+		readerErr := buildReader.Close()
+		if readerErr != nil {
+			errMsg := fmt.Errorf("error closing logs reader %w", readerErr)
+			telemetry.ReportError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "closed logs reader")
+		}
+	}()
+
+	_, err = io.Copy(buildWriter, buildResponse.Body)
 	if err != nil {
 		errMsg := fmt.Errorf("error copying build response body %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -143,12 +171,14 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 }
 
 func (r *Rootfs) dockerTag() string {
-	return r.env.DockerRegistry + "/" + r.env.EnvID
+	return r.env.DockerRegistry + "/" + r.env.EnvID + ":" + r.env.BuildID
 }
 
 func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
+
+	time.Sleep(2 * time.Second)
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:        r.dockerTag(),
