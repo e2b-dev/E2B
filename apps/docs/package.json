@@ -62,7 +62,7 @@
     "zustand": "^4.3.2"
   },
   "devDependencies": {
-    "@e2b/sdk": "^0.2.4",
+    "@e2b/sdk": "^0.3.0",
     "@nodelib/fs.walk": "^2.0.0",
     "encoding": "^0.1.13",
     "sharp": "^0.32.0",
