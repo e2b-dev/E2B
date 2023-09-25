@@ -37,7 +37,7 @@ job "{{ .JobName }}/{{ .EnvID }}" {
       config {
         BuildID = "{{ .BuildID }}"
         EnvID = "{{ .EnvID }}"
-        ProvisionScript = "{{ escapeHCL .ProvisionScript }}"
+        ProvisionScript = ""
         VCpuCount = "{{ .VCpuCount }}"
         DiskSizeMB = "{{ .DiskSizeMB }}"
         MemoryMB = "{{ .MemoryMB }}"

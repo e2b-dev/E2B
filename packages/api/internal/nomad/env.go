@@ -60,7 +60,7 @@ func (n *NomadClient) BuildEnvJob(
 	jobVars := struct {
 		BuildID         string
 		EnvID           string
-		ProvisionScript string
+		// ProvisionScript string
 		SpanID          string
 		TraceID         string
 		JobName         string
@@ -75,7 +75,7 @@ func (n *NomadClient) BuildEnvJob(
 		DiskSizeMB:      defaultDiskSizeMB,
 		VCpuCount:       defaultVCpuCount,
 		MemoryMB:        defaultMemoryMB,
-		ProvisionScript: provisionEnvScriptFile,
+		// ProvisionScript: provisionEnvScriptFile,
 		TraceID:         traceID,
 		EnvID:           envID,
 		TaskName:        defaultTaskName,
