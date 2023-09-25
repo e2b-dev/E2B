@@ -289,6 +289,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		startedAt:  time.Now().Round(time.Millisecond),
 		logger:     d.logger,
 		env:        &env,
+		exited:     make(chan struct{}),
 	}
 
 	driverState := TaskState{
