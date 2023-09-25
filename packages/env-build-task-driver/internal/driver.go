@@ -38,9 +38,8 @@ var (
 	}
 
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"BuildID":         hclspec.NewAttr("BuildID", "string", true),
-		"EnvID":           hclspec.NewAttr("EnvID", "string", true),
-		"ProvisionScript": hclspec.NewAttr("ProvisionScript", "string", true),
+		"BuildID": hclspec.NewAttr("BuildID", "string", true),
+		"EnvID":   hclspec.NewAttr("EnvID", "string", true),
 
 		"SpanID":  hclspec.NewAttr("SpanID", "string", true),
 		"TraceID": hclspec.NewAttr("TraceID", "string", true),
@@ -61,9 +60,8 @@ var (
 type Config struct{}
 
 type TaskConfig struct {
-	BuildID         string `codec:"BuildID"`
-	EnvID           string `codec:"EnvID"`
-	ProvisionScript string `codec:"ProvisionScript"`
+	BuildID string `codec:"BuildID"`
+	EnvID   string `codec:"EnvID"`
 
 	SpanID  string `codec:"SpanID"`
 	TraceID string `codec:"TraceID"`
@@ -261,7 +259,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	contextsPath := cfg.Env["DOCKER_CONTEXTS_PATH"]
 	registry := cfg.Env["DOCKER_REGISTRY"]
-	envsPath := cfg.Env["ENVS_PATH"]
+	envsDisk := cfg.Env["ENVS_DISK"]
 	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
 	envdPath := cfg.Env["ENVD_PATH"]
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
@@ -270,7 +268,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	env := env.Env{
 		BuildID:               taskConfig.BuildID,
 		EnvID:                 taskConfig.EnvID,
-		EnvsPath:              envsPath,
+		EnvsDiskPath:          envsDisk,
 		VCpuCount:             taskConfig.VCpuCount,
 		MemoryMB:              taskConfig.MemoryMB,
 		DockerContextsPath:    contextsPath,
@@ -278,7 +276,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		KernelImagePath:       kernelImagePath,
 		DiskSizeMB:            taskConfig.DiskSizeMB,
 		FirecrackerBinaryPath: firecrackerBinaryPath,
-		ProvisionScript:       taskConfig.ProvisionScript,
 		EnvdPath:              envdPath,
 		ContextFileName:       contextFileName,
 	}
@@ -289,6 +286,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		startedAt:  time.Now().Round(time.Millisecond),
 		logger:     d.logger,
 		env:        &env,
+		exited:     make(chan struct{}),
 	}
 
 	driverState := TaskState{

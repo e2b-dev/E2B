@@ -68,8 +68,10 @@
 - Add local apt-get mirror for provisioning
 - Update nomad
 - Ensure required programs and files are ready during each driver init
-- Improve CLI errors
+- Improve CLI errors returned from API
 - CLI upload the context while archiving in stream
+- Setup the linter (exhaustruct is useful)
+- Move provisioning script to api for DX (escaping problems)
 
 ### API
 - Add monitoring to the envs routes
