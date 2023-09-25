@@ -34,7 +34,7 @@ export default {
     autoExternal({ builtins: false }),
     typescript({
       clean: false,
-      check: false, // uncomment when TS gives you weird erros when running vitest
+      check: false, // uncomment when TS gives you weird errors when running vitest
     }),
     nodePolyfills(),
     nodeResolve({

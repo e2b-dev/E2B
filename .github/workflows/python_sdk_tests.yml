@@ -2,13 +2,13 @@ name: Test Python SDK
 
 on:
   push:
-    #   Tests are already running on main before release
+    # Tests are already running on main before release
     branches:
-      - '*'
+      - '**'
       - '!main'
     paths:
       - packages/python-sdk/**/*
-      - .github/workflows/python_tests.yml
+      - .github/workflows/python_sdk_tests.yml
 
 permissions:
   contents: read

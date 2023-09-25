@@ -2,13 +2,13 @@ name: Test JS SDK
 
 on:
   push:
-#   Tests are already running on main before release
+    # Tests are already running on main before release
     branches:
-      - '*'
+      - '**'
       - '!main'
     paths:
       - packages/js-sdk/**/*
-      - .github/workflows/js_tests.yml
+      - .github/workflows/js_sdk_tests.yml
 
 permissions:
   contents: read
@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        
+      - uses: pnpm/action-setup@v2        
 
       - name: Setup Node
         uses: actions/setup-node@v3

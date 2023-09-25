@@ -1,6 +1,8 @@
 import * as commander from 'commander'
 import { stripIndent } from 'common-tags'
 import * as fs from 'fs'
+import Blob from 'cross-blob' // Remove cross-blob when dropping node 16 support
+import { FormData } from 'formdata-node' // Remove formdata-node when dropping node 16 support
 import fsPromise from 'fs/promises'
 import fetch from 'node-fetch'
 import { apiBaseUrl, ensureAccessToken } from 'src/api'
@@ -140,9 +142,9 @@ export const createCommand = new commander.Command('create')
           if (elapsed > 1000 * 60 * 2) {
             // TODO
             console.log(stripIndent`
-              ⚠️ Build taking longer than 2 minutes, something might be wrong.\n
-              Stopping to wait for result, but it might still finish -\n
-              Check by yourself by running ${asLocal('e2b env list')}\n
+              ⚠️ Build taking longer than 2 minutes, something might be wrong.
+              Stopping to wait for result, but it might still finish.
+              Check by yourself by running ${asLocal('e2b env list')}
             `)
             completed = true
           }
