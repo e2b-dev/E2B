@@ -45,6 +45,7 @@ usermod -aG sudo user
 passwd -d user
 echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 
+chmod -R 777 /
 chmod -R 777 /code
 chmod -R 777 /home/user
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
