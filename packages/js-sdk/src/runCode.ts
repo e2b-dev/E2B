@@ -46,7 +46,7 @@ export async function runCode(
       break
     default:
       throw new Error(
-        `The "${runtime}" runtime isn't supported. Please let us know if you need support for this runtime.`,
+        `The "${runtime}" runtime isn't supported. Please contact us know if you need support for this runtime.`,
       )
   }
 
@@ -59,10 +59,7 @@ export async function runCode(
 
   const codeProc = await session.process.start({
     cmd: `${binary} ${filepath}`,
-    onStdout: data => console.log('stdout: ', data.line),
-    onStderr: data => console.error('stderr: ', data.line),
   })
-  await sleep(3000)
   const out = await codeProc.finished
 
   await session.close()
