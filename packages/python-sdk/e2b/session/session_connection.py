@@ -129,9 +129,7 @@ class SessionConnection:
                 await self._rpc.close()
 
         self._close()
-        logger.info(
-            f"Session closed"
-        )
+        logger.info(f"Session closed")
 
     def _close(self):
         if self._on_close_child:

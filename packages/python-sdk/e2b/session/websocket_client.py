@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 class WebSocket:
     def __init__(
-            self,
-            url: str,
-            started: Event,
-            stopped: Event,
-            queue_in: Queue[dict],
-            queue_out: JanusQueue[Data],
+        self,
+        url: str,
+        started: Event,
+        stopped: Event,
+        queue_in: Queue[dict],
+        queue_out: JanusQueue[Data],
     ):
         self._ws: Optional[WebSocketClientProtocol] = None
         self.url = url
