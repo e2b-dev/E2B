@@ -6,7 +6,7 @@ set -eu
 
 # Check if the remote is set
 if [ -z "$(git remote get-url api)" ]; then
-  git remote add api git@github.com:e2b-dev/api.git
+  git remote add api git@github.com:e2b-dev/infra.git
 fi
 
 # Get the current branch
