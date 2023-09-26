@@ -16,7 +16,7 @@ import re  # noqa: F401
 import io
 import warnings
 
-from pydantic import validate_arguments, ValidationError
+from pydantic import validate_call, ValidationError
 from typing_extensions import Annotated
 from typing import overload, Optional, Union, Awaitable
 
@@ -62,7 +62,7 @@ class EnvsApi:
     ) -> None:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_delete(
         self,
         api_key: StrictStr,
@@ -104,7 +104,7 @@ class EnvsApi:
             api_key, code_snippet_id, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_delete_with_http_info(
         self, api_key: StrictStr, code_snippet_id: StrictStr, **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -235,7 +235,7 @@ class EnvsApi:
     ) -> None:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_patch(
         self,
         api_key: StrictStr,
@@ -277,7 +277,7 @@ class EnvsApi:
             api_key, code_snippet_id, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_patch_with_http_info(
         self, api_key: StrictStr, code_snippet_id: StrictStr, **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -413,7 +413,7 @@ class EnvsApi:
     ) -> None:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_post(
         self,
         api_key: StrictStr,
@@ -458,7 +458,7 @@ class EnvsApi:
             api_key, code_snippet_id, new_environment, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_post_with_http_info(
         self,
         api_key: StrictStr,
@@ -611,7 +611,7 @@ class EnvsApi:
     ) -> None:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_state_put(
         self,
         api_key: StrictStr,
@@ -656,7 +656,7 @@ class EnvsApi:
             api_key, code_snippet_id, environment_state_update, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_state_put_with_http_info(
         self,
         api_key: StrictStr,
@@ -809,7 +809,7 @@ class EnvsApi:
     ) -> None:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_title_put(
         self,
         api_key: StrictStr,
@@ -854,7 +854,7 @@ class EnvsApi:
             api_key, code_snippet_id, environment_title_update, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def envs_code_snippet_id_title_put_with_http_info(
         self,
         api_key: StrictStr,
@@ -998,7 +998,7 @@ class EnvsApi:
     ) -> List[Environment]:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def envs_get(
         self, api_key: StrictStr, async_req: Optional[bool] = None, **kwargs
     ) -> Union[List[Environment], Awaitable[List[Environment]]]:  # noqa: E501
@@ -1032,7 +1032,7 @@ class EnvsApi:
             kwargs["async_req"] = async_req
         return self.envs_get_with_http_info(api_key, **kwargs)  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def envs_get_with_http_info(
         self, api_key: StrictStr, **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -1163,7 +1163,7 @@ class EnvsApi:
     ) -> Environment:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def envs_post(
         self,
         api_key: StrictStr,
@@ -1205,7 +1205,7 @@ class EnvsApi:
             api_key, new_environment, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def envs_post_with_http_info(
         self, api_key: StrictStr, new_environment: NewEnvironment, **kwargs
     ) -> ApiResponse:  # noqa: E501

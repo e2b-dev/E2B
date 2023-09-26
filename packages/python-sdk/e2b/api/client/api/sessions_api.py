@@ -16,7 +16,7 @@ import re  # noqa: F401
 import io
 import warnings
 
-from pydantic import validate_arguments, ValidationError
+from pydantic import validate_call, ValidationError
 from typing_extensions import Annotated
 from typing import overload, Optional, Union, Awaitable
 
@@ -56,7 +56,7 @@ class SessionsApi:
     ) -> List[Session]:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def sessions_get(
         self, api_key: StrictStr, async_req: Optional[bool] = None, **kwargs
     ) -> Union[List[Session], Awaitable[List[Session]]]:  # noqa: E501
@@ -90,7 +90,7 @@ class SessionsApi:
             kwargs["async_req"] = async_req
         return self.sessions_get_with_http_info(api_key, **kwargs)  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def sessions_get_with_http_info(
         self, api_key: StrictStr, **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -221,7 +221,7 @@ class SessionsApi:
     ) -> Session:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def sessions_post(
         self,
         new_session: NewSession,
@@ -263,7 +263,7 @@ class SessionsApi:
             new_session, api_key, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def sessions_post_with_http_info(
         self, new_session: NewSession, api_key: Optional[StrictStr] = None, **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -408,7 +408,7 @@ class SessionsApi:
     ) -> None:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def sessions_session_id_delete(
         self,
         api_key: StrictStr,
@@ -450,7 +450,7 @@ class SessionsApi:
             api_key, session_id, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def sessions_session_id_delete_with_http_info(
         self, api_key: StrictStr, session_id: StrictStr, **kwargs
     ) -> ApiResponse:  # noqa: E501
@@ -581,7 +581,7 @@ class SessionsApi:
     ) -> None:  # noqa: E501
         ...
 
-    @validate_arguments
+    @validate_call
     def sessions_session_id_refresh_post(
         self,
         session_id: StrictStr,
@@ -623,7 +623,7 @@ class SessionsApi:
             session_id, api_key, **kwargs
         )  # noqa: E501
 
-    @validate_arguments
+    @validate_call
     def sessions_session_id_refresh_post_with_http_info(
         self, session_id: StrictStr, api_key: Optional[StrictStr] = None, **kwargs
     ) -> ApiResponse:  # noqa: E501
