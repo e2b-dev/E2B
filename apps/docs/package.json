@@ -59,13 +59,13 @@
     "unist-util-filter": "^4.0.1",
     "unist-util-visit": "^4.1.1",
     "usehooks-ts": "^2.9.1",
-    "zustand": "^4.3.2"
+    "zustand": "^4.3.2",
+    "@e2b/sdk": "^0.3.2"
   },
   "devDependencies": {
-    "@e2b/sdk": "^0.3.0",
     "@nodelib/fs.walk": "^2.0.0",
     "encoding": "^0.1.13",
-    "sharp": "^0.32.0",
-    "eslint-config-next": "13.4.19"
+    "eslint-config-next": "13.4.19",
+    "sharp": "^0.32.0"
   }
 }

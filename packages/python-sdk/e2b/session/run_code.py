@@ -36,7 +36,7 @@ async def run_code(
     binary = "python3"
     filepath = "/index.py"
   else:
-    raise Exception(f'Invalid runtime "{runtime}". Please contactus if you need support for this runtime')
+    raise Exception(f'Invalid runtime "{runtime}". Please contact us (hello@e2b.dev) if you need support for this runtime')
 
   session = await Session.create(
     id=env_id,
