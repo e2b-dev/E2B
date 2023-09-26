@@ -197,7 +197,7 @@ class ProcessManager:
         on_exit: Optional[Callable[[], Any]] = None,
         env_vars: Optional[EnvVars] = None,
         cwd: str = "",
-        rootdir: str = "", # DEPRECATED
+        rootdir: str = "",  # DEPRECATED
         process_id: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> Process:
@@ -312,7 +312,9 @@ class ProcessManager:
             try:
                 if not cwd and rootdir:
                     cwd = rootdir
-                    logger.warning("The rootdir parameter is deprecated, use cwd instead.")
+                    logger.warning(
+                        "The rootdir parameter is deprecated, use cwd instead."
+                    )
 
                 if not cwd and self._session.cwd:
                     cwd = self._session.cwd
