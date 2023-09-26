@@ -9,20 +9,20 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   url.hostname = 'e2b-blog.framer.website'
   url.port = ''
 
-  if (url.pathname === '/blog') {
+  if (url.pathname === '/blog' || url.pathname === '/blog/') {
     url.pathname = '/'
   }
-
-  console.log(url.toString())
 
   const res = await fetch(url.toString(), { ...req })
 
   const htmlBody = await res.text()
 
-  // Replace has intentionally not compelted quotes to catch the rest of the path
+  // Replace has intentionally not completed quotes to catch the rest of the path
   const modifiedHtmlBody = htmlBody.replaceAll(
     'href="https://e2b-blog.framer.website',
-    'href="https://e2b.dev/blog',
+    // The default url on framer do not have /blog in the path but the custom domain does,
+    // so we need to handle this explicitly.
+    url.pathname === '/' ? 'href="https://e2b.dev/blog' : 'href="https://e2b.dev',
   )
 
   return new NextResponse(modifiedHtmlBody, res)
