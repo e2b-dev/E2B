@@ -120,5 +120,5 @@ variable "github_organization" {
 
 variable "github_repository" {
   type    = string
-  default = "api"
+  default = "infra"
 }
