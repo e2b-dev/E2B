@@ -31,7 +31,7 @@ interface Subscriber {
   handler: SubscriptionHandler
 }
 
-interface Logger {
+export interface Logger {
   debug?: (message: string, ...args: unknown[]) => void
   info?: (message: string, ...args: unknown[]) => void
   warn?: (message: string, ...args: unknown[]) => void

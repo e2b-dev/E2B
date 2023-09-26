@@ -1,12 +1,15 @@
-import logging
 import base64
+import logging
+import os
+import warnings
 from typing import Any, List, Optional
+
+from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.filesystem_watcher import FilesystemWatcher
 from e2b.session.session_connection import SessionConnection
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +26,16 @@ class FileInfo(BaseModel):
 class FilesystemManager:
     """
     Filesystem manager is used to read, write, remove and list files and directories in the environment.
+
+    @param cwd: Current working directory. The path to a file or a directory can be relative or absolute. Relative
+    paths are resolved from the current working directory.
     """
 
     _service_name = "filesystem"
 
-    def __init__(self, session: SessionConnection):
+    def __init__(self, session: SessionConnection, cwd: Optional[str] = None):
         self._session = session
+        self.cwd = cwd
 
     async def read_bytes(self, path: str) -> bytearray:
         """
@@ -38,6 +45,7 @@ class FilesystemManager:
         :param path: path to a file
         :return: byte array representing the content of a file
         """
+        path = self._resolve_path(path)
         result: str = await self._session._call(
             self._service_name, "readBase64", [path]
         )
@@ -52,6 +60,7 @@ class FilesystemManager:
         :param path: path to a file
         :param content: byte array representing the content to write
         """
+        path = self._resolve_path(path)
         base64_content = base64.b64encode(content).decode("utf-8")
         await self._session._call(
             self._service_name, "writeBase64", [path, base64_content]
@@ -66,6 +75,8 @@ class FilesystemManager:
         :return: Content of a file
         """
         logger.debug(f"Reading file {path}")
+
+        path = self._resolve_path(path)
         try:
             result: str = await self._session._call(
                 self._service_name, "read", [path], timeout=timeout
@@ -76,7 +87,7 @@ class FilesystemManager:
             raise FilesystemException(e.message) from e
 
     async def write(
-        self, path: str, content: str, timeout: Optional[float] = TIMEOUT
+            self, path: str, content: str, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
         Writes content to a file.
@@ -86,6 +97,8 @@ class FilesystemManager:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.debug(f"Writing file {path}")
+
+        path = self._resolve_path(path)
         try:
             await self._session._call(
                 self._service_name, "write", [path, content], timeout=timeout
@@ -102,6 +115,8 @@ class FilesystemManager:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.debug(f"Removing file {path}")
+
+        path = self._resolve_path(path)
         try:
             await self._session._call(
                 self._service_name, "remove", [path], timeout=timeout
@@ -111,7 +126,7 @@ class FilesystemManager:
             raise FilesystemException(e.message) from e
 
     async def list(
-        self, path: str, timeout: Optional[float] = TIMEOUT
+            self, path: str, timeout: Optional[float] = TIMEOUT
     ) -> List[FileInfo]:
         """
         List files in a directory.
@@ -122,6 +137,8 @@ class FilesystemManager:
         :return: Array of files in a directory
         """
         logger.debug(f"Listing files in {path}")
+
+        path = self._resolve_path(path)
         try:
             result: List[Any] = await self._session._call(
                 self._service_name, "list", [path], timeout=timeout
@@ -142,6 +159,8 @@ class FilesystemManager:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.debug(f"Creating directory {path}")
+
+        path = self._resolve_path(path)
         try:
             await self._session._call(
                 self._service_name, "makeDir", [path], timeout=timeout
@@ -159,8 +178,35 @@ class FilesystemManager:
         :return: New watcher
         """
         logger.debug(f"Watching directory {path}")
+
+        path = self._resolve_path(path)
         return FilesystemWatcher(
             connection=self._session,
             path=path,
             service_name=self._service_name,
         )
+
+    def _resolve_path(self, path: str) -> str:
+        if path.startswith("./"):
+            if not self.cwd:
+                raise warnings.warn(
+                    f"Path starts with './' and cwd isn't set. The path {path} will evaluate to `{path[1:]}`, which may not be what you want."
+                )
+
+            return os.path.join(self.cwd or '', path[1:])
+
+        if path.startswith("../"):
+            if not self.cwd:
+                raise warnings.warn(
+                    f"Path starts with '../' and cwd isn't set. The path {path} will evaluate to `{path[2:]}`, which may not be what you want."
+                )
+            return os.path.join(self.cwd or '', path[2:])
+
+        if path.startswith("~/"):
+            if not self.cwd:
+                raise warnings.warn(
+                    f"Path starts with '~/' and cwd isn't set. The path {path} will evaluate to `/home/user/{path[2:]}`, which may not be what you want."
+                )
+            return os.path.join(self.cwd or '/home/user', path[1:])
+
+        return path
