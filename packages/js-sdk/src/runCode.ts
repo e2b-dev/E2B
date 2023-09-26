@@ -5,13 +5,8 @@ export enum CodeRuntime {
   Python3 = 'Python3',
 }
 
-// Fucntions that sleeps for a given amount of time
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
 /**
- * Run code in a sandboxed cloud environment.
+ * Run code in a sandboxed cloud playground.
  * `runCode` wraps the `Session` class and provides a simple interface for running code in a sandboxed environment
  * without any need to manage lifecycle of the session.
  * `runCode` automatically loads the E2B API key from the `E2B_API_KEY` environment variable.
@@ -46,7 +41,7 @@ export async function runCode(
       break
     default:
       throw new Error(
-        `The "${runtime}" runtime isn't supported. Please contact us know if you need support for this runtime.`,
+        `The "${runtime}" runtime isn't supported. Please contact us (hello@e2b.dev) if you need support for this runtime`,
       )
   }
 
