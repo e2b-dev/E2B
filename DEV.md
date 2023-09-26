@@ -74,6 +74,7 @@
 - Move provisioning script to api for DX (escaping problems)
 - Using docker "commit container" to store provisioned containers
 - Catch and parse errors from the docker build to inform us and users about the state of the build - right now the docker build fails silently and the error is on the next step where container start cannot find image with the specific name
+- Check how people use otel in other go projects
 
 ### API
 - Add monitoring to the envs routes
@@ -114,6 +115,12 @@
 - Check close "allUnsubscribed" in envd sub manager
 - The read/write bytes should be by chunk (we can implement it via ws or a new endpoint?)
 - mount envd on separate volume?
+- Switchable user via parameter
+- Implement primitives for all core services (https://nodejs.org/docs/latest-v20.x/api/fs.html) so we don't have to update the envd for every new feature
+- Make process handler in envd more primitive (less configuration of things like shells/interactive, etc -> move this to SDK? would need to implement in both SDKs correctly)
+- The maximal size of scanned line in current envd is 64k - increase this or change the system of scanning to use bytes instead of lines (while still having buffer)
+- Hook output handlers to the terminal tty before starting the process via pty
+- Check the https://pkg.go.dev/golang.org/x/term library for implementing the terminal functionality
 
 ### Build system
 - Use overlays instead of cp reflink so we can use any FS type
