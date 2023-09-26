@@ -31,7 +31,8 @@ apply:
 	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
 	TF_VAR_server_machine_type=$(SERVER_MACHINE_TYPE) \
 	TF_VAR_server_cluster_size=$(SERVER_CLUSTER_SIZE) \
-	terraform apply \ -auto-approve 
+	terraform apply \
+	-auto-approve \
 	-input=false \
 	-compact-warnings \
 	-parallelism=20
