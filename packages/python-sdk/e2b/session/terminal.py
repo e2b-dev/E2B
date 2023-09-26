@@ -58,12 +58,12 @@ class Terminal:
         return self.finished.__await__()
 
     def __init__(
-        self,
-        terminal_id: str,
-        session: SessionConnection,
-        trigger_exit: Callable[[], Coroutine[Any, Any, None]],
-        finished: Awaitable[TerminalOutput],
-        output: TerminalOutput,
+            self,
+            terminal_id: str,
+            session: SessionConnection,
+            trigger_exit: Callable[[], Coroutine[Any, Any, None]],
+            finished: Awaitable[TerminalOutput],
+            output: TerminalOutput,
     ):
         self._terminal_id = terminal_id
         self._session = session
@@ -89,7 +89,7 @@ class Terminal:
             raise TerminalException(e.message) from e
 
     async def resize(
-        self, cols: int, rows: int, timeout: Optional[float] = TIMEOUT
+            self, cols: int, rows: int, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
         Resizes the terminal tty.
@@ -144,16 +144,16 @@ class TerminalManager:
         self._process_cleanup.clear()
 
     async def start(
-        self,
-        on_data: Callable[[str], Any],
-        cols: int,
-        rows: int,
-        cwd: str = "",
-        terminal_id: Optional[str] = None,
-        on_exit: Optional[Callable[[], Any]] = None,
-        cmd: Optional[str] = None,
-        env_vars: Optional[EnvVars] = None,
-        timeout: Optional[float] = TIMEOUT,
+            self,
+            on_data: Callable[[str], Any],
+            cols: int,
+            rows: int,
+            cwd: str = "",
+            terminal_id: Optional[str] = None,
+            on_exit: Optional[Callable[[], Any]] = None,
+            cmd: Optional[str] = None,
+            env_vars: Optional[EnvVars] = None,
+            timeout: Optional[float] = TIMEOUT,
     ) -> Terminal:
         """
         Start a new terminal session.
@@ -229,6 +229,9 @@ class TerminalManager:
                 await future_exit_handler_finish
 
             try:
+                if not cwd and self._session.cwd:
+                    cwd = self._session.cwd
+
                 await self._session._call(
                     self._service_name,
                     "start",

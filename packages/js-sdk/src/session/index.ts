@@ -159,6 +159,9 @@ export class Session extends SessionConnection {
             this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
             cwd = rootDir
           }
+          if (!cwd && this.opts.cwd) {
+            cwd = this.opts.cwd
+          }
           const { promise: terminalExited, resolve: triggerExit } =
             createDeferredPromise()
 
