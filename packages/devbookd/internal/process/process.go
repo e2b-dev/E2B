@@ -23,7 +23,7 @@ type Process struct {
 }
 
 func New(id ID, shell, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
-	cmd := exec.Command(shell, "-l", "-i", "-c", cmdToExecute)
+	cmd := exec.Command(shell, "-l", "-c", cmdToExecute)
 
 	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
 	if err != nil {
