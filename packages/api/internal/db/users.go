@@ -20,7 +20,5 @@ func (db *DB) GetDefaultTeamFromUserID(userID string) (result *models.Team, err 
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
 
-	result, err = userTeam.Team().One(db.Client)
-
-	return result, nil
+	return userTeam.Team().One(db.Client)
 }

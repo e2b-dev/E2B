@@ -241,6 +241,14 @@ func (a *APIStore) GetEnvsEnvID(
 
 	env, err := a.supabase.GetEnv(envID, team.ID)
 	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting env: %s", err))
+
+		err = fmt.Errorf("error when getting env: %w", err)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
+	if env == nil {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
 
 		err = fmt.Errorf("error when getting env: %w", err)

@@ -43,12 +43,17 @@ func (db *DB) GetEnv(envID string, teamID string) (env *api.Environment, err err
 	publicWhere := models.EnvWhere.Public.EQ(true)
 	teamWhere := models.EnvWhere.TeamID.EQ(teamID)
 	envWhere := models.EnvWhere.ID.EQ(envID)
-	dbEnv, err := models.Envs(qm.Expr(publicWhere, qm.Or2(teamWhere)), envWhere).One(db.Client)
+	dbEnvs, err := models.Envs(qm.Expr(publicWhere, qm.Or2(teamWhere)), envWhere).All(db.Client)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
 
+	if len(dbEnvs) == 0 {
+		return nil, nil
+	}
+
+	dbEnv := dbEnvs[0]
 	return &api.Environment{
 		EnvID:  dbEnv.ID,
 		Status: api.EnvironmentStatus(dbEnv.Status),
@@ -122,8 +127,12 @@ func (db *DB) UpdateStatusEnv(envID string, status models.EnvStatusEnum) (*api.E
 func (db *DB) HasEnvAccess(envID string, teamID string, public bool) (bool, error) {
 	env, err := db.GetEnv(envID, teamID)
 
-	if !public && env.Public {
-		return false, err
+	if err != nil {
+		return false, fmt.Errorf("failed to get env '%s': %w", envID, err)
+	}
+
+	if env == nil || !public && env.Public {
+		return false, nil
 	}
 
 	return env != nil, err
