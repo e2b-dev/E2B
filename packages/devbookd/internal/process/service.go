@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/devbookhq/devbook-api/packages/devbookd/internal/env"
 	"github.com/devbookhq/devbook-api/packages/devbookd/internal/output"
@@ -26,6 +27,8 @@ type Service struct {
 	exitSubs   *subscriber.Manager
 }
 
+const maxScanCapacity = 1024 * 1024 // 1MB
+
 func NewService(logger *zap.SugaredLogger, env env.Env) *Service {
 	return &Service{
 		logger:    logger,
@@ -45,8 +48,13 @@ func (s *Service) hasSubscibers(id ID) bool {
 		s.stderrSubs.Has(id)
 }
 
-func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType, process *Process) {
+func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Process, wg *sync.WaitGroup) {
 	scanner := bufio.NewScanner(pipe)
+
+	buf := make([]byte, maxScanCapacity)
+	scanner.Buffer(buf, maxScanCapacity)
+
+	// The default max buffer size is 64k - we are increasing this to 1MB.
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -71,12 +79,9 @@ func (s *Service) scanRunCmdOut(pipe io.ReadCloser, t output.OutType, process *P
 		}
 	}
 
-	err := pipe.Close()
-	if err != nil {
-		s.logger.Warnw("Failed to close pipe",
-			"error", err,
-		)
-	}
+	// Pipe should be automatically closed when the process exits -> this should EOF the scanner.
+
+	wg.Done()
 }
 
 func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir string) (ID, error) {
@@ -91,6 +96,8 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		s.logger.Infow("Process with ID doesn't exist yet. Creating a new process",
 			"requestedProcessID", id,
 		)
+
+		var waitForOutputHandlers sync.WaitGroup
 
 		id := id
 		if id == "" {
@@ -117,7 +124,9 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 			return "", fmt.Errorf("error setting up stderr pipe for the process '%s': %+v", newProc.ID, err)
 		}
-		go s.scanRunCmdOut(stderr, output.OutTypeStderr, newProc)
+
+		waitForOutputHandlers.Add(1)
+		go s.scanRunCmdOut(stderr, output.OutTypeStderr, newProc, &waitForOutputHandlers)
 
 		stdout, err := newProc.cmd.StdoutPipe()
 		if err != nil {
@@ -135,7 +144,9 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			)
 			return "", fmt.Errorf("error setting up stdout pipe for the process '%s': %+v", newProc.ID, err)
 		}
-		go s.scanRunCmdOut(stdout, output.OutTypeStdout, newProc)
+
+		waitForOutputHandlers.Add(1)
+		go s.scanRunCmdOut(stdout, output.OutTypeStdout, newProc, &waitForOutputHandlers)
 
 		stdin, err := newProc.cmd.StdinPipe()
 		if err != nil {
@@ -194,27 +205,28 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		}
 
 		go func() {
-			defer func() {
-				s.processes.Remove(newProc.ID)
-				pipeErr := stdin.Close()
-				if pipeErr != nil {
-					s.logger.Warnw("Failed to close pipe",
-						"error", pipeErr,
-					)
-				}
+			waitForOutputHandlers.Wait()
 
-				err = s.exitSubs.Notify(newProc.ID, struct{}{})
-				if err != nil {
-					s.logger.Errorw("Failed to send exit notification",
-						"processID", newProc.ID,
-						"error", err,
-					)
-				}
-			}()
-
+			// We need to wait for all pipe closes to finish before we can wait for the process to exit (mentioned in the docs).
 			err := newProc.cmd.Wait()
 			if err != nil {
 				s.logger.Warnw("Failed waiting for process",
+					"processID", newProc.ID,
+					"error", err,
+				)
+			}
+
+			s.processes.Remove(newProc.ID)
+			pipeErr := stdin.Close()
+			if pipeErr != nil {
+				s.logger.Warnw("Failed to close pipe",
+					"error", pipeErr,
+				)
+			}
+
+			err = s.exitSubs.Notify(newProc.ID, struct{}{})
+			if err != nil {
+				s.logger.Errorw("Failed to send exit notification",
 					"processID", newProc.ID,
 					"error", err,
 				)

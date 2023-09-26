@@ -22,7 +22,7 @@ type Terminal struct {
 	tty *os.File
 }
 
-func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]string, cmdToExecute *string, logger *zap.SugaredLogger) (*Terminal, error) {
+func New(id, shell string, rootdir *string, cols, rows uint16, envVars *map[string]string, cmdToExecute *string, logger *zap.SugaredLogger) (*Terminal, error) {
 	var cmd *exec.Cmd
 
 	if cmdToExecute != nil {
@@ -40,10 +40,10 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid), Groups: []uint32{uint32(gid)}, NoSetGroups: true}
 
-	if rootdir == "" {
+	if rootdir == nil {
 		cmd.Dir = homedir
 	} else {
-		cmd.Dir = rootdir
+		cmd.Dir = *rootdir
 	}
 	// We inherit the env vars from the root process, but we should handle this differently in the future.
 	formattedVars := os.Environ()
@@ -67,7 +67,7 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %+v", cmd, rootdir, cols, rows, err)
+		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %+v", cmd, cmd.Dir, cols, rows, err)
 	}
 
 	return &Terminal{
