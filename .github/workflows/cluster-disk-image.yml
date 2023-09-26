@@ -2,11 +2,6 @@ name: Cluster disk image
 
 on:
   workflow_call:
-    secrets:
-      service_account_email:
-        required: true
-      workload_identity_provider:
-        required: true
 
 jobs:
   publish:
@@ -20,8 +15,8 @@ jobs:
       #   uses: google-github-actions/auth@v1
       #   with:
       #     create_credentials_file: true
-      #     workload_identity_provider: ${{ secrets.workload_identity_provider }}
-      #     service_account: ${{ secrets.service_account_email }}
+      #     workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      #     service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
       # - name: Setup Packer
       #   uses: hashicorp-contrib/setup-packer@v2

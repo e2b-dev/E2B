@@ -3,10 +3,6 @@ name: API image
 on:
   workflow_call:
     secrets:
-      service_account_email:
-        required: true
-      workload_identity_provider:
-        required: true
       gce_project:
         required: true
 
@@ -24,8 +20,8 @@ jobs:
       - name: Setup Service Account
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: ${{ secrets.workload_identity_provider }}
-          service_account: ${{ secrets.service_account_email }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
       - name: Configure Docker
         run: gcloud --quiet auth configure-docker us-central1-docker.pkg.dev

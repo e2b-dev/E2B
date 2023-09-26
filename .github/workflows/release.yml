@@ -76,9 +76,6 @@ jobs:
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.env-instance-task-driver == 'true'
     uses: ./.github/workflows/env-instance-task-driver.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   env-build-task-driver:
     name: Env build task driver
@@ -88,9 +85,6 @@ jobs:
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.env-build-task-driver == 'true'
     uses: ./.github/workflows/env-build-task-driver.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   cluster-disk-image:
     name: Cluster disk image
@@ -100,9 +94,6 @@ jobs:
       needs.changes.outputs.version == 'true' &&
       needs.changes.outputs.cluster-disk-image == 'true'
     uses: ./.github/workflows/cluster-disk-image.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
   envd:
     name: Env Daemon
@@ -113,8 +104,6 @@ jobs:
       needs.changes.outputs.envd == 'true'
     uses: ./.github/workflows/envd.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
       version: ${{ needs.changes.outputs.get-version }}
 
   api-image:
@@ -126,8 +115,6 @@ jobs:
       needs.changes.outputs.api-image == 'true'
     uses: ./.github/workflows/api-image.yml
     secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
       gce_project: ${{ secrets.GCE_PROJECT }}
 
   terraform:
@@ -151,10 +138,6 @@ jobs:
       (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
       (needs.api-image.result == 'success' || needs.api-image.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
-    secrets:
-      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-      service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
-
 
   # The last successful release is used for determining which changed and what should be deployed in this release.
   release:

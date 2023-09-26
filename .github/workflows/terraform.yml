@@ -2,12 +2,6 @@ name: Terraform
 
 on:
   workflow_call:
-    secrets:
-      service_account_email:
-        required: true
-      workload_identity_provider:
-        required: true
-
 
 jobs:
   deploy:
@@ -21,8 +15,8 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           create_credentials_file: true
-          workload_identity_provider: ${{ secrets.workload_identity_provider }}
-          service_account: ${{ secrets.service_account_email }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -50,3 +44,7 @@ jobs:
         run: make apply
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tf_var_client_machine_type: ${{ secrets.CLIENT_MACHINE_TYPE }}
+          tf_var_client_cluster_size: ${{ secrets.CLIENT_CLUSTER_SIZE }}
+          tf_var_server_machine_type: ${{ secrets.SERVER_MACHINE_TYPE }}
+          tf_var_server_cluster_size: ${{ secrets.SERVER_CLUSTER_SIZE }}
