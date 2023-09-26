@@ -16,23 +16,19 @@ variable "gcp_zone" {
 }
 
 variable "server_cluster_size" {
-  type    = number
-  default = 1
+  type = number
 }
 
 variable "server_machine_type" {
-  type    = string
-  default = "n1-standard-1"
+  type = string
 }
 
 variable "client_cluster_size" {
-  type    = number
-  default = 1
+  type = number
 }
 
 variable "client_machine_type" {
-  type    = string
-  default = "n2-standard-4"
+  type = string
 }
 
 variable "client_proxy_health_port" {
