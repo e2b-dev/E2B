@@ -101,6 +101,7 @@ async def test_write_bytes():
 
     await session.close()
 
+
 async def test_read_bytes():
     file_name = "video.webm"
     local_dir = "tests/assets"
