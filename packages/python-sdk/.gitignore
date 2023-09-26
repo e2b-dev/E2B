@@ -263,3 +263,6 @@ dmypy.json
 cython_debug/
 
 .idea/
+
+# Test results
+results.csv

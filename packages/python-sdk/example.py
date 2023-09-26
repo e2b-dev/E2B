@@ -13,8 +13,6 @@ async def main():
     s = Session("Nodejs")
     await s.open()
 
-
-
     await s.close()
 
     return
