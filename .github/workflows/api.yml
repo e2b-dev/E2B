@@ -1,4 +1,4 @@
-name: API image
+name: API
 
 on:
   workflow_call:

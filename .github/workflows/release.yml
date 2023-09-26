@@ -19,7 +19,7 @@ jobs:
     outputs:
       get-version: ${{ steps.getversion.outputs.version }}
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
-      api-image: ${{ steps.filter.outputs.api-image }}
+      api: ${{ steps.filter.outputs.api }}
       envd: ${{ steps.filter.outputs.envd }}
       env-instance-task-driver: ${{ steps.filter.outputs.env-instance-task-driver }}
       env-build-task-driver: ${{ steps.filter.outputs.env-build-task-driver }}
@@ -49,9 +49,9 @@ jobs:
             cluster-disk-image:
               - 'packages/cluster-disk-image/**'
               - '.github/workflows/cluster-disk-image.yml'
-            api-image:
+            api:
               - 'packages/api/**'
-              - '.github/workflows/api-image.yml'
+              - '.github/workflows/api.yml'
             envd:
               - 'packages/envd/**'
               - '.github/workflows/envd.yml'
@@ -117,14 +117,14 @@ jobs:
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
       version: ${{ needs.changes.outputs.get-version }}
 
-  api-image:
+  api:
     name: API image
     needs: changes
     if: |
       always() &&
       needs.changes.outputs.version == 'true' &&
-      needs.changes.outputs.api-image == 'true'
-    uses: ./.github/workflows/api-image.yml
+      needs.changes.outputs.api == 'true'
+    uses: ./.github/workflows/api.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
       service_account_email: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
@@ -136,7 +136,7 @@ jobs:
       [
         changes,
         cluster-disk-image,
-        api-image,
+        api,
         envd,
         env-instance-task-driver,
         env-build-task-driver,
@@ -149,7 +149,7 @@ jobs:
       (needs.envd.result == 'success' || needs.envd.result == 'skipped') &&
       (needs.env-instance-task-driver.result == 'success' || needs.env-instance-task-driver.result == 'skipped') &&
       (needs.env-build-task-driver.result == 'success' || needs.env-build-task-driver.result == 'skipped') &&
-      (needs.api-image.result == 'success' || needs.api-image.result == 'skipped')
+      (needs.api.result == 'success' || needs.api.result == 'skipped')
     uses: ./.github/workflows/terraform.yml
     secrets:
       workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
