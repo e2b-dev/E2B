@@ -22,8 +22,8 @@ type Process struct {
 	Stdin *io.WriteCloser
 }
 
-func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
-	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
+func New(id ID, shell, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
+	cmd := exec.Command(shell, "-c", "-l", cmdToExecute)
 
 	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
 	if err != nil {

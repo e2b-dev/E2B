@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/devbookhq/devbook-api/packages/devbookd/internal/env"
 	"github.com/devbookhq/devbook-api/packages/devbookd/internal/output"
 	"github.com/devbookhq/devbook-api/packages/devbookd/internal/subscriber"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -18,15 +19,19 @@ type Service struct {
 
 	processes *Manager
 
+	env env.Env
+
 	stdoutSubs *subscriber.Manager
 	stderrSubs *subscriber.Manager
 	exitSubs   *subscriber.Manager
 }
 
-func NewService(logger *zap.SugaredLogger) *Service {
+func NewService(logger *zap.SugaredLogger, env env.Env) *Service {
 	return &Service{
 		logger:    logger,
 		processes: NewManager(logger),
+
+		env: env,
 
 		stdoutSubs: subscriber.NewManager("process/stdoutSubs", logger.Named("subscriber.process.stdoutSubs")),
 		stderrSubs: subscriber.NewManager("process/stderrSubs", logger.Named("subscriber.process.stderrSubs")),
@@ -92,7 +97,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			id = xid.New().String()
 		}
 
-		newProc, err := s.processes.Add(id, cmd, envVars, rootdir)
+		newProc, err := s.processes.Add(id, s.env.Shell(), cmd, envVars, rootdir)
 		if err != nil {
 			s.logger.Errorw("Failed to create new process",
 				"processID", id,

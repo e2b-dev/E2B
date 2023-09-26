@@ -80,7 +80,7 @@ func configureEnvForUserMode(env *Env) error {
 
 	preferredShell, ok := os.LookupEnv("SHELL")
 	if !ok {
-		preferredShell = path.Join("/bin", "sh")
+		preferredShell = "/bin/bash"
 	}
 	env.shell = preferredShell
 
@@ -92,7 +92,7 @@ func configureEnvForServerMode(env *Env) {
 
 	preferredShell, ok := os.LookupEnv("SHELL")
 	if !ok {
-		preferredShell = path.Join("/bin", "sh")
+		preferredShell = "/bin/bash"
 	}
 	env.shell = preferredShell
 }
