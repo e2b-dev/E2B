@@ -15,7 +15,7 @@ logger = logging.getLogger(__file__)
 
 
 class TerminalOutput(BaseModel):
-    data = ""
+    data: str = ""
 
     def _add_data(self, data: str) -> None:
         self.data += data

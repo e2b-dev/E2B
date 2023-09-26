@@ -37,7 +37,7 @@ class ProcessOutput(BaseModel):
     delimiter: ClassVar[str] = "\n"
     messages: List[ProcessMessage] = []
 
-    error = False
+    error: bool = False
 
     @property
     def stdout(self) -> str:
