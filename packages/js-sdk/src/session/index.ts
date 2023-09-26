@@ -311,7 +311,7 @@ export class Session extends SessionConnection {
       if (opts.cwd) {
         console.log(`Custom cwd for Session set: "${opts.cwd}"`)
         const proc = await session.process.start({
-          cmd: `mkdir -p ${opts.cwd} && cd ${opts.cwd}`,
+          cmd: `mkdir -p ${opts.cwd}`,
           cwd: '/',
         })
         await proc.finished
