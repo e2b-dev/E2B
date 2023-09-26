@@ -41,6 +41,7 @@ interface Logger {
 export interface SessionConnectionOpts {
   id: string
   apiKey: string
+  cwd?: string
   logger?: Logger
   __debug_hostname?: string
   __debug_port?: number
@@ -65,7 +66,8 @@ export class SessionConnection {
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
 
-  constructor(private readonly opts: SessionConnectionOpts) {
+  // let's keep opts readonly, but public – for convenience, mainly when debugging
+  constructor(readonly opts: SessionConnectionOpts) {
     if (!opts.apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit https://e2b.dev/docs to get your API key',

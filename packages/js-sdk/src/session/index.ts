@@ -241,8 +241,11 @@ export class Session extends SessionConnection {
             this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
             cwd = rootDir
           }
+          if (!cwd && this.opts.cwd) {
+            cwd = this.opts.cwd
+          }
           if (!cmd) throw new Error('cmd is required')
-          this.logger.debug?.(`Starting process "${processID}"`)
+          this.logger.debug?.(`Starting process "${processID}", cmd: "${cmd}"`)
 
           const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
@@ -304,7 +307,17 @@ export class Session extends SessionConnection {
   }
 
   static async create(opts: SessionOpts) {
-    return new Session(opts).open({ timeout: opts?.timeout })
+    return new Session(opts).open({ timeout: opts?.timeout }).then(async session => {
+      if (opts.cwd) {
+        console.log(`Custom cwd for Session set: "${opts.cwd}"`)
+        const proc = await session.process.start({
+          cmd: `mkdir -p ${opts.cwd} && cd ${opts.cwd}`,
+          cwd: '/',
+        })
+        await proc.finished
+      }
+      return session
+    })
   }
 
   override async open(opts: CallOpts) {
