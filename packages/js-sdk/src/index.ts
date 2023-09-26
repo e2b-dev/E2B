@@ -20,3 +20,6 @@ export type {
 export { Process, ProcessMessage, ProcessOutput } from './session/process'
 export type { ProcessManager } from './session/process'
 export type { EnvVars } from './session/envVars'
+export { runCode } from './runCode'
+export type { CodeRuntime } from './runCode'
+// export { runCmd } from './runCmd'

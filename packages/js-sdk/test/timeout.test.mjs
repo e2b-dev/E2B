@@ -58,16 +58,21 @@ test.skip('timeout process', async () => {
 })
 
 // TODO: Waiting for https://github.com/vitest-dev/vitest/issues/3119
-test.skip('timeout longer than cmd should not leak', () => new Promise(async (resolve) => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
-  const start = Date.now();
-  const proc = await session.process.start({
-    cmd: "node -e 'setTimeout(() => {}, 1000)'", // should take around 1 second
-    onExit: () => {
-      // TODO: Verify that process finished after successful cmd, and not after timeout
-      resolve()
-    },
-    timeout: 10_000 // but we give it 10 seconds
-  })
-  await proc.finished
-}), {timeout: 12_000})
+test.skip(
+  'timeout longer than cmd should not leak',
+  () =>
+    new Promise(async resolve => {
+      const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+      const start = Date.now()
+      const proc = await session.process.start({
+        cmd: "node -e 'setTimeout(() => {}, 1000)'", // should take around 1 second
+        onExit: () => {
+          // TODO: Verify that process finished after successful cmd, and not after timeout
+          resolve()
+        },
+        timeout: 10_000, // but we give it 10 seconds
+      })
+      await proc.finished
+    }),
+  { timeout: 12_000 },
+)
