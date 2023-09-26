@@ -42,7 +42,7 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 	// We inherit the env vars from the root process, but we should handle this differently in the future.
 	formattedVars := os.Environ()
 
-	formattedVars = append(formattedVars, "HOME="+cmd.Dir)
+	formattedVars = append(formattedVars, "HOME="+homedir)
 	formattedVars = append(formattedVars, "USER="+username)
 	formattedVars = append(formattedVars, "LOGNAME="+username)
 
