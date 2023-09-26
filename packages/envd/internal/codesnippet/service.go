@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 
-	"github.com/e2b-dev/api/packages/envd/internal/port"
-	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
+	"github.com/e2b-dev/infra/packages/envd/internal/port"
+	"github.com/e2b-dev/infra/packages/envd/internal/subscriber"
 )
 
 type Service struct {

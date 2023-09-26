@@ -10,7 +10,7 @@ import (
 
 	"github.com/creack/pty"
 
-	"github.com/e2b-dev/api/packages/envd/internal/user"
+	"github.com/e2b-dev/infra/packages/envd/internal/user"
 )
 
 type ID = string

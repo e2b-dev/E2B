@@ -1,4 +1,4 @@
-module github.com/e2b-dev/api/packages/envd
+module github.com/e2b-dev/infra/packages/envd
 
 go 1.21
 

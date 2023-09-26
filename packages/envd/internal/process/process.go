@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/e2b-dev/api/packages/envd/internal/user"
+	"github.com/e2b-dev/infra/packages/envd/internal/user"
 
 	"go.uber.org/zap"
 )

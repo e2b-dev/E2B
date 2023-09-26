@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/models"
+	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/client/models"
 )
 
 // PatchVMReader is a Reader for the PatchVM structure.

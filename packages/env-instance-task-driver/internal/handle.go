@@ -13,9 +13,9 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/env"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
 )
 
 type taskHandle struct {

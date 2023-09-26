@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/env"
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
+	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 
 	"github.com/docker/docker/client"
 	"github.com/hashicorp/go-hclog"

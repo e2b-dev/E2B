@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
 )
 
 func (a *APIStore) PostInstances(

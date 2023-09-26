@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 
-	"github.com/e2b-dev/api/packages/api/internal/db/models"
+	"github.com/e2b-dev/infra/packages/api/internal/db/models"
 )
 
 type team struct {

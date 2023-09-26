@@ -11,12 +11,12 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	codesnippet "github.com/e2b-dev/api/packages/envd/internal/codesnippet"
-	"github.com/e2b-dev/api/packages/envd/internal/env"
-	"github.com/e2b-dev/api/packages/envd/internal/filesystem"
-	"github.com/e2b-dev/api/packages/envd/internal/port"
-	"github.com/e2b-dev/api/packages/envd/internal/process"
-	"github.com/e2b-dev/api/packages/envd/internal/terminal"
+	codesnippet "github.com/e2b-dev/infra/packages/envd/internal/codesnippet"
+	"github.com/e2b-dev/infra/packages/envd/internal/env"
+	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
+	"github.com/e2b-dev/infra/packages/envd/internal/port"
+	"github.com/e2b-dev/infra/packages/envd/internal/process"
+	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
 )
 
 // TODO: I'm not really sure if we're using RPC Notifier and Subscriber in the right way.

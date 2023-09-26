@@ -12,10 +12,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/constants"
-	"github.com/e2b-dev/api/packages/api/internal/db/models"
-	"github.com/e2b-dev/api/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/db/models"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 )
 
 func (a *APIStore) buildEnv(ctx context.Context, envID string, content io.Reader) {

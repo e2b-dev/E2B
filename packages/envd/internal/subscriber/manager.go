@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/e2b-dev/api/packages/envd/internal/smap"
+	"github.com/e2b-dev/infra/packages/envd/internal/smap"
 )
 
 type Manager struct {

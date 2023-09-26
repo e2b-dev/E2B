@@ -1,4 +1,4 @@
-module github.com/e2b-dev/api/packages/env-instance-task-driver
+module github.com/e2b-dev/infra/packages/env-instance-task-driver
 
 go 1.21
 

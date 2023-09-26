@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/models"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/models"
 )
 
 // DescribeBalloonConfigReader is a Reader for the DescribeBalloonConfig structure.

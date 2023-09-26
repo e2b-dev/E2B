@@ -3,14 +3,15 @@ package internal
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.opentelemetry.io/otel/trace"
-	"net"
 
 	"go.opentelemetry.io/otel"
 )

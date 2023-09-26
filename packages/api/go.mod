@@ -1,4 +1,4 @@
-module github.com/e2b-dev/api/packages/api
+module github.com/e2b-dev/infra/packages/api
 
 go 1.21
 

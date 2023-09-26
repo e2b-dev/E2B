@@ -13,9 +13,9 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/lightstep/otel-launcher-go/launcher"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/handlers"
-	customMiddleware "github.com/e2b-dev/api/packages/api/internal/middleware"
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/handlers"
+	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/gin-gonic/gin"

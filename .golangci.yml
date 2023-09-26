@@ -5,7 +5,7 @@ linters-settings:
   gocyclo:
     min-complexity: 15
   goimports:
-    local-prefixes: github.com/e2b-dev/api
+    local-prefixes: github.com/e2b-dev/infra
   govet:
     # Enable all analyzers.
     # Default: false

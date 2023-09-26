@@ -8,8 +8,8 @@ import (
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
 
-	driver "github.com/e2b-dev/api/packages/env-build-task-driver/internal"
-	env "github.com/e2b-dev/api/packages/env-build-task-driver/internal/env"
+	driver "github.com/e2b-dev/infra/packages/env-build-task-driver/internal"
+	env "github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
 
 	_ "net/http/pprof"
 

@@ -1,4 +1,4 @@
-module github.com/e2b-dev/api/packages/env-build-task-driver
+module github.com/e2b-dev/infra/packages/env-build-task-driver
 
 go 1.21
 

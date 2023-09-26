@@ -2,16 +2,16 @@ package db
 
 import (
 	"fmt"
+
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
-	"github.com/e2b-dev/api/packages/api/internal/api"
-	"github.com/e2b-dev/api/packages/api/internal/db/models"
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/db/models"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 func (db *DB) DeleteEnv(envID string) error {
 	_, err := models.Envs(models.EnvWhere.ID.EQ(envID)).DeleteAll(db.Client)
-
 	if err != nil {
 		return fmt.Errorf("failed to delete env '%s': %w", envID, err)
 	}
@@ -23,7 +23,6 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 	publicWhere := models.EnvWhere.Public.EQ(true)
 	teamWhere := models.EnvWhere.TeamID.EQ(teamID)
 	envs, err := models.Envs(publicWhere, qm.Or2(teamWhere)).All(db.Client)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
@@ -44,7 +43,6 @@ func (db *DB) GetEnv(envID string, teamID string) (env *api.Environment, err err
 	teamWhere := models.EnvWhere.TeamID.EQ(teamID)
 	envWhere := models.EnvWhere.ID.EQ(envID)
 	dbEnvs, err := models.Envs(qm.Expr(publicWhere, qm.Or2(teamWhere)), envWhere).All(db.Client)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
@@ -70,7 +68,6 @@ func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.En
 		Public:     false,
 	}
 	err := env.Insert(db.Client, boil.Infer())
-
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 
@@ -89,7 +86,6 @@ func (db *DB) UpdateDockerfileEnv(envID string, dockerfile string) (*api.Environ
 		Status:     models.EnvStatusEnumBuilding,
 	}
 	rowsAffected, err := env.Update(db.Client, boil.Whitelist("status", "dockerfile"))
-
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 
@@ -110,7 +106,6 @@ func (db *DB) UpdateStatusEnv(envID string, status models.EnvStatusEnum) (*api.E
 		Status: status,
 	}
 	rowsAffected, err := env.Update(db.Client, boil.Whitelist("status"))
-
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 
@@ -126,7 +121,6 @@ func (db *DB) UpdateStatusEnv(envID string, status models.EnvStatusEnum) (*api.E
 
 func (db *DB) HasEnvAccess(envID string, teamID string, public bool) (bool, error) {
 	env, err := db.GetEnv(envID, teamID)
-
 	if err != nil {
 		return false, fmt.Errorf("failed to get env '%s': %w", envID, err)
 	}

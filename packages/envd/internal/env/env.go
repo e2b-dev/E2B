@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/e2b-dev/api/packages/envd/internal/log"
+	"github.com/e2b-dev/infra/packages/envd/internal/log"
 	"go.uber.org/zap"
 )
 

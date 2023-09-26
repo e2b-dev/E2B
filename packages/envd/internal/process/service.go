@@ -10,8 +10,8 @@ import (
 	"github.com/rs/xid"
 	"go.uber.org/zap"
 
-	"github.com/e2b-dev/api/packages/envd/internal/output"
-	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
+	"github.com/e2b-dev/infra/packages/envd/internal/output"
+	"github.com/e2b-dev/infra/packages/envd/internal/subscriber"
 )
 
 type Service struct {

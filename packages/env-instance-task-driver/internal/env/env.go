@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/KarpelesLab/reflink"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -47,7 +47,7 @@ func New(
 	envPath := filepath.Join(fcEnvsDisk, envID)
 	envInstancePath := filepath.Join(envPath, EnvInstancesDirName, slot.InstanceID)
 
-	err := os.MkdirAll(envInstancePath, 0777)
+	err := os.MkdirAll(envInstancePath, 0o777)
 	if err != nil {
 		telemetry.ReportError(childCtx, err)
 	}
@@ -63,7 +63,7 @@ func New(
 	buildID := string(data)
 	buildDirPath := filepath.Join(envPath, BuildDirName, buildID)
 
-	mkdirErr := os.MkdirAll(buildDirPath, 0777)
+	mkdirErr := os.MkdirAll(buildDirPath, 0o777)
 	if mkdirErr != nil {
 		telemetry.ReportError(childCtx, err)
 	}

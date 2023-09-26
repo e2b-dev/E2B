@@ -10,8 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 
-	fswatcher "github.com/e2b-dev/api/packages/envd/internal/filesystem/watcher"
-	"github.com/e2b-dev/api/packages/envd/internal/subscriber"
+	fswatcher "github.com/e2b-dev/infra/packages/envd/internal/filesystem/watcher"
+	"github.com/e2b-dev/infra/packages/envd/internal/subscriber"
 )
 
 type FileInfoResponse struct {

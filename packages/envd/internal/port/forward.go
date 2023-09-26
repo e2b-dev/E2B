@@ -11,7 +11,7 @@ import (
 	"net"
 	"os/exec"
 
-	"github.com/e2b-dev/api/packages/envd/internal/env"
+	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +47,6 @@ func NewForwarder(
 	env *env.EnvConfig,
 	scanner *Scanner,
 ) *Forwarder {
-
 	scannerSub := scanner.AddSubscriber(
 		"port-forwarder",
 		// We only want to forward ports that are actively listening on localhost.

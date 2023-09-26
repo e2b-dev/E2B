@@ -6,7 +6,7 @@ package client
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/client/client/operations"
+	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/client/client/operations"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"

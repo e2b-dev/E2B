@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/e2b-dev/api/packages/env-instance-task-driver/internal/client/models"
+	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/models"
 )
 
 // PutGuestBootSourceReader is a Reader for the PutGuestBootSource structure.

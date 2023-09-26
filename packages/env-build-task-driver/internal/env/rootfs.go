@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/api/packages/env-build-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
 
 const (
