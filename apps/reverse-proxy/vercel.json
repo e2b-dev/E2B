@@ -73,26 +73,6 @@
           "value": "e2b.dev"
         }
       ]
-    },
-    {
-      "source": "/blog(\\/)?",
-      "destination": "https://e2b-blog.framer.website",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ]
-    },
-    {
-      "source": "/blog/:path*",
-      "destination": "https://e2b-blog.framer.website/blog/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ]
     }
   ],
   "redirects": [
