@@ -22,8 +22,8 @@ resource "google_storage_bucket_iam_member" "envs-pipeline-iam" {
 
 resource "google_project_iam_member" "service-account-roles" {
   project = var.gcp_project_id
-  role    =     "roles/editor"
-  member = "serviceAccount:${google_service_account.infra_instances_service_account.email}"
+  role    = "roles/editor"
+  member  = "serviceAccount:${google_service_account.infra_instances_service_account.email}"
 }
 
 module "server_cluster" {

@@ -1,3 +1,5 @@
+-include .env
+
 server := gcloud compute instances list --format='csv(name)' | grep "server"
 
 # Login for Packer and Docker (uses gcloud user creds)
@@ -17,11 +19,22 @@ init:
 .PHONY: plan
 plan:
 	terraform fmt -recursive
+	TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
+	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
+	TF_VAR_server_machine_type=$(SERVER_MACHINE_TYPE) \
+	TF_VAR_server_cluster_size=$(SERVER_CLUSTER_SIZE) \
 	terraform plan -compact-warnings -detailed-exitcode
 
 .PHONY: apply
 apply:
-	terraform apply -auto-approve -input=false -compact-warnings -parallelism=20
+	TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
+	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
+	TF_VAR_server_machine_type=$(SERVER_MACHINE_TYPE) \
+	TF_VAR_server_cluster_size=$(SERVER_CLUSTER_SIZE) \
+	terraform apply \ -auto-approve 
+	-input=false \
+	-compact-warnings \
+	-parallelism=20
 
 .PHONY: version
 version:

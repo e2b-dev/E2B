@@ -136,21 +136,21 @@ module "api" {
 
   gcp_zone = var.gcp_zone
 
-  logs_proxy_address                 = "http://${module.cluster.logs_proxy_ip}"
-  nomad_address                      = "http://${module.cluster.server_proxy_ip}"
-  nomad_token                        = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-  consul_token                       = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-  api_port                           = var.api_port
-  environment                        = var.environment
-  bucket_name                        = data.google_storage_bucket.e2b-envs-docker-context.name
+  logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
+  nomad_address      = "http://${module.cluster.server_proxy_ip}"
+  nomad_token        = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
+  consul_token       = data.google_secret_manager_secret_version.consul_acl_token.secret_data
+  api_port           = var.api_port
+  environment        = var.environment
+  bucket_name        = data.google_storage_bucket.e2b-envs-docker-context.name
 }
 
 module "github-tf" {
   source = "./github-tf"
 
-  gcp_project_id      = var.gcp_project_id
-  gcp_region          = var.gcp_region
-  gcp_zone            = var.gcp_zone
+  gcp_project_id = var.gcp_project_id
+  gcp_region     = var.gcp_region
+  gcp_zone       = var.gcp_zone
 
   github_organization = var.github_organization
   github_repository   = var.github_repository

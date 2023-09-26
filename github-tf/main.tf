@@ -13,7 +13,7 @@ variable "gcp_project_id" {
 }
 
 variable "gcp_region" {
-  type    = string
+  type = string
 }
 
 variable "gcp_zone" {
@@ -37,7 +37,7 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
-data "google_secret_manager_secret_version" "github-token-google-secret"{
+data "google_secret_manager_secret_version" "github-token-google-secret" {
   secret = "github-repo-token"
 }
 
@@ -54,7 +54,7 @@ resource "google_service_account" "github-action-service-account" {
 }
 
 resource "google_iam_workload_identity_pool" "github-actions-wip" {
-  provider = google-beta
+  provider                  = google-beta
   workload_identity_pool_id = "github-actions-${var.gcp_project_id}-api-pool"
   display_name              = "GitHub Actions for ${var.github_repository} repo"
   description               = "OIDC identity pool for deploying ${var.github_repository} via GitHub Actions"
@@ -62,7 +62,7 @@ resource "google_iam_workload_identity_pool" "github-actions-wip" {
 
 
 resource "google_iam_workload_identity_pool_provider" "gha-identity-pool-provider" {
-  provider = google-beta
+  provider                           = google-beta
   workload_identity_pool_id          = google_iam_workload_identity_pool.github-actions-wip.workload_identity_pool_id
   workload_identity_pool_provider_id = "gh-provider"
   display_name                       = "GHA identity pool provider"
@@ -105,7 +105,7 @@ resource "google_project_iam_member" "service-account-roles" {
   ])
   project = var.gcp_project_id
   role    = each.value
-  member = "serviceAccount:${google_service_account.github-action-service-account.email}"
+  member  = "serviceAccount:${google_service_account.github-action-service-account.email}"
 }
 
 resource "github_actions_secret" "wif-token-secret" {
