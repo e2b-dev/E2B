@@ -27,11 +27,11 @@ test('process on stdout/stderr', async () => {
 })
 
 test('process expected stdout', async () => {
-  // TODO
+  // TODO: Implement this once we fix envd stdout/stderr race condition
 })
 
 test('process expected stderr', async () => {
-  // TODO
+  // TODO: Implement this once we fix envd stdout/stderr race condition
 })
 
 test('process on exit', async () => {
