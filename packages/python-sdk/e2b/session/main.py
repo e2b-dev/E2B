@@ -9,7 +9,6 @@ from e2b.session.process import ProcessManager
 from e2b.session.session_connection import SessionConnection
 from e2b.session.terminal import TerminalManager
 
-
 logger = logging.getLogger(__name__)
 
 Environment = Literal[
@@ -60,18 +59,18 @@ class Session(SessionConnection):
         return self._filesystem
 
     def __init__(
-            self,
-            id: Union[Environment, str],
-            api_key: str,
-            cwd: Optional[str] = None,
-            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-            _debug_hostname: Optional[str] = None,
-            _debug_port: Optional[int] = None,
-            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        self,
+        id: Union[Environment, str],
+        api_key: str,
+        cwd: Optional[str] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.
- 
+
         :param id: ID of the environment or the environment type template.
         Can be one of the following environment type templates or a custom environment ID:
         - `Nodejs`
