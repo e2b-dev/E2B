@@ -11,11 +11,12 @@
     Do not edit the class manually.
 """  # noqa: E501
 
-from __future__ import annotations
 
-import json
+from __future__ import annotations
 import pprint
 import re  # noqa: F401
+import json
+
 
 from pydantic import BaseModel, Field, StrictBool, StrictStr
 
@@ -83,5 +84,12 @@ class Session(BaseModel):
                     + obj
                 )
 
-        _obj = Session.parse_obj(obj)
+        _obj = Session.parse_obj(
+            {
+                "code_snippet_id": obj.get("codeSnippetID"),
+                "edit_enabled": obj.get("editEnabled"),
+                "session_id": obj.get("sessionID"),
+                "client_id": obj.get("clientID"),
+            }
+        )
         return _obj
