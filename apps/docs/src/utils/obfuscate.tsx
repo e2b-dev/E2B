@@ -11,6 +11,11 @@ export function obfuscateSecret(
   end: number = 3,
   asterisks: number = 4,
 ) {
+  if (!secret) {
+    // This should ideally never happen, but just in case, until we have strict mode on
+    console.error('obfuscateSecret(): No secret to obfuscate provided')
+    return '' // return to avoid exceptions on following lines
+  }
   return (
     secret.substring(0, start) +
     '*'.repeat(asterisks) +
