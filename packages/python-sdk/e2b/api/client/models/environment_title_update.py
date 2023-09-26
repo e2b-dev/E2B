@@ -30,14 +30,14 @@ class EnvironmentTitleUpdate(BaseModel):
     title: Optional[StrictStr] = None
 
     """Pydantic configuration"""
-
-    class Config:
-        allow_population_by_field_name = True
-        validate_assignment = True
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+    }
 
     def to_str(self) -> str:
         """Returns the string representation of the model using alias"""
-        return pprint.pformat(self.dict(by_alias=True))
+        return pprint.pformat(self.model_dump(by_alias=True))
 
     def to_json(self) -> str:
         """Returns the JSON representation of the model using alias"""
@@ -50,7 +50,7 @@ class EnvironmentTitleUpdate(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.model_dump(by_alias=True, exclude={}, exclude_none=True)
         return _dict
 
     @classmethod
@@ -60,7 +60,7 @@ class EnvironmentTitleUpdate(BaseModel):
             return None
 
         if not isinstance(obj, dict):
-            return EnvironmentTitleUpdate.parse_obj(obj)
+            return EnvironmentTitleUpdate.model_validate(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
@@ -70,5 +70,5 @@ class EnvironmentTitleUpdate(BaseModel):
                     + obj
                 )
 
-        _obj = EnvironmentTitleUpdate.parse_obj({"title": obj.get("title")})
+        _obj = EnvironmentTitleUpdate.model_validate({"title": obj.get("title")})
         return _obj

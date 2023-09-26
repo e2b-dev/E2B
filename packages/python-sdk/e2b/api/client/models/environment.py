@@ -32,14 +32,14 @@ class Environment(BaseModel):
     title: Optional[StrictStr] = None
 
     """Pydantic configuration"""
-
-    class Config:
-        allow_population_by_field_name = True
-        validate_assignment = True
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+    }
 
     def to_str(self) -> str:
         """Returns the string representation of the model using alias"""
-        return pprint.pformat(self.dict(by_alias=True))
+        return pprint.pformat(self.model_dump(by_alias=True))
 
     def to_json(self) -> str:
         """Returns the JSON representation of the model using alias"""
@@ -52,7 +52,7 @@ class Environment(BaseModel):
 
     def to_dict(self):
         """Returns the dictionary representation of the model using alias"""
-        _dict = self.dict(by_alias=True, exclude={}, exclude_none=True)
+        _dict = self.model_dump(by_alias=True, exclude={}, exclude_none=True)
         return _dict
 
     @classmethod
@@ -62,7 +62,7 @@ class Environment(BaseModel):
             return None
 
         if not isinstance(obj, dict):
-            return Environment.parse_obj(obj)
+            return Environment.model_validate(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
@@ -72,7 +72,7 @@ class Environment(BaseModel):
                     + obj
                 )
 
-        _obj = Environment.parse_obj(
+        _obj = Environment.model_validate(
             {
                 "id": obj.get("id"),
                 "template": obj.get("template"),
