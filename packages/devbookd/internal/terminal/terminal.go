@@ -26,10 +26,10 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	var cmd *exec.Cmd
 
 	if cmdToExecute != nil {
-		cmd = exec.Command("sh", "-c", "-l", *cmdToExecute)
+		cmd = exec.Command(shell, "-i", "-l", "-c", *cmdToExecute)
 	} else {
 		// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
-		cmd = exec.Command(shell, "-l")
+		cmd = exec.Command(shell, "-i", "-l")
 	}
 
 	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
