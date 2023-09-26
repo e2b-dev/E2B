@@ -23,5 +23,18 @@ async def test_custom_cwd():
     proc = await session.process.start("pwd")
     output = await proc
     assert output.stdout == "/code/app"
-    
-    # TODO: test process start
+
+    await session.filesystem.write("hello.txt", "Hello VM!")
+    proc = await session.process.start("readlink -f hello.txt")
+    output = await proc
+    assert output.stdout == "/code/app/hello.txt"
+
+    # change dir to /home/user
+    proc = await session.process.start("cd /home/user")
+    await proc
+
+    # create another file, it should still respect the session cwd and not the cd from previous step
+    await session.filesystem.write("hello2.txt", "Hello VM!")
+    proc = await session.process.start("readlink -f hello2.txt")
+    output = await proc
+    assert output.stdout == "/code/app/hello2.txt"

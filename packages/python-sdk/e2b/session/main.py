@@ -60,17 +60,18 @@ class Session(SessionConnection):
         return self._filesystem
 
     def __init__(
-        self,
-        id: Union[Environment, str],
-        api_key: str,
-        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        _debug_hostname: Optional[str] = None,
-        _debug_port: Optional[int] = None,
-        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+            self,
+            id: Union[Environment, str],
+            api_key: str,
+            cwd: Optional[str] = None,
+            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+            _debug_hostname: Optional[str] = None,
+            _debug_port: Optional[int] = None,
+            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.
-
+ 
         :param id: ID of the environment or the environment type template.
         Can be one of the following environment type templates or a custom environment ID:
         - `Nodejs`
@@ -84,6 +85,7 @@ class Session(SessionConnection):
         - `DotNET`
 
         :param api_key: The API key to use
+        :param cwd: The current working directory to use
         :param edit_enabled: Whether the session state will be saved after exit
         :param on_scan_ports: A callback to handle opened ports
         """
@@ -92,6 +94,7 @@ class Session(SessionConnection):
         super().__init__(
             id=id,
             api_key=api_key,
+            cwd=cwd,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
@@ -163,10 +166,11 @@ class Session(SessionConnection):
         :param cwd: The current working directory to use
         :param on_scan_ports: A callback to handle opened ports
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-        """        
+        """
         session = cls(
             id=id,
             api_key=api_key,
+            cwd=cwd,
             on_scan_ports=on_scan_ports,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
@@ -175,7 +179,7 @@ class Session(SessionConnection):
         await session.open(timeout=timeout)
         if cwd:
             logger.info(f"Custom cwd for Session set: {cwd}")
-            proc = await session.process.start(f"mkdir -p {cwd}")
+            proc = await session.process.start(f"mkdir -p {cwd}", cwd="/")
             await proc
-            
+
         return session

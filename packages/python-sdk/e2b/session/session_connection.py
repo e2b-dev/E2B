@@ -41,6 +41,10 @@ class SessionConnection:
     _refresh_retries = 4
 
     @property
+    def cwd(self):
+        return self._cwd
+
+    @property
     def finished(self):
         """
         A future that is resolved when the session exits.
@@ -61,6 +65,7 @@ class SessionConnection:
         self,
         id: str,
         api_key: str,
+        cwd: Optional[str] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -73,6 +78,7 @@ class SessionConnection:
 
         self._id = id
         self._api_key = api_key
+        self._cwd = cwd
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env

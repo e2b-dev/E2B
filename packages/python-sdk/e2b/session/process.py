@@ -216,7 +216,7 @@ class ProcessManager:
 
         :return: A process object
         """
-        logger.info(f"Starting process (id: {process_id})")
+        logger.info(f"Starting process (id: {process_id}): {cmd}")
         async with async_timeout.timeout(timeout):
             if not env_vars:
                 env_vars = {}
@@ -313,7 +313,10 @@ class ProcessManager:
                 if not cwd and rootdir:
                     cwd = rootdir
                     logger.warning("The rootdir parameter is deprecated, use cwd instead.")
-                
+
+                if not cwd and self._session.cwd:
+                    cwd = self._session.cwd
+
                 await self._session._call(
                     self._service_name,
                     "start",
