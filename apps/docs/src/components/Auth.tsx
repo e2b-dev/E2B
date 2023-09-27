@@ -172,7 +172,7 @@ export const Auth = function () {
           <Button
             onClick={() => signIn()}
             variant="textTernary"
-            className="text-xs"
+            className="whitespace-nowrap text-xs"
           >
             Sign up to get your API key
           </Button>
