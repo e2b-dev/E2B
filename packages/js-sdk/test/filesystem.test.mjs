@@ -1,12 +1,10 @@
-import { Session } from '../src'
-import { expect, test } from 'vitest'
+import {Session} from '../src'
+import {expect, test} from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-const E2B_API_KEY = process.env.E2B_API_KEY
-
 test('list files', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
   await session.filesystem.makeDir('/test/new')
 
   const ls = await session.filesystem.list('/test')
@@ -15,8 +13,9 @@ test('list files', async () => {
   await session.close()
 })
 
+
 test('create file', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
   await session.filesystem.makeDir('/test')
   await session.filesystem.write('/test/test.txt', 'Hello World!')
 
@@ -27,7 +26,7 @@ test('create file', async () => {
 })
 
 test('read and write', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
 
   // String
   await session.filesystem.write('/tmp/test.txt', 'Hello World!')
@@ -44,7 +43,7 @@ test('read and write', async () => {
 })
 
 test('list delete files', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
   await session.filesystem.makeDir('/test/new')
 
   let ls = await session.filesystem.list('/test')
@@ -59,7 +58,7 @@ test('list delete files', async () => {
 })
 
 test('watch dir', async () => {
-  const session = new Session({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = new Session({id: 'Nodejs'})
   await session.open()
   await session.filesystem.write('/tmp/test.txt', 'Hello')
 

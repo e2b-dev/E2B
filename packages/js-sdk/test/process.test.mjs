@@ -1,10 +1,9 @@
-import { Session } from '../src'
-import { expect, test, vi } from 'vitest'
+import {Session} from '../src'
+import {expect, test, vi} from 'vitest'
 
-const E2B_API_KEY = process.env.E2B_API_KEY
 
 test('process on stdout/stderr', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
 
   const stdout = []
   const stderr = []
@@ -35,9 +34,10 @@ test('process expected stderr', async () => {
 })
 
 test('process on exit', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
 
-  const onExit = vi.fn(() => {})
+  const onExit = vi.fn(() => {
+  })
 
   const process = await session.process.start({
     cmd: 'pwd',
@@ -51,7 +51,7 @@ test('process on exit', async () => {
 })
 
 test('process send stdin', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
 
   const process = await session.process.start({
     cmd: 'read -r line; echo "$line"',

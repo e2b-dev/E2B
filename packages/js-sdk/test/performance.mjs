@@ -1,15 +1,15 @@
-import { writeFileSync } from 'fs'
+import {writeFileSync} from 'fs'
 
-import { Session } from '../dist/cjs/index.js'
+import {Session} from '../dist/cjs/index.js'
 
-const apiKey = process.env.API_KEY
 const reportSummaryFile = process.env.SUMMARY_FILE || './test.md'
 
 const codeSnippetIDs = ['5udkAFHBVrGz']
 const samplePerID = 15
 const upperBoundary = 1000 // 1s
 
-async function spinSession(id, isEditSession) {
+
+async function spinSession(id) {
   console.log('Creating session...')
   let session
   try {
@@ -17,8 +17,6 @@ async function spinSession(id, isEditSession) {
     session = new Session({
       id,
       // debug: true,
-      editEnabled: isEditSession,
-      ...(isEditSession && { apiKey }),
     })
     session.open()
 
@@ -26,7 +24,7 @@ async function spinSession(id, isEditSession) {
     return endTime - startTime
   } catch (e) {
     console.error(
-      `Measuring ${id}${isEditSession ? ' (persistent session)' : ''} failed`,
+      `Measuring ${id} failed`,
       e,
     )
   } finally {
@@ -68,18 +66,13 @@ function writeMeasurements(data) {
   writeFileSync(reportSummaryFile, report)
 }
 
-async function sample(id, size, isEditSession) {
-  if (isEditSession && !apiKey) {
-    console.log('No API key, skipping measuring persistent sessions')
-    return {}
-  }
-
+async function sample(id, size) {
   let totalTime = 0
-  const entryName = `${isEditSession ? 'Persistent' : 'Public'} session (${id})`
+  const entryName = `Public session (${id})`
 
   try {
     for (let i = 0; i < size; i++) {
-      const timeToSession = await spinSession(id, isEditSession)
+      const timeToSession = await spinSession(id)
       totalTime += timeToSession
     }
 
@@ -108,7 +101,7 @@ async function main() {
 
   for (const id of codeSnippetIDs) {
     const entry = await sample(id, samplePerID)
-    entries = { ...entries, ...entry }
+    entries = {...entries, ...entry}
   }
 
   // for (const id of codeSnippetIDs) {

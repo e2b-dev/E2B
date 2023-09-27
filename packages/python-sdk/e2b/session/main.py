@@ -2,6 +2,7 @@ import logging
 from typing import Any, Callable, List, Literal, Optional, Union
 
 from async_timeout import timeout as async_timeout
+
 from e2b.constants import TIMEOUT
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
 from e2b.session.filesystem import FilesystemManager
@@ -59,14 +60,14 @@ class Session(SessionConnection):
         return self._filesystem
 
     def __init__(
-        self,
-        id: Union[Environment, str],
-        api_key: str,
-        cwd: Optional[str] = None,
-        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        _debug_hostname: Optional[str] = None,
-        _debug_port: Optional[int] = None,
-        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+            self,
+            id: Union[Environment, str],
+            api_key: Optional[str],
+            cwd: Optional[str] = None,
+            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+            _debug_hostname: Optional[str] = None,
+            _debug_port: Optional[int] = None,
+            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.
@@ -83,9 +84,8 @@ class Session(SessionConnection):
         - `Perl`
         - `DotNET`
 
-        :param api_key: The API key to use
+        :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
         :param cwd: The current working directory to use
-        :param edit_enabled: Whether the session state will be saved after exit
         :param on_scan_ports: A callback to handle opened ports
         """
 
@@ -136,15 +136,15 @@ class Session(SessionConnection):
 
     @classmethod
     async def create(
-        cls,
-        id: Union[Environment, str],
-        api_key: Optional[str] = None,
-        cwd: Optional[str] = None,
-        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        timeout: Optional[float] = TIMEOUT,
-        _debug_hostname: Optional[str] = None,
-        _debug_port: Optional[int] = None,
-        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+            cls,
+            id: Union[Environment, str],
+            api_key: Optional[str] = None,
+            cwd: Optional[str] = None,
+            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+            timeout: Optional[float] = TIMEOUT,
+            _debug_hostname: Optional[str] = None,
+            _debug_port: Optional[int] = None,
+            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.
