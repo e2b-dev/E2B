@@ -30,7 +30,7 @@ jobs:
 
       - name: Install npm dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Check if new version
         id: version
         run: |
@@ -66,7 +66,7 @@ jobs:
         with:
           node-version: 16
           cache: pnpm
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -87,6 +87,9 @@ jobs:
         run: pnpm run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update lock file
+        run: pnpm i --no-link
 
       - name: Release new versions
         uses: changesets/action@v1

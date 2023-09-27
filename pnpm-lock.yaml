@@ -170,8 +170,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.4.1
+        version: 0.4.1
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -980,8 +980,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@e2b/sdk@0.4.0:
-    resolution: {integrity: sha512-OmjnUhbl3Pz2aRet3XlQHuNC2JNzVT39SGdJ1Q458QGlLXlAI6zQfdxVIMQujrTwVXebznwOwAbnj/JvCzppcw==}
+  /@e2b/sdk@0.4.1:
+    resolution: {integrity: sha512-8XEkmS5tdkFuTL3OPg+P7/Bw7egYSbPIkxs6zYQivRPkAYySnKAxXk+TIFG7cJl2va6/CBbfSOLoSXT6V4R+mw==}
     dependencies:
       bufferutil: 4.0.7
       cross-fetch: 3.1.8
