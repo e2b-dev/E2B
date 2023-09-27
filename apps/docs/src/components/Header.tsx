@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useEffect } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { motion, useScroll, useTransform } from 'framer-motion'
@@ -12,36 +12,55 @@ import { Auth } from '@/components/Auth'
 import { HeaderSeparator } from '@/components/HeaderUtils'
 import { DiscordIcon } from '@/components/icons/DiscordIcon'
 import { TwitterIcon } from '@/components/icons/TwitterIcon'
+import { useLocalStorage } from 'usehooks-ts'
+import { config } from '../../config'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
+import dynamic from 'next/dynamic'
 
-function TopLevelNavItem({
-  href,
-  children,
-}: {
-  href: string
-  children: React.ReactNode
-}) {
-  return (
-    <li>
-      <Link
-        href={href}
-        className="text-sm leading-5 text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
-      >
-        {children}
-      </Link>
-    </li>
-  )
-}
+// No SSR to avoid hydration mismatch
+const TopLevelNavItem = dynamic(() => import('@/components/TopLevelNavItem'), {
+  ssr: false,
+})
 
 // @ts-ignore
 export const Header = forwardRef(function Header({ className }, ref) {
-  // @ts-ignore
   const { isOpen: mobileNavIsOpen } = useMobileNavigationStore()
   const isInsideMobileNavigation = useIsInsideMobileNavigation()
+
+  const [githubStars, setGithubStars] = useLocalStorage('github-stars', null)
+  const [discordUsers, setDiscordUsers] = useLocalStorage('discord-users', null)
+  // TODO: Maybe add Twitter followers count?
+  // const [twitterFollowers, setTwitterFollowers] = useLocalStorage(
+  //   'twitter-followers',
+  //   null,
+  // )
 
   const { scrollY } = useScroll()
   const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9])
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8])
+
+  useEffect(() => {
+    fetch(config.github.api)
+      .then(response => response.json())
+      .then(data => setGithubStars(data.stargazers_count))
+      .catch(() => setGithubStars(false))
+  }, [setGithubStars])
+
+  useEffect(() => {
+    fetch(config.discord.api)
+      .then(response => response.json())
+      .then(async data => setDiscordUsers(data.presence_count))
+      .catch(() => setDiscordUsers(false))
+  }, [setDiscordUsers])
+
+  // TODO: Maybe add Twitter followers count?
+  // useEffect(() => {
+  //   fetch(config.twitter.api)
+  //     .then((response) => response.json())
+  //     .then(async (data) => setTwitterFollowers(data.followers_count))
+  //     .catch(() => setTwitterFollowers(false))
+  //   setTwitterFollowers(155)
+  // }, [])
 
   return (
     <motion.div
@@ -87,15 +106,22 @@ export const Header = forwardRef(function Header({ className }, ref) {
             role="list"
             className="flex items-center gap-4"
           >
-            <TopLevelNavItem href="https://twitter.com/e2b_dev">
-              <TwitterIcon className="h-5 w-5 fill-current" />
-            </TopLevelNavItem>
-            <TopLevelNavItem href="https://github.com/e2b-dev/e2b">
-              <GitHubIcon className="h-5 w-5 fill-current" />
-            </TopLevelNavItem>
-            <TopLevelNavItem href="https://discord.gg/U7KEcGErtQ">
-              <DiscordIcon className="h-5 w-5 fill-current" />
-            </TopLevelNavItem>
+            <TopLevelNavItem
+              href={`https://discord.gg/${config.discord.slug}`}
+              stat={discordUsers}
+              statType="discordUsers"
+              icon={<DiscordIcon className="h-5 w-5 fill-current" />}
+            />
+            <TopLevelNavItem
+              href={config.github.url}
+              stat={githubStars}
+              statType="githubStars"
+              icon={<GitHubIcon className="h-5 w-5 fill-current" />}
+            />
+            <TopLevelNavItem
+              href={config.twitter.url}
+              icon={<TwitterIcon className="h-5 w-5 fill-current" />}
+            />
           </ul>
         </nav>
         <HeaderSeparator />
