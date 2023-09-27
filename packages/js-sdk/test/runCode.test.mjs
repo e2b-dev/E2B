@@ -15,7 +15,7 @@ import { expect, test } from 'vitest'
 // })
 
 test('run code using unsupported runtime', async () => {
-  await expect(await runCode('Unsupported', 'print("hello")')).rejects.toThrow(
-    "runtime isn't supported",
+  await expect(() => runCode('Unsupported', 'print("hello")')).rejects.toThrowError(
+    "isn't supported",
   )
 })
