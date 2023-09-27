@@ -177,8 +177,6 @@ class Session(SessionConnection):
         )
         await session.open(timeout=timeout)
         if cwd:
-            logger.info(f"Custom cwd for Session set: {cwd}")
-            proc = await session.process.start(f"mkdir -p {cwd}", cwd="/")
-            await proc
+            await session.filesystem.make_dir(cwd)
 
         return session
