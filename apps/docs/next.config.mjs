@@ -33,6 +33,7 @@ function getFilesHash(rootPath) {
 
   fsWalk.walkSync(rootPath, { stats: true }).forEach((e) => {
     if (!e.stats.isDirectory()) {
+      if (e.path.includes(`/node_modules/`)) return // ignore node_modules which may contain symlinks
       const content = fs.readFileSync(e.path, 'utf8')
       processFile(e.path, content)
     }
