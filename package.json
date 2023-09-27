@@ -5,9 +5,11 @@
   "scripts": {
     "version": "changeset version && pnpm run -r postVersion",
     "publish": "changeset publish && pnpm run -r postPublish",
-    "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
     "test": "pnpm test --recursive --if-present",
-    "dev:docs": "pnpm --prefix apps/docs run dev"
+    "dev:docs": "pnpm --prefix apps/docs run dev",
+
+    "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
+    "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json"
   },
   "packageManager": "pnpm@8.7.6",
   "workspaces": [
