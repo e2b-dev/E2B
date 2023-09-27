@@ -202,7 +202,6 @@ func (d *Driver) buildFingerprint() *drivers.Fingerprint {
 	}
 }
 
-// StartTask returns a task handle and a driver network if necessary.
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
 	ctx, span := d.tracer.Start(d.ctx, "start-task-validation", trace.WithAttributes(
 		attribute.String("alloc_id", cfg.AllocID),
@@ -375,7 +374,6 @@ func (d *Driver) StopTask(taskID string, timeout time.Duration, signal string) e
 	return nil
 }
 
-// DestroyTask cleans up and removes a task that has terminated.
 func (d *Driver) DestroyTask(taskID string, force bool) error {
 	_, ok := d.tasks.Get(taskID)
 	if !ok {
