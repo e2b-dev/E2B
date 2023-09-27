@@ -211,6 +211,8 @@ class ProcessManager:
         :param env_vars: A dictionary of environment variables to set for the process
         :param cwd: The root directory for the process
         :param rootdir: (DEPRECATED - use cwd) The root directory for the process
+        .. deprecated:: 0.3.2
+            Use cwd instead.
         :param process_id: The process id to use for the process. If not provided, a random id is generated
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
 

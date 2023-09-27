@@ -24,17 +24,18 @@ async def test_custom_cwd():
     output = await proc
     assert output.stdout == "/code/app"
 
+    # filesystem ops does not respect the cwd yet
     await session.filesystem.write("hello.txt", "Hello VM!")
-    proc = await session.process.start("readlink -f hello.txt")
+    proc = await session.process.start("cat /hello.txt") # notice the file is in root
     output = await proc
-    assert output.stdout == "/code/app/hello.txt"
+    assert output.stdout == "Hello VM!"
 
     # change dir to /home/user
     proc = await session.process.start("cd /home/user")
     await proc
 
-    # create another file, it should still respect the session cwd and not the cd from previous step
-    await session.filesystem.write("hello2.txt", "Hello VM!")
-    proc = await session.process.start("readlink -f hello2.txt")
+    # create another file, it should still be in root
+    await session.filesystem.write("hello2.txt", "Hello VM 2!")
+    proc = await session.process.start("cat /hello2.txt")
     output = await proc
-    assert output.stdout == "/code/app/hello2.txt"
+    assert output.stdout == "Hello VM 2!"

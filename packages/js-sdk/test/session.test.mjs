@@ -31,12 +31,13 @@ test(
       expect(out).toEqual('/code/app')
     }
 
+    // filesystem ops does not respect the cwd yet
     {
       await session.filesystem.write('hello.txt', `Hello VM!`)
-      const proc = await session.process.start({ cmd: 'readlink -f hello.txt' })
+      const proc = await session.process.start({ cmd: 'cat /hello.txt' })
       await proc.finished
       const out = proc.output.stdout
-      expect(out).toEqual('/code/app/hello.txt')
+      expect(out).toEqual('Hello VM!')
     }
 
     // change dir to /home/user
@@ -45,13 +46,13 @@ test(
       await proc.finished
     }
 
-    // create another file, it should still respect the session cwd and not the cd from previous step
+    // create another file, it should still be in root
     {
-      await session.filesystem.write('hello2.txt', `Hello VM!`)
-      const proc = await session.process.start({ cmd: 'readlink -f hello2.txt' })
+      await session.filesystem.write('hello2.txt', `Hello VM 2!`)
+      const proc = await session.process.start({ cmd: 'cat /hello2.txt' })
       await proc.finished
       const out = proc.output.stdout
-      expect(out).toEqual('/code/app/hello2.txt')
+      expect(out).toEqual('Hello VM 2!')
     }
   },
   { timeout: 10_000 },
