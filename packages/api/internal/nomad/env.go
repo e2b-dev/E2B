@@ -101,26 +101,18 @@ func (n *NomadClient) BuildEnvJob(
 		index:  index,
 	}
 
-	_, err = n.WaitForJobStart(
-		childCtx,
-		jobInfo,
-		meta,
-		jobStartTimeout,
-	)
-	if err != nil {
-		apiErr := n.DeleteEnvBuild(*job.ID, false)
-		if apiErr != nil {
-			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w: :%w", envID, err, apiErr)
-		}
-	}
-
 	_, finishErr := n.WaitForJobFinish(
 		childCtx,
 		jobInfo,
 		meta,
+		jobFinishTimeout,
 	)
-
 	if finishErr != nil {
+		apiErr := n.DeleteEnvBuild(*job.ID, false)
+		if apiErr != nil {
+			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w: :%w", envID, err, apiErr)
+		}
+
 		return fmt.Errorf("error waiting for env '%s' build: %+w", envID, finishErr)
 	}
 

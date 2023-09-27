@@ -16,6 +16,7 @@ const (
 	taskDeadState     = "dead"
 	defaultTaskName   = "start"
 	jobStartTimeout   = time.Second * 20
+	jobFinishTimeout  = time.Minute * 30
 )
 
 var (
@@ -108,8 +109,11 @@ func (n *NomadClient) WaitForJobStart(ctx context.Context, job JobInfo, meta api
 	return nil, fmt.Errorf("failed retrieving allocations")
 }
 
-func (n *NomadClient) WaitForJobFinish(ctx context.Context, job JobInfo, meta api.QueryMeta) (*api.Allocation, error) {
-	jobEvents, err := n.getJobEventStream(ctx, job, meta)
+func (n *NomadClient) WaitForJobFinish(ctx context.Context, job JobInfo, meta api.QueryMeta, timeout time.Duration) (*api.Allocation, error) {
+	streamCtx, streamCancel := context.WithTimeout(ctx, timeout)
+	defer streamCancel()
+
+	jobEvents, err := n.getJobEventStream(streamCtx, job, meta)
 	if err != nil {
 		return nil, err
 	}
