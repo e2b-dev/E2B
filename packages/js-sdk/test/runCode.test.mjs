@@ -1,18 +1,19 @@
-import { runCode } from '../src'
-import { expect, test } from 'vitest'
+import {runCode} from '../src'
+import {expect, test} from 'vitest'
 
-// test('run code', async () => {
-//   const code = `
-// print("hello")
-// raise Exception("err")
-// `
-//   const { stdout, stderr } = await runCode('Python3', code)
-//   console.log('stdout', stdout)
-//   console.log('stderr', stderr)
+test('run code', async () => {
 
-//   expect(stdout).toEqual('hello')
-//   // expect(stderr).toContain('Exception: err')
-// })
+  const code = `
+test="test\\n"
+print(10*test)
+raise Exception("err")
+`
+  const {stdout, stderr} = await runCode('PPSrlH5TIvFx', code)
+  console.log('stdout', stdout)
+  console.log('stderr', stderr)
+  expect(stdout.length).toEqual(50)
+  expect(stderr).toContain('Exception: err')
+})
 
 test('run code using unsupported runtime', async () => {
   await expect(() => runCode('Unsupported', 'print("hello")')).rejects.toThrowError(

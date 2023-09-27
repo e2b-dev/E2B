@@ -5,10 +5,10 @@ from e2b.session.exception import UnsupportedRuntimeException
 
 
 async def test_run_code():
-    code = "console.log('hello'); throw new Error('error')"
+    code = "console.log('hello\\n'.repeat(10)); throw new Error('error')"
     stdout, stderr = await run_code("Node16", code)
 
-    assert stdout == "hello"
+    assert len(stdout) == 60
     assert "Error: error" in stderr
 
 

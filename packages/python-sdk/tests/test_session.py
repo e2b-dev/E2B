@@ -22,7 +22,7 @@ async def test_custom_cwd():
 
     # filesystem ops does not respect the cwd yet
     await session.filesystem.write("hello.txt", "Hello VM!")
-    proc = await session.process.start("cat /hello.txt") # notice the file is in root
+    proc = await session.process.start("cat /hello.txt")  # notice the file is in root
     output = await proc
     assert output.stdout == "Hello VM!"
 
