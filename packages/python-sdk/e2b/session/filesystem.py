@@ -87,7 +87,7 @@ class FilesystemManager:
             raise FilesystemException(e.message) from e
 
     async def write(
-            self, path: str, content: str, timeout: Optional[float] = TIMEOUT
+        self, path: str, content: str, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
         Writes content to a file.
@@ -126,7 +126,7 @@ class FilesystemManager:
             raise FilesystemException(e.message) from e
 
     async def list(
-            self, path: str, timeout: Optional[float] = TIMEOUT
+        self, path: str, timeout: Optional[float] = TIMEOUT
     ) -> List[FileInfo]:
         """
         List files in a directory.
@@ -193,20 +193,20 @@ class FilesystemManager:
                     f"Path starts with './' and cwd isn't set. The path {path} will evaluate to `{path[1:]}`, which may not be what you want."
                 )
 
-            return os.path.join(self.cwd or '', path[1:])
+            return os.path.join(self.cwd or "", path[1:])
 
         if path.startswith("../"):
             if not self.cwd:
                 raise warnings.warn(
                     f"Path starts with '../' and cwd isn't set. The path {path} will evaluate to `{path[2:]}`, which may not be what you want."
                 )
-            return os.path.join(self.cwd or '', path[2:])
+            return os.path.join(self.cwd or "", path[2:])
 
         if path.startswith("~/"):
             if not self.cwd:
                 raise warnings.warn(
                     f"Path starts with '~/' and cwd isn't set. The path {path} will evaluate to `/home/user/{path[2:]}`, which may not be what you want."
                 )
-            return os.path.join(self.cwd or '/home/user', path[1:])
+            return os.path.join(self.cwd or "/home/user", path[1:])
 
         return path

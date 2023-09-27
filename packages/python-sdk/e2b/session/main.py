@@ -60,14 +60,14 @@ class Session(SessionConnection):
         return self._filesystem
 
     def __init__(
-            self,
-            id: Union[Environment, str],
-            api_key: Optional[str],
-            cwd: Optional[str] = None,
-            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-            _debug_hostname: Optional[str] = None,
-            _debug_port: Optional[int] = None,
-            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        self,
+        id: Union[Environment, str],
+        api_key: Optional[str],
+        cwd: Optional[str] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.
@@ -136,15 +136,15 @@ class Session(SessionConnection):
 
     @classmethod
     async def create(
-            cls,
-            id: Union[Environment, str],
-            api_key: Optional[str] = None,
-            cwd: Optional[str] = None,
-            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-            timeout: Optional[float] = TIMEOUT,
-            _debug_hostname: Optional[str] = None,
-            _debug_port: Optional[int] = None,
-            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        cls,
+        id: Union[Environment, str],
+        api_key: Optional[str] = None,
+        cwd: Optional[str] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.

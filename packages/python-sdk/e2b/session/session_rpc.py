@@ -123,15 +123,15 @@ class SessionRpc(BaseModel):
         )
         if isinstance(message, Ok):
             if (
-                    message.id in self._waiting_for_replies
-                    and self._waiting_for_replies[message.id]
+                message.id in self._waiting_for_replies
+                and self._waiting_for_replies[message.id]
             ):
                 self._waiting_for_replies[message.id](message.result)
                 return
         elif isinstance(message, Error):
             if (
-                    message.id in self._waiting_for_replies
-                    and self._waiting_for_replies[message.id]
+                message.id in self._waiting_for_replies
+                and self._waiting_for_replies[message.id]
             ):
                 self._waiting_for_replies[message.id].reject(
                     RpcException(

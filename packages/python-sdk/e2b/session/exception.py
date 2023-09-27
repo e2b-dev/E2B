@@ -7,11 +7,11 @@ class SessionException(Exception):
 
 class RpcException(SessionException):
     def __init__(
-            self,
-            message: str,
-            code: int,
-            id: str,
-            data: Optional[Dict] = None,
+        self,
+        message: str,
+        code: int,
+        id: str,
+        data: Optional[Dict] = None,
     ):
         super().__init__(message)
         self.data = data
