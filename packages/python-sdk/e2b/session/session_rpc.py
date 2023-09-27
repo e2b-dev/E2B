@@ -8,16 +8,17 @@ from queue import Queue
 from threading import Event
 from typing import Any, Callable, Dict, Iterator, List, Union
 
-from e2b.session.exception import RpcException
-from e2b.session.websocket_client import WebSocket
-from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
-from e2b.utils.threads import shutdown_executor
 from janus import Queue as JanusQueue
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, PrivateAttr, ConfigDict
 from websockets.typing import Data
+
+from e2b.session.exception import RpcException
+from e2b.session.websocket_client import WebSocket
+from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
+from e2b.utils.threads import shutdown_executor
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,8 @@ def to_response_or_notification(response: Dict[str, Any]) -> Message:
 
 
 class SessionRpc(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     url: str
     on_message: Callable[[Notification], None]
 
@@ -59,9 +62,6 @@ class SessionRpc(BaseModel):
     _queue_in: Queue = PrivateAttr(default_factory=Queue)
     _queue_out: JanusQueue = PrivateAttr(default_factory=JanusQueue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     async def process_messages(self):
         while True:
@@ -123,15 +123,15 @@ class SessionRpc(BaseModel):
         )
         if isinstance(message, Ok):
             if (
-                message.id in self._waiting_for_replies
-                and self._waiting_for_replies[message.id]
+                    message.id in self._waiting_for_replies
+                    and self._waiting_for_replies[message.id]
             ):
                 self._waiting_for_replies[message.id](message.result)
                 return
         elif isinstance(message, Error):
             if (
-                message.id in self._waiting_for_replies
-                and self._waiting_for_replies[message.id]
+                    message.id in self._waiting_for_replies
+                    and self._waiting_for_replies[message.id]
             ):
                 self._waiting_for_replies[message.id].reject(
                     RpcException(

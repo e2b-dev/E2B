@@ -1,20 +1,20 @@
-from os import getenv
 from unittest.mock import MagicMock
 
 from e2b import Session
 
-E2B_API_KEY = getenv("E2B_API_KEY")
 
 async def test_process_expected_stdout():
     # TODO: Implement this once we fix envd stdout/stderr race condition
     pass
 
+
 async def test_process_expected_stderr():
     # TODO: Implement this once we fix envd stdout/stderr race condition
     pass
 
+
 async def test_process_on_stdout_stderr():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
 
     stdout = []
     stderr = []
@@ -38,7 +38,7 @@ async def test_process_on_stdout_stderr():
 
 
 async def test_process_on_exit():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
 
     on_exit = MagicMock()
 
@@ -54,7 +54,7 @@ async def test_process_on_exit():
 
 
 async def test_process_send_stdin():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
 
     proc = await session.process.start(
         'read -r line; echo "$line"',

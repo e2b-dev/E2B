@@ -1,8 +1,9 @@
 from typing import Any, Callable, ClassVar, List, Optional
 
+from pydantic import BaseModel, ConfigDict
+
 from e2b.session.exception import MultipleExceptions, RpcException, SessionException
 from e2b.session.session_connection import SessionConnection
-from pydantic import BaseModel
 
 
 class OpenPort(BaseModel):
@@ -15,13 +16,12 @@ ScanOpenedPortsHandler = Callable[[List[OpenPort]], Any]
 
 
 class CodeSnippetManager(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     service_name: ClassVar[str] = "codeSnippet"
     session: SessionConnection
 
     on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None
-
-    class Config:
-        arbitrary_types_allowed = True
 
     async def _subscribe(self):
         try:

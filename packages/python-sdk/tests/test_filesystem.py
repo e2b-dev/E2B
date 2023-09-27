@@ -1,13 +1,12 @@
 import filecmp
 from asyncio import sleep
-from os import getenv, path
+from os import path
 
 from e2b import Session
 
-E2B_API_KEY = getenv("E2B_API_KEY")
 
 async def test_list_files():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
     await session.filesystem.make_dir("/test/new")
 
     ls = await session.filesystem.list("/test")
@@ -17,7 +16,7 @@ async def test_list_files():
 
 
 async def test_create_file():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
     await session.filesystem.make_dir("/test")
     await session.filesystem.write("/test/test.txt", "Hello World!")
 
@@ -28,7 +27,7 @@ async def test_create_file():
 
 
 async def test_read_and_write():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
 
     await session.filesystem.write("/tmp/test.txt", "Hello World!")
 
@@ -39,7 +38,7 @@ async def test_read_and_write():
 
 
 async def test_list_delete_files():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
     await session.filesystem.make_dir("/test/new")
 
     ls = await session.filesystem.list("/test")
@@ -54,7 +53,7 @@ async def test_list_delete_files():
 
 
 async def test_watch_dir():
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
     await session.filesystem.write("/tmp/test.txt", "Hello")
 
     watcher = await session.filesystem.watch_dir("/tmp")
@@ -87,7 +86,7 @@ async def test_write_bytes():
     # TODO: This test isn't complete since we can't verify the size of the file inside session.
     # We don't have any SDK function to get the size of a file inside session.
 
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
 
     # Upload the file
     with open(local_path, "rb") as f:
@@ -112,7 +111,7 @@ async def test_read_bytes():
     # TODO: This test isn't complete since we can't verify the size of the file inside session.
     # We don't have any SDK function to get the size of a file inside session.
 
-    session = await Session.create("Nodejs", api_key=E2B_API_KEY)
+    session = await Session.create("Nodejs")
 
     # Upload the file first
     with open(local_path, "rb") as f:

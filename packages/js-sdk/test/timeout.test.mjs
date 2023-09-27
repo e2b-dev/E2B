@@ -1,14 +1,13 @@
-import { expect, test } from 'vitest'
+import {expect, test} from 'vitest'
 
-import { Session } from '../src'
-import { TimeoutError } from '../src/error.ts'
+import {Session} from '../src'
+import {TimeoutError} from '../src/error.ts'
 
-const E2B_API_KEY = process.env.E2B_API_KEY
 
 // TODO: Make it work on CI and re-enable!
 test.skip('timeout session', async () => {
   await expect(
-    Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY, timeout: 10 }),
+    Session.create({id: 'Nodejs', timeout: 10}),
   ).rejects.toThrow()
 })
 
@@ -16,7 +15,6 @@ test.skip('timeout session', async () => {
 test.skip('dont timeout session', async () => {
   const session = await Session.create({
     id: 'Nodejs',
-    apiKey: E2B_API_KEY,
     timeout: 10000,
   })
   await session.close()
@@ -24,35 +22,35 @@ test.skip('dont timeout session', async () => {
 
 // TODO: Make it work on CI and re-enable!
 test.skip('timeout filesystem', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
   await expect(
-    session.filesystem.write('/home/test.txt', 'Hello World', { timeout: 10 }),
+    session.filesystem.write('/home/test.txt', 'Hello World', {timeout: 10}),
   ).rejects.toThrow(TimeoutError)
   await expect(
-    session.filesystem.read('/home/test.txt', { timeout: 10 }),
+    session.filesystem.read('/home/test.txt', {timeout: 10}),
   ).rejects.toThrow(TimeoutError)
-  await expect(session.filesystem.list('/home', { timeout: 10 })).rejects.toThrow(
+  await expect(session.filesystem.list('/home', {timeout: 10})).rejects.toThrow(
     TimeoutError,
   )
   await expect(
-    session.filesystem.makeDir('/home/test/', { timeout: 10 }),
+    session.filesystem.makeDir('/home/test/', {timeout: 10}),
   ).rejects.toThrow(TimeoutError)
   await session.filesystem.write('/home/test.txt', 'Hello World')
   await expect(
-    session.filesystem.remove('/home/test.txt', { timeout: 10 }),
+    session.filesystem.remove('/home/test.txt', {timeout: 10}),
   ).rejects.toThrow(TimeoutError)
 })
 
 // TODO: Make it work on CI and re-enable!
 test.skip('timeout process', async () => {
-  const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
+  const session = await Session.create({id: 'Nodejs'})
   await expect(
-    session.process.start({ cmd: "node -e 'setTimeout(() => {}, 10000)'", timeout: 10 }),
+    session.process.start({cmd: "node -e 'setTimeout(() => {}, 10000)'", timeout: 10}),
   ).rejects.toThrow(TimeoutError)
   const process = await session.process.start({
     cmd: "while true; do echo 'Hello World'; sleep 1; done",
   })
-  await expect(process.sendStdin('Hello World', { timeout: 10 })).rejects.toThrow(
+  await expect(process.sendStdin('Hello World', {timeout: 10})).rejects.toThrow(
     TimeoutError,
   )
 })
@@ -62,8 +60,7 @@ test.skip(
   'timeout longer than cmd should not leak',
   () =>
     new Promise(async resolve => {
-      const session = await Session.create({ id: 'Nodejs', apiKey: E2B_API_KEY })
-      const start = Date.now()
+      const session = await Session.create({id: 'Nodejs'})
       const proc = await session.process.start({
         cmd: "node -e 'setTimeout(() => {}, 1000)'", // should take around 1 second
         onExit: () => {
@@ -74,5 +71,5 @@ test.skip(
       })
       await proc.finished
     }),
-  { timeout: 12_000 },
+  {timeout: 12_000},
 )

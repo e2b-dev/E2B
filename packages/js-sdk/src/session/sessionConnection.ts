@@ -40,7 +40,7 @@ interface Logger {
 
 export interface SessionConnectionOpts {
   id: string
-  apiKey: string
+  apiKey?: string
   cwd?: string
   logger?: Logger
   __debug_hostname?: string
@@ -63,16 +63,19 @@ export class SessionConnection {
   protected session?: components['schemas']['Session']
   protected isOpen = false
 
+  private readonly apiKey: string
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
 
   // let's keep opts readonly, but public – for convenience, mainly when debugging
   constructor(readonly opts: SessionConnectionOpts) {
-    if (!opts.apiKey) {
+    const apiKey = opts.apiKey || process.env.E2B_API_KEY
+    if (!apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit https://e2b.dev/docs to get your API key',
       )
     }
+    this.apiKey = apiKey
     this.logger = opts.logger ?? {
       // by default, we log to the console
       // we don't log debug messages by default
@@ -162,7 +165,7 @@ export class SessionConnection {
       if (!this.opts.__debug_hostname) {
         try {
           const res = await createSession({
-            api_key: this.opts.apiKey,
+            api_key: this.apiKey,
             codeSnippetID: this.opts.id,
             editEnabled: false,
           })
@@ -390,7 +393,7 @@ export class SessionConnection {
         try {
           this.logger.debug?.(`Refreshed session "${sessionID}"`)
           await refreshSession({
-            api_key: this.opts.apiKey,
+            api_key: this.apiKey,
             sessionID,
           })
         } catch (e) {
