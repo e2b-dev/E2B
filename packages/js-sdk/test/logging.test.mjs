@@ -3,34 +3,34 @@ import { expect, test, vi } from 'vitest'
 
 test('no logs in console during very basic scenario', async () => {
   const consoleSpy = {
-    debug: vi.spyOn(console, "debug"),
-    info: vi.spyOn(console, "info"),
-    warn: vi.spyOn(console, "warn"),
-    error: vi.spyOn(console, "error"),
+    debug: vi.spyOn(console, 'debug'),
+    info: vi.spyOn(console, 'info'),
+    warn: vi.spyOn(console, 'warn'),
+    error: vi.spyOn(console, 'error'),
   }
 
-  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY });
-  await session.filesystem.write("test.txt", "Hello World");
+  const session = await Session.create({ id: 'Nodejs', apiKey: process.env.E2B_API_KEY })
+  await session.filesystem.write('test.txt', 'Hello World')
   await session.close()
 
-  expect(consoleSpy.debug).toHaveBeenCalledTimes(0);
-  expect(consoleSpy.info).toHaveBeenCalledTimes(2);
-  expect(consoleSpy.error).toHaveBeenCalledTimes(0);
+  expect(consoleSpy.debug).toHaveBeenCalledTimes(0)
+  expect(consoleSpy.info).toHaveBeenCalledTimes(2)
+  expect(consoleSpy.error).toHaveBeenCalledTimes(0)
 })
 
 // TODO: Re-enable https://e2b-team.slack.com/archives/C05AGT4UFMJ/p1694697558738799?thread_ts=1694697479.308769&cid=C05AGT4UFMJ
 test.skip('warn logs in console during convoluted scenario', async () => {
   const consoleSpy = {
-    debug: vi.spyOn(console, "debug"),
-    info: vi.spyOn(console, "info"),
-    warn: vi.spyOn(console, "warn"),
-    error: vi.spyOn(console, "error"),
+    debug: vi.spyOn(console, 'debug'),
+    info: vi.spyOn(console, 'info'),
+    warn: vi.spyOn(console, 'warn'),
+    error: vi.spyOn(console, 'error'),
   }
 
-  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY });
+  const session = await Session.create({ id: 'Nodejs', apiKey: process.env.E2B_API_KEY })
   await session.close() // Note that we are intentionally closing and then trying to write
   const warnsAmount = consoleSpy.warn.mock.calls.length
-  
+
   // void to explicitly not awaiting, we wanna check if logging is happening correctly during retries
   void session.filesystem.read('/etc/hosts') // this should trigger retries
   setTimeout(() => {
@@ -40,23 +40,25 @@ test.skip('warn logs in console during convoluted scenario', async () => {
 
 test('verbose & info logs in console when opted-in', async () => {
   const consoleSpy = {
-    info: vi.spyOn(console, "info"),
-    warn: vi.spyOn(console, "warn"),
-    error: vi.spyOn(console, "error"),
+    info: vi.spyOn(console, 'info'),
+    warn: vi.spyOn(console, 'warn'),
+    error: vi.spyOn(console, 'error'),
   }
-  
+
   const logger = {
     info: console.info,
     warn: console.warn,
     error: console.error,
   }
 
-  const session = await Session.create({ id: "Nodejs", apiKey: process.env.E2B_API_KEY, logger });
-  await session.filesystem.write("test.txt", "Hello World");
+  const session = await Session.create({
+    id: 'Nodejs',
+    apiKey: process.env.E2B_API_KEY,
+    logger,
+  })
+  await session.filesystem.write('test.txt', 'Hello World')
   await session.close()
 
-  expect(consoleSpy.info).toHaveBeenCalled();
-  expect(consoleSpy.error).toHaveBeenCalledTimes(0);
+  expect(consoleSpy.info).toHaveBeenCalled()
+  expect(consoleSpy.error).toHaveBeenCalledTimes(0)
 })
-
-

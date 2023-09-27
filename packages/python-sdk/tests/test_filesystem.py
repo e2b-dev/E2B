@@ -6,7 +6,6 @@ from e2b import Session
 
 E2B_API_KEY = getenv("E2B_API_KEY")
 
-
 async def test_list_files():
     session = await Session.create("Nodejs", api_key=E2B_API_KEY)
     await session.filesystem.make_dir("/test/new")
@@ -118,7 +117,7 @@ async def test_read_bytes():
     # Upload the file first
     with open(local_path, "rb") as f:
         content = f.read()
-        await session.filesystem.write_bytes(remote_path, content)
+        await session.filesystem.write_bytes(remote_path, bytearray(content))
 
     # Download the file
     content = await session.filesystem.read_bytes(remote_path)

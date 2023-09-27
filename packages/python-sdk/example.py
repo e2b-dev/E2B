@@ -1,21 +1,26 @@
 import asyncio
 import logging
+from os import getenv
 
-from e2b import Session
+from e2b import Session, run_code
 
 id = "Python3"
+E2B_API_KEY = getenv("E2B_API_KEY")
+
 
 logging.basicConfig(level=logging.ERROR)
 
 
 async def main():
-    print("a")
-    s = Session("Nodejs")
-    await s.open()
+    # s = Session("Nodejs", api_key=E2B_API_KEY)
+    # await s.open()
+    # await s.close()
 
-    await s.close()
-
+    stdout, stderr = await run_code("Node16", "console.log('hello world'); throw new Error('error')")
+    print(stdout)
+    print(stderr)
     return
+
     session = await Session.create(id)
 
     # proc = await session.terminal.start(

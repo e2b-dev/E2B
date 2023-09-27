@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   KeyRound,
   Settings,
+  Binary,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -332,6 +333,16 @@ export const navigation = [
         title: 'Running Processes',
         href: '/playgrounds/process',
       },
+      {
+        icon: (
+          <Binary
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Executing Code',
+        href: '/playgrounds/execute',
+      },
       // {
       //   icon: (
       //     <FileUp
@@ -377,7 +388,7 @@ export const navigation = [
   {
     title: 'AI Agents Use Case',
     links: [
-      { title: 'Execute Code', href: '/agents/exec' },
+      // { title: 'Execute Code', href: '/agents/exec' },
       // { title: 'Installing Dependencies', href: '/agents/deps' },
       { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
       { title: 'Run Shell Commands', href: '/agents/shell-commands' },
