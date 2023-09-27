@@ -4,3 +4,4 @@
 ---
 
 Renamed process.start argument rootDir to cwd
+Added cwd option to Session creation
