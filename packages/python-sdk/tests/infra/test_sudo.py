@@ -7,5 +7,5 @@ async def test_sudo():
     process = await session.process.start("sudo echo test")
     await process
     output = process.stdout
-    assert output == "/home/user"
+    assert output == "test"
     await session.close()
