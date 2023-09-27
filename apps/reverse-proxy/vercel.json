@@ -5,16 +5,6 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/",
-      "destination": "https://e2b-landing-page.framer.website",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ]
-    },
-    {
       "source": "/_vercel/insights/:path*",
       "destination": "https://e2b-docs.vercel.app/_vercel/insights/:path*",
       "has": [
@@ -57,16 +47,6 @@
     {
       "source": "/dashboard/:path*",
       "destination": "https://e2b-dashboard.vercel.app/dashboard/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "e2b.dev"
-        }
-      ]
-    },
-    {
-      "source": "/changelog(\\/)?",
-      "destination": "https://e2b-changelog.framer.website",
       "has": [
         {
           "type": "host",
