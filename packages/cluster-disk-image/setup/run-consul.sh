@@ -181,20 +181,20 @@ function generate_consul_config {
   if [[ -z "$cluster_tag_name" ]]; then
     log_warn "The --cluster-tag-name property is empty. Will not automatically try to form a cluster based on Cluster Tag Name."
   else
-    retry_join_json=$(cat <<EOF
+    retry_join_json=$(
+      cat <<EOF
 "retry_join": ["provider=gce project_name=$project_id tag_value=$cluster_tag_name"],
 EOF
-)
+    )
   fi
 
   local recursors_config=""
   if [[ ${#recursors[@]} -ne 0 ]]; then
     recursors_config="\"recursors\" : [ "
-    for recursor in "${recursors[@]}"
-    do
-        recursors_config="${recursors_config}\"${recursor}\", "
+    for recursor in "${recursors[@]}"; do
+      recursors_config="${recursors_config}\"${recursor}\", "
     done
-    recursors_config=$(echo "${recursors_config}"| sed 's/, $//')" ],"
+    recursors_config=$(echo "${recursors_config}" | sed 's/, $//')" ],"
   fi
 
   local bootstrap_expect=""
@@ -208,7 +208,8 @@ EOF
   fi
 
   local autopilot_configuration
-  autopilot_configuration=$(cat <<EOF
+  autopilot_configuration=$(
+    cat <<EOF
 "autopilot": {
   "cleanup_dead_servers": $cleanup_dead_servers,
   "last_contact_threshold": "$last_contact_threshold",
@@ -219,7 +220,7 @@ EOF
   "upgrade_version_tag": "$upgrade_version_tag"
 },
 EOF
-)
+  )
 
   local gossip_encryption_configuration=""
   if [[ "$enable_gossip_encryption" == "true" && -n "$gossip_encryption_key" ]]; then
@@ -230,7 +231,8 @@ EOF
   local rpc_encryption_configuration=""
   if [[ "$enable_rpc_encryption" == "true" && -n "$ca_path" && -n "$cert_file_path" && -n "$key_file_path" ]]; then
     log_info "Creating RPC encryption configuration"
-    rpc_encryption_configuration=$(cat <<EOF
+    rpc_encryption_configuration=$(
+      cat <<EOF
 "verify_outgoing": true,
 "verify_incoming": true,
 "verify_server_hostname": $verify_server_hostname,
@@ -238,12 +240,13 @@ EOF
 "cert_file": "$cert_file_path",
 "key_file": "$key_file_path",
 EOF
-)
+    )
   fi
 
   log_info "Creating default Consul configuration"
   local default_config_json
-  default_config_json=$(cat <<EOF
+  default_config_json=$(
+    cat <<EOF
 {
   "connect": {
     "enabled": true
@@ -256,6 +259,9 @@ EOF
   "telemetry": {
     "prometheus_retention_time": "60s",
     "disable_hostname": true
+  },
+  "limits": {
+    "http_max_conns_per_client": 5000,
   },
   "advertise_addr": "$instance_ip_address",
   "bind_addr": "$instance_ip_address",
@@ -272,10 +278,10 @@ EOF
   "ui": $ui
 }
 EOF
-)
+  )
 
   log_info "Installing Consul config file in $config_path"
-  echo "$default_config_json" | jq '.' > "$config_path"
+  echo "$default_config_json" | jq '.' >"$config_path"
   chown "$user:$user" "$config_path"
 }
 
@@ -293,7 +299,8 @@ function generate_systemd_config {
 
   log_info "Creating systemd config file to run Consul in $systemd_config_path"
 
-  local -r unit_config=$(cat <<EOF
+  local -r unit_config=$(
+    cat <<EOF
 [Unit]
 Description="HashiCorp Consul - A service mesh solution"
 Documentation=https://www.consul.io/
@@ -301,9 +308,10 @@ Requires=network-online.target
 After=network-online.target
 ConditionFileNotEmpty=$config_path
 EOF
-)
+  )
 
-  local -r service_config=$(cat <<EOF
+  local -r service_config=$(
+    cat <<EOF
 [Service]
 Type=notify
 User=$consul_user
@@ -317,7 +325,7 @@ TimeoutSec=300s
 LimitNOFILE=65536
 $(split_by_lines "Environment=" "${environment[@]}")
 EOF
-)
+  )
 
   local log_config=""
   if [[ -n $consul_systemd_stdout ]]; then
@@ -327,16 +335,17 @@ EOF
     log_config+="StandardError=$consul_systemd_stderr\n"
   fi
 
-  local -r install_config=$(cat <<EOF
+  local -r install_config=$(
+    cat <<EOF
 [Install]
 WantedBy=multi-user.target
 EOF
-)
+  )
 
-  echo -e "$unit_config" > "$systemd_config_path"
-  echo -e "$service_config" >> "$systemd_config_path"
-  echo -e "$log_config" >> "$systemd_config_path"
-  echo -e "$install_config" >> "$systemd_config_path"
+  echo -e "$unit_config" >"$systemd_config_path"
+  echo -e "$service_config" >>"$systemd_config_path"
+  echo -e "$log_config" >>"$systemd_config_path"
+  echo -e "$install_config" >>"$systemd_config_path"
 }
 
 function start_consul {
@@ -400,137 +409,137 @@ function run {
     local key="$1"
 
     case "$key" in
-      --server)
-        server="true"
-        ;;
-      --client)
-        client="true"
-        ;;
-      --config-dir)
-        assert_not_empty "$key" "$2"
-        config_dir="$2"
-        shift
-        ;;
-      --data-dir)
-        assert_not_empty "$key" "$2"
-        data_dir="$2"
-        shift
-        ;;
-      --systemd-stdout)
-        assert_not_empty "$key" "$2"
-        systemd_stdout="$2"
-        shift
-        ;;
-      --systemd-stderr)
-        assert_not_empty "$key" "$2"
-        systemd_stderr="$2"
-        shift
-        ;;
-      --bin-dir)
-        assert_not_empty "$key" "$2"
-        bin_dir="$2"
-        shift
-        ;;
-      --user)
-        assert_not_empty "$key" "$2"
-        user="$2"
-        shift
-        ;;
-      --cluster-tag-name)
-        assert_not_empty "$key" "$2"
-        cluster_tag_name="$2"
-        shift
-        ;;
-      --datacenter)
-        assert_not_empty "$key" "$2"
-        datacenter="$2"
-        shift
-        ;;
-      --autopilot-cleanup-dead-servers)
-        assert_not_empty "$key" "$2"
-        cleanup_dead_servers="$2"
-        shift
-        ;;
-      --autopilot-last-contact-threshold)
-        assert_not_empty "$key" "$2"
-        last_contact_threshold="$2"
-        shift
-        ;;
-      --autopilot-max-trailing-logs)
-        assert_not_empty "$key" "$2"
-        max_trailing_logs="$2"
-        shift
-        ;;
-      --autopilot-server-stabilization-time)
-        assert_not_empty "$key" "$2"
-        server_stabilization_time="$2"
-        shift
-        ;;
-      --autopilot-redundancy-zone-tag)
-        assert_not_empty "$key" "$2"
-        redundancy_zone_tag="$2"
-        shift
-        ;;
-      --autopilot-disable-upgrade-migration)
-        disable_upgrade_migration="true"
-        shift
-        ;;
-      --autopilot-upgrade-version-tag)
-        assert_not_empty "$key" "$2"
-        upgrade_version_tag="$2"
-        shift
-        ;;
-      --enable-gossip-encryption)
-        enable_gossip_encryption="true"
-        ;;
-      --gossip-encryption-key)
-        assert_not_empty "$key" "$2"
-        gossip_encryption_key="$2"
-        shift
-        ;;
-      --enable-rpc-encryption)
-        enable_rpc_encryption="true"
-        ;;
-      --verify-server-hostname)
-        verify_server_hostname="true"
-        ;;
-      --ca-path)
-        assert_not_empty "$key" "$2"
-        ca_path="$2"
-        shift
-        ;;
-      --cert-file-path)
-        assert_not_empty "$key" "$2"
-        cert_file_path="$2"
-        shift
-        ;;
-      --key-file-path)
-        assert_not_empty "$key" "$2"
-        key_file_path="$2"
-        shift
-        ;;
-      --environment)
-        assert_not_empty "$key" "$2"
-        environment+=("$2")
-        shift
-        ;;
-      --skip-consul-config)
-        skip_consul_config="true"
-        ;;
-      --recursor)
-        assert_not_empty "$key" "$2"
-        recursors+=("$2")
-        shift
-        ;;
-      --help)
-        print_usage
-        exit
-        ;;
-      *)
-        log_error "Unrecognized argument: $key"
-        print_usage
-        exit 1
-        ;;
+    --server)
+      server="true"
+      ;;
+    --client)
+      client="true"
+      ;;
+    --config-dir)
+      assert_not_empty "$key" "$2"
+      config_dir="$2"
+      shift
+      ;;
+    --data-dir)
+      assert_not_empty "$key" "$2"
+      data_dir="$2"
+      shift
+      ;;
+    --systemd-stdout)
+      assert_not_empty "$key" "$2"
+      systemd_stdout="$2"
+      shift
+      ;;
+    --systemd-stderr)
+      assert_not_empty "$key" "$2"
+      systemd_stderr="$2"
+      shift
+      ;;
+    --bin-dir)
+      assert_not_empty "$key" "$2"
+      bin_dir="$2"
+      shift
+      ;;
+    --user)
+      assert_not_empty "$key" "$2"
+      user="$2"
+      shift
+      ;;
+    --cluster-tag-name)
+      assert_not_empty "$key" "$2"
+      cluster_tag_name="$2"
+      shift
+      ;;
+    --datacenter)
+      assert_not_empty "$key" "$2"
+      datacenter="$2"
+      shift
+      ;;
+    --autopilot-cleanup-dead-servers)
+      assert_not_empty "$key" "$2"
+      cleanup_dead_servers="$2"
+      shift
+      ;;
+    --autopilot-last-contact-threshold)
+      assert_not_empty "$key" "$2"
+      last_contact_threshold="$2"
+      shift
+      ;;
+    --autopilot-max-trailing-logs)
+      assert_not_empty "$key" "$2"
+      max_trailing_logs="$2"
+      shift
+      ;;
+    --autopilot-server-stabilization-time)
+      assert_not_empty "$key" "$2"
+      server_stabilization_time="$2"
+      shift
+      ;;
+    --autopilot-redundancy-zone-tag)
+      assert_not_empty "$key" "$2"
+      redundancy_zone_tag="$2"
+      shift
+      ;;
+    --autopilot-disable-upgrade-migration)
+      disable_upgrade_migration="true"
+      shift
+      ;;
+    --autopilot-upgrade-version-tag)
+      assert_not_empty "$key" "$2"
+      upgrade_version_tag="$2"
+      shift
+      ;;
+    --enable-gossip-encryption)
+      enable_gossip_encryption="true"
+      ;;
+    --gossip-encryption-key)
+      assert_not_empty "$key" "$2"
+      gossip_encryption_key="$2"
+      shift
+      ;;
+    --enable-rpc-encryption)
+      enable_rpc_encryption="true"
+      ;;
+    --verify-server-hostname)
+      verify_server_hostname="true"
+      ;;
+    --ca-path)
+      assert_not_empty "$key" "$2"
+      ca_path="$2"
+      shift
+      ;;
+    --cert-file-path)
+      assert_not_empty "$key" "$2"
+      cert_file_path="$2"
+      shift
+      ;;
+    --key-file-path)
+      assert_not_empty "$key" "$2"
+      key_file_path="$2"
+      shift
+      ;;
+    --environment)
+      assert_not_empty "$key" "$2"
+      environment+=("$2")
+      shift
+      ;;
+    --skip-consul-config)
+      skip_consul_config="true"
+      ;;
+    --recursor)
+      assert_not_empty "$key" "$2"
+      recursors+=("$2")
+      shift
+      ;;
+    --help)
+      print_usage
+      exit
+      ;;
+    *)
+      log_error "Unrecognized argument: $key"
+      print_usage
+      exit 1
+      ;;
     esac
 
     shift
