@@ -4,8 +4,8 @@ import { components } from '../api'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
 import {
-  ScanOpenedPortsHandler as ScanOpenPortsHandler,
   codeSnippetService,
+  ScanOpenedPortsHandler as ScanOpenPortsHandler,
 } from './codeSnippet'
 import { FileInfo, FilesystemManager, filesystemService } from './filesystem'
 import FilesystemWatcher from './filesystemWatcher'
@@ -140,7 +140,7 @@ export class Session extends SessionConnection {
         onExit,
         envVars,
         cmd,
-        rootdir = '',
+        cwd = '',
         terminalID = id(12),
         timeout = undefined,
       }: TerminalOpts) => {
@@ -150,10 +150,18 @@ export class Session extends SessionConnection {
           onExit,
           envVars,
           cmd,
-          rootdir = '',
+          cwd = '',
+          rootDir,
           terminalID = id(12),
         }: Omit<TerminalOpts, 'timeout'>) => {
           this.logger.debug?.(`Starting terminal "${terminalID}"`)
+          if (!cwd && rootDir) {
+            this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
+            cwd = rootDir
+          }
+          if (!cwd && this.opts.cwd) {
+            cwd = this.opts.cwd
+          }
           const { promise: terminalExited, resolve: triggerExit } =
             createDeferredPromise()
 
@@ -194,7 +202,7 @@ export class Session extends SessionConnection {
               size.cols,
               size.rows,
               // Handle optional args for old devbookd compatibility
-              ...(cmd !== undefined ? [envVars, cmd, rootdir] : []),
+              ...(cmd !== undefined ? [envVars, cmd, cwd] : []),
             ])
           } catch (err) {
             triggerExit()
@@ -213,7 +221,7 @@ export class Session extends SessionConnection {
           onExit,
           envVars,
           cmd,
-          rootdir,
+          cwd,
           terminalID,
         })
       },
@@ -228,13 +236,19 @@ export class Session extends SessionConnection {
           onStderr,
           onExit,
           envVars = {},
-          rootdir = '',
+          cwd = '',
+          rootDir,
           processID = id(12),
         }: Omit<ProcessOpts, 'timeout'>) => {
-          if (!cmd) {
-            throw new Error('cmd is required')
+          if (!cwd && rootDir) {
+            this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
+            cwd = rootDir
           }
-          this.logger.debug?.(`Starting process "${processID}"`)
+          if (!cwd && this.opts.cwd) {
+            cwd = this.opts.cwd
+          }
+          if (!cmd) throw new Error('cmd is required')
+          this.logger.debug?.(`Starting process "${processID}", cmd: "${cmd}"`)
 
           const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
@@ -280,7 +294,7 @@ export class Session extends SessionConnection {
           })
 
           try {
-            await this.call(processService, 'start', [processID, cmd, envVars, rootdir])
+            await this.call(processService, 'start', [processID, cmd, envVars, cwd])
           } catch (err) {
             triggerExit()
             await unsubscribing
@@ -296,7 +310,13 @@ export class Session extends SessionConnection {
   }
 
   static async create(opts: SessionOpts) {
-    return new Session(opts).open({ timeout: opts?.timeout })
+    return new Session(opts).open({ timeout: opts?.timeout }).then(async session => {
+      if (opts.cwd) {
+        console.log(`Custom cwd for Session set: "${opts.cwd}"`)
+        await session.filesystem.makeDir(opts.cwd)
+      }
+      return session
+    })
   }
 
   override async open(opts: CallOpts) {

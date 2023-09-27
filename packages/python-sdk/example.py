@@ -24,7 +24,7 @@ async def main():
     session = await Session.create(id)
 
     # proc = await session.terminal.start(
-    #     rootdir="/code",
+    #     cwd="/code",
     #     cols=80,
     #     rows=24,
     #     on_data=lambda data: print("DATA", data),
@@ -39,7 +39,7 @@ async def main():
     # await proc.finished
     proc = await session.process.start(
         "ls",
-        rootdir="/",
+        cwd="/",
         on_stderr=lambda data: print("ERR", data),
         on_stdout=lambda data: print("OUT", data),
     )
@@ -89,7 +89,7 @@ async def main():
         on_stdout=on_stdout,
         on_stderr=on_stderr,
         on_exit=lambda: print("EXIT"),
-        rootdir="/code",
+        cwd="/code",
     )
     # await proc.send_stdin("lore olympus")
     # await proc.send_stdin("\nnew line too")
@@ -104,7 +104,7 @@ async def main():
         on_data=lambda data: print("DATA", data),
         cols=80,
         rows=24,
-        rootdir="/code",
+        cwd="/code",
     )
 
     await term.send_data("echo 1\n")

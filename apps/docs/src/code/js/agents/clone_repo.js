@@ -24,7 +24,7 @@ console.log(content)
 console.log('Installing deps...')
 proc = await session.process.start({
   cmd: 'npm install',
-  rootdir: '/code/open-react-template',
+  cwd: '/code/open-react-template',
   onStdout: data => console.log(data.line),
   onStderr: data => console.log(data.line),
 })

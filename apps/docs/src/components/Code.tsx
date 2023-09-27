@@ -130,7 +130,7 @@ function CodePanel({
       await session.filesystem.write(filename, code)
       session.process.start({
         cmd: `${runtime} ${filename}`,
-        rootdir: '/code',
+        cwd: '/code',
         onStdout: appendOutput,
         onStderr: filterAndMaybeAppendOutput,
         onExit: () => setIsRunning(false),

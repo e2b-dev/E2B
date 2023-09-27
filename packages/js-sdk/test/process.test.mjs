@@ -13,7 +13,7 @@ test('process on stdout/stderr', async () => {
     cmd: 'pwd',
     onStdout: data => stdout.push(data),
     onStderr: data => stderr.push(data),
-    rootdir: '/tmp',
+    cwd: '/tmp',
   })
 
   const output = await process.finished
@@ -55,7 +55,7 @@ test('process send stdin', async () => {
 
   const process = await session.process.start({
     cmd: 'read -r line; echo "$line"',
-    rootdir: '/code',
+    cwd: '/code',
   })
   await process.sendStdin('ping\n')
   await process.finished

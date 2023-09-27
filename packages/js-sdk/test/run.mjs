@@ -40,7 +40,7 @@ raise Exception("err")
     //     cols: 9,
     //     rows: 9,
     //   },
-    //   rootdir: '/code',
+    //   cwd: '/code',
     //   cmd: 'npm i',
     // })
 

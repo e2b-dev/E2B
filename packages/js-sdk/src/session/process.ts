@@ -113,7 +113,9 @@ export interface ProcessOpts {
   onStderr?: (out: ProcessMessage) => void
   onExit?: () => void
   envVars?: EnvVars
-  rootdir?: string
+  cwd?: string
+  /** @deprecated use cwd instead */
+  rootDir?: string
   processID?: string
   timeout?: number
 }

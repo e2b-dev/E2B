@@ -9,7 +9,6 @@ from e2b.session.process import ProcessManager
 from e2b.session.session_connection import SessionConnection
 from e2b.session.terminal import TerminalManager
 
-
 logger = logging.getLogger(__name__)
 
 Environment = Literal[
@@ -63,6 +62,7 @@ class Session(SessionConnection):
         self,
         id: Union[Environment, str],
         api_key: str,
+        cwd: Optional[str] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
@@ -84,6 +84,7 @@ class Session(SessionConnection):
         - `DotNET`
 
         :param api_key: The API key to use
+        :param cwd: The current working directory to use
         :param edit_enabled: Whether the session state will be saved after exit
         :param on_scan_ports: A callback to handle opened ports
         """
@@ -92,6 +93,7 @@ class Session(SessionConnection):
         super().__init__(
             id=id,
             api_key=api_key,
+            cwd=cwd,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
@@ -137,6 +139,7 @@ class Session(SessionConnection):
         cls,
         id: Union[Environment, str],
         api_key: Optional[str] = None,
+        cwd: Optional[str] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
         timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
@@ -159,17 +162,21 @@ class Session(SessionConnection):
         - `DotNET`
 
         :param api_key: The API key to use
+        :param cwd: The current working directory to use
         :param on_scan_ports: A callback to handle opened ports
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
-
         session = cls(
             id=id,
             api_key=api_key,
+            cwd=cwd,
             on_scan_ports=on_scan_ports,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
         )
         await session.open(timeout=timeout)
+        if cwd:
+            await session.filesystem.make_dir(cwd)
+
         return session
