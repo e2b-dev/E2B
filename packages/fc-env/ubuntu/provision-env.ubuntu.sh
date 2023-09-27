@@ -49,7 +49,9 @@ usermod -aG sudo user
 passwd -d user
 echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 
-find / -type d \( -path /sys -o -path /proc -o -path /dev -o -path /etc -o -path /usr/share -o -path /lib/systemd/system/ -o -path /etc/systemd/system/ \) -prune -o -exec chmod 777 {} +
+chmod 777 /home/user
+chmod 777 -R /usr/local/
+
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
 # It may be becayse of the way we are starting the FC VM?
 # chown -R user:user /home/user
