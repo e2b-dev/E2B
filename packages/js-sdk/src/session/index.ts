@@ -313,7 +313,7 @@ export class Session extends SessionConnection {
     return new Session(opts).open({ timeout: opts?.timeout }).then(async session => {
       if (opts.cwd) {
         console.log(`Custom cwd for Session set: "${opts.cwd}"`)
-        const proc = await session.filesystem.makeDir({path: cwd})
+        await session.filesystem.makeDir(opts.cwd)
       }
       return session
     })
