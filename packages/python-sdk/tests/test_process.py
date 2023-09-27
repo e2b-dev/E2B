@@ -5,6 +5,13 @@ from e2b import Session
 
 E2B_API_KEY = getenv("E2B_API_KEY")
 
+async def test_process_expected_stdout():
+    # TODO: Implement this once we fix envd stdout/stderr race condition
+    pass
+
+async def test_process_expected_stderr():
+    # TODO: Implement this once we fix envd stdout/stderr race condition
+    pass
 
 async def test_process_on_stdout_stderr():
     session = await Session.create("Nodejs", api_key=E2B_API_KEY)

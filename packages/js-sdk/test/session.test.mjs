@@ -1,5 +1,5 @@
 import { Session } from '../src'
-import { expect, test } from 'vitest'
+import { test } from 'vitest'
 
 const E2B_API_KEY = process.env.E2B_API_KEY
 

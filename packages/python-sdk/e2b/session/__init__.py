@@ -12,3 +12,4 @@ from .filesystem_watcher import FilesystemEvent, FilesystemOperation, Filesystem
 from .main import Session
 from .process import Process, ProcessManager, ProcessMessage, ProcessOutput
 from .terminal import Terminal, TerminalManager, TerminalOutput
+from .run_code import run_code

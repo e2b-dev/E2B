@@ -1,12 +1,22 @@
-import { Session } from '../dist/cjs/index.js'
+import { runCode } from '../dist/cjs/index.js'
 
 async function main() {
-  const session = await Session.create({
-    id: 'Nodejs',
-    apiKey: process.env.E2B_API_KEY,
-  })
+  // const session = await Session.create({
+  //   id: 'Nodejs',
+  //   apiKey: process.env.E2B_API_KEY,
+  // })
 
   try {
+    // const code = 'console.log("Hello World"); console.error("Bum")'
+    const code = `
+print("hello")
+raise Exception("err")
+`
+    const out = await runCode('Python3', code)
+    console.log(out)
+    // console.log('stdout', stdout)
+    // console.log('stderr', stderr)
+
     // await session.filesystem.write('/code/file', 'test')
     // const content = await session.filesystem.read('/code/file')
     // console.log('content', content)
@@ -16,15 +26,6 @@ async function main() {
     //   // onExit: () => console.log('exit'),
     //   // onStdout: data => console.log(data.line),
     // })
-    const process = await session.process.start('npm init -y')
-
-    const output = await process.finished
-
-    console.log('output:', output)
-    console.log('stdout:', output.stdout)
-    console.log('stderr:', output.stderr)
-
-    await session.close()
     // const cmd = 'npm i'
 
     // await session.process.start({
