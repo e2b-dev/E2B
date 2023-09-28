@@ -60,3 +60,5 @@ async def test_relative_paths():
     proc = await session.process.start("cat /hello.txt")
     output = await proc
     assert output.stdout == "Hello Tom!"
+
+# TODO: test warnings
