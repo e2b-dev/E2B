@@ -44,7 +44,7 @@ func (d *dataWriter) Write(p []byte) (int, error) {
 	return len(p), err
 }
 
-func (s *Service) dataSubsWriter(terminalID string) *dataWriter {
+func (s *Service) dataSubsWriter(terminalID string) io.Writer {
 	return &dataWriter{
 		terminalID: terminalID,
 		dataSubs:   s.dataSubs,
@@ -73,17 +73,10 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 			id = xid.New().String()
 		}
 
-		var validRootdir string
-		if rootdir != nil {
-			validRootdir = *rootdir
-		} else {
-			validRootdir = s.env.Workdir()
-		}
-
 		newTerm, err := s.terminals.Add(
 			id,
 			s.env.Shell(),
-			validRootdir,
+			rootdir,
 			cols,
 			rows,
 			envVars,

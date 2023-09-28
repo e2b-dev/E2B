@@ -27,6 +27,10 @@ echo "export PS1='\w \$ '" >/etc/profile.d/prompt.sh
 echo "export PS1='\w \$ '" >>"/etc/profile"
 echo "export PS1='\w \$ '" >>"/root/.bashrc"
 
+# Use .bashrc and .profile
+echo "if [ -f ~/.bashrc ]; then source ~/.bashrc; fi; if [ -f ~/.profile ]; then source ~/.profile; fi" >> /etc/profile
+
+
 mkdir -p /etc/ssh
 touch /etc/ssh/sshd_config
 echo "PermitRootLogin yes" >>/etc/ssh/sshd_config
@@ -45,8 +49,10 @@ usermod -aG sudo user
 passwd -d user
 echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 
-chmod -R 777 /code
-chmod -R 777 /home/user
+chmod 777 /home/user
+chmod 777 -R /usr/local
+chmod 777 -R /code
+
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
 # It may be becayse of the way we are starting the FC VM?
 # chown -R user:user /home/user

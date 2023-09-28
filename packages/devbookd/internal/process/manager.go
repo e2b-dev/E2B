@@ -34,8 +34,8 @@ func (m *Manager) Get(id ID) (*Process, bool) {
 	return m.procs.Get(id)
 }
 
-func (m *Manager) Add(id ID, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
-	proc, err := New(id, cmd, envVars, rootdir, m.logger)
+func (m *Manager) Add(id ID, shell, cmd string, envVars *map[string]string, rootdir string) (*Process, error) {
+	proc, err := New(id, shell, cmd, envVars, rootdir, m.logger)
 	if err != nil {
 		return nil, fmt.Errorf("error configuring new process with id '%s': %+v", id, err)
 	}
