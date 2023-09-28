@@ -25,6 +25,7 @@ from e2b.session.exception import (
     SessionException,
 )
 from e2b.session.session_rpc import Notification, SessionRpc
+from e2b.utils.filesystem import resolve_path
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
 from e2b.utils.str import camel_case_to_snake_case
@@ -97,6 +98,15 @@ class SessionConnection:
         self._finished = DeferredFuture(self._process_cleanup)
 
         logger.info(f"Session for code snippet {self._id} initialized")
+
+    def cd(self, path: str) -> None:
+        """
+        Change the current working directory.
+
+        :param path: Path to a directory
+        """
+        path = resolve_path(path, self.cwd)
+        self._cwd = path
 
     def get_hostname(self, port: Optional[int] = None):
         """

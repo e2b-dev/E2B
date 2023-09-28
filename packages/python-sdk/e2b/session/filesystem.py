@@ -1,7 +1,5 @@
 import base64
 import logging
-import os
-import warnings
 from typing import Any, List, Optional
 
 from pydantic import BaseModel
@@ -10,6 +8,7 @@ from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.filesystem_watcher import FilesystemWatcher
 from e2b.session.session_connection import SessionConnection
+from e2b.utils.filesystem import resolve_path
 
 logger = logging.getLogger(__name__)
 
@@ -26,18 +25,18 @@ class FileInfo(BaseModel):
 class FilesystemManager:
     """
     Filesystem manager is used to read, write, remove and list files and directories in the environment.
-
-    @param cwd: Current working directory. The path to a file or a directory can be relative or absolute. Relative
-    paths are resolved from the current working directory.
     """
 
     _service_name = "filesystem"
 
-    def __init__(self, session: SessionConnection, cwd: Optional[str] = None):
+    def __init__(self, session: SessionConnection):
         self._session = session
-        self.cwd = cwd
 
-    async def read_bytes(self, path: str) -> bytearray:
+    @property
+    def cwd(self) -> str:
+        return self._session.cwd
+
+    async def read_bytes(self, path: str) -> bytes:
         """
         Reads the whole content of a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
@@ -45,14 +44,13 @@ class FilesystemManager:
         :param path: path to a file
         :return: byte array representing the content of a file
         """
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
         result: str = await self._session._call(
             self._service_name, "readBase64", [path]
         )
         return base64.b64decode(result)
-        # return bytearray(result, "base64")
 
-    async def write_bytes(self, path: str, content: bytearray) -> None:
+    async def write_bytes(self, path: str, content: bytes) -> None:
         """
         Writes content to a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
@@ -60,7 +58,7 @@ class FilesystemManager:
         :param path: path to a file
         :param content: byte array representing the content to write
         """
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
         base64_content = base64.b64encode(content).decode("utf-8")
         await self._session._call(
             self._service_name, "writeBase64", [path, base64_content]
@@ -76,7 +74,7 @@ class FilesystemManager:
         """
         logger.debug(f"Reading file {path}")
 
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
         try:
             result: str = await self._session._call(
                 self._service_name, "read", [path], timeout=timeout
@@ -98,7 +96,8 @@ class FilesystemManager:
         """
         logger.debug(f"Writing file {path}")
 
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
+        print("path", path)
         try:
             await self._session._call(
                 self._service_name, "write", [path, content], timeout=timeout
@@ -116,7 +115,7 @@ class FilesystemManager:
         """
         logger.debug(f"Removing file {path}")
 
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
         try:
             await self._session._call(
                 self._service_name, "remove", [path], timeout=timeout
@@ -138,7 +137,7 @@ class FilesystemManager:
         """
         logger.debug(f"Listing files in {path}")
 
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
         try:
             result: List[Any] = await self._session._call(
                 self._service_name, "list", [path], timeout=timeout
@@ -160,7 +159,7 @@ class FilesystemManager:
         """
         logger.debug(f"Creating directory {path}")
 
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
         try:
             await self._session._call(
                 self._service_name, "makeDir", [path], timeout=timeout
@@ -179,34 +178,9 @@ class FilesystemManager:
         """
         logger.debug(f"Watching directory {path}")
 
-        path = self._resolve_path(path)
+        path = resolve_path(path, self.cwd)
         return FilesystemWatcher(
             connection=self._session,
             path=path,
             service_name=self._service_name,
         )
-
-    def _resolve_path(self, path: str) -> str:
-        if path.startswith("./"):
-            if not self.cwd:
-                raise warnings.warn(
-                    f"Path starts with './' and cwd isn't set. The path {path} will evaluate to `{path[1:]}`, which may not be what you want."
-                )
-
-            return os.path.join(self.cwd or "", path[1:])
-
-        if path.startswith("../"):
-            if not self.cwd:
-                raise warnings.warn(
-                    f"Path starts with '../' and cwd isn't set. The path {path} will evaluate to `{path[2:]}`, which may not be what you want."
-                )
-            return os.path.join(self.cwd or "", path[2:])
-
-        if path.startswith("~/"):
-            if not self.cwd:
-                raise warnings.warn(
-                    f"Path starts with '~/' and cwd isn't set. The path {path} will evaluate to `/home/user/{path[2:]}`, which may not be what you want."
-                )
-            return os.path.join(self.cwd or "/home/user", path[1:])
-
-        return path

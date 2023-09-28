@@ -90,6 +90,9 @@ class Session(SessionConnection):
         """
 
         logger.info(f"Creating session {id if isinstance(id, str) else type(id)}")
+        if cwd and cwd.startswith("~"):
+            cwd = cwd.replace("~", "/home/user")
+
         super().__init__(
             id=id,
             api_key=api_key,
@@ -118,6 +121,8 @@ class Session(SessionConnection):
             await super().open()
             await self._code_snippet._subscribe()
         logger.info(f"Session {self._id} opened")
+        if self.cwd:
+            await self.filesystem.make_dir(self.cwd)
 
     def _close_services(self):
         self._terminal._close()
@@ -176,7 +181,5 @@ class Session(SessionConnection):
             _debug_dev_env=_debug_dev_env,
         )
         await session.open(timeout=timeout)
-        if cwd:
-            await session.filesystem.make_dir(cwd)
 
         return session
