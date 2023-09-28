@@ -1,3 +1,5 @@
+import pytest
+
 from e2b import Session
 
 
@@ -21,6 +23,8 @@ async def test_filesystem_cwd():
     output = await proc
     assert output.stdout == "Hello VM!"
 
+    await session.close()
+
 
 async def test_cd():
     session = await Session.create("Nodejs", cwd="/code/app")
@@ -39,6 +43,8 @@ async def test_cd():
     output = await proc
     assert output.stdout == "Hello VM!"
 
+    await session.close()
+
 
 async def test_initial_cwd_with_tilde():
     session = await Session.create("Nodejs", cwd="~/code/")
@@ -47,18 +53,36 @@ async def test_initial_cwd_with_tilde():
     output = await proc
     assert output.stdout == "/home/user/code"
 
+    await session.close()
+
 
 async def test_relative_paths():
-    session = await Session.create("Nodejs", cwd="/home/")
+    session = await Session.create("Nodejs", cwd="/home/user")
 
-    await session.filesystem.write("./user/hello.txt", "Hello Vasek!")
-    proc = await session.process.start("cat /home/user/hello.txt")
+    await session.filesystem.make_dir("./code")
+    await session.filesystem.write("./code/hello.txt", "Hello Vasek!")
+    proc = await session.process.start("cat /home/user/code/hello.txt")
     output = await proc
     assert output.stdout == "Hello Vasek!"
 
-    await session.filesystem.write("../hello.txt", "Hello Tom!")
+    await session.filesystem.write("../../hello.txt", "Hello Tom!")
     proc = await session.process.start("cat /hello.txt")
     output = await proc
     assert output.stdout == "Hello Tom!"
 
-# TODO: test warnings
+    await session.close()
+
+
+async def test_warnings():
+    session = await Session.create("Nodejs")
+
+    with pytest.warns(Warning):
+        await session.filesystem.write("./hello.txt", "Hello Vasek!")
+
+    with pytest.warns(Warning):
+        await session.filesystem.write("../hello.txt", "Hello Vasek!")
+
+    with pytest.warns(Warning):
+        await session.filesystem.write("~/hello.txt", "Hello Vasek!")
+
+    await session.close()
