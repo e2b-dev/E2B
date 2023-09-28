@@ -1,5 +1,5 @@
 packer {
-  required_version = "1.8.4"
+  required_version = "1.9.2"
   required_plugins {
     googlecompute = {
       version = "1.0.16"
@@ -52,7 +52,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y docker.io=20.10.12-0ubuntu2~20.04.1",
+      "sudo apt-get install -y docker.io",
       "sudo systemctl start docker",
       "sudo usermod -aG docker $USER",
     ]
