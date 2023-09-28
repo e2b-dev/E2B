@@ -321,7 +321,7 @@ class ProcessManager:
 
                 if not cwd and self._session.cwd:
                     cwd = self._session.cwd
-                    print("CWD", cwd)
+
                 await self._session._call(
                     self._service_name,
                     "start",
