@@ -19,7 +19,7 @@ import json
 
 
 from pydantic import BaseModel, Field
-from e2b.api.client.models.environment_state import EnvironmentState
+from e2b.api.v2.client.models.environment_state import EnvironmentState
 
 
 class EnvironmentStateUpdate(BaseModel):

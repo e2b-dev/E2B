@@ -24,12 +24,12 @@ from pydantic import StrictStr
 
 from typing import List, Optional
 
-from e2b.api.client.models.new_session import NewSession
-from e2b.api.client.models.session import Session
+from e2b.api.v2.client.models.new_session import NewSession
+from e2b.api.v2.client.models.session import Session
 
-from e2b.api.client.api_client import ApiClient
-from e2b.api.client.api_response import ApiResponse
-from e2b.api.client.exceptions import ApiTypeError, ApiValueError  # noqa: F401
+from e2b.api.v2.client.api_client import ApiClient
+from e2b.api.v2.client.api_response import ApiResponse
+from e2b.api.v2.client.exceptions import ApiTypeError, ApiValueError  # noqa: F401
 
 
 class SessionsApi:

@@ -24,11 +24,11 @@ import tempfile
 
 from urllib.parse import quote
 
-from e2b.api.client.configuration import Configuration
-from e2b.api.client.api_response import ApiResponse
-import e2b.api.client.models
-from e2b.api.client import rest
-from e2b.api.client.exceptions import ApiValueError, ApiException
+from e2b.api.v2.client.configuration import Configuration
+from e2b.api.v2.client.api_response import ApiResponse
+import e2b.api.v2.client.models
+from e2b.api.v2.client import rest
+from e2b.api.v2.client.exceptions import ApiValueError, ApiException
 
 
 class ApiClient:
@@ -371,7 +371,7 @@ class ApiClient:
             if klass in self.NATIVE_TYPES_MAPPING:
                 klass = self.NATIVE_TYPES_MAPPING[klass]
             else:
-                klass = getattr(e2b.api.client.models, klass)
+                klass = getattr(e2b.api.v2.client.models, klass)
 
         if klass in self.PRIMITIVE_TYPES:
             return self.__deserialize_primitive(data, klass)
