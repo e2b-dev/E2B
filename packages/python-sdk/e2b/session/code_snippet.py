@@ -16,6 +16,10 @@ ScanOpenedPortsHandler = Callable[[List[OpenPort]], Any]
 
 
 class CodeSnippetManager(BaseModel):
+    # TODO: remove Config class when only pydantic 2.0 is used
+    class Config:
+        arbitrary_types_allowed = True
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     service_name: ClassVar[str] = "codeSnippet"

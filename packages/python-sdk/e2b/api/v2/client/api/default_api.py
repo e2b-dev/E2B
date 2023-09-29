@@ -21,9 +21,9 @@ from typing_extensions import Annotated
 from typing import overload, Optional, Union, Awaitable
 
 
-from e2b.api.client.api_client import ApiClient
-from e2b.api.client.api_response import ApiResponse
-from e2b.api.client.exceptions import ApiTypeError, ApiValueError  # noqa: F401
+from e2b.api.v2.client.api_client import ApiClient
+from e2b.api.v2.client.api_response import ApiResponse
+from e2b.api.v2.client.exceptions import ApiTypeError, ApiValueError  # noqa: F401
 
 
 class DefaultApi:

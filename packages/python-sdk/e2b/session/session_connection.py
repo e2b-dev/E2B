@@ -8,10 +8,7 @@ from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 import async_timeout
 from pydantic import BaseModel
 
-from e2b.api.client import NewSession
-from e2b.api.client import Session as SessionInfo
-from e2b.api.client.rest import ApiException
-from e2b.api.main import client, configuration
+from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
     SESSION_DOMAIN,
     SESSION_REFRESH_PERIOD,
@@ -87,7 +84,7 @@ class SessionConnection:
         self._debug_dev_env = _debug_dev_env
         self._on_close_child = on_close
 
-        self._session: Optional[SessionInfo] = None
+        self._session: Optional[models.Session] = None
         self._is_open = False
         self._process_cleanup: List[Callable[[], Any]] = []
         self._refreshing_task: Optional[asyncio.Future] = None
@@ -166,7 +163,7 @@ class SessionConnection:
                 api = client.SessionsApi(api_client)
 
                 self._session = await api.sessions_post(
-                    NewSession(codeSnippetID=self._id, editEnabled=False),
+                    models.NewSession(codeSnippetID=self._id, editEnabled=False),
                     api_key=self._api_key,
                 )
                 logger.info(
@@ -337,7 +334,7 @@ class SessionConnection:
                 try:
                     await api.sessions_session_id_refresh_post(session_id)
                     logger.debug(f"Refreshed session {session_id}")
-                except ApiException as e:
+                except exceptions.ApiException as e:
                     if e.status == 404:
                         raise SessionException(
                             f"Session {session_id} failed because it cannot be found"
