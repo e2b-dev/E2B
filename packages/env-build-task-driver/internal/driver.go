@@ -2,44 +2,24 @@ package internal
 
 import (
 	"context"
-	"time"
 
 	"github.com/docker/docker/client"
-	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
 	"github.com/hashicorp/nomad/plugins/base"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
 const (
-	pluginName    = "env-build-task-driver"
-	pluginVersion = "0.2.0"
+	PluginName    = "env-build-task-driver"
+	PluginVersion = "0.2.0"
 )
 
 type (
 	Config struct{}
-
-	TaskConfig struct {
-		BuildID string `codec:"BuildID"`
-		EnvID   string `codec:"EnvID"`
-
-		SpanID  string `codec:"SpanID"`
-		TraceID string `codec:"TraceID"`
-
-		VCpuCount  int64 `codec:"VCpuCount"`
-		MemoryMB   int64 `codec:"MemoryMB"`
-		DiskSizeMB int64 `codec:"DiskSizeMB"`
-	}
-
-	TaskState struct {
-		TaskConfig *drivers.TaskConfig
-		StartedAt  time.Time
-	}
 
 	Driver struct {
 		tracer trace.Tracer
@@ -79,21 +59,9 @@ var (
 	pluginInfo = &base.PluginInfoResponse{
 		Type:              base.PluginTypeDriver,
 		PluginApiVersions: []string{drivers.ApiVersion010},
-		PluginVersion:     pluginVersion,
-		Name:              pluginName,
+		PluginVersion:     PluginVersion,
+		Name:              PluginName,
 	}
-
-	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
-		"BuildID": hclspec.NewAttr("BuildID", "string", true),
-		"EnvID":   hclspec.NewAttr("EnvID", "string", true),
-
-		"SpanID":  hclspec.NewAttr("SpanID", "string", true),
-		"TraceID": hclspec.NewAttr("TraceID", "string", true),
-
-		"VCpuCount":  hclspec.NewAttr("VCpuCount", "number", true),
-		"MemoryMB":   hclspec.NewAttr("MemoryMB", "number", true),
-		"DiskSizeMB": hclspec.NewAttr("DiskSizeMB", "number", true),
-	})
 
 	configSpec = hclspec.NewObject(map[string]*hclspec.Spec{})
 
@@ -105,7 +73,7 @@ var (
 
 func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 	ctx, cancel := context.WithCancel(context.Background())
-	logger = logger.Named(pluginName)
+	logger = logger.Named(PluginName)
 
 	tracer := otel.Tracer("driver")
 
@@ -151,46 +119,6 @@ func (d *Driver) SetConfig(cfg *base.Config) error {
 	return nil
 }
 
-func (d *Driver) TaskConfigSchema() (*hclspec.Spec, error) {
-	return taskConfigSpec, nil
-}
-
 func (d *Driver) Capabilities() (*drivers.Capabilities, error) {
 	return capabilities, nil
-}
-
-func (taskConfig *TaskConfig) getContextFromRemote(ctx context.Context, tracer trace.Tracer, name string) (context.Context, trace.Span) {
-	tid, traceIDErr := trace.TraceIDFromHex(taskConfig.TraceID)
-	if traceIDErr != nil {
-		telemetry.ReportError(
-			ctx,
-			traceIDErr,
-			attribute.String("trace_id", taskConfig.TraceID),
-			attribute.Int("trace_id.length", len(taskConfig.TraceID)),
-		)
-	}
-
-	sid, spanIDErr := trace.SpanIDFromHex(taskConfig.SpanID)
-	if spanIDErr != nil {
-		telemetry.ReportError(
-			ctx,
-			spanIDErr,
-			attribute.String("span_id", taskConfig.SpanID),
-			attribute.Int("span_id.length", len(taskConfig.SpanID)),
-		)
-	}
-
-	remoteCtx := trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID:    tid,
-		SpanID:     sid,
-		TraceFlags: 0x0,
-	})
-
-	return tracer.Start(
-		trace.ContextWithRemoteSpanContext(ctx, remoteCtx),
-		"start-task",
-		trace.WithLinks(
-			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
-		),
-	)
 }

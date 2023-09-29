@@ -59,3 +59,39 @@ func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 		),
 	)
 }
+
+func GetContextFromRemote(ctx context.Context, tracer trace.Tracer, name, spanID, traceID string) (context.Context, trace.Span) {
+	tid, traceIDErr := trace.TraceIDFromHex(traceID)
+	if traceIDErr != nil {
+		ReportError(
+			ctx,
+			traceIDErr,
+			attribute.String("trace_id", traceID),
+			attribute.Int("trace_id.length", len(traceID)),
+		)
+	}
+
+	sid, spanIDErr := trace.SpanIDFromHex(spanID)
+	if spanIDErr != nil {
+		ReportError(
+			ctx,
+			spanIDErr,
+			attribute.String("span_id", spanID),
+			attribute.Int("span_id.length", len(spanID)),
+		)
+	}
+
+	remoteCtx := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    tid,
+		SpanID:     sid,
+		TraceFlags: 0x0,
+	})
+
+	return tracer.Start(
+		trace.ContextWithRemoteSpanContext(ctx, remoteCtx),
+		"start-task",
+		trace.WithLinks(
+			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
+		),
+	)
+}

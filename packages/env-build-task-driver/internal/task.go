@@ -7,13 +7,46 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
+	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
+	"github.com/hashicorp/nomad/plugins/shared/hclspec"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
 const taskHandleVersion = 1
+
+var taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
+	"BuildID": hclspec.NewAttr("BuildID", "string", true),
+	"EnvID":   hclspec.NewAttr("EnvID", "string", true),
+
+	"SpanID":  hclspec.NewAttr("SpanID", "string", true),
+	"TraceID": hclspec.NewAttr("TraceID", "string", true),
+
+	"VCpuCount":  hclspec.NewAttr("VCpuCount", "number", true),
+	"MemoryMB":   hclspec.NewAttr("MemoryMB", "number", true),
+	"DiskSizeMB": hclspec.NewAttr("DiskSizeMB", "number", true),
+})
+
+type (
+	TaskState struct {
+		TaskConfig *drivers.TaskConfig
+		StartedAt  time.Time
+	}
+
+	TaskConfig struct {
+		BuildID string `codec:"BuildID"`
+		EnvID   string `codec:"EnvID"`
+
+		SpanID  string `codec:"SpanID"`
+		TraceID string `codec:"TraceID"`
+
+		VCpuCount  int64 `codec:"VCpuCount"`
+		MemoryMB   int64 `codec:"MemoryMB"`
+		DiskSizeMB int64 `codec:"DiskSizeMB"`
+	}
+)
 
 func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drivers.DriverNetwork, error) {
 	ctx, span := d.tracer.Start(d.ctx, "start-task-validation", trace.WithAttributes(
@@ -34,7 +67,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
-	_, childSpan := taskConfig.getContextFromRemote(ctx, d.tracer, "start-task")
+	_, childSpan := telemetry.GetContextFromRemote(ctx, d.tracer, "start-task", taskConfig.SpanID, taskConfig.TraceID)
 	defer childSpan.End()
 
 	contextsPath := cfg.Env["DOCKER_CONTEXTS_PATH"]
@@ -184,4 +217,8 @@ func (d *Driver) TaskStats(ctx context.Context, taskID string, interval time.Dur
 	}
 
 	return nil, drivers.DriverStatsNotImplemented
+}
+
+func (d *Driver) TaskConfigSchema() (*hclspec.Spec, error) {
+	return taskConfigSpec, nil
 }

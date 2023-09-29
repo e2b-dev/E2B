@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	serviceName               = "env-build-task-driver"
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
+	profilingPort             = ":6062"
 )
 
 func factory(log log.Logger) interface{} {
@@ -28,7 +28,7 @@ func factory(log log.Logger) interface{} {
 func main() {
 	// Create pprof endpoint for profiling
 	go func() {
-		http.ListenAndServe(":6062", nil)
+		http.ListenAndServe(profilingPort, nil)
 	}()
 
 	envID := flag.String("env", "", "env id")
@@ -42,7 +42,8 @@ func main() {
 	} else {
 		// Regular Nomad Plugin initialization
 		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
+			launcher.WithServiceName(driver.PluginName),
+			launcher.WithServiceVersion(driver.PluginVersion),
 			launcher.WithMetricReportingPeriod(10*time.Second),
 			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
 			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
