@@ -34,7 +34,7 @@ var (
 	pluginInfo = &base.PluginInfoResponse{
 		Type:              base.PluginTypeDriver,
 		PluginApiVersions: []string{drivers.ApiVersion010},
-		PluginVersion:     "0.1.1-dev",
+		PluginVersion:     "0.2.0",
 		Name:              pluginName,
 	}
 
@@ -50,7 +50,6 @@ var (
 	capabilities = &drivers.Capabilities{
 		SendSignals: false,
 		Exec:        false,
-		FSIsolation: drivers.FSIsolationImage,
 	}
 )
 
@@ -432,7 +431,6 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
 
-	// // Going with simplest approach of polling for handler to mark exit.
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 

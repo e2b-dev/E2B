@@ -23,7 +23,7 @@ import (
 
 const (
 	pluginName        = "env-build-task-driver"
-	pluginVersion     = "v0.1.0"
+	pluginVersion     = "0.2.0"
 	fingerprintPeriod = 30 * time.Second
 	taskHandleVersion = 1
 	envBuildTimeout   = 30 * time.Minute
@@ -337,25 +337,8 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
 
-	var result *drivers.ExitResult
-
-	<-handle.exited
-
-	handle.stateLock.RLock()
-
-	if handle.exitResult != nil {
-		if handle.exitResult.Err != nil {
-			result = &drivers.ExitResult{
-				Err: fmt.Errorf("executor: error waiting on process: %w", handle.exitResult.Err),
-			}
-		}
-	}
-
-	if result == nil {
-		result = &drivers.ExitResult{}
-	}
-
-	handle.stateLock.RUnlock()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -363,7 +346,11 @@ func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *dr
 			return
 		case <-d.ctx.Done():
 			return
-		case ch <- result:
+		case <-ticker.C:
+			s := handle.TaskStatus()
+			if s.State == drivers.TaskStateExited {
+				ch <- handle.exitResult
+			}
 		}
 	}
 }
