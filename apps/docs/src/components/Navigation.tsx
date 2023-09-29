@@ -264,7 +264,10 @@ export const navigation = [
     links: [
       { title: 'What is E2B & AI Playgrounds?', href: '/' },
       { title: 'Pricing', href: '/pricing' },
-      // { title: 'Open Source', href: '/oss' },
+      {
+        title: 'Example: Build Code Interpreter',
+        href: '/guide/simple-gpt4-code-interpreter',
+      },
     ],
   },
   {
