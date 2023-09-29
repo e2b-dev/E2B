@@ -57,25 +57,6 @@ data "google_secret_manager_secret_version" "consul_acl_token" {
   secret = "consul-secret-id"
 }
 
-provider "consul" {
-  address = "http://${data.google_compute_global_address.orch_server_consul_ip.address}"
-  token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-}
-
-resource "consul_acl_policy" "agent" {
-  name  = "agent"
-  rules = <<-RULE
-    key_prefix "" {
-      policy = "deny"
-    }
-    RULE
-}
-
-resource "consul_acl_token_policy_attachment" "attachment" {
-  token_id = "00000000-0000-0000-0000-000000000002"
-  policy   = consul_acl_policy.agent.name
-}
-
 data "google_compute_global_address" "orch_server_ip" {
   name = "orch-server-nomad-ip"
 }
