@@ -15,7 +15,6 @@ require (
 	github.com/hashicorp/nomad v1.3.0
 	github.com/lightstep/otel-launcher-go v1.10.1
 	github.com/opencontainers/image-spec v1.1.0-rc2
-	github.com/sirupsen/logrus v1.9.3
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.4
 	go.opentelemetry.io/otel v1.9.0
@@ -103,6 +102,7 @@ require (
 	github.com/sethvargo/go-envconfig v0.8.2 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.4 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect

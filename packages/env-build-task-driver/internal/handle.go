@@ -27,6 +27,8 @@ type taskHandle struct {
 
 	exited chan struct{}
 
+	cancel context.CancelFunc
+
 	mu sync.RWMutex
 }
 
