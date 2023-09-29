@@ -4,348 +4,348 @@
  */
 
 export interface paths {
-  '/health': {
+  "/health": {
     /** Health check */
     get: {
       responses: {
         /** Request was successful */
-        200: unknown
-        401: components['responses']['401']
-      }
-    }
-  }
-  '/sessions': {
+        200: unknown;
+        401: components["responses"]["401"];
+      };
+    };
+  };
+  "/sessions": {
     /** List all sessions */
     get: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
-      }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
+      };
       responses: {
         /** Successfully returned all sessions */
         200: {
           content: {
-            'application/json': components['schemas']['Session'][]
-          }
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
+            "application/json": components["schemas"]["Session"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
     /** Create a session on the server */
     post: {
       parameters: {
         query: {
-          api_key?: components['parameters']['apiKeyOpt']
-        }
-      }
+          api_key?: components["parameters"]["apiKeyOpt"];
+        };
+      };
       responses: {
         /** Successfully created a session */
         201: {
           content: {
-            'application/json': components['schemas']['Session']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
+            "application/json": components["schemas"]["Session"];
+          };
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
       requestBody: {
         content: {
-          'application/json': components['schemas']['NewSession']
-        }
-      }
-    }
-  }
-  '/sessions/{sessionID}': {
+          "application/json": components["schemas"]["NewSession"];
+        };
+      };
+    };
+  };
+  "/sessions/{sessionID}": {
     /** Delete a session on the server */
     delete: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
         path: {
-          sessionID: components['parameters']['sessionID']
-        }
-      }
+          sessionID: components["parameters"]["sessionID"];
+        };
+      };
       responses: {
         /** Successfully deleted the session */
-        204: never
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-  }
-  '/sessions/{sessionID}/refresh': {
+        204: never;
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/sessions/{sessionID}/refresh": {
     /** Refresh the session extending its time to live */
     post: {
       parameters: {
         query: {
-          api_key?: components['parameters']['apiKeyOpt']
-        }
+          api_key?: components["parameters"]["apiKeyOpt"];
+        };
         path: {
-          sessionID: components['parameters']['sessionID']
-        }
-      }
+          sessionID: components["parameters"]["sessionID"];
+        };
+      };
       responses: {
         /** Successfully refreshed the session */
-        204: never
-        401: components['responses']['401']
+        204: never;
+        401: components["responses"]["401"];
         /** Error refreshing session - session not found */
         404: {
           content: {
-            'application/json': components['schemas']['Error']
-          }
-        }
-      }
-    }
-  }
-  '/envs': {
+            "application/json": components["schemas"]["Error"];
+          };
+        };
+      };
+    };
+  };
+  "/envs": {
     /** List all environments */
     get: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
-      }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
+      };
       responses: {
         /** Successfully returned all environments */
         200: {
           content: {
-            'application/json': components['schemas']['Environment'][]
-          }
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
+            "application/json": components["schemas"]["Environment"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
     /** Create a new environment */
     post: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
-      }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
+      };
       responses: {
         /** Successfully created an environment */
         200: {
           content: {
-            'application/json': components['schemas']['Environment']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
+            "application/json": components["schemas"]["Environment"];
+          };
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
       requestBody: {
         content: {
-          'application/json': components['schemas']['NewEnvironment']
-        }
-      }
-    }
-  }
-  '/envs/{codeSnippetID}': {
+          "application/json": components["schemas"]["NewEnvironment"];
+        };
+      };
+    };
+  };
+  "/envs/{codeSnippetID}": {
     /** Create a new env for a code snippet */
     post: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
         path: {
-          codeSnippetID: components['parameters']['codeSnippetID']
-        }
-      }
+          codeSnippetID: components["parameters"]["codeSnippetID"];
+        };
+      };
       responses: {
         /** Successfully created an environment */
-        204: never
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
       requestBody: {
         content: {
-          'application/json': components['schemas']['NewEnvironment']
-        }
-      }
-    }
+          "application/json": components["schemas"]["NewEnvironment"];
+        };
+      };
+    };
     /** Delete the code snippet environment */
     delete: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
         path: {
-          codeSnippetID: components['parameters']['codeSnippetID']
-        }
-      }
+          codeSnippetID: components["parameters"]["codeSnippetID"];
+        };
+      };
       responses: {
         /** Successfully deleted the environment */
-        204: never
+        204: never;
         /** Cannot delete the environment */
         400: {
           content: {
-            'application/json': components['schemas']['Error']
-          }
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
+            "application/json": components["schemas"]["Error"];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
     /** Update the environment of the code snippet to match the edit environment */
     patch: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
         path: {
-          codeSnippetID: components['parameters']['codeSnippetID']
-        }
-      }
+          codeSnippetID: components["parameters"]["codeSnippetID"];
+        };
+      };
       responses: {
         /** Updated the edit environment for code snippet */
-        204: never
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-  }
-  '/envs/{codeSnippetID}/state': {
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/envs/{codeSnippetID}/state": {
     /** Update the state of the environment */
     put: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
         path: {
-          codeSnippetID: components['parameters']['codeSnippetID']
-        }
-      }
+          codeSnippetID: components["parameters"]["codeSnippetID"];
+        };
+      };
       responses: {
         /** Updated the state of environment */
-        204: never
-        400: components['responses']['400']
-        401: components['responses']['401']
-      }
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+      };
       requestBody: {
         content: {
-          'application/json': components['schemas']['EnvironmentStateUpdate']
-        }
-      }
-    }
-  }
-  '/envs/{codeSnippetID}/title': {
+          "application/json": components["schemas"]["EnvironmentStateUpdate"];
+        };
+      };
+    };
+  };
+  "/envs/{codeSnippetID}/title": {
     /** Update the title of the environment */
     put: {
       parameters: {
         query: {
-          api_key: components['parameters']['apiKeyReq']
-        }
+          api_key: components["parameters"]["apiKeyReq"];
+        };
         path: {
-          codeSnippetID: components['parameters']['codeSnippetID']
-        }
-      }
+          codeSnippetID: components["parameters"]["codeSnippetID"];
+        };
+      };
       responses: {
         /** Updated the title of the code snippet */
-        204: never
-        400: components['responses']['400']
-        401: components['responses']['401']
-      }
+        204: never;
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+      };
       requestBody: {
         content: {
-          'application/json': components['schemas']['EnvironmentTitleUpdate']
-        }
-      }
-    }
-  }
+          "application/json": components["schemas"]["EnvironmentTitleUpdate"];
+        };
+      };
+    };
+  };
 }
 
 export interface components {
   schemas: {
     /** @enum {string} */
     Template:
-      | 'Nodejs'
-      | 'Go'
-      | 'Bash'
-      | 'Rust'
-      | 'Python3'
-      | 'PHP'
-      | 'Java'
-      | 'Perl'
-      | 'DotNET'
+      | "Nodejs"
+      | "Go"
+      | "Bash"
+      | "Rust"
+      | "Python3"
+      | "PHP"
+      | "Java"
+      | "Perl"
+      | "DotNET";
     /** @enum {string} */
-    EnvironmentState: 'Building' | 'Failed' | 'Done'
+    EnvironmentState: "Building" | "Failed" | "Done";
     Environment: {
-      id: string
-      template?: string
-      title?: string
-    }
+      id: string;
+      template?: string;
+      title?: string;
+    };
     NewEnvironment: {
-      title?: string
-      template: string
-    }
+      title?: string;
+      template: string;
+    };
     EnvironmentStateUpdate: {
-      state: components['schemas']['EnvironmentState']
-    }
+      state: components["schemas"]["EnvironmentState"];
+    };
     EnvironmentTitleUpdate: {
-      title?: string
-    }
+      title?: string;
+    };
     NewSession: {
       /**
        * @description Option determining if the session is a shared persistent edit session
        * @default false
        */
-      editEnabled?: boolean
+      editEnabled?: boolean;
       /** @description Identifier of a code snippet which which is the environment associated */
-      codeSnippetID: string
-    }
+      codeSnippetID: string;
+    };
     Session: {
       /** @description Identifier of a code snippet which which is the environment associated */
-      codeSnippetID: string
+      codeSnippetID: string;
       /** @description Information if the session is a shared persistent edit session */
-      editEnabled: boolean
+      editEnabled: boolean;
       /** @description Identifier of the session */
-      sessionID: string
+      sessionID: string;
       /** @description Identifier of the client */
-      clientID: string
-    }
+      clientID: string;
+    };
     Error: {
       /**
        * Format: int32
        * @description Error code
        */
-      code: number
+      code: number;
       /** @description Error */
-      message: string
-    }
-  }
+      message: string;
+    };
+  };
   responses: {
     /** Bad request */
     400: {
       content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
+        "application/json": components["schemas"]["Error"];
+      };
+    };
     /** Authentication error */
     401: {
       content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
+        "application/json": components["schemas"]["Error"];
+      };
+    };
     /** Server error */
     500: {
       content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-  }
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+  };
   parameters: {
-    apiKeyOpt: string
-    apiKeyReq: string
-    codeSnippetID: string
-    sessionID: string
-  }
+    apiKeyOpt: string;
+    apiKeyReq: string;
+    codeSnippetID: string;
+    sessionID: string;
+  };
 }
 
 export interface operations {}
