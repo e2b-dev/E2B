@@ -23,8 +23,8 @@ type taskHandle struct {
 	logger hclog.Logger
 	// TODO: The mutext here causes deadlock when we are stopping tasks
 	// For now we are not using it - the relevant data will be still valid (FC running/exit).
-	// stateLock syncs access to all fields below
-	stateLock sync.RWMutex
+	// mu syncs access to all fields below
+	mu sync.RWMutex
 
 	taskConfig            *drivers.TaskConfig
 	State                 drivers.TaskState
@@ -39,8 +39,8 @@ type taskHandle struct {
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
-	h.stateLock.RLock()
-	defer h.stateLock.RUnlock()
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 
 	return &drivers.TaskStatus{
 		ID:          h.taskConfig.ID,
@@ -59,13 +59,13 @@ func (h *taskHandle) run(ctx context.Context, driver *Driver) {
 	pid, err := strconv.Atoi(h.EnvInstance.Pid)
 	if err != nil {
 		h.logger.Info(fmt.Sprintf("ERROR Env-instance-task-driver Could not parse pid=%s after initialization", h.EnvInstance.Pid))
-		h.stateLock.Lock()
+		h.mu.Lock()
 		h.exitResult = &drivers.ExitResult{}
 		h.exitResult.ExitCode = 127
 		h.exitResult.Signal = 0
 		h.completedAt = time.Now()
 		h.State = drivers.TaskStateExited
-		h.stateLock.Unlock()
+		h.mu.Unlock()
 		return
 	}
 
@@ -115,8 +115,8 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	}
 
 	telemetry.ReportEvent(childCtx, "waiting for state lock")
-	h.stateLock.Lock()
-	defer h.stateLock.Unlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	telemetry.ReportEvent(childCtx, "passed state lock")
 
 	h.exitResult = &drivers.ExitResult{}

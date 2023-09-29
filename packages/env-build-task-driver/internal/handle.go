@@ -27,12 +27,12 @@ type taskHandle struct {
 
 	exited chan struct{}
 
-	stateLock sync.RWMutex
+	mu sync.RWMutex
 }
 
 func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
-	h.stateLock.RLock()
-	defer h.stateLock.RUnlock()
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 
 	return &drivers.TaskStatus{
 		ID:               h.taskConfig.ID,
@@ -55,7 +55,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 
 		h.logger.Error(fmt.Sprintf("ERROR Env-build-task-driver Could not build env '%s' during build '%s': %s", h.env.EnvID, h.env.BuildID, err.Error()))
 
-		h.stateLock.Lock()
+		h.mu.Lock()
 
 		h.exitResult.Err = err
 		h.procState = drivers.TaskStateExited
@@ -66,10 +66,10 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 			ExitCode: 1,
 		}
 
-		h.stateLock.Unlock()
+		h.mu.Unlock()
 	} else {
 		h.logger.Info(fmt.Sprintf("Env '%s' during build '%s' was built successfully", h.env.EnvID, h.env.BuildID))
-		h.stateLock.Lock()
+		h.mu.Lock()
 
 		h.exitResult = &drivers.ExitResult{
 			ExitCode: 0,
@@ -78,10 +78,10 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 		h.completedAt = time.Now()
 		h.procState = drivers.TaskStateExited
 
-		h.stateLock.Unlock()
+		h.mu.Unlock()
 	}
 
-	h.stateLock.Lock()
+	h.mu.Lock()
 	close(h.exited)
-	h.stateLock.Unlock()
+	h.mu.Unlock()
 }
