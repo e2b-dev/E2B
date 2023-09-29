@@ -14,7 +14,7 @@ source "googlecompute" "orch" {
   # TODO: Overwrite the image instead of creating timestamped images every time we build its
   image_name          = "orch-${formatdate("YYYY-MM-DD-hh-mm-ss", timestamp())}"
   project_id          = var.gcp_project_id
-  source_image_family = "ubuntu-2004-lts"
+  source_image_family = "ubuntu-2204-lts"
   ssh_username        = "ubuntu"
   zone                = var.gcp_zone
   disk_size           = 10
@@ -102,7 +102,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /fc-vm",
-      "sudo curl https://storage.googleapis.com/e2b-fc-env-pipeline/vmlinux.bin -o /fc-vm/vmlinux.bin",
+      "sudo curl https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.5/x86_64/vmlinux-${var.kernel_version} -o /fc-vm/vmlinux.bin",
     ]
   }
 

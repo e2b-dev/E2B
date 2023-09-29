@@ -15,7 +15,7 @@ permissions:
 jobs:
   changes:
     name: Repository changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       get-version: ${{ steps.getversion.outputs.version }}
       cluster-disk-image: ${{ steps.filter.outputs.cluster-disk-image }}
@@ -167,7 +167,7 @@ jobs:
       always() &&
       needs.terraform.result == 'success' &&
       needs.changes.outputs.version == 'true'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Create release
         uses: ncipollo/release-action@v1
