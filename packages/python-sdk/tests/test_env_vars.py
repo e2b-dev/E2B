@@ -42,4 +42,4 @@ async def test_overriding_env_vars():
     output = process.stdout
     assert output == "QUX"
 
-    await session
+    await session.close()
