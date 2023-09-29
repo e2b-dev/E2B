@@ -21,5 +21,5 @@ update-instance-driver:
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-instance-task-driver && \
 	sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver && \
-	pgrep firecracker | xargs -n1 sudo kill -9 && \
-	supervisorctl restart nomad'
+	sudo supervisorctl restart nomad && \
+	sudo kill -9 $$(pgrep firecracker)'
