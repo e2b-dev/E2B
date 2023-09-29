@@ -53,9 +53,18 @@ resource "google_service_account" "github-action-service-account" {
   display_name = "Service account for deploying API via Github Actions"
 }
 
+
+resource "random_string" "action_wip_random" {
+  length  = 4
+  special = false
+  lower   = true
+  upper   = false
+  numeric = true
+}
+
 resource "google_iam_workload_identity_pool" "github-actions-wip" {
   provider                  = google-beta
-  workload_identity_pool_id = "github-actions-${var.gcp_project_id}-api-pool"
+  workload_identity_pool_id = "github-actions-${var.gcp_project_id}-api-${random_string.action_wip_random.result}"
   display_name              = "GitHub Actions for ${var.github_repository} repo"
   description               = "OIDC identity pool for deploying ${var.github_repository} via GitHub Actions"
 }
@@ -85,8 +94,6 @@ resource "google_service_account_iam_member" "gha-service-account-wif-tokencreat
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/projects/${data.google_project.gcp_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github-actions-wip.workload_identity_pool_id}/attribute.repository/${var.github_organization}/${var.github_repository}"
 }
-
-
 
 resource "google_project_iam_member" "service-account-roles" {
   for_each = toset([
