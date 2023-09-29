@@ -60,14 +60,14 @@ class Session(SessionConnection):
         return self._filesystem
 
     def __init__(
-            self,
-            id: Union[Environment, str],
-            api_key: Optional[str],
-            cwd: Optional[str] = None,
-            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-            _debug_hostname: Optional[str] = None,
-            _debug_port: Optional[int] = None,
-            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        self,
+        id: Union[Environment, str],
+        api_key: Optional[str],
+        cwd: Optional[str] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.
@@ -90,6 +90,9 @@ class Session(SessionConnection):
         """
 
         logger.info(f"Creating session {id if isinstance(id, str) else type(id)}")
+        if cwd and cwd.startswith("~"):
+            cwd = cwd.replace("~", "/home/user")
+
         super().__init__(
             id=id,
             api_key=api_key,
@@ -118,6 +121,8 @@ class Session(SessionConnection):
             await super().open()
             await self._code_snippet._subscribe()
         logger.info(f"Session {self._id} opened")
+        if self.cwd:
+            await self.filesystem.make_dir(self.cwd)
 
     def _close_services(self):
         self._terminal._close()
@@ -136,15 +141,15 @@ class Session(SessionConnection):
 
     @classmethod
     async def create(
-            cls,
-            id: Union[Environment, str],
-            api_key: Optional[str] = None,
-            cwd: Optional[str] = None,
-            on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-            timeout: Optional[float] = TIMEOUT,
-            _debug_hostname: Optional[str] = None,
-            _debug_port: Optional[int] = None,
-            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        cls,
+        id: Union[Environment, str],
+        api_key: Optional[str] = None,
+        cwd: Optional[str] = None,
+        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
         Creates a new cloud environment session.
@@ -176,7 +181,5 @@ class Session(SessionConnection):
             _debug_dev_env=_debug_dev_env,
         )
         await session.open(timeout=timeout)
-        if cwd:
-            await session.filesystem.make_dir(cwd)
 
         return session

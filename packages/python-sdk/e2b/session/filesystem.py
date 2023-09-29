@@ -1,12 +1,14 @@
-import logging
 import base64
+import logging
 from typing import Any, List, Optional
+
+from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.filesystem_watcher import FilesystemWatcher
 from e2b.session.session_connection import SessionConnection
-from pydantic import BaseModel
+from e2b.utils.filesystem import resolve_path
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,11 @@ class FilesystemManager:
     def __init__(self, session: SessionConnection):
         self._session = session
 
-    async def read_bytes(self, path: str) -> bytearray:
+    @property
+    def cwd(self) -> str:
+        return self._session.cwd
+
+    async def read_bytes(self, path: str) -> bytes:
         """
         Reads the whole content of a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
@@ -38,13 +44,13 @@ class FilesystemManager:
         :param path: path to a file
         :return: byte array representing the content of a file
         """
+        path = resolve_path(path, self.cwd)
         result: str = await self._session._call(
             self._service_name, "readBase64", [path]
         )
         return base64.b64decode(result)
-        # return bytearray(result, "base64")
 
-    async def write_bytes(self, path: str, content: bytearray) -> None:
+    async def write_bytes(self, path: str, content: bytes) -> None:
         """
         Writes content to a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
@@ -52,6 +58,7 @@ class FilesystemManager:
         :param path: path to a file
         :param content: byte array representing the content to write
         """
+        path = resolve_path(path, self.cwd)
         base64_content = base64.b64encode(content).decode("utf-8")
         await self._session._call(
             self._service_name, "writeBase64", [path, base64_content]
@@ -66,6 +73,8 @@ class FilesystemManager:
         :return: Content of a file
         """
         logger.debug(f"Reading file {path}")
+
+        path = resolve_path(path, self.cwd)
         try:
             result: str = await self._session._call(
                 self._service_name, "read", [path], timeout=timeout
@@ -86,6 +95,8 @@ class FilesystemManager:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.debug(f"Writing file {path}")
+
+        path = resolve_path(path, self.cwd)
         try:
             await self._session._call(
                 self._service_name, "write", [path, content], timeout=timeout
@@ -102,6 +113,8 @@ class FilesystemManager:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.debug(f"Removing file {path}")
+
+        path = resolve_path(path, self.cwd)
         try:
             await self._session._call(
                 self._service_name, "remove", [path], timeout=timeout
@@ -122,6 +135,8 @@ class FilesystemManager:
         :return: Array of files in a directory
         """
         logger.debug(f"Listing files in {path}")
+
+        path = resolve_path(path, self.cwd)
         try:
             result: List[Any] = await self._session._call(
                 self._service_name, "list", [path], timeout=timeout
@@ -142,6 +157,8 @@ class FilesystemManager:
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.debug(f"Creating directory {path}")
+
+        path = resolve_path(path, self.cwd)
         try:
             await self._session._call(
                 self._service_name, "makeDir", [path], timeout=timeout
@@ -159,6 +176,8 @@ class FilesystemManager:
         :return: New watcher
         """
         logger.debug(f"Watching directory {path}")
+
+        path = resolve_path(path, self.cwd)
         return FilesystemWatcher(
             connection=self._session,
             path=path,

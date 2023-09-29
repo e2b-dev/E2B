@@ -43,10 +43,6 @@ class SessionConnection:
     _refresh_retries = 4
 
     @property
-    def cwd(self):
-        return self._cwd
-
-    @property
     def finished(self):
         """
         A future that is resolved when the session exits.
@@ -64,14 +60,14 @@ class SessionConnection:
         return self._finished.__await__()
 
     def __init__(
-            self,
-            id: str,
-            api_key: Optional[str],
-            cwd: Optional[str] = None,
-            _debug_hostname: Optional[str] = None,
-            _debug_port: Optional[int] = None,
-            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
-            on_close: Optional[Callable[[], Any]] = None,
+        self,
+        id: str,
+        api_key: Optional[str],
+        cwd: Optional[str] = None,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        on_close: Optional[Callable[[], Any]] = None,
     ):
         api_key = api_key or getenv("E2B_API_KEY")
 
@@ -80,9 +76,9 @@ class SessionConnection:
                 "API key is required, please visit https://e2b.dev/docs to get your API key",
             )
 
+        self.cwd = cwd
         self._id = id
         self._api_key = api_key
-        self._cwd = cwd
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env
@@ -224,11 +220,11 @@ class SessionConnection:
             raise e
 
     async def _call(
-            self,
-            service: str,
-            method: str,
-            params: List[Any] = None,
-            timeout: Optional[float] = TIMEOUT,
+        self,
+        service: str,
+        method: str,
+        params: List[Any] = None,
+        timeout: Optional[float] = TIMEOUT,
     ):
         if not params:
             params = []
@@ -240,8 +236,8 @@ class SessionConnection:
             return await self._rpc.send_message(f"{service}_{method}", params)
 
     async def _handle_subscriptions(
-            self,
-            *subs: Optional[Awaitable[Callable[[], Awaitable[None]]]],
+        self,
+        *subs: Optional[Awaitable[Callable[[], Awaitable[None]]]],
     ):
         results: List[
             Union[Callable[[], Awaitable[None]], None, Exception]
@@ -289,12 +285,12 @@ class SessionConnection:
         logger.debug(f"Unsubscribed (sub_id: {sub_id})")
 
     async def _subscribe(
-            self,
-            service: str,
-            handler: Callable[[Any], Any],
-            method: str,
-            *params,
-            timeout: Optional[float] = TIMEOUT,
+        self,
+        service: str,
+        handler: Callable[[Any], Any],
+        method: str,
+        *params,
+        timeout: Optional[float] = TIMEOUT,
     ):
         sub_id = await self._call(
             service, "subscribe", [method, *params], timeout=timeout

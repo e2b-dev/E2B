@@ -25,12 +25,14 @@ import {
   TerminalOutput,
   terminalService,
 } from './terminal'
+import { resolvePath } from '../utils/filesystem'
 
 export type Environment = components['schemas']['Template']
 
 export interface SessionOpts extends SessionConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler
   timeout?: number
+  cwd?: string // Current working directory. Used to resolve relative paths.
 }
 
 export class Session extends SessionConnection {
@@ -54,7 +56,12 @@ export class Session extends SessionConnection {
        * @returns Array of files in a directory
        */
       list: async (path, opts?: CallOpts) => {
-        return (await this.call(filesystemService, 'list', [path], opts)) as FileInfo[]
+        return (await this.call(
+          filesystemService,
+          'list',
+          [_resolvePath(path)],
+          opts,
+        )) as FileInfo[]
       },
       /**
        * Reads the whole content of a file.
@@ -64,7 +71,12 @@ export class Session extends SessionConnection {
        * @returns Content of a file
        */
       read: async (path, opts?: CallOpts) => {
-        return (await this.call(filesystemService, 'read', [path], opts)) as string
+        return (await this.call(
+          filesystemService,
+          'read',
+          [_resolvePath(path)],
+          opts,
+        )) as string
       },
       /**
        * Removes a file or a directory.
@@ -73,7 +85,7 @@ export class Session extends SessionConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       remove: async (path, opts?: CallOpts) => {
-        await this.call(filesystemService, 'remove', [path], opts)
+        await this.call(filesystemService, 'remove', [_resolvePath(path)], opts)
       },
       /**
        * Writes content to a new file on path.
@@ -83,7 +95,7 @@ export class Session extends SessionConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       write: async (path, content, opts?: CallOpts) => {
-        await this.call(filesystemService, 'write', [path, content], opts)
+        await this.call(filesystemService, 'write', [_resolvePath(path), content], opts)
       },
       /**
        * Write array of bytes to a file.
@@ -96,7 +108,10 @@ export class Session extends SessionConnection {
         // We need to convert the byte array to base64 string without using browser or node specific APIs.
         // This should be achieved by the node polyfills.
         const base64Content = Buffer.from(content).toString('base64')
-        await this.call(filesystemService, 'writeBase64', [path, base64Content])
+        await this.call(filesystemService, 'writeBase64', [
+          _resolvePath(path),
+          base64Content,
+        ])
       },
       /**
        * Reads the whole content of a file as an array of bytes.
@@ -105,7 +120,7 @@ export class Session extends SessionConnection {
        */
       readBytes: async (path: string) => {
         const base64Content = (await this.call(filesystemService, 'readBase64', [
-          path,
+          _resolvePath(path),
         ])) as string
         // We need to convert the byte array to base64 string without using browser or node specific APIs.
         // This should be achieved by the node polyfills.
@@ -118,7 +133,7 @@ export class Session extends SessionConnection {
        * @param {timeout} [opts.timeout] Timeout in milliseconds (default is 60 seconds)
        */
       makeDir: async (path, opts?: CallOpts) => {
-        await this.call(filesystemService, 'makeDir', [path], opts)
+        await this.call(filesystemService, 'makeDir', [_resolvePath(path)], opts)
       },
       /**
        * Watches directory for filesystem events.
@@ -127,7 +142,7 @@ export class Session extends SessionConnection {
        */
       watchDir: (path: string) => {
         this.logger.debug?.(`Watching directory "${path}"`)
-        const npath = normalizePath(path)
+        const npath = normalizePath(_resolvePath(path))
         return new FilesystemWatcher(this, npath)
       },
     }
@@ -159,8 +174,8 @@ export class Session extends SessionConnection {
             this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
             cwd = rootDir
           }
-          if (!cwd && this.opts.cwd) {
-            cwd = this.opts.cwd
+          if (!cwd && this.cwd) {
+            cwd = this.cwd
           }
           const { promise: terminalExited, resolve: triggerExit } =
             createDeferredPromise()
@@ -244,8 +259,8 @@ export class Session extends SessionConnection {
             this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
             cwd = rootDir
           }
-          if (!cwd && this.opts.cwd) {
-            cwd = this.opts.cwd
+          if (!cwd && this.cwd) {
+            cwd = this.cwd
           }
           if (!cmd) throw new Error('cmd is required')
           this.logger.debug?.(`Starting process "${processID}", cmd: "${cmd}"`)
@@ -307,6 +322,9 @@ export class Session extends SessionConnection {
         return await withTimeout(start, timeout)(opts)
       },
     }
+
+    const _resolvePath = (path: string): string =>
+      resolvePath(path, this.cwd, this.logger)
   }
 
   static async create(opts: SessionOpts) {
