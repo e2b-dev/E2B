@@ -78,8 +78,8 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	defer func() {
 		closeErr := dockerContextFile.Close()
 		if closeErr != nil {
-			// We can probably disregard 'already closed' erorr if we are reading file from gcsfuse bucket because gcsfuse files behave this way - they look closed after reading
-			errMsg := fmt.Errorf("error closing docker context file (we can probably disregard 'already closed' erorr if we are reading file from gcsfuse bucket because gcsfuse files behave this way): %w", closeErr)
+			// We can probably disregard 'already closed' error if we are reading file from gcsfuse bucket because gcsfuse files behave this way - they look closed after reading
+			errMsg := fmt.Errorf("error closing docker context file (we can probably disregard 'already closed' error if we are reading file from gcsfuse bucket because gcsfuse files behave this way): %w", closeErr)
 			telemetry.ReportError(childCtx, errMsg)
 		} else {
 			telemetry.ReportEvent(childCtx, "closed docker context file")
@@ -90,7 +90,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		childCtx,
 		dockerContextFile,
 		types.ImageBuildOptions{
-			Context:    dockerContextFile,
 			Dockerfile: dockerfileName,
 			Remove:     true,
 			Tags:       []string{r.dockerTag()},
