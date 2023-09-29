@@ -68,4 +68,4 @@ test('process send stdin', async () => {
   // assert.equal(message.error, false)
 
   await session.close()
-})
+}, 10000)

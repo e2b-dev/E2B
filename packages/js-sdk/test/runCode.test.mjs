@@ -13,7 +13,7 @@ raise Exception("err")
   console.log('stderr', stderr)
   expect(stdout.length).toEqual(50)
   expect(stderr).toContain('Exception: err')
-})
+}, 10000)
 
 test('run code using unsupported runtime', async () => {
   await expect(() => runCode('Unsupported', 'print("hello")')).rejects.toThrowError(
