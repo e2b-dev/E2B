@@ -93,7 +93,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		ContextFileName:       contextFileName,
 	}
 
-	cancellableBuildContext, cancel := context.WithCancel(context.Background())
+	cancellableBuildContext, cancel := context.WithCancel(d.ctx)
 
 	h := &taskHandle{
 		taskConfig: cfg,
