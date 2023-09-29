@@ -105,7 +105,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	if !strings.HasSuffix(fileHandler.Filename, ".tar.gz.e2b") {
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
 
-		err = fmt.Errorf("build context doesn't have corrent extension, the file is %s", fileHandler.Filename)
+		err = fmt.Errorf("build context doesn't have correct extension, the file is %s", fileHandler.Filename)
 		ReportCriticalError(ctx, err)
 
 		return
