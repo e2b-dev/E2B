@@ -37,7 +37,7 @@ export const resolvePath = (
   }
 
   if (!inputPath.startsWith('/') && cwd) {
-    return path.join(cwd, path)
+    return path.join(cwd, inputPath)
   }
 
   return inputPath

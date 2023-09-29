@@ -80,6 +80,9 @@ export class SessionConnection {
     this.apiKey = apiKey
 
     this.cwd = opts.cwd
+    if (this.cwd && this.cwd.startsWith('~')) {
+      this.cwd = this.cwd.replace('~', '/home/user')
+    }
 
     this.logger = opts.logger ?? {
       // by default, we log to the console
