@@ -36,12 +36,13 @@ func NewService(logger *zap.SugaredLogger, env *env.EnvConfig) *Service {
 }
 
 type dataWriter struct {
-	terminalID string
 	dataSubs   *subscriber.Manager
+	terminalID string
 }
 
 func (d *dataWriter) Write(p []byte) (int, error) {
 	err := d.dataSubs.Notify(d.terminalID, string(p))
+
 	return len(p), err
 }
 

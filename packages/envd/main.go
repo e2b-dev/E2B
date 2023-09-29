@@ -122,7 +122,7 @@ func main() {
 		)
 	}
 
-	processService := process.NewService(logger.Named("processSvc"))
+	processService := process.NewService(logger.Named("processSvc"), envConfig)
 	if err := rpcServer.RegisterName("process", processService); err != nil {
 		logger.Panicw("failed to register process service", "error", err)
 	}

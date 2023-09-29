@@ -16,20 +16,19 @@ import (
 )
 
 type Service struct {
-	logger *zap.SugaredLogger
-
-	processes *Manager
-
-	env env.EnvConfig
-
 	stdoutSubs *subscriber.Manager
 	stderrSubs *subscriber.Manager
 	exitSubs   *subscriber.Manager
+
+	logger *zap.SugaredLogger
+	env    *env.EnvConfig
+
+	processes *Manager
 }
 
 const maxScanCapacity = 1024 * 1024 // 1MB
 
-func NewService(logger *zap.SugaredLogger, env env.EnvConfig) *Service {
+func NewService(logger *zap.SugaredLogger, env *env.EnvConfig) *Service {
 	return &Service{
 		logger:    logger,
 		processes: NewManager(logger),
