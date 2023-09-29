@@ -23,14 +23,14 @@ type Terminal struct {
 	tty *os.File
 }
 
-func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]string, cmdToExecute *string, logger *zap.SugaredLogger) (*Terminal, error) {
+func New(id, shell string, rootdir *string, cols, rows uint16, envVars *map[string]string, cmdToExecute *string, logger *zap.SugaredLogger) (*Terminal, error) {
 	var cmd *exec.Cmd
 
 	if cmdToExecute != nil {
-		cmd = exec.Command("sh", "-c", "-l", *cmdToExecute)
+		cmd = exec.Command(shell, "-i", "-l", "-c", *cmdToExecute)
 	} else {
 		// The -l option (according to the man page) makes "bash act as if it had been invoked as a login shell".
-		cmd = exec.Command(shell, "-l")
+		cmd = exec.Command(shell, "-i", "-l")
 	}
 
 	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
@@ -41,15 +41,15 @@ func New(id, shell, rootdir string, cols, rows uint16, envVars *map[string]strin
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid), Groups: []uint32{uint32(gid)}, NoSetGroups: true}
 
-	if rootdir == "" {
+	if rootdir == nil {
 		cmd.Dir = homedir
 	} else {
-		cmd.Dir = rootdir
+		cmd.Dir = *rootdir
 	}
 	// We inherit the env vars from the root process, but we should handle this differently in the future.
 	formattedVars := os.Environ()
 
-	formattedVars = append(formattedVars, "HOME="+cmd.Dir)
+	formattedVars = append(formattedVars, "HOME="+homedir)
 	formattedVars = append(formattedVars, "USER="+username)
 	formattedVars = append(formattedVars, "LOGNAME="+username)
 	formattedVars = append(formattedVars, "TERM=xterm")

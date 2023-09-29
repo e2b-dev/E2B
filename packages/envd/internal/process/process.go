@@ -22,8 +22,8 @@ type Process struct {
 	Stdin *io.WriteCloser
 }
 
-func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
-	cmd := exec.Command("sh", "-c", "-l", cmdToExecute)
+func New(id ID, shell, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {
+	cmd := exec.Command(shell, "-l", "-c", cmdToExecute)
 
 	uid, gid, homedir, username, err := user.GetUser(user.DefaultUser)
 	if err != nil {
@@ -42,7 +42,7 @@ func New(id ID, cmdToExecute string, envVars *map[string]string, rootdir string,
 	// We inherit the env vars from the root process, but we should handle this differently in the future.
 	formattedVars := os.Environ()
 
-	formattedVars = append(formattedVars, "HOME="+cmd.Dir)
+	formattedVars = append(formattedVars, "HOME="+homedir)
 	formattedVars = append(formattedVars, "USER="+username)
 	formattedVars = append(formattedVars, "LOGNAME="+username)
 

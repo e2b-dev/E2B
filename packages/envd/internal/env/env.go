@@ -32,7 +32,7 @@ type EnvConfig struct {
 func NewEnv(debug bool) (*EnvConfig, *zap.SugaredLogger, error) {
 	preferredShell, ok := os.LookupEnv("SHELL")
 	if !ok {
-		preferredShell = filepath.Join("/bin", "sh")
+		preferredShell = filepath.Join("/bin", "bash")
 	}
 
 	l, err := log.NewLogger(defaultLogDir, debug, true)

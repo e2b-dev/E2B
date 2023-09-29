@@ -38,8 +38,8 @@ func (m *Manager) Get(id ID) (*Terminal, bool) {
 
 func (m *Manager) Add(
 	id,
-	shell,
-	rootdir string,
+	shell string,
+	rootdir *string,
 	cols,
 	rows uint16,
 	envVars *map[string]string,

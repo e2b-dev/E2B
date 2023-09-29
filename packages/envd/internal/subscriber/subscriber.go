@@ -32,6 +32,7 @@ func New(ctx context.Context, topic string) (*Subscriber, error) {
 func (s *Subscriber) Notify(data interface{}) (err error) {
 	defer func() {
 		if recoverErr := recover(); recoverErr != nil {
+			// TODO: Log the error somewhere
 			err = fmt.Errorf("recovered from subscriber notify panic: %+v", recoverErr)
 		}
 	}()

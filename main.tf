@@ -60,7 +60,6 @@ module "cluster" {
   api_port                 = var.api_port
 }
 
-
 data "google_compute_global_address" "orch_server_consul_ip" {
   name = "orch-server-consul-ip"
 }

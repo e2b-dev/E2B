@@ -30,15 +30,6 @@ Methods:
 - `{"jsonrpc": "2.0", "method": "process_kill", "params": ["myProcessID"], "id": 60}` - Kill existing process
 - `{"jsonrpc": "2.0", "method": "process_stdin", "params": ["myProcessID", "test"], "id": 59}` - Send stdin to process
 
-### Code snippet service
-Subscribers:
-- `{"jsonrpc": "2.0", "method": "codeSnippet_subscribe", "params": ["stdout"], "id": 2}` - Subscribe to changes in the stdout from the code snippet
-- `{"jsonrpc": "2.0", "method": "codeSnippet_subscribe", "params": ["stderr"], "id": 3}` - Subscibe to changes in the stderr from the code snippet
-- `{"jsonrpc": "2.0", "method": "codeSnippet_subscribe", "params": ["state"], "id": 4}` - Subscribe to changes in the state of the code snippet execution
-
-Methods:
-- `{"jsonrpc": "2.0", "method": "codeSnippet_run", "params": ["echo 1; sleep 2; echo 2; echo 3", {}], "id": 5}` - Run code snippet
-
 
 ### Terminal service
 Subscribers:
