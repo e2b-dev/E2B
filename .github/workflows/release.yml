@@ -88,9 +88,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update lock file
-        run: pnpm i --no-link --no-frozen-lockfile
-
       - name: Release new versions
         uses: changesets/action@v1
         with:
@@ -99,6 +96,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Update lock file
+        run: pnpm i --no-link --no-frozen-lockfile
 
       - name: Commit new versions
         run: |

@@ -3,13 +3,14 @@ import logging
 from typing import Any, Awaitable, Callable, Coroutine, List, Optional
 
 import async_timeout
+from pydantic import BaseModel
+
 from e2b.constants import TIMEOUT
 from e2b.session.env_vars import EnvVars
 from e2b.session.exception import MultipleExceptions, RpcException, TerminalException
 from e2b.session.session_connection import SessionConnection
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
-from pydantic import BaseModel
 
 logger = logging.getLogger(__file__)
 
@@ -172,6 +173,8 @@ class TerminalManager:
         :return: Terminal session
         """
         async with async_timeout.timeout(timeout):
+            env_vars = self._session.env_vars.update(env_vars or {})
+
             future_exit = DeferredFuture(self._process_cleanup)
             terminal_id = terminal_id or create_id(12)
 

@@ -4,22 +4,24 @@ export const metadata = {
 }
 
 export const sections = [
-  { title: 'Start process', id: 'start-process' },
-  { title: 'Stop process', id: 'stop-process' },
-  { title: 'Stream stdout', id: 'stream-stdout' },
-  { title: 'Stream stderr', id: 'stream-stderr' },
-  { title: 'Send stdin', id: 'send-stdin' },
+  {title: 'Start process', id: 'start-process'},
+  {title: 'Stop process', id: 'stop-process'},
+  {title: 'Stream stdout', id: 'stream-stdout'},
+  {title: 'Stream stderr', id: 'stream-stderr'},
+  {title: 'Send stdin', id: 'send-stdin'},
+  {title: 'Set environment variables', id: 'set-environment-variables'},
 ]
 
 ## Process
 
 Here are the basic operations you can do with the process inside a cloud playground:
 
-- [Start process](/getting-started/basics#start-process)
-- [Stop process](/getting-started/basics#stop-process)
-- [Stdout](/getting-started/basics#stream-stdout)
-- [Stdin](/getting-started/basics#send-stdin)
-- [Stderr](/getting-started/basics#stream-stderr)
+- [Start process](/playgrounds/process#start-process)
+- [Stop process](/playgrounds/process#stop-process)
+- [Stdout](/playgrounds/process#stream-stdout)
+- [Stdin](/playgrounds/process#send-stdin)
+- [Stderr](/playgrounds/process#stream-stderr)
+- [Environment variables](/playgrounds/process#set-environment-variables)
 
 ## Start process
 
@@ -53,5 +55,14 @@ Here are the basic operations you can do with the process inside a cloud playgro
 
 <CodeGroupAutoload
   path="basics/process_write_stdin"
+  isRunnable={true}
+/>
+
+## Set environment variables
+
+Environment variables set on process has precedence over the ones set on the session.
+
+<CodeGroupAutoload
+  path="basics/set_env_vars"
   isRunnable={true}
 />

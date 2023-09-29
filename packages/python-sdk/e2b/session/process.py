@@ -221,8 +221,8 @@ class ProcessManager:
         """
         logger.info(f"Starting process (id: {process_id}): {cmd}")
         async with async_timeout.timeout(timeout):
-            if not env_vars:
-                env_vars = {}
+            env_vars = env_vars or {}
+            env_vars = {**self._session.env_vars, **env_vars}
 
             future_exit = DeferredFuture(self._process_cleanup)
             process_id = process_id or create_id(12)

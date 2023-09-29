@@ -19,6 +19,7 @@ from e2b.constants import (
     WS_PORT,
     WS_ROUTE,
 )
+from e2b.session.env_vars import EnvVars
 from e2b.session.exception import (
     AuthenticationException,
     MultipleExceptions,
@@ -64,6 +65,7 @@ class SessionConnection:
         id: str,
         api_key: Optional[str],
         cwd: Optional[str] = None,
+        env_vars: Optional[EnvVars] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -77,6 +79,7 @@ class SessionConnection:
             )
 
         self.cwd = cwd
+        self.env_vars = env_vars or {}
         self._id = id
         self._api_key = api_key
         self._debug_hostname = _debug_hostname
