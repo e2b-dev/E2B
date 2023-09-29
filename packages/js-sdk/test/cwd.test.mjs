@@ -1,5 +1,5 @@
 import { Session } from '../src'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 test(
   'custom cwd',
