@@ -31,7 +31,6 @@ const (
 )
 
 var (
-	// pluginInfo is the response returned for the PluginInfo RPC
 	pluginInfo = &base.PluginInfoResponse{
 		Type:              base.PluginTypeDriver,
 		PluginApiVersions: []string{drivers.ApiVersion010},
@@ -39,8 +38,6 @@ var (
 		Name:              pluginName,
 	}
 
-	// taskConfigSpec is the hcl specification for the driver config section of
-	// a task within a job. It is returned in the TaskConfigSchema RPC
 	taskConfigSpec = hclspec.NewObject(map[string]*hclspec.Spec{
 		"InstanceID":       hclspec.NewAttr("InstanceID", "string", true),
 		"EnvID":            hclspec.NewAttr("EnvID", "string", true),
@@ -50,8 +47,6 @@ var (
 		"ConsulToken":      hclspec.NewAttr("ConsulToken", "string", true),
 	})
 
-	// capabilities is returned by the Capabilities RPC and indicates what
-	// optional features this driver supports
 	capabilities = &drivers.Capabilities{
 		SendSignals: false,
 		Exec:        false,
@@ -89,18 +84,8 @@ type Driver struct {
 	hosts *txeh.Hosts
 }
 
-// Config is the driver configuration set by the SetConfig RPC call
-type (
-	Config struct{}
-	Nic    struct {
-		Ip          string // CIDR
-		Gateway     string
-		Interface   string
-		Nameservers []string
-	}
-)
+type Config struct{}
 
-// TaskConfig is the driver configuration of a task within a job
 type TaskConfig struct {
 	TraceID          string `codec:"TraceID"`
 	SpanID           string `codec:"SpanID"`
@@ -110,13 +95,10 @@ type TaskConfig struct {
 	EnvID            string `codec:"EnvID"`
 }
 
-// TaskState is the state which is encoded in the handle returned in
-// StartTask. This information is needed to rebuild the task state and handler
-// during recovery.
 type TaskState struct {
-	TaskConfig    *drivers.TaskConfig
-	ContainerName string
-	StartedAt     time.Time
+	TaskConfig *drivers.TaskConfig
+	Name       string
+	StartedAt  time.Time
 }
 
 func NewFirecrackerDriver(logger hclog.Logger) drivers.DriverPlugin {
@@ -395,9 +377,9 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	driverState := TaskState{
-		ContainerName: fmt.Sprintf("%s-%s", cfg.Name, cfg.AllocID),
-		TaskConfig:    cfg,
-		StartedAt:     h.startedAt,
+		Name:       fmt.Sprintf("%s-%s", cfg.Name, cfg.AllocID),
+		TaskConfig: cfg,
+		StartedAt:  h.startedAt,
 	}
 
 	if err = handle.SetDriverState(&driverState); err != nil {

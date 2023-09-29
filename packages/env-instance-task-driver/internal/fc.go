@@ -12,16 +12,14 @@ import (
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
-	hclog "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
-	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/client"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/client/operations"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/models"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
+	envSetup "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
 )
@@ -67,8 +65,8 @@ func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, me
 	httpClient := newFirecrackerClient(socketPath)
 	telemetry.ReportEvent(childCtx, "created FC socket client")
 
-	memfilePath := filepath.Join(envPath, env.MemfileName)
-	snapfilePath := filepath.Join(envPath, env.SnapfileName)
+	memfilePath := filepath.Join(envPath, envSetup.MemfileName)
+	snapfilePath := filepath.Join(envPath, envSetup.SnapfileName)
 
 	childSpan.SetAttributes(
 		attribute.String("memfile_path", memfilePath),
@@ -80,7 +78,7 @@ func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, me
 		Context: childCtx,
 		Body: &models.SnapshotLoadParams{
 			ResumeVM:            true,
-			EnableDiffSnapshots: false,
+			EnableDiffSnapshots: true,
 			MemBackend: &models.MemoryBackend{
 				BackendPath: &memfilePath,
 				BackendType: &backendType,
@@ -118,7 +116,7 @@ func (d *Driver) initializeFC(
 	cfg *drivers.TaskConfig,
 	taskConfig TaskConfig,
 	slot *slot.IPSlot,
-	env *env.InstanceFilesystem,
+	env *envSetup.InstanceFilesystem,
 ) (*fc, error) {
 	childCtx, childSpan := d.tracer.Start(ctx, "initialize-fc", trace.WithAttributes(
 		attribute.String("instance_id", slot.InstanceID),
@@ -126,37 +124,17 @@ func (d *Driver) initializeFC(
 	))
 	defer childSpan.End()
 
-	opts := newOptions()
-
-	fcCfg, err := opts.getFirecrackerConfig(cfg.AllocID, slot.InstanceID)
-	if err != nil {
-		errMsg := fmt.Errorf("error assembling FC config: %w", err)
+	socketPath, sockErr := envSetup.GetSocketPath(slot.InstanceID)
+	if sockErr != nil {
+		errMsg := fmt.Errorf("error getting socket path: %w", sockErr)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return nil, errMsg
 	}
 
-	vmmChildCtx, vmmChildSpan := d.tracer.Start(
-		childCtx,
+	vmmCtx, _ := d.tracer.Start(
+		trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
 		"fc-vmm",
-		trace.WithAttributes(attribute.String("fc_log_fifo", opts.FcLogFifo)),
-		trace.WithAttributes(attribute.String("fc_metrics_fifo", opts.FcMetricsFifo)),
 	)
-	defer vmmChildSpan.End()
-
-	vmmCtx, vmmCancel := context.WithCancel(vmmChildCtx)
-	defer vmmCancel()
-
-	d.logger.Info("Starting firecracker", "driver_initialize_container", hclog.Fmt("%v+", opts))
-	logger := log.New()
-	log.SetLevel(log.DebugLevel)
-	logger.SetLevel(log.DebugLevel)
-
-	otelHook := telemetry.NewOtelHook(vmmChildSpan)
-	logger.AddHook(otelHook)
-
-	machineOpts := []firecracker.Opt{
-		firecracker.WithLogger(log.NewEntry(logger)),
-	}
 
 	mountCmd := fmt.Sprintf(
 		"mount --bind  %s %s && ",
@@ -164,48 +142,61 @@ func (d *Driver) initializeFC(
 		env.BuildDirPath,
 	)
 
-	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", fcCfg.SocketPath)
+	fcCmd := fmt.Sprintf("/usr/bin/firecracker --api-sock %s", socketPath)
 	inNetNSCmd := fmt.Sprintf("ip netns exec %s ", slot.NamespaceID())
+
+	cmd := exec.CommandContext(vmmCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
 
 	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
 	cmdStderrReader, cmdStderrWriter := io.Pipe()
 
-	cmd := exec.CommandContext(childCtx, "unshare", "-pfm", "--kill-child", "--", "bash", "-c", mountCmd+inNetNSCmd+fcCmd)
 	cmd.Stderr = cmdStdoutWriter
 	cmd.Stdout = cmdStderrWriter
 
-	machineOpts = append(
-		machineOpts,
-		firecracker.WithProcessRunner(cmd),
-	)
-
 	go func() {
+		defer func() {
+			readerErr := cmdStdoutReader.Close()
+			if readerErr != nil {
+				errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
+				telemetry.ReportError(vmmCtx, errMsg)
+			}
+		}()
+
 		scanner := bufio.NewScanner(cmdStdoutReader)
 
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			telemetry.ReportEvent(vmmChildCtx, "vmm log",
+			telemetry.ReportEvent(vmmCtx, "vmm log",
 				attribute.String("type", "stdout"),
 				attribute.String("message", line),
 			)
 		}
 
-		readerErr := cmdStdoutReader.Close()
+		readerErr := scanner.Err()
 		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
-			telemetry.ReportError(vmmChildCtx, errMsg)
+			errMsg := fmt.Errorf("error reading vmm stdout %w", readerErr)
+			telemetry.ReportError(vmmCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(vmmCtx, "vmm stdout reader closed")
 		}
 	}()
 
-	// TODO: Make the log collecting long running
 	go func() {
+		defer func() {
+			readerErr := cmdStderrReader.Close()
+			if readerErr != nil {
+				errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
+				telemetry.ReportError(vmmCtx, errMsg)
+			}
+		}()
+
 		scanner := bufio.NewScanner(cmdStderrReader)
 
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			telemetry.ReportEvent(vmmChildCtx, "vmm log",
+			telemetry.ReportEvent(vmmCtx, "vmm log",
 				attribute.String("type", "stderr"),
 				attribute.String("message", line),
 			)
@@ -214,53 +205,16 @@ func (d *Driver) initializeFC(
 		readerErr := cmdStderrReader.Close()
 		if readerErr != nil {
 			errMsg := fmt.Errorf("error closing vmm stderr reader %w", readerErr)
-			telemetry.ReportError(vmmChildCtx, errMsg)
-		}
-	}()
-
-	vmmLogsReader, vmmLogsWriter := io.Pipe()
-
-	go func() {
-		scanner := bufio.NewScanner(vmmLogsReader)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-
-			telemetry.ReportEvent(vmmChildCtx, "vmm log",
-				attribute.String("type", "setup"),
-				attribute.String("message", line),
-			)
-		}
-
-		readerErr := vmmLogsReader.Close()
-		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm setup reader %w", readerErr)
-			telemetry.ReportError(vmmChildCtx, errMsg)
+			telemetry.ReportError(vmmCtx, errMsg)
 		}
 	}()
 
 	prebootFcConfig := firecracker.Config{
 		DisableValidation: true,
-		MmdsAddress:       fcCfg.MmdsAddress,
-		Seccomp:           fcCfg.Seccomp,
-		ForwardSignals:    fcCfg.ForwardSignals,
-		VMID:              fcCfg.VMID,
-		MachineCfg:        fcCfg.MachineCfg,
-		VsockDevices:      fcCfg.VsockDevices,
-		FifoLogWriter:     vmmLogsWriter,
-		Drives:            fcCfg.Drives,
-		KernelArgs:        fcCfg.KernelArgs,
-		InitrdPath:        fcCfg.InitrdPath,
-		KernelImagePath:   fcCfg.KernelImagePath,
-		MetricsFifo:       fcCfg.MetricsFifo,
-		MetricsPath:       fcCfg.MetricsPath,
-		LogLevel:          "Debug",
-		LogFifo:           fcCfg.LogFifo,
-		LogPath:           fcCfg.LogPath,
-		SocketPath:        fcCfg.SocketPath,
+		SocketPath:        socketPath,
 	}
 
-	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, machineOpts...)
+	m, err := firecracker.NewMachine(vmmCtx, prebootFcConfig, firecracker.WithProcessRunner(cmd))
 	if err != nil {
 		errMsg := fmt.Errorf("failed creating machine: %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -272,7 +226,6 @@ func (d *Driver) initializeFC(
 	m.Handlers.FcInit = m.Handlers.FcInit.Clear().
 		Append(
 			firecracker.StartVMMHandler,
-			firecracker.BootstrapLoggingHandler,
 		)
 
 	err = m.Handlers.Run(childCtx, m)
@@ -286,7 +239,7 @@ func (d *Driver) initializeFC(
 	// TODO: We need to change this in the envd OR move the logging to the driver
 	if err := loadSnapshot(
 		childCtx,
-		fcCfg.SocketPath,
+		socketPath,
 		env.EnvPath,
 		d,
 		struct {
@@ -312,7 +265,6 @@ func (d *Driver) initializeFC(
 			if stopErr != nil {
 				errMsg := fmt.Errorf("error stopping machine after error: %w", stopErr)
 				telemetry.ReportError(childCtx, errMsg)
-				logger.Error(errMsg)
 			}
 		}
 	}()
@@ -328,7 +280,7 @@ func (d *Driver) initializeFC(
 		Cmd:          cmd,
 		AllocId:      cfg.AllocID,
 		Pid:          strconv.Itoa(pid),
-		SocketPath:   fcCfg.SocketPath,
+		SocketPath:   socketPath,
 		EnvID:        taskConfig.EnvID,
 		EnvPath:      env.EnvPath,
 		BuildDirPath: env.BuildDirPath,

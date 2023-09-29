@@ -129,13 +129,6 @@ func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 		}
 	}
 
-	// TODO: Ensure the pipes are closed by this point
-	_, err := h.EnvInstance.Cmd.Process.Wait()
-	if err != nil {
-		errMsg := fmt.Errorf("error waiting for FC process end %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	}
-
 	telemetry.ReportEvent(childCtx, "waiting for state lock")
 	h.stateLock.Lock()
 	defer h.stateLock.Unlock()
