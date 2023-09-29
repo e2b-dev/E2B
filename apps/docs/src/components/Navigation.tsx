@@ -13,14 +13,15 @@ import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth'
 import { Feedback } from '@/components/Feedback'
 import {
+  Binary,
   Bug,
-  Timer,
   ChevronRightSquare,
+  Folder,
   FolderTree,
-  ShieldAlert,
   KeyRound,
   Settings,
-  Binary,
+  ShieldAlert,
+  Timer,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -363,6 +364,16 @@ export const navigation = [
       //   title: 'Download Files',
       //   href: '/playgrounds/download',
       // },
+      {
+        icon: (
+          <Folder
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Working Directory',
+        href: '/playgrounds/cwd',
+      },
       {
         icon: (
           <Bug
