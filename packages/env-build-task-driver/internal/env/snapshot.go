@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
@@ -133,14 +133,33 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 
 	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
 
-	cmdStdoutReader, cmdStdoutWriter := io.Pipe()
-	cmdStderrReader, cmdStderrWriter := io.Pipe()
+	stdoutPipe, err := s.fc.StdoutPipe()
+	if err != nil {
+		errMsg := fmt.Errorf("error creating fc stdout pipe %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 
-	s.fc.Stdout = cmdStdoutWriter
-	s.fc.Stderr = cmdStderrWriter
+		return errMsg
+	}
 
+	stderrPipe, err := s.fc.StderrPipe()
+	if err != nil {
+		errMsg := fmt.Errorf("error creating fc stderr pipe %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		closeErr := stdoutPipe.Close()
+		if closeErr != nil {
+			errMsg := fmt.Errorf("error closing fc stdout pipe %w", closeErr)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+
+		return errMsg
+	}
+
+	var outputWaitGroup sync.WaitGroup
+
+	outputWaitGroup.Add(1)
 	go func() {
-		scanner := bufio.NewScanner(cmdStdoutReader)
+		scanner := bufio.NewScanner(stdoutPipe)
 
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -151,18 +170,12 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 			)
 		}
 
-		readerErr := cmdStdoutReader.Close()
-		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm stdout reader %w", readerErr)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed vmm stdout reader")
-		}
+		outputWaitGroup.Done()
 	}()
 
-	// TODO: Make the log collecting long running
+	outputWaitGroup.Add(1)
 	go func() {
-		scanner := bufio.NewScanner(cmdStderrReader)
+		scanner := bufio.NewScanner(stderrPipe)
 
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -173,16 +186,10 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 			)
 		}
 
-		readerErr := cmdStderrReader.Close()
-		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing vmm stderr reader %w", readerErr)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed vmm stderr reader")
-		}
+		outputWaitGroup.Done()
 	}()
 
-	err := s.fc.Start()
+	err = s.fc.Start()
 	if err != nil {
 		errMsg := fmt.Errorf("error starting fc process %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
@@ -195,6 +202,8 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	go func() {
 		anonymousChildCtx, anonymousChildSpan := tracer.Start(ctx, "handle-fc-process-wait")
 		defer anonymousChildSpan.End()
+
+		outputWaitGroup.Wait()
 
 		waitErr := s.fc.Wait()
 		if err != nil {
