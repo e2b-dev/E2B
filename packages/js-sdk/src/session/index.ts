@@ -174,8 +174,8 @@ export class Session extends SessionConnection {
             this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
             cwd = rootDir
           }
-          if (!cwd && this.opts.cwd) {
-            cwd = this.opts.cwd
+          if (!cwd && this.cwd) {
+            cwd = this.cwd
           }
           const { promise: terminalExited, resolve: triggerExit } =
             createDeferredPromise()
@@ -259,8 +259,8 @@ export class Session extends SessionConnection {
             this.logger.warn?.('The rootDir parameter is deprecated, use cwd instead.')
             cwd = rootDir
           }
-          if (!cwd && this.opts.cwd) {
-            cwd = this.opts.cwd
+          if (!cwd && this.cwd) {
+            cwd = this.cwd
           }
           if (!cmd) throw new Error('cmd is required')
           this.logger.debug?.(`Starting process "${processID}", cmd: "${cmd}"`)
@@ -324,7 +324,7 @@ export class Session extends SessionConnection {
     }
 
     const _resolvePath = (path: string): string =>
-      resolvePath(path, opts.cwd, this.logger)
+      resolvePath(path, this.cwd, this.logger)
   }
 
   static async create(opts: SessionOpts) {

@@ -25,7 +25,6 @@ from e2b.session.exception import (
     SessionException,
 )
 from e2b.session.session_rpc import Notification, SessionRpc
-from e2b.utils.filesystem import resolve_path
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.noop import noop
 from e2b.utils.str import camel_case_to_snake_case
@@ -42,10 +41,6 @@ class Subscription(BaseModel):
 
 class SessionConnection:
     _refresh_retries = 4
-
-    @property
-    def cwd(self):
-        return self._cwd
 
     @property
     def finished(self):
@@ -81,9 +76,9 @@ class SessionConnection:
                 "API key is required, please visit https://e2b.dev/docs to get your API key",
             )
 
+        self.cwd = cwd
         self._id = id
         self._api_key = api_key
-        self._cwd = cwd
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env
@@ -98,15 +93,6 @@ class SessionConnection:
         self._finished = DeferredFuture(self._process_cleanup)
 
         logger.info(f"Session for code snippet {self._id} initialized")
-
-    def cd(self, path: str) -> None:
-        """
-        Change the current working directory.
-
-        :param path: Path to a directory
-        """
-        path = resolve_path(path, self.cwd)
-        self._cwd = path
 
     def get_hostname(self, port: Optional[int] = None):
         """

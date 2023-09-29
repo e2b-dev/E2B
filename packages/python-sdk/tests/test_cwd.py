@@ -15,29 +15,26 @@ async def test_process_cwd():
 async def test_filesystem_cwd():
     session = await Session.create("Nodejs", cwd="/code/app")
 
-    # filesystem ops does not respect the cwd yet
     await session.filesystem.write("hello.txt", "Hello VM!")
-    proc = await session.process.start(
-        "cat /code/app/hello.txt"
-    )  # notice the file is in root
+    proc = await session.process.start("cat /code/app/hello.txt")
     output = await proc
     assert output.stdout == "Hello VM!"
 
     await session.close()
 
 
-async def test_cd():
+async def test_change_cwd():
     session = await Session.create("Nodejs", cwd="/code/app")
 
     # change dir to /home/user
-    session.cd("/home/user")
+    session.cwd = "/home/user"
 
-    # process respects cd
+    # process respects cwd
     proc = await session.process.start("pwd")
     output = await proc
     assert output.stdout == "/home/user"
 
-    # filesystem respects cd
+    # filesystem respects cwd
     await session.filesystem.write("hello.txt", "Hello VM!")
     proc = await session.process.start("cat /home/user/hello.txt")
     output = await proc

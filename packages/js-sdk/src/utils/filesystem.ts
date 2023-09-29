@@ -6,36 +6,38 @@ export const resolvePath = (
   cwd: string | undefined,
   logger: Logger,
 ): string => {
+  let result: string
   if (inputPath.startsWith('./')) {
+    result = path.join(cwd || '/home/user', inputPath)
     if (!cwd) {
       logger.warn?.(
-        `Path starts with './' and cwd isn't set. The path '${inputPath}' will evaluate to '${inputPath.substring(
-          1,
-        )}', which may not be what you want.`,
+        `Path starts with './' and cwd isn't set. The path '${inputPath}' will evaluate to '${result}', which may not be what you want.`,
       )
     }
-    return path.join(cwd || '', inputPath.substring(1))
+    return result
   }
 
   if (inputPath.startsWith('../')) {
+    result = path.join(cwd || '/home/user', inputPath)
     if (!cwd) {
       logger.warn?.(
-        `Path starts with '../' and cwd isn't set. The path '${inputPath}' will evaluate to '${inputPath.substring(
-          2,
-        )}', which may not be what you want.`,
+        `Path starts with '../' and cwd isn't set. The path '${inputPath}' will evaluate to '${result}', which may not be what you want.`,
       )
     }
-    return path.join(cwd || '', inputPath.substring(2))
+    return result
   }
   if (inputPath.startsWith('~/')) {
+    result = path.join(cwd || '/home/user', inputPath.substring(2))
     if (!cwd) {
       logger.warn?.(
-        `Path starts with '~/' and cwd isn't set. The path '${inputPath}' will evaluate to '/home/user${inputPath.substring(
-          1,
-        )}', which may not be what you want.`,
+        `Path starts with '~/' and cwd isn't set. The path '${inputPath}' will evaluate to '${result}', which may not be what you want.`,
       )
     }
-    return path.join(cwd || '/home/user', inputPath.substring(1))
+    return result
+  }
+
+  if (!inputPath.startsWith('/') && cwd) {
+    return path.join(cwd, path)
   }
 
   return inputPath

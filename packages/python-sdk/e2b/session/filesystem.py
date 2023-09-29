@@ -85,7 +85,7 @@ class FilesystemManager:
             raise FilesystemException(e.message) from e
 
     async def write(
-            self, path: str, content: str, timeout: Optional[float] = TIMEOUT
+        self, path: str, content: str, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
         Writes content to a file.
@@ -124,7 +124,7 @@ class FilesystemManager:
             raise FilesystemException(e.message) from e
 
     async def list(
-            self, path: str, timeout: Optional[float] = TIMEOUT
+        self, path: str, timeout: Optional[float] = TIMEOUT
     ) -> List[FileInfo]:
         """
         List files in a directory.

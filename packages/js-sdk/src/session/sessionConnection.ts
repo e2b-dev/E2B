@@ -59,6 +59,8 @@ const refreshSession = api
   .create({ api_key: true })
 
 export class SessionConnection {
+  cwd: string | undefined
+
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
   protected isOpen = false
@@ -76,6 +78,9 @@ export class SessionConnection {
       )
     }
     this.apiKey = apiKey
+
+    this.cwd = opts.cwd
+
     this.logger = opts.logger ?? {
       // by default, we log to the console
       // we don't log debug messages by default
