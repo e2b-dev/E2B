@@ -261,7 +261,7 @@ EOF
     "disable_hostname": true
   },
   "limits": {
-    "http_max_conns_per_client": 5000,
+    "http_max_conns_per_client": 5000
   },
   "advertise_addr": "$instance_ip_address",
   "bind_addr": "$instance_ip_address",
