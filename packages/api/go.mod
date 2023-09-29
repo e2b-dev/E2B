@@ -11,7 +11,7 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/hashicorp/go-uuid v1.0.3
-	github.com/hashicorp/nomad/api v0.0.0-20230908215034-ef24e40b392c
+	github.com/hashicorp/nomad/api v0.0.0-20230929073114-b44cef0e66fa
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/lightstep/otel-launcher-go v1.10.1
 	github.com/oapi-codegen/runtime v1.0.0

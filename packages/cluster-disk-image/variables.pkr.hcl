@@ -10,7 +10,7 @@ variable "gcp_zone" {
 
 variable "consul_version" {
   type    = string
-  default = "1.12.0"
+  default = "1.16.1"
 }
 
 variable "nomad_version" {
@@ -22,4 +22,10 @@ variable "firecracker_version" {
   type        = string
   description = "Firecracker version must be prefixed with 'v'"
   default     = "v1.4.1"
+}
+
+variable "kernel_version" {
+  type = string
+  description = "Kernel version"
+  default = "5.10.186"
 }
