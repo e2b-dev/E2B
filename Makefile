@@ -2,6 +2,11 @@
 
 server := gcloud compute instances list --format='csv(name)' | grep "server"
 
+tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
+	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
+	TF_VAR_server_machine_type=$(SERVER_MACHINE_TYPE) \
+	TF_VAR_server_cluster_size=$(SERVER_CLUSTER_SIZE)
+
 # Login for Packer and Docker (uses gcloud user creds)
 # Login for Terraform (uses application default creds)
 .PHONY: login-gcloud
@@ -19,20 +24,22 @@ init:
 .PHONY: plan
 plan:
 	terraform fmt -recursive
-	TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
-	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
-	TF_VAR_server_machine_type=$(SERVER_MACHINE_TYPE) \
-	TF_VAR_server_cluster_size=$(SERVER_CLUSTER_SIZE) \
+	$(tf_vars) \
 	terraform plan -compact-warnings -detailed-exitcode
 
 .PHONY: apply
 apply:
-	TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \
-	TF_VAR_client_cluster_size=$(CLIENT_CLUSTER_SIZE) \
-	TF_VAR_server_machine_type=$(SERVER_MACHINE_TYPE) \
-	TF_VAR_server_cluster_size=$(SERVER_CLUSTER_SIZE) \
+	$(tf_vars) \
 	terraform apply \
 	-auto-approve \
+	-input=false \
+	-compact-warnings \
+	-parallelism=20
+
+.PHONY: destroy
+destroy:
+	$(tf_vars) \
+	terraform destroy \
 	-input=false \
 	-compact-warnings \
 	-parallelism=20
