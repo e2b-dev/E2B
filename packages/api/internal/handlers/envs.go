@@ -166,7 +166,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
-			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
+			trace.ContextWithSpanContext(a.Ctx, span.SpanContext()),
 			"background-build-env",
 		)
 

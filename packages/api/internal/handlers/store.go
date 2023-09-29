@@ -31,6 +31,7 @@ type APIStore struct {
 	Lock         sync.Mutex
 	tracer       trace.Tracer
 	cloudStorage *cloudStorage
+	Ctx          context.Context
 }
 
 func NewAPIStore() *APIStore {
@@ -108,6 +109,7 @@ func NewAPIStore() *APIStore {
 	}
 
 	return &APIStore{
+		Ctx:          ctx,
 		nomad:        nomadClient,
 		supabase:     supabaseClient,
 		NextId:       1000,
