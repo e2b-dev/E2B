@@ -89,7 +89,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update lock file
-        run: pnpm i --no-link
+        run: pnpm i --no-link --no-frozen-lockfile
 
       - name: Release new versions
         uses: changesets/action@v1
