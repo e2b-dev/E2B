@@ -27,6 +27,7 @@ type taskHandle struct {
 
 	exited chan struct{}
 
+	ctx    context.Context
 	cancel context.CancelFunc
 
 	mu sync.RWMutex
@@ -45,6 +46,13 @@ func (h *taskHandle) TaskStatus() *drivers.TaskStatus {
 		ExitResult:       h.exitResult,
 		DriverAttributes: map[string]string{},
 	}
+}
+
+func (h *taskHandle) IsRunning() bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	return h.procState == drivers.TaskStateRunning
 }
 
 func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *client.Client) {

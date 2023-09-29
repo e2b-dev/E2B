@@ -103,6 +103,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		env:        &env,
 		exited:     make(chan struct{}),
 		cancel:     cancel,
+		ctx:        cancellableBuildContext,
 	}
 
 	driverState := TaskState{
@@ -156,16 +157,13 @@ func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.E
 func (d *Driver) handleWait(ctx context.Context, handle *taskHandle, ch chan *drivers.ExitResult) {
 	defer close(ch)
 
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-d.ctx.Done():
 			return
-		case <-ticker.C:
+		case <-handle.ctx.Done():
 			s := handle.TaskStatus()
 			if s.State == drivers.TaskStateExited {
 				ch <- handle.exitResult
@@ -189,6 +187,10 @@ func (d *Driver) DestroyTask(taskID string, force bool) error {
 	handle, ok := d.tasks.Get(taskID)
 	if !ok {
 		return drivers.ErrTaskNotFound
+	}
+
+	if handle.IsRunning() && !force {
+		return errors.New("task is still running")
 	}
 
 	handle.cancel()
