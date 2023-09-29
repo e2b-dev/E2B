@@ -7,9 +7,9 @@ async def test_env_vars():
     process = await session.process.start("echo $FOO", env_vars={"FOO": "BAR"})
     await process
     output = process.stdout
-    await session.close()
-
     assert output == "BAR"
+
+    await session.close()
 
 
 async def test_profile_env_vars():
@@ -19,6 +19,27 @@ async def test_profile_env_vars():
     process = await session.process.start("echo $FOO")
     await process
     output = process.stdout
+    assert output == "BAR"
+
     await session.close()
 
+
+async def test_default_env_vars():
+    session = await Session.create("Bash", env_vars={"FOO": "BAR"})
+    process = await session.process.start("echo $FOO")
+    await process
+    output = process.stdout
     assert output == "BAR"
+
+    await session.close()
+
+
+async def test_overriding_env_vars():
+    session = await Session.create("Bash", env_vars={"FOO": "BAR"})
+
+    process = await session.process.start("echo $FOO", env_vars={"FOO": "QUX"})
+    await process
+    output = process.stdout
+    assert output == "QUX"
+
+    await session
