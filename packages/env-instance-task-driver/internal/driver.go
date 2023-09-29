@@ -82,6 +82,9 @@ type Driver struct {
 	logger hclog.Logger
 
 	hosts *txeh.Hosts
+
+	drivers.DriverExecTaskNotSupported
+	drivers.DriverSignalTaskNotSupported
 }
 
 type Config struct{}
@@ -546,27 +549,15 @@ func (d *Driver) InspectTask(taskID string) (*drivers.TaskStatus, error) {
 	return handle.TaskStatus(), nil
 }
 
-// TaskStats will query the driver and return the current usage for the vm
-func (d *Driver) TaskStats(ctx context.Context, taskID string, interval time.Duration) (<-chan *drivers.TaskResourceUsage, error) {
-	handle, ok := d.tasks.Get(taskID)
-	if !ok {
-		return nil, drivers.ErrTaskNotFound
-	}
-
-	statsChannel := make(chan *drivers.TaskResourceUsage)
-	go handle.stats(ctx, statsChannel, interval)
-
-	return statsChannel, nil
-}
-
 func (d *Driver) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, error) {
 	return d.eventer.TaskEvents(ctx)
 }
 
-func (d *Driver) ExecTask(taskID string, cmd []string, timeout time.Duration) (*drivers.ExecTaskResult, error) {
-	return nil, fmt.Errorf("env-instance-task-driver does not support exec")
-}
+func (d *Driver) TaskStats(ctx context.Context, taskID string, interval time.Duration) (<-chan *drivers.TaskResourceUsage, error) {
+	_, ok := d.tasks.Get(taskID)
+	if !ok {
+		return nil, drivers.ErrTaskNotFound
+	}
 
-func (d *Driver) SignalTask(taskID string, signal string) error {
-	return fmt.Errorf("env-instance-task-driver does not support signal")
+	return nil, drivers.DriverStatsNotImplemented
 }

@@ -49,12 +49,6 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 	childCtx, childSpan := tracer.Start(ctx, "run")
 	defer childSpan.End()
 
-	defer func() {
-		h.stateLock.Lock()
-		close(h.exited)
-		h.stateLock.Unlock()
-	}()
-
 	err := h.env.Build(childCtx, tracer, docker)
 	if err != nil {
 		telemetry.ReportCriticalError(childCtx, err)
@@ -81,9 +75,13 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 			ExitCode: 0,
 		}
 
-		h.procState = drivers.TaskStateExited
 		h.completedAt = time.Now()
+		h.procState = drivers.TaskStateExited
 
 		h.stateLock.Unlock()
 	}
+
+	h.stateLock.Lock()
+	close(h.exited)
+	h.stateLock.Unlock()
 }

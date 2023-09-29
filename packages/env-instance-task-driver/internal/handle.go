@@ -83,21 +83,6 @@ func (h *taskHandle) run(ctx context.Context, driver *Driver) {
 	}
 }
 
-func (h *taskHandle) stats(ctx context.Context, statsChannel chan *drivers.TaskResourceUsage, interval time.Duration) {
-	defer close(statsChannel)
-	timer := time.NewTimer(0)
-	h.logger.Debug("Starting stats collection for ", h.taskConfig.ID)
-	for {
-		select {
-		case <-ctx.Done():
-			h.logger.Debug("Stopping stats collection for ", h.taskConfig.ID)
-			return
-		case <-timer.C:
-			timer.Reset(interval)
-		}
-	}
-}
-
 func (h *taskHandle) shutdown(ctx context.Context, driver *Driver) error {
 	childCtx, childSpan := driver.tracer.Start(ctx, "shutdown")
 	defer childSpan.End()

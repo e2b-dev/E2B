@@ -104,6 +104,9 @@ type Driver struct {
 	logger hclog.Logger
 
 	docker *client.Client
+
+	drivers.DriverExecTaskNotSupported
+	drivers.DriverSignalTaskNotSupported
 }
 
 func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
@@ -394,24 +397,15 @@ func (d *Driver) InspectTask(taskID string) (*drivers.TaskStatus, error) {
 	return handle.TaskStatus(), nil
 }
 
+func (d *Driver) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, error) {
+	return d.eventer.TaskEvents(ctx)
+}
+
 func (d *Driver) TaskStats(ctx context.Context, taskID string, interval time.Duration) (<-chan *drivers.TaskResourceUsage, error) {
 	_, ok := d.tasks.Get(taskID)
 	if !ok {
 		return nil, drivers.ErrTaskNotFound
 	}
 
-	emptyChannel := make(<-chan *drivers.TaskResourceUsage)
-	return emptyChannel, nil
-}
-
-func (d *Driver) TaskEvents(ctx context.Context) (<-chan *drivers.TaskEvent, error) {
-	return d.eventer.TaskEvents(ctx)
-}
-
-func (d *Driver) SignalTask(taskID string, signal string) error {
-	return errors.New("This driver does not support exec")
-}
-
-func (d *Driver) ExecTask(taskID string, cmd []string, timeout time.Duration) (*drivers.ExecTaskResult, error) {
-	return nil, errors.New("This driver does not support exec")
+	return nil, drivers.DriverStatsNotImplemented
 }
