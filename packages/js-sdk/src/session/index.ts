@@ -177,6 +177,9 @@ export class Session extends SessionConnection {
           if (!cwd && this.cwd) {
             cwd = this.cwd
           }
+          envVars = envVars || {}
+          envVars = { ...this.envVars, ...envVars }
+
           const { promise: terminalExited, resolve: triggerExit } =
             createDeferredPromise()
 
@@ -263,6 +266,10 @@ export class Session extends SessionConnection {
             cwd = this.cwd
           }
           if (!cmd) throw new Error('cmd is required')
+
+          envVars = envVars || {}
+          envVars = { ...this.envVars, ...envVars }
+
           this.logger.debug?.(`Starting process "${processID}", cmd: "${cmd}"`)
 
           const { promise: processExited, resolve: triggerExit } = createDeferredPromise()

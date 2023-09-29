@@ -15,6 +15,7 @@ import { codeSnippetService } from './codeSnippet'
 import { filesystemService } from './filesystem'
 import { processService } from './process'
 import { terminalService } from './terminal'
+import { EnvVars } from './envVars'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void
@@ -42,6 +43,7 @@ export interface SessionConnectionOpts {
   id: string
   apiKey?: string
   cwd?: string
+  envVars?: EnvVars
   logger?: Logger
   __debug_hostname?: string
   __debug_port?: number
@@ -60,6 +62,7 @@ const refreshSession = api
 
 export class SessionConnection {
   cwd: string | undefined
+  envVars: EnvVars
 
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
@@ -84,6 +87,7 @@ export class SessionConnection {
       this.cwd = this.cwd.replace('~', '/home/user')
     }
 
+    this.envVars = opts.envVars || {}
     this.logger = opts.logger ?? {
       // by default, we log to the console
       // we don't log debug messages by default
