@@ -67,6 +67,9 @@ class Session(SessionConnection):
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        on_stdout: Optional[Callable[[str], Any]] = None,
+        on_stderr: Optional[Callable[[str], Any]] = None,
+        on_exit: Optional[Callable[[int], Any]] = None,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -89,6 +92,9 @@ class Session(SessionConnection):
         :param api_key: The API key to use, if not provided, the `E2B_API_KEY` environment variable is used
         :param cwd: The current working directory to use
         :param on_scan_ports: A callback to handle opened ports
+        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
+        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
+        :param on_exit: A default callback that is called when the process exits
         """
 
         logger.info(f"Creating session {id if isinstance(id, str) else type(id)}")
@@ -111,7 +117,9 @@ class Session(SessionConnection):
         )
         self._terminal = TerminalManager(session=self)
         self._filesystem = FilesystemManager(session=self)
-        self._process = ProcessManager(session=self)
+        self._process = ProcessManager(
+            session=self, on_stdout=on_stdout, on_stderr=on_stderr, on_exit=on_exit
+        )
 
     async def open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -150,6 +158,9 @@ class Session(SessionConnection):
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
+        on_stdout: Optional[Callable[[str], Any]] = None,
+        on_stderr: Optional[Callable[[str], Any]] = None,
+        on_exit: Optional[Callable[[int], Any]] = None,
         timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
@@ -172,7 +183,11 @@ class Session(SessionConnection):
 
         :param api_key: The API key to use
         :param cwd: The current working directory to use
+        :param env_vars: Environment variables to set
         :param on_scan_ports: A callback to handle opened ports
+        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
+        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
+        :param on_exit: A default callback that is called when the process exits
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         session = cls(
@@ -181,6 +196,9 @@ class Session(SessionConnection):
             cwd=cwd,
             env_vars=env_vars,
             on_scan_ports=on_scan_ports,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
             _debug_hostname=_debug_hostname,
             _debug_port=_debug_port,
             _debug_dev_env=_debug_dev_env,
