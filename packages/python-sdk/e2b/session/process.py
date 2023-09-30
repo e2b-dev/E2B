@@ -180,9 +180,18 @@ class ProcessManager:
 
     _service_name = "process"
 
-    def __init__(self, session: SessionConnection):
+    def __init__(
+        self,
+        session: SessionConnection,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
+    ):
         self._session = session
         self._process_cleanup: List[Callable[[], Any]] = []
+        self._on_stdout = on_stdout
+        self._on_stderr = on_stderr
+        self._on_exit = on_exit
 
     def _close(self):
         for cleanup in self._process_cleanup:
@@ -223,6 +232,10 @@ class ProcessManager:
         async with async_timeout.timeout(timeout):
             env_vars = env_vars or {}
             env_vars = {**self._session.env_vars, **env_vars}
+
+            on_stdout = on_stdout or self._on_stdout
+            on_stderr = on_stderr or self._on_stderr
+            on_exit = on_exit or self._on_exit
 
             future_exit = DeferredFuture(self._process_cleanup)
             process_id = process_id or create_id(12)

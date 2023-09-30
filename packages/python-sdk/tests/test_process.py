@@ -71,3 +71,56 @@ async def test_process_send_stdin():
     assert not message.error
 
     await session.close()
+
+
+async def test_default_on_exit():
+    on_exit = MagicMock()
+
+    session = await Session.create("Nodejs", on_exit=lambda: on_exit())
+    proc = await session.process.start(
+        "pwd",
+        on_exit=lambda: print("EXIT"),
+    )
+    await proc
+    on_exit.assert_not_called()
+
+    proc = await session.process.start(
+        "pwd",
+    )
+    await proc
+    on_exit.assert_called_once()
+
+    await session.close()
+
+
+async def test_process_default_on_stdout_stderr():
+    on_stdout = MagicMock()
+    on_stderr = MagicMock()
+
+    session = await Session.create(
+        "Nodejs",
+        on_stdout=lambda data: on_stdout(),
+        on_stderr=lambda data: on_stderr(),
+    )
+    code = "node -e \"console.log('hello'); throw new Error('error')\""
+
+    stdout = []
+    stderr = []
+
+    proc = await session.process.start(
+        code,
+        on_stdout=lambda data: stdout.append(data),
+        on_stderr=lambda data: stderr.append(data),
+    )
+
+    await proc
+    on_stdout.assert_not_called()
+    on_stderr.assert_not_called()
+
+    proc = await session.process.start(code)
+    await proc
+
+    on_stdout.assert_called_once()
+    on_stderr.assert_called()
+
+    await session.close()

@@ -32,7 +32,9 @@ export type Environment = components['schemas']['Template']
 export interface SessionOpts extends SessionConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler
   timeout?: number
-  cwd?: string // Current working directory. Used to resolve relative paths.
+  onStdout?: (out: ProcessMessage) => void
+  onStderr?: (out: ProcessMessage) => void
+  onExit?: () => void
 }
 
 export class Session extends SessionConnection {
@@ -276,16 +278,26 @@ export class Session extends SessionConnection {
 
           const output = new ProcessOutput()
 
-          function handleStdout(data: { line: string; timestamp: number }) {
+          const handleStdout = (data: { line: string; timestamp: number }) => {
             const message = new ProcessMessage(data.line, data.timestamp, false)
             output.addStdout(message)
-            onStdout?.(message)
+
+            if (onStdout) {
+              onStdout(message)
+            } else if (this.opts.onStdout) {
+              this.opts.onStdout(message)
+            }
           }
 
-          function handleStderr(data: { line: string; timestamp: number }) {
+          const handleStderr = (data: { line: string; timestamp: number }) => {
             const message = new ProcessMessage(data.line, data.timestamp, true)
             output.addStderr(message)
-            onStderr?.(message)
+
+            if (onStderr) {
+              onStderr(message)
+            } else if (this.opts.onStderr) {
+              this.opts.onStderr(message)
+            }
           }
 
           const [onExitSubID, onStdoutSubID, onStderrSubID] =
@@ -311,7 +323,12 @@ export class Session extends SessionConnection {
               this.logger.error?.(errMsg)
             }
 
-            onExit?.()
+            if (onExit) {
+              onExit()
+            } else if (this.opts.onExit) {
+              this.opts.onExit()
+            }
+
             handleFinishUnsubscribing(output)
           })
 
