@@ -23,9 +23,9 @@ export const sections = [
   { title: 'Let GPT fix generated code', id: 'upgrade-let-gpt-fix-generated-code', icon: ExtraIcon, },
 ]
 
-# Build Custom Code Interpreter with E2B
+# Build Custom Code Interpreter with E2B and GPT-4
 
-This is an example how to build a custom simple code interpreter using [OpenAI GPT-4](https://platform.openai.com/docs/models) and [E2B](https://e2b.dev). {{ className: 'lead' }}
+This is an example how to build a custom simple code interpreter that can execute JavaScript using [OpenAI GPT-4](https://platform.openai.com/docs/models) and [E2B](https://e2b.dev). {{ className: 'lead' }}
 
 ## What is Code Interpreter?
 
@@ -33,7 +33,10 @@ This is an example how to build a custom simple code interpreter using [OpenAI G
 
 This guide will show you how to build your own custom code interpreter that can execute JavaScript code using E2B and GPT-4. {{ className: 'lead' }}
 
-You can find the final code in [this GitHub repository](/todo). {{ className: 'lead' }}
+You can find the final code for both Python and JavaScript in [this GitHub repository](https://github.com/e2b-dev/e2b-cookbook/tree/main). {{ className: 'lead' }}
+
+## Why to use E2B?
+E2B allows you to execute the GPT-generated code in a sandboxed cloud environment. This means you can run the code without worrying about security issues and potential harm the generated code can make to your machine. {{ className: 'lead' }}
 
 ## Install E2B and OpenAI
 
@@ -89,7 +92,7 @@ Here we set up the OpenAI chat completion endpoint that allows to call the GPT-4
 response = openai.ChatCompletion.create(
   model="gpt-4", # Or use gpt-3.5-turbo
   messages=[
-      {"role": "system", "content": "You are a senior developer that can code in JavaScript."},
+      {"role": "system", "content": "You are a senior developer that can code in JavaScript. Always produce valid JSON."},
   ]
 )
 ```
@@ -101,7 +104,7 @@ const chatCompletion = await openai.chat.completions.create({
   messages: [
     {
       role: 'system',
-      content: 'You are a senior developer that can code in JavaScript.',
+      content: 'You are a senior developer that can code in JavaScript. Always produce valid JSON.',
     },
   ],
 })
@@ -190,7 +193,7 @@ The new code is marked by the highlighted lines.
 response = openai.ChatCompletion.create(
   model="gpt-4",
   messages=[
-      {"role": "system", "content": "You are a senior developer that can code in JavaScript."},
+      {"role": "system", "content": "You are a senior developer that can code in JavaScript. Always produce valid JSON."},
       {"role": "user", "content": "Write hello world"}, # $HighlightLine
       {"role": "assistant", "content": "print(\"hello world\")", "name":"exec_code"}, # $HighlightLine
       {"role": "user", "content": "Generate first 100 fibonacci numbers"}, # $HighlightLine
@@ -205,21 +208,21 @@ const chatCompletion = await openai.chat.completions.create({
   messages: [
     {
       role: 'system',
-      content: 'You are a senior developer that can code in JavaScript.',
+      content: 'You are a senior developer that can code in JavaScript. Always produce valid JSON.',
     },
-    {
+    { // $HighlightLine
       role: 'user', // $HighlightLine
       content: 'Write hello world', // $HighlightLine
-    },
-    {
+    }, // $HighlightLine
+    { // $HighlightLine
       role: 'assistant', // $HighlightLine
       content: '{"code": "print("hello world")"}', // $HighlightLine
       name: 'exec_code', // $HighlightLine
-    },
-    {
+    }, // $HighlightLine
+    { // $HighlightLine
       role: 'user', // $HighlightLine
       content: 'Generate first 100 fibonacci numbers', // $HighlightLine
-    },
+    }, // $HighlightLine
   ],
   functions, // $HighlightLine
 })
@@ -240,12 +243,13 @@ If you print the GPT response now, you'll most likely see the model is calling t
         "content": null,
         "function_call": {
           "name": "exec_code",
-          "arguments": "{\n  \"code\": \"def fibonacci(n):\\n    fib_sequence = [0, 1]\\n    while len(fib_sequence) < n:\\n        fib_sequence.append(fib_sequence[-1] + fib_sequence[-2])\\n    return fib_sequence\\n\\nprint(fibonacci(100))\"\n}"
+          "arguments": "{\n  \"code\": \"\n    var fibonacciSequence = [0, 1];\n    for(var i=2; i<100; i++){\n        fibonacciSequence[i] = fibonacciSequence[i-1] + fibonacciSequence[i-2];\n    }\n    console.log(fibonacciSequence);\n  \"\n}"
         }
       },
       "finish_reason": "function_call"
     }
-  ]
+  ],
+  ...
 }
 ```
 
@@ -387,8 +391,92 @@ And this what the executed code for "Generate first 100 fibonacci numbers" promp
 ]
 ```
 
-## Upgrade: Let GPT install missing libraries
+## Final code
+You can find the final code for both Python and JavaScript in [this GitHub repository](https://github.com/e2b-dev/e2b-cookbook/tree/main). {{ className: 'lead' }}
 
+{/* ## Upgrade: Let GPT install missing libraries
+The current version of our code interpreter has one big flaw. It doesn't allow to install missing libraries. If GPT decided to generate code that uses a library that is not installed, the code will fail to execute.
+We're going to solve this problem by letting GPT install missing libraries by adding a new OpenAI function called `install_package`.
+
+This is how our new `functions` variable looks like. The highlighted lines are the new code.
+
+<CodeGroup isRunnable={false}>
+```python
+functions = [
+  {
+      "name": "exec_code",
+      "description": "Executes the passed JavaScript code using Nodejs and returns the stdout and stderr.",
+      "parameters": {
+          "type": "object",
+          "properties": {
+              "code": {
+                  "type": "string",
+                  "description": "The JavaScript code to execute.",
+              },
+          },
+          "required": ["code"],
+      },
+  },
+  { # $HighlightLine
+      "name": "install_package", # $HighlightLine
+      "description": "Installs the passed npm package.", # $HighlightLine
+      "parameters": { # $HighlightLine
+          "type": "object", # $HighlightLine
+          "properties": { # $HighlightLine
+              "name": { # $HighlightLine
+                  "type": "string", # $HighlightLine
+                  "description": "The name of an npm package to install.", # $HighlightLine
+              }, # $HighlightLine
+          }, # $HighlightLine
+          "required": ["name"], # $HighlightLine
+      }, # $HighlightLine
+  } # $HighlightLine
+]
+```
+
+```js
+const functions = [
+  {
+    name: "exec_code",
+    description:
+      "Executes the passed JavaScript code using Nodejs and returns the stdout and stderr.",
+    parameters: {
+      type: "object",
+      properties: {
+        code: {
+          type: "string",
+          description: "The JavaScript code to execute.",
+        },
+      },
+      required: ["code"],
+    },
+  },
+  { // $HighlightLine
+    name: "install_package", // $HighlightLine
+    description: "Installs the passed npm package.", // $HighlightLine
+    parameters: { // $HighlightLine
+      type: "object", // $HighlightLine
+      properties: { // $HighlightLine
+        name: { // $HighlightLine
+          type: "string", // $HighlightLine
+          description: "The name of an npm package to install.", // $HighlightLine
+        }, // $HighlightLine
+      }, // $HighlightLine
+      required: ["name"], // $HighlightLine
+    }, // $HighlightLine
+  }, // $HighlightLine
+];
+```
+</CodeGroup>
+
+Now we need to add a new `if` statement to our code that will detect if the model is calling the `install_package` function and if it does, we need to install the package using E2B.
+
+<CodeGroup isRunnable={false}>
+</CodeGroup>
+
+### Switch to long-running session with E2B
+TODO
 
 ## Upgrade: Let GPT fix generated code
-
+TODO
+ */}
