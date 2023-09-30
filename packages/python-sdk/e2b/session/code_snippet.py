@@ -1,6 +1,6 @@
 from typing import Any, Callable, ClassVar, List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from e2b.session.exception import MultipleExceptions, RpcException, SessionException
 from e2b.session.session_connection import SessionConnection
@@ -16,7 +16,9 @@ ScanOpenedPortsHandler = Callable[[List[OpenPort]], Any]
 
 
 class CodeSnippetManager(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    # TODO: Change to model_config = ConfigDict(arbitrary_types_allowed=True) when only pydantic 2.0 is used
+    class Config:
+        arbitrary_types_allowed = True
 
     service_name: ClassVar[str] = "codeSnippet"
     session: SessionConnection

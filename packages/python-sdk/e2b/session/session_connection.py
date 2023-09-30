@@ -8,10 +8,7 @@ from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 import async_timeout
 from pydantic import BaseModel
 
-from e2b.api.client import NewSession
-from e2b.api.client import Session as SessionInfo
-from e2b.api.client.rest import ApiException
-from e2b.api.main import client, configuration
+from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
     SESSION_DOMAIN,
     SESSION_REFRESH_PERIOD,
@@ -19,6 +16,7 @@ from e2b.constants import (
     WS_PORT,
     WS_ROUTE,
 )
+from e2b.session.env_vars import EnvVars
 from e2b.session.exception import (
     AuthenticationException,
     MultipleExceptions,
@@ -43,10 +41,6 @@ class SessionConnection:
     _refresh_retries = 4
 
     @property
-    def cwd(self):
-        return self._cwd
-
-    @property
     def finished(self):
         """
         A future that is resolved when the session exits.
@@ -64,14 +58,15 @@ class SessionConnection:
         return self._finished.__await__()
 
     def __init__(
-            self,
-            id: str,
-            api_key: Optional[str],
-            cwd: Optional[str] = None,
-            _debug_hostname: Optional[str] = None,
-            _debug_port: Optional[int] = None,
-            _debug_dev_env: Optional[Literal["remote", "local"]] = None,
-            on_close: Optional[Callable[[], Any]] = None,
+        self,
+        id: str,
+        api_key: Optional[str],
+        cwd: Optional[str] = None,
+        env_vars: Optional[EnvVars] = None,
+        _debug_hostname: Optional[str] = None,
+        _debug_port: Optional[int] = None,
+        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
+        on_close: Optional[Callable[[], Any]] = None,
     ):
         api_key = api_key or getenv("E2B_API_KEY")
 
@@ -80,15 +75,16 @@ class SessionConnection:
                 "API key is required, please visit https://e2b.dev/docs to get your API key",
             )
 
+        self.cwd = cwd
+        self.env_vars = env_vars or {}
         self._id = id
         self._api_key = api_key
-        self._cwd = cwd
         self._debug_hostname = _debug_hostname
         self._debug_port = _debug_port
         self._debug_dev_env = _debug_dev_env
         self._on_close_child = on_close
 
-        self._session: Optional[SessionInfo] = None
+        self._session: Optional[models.Session] = None
         self._is_open = False
         self._process_cleanup: List[Callable[[], Any]] = []
         self._refreshing_task: Optional[asyncio.Future] = None
@@ -167,7 +163,7 @@ class SessionConnection:
                 api = client.SessionsApi(api_client)
 
                 self._session = await api.sessions_post(
-                    NewSession(codeSnippetID=self._id, editEnabled=False),
+                    models.NewSession(codeSnippetID=self._id, editEnabled=False),
                     api_key=self._api_key,
                 )
                 logger.info(
@@ -224,11 +220,11 @@ class SessionConnection:
             raise e
 
     async def _call(
-            self,
-            service: str,
-            method: str,
-            params: List[Any] = None,
-            timeout: Optional[float] = TIMEOUT,
+        self,
+        service: str,
+        method: str,
+        params: List[Any] = None,
+        timeout: Optional[float] = TIMEOUT,
     ):
         if not params:
             params = []
@@ -240,8 +236,8 @@ class SessionConnection:
             return await self._rpc.send_message(f"{service}_{method}", params)
 
     async def _handle_subscriptions(
-            self,
-            *subs: Optional[Awaitable[Callable[[], Awaitable[None]]]],
+        self,
+        *subs: Optional[Awaitable[Callable[[], Awaitable[None]]]],
     ):
         results: List[
             Union[Callable[[], Awaitable[None]], None, Exception]
@@ -289,12 +285,12 @@ class SessionConnection:
         logger.debug(f"Unsubscribed (sub_id: {sub_id})")
 
     async def _subscribe(
-            self,
-            service: str,
-            handler: Callable[[Any], Any],
-            method: str,
-            *params,
-            timeout: Optional[float] = TIMEOUT,
+        self,
+        service: str,
+        handler: Callable[[Any], Any],
+        method: str,
+        *params,
+        timeout: Optional[float] = TIMEOUT,
     ):
         sub_id = await self._call(
             service, "subscribe", [method, *params], timeout=timeout
@@ -338,7 +334,7 @@ class SessionConnection:
                 try:
                     await api.sessions_session_id_refresh_post(session_id)
                     logger.debug(f"Refreshed session {session_id}")
-                except ApiException as e:
+                except exceptions.ApiException as e:
                     if e.status == 404:
                         raise SessionException(
                             f"Session {session_id} failed because it cannot be found"

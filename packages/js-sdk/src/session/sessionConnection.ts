@@ -15,6 +15,7 @@ import { codeSnippetService } from './codeSnippet'
 import { filesystemService } from './filesystem'
 import { processService } from './process'
 import { terminalService } from './terminal'
+import { EnvVars } from './envVars'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void
@@ -31,7 +32,7 @@ interface Subscriber {
   handler: SubscriptionHandler
 }
 
-interface Logger {
+export interface Logger {
   debug?: (message: string, ...args: unknown[]) => void
   info?: (message: string, ...args: unknown[]) => void
   warn?: (message: string, ...args: unknown[]) => void
@@ -42,6 +43,7 @@ export interface SessionConnectionOpts {
   id: string
   apiKey?: string
   cwd?: string
+  envVars?: EnvVars
   logger?: Logger
   __debug_hostname?: string
   __debug_port?: number
@@ -59,6 +61,9 @@ const refreshSession = api
   .create({ api_key: true })
 
 export class SessionConnection {
+  cwd: string | undefined
+  envVars: EnvVars
+
   protected readonly logger: Logger
   protected session?: components['schemas']['Session']
   protected isOpen = false
@@ -76,6 +81,13 @@ export class SessionConnection {
       )
     }
     this.apiKey = apiKey
+
+    this.cwd = opts.cwd
+    if (this.cwd && this.cwd.startsWith('~')) {
+      this.cwd = this.cwd.replace('~', '/home/user')
+    }
+
+    this.envVars = opts.envVars || {}
     this.logger = opts.logger ?? {
       // by default, we log to the console
       // we don't log debug messages by default

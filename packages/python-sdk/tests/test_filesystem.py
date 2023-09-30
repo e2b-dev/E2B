@@ -116,7 +116,7 @@ async def test_read_bytes():
     # Upload the file first
     with open(local_path, "rb") as f:
         content = f.read()
-        await session.filesystem.write_bytes(remote_path, bytearray(content))
+        await session.filesystem.write_bytes(remote_path, content)
 
     # Download the file
     content = await session.filesystem.read_bytes(remote_path)
