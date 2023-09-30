@@ -19,8 +19,9 @@ export const sections = [
   { title: 'Prepare OpenAI functions', id: 'prepare-open-ai-functions', },
   { title: 'Parse GPT response', id: 'parse-gpt-response', },
   { title: 'Run GPT-generated code with E2B', id: 'run-gpt-generated-code-with-e2-b', },
-  { title: 'Let GPT install missing libraries', id: 'upgrade-let-gpt-install-missing-libraries', icon: ExtraIcon, },
-  { title: 'Let GPT fix generated code', id: 'upgrade-let-gpt-fix-generated-code', icon: ExtraIcon, },
+  // { title: 'Let GPT install missing libraries', id: 'upgrade-let-gpt-install-missing-libraries', icon: ExtraIcon, },
+  // { title: 'Let GPT fix generated code', id: 'upgrade-let-gpt-fix-generated-code', icon: ExtraIcon, },
+  { title: 'Final code', id: 'final-code', },
 ]
 
 # Build Custom Code Interpreter with E2B and GPT-4
@@ -391,8 +392,6 @@ And this what the executed code for "Generate first 100 fibonacci numbers" promp
 ]
 ```
 
-## Final code
-You can find the final code for both Python and JavaScript in [this GitHub repository](https://github.com/e2b-dev/e2b-cookbook/tree/main). {{ className: 'lead' }}
 
 {/* ## Upgrade: Let GPT install missing libraries
 The current version of our code interpreter has one big flaw. It doesn't allow to install missing libraries. If GPT decided to generate code that uses a library that is not installed, the code will fail to execute.
@@ -480,3 +479,7 @@ TODO
 ## Upgrade: Let GPT fix generated code
 TODO
  */}
+
+
+## Final code
+You can find the final code for both Python and JavaScript in [this GitHub repository](https://github.com/e2b-dev/e2b-cookbook/tree/main). {{ className: 'lead' }}
