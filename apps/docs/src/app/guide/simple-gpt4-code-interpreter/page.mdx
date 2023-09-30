@@ -1,14 +1,39 @@
-# Build Custom GPT-4 or GPT-3.5 Code Interpreter
+import {
+  PlusCircle,
+  Plus,
+  ChevronsUp,
+} from 'lucide-react'
 
-This is an example how to build a custom simple code interpreter using [OpenAI GPT-4](https://platform.openai.com/docs/models) and E2B. {{ className: 'lead' }}
+export const ExtraIcon = (
+  <ChevronsUp
+    size={14}
+    className="text-emerald-500"
+  />
+)
+
+export const sections = [
+  { title: 'Install E2B and OpenAI', id: 'install-e2-b-and-open-ai', },
+  { title: 'Get API keys', id: 'get-api-keys', },
+  { title: 'Import packages', id: 'import-packages', },
+  { title: 'Make calls to GPT', id: 'make-calls-to-gpt', },
+  { title: 'Prepare OpenAI functions', id: 'prepare-open-ai-functions', },
+  { title: 'Parse GPT response', id: 'parse-gpt-response', },
+  { title: 'Run GPT-generated code with E2B', id: 'run-gpt-generated-code-with-e2-b', },
+  { title: 'Let GPT install missing libraries', id: 'upgrade-let-gpt-install-missing-libraries', icon: ExtraIcon, },
+  { title: 'Let GPT fix generated code', id: 'upgrade-let-gpt-fix-generated-code', icon: ExtraIcon, },
+]
+
+# Build Custom Code Interpreter with E2B
+
+This is an example how to build a custom simple code interpreter using [OpenAI GPT-4](https://platform.openai.com/docs/models) and [E2B](https://e2b.dev). {{ className: 'lead' }}
 
 ## What is Code Interpreter?
 
-[Code Interpreter](https://openai.com/blog/chatgpt-plugins?ref=blog.roboflow.com#code-interpreter) is a [ChatGPT plugin](https://platform.openai.com/docs/plugins/introduction) released by OpenAI that gives ChatGPT capabilites to run Python code.
+[Code Interpreter](https://openai.com/blog/chatgpt-plugins?ref=blog.roboflow.com#code-interpreter) is a [ChatGPT plugin](https://platform.openai.com/docs/plugins/introduction) released by OpenAI that gives ChatGPT capabilites to run code.
 
-This guide will show you how to build your own custom code interpreter using E2B and GPT-4. {{ className: 'lead' }}
+This guide will show you how to build your own custom code interpreter that can execute JavaScript code using E2B and GPT-4. {{ className: 'lead' }}
 
-You can find the final code in [this GitHub repository](/todo).
+You can find the final code in [this GitHub repository](/todo). {{ className: 'lead' }}
 
 ## Install E2B and OpenAI
 
@@ -27,14 +52,14 @@ npm i openai
 
 </CodeGroup>
 
-## Obtain API keys
+## Get API keys
 
 Let's get our API keys for E2B and OpenAI. We'll need them to use the APIs.
 
 1. Get your E2B API Key from [here](/getting-started/api-key)
 2. Get your GPT-4 or GPT-3.5 at the [OpenAI website](https://platform.openai.com/)
 
-## Import E2B and OpenAI
+## Import packages
 
 Now we need to import the packages we installed in the previous step.
 
@@ -42,6 +67,10 @@ Now we need to import the packages we installed in the previous step.
 ```python
 import e2b
 import openai
+
+# We'll need these later
+import asyncio
+import json
 ```
 
 ```js
@@ -51,7 +80,7 @@ import OpenAI from 'openai'
 
 </CodeGroup>
 
-## Set up OpenAI chat completion endpoint
+## Make calls to GPT
 
 Here we set up the OpenAI chat completion endpoint that allows to call the GPT-4 (or GPT-3.5) models.
 
@@ -60,7 +89,7 @@ Here we set up the OpenAI chat completion endpoint that allows to call the GPT-4
 response = openai.ChatCompletion.create(
   model="gpt-4", # Or use gpt-3.5-turbo
   messages=[
-      {"role": "system", "content": "You are a senior developer that can code in Python."},
+      {"role": "system", "content": "You are a senior developer that can code in JavaScript."},
   ]
 )
 ```
@@ -72,7 +101,7 @@ const chatCompletion = await openai.chat.completions.create({
   messages: [
     {
       role: 'system',
-      content: 'You are a senior developer that can code in Python.',
+      content: 'You are a senior developer that can code in JavaScript.',
     },
   ],
 })
@@ -93,7 +122,7 @@ If you print the response, you should see something like this:
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "Great! How can I assist you today? Are you looking for help with Python solutions, or do you need some general advice about software development?"
+        "content": "Great! How can I assist you today? Are you looking for help with JavaScript solutions, or do you need some general advice about software development?"
       },
       "finish_reason": "stop"
     }
@@ -106,22 +135,22 @@ If you print the response, you should see something like this:
 }
 ```
 
-## Set up OpenAI functions for generating code
+## Prepare OpenAI functions
 
-We're going to take an advantage of the [OpenAI functions](https://openai.com/blog/function-calling-and-other-api-updates). Defining these functions will make it easier instructing the model that it can write Python code to complete request from the user. We'll execute this code later using E2B.
+We're going to take an advantage of the [OpenAI functions](https://openai.com/blog/function-calling-and-other-api-updates). Defining these functions will make it easier instructing the model that it can write JavaScript code to complete request from the user. We'll execute this code later using E2B.
 
 <CodeGroup isRunnable={false}>
 ```python
 functions = [
   {
       "name": "exec_code",
-      "description": "Executes the passed Python code and returns the stdout and stderr.",
+      "description": "Executes the passed JavaScript code using Nodejs and returns the stdout and stderr.",
       "parameters": {
           "type": "object",
           "properties": {
               "code": {
                   "type": "string",
-                  "description": "The python code to execute.",
+                  "description": "The JavaScript code to execute.",
               },
           },
           "required": ["code"],
@@ -134,13 +163,13 @@ functions = [
 const functions = [
   {
     name: 'exec_code',
-    description: 'Executes the passed Python code and returns the stdout and stderr.',
+    description: 'Executes the passed JavaScript code using Nodejs and returns the stdout and stderr',
     parameters: {
       type: 'object',
       properties: {
         code: {
           type: 'string',
-          description: 'The python code to execute.',
+          description: 'The JavaScript code to execute.',
         },
       },
       required: ['code'],
@@ -161,7 +190,7 @@ The new code is marked by the highlighted lines.
 response = openai.ChatCompletion.create(
   model="gpt-4",
   messages=[
-      {"role": "system", "content": "You are a senior developer that can code in Python."},
+      {"role": "system", "content": "You are a senior developer that can code in JavaScript."},
       {"role": "user", "content": "Write hello world"}, # $HighlightLine
       {"role": "assistant", "content": "print(\"hello world\")", "name":"exec_code"}, # $HighlightLine
       {"role": "user", "content": "Generate first 100 fibonacci numbers"}, # $HighlightLine
@@ -176,7 +205,7 @@ const chatCompletion = await openai.chat.completions.create({
   messages: [
     {
       role: 'system',
-      content: 'You are a senior developer that can code in Python.',
+      content: 'You are a senior developer that can code in JavaScript.',
     },
     {
       role: 'user', // $HighlightLine
@@ -220,14 +249,12 @@ If you print the GPT response now, you'll most likely see the model is calling t
 }
 ```
 
-## Parse the GPT response
+## Parse GPT response
 
 We need to parse the GPT's response and detect if it contains a function call. If it does and it's actually the `exec_code` function, we need to parse the `arguments` field, get the `code` argument and actually run the code using E2B (we'll do it in the next step).
 
 <CodeGroup isRunnable={false}>
 ```python
-import json
-
 # ... previous code
 
 message = response["choices"][0]["message"]
@@ -282,7 +309,7 @@ if (func) {
 
 
 
-## Execute the GPT-generated code with E2B
+## Run GPT-generated code with E2B
 
 It's time to actually run the code generated by GPT. We'll be using the `e2b.runCode`/`e2b.run_code` to execute the code in E2B's sandboxed playground.
 All we need to add is just a single line of code. I hgihtlighted it in the code snippets below.
@@ -360,8 +387,8 @@ And this what the executed code for "Generate first 100 fibonacci numbers" promp
 ]
 ```
 
-{/* ## Advanced: Allow GPT to install missing packages
+## Upgrade: Let GPT install missing libraries
 
-## Advanced: Allow GPT to fix itself
 
-## Switch to */}
+## Upgrade: Let GPT fix generated code
+

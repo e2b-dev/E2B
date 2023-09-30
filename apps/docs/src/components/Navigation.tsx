@@ -91,14 +91,18 @@ function NavLink({
     >
       <div className="flex items-center justify-start gap-1">
         {icon}
-        <span className="truncate">{children}</span>
-        {tag && (
-          <Tag
-            variant="small"
-            color="zinc"
-          >
-            {tag}
-          </Tag>
+        {tag ? (
+          <div className="flex items-center gap-2">
+            <Tag
+              variant="small"
+              color="emerald"
+            >
+              {tag}
+            </Tag>
+            <span className="truncate">{children}</span>
+          </div>
+        ) : (
+          <span className="truncate">{children}</span>
         )}
       </div>
     </Link>
@@ -241,6 +245,7 @@ function NavigationGroup({ group, className }) {
                         <NavLink
                           href={`${link.href}#${section.id}`}
                           tag={section.tag}
+                          icon={section.icon}
                           isAnchorLink
                         >
                           {section.title}
