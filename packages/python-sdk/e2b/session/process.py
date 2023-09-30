@@ -128,12 +128,12 @@ class Process:
         return self._finished.__await__()
 
     def __init__(
-            self,
-            process_id: str,
-            session: SessionConnection,
-            trigger_exit: Callable[[], Coroutine[Any, Any, None]],
-            finished: Awaitable[ProcessOutput],
-            output: ProcessOutput,
+        self,
+        process_id: str,
+        session: SessionConnection,
+        trigger_exit: Callable[[], Coroutine[Any, Any, None]],
+        finished: Awaitable[ProcessOutput],
+        output: ProcessOutput,
     ):
         self._process_id = process_id
         self._session = session
@@ -181,11 +181,11 @@ class ProcessManager:
     _service_name = "process"
 
     def __init__(
-            self,
-            session: SessionConnection,
-            on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-            on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-            on_exit: Optional[Callable[[], Any]] = None,
+        self,
+        session: SessionConnection,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
     ):
         self._session = session
         self._process_cleanup: List[Callable[[], Any]] = []
@@ -200,16 +200,16 @@ class ProcessManager:
         self._process_cleanup.clear()
 
     async def start(
-            self,
-            cmd: str,
-            on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-            on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-            on_exit: Optional[Callable[[], Any]] = None,
-            env_vars: Optional[EnvVars] = None,
-            cwd: str = "",
-            rootdir: str = "",  # DEPRECATED
-            process_id: Optional[str] = None,
-            timeout: Optional[float] = TIMEOUT,
+        self,
+        cmd: str,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
+        env_vars: Optional[EnvVars] = None,
+        cwd: str = "",
+        rootdir: str = "",  # DEPRECATED
+        process_id: Optional[str] = None,
+        timeout: Optional[float] = TIMEOUT,
     ) -> Process:
         """
         Starts a process in the environment.
