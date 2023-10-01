@@ -257,6 +257,19 @@ function CodeGroupPanels({
 }: React.ComponentPropsWithoutRef<typeof CodePanel>) {
   const hasTabs = Children.count(children) > 1
 
+  /* <INTERNAL> */
+  // @ts-ignore
+  if (typeof window !== 'undefined' && window.DEBUG_COMPARE_LANGS) {
+    return (
+      <div className="grid grid-cols-2">
+        {Children.map(children, child => (
+          <CodePanel {...props}>{child}</CodePanel>
+        ))}
+      </div>
+    )
+  }
+  /* </INTERNAL> */
+
   if (hasTabs) {
     return (
       <Tab.Panels>
