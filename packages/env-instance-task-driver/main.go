@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	serviceName               = "env-instance-task-driver"
 	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
 )
 
@@ -31,7 +30,8 @@ func configurePlugin() {
 
 	if *telemetryAPIKey == "" {
 		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
+			launcher.WithServiceName(driver.PluginName),
+			launcher.WithServiceVersion(driver.PluginVersion),
 			launcher.WithMetricReportingPeriod(10*time.Second),
 			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
 			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
@@ -42,7 +42,7 @@ func configurePlugin() {
 		defer otelLauncher.Shutdown()
 	} else {
 		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
+			launcher.WithServiceName(driver.PluginName),
 			launcher.WithAccessToken(*telemetryAPIKey),
 		)
 		defer otelLauncher.Shutdown()
@@ -52,7 +52,7 @@ func configurePlugin() {
 }
 
 func factory(log log.Logger) interface{} {
-	return driver.NewFirecrackerDriver(log)
+	return driver.NewPlugin(log)
 }
 
 func main() {

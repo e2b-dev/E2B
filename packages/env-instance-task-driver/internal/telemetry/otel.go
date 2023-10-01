@@ -5,46 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
-
-type OtelHook struct {
-	span trace.Span
-}
-
-func (hook *OtelHook) Fire(entry *log.Entry) error {
-	switch entry.Level {
-	case log.ErrorLevel:
-	case log.FatalLevel:
-	case log.PanicLevel:
-		hook.span.SetStatus(codes.Error, "critical error")
-		hook.span.RecordError(fmt.Errorf(entry.Message))
-	case log.WarnLevel:
-		hook.span.RecordError(fmt.Errorf(entry.Message))
-	case log.InfoLevel:
-	case log.DebugLevel:
-	case log.TraceLevel:
-	default:
-		hook.span.AddEvent(entry.Message)
-	}
-
-	return nil
-}
-
-var supportedLevels = []log.Level{log.DebugLevel, log.InfoLevel, log.WarnLevel, log.ErrorLevel}
-
-func (hook *OtelHook) Levels() []log.Level {
-	return supportedLevels
-}
-
-func NewOtelHook(span trace.Span) *OtelHook {
-	return &OtelHook{
-		span: span,
-	}
-}
 
 func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
@@ -60,14 +24,22 @@ func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) 
 	)
 }
 
-func ReportCriticalError(ctx context.Context, err error) {
+func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
-	fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
+	if len(attrs) == 0 {
+		fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
+	} else {
+		fmt.Fprintf(os.Stderr, "Critical error: %v - %v\n", err, attrs)
+	}
 
 	span.RecordError(err,
 		trace.WithStackTrace(true),
+		trace.WithAttributes(
+			attrs...,
+		),
 	)
+
 	span.SetStatus(codes.Error, "critical error")
 }
 
@@ -84,6 +56,42 @@ func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 		trace.WithStackTrace(true),
 		trace.WithAttributes(
 			attrs...,
+		),
+	)
+}
+
+func GetContextFromRemote(ctx context.Context, tracer trace.Tracer, name, spanID, traceID string) (context.Context, trace.Span) {
+	tid, traceIDErr := trace.TraceIDFromHex(traceID)
+	if traceIDErr != nil {
+		ReportError(
+			ctx,
+			traceIDErr,
+			attribute.String("trace_id", traceID),
+			attribute.Int("trace_id.length", len(traceID)),
+		)
+	}
+
+	sid, spanIDErr := trace.SpanIDFromHex(spanID)
+	if spanIDErr != nil {
+		ReportError(
+			ctx,
+			spanIDErr,
+			attribute.String("span_id", spanID),
+			attribute.Int("span_id.length", len(spanID)),
+		)
+	}
+
+	remoteCtx := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    tid,
+		SpanID:     sid,
+		TraceFlags: 0x0,
+	})
+
+	return tracer.Start(
+		trace.ContextWithRemoteSpanContext(ctx, remoteCtx),
+		"start-task",
+		trace.WithLinks(
+			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
 		),
 	)
 }
