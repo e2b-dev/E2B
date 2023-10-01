@@ -284,7 +284,8 @@ export class Session extends SessionConnection {
 
             if (onStdout) {
               onStdout(message)
-            } else if (this.opts.onStdout) {
+            } else if ((this.opts as SessionOpts).onStdout) {
+              // @ts-expect-error TS2339
               this.opts.onStdout(message)
             }
           }
@@ -295,7 +296,8 @@ export class Session extends SessionConnection {
 
             if (onStderr) {
               onStderr(message)
-            } else if (this.opts.onStderr) {
+            } else if ((this.opts as SessionOpts).onStderr) {
+              // @ts-expect-error TS2339
               this.opts.onStderr(message)
             }
           }
@@ -325,7 +327,8 @@ export class Session extends SessionConnection {
 
             if (onExit) {
               onExit()
-            } else if (this.opts.onExit) {
+            } else if ((this.opts as SessionOpts).onExit) {
+              // @ts-expect-error TS2339
               this.opts.onExit()
             }
 
