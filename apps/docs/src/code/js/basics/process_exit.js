@@ -3,20 +3,18 @@ import { Session } from '@e2b/sdk'
 const session = await Session.create({
   id: 'Nodejs',
   apiKey: process.env.E2B_API_KEY,
-  onStdout: output => console.log('session', output.line), // $HighlightLine
+  onExit: () => console.log('[session]', 'process ended'), // $HighlightLine
 })
 
-const proc = await session.process.start({
-  cmd: 'echo "Hello World!"',
-})
+const proc = await session.process.start({ cmd: 'echo "Hello World!"' })
 await proc.finished
-// output: session Hello World!
+// output: [session] process ended
 
 const procWithCustomHandler = await session.process.start({
   cmd: 'echo "Hello World!"',
-  onStdout: data => console.log('process', data.line), // $HighlightLine
+  onExit: () => console.log('[process]', 'process ended'), // $HighlightLine
 })
 await procWithCustomHandler.finished
-// output: process Hello World!
+// output: [process] process ended
 
 await session.close()

@@ -8,6 +8,7 @@ export const sections = [
   {title: 'Stop process', id: 'stop-process'},
   {title: 'Stream stdout', id: 'stream-stdout'},
   {title: 'Stream stderr', id: 'stream-stderr'},
+  {title: 'On process exit', id: 'on-process-exit'},
   {title: 'Send stdin', id: 'send-stdin'},
   {title: 'Set environment variables', id: 'set-environment-variables'},
 ]
@@ -21,6 +22,7 @@ Here are the basic operations you can do with the process inside a cloud playgro
 - [Stdout](/playgrounds/process#stream-stdout)
 - [Stdin](/playgrounds/process#send-stdin)
 - [Stderr](/playgrounds/process#stream-stderr)
+- [On exit](/playgrounds/process#on-process-exit)
 - [Environment variables](/playgrounds/process#set-environment-variables)
 
 ## Start process
@@ -39,6 +41,8 @@ Here are the basic operations you can do with the process inside a cloud playgro
 
 ## Stream stdout
 
+Set either stdout handler for whole session level or per process.
+
 <CodeGroupAutoload
   path="basics/process_stream_stdout"
   isRunnable={false}
@@ -46,8 +50,19 @@ Here are the basic operations you can do with the process inside a cloud playgro
 
 ## Stream stderr
 
+Set either stderr handler for whole session level or per process.
+
 <CodeGroupAutoload
   path="basics/process_stream_stderr"
+  isRunnable={false}
+/>
+
+## On process exit
+
+Set either on exit handler for whole session level or per process.
+
+<CodeGroupAutoload
+  path="basics/process_exit"
   isRunnable={false}
 />
 
