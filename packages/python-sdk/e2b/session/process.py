@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from asyncio.exceptions import TimeoutError
 from typing import Any, Awaitable, Callable, ClassVar, Coroutine, Dict, List, Optional
 
@@ -74,6 +75,20 @@ class Process:
     A process running in the environment.
     """
 
+    def __init__(
+            self,
+            process_id: str,
+            session: SessionConnection,
+            trigger_exit: Callable[[], Coroutine[Any, Any, None]],
+            finished: Awaitable[ProcessOutput],
+            output: ProcessOutput,
+    ):
+        self._process_id = process_id
+        self._session = session
+        self._trigger_exit = trigger_exit
+        self._finished = finished
+        self._output = output
+
     @property
     def output(self) -> ProcessOutput:
         """
@@ -125,21 +140,14 @@ class Process:
         return self._process_id
 
     def __await__(self):
+        """
+        Deprecated, use wait instead.
+        """
+        warnings.warn("Use wait instead of just calling await on Process", DeprecationWarning)
         return self._finished.__await__()
 
-    def __init__(
-        self,
-        process_id: str,
-        session: SessionConnection,
-        trigger_exit: Callable[[], Coroutine[Any, Any, None]],
-        finished: Awaitable[ProcessOutput],
-        output: ProcessOutput,
-    ):
-        self._process_id = process_id
-        self._session = session
-        self._trigger_exit = trigger_exit
-        self._finished = finished
-        self._output = output
+    async def wait(self):
+        return await self._finished
 
     async def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -173,6 +181,32 @@ class Process:
         await self._trigger_exit()
 
 
+class SyncProcess(Process):
+    @property
+    def _loop(self):
+        return self._session._loop
+
+    def wait(self):
+        return self._loop.run_until_complete(super().wait())
+
+    def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Sends data to the process stdin.
+
+        :param data: Data to send
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().send_stdin(data, timeout))
+
+    def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Kills the process.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().kill(timeout))
+
+
 class ProcessManager:
     """
     Manager for starting and interacting with processes in the environment.
@@ -181,11 +215,11 @@ class ProcessManager:
     _service_name = "process"
 
     def __init__(
-        self,
-        session: SessionConnection,
-        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[], Any]] = None,
+            self,
+            session: SessionConnection,
+            on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_exit: Optional[Callable[[], Any]] = None,
     ):
         self._session = session
         self._process_cleanup: List[Callable[[], Any]] = []
@@ -200,16 +234,16 @@ class ProcessManager:
         self._process_cleanup.clear()
 
     async def start(
-        self,
-        cmd: str,
-        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
-        on_exit: Optional[Callable[[], Any]] = None,
-        env_vars: Optional[EnvVars] = None,
-        cwd: str = "",
-        rootdir: str = "",  # DEPRECATED
-        process_id: Optional[str] = None,
-        timeout: Optional[float] = TIMEOUT,
+            self,
+            cmd: str,
+            on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_exit: Optional[Callable[[], Any]] = None,
+            env_vars: Optional[EnvVars] = None,
+            cwd: str = "",
+            rootdir: str = "",  # DEPRECATED
+            process_id: Optional[str] = None,
+            timeout: Optional[float] = TIMEOUT,
     ) -> Process:
         """
         Starts a process in the environment.
@@ -360,3 +394,54 @@ class ProcessManager:
                 logger.error(f"Timeout error during starting the process: {cmd}")
                 await trigger_exit()
                 raise e
+
+
+class SyncProcessManager(ProcessManager):
+    def __init__(
+            self,
+            session: SessionConnection,
+            loop: asyncio.AbstractEventLoop,
+            on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_exit: Optional[Callable[[], Any]] = None,
+    ):
+        super().__init__(
+            session=session,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+        )
+        self._loop = loop
+
+    def start(
+            self,
+            cmd: str,
+            on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+            on_exit: Optional[Callable[[], Any]] = None,
+            env_vars: Optional[EnvVars] = None,
+            cwd: str = "",
+            rootdir: str = "",  # DEPRECATED
+            process_id: Optional[str] = None,
+            timeout: Optional[float] = TIMEOUT,
+    ) -> SyncProcess:
+        process = self._loop.run_until_complete(
+            super().start(
+                cmd=cmd,
+                on_stdout=on_stdout,
+                on_stderr=on_stderr,
+                on_exit=on_exit,
+                env_vars=env_vars,
+                cwd=cwd,
+                rootdir=rootdir,
+                process_id=process_id,
+                timeout=timeout,
+            )
+        )
+        return SyncProcess(
+            process_id=process.process_id,
+            session=process._session,
+            trigger_exit=process._trigger_exit,
+            finished=process._finished,
+            output=process._output,
+        )

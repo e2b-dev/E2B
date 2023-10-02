@@ -141,7 +141,7 @@ class Session(SessionConnection):
 
     async def close(self) -> None:
         await super().close()
-        self._close()
+        await self._close()
 
     async def __aenter__(self):
         await self.open()
@@ -204,5 +204,4 @@ class Session(SessionConnection):
             _debug_dev_env=_debug_dev_env,
         )
         await session.open(timeout=timeout)
-
         return session

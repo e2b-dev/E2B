@@ -126,6 +126,10 @@ class SessionConnection:
         """
         Close the session and unsubscribe from all the subscriptions.
         """
+        await self._close()
+        logger.info(f"Session closed")
+
+    async def _close(self):
         if self._is_open and self._session:
             logger.info(
                 f"Closing session {self._session.code_snippet_id} (id: {self._session.session_id})"
@@ -134,10 +138,6 @@ class SessionConnection:
             if self._rpc:
                 await self._rpc.close()
 
-        self._close()
-        logger.info(f"Session closed")
-
-    def _close(self):
         if self._on_close_child:
             self._on_close_child()
 
@@ -195,13 +195,13 @@ class SessionConnection:
                                 "No session to stop refreshing. Session was not created"
                             )
 
-                        await self.close()
+                        await self._close()
 
                 refresh_handler = asyncio.create_task(refresh_cleanup())
                 self._process_cleanup.append(refresh_handler.cancel)
         except Exception as e:
             logger.error(f"Failed to acquire session")
-            await self.close()
+            await self._close()
             raise e
 
         hostname = self.get_hostname(self._debug_port or WS_PORT)
@@ -216,7 +216,7 @@ class SessionConnection:
             )
             await self._rpc.connect()
         except Exception as e:
-            await self.close()
+            await self._close()
             raise e
 
     async def _call(

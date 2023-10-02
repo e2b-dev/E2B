@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import logging
 from typing import Any, List, Optional
@@ -183,3 +184,35 @@ class FilesystemManager:
             path=path,
             service_name=self._service_name,
         )
+
+
+class SyncFilesystemManager(FilesystemManager):
+    def __init__(self, session: SessionConnection, loop: asyncio.AbstractEventLoop):
+        super().__init__(session)
+        self._loop = loop
+
+    def read_bytes(self, path: str) -> bytes:
+        return self._loop.run_until_complete(super().read_bytes(path))
+
+    def write_bytes(self, path: str, content: bytes) -> None:
+        return self._loop.run_until_complete(super().write_bytes(path, content))
+
+    def read(self, path: str, timeout: Optional[float] = TIMEOUT) -> str:
+        return self._loop.run_until_complete(super().read(path, timeout))
+
+    def write(
+        self, path: str, content: str, timeout: Optional[float] = TIMEOUT
+    ) -> None:
+        return self._loop.run_until_complete(super().write(path, content, timeout))
+
+    def remove(self, path: str, timeout: Optional[float] = TIMEOUT) -> None:
+        return self._loop.run_until_complete(super().remove(path, timeout))
+
+    def list(self, path: str, timeout: Optional[float] = TIMEOUT) -> List[FileInfo]:
+        return self._loop.run_until_complete(super().list(path, timeout))
+
+    def make_dir(self, path: str, timeout: Optional[float] = TIMEOUT) -> None:
+        return self._loop.run_until_complete(super().make_dir(path, timeout))
+
+    def watch_dir(self, path: str) -> FilesystemWatcher:
+        return self._loop.run_until_complete(super().watch_dir(path))
