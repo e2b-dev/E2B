@@ -12,7 +12,7 @@ on:
   workflow_call:
     secrets:
       E2B_API_KEY:
-        - required: true
+        required: true
 
 permissions:
   contents: read
