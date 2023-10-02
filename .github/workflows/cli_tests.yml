@@ -5,6 +5,7 @@ on:
     paths:
       - packages/cli/**/*
       - .github/workflows/cli_tests.yml
+  workflow_call:
 
 permissions:
   contents: read
@@ -19,9 +20,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - uses: pnpm/action-setup@v2
-      
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:

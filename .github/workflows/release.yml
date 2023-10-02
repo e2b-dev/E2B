@@ -37,8 +37,74 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release.sh)
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
-  release:
+  changes:
+    name: Repository changes
     needs: [ is_release ]
+    if: needs.is_release.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      js-sdk: ${{ steps.filter.outputs.js-sdk }}
+      python-sdk: ${{ steps.filter.outputs.python-sdk }}
+      cli: ${{ steps.filter.outputs.cli }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get the last release
+        id: last_release
+        uses: cardinalby/git-get-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          latest: true
+          prerelease: false
+          draft: false
+
+      - name: Find changes since the last release
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: ${{ steps.last_release.outputs.tag_name }}
+          filters: |
+            js-sdk:
+              - 'packages/js-sdk/**'
+              - '.github/workflows/js_sdk_tests.yml'
+            python-sdk:
+              - 'packages/python-sdk/**'
+              - '.github/workflows/python_sdk_tests.yml'
+            cli:
+              - 'packages/cli/**'
+              - '.github/workflows/cli_tests.yml'
+
+      - name: Read Version file
+        id: getversion
+        run: echo "::set-output name=version::$(cat VERSION)"
+
+  python-tests:
+    name: Python SDK Tests
+    needs: [ changes ]
+    if: needs.changes.outputs.python-sdk == 'true'
+    uses: ./.github/workflows/python-sdk-tests.yml
+    secrets: inherit
+
+  js-tests:
+    name: JS SDK Tests
+    needs: [ changes ]
+    if: needs.changes.outputs.js-sdk == 'true'
+    uses: ./.github/workflows/js-sdk-tests.yml
+    secrets: inherit
+
+  cli-tests:
+    name: CLI Tests
+    needs: [ changes ]
+    if: needs.changes.outputs.cli == 'true'
+    uses: ./.github/workflows/cli-tests.yml
+    secrets: inherit
+
+  release:
+    needs: [ python-tests, js-tests, cli-tests ]
     if: needs.is_release.outputs.release == 'true'
     name: Release
     runs-on: ubuntu-latest

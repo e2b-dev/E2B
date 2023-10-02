@@ -9,6 +9,10 @@ on:
     paths:
       - packages/python-sdk/**/*
       - .github/workflows/python_sdk_tests.yml
+  workflow_call:
+    secrets:
+      E2B_API_KEY:
+        - required: true
 
 permissions:
   contents: read
