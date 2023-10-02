@@ -345,6 +345,19 @@ func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, 
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
+	// Delete veth device
+	veth, err := netlink.LinkByName(ipSlot.VethName())
+	if err != nil {
+		errMsg := fmt.Errorf("error finding veth %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		err = netlink.LinkDel(veth)
+		if err != nil {
+			errMsg := fmt.Errorf("error deleting veth device %w", err)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+	}
+
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting namespace %w", err)
