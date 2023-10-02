@@ -86,21 +86,21 @@ jobs:
     name: Python SDK Tests
     needs: [ changes ]
     if: needs.changes.outputs.python-sdk == 'true'
-    uses: ./.github/workflows/python-sdk-tests.yml
+    uses: ./.github/workflows/python_sdk_tests.yml
     secrets: inherit
 
   js-tests:
     name: JS SDK Tests
     needs: [ changes ]
     if: needs.changes.outputs.js-sdk == 'true'
-    uses: ./.github/workflows/js-sdk-tests.yml
+    uses: ./.github/workflows/js_sdk_tests.yml
     secrets: inherit
 
   cli-tests:
     name: CLI Tests
     needs: [ changes ]
     if: needs.changes.outputs.cli == 'true'
-    uses: ./.github/workflows/cli-tests.yml
+    uses: ./.github/workflows/cli_tests.yml
     secrets: inherit
 
   release:
