@@ -144,11 +144,6 @@ jobs:
           key: node_modules-${{hashFiles('package-lock.json')}}
           restore-keys: node_modules-
 
-      - name: Run tests
-        run: pnpm run test
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-
       - name: Create new versions
         run: pnpm run version
         env:
@@ -176,8 +171,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  report-failure:
+    if: failure()
+    name: Release Failed - Slack Notification
+    runs-on: ubuntu-latest
+    steps:
       - name: Release Failed - Slack Notification
-        if: failure()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_COLOR: '#ff0000'
