@@ -300,40 +300,40 @@ func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, 
 	err := hosts.Save()
 	if err != nil {
 		errMsg := fmt.Errorf("error removing env instance to etc hosts %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	tables, err := iptables.New()
 	if err != nil {
 		errMsg := fmt.Errorf("error initializing iptables %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	// Delete host forwarding rules
 	err = tables.Delete("filter", "FORWARD", "-i", ipSlot.VethName(), "-o", hostDefaultGateway, "-j", "ACCEPT")
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting host forwarding rule to default gateway %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	err = tables.Delete("filter", "FORWARD", "-i", hostDefaultGateway, "-o", ipSlot.VethName(), "-j", "ACCEPT")
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting host forwarding rule from default gateway %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	// Delete host postrouting rules
 	err = tables.Delete("nat", "POSTROUTING", "-s", ipSlot.HostSnapshotCIDR(), "-o", hostDefaultGateway, "-j", "MASQUERADE")
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting host postrouting rule %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	// Delete routing from host to FC namespace
 	_, ipNet, err := net.ParseCIDR(ipSlot.HostSnapshotCIDR())
 	if err != nil {
 		errMsg := fmt.Errorf("error parsing host snapshot CIDR %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	err = netlink.RouteDel(&netlink.Route{
@@ -342,26 +342,29 @@ func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, 
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting route from host to FC %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	// Delete veth device
+	// We explicitly delete the veth device from the host namespace because even though deleting
+	// is deleting the device there may be a race condition when creating a new veth device with
+	// the same name immediatly after deleting the namespace
 	veth, err := netlink.LinkByName(ipSlot.VethName())
 	if err != nil {
 		errMsg := fmt.Errorf("error finding veth %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	} else {
 		err = netlink.LinkDel(veth)
 		if err != nil {
 			errMsg := fmt.Errorf("error deleting veth device %w", err)
-			telemetry.ReportError(childCtx, errMsg)
+			telemetry.ReportCriticalError(childCtx, errMsg)
 		}
 	}
 
 	err = netns.DeleteNamed(ipSlot.NamespaceID())
 	if err != nil {
 		errMsg := fmt.Errorf("error deleting namespace %w", err)
-		telemetry.ReportError(childCtx, errMsg)
+		telemetry.ReportCriticalError(childCtx, errMsg)
 	}
 
 	err = ipSlot.Release(childCtx, consulToken, tracer)
