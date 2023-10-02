@@ -3,9 +3,17 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
+  "ignore": [
+    "e2b-dashboard",
+    "e2b-docs",
+    "reverse-proxy"
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "privatePackages": { "version": true, "tag": true }
+  "privatePackages": {
+    "version": true,
+    "tag": true
+  }
 }
