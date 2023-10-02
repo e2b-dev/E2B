@@ -136,14 +136,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache node modules
-        uses: actions/cache@v3
-        id: cache-modules
-        with:
-          path: node_modules
-          key: node_modules-${{hashFiles('package-lock.json')}}
-          restore-keys: node_modules-
-
       - name: Create new versions
         run: pnpm run version
         env:
@@ -172,6 +164,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   report-failure:
+    needs: [ python-tests, js-tests, cli-tests, release ]
     if: failure()
     name: Release Failed - Slack Notification
     runs-on: ubuntu-latest
