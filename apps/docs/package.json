@@ -1,6 +1,6 @@
 {
   "name": "e2b-docs",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,7 @@
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
     "@algolia/autocomplete-core": "^1.7.3",
-    "@e2b/sdk": "0.5.1",
+    "@e2b/sdk": "0.5.2",
     "@headlessui/react": "^1.7.15",
     "@headlessui/tailwindcss": "^0.2.0",
     "@mdx-js/loader": "^2.1.5",
