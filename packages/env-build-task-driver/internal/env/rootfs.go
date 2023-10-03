@@ -2,8 +2,8 @@ package env
 
 import (
 	"archive/tar"
-	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -86,8 +86,11 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		}
 	}()
 
+	buildCtx, cancel := context.WithCancel(childCtx)
+	defer cancel()
+
 	buildResponse, buildErr := r.client.ImageBuild(
-		childCtx,
+		buildCtx,
 		dockerContextFile,
 		types.ImageBuildOptions{
 			Dockerfile: dockerfileName,
@@ -104,50 +107,45 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "started docker image build", attribute.String("tag", r.dockerTag()))
 
-	buildReader, buildWriter := io.Pipe()
-
-	go func() {
-		logsCtx, logsSpan := tracer.Start(childCtx, "handle-build-logs", trace.WithSpanKind(trace.SpanKindConsumer))
-		defer logsSpan.End()
-
-		scanner := bufio.NewScanner(buildReader)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-
-			telemetry.ReportEvent(logsCtx, "docker build logs",
-				attribute.String("message", line),
-			)
-		}
-
-		readerErr := buildReader.Close()
-		if readerErr != nil {
-			errMsg := fmt.Errorf("error closing logs reader %w", readerErr)
-			telemetry.ReportError(childCtx, errMsg)
+	defer func() {
+		err = buildResponse.Body.Close()
+		if err != nil {
+			errMsg := fmt.Errorf("error closing build response body %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
 		} else {
-			telemetry.ReportEvent(childCtx, "closed logs reader")
+			telemetry.ReportEvent(childCtx, "closed build response body")
 		}
 	}()
 
-	_, err = io.Copy(buildWriter, buildResponse.Body)
-	if err != nil {
-		errMsg := fmt.Errorf("error copying build response body %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
+	decoder := json.NewDecoder(buildResponse.Body)
+	for {
+		var message map[string]interface{}
 
-		return errMsg
+		err := decoder.Decode(&message)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			errMsg := fmt.Errorf("error decoding build response %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			return errMsg
+		}
+
+		if message["error"] != nil {
+			cancel()
+			errMsg := fmt.Errorf("error building image: %s", message["error"])
+			telemetry.ReportCriticalError(childCtx, errMsg)
+
+			return errMsg
+		}
+
+		stream, exists := message["stream"]
+		if exists {
+			telemetry.ReportEvent(childCtx, "docker build stream", attribute.String("stream", stream.(string)))
+		}
 	}
 
-	telemetry.ReportEvent(childCtx, "copied build response body")
-
-	err = buildResponse.Body.Close()
-	if err != nil {
-		errMsg := fmt.Errorf("error closing build response body %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "closed build response body")
+	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
 
 	return nil
 }

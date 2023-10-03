@@ -392,9 +392,9 @@ func RemoveNetwork(ctx context.Context, ipSlot *slot.IPSlot, hosts *txeh.Hosts, 
 		errMsg := fmt.Errorf("error releasing slot %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 		return errMsg
-	} else {
-		telemetry.ReportEvent(childCtx, "released slot")
 	}
+
+	telemetry.ReportEvent(childCtx, "released slot")
 
 	return nil
 }
