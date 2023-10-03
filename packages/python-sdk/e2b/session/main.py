@@ -141,6 +141,9 @@ class Session(SessionConnection):
         self._process._close()
 
     async def close(self) -> None:
+        """
+        Closes the session.
+        """
         await super().close()
         await self._close()
 

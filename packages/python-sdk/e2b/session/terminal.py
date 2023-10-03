@@ -64,6 +64,9 @@ class Terminal:
         return self.finished.__await__()
 
     async def wait(self):
+        """
+        Waits till the terminal session exits.
+        """
         return await self.finished
 
     def __init__(
@@ -153,6 +156,9 @@ class SyncTerminal(Terminal):
         self._loop = loop
 
     def wait(self):
+        """
+        Waits till the terminal session exits.
+        """
         return self._loop.run_until_complete(super().wait())
 
     def send_data(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:

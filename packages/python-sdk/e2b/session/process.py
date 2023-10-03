@@ -161,6 +161,9 @@ class Process:
         return self._finished.__await__()
 
     async def wait(self):
+        """
+        Waits for the process to exit.
+        """
         return await self._finished
 
     async def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
@@ -201,6 +204,9 @@ class SyncProcess(Process):
         return self._session._loop
 
     def wait(self):
+        """
+        Waits for the process to exit.
+        """
         return self._loop.run_until_complete(super().wait())
 
     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
@@ -260,23 +266,6 @@ class BaseProcessManager(ABC):
         process_id: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> Union[Process, SyncProcess]:
-        """
-        Starts a process in the environment.
-
-        :param cmd: The command to run
-        :param on_stdout: A callback that is called when stdout with a newline is received from the process
-        :param on_stderr: A callback that is called when stderr with a newline is received from the process
-        :param on_exit: A callback that is called when the process exits
-        :param env_vars: A dictionary of environment variables to set for the process
-        :param cwd: The root directory for the process
-        :param rootdir: (DEPRECATED - use cwd) The root directory for the process
-        .. deprecated:: 0.3.2
-            Use cwd instead.
-        :param process_id: The process id to use for the process. If not provided, a random id is generated
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-
-        :return: A process object
-        """
         logger.info(f"Starting process (id: {process_id}): {cmd}")
         async with async_timeout.timeout(timeout):
             env_vars = env_vars or {}
@@ -487,6 +476,23 @@ class SyncProcessManager(BaseProcessManager):
         process_id: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> SyncProcess:
+        """
+        Starts a process in the environment.
+
+        :param cmd: The command to run
+        :param on_stdout: A callback that is called when stdout with a newline is received from the process
+        :param on_stderr: A callback that is called when stderr with a newline is received from the process
+        :param on_exit: A callback that is called when the process exits
+        :param env_vars: A dictionary of environment variables to set for the process
+        :param cwd: The root directory for the process
+        :param rootdir: (DEPRECATED - use cwd) The root directory for the process
+        .. deprecated:: 0.3.2
+            Use cwd instead.
+        :param process_id: The process id to use for the process. If not provided, a random id is generated
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+
+        :return: A process object
+        """
         return self._loop.run_until_complete(
             super().start(
                 cmd=cmd,
