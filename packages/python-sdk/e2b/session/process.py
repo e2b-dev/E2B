@@ -1,7 +1,20 @@
 import asyncio
 import logging
+import warnings
+from abc import ABC
 from asyncio.exceptions import TimeoutError
-from typing import Any, Awaitable, Callable, ClassVar, Coroutine, Dict, List, Optional
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    ClassVar,
+    Coroutine,
+    Dict,
+    List,
+    Optional,
+    Union,
+    Type,
+)
 
 import async_timeout
 from pydantic import BaseModel
@@ -74,6 +87,20 @@ class Process:
     A process running in the environment.
     """
 
+    def __init__(
+        self,
+        process_id: str,
+        session: SessionConnection,
+        trigger_exit: Callable[[], Coroutine[Any, Any, None]],
+        finished: Awaitable[ProcessOutput],
+        output: ProcessOutput,
+    ):
+        self._process_id = process_id
+        self._session = session
+        self._trigger_exit = trigger_exit
+        self._finished = finished
+        self._output = output
+
     @property
     def output(self) -> ProcessOutput:
         """
@@ -125,21 +152,19 @@ class Process:
         return self._process_id
 
     def __await__(self):
+        """
+        Deprecated, use wait instead.
+        """
+        warnings.warn(
+            "Use wait instead of just calling await on Process", DeprecationWarning
+        )
         return self._finished.__await__()
 
-    def __init__(
-        self,
-        process_id: str,
-        session: SessionConnection,
-        trigger_exit: Callable[[], Coroutine[Any, Any, None]],
-        finished: Awaitable[ProcessOutput],
-        output: ProcessOutput,
-    ):
-        self._process_id = process_id
-        self._session = session
-        self._trigger_exit = trigger_exit
-        self._finished = finished
-        self._output = output
+    async def wait(self):
+        """
+        Waits for the process to exit.
+        """
+        return await self._finished
 
     async def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
@@ -173,12 +198,42 @@ class Process:
         await self._trigger_exit()
 
 
-class ProcessManager:
+class SyncProcess(Process):
+    @property
+    def _loop(self):
+        return self._session._loop
+
+    def wait(self):
+        """
+        Waits for the process to exit.
+        """
+        return self._loop.run_until_complete(super().wait())
+
+    def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Sends data to the process stdin.
+
+        :param data: Data to send
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().send_stdin(data, timeout))
+
+    def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Kills the process.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().kill(timeout))
+
+
+class BaseProcessManager(ABC):
     """
     Manager for starting and interacting with processes in the environment.
     """
 
     _service_name = "process"
+    _process_model: Union[Type[Process], Type[SyncProcess]]
 
     def __init__(
         self,
@@ -210,24 +265,7 @@ class ProcessManager:
         rootdir: str = "",  # DEPRECATED
         process_id: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
-    ) -> Process:
-        """
-        Starts a process in the environment.
-
-        :param cmd: The command to run
-        :param on_stdout: A callback that is called when stdout with a newline is received from the process
-        :param on_stderr: A callback that is called when stderr with a newline is received from the process
-        :param on_exit: A callback that is called when the process exits
-        :param env_vars: A dictionary of environment variables to set for the process
-        :param cwd: The root directory for the process
-        :param rootdir: (DEPRECATED - use cwd) The root directory for the process
-        .. deprecated:: 0.3.2
-            Use cwd instead.
-        :param process_id: The process id to use for the process. If not provided, a random id is generated
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-
-        :return: A process object
-        """
+    ) -> Union[Process, SyncProcess]:
         logger.info(f"Starting process (id: {process_id}): {cmd}")
         async with async_timeout.timeout(timeout):
             env_vars = env_vars or {}
@@ -346,7 +384,7 @@ class ProcessManager:
                     ],
                 )
                 logger.info(f"Started process (id: {process_id})")
-                return Process(
+                return self._process_model(
                     output=output,
                     session=self._session,
                     process_id=process_id,
@@ -360,3 +398,111 @@ class ProcessManager:
                 logger.error(f"Timeout error during starting the process: {cmd}")
                 await trigger_exit()
                 raise e
+
+
+class ProcessManager(BaseProcessManager):
+    _process_model = Process
+
+    async def start(
+        self,
+        cmd: str,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
+        env_vars: Optional[EnvVars] = None,
+        cwd: str = "",
+        rootdir: str = "",  # DEPRECATED
+        process_id: Optional[str] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> Process:
+        """
+        Starts a process in the environment.
+
+        :param cmd: The command to run
+        :param on_stdout: A callback that is called when stdout with a newline is received from the process
+        :param on_stderr: A callback that is called when stderr with a newline is received from the process
+        :param on_exit: A callback that is called when the process exits
+        :param env_vars: A dictionary of environment variables to set for the process
+        :param cwd: The root directory for the process
+        :param rootdir: (DEPRECATED - use cwd) The root directory for the process
+        .. deprecated:: 0.3.2
+            Use cwd instead.
+        :param process_id: The process id to use for the process. If not provided, a random id is generated
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+
+        :return: A process object
+        """
+        return await super().start(
+            cmd=cmd,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+            env_vars=env_vars,
+            cwd=cwd,
+            rootdir=rootdir,
+            process_id=process_id,
+            timeout=timeout,
+        )
+
+
+class SyncProcessManager(BaseProcessManager):
+    _process_model = SyncProcess
+
+    def __init__(
+        self,
+        session: SessionConnection,
+        loop: asyncio.AbstractEventLoop,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
+    ):
+        super().__init__(
+            session=session,
+            on_stdout=on_stdout,
+            on_stderr=on_stderr,
+            on_exit=on_exit,
+        )
+        self._loop = loop
+
+    def start(
+        self,
+        cmd: str,
+        on_stdout: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_stderr: Optional[Callable[[ProcessMessage], Any]] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
+        env_vars: Optional[EnvVars] = None,
+        cwd: str = "",
+        rootdir: str = "",  # DEPRECATED
+        process_id: Optional[str] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> SyncProcess:
+        """
+        Starts a process in the environment.
+
+        :param cmd: The command to run
+        :param on_stdout: A callback that is called when stdout with a newline is received from the process
+        :param on_stderr: A callback that is called when stderr with a newline is received from the process
+        :param on_exit: A callback that is called when the process exits
+        :param env_vars: A dictionary of environment variables to set for the process
+        :param cwd: The root directory for the process
+        :param rootdir: (DEPRECATED - use cwd) The root directory for the process
+        .. deprecated:: 0.3.2
+            Use cwd instead.
+        :param process_id: The process id to use for the process. If not provided, a random id is generated
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+
+        :return: A process object
+        """
+        return self._loop.run_until_complete(
+            super().start(
+                cmd=cmd,
+                on_stdout=on_stdout,
+                on_stderr=on_stderr,
+                on_exit=on_exit,
+                env_vars=env_vars,
+                cwd=cwd,
+                rootdir=rootdir,
+                process_id=process_id,
+                timeout=timeout,
+            )
+        )

@@ -1,6 +1,8 @@
 import asyncio
 import logging
-from typing import Any, Awaitable, Callable, Coroutine, List, Optional
+import warnings
+from abc import ABC
+from typing import Any, Awaitable, Callable, Coroutine, List, Optional, Union, Type
 
 import async_timeout
 from pydantic import BaseModel
@@ -56,7 +58,16 @@ class Terminal:
         return self._terminal_id
 
     def __await__(self):
+        warnings.warn(
+            """'await terminal' is deprecated, use 'await terminal.wait()' instead"""
+        )
         return self.finished.__await__()
+
+    async def wait(self):
+        """
+        Waits till the terminal session exits.
+        """
+        return await self.finished
 
     def __init__(
         self,
@@ -127,12 +138,64 @@ class Terminal:
         await self._trigger_exit()
 
 
-class TerminalManager:
+class SyncTerminal(Terminal):
+    """
+    Terminal session.
+    """
+
+    def __init__(
+        self,
+        terminal_id: str,
+        session: SessionConnection,
+        trigger_exit: Callable[[], Coroutine[Any, Any, None]],
+        finished: Awaitable[TerminalOutput],
+        output: TerminalOutput,
+        loop: asyncio.AbstractEventLoop,
+    ):
+        super().__init__(terminal_id, session, trigger_exit, finished, output)
+        self._loop = loop
+
+    def wait(self):
+        """
+        Waits till the terminal session exits.
+        """
+        return self._loop.run_until_complete(super().wait())
+
+    def send_data(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Sends data to the terminal standard input.
+
+        :param data: Data to send
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().send_data(data, timeout))
+
+    def resize(self, cols: int, rows: int, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Resizes the terminal tty.
+
+        :param cols: Number of columns
+        :param rows: Number of rows
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().resize(cols, rows, timeout))
+
+    def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Kill the terminal session.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().kill(timeout))
+
+
+class BaseTerminalManager(ABC):
     """
     Manager for starting and interacting with terminal sessions in the environment.
     """
 
     _service_name = "terminal"
+    _terminal_class: Union[Type[Terminal], Type[SyncTerminal]]
 
     def __init__(self, session: SessionConnection):
         self._session = session
@@ -155,23 +218,7 @@ class TerminalManager:
         cmd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         timeout: Optional[float] = TIMEOUT,
-    ) -> Terminal:
-        """
-        Start a new terminal session.
-
-        :param on_data: Callback that will be called when the terminal sends data
-        :param cwd: Working directory where will the terminal start
-        :param terminal_id: Unique identifier of the terminal session
-        :param on_exit: Callback that will be called when the terminal exits
-        :param cols: Number of columns the terminal will have. This affects rendering
-        :param rows: Number of rows the terminal will have. This affects rendering
-        :param cmd: If the `cmd` parameter is defined it will be executed as a command
-        and this terminal session will exit when the command exits
-        :param env_vars: Environment variables that will be accessible inside of the terminal
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-
-        :return: Terminal session
-        """
+    ) -> Union[Terminal, SyncTerminal]:
         async with async_timeout.timeout(timeout):
             env_vars = self._session.env_vars.update(env_vars or {})
 
@@ -248,7 +295,7 @@ class TerminalManager:
                     ],
                     timeout=timeout,
                 )
-                return Terminal(
+                return self._terminal_class(
                     terminal_id=terminal_id,
                     session=self._session,
                     trigger_exit=trigger_exit,
@@ -262,3 +309,101 @@ class TerminalManager:
                 logger.error(f"Timeout error during starting the terminal: {cmd}")
                 await trigger_exit()
                 raise
+
+
+class TerminalManager(BaseTerminalManager):
+    _terminal_class = Terminal
+
+    async def start(
+        self,
+        on_data: Callable[[str], Any],
+        cols: int,
+        rows: int,
+        cwd: str = "",
+        terminal_id: Optional[str] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
+        cmd: Optional[str] = None,
+        env_vars: Optional[EnvVars] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> Union[Terminal, SyncTerminal]:
+        """
+        Start a new terminal session.
+
+        :param on_data: Callback that will be called when the terminal sends data
+        :param cwd: Working directory where will the terminal start
+        :param terminal_id: Unique identifier of the terminal session
+        :param on_exit: Callback that will be called when the terminal exits
+        :param cols: Number of columns the terminal will have. This affects rendering
+        :param rows: Number of rows the terminal will have. This affects rendering
+        :param cmd: If the `cmd` parameter is defined it will be executed as a command
+        and this terminal session will exit when the command exits
+        :param env_vars: Environment variables that will be accessible inside of the terminal
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+
+        :return: Terminal session
+        """
+        return await super().start(
+            on_data,
+            cols,
+            rows,
+            cwd,
+            terminal_id,
+            on_exit,
+            cmd,
+            env_vars,
+            timeout,
+        )
+
+
+class SyncTerminalManager(BaseTerminalManager):
+    """
+    Manager for starting and interacting with terminal sessions in the environment.
+    """
+
+    _terminal_class = SyncTerminal
+
+    def __init__(self, session: SessionConnection, loop: asyncio.AbstractEventLoop):
+        super().__init__(session)
+        self._loop = loop
+
+    def start(
+        self,
+        on_data: Callable[[str], Any],
+        cols: int,
+        rows: int,
+        cwd: str = "",
+        terminal_id: Optional[str] = None,
+        on_exit: Optional[Callable[[], Any]] = None,
+        cmd: Optional[str] = None,
+        env_vars: Optional[EnvVars] = None,
+        timeout: Optional[float] = TIMEOUT,
+    ) -> SyncTerminal:
+        """
+        Start a new terminal session.
+
+        :param on_data: Callback that will be called when the terminal sends data
+        :param cwd: Working directory where will the terminal start
+        :param terminal_id: Unique identifier of the terminal session
+        :param on_exit: Callback that will be called when the terminal exits
+        :param cols: Number of columns the terminal will have. This affects rendering
+        :param rows: Number of rows the terminal will have. This affects rendering
+        :param cmd: If the `cmd` parameter is defined it will be executed as a command
+        and this terminal session will exit when the command exits
+        :param env_vars: Environment variables that will be accessible inside of the terminal
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+
+        :return: Terminal session
+        """
+        return self._loop.run_until_complete(
+            super().start(
+                on_data,
+                cols,
+                rows,
+                cwd,
+                terminal_id,
+                on_exit,
+                cmd,
+                env_vars,
+                timeout,
+            )
+        )
