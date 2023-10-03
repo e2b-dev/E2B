@@ -7,6 +7,11 @@ from .session import (
     FilesystemEvent,
     FilesystemManager,
     TerminalManager,
+    SyncFilesystemWatcher,
+    SyncFilesystemManager,
+    SyncTerminalManager,
+    SyncProcessManager,
+    SyncProcess,
     Terminal,
     ProcessManager,
     Process,
@@ -21,4 +26,5 @@ from .session import (
     ProcessOutput,
     TerminalOutput,
     run_code,
+    run_code_sync,
 )

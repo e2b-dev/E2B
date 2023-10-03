@@ -12,9 +12,9 @@ CodeRuntime = Literal[
 
 
 async def run_code(
-        runtime: Union[CodeRuntime, str],
-        code: str,
-        api_key: Optional[str] = None,
+    runtime: Union[CodeRuntime, str],
+    code: str,
+    api_key: Optional[str] = None,
 ):
     """
     Runs code in a sandboxed cloud playground and return the stdout and stderr
@@ -62,9 +62,9 @@ async def run_code(
 
 
 def run_code_sync(
-        runtime: Union[CodeRuntime, str],
-        code: str,
-        api_key: Optional[str] = None,
+    runtime: Union[CodeRuntime, str],
+    code: str,
+    api_key: Optional[str] = None,
 ):
     """
     Runs code in a sandboxed cloud playground and return the stdout and stderr
