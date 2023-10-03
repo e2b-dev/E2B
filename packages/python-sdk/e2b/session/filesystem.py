@@ -1,13 +1,13 @@
 import asyncio
 import base64
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
-from e2b.session.filesystem_watcher import FilesystemWatcher
+from e2b.session.filesystem_watcher import FilesystemWatcher, SyncFilesystemWatcher
 from e2b.session.session_connection import SessionConnection
 from e2b.utils.filesystem import resolve_path
 
@@ -23,7 +23,8 @@ class FileInfo(BaseModel):
     name: str
 
 
-class FilesystemManager:
+class BaseFilesystemManager:
+    _watcher_model = Union[Type[FilesystemWatcher], Type[SyncFilesystemWatcher]]
     """
     Filesystem manager is used to read, write, remove and list files and directories in the environment.
     """
@@ -168,7 +169,9 @@ class FilesystemManager:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def watch_dir(self, path: str) -> FilesystemWatcher:
+    async def watch_dir(
+        self, path: str
+    ) -> Union[FilesystemWatcher, SyncFilesystemWatcher]:
         """
         Watches directory for filesystem events.
 
@@ -179,14 +182,23 @@ class FilesystemManager:
         logger.debug(f"Watching directory {path}")
 
         path = resolve_path(path, self.cwd)
-        return FilesystemWatcher(
+        return self._watcher_model(
             connection=self._session,
             path=path,
             service_name=self._service_name,
         )
 
 
-class SyncFilesystemManager(FilesystemManager):
+class FilesystemManager(BaseFilesystemManager):
+    _watcher_model = FilesystemWatcher
+
+    async def watch_dir(self, path: str) -> FilesystemWatcher:
+        return await super().watch_dir(path)
+
+
+class SyncFilesystemManager(BaseFilesystemManager):
+    _watcher_model = SyncFilesystemWatcher
+
     def __init__(self, session: SessionConnection, loop: asyncio.AbstractEventLoop):
         super().__init__(session)
         self._loop = loop
@@ -214,5 +226,5 @@ class SyncFilesystemManager(FilesystemManager):
     def make_dir(self, path: str, timeout: Optional[float] = TIMEOUT) -> None:
         return self._loop.run_until_complete(super().make_dir(path, timeout))
 
-    def watch_dir(self, path: str) -> FilesystemWatcher:
+    def watch_dir(self, path: str) -> SyncFilesystemWatcher:
         return self._loop.run_until_complete(super().watch_dir(path))

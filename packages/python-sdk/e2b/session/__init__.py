@@ -9,7 +9,7 @@ from .exception import (
 )
 from .filesystem import FileInfo, FilesystemManager
 from .filesystem_watcher import FilesystemEvent, FilesystemOperation, FilesystemWatcher
-from .main import Session
+from .main import Session, SyncSession
 from .process import Process, ProcessManager, ProcessMessage, ProcessOutput
-from .terminal import Terminal, TerminalManager, TerminalOutput
 from .run_code import run_code
+from .terminal import Terminal, TerminalManager, TerminalOutput

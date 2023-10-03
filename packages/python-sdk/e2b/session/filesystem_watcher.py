@@ -2,10 +2,11 @@ import logging
 from enum import Enum
 from typing import Any, Awaitable, Callable, Optional, Set
 
+from pydantic import BaseModel
+
 from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.session_connection import SessionConnection
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -106,3 +107,28 @@ class FilesystemWatcher:
     def _handle_filesystem_events(self, event: FilesystemEvent) -> None:
         for listener in self._listeners:
             listener(event)
+
+
+class SyncFilesystemWatcher(FilesystemWatcher):
+    def __init__(
+        self,
+        connection: SessionConnection,
+        path: str,
+        service_name: str,
+    ):
+        super().__init__(connection, path, service_name)
+        self._loop = connection._loop
+
+    def start(self, timeout: Optional[float] = TIMEOUT) -> None:
+        """
+        Starts the filesystem watcher.
+
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
+        """
+        return self._loop.run_until_complete(super().start(timeout))
+
+    def stop(self) -> None:
+        """
+        Stops the filesystem watcher.
+        """
+        return self._loop.run_until_complete(super().stop())

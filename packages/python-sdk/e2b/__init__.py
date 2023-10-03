@@ -1,5 +1,6 @@
 from .session import (
     Session,
+    SyncSession,
     FilesystemOperation,
     FilesystemWatcher,
     FileInfo,
