@@ -8,6 +8,14 @@ from .exception import UnsupportedRuntimeException
 CodeRuntime = Literal[
     "Node16",
     "Python3",
+    "Bash",
+    # TODO: Support all runtimes that our infra supports
+    # DotNET = 'DotNET',
+    # Go = 'Go',
+    # Java = 'Java',
+    # Perl = 'Perl',
+    # PHP = 'PHP',
+    # Rust = 'Rust',
 ]
 
 
@@ -40,6 +48,10 @@ async def run_code(
         env_id = "Python3"
         binary = "python3"
         filepath = "/index.py"
+    elif runtime == "Bash":
+        env_id = "Bash"
+        binary = "bash"
+        filepath = "/main.sh"        
     else:
         raise UnsupportedRuntimeException(
             f'Invalid runtime "{runtime}". Please contact us (hello@e2b.dev) if you need support for this runtime'
