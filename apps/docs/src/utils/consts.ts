@@ -1,5 +1,5 @@
 // Beware of our conventions:
-// - use `js` for "JavaScript & TypeScript" – the code is actually JavaScript, but we wanna communicate that we are TypeScript friendly
+// - use `js` for "JavaScript & TypeScript" - the code is actually JavaScript, but we wanna communicate that we are TypeScript friendly
 // @see https://e2b-team.slack.com/archives/C05AGT4UFMJ/p1694097476092009?thread_ts=1694072588.364759&cid=C05AGT4UFMJ
 // - use `javascript` for explicitly JavaScript
 // - use `typescript` for explicitly TypeScript

@@ -72,7 +72,7 @@ export class SessionConnection {
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
 
-  // let's keep opts readonly, but public – for convenience, mainly when debugging
+  // let's keep opts readonly, but public - for convenience, mainly when debugging
   constructor(readonly opts: SessionConnectionOpts) {
     const apiKey = opts.apiKey || process.env.E2B_API_KEY
     if (!apiKey) {
