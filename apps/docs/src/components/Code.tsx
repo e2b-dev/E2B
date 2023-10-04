@@ -478,7 +478,7 @@ export function Pre({
 export function CodeGroupAutoload({ children, isRunnable = true }) {
   if (!children) {
     console.warn(
-      'CodeGroupAutoload: No children provided – something is wrong with your MDX file',
+      'CodeGroupAutoload: No children provided - something is wrong with your MDX file',
     )
     return null
   }
