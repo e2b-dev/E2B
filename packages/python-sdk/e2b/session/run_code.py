@@ -9,6 +9,7 @@ CodeRuntime = Literal[
     "Node16",
     "Python3",
     "Bash",
+    "Python3-DataAnalysis",
     # TODO: Support all runtimes that our infra supports
     # DotNET = 'DotNET',
     # Go = 'Go',
@@ -48,10 +49,14 @@ async def run_code(
         env_id = "Python3"
         binary = "python3"
         filepath = "/index.py"
+    elif runtime == "Python3_DataAnalysis":
+        env_id = "YI58BPyX5KrK"
+        binary = "python3"
+        filepath = "/index.py"
     elif runtime == "Bash":
         env_id = "Bash"
         binary = "bash"
-        filepath = "/main.sh"        
+        filepath = "/main.sh"
     else:
         raise UnsupportedRuntimeException(
             f'Invalid runtime "{runtime}". Please contact us (hello@e2b.dev) if you need support for this runtime'
