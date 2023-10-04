@@ -133,6 +133,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 
 		if message["error"] != nil {
 			cancel()
+
 			errMsg := fmt.Errorf("error building image: %s", message["error"])
 			telemetry.ReportCriticalError(childCtx, errMsg)
 
@@ -140,9 +141,13 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		}
 
 		stream, exists := message["stream"]
-		if exists {
-			telemetry.ReportEvent(childCtx, "docker build stream", attribute.String("stream", stream.(string)))
+		if !exists {
+			break
 		}
+
+		streamMessage := fmt.Sprintf("%+v", stream.(string))
+
+		telemetry.ReportEvent(childCtx, "docker build stream", attribute.String("stream", streamMessage))
 	}
 
 	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
