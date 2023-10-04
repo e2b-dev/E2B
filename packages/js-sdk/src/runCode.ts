@@ -3,6 +3,14 @@ import { Session } from './session'
 export enum CodeRuntime {
   Node16 = 'Node16',
   Python3 = 'Python3',
+  Bash = 'Bash',
+  // TODO: Support all runtimes that our infra supports
+  // DotNET = 'DotNET',
+  // Go = 'Go',
+  // Java = 'Java',
+  // Perl = 'Perl',
+  // PHP = 'PHP',
+  // Rust = 'Rust',
 }
 
 /**
@@ -38,6 +46,11 @@ export async function runCode(
       envID = 'Python3'
       binary = 'python3'
       filepath = '/main.py'
+      break
+    case CodeRuntime.Bash:
+      envID = 'Bash'
+      binary = 'bash'
+      filepath = '/main.sh'
       break
     default:
       throw new Error(
