@@ -9,7 +9,7 @@ CodeRuntime = Literal[
     "Node16",
     "Python3",
     "Bash",
-    "Python3-DataAnalysis",
+    "Python3_DataAnalysis",
     # TODO: Support all runtimes that our infra supports
     # DotNET = 'DotNET',
     # Go = 'Go',
@@ -79,9 +79,9 @@ async def run_code(
 
 
 def run_code_sync(
-    runtime: Union[CodeRuntime, str],
-    code: str,
-    api_key: Optional[str] = None,
+        runtime: Union[CodeRuntime, str],
+        code: str,
+        api_key: Optional[str] = None,
 ):
     """
     Runs code in a sandboxed cloud playground and return the stdout and stderr
