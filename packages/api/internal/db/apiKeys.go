@@ -13,9 +13,11 @@ type team struct {
 func (db *DB) GetTeamID(apiKey string) (*team, error) {
 	result, err := models.TeamAPIKeys(models.TeamAPIKeyWhere.APIKey.EQ(apiKey)).One(db.Client)
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		errMsg := fmt.Errorf("failed to get team from API key: %w", err)
 
-		return nil, fmt.Errorf("failed to get team from API key: %w", err)
+		fmt.Println(errMsg.Error())
+
+		return nil, errMsg
 	}
 
 	return &team{result.TeamID}, nil
@@ -28,9 +30,11 @@ type user struct {
 func (db *DB) GetUserID(accessToken string) (*user, error) {
 	result, err := models.AccessTokens(models.AccessTokenWhere.AccessToken.EQ(accessToken)).One(db.Client)
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		errMsg := fmt.Errorf("failed to get user from access token: %w", err)
 
-		return nil, fmt.Errorf("failed to get user from access token: %w", err)
+		fmt.Println(errMsg.Error())
+
+		return nil, errMsg
 	}
 
 	return &user{result.UserID}, nil

@@ -69,9 +69,11 @@ func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.En
 	}
 	err := env.Insert(db.Client, boil.Infer())
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		errMsg := fmt.Errorf("failed to create env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
 
-		return nil, fmt.Errorf("failed to create env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
+		fmt.Println(errMsg.Error())
+
+		return nil, errMsg
 	}
 
 	return &api.Environment{EnvID: envID, Status: api.EnvironmentStatusBuilding, Public: false}, nil
@@ -87,9 +89,11 @@ func (db *DB) UpdateDockerfileEnv(envID string, dockerfile string) (*api.Environ
 	}
 	rowsAffected, err := env.Update(db.Client, boil.Whitelist("status", "dockerfile"))
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		errMsg := fmt.Errorf("failed to update env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
 
-		return nil, fmt.Errorf("failed to update env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
+		fmt.Println(errMsg.Error())
+
+		return nil, errMsg
 	}
 
 	if rowsAffected == 0 {
@@ -107,9 +111,11 @@ func (db *DB) UpdateStatusEnv(envID string, status models.EnvStatusEnum) (*api.E
 	}
 	rowsAffected, err := env.Update(db.Client, boil.Whitelist("status"))
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		errMsg := fmt.Errorf("failed to update env with id '%s': %w", envID, err)
 
-		return nil, fmt.Errorf("failed to update env with id '%s': %w", envID, err)
+		fmt.Println(errMsg.Error())
+
+		return nil, errMsg
 	}
 
 	if rowsAffected == 0 {
