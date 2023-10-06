@@ -17,6 +17,8 @@ import {
   asLocalRelative,
 } from 'src/utils/format'
 import * as yup from 'yup'
+import * as os from 'os'
+import path from 'path'
 
 export const createCommand = new commander.Command('create')
   .description(`Create new environment and ${asLocal(configName)} config`)
@@ -78,8 +80,8 @@ export const createCommand = new commander.Command('create')
         console.log(`• ${filePath.rootPath}`)
       })
 
-      // TODO: Create in temp dir
-      const tarPath = 'env.tar.gz'
+      const tempDir = os.tmpdir()
+      const tarPath = path.join(tempDir, 'env.tar.gz')
 
       await packToTar(
         root,
