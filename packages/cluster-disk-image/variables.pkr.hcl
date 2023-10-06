@@ -10,7 +10,7 @@ variable "gcp_zone" {
 
 variable "consul_version" {
   type    = string
-  default = "1.16.1"
+  default = "1.12.0"
 }
 
 variable "nomad_version" {

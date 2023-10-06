@@ -1,7 +1,7 @@
 # Server cluster instances are not currently automatically updated when you create a new
 # orchestrator image with Packer.
 resource "google_service_account" "infra_instances_service_account" {
-  account_id   = "infra-instances"
+  account_id   = "infra-instances-1"
   display_name = "Infra Instances Service Account"
 }
 
@@ -17,8 +17,6 @@ resource "google_storage_bucket_iam_member" "envs-pipeline-iam" {
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${resource.google_service_account.infra_instances_service_account.email}"
 }
-
-
 
 resource "google_project_iam_member" "service-account-roles" {
   project = var.gcp_project_id
