@@ -13,6 +13,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/lightstep/otel-launcher-go/launcher"
 
+	"github.com/gin-contrib/pprof"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
@@ -41,7 +43,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 
 	r := gin.New()
 
-	// pprof.Register(r, "debug/pprof")
+	pprof.Register(r, "debug/pprof")
 
 	// We use custom otelgin middleware because we want to log 4xx errors in the otel
 	otelMiddleware := customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), ignoreLoggingForPaths...)

@@ -31,7 +31,7 @@ build-debug:
 run:
 	make build-debug
 	API_ADMIN_KEY=test \
-	NOMAD_ADDRESS=http://34.96.124.39 \
+	NOMAD_ADDRESS=https://nomad.e2b.dev \
 	NOMAD_TOKEN=$(NOMAD_TOKEN) \
 	CONSUL_TOKEN=$(CONSUL_TOKEN) \
 	SUPABASE_CONNECTION_STRING=$(SUPABASE_CONNECTION_STRING) \

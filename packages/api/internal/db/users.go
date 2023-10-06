@@ -15,9 +15,10 @@ func (db *DB) GetDefaultTeamFromUserID(userID string) (result *models.Team, err 
 	joinTeam := qm.InnerJoin(models.TableNames.Teams + " on " + models.TableNames.UsersTeams + "." + models.UsersTeamColumns.TeamID + " = " + models.TableNames.Teams + "." + models.TeamColumns.ID)
 	userTeam, err := models.UsersTeams(joinTeam, userWhere, defaultTeamWhere).One(db.Client)
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		errMsg := fmt.Errorf("failed to list envs: %w", err)
+		fmt.Println(errMsg.Error())
 
-		return nil, fmt.Errorf("failed to list envs: %w", err)
+		return nil, errMsg
 	}
 
 	return userTeam.Team().One(db.Client)

@@ -58,7 +58,6 @@ bootstrap-nomad:
 	gcloud compute ssh $$($(server)) -- \
 	'nomad acl bootstrap'
 
-
 build-all:
 	$(MAKE) -C packages/envd build
 	$(MAKE) -C packages/api build
