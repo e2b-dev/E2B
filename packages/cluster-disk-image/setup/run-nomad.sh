@@ -235,6 +235,11 @@ acl {
   enabled = true
 }
 
+limits {
+  http_max_conns_per_client = 5000
+  rpc_max_conns_per_client = 5000
+}
+
 consul {
   address = "127.0.0.1:8500"
 }
