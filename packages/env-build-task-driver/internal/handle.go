@@ -67,14 +67,12 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 
 		h.mu.Lock()
 
-		h.exitResult.Err = err
-		h.procState = drivers.TaskStateExited
-		h.completedAt = time.Now()
-
 		h.exitResult = &drivers.ExitResult{
 			Err:      err,
 			ExitCode: 1,
 		}
+		h.procState = drivers.TaskStateExited
+		h.completedAt = time.Now()
 
 		h.mu.Unlock()
 	} else {
