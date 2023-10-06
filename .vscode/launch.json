@@ -5,13 +5,13 @@
       "id": "buildID",
       "type": "promptString",
       "description": "Build ID",
-      "default": "08c6d485-ae68-6d98-c9c1-adafb9f488ed"
+      "default": "49c02c96-62fd-939e-7d5e-27f5d4b73884"
     },
     {
       "id": "envID",
       "type": "promptString",
       "description": "Env ID",
-      "default": "ggjp0khvwwoqeoghu19o"
+      "default": "k3g50e4hhl513xjd2tpb"
     },
   ],
   "configurations": [
