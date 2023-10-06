@@ -112,14 +112,15 @@ export const createCommand = new commander.Command('create')
 
       if (!apiRes.ok) {
         const resJson = (await apiRes.json()) as { message: string }
+        console.log('res', resJson)
         throw new Error(
           `API request failed: ${apiRes.statusText}, ${resJson?.message ?? 'no message'}`,
         )
       }
       const resJson = (await apiRes.json()) as {
         envID: string
-        Public: boolean
-        Status: 'building' | 'error' | 'ready'
+        public: boolean
+        status: 'building' | 'error' | 'ready'
       }
       console.log(`✅ Env created: ${resJson?.envID}, waiting for build to finish...`)
 
@@ -134,6 +135,8 @@ export const createCommand = new commander.Command('create')
         if (!apiResPoll.ok)
           throw new Error(`API request failed: ${apiResPoll.statusText}`)
         const env = (await apiResPoll.json()) as { status: string; created_at: string }
+        console.log('env', env)
+
         if (env.status === 'building') {
           const now = new Date()
           const elapsed = now.getTime() - startedAt.getTime()
@@ -148,9 +151,11 @@ export const createCommand = new commander.Command('create')
             `)
             completed = true
           }
-        } else if (env.status === 'completed') {
+        } else if (env.status === 'ready') {
           completed = true
           console.log(`✅ Build completed at ${env.created_at}`) // TODO: Nicer
+        } else if (env.status === 'error') {
+          throw new Error('Build failed')
         }
       }
 
@@ -160,7 +165,7 @@ export const createCommand = new commander.Command('create')
       //   await saveConfig(configPath, config)
       // }
     } catch (err: unknown) {
-      console.error(asFormattedError((err as Error).message))
+      console.error(asFormattedError((err as Error).message), err)
       process.exit(1)
     }
   })
