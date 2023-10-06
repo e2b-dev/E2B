@@ -21,7 +21,8 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "rm -rf ./dist && tsup --minify",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "test-e2b": "cd testground/demo-basic && ../../dist/index.js env create"
   },
   "devDependencies": {
     "@types/common-tags": "^1.8.2",
