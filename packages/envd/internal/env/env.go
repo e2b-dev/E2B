@@ -37,7 +37,7 @@ func NewEnv(debug bool) (*EnvConfig, *zap.SugaredLogger, error) {
 
 	l, err := log.NewLogger(defaultLogDir, debug, true)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating a new logger: %+w", err)
+		return nil, nil, fmt.Errorf("error creating a new logger: %w", err)
 	}
 
 	return &EnvConfig{
