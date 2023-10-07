@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/db"
 	"github.com/e2b-dev/infra/packages/api/internal/db/models"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 )
@@ -133,11 +135,11 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	} else {
 		SetAttributes(ctx, attribute.String("env.id", envID))
 
-		hasAccess, err := a.supabase.HasEnvAccess(envID, team.ID, false)
-		if err != nil {
+		hasAccess, accessErr := a.supabase.HasEnvAccess(envID, team.ID, false)
+		if accessErr != nil {
 			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The environment '%s' does not exist", envID))
 
-			errMsg := fmt.Errorf("error env not found: %w", err)
+			errMsg := fmt.Errorf("error env not found: %w", accessErr)
 			ReportError(ctx, errMsg)
 
 			return
@@ -145,7 +147,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		if !hasAccess {
 			a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
-			errMsg := fmt.Errorf("user doesn't have access to env: %w", err)
+			errMsg := fmt.Errorf("user doesn't have access to env '%s'", envID)
 			ReportError(ctx, errMsg)
 
 			return
@@ -189,6 +191,7 @@ func (a *APIStore) GetEnvs(
 	ctx := c.Request.Context()
 
 	userID := c.Value(constants.UserIDContextKey).(string)
+
 	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
@@ -232,24 +235,26 @@ func (a *APIStore) GetEnvsEnvID(
 	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", team.ID))
 
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
+		errMsg := fmt.Errorf("error when getting default team: %w", err)
+		a.sendAPIStoreError(c, http.StatusInternalServerError, errMsg.Error())
 
-		err = fmt.Errorf("error when getting default team: %w", err)
+		ReportCriticalError(ctx, errMsg)
 
 		return
 	}
 
 	env, err := a.supabase.GetEnv(envID, team.ID)
-	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting env: %s", err))
+	if errors.Is(err, db.ErrEnvNotFound) {
+		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
 
 		err = fmt.Errorf("error when getting env: %w", err)
 		ReportCriticalError(ctx, err)
 
 		return
 	}
-	if env == nil {
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
+
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting env: %s", err))
 
 		err = fmt.Errorf("error when getting env: %w", err)
 		ReportCriticalError(ctx, err)

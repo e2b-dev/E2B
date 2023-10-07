@@ -82,7 +82,7 @@ func (c *InstanceCache) Sync(instances []*api.Instance) {
 }
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
-// We are retrieving the tasks from Nomad now
+// We are retrieving the tasks from Nomad now.
 func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*api.Instance) *InstanceCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](instanceExpiration),

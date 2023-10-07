@@ -8,10 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
-
-	// trunk-ignore(semgrep/go.lang.security.audit.xss.import-text-template.import-text-template)
 	"text/template"
+	"time"
 
 	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,7 +37,6 @@ var envInstanceFile string
 var envInstanceTemplate = template.Must(template.New(instanceJobName).Parse(envInstanceFile))
 
 func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
-	// trunk-ignore(golangci-lint/exhaustruct)
 	allocations, _, err := n.client.Allocations().List(&nomadAPI.QueryOptions{
 		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, defaultTaskName, taskRunningState),
 	})
@@ -130,10 +127,10 @@ func (n *NomadClient) CreateInstance(
 	result := make(chan AllocResult)
 	defer close(result)
 
-	waitCtx, cancel := context.WithTimeout(childCtx, buildFinishTimeout)
+	waitCtx, cancel := context.WithTimeout(childCtx, instanceStartTimeout)
 	defer cancel()
 
-	go n.WaitForJob(waitCtx, *job.ID, taskDeadState, result)
+	go n.WaitForJob(waitCtx, *job.ID, taskRunningState, result)
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
@@ -154,7 +151,7 @@ func (n *NomadClient) CreateInstance(
 		}
 
 		return nil, &api.APIError{
-			Msg:       err.Error(),
+			Msg:       apiErr.Error(),
 			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}

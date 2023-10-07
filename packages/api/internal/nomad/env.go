@@ -1,7 +1,6 @@
 package nomad
 
 import (
-	// trunk-ignore(semgrep/go.lang.security.audit.xss.import-text-template.import-text-template)
 	"bytes"
 	"context"
 	_ "embed"
@@ -109,7 +108,7 @@ func (n *NomadClient) BuildEnvJob(
 			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w: :%w", envID, err, apiErr)
 		}
 
-		return fmt.Errorf("error waiting for env '%s' build: %+w", envID, finishErr)
+		return fmt.Errorf("error waiting for env '%s' build: %w", envID, finishErr.Err)
 	}
 
 	return nil

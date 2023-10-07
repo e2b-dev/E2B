@@ -13,9 +13,7 @@ type DB struct {
 	Client *sql.DB
 }
 
-var (
-	databaseURL = os.Getenv("SUPABASE_CONNECTION_STRING")
-)
+var databaseURL = os.Getenv("SUPABASE_CONNECTION_STRING")
 
 func NewClient() (*DB, error) {
 	if databaseURL == "" {
@@ -23,7 +21,6 @@ func NewClient() (*DB, error) {
 	}
 
 	db, err := sql.Open("postgres", databaseURL)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
