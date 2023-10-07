@@ -78,11 +78,12 @@ func NewAPIStore() *APIStore {
 	var initialInstances []*api.Instance
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
-		var instancesErr error
-		initialInstances, instancesErr = nomadClient.GetInstances()
+		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
 			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", instancesErr)
 		}
+
+		initialInstances = instances
 	} else {
 		fmt.Println("Skipping loading sessions from Nomad, running locally")
 	}
@@ -96,6 +97,7 @@ func NewAPIStore() *APIStore {
 	}
 
 	ctx := context.Background()
+
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %s", err)
@@ -235,6 +237,7 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 			fmt.Printf("Error sending Posthog event: %s", err)
 		}
 	}
+
 	return nil
 }
 

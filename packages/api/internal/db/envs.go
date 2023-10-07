@@ -140,5 +140,5 @@ func (db *DB) HasEnvAccess(envID string, teamID string, public bool) (bool, erro
 		return false, nil
 	}
 
-	return true, err
+	return true, nil
 }
