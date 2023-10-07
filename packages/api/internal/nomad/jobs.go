@@ -77,39 +77,39 @@ func (n *NomadClient) processJobEvent(job *api.JobListStub) error {
 		return nil
 	}
 
+	if sub.taskState != job.Status {
+		return nil
+	}
+
 	switch job.Status {
 	case taskDeadState:
-		if sub.taskState == taskDeadState {
-			alloc, allocErr, err := n.getAllocTaskErr(job, defaultTaskName)
-			if err != nil {
-				errMsg := fmt.Errorf("error getting allocation for job '%s': %w", job.ID, err)
-				sub.events <- AllocResult{
-					Alloc: nil,
-					Err:   errMsg,
-				}
+		alloc, allocErr, err := n.getAllocTaskErr(job, defaultTaskName)
+		if err != nil {
+			errMsg := fmt.Errorf("error getting allocation for job '%s': %w", job.ID, err)
+			sub.events <- AllocResult{
+				Alloc: nil,
+				Err:   errMsg,
 			}
+		}
 
-			if allocErr != nil {
-				sub.events <- AllocResult{
-					Err:   allocErr,
-					Alloc: nil,
-				}
+		if allocErr != nil {
+			sub.events <- AllocResult{
+				Err:   allocErr,
+				Alloc: nil,
 			}
+		}
 
-			if alloc != nil {
-				sub.events <- AllocResult{
-					Alloc: alloc,
-					Err:   nil,
-				}
+		if alloc != nil {
+			sub.events <- AllocResult{
+				Alloc: alloc,
+				Err:   nil,
 			}
 		}
 
 	case taskRunningState:
-		if sub.taskState == taskRunningState {
-			sub.events <- AllocResult{
-				Alloc: nil,
-				Err:   nil,
-			}
+		sub.events <- AllocResult{
+			Alloc: nil,
+			Err:   nil,
 		}
 
 	case taskPendingState:
