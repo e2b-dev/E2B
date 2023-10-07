@@ -1,4 +1,4 @@
-job "{{ .JobName }}/{{ .EnvID }}" {
+job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
   datacenters = ["us-central1-a"]
   type = "batch"
 

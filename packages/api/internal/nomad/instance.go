@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	// trunk-ignore(semgrep/go.lang.security.audit.xss.import-text-template.import-text-template)
 	"text/template"
@@ -24,6 +25,8 @@ const (
 	instanceJobName          = "env-instance"
 	instanceJobNameWithSlash = instanceJobName + "/"
 	instanceIDPrefix         = "i"
+
+	instanceStartTimeout = time.Second * 20
 )
 
 var (
@@ -124,7 +127,15 @@ func (n *NomadClient) CreateInstance(
 		}
 	}
 
-	res, _, err := n.client.Jobs().Register(job, nil)
+	result := make(chan AllocResult)
+	defer close(result)
+
+	waitCtx, cancel := context.WithTimeout(childCtx, buildFinishTimeout)
+	defer cancel()
+
+	go n.WaitForJob(waitCtx, *job.ID, taskDeadState, result)
+
+	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
 		fmt.Printf("Failed to register '%s%s' job: %+v", instanceJobNameWithSlash, jobVars.InstanceID, err)
 
@@ -135,21 +146,8 @@ func (n *NomadClient) CreateInstance(
 		}
 	}
 
-	meta := res.QueryMeta
-	evalID := res.EvalID
-	index := res.JobModifyIndex
-
-	alloc, err := n.WaitForJobStart(
-		childCtx,
-		JobInfo{
-			name:   instanceJobNameWithSlash + instanceID,
-			evalID: evalID,
-			index:  index,
-		},
-		meta,
-		jobStartTimeout,
-	)
-	if err != nil {
+	allocResult := <-result
+	if allocResult.Err != nil {
 		apiErr := n.DeleteInstance(instanceID, false)
 		if apiErr != nil {
 			fmt.Printf("error in cleanup after failing to create instance of environment '%s':%+v", envID, apiErr.Msg)
@@ -166,8 +164,16 @@ func (n *NomadClient) CreateInstance(
 		attribute.String("instance_id", instanceID),
 	)
 
+	if allocResult.Alloc == nil {
+		return nil, &api.APIError{
+			Msg:       "allocation is nil",
+			ClientMsg: "Cannot create a environment instance right now",
+			Code:      http.StatusInternalServerError,
+		}
+	}
+
 	instance := &api.Instance{
-		ClientID:   strings.Clone(alloc.NodeID[:shortNodeIDLength]),
+		ClientID:   strings.Clone(allocResult.Alloc.NodeID[:shortNodeIDLength]),
 		InstanceID: instanceID,
 		EnvID:      envID,
 	}

@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"fmt"
 	"text/template"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -21,6 +22,8 @@ const (
 	defaultVCpuCount  = 2
 	defaultMemoryMB   = 512
 	defaultDiskSizeMB = 512
+
+	buildFinishTimeout = time.Minute * 30
 )
 
 //go:embed env-build.hcl
@@ -86,28 +89,21 @@ func (n *NomadClient) BuildEnvJob(
 		return fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
 	}
 
-	res, _, err := n.client.Jobs().Register(job, nil)
+	result := make(chan AllocResult)
+	defer close(result)
+
+	waitCtx, cancel := context.WithTimeout(childCtx, buildFinishTimeout)
+	defer cancel()
+
+	go n.WaitForJob(waitCtx, *job.ID, taskDeadState, result)
+
+	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
 		return fmt.Errorf("failed to register '%s%s' job: %w", buildJobNameWithSlash, jobVars.EnvID, err)
 	}
 
-	meta := res.QueryMeta
-	evalID := res.EvalID
-	index := res.JobModifyIndex
-
-	jobInfo := JobInfo{
-		name:   buildJobNameWithSlash + envID,
-		evalID: evalID,
-		index:  index,
-	}
-
-	_, finishErr := n.WaitForJobFinish(
-		childCtx,
-		jobInfo,
-		meta,
-		jobFinishTimeout,
-	)
-	if finishErr != nil {
+	finishErr := <-result
+	if finishErr.Err != nil {
 		apiErr := n.DeleteEnvBuild(*job.ID, false)
 		if apiErr != nil {
 			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w: :%w", envID, err, apiErr)
