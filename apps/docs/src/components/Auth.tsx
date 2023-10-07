@@ -169,15 +169,18 @@ export const Auth = function () {
       ) : (
         <div className="flex items-center justify-center gap-3">
           {/* @ts-ignore */}
-          <Button
+          {/* <Button
             onClick={() => signIn()}
             variant="textTernary"
             className="whitespace-nowrap text-xs"
           >
             Sign up to get your API key
-          </Button>
+          </Button> */}
+          <div className="text-xs font-bold text-amber-600">
+            {"We're experiencing unusually high traffic. Sign ups are temporily disabled"}
+          </div>
           {/* @ts-ignore */}
-          <Button onClick={() => signIn()}>Sign In</Button>
+          {/* <Button onClick={() => signIn()}>Sign In</Button> */}
         </div>
       )}
     </>
