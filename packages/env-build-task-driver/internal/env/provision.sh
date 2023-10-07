@@ -41,7 +41,7 @@ EOF
 
 # Chrony configuration
 mkdir -p /etc/chrony
-echo "refclock PHC /dev/ptp0 poll -1 dpoll -1 offset 0 trust prefer" >/etc/chrony/chrony.conf
+echo "refclock PHC /dev/ptp0 poll -1 dpoll -3 offset 0 trust prefer" >/etc/chrony/chrony.conf
 echo "makestep 1 -1" >>/etc/chrony/chrony.conf
 
 # Add chrony to systemd
