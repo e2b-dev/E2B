@@ -17,6 +17,8 @@ const (
 	taskPendingState = "pending"
 
 	defaultTaskName = "start"
+
+	jobCheckInterval = 100 * time.Millisecond
 )
 
 type AllocResult struct {
@@ -42,7 +44,7 @@ func (n *NomadClient) newSubscriber(jobID string, taskState string) *JobSubscrib
 }
 
 func (n *NomadClient) ListenToJobs(ctx context.Context) {
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(jobCheckInterval)
 	defer ticker.Stop()
 
 	for {
@@ -51,17 +53,19 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 			jobs, _, err := n.client.Jobs().List(nil)
 			if err != nil {
 				log.Printf("Error getting jobs: %s\n", err)
+
 				return
 			}
 
 			for _, job := range jobs {
-				err := n.processJobEvent(job)
-				if err != nil {
-					log.Printf("Error processing job event: %s\n", err)
+				jobProcessErr := n.processJobEvent(job)
+				if jobProcessErr != nil {
+					log.Printf("Error processing job event: %s\n", jobProcessErr)
 				}
 			}
 		case <-ctx.Done():
 			log.Println("Context canceled, stopping ListenToJobs")
+
 			return
 		}
 	}
@@ -78,28 +82,34 @@ func (n *NomadClient) processJobEvent(job *api.JobListStub) error {
 		if sub.taskState == taskDeadState {
 			alloc, allocErr, err := n.getAllocTaskErr(job, defaultTaskName)
 			if err != nil {
-				errMsg := fmt.Errorf("error getting allocation for job %s: %s", job.ID, err)
+				errMsg := fmt.Errorf("error getting allocation for job '%s': %w", job.ID, err)
 				sub.events <- AllocResult{
-					Err: errMsg,
+					Alloc: nil,
+					Err:   errMsg,
 				}
 			}
 
 			if allocErr != nil {
 				sub.events <- AllocResult{
-					Err: allocErr,
+					Err:   allocErr,
+					Alloc: nil,
 				}
 			}
 
 			if alloc != nil {
 				sub.events <- AllocResult{
 					Alloc: alloc,
+					Err:   nil,
 				}
 			}
 		}
 
 	case taskRunningState:
 		if sub.taskState == taskRunningState {
-			sub.events <- AllocResult{}
+			sub.events <- AllocResult{
+				Alloc: nil,
+				Err:   nil,
+			}
 		}
 
 	case taskPendingState:
@@ -149,7 +159,8 @@ func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, r
 
 	case <-ctx.Done():
 		result <- AllocResult{
-			Err: fmt.Errorf("waiting for job '%s' cancelled", jobID),
+			Err:   fmt.Errorf("waiting for job '%s' canceled", jobID),
+			Alloc: nil,
 		}
 	}
 }
