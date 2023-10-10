@@ -108,7 +108,7 @@ func (n *NomadClient) BuildEnvJob(
 
 	delErr := n.DeleteEnvBuild(*job.ID, false)
 	if delErr != nil {
-		return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w: :%w", envID, err, apiErr)
+		return fmt.Errorf("error in cleanup after failing to create instance of environment '%s':%w", envID, delErr)
 	}
 
 	return nil
