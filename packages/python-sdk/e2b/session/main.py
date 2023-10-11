@@ -1,5 +1,8 @@
 import asyncio
 import logging
+import requests
+import urllib.parse
+from io import BufferedReader
 from typing import Any, Callable, List, Literal, Optional, Union
 
 from async_timeout import timeout as async_timeout
@@ -146,6 +149,47 @@ class Session(SessionConnection):
         """
         await super().close()
         await self._close()
+
+    def upload_file_url(self) -> str:
+        """
+        Returns a URL that can be used to upload files to the session via a multipart/form-data POST request.
+        This is useful if you're uploading files directly from the browser.
+        The file will be uploaded to the user's home directory with the same name.
+        If a file with the same name already exists, it will be overwritten.
+        """
+        hostname = self.get_hostname(self._debug_port)
+        protocol = "http" if self._debug_dev_env == "local" else "https"
+        return f"{protocol}://{hostname}/file"
+
+    def upload_file(self, file: BufferedReader) -> None:
+        """
+        Uploads a file to the session.
+        The file will be uploaded to the user's home directory with the same name.
+        If a file with the same name already exists, it will be overwritten.
+        """
+        hostname = self.get_hostname(self._debug_port)
+        protocol = "http" if self._debug_dev_env == "local" else "https"
+
+        url = f"{protocol}://{hostname}/file"
+        files = {'file': file}
+        r = requests.post(url, files=files)
+        if r.status_code != 200:
+            raise Exception("Failed to upload file")
+
+    def download_file(self, remote_path: str) -> bytes:
+        """
+        Downloads a file from the session and returns it's content as bytes.
+        """
+        encoded_path = urllib.parse.quote(remote_path)
+        hostname = self.get_hostname(self._debug_port)
+        protocol = "http" if self._debug_dev_env == "local" else "https"
+
+        url = f"{protocol}://{hostname}/file?path={encoded_path}"
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            raise Exception(f"Failed to download file '{remote_path}'. {response.text} {response.reason}")
+        return response.content
 
     async def __aenter__(self):
         await self.open()
