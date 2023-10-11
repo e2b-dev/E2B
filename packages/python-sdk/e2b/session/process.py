@@ -108,7 +108,7 @@ class Process:
         The exit code of the last process started by this manager.
         """
         if not self.finished:
-            raise ProcessException("Process is still running")
+            raise ProcessException("Process has not finished yet")
         return self.output.exit_code
 
     @property
