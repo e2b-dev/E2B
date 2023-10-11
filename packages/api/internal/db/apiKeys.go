@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"github.com/e2b-dev/infra/packages/api/internal/db/models"
 )
@@ -11,12 +12,18 @@ type team struct {
 }
 
 func (db *DB) GetTeamID(apiKey string) (*team, error) {
-	result, err := models.TeamAPIKeys(models.TeamAPIKeyWhere.APIKey.EQ(apiKey)).One(db.Client)
+	joinTeam := qm.InnerJoin(models.TableNames.Teams + " on " + models.TableNames.TeamAPIKeys + "." + models.TeamAPIKeyColumns.TeamID + " = " + models.TableNames.Teams + "." + models.TeamColumns.ID)
+	result, err := models.TeamAPIKeys(qm.Load(models.TeamAPIKeyRels.Team), models.TeamAPIKeyWhere.APIKey.EQ(apiKey), joinTeam).One(db.Client)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get team from API key: %w", err)
 
 		fmt.Println(errMsg.Error())
 
+		return nil, errMsg
+	}
+
+	if result.R.Team.IsBlocked {
+		errMsg := fmt.Errorf("team is blocked")
 		return nil, errMsg
 	}
 
