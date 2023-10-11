@@ -277,6 +277,10 @@ export class Session extends SessionConnection {
           const { promise: processExited, resolve: triggerExit } = createDeferredPromise()
 
           const output = new ProcessOutput()
+          const handleExit = (exitCode: number) => {
+            output.setExitCode(exitCode)
+            triggerExit()
+          }
 
           const handleStdout = (data: { line: string; timestamp: number }) => {
             const message = new ProcessMessage(data.line, data.timestamp, false)
@@ -304,7 +308,7 @@ export class Session extends SessionConnection {
 
           const [onExitSubID, onStdoutSubID, onStderrSubID] =
             await this.handleSubscriptions(
-              this.subscribe(processService, triggerExit, 'onExit', processID),
+              this.subscribe(processService, handleExit, 'onExit', processID),
               this.subscribe(processService, handleStdout, 'onStdout', processID),
               this.subscribe(processService, handleStderr, 'onStderr', processID),
             )

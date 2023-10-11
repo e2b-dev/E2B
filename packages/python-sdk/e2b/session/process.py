@@ -52,6 +52,7 @@ class ProcessOutput(BaseModel):
     messages: List[ProcessMessage] = []
 
     error: bool = False
+    exit_code: Optional[int] = None
 
     @property
     def stdout(self) -> str:
@@ -100,6 +101,15 @@ class Process:
         self._trigger_exit = trigger_exit
         self._finished = finished
         self._output = output
+
+    @property
+    def exit_code(self) -> int:
+        """
+        The exit code of the last process started by this manager.
+        """
+        if not self.finished:
+            raise ProcessException("Process has not finished yet")
+        return self.output.exit_code
 
     @property
     def output(self) -> ProcessOutput:
@@ -282,6 +292,10 @@ class BaseProcessManager(ABC):
 
             output = ProcessOutput()
 
+            def handle_exit(exit_code: int):
+                output.exit_code = exit_code
+                future_exit(True)
+
             def handle_stdout(data: Dict[Any, Any]):
                 out = OutStdoutResponse(**data)
 
@@ -317,7 +331,7 @@ class BaseProcessManager(ABC):
             try:
                 unsub_all = await self._session._handle_subscriptions(
                     self._session._subscribe(
-                        self._service_name, future_exit, "onExit", process_id
+                        self._service_name, handle_exit, "onExit", process_id
                     ),
                     self._session._subscribe(
                         self._service_name, handle_stdout, "onStdout", process_id

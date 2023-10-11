@@ -26,6 +26,18 @@ export class ProcessOutput {
   private readonly delimiter = '\n'
   private readonly messages: ProcessMessage[] = []
   private _error = false
+  private _exitCode?: number
+  private _finished = false
+
+  /**
+   * The exit code of the process.
+   */
+  get exitCode(): number | undefined {
+    if (!this._finished) {
+      throw new Error('Process has not finished yet')
+    }
+    return this._exitCode
+  }
 
   /**
    * Whether the process has errored.
@@ -61,6 +73,11 @@ export class ProcessOutput {
   addStderr(message: ProcessMessage) {
     this._error = true
     this.insertByTimestamp(message)
+  }
+
+  setExitCode(exitCode: number) {
+    this._exitCode = exitCode
+    this._finished = true
   }
 
   private insertByTimestamp(message: ProcessMessage) {
