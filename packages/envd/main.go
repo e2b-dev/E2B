@@ -11,10 +11,10 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	codesnippet "github.com/e2b-dev/infra/packages/envd/internal/codesnippet"
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
 	"github.com/e2b-dev/infra/packages/envd/internal/port"
+	"github.com/e2b-dev/infra/packages/envd/internal/ports"
 	"github.com/e2b-dev/infra/packages/envd/internal/process"
 	"github.com/e2b-dev/infra/packages/envd/internal/terminal"
 )
@@ -106,9 +106,10 @@ func main() {
 
 	go portScanner.ScanAndBroadcast()
 
-	codeSnippetService := codesnippet.NewService(logger.Named("codeSnippetSvc"), portScanner)
-	if err := rpcServer.RegisterName("codeSnippet", codeSnippetService); err != nil {
-		logger.Panicw("failed to register code snippet service", "error", err)
+	ports := ports.NewService(logger.Named("codeSnippetSvc"), portScanner)
+	// WARN: Service is still registered as "codeSnippet" because of backward compatibility with  SDK
+	if err := rpcServer.RegisterName("codeSnippet", ports); err != nil {
+		logger.Panicw("failed to register ports service", "error", err)
 	}
 
 	if filesystemService, err := filesystem.NewService(logger.Named("filesystemSvc")); err == nil {

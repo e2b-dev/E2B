@@ -1,4 +1,4 @@
-package codesnippet
+package ports
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func NewService(
 	cs := &Service{
 		logger:              logger,
 		scannerSubscriber:   scannerSub,
-		scanOpenedPortsSubs: subscriber.NewManager("codeSnippet/scanOpenedPortsSubs", logger.Named("subscriber.codeSnippet.scanOpenedPorts")),
+		scanOpenedPortsSubs: subscriber.NewManager("ports/scanOpenedPortsSubs", logger.Named("subscriber.ports.scanOpenedPorts")),
 	}
 
 	go cs.listenToOpenPorts()
