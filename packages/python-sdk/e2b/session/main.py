@@ -166,6 +166,8 @@ class Session(SessionConnection):
         Uploads a file to the session.
         The file will be uploaded to the user's home directory with the same name.
         If a file with the same name already exists, it will be overwritten.
+
+        :param file: The file to upload
         """
         hostname = self.get_hostname(self._debug_port)
         protocol = "http" if self._debug_dev_env == "local" else "https"
@@ -179,6 +181,8 @@ class Session(SessionConnection):
     def download_file(self, remote_path: str) -> bytes:
         """
         Downloads a file from the session and returns it's content as bytes.
+
+        :param remote_path: The path of the file to download
         """
         encoded_path = urllib.parse.quote(remote_path)
         hostname = self.get_hostname(self._debug_port)
