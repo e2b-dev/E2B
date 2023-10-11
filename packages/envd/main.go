@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/env"
+	"github.com/e2b-dev/infra/packages/envd/internal/file"
 	"github.com/e2b-dev/infra/packages/envd/internal/filesystem"
 	"github.com/e2b-dev/infra/packages/envd/internal/port"
 	"github.com/e2b-dev/infra/packages/envd/internal/ports"
@@ -44,6 +45,17 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	logger.Info("/ping request")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("pong"))
+}
+
+func fileHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		file.Download(logger, w, r)
+	case "POST":
+		file.Upload(logger, w, r)
+	default:
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
 }
 
 func parseFlags() {
@@ -140,6 +152,8 @@ func main() {
 	router.HandleFunc("/ping", pingHandler)
 	// Register the profiling handlers that were added in default mux with the `net/http/pprof` import.
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+	// The /file route used for downloading and uploading files via SDK.
+	router.HandleFunc("/file", fileHandler)
 
 	server := &http.Server{
 		ReadTimeout:  40 * time.Second,
