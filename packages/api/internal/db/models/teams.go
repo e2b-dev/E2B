@@ -27,6 +27,7 @@ type Team struct {
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	IsDefault null.Bool `boil:"is_default" json:"is_default,omitempty" toml:"is_default" yaml:"is_default,omitempty"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	IsBlocked bool      `boil:"is_blocked" json:"is_blocked" toml:"is_blocked" yaml:"is_blocked"`
 
 	R *teamR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L teamL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,11 +38,13 @@ var TeamColumns = struct {
 	CreatedAt string
 	IsDefault string
 	Name      string
+	IsBlocked string
 }{
 	ID:        "id",
 	CreatedAt: "created_at",
 	IsDefault: "is_default",
 	Name:      "name",
+	IsBlocked: "is_blocked",
 }
 
 var TeamTableColumns = struct {
@@ -49,11 +52,13 @@ var TeamTableColumns = struct {
 	CreatedAt string
 	IsDefault string
 	Name      string
+	IsBlocked string
 }{
 	ID:        "teams.id",
 	CreatedAt: "teams.created_at",
 	IsDefault: "teams.is_default",
 	Name:      "teams.name",
+	IsBlocked: "teams.is_blocked",
 }
 
 // Generated where
@@ -87,11 +92,13 @@ var TeamWhere = struct {
 	CreatedAt whereHelpertime_Time
 	IsDefault whereHelpernull_Bool
 	Name      whereHelperstring
+	IsBlocked whereHelperbool
 }{
 	ID:        whereHelperstring{field: "\"teams\".\"id\""},
 	CreatedAt: whereHelpertime_Time{field: "\"teams\".\"created_at\""},
 	IsDefault: whereHelpernull_Bool{field: "\"teams\".\"is_default\""},
 	Name:      whereHelperstring{field: "\"teams\".\"name\""},
+	IsBlocked: whereHelperbool{field: "\"teams\".\"is_blocked\""},
 }
 
 // TeamRels is where relationship names are stored.
@@ -142,9 +149,9 @@ func (r *teamR) GetUsersTeams() UsersTeamSlice {
 type teamL struct{}
 
 var (
-	teamAllColumns            = []string{"id", "created_at", "is_default", "name"}
+	teamAllColumns            = []string{"id", "created_at", "is_default", "name", "is_blocked"}
 	teamColumnsWithoutDefault = []string{}
-	teamColumnsWithDefault    = []string{"id", "created_at", "is_default", "name"}
+	teamColumnsWithDefault    = []string{"id", "created_at", "is_default", "name", "is_blocked"}
 	teamPrimaryKeyColumns     = []string{"id"}
 	teamGeneratedColumns      = []string{}
 )
