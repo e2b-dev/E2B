@@ -7,6 +7,8 @@ RUN apt-get install systemd ca-certificates make -y
 
 RUN update-ca-certificates
 
+RUN useradd -ms /bin/bash user
+
 WORKDIR /
 
 RUN mkdir -p /etc/systemd/system/multi-user.target.wants

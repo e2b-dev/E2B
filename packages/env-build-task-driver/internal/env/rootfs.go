@@ -3,7 +3,6 @@ package env
 import (
 	"archive/tar"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -28,18 +28,20 @@ const (
 )
 
 type Rootfs struct {
-	client *client.Client
+	client       *client.Client
+	legacyClient *docker.Client
 
 	env *Env
 }
 
-func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *client.Client) (*Rootfs, error) {
+func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *client.Client, legacyDocker *docker.Client) (*Rootfs, error) {
 	childCtx, childSpan := tracer.Start(ctx, "new-rootfs")
 	defer childSpan.End()
 
 	rootfs := &Rootfs{
-		client: docker,
-		env:    env,
+		client:       docker,
+		legacyClient: legacyDocker,
+		env:          env,
 	}
 
 	err := rootfs.buildDockerImage(childCtx, tracer)
@@ -89,65 +91,23 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	buildCtx, cancel := context.WithCancel(childCtx)
 	defer cancel()
 
-	buildResponse, buildErr := r.client.ImageBuild(
-		buildCtx,
-		dockerContextFile,
-		types.ImageBuildOptions{
-			Dockerfile: dockerfileName,
-			Remove:     true,
-			Tags:       []string{r.dockerTag()},
-		},
-	)
-	if buildErr != nil {
-		errMsg := fmt.Errorf("error starting docker image build %w", buildErr)
+	innerBuildCtx, innerBuildSpan := tracer.Start(buildCtx, "build-docker-image-logs")
+	defer innerBuildSpan.End()
+
+	buildOutputWriter := telemetry.NewEventWriter(innerBuildCtx, "docker-build-output")
+
+	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
+		Context:      buildCtx,
+		Dockerfile:   dockerfileName,
+		InputStream:  dockerContextFile,
+		OutputStream: buildOutputWriter,
+		Name:         r.dockerTag(),
+	})
+	if err != nil {
+		errMsg := fmt.Errorf("error building docker image for env %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "started docker image build", attribute.String("tag", r.dockerTag()))
-
-	defer func() {
-		err = buildResponse.Body.Close()
-		if err != nil {
-			errMsg := fmt.Errorf("error closing build response body %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed build response body")
-		}
-	}()
-
-	decoder := json.NewDecoder(buildResponse.Body)
-	for {
-		var message map[string]interface{}
-
-		err := decoder.Decode(&message)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			errMsg := fmt.Errorf("error decoding build response %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return errMsg
-		}
-
-		if message["error"] != nil {
-			cancel()
-
-			errMsg := fmt.Errorf("error building image: %s", message["error"])
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return errMsg
-		}
-
-		stream, exists := message["stream"]
-		if !exists {
-			break
-		}
-
-		streamMessage := fmt.Sprintf("%+v", stream.(string))
-
-		telemetry.ReportEvent(childCtx, "docker build stream", attribute.String("stream", streamMessage))
 	}
 
 	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
@@ -184,7 +144,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		Entrypoint:   []string{"/bin/sh", "-c"},
 		User:         "root",
 		Cmd:          []string{r.env.ProvisionScript()},
-		Tty:          true,
+		Tty:          false,
 		AttachStdout: true,
 		AttachStderr: true,
 	}, nil, nil, &v1.Platform{}, "")
@@ -303,41 +263,28 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
 	go func() {
-		anonymousChildCtx, childSpan := tracer.Start(childCtx, "handle-container-logs", trace.WithSpanKind(trace.SpanKindConsumer))
-		defer childSpan.End()
+		anonymousChildCtx, anonymousChildSpan := tracer.Start(childCtx, "handle-container-logs", trace.WithSpanKind(trace.SpanKindConsumer))
+		defer anonymousChildSpan.End()
 
-		data, err := r.client.ContainerLogs(anonymousChildCtx, cont.ID, types.ContainerLogsOptions{
-			ShowStdout: true,
-			ShowStderr: true,
-			Timestamps: false,
-			Follow:     true,
-			Tail:       "40",
+		containerStdoutWriter := telemetry.NewEventWriter(anonymousChildCtx, "stdout")
+		containerStderrWriter := telemetry.NewEventWriter(anonymousChildCtx, "stderr")
+
+		err := r.legacyClient.Logs(docker.LogsOptions{
+			Stdout:       true,
+			Stderr:       true,
+			RawTerminal:  false,
+			OutputStream: containerStdoutWriter,
+			ErrorStream:  containerStderrWriter,
+			Context:      childCtx,
+			Container:    cont.ID,
+			Follow:       true,
+			Timestamps:   false,
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error getting container logs %w", err)
 			telemetry.ReportError(anonymousChildCtx, errMsg)
-
-			return
 		} else {
-			telemetry.ReportEvent(anonymousChildCtx, "got container logs")
-		}
-
-		defer func() {
-			closeErr := data.Close()
-			if closeErr != nil {
-				errMsg := fmt.Errorf("error closing container logs %w", closeErr)
-				telemetry.ReportError(anonymousChildCtx, errMsg)
-			} else {
-				telemetry.ReportEvent(anonymousChildCtx, "closed container logs")
-			}
-		}()
-
-		_, err = io.Copy(os.Stdout, data)
-		if err != nil {
-			errMsg := fmt.Errorf("error copying container logs %w", err)
-			telemetry.ReportError(anonymousChildCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(anonymousChildCtx, "copied container logs")
+			telemetry.ReportEvent(anonymousChildCtx, "setup container logs")
 		}
 	}()
 
@@ -370,6 +317,36 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}
 
 	telemetry.ReportEvent(childCtx, "waited for container exit")
+
+	inspection, err := r.client.ContainerInspect(ctx, cont.ID)
+	if err != nil {
+		errMsg := fmt.Errorf("error inspecting container %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "inspected container")
+
+	if inspection.State.Running {
+		errMsg := fmt.Errorf("container is still running")
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	if inspection.State.ExitCode != 0 {
+		errMsg := fmt.Errorf("container exited with status %d: %s", inspection.State.ExitCode, inspection.State.Error)
+		telemetry.ReportCriticalError(
+			childCtx,
+			errMsg,
+			attribute.Int("exitCode", inspection.State.ExitCode),
+			attribute.String("error", inspection.State.Error),
+			attribute.Bool("oom", inspection.State.OOMKilled),
+		)
+
+		return errMsg
+	}
 
 	containerReader, err := r.client.ContainerExport(childCtx, cont.ID)
 	if err != nil {
@@ -423,8 +400,17 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "converted container tar to ext4")
 
-	cmd := exec.Command("tune2fs", "-O ^read-only", r.env.tmpRootfsPath())
-	// cmd.Stdout = os.Stdout
+	tuneContext, tuneSpan := tracer.Start(childCtx, "tune-rootfs-file-cmd")
+	defer tuneSpan.End()
+
+	cmd := exec.CommandContext(tuneContext, "tune2fs", "-O ^read-only", r.env.tmpRootfsPath())
+
+	tuneStdoutWriter := telemetry.NewEventWriter(tuneContext, "stdout")
+	cmd.Stdout = tuneStdoutWriter
+
+	tuneStderrWriter := telemetry.NewEventWriter(childCtx, "stderr")
+	cmd.Stderr = tuneStderrWriter
+
 	err = cmd.Run()
 	if err != nil {
 		errMsg := fmt.Errorf("error making rootfs file writable %w", err)
@@ -458,7 +444,16 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "truncated rootfs file to size of build + defaultDiskSizeMB")
 
-	cmd = exec.Command("resize2fs", r.env.tmpRootfsPath())
+	resizeContext, resizeSpan := tracer.Start(childCtx, "resize-rootfs-file-cmd")
+	defer resizeSpan.End()
+
+	cmd = exec.CommandContext(resizeContext, "resize2fs", r.env.tmpRootfsPath())
+
+	resizeStdoutWriter := telemetry.NewEventWriter(resizeContext, "stdout")
+	cmd.Stdout = resizeStdoutWriter
+
+	resizeStderrWriter := telemetry.NewEventWriter(resizeContext, "stderr")
+	cmd.Stderr = resizeStderrWriter
 
 	err = cmd.Run()
 	if err != nil {

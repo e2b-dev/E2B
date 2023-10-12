@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/drivers/shared/eventer"
 	"github.com/hashicorp/nomad/plugins/base"
@@ -50,6 +51,8 @@ type (
 
 		docker *client.Client
 
+		legacyDockerClient *docker.Client
+
 		drivers.DriverExecTaskNotSupported
 		drivers.DriverSignalTaskNotSupported
 	}
@@ -82,9 +85,15 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 		panic(err)
 	}
 
+	legacyClient, err := docker.NewClientFromEnv()
+	if err != nil {
+		panic(err)
+	}
+
 	return &Driver{
 		tracer:         tracer,
 		docker:         client,
+		legacyDockerClient: legacyClient,
 		eventer:        eventer.NewEventer(ctx, logger),
 		config:         &Config{},
 		tasks:          newTaskStore(),

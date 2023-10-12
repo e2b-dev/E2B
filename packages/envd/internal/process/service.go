@@ -228,8 +228,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 					"error", pipeErr,
 				)
 			}
-
-			err = s.exitSubs.Notify(newProc.ID, struct{}{})
+			err = s.exitSubs.Notify(newProc.ID, newProc.cmd.ProcessState.ExitCode())
 			if err != nil {
 				s.logger.Errorw("Failed to send exit notification",
 					"processID", newProc.ID,

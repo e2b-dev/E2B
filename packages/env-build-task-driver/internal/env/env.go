@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
@@ -73,11 +74,6 @@ func (e *Env) DockerContextPath() string {
 	return filepath.Join(e.DockerContextsPath, e.EnvID, e.BuildID, e.ContextFileName)
 }
 
-// Docker tag of the docker image for this env.
-func (e *Env) DockerTag() string {
-	return e.DockerRegistry + "/" + e.EnvID
-}
-
 // Path to the directory where the temporary files for the build are stored.
 func (e *Env) tmpBuildDirPath() string {
 	return filepath.Join(e.envDirPath(), buildDirName, e.BuildID)
@@ -121,7 +117,7 @@ func (e *Env) envSnapfilePath() string {
 	return filepath.Join(e.envDirPath(), snapfileName)
 }
 
-func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Client) error {
+func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Client, legacyDocker *docker.Client) error {
 	childCtx, childSpan := tracer.Start(ctx, "build")
 	defer childSpan.End()
 
@@ -135,7 +131,7 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 
 	defer e.Cleanup(childCtx, tracer)
 
-	rootfs, err := NewRootfs(childCtx, tracer, e, docker)
+	rootfs, err := NewRootfs(childCtx, tracer, e, docker, legacyDocker)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
