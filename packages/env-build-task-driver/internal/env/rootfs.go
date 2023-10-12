@@ -141,7 +141,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:        r.dockerTag(),
-		Entrypoint:   []string{"/bin/sh", "-c"},
+		Entrypoint:   []string{"/bin/bash", "-c"},
 		User:         "root",
 		Cmd:          []string{r.env.ProvisionScript()},
 		Tty:          false,
@@ -262,6 +262,16 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
+	err = r.client.ContainerStart(childCtx, cont.ID, types.ContainerStartOptions{})
+	if err != nil {
+		errMsg := fmt.Errorf("error starting container %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "started container")
+
 	go func() {
 		anonymousChildCtx, anonymousChildSpan := tracer.Start(childCtx, "handle-container-logs", trace.WithSpanKind(trace.SpanKindConsumer))
 		defer anonymousChildSpan.End()
@@ -287,16 +297,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			telemetry.ReportEvent(anonymousChildCtx, "setup container logs")
 		}
 	}()
-
-	err = r.client.ContainerStart(childCtx, cont.ID, types.ContainerStartOptions{})
-	if err != nil {
-		errMsg := fmt.Errorf("error starting container %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "started container")
 
 	wait, errWait := r.client.ContainerWait(childCtx, cont.ID, container.WaitConditionNotRunning)
 	select {

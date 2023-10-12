@@ -1,6 +1,8 @@
-#!/usr/bin/env bash
-
 set -euo xtrace pipefail
+
+echo "Starting provisioning script"
+
+apt-get update --download-only
 
 DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server chrony sudo systemd
 
