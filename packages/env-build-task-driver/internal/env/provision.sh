@@ -2,24 +2,18 @@
 
 set -euo xtrace pipefail
 
-# yes | unminimize
-
-echo "Starting provisioning script..."
-
-apt-get update
-
 DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server chrony sudo systemd
 
 # Set up autologin.
-mkdir /etc/systemd/system/serial-getty@ttyS0.service.d
+mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
 cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty --noissue --autologin root %I 115200,38400,9600 vt102
 EOF
 
+# Set up envd service.
 mkdir -p /etc/systemd/system
-
 cat <<EOF >/etc/systemd/system/envd.service
 [Unit]
 Description=Env Daemon Service
@@ -39,24 +33,27 @@ OOMScoreAdjust=-999
 WantedBy=multi-user.target
 EOF
 
-# Chrony configuration
+# Set up chrony.
 mkdir -p /etc/chrony
-echo "refclock PHC /dev/ptp0 poll -2 dpoll -2 offset 0 trust prefer" >/etc/chrony/chrony.conf
-echo "makestep 1 -1" >>/etc/chrony/chrony.conf
+cat <<EOF >/etc/chrony/chrony.conf
+refclock PHC /dev/ptp0 poll -2 dpoll -2 offset 0 trust prefer
+makestep 1 -1
+EOF
 
-# Add chrony to systemd
 mkdir -p /etc/systemd/system/chrony.service.d
-echo "[Service]" >/etc/systemd/system/chrony.service.d/override.conf
-echo "ExecStart=" >>/etc/systemd/system/chrony.service.d/override.conf
-echo "ExecStart=/usr/sbin/chronyd" >>/etc/systemd/system/chrony.service.d/override.conf
+cat <<EOF >/etc/systemd/system/chrony.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=/usr/sbin/chronyd
+EOF
 
-# --- Enable systemd services --- #
+# Enable systemd services
 # Because this script runs in a container we can't use `systemctl`.
 # Containers don't run init daemons. We have to enable the runner service manually.
 mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -s /etc/systemd/system/envd.service /etc/systemd/system/multi-user.target.wants/envd.service
-# ------------------------------- #
 
+# Set up shell.
 echo "export SHELL='/bin/bash'" >/etc/profile.d/shell.sh
 echo "export PS1='\w \$ '" >/etc/profile.d/prompt.sh
 echo "export PS1='\w \$ '" >>"/etc/profile"
@@ -65,17 +62,16 @@ echo "export PS1='\w \$ '" >>"/root/.bashrc"
 # Use .bashrc and .profile
 echo "if [ -f ~/.bashrc ]; then source ~/.bashrc; fi; if [ -f ~/.profile ]; then source ~/.profile; fi" >>/etc/profile
 
+# Set up SSH.
 mkdir -p /etc/ssh
-touch /etc/ssh/sshd_config
-echo "PermitRootLogin yes" >>/etc/ssh/sshd_config
-echo "PermitEmptyPasswords yes" >>/etc/ssh/sshd_config
-echo "PasswordAuthentication yes" >>/etc/ssh/sshd_config
+cat <<EOF >>/etc/ssh/ssh_config
+PermitRootLogin yes
+PermitEmptyPasswords yes
+PasswordAuthentication yes
+EOF
 
 # Remove password for root.
 passwd -d root
-
-# TODO: Change the directory for core dumps.
-# bash -c 'echo "kernel.core_pattern=/tmp/%e.%t.%p.%s.core" > /proc/sys/kernel/core_pattern'
 
 # Create default user.
 adduser --disabled-password --gecos "" user
@@ -92,7 +88,7 @@ chmod 777 -R /code
 
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
 # It may be becayse of the way we are starting the FC VM?
-# chown -R user:user /home/user
+
 
 # Add DNS.
 echo "nameserver 8.8.8.8" >/etc/resolv.conf
@@ -101,4 +97,4 @@ echo "nameserver 8.8.8.8" >/etc/resolv.conf
 systemctl enable envd
 systemctl enable chrony
 
-echo "Finished provisioning script."
+echo "Finished provisioning script"
