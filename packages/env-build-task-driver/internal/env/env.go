@@ -73,11 +73,6 @@ func (e *Env) DockerContextPath() string {
 	return filepath.Join(e.DockerContextsPath, e.EnvID, e.BuildID, e.ContextFileName)
 }
 
-// Docker tag of the docker image for this env.
-func (e *Env) DockerTag() string {
-	return e.DockerRegistry + "/" + e.EnvID
-}
-
 // Path to the directory where the temporary files for the build are stored.
 func (e *Env) tmpBuildDirPath() string {
 	return filepath.Join(e.envDirPath(), buildDirName, e.BuildID)

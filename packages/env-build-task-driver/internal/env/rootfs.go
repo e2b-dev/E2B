@@ -93,9 +93,12 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		buildCtx,
 		dockerContextFile,
 		types.ImageBuildOptions{
-			Dockerfile: dockerfileName,
-			Remove:     true,
-			Tags:       []string{r.dockerTag()},
+			Dockerfile:     dockerfileName,
+			NoCache:        false,
+			Remove:         true,
+			Tags:           []string{r.dockerTag()},
+			Version:        "2",
+			SuppressOutput: false,
 		},
 	)
 	if buildErr != nil {
