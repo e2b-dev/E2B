@@ -28,7 +28,7 @@ const (
 )
 
 type Rootfs struct {
-	client *client.Client
+	client       *client.Client
 	legacyClient *docker.Client
 
 	env *Env
@@ -39,9 +39,9 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	defer childSpan.End()
 
 	rootfs := &Rootfs{
-		client: docker,
+		client:       docker,
 		legacyClient: legacyDocker,
-		env:    env,
+		env:          env,
 	}
 
 	err := rootfs.buildDockerImage(childCtx, tracer)
@@ -94,14 +94,14 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	innerBuildCtx, innerBuildSpan := tracer.Start(buildCtx, "build-docker-image-logs")
 	defer innerBuildSpan.End()
 
-	buildOutputWriter := telemetry.NewEventWriter(innerBuildCtx, "docker-build-output")	
+	buildOutputWriter := telemetry.NewEventWriter(innerBuildCtx, "docker-build-output")
 
 	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
-		Context: buildCtx,
-		Dockerfile: dockerfileName,
-		InputStream: dockerContextFile,
+		Context:      buildCtx,
+		Dockerfile:   dockerfileName,
+		InputStream:  dockerContextFile,
 		OutputStream: buildOutputWriter,
-		Name: r.dockerTag(),
+		Name:         r.dockerTag(),
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image for env %w", err)
@@ -109,7 +109,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 
 		return errMsg
 	}
-	
+
 	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
 
 	return nil
@@ -144,7 +144,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		Entrypoint:   []string{"/bin/sh", "-c"},
 		User:         "root",
 		Cmd:          []string{r.env.ProvisionScript()},
-		Tty:          true,
+		Tty:          false,
 		AttachStdout: true,
 		AttachStderr: true,
 	}, nil, nil, &v1.Platform{}, "")
@@ -263,43 +263,28 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "copied envd to container")
 
 	go func() {
-		anonymousChildCtx, childSpan := tracer.Start(childCtx, "handle-container-logs", trace.WithSpanKind(trace.SpanKindConsumer))
-		defer childSpan.End()
+		anonymousChildCtx, anonymousChildSpan := tracer.Start(childCtx, "handle-container-logs", trace.WithSpanKind(trace.SpanKindConsumer))
+		defer anonymousChildSpan.End()
 
-		data, err := r.client.ContainerLogs(anonymousChildCtx, cont.ID, types.ContainerLogsOptions{
-			ShowStdout: true,
-			ShowStderr: true,
-			Timestamps: false,
-			Follow:     true,
-			Tail:       "40",
+		containerStdoutWriter := telemetry.NewEventWriter(anonymousChildCtx, "stdout")
+		containerStderrWriter := telemetry.NewEventWriter(anonymousChildCtx, "stderr")
+
+		err := r.legacyClient.Logs(docker.LogsOptions{
+			Stdout:       true,
+			Stderr:       true,
+			RawTerminal:  false,
+			OutputStream: containerStdoutWriter,
+			ErrorStream:  containerStderrWriter,
+			Context:      childCtx,
+			Container:    cont.ID,
+			Follow:       true,
+			Timestamps:   false,
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error getting container logs %w", err)
 			telemetry.ReportError(anonymousChildCtx, errMsg)
-
-			return
 		} else {
-			telemetry.ReportEvent(anonymousChildCtx, "got container logs")
-		}
-
-		defer func() {
-			closeErr := data.Close()
-			if closeErr != nil {
-				errMsg := fmt.Errorf("error closing container logs %w", closeErr)
-				telemetry.ReportError(anonymousChildCtx, errMsg)
-			} else {
-				telemetry.ReportEvent(anonymousChildCtx, "closed container logs")
-			}
-		}()
-
-		containerLogsWriter := telemetry.NewEventWriter(anonymousChildCtx, "stdout")
-
-		_, err = io.Copy(containerLogsWriter, data)
-		if err != nil {
-			errMsg := fmt.Errorf("error copying container logs %w", err)
-			telemetry.ReportError(anonymousChildCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(anonymousChildCtx, "copied container logs")
+			telemetry.ReportEvent(anonymousChildCtx, "setup container logs")
 		}
 	}()
 
@@ -332,6 +317,36 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}
 
 	telemetry.ReportEvent(childCtx, "waited for container exit")
+
+	inspection, err := r.client.ContainerInspect(ctx, cont.ID)
+	if err != nil {
+		errMsg := fmt.Errorf("error inspecting container %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "inspected container")
+
+	if inspection.State.Running {
+		errMsg := fmt.Errorf("container is still running")
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	if inspection.State.ExitCode != 0 {
+		errMsg := fmt.Errorf("container exited with status %d: %s", inspection.State.ExitCode, inspection.State.Error)
+		telemetry.ReportCriticalError(
+			childCtx,
+			errMsg,
+			attribute.Int("exitCode", inspection.State.ExitCode),
+			attribute.String("error", inspection.State.Error),
+			attribute.Bool("oom", inspection.State.OOMKilled),
+		)
+
+		return errMsg
+	}
 
 	containerReader, err := r.client.ContainerExport(childCtx, cont.ID)
 	if err != nil {
