@@ -292,7 +292,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			}
 		}()
 
-		_, err = io.Copy(os.Stdout, data)
+		containerLogsWriter := telemetry.NewEventWriter(anonymousChildCtx, "stdout")
+
+		_, err = io.Copy(containerLogsWriter, data)
 		if err != nil {
 			errMsg := fmt.Errorf("error copying container logs %w", err)
 			telemetry.ReportError(anonymousChildCtx, errMsg)
