@@ -383,8 +383,17 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "converted container tar to ext4")
 
-	cmd := exec.Command("tune2fs", "-O ^read-only", r.env.tmpRootfsPath())
-	// cmd.Stdout = os.Stdout
+	tuneContext, tuneSpan := tracer.Start(childCtx, "tune-rootfs-file-cmd")
+	defer tuneSpan.End()
+
+	cmd := exec.CommandContext(tuneContext, "tune2fs", "-O ^read-only", r.env.tmpRootfsPath())
+
+	tuneStdoutWriter := telemetry.NewEventWriter(tuneContext, "stdout")
+	cmd.Stdout = tuneStdoutWriter
+
+	tuneStderrWriter := telemetry.NewEventWriter(childCtx, "stderr")
+	cmd.Stderr = tuneStderrWriter
+
 	err = cmd.Run()
 	if err != nil {
 		errMsg := fmt.Errorf("error making rootfs file writable %w", err)
@@ -418,7 +427,16 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "truncated rootfs file to size of build + defaultDiskSizeMB")
 
-	cmd = exec.Command("resize2fs", r.env.tmpRootfsPath())
+	resizeContext, resizeSpan := tracer.Start(childCtx, "resize-rootfs-file-cmd")
+	defer resizeSpan.End()
+
+	cmd = exec.CommandContext(resizeContext, "resize2fs", r.env.tmpRootfsPath())
+
+	resizeStdoutWriter := telemetry.NewEventWriter(resizeContext, "stdout")
+	cmd.Stdout = resizeStdoutWriter
+
+	resizeStderrWriter := telemetry.NewEventWriter(resizeContext, "stderr")
+	cmd.Stderr = resizeStderrWriter
 
 	err = cmd.Run()
 	if err != nil {
