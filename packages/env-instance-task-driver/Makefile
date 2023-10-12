@@ -25,12 +25,12 @@ update-driver:
 	sudo cp /mnt/disks/envs-pipeline/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver && \
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver && \
 	sudo supervisorctl restart nomad && \
-	sudo kill -9 $$(pgrep firecracker)'
+	($$(pgrep firecracker) && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"'
 
 update-driver-locally:
 	make build-debug
-	sudo rm -rf /opt/nomad/plugins/env-build-task-driver
-	sudo cp ./bin/debug/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
-	sudo chmod +x /opt/nomad/plugins/env-build-task-driver
+	sudo rm -rf /opt/nomad/plugins/env-instance-task-driver
+	sudo cp ./bin/debug/env-instance-task-driver /opt/nomad/plugins/env-instance-task-driver
+	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
 	sudo supervisorctl restart nomad
-	sudo kill -9 $$(pgrep firecracker)
+	($$(pgrep firecracker) && sudo kill -9 $$(pgrep firecracker)) || echo "No firecracker process found"
