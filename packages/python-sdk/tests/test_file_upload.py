@@ -11,7 +11,7 @@ async def test_file_upload():
         file=open(filepath, "rb")
     )
 
-    files = await session.filesystem.list("/root")
+    files = await session.filesystem.list("/home/user")
     for file_item in files:
         print(file_item.name)
     assert file_name in [x.name for x in files]

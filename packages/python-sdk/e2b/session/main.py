@@ -2,6 +2,7 @@ import asyncio
 import logging
 import requests
 import urllib.parse
+from os import path
 from io import BufferedReader
 from typing import Any, Callable, List, Literal, Optional, Union
 
@@ -164,10 +165,10 @@ class Session(SessionConnection):
         protocol = "http" if self._debug_dev_env == "local" else "https"
         return f"{protocol}://{ENVD_PORT}-{hostname}/file"
 
-    def upload_file(self, file: BufferedReader) -> None:
+    def upload_file(self, file: BufferedReader) -> str:
         """
         Uploads a file to the session.
-        The file will be uploaded to the user's home directory with the same name.
+        The file will be uploaded to the user's home (`/home/user`) directory with the same name.
         If a file with the same name already exists, it will be overwritten.
 
         :param file: The file to upload
@@ -176,6 +177,9 @@ class Session(SessionConnection):
         r = requests.post(self.file_url(), files=files)
         if r.status_code != 200:
             raise Exception(f"Failed to upload file: {r.reason} {r.text}")
+
+        filename = path.basename(file.name)
+        return f"/home/user/{filename}"
 
     def download_file(self, remote_path: str) -> bytes:
         """
@@ -188,7 +192,7 @@ class Session(SessionConnection):
         r = requests.get(url)
 
         if r.status_code != 200:
-            raise Exception(f"Failed to download file '{remote_path}'. {r.text} {r.reason}")
+            raise Exception(f"Failed to download file '{remote_path}'. {r.reason} {r.text}")
         return r.content
 
     async def __aenter__(self):
