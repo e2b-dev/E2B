@@ -6,8 +6,6 @@ import (
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
 	"go.opentelemetry.io/otel"
-
-	_ "embed"
 )
 
 func MockBuild(envID, buildID string) {
