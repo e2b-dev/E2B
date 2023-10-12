@@ -6,6 +6,9 @@ upload:
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/ .
 
+build-debug:
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -race -gcflags=all="-N -l" -o bin/debug/ .
+
 generate:
 	cd internal/client && swagger generate client -f firecracker.yml -A firecracker
 
@@ -15,7 +18,7 @@ generate:
 run-profiler:
 	go tool pprof -http :9991 http://$(client-ip):6061/debug/pprof/$(metric)?seconds=$(interval)\&timeout=120
 
-update-instance-driver:
+update-driver:
 	make build
 	./upload.sh
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /opt/nomad/plugins/env-instance-task-driver && \
@@ -23,3 +26,11 @@ update-instance-driver:
 	sudo chmod +x /opt/nomad/plugins/env-instance-task-driver && \
 	sudo supervisorctl restart nomad && \
 	sudo kill -9 $$(pgrep firecracker)'
+
+update-driver-locally:
+	make build-debug
+	sudo rm -rf /opt/nomad/plugins/env-build-task-driver
+	sudo cp ./bin/debug/env-build-task-driver /opt/nomad/plugins/env-build-task-driver
+	sudo chmod +x /opt/nomad/plugins/env-build-task-driver
+	sudo supervisorctl restart nomad
+	sudo kill -9 $$(pgrep firecracker)
