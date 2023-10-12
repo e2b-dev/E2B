@@ -2,9 +2,7 @@ import normalizePath from 'normalize-path'
 import FormData from 'form-data'
 import fetch from 'node-fetch'
 
-import {
-  ENVD_PORT,
-} from '../constants'
+import { ENVD_PORT } from '../constants'
 import { components } from '../api'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
@@ -367,7 +365,6 @@ export class Session extends SessionConnection {
    */
   public get fileURL() {
     const hostname = this.getHostname(this.opts.__debug_port)
-    console.log('HOSTNAME', hostname)
     const protocol = this.opts.__debug_devEnv === 'local' ? 'http' : 'https'
     return `${protocol}://${ENVD_PORT}-${hostname}/file`
   }
@@ -415,7 +412,6 @@ export class Session extends SessionConnection {
       contentType: contentType || 'application/octet-stream',
     })
 
-    console.log(this.fileURL)
     const response = await fetch(this.fileURL, {
       method: 'POST',
       body: formData,
@@ -425,6 +421,8 @@ export class Session extends SessionConnection {
       const text = await response.text()
       throw new Error(`Failed to upload file: ${text}`)
     }
+
+    return `/home/user/${filename}`
   }
 
   async downloadFile(remotePath: string) {
