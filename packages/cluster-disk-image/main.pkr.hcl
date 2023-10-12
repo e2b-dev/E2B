@@ -40,6 +40,14 @@ build {
     destination = "/tmp"
   }
 
+  # Install Docker
+  provisioner "shell" {
+    inline = [
+      "sudo curl -fsSL https://get.docker.com -o get-docker.sh",
+      "sudo sh get-docker.sh",
+    ]
+  }
+
   provisioner "shell" {
     inline = [
       "export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`",
@@ -48,11 +56,12 @@ build {
     ]
   }
 
+
   # TODO: Remove unused deps
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make docker.io build-essential",
+      "sudo apt-get install -y unzip jq net-tools qemu-utils gcsfuse make build-essential",
     ]
   }
 
@@ -62,7 +71,6 @@ build {
     ]
   }
 
-  # Install Docker
   provisioner "shell" {
     inline = [
       "sudo systemctl start docker",
