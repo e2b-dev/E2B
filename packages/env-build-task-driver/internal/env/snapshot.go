@@ -12,7 +12,6 @@ import (
 
 	firecracker "github.com/firecracker-microvm/firecracker-go-sdk"
 	"github.com/go-openapi/strfmt"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/client/client"
@@ -29,6 +28,12 @@ const (
 
 	fcIfaceID  = "eth0"
 	tmpDirPath = "/tmp"
+
+
+	socketReadyCheckInterval = 100 * time.Millisecond
+	socketWaitTimeout = 2 * time.Second
+
+	waitTimeForFCConfig = 500 * time.Millisecond
 )
 
 type Snapshot struct {
@@ -57,7 +62,7 @@ func waitForSocket(socketPath string, timeout time.Duration) error {
 			}
 
 			// Wait for a short duration before checking again
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(socketReadyCheckInterval)
 		} else {
 			// Error occurred while checking for socket file
 			return err
@@ -133,6 +138,9 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 
 	s.fc = exec.CommandContext(childCtx, "ip", "netns", "exec", networkNamespaceID, fcBinaryPath, "--api-sock", s.socketPath)
 
+	fcVMStdoutWriter := telemetry.NewEventWriter(childCtx, "stdout")
+	fcVMStderrWriter := telemetry.NewEventWriter(childCtx, "stderr")
+
 	stdoutPipe, err := s.fc.StdoutPipe()
 	if err != nil {
 		errMsg := fmt.Errorf("error creating fc stdout pipe %w", err)
@@ -148,8 +156,8 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 
 		closeErr := stdoutPipe.Close()
 		if closeErr != nil {
-			errMsg := fmt.Errorf("error closing fc stdout pipe %w", closeErr)
-			telemetry.ReportError(childCtx, errMsg)
+			closeErrMsg := fmt.Errorf("error closing fc stdout pipe %w", closeErr)
+			telemetry.ReportError(childCtx, closeErrMsg)
 		}
 
 		return errMsg
@@ -163,11 +171,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 
 		for scanner.Scan() {
 			line := scanner.Text()
-
-			telemetry.ReportEvent(childCtx, "vmm log",
-				attribute.String("type", "stdout"),
-				attribute.String("message", line),
-			)
+			fcVMStdoutWriter.Write([]byte(line))
 		}
 
 		outputWaitGroup.Done()
@@ -179,11 +183,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 
 		for scanner.Scan() {
 			line := scanner.Text()
-
-			telemetry.ReportEvent(childCtx, "vmm log",
-				attribute.String("type", "stderr"),
-				attribute.String("message", line),
-			)
+			fcVMStderrWriter.Write([]byte(line))
 		}
 
 		outputWaitGroup.Done()
@@ -215,7 +215,7 @@ func (s *Snapshot) startFCProcess(ctx context.Context, tracer trace.Tracer, fcBi
 	}()
 
 	// Wait for the FC process to start so we can use FC API
-	err = waitForSocket(s.socketPath, 2*time.Second)
+	err = waitForSocket(s.socketPath, socketWaitTimeout)
 	if err != nil {
 		errMsg := fmt.Errorf("error waiting for fc socket %w", err)
 
@@ -341,7 +341,7 @@ func (s *Snapshot) configureFC(ctx context.Context, tracer trace.Tracer) error {
 	telemetry.ReportEvent(childCtx, "set fc mmds config")
 
 	// We may need to sleep before start - previous configuration is processes asynchronously. How to do this sync or in one go?
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(waitTimeForFCConfig)
 
 	start := models.InstanceActionInfoActionTypeInstanceStart
 	startActionParams := operations.CreateSyncActionParams{

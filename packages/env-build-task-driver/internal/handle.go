@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"go.opentelemetry.io/otel/trace"
@@ -55,11 +56,11 @@ func (h *taskHandle) IsRunning() bool {
 	return h.procState == drivers.TaskStateRunning
 }
 
-func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *client.Client) {
+func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *client.Client, legacyDocker *docker.Client) {
 	childCtx, childSpan := tracer.Start(ctx, "run")
 	defer childSpan.End()
 
-	err := h.env.Build(childCtx, tracer, docker)
+	err := h.env.Build(childCtx, tracer, docker, legacyDocker)
 	if err != nil {
 		telemetry.ReportCriticalError(childCtx, err)
 
