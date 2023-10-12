@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 	"go.opentelemetry.io/otel"
 
 	_ "embed"
@@ -15,6 +16,11 @@ func MockBuild(envID, buildID string) {
 	tracer := otel.Tracer("test")
 
 	client, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		panic(err)
+	}
+
+	legacyClient, err := docker.NewClientFromEnv()
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +51,7 @@ func MockBuild(envID, buildID string) {
 		ContextFileName:       contextFileName,
 	}
 
-	err = e.Build(ctx, tracer, client)
+	err = e.Build(ctx, tracer, client, legacyClient)
 	if err != nil {
 		panic(err)
 	}

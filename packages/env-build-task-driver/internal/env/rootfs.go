@@ -3,7 +3,6 @@ package env
 import (
 	"archive/tar"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -29,16 +29,18 @@ const (
 
 type Rootfs struct {
 	client *client.Client
+	legacyClient *docker.Client
 
 	env *Env
 }
 
-func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *client.Client) (*Rootfs, error) {
+func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *client.Client, legacyDocker *docker.Client) (*Rootfs, error) {
 	childCtx, childSpan := tracer.Start(ctx, "new-rootfs")
 	defer childSpan.End()
 
 	rootfs := &Rootfs{
 		client: docker,
+		legacyClient: legacyDocker,
 		env:    env,
 	}
 
@@ -89,70 +91,25 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	buildCtx, cancel := context.WithCancel(childCtx)
 	defer cancel()
 
-	buildResponse, buildErr := r.client.ImageBuild(
-		buildCtx,
-		dockerContextFile,
-		types.ImageBuildOptions{
-			Dockerfile:     dockerfileName,
-			NoCache:        false,
-			Remove:         true,
-			Tags:           []string{r.dockerTag()},
-			Version:        "2",
-			SuppressOutput: false,
-		},
-	)
-	if buildErr != nil {
-		errMsg := fmt.Errorf("error starting docker image build %w", buildErr)
+	innerBuildCtx, innerBuildSpan := tracer.Start(buildCtx, "build-docker-image-logs")
+	defer innerBuildSpan.End()
+
+	buildOutputWriter := telemetry.NewEventWriter(innerBuildCtx, "docker-build-output")	
+
+	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
+		Context: buildCtx,
+		Dockerfile: dockerfileName,
+		InputStream: dockerContextFile,
+		OutputStream: buildOutputWriter,
+		Name: r.dockerTag(),
+	})
+	if err != nil {
+		errMsg := fmt.Errorf("error building docker image for env %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
 	}
-
-	telemetry.ReportEvent(childCtx, "started docker image build", attribute.String("tag", r.dockerTag()))
-
-	defer func() {
-		err = buildResponse.Body.Close()
-		if err != nil {
-			errMsg := fmt.Errorf("error closing build response body %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed build response body")
-		}
-	}()
-
-	decoder := json.NewDecoder(buildResponse.Body)
-	for {
-		var message map[string]interface{}
-
-		err := decoder.Decode(&message)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			errMsg := fmt.Errorf("error decoding build response %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return errMsg
-		}
-
-		if message["error"] != nil {
-			cancel()
-
-			errMsg := fmt.Errorf("error building image: %s", message["error"])
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return errMsg
-		}
-
-		stream, exists := message["stream"]
-		if !exists {
-			break
-		}
-
-		streamMessage := fmt.Sprintf("%+v", stream.(string))
-
-		telemetry.ReportEvent(childCtx, "docker build stream", attribute.String("stream", streamMessage))
-	}
-
+	
 	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
 
 	return nil

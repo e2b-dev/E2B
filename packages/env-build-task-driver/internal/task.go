@@ -64,6 +64,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	d.logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
+	
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
@@ -128,7 +129,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		)
 		defer childBuildSpan.End()
 
-		h.run(buildContext, d.tracer, d.docker)
+		h.run(buildContext, d.tracer, d.docker, d.legacyDockerClient)
 	}()
 
 	return handle, nil, nil
@@ -139,7 +140,7 @@ func (d *Driver) RecoverTask(handle *drivers.TaskHandle) error {
 		return errors.New("error: handle cannot be nil")
 	}
 
-	return fmt.Errorf("Recover task not implemented")
+	return fmt.Errorf("recover task not implemented")
 }
 
 func (d *Driver) WaitTask(ctx context.Context, taskID string) (<-chan *drivers.ExitResult, error) {

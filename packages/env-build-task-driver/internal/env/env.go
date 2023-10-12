@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/docker/docker/client"
+	docker "github.com/fsouza/go-dockerclient"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
@@ -116,7 +117,7 @@ func (e *Env) envSnapfilePath() string {
 	return filepath.Join(e.envDirPath(), snapfileName)
 }
 
-func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Client) error {
+func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Client, legacyDocker *docker.Client) error {
 	childCtx, childSpan := tracer.Start(ctx, "build")
 	defer childSpan.End()
 
@@ -130,7 +131,7 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 
 	defer e.Cleanup(childCtx, tracer)
 
-	rootfs, err := NewRootfs(childCtx, tracer, e, docker)
+	rootfs, err := NewRootfs(childCtx, tracer, e, docker, legacyDocker)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs for env '%s' during build '%s': %w", e.EnvID, e.BuildID, err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
