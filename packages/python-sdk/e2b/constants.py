@@ -3,5 +3,5 @@ WS_RECONNECT_INTERVAL = 6  # seconds
 
 TIMEOUT = 60
 SESSION_DOMAIN = "ondevbook.com"
-WS_PORT = 49982
+ENVD_PORT = 49982
 WS_ROUTE = "/ws"

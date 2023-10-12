@@ -20,6 +20,10 @@ async def main():
     )
     await s.open()
 
+    s.upload_file(file=open("results.csv", "rb"))
+
+    exit()
+
     a = await s.process.start("ls -la /var ")
     await a
     print(a.stdout)

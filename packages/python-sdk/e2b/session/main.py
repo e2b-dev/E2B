@@ -7,7 +7,10 @@ from typing import Any, Callable, List, Literal, Optional, Union
 
 from async_timeout import timeout as async_timeout
 
-from e2b.constants import TIMEOUT
+from e2b.constants import (
+    TIMEOUT,
+    ENVD_PORT,
+)
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
 from e2b.session.env_vars import EnvVars
 from e2b.session.filesystem import FilesystemManager, SyncFilesystemManager
@@ -150,7 +153,7 @@ class Session(SessionConnection):
         await super().close()
         await self._close()
 
-    def upload_file_url(self) -> str:
+    def file_url(self) -> str:
         """
         Returns a URL that can be used to upload files to the session via a multipart/form-data POST request.
         This is useful if you're uploading files directly from the browser.
@@ -159,7 +162,7 @@ class Session(SessionConnection):
         """
         hostname = self.get_hostname(self._debug_port)
         protocol = "http" if self._debug_dev_env == "local" else "https"
-        return f"{protocol}://{hostname}/file"
+        return f"{protocol}://{ENVD_PORT}-{hostname}/file"
 
     def upload_file(self, file: BufferedReader) -> None:
         """
@@ -169,14 +172,10 @@ class Session(SessionConnection):
 
         :param file: The file to upload
         """
-        hostname = self.get_hostname(self._debug_port)
-        protocol = "http" if self._debug_dev_env == "local" else "https"
-
-        url = f"{protocol}://{hostname}/file"
         files = {'file': file}
-        r = requests.post(url, files=files)
+        r = requests.post(self.file_url(), files=files)
         if r.status_code != 200:
-            raise Exception("Failed to upload file")
+            raise Exception(f"Failed to upload file: {r.reason} {r.text}")
 
     def download_file(self, remote_path: str) -> bytes:
         """
@@ -185,15 +184,12 @@ class Session(SessionConnection):
         :param remote_path: The path of the file to download
         """
         encoded_path = urllib.parse.quote(remote_path)
-        hostname = self.get_hostname(self._debug_port)
-        protocol = "http" if self._debug_dev_env == "local" else "https"
+        url = f"{self.file_url()}?path={encoded_path}"
+        r = requests.get(url)
 
-        url = f"{protocol}://{hostname}/file?path={encoded_path}"
-        response = requests.get(url)
-
-        if response.status_code != 200:
-            raise Exception(f"Failed to download file '{remote_path}'. {response.text} {response.reason}")
-        return response.content
+        if r.status_code != 200:
+            raise Exception(f"Failed to download file '{remote_path}'. {r.text} {r.reason}")
+        return r.content
 
     async def __aenter__(self):
         await self.open()

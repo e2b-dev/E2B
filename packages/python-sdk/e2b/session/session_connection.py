@@ -13,7 +13,7 @@ from e2b.constants import (
     SESSION_DOMAIN,
     SESSION_REFRESH_PERIOD,
     TIMEOUT,
-    WS_PORT,
+    ENVD_PORT,
     WS_ROUTE,
 )
 from e2b.session.env_vars import EnvVars
@@ -204,7 +204,7 @@ class SessionConnection:
             await self._close()
             raise e
 
-        hostname = self.get_hostname(self._debug_port or WS_PORT)
+        hostname = self.get_hostname(self._debug_port or ENVD_PORT)
         protocol = "ws" if self._debug_dev_env == "local" else "wss"
 
         session_url = f"{protocol}://{hostname}{WS_ROUTE}"
