@@ -26,7 +26,6 @@ update-driver:
 	sudo chmod +x /opt/nomad/plugins/env-build-task-driver && \
 	sudo supervisorctl restart nomad'
 
-
 update-driver-locally:
 	make build-debug
 	sudo rm -rf /opt/nomad/plugins/env-build-task-driver
