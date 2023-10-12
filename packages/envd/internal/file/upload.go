@@ -7,12 +7,14 @@ import (
 	"os"
 	"path"
 
+	"github.com/e2b-dev/infra/packages/envd/internal/user"
 	"go.uber.org/zap"
 )
 
 const MAX_UPLOAD_SIZE = 100 * 1024 * 1024 // 100MB
 
 func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
+
 	r.Body = http.MaxBytesReader(w, r.Body, MAX_UPLOAD_SIZE)
 
 	if err := r.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
@@ -32,15 +34,20 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 	defer file.Close()
 
-	// Create a new file in the uploads directory
-	homedir, err := os.UserHomeDir()
-	if err != nil {
-		logger.Panic("Error getting user home dir:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	filepath := r.Form.Get("path")
+	var newFilePath string
+	if filepath == "" {
+		// Create a new file in the user's homedir if no path in the form is specified
+		_, _, homedir, _, err := user.GetUser(user.DefaultUser)
+		if err != nil {
+			logger.Panic("Error getting user home dir:", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		newFilePath = path.Join(homedir, fileHeader.Filename)
+	} else {
+		newFilePath = filepath
 	}
-
-	newFilePath := path.Join(homedir, fileHeader.Filename)
 
 	dst, err := os.Create(newFilePath)
 	if err != nil {
