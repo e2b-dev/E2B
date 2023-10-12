@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -15,7 +16,7 @@ type EventWriter struct {
 }
 
 func (w *EventWriter) Write(p []byte) (n int, err error) {
-	fmt.Printf("-> %s: %s\n", w.name, string(p))
+	fmt.Printf("-> [%s] %s\n", w.name, strings.Trim(string(p), " \t\n"))
 
 	w.span.AddEvent(w.name,
 		trace.WithAttributes(
