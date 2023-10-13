@@ -14,16 +14,12 @@ import (
 // DirWatcher allows to watch directories.
 // DirWatcher returns an error when trying to watch files.
 type DirWatcher struct {
-	logger  *zap.SugaredLogger
-	mu      sync.Mutex
-	watcher *fsnotify.Watcher
-	Errors  chan error
-	Events  chan Event
-	// watcherDirs is an array of directories that are being watched.
-	// Even though watcher has a WatchList() property with all watched
-	// paths we keep a track of watched dirs on our own to solve the "two remove events" problem.
-	// The problem is described in the `watchLoop` function.
+	logger      *zap.SugaredLogger
+	watcher     *fsnotify.Watcher
+	Errors      chan error
+	Events      chan Event
 	watchedDirs []string
+	mu          sync.Mutex
 }
 
 func NewDirWatcher(logger *zap.SugaredLogger) (*DirWatcher, error) {

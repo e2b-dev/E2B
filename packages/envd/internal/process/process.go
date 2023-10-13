@@ -16,10 +16,9 @@ type ID = string
 
 type Process struct {
 	logger *zap.SugaredLogger
-
-	ID    ID
-	cmd   *exec.Cmd
-	Stdin *io.WriteCloser
+	cmd    *exec.Cmd
+	Stdin  *io.WriteCloser
+	ID     ID
 }
 
 func New(id ID, shell, cmdToExecute string, envVars *map[string]string, rootdir string, logger *zap.SugaredLogger) (*Process, error) {

@@ -11,8 +11,8 @@ import (
 
 type Manager struct {
 	logger *zap.SugaredLogger
-	label  string
 	subs   *smap.Map[*Subscriber]
+	label  string
 }
 
 func NewManager(label string, logger *zap.SugaredLogger) *Manager {

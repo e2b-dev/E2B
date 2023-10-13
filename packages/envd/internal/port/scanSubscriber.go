@@ -6,9 +6,9 @@ import "github.com/drael/GOnetstat"
 // from a concrete implementation to combination of generics and interfaces.
 
 type ScannerSubscriber struct {
-	id       string
 	filter   *ScannerFilter
 	Messages chan ([]GOnetstat.Process)
+	id       string
 }
 
 func NewScannerSubscriber(id string, filter *ScannerFilter) *ScannerSubscriber {

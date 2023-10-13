@@ -15,8 +15,8 @@ import (
 )
 
 type FileInfoResponse struct {
-	IsDir bool   `json:"isDir"`
 	Name  string `json:"name"`
+	IsDir bool   `json:"isDir"`
 }
 
 type Service struct {

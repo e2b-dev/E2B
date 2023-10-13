@@ -5,8 +5,8 @@ import (
 )
 
 type ScannerFilter struct {
-	IPs   []string
 	State string
+	IPs   []string
 }
 
 func (sf *ScannerFilter) Match(proc *GOnetstat.Process) bool {

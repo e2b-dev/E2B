@@ -6,8 +6,10 @@ import (
 	"github.com/posthog/posthog-go"
 )
 
-const teamGroup = "team"
-const placeholderTeamGroupUser = "backend"
+const (
+	teamGroup                = "team"
+	placeholderTeamGroupUser = "backend"
+)
 
 func (a *APIStore) IdentifyAnalyticsTeam(teamID string) {
 	err := a.posthog.Enqueue(posthog.GroupIdentify{

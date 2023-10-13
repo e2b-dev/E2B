@@ -17,10 +17,9 @@ type ID = string
 
 type Terminal struct {
 	logger *zap.SugaredLogger
-
-	ID  ID
-	cmd *exec.Cmd
-	tty *os.File
+	cmd    *exec.Cmd
+	tty    *os.File
+	ID     ID
 }
 
 func New(id, shell string, rootdir *string, cols, rows uint16, envVars *map[string]string, cmdToExecute *string, logger *zap.SugaredLogger) (*Terminal, error) {

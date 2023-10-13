@@ -23,23 +23,17 @@ const (
 )
 
 type PortToForward struct {
-	// Process ID of the process that's listening on port.
-	pid   string
-	port  int64
-	state PortState
-
 	socat *exec.Cmd
+	pid   string
+	state PortState
+	port  int64
 }
 
 type Forwarder struct {
-	logger *zap.SugaredLogger
-
-	sourceIP net.IP
-
-	// Map of ports that are being currently forwarded.
-	ports map[string]*PortToForward
-
+	logger            *zap.SugaredLogger
+	ports             map[string]*PortToForward
 	scannerSubscriber *ScannerSubscriber
+	sourceIP          net.IP
 }
 
 func NewForwarder(

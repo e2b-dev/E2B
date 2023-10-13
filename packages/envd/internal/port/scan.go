@@ -9,11 +9,9 @@ import (
 
 type Scanner struct {
 	Processes chan GOnetstat.Process
-
-	scanExit chan struct{}
-	period   time.Duration
-
-	subs *smap.Map[*ScannerSubscriber]
+	scanExit  chan struct{}
+	subs      *smap.Map[*ScannerSubscriber]
+	period    time.Duration
 }
 
 func (s *Scanner) Destroy() {
