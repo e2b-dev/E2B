@@ -169,6 +169,9 @@ importers:
       '@algolia/autocomplete-core':
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
+      '@e2b/sdk':
+        specifier: ^0.6.2
+        version: 0.6.2
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -984,6 +987,20 @@ packages:
       - bufferutil
       - encoding
       - utf-8-validate
+    dev: false
+
+  /@e2b/sdk@0.6.2:
+    resolution: {integrity: sha512-DD5aYELl3/Lb4oAYmDdc40/OXnAB2BQCIvOIvl3bnwQMALCQNe2jZHPFvJlMsfW2Au9CGfMToZ0c3N6fApasKg==}
+    dependencies:
+      bufferutil: 4.0.7
+      cross-fetch: 3.1.8
+      normalize-path: 3.0.0
+      openapi-typescript-fetch: 1.1.3
+      platform: 1.3.6
+      rpc-websocket-client: 1.1.4(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+      utf-8-validate: 5.0.10
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@emotion/is-prop-valid@0.8.8:
@@ -3164,7 +3181,7 @@ packages:
   /@types/keyv@3.1.4:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: false
 
   /@types/lodash.debounce@4.0.7:
@@ -3197,7 +3214,7 @@ packages:
   /@types/node-fetch@2.6.5:
     resolution: {integrity: sha512-OZsUlr2nxvkqUFLSaY2ZbA+P1q22q+KrlxWOn/38RX+u5kTkYL2mTujEpzUhGkS+K/QCYp9oagfXG39XOzyySg==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
       form-data: 4.0.0
 
   /@types/node@12.20.55:
@@ -3210,6 +3227,7 @@ packages:
 
   /@types/node@18.17.18:
     resolution: {integrity: sha512-/4QOuy3ZpV7Ya1GTRz5CYSz3DgkKpyUptXuQ5PPce7uuyJAOR7r9FhkmxJfvcNUXyklbC63a+YvB3jxy7s9ngw==}
+    dev: true
 
   /@types/node@20.6.3:
     resolution: {integrity: sha512-HksnYH4Ljr4VQgEy2lTStbCKv/P590tmPe5HqOnv9Gprffgv5WXAY+Y5Gqniu0GGqeTCUdBnzC3QSrzPkBkAMA==}
@@ -3218,7 +3236,6 @@ packages:
     resolution: {integrity: sha512-SPlobFgbidfIeOYlzXiEjSYeIJiOCthv+9tSQVpvk4PAdIIc+2SmjNVzWXk9t0Y7dl73Zdf+OgXKHX9XtkqUpw==}
     dependencies:
       undici-types: 5.25.3
-    dev: true
 
   /@types/normalize-package-data@2.4.1:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
@@ -3231,7 +3248,7 @@ packages:
   /@types/parse-gitignore@1.0.0:
     resolution: {integrity: sha512-GCL7NIxhUzJ1M5bp68T8DtDVTbQdw93MPIIII+YASs3icSozMEG9ZjX7pp7ldRJrVgrRtJBwy+/g+aBzCIttlg==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: true
 
   /@types/phoenix@1.6.1:
@@ -3288,13 +3305,13 @@ packages:
   /@types/resolve@1.17.1:
     resolution: {integrity: sha512-yy7HuzQhj0dhGpD8RLXSZWEkLsV9ibvxvi6EiJ3bkqLAO1RGo0WbkWQiwpRlSFymTJRz0d3k5LM3kkx8ArDbLw==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: true
 
   /@types/responselike@1.0.0:
     resolution: {integrity: sha512-85Y2BjiufFzaMIlvJDvTTB8Fxl2xfLo4HgmHzVBz08w4wDePCTjYw66PdrolO0kzli3yam/YCgRufyo1DdQVTA==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: false
 
   /@types/scheduler@0.16.3:
@@ -3306,20 +3323,20 @@ packages:
   /@types/tar-fs@2.0.2:
     resolution: {integrity: sha512-XuZRAvdo7FbDfgQCNkc8NOdSae5XtG+of2mTSgJ85G4OG0miN4E8BTGT+JBTLO87RQ7iCwsIDCqCsHnf2IaSXA==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
       '@types/tar-stream': 2.2.3
     dev: false
 
   /@types/tar-stream@2.2.3:
     resolution: {integrity: sha512-if3mugZfjVkXOMZdFjIHySxY13r6GXPpyOlsDmLffvyI7tLz9wXE8BFjNivXsvUeyJ1KNlOpfLnag+ISmxgxPw==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: false
 
   /@types/through@0.0.31:
     resolution: {integrity: sha512-LpKpmb7FGevYgXnBXYs6HWnmiFyVG07Pt1cnbgM1IhEacITTiUaBXXvOR3Y50ksaJWGSfhbEvQFivQEFGCC55w==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: true
 
   /@types/unist@2.0.8:
@@ -3336,13 +3353,13 @@ packages:
   /@types/utf-8-validate@5.0.0:
     resolution: {integrity: sha512-O3hA/hKp1itPhn4RHBEFt9fos9j1jmebB5UV8iuq0Trr0qoIj+1DywNGLRGWQ+wxZagld4DGZPSVYi0pDniFMQ==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: true
 
   /@types/websocket@1.0.6:
     resolution: {integrity: sha512-JXkliwz93B2cMWOI1ukElQBPN88vMg3CruvW4KVSKpflt3NyNCJImnhIuB/f97rG7kakqRJGFiwkA895Kn02Dg==}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
     dev: false
 
   /@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0)(eslint@8.49.0)(typescript@4.9.5):
@@ -7052,7 +7069,7 @@ packages:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: false
@@ -11022,7 +11039,6 @@ packages:
 
   /undici-types@5.25.3:
     resolution: {integrity: sha512-Ga1jfYwRn7+cP9v8auvEXN1rX3sWqlayd4HP7OKk4mZWylEmu3KzXDUGrQUN6Ol7qo1gPvB2e5gX6udnyEPgdA==}
-    dev: true
 
   /undici@5.25.0:
     resolution: {integrity: sha512-DgU98Ll+r1ssO8PcGFWIfj6kie0ttV20DSyE/CVYDVeHvfwBwQbjlsIYJIwAoU1WRhGuEEbj+jgZqcKPco5vkQ==}
@@ -11277,7 +11293,7 @@ packages:
       vfile-message: 3.1.4
     dev: false
 
-  /vite-node@0.34.4(@types/node@18.17.18):
+  /vite-node@0.34.4(@types/node@20.8.5):
     resolution: {integrity: sha512-ho8HtiLc+nsmbwZMw8SlghESEE3KxJNp04F/jPUCLVvaURwt0d+r9LxEqCX5hvrrOQ0GSyxbYr5ZfRYhQ0yVKQ==}
     engines: {node: '>=v14.18.0'}
     hasBin: true
@@ -11287,7 +11303,7 @@ packages:
       mlly: 1.4.2
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 4.4.9(@types/node@18.17.18)
+      vite: 4.4.9(@types/node@20.8.5)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -11299,7 +11315,7 @@ packages:
       - terser
     dev: true
 
-  /vite@4.4.9(@types/node@18.17.18):
+  /vite@4.4.9(@types/node@20.8.5):
     resolution: {integrity: sha512-2mbUn2LlUmNASWwSCNSJ/EG2HuSRTnVNaydp6vMCm5VIqJsjMfbIWtbH2kDuwUVW5mMUKKZvGPX/rqeqVvv1XA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -11327,7 +11343,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
       esbuild: 0.18.20
       postcss: 8.4.30
       rollup: 3.29.2
@@ -11368,7 +11384,7 @@ packages:
     dependencies:
       '@types/chai': 4.3.6
       '@types/chai-subset': 1.3.3
-      '@types/node': 18.17.18
+      '@types/node': 20.8.5
       '@vitest/expect': 0.34.4
       '@vitest/runner': 0.34.4
       '@vitest/snapshot': 0.34.4
@@ -11387,8 +11403,8 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.1
       tinypool: 0.7.0
-      vite: 4.4.9(@types/node@18.17.18)
-      vite-node: 0.34.4(@types/node@18.17.18)
+      vite: 4.4.9(@types/node@20.8.5)
+      vite-node: 0.34.4(@types/node@20.8.5)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less
