@@ -2,8 +2,17 @@ import OpenAI from 'openai'
 import * as e2b from '../dist/cjs/index.js'
 import fs from 'node:fs'
 
-const systemPrompt =
-  "You're a helpful Python data analyst. Users ask you to solve data analysis problems and you solve them with running Python code. You can use popular python data analysis libraries such as numpy, pandas, and matplotlib."
+const systemPrompt = `You're a helpful Python data analyst. Users ask you to solve data analysis problems and you solve them with running Python code. ALWAYS PRINT THE VARIABLES. The following Python packages are installed:
+NumPy
+Pandas
+Matplotlib
+SciPy
+Scikit-learn
+NLTK
+Requests
+Beautiful Soup
+SQLAlchemy`
+
 const history = [
   {
     role: 'system',
@@ -21,41 +30,14 @@ const history = [
   },
   {
     role: 'assistant',
-    content: `import pandas as pd
-
-# Load the data
-file_path = '/home/user/data.csv'
-csv_data = pd.read_csv(file_path)
-
-# Basic information about the data
-basic_info = csv_data.info()
-
-# Displaying the first few rows of the dataframe
-head_data = csv_data.head()
-
-# Basic statistical details
-desc_stats = csv_data.describe(include='all')
-
-print(basic_info)
-print(head_data)
-print(desc_stats)
-`,
+    content:
+      "import pandas as pd\nfile_path = '/home/user/data.csv'\ncsv_data = pd.read_csv(file_path)\nbasic_info = csv_data.info()\nhead_data = csv_data.head()\ndesc_stats = csv_data.describe(include='all')\nprint(basic_info)\nprint(head_data)\nprint(desc_stats)",
     name: 'run_python_code',
   },
 ]
 
-const desc = `Run Python code in a sandboxed environment. You have access to the internet and can load and save files from the "/home/user" directory. The following packages are installed:
-NumPy - Used for numerical computing in Python. It provides support for arrays (including multidimensional arrays), as well as an assortment of mathematical functions to operate on these arrays.
-Pandas - A data analysis and manipulation library for Python. It provides data structures for efficiently storing large datasets and tools for reshaping, aggregating, and filtering data.
-Matplotlib - A plotting library for creating static, interactive, and animated visualizations in Python.
-SciPy - Used for scientific computing in Python. It builds on NumPy and provides a large number of functions that operate on numpy arrays and are useful for different types of scientific and engineering applications.
-Scikit-learn - A machine learning library that provides simple and efficient tools for data analysis and modeling. It integrates well with other scientific libraries in the Python ecosystem.
-NLTK (Natural Language Toolkit) - A library for working with human language data. It provides easy-to-use interfaces to over 50 corpora and lexical resources.
-Flask - A micro web framework written in Python. It provides tools to create and run web applications.
-Django - A high-level web framework that encourages rapid development and clean, pragmatic design.
-Requests - A library for making HTTP requests in Python. It abstracts many of the complexities of making requests behind a simple API.
-Beautiful Soup - Used for web scraping purposes to pull the data out of HTML and XML documents.
-SQLAlchemy - A SQL toolkit and Object-Relational Mapping (ORM) library for Python. It provides a set of high-level API to connect to relational databases.`
+const desc =
+  'Run Python code from file. You have access to the internet and can load and save files from the "/home/user" directory'
 
 const functions = [
   {
@@ -66,7 +48,7 @@ const functions = [
       properties: {
         code: {
           type: 'string',
-          description: 'The Python code to run.',
+          description: 'The Python code to run. Make sure to properly JSON escape it.',
         },
       },
     },
@@ -76,30 +58,83 @@ const functions = [
 
 let s
 const openai = new OpenAI()
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: history,
-  functions,
-})
+
+async function chat() {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: history,
+    functions,
+  })
+  return response
+}
+
+function respond(msg) {
+  history.push({
+    role: 'user',
+    content: msg,
+  })
+  return chat()
+}
+
+function handleArtifact(artifact) {
+  console.log('ARTIFACT')
+  console.log(artifact)
+}
 
 async function startSession() {
   s = await e2b.DataAnalysis.create()
 
   const localFile = fs.readFileSync('/Users/mlejva/Downloads/netflix.csv')
   const remotePath = await s.uploadFile(localFile, 'netflix.csv')
+  return remotePath
 }
 
 async function runPython(code) {
-  const { artifacts } = await s.runPython(code, {
+  const { stdout, stderr } = await s.runPython(code, {
     onStdout: console.log,
     onStderr: console.error,
+    onArtifact: handleArtifact,
   })
-  for (const artifact of artifacts) {
-    console.log('ARTIFACT')
-    console.log(artifact)
-    // const data = await s.downloadFile(artifact.path, 'buffer')
-    // fs.writeFileSync(artifact.path, data)
+  if (stderr) {
+    respond(`I ran your code and got the following error: ${stderr}`)
+  } else if (stdout) {
+    respond(`I ran your code and this is the output: ${stdout}`)
+  }
+  // for (const artifact of artifacts) {
+  //   // const data = await s.downloadFile(artifact.path, 'buffer')
+  //   // fs.writeFileSync(artifact.path, data)
+  // }
+}
+
+async function runFunction(name, args) {
+  if (name === 'run_python_code') {
+    await runPython(args.code)
   }
 }
+
+const remoteCSVFilePath = await startSession()
+
+const response = await respond(
+  `I uploaded a CSV file here "${remoteCSVFilePath}". What can you tell me about the data in this csv file?`,
+)
+
+const choice = response.choices[0]
+if (choice.finish_reason === 'stop') {
+  console.log('DONE')
+} else if (choice.finish_reason === 'function_call') {
+  const functionName = choice.message.function_call.name
+  const functionsArgsStr = choice.message.function_call.arguments
+  console.log(functionsArgsStr)
+  const functionArgs = JSON.parse(functionsArgsStr)
+  await runFunction(functionName, functionArgs)
+} else {
+  console.log('unexpected finish reason', choice.finish_reason)
+}
+
+// const response = await openai.chat.completions.create({
+//   model: 'gpt-4',
+//   messages: history,
+//   functions,
+// })
 
 await s.close()

@@ -1,4 +1,4 @@
-import { Session, SessionOpts } from '../session'
+import { Session, SessionOpts, DownloadFileFormat } from '../session'
 import type { ProcessOpts } from '../session/process'
 import { FilesystemEvent, FilesystemOperation } from '../session/filesystemWatcher'
 
@@ -11,8 +11,8 @@ class Artifact {
     this._session = session
   }
 
-  read() {
-    return this._session.downloadFile(this.path)
+  download(format?: DownloadFileFormat) {
+    return this._session.downloadFile(this.path, format)
   }
 }
 
