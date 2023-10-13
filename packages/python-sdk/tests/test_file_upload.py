@@ -7,9 +7,8 @@ async def test_file_upload():
     filepath = path.join(local_dir, file_name)
 
     session = await Session.create("Nodejs")
-    session.upload_file(
-        file=open(filepath, "rb")
-    )
+    with open(filepath, "rb") as f:
+        session.upload_file(file=f)
 
     files = await session.filesystem.list("/home/user")
     for file_item in files:

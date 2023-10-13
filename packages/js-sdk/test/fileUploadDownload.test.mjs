@@ -10,9 +10,10 @@ test('upload and download file', async () => {
 
   const uploadedFilePath = await session.uploadFile(localFile, 'video.webm')
 
-  const response = await session.downloadFile(uploadedFilePath)
-  const downloadedFile = await response.buffer()
+  const ls = await session.filesystem.list('/home/user')
+  expect(ls.map(x => x.name)).contains('video.webm')
 
+  const downloadedFile = await session.downloadFile(uploadedFilePath, 'buffer')
   expect(localFile).toEqual(downloadedFile)
 
   await session.close()

@@ -11,9 +11,8 @@ async def test_download():
     session = await Session.create("Nodejs")
 
     # Upload the file first (it's uploaded to /home/user)
-    uploaded_file_path = session.upload_file(
-        file=open(local_path, "rb")
-    )
+    with open(local_path, "rb") as f:
+        uploaded_file_path = session.upload_file(file=f)
 
     # Download the file back and save it in the local filesystem
     file_content = session.download_file(uploaded_file_path)

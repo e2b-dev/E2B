@@ -405,11 +405,10 @@ export class Session extends SessionConnection {
    * In the browser environment, use the `uploadURL()` method and upload the file driectly via POST multipart/form-data**
    *
    */
-  async uploadFile(file: Buffer | Blob, filename: string, contentType?: string) {
+  async uploadFile(file: Buffer | Blob, filename: string) {
     const formData = new FormData()
     formData.append('file', file, {
       filename,
-      contentType: contentType || 'application/octet-stream',
     })
 
     const response = await fetch(this.fileURL, {
@@ -425,12 +424,41 @@ export class Session extends SessionConnection {
     return `/home/user/${filename}`
   }
 
-  async downloadFile(remotePath: string) {
+  async downloadFile(
+    remotePath: string,
+    format?: 'base64' | 'blob' | 'buffer' | 'arraybuffer' | 'text',
+  ) {
+    remotePath = encodeURIComponent(remotePath)
+
     const response = await fetch(`${this.fileURL}?path=${remotePath}`)
     if (!response.ok) {
       const text = await response.text()
       throw new Error(`Failed to download file '${remotePath}': ${text}`)
     }
-    return response
+
+    let data
+    switch (format) {
+      case 'base64':
+        data = await response.arrayBuffer()
+        data = Buffer.from(data).toString('base64')
+        break
+      case 'blob':
+        data = await response.blob()
+        break
+      case 'buffer':
+        data = await response.buffer()
+        break
+      case 'arraybuffer':
+        data = await response.arrayBuffer()
+        break
+      case 'text':
+        data = await response.text()
+        break
+      default:
+        data = await response.arrayBuffer()
+        break
+    }
+
+    return data
   }
 }

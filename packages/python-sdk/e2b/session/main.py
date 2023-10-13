@@ -3,8 +3,7 @@ import logging
 import requests
 import urllib.parse
 from os import path
-from io import BufferedReader
-from typing import Any, Callable, List, Literal, Optional, Union
+from typing import Any, Callable, List, Literal, Optional, Union, IO
 
 from async_timeout import timeout as async_timeout
 
@@ -165,7 +164,7 @@ class Session(SessionConnection):
         protocol = "http" if self._debug_dev_env == "local" else "https"
         return f"{protocol}://{ENVD_PORT}-{hostname}/file"
 
-    def upload_file(self, file: BufferedReader) -> str:
+    def upload_file(self, file: IO) -> str:
         """
         Uploads a file to the session.
         The file will be uploaded to the user's home (`/home/user`) directory with the same name.
