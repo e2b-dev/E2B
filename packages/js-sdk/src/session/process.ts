@@ -93,13 +93,20 @@ export class ProcessOutput {
  * A process running in the environment.
  */
 export class Process {
+  /**
+   * @deprecated use .wait() instead
+   */
+  readonly finished: Promise<ProcessOutput>
+
   constructor(
     readonly processID: string,
     private readonly session: SessionConnection,
     private readonly triggerExit: () => void,
-    readonly finished: Promise<ProcessOutput>,
+    finished: Promise<ProcessOutput>,
     readonly output: ProcessOutput,
-  ) {}
+  ) {
+    this.finished = finished
+  }
 
   /**
    * Kills the process.
@@ -111,6 +118,13 @@ export class Process {
       this.triggerExit()
       await this.finished
     }
+  }
+
+  /**
+   * Waits for the process to finish.
+   */
+  async wait(): Promise<ProcessOutput> {
+    return this.finished
   }
 
   /**
