@@ -24,13 +24,15 @@ const (
 
 type PortToForward struct {
 	socat *exec.Cmd
+	// Process ID of the process that's listening on port.
 	pid   string
 	state PortState
 	port  int64
 }
 
 type Forwarder struct {
-	logger            *zap.SugaredLogger
+	logger *zap.SugaredLogger
+	// Map of ports that are being currently forwarded.
 	ports             map[string]*PortToForward
 	scannerSubscriber *ScannerSubscriber
 	sourceIP          net.IP
