@@ -1,7 +1,7 @@
-import { Session, SessionOpts } from '../index.ts'
+import { Session, SessionOpts } from '../index'
 
-class DataAnalysis extends Session {
-  env_id = 'YI58BPyX5KrK'
+export class DataAnalysis extends Session {
+  private envID = 'Python3-DataAnalysis'
 
   constructor(opts: Omit<SessionOpts, 'id'>) {
     super({ id: this.env_id, ...opts })
@@ -12,13 +12,13 @@ class DataAnalysis extends Session {
     throw new Error('Wrong syntax. Use only `new DataAnalysis()`')
   }
 
-  runPython(code: string) {
+  async runPython(code: string) {
     const proc = self.process.start({ cmd: `python -c "${code}"` })
     await proc.finished
     return proc.output
   }
 
-  installPythonPackage(packageName: string) {
+  async installPythonPackage(packageName: string) {
     const proc = self.process.start({ cmd: `pip install ${packageName}` })
     await proc.finished
 
@@ -27,7 +27,7 @@ class DataAnalysis extends Session {
     }
   }
 
-  installSystemPackage(packageName: string) {
+  async installSystemPackage(packageName: string) {
     const proc = self.process.start({ cmd: `apt-get install ${packageName}` })
     await proc.finished
 
