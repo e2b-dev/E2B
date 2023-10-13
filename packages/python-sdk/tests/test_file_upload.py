@@ -1,6 +1,7 @@
 from os import path
 from e2b import Session
 
+
 async def test_file_upload():
     file_name = "video.webm"
     local_dir = "tests/assets"

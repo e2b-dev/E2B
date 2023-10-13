@@ -5,7 +5,7 @@ generate-v2:
 	# Waiting for https://github.com/OpenAPITools/openapi-generator/pull/16655 to be merged
 	# Using this branch to use pydantic v2: https://github.com/fa0311/openapi-generator/tree/oshmoun-master-2
 	# After released, use npx -yes @openapitools/openapi-generator-cli generate
-	java -jar <OPENAPI-TOOL-PATH>/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
+	java -jar ~/Work/e2b/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
 	-i ../../spec/openapi.yml  \
 	--library asyncio \
 	-g python \
@@ -43,3 +43,6 @@ generate-v1:
 	rm -r ./e2b/api/.openapi-generator
 	mv ./e2b/api/__init__.py.bck ./e2b/api/__init__.py
 	black .
+
+.PHONY: generate
+generate: generate-v1 generate-v2

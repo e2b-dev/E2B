@@ -172,7 +172,7 @@ class Session(SessionConnection):
 
         :param file: The file to upload
         """
-        files = {'file': file}
+        files = {"file": file}
         r = requests.post(self.file_url(), files=files)
         if r.status_code != 200:
             raise Exception(f"Failed to upload file: {r.reason} {r.text}")
@@ -191,7 +191,9 @@ class Session(SessionConnection):
         r = requests.get(url)
 
         if r.status_code != 200:
-            raise Exception(f"Failed to download file '{remote_path}'. {r.reason} {r.text}")
+            raise Exception(
+                f"Failed to download file '{remote_path}'. {r.reason} {r.text}"
+            )
         return r.content
 
     async def __aenter__(self):
