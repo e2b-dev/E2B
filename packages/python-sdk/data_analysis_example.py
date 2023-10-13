@@ -1,6 +1,7 @@
 import logging
 from os import getenv
 
+import requests
 from dotenv import load_dotenv
 
 from e2b.templates.data_analysis import DataAnalysis
@@ -14,31 +15,30 @@ logging.basicConfig(level=logging.ERROR)
 def main():
     s = DataAnalysis(api_key=E2B_API_KEY)
 
-    with open("data/spotify-2023.csv", "rb") as f:
-        s.upload_file(file=f)
+    with open("data/netflix.csv", "wb") as f:
+        response = requests.get(
+            "https://storage.googleapis.com/e2b-examples/netflix.csv"
+        )
+        f.write(response.content)
+
+    with open("data/netflix.csv", "rb") as f:
+        path = s.upload_file(file=f)
 
     stdout, stderr, artifacts = s.run_python(
-        """
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import matplotlib.pyplot as plt
+        f"""
+import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-spotify_filepath = '/root/spotify-2023.csv'
+data = pd.read_csv('{path}')
+top_countries = data['country'].value_counts().head(10)
 
-spotify_data = pd.read_csv(spotify_filepath, encoding='latin')
-
-# Artists with most songs in the top 10 / Artistas con más canciones en el top 10
-top_artists_per_song = spotify_data['artist(s)_name'].value_counts().head(10)
-top_artists_per_song
-
-plt.figure(figsize=(13, 6))
-sns.barplot(x=top_artists_per_song.index, y=top_artists_per_song.values, palette='crest_r')
-plt.ylabel('Número de Canciones',fontsize=10)
-plt.xlabel('Nombre del Artista',fontsize=10)
-plt.title('Artistas con más canciones en el top 10')
-plt.xticks(fontsize=9)
-
+plt.figure(figsize=(10, 6))
+top_countries.plot(kind='bar', color='skyblue')
+plt.title('Number of content')
+plt.xlabel('Country')
+plt.ylabel('Count')
+plt.xticks(rotation=45)
 plt.show()
 """
     )
