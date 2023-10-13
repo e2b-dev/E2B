@@ -1,4 +1,4 @@
-import { Session } from '../dist/umd/index.js'; // should be /esm/, but getting "The requested module '../dist/esm/index.js' is a CommonJS module"
+import { Session } from '../dist/umd/index.js' // should be /esm/, but getting "The requested module '../dist/esm/index.js' is a CommonJS module"
 
 const commonProcessOpts = {
   onStdout: ({ line }) => console.log('🟢', line),
@@ -11,15 +11,19 @@ const session = await Session.create({
 })
 
 console.log('🟣 Creating package.json')
-await (await session.process.start({ 
-  cmd: `npx playwright install`,
-  ...commonProcessOpts
-})).finished
+await (
+  await session.process.start({
+    cmd: 'npx playwright install',
+    ...commonProcessOpts,
+  })
+).finished
 
 console.log('🟣 Running playwright --version')
-await (await session.process.start({
-  cmd: 'npx playwright --version',
-  ...commonProcessOpts
-})).finished
+await (
+  await session.process.start({
+    cmd: 'npx playwright --version',
+    ...commonProcessOpts,
+  })
+).finished
 
 await session.close()
