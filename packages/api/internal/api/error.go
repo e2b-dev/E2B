@@ -1,11 +1,7 @@
 package api
 
 type APIError struct {
-	Msg       string
+	Err       error
 	ClientMsg string
 	Code      int
-}
-
-func (err *APIError) Error() string {
-	return err.Msg
 }

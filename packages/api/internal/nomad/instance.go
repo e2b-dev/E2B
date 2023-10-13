@@ -41,8 +41,10 @@ func (n *NomadClient) GetInstances() ([]*api.Instance, *api.APIError) {
 		Filter: fmt.Sprintf("JobID contains \"%s\" and TaskStates.%s.State == \"%s\"", instanceJobNameWithSlash, defaultTaskName, taskRunningState),
 	})
 	if err != nil {
+		errMsg := fmt.Errorf("failed to retrieve allocations from Nomad %w", err)
+
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to retrieve allocations from Nomad %+v", err),
+			Err:       errMsg,
 			ClientMsg: "Cannot retrieve instances right now",
 			Code:      http.StatusInternalServerError,
 		}
@@ -108,18 +110,22 @@ func (n *NomadClient) CreateInstance(
 
 	err := envInstanceTemplate.Execute(&jobDef, jobVars)
 	if err != nil {
+		errMsg := fmt.Errorf("failed to `envInstanceJobTemp.Execute()`: %w", err)
+
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to `envInstanceJobTemp.Execute()`: %+v", err),
-			ClientMsg: "Cannot create a environemtn instance right now",
+			Err:       errMsg,
+			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
 	}
 
 	job, err := n.client.Jobs().ParseHCL(jobDef.String(), false)
 	if err != nil {
+		errMsg := fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
+
 		return nil, &api.APIError{
-			Msg:       fmt.Sprintf("failed to parse the HCL job file %+s: %+v", jobDef.String(), err),
-			ClientMsg: "Cannot create instance",
+			Err:       errMsg,
+			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
 	}
@@ -134,24 +140,32 @@ func (n *NomadClient) CreateInstance(
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
-		fmt.Printf("Failed to register '%s%s' job: %+v", instanceJobNameWithSlash, jobVars.InstanceID, err)
+		errMsg := fmt.Errorf("failed to register '%s%s' job: %w", instanceJobNameWithSlash, jobVars.InstanceID, err)
 
 		return nil, &api.APIError{
-			Msg:       err.Error(),
-			ClientMsg: "Cannot create instance",
+			Err:       errMsg,
+			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
 	}
 
 	allocResult := <-result
 	if allocResult.Err != nil {
+		errMsg := fmt.Errorf("failed to create instance of environment '%s': %w", envID, allocResult.Err)
+
 		apiErr := n.DeleteInstance(instanceID, false)
 		if apiErr != nil {
-			fmt.Printf("error in cleanup after failing to create instance of environment '%s':%+v", envID, apiErr.Msg)
+			cleanupErr := fmt.Errorf("error in cleanup after failing to create instance of environment error: %w: %w", apiErr.Err, errMsg)
+
+			return nil, &api.APIError{
+				Err:       cleanupErr,
+				ClientMsg: "Cannot create a environment instance right now",
+				Code:      http.StatusInternalServerError,
+			}
 		}
 
 		return nil, &api.APIError{
-			Msg:       apiErr.Error(),
+			Err:       errMsg,
 			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
@@ -162,8 +176,10 @@ func (n *NomadClient) CreateInstance(
 	)
 
 	if allocResult.Alloc == nil {
+		errMsg := fmt.Errorf("allocation is nil")
+
 		return nil, &api.APIError{
-			Msg:       "allocation is nil",
+			Err:       errMsg,
 			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
@@ -181,8 +197,10 @@ func (n *NomadClient) CreateInstance(
 func (n *NomadClient) DeleteInstance(instanceID string, purge bool) *api.APIError {
 	_, _, err := n.client.Jobs().Deregister(instanceJobNameWithSlash+instanceID, purge, nil)
 	if err != nil {
+		errMsg := fmt.Errorf("cannot delete job '%s%s' job: %w", instanceJobNameWithSlash, instanceID, err)
+
 		return &api.APIError{
-			Msg:       fmt.Sprintf("cannot delete job '%s%s' job: %+v", instanceJobNameWithSlash, instanceID, err),
+			Err:       errMsg,
 			ClientMsg: "Cannot delete the environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}

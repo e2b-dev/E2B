@@ -92,7 +92,7 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %s", er, err.Error())
+				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %+v", er, err.Err)
 			}
 		}
 	})
@@ -120,7 +120,7 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 
 		activeInstances, err := client.GetInstances()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %s", err)
+			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %+v", err.Err)
 		} else {
 			c.Sync(activeInstances)
 		}

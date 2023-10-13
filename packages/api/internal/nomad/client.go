@@ -16,7 +16,7 @@ var (
 
 type NomadClient struct {
 	client      *api.Client
-	subscribers *utils.Map[*JobSubscriber]
+	subscribers *utils.Map[*jobSubscriber]
 	cancel      context.CancelFunc
 }
 
@@ -35,7 +35,7 @@ func InitNomadClient() *NomadClient {
 
 	n := &NomadClient{
 		client:      client,
-		subscribers: utils.NewMap[*JobSubscriber](),
+		subscribers: utils.NewMap[*jobSubscriber](),
 		cancel:      cancel,
 	}
 

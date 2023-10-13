@@ -45,7 +45,7 @@ func (a *APIStore) PostInstances(
 
 	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID)
 	if instanceErr != nil {
-		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr)
+		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
 		ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, instanceErr.Code, instanceErr.ClientMsg)
 
@@ -67,7 +67,7 @@ func (a *APIStore) PostInstances(
 
 		delErr := a.DeleteInstance(instance.InstanceID, true)
 		if delErr != nil {
-			delErrMsg := fmt.Errorf("couldn't delete instance that couldn't be added to cache: %w", delErr)
+			delErrMsg := fmt.Errorf("couldn't delete instance that couldn't be added to cache: %w", delErr.Err)
 			ReportError(ctx, delErrMsg)
 		} else {
 			ReportEvent(ctx, "deleted instance that couldn't be added to cache")

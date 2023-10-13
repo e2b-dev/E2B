@@ -23,15 +23,15 @@ import (
 )
 
 type APIStore struct {
+	Ctx          context.Context
+	posthog      posthog.Client
+	tracer       trace.Tracer
 	cache        *nomad.InstanceCache
 	nomad        *nomad.NomadClient
 	supabase     *db.DB
-	posthog      posthog.Client
+	cloudStorage *cloudStorage
 	NextId       int64
 	Lock         sync.Mutex
-	tracer       trace.Tracer
-	cloudStorage *cloudStorage
-	Ctx          context.Context
 }
 
 func NewAPIStore() *APIStore {
@@ -80,7 +80,7 @@ func NewAPIStore() *APIStore {
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %s", instancesErr)
+			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %+v", instancesErr.Err)
 		}
 
 		initialInstances = instances
@@ -202,10 +202,12 @@ func getDeleteInstanceFunction(nomad *nomad.NomadClient, posthogClient posthog.C
 }
 
 func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, instanceID string, teamID *string, startTime *time.Time, purge bool) *api.APIError {
-	err := nomad.DeleteInstance(instanceID, purge)
-	if err != nil {
+	delErr := nomad.DeleteInstance(instanceID, purge)
+	if delErr != nil {
+		errMsg := fmt.Errorf("cannot delete session '%s': %w", instanceID, delErr.Err)
+
 		return &api.APIError{
-			Msg:       fmt.Sprintf("cannot delete session '%s': %+v", instanceID, err),
+			Err:       errMsg,
 			ClientMsg: "Cannot delete the session right now",
 			Code:      http.StatusInternalServerError,
 		}
