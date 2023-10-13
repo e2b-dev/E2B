@@ -450,7 +450,7 @@ export class Session extends SessionConnection {
         data = await response.blob()
         break
       case 'buffer':
-        data = await response.buffer()
+        data = Buffer.from(await response.arrayBuffer())
         break
       case 'arraybuffer':
         data = await response.arrayBuffer()

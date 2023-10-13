@@ -1,18 +1,18 @@
-const e2b = require("../dist/cjs/index")
-const fs = require("fs")
+import * as e2b from '../dist/cjs/index.js'
+import fs from 'node:fs'
 
 async function main() {
-  const s = e2b.DataAnalysis.create({
-    apiKey: "e2b_445a7e6449fcc400dfe3b4fbd45afa398359863f"
-  })
-  const response = await fetch("https://storage.googleapis.com/e2b-examples/netflix.csv")
-  const buffer = await response.buffer()
+  const s = await e2b.DataAnalysis.create()
+  const response = await fetch('https://storage.googleapis.com/e2b-examples/netflix.csv')
+  const file = await response.arrayBuffer()
 
-  const path = await s.uploadFile(buffer, "netflix.csv")
+  console.log('========== BEFORE UPLOAD')
+  const path = await s.uploadFile(Buffer.from(file), 'netflix.csv')
   console.log(path)
+  console.log('========== AFTER UPLOAD')
 
   const p = await s.process.start({
-    cmd: "ls /home/user",
+    cmd: 'ls /home/user',
   })
   await p
 
@@ -41,8 +41,6 @@ plt.show()`)
   }
 
   await s.close()
-
-
 }
 
 main().catch(console.error)
