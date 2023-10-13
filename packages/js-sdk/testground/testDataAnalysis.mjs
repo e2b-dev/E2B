@@ -36,7 +36,7 @@ plt.show()`)
 
   console.log(result)
   for (const artifact of result.artifacts) {
-    const data = await s.downloadFile(artifact.path)
+    const data = await s.downloadFile(artifact.path, 'buffer')
     fs.writeFileSync(artifact.path, data)
   }
 
