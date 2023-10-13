@@ -71,7 +71,7 @@ export class DataAnalysis extends Session {
 
   async installPythonPackage(packageName: string) {
     const proc = await this.process.start({ cmd: `pip install ${packageName}` })
-    await proc.finished
+    await proc.wait()
 
     if (proc.output.exitCode !== 0) {
       throw new Error(`Failed to install package ${packageName}`)
@@ -80,7 +80,7 @@ export class DataAnalysis extends Session {
 
   async installSystemPackage(packageName: string) {
     const proc = await this.process.start({ cmd: `apt-get install ${packageName}` })
-    await proc.finished
+    await proc.wait()
 
     if (proc.output.exitCode !== 0) {
       throw new Error(`Failed to install package ${packageName}`)
