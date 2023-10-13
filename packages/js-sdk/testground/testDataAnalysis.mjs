@@ -91,8 +91,8 @@ async function startSession() {
 
 async function runPython(code) {
   const { stdout, stderr } = await s.runPython(code, {
-    onStdout: console.log,
-    onStderr: console.error,
+    onStdout: out => console.log(out.line),
+    onStderr: out => console.error(out.line),
     onArtifact: handleArtifact,
   })
   if (stderr) {
