@@ -35,3 +35,4 @@ update-driver-locally:
 
 test:
 	sudo go run main.go -env fihwyog4sk9ap9lc618x -build c53d8e6a-5abc-2de4-b56d-8de67b64161d
+	# sudo go run main.go -env ip5z93iwppq6xwwbu107 -build 989830d0-0073-cece-4414-4eb3742f7c9b
