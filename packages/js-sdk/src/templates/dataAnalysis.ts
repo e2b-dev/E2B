@@ -1,4 +1,5 @@
 import { Session, SessionOpts } from '../session'
+import type { ProcessOpts } from '../session/process'
 import { FilesystemEvent, FilesystemOperation } from '../session/filesystemWatcher'
 
 class Artifact {
@@ -34,7 +35,7 @@ export class DataAnalysis extends Session {
       })
   }
 
-  async runPython(code: string) {
+  async runPython(code: string, opts: Omit<ProcessOpts, 'cmd'> = {}) {
     const artifacts: string[] = []
 
     function registerArtifacts(event: FilesystemEvent) {
@@ -47,7 +48,10 @@ export class DataAnalysis extends Session {
     watcher.addEventListener(registerArtifacts)
     await watcher.start()
 
-    const proc = await this.process.start({ cmd: `python -c "${code}"` })
+    const proc = await this.process.start({
+      cmd: `python -c "${code}"`,
+      ...opts,
+    })
     await proc.finished
 
     await watcher.stop()
