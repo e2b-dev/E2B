@@ -44,11 +44,11 @@ export class DataAnalysis extends Session {
     }
 
     const watcher = this.filesystem.watchDir('/tmp')
-    await watcher.addEventListener(registerArtifacts)
+    watcher.addEventListener(registerArtifacts)
     await watcher.start()
 
     const proc = await this.process.start({ cmd: `python -c "${code}"` })
-    await proc
+    await proc.finished
 
     await watcher.stop()
 
@@ -61,7 +61,7 @@ export class DataAnalysis extends Session {
 
   async installPythonPackage(packageName: string) {
     const proc = await this.process.start({ cmd: `pip install ${packageName}` })
-    await proc
+    await proc.finished
 
     if (proc.output.exitCode !== 0) {
       throw new Error(`Failed to install package ${packageName}`)
@@ -70,7 +70,7 @@ export class DataAnalysis extends Session {
 
   async installSystemPackage(packageName: string) {
     const proc = await this.process.start({ cmd: `apt-get install ${packageName}` })
-    await proc
+    await proc.finished
 
     if (proc.output.exitCode !== 0) {
       throw new Error(`Failed to install package ${packageName}`)
