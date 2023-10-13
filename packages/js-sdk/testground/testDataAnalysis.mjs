@@ -14,7 +14,7 @@ async function main() {
   const p = await s.process.start({
     cmd: 'ls /home/user',
   })
-  await p
+  await p.finished
 
   console.log(p.output)
   const result = await s.runPython(`
