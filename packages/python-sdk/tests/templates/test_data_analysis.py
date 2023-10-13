@@ -12,6 +12,5 @@ plt.ylabel('some numbers')
 plt.show()
     """
     )
-    print(a, b, artifacts)
     s.close()
     assert len(artifacts) == 1
