@@ -1,10 +1,12 @@
 set -euo xtrace pipefail
 
-echo "Starting provisioning script"
+echo "Starting provisioning script."
 
-apt-get update --download-only
+DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/pkgs/*.deb && rm /tmp/pkgs/*.deb
 
-DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server chrony sudo systemd
+# We are downloading the packages manually
+# apt-get update --download-only
+# DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server chrony sudo systemd
 
 # Set up autologin.
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d

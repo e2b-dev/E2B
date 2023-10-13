@@ -64,7 +64,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	}
 
 	d.logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
-	
+
 	handle := drivers.NewTaskHandle(taskHandleVersion)
 	handle.Config = cfg
 
@@ -76,6 +76,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	envsDisk := cfg.Env["ENVS_DISK"]
 	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
 	envdPath := cfg.Env["ENVD_PATH"]
+	pkgsPath := cfg.Env["PKGS_PATH"]
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
 	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 
@@ -83,6 +84,7 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		BuildID:               taskConfig.BuildID,
 		EnvID:                 taskConfig.EnvID,
 		EnvsDiskPath:          envsDisk,
+		PkgsPath:              pkgsPath,
 		VCpuCount:             taskConfig.VCpuCount,
 		MemoryMB:              taskConfig.MemoryMB,
 		DockerContextsPath:    contextsPath,

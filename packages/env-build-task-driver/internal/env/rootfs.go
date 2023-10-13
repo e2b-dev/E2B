@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -21,10 +22,14 @@ import (
 )
 
 const (
+	// Name of the dockerfile in the Docker context.
 	dockerfileName = "Dockerfile"
+	// Path to the envd in the FC VM.
 	envdRootfsPath = "/usr/bin/envd"
+	pkgsDirPath    = "/tmp/pkgs"
 	toMBShift      = 20
-	maxRootfsSize  = 5000 << toMBShift
+	// Max size of the rootfs file in MB.
+	maxRootfsSize = 5000 << toMBShift
 )
 
 type Rootfs struct {
@@ -120,8 +125,8 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 	defer childSpan.End()
 
 	_, err := r.client.ImageRemove(childCtx, r.dockerTag(), types.ImageRemoveOptions{
-		Force:         true,
-		PruneChildren: true,
+		Force:         false,
+		PruneChildren: false,
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error removing image %w", err)
@@ -167,89 +172,70 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 	}()
 
-	envdFile, err := os.Open(r.env.EnvdPath)
+	filesToTar := []fileToTar{
+		{
+			localPath: r.env.EnvdPath,
+			tarPath:   envdRootfsPath,
+		},
+	}
+
+	entries, err := os.ReadDir(r.env.PkgsPath)
 	if err != nil {
-		errMsg := fmt.Errorf("error opening envd file %w", err)
+		errMsg := fmt.Errorf("error reading packages directory %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
 	}
 
-	telemetry.ReportEvent(childCtx, "opened envd file")
+	telemetry.ReportEvent(childCtx, "read packages directory")
 
-	defer func() {
-		closeErr := envdFile.Close()
-		if closeErr != nil {
-			errMsg := fmt.Errorf("error closing envd file %w", closeErr)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed envd file")
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			filesToTar = append(filesToTar, fileToTar{
+				localPath: path.Join(r.env.PkgsPath, entry.Name()),
+				tarPath:   path.Join(pkgsDirPath, entry.Name()),
+			})
 		}
-	}()
-
-	envdStat, err := envdFile.Stat()
-	if err != nil {
-		errMsg := fmt.Errorf("error statting envd file %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
 	}
-
-	telemetry.ReportEvent(childCtx, "statted envd file")
 
 	pr, pw := io.Pipe()
 
-	tw := tar.NewWriter(pw)
-
 	go func() {
-		hdr := &tar.Header{
-			Name: envdRootfsPath, // The name of the file in the tar archive
-			Mode: 0o777,
-			Size: envdStat.Size(),
+		defer func() {
+			err = pw.Close()
+			if err != nil {
+				errMsg := fmt.Errorf("error closing pipe %w", err)
+				telemetry.ReportCriticalError(childCtx, errMsg)
+			} else {
+				telemetry.ReportEvent(childCtx, "closed pipe")
+			}
+		}()
+
+		tw := tar.NewWriter(pw)
+		defer func() {
+			err = tw.Close()
+			if err != nil {
+				errMsg := fmt.Errorf("error closing tar writer %w", err)
+				telemetry.ReportCriticalError(childCtx, errMsg)
+			} else {
+				telemetry.ReportEvent(childCtx, "closed tar writer")
+			}
+		}()
+
+		for _, file := range filesToTar {
+			addErr := addFileToTarWriter(tw, file)
+			if addErr != nil {
+				errMsg := fmt.Errorf("error adding envd to tar writer %w", addErr)
+				telemetry.ReportCriticalError(childCtx, errMsg)
+
+				return
+			} else {
+				telemetry.ReportEvent(childCtx, "added envd to tar writer")
+			}
 		}
-
-		err = tw.WriteHeader(hdr)
-		if err != nil {
-			errMsg := fmt.Errorf("error writing tar header %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return
-		}
-
-		telemetry.ReportEvent(childCtx, "wrote tar header")
-
-		_, err = io.Copy(tw, envdFile)
-		if err != nil {
-			errMsg := fmt.Errorf("error copying envd to tar %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return
-		}
-
-		telemetry.ReportEvent(childCtx, "copied envd to tar")
-
-		err = tw.Close()
-		if err != nil {
-			errMsg := fmt.Errorf("error closing tar writer %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return
-		}
-
-		telemetry.ReportEvent(childCtx, "closed tar writer")
-
-		err = pw.Close()
-		if err != nil {
-			errMsg := fmt.Errorf("error closing pipe %w", err)
-			telemetry.ReportCriticalError(childCtx, errMsg)
-
-			return
-		}
-
-		telemetry.ReportEvent(childCtx, "closed pipe")
 	}()
 
-	// Copy envd to the container
+	// Copy tar to the container
 	err = r.client.CopyToContainer(childCtx, cont.ID, "/", pr, types.CopyToContainerOptions{
 		AllowOverwriteDirWithFile: true,
 	})

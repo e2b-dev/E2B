@@ -64,7 +64,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 	if err != nil {
 		telemetry.ReportCriticalError(childCtx, err)
 
-		h.logger.Error(fmt.Sprintf("ERROR Env-build-task-driver Could not build env '%s' during build '%s': %s", h.env.EnvID, h.env.BuildID, err.Error()))
+		h.logger.Error(fmt.Sprintf("error during building env '%s' with build id '%s': %s", h.env.EnvID, h.env.BuildID, err.Error()))
 
 		h.mu.Lock()
 
@@ -77,7 +77,7 @@ func (h *taskHandle) run(ctx context.Context, tracer trace.Tracer, docker *clien
 
 		h.mu.Unlock()
 	} else {
-		h.logger.Info(fmt.Sprintf("Env '%s' during build '%s' was built successfully", h.env.EnvID, h.env.BuildID))
+		h.logger.Info(fmt.Sprintf("building env '%s' with build id '%s' successful", h.env.EnvID, h.env.BuildID))
 		h.mu.Lock()
 
 		h.exitResult = &drivers.ExitResult{
