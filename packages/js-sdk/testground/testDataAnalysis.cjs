@@ -2,21 +2,14 @@ const e2b = require("../dist/cjs/index")
 const fs = require("fs")
 
 async function main() {
-  const s = e2b.DataAnalysis.create({
+  const s = await e2b.DataAnalysis.create({
     apiKey: process.env.E2B_API_KEY,
   })
   const response = await fetch("https://storage.googleapis.com/e2b-examples/netflix.csv")
   const buffer = await response.buffer()
 
   const path = await s.uploadFile(buffer, "netflix.csv")
-  console.log(path)
 
-  const p = await s.process.start({
-    cmd: "ls /home/user",
-  })
-  await p
-
-  console.log(p.output)
   const result = await s.runPython(`
 print(1)
 import pandas as pd
@@ -36,7 +29,7 @@ plt.show()`)
 
   console.log(result)
   for (const artifact of result.artifacts) {
-    const data = await s.downloadFile(artifact.path)
+    const data = await s.downloadFile(artifact.path, 'buffer')
     fs.writeFileSync(artifact.path, data)
   }
 
