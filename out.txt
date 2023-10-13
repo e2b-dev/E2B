@@ -1,0 +1,25 @@
+HELLO 1
+HELLO 2
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 8807 entries, 0 to 8806
+Data columns (total 12 columns):
+ #   Column        Non-Null Count  Dtype 
+---  ------        --------------  ----- 
+ 0   show_id       8807 non-null   object
+ 1   type          8807 non-null   object
+ 2   title         8807 non-null   object
+ 3   director      6173 non-null   object
+ 4   cast          7982 non-null   object
+ 5   country       7976 non-null   object
+ 6   date_added    8797 non-null   object
+ 7   release_year  8807 non-null   int64 
+ 8   rating        8803 non-null   object
+ 9   duration      8804 non-null   object
+ 10  listed_in     8807 non-null   object
+ 11  description   8807 non-null   object
+dtypes: int64(1), object(11)
+memory usage: 825.8+ KB
+HELLO 3
+HELLO 3
+HELLO 4
+HELLO 5
