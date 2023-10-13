@@ -57,12 +57,12 @@ class DataAnalysis(SyncSession):
     ) -> Tuple[str, str, List[Artifact]]:
         artifacts = set()
 
-        def watch_files(event: Any):
+        def register_artifacts(event: Any):
             if event.operation == "Create":
                 artifacts.add(event.path)
 
         watcher = self.filesystem.watch_dir("/tmp")
-        watcher.add_event_listener(watch_files)
+        watcher.add_event_listener(register_artifacts)
 
         watcher.start()
         process = self.process.start(
