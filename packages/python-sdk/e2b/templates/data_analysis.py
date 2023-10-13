@@ -16,6 +16,9 @@ class Artifact(BaseModel):
         super().__init__(**data)
         self._session = data["_session"]
 
+    def __hash__(self):
+        return hash(self.name)
+
     def read(self) -> bytes:
         return self._session.download_file(self.name)
 
@@ -72,7 +75,7 @@ class DataAnalysis(SyncSession):
                     except Exception as e:
                         logger.error("Failed to process artifact", exc_info=e)
 
-        watcher = self.filesystem.watch_dir("/tmp")
+        watcher = self.filesystem.watch_dir("/home/user/artifacts")
         watcher.add_event_listener(register_artifacts)
         watcher.start()
 
@@ -86,10 +89,7 @@ class DataAnalysis(SyncSession):
 
         watcher.stop()
 
-        artifacts = list(
-            map(lambda artifact: Artifact(name=artifact, _session=self), artifacts)
-        )
-        return process.output.stdout, process.output.stderr, artifacts
+        return process.output.stdout, process.output.stderr, list(artifacts)
 
     def install_python_package(self, package_names: Union[str, List[str]]):
         if isinstance(package_names, list):
