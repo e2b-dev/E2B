@@ -22,11 +22,11 @@ export class DataAnalysis extends Session {
     super({ id: DataAnalysisEnvId, ...opts })
   }
 
-  static async create(opts: Omit<SessionOpts, 'id'>) {
+  static async create(opts?: Omit<SessionOpts, 'id'>) {
     return new DataAnalysis({ ...opts })
       .open({ timeout: opts?.timeout })
       .then(async session => {
-        if (opts.cwd) {
+        if (opts?.cwd) {
           console.log(`Custom cwd for Session set: "${opts.cwd}"`)
           await session.filesystem.makeDir(opts.cwd)
         }
