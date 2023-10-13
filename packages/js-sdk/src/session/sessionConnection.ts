@@ -4,7 +4,7 @@ import api, { components } from '../api'
 import {
   SESSION_DOMAIN,
   SESSION_REFRESH_PERIOD,
-  WS_PORT,
+  ENVD_PORT,
   WS_RECONNECT_INTERVAL,
   WS_ROUTE,
 } from '../constants'
@@ -208,7 +208,7 @@ export class SessionConnection {
         }
       }
 
-      const hostname = this.getHostname(this.opts.__debug_port || WS_PORT)
+      const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
 
       if (!hostname) {
         throw new Error("Cannot get session's hostname")

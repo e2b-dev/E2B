@@ -14,8 +14,18 @@ logging.basicConfig(level=logging.ERROR)
 
 
 async def main():
-    s = Session("Nodejs", api_key=E2B_API_KEY)
+    s = Session(
+        id="YI58BPyX5KrK",
+        api_key=E2B_API_KEY,
+        _debug_hostname="localhost",
+        _debug_port=49982,
+        _debug_dev_env="local",
+    )
     await s.open()
+
+    s.upload_file(file=open("results.csv", "rb"))
+
+    exit()
 
     a = await s.process.start("ls -la /var ")
     await a

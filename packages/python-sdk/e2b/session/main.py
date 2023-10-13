@@ -1,10 +1,16 @@
 import asyncio
 import logging
-from typing import Any, Callable, List, Literal, Optional, Union
+import requests
+import urllib.parse
+from os import path
+from typing import Any, Callable, List, Literal, Optional, Union, IO
 
 from async_timeout import timeout as async_timeout
 
-from e2b.constants import TIMEOUT
+from e2b.constants import (
+    TIMEOUT,
+    ENVD_PORT,
+)
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
 from e2b.session.env_vars import EnvVars
 from e2b.session.filesystem import FilesystemManager, SyncFilesystemManager
@@ -146,6 +152,47 @@ class Session(SessionConnection):
         """
         await super().close()
         await self._close()
+
+    def file_url(self) -> str:
+        """
+        Returns a URL that can be used to upload files to the session via a multipart/form-data POST request.
+        This is useful if you're uploading files directly from the browser.
+        The file will be uploaded to the user's home directory with the same name.
+        If a file with the same name already exists, it will be overwritten.
+        """
+        hostname = self.get_hostname(self._debug_port)
+        protocol = "http" if self._debug_dev_env == "local" else "https"
+        return f"{protocol}://{ENVD_PORT}-{hostname}/file"
+
+    def upload_file(self, file: IO) -> str:
+        """
+        Uploads a file to the session.
+        The file will be uploaded to the user's home (`/home/user`) directory with the same name.
+        If a file with the same name already exists, it will be overwritten.
+
+        :param file: The file to upload
+        """
+        files = {'file': file}
+        r = requests.post(self.file_url(), files=files)
+        if r.status_code != 200:
+            raise Exception(f"Failed to upload file: {r.reason} {r.text}")
+
+        filename = path.basename(file.name)
+        return f"/home/user/{filename}"
+
+    def download_file(self, remote_path: str) -> bytes:
+        """
+        Downloads a file from the session and returns it's content as bytes.
+
+        :param remote_path: The path of the file to download
+        """
+        encoded_path = urllib.parse.quote(remote_path)
+        url = f"{self.file_url()}?path={encoded_path}"
+        r = requests.get(url)
+
+        if r.status_code != 200:
+            raise Exception(f"Failed to download file '{remote_path}'. {r.reason} {r.text}")
+        return r.content
 
     async def __aenter__(self):
         await self.open()

@@ -1,6 +1,30 @@
-import { runCode } from '../dist/cjs/index.js'
+import fs from 'fs'
+import { Session, runCode } from '../dist/cjs/index.js'
+
+async function localSession() {
+  return await Session.create({
+    id: 'Nodejs',
+    apiKey: process.env.E2B_API_KEY,
+    // __debug_hostname: 'localhost',
+    // __debug_port: 49982,
+    // __debug_devEnv: 'local',
+  })
+}
 
 async function main() {
+  const session = await localSession()
+
+  const f = fs.readFileSync('./package.json')
+  await session.uploadFile(f, 'package.json')
+
+  const content = await session.filesystem.list('/home/user')
+  content.forEach(c => console.log(c.name))
+  process.exit()
+
+  const response = await session.downloadFile('/.dbkenv')
+  const text = await response.text()
+  console.log('text', text)
+  process.exit()
   // const session = await Session.create({
   //   id: 'Nodejs',
   //   apiKey: process.env.E2B_API_KEY,

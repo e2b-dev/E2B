@@ -4,5 +4,5 @@ export const WS_RECONNECT_INTERVAL = 600 // 600ms
 export const TIMEOUT = 60_000 // 60s
 
 export const SESSION_DOMAIN = 'ondevbook.com'
-export const WS_PORT = 49982
+export const ENVD_PORT = 49982
 export const WS_ROUTE = '/ws'

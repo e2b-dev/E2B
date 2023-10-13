@@ -1,5 +1,8 @@
 import normalizePath from 'normalize-path'
+import FormData from 'form-data'
+import fetch from 'node-fetch'
 
+import { ENVD_PORT } from '../constants'
 import { components } from '../api'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
@@ -358,6 +361,18 @@ export class Session extends SessionConnection {
       resolvePath(path, this.cwd, this.logger)
   }
 
+  /**
+   * URL that can be used to download or upload file to the session via a multipart/form-data POST request.
+   * This is useful if you're uploading files directly from the browser.
+   * The file will be uploaded to the user's home directory with the same name.
+   * If a file with the same name already exists, it will be overwritten.
+   */
+  public get fileURL() {
+    const hostname = this.getHostname(this.opts.__debug_port)
+    const protocol = this.opts.__debug_devEnv === 'local' ? 'http' : 'https'
+    return `${protocol}://${ENVD_PORT}-${hostname}/file`
+  }
+
   static async create(opts: SessionOpts) {
     return new Session(opts).open({ timeout: opts?.timeout }).then(async session => {
       if (opts.cwd) {
@@ -383,5 +398,71 @@ export class Session extends SessionConnection {
     )
 
     return this
+  }
+
+  /**
+   * Uploads a file to the session.
+   * The file will be uploaded to the user's home directory with the same name.
+   * If a file with the same name already exists, it will be overwritten.
+   *
+   * **Use this method only in the non-browser environment.
+   * In the browser environment, use the `uploadURL()` method and upload the file driectly via POST multipart/form-data**
+   *
+   */
+  async uploadFile(file: Buffer | Blob, filename: string) {
+    const formData = new FormData()
+    formData.append('file', file, {
+      filename,
+    })
+
+    const response = await fetch(this.fileURL, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`Failed to upload file: ${text}`)
+    }
+
+    return `/home/user/${filename}`
+  }
+
+  async downloadFile(
+    remotePath: string,
+    format?: 'base64' | 'blob' | 'buffer' | 'arraybuffer' | 'text',
+  ) {
+    remotePath = encodeURIComponent(remotePath)
+
+    const response = await fetch(`${this.fileURL}?path=${remotePath}`)
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`Failed to download file '${remotePath}': ${text}`)
+    }
+
+    let data
+    switch (format) {
+      case 'base64':
+        data = await response.arrayBuffer()
+        data = Buffer.from(data).toString('base64')
+        break
+      case 'blob':
+        data = await response.blob()
+        break
+      case 'buffer':
+        data = await response.buffer()
+        break
+      case 'arraybuffer':
+        data = await response.arrayBuffer()
+        break
+      case 'text':
+        data = await response.text()
+        break
+      default:
+        data = await response.arrayBuffer()
+        break
+    }
+
+    return data
   }
 }
