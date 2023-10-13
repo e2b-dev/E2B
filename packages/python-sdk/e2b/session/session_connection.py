@@ -54,9 +54,6 @@ class SessionConnection:
         """
         return self._is_open
 
-    def __await__(self):
-        return self._finished.__await__()
-
     def __init__(
         self,
         id: str,

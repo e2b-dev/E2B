@@ -17,15 +17,23 @@ export class TerminalOutput {
 
 /**
  * A terminal session running in the environment.
+ *
  */
 export class Terminal {
+  /**
+   * @deprecated use .wait() instead
+   */
+  readonly finished: Promise<TerminalOutput>
+
   constructor(
     readonly terminalID: string,
     private readonly session: SessionConnection,
     private readonly triggerExit: () => void,
-    readonly finished: Promise<TerminalOutput>,
+    finished: Promise<TerminalOutput>,
     readonly output: TerminalOutput,
-  ) {}
+  ) {
+    this.finished = finished
+  }
 
   get data() {
     return this.output.data
@@ -42,6 +50,13 @@ export class Terminal {
       this.triggerExit()
       await this.finished
     }
+  }
+
+  /**
+   * Waits for the terminal to finish.
+   */
+  async wait(): Promise<TerminalOutput> {
+    return this.finished
   }
 
   /**

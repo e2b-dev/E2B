@@ -50,7 +50,7 @@ export class DataAnalysis extends Session {
       }
     }
 
-    const watcher = this.filesystem.watchDir('/tmp')
+    const watcher = this.filesystem.watchDir('/home/user/artifacts')
     watcher.addEventListener(registerArtifacts)
     await watcher.start()
 
@@ -58,7 +58,7 @@ export class DataAnalysis extends Session {
       cmd: `python -c "${code}"`,
       ...opts,
     })
-    await proc.finished
+    await proc.wait()
 
     await watcher.stop()
 

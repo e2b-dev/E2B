@@ -12,7 +12,7 @@ const proc = await session.process.start({
   cmd: 'echo $FOO $BAR!',
   envVars: { BAR: 'World' }, // $HighlightLine
 })
-await proc.finished
+await proc.wait()
 console.log(proc.output.stdout)
 // output: Hello World!
 

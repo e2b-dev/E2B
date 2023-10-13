@@ -17,7 +17,7 @@ const proc = await session.process.start({
   onStderr: (data) => console.log('[WARN | ERROR] ', data.line),
 })
 // Wait for the process to finish
-await proc.finished
+await proc.wait()
 
 // We can now use lodash in our code
 const code = `
@@ -33,6 +33,6 @@ const codeRun = await session.process.start({
   onStdout: (data) => console.log('[INFO] ', data.line),
   onStderr: (data) => console.log('[WARN | ERROR] ', data.line),
 })
-await codeRun.finished
+await codeRun.wait()
 
 await session.close()

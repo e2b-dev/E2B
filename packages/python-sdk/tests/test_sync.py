@@ -1,7 +1,8 @@
 import asyncio
+from typing import List
 from unittest.mock import MagicMock
 
-from e2b import SyncSession
+from e2b import SyncSession, FilesystemEvent
 
 
 def test_process_on_stdout_stderr():
@@ -117,7 +118,7 @@ def test_watch_dir():
 
     watcher = session.filesystem.watch_dir("/tmp")
 
-    events = []
+    events: List[FilesystemEvent] = []
     watcher.add_event_listener(lambda e: events.append(e))
 
     watcher.start()
@@ -128,7 +129,7 @@ def test_watch_dir():
     assert len(events) >= 1
 
     event = events[0]
-    assert event["operation"] == "Write"
-    assert event["path"] == "/tmp/test.txt"
+    assert event.operation == "Write"
+    assert event.path == "/tmp/test.txt"
 
     session.close()
