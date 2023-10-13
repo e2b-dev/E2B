@@ -21,6 +21,7 @@ test('process on stdout/stderr', async () => {
   expect(output.stderr).toEqual('')
   expect(stdout.map(message => message.line)).toEqual(['/tmp'])
   expect(stderr).toEqual([])
+  expect(process.output.exitCode).toEqual(0)
   await session.close()
 })
 
@@ -112,6 +113,7 @@ test('test default on stdout/stderr', async () => {
   await process.finished
   expect(onStdout).toHaveBeenCalledOnce()
   expect(onStderr).toHaveBeenCalled()
+  expect(process.output.exitCode).toEqual(1)
 
   await session.close()
 }, 10000)

@@ -33,6 +33,7 @@ async def test_process_on_stdout_stderr():
     assert output.stderr == ""
     assert list(map(lambda message: message.line, stdout)) == ["/tmp"]
     assert stderr == []
+    assert proc.exit_code == 0
 
     await session.close()
 
@@ -122,5 +123,6 @@ async def test_process_default_on_stdout_stderr():
 
     on_stdout.assert_called_once()
     on_stderr.assert_called()
+    assert proc.exit_code == 1
 
     await session.close()

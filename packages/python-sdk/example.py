@@ -2,8 +2,11 @@ import asyncio
 import logging
 from os import getenv
 
+from dotenv import load_dotenv
+
 from e2b import Session
 
+load_dotenv()
 id = "Python3"
 E2B_API_KEY = getenv("E2B_API_KEY")
 
