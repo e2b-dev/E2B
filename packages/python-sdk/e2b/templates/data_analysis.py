@@ -1,13 +1,17 @@
 from typing import Optional, Callable, Any, Tuple, List, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 
 from e2b import EnvVars, SyncSession
 
 
 class Artifact(BaseModel):
     name: str
-    _session: SyncSession
+    _session: SyncSession = PrivateAttr()
+
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        self._session = data["_session"]
 
     def read(self) -> bytes:
         return self._session.download_file(self.name)
