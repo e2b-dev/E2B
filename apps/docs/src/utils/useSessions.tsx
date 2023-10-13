@@ -68,9 +68,9 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
             onStderr: stdHandler,
             cwd: '/code',
           })
-          await proc.finished // await prep process to finish
+          await proc.wait() // await prep process to finish
           log(`${lang} session created and started`)
-          // set session to store so it can be used instead of creating a new one
+          // set session to store, so it can be used instead of creating a new one
           set(state => ({
             sessions: {
               ...state.sessions,

@@ -9,14 +9,14 @@ const session = await Session.create({
 const proc = await session.process.start({
   cmd: 'echo "Hello World!"',
 })
-await proc.finished
+await proc.wait()
 // output: session Hello World!
 
 const procWithCustomHandler = await session.process.start({
   cmd: 'echo "Hello World!"',
   onStdout: data => console.log('process', data.line), // $HighlightLine
 })
-await procWithCustomHandler.finished
+await procWithCustomHandler.wait()
 // output: process Hello World!
 
 await session.close()

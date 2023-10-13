@@ -10,6 +10,6 @@ const npmInit = await session.process.start({
   cmd: 'npm init -y',
   timeout: 3000, // $HighlightLine
 })
-await npmInit.finished
+await npmInit.wait()
 
 await session.close()

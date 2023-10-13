@@ -28,7 +28,7 @@ const proc = await session.process.start({ // $HighlightLine
 }) // $HighlightLine
 
 // 4. Wait for the process to finish
-await proc.finished
+await proc.wait()
 
 // 5. Or you can access output after the process has finished
 const output = proc.output
