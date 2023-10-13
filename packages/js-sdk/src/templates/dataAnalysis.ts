@@ -16,6 +16,10 @@ class Artifact {
   }
 }
 
+interface RunPythonOpts extends Omit<ProcessOpts, 'cmd'> {
+  onArtifact?: (artifact: Artifact) => void
+}
+
 const DataAnalysisEnvId = 'Python3-DataAnalysis'
 
 export class DataAnalysis extends Session {
@@ -35,12 +39,14 @@ export class DataAnalysis extends Session {
       })
   }
 
-  async runPython(code: string, opts: Omit<ProcessOpts, 'cmd'> = {}) {
+  async runPython(code: string, opts: RunPythonOpts = {}) {
     const artifacts: string[] = []
 
-    function registerArtifacts(event: FilesystemEvent) {
+    const registerArtifacts = (event: FilesystemEvent) => {
       if (event.operation === FilesystemOperation.Create) {
+        const artifact = new Artifact(event.path, this)
         artifacts.push(event.path)
+        opts.onArtifact?.(artifact)
       }
     }
 
