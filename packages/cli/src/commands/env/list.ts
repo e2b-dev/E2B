@@ -1,5 +1,7 @@
 import * as chalk from 'chalk'
 import * as commander from 'commander'
+import * as nodeFetch from 'node-fetch'
+
 import { apiBaseUrl, ensureAccessToken } from 'src/api'
 import { asFormattedError } from 'src/utils/format'
 import { sortEnvs } from 'src/utils/sort'
@@ -14,11 +16,11 @@ export const listCommand = new commander.Command('list')
 
       // TODO: Use client
       // const envs = await client.path('/envs').method('get').create()({ accessToken }).data
-      const apiRes = await fetch(`${apiBaseUrl}/envs`, {
+      const apiRes = await nodeFetch.default(`${apiBaseUrl}/envs`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${accessToken}` },
       })
-      const envs = await apiRes.json()
+      const envs = (await apiRes.json()) as any
 
       console.log(chalk.default.underline(chalk.default.green('Environments')))
 

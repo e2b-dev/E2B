@@ -1,10 +1,11 @@
-import { listen } from 'async-listen'
+import * as listen from 'async-listen'
 import * as commander from 'commander'
-import fs from 'fs'
-import http from 'http'
-import open from 'open'
+import * as fs from 'fs'
+import * as http from 'http'
+import * as open from 'open'
 import * as os from 'os'
-import path from 'path'
+import * as path from 'path'
+
 import { asBold, asFormattedError } from 'src/utils/format'
 
 import pkg from '../../package.json'
@@ -67,7 +68,7 @@ export function getUserConfig(): UserConfig | null {
 
 async function signInWithBrowser(): Promise<UserConfig> {
   const server = http.createServer()
-  const { port } = await listen(server, 0, '127.0.0.1')
+  const { port } = await listen.default(server, 0, '127.0.0.1')
   const loginUrl = new URL(`${DOCS_BASE}/api/cli`)
   loginUrl.searchParams.set('next', `http://localhost:${port}`)
   loginUrl.searchParams.set('cliVersion', pkg.version)
@@ -97,6 +98,6 @@ async function signInWithBrowser(): Promise<UserConfig> {
       res.end()
     })
 
-    return open(loginUrl.toString())
+    return open.default(loginUrl.toString())
   })
 }

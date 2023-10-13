@@ -1,5 +1,6 @@
 import * as sdk from '@e2b/sdk'
 import * as commander from 'commander'
+
 import { ensureAPIKey } from 'src/api'
 import { idArgument } from 'src/arguments'
 import { pathOption, selectOption } from 'src/options'
@@ -17,7 +18,7 @@ export const shellCommand = new commander.Command('shell')
   .addArgument(idArgument)
   .addOption(selectOption)
   .addOption(pathOption)
-  .alias('cn')
+  .alias('sh')
   .option(
     '-L, --local-debug',
     'Connect to existing local environment instance for debugging',
@@ -75,10 +76,10 @@ export async function connectEnvironment({
     id: config.id,
     ...(local
       ? {
-          __debug_devEnv: 'local',
-          __debug_hostname: 'localhost',
-          __debug_port: 49982,
-        }
+        __debug_devEnv: 'local',
+        __debug_hostname: 'localhost',
+        __debug_port: 49982,
+      }
       : {}),
   })
 

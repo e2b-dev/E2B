@@ -1,10 +1,10 @@
-import dockerIgnore from '@balena/dockerignore'
+import * as dockerIgnore from '@balena/dockerignore'
 import * as fsWalk from '@nodelib/fs.walk'
 import * as fs from 'fs'
 import * as fsPromise from 'fs/promises'
-import gitIgnore, { Ignore } from 'ignore'
+import * as gitIgnore from 'ignore'
 import * as path from 'path'
-import tar from 'tar-fs'
+import * as tar from 'tar-fs'
 import * as util from 'util'
 
 const walk = util.promisify(fsWalk.walk)
@@ -28,11 +28,11 @@ export async function getFiles(
     respectDockerignore?: boolean
   },
 ) {
-  let gitignore: Ignore | undefined
+  let gitignore: gitIgnore.Ignore | undefined
   if (opts?.respectGitignore) {
     const gitignorePath = path.join(rootPath, '.gitignore')
     if (fs.existsSync(gitignorePath)) {
-      gitignore = gitIgnore().add(fs.readFileSync(gitignorePath).toString())
+      gitignore = gitIgnore.default().add(fs.readFileSync(gitignorePath).toString())
     }
   }
 
@@ -42,7 +42,7 @@ export async function getFiles(
     if (fs.existsSync(dockerignorePath)) {
       const dockerIgnoreContent = fs.readFileSync(dockerignorePath, 'utf-8')
       const dockerIgnoreLines = dockerIgnoreContent.split('\n').map(line => line.trim())
-      dockerignore = dockerIgnore().add(dockerIgnoreLines)
+      dockerignore = dockerIgnore.default().add(dockerIgnoreLines)
     }
   }
 

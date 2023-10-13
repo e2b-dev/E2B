@@ -1,6 +1,7 @@
 import * as sdk from '@devbookhq/sdk'
 import * as chalk from 'chalk'
 import * as fs from 'fs'
+
 import { getConfigPath, loadConfig } from 'src/config'
 import { asFormattedEnvironment } from 'src/utils/format'
 import { sortEnvs } from 'src/utils/sort'

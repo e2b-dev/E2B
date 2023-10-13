@@ -1,10 +1,14 @@
 import * as commander from 'commander'
-import { stripIndent } from 'common-tags'
+import * as commonTags from 'common-tags'
 import * as fs from 'fs'
-import Blob from 'cross-blob' // Remove cross-blob when dropping node 16 support
-import { FormData } from 'formdata-node' // Remove formdata-node when dropping node 16 support
-import fsPromise from 'fs/promises'
-import fetch from 'node-fetch'
+import * as Blob from 'cross-blob' // Remove cross-blob when dropping node 16 support
+import * as fData from 'formdata-node' // Remove formdata-node when dropping node 16 support
+import * as fsPromise from 'fs/promises'
+import * as nodeFetch from 'node-fetch'
+import * as yup from 'yup'
+import * as os from 'os'
+import * as path from 'path'
+
 import { apiBaseUrl, ensureAccessToken } from 'src/api'
 import { configName } from 'src/config'
 import { pathOption } from 'src/options'
@@ -16,9 +20,6 @@ import {
   asLocal,
   asLocalRelative,
 } from 'src/utils/format'
-import * as yup from 'yup'
-import * as os from 'os'
-import path from 'path'
 
 export const createCommand = new commander.Command('create')
   .description(`Create new environment and ${asLocal(configName)} config`)
@@ -65,7 +66,7 @@ export const createCommand = new commander.Command('create')
         respectDockerignore: opts.respectDockerignore,
       })
       if (!filePaths.length) {
-        console.log(stripIndent`
+        console.log(commonTags.stripIndent`
           No files found in ${asLocalRelative(root)}.
           Note that .gitignore and .dockerignore files are respected by default,
           use --respect-gitignore=false and --respect-dockerignore=false to override.
@@ -92,7 +93,7 @@ export const createCommand = new commander.Command('create')
 
       if (!fs.existsSync(tarPath)) throw new Error(`Tar file ${tarPath} does not exist`)
 
-      const buildContextBlob = new Blob([fs.readFileSync(tarPath)])
+      const buildContextBlob = new Blob.default([fs.readFileSync(tarPath)])
       let dockerfileContent
       if (fs.existsSync(`${root}/Dockerfile`)) {
         dockerfileContent = fs.readFileSync(`${root}/Dockerfile`, 'utf-8')
@@ -101,12 +102,12 @@ export const createCommand = new commander.Command('create')
       // TODO: Use SDK client
       // client.path('/envs').method('post').create(...)
 
-      const formData = new FormData()
+      const formData = new fData.FormData()
       formData.append('buildContext', buildContextBlob, 'env.tar.gz.e2b')
       if (dockerfileContent) formData.append('dockerfile', dockerfileContent)
       // if (envID) formData.append('envID', envID); // TODO: Future
 
-      const apiRes = await fetch(`${apiBaseUrl}/envs`, {
+      const apiRes = await nodeFetch.default(`${apiBaseUrl}/envs`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
         body: formData,
@@ -130,10 +131,13 @@ export const createCommand = new commander.Command('create')
       let completed = false
       while (!completed) {
         await wait(5000)
-        const apiResPoll = await fetch(`${apiBaseUrl}/envs/${resJson?.envID}`, {
-          method: 'GET',
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        const apiResPoll = await nodeFetch.default(
+          `${apiBaseUrl}/envs/${resJson?.envID}`,
+          {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        )
         if (!apiResPoll.ok)
           throw new Error(`API request failed: ${apiResPoll.statusText}`)
         const env = (await apiResPoll.json()) as { status: string; created_at: string }
@@ -146,7 +150,7 @@ export const createCommand = new commander.Command('create')
           console.log(`⏳ Building… (started ${elapsedStr} ago)`) // nicer
           if (elapsed > 1000 * 60 * 2) {
             // TODO
-            console.log(stripIndent`
+            console.log(commonTags.stripIndent`
               ⚠️ Build taking longer than 2 minutes, something might be wrong.
               Stopping to wait for result, but it might still finish.
               Check by yourself by running ${asLocal('e2b env list')}

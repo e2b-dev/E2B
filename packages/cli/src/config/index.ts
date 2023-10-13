@@ -2,10 +2,10 @@ import * as toml from '@iarna/toml'
 import * as fs from 'fs'
 import * as fsPromise from 'fs/promises'
 import * as path from 'path'
-import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
 import * as yup from 'yup'
 
-import { getFiles } from '../utils/filesystem'
+import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
+import { getFiles } from 'src/utils/filesystem'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const dockerNames = require('docker-names')
@@ -42,8 +42,7 @@ export async function loadConfig(configPath: string) {
     return (await configSchema.validate(config)) as E2bConfig
   } catch (err: any) {
     throw new Error(
-      `E2b environment config ${asLocalRelative(configPath)} cannot be loaded: ${
-        err.message
+      `E2b environment config ${asLocalRelative(configPath)} cannot be loaded: ${err.message
       }`,
     )
   }
