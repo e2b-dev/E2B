@@ -1,8 +1,11 @@
+import logging
 from typing import Optional, Callable, Any, Tuple, List, Union
 
 from pydantic import BaseModel, PrivateAttr
 
 from e2b import EnvVars, SyncSession
+
+logger = logging.getLogger(__name__)
 
 
 class Artifact(BaseModel):
@@ -32,8 +35,10 @@ class DataAnalysis(SyncSession):
         env_vars: Optional[EnvVars] = None,
         on_stdout: Optional[Callable[[str], Any]] = None,
         on_stderr: Optional[Callable[[str], Any]] = None,
+        on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
     ):
+        self.on_artifact = on_artifact
         super().__init__(
             id=self.env_id,
             api_key=api_key,
@@ -59,12 +64,18 @@ class DataAnalysis(SyncSession):
 
         def register_artifacts(event: Any):
             if event.operation == "Create":
-                artifacts.add(event.path)
+                artifact = Artifact(name=event.path, _session=self)
+                artifacts.add(artifact)
+                if self.on_artifact:
+                    try:
+                        self.on_artifact(artifact)
+                    except Exception as e:
+                        logger.error("Failed to process artifact", exc_info=e)
 
         watcher = self.filesystem.watch_dir("/tmp")
         watcher.add_event_listener(register_artifacts)
-
         watcher.start()
+
         process = self.process.start(
             f'python -c "{code}"',
             on_stdout=on_stdout,
@@ -72,6 +83,7 @@ class DataAnalysis(SyncSession):
             on_exit=on_exit,
         )
         process.wait()
+
         watcher.stop()
 
         artifacts = list(
