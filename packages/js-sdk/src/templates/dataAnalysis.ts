@@ -69,7 +69,7 @@ export class DataAnalysis extends Session {
     }
   }
 
-  async installPythonPackage(packageName: string | string[]) {
+  async installPythonPackages(packageName: string | string[]) {
     if (Array.isArray(packageName)) {
       packageName = packageName.join(' ')
     }
@@ -82,7 +82,7 @@ export class DataAnalysis extends Session {
     }
   }
 
-  async installSystemPackage(packageName: string | string[]) {
+  async installSystemPackages(packageName: string | string[]) {
     if (Array.isArray(packageName)) {
       packageName = packageName.join(' ')
     }
