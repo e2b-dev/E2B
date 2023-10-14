@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 import * as packageJSON from './package.json'
 
-const excludedPackages = ['inquirer', 'update-notifier']
+const excludedPackages = ['update-notifier']
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -10,6 +10,7 @@ export default defineConfig({
   target: 'node16',
   platform: 'node',
   format: 'cjs',
+  clean: true,
   noExternal: Object.keys(packageJSON.dependencies).filter(
     f => !excludedPackages.includes(f),
   ),

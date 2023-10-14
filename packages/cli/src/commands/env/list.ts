@@ -1,10 +1,11 @@
 import * as chalk from 'chalk'
 import * as commander from 'commander'
-import * as nodeFetch from 'node-fetch'
+import * as e2b from '@e2b/sdk'
 
-import { apiBaseUrl, ensureAccessToken } from 'src/api'
+import { ensureAccessToken } from 'src/api'
 import { asFormattedError } from 'src/utils/format'
-import { sortEnvs } from 'src/utils/sort'
+
+const listEnvs = e2b.api.path('/envs').method('get').create()
 
 export const listCommand = new commander.Command('list')
   .description('List environments')
@@ -14,22 +15,25 @@ export const listCommand = new commander.Command('list')
       const accessToken = ensureAccessToken()
       process.stdout.write('\n')
 
-      // TODO: Use client
-      // const envs = await client.path('/envs').method('get').create()({ accessToken }).data
-      const apiRes = await nodeFetch.default(`${apiBaseUrl}/envs`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      const envs = (await apiRes.json()) as any
+      const envsResponse = await listEnvs(
+        {},
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        },
+      )
 
       console.log(chalk.default.underline(chalk.default.green('Environments')))
+
+      const envs = envsResponse.data
 
       if (!envs?.length) {
         console.log('No environments found')
       } else {
-        envs.sort(sortEnvs).forEach((env: { envID: string }) => {
-          console.log(env.envID)
-        })
+        envs
+          .sort((a, b) => a.envID.localeCompare(b.envID))
+          .forEach((env: { envID: string }) => {
+            console.log(env.envID)
+          })
       }
 
       process.stdout.write('\n')

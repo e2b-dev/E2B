@@ -1,58 +1,22 @@
-import * as sdk from '@e2b/sdk'
+import * as e2b from '@e2b/sdk'
 import * as commander from 'commander'
 
 import { ensureAPIKey } from 'src/api'
-import { idArgument } from 'src/arguments'
-import { pathOption, selectOption } from 'src/options'
+import { reqIDArgument } from 'src/arguments'
 import { spawnConnectedTerminal } from 'src/terminal'
-import { getRoot } from 'src/utils/filesystem'
-import {
-  asBold,
-  asFormattedEnvironment,
-  asFormattedError,
-  asLocalRelative,
-} from 'src/utils/format'
+import { asBold, asFormattedEnvironment, asFormattedError } from 'src/utils/format'
 
 export const shellCommand = new commander.Command('shell')
   .description('Connect terminal to environment')
-  .addArgument(idArgument)
-  .addOption(selectOption)
-  .addOption(pathOption)
+  .addArgument(reqIDArgument)
   .alias('sh')
-  .option(
-    '-L, --local-debug',
-    'Connect to existing local environment instance for debugging',
-  )
-  .action(async (id, opts) => {
+  .action(async (id: string) => {
     try {
       const apiKey = ensureAPIKey()
-      const root = getRoot(opts.path)
 
-      if (opts.localDebug) {
-        await connectEnvironment({ apiKey, local: true, config: { id: 'local-debug' } })
-        return
-      }
+      const env: Pick<e2b.components['schemas']['Environment'], 'envID'> = { envID: id }
 
-      // let env: sdk.components['schemas']['Environment'] | undefined
-      let env: any
-      if (id) {
-        env = { id }
-      } else if (opts.select) {
-        throw new Error('Selecting is not yet implemented')
-        // const apiKey = ensureAPIKey()
-        // const envs = await listEnvironments({ apiKey })
-        // env = await getPromptEnv(envs, 'Select environment to connect to')
-      } else {
-        throw new Error('No environment ID provided, use "e2b env shell --id <envID>"')
-        // env = await getRootEnv(root)
-      }
-
-      if (!env) {
-        console.log(`No environments found in ${asLocalRelative(root)}`)
-        return
-      }
-
-      await connectEnvironment({ apiKey, config: env })
+      await connectEnvironment({ apiKey, env })
       // We explicitly call exit because the session is keeping the program alive.
       // We also don't want to call session.close because that would disconnect other users from the edit session.
       process.exit(0)
@@ -62,25 +26,16 @@ export const shellCommand = new commander.Command('shell')
     }
   })
 
-export async function connectEnvironment({
+async function connectEnvironment({
   apiKey,
-  config,
-  local,
+  env,
 }: {
   apiKey: string
-  local?: boolean
-  config: sdk.components['schemas']['Environment']
+  env: Pick<e2b.components['schemas']['Environment'], 'envID'>
 }) {
-  const session = new sdk.Session({
+  const session = new e2b.Session({
     apiKey,
-    id: config.id,
-    ...(local
-      ? {
-        __debug_devEnv: 'local',
-        __debug_hostname: 'localhost',
-        __debug_port: 49982,
-      }
-      : {}),
+    id: env.envID,
   })
 
   await session.open({})
@@ -89,14 +44,14 @@ export async function connectEnvironment({
     const { exited } = await spawnConnectedTerminal(
       session.terminal,
       `Terminal connected to environment ${asFormattedEnvironment(
-        config,
+        env,
       )}\nwith session URL ${asBold(`https://${session.getHostname()}`)}`,
-      `Disconnecting terminal from environment ${asFormattedEnvironment(config)}`,
+      `Disconnecting terminal from environment ${asFormattedEnvironment(env)}`,
     )
 
     await exited
     console.log(
-      `Closing terminal connection to environment ${asFormattedEnvironment(config)}`,
+      `Closing terminal connection to environment ${asFormattedEnvironment(env)}`,
     )
   } else {
     throw new Error('Cannot start terminal - no session')

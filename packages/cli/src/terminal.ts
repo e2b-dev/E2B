@@ -50,7 +50,7 @@ export async function spawnConnectedTerminal(
   })
 
   return {
-    // destroy: terminalSession.destroy.bind(terminalSession), FIXME
+    kill: terminalSession.kill.bind(terminalSession),
     exited,
   }
 }

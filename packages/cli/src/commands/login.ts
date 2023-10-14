@@ -3,25 +3,14 @@ import * as commander from 'commander'
 import * as fs from 'fs'
 import * as http from 'http'
 import * as open from 'open'
-import * as os from 'os'
 import * as path from 'path'
 
+import { pkg } from 'src'
+import { getUserConfig, USER_CONFIG_PATH, UserConfig, DOCS_BASE } from 'src/user'
 import { asBold, asFormattedError } from 'src/utils/format'
 
-import pkg from '../../package.json'
-
-type UserConfig = {
-  email: string
-  accessToken: string
-  defaultTeamApiKey: string
-  defaultTeamId: string
-}
-
-const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
-const DOCS_BASE = process.env.E2B_DOCS_BASE || 'https://e2b.dev/docs'
-
 export const loginCommand = new commander.Command('login')
-  .description('Login to e2b')
+  .description('Log in to e2b')
   .action(async () => {
     let userConfig
     try {
@@ -49,22 +38,6 @@ export const loginCommand = new commander.Command('login')
     console.log(`Logged in as ${asBold(userConfig.email)}`)
     process.exit(0)
   })
-
-export const logoutCommand = new commander.Command('logout')
-  .description('Logout of e2b')
-  .action(() => {
-    if (fs.existsSync(USER_CONFIG_PATH)) {
-      fs.unlinkSync(USER_CONFIG_PATH) // Delete user config
-      console.log('Logged out.')
-    } else {
-      console.log('Not logged in, nothing to do')
-    }
-  })
-
-export function getUserConfig(): UserConfig | null {
-  if (!fs.existsSync(USER_CONFIG_PATH)) return null
-  return JSON.parse(fs.readFileSync(USER_CONFIG_PATH, 'utf8'))
-}
 
 async function signInWithBrowser(): Promise<UserConfig> {
   const server = http.createServer()

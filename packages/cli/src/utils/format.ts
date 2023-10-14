@@ -1,18 +1,14 @@
-import * as sdk from '@devbookhq/sdk'
 import * as chalk from 'chalk'
+import * as e2b from '@e2b/sdk'
 
 import { cwdRelative } from './filesystem'
 
 export function asFormattedEnvironment(
-  env: sdk.components['schemas']['Environment'],
-  localPath?: string,
+  env: Pick<e2b.components['schemas']['Environment'], 'envID'>,
 ) {
-  const id = asBold(env.id)
-  const template = env.template ? asTemplate` [${env.template}]` : ''
-  const title = env.title ? ` ${env.title}` : ''
-  const configPath = localPath ? asDim(' <-> ') + asLocalRelative(localPath) : ''
+  const id = asBold(env.envID)
 
-  return `${id}${template}${title}${configPath}`
+  return `${id}`
 }
 
 export function asFormattedError(text: string, err?: any) {
@@ -29,10 +25,6 @@ export function asBold(content: string) {
 
 export function asEnv(pathInEnv?: string) {
   return chalk.default.green(pathInEnv)
-}
-
-export function asTemplate(t: TemplateStringsArray, template: string) {
-  return chalk.default.dim(t[0] + template + t[1])
 }
 
 export function asLocal(pathInLocal?: string) {

@@ -1,10 +1,8 @@
 import * as dockerIgnore from '@balena/dockerignore'
 import * as fsWalk from '@nodelib/fs.walk'
 import * as fs from 'fs'
-import * as fsPromise from 'fs/promises'
 import * as gitIgnore from 'ignore'
 import * as path from 'path'
-import * as tar from 'tar-fs'
 import * as util from 'util'
 
 const walk = util.promisify(fsWalk.walk)
@@ -77,25 +75,6 @@ export function getRoot(envPath?: string) {
   return path.resolve(defaultPath, envPath)
 }
 
-export async function ensureDir(dirPath: string) {
-  if (!fs.existsSync(dirPath)) {
-    return fsPromise.mkdir(dirPath, { recursive: true })
-  }
-}
-
 export function cwdRelative(absolutePath: string) {
   return path.relative(process.cwd(), absolutePath)
 }
-
-export const packToTar = (
-  rootPath: string,
-  filePaths: string[],
-  tarPath: string | Buffer | URL,
-) =>
-  new Promise((resolve, reject) => {
-    tar
-      .pack(rootPath, { entries: filePaths })
-      .pipe(fs.createWriteStream(tarPath))
-      .on('error', reject)
-      .on('finish', resolve)
-  })
