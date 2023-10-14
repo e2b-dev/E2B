@@ -5,7 +5,7 @@ import * as e2b from '@e2b/sdk'
 import { ensureAccessToken } from 'src/api'
 import { asFormattedError } from 'src/utils/format'
 
-const listEnvs = e2b.api.path('/envs').method('get').create()
+const listEnvs = e2b.withAccessToken(e2b.api.path('/envs').method('get').create())
 
 export const listCommand = new commander.Command('list')
   .description('List environments')
@@ -15,12 +15,7 @@ export const listCommand = new commander.Command('list')
       const accessToken = ensureAccessToken()
       process.stdout.write('\n')
 
-      const envsResponse = await listEnvs(
-        {},
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        },
-      )
+      const envsResponse = await listEnvs(accessToken, {})
 
       console.log(chalk.default.underline(chalk.default.green('Environments')))
 
