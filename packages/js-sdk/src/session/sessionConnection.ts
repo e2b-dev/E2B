@@ -1,15 +1,21 @@
-import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client';
+import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
 
-import ApiClient, { components } from '../api';
-import { INSTANCE_DOMAIN, INSTANCE_REFRESH_PERIOD, ENVD_PORT, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants';
-import { AuthenticationError } from '../error';
-import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise';
-import wait from '../utils/wait';
-import { codeSnippetService } from './codeSnippet';
-import { filesystemService } from './filesystem';
-import { processService } from './process';
-import { terminalService } from './terminal';
-
+import api, { components, withAPIKey } from '../api'
+import {
+  ENVD_PORT,
+  INSTANCE_DOMAIN,
+  WS_RECONNECT_INTERVAL,
+  WS_ROUTE,
+  INSTANCE_REFRESH_PERIOD,
+} from '../constants'
+import { AuthenticationError } from '../error'
+import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise'
+import wait from '../utils/wait'
+import { codeSnippetService } from './codeSnippet'
+import { filesystemService } from './filesystem'
+import { processService } from './process'
+import { terminalService } from './terminal'
+import { EnvVars } from './envVars'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void
@@ -35,7 +41,9 @@ export interface Logger {
 
 export interface SessionConnectionOpts {
   id: string
-  apiKey: string
+  apiKey?: string
+  cwd?: string
+  envVars?: EnvVars
   logger?: Logger
   __debug_hostname?: string
   __debug_port?: number
@@ -46,28 +54,47 @@ export interface CallOpts {
   timeout?: number
 }
 
-export class SessionConnection {
-  protected readonly logger: Logger
-  protected session?: components['schemas']['Instance']
-  protected isOpen = false
-  protected client: ApiClient
+const createInstance = withAPIKey(api.path('/instances').method('post').create())
+const refreshInstance = withAPIKey(
+  api.path('/instances/{instanceID}/refreshes').method('post').create(),
+)
 
+export class SessionConnection {
+  cwd: string | undefined
+  envVars: EnvVars
+
+  protected readonly logger: Logger
+  protected instance?: components['schemas']['Instance']
+  protected isOpen = false
+
+  private readonly apiKey: string
   private readonly rpc = new RpcWebSocketClient()
   private subscribers: Subscriber[] = []
 
-  constructor(private readonly opts: SessionConnectionOpts) {
-    if (!opts.apiKey) {
+  // let's keep opts readonly, but public - for convenience, mainly when debugging
+  constructor(readonly opts: SessionConnectionOpts) {
+    const apiKey = opts.apiKey || process.env.E2B_API_KEY
+    if (!apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit https://e2b.dev/docs to get your API key',
       )
     }
+    this.apiKey = apiKey
+
+    this.cwd = opts.cwd
+    if (this.cwd && this.cwd.startsWith('~')) {
+      this.cwd = this.cwd.replace('~', '/home/user')
+    }
+
+    this.envVars = opts.envVars || {}
     this.logger = opts.logger ?? {
-      // by default, we log to the console, only warnings and errors
+      // by default, we log to the console
+      // we don't log debug messages by default
+      info: console.info,
       warn: console.warn,
       error: console.error,
     }
-    this.logger.info?.(`Session for code snippet "${opts.id}" initialized`)
-    this.client = new ApiClient({ 'X-API-Key': opts.apiKey })
+    this.logger.info?.(`Session "${opts.id}" initialized`)
   }
 
   /**
@@ -90,11 +117,11 @@ export class SessionConnection {
       }
     }
 
-    if (!this.session) {
+    if (!this.instance) {
       return undefined
     }
 
-    const hostname = `${this.session.instanceID}-${this.session.clientID}.${INSTANCE_DOMAIN}`
+    const hostname = `${this.instance.instanceID}-${this.instance.clientID}.${INSTANCE_DOMAIN}`
     if (port) {
       return `${port}-${hostname}`
     } else {
@@ -109,7 +136,7 @@ export class SessionConnection {
    */
   async close() {
     if (this.isOpen) {
-      this.logger.debug?.(`Closing session "${this.session?.instanceID}"`)
+      this.logger.debug?.(`Closing session "${this.instance?.instanceID}"`)
       this.isOpen = false
 
       this.logger.debug?.('Unsubscribing...')
@@ -139,7 +166,7 @@ export class SessionConnection {
    */
   async open(opts: CallOpts) {
     const open = async () => {
-      if (this.isOpen || !!this.session) {
+      if (this.isOpen || !!this.instance) {
         throw new Error('Session connect was already called')
       } else {
         this.isOpen = true
@@ -148,15 +175,16 @@ export class SessionConnection {
 
       if (!this.opts.__debug_hostname) {
         try {
-          const res = await this.client.createSession({
+          const res = await createInstance(this.apiKey, {
             envID: this.opts.id,
           })
-          this.session = res.data
-          this.logger.debug?.(`Acquired session "${this.session.instanceID}"`)
 
-          this.refresh(this.session.instanceID)
+          this.instance = res.data
+          this.logger.debug?.(`Acquired session "${this.instance.instanceID}"`)
+
+          this.refresh(this.instance.instanceID)
         } catch (e) {
-          if (e instanceof this.client.createSession.Error) {
+          if (e instanceof createInstance.Error) {
             const error = e.getActualType()
             if (error.status === 400) {
               throw new Error(
@@ -178,7 +206,7 @@ export class SessionConnection {
         }
       }
 
-      const hostname = this.getHostname(this.opts.__debug_port || WS_PORT)
+      const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
 
       if (!hostname) {
         throw new Error("Cannot get session's hostname")
@@ -190,7 +218,7 @@ export class SessionConnection {
       this.rpc.onError(err => {
         // not warn, because this is somewhat expected behaviour during initialization
         this.logger.debug?.(
-          `Error in WS session "${this.session?.instanceID}": ${err.message ?? err.code ?? err.toString()
+          `Error in WS session "${this.instance?.instanceID}": ${err.message ?? err.code ?? err.toString()
           }. Trying to reconnect...`,
         )
       })
@@ -213,28 +241,28 @@ export class SessionConnection {
       })
 
       this.rpc.onOpen(() => {
-        this.logger.debug?.(`Connected to session "${this.session?.instanceID}"`)
+        this.logger.debug?.(`Connected to session "${this.instance?.instanceID}"`)
         resolveOpening?.()
       })
 
       this.rpc.onClose(async () => {
         this.logger.debug?.(
-          `Closing WS connection to session "${this.session?.instanceID}"`,
+          `Closing WS connection to session "${this.instance?.instanceID}"`,
         )
         if (this.isOpen) {
           await wait(WS_RECONNECT_INTERVAL)
-          this.logger.debug?.(`Reconnecting to session "${this.session?.instanceID}"`)
+          this.logger.debug?.(`Reconnecting to session "${this.instance?.instanceID}"`)
           try {
             // When the WS connection closes the subscribers in devbookd are removed.
             // We want to delete the subscriber handlers here so there are no orphans.
             this.subscribers = []
             await this.rpc.connect(sessionURL)
-            this.logger.debug?.(`Reconnected to session "${this.session?.instanceID}"`)
+            this.logger.debug?.(`Reconnected to session "${this.instance?.instanceID}"`)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (err: any) {
             // not warn, because this is somewhat expected behaviour during initialization
             this.logger.debug?.(
-              `Failed reconnecting to session "${this.session?.instanceID}": ${err.message ?? err.code ?? err.toString()
+              `Failed reconnecting to session "${this.instance?.instanceID}": ${err.message ?? err.code ?? err.toString()
               }`,
             )
           }
@@ -246,14 +274,14 @@ export class SessionConnection {
       this.rpc.onNotification.push(this.handleNotification.bind(this))
 
       try {
-        this.logger.debug?.(`Connection to session "${this.session?.instanceID}"`)
+        this.logger.debug?.(`Connection to session "${this.instance?.instanceID}"`)
         await this.rpc.connect(sessionURL)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         // not warn, because this is somewhat expected behaviour during initialization
         this.logger.debug?.(
-          `Error connecting to session "${this.session?.instanceID}": ${err.message ?? err.code ?? err.toString()
+          `Error connecting to session "${this.instance?.instanceID}": ${err.message ?? err.code ?? err.toString()
           }`,
         )
       }
@@ -352,15 +380,15 @@ export class SessionConnection {
       .forEach(s => s.handler(data.params?.result))
   }
 
-  private async refresh(sessionID: string) {
-    this.logger.debug?.(`Started refreshing session "${sessionID}"`)
+  private async refresh(instanceID: string) {
+    this.logger.debug?.(`Started refreshing session "${instanceID}"`)
 
     try {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         if (!this.isOpen) {
           this.logger.debug?.(
-            `Cannot refresh session ${this.session?.instanceID} - it was closed`,
+            `Cannot refresh session ${this.instance?.instanceID} - it was closed`,
           )
           return
         }
@@ -368,12 +396,13 @@ export class SessionConnection {
         await wait(INSTANCE_REFRESH_PERIOD)
 
         try {
-          this.logger.debug?.(`Refreshed session "${sessionID}"`)
-          await this.client.refreshSession({
-            instanceID: sessionID,
+          this.logger.debug?.(`Refreshed session "${instanceID}"`)
+
+          await refreshInstance(this.apiKey, {
+            instanceID,
           })
         } catch (e) {
-          if (e instanceof this.client.refreshSession.Error) {
+          if (e instanceof refreshInstance.Error) {
             const error = e.getActualType()
             if (error.status === 404) {
               this.logger.warn?.(
@@ -382,13 +411,13 @@ export class SessionConnection {
               return
             }
             this.logger.warn?.(
-              `Refreshing session "${sessionID}" failed - (${error.status})`,
+              `Refreshing session "${instanceID}" failed - (${error.status})`,
             )
           }
         }
       }
     } finally {
-      this.logger.debug?.(`Stopped refreshing session "${sessionID}"`)
+      this.logger.debug?.(`Stopped refreshing session "${instanceID}"`)
       await this.close()
     }
   }

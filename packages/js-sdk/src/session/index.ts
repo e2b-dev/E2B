@@ -3,7 +3,6 @@ import FormData from 'form-data'
 import fetch from 'node-fetch'
 
 import { ENVD_PORT } from '../constants'
-import { components } from '../api'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
 import {
@@ -29,8 +28,6 @@ import {
   terminalService,
 } from './terminal'
 import { resolvePath } from '../utils/filesystem'
-
-export type Environment = components['schemas']['Template']
 
 export interface SessionOpts extends SessionConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler
@@ -388,7 +385,7 @@ export class Session extends SessionConnection {
 
     const portsHandler = this.onScanPorts
       ? (ports: { State: string; Ip: string; Port: number }[]) =>
-          this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
+        this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
       : undefined
 
     await this.handleSubscriptions(
