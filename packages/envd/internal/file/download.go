@@ -10,10 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
+const FileHeaderByteSize = 512
+
 func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Query().Get("path")
 	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
+
 		return
 	}
 
@@ -23,12 +26,27 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		logger.Error("Error opening file:", err)
 		http.Error(w, "File not found", http.StatusNotFound)
+
 		return
 	}
-	defer file.Close()
 
-	fileHeader := make([]byte, 512)
-	file.Read(fileHeader)
+	defer func() {
+		closeErr := file.Close()
+		if closeErr != nil {
+			logger.Error("Error closing file:", closeErr)
+		}
+	}()
+
+	fileHeader := make([]byte, FileHeaderByteSize)
+
+	_, err = file.Read(fileHeader)
+	if err != nil {
+		logger.Error("Error reading file header:", err)
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+
+		return
+	}
+
 	fileContentType := http.DetectContentType(fileHeader)
 
 	fileStat, _ := file.Stat()
@@ -38,6 +56,19 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", fileContentType)
 	w.Header().Set("Content-Length", fileSize)
 
-	file.Seek(0, 0)
-	io.Copy(w, file)
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		logger.Error("Error seeking file:", err)
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+
+		return
+	}
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		logger.Error("Error copying file to response:", err)
+		http.Error(w, "Error reading file", http.StatusInternalServerError)
+
+		return
+	}
 }
