@@ -1,8 +1,29 @@
 import OpenAI from 'openai'
 import * as e2b from '../dist/cjs/index.js'
+import readline from 'node:readline'
 import fs from 'node:fs'
+import MarkdownIt from 'markdown-it'
+import { JSDOM } from 'jsdom'
 
-const systemPrompt = `You're a helpful Python data analyst. Users ask you to solve data analysis problems and you solve them with running Python code. ALWAYS PRINT THE VARIABLES. The following Python packages are installed:
+const md = new MarkdownIt()
+
+let codeSnippets = []
+
+function askUserQuestion(query) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+
+  return new Promise(resolve =>
+    rl.question(query, ans => {
+      rl.close()
+      resolve(ans)
+    }),
+  )
+}
+
+const systemPrompt = `You're a helpful Python data analyst. Always make sure all libraries are properly imported. Users ask you to solve data analysis problems and you solve them with running Python code. ALWAYS PRINT THE VARIABLES YOU WANT SHOW TO USER. The following Python packages are installed:
 NumPy
 Pandas
 Matplotlib
@@ -13,6 +34,10 @@ Requests
 Beautiful Soup
 SQLAlchemy`
 
+const exampleCodeInMarkdown = fs.readFileSync(
+  '/Users/mlejva/Developer/e2b/packages/js-sdk/testground/code.md',
+  'utf8',
+)
 const history = [
   {
     role: 'system',
@@ -25,19 +50,16 @@ const history = [
   },
   {
     role: 'assistant',
-    content:
-      "Let's start by loading the data and then we can explore its general characteristics such as the number of rows and columns, column names and types, missing values, and basic statistics.",
+    content: `Let's start by loading the data and then we can explore its general characteristics such as the number of rows and columns, column names and types, missing values, and basic statistics. ${exampleCodeInMarkdown}`,
   },
-  {
-    role: 'assistant',
-    content:
-      "import pandas as pd\nfile_path = '/home/user/data.csv'\ncsv_data = pd.read_csv(file_path)\nbasic_info = csv_data.info()\nhead_data = csv_data.head()\ndesc_stats = csv_data.describe(include='all')\nprint(basic_info)\nprint(head_data)\nprint(desc_stats)",
-    name: 'run_python_code',
-  },
+  // {
+  //   role: 'assistant',
+  //   content: ``,
+  // },
 ]
 
 const desc =
-  'Run Python code from file. You have access to the internet and can load and save files from the "/home/user" directory'
+  'Run Python code from file. You have access to the internet and can load and save files from the "/home/user" directory. ALWASY WRITE CORRECT PYTHON CODE'
 
 const functions = [
   {
@@ -48,7 +70,7 @@ const functions = [
       properties: {
         code: {
           type: 'string',
-          description: 'The Python code to run. Make sure to properly JSON escape it.',
+          description: 'The Python code to run in Markdown format.',
         },
       },
     },
@@ -63,7 +85,7 @@ async function chat() {
   const response = await openai.chat.completions.create({
     model: 'gpt-4',
     messages: history,
-    functions,
+    // functions,
   })
   return response
 }
@@ -76,9 +98,11 @@ function respond(msg) {
   return chat()
 }
 
-function handleArtifact(artifact) {
-  console.log('ARTIFACT')
-  console.log(artifact)
+async function handleArtifact(artifact) {
+  const path = '/Users/mlejva/Developer/e2b/packages/js-sdk/testground/chart.png'
+  const file = await artifact.download('buffer')
+  fs.writeFileSync(path, file)
+  console.log('Chart saved to ', `file://${path}`)
 }
 
 async function startSession() {
@@ -95,15 +119,70 @@ async function runPython(code) {
     onStderr: out => console.error(out.line),
     onArtifact: handleArtifact,
   })
+
   if (stderr) {
-    respond(`I ran your code and got the following error: ${stderr}`)
+    // fs.writeFileSync(
+    //   '/Users/mlejva/Developer/e2b/packages/js-sdk/testground/code.txt',
+    //   code,
+    // )
+    // codeSnippets.pop()
+    console.log('Got an error in code, fixing mysekf...')
+    const response = await respond(
+      `I ran your code and got the following error: ${stderr}`,
+    )
+
+    await parseResponse(response)
   } else if (stdout) {
-    respond(`I ran your code and this is the output: ${stdout}`)
+    const response = await respond(`I ran your code and this is the output: ${stdout}`)
+    await parseResponse(response)
   }
-  // for (const artifact of artifacts) {
-  //   // const data = await s.downloadFile(artifact.path, 'buffer')
-  //   // fs.writeFileSync(artifact.path, data)
-  // }
+}
+
+function getPythonCodeSnippets(content) {
+  const html = md.render(content)
+  const dom = new JSDOM(html)
+  const snippets = []
+  dom.window.document.querySelectorAll('pre').forEach(pre => {
+    if (pre.textContent) {
+      // console.log('SNIPPET')
+      // console.log(pre.textContent)
+      snippets.push(pre.textContent)
+    }
+  })
+  return snippets
+}
+
+async function parseResponse(response) {
+  const choice = response.choices[0]
+  // console.log('==== CHOICE')
+  // console.log(choice)
+  // console.log('====')
+
+  if (choice.finish_reason === 'stop') {
+    const content = choice.message.content
+    const snippets = getPythonCodeSnippets(content)
+
+    if (snippets.length > 0) {
+      const newCode = snippets[0]
+      // codeSnippets.push(newCode)
+      // await runFunction('run_python_code', { code: codeSnippets.join('\n') })
+      await runFunction('run_python_code', { code: newCode })
+    } else {
+      console.log(content)
+      const ans = await askUserQuestion('> ')
+      const response = await respond(ans)
+      await parseResponse(response)
+    }
+  } else if (choice.finish_reason === 'function_call') {
+    // const functionName = choice.message.function_call.name
+    // const functionsArgsStr = choice.message.function_call.arguments
+    // console.log(functionsArgsStr)
+    // process.exit()
+    // const functionArgs = JSON.parse(functionsArgsStr)
+    // await runFunction(functionName, functionArgs)
+  } else {
+    console.log('unexpected finish reason', choice.finish_reason)
+  }
 }
 
 async function runFunction(name, args) {
@@ -117,19 +196,7 @@ const remoteCSVFilePath = await startSession()
 const response = await respond(
   `I uploaded a CSV file here "${remoteCSVFilePath}". What can you tell me about the data in this csv file?`,
 )
-
-const choice = response.choices[0]
-if (choice.finish_reason === 'stop') {
-  console.log('DONE')
-} else if (choice.finish_reason === 'function_call') {
-  const functionName = choice.message.function_call.name
-  const functionsArgsStr = choice.message.function_call.arguments
-  console.log(functionsArgsStr)
-  const functionArgs = JSON.parse(functionsArgsStr)
-  await runFunction(functionName, functionArgs)
-} else {
-  console.log('unexpected finish reason', choice.finish_reason)
-}
+await parseResponse(response)
 
 // const response = await openai.chat.completions.create({
 //   model: 'gpt-4',

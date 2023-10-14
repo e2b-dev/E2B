@@ -54,8 +54,11 @@ export class DataAnalysis extends Session {
     watcher.addEventListener(registerArtifacts)
     await watcher.start()
 
+    const currentEpoch = new Date().getTime()
+    const codefilePath = `/tmp/main-${currentEpoch}.py`
+    await this.filesystem.write(codefilePath, code)
     const proc = await this.process.start({
-      cmd: `python -c "${code}"`,
+      cmd: `python ${codefilePath}`,
       ...opts,
     })
     await proc.wait()
