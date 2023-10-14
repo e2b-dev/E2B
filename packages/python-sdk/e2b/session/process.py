@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class ProcessMessage(BaseModel):
     """
-    A message from a process
+    A message from a process.
     """
 
     line: str
@@ -57,14 +57,14 @@ class ProcessOutput(BaseModel):
     @property
     def stdout(self) -> str:
         """
-        The stdout from the process
+        The stdout from the process.
         """
         return self.delimiter.join(out.line for out in self.messages if not out.error)
 
     @property
     def stderr(self) -> str:
         """
-        The stderr from the process
+        The stderr from the process.
         """
         return self.delimiter.join(out.line for out in self.messages if out.error)
 
@@ -103,7 +103,7 @@ class Process:
         self._output = output
 
     @property
-    def exit_code(self) -> int:
+    def exit_code(self) -> int | None:
         """
         The exit code of the last process started by this manager.
         """
@@ -114,35 +114,35 @@ class Process:
     @property
     def output(self) -> ProcessOutput:
         """
-        The output from the process
+        The output from the process.
         """
         return self._output
 
     @property
     def stdout(self) -> str:
         """
-        The stdout from the process
+        The stdout from the process.
         """
         return self._output.stdout
 
     @property
     def stderr(self) -> str:
         """
-        The stderr from the process
+        The stderr from the process.
         """
         return self._output.stderr
 
     @property
     def error(self) -> bool:
         """
-        True if the process has written to stderr
+        True if the process has written to stderr.
         """
         return self._output.error
 
     @property
     def output_messages(self) -> List[ProcessMessage]:
         """
-        The output messages from the process
+        The output messages from the process.
         """
         return self._output.messages
 
@@ -172,13 +172,13 @@ class Process:
 
     async def wait(self):
         """
-        Waits for the process to exit.
+        Wait for the process to exit.
         """
         return await self._finished
 
     async def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Sends data to the process stdin.
+        Send data to the process stdin.
 
         :param data: Data to send
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
@@ -195,7 +195,7 @@ class Process:
 
     async def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Kills the process.
+        Kill the process.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
@@ -215,13 +215,13 @@ class SyncProcess(Process):
 
     def wait(self):
         """
-        Waits for the process to exit.
+        Wait for the process to exit.
         """
         return self._loop.run_until_complete(super().wait())
 
     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Sends data to the process stdin.
+        Send data to the process stdin.
 
         :param data: Data to send
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
@@ -430,7 +430,7 @@ class ProcessManager(BaseProcessManager):
         timeout: Optional[float] = TIMEOUT,
     ) -> Process:
         """
-        Starts a process in the environment.
+        Start a process in the environment.
 
         :param cmd: The command to run
         :param on_stdout: A callback that is called when stdout with a newline is received from the process
@@ -491,7 +491,7 @@ class SyncProcessManager(BaseProcessManager):
         timeout: Optional[float] = TIMEOUT,
     ) -> SyncProcess:
         """
-        Starts a process in the environment.
+        Start a process in the environment.
 
         :param cmd: The command to run
         :param on_stdout: A callback that is called when stdout with a newline is received from the process

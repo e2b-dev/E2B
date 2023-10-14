@@ -1,6 +1,7 @@
 export { default as api } from './api'
 export type { ClientType, components } from './api'
 
+export { API_DOMAIN } from './constants'
 export { Session } from './session'
 export type { Environment } from './session'
 export type { SessionOpts } from './session'

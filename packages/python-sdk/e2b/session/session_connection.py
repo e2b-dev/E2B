@@ -10,8 +10,8 @@ from pydantic import BaseModel
 
 from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
-    SESSION_DOMAIN,
-    SESSION_REFRESH_PERIOD,
+    INSTANCE_DOMAIN,
+    INSTANCE_REFRESH_PERIOD,
     TIMEOUT,
     ENVD_PORT,
     WS_ROUTE,
@@ -113,7 +113,7 @@ class SessionConnection:
                 return self._debug_hostname
 
         hostname = (
-            f"{self._session.session_id}-{self._session.client_id}.{SESSION_DOMAIN}"
+            f"{self._session.session_id}-{self._session.client_id}.{INSTANCE_DOMAIN}"
         )
         if port:
             return f"{port}-{hostname}"
@@ -124,7 +124,7 @@ class SessionConnection:
         Close the session and unsubscribe from all the subscriptions.
         """
         await self._close()
-        logger.info(f"Session closed")
+        logger.info("Session closed")
 
     async def _close(self):
         if self._is_open and self._session:
@@ -197,7 +197,7 @@ class SessionConnection:
                 refresh_handler = asyncio.create_task(refresh_cleanup())
                 self._process_cleanup.append(refresh_handler.cancel)
         except Exception as e:
-            logger.error(f"Failed to acquire session")
+            logger.error("Failed to acquire session")
             await self._close()
             raise e
 
@@ -220,7 +220,7 @@ class SessionConnection:
         self,
         service: str,
         method: str,
-        params: List[Any] = None,
+        params: Optional[List[Any]] = None,
         timeout: Optional[float] = TIMEOUT,
     ):
         if not params:
@@ -230,6 +230,8 @@ class SessionConnection:
             raise SessionException("Session is not open")
 
         async with async_timeout.timeout(timeout):
+            if not self._rpc:
+                raise SessionException("RPC is not initialized")
             return await self._rpc.send_message(f"{service}_{method}", params)
 
     async def _handle_subscriptions(
@@ -327,7 +329,7 @@ class SessionConnection:
                         f"Cannot refresh session - it was closed. {self._session}"
                     )
                     return
-                await asyncio.sleep(SESSION_REFRESH_PERIOD)
+                await asyncio.sleep(INSTANCE_REFRESH_PERIOD)
                 try:
                     await api.sessions_session_id_refresh_post(session_id)
                     logger.debug(f"Refreshed session {session_id}")

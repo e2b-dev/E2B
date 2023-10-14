@@ -52,6 +52,9 @@ class WebSocket:
 
     async def _receive_message(self):
         try:
+            if not self._ws:
+                logger.error("No WebSocket connection")
+                return
             async for message in self._ws:
                 logger.debug(f"WebSocket received message: {message}".strip())
                 self._queue_out.put(message)
@@ -63,7 +66,7 @@ class WebSocket:
         websocket_connector = connect(self.url, max_size=None, max_queue=None)
         websocket_connector.BACKOFF_MIN = 1
         websocket_connector.BACKOFF_FACTOR = 1
-        websocket_connector.BACKOFF_INITIAL = 1
+        websocket_connector.BACKOFF_INITIAL = 0.4
         async for websocket in websocket_connector:
             try:
                 self._ws = websocket

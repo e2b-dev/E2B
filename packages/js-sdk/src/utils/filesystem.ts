@@ -1,4 +1,5 @@
 import path from 'path'
+
 import { Logger } from '../session/sessionConnection'
 
 export const resolvePath = (

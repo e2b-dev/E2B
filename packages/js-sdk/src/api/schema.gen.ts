@@ -14,37 +14,14 @@ export interface paths {
       };
     };
   };
-  "/sessions": {
-    /** List all sessions */
-    get: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-      };
-      responses: {
-        /** Successfully returned all sessions */
-        200: {
-          content: {
-            "application/json": components["schemas"]["Session"][];
-          };
-        };
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-    /** Create a session on the server */
+  "/instances": {
+    /** Create an instance from the environment */
     post: {
-      parameters: {
-        query: {
-          api_key?: components["parameters"]["apiKeyOpt"];
-        };
-      };
       responses: {
-        /** Successfully created a session */
+        /** The instance was created successfully */
         201: {
           content: {
-            "application/json": components["schemas"]["Session"];
+            "application/json": components["schemas"]["Instance"];
           };
         };
         400: components["responses"]["400"];
@@ -53,46 +30,24 @@ export interface paths {
       };
       requestBody: {
         content: {
-          "application/json": components["schemas"]["NewSession"];
+          "application/json": components["schemas"]["NewInstance"];
         };
       };
     };
   };
-  "/sessions/{sessionID}": {
-    /** Delete a session on the server */
-    delete: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-        path: {
-          sessionID: components["parameters"]["sessionID"];
-        };
-      };
-      responses: {
-        /** Successfully deleted the session */
-        204: never;
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
-  "/sessions/{sessionID}/refresh": {
-    /** Refresh the session extending its time to live */
+  "/instances/{instanceID}/refreshes": {
+    /** Refresh the instance extending its time to live */
     post: {
       parameters: {
-        query: {
-          api_key?: components["parameters"]["apiKeyOpt"];
-        };
         path: {
-          sessionID: components["parameters"]["sessionID"];
+          instanceID: components["parameters"]["instanceID"];
         };
       };
       responses: {
-        /** Successfully refreshed the session */
+        /** Successfully refreshed the instance */
         204: never;
         401: components["responses"]["401"];
-        /** Error refreshing session - session not found */
+        /** Error refreshing instance - not found */
         404: {
           content: {
             "application/json": components["schemas"]["Error"];
@@ -104,11 +59,6 @@ export interface paths {
   "/envs": {
     /** List all environments */
     get: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-      };
       responses: {
         /** Successfully returned all environments */
         200: {
@@ -122,140 +72,51 @@ export interface paths {
     };
     /** Create a new environment */
     post: {
+      responses: {
+        /** The build has started */
+        202: {
+          content: {
+            "application/json": components["schemas"]["Environment"];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            /**
+             * Format: binary
+             * @description Docker build context
+             */
+            buildContext: string;
+            /** @description Dockerfile content */
+            dockerfile: string;
+            /** @description ID of the environment, only present if the environment should be rebuilt */
+            envID?: string;
+          };
+        };
+      };
+    };
+  };
+  "/envs/{envID}": {
+    /** Get environment info */
+    get: {
       parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
+        path: {
+          envID: components["parameters"]["envID"];
         };
       };
       responses: {
-        /** Successfully created an environment */
+        /** Successfully returned the environment */
         200: {
           content: {
             "application/json": components["schemas"]["Environment"];
           };
         };
-        400: components["responses"]["400"];
         401: components["responses"]["401"];
+        404: components["responses"]["404"];
         500: components["responses"]["500"];
-      };
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["NewEnvironment"];
-        };
-      };
-    };
-  };
-  "/envs/{codeSnippetID}": {
-    /** Create a new env for a code snippet */
-    post: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-        path: {
-          codeSnippetID: components["parameters"]["codeSnippetID"];
-        };
-      };
-      responses: {
-        /** Successfully created an environment */
-        204: never;
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["NewEnvironment"];
-        };
-      };
-    };
-    /** Delete the code snippet environment */
-    delete: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-        path: {
-          codeSnippetID: components["parameters"]["codeSnippetID"];
-        };
-      };
-      responses: {
-        /** Successfully deleted the environment */
-        204: never;
-        /** Cannot delete the environment */
-        400: {
-          content: {
-            "application/json": components["schemas"]["Error"];
-          };
-        };
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-    /** Update the environment of the code snippet to match the edit environment */
-    patch: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-        path: {
-          codeSnippetID: components["parameters"]["codeSnippetID"];
-        };
-      };
-      responses: {
-        /** Updated the edit environment for code snippet */
-        204: never;
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
-  "/envs/{codeSnippetID}/state": {
-    /** Update the state of the environment */
-    put: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-        path: {
-          codeSnippetID: components["parameters"]["codeSnippetID"];
-        };
-      };
-      responses: {
-        /** Updated the state of environment */
-        204: never;
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-      };
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["EnvironmentStateUpdate"];
-        };
-      };
-    };
-  };
-  "/envs/{codeSnippetID}/title": {
-    /** Update the title of the environment */
-    put: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-        path: {
-          codeSnippetID: components["parameters"]["codeSnippetID"];
-        };
-      };
-      responses: {
-        /** Updated the title of the code snippet */
-        204: never;
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-      };
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["EnvironmentTitleUpdate"];
-        };
       };
     };
   };
@@ -263,50 +124,26 @@ export interface paths {
 
 export interface components {
   schemas: {
-    /** @enum {string} */
-    Template:
-      | "Nodejs"
-      | "Go"
-      | "Bash"
-      | "Rust"
-      | "Python3"
-      | "PHP"
-      | "Java"
-      | "Perl"
-      | "DotNET";
-    /** @enum {string} */
-    EnvironmentState: "Building" | "Failed" | "Done";
+    NewInstance: {
+      /** @description Identifier of the required environment */
+      envID: string;
+    };
     Environment: {
-      id: string;
-      template?: string;
-      title?: string;
-    };
-    NewEnvironment: {
-      title?: string;
-      template: string;
-    };
-    EnvironmentStateUpdate: {
-      state: components["schemas"]["EnvironmentState"];
-    };
-    EnvironmentTitleUpdate: {
-      title?: string;
-    };
-    NewSession: {
+      /** @description Identifier of the environment */
+      envID: string;
       /**
-       * @description Option determining if the session is a shared persistent edit session
-       * @default false
+       * @description Status of the environment
+       * @enum {string}
        */
-      editEnabled?: boolean;
-      /** @description Identifier of a code snippet which which is the environment associated */
-      codeSnippetID: string;
+      status: "building" | "ready" | "error";
+      /** @description Whether the environment is public or only accessible by the team */
+      public: boolean;
     };
-    Session: {
-      /** @description Identifier of a code snippet which which is the environment associated */
-      codeSnippetID: string;
-      /** @description Information if the session is a shared persistent edit session */
-      editEnabled: boolean;
-      /** @description Identifier of the session */
-      sessionID: string;
+    Instance: {
+      /** @description Identifier of the environment from which is the instance created */
+      envID: string;
+      /** @description Identifier of the instance */
+      instanceID: string;
       /** @description Identifier of the client */
       clientID: string;
     };
@@ -333,6 +170,12 @@ export interface components {
         "application/json": components["schemas"]["Error"];
       };
     };
+    /** Not found */
+    404: {
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
     /** Server error */
     500: {
       content: {
@@ -341,10 +184,8 @@ export interface components {
     };
   };
   parameters: {
-    apiKeyOpt: string;
-    apiKeyReq: string;
-    codeSnippetID: string;
-    sessionID: string;
+    envID: string;
+    instanceID: string;
   };
 }
 
