@@ -1,10 +1,10 @@
 import asyncio
 import logging
-import requests
 import urllib.parse
 from os import path
 from typing import Any, Callable, List, Literal, Optional, Union, IO
 
+import requests
 from async_timeout import timeout as async_timeout
 
 from e2b.constants import (
@@ -172,7 +172,7 @@ class Session(SessionConnection):
 
         :param file: The file to upload
         """
-        files = {'file': file}
+        files = {"file": file}
         r = requests.post(self.file_url(), files=files)
         if r.status_code != 200:
             raise Exception(f"Failed to upload file: {r.reason} {r.text}")
@@ -191,7 +191,9 @@ class Session(SessionConnection):
         r = requests.get(url)
 
         if r.status_code != 200:
-            raise Exception(f"Failed to download file '{remote_path}'. {r.reason} {r.text}")
+            raise Exception(
+                f"Failed to download file '{remote_path}'. {r.reason} {r.text}"
+            )
         return r.content
 
     async def __aenter__(self):

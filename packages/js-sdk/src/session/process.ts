@@ -17,6 +17,10 @@ export class ProcessMessage {
   ) {
     // eslint-disable-next-line prettier/prettier
   }
+
+  public toString() {
+    return this.line
+  }
 }
 
 /**
