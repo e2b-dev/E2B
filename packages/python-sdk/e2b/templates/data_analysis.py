@@ -1,8 +1,10 @@
 import logging
+import time
 from typing import Optional, Callable, Any, Tuple, List, Union
 
 from pydantic import BaseModel, PrivateAttr
 
+from e2b.constants import TIMEOUT
 from e2b import EnvVars, SyncSession
 
 logger = logging.getLogger(__name__)
@@ -62,6 +64,10 @@ class DataAnalysis(SyncSession):
         on_stdout: Optional[Callable[[str], Any]] = None,
         on_stderr: Optional[Callable[[str], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
+        env_vars: Optional[EnvVars] = None,
+        cwd: str = "",
+        process_id: Optional[str] = None,
+        timeout: Optional[float] = TIMEOUT,
     ) -> Tuple[str, str, List[Artifact]]:
         artifacts = set()
 
@@ -79,11 +85,19 @@ class DataAnalysis(SyncSession):
         watcher.add_event_listener(register_artifacts)
         watcher.start()
 
+        epoch_time = time.time()
+        codefile_path = f"/tmp/main-{epoch_time}.py"
+        self.filesystem.write(codefile_path, code)
+
         process = self.process.start(
-            f'python -c "{code}"',
+            f'python {codefile_path}',
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             on_exit=on_exit,
+            env_vars=env_vars,
+            cwd=cwd,
+            process_id=process_id,
+            timeout=timeout,
         )
         process.wait()
 
