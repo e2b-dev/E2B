@@ -27,5 +27,14 @@ from .session import (
     TerminalOutput,
     run_code,
     run_code_sync,
+)
+
+from .api import (
+    E2BApiClient,
+    client,
+)
+
+from .constants import (
     API_DOMAIN,
+    INSTANCE_DOMAIN,
 )

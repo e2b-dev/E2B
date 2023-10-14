@@ -8,7 +8,7 @@ from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
 import async_timeout
 from pydantic import BaseModel
 
-from e2b.api import client, configuration, exceptions, models
+from e2b.api import E2BApiClient, exceptions, models, client
 from e2b.constants import (
     INSTANCE_DOMAIN,
     INSTANCE_REFRESH_PERIOD,
@@ -81,7 +81,7 @@ class SessionConnection:
         self._debug_dev_env = _debug_dev_env
         self._on_close_child = on_close
 
-        self._session: Optional[models.Session] = None
+        self._instance: Optional[models.Instance] = None
         self._is_open = False
         self._process_cleanup: List[Callable[[], Any]] = []
         self._refreshing_task: Optional[asyncio.Future] = None
@@ -99,7 +99,7 @@ class SessionConnection:
 
         :return: Hostname of the session or session's port
         """
-        if not self._session:
+        if not self._instance:
             raise SessionException(
                 "Session is not running. You have to run `await session.open()` first or create the session with `await Session.create()"
             )
@@ -113,7 +113,7 @@ class SessionConnection:
                 return self._debug_hostname
 
         hostname = (
-            f"{self._session.session_id}-{self._session.client_id}.{INSTANCE_DOMAIN}"
+            f"{self._instance.instance_id}-{self._instance.client_id}.{INSTANCE_DOMAIN}"
         )
         if port:
             return f"{port}-{hostname}"
@@ -127,9 +127,9 @@ class SessionConnection:
         logger.info("Session closed")
 
     async def _close(self):
-        if self._is_open and self._session:
+        if self._is_open and self._instance:
             logger.info(
-                f"Closing session {self._session.code_snippet_id} (id: {self._session.session_id})"
+                f"Closing session {self._instance.env_id} (id: {self._instance.instance_id})"
             )
             self._is_open = False
             if self._rpc:
@@ -150,21 +150,20 @@ class SessionConnection:
 
         You must call this method before using the session.
         """
-        if self._is_open or self._session:
+        if self._is_open or self._instance:
             raise SessionException("Session connect was already called")
         else:
             self._is_open = True
 
         try:
-            async with client.ApiClient(configuration) as api_client:
-                api = client.SessionsApi(api_client)
+            async with E2BApiClient(api_key=self._api_key) as api_client:
+                api = client.InstancesApi(api_client)
 
-                self._session = await api.sessions_post(
-                    models.NewSession(codeSnippetID=self._id, editEnabled=False),
-                    api_key=self._api_key,
+                self._instance = await api.instances_post(
+                    models.NewInstance(envID=self._id),
                 )
                 logger.info(
-                    f"Session {self._session.code_snippet_id} created (id:{self._session.session_id})"
+                    f"Session {self._instance.env_id} created (id:{self._instance.instance_id})"
                 )
 
                 # We could potentially use asyncio.to_thread() but that requires Python 3.9+
@@ -172,7 +171,7 @@ class SessionConnection:
                 self._refreshing_task = asyncio.get_running_loop().run_in_executor(
                     executor,
                     run_async_func_in_new_loop,
-                    self._refresh(self._session.session_id),
+                    self._refresh(self._instance.instance_id),
                 )
 
                 self._process_cleanup.append(self._refreshing_task.cancel)
@@ -183,9 +182,9 @@ class SessionConnection:
                         if self._refreshing_task:
                             await self._refreshing_task
                     finally:
-                        if self._session:
+                        if self._instance:
                             logger.info(
-                                f"Stopped refreshing session (id: {self._session.session_id})"
+                                f"Stopped refreshing session (id: {self._instance.instance_id})"
                             )
                         else:
                             logger.info(
@@ -231,7 +230,8 @@ class SessionConnection:
 
         async with async_timeout.timeout(timeout):
             if not self._rpc:
-                raise SessionException("RPC is not initialized")
+                raise SessionException("Session is not open")
+
             return await self._rpc.send_message(f"{service}_{method}", params)
 
     async def _handle_subscriptions(
@@ -314,38 +314,36 @@ class SessionConnection:
             if id == data.params["subscription"]:
                 sub.handler(data.params["result"])
 
-    async def _refresh(self, session_id: str):
-        logger.info(
-            f"Started refreshing session {self._session.code_snippet_id} (id: {session_id})"
-        )
+    async def _refresh(self, instance_id: str):
+        logger.info(f"Started refreshing session (id:{instance_id})")
 
         current_retry = 0
 
-        async with client.ApiClient(configuration) as api_client:
-            api = client.SessionsApi(api_client)
+        async with E2BApiClient(api_key=self._api_key) as api_client:
+            api = client.InstancesApi(api_client)
             while True:
                 if not self._is_open:
                     logger.debug(
-                        f"Cannot refresh session - it was closed. {self._session}"
+                        f"Cannot refresh session - it was closed. {self._instance}"
                     )
                     return
                 await asyncio.sleep(INSTANCE_REFRESH_PERIOD)
                 try:
-                    await api.sessions_session_id_refresh_post(session_id)
-                    logger.debug(f"Refreshed session {session_id}")
+                    await api.instances_instance_id_refreshes_post(instance_id)
+                    logger.debug(f"Refreshed session {instance_id}")
                 except exceptions.ApiException as e:
                     if e.status == 404:
                         raise SessionException(
-                            f"Session {session_id} failed because it cannot be found"
+                            f"Session {instance_id} failed because it cannot be found"
                         ) from e
                     else:
                         if current_retry < self._refresh_retries:
                             logger.error(
-                                f"Refreshing session {session_id} failed. Retrying..."
+                                f"Refreshing session {instance_id} failed. Retrying..."
                             )
                             current_retry += 1
                         else:
                             logger.error(
-                                f"Refreshing session {session_id} failed. Max retries exceeded"
+                                f"Refreshing session {instance_id} failed. Max retries exceeded"
                             )
                             raise e
