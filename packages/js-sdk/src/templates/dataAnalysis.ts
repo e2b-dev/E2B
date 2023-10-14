@@ -72,7 +72,11 @@ export class DataAnalysis extends Session {
     }
   }
 
-  async installPythonPackage(packageName: string) {
+  async installPythonPackages(packageName: string | string[]) {
+    if (Array.isArray(packageName)) {
+      packageName = packageName.join(' ')
+    }
+
     const proc = await this.process.start({ cmd: `pip install ${packageName}` })
     await proc.wait()
 
@@ -81,7 +85,11 @@ export class DataAnalysis extends Session {
     }
   }
 
-  async installSystemPackage(packageName: string) {
+  async installSystemPackages(packageName: string | string[]) {
+    if (Array.isArray(packageName)) {
+      packageName = packageName.join(' ')
+    }
+
     const proc = await this.process.start({ cmd: `apt-get install ${packageName}` })
     await proc.wait()
 

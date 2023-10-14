@@ -91,7 +91,7 @@ class DataAnalysis(SyncSession):
 
         return process.output.stdout, process.output.stderr, list(artifacts)
 
-    def install_python_package(self, package_names: Union[str, List[str]]):
+    def install_python_packages(self, package_names: Union[str, List[str]]):
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
@@ -103,7 +103,7 @@ class DataAnalysis(SyncSession):
                 f"Failed to install package {package_names}: {process.output.stderr}"
             )
 
-    def install_system_package(self, package_names: Union[str, List[str]]):
+    def install_system_packages(self, package_names: Union[str, List[str]]):
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
