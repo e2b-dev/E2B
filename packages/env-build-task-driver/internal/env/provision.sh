@@ -86,13 +86,12 @@ echo "user ALL=(ALL:ALL) NOPASSWD: ALL" >>/etc/sudoers
 mkdir -p /code
 mkdir -p /home/user
 
-chmod 777 /home/user
+chmod 777 -R /home/user
 chmod 777 -R /usr/local
 chmod 777 -R /code
 
 # TODO: Right now the chown line has no effect in the FC, even though it correctly changes the owner here.
 # It may be becayse of the way we are starting the FC VM?
-
 
 # Add DNS.
 echo "nameserver 8.8.8.8" >/etc/resolv.conf
