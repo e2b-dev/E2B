@@ -1,7 +1,7 @@
 export { default as api, withAPIKey, withAccessToken } from './api'
 export type { ClientType, components } from './api'
 
-export { API_DOMAIN } from './constants'
+export { API_DOMAIN, INSTANCE_DOMAIN } from './constants'
 export { Session } from './session'
 export type { SessionOpts } from './session'
 export type { OpenPort } from './session/codeSnippet'
