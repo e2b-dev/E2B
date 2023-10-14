@@ -27,8 +27,14 @@ export const buildCommand = new commander.Command('build')
     )} to rebuild an existing environment. Otherwise, a new environment will be created.`,
   )
   .addOption(pathOption)
-  .option('-G, --no-gitignore', 'Ignore .gitignore file in the root directory')
-  .option('-D, --no-dockerignore', 'Ignore .dockerignore file in the root directory')
+  .option(
+    '-G, --no-gitignore',
+    `Ignore ${asLocalRelative('.gitignore')} file in the root directory`,
+  )
+  .option(
+    '-D, --no-dockerignore',
+    `Ignore ${asLocalRelative('.dockerignore')} file in the root directory`,
+  )
   .alias('bd')
   .action(
     async (
