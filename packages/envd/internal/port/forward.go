@@ -11,8 +11,9 @@ import (
 	"net"
 	"os/exec"
 
-	"github.com/e2b-dev/infra/packages/envd/internal/env"
 	"go.uber.org/zap"
+
+	"github.com/e2b-dev/infra/packages/envd/internal/env"
 )
 
 type PortState string
@@ -96,7 +97,11 @@ func (f *Forwarder) StartForwarding() {
 						"state", p.State,
 					)
 					// The opened port wasn't in the map so we create a new PortToForward and start forwarding.
-					ptf := &PortToForward{p.Pid, p.Port, PortStateForward, nil}
+					ptf := &PortToForward{
+						pid:   p.Pid,
+						port:  p.Port,
+						state: PortStateForward,
+					}
 					f.ports[key] = ptf
 					f.starPortForwarding(ptf)
 				}
