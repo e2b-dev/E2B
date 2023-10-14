@@ -110,6 +110,8 @@ server {
   proxy_cache_bypass 1;
   proxy_no_cache 1;
 
+  client_max_body_size 100M;
+
   location / {
     proxy_pass $scheme://[[ .Address ]]:[[ .Port ]]$request_uri;
   }
