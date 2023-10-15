@@ -14,14 +14,18 @@ import { Auth } from '@/components/Auth'
 import { Feedback } from '@/components/Feedback'
 import {
   Binary,
-  Bug,
   ChevronRightSquare,
   Folder,
   FolderTree,
   KeyRound,
   Settings,
-  ShieldAlert,
+  AlertOctagon,
+  ShieldQuestion,
   Timer,
+  FileUp,
+  FileDown,
+  Variable,
+  TextQuote,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -266,9 +270,9 @@ function NavigationGroup({ group, className }) {
 
 export const navigation = [
   {
-    title: 'Introduction',
+    title: 'E2B - Sandbox Runtime for LLM',
     links: [
-      { title: 'What is E2B & AI Playgrounds?', href: '/' },
+      { title: 'Introduction', href: '/' },
       { title: 'Pricing', href: '/pricing' },
       {
         title: 'Example: Build Code Interpreter',
@@ -299,28 +303,48 @@ export const navigation = [
         title: 'API Key',
         href: '/getting-started/api-key',
       },
-      // { title: 'SDK Basics', href: '/getting-started/basics' },
-      // { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
-      // { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
-      // {
-      //   title: 'SDK Multiple Processes',
-      //   href: '/getting-started/sdk-multiple-processes',
-      // },
-    ],
-  },
-  {
-    title: 'AI Playgrounds SDK',
-    links: [
-      { title: 'Overview', href: '/playgrounds/overview' },
       {
         icon: (
-          <ShieldAlert
+          <AlertOctagon
             strokeWidth={1}
             size={20}
           />
         ),
-        title: 'Limitations',
+        title: 'Current Limitations',
         href: '/playgrounds/limitations',
+      },
+      {
+        icon: (
+          <ShieldQuestion
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: '[TODO] Support',
+        href: '/playgrounds/limitations',
+      },
+    ],
+  },
+  {
+    title: 'Use Cases & Guides',
+    links: [
+      { title: '[TODO] AI Data Analysis & Code Interpreter', href: '/' },
+      { title: '[TODO] Run LLM-Generated Code', href: '/' },
+    ],
+  },
+  {
+    title: 'API',
+    links: [
+      { title: 'Overview', href: '/playgrounds/overview' },
+      {
+        icon: (
+          <Variable
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: '[TODO] Environment Variables',
+        href: '/playgrounds/filesystem',
       },
       {
         icon: (
@@ -352,26 +376,26 @@ export const navigation = [
         title: 'Executing Code',
         href: '/playgrounds/execute',
       },
-      // {
-      //   icon: (
-      //     <FileUp
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Upload Files',
-      //   href: '/playgrounds/upload',
-      // },
-      // {
-      //   icon: (
-      //     <FileDown
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Download Files',
-      //   href: '/playgrounds/download',
-      // },
+      {
+        icon: (
+          <FileUp
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Upload Files',
+        href: '/playgrounds/upload',
+      },
+      {
+        icon: (
+          <FileDown
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Download Files',
+        href: '/playgrounds/download',
+      },
       {
         icon: (
           <Folder
@@ -384,12 +408,12 @@ export const navigation = [
       },
       {
         icon: (
-          <Bug
+          <TextQuote
             strokeWidth={1}
             size={20}
           />
         ),
-        title: 'Debugging',
+        title: '[TODO] Logging',
         href: '/playgrounds/debugging',
       },
       {
@@ -404,18 +428,18 @@ export const navigation = [
       },
     ],
   },
-  {
-    title: 'AI Agents Use Case',
-    links: [
-      { title: 'Execute Code', href: '/agents/exec' },
-      // { title: 'Installing Dependencies', href: '/agents/deps' },
-      { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
-      { title: 'Run Shell Commands', href: '/agents/shell-commands' },
-      // { title: 'Read File', href: '/agents/read' },
-      // { title: 'Write File', href: '/agents/write' },
-      // TODO: Guide for building ffmpeg agent
-    ],
-  },
+  // {
+  //   title: 'AI Agents Use Case',
+  //   links: [
+  //     { title: 'Execute Code', href: '/agents/exec' },
+  //     // { title: 'Installing Dependencies', href: '/agents/deps' },
+  //     { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
+  //     { title: 'Run Shell Commands', href: '/agents/shell-commands' },
+  //     // { title: 'Read File', href: '/agents/read' },
+  //     // { title: 'Write File', href: '/agents/write' },
+  //     // TODO: Guide for building ffmpeg agent
+  //   ],
+  // },
 
   // {
   //   title: 'AI Environments',
