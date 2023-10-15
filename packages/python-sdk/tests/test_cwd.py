@@ -23,7 +23,7 @@ def test_filesystem_cwd():
     session.close()
 
 
-async def test_change_cwd():
+def test_change_cwd():
     session = Session("Nodejs", cwd="/code/app")
 
     # change dir to /home/user
@@ -43,7 +43,7 @@ async def test_change_cwd():
     session.close()
 
 
-async def test_initial_cwd_with_tilde():
+def test_initial_cwd_with_tilde():
     session = Session("Nodejs", cwd="~/code/")
 
     proc = session.process.start("pwd")
@@ -53,7 +53,7 @@ async def test_initial_cwd_with_tilde():
     session.close()
 
 
-async def test_relative_paths():
+def test_relative_paths():
     session = Session("Nodejs", cwd="/home/user")
 
     session.filesystem.make_dir("./code")
@@ -70,7 +70,7 @@ async def test_relative_paths():
     session.close()
 
 
-async def test_warnings():
+def test_warnings():
     session = Session("Nodejs")
 
     with pytest.warns(Warning):
