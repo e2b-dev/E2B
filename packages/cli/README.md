@@ -1,55 +1,72 @@
-# e2b CLI (WIP)
+<h1 align="center">
+<span style="font-size:48px;"><b>E2B CLI</b></span>
+</h1>
 
-Command line interface for [e2b](https://e2b.dev/).
+<h4 align="center">
+  <a href="https://e2b.dev/docs">Docs</a> |
+  <a href="https://e2b.dev">Website</a> |
+  <a href="https://discord.gg/U7KEcGErtQ">Discord</a> |
+  <a href="https://twitter.com/e2b_dev">Twitter</a>
+</h4>
+
+<h4 align="center">
+  <a href="https://discord.gg/U7KEcGErtQ">
+    <img src="https://img.shields.io/badge/chat-on%20Discord-blue" alt="Discord community server" />
+  </a>
+  <a href="https://twitter.com/e2b_dev">
+    <img src="https://img.shields.io/twitter/follow/infisical?label=Follow" alt="e2b Twitter" />
+  </a>
+</h4>
+
+[E2B](https://e2b.dev) (_english2bits_) is a cloud operating system for AI agents.
 
 ## Installation
 
-```sh
+```bash
 npm install -g @e2b/cli
 ```
 
-Then you can use the CLI with
+Then you can use the CLI like this:
 
-```sh
+```bash
 e2b --help
 ```
 
-You will need to authenticate to use the e2b CLI.
+## Getting started
 
-```sh
-e2b login
-```
+1. Authenticate with `e2b login`
 
-<details>
-<summary>Authenticate without the ability to open browser</summary>
+> To authenticate without the ability to open browser, you can provide `E2B_ACCESS_TOKEN` as an environment variable. Get your `E2B_ACCESS_TOKEN` from [e2b.dev/docs](https://e2b.dev/docs). Then use the CLI like this: `E2B_ACCESS_TOKEN=sk_e2b_... e2b build`
 
+2. Create a `Dockerfile` where you describe how your custom E2B environment should look like
 
-To authenticate without the ability to open browser, you can provide E2B_ACCESS_TOKEN as an environment variable.
-Obtain your E2B_ACCESS_TOKEN from at [e2b.dev/docs](https://e2b.dev/docs).
+3. Run `e2b build` inside the directory with the `Dockerfile` to create and build the environment. You will get **environment ID** that you use for connecting to the environment instances via SDKs and for rebuilding the environment
 
-```sh
-E2B_ACCESS_TOKEN=sk_e2b_... e2b login
-```
+5. Use the **environment ID** that you got during the `e2b build` with the Python or JS/TS SDK as the `id` to create environment instances
 
-</details>
+6. Rebuild the environment by running `e2b build <id-of-the-environment>` in the directory with the `Dockerfile`
+
 
 ## Commands
 
-🔜 All commands can be called with a `--path <path-to-dir>` flag that changes the directory where the command will be called, without the need to call `cd`.
+All commands can be called with a `--path <path-to-dir>` flag that changes the directory where the command will be called, without the need to call `cd`.
 
-```
+```sh
 -V, --version    Display e2b CLI version
 -h, --help       display help for command
 ```
 
-```
-help [command]   display help for command
+```sh
+Usage: e2b env [options] [command]
 
-login            Login to e2b
-logout           Logout of e2b
+Manage e2b environments
 
-env|environment  Manage e2b environments
-  create|cr [options]      Create new environment and e2b.json config
+Options:
+  -h, --help               display help for command
+
+Commands:
+  build|bd [options] [id]  Build environment
   list|ls                  List environments
-  shell|cn [options] [id]  Connect terminal to environment
+  shell|sh <id>            Connect terminal to environment
+  help [command]           display help for command
 ```
