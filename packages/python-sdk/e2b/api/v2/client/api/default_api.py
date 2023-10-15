@@ -18,7 +18,6 @@ import warnings
 
 from pydantic import validate_call, ValidationError
 from typing_extensions import Annotated
-from typing import overload, Optional, Union, Awaitable
 
 
 from e2b.api.v2.client.api_client import ApiClient
@@ -38,20 +37,8 @@ class DefaultApi:
             api_client = ApiClient.get_default()
         self.api_client = api_client
 
-    @overload
-    async def health_get(self, **kwargs) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def health_get(
-        self, async_req: Optional[bool] = True, **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
-    def health_get(
-        self, async_req: Optional[bool] = None, **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+    def health_get(self, **kwargs) -> None:  # noqa: E501
         """health_get  # noqa: E501
 
         Health check  # noqa: E501
@@ -76,8 +63,6 @@ class DefaultApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the health_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.health_get_with_http_info(**kwargs)  # noqa: E501
 
     @validate_call

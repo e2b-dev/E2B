@@ -19,7 +19,6 @@ To be able to use it, you will need these dependencies in your own package that 
 
 * urllib3 >= 1.25.3
 * python-dateutil
-* aiohttp
 * pydantic
 * aenum
 
@@ -44,12 +43,12 @@ configuration = e2b.api.v2.client.Configuration(
 
 
 # Enter a context with an instance of the API client
-async with e2b.api.v2.client.ApiClient(configuration) as api_client:
+with e2b.api.v2.client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = e2b.api.v2.client.DefaultApi(api_client)
 
     try:
-        await api_instance.health_get()
+        api_instance.health_get()
     except ApiException as e:
         print("Exception when calling DefaultApi->health_get: %s\n" % e)
 

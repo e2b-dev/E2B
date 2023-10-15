@@ -18,7 +18,6 @@ import warnings
 
 from pydantic import validate_call, ValidationError
 from typing_extensions import Annotated
-from typing import overload, Optional, Union, Awaitable
 
 from pydantic import StrictStr
 
@@ -46,30 +45,10 @@ class EnvsApi:
             api_client = ApiClient.get_default()
         self.api_client = api_client
 
-    @overload
-    async def envs_code_snippet_id_delete(
-        self, api_key: StrictStr, code_snippet_id: StrictStr, **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def envs_code_snippet_id_delete(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
     def envs_code_snippet_id_delete(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        async_req: Optional[bool] = None,
-        **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+        self, api_key: StrictStr, code_snippet_id: StrictStr, **kwargs
+    ) -> None:  # noqa: E501
         """envs_code_snippet_id_delete  # noqa: E501
 
         Delete the code snippet environment  # noqa: E501
@@ -98,8 +77,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_code_snippet_id_delete_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_code_snippet_id_delete_with_http_info(
             api_key, code_snippet_id, **kwargs
         )  # noqa: E501
@@ -219,30 +196,10 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_code_snippet_id_patch(
-        self, api_key: StrictStr, code_snippet_id: StrictStr, **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def envs_code_snippet_id_patch(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
     def envs_code_snippet_id_patch(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        async_req: Optional[bool] = None,
-        **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+        self, api_key: StrictStr, code_snippet_id: StrictStr, **kwargs
+    ) -> None:  # noqa: E501
         """envs_code_snippet_id_patch  # noqa: E501
 
         Update the environment of the code snippet to match the edit environment  # noqa: E501
@@ -271,8 +228,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_code_snippet_id_patch_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_code_snippet_id_patch_with_http_info(
             api_key, code_snippet_id, **kwargs
         )  # noqa: E501
@@ -392,36 +347,14 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_code_snippet_id_post(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        new_environment: NewEnvironment,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def envs_code_snippet_id_post(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        new_environment: NewEnvironment,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
     def envs_code_snippet_id_post(
         self,
         api_key: StrictStr,
         code_snippet_id: StrictStr,
         new_environment: NewEnvironment,
-        async_req: Optional[bool] = None,
         **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+    ) -> None:  # noqa: E501
         """envs_code_snippet_id_post  # noqa: E501
 
         Create a new env for a code snippet  # noqa: E501
@@ -452,8 +385,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_code_snippet_id_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_code_snippet_id_post_with_http_info(
             api_key, code_snippet_id, new_environment, **kwargs
         )  # noqa: E501
@@ -590,36 +521,14 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_code_snippet_id_state_put(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        environment_state_update: EnvironmentStateUpdate,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def envs_code_snippet_id_state_put(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        environment_state_update: EnvironmentStateUpdate,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
     def envs_code_snippet_id_state_put(
         self,
         api_key: StrictStr,
         code_snippet_id: StrictStr,
         environment_state_update: EnvironmentStateUpdate,
-        async_req: Optional[bool] = None,
         **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+    ) -> None:  # noqa: E501
         """envs_code_snippet_id_state_put  # noqa: E501
 
         Update the state of the environment  # noqa: E501
@@ -650,8 +559,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_code_snippet_id_state_put_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_code_snippet_id_state_put_with_http_info(
             api_key, code_snippet_id, environment_state_update, **kwargs
         )  # noqa: E501
@@ -788,36 +695,14 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_code_snippet_id_title_put(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        environment_title_update: EnvironmentTitleUpdate,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def envs_code_snippet_id_title_put(
-        self,
-        api_key: StrictStr,
-        code_snippet_id: StrictStr,
-        environment_title_update: EnvironmentTitleUpdate,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
     def envs_code_snippet_id_title_put(
         self,
         api_key: StrictStr,
         code_snippet_id: StrictStr,
         environment_title_update: EnvironmentTitleUpdate,
-        async_req: Optional[bool] = None,
         **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+    ) -> None:  # noqa: E501
         """envs_code_snippet_id_title_put  # noqa: E501
 
         Update the title of the environment  # noqa: E501
@@ -848,8 +733,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_code_snippet_id_title_put_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_code_snippet_id_title_put_with_http_info(
             api_key, code_snippet_id, environment_title_update, **kwargs
         )  # noqa: E501
@@ -986,22 +869,8 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_get(
-        self, api_key: StrictStr, **kwargs
-    ) -> List[Environment]:  # noqa: E501
-        ...
-
-    @overload
-    def envs_get(
-        self, api_key: StrictStr, async_req: Optional[bool] = True, **kwargs
-    ) -> List[Environment]:  # noqa: E501
-        ...
-
     @validate_call
-    def envs_get(
-        self, api_key: StrictStr, async_req: Optional[bool] = None, **kwargs
-    ) -> Union[List[Environment], Awaitable[List[Environment]]]:  # noqa: E501
+    def envs_get(self, api_key: StrictStr, **kwargs) -> List[Environment]:  # noqa: E501
         """envs_get  # noqa: E501
 
         List all environments  # noqa: E501
@@ -1028,8 +897,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_get_with_http_info(api_key, **kwargs)  # noqa: E501
 
     @validate_call
@@ -1147,30 +1014,10 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_post(
-        self, api_key: StrictStr, new_environment: NewEnvironment, **kwargs
-    ) -> Environment:  # noqa: E501
-        ...
-
-    @overload
-    def envs_post(
-        self,
-        api_key: StrictStr,
-        new_environment: NewEnvironment,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> Environment:  # noqa: E501
-        ...
-
     @validate_call
     def envs_post(
-        self,
-        api_key: StrictStr,
-        new_environment: NewEnvironment,
-        async_req: Optional[bool] = None,
-        **kwargs
-    ) -> Union[Environment, Awaitable[Environment]]:  # noqa: E501
+        self, api_key: StrictStr, new_environment: NewEnvironment, **kwargs
+    ) -> Environment:  # noqa: E501
         """envs_post  # noqa: E501
 
         Create a new environment  # noqa: E501
@@ -1199,8 +1046,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_post_with_http_info(
             api_key, new_environment, **kwargs
         )  # noqa: E501

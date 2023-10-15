@@ -7,27 +7,22 @@ from .exception import (
     SessionException,
     TerminalException,
 )
-from .filesystem import FileInfo, FilesystemManager, SyncFilesystemManager
+from .filesystem import FileInfo, FilesystemManager
 from .filesystem_watcher import (
     FilesystemEvent,
     FilesystemOperation,
     FilesystemWatcher,
-    SyncFilesystemWatcher,
 )
-from .main import Session, SyncSession
+from .main import Session
 from .process import (
     Process,
     ProcessManager,
     ProcessMessage,
     ProcessOutput,
-    SyncProcess,
-    SyncProcessManager,
 )
-from .run_code import run_code, run_code_sync
+from .run_code import run_code
 from .terminal import (
     Terminal,
     TerminalManager,
     TerminalOutput,
-    SyncTerminalManager,
-    SyncTerminal,
 )

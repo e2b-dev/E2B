@@ -18,7 +18,6 @@ import warnings
 
 from pydantic import validate_call, ValidationError
 from typing_extensions import Annotated
-from typing import overload, Optional, Union, Awaitable
 
 from pydantic import StrictStr
 
@@ -44,22 +43,8 @@ class SessionsApi:
             api_client = ApiClient.get_default()
         self.api_client = api_client
 
-    @overload
-    async def sessions_get(
-        self, api_key: StrictStr, **kwargs
-    ) -> List[Session]:  # noqa: E501
-        ...
-
-    @overload
-    def sessions_get(
-        self, api_key: StrictStr, async_req: Optional[bool] = True, **kwargs
-    ) -> List[Session]:  # noqa: E501
-        ...
-
     @validate_call
-    def sessions_get(
-        self, api_key: StrictStr, async_req: Optional[bool] = None, **kwargs
-    ) -> Union[List[Session], Awaitable[List[Session]]]:  # noqa: E501
+    def sessions_get(self, api_key: StrictStr, **kwargs) -> List[Session]:  # noqa: E501
         """sessions_get  # noqa: E501
 
         List all sessions  # noqa: E501
@@ -86,8 +71,6 @@ class SessionsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the sessions_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.sessions_get_with_http_info(api_key, **kwargs)  # noqa: E501
 
     @validate_call
@@ -205,30 +188,10 @@ class SessionsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def sessions_post(
-        self, new_session: NewSession, api_key: Optional[StrictStr] = None, **kwargs
-    ) -> Session:  # noqa: E501
-        ...
-
-    @overload
-    def sessions_post(
-        self,
-        new_session: NewSession,
-        api_key: Optional[StrictStr] = None,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> Session:  # noqa: E501
-        ...
-
     @validate_call
     def sessions_post(
-        self,
-        new_session: NewSession,
-        api_key: Optional[StrictStr] = None,
-        async_req: Optional[bool] = None,
-        **kwargs
-    ) -> Union[Session, Awaitable[Session]]:  # noqa: E501
+        self, new_session: NewSession, api_key: Optional[StrictStr] = None, **kwargs
+    ) -> Session:  # noqa: E501
         """sessions_post  # noqa: E501
 
         Create a session on the server  # noqa: E501
@@ -257,8 +220,6 @@ class SessionsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the sessions_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.sessions_post_with_http_info(
             new_session, api_key, **kwargs
         )  # noqa: E501
@@ -392,30 +353,10 @@ class SessionsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def sessions_session_id_delete(
-        self, api_key: StrictStr, session_id: StrictStr, **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def sessions_session_id_delete(
-        self,
-        api_key: StrictStr,
-        session_id: StrictStr,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
     def sessions_session_id_delete(
-        self,
-        api_key: StrictStr,
-        session_id: StrictStr,
-        async_req: Optional[bool] = None,
-        **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+        self, api_key: StrictStr, session_id: StrictStr, **kwargs
+    ) -> None:  # noqa: E501
         """sessions_session_id_delete  # noqa: E501
 
         Delete a session on the server  # noqa: E501
@@ -444,8 +385,6 @@ class SessionsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the sessions_session_id_delete_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.sessions_session_id_delete_with_http_info(
             api_key, session_id, **kwargs
         )  # noqa: E501
@@ -565,30 +504,10 @@ class SessionsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def sessions_session_id_refresh_post(
-        self, session_id: StrictStr, api_key: Optional[StrictStr] = None, **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def sessions_session_id_refresh_post(
-        self,
-        session_id: StrictStr,
-        api_key: Optional[StrictStr] = None,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_call
     def sessions_session_id_refresh_post(
-        self,
-        session_id: StrictStr,
-        api_key: Optional[StrictStr] = None,
-        async_req: Optional[bool] = None,
-        **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+        self, session_id: StrictStr, api_key: Optional[StrictStr] = None, **kwargs
+    ) -> None:  # noqa: E501
         """sessions_session_id_refresh_post  # noqa: E501
 
         Refresh the session extending its time to live  # noqa: E501
@@ -617,8 +536,6 @@ class SessionsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the sessions_session_id_refresh_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.sessions_session_id_refresh_post_with_http_info(
             session_id, api_key, **kwargs
         )  # noqa: E501

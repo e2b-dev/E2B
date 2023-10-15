@@ -19,15 +19,12 @@ pydantic = "*"
 aenum = ">=3.1.11"
 websockets = "^11.0.3"
 jsonrpcclient = "^4.0.3"
-janus = "^1.0.0"
-async-timeout = "^4.0.3"
 requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
 pytest = "^7.4.0"
 pytest-xdist = "^3.3.1"
-pytest-asyncio = "^0.21.1"
 psycopg2 = "^2.9.7"
 python-dotenv = "^1.0.0"
 

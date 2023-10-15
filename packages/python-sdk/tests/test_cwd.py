@@ -3,24 +3,24 @@ import pytest
 from e2b import Session
 
 
-async def test_process_cwd():
-    session = await Session.create("Nodejs", cwd="/code/app")
+def test_process_cwd():
+    session = Session.create("Nodejs", cwd="/code/app")
 
-    proc = await session.process.start("pwd")
-    output = await proc
+    proc = session.process.start("pwd")
+    output = proc.wait()
     assert output.stdout == "/code/app"
-    await session.close()
+    session.close()
 
 
-async def test_filesystem_cwd():
-    session = await Session.create("Nodejs", cwd="/code/app")
+def test_filesystem_cwd():
+    session = Session.create("Nodejs", cwd="/code/app")
 
-    await session.filesystem.write("hello.txt", "Hello VM!")
-    proc = await session.process.start("cat /code/app/hello.txt")
-    output = await proc
+    session.filesystem.write("hello.txt", "Hello VM!")
+    proc = session.process.start("cat /code/app/hello.txt")
+    output = proc.wait()
     assert output.stdout == "Hello VM!"
 
-    await session.close()
+    session.close()
 
 
 async def test_change_cwd():

@@ -1,8 +1,9 @@
 import queue
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 
-def shutdown_executor(executor):
+def shutdown_executor(executor: ThreadPoolExecutor):
     py_version = sys.version_info
     if (py_version.major == 3) and (py_version.minor < 9):
         # py versions less than 3.9

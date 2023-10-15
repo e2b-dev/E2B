@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Any, Awaitable, Callable, Optional, Set
+from typing import Any, Callable, Optional, Set
 
 from pydantic import BaseModel
 
@@ -51,10 +51,10 @@ class FilesystemWatcher:
         self._connection = connection
         self._path = path
         self._service_name = service_name
-        self._unsubscribe: Optional[Callable[[], Awaitable[Any]]] = None
+        self._unsubscribe: Optional[Callable[[], Any]] = None
         self._listeners: Set[Callable[[FilesystemEvent], Any]] = set()
 
-    async def start(self, timeout: Optional[float] = TIMEOUT) -> None:
+    def start(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Starts the filesystem watcher.
 
@@ -65,7 +65,7 @@ class FilesystemWatcher:
 
         logger.debug("Starting filesystem watcher for %s", self.path)
         try:
-            self._unsubscribe = await self._connection._subscribe(
+            self._unsubscribe = self._connection._subscribe(
                 self._service_name,
                 self._handle_filesystem_events,
                 "watchDir",
@@ -76,7 +76,7 @@ class FilesystemWatcher:
         except RpcException as e:
             raise FilesystemException(e.message) from e
 
-    async def stop(self) -> None:
+    def stop(self) -> None:
         """
         Stops the filesystem watcher.
         """
@@ -85,7 +85,7 @@ class FilesystemWatcher:
         self._listeners.clear()
         if self._unsubscribe:
             try:
-                await self._unsubscribe()
+                self._unsubscribe()
                 self._unsubscribe = None
                 logger.debug("Stopped filesystem watcher for %s", self.path)
             except RpcException as e:
@@ -112,28 +112,3 @@ class FilesystemWatcher:
         event = FilesystemEvent(**event)
         for listener in self._listeners:
             listener(event)
-
-
-class SyncFilesystemWatcher(FilesystemWatcher):
-    def __init__(
-        self,
-        connection: SessionConnection,
-        path: str,
-        service_name: str,
-    ):
-        super().__init__(connection, path, service_name)
-        self._loop = connection._loop
-
-    def start(self, timeout: Optional[float] = TIMEOUT) -> None:
-        """
-        Starts the filesystem watcher.
-
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-        """
-        return self._loop.run_until_complete(super().start(timeout))
-
-    def stop(self) -> None:
-        """
-        Stops the filesystem watcher.
-        """
-        return self._loop.run_until_complete(super().stop())

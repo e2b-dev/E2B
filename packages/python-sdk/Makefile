@@ -7,7 +7,6 @@ generate-v2:
 	# After released, use npx -yes @openapitools/openapi-generator-cli generate
 	java -jar <OPENAPI-TOOL-PATH>/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
 	-i ../../spec/openapi.yml  \
-	--library asyncio \
 	-g python \
 	-o ./e2b/api \
 	--global-property apis,models,supportingFiles,modelDocs=false \
@@ -29,7 +28,6 @@ generate-v1:
 	rm -rf ./e2b/api/v1
 	npx -yes @openapitools/openapi-generator-cli  generate \
 	-i ../../spec/openapi.yml  \
-	--library asyncio \
 	-g python-nextgen \
 	-o ./e2b/api \
 	--global-property apis,models,supportingFiles,modelDocs=false \
@@ -43,3 +41,6 @@ generate-v1:
 	rm -r ./e2b/api/.openapi-generator
 	mv ./e2b/api/__init__.py.bck ./e2b/api/__init__.py
 	black .
+
+.PHONY: generate
+generate: generate-v1 generate-v2
