@@ -33,10 +33,11 @@ func (ss *ScannerSubscriber) Signal(proc []GOnetstat.Process) {
 		ss.Messages <- proc
 	} else {
 		filtered := []GOnetstat.Process{}
-		for _, p := range proc {
+		for i := range proc {
+			// We need to access the list directly otherwise there will be implicit memory aliasing
 			// If the filter matched a process, we will send it to a channel.
-			if ss.filter.Match(&p) {
-				filtered = append(filtered, p)
+			if ss.filter.Match(&proc[i]) {
+				filtered = append(filtered, proc[i])
 			}
 		}
 		ss.Messages <- filtered
