@@ -57,7 +57,7 @@ jobs:
         run: make apply
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CLIENT_MACHINE_TYPE: ${{ secrets.client_machine_type }}
           CLIENT_CLUSTER_SIZE: ${{ secrets.client_cluster_size }}
-          SERVER_MACHINE_TYPE: ${{ secrets.server_machine_type }}
+          CLIENT_MACHINE_TYPE: ${{ secrets.client_machine_type }}
           SERVER_CLUSTER_SIZE: ${{ secrets.server_cluster_size }}
+          SERVER_MACHINE_TYPE: ${{ secrets.server_machine_type }}
