@@ -327,7 +327,7 @@ class ProcessManager:
                     logger.exception(f"Error in on_exit callback: {error}")
             future_exit_handler_finish(output)
 
-        executor = ThreadPoolExecutor(thread_name_prefix="e2b-exit-handler")
+        executor = ThreadPoolExecutor(thread_name_prefix="e2b-process-exit-handler")
         exit_task = executor.submit(exit_handler)
 
         self._process_cleanup.append(exit_task.cancel)

@@ -220,7 +220,7 @@ class TerminalManager:
                 on_exit()
             future_exit_handler_finish(output)
 
-        executor = ThreadPoolExecutor(thread_name_prefix="e2b-Terminal")
+        executor = ThreadPoolExecutor(thread_name_prefix="e2b-terminal-exit-handler")
         exit_task = executor.submit(exit_handler)
 
         self._process_cleanup.append(exit_task.cancel)

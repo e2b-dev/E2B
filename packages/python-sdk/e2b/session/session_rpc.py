@@ -77,13 +77,15 @@ class SessionRpc(BaseModel):
         stopped = Event()
         self._process_cleanup.append(stopped.set)
 
-        messages_executor = ThreadPoolExecutor(thread_name_prefix="e2b-Messages")
+        messages_executor = ThreadPoolExecutor(
+            thread_name_prefix="e2b-process-messages"
+        )
         task = messages_executor.submit(self.process_messages)
         self._process_cleanup.append(lambda: self._queue_out.put(STOP_SIGN))
         self._process_cleanup.append(task.cancel)
         self._process_cleanup.append(lambda: shutdown_executor(messages_executor))
 
-        executor = ThreadPoolExecutor(thread_name_prefix="e2b-Websocket")
+        executor = ThreadPoolExecutor(thread_name_prefix="e2b-websocket")
         websocket_task = executor.submit(
             run_async_func_in_new_loop,
             WebSocket(
