@@ -1,10 +1,10 @@
 import asyncio
 import logging
 import warnings
+import async_timeout
+
 from abc import ABC
 from typing import Any, Awaitable, Callable, Coroutine, List, Optional, Union, Type
-
-import async_timeout
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
@@ -65,7 +65,7 @@ class Terminal:
 
     async def wait(self):
         """
-        Waits till the terminal session exits.
+        Wait till the terminal session exits.
         """
         return await self.finished
 
@@ -85,7 +85,7 @@ class Terminal:
 
     async def send_data(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Sends data to the terminal standard input.
+        Send data to the terminal standard input.
 
         :param data: Data to send
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
@@ -157,13 +157,13 @@ class SyncTerminal(Terminal):
 
     def wait(self):
         """
-        Waits till the terminal session exits.
+        Wait till the terminal session exits.
         """
         return self._loop.run_until_complete(super().wait())
 
     def send_data(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Sends data to the terminal standard input.
+        Send data to the terminal standard input.
 
         :param data: Data to send
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time

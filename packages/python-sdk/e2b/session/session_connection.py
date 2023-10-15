@@ -1,11 +1,11 @@
 import asyncio
 import logging
 import traceback
+import async_timeout
+
 from concurrent.futures import ThreadPoolExecutor
 from os import getenv
 from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
-
-import async_timeout
 from pydantic import BaseModel
 
 from e2b.api import E2BApiClient, exceptions, models, client
@@ -57,7 +57,7 @@ class SessionConnection:
     def __init__(
         self,
         id: str,
-        api_key: Optional[str],
+        api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         _debug_hostname: Optional[str] = None,

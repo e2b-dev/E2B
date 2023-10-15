@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import warnings
+import async_timeout
+
 from abc import ABC
 from asyncio.exceptions import TimeoutError
 from typing import (
@@ -15,8 +17,6 @@ from typing import (
     Union,
     Type,
 )
-
-import async_timeout
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT

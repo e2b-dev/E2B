@@ -1,5 +1,4 @@
 from typing import Any, Callable, ClassVar, List, Optional
-
 from pydantic import BaseModel
 
 from e2b.session.exception import MultipleExceptions, RpcException, SessionException

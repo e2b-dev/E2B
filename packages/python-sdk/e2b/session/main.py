@@ -2,9 +2,9 @@ import asyncio
 import logging
 import requests
 import urllib.parse
-from os import path
-from typing import Any, Callable, List, Literal, Optional, Union, IO
 
+from os import path
+from typing import Any, Callable, List, Literal, Optional, IO
 from async_timeout import timeout as async_timeout
 
 from e2b.constants import (
@@ -20,22 +20,12 @@ from e2b.session.terminal import TerminalManager, SyncTerminalManager
 
 logger = logging.getLogger(__name__)
 
-Environment = Literal[
-    "Nodejs",
-    "Bash",
-    "Python3",
-    "Java",
-    "Go",
-    "Rust",
-    "PHP",
-    "Perl",
-    "DotNET",
-]
-
 
 class Session(SessionConnection):
     """
-    E2B cloud environment gives your agent a full cloud development environment that's sandboxed. That means:
+    E2B cloud environment gives your agent a full cloud development environment that's sandboxed.
+
+    That means:
 
     - Access to Linux OS
     - Using filesystem (create, list, and delete files and dirs)
@@ -69,8 +59,8 @@ class Session(SessionConnection):
 
     def __init__(
         self,
-        id: Union[Environment, str],
-        api_key: Optional[str],
+        id: str,
+        api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
@@ -82,7 +72,7 @@ class Session(SessionConnection):
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
-        Creates a new cloud environment session.
+        Create a new cloud environment session.
 
         :param id: ID of the environment or the environment type template.
         Can be one of the following environment type templates or a custom environment ID:
@@ -130,7 +120,7 @@ class Session(SessionConnection):
 
     async def open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Opens the session.
+        Open the session.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
@@ -148,14 +138,14 @@ class Session(SessionConnection):
 
     async def close(self) -> None:
         """
-        Closes the session.
+        Close the session.
         """
         await super().close()
         await self._close()
 
     def file_url(self) -> str:
         """
-        Returns a URL that can be used to upload files to the session via a multipart/form-data POST request.
+        Return a URL that can be used to upload files to the session via a multipart/form-data POST request.
         This is useful if you're uploading files directly from the browser.
         The file will be uploaded to the user's home directory with the same name.
         If a file with the same name already exists, it will be overwritten.
@@ -166,7 +156,7 @@ class Session(SessionConnection):
 
     def upload_file(self, file: IO) -> str:
         """
-        Uploads a file to the session.
+        Upload a file to the session.
         The file will be uploaded to the user's home (`/home/user`) directory with the same name.
         If a file with the same name already exists, it will be overwritten.
 
@@ -182,7 +172,7 @@ class Session(SessionConnection):
 
     def download_file(self, remote_path: str) -> bytes:
         """
-        Downloads a file from the session and returns it's content as bytes.
+        Download a file from the session and returns it's content as bytes.
 
         :param remote_path: The path of the file to download
         """
@@ -206,7 +196,7 @@ class Session(SessionConnection):
     @classmethod
     async def create(
         cls,
-        id: Union[Environment, str],
+        id: str,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -220,7 +210,7 @@ class Session(SessionConnection):
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
-        Creates a new cloud environment session.
+        Create a new cloud environment session.
 
         :param id: ID of the environment or the environment type template.
         Can be one of the following environment type templates or a custom environment ID:
@@ -262,7 +252,9 @@ class Session(SessionConnection):
 
 class SyncSession(Session):
     """
-    E2B cloud environment gives your agent a full cloud development environment that's sandboxed. That means:
+    E2B cloud environment gives your agent a full cloud development environment that's sandboxed.
+
+    That means:
 
     - Access to Linux OS
     - Using filesystem (create, list, and delete files and dirs)
@@ -275,8 +267,8 @@ class SyncSession(Session):
 
     def __init__(
         self,
-        id: Union[Environment, str],
-        api_key: Optional[str],
+        id: str,
+        api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
@@ -329,7 +321,7 @@ class SyncSession(Session):
 
     def open(self, timeout: Optional[float] = TIMEOUT):
         """
-        Opens the session.
+        Open the session.
         """
         return self._loop.run_until_complete(super().open(timeout))
 
@@ -339,7 +331,7 @@ class SyncSession(Session):
 
     def close(self) -> None:
         """
-        Closes the session.
+        Close the session.
         """
         self._loop.run_until_complete(super().close())
 
@@ -353,7 +345,7 @@ class SyncSession(Session):
     @classmethod
     def create(
         cls,
-        id: Union[Environment, str],
+        id: str,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
@@ -367,7 +359,7 @@ class SyncSession(Session):
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
-        Creates a new cloud environment session.
+        Create a new cloud environment session.
 
         :param id: ID of the environment or the environment type template.
         Can be one of the following environment type templates or a custom environment ID:

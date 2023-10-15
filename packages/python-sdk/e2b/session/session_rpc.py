@@ -3,11 +3,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 from threading import Event
 from typing import Any, Callable, Dict, Iterator, List, Union
-
 from janus import Queue as JanusQueue
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class Notification(BaseModel):
-    """Nofification"""
+    """Nofification."""
 
     method: str
     params: Dict
@@ -34,7 +34,7 @@ Message = Union[Response, Notification]
 
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
-    """Create a Response namedtuple from a dict"""
+    """Create a Response namedtuple from a dict."""
     if "error" in response:
         return Error(
             response["error"]["code"],

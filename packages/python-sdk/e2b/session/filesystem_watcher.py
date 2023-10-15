@@ -1,7 +1,7 @@
 import logging
+
 from enum import Enum
 from typing import Any, Awaitable, Callable, Optional, Set
-
 from pydantic import BaseModel
 
 from e2b.constants import TIMEOUT
@@ -52,7 +52,7 @@ class FilesystemWatcher:
 
     async def start(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Starts the filesystem watcher.
+        Start the filesystem watcher.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
@@ -74,7 +74,7 @@ class FilesystemWatcher:
 
     async def stop(self) -> None:
         """
-        Stops the filesystem watcher.
+        Stop the filesystem watcher.
         """
         logger.debug("Stopping filesystem watcher for %s", self.path)
 
@@ -89,7 +89,7 @@ class FilesystemWatcher:
 
     def add_event_listener(self, listener: Callable[[FilesystemEvent], Any]):
         """
-        Adds a listener for filesystem events.
+        Add a listener for filesystem events.
 
         :param listener: Listener to add
 
@@ -121,7 +121,7 @@ class SyncFilesystemWatcher(FilesystemWatcher):
 
     def start(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Starts the filesystem watcher.
+        Start the filesystem watcher.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
@@ -129,6 +129,6 @@ class SyncFilesystemWatcher(FilesystemWatcher):
 
     def stop(self) -> None:
         """
-        Stops the filesystem watcher.
+        Stop the filesystem watcher.
         """
         return self._loop.run_until_complete(super().stop())

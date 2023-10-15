@@ -11,7 +11,7 @@ class OutResponse(BaseModel):
     type: OutType
     timestamp: int
     """
-    Unix epoch in nanoseconds
+    Unix epoch in nanoseconds.
     """
     line: str
 

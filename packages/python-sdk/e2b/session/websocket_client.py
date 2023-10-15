@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+
 from queue import Queue
 from threading import Event
 from typing import Any, Callable, List, Optional
-
 from janus import SyncQueue as JanusQueue
 from websockets import WebSocketClientProtocol, connect
 from websockets.exceptions import ConnectionClosed
