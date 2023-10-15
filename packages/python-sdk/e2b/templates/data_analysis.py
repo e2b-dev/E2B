@@ -21,14 +21,8 @@ class Artifact(BaseModel):
     def __hash__(self):
         return hash(self.name)
 
-    def read(self) -> bytes:
+    def download(self) -> bytes:
         return self._session.download_file(self.name)
-
-    def download(self, path: Optional[str] = None) -> None:
-        data = self.read()
-        with open(path or self.name, "wb") as f:
-            f.write(data)
-
 
 class DataAnalysis(SyncSession):
     env_id = "Python3-DataAnalysis"
