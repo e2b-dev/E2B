@@ -10,14 +10,14 @@ const golangVersion = await session.process.start({
   cmd: 'go version',
   onStderr: output => console.log('session', output.line), // $HighlightLine
 })
-await golangVersion.finished
+await golangVersion.wait()
 // output: [session] /bin/bash: line 1: go: command not found
 
 const procWithCustomHandler = await session.process.start({
   cmd: 'go version',
   onStderr: data => console.log('process', data.line), // $HighlightLine
 })
-await procWithCustomHandler.finished
+await procWithCustomHandler.wait()
 // output: process /bin/bash: line 1: go: command not found
 
 await session.close()

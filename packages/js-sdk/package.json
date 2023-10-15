@@ -1,6 +1,6 @@
 {
   "name": "@e2b/sdk",
-  "version": "0.6.2",
+  "version": "0.6.4",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -43,6 +43,9 @@
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
     "knip": "^2.19.5",
+    "jsdom": "^22.1.0",
+    "markdown-it": "^13.0.2",
+    "openai": "^4.12.1",
     "openapi-typescript": "^5.4.1",
     "rollup": "^2.79.1",
     "rollup-plugin-auto-external": "^2.0.0",

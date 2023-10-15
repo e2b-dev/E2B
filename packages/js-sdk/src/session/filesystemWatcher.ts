@@ -36,7 +36,7 @@ class FilesystemWatcher {
   }
 
   // Starts watching the path that was passed to the contructor
-  async start(opts: CallOpts) {
+  async start(opts?: CallOpts) {
     const start = async () => {
       // Already started.
       if (this.rpcSubscriptionID) return

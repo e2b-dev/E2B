@@ -29,6 +29,8 @@ import {
 } from './terminal'
 import { resolvePath } from '../utils/filesystem'
 
+export type DownloadFileFormat = 'base64' | 'blob' | 'buffer' | 'arraybuffer' | 'text'
+
 export interface SessionOpts extends SessionConnectionOpts {
   onScanPorts?: ScanOpenPortsHandler
   timeout?: number
@@ -425,10 +427,7 @@ export class Session extends SessionConnection {
     return `/home/user/${filename}`
   }
 
-  async downloadFile(
-    remotePath: string,
-    format?: 'base64' | 'blob' | 'buffer' | 'arraybuffer' | 'text',
-  ) {
+  async downloadFile(remotePath: string, format?: DownloadFileFormat) {
     remotePath = encodeURIComponent(remotePath)
 
     const response = await fetch(`${this.fileURL}?path=${remotePath}`)
@@ -447,7 +446,7 @@ export class Session extends SessionConnection {
         data = await response.blob()
         break
       case 'buffer':
-        data = await response.buffer()
+        data = Buffer.from(await response.arrayBuffer())
         break
       case 'arraybuffer':
         data = await response.arrayBuffer()

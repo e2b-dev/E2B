@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import requests
 import urllib.parse
+import requests
 
 from os import path
 from typing import Any, Callable, List, Literal, Optional, IO

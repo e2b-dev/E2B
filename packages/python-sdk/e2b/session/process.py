@@ -42,6 +42,9 @@ class ProcessMessage(BaseModel):
     Unix epoch in nanoseconds
     """
 
+    def __str__(self):
+        return self.line
+
 
 class ProcessOutput(BaseModel):
     """

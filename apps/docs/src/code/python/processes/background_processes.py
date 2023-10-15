@@ -25,7 +25,7 @@ async def main():
   server_request = await session.process.start("curl localhost:8000")
 
   # Wait for the server request to finish running
-  request_output = await server_request.finished
+  request_output = await server_request
 
   # Stop the background process (it would otherwise run indefinitely)
   await background_server.kill() # $HighlightLine

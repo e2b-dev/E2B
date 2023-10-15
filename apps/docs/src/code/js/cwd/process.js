@@ -7,12 +7,12 @@ const session = await Session.create({
 })
 
 const sessionCwd = await session.process.start({ cmd: 'pwd' }) // $HighlightLine
-await sessionCwd.finished
+await sessionCwd.wait()
 console.log(sessionCwd.output.stdout)
 // output: /code
 
 const processCwd = await session.process.start({ cmd: 'pwd', cwd: '/home' }) // $HighlightLine
-await processCwd.finished
+await processCwd.wait()
 console.log(processCwd.output.stdout)
 // output: /home
 

@@ -11,7 +11,8 @@ function sleep(ms) {
 
 // Start a server process in the background
 // We are not calling `await backgroundServer` - that would wait for the process to finish running
-const backgroundServer = await session.process.start({ // $HighlightLine
+const backgroundServer = await session.process.start({
+  // $HighlightLine
   cmd: 'python3 -m http.server 8000', // $HighlightLine
   onStdout: output => console.log(output), // $HighlightLine
 }) // $HighlightLine
@@ -23,12 +24,12 @@ await sleep(1000)
 const serverRequest = await session.process.start({ cmd: 'curl localhost:8000' })
 
 // Wait for the server request to finish running
-const requestOutput = await serverRequest.finished
+const requestOutput = await serverRequest.wait()
 
 // Stop the background process (it would otherwise run indefinitely)
 await backgroundServer.kill() // $HighlightLine
 
 // Access the server output after the server process is killed
-const serverOutput = backgroundServer.output  // $HighlightLine
+const serverOutput = backgroundServer.output // $HighlightLine
 
 await session.close()

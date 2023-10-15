@@ -22,3 +22,4 @@ export type { ProcessManager } from './session/process'
 export type { EnvVars } from './session/envVars'
 export { runCode, CodeRuntime } from './runCode' // Export CodeRuntime enum as value, not as type, so it can be actually used in consumer code
 // export { runCmd } from './runCmd'
+export { DataAnalysis } from './templates/dataAnalysis'

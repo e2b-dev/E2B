@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.session_connection import SessionConnection
+from e2b.utils.str import snake_case_to_camel_case
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,9 @@ class FilesystemEvent(BaseModel):
     Unix epoch in nanoseconds
     """
     is_dir: bool
+
+    class Config:
+        alias_generator = snake_case_to_camel_case
 
 
 class FilesystemWatcher:
@@ -104,7 +108,8 @@ class FilesystemWatcher:
 
         return delete_listener
 
-    def _handle_filesystem_events(self, event: FilesystemEvent) -> None:
+    def _handle_filesystem_events(self, event: dict) -> None:
+        event = FilesystemEvent(**event)
         for listener in self._listeners:
             listener(event)
 

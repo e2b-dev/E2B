@@ -7,14 +7,14 @@ const session = await Session.create({
 })
 
 const proc = await session.process.start({ cmd: 'echo "Hello World!"' })
-await proc.finished
+await proc.wait()
 // output: [session] process ended
 
 const procWithCustomHandler = await session.process.start({
   cmd: 'echo "Hello World!"',
   onExit: () => console.log('[process]', 'process ended'), // $HighlightLine
 })
-await procWithCustomHandler.finished
+await procWithCustomHandler.wait()
 // output: [process] process ended
 
 await session.close()

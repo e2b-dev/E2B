@@ -1,8 +1,9 @@
 import filecmp
 from asyncio import sleep
 from os import path
+from typing import List
 
-from e2b import Session
+from e2b import Session, FilesystemEvent
 
 
 async def test_list_files():
@@ -58,7 +59,7 @@ async def test_watch_dir():
 
     watcher = await session.filesystem.watch_dir("/tmp")
 
-    events = []
+    events: List[FilesystemEvent] = []
     watcher.add_event_listener(lambda e: events.append(e))
 
     await watcher.start()
@@ -69,8 +70,8 @@ async def test_watch_dir():
     assert len(events) >= 1
 
     event = events[0]
-    assert event["operation"] == "Write"
-    assert event["path"] == "/tmp/test.txt"
+    assert event.operation == "Write"
+    assert event.path == "/tmp/test.txt"
 
     await session.close()
 
