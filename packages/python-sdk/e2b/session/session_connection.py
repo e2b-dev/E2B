@@ -1,12 +1,14 @@
 import asyncio
+import functools
 import logging
 import traceback
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from os import getenv
-from typing import Any, Awaitable, Callable, List, Literal, Optional, Union
+from time import sleep
+from typing import Any, Callable, List, Literal, Optional, Union
 
-import async_timeout
 from pydantic import BaseModel
+from urllib3.exceptions import ReadTimeoutError
 
 from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
@@ -21,10 +23,10 @@ from e2b.session.exception import (
     AuthenticationException,
     MultipleExceptions,
     SessionException,
+    TimeoutException,
 )
 from e2b.session.session_rpc import Notification, SessionRpc
-from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
-from e2b.utils.noop import noop
+from e2b.utils.future import DeferredFuture
 from e2b.utils.str import camel_case_to_snake_case
 from e2b.utils.threads import shutdown_executor
 
@@ -34,7 +36,7 @@ logger = logging.getLogger(__name__)
 class Subscription(BaseModel):
     service: str
     id: str
-    handler: Callable[[Any], Awaitable[None]]
+    handler: Callable[[Any], None]
 
 
 class SessionConnection:
@@ -60,10 +62,11 @@ class SessionConnection:
         api_key: Optional[str],
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
+        on_close: Optional[Callable[[], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
-        on_close: Optional[Callable[[], Any]] = None,
     ):
         api_key = api_key or getenv("E2B_API_KEY")
 
@@ -90,6 +93,8 @@ class SessionConnection:
         self._finished = DeferredFuture(self._process_cleanup)
 
         logger.info(f"Session for code snippet {self._id} initialized")
+
+        self._open(timeout=timeout)
 
     def get_hostname(self, port: Optional[int] = None):
         """
@@ -119,21 +124,21 @@ class SessionConnection:
             return f"{port}-{hostname}"
         return hostname
 
-    async def close(self) -> None:
+    def close(self) -> None:
         """
         Close the session and unsubscribe from all the subscriptions.
         """
-        await self._close()
+        self._close()
         logger.info(f"Session closed")
 
-    async def _close(self):
+    def _close(self):
         if self._is_open and self._session:
             logger.info(
                 f"Closing session {self._session.code_snippet_id} (id: {self._session.session_id})"
             )
             self._is_open = False
             if self._rpc:
-                await self._rpc.close()
+                self._rpc.close()
 
         if self._on_close_child:
             self._on_close_child()
@@ -144,7 +149,7 @@ class SessionConnection:
             cleanup()
         self._process_cleanup.clear()
 
-    async def open(self) -> None:
+    def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Open a connection to a new session.
 
@@ -156,49 +161,36 @@ class SessionConnection:
             self._is_open = True
 
         try:
-            async with client.ApiClient(configuration) as api_client:
+            with client.ApiClient(configuration) as api_client:
                 api = client.SessionsApi(api_client)
 
-                self._session = await api.sessions_post(
+                self._session = api.sessions_post(
                     models.NewSession(codeSnippetID=self._id, editEnabled=False),
                     api_key=self._api_key,
+                    _request_timeout=timeout,
                 )
                 logger.info(
                     f"Session {self._session.code_snippet_id} created (id:{self._session.session_id})"
                 )
 
                 # We could potentially use asyncio.to_thread() but that requires Python 3.9+
-                executor = ThreadPoolExecutor()
-                self._refreshing_task = asyncio.get_running_loop().run_in_executor(
-                    executor,
-                    run_async_func_in_new_loop,
-                    self._refresh(self._session.session_id),
+                executor = ThreadPoolExecutor(thread_name_prefix="e2b-refresh")
+                self._refreshing_task = executor.submit(
+                    self._refresh, self._session.session_id
                 )
 
                 self._process_cleanup.append(self._refreshing_task.cancel)
                 self._process_cleanup.append(lambda: shutdown_executor(executor))
 
-                async def refresh_cleanup():
-                    try:
-                        if self._refreshing_task:
-                            await self._refreshing_task
-                    finally:
-                        if self._session:
-                            logger.info(
-                                f"Stopped refreshing session (id: {self._session.session_id})"
-                            )
-                        else:
-                            logger.info(
-                                "No session to stop refreshing. Session was not created"
-                            )
-
-                        await self._close()
-
-                refresh_handler = asyncio.create_task(refresh_cleanup())
-                self._process_cleanup.append(refresh_handler.cancel)
+        except ReadTimeoutError as e:
+            logger.error(f"Failed to acquire session: {e}")
+            self._close()
+            raise TimeoutException(
+                f"Failed to acquire session: {e}",
+            ) from e
         except Exception as e:
             logger.error(f"Failed to acquire session")
-            await self._close()
+            self._close()
             raise e
 
         hostname = self.get_hostname(self._debug_port or ENVD_PORT)
@@ -211,52 +203,50 @@ class SessionConnection:
                 url=session_url,
                 on_message=self._handle_notification,
             )
-            await self._rpc.connect()
+            self._rpc.connect()
+        except TimeoutError as e:
+            print(e)
+            raise e
         except Exception as e:
-            await self._close()
+            print(e)
+            self._close()
             raise e
 
-    async def _call(
+    def _call(
         self,
         service: str,
         method: str,
         params: List[Any] = None,
         timeout: Optional[float] = TIMEOUT,
-    ):
+    ) -> Any:
         if not params:
             params = []
 
         if not self.is_open:
             raise SessionException("Session is not open")
 
-        async with async_timeout.timeout(timeout):
-            return await self._rpc.send_message(f"{service}_{method}", params)
+        return self._rpc.send_message(f"{service}_{method}", params, timeout=timeout)
 
-    async def _handle_subscriptions(
+    def _handle_subscriptions(
         self,
-        *subs: Optional[Awaitable[Callable[[], Awaitable[None]]]],
+        *subs: Optional[Callable[[], None]],
     ):
-        results: List[
-            Union[Callable[[], Awaitable[None]], None, Exception]
-        ] = await asyncio.gather(
-            *[sub if sub else noop() for sub in subs],
-            return_exceptions=True,
-        )
+        results: List[Union[Callable, None, Exception]] = [sub for sub in subs if sub]
 
         exceptions = [e for e in results if isinstance(e, Exception)]
 
-        async def unsub_all():
-            return await asyncio.gather(
-                *[
-                    unsub()
+        def unsub_all():
+            return lambda: functools.reduce(
+                lambda _, f: f(),
+                [
+                    unsub
                     for unsub in results
                     if not isinstance(unsub, Exception) and unsub
                 ],
-                return_exceptions=True,
             )
 
         if len(exceptions) > 0:
-            await unsub_all()
+            unsub_all()
 
             if len(exceptions) == 1:
                 raise exceptions[0]
@@ -275,23 +265,21 @@ class SessionConnection:
 
         return unsub_all
 
-    async def _unsubscribe(self, sub_id: str, timeout: Optional[float] = TIMEOUT):
+    def _unsubscribe(self, sub_id: str, timeout: Optional[float] = TIMEOUT):
         sub = self._subscribers[sub_id]
-        await self._call(sub.service, "unsubscribe", [sub.id], timeout=timeout)
+        self._call(sub.service, "unsubscribe", [sub.id], timeout=timeout)
         del self._subscribers[sub_id]
         logger.debug(f"Unsubscribed (sub_id: {sub_id})")
 
-    async def _subscribe(
+    def _subscribe(
         self,
         service: str,
         handler: Callable[[Any], Any],
         method: str,
         *params,
         timeout: Optional[float] = TIMEOUT,
-    ):
-        sub_id = await self._call(
-            service, "subscribe", [method, *params], timeout=timeout
-        )
+    ) -> Callable[[], None]:
+        sub_id = self._call(service, "subscribe", [method, *params], timeout=timeout)
         if not isinstance(sub_id, str):
             raise Exception(f"Failed to subscribe: {camel_case_to_snake_case(method)}")
 
@@ -300,8 +288,8 @@ class SessionConnection:
         )
         logger.info(f"Subscribed to {service} {camel_case_to_snake_case(method)}")
 
-        async def unsub():
-            await self._unsubscribe(sub_id, timeout=timeout)
+        def unsub():
+            self._unsubscribe(sub_id, timeout=timeout)
 
         return unsub
 
@@ -312,38 +300,48 @@ class SessionConnection:
             if id == data.params["subscription"]:
                 sub.handler(data.params["result"])
 
-    async def _refresh(self, session_id: str):
-        logger.info(
-            f"Started refreshing session {self._session.code_snippet_id} (id: {session_id})"
-        )
+    def _refresh(self, session_id: str):
+        try:
+            logger.info(
+                f"Started refreshing session {self._session.code_snippet_id} (id: {session_id})"
+            )
 
-        current_retry = 0
+            current_retry = 0
 
-        async with client.ApiClient(configuration) as api_client:
-            api = client.SessionsApi(api_client)
-            while True:
-                if not self._is_open:
-                    logger.debug(
-                        f"Cannot refresh session - it was closed. {self._session}"
-                    )
-                    return
-                await asyncio.sleep(SESSION_REFRESH_PERIOD)
-                try:
-                    await api.sessions_session_id_refresh_post(session_id)
-                    logger.debug(f"Refreshed session {session_id}")
-                except exceptions.ApiException as e:
-                    if e.status == 404:
-                        raise SessionException(
-                            f"Session {session_id} failed because it cannot be found"
-                        ) from e
-                    else:
-                        if current_retry < self._refresh_retries:
-                            logger.error(
-                                f"Refreshing session {session_id} failed. Retrying..."
-                            )
-                            current_retry += 1
+            with client.ApiClient(configuration) as api_client:
+                api = client.SessionsApi(api_client)
+                while True:
+                    if not self._is_open:
+                        logger.debug(
+                            f"Cannot refresh session - it was closed. {self._session}"
+                        )
+                        return
+                    sleep(SESSION_REFRESH_PERIOD)
+                    try:
+                        api.sessions_session_id_refresh_post(session_id)
+                        logger.debug(f"Refreshed session {session_id}")
+                    except exceptions.ApiException as e:
+                        if e.status == 404:
+                            raise SessionException(
+                                f"Session {session_id} failed because it cannot be found"
+                            ) from e
                         else:
-                            logger.error(
-                                f"Refreshing session {session_id} failed. Max retries exceeded"
-                            )
-                            raise e
+                            if current_retry < self._refresh_retries:
+                                logger.error(
+                                    f"Refreshing session {session_id} failed. Retrying..."
+                                )
+                                current_retry += 1
+                            else:
+                                logger.error(
+                                    f"Refreshing session {session_id} failed. Max retries exceeded"
+                                )
+                                raise e
+        finally:
+            if self._session:
+                logger.info(
+                    f"Stopped refreshing session (id: {self._session.session_id})"
+                )
+            else:
+                logger.info("No session to stop refreshing. Session was not created")
+
+            self._close()

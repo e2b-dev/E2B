@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from queue import Queue
 from threading import Event
 from typing import Any, Callable, Dict, Iterator, List, Union
 
-from janus import Queue as JanusQueue
 from jsonrpcclient import Error, Ok, request_json
 from jsonrpcclient.id_generators import decimal as decimal_id_generator
 from jsonrpcclient.responses import Response
 from pydantic import BaseModel, PrivateAttr, ConfigDict
 from websockets.typing import Data
 
-from e2b.session.exception import RpcException
+from e2b.constants import TIMEOUT
+from e2b.session.exception import RpcException, TimeoutException
 from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.threads import shutdown_executor
 
 logger = logging.getLogger(__name__)
+STOP_SIGN = object()
 
 
 class Notification(BaseModel):
@@ -60,41 +60,52 @@ class SessionRpc(BaseModel):
     _id_generator: Iterator[int] = PrivateAttr(default_factory=decimal_id_generator)
     _waiting_for_replies: Dict[int, DeferredFuture] = PrivateAttr(default_factory=dict)
     _queue_in: Queue = PrivateAttr(default_factory=Queue)
-    _queue_out: JanusQueue = PrivateAttr(default_factory=JanusQueue)
+    _queue_out: Queue = PrivateAttr(default_factory=Queue)
     _process_cleanup: List[Callable[[], Any]] = PrivateAttr(default_factory=list)
 
-    async def process_messages(self):
+    def process_messages(self):
         while True:
-            data = await self._queue_out.async_q.get()
+            data = self._queue_out.get()
+            if data == STOP_SIGN:
+                break
             logger.debug(f"WebSocket received message: {data}".strip())
-            await self._receive_message(data)
-            self._queue_out.async_q.task_done()
+            self._receive_message(data)
+            self._queue_out.task_done()
 
-    async def connect(self):
+    def connect(self):
         started = Event()
         stopped = Event()
-        task = asyncio.create_task(self.process_messages())
-        executor = ThreadPoolExecutor()
+        self._process_cleanup.append(stopped.set)
+
+        messages_executor = ThreadPoolExecutor(
+            thread_name_prefix="e2b-process-messages"
+        )
+        task = messages_executor.submit(self.process_messages)
+        self._process_cleanup.append(lambda: self._queue_out.put(STOP_SIGN))
+        self._process_cleanup.append(task.cancel)
+        self._process_cleanup.append(lambda: shutdown_executor(messages_executor))
+
+        executor = ThreadPoolExecutor(thread_name_prefix="e2b-websocket")
         websocket_task = executor.submit(
             run_async_func_in_new_loop,
             WebSocket(
                 url=self.url,
                 queue_in=self._queue_in,
-                queue_out=self._queue_out.sync_q,
+                queue_out=self._queue_out,
                 started=started,
                 stopped=stopped,
             ).run(),
         )
-        self._process_cleanup.append(stopped.set)
         self._process_cleanup.append(websocket_task.cancel)
         self._process_cleanup.append(lambda: shutdown_executor(executor))
-        self._process_cleanup.append(task.cancel)
+
         logger.info("WebSocket waiting to start")
-        while not started.is_set():
-            await asyncio.sleep(0)
+        started.wait()
         logger.info("WebSocket started")
 
-    async def send_message(self, method: str, params: List[Any]) -> Any:
+    def send_message(
+        self, method: str, params: List[Any], timeout: float = TIMEOUT
+    ) -> Any:
         id = next(self._id_generator)
         request = request_json(method, params, id)
         future_reply = DeferredFuture(self._process_cleanup)
@@ -104,7 +115,13 @@ class SessionRpc(BaseModel):
             logger.debug(f"WebSocket queueing message: {request}")
             self._queue_in.put(request)
             logger.debug(f"WebSocket waiting for reply: {request}")
-            r = await future_reply
+            try:
+                r = future_reply.result(timeout=timeout)
+            except TimeoutError as e:
+                logger.error(f"WebSocket timed out while waiting for: {request} {e}")
+                raise TimeoutException(
+                    f"WebSocket timed out while waiting for: {request} {e}"
+                )
             return r
         except Exception as e:
             logger.error(f"WebSocket received error while waiting for: {request} {e}")
@@ -113,7 +130,7 @@ class SessionRpc(BaseModel):
             del self._waiting_for_replies[id]
             logger.debug(f"WebSocket removed waiting handler for {id}")
 
-    async def _receive_message(self, data: Data):
+    def _receive_message(self, data: Data):
         logger.debug(f"Processing message: {data}".strip())
 
         message = to_response_or_notification(json.loads(data))
@@ -156,5 +173,5 @@ class SessionRpc(BaseModel):
             handler.cancel()
             del handler
 
-    async def close(self):
+    def close(self):
         self._close()

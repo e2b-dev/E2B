@@ -6,7 +6,6 @@ from queue import Queue
 from threading import Event
 from typing import Any, Callable, List, Optional
 
-from janus import SyncQueue as JanusQueue
 from websockets import WebSocketClientProtocol, connect
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Data
@@ -21,7 +20,7 @@ class WebSocket:
         started: Event,
         stopped: Event,
         queue_in: Queue[dict],
-        queue_out: JanusQueue[Data],
+        queue_out: Queue[Data],
     ):
         self._ws: Optional[WebSocketClientProtocol] = None
         self.url = url

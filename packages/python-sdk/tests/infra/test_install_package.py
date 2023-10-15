@@ -1,14 +1,14 @@
 from e2b import Session
 
 
-async def test_python_package():
-    session = await Session.create("Python3")
+def test_python_package():
+    session = Session("Python3")
 
-    process = await session.process.start("pip install pip-install-test")
-    await process
+    process = session.process.start("pip install pip-install-test")
+    process.wait()
 
-    process = await session.process.start('python -c "import pip_install_test"')
-    await process
+    process = session.process.start('python -c "import pip_install_test"')
+    process.wait()
     output = process.stdout
     assert "Good job!" in output
-    await session.close()
+    session.close()

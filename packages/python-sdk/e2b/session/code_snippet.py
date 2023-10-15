@@ -25,9 +25,9 @@ class CodeSnippetManager(BaseModel):
 
     on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None
 
-    async def _subscribe(self):
+    def _subscribe(self):
         try:
-            await self.session._handle_subscriptions(
+            self.session._handle_subscriptions(
                 self.session._subscribe(
                     self.service_name,
                     lambda ports: self.on_scan_ports(
