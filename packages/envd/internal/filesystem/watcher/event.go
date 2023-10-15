@@ -46,11 +46,13 @@ func newEvent(event fsnotify.Event) (Event, error) {
 	}
 
 	dir := false
+
 	if op != Remove && op != Rename {
 		stat, err := os.Stat(event.Name)
 		if err != nil {
-			return Event{}, fmt.Errorf("failed to stat path '%s': %s", event.Name, err)
+			return Event{}, fmt.Errorf("failed to stat path '%s': %w", event.Name, err)
 		}
+
 		dir = stat.IsDir()
 	}
 

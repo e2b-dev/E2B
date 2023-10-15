@@ -6,9 +6,8 @@ import (
 	"os/exec"
 	"syscall"
 
-	"go.uber.org/zap"
-
 	"github.com/creack/pty"
+	"go.uber.org/zap"
 
 	"github.com/e2b-dev/infra/packages/envd/internal/user"
 )
@@ -59,6 +58,7 @@ func New(id, shell string, rootdir *string, cols, rows uint16, envVars *map[stri
 			formattedVars = append(formattedVars, key+"="+value)
 		}
 	}
+
 	cmd.Env = formattedVars
 
 	tty, err := pty.StartWithSize(cmd, &pty.Winsize{
@@ -66,7 +66,7 @@ func New(id, shell string, rootdir *string, cols, rows uint16, envVars *map[stri
 		Rows: rows,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, rootdir, cols, rows, err)
+		return nil, fmt.Errorf("error starting pty with command '%s' in dir '%s' with '%d' cols and '%d' rows: %w", cmd, cmd.Dir, cols, rows, err)
 	}
 
 	return &Terminal{
@@ -79,10 +79,6 @@ func New(id, shell string, rootdir *string, cols, rows uint16, envVars *map[stri
 
 func (t *Terminal) Pid() int {
 	return t.cmd.Process.Pid
-}
-
-func (t *Terminal) Read(b []byte) (int, error) {
-	return t.tty.Read(b)
 }
 
 func (t *Terminal) Destroy() {
@@ -109,8 +105,10 @@ func (t *Terminal) Destroy() {
 	}
 }
 
-func (t *Terminal) Write(b []byte) (int, error) {
-	return t.tty.Write(b)
+func (t *Terminal) Write(b []byte) error {
+	_, err := t.tty.Write(b)
+
+	return fmt.Errorf("error writing to terminal '%s': %w", t.ID, err)
 }
 
 func (t *Terminal) Resize(cols, rows uint16) error {

@@ -64,6 +64,7 @@ func NewForwarder(
 func (f *Forwarder) StartForwarding() {
 	if f.scannerSubscriber == nil {
 		f.logger.Error("Cannot start forwarding because scanner subscriber is nil")
+
 		return
 	}
 
@@ -85,8 +86,8 @@ func (f *Forwarder) StartForwarding() {
 				key := fmt.Sprintf("%s-%v", p.Pid, p.Port)
 
 				// We check if the opened port is in our map of forwarded ports.
-				val, ok := f.ports[key]
-				if ok {
+				val, portOk := f.ports[key]
+				if portOk {
 					// Just mark the port as being forwarded so we don't delete it.
 					// The actual socat process that handles forwarding should be running from the last iteration.
 					val.state = PortStateForward
@@ -141,8 +142,10 @@ func (f *Forwarder) starPortForwarding(p *PortToForward) {
 			"socatCmd", socatCmd,
 			"error", err,
 		)
+
 		return
 	}
+
 	p.socat = cmd
 }
 
@@ -150,6 +153,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 	if p.socat == nil {
 		return
 	}
+
 	defer func() { p.socat = nil }()
 
 	f.logger.Infow("About to stop port forwarding",
@@ -167,6 +171,7 @@ func (f *Forwarder) stopPortForwarding(p *PortToForward) {
 			"port", p.port,
 			"error", err,
 		)
+
 		return
 	}
 

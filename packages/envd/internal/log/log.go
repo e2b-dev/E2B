@@ -40,8 +40,9 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 
 	var cfg zap.Config
 	if err := json.Unmarshal(rawJSON, &cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error unmarshalling rawJSON: %w", err)
 	}
+
 	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
 		// 2019-08-13T04:39:11Z
@@ -49,7 +50,7 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 
 	l, err := cfg.Build()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error building logger: %w", err)
 	}
 
 	if !mmds || debug {
@@ -58,6 +59,7 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 
 	// mmds is enabled, create a logger that sends logs with info from the FC's MMDS
 	var combinedLogger *zap.Logger
+
 	sessionWriter := newSessionWriter()
 
 	level := zap.ErrorLevel
@@ -72,5 +74,6 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 	)
 
 	combinedLogger = zap.New(core)
+
 	return combinedLogger.Sugar(), nil
 }

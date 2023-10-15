@@ -42,5 +42,6 @@ func (m *Manager) Add(id ID, shell, cmd string, envVars *map[string]string, root
 	}
 
 	m.procs.Insert(proc.ID, proc)
+
 	return proc, nil
 }

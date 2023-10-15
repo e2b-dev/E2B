@@ -37,6 +37,7 @@ func NewService(logger *zap.SugaredLogger) (*Service, error) {
 		dwatcher:  dwatcher,
 	}
 	go s.dirWatcherLoop()
+
 	return s, nil
 }
 
@@ -47,6 +48,7 @@ func (s *Service) dirWatcherLoop() {
 			if !ok {
 				return
 			}
+
 			s.logger.Errorf(
 				"received an error from fswatcher.Errors",
 				"error", err,
@@ -67,6 +69,7 @@ func (s *Service) dirWatcherLoop() {
 						"subscriptionID", sub.Subscription.ID,
 						"error", err,
 					)
+
 					continue
 				}
 			}
@@ -88,26 +91,30 @@ func (s *Service) WatchDir(ctx context.Context, dirpath string) (*rpc.Subscripti
 			"ctx", ctx,
 			"error", err,
 		)
-		return nil, err
+
+		return nil, fmt.Errorf("error creating a filesystem.watch subscription from context: %w", err)
 	}
 
 	go func() {
 		<-allUnsubscribed
-		if err := s.dwatcher.Remove(dirpath); err != nil {
+
+		if removeErr := s.dwatcher.Remove(dirpath); removeErr != nil {
 			s.logger.Errorf(
 				"failed to remove path from dwatcher",
-				"error", err,
+				"error", removeErr,
 			)
+
 			return
 		}
 	}()
 
-	if err := s.dwatcher.Add(dirpath); err != nil {
+	if addErr := s.dwatcher.Add(dirpath); addErr != nil {
 		s.logger.Errorf(
 			"Failed to add path to dwatcher",
-			"error", err,
+			"error", addErr,
 		)
-		return nil, err
+
+		return nil, fmt.Errorf("error adding path to dwatcher: %w", addErr)
 	}
 
 	return sub.Subscription, nil
@@ -124,6 +131,7 @@ func (s *Service) List(dirpath string) (*[]FileInfoResponse, error) {
 			"directoryPath", dirpath,
 			"error", err,
 		)
+
 		return nil, fmt.Errorf("error listing files in '%s': %w", dirpath, err)
 	}
 
@@ -149,8 +157,10 @@ func (s *Service) Remove(path string) error {
 			"path", path,
 			"error", err,
 		)
+
 		return fmt.Errorf("error removing file or directory '%s': %w", path, err)
 	}
+
 	return nil
 }
 
@@ -166,6 +176,7 @@ func (s *Service) Read(path string) (string, error) {
 			"path", path,
 			"error", err,
 		)
+
 		return "", fmt.Errorf("error reading file '%s': %w", path, err)
 	}
 
@@ -185,6 +196,7 @@ func (s *Service) ReadBase64(path string) (string, error) {
 			"path", path,
 			"error", err,
 		)
+
 		return "", fmt.Errorf("error reading file '%s': %w", path, err)
 	}
 
@@ -205,8 +217,10 @@ func (s *Service) Write(path string, content string) error {
 			"content", content,
 			"error", err,
 		)
+
 		return fmt.Errorf("error writing to file '%s': %w", path, err)
 	}
+
 	return nil
 }
 
@@ -223,6 +237,7 @@ func (s *Service) WriteBase64(path string, content string) error {
 			"content", content,
 			"error", err,
 		)
+
 		return fmt.Errorf("error decoding bytes from base64 '%s': %w", bytes, err)
 	}
 
@@ -232,8 +247,10 @@ func (s *Service) WriteBase64(path string, content string) error {
 			"content", content,
 			"error", err,
 		)
+
 		return fmt.Errorf("error writing to file '%s': %w", path, err)
 	}
+
 	return nil
 }
 
@@ -247,6 +264,7 @@ func (s *Service) MakeDir(dirpath string) error {
 			"dirpath", dirpath,
 			"error", err,
 		)
+
 		return fmt.Errorf("error creating a new directory '%s': %w", dirpath, err)
 	}
 

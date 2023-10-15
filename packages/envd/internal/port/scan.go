@@ -31,6 +31,7 @@ func NewScanner(period time.Duration) *Scanner {
 func (s *Scanner) AddSubscriber(id string, filter *ScannerFilter) *ScannerSubscriber {
 	subscriber := NewScannerSubscriber(id, filter)
 	s.subs.Insert(id, subscriber)
+
 	return subscriber
 }
 

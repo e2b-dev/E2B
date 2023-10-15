@@ -52,6 +52,7 @@ func (dw *DirWatcher) watchLoop() {
 			if !ok {
 				dw.logger.Debug("watcher.Errors got closed")
 				close(dw.watcher.Errors)
+
 				return
 			}
 			dw.watcher.Errors <- err
@@ -59,6 +60,7 @@ func (dw *DirWatcher) watchLoop() {
 			if !ok {
 				dw.logger.Debug("watcher.Events got closed")
 				close(dw.Events)
+
 				return
 			}
 
@@ -76,7 +78,7 @@ func (dw *DirWatcher) watchLoop() {
 			// are in the array. If both paths are in the array then the remove event must be associated with removing a directory that's
 			// being watched. We can ignore the event because we will receive another event associated with the parent directory.
 			//
-			// **Drawbacks**: One drawback is that if we're watching only dirB and not dirA and dirB get's removed we never get to know
+			// **Drawbacks**: One drawback is that if we're watching only dirB and not dirA and dirB get's removed we never get's to know
 			// about it. I think that's fine for our use case. We just need to make sure to always watch parent dirs and don't allow users
 			// to delete the root dirs.
 			if fsnotify.Remove.Has(e.Op) && dw.isInWatchedDirs(e.Name) && dw.isInWatchedDirs(parentPath) {
@@ -96,6 +98,7 @@ func (dw *DirWatcher) watchLoop() {
 					"originalEvent", e,
 					"error", err,
 				)
+
 				continue
 			}
 
@@ -109,11 +112,13 @@ func (dw *DirWatcher) removeFromWatchedDirs(dirpath string) {
 	defer dw.mu.Unlock()
 
 	filtered := []string{}
+
 	for _, p := range dw.watchedDirs {
 		if p != dirpath {
 			filtered = append(filtered, p)
 		}
 	}
+
 	dw.watchedDirs = filtered
 }
 
@@ -122,12 +127,15 @@ func (dw *DirWatcher) addToWatchedDirs(dirpath string) {
 	defer dw.mu.Unlock()
 
 	exists := false
+
 	for _, p := range dw.watchedDirs {
 		if p == dirpath {
 			exists = true
+
 			break
 		}
 	}
+
 	if !exists {
 		dw.watchedDirs = append(dw.watchedDirs, dirpath)
 	}
@@ -138,28 +146,36 @@ func (dw *DirWatcher) isInWatchedDirs(dirpath string) bool {
 	defer dw.mu.Unlock()
 
 	exists := false
+
 	for _, p := range dw.watchedDirs {
 		if p == dirpath {
 			exists = true
+
 			break
 		}
 	}
+
 	return exists
 }
 
 func (dw *DirWatcher) addToWatcher(dirpath string) error {
 	dw.addToWatchedDirs(dirpath)
+
 	watching := false
+
 	for _, p := range dw.watcher.WatchList() {
 		if p == dirpath {
 			watching = true
+
 			dw.logger.Debugw(
 				"The path is already being watched",
 				"path", dirpath,
 			)
+
 			break
 		}
 	}
+
 	if !watching {
 		dw.logger.Debugw(
 			"Will add path to watcher",
@@ -176,7 +192,8 @@ func (dw *DirWatcher) addToWatcher(dirpath string) error {
 				"WatchList", dw.watcher.WatchList(),
 				"watchedDirs", dw.watchedDirs,
 			)
-			return fmt.Errorf("'%s': failed to watch: %s", dirpath, err)
+
+			return fmt.Errorf("'%s': failed to watch: %w", dirpath, err)
 		}
 	}
 
@@ -191,7 +208,7 @@ func (dw *DirWatcher) Add(dirpath string) error {
 	if errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("'%s': doesn't exist. Only existing paths are supported", dirpath)
 	} else if err != nil {
-		return fmt.Errorf("failed to stat path '%s': %s", dirpath, err)
+		return fmt.Errorf("failed to stat path '%s': %w", dirpath, err)
 	}
 
 	if !stat.IsDir() {
@@ -210,14 +227,17 @@ func (dw *DirWatcher) Remove(dirpath string) error {
 	)
 	// We can safely ignore errors that originated from trying to remove a path that isn't watched anymore.
 	if err := dw.watcher.Remove(dirpath); err != nil && !errors.Is(err, fsnotify.ErrNonExistentWatch) {
-		return fmt.Errorf("'%s': failed to remove from watcher: %s", dirpath, err)
+		return fmt.Errorf("'%s': failed to remove from watcher: %w", dirpath, err)
 	}
+
 	dw.removeFromWatchedDirs(dirpath)
+
 	dw.logger.Debugw(
-		"either successfuly removed path from WatchList or path wasn't in the WatchList in the first place",
+		"either successfully removed path from WatchList or path wasn't in the WatchList in the first place",
 		"path", dirpath,
 		"WatchList", dw.watcher.WatchList(),
 		"watchedDirs", dw.watchedDirs,
 	)
+
 	return nil
 }

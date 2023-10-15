@@ -51,5 +51,6 @@ func (m *Manager) Add(
 	}
 
 	m.terms.Insert(term.ID, term)
+
 	return term, nil
 }

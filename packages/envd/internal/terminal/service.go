@@ -89,6 +89,7 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 				"terminalID", id,
 				"error", err,
 			)
+
 			return "", fmt.Errorf("error starting new terminal '%s': %w", id, err)
 		}
 
@@ -99,21 +100,22 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 		writer := s.dataSubsWriter(newTerm.ID)
 
 		go func() {
-			_, err := io.Copy(writer, newTerm.tty)
-			if err != nil {
+			_, copyErr := io.Copy(writer, newTerm.tty)
+			if copyErr != nil {
 				s.logger.Warnw("Error reading from terminal",
 					"terminalID", newTerm.ID,
-					"error", err,
+					"error", copyErr,
 				)
 			}
 
 			s.terminals.Remove(newTerm.ID)
 			s.logger.Infow("Sending terminal exit notification", "terminalID", newTerm.ID)
-			err = s.exitSubs.Notify(id, struct{}{})
-			if err != nil {
+			notifyErr := s.exitSubs.Notify(id, struct{}{})
+
+			if notifyErr != nil {
 				s.logger.Errorw("Failed to send exit notification",
 					"terminalID", id,
-					"error", err,
+					"error", notifyErr,
 				)
 			} else {
 				s.logger.Infow("Sent terminal exit notification", "terminalID", newTerm.ID)
@@ -123,12 +125,14 @@ func (s *Service) Start(id ID, cols, rows uint16, envVars *map[string]string, cm
 		s.logger.Infow("Started new terminal",
 			"terminalID", newTerm.ID,
 		)
+
 		return newTerm.ID, nil
 	}
 
 	s.logger.Infow("Terminal with this ID already exists",
 		"terminalID", id,
 	)
+
 	return term.ID, nil
 }
 
@@ -139,15 +143,17 @@ func (s *Service) Data(id ID, data string) error {
 		s.logger.Errorw("Failed to find terminal",
 			"terminalID", id,
 		)
+
 		return fmt.Errorf("error finding terminal '%s'", id)
 	}
 
-	if _, err := term.Write([]byte(data)); err != nil {
+	if err := term.Write([]byte(data)); err != nil {
 		s.logger.Errorw("Failed to write data to terminal",
 			"terminalID", id,
 			"error", err,
 			"data", data,
 		)
+
 		return fmt.Errorf("error writing data to terminal '%s': %w", id, err)
 	}
 
@@ -165,6 +171,7 @@ func (s *Service) Resize(id ID, cols, rows uint16) error {
 		s.logger.Errorw("Failed finding terminal",
 			"terminalID", id,
 		)
+
 		return fmt.Errorf("error finding terminal '%s'", id)
 	}
 
@@ -175,6 +182,7 @@ func (s *Service) Resize(id ID, cols, rows uint16) error {
 			"cols", cols,
 			"rows", rows,
 		)
+
 		return fmt.Errorf("error resizing terminal '%s': %w", id, err)
 	}
 
@@ -201,7 +209,8 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 			"ctx", ctx,
 			"error", err,
 		)
-		return nil, err
+
+		return nil, fmt.Errorf("error creating a data subscription from context: %w", err)
 	}
 
 	go func() {
@@ -216,6 +225,7 @@ func (s *Service) OnData(ctx context.Context, id ID) (*rpc.Subscription, error) 
 		"terminalID", id,
 		"subID", sub.Subscription.ID,
 	)
+
 	return sub.Subscription, nil
 }
 
@@ -229,7 +239,8 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 			"ctx", ctx,
 			"error", err,
 		)
-		return nil, err
+
+		return nil, fmt.Errorf("error creating an exit subscription from context: %w", err)
 	}
 
 	go func() {

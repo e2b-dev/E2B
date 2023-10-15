@@ -61,9 +61,11 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 		line := scanner.Text()
 
 		var o output.OutMessage
+
 		switch t {
 		case output.OutTypeStdout:
 			o = output.NewStdoutMessage(line)
+
 			err := s.stdoutSubs.Notify(process.ID, o)
 			if err != nil {
 				s.logger.Errorw("Failed to send stdout notification",
@@ -72,6 +74,7 @@ func (s *Service) scanRunCmdOut(pipe io.Reader, t output.OutType, process *Proce
 			}
 		case output.OutTypeStderr:
 			o = output.NewStderrMessage(line)
+
 			err := s.stderrSubs.Notify(process.ID, o)
 			if err != nil {
 				s.logger.Errorw("Failed to send stderr notification",
@@ -95,7 +98,6 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 	)
 
 	proc, ok := s.processes.Get(id)
-
 	// Process doesn't exist, we will create a new one.
 	if !ok {
 		s.logger.Infow("Process with ID doesn't exist yet. Creating a new process",
@@ -115,6 +117,7 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				"processID", id,
 				"error", err,
 			)
+
 			return "", err
 		}
 
@@ -131,11 +134,13 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		}
 
 		waitForOutputHandlers.Add(1)
+
 		go s.scanRunCmdOut(stderr, output.OutTypeStderr, newProc, &waitForOutputHandlers)
 
 		stdout, err := newProc.cmd.StdoutPipe()
 		if err != nil {
 			s.processes.Remove(newProc.ID)
+
 			pipeErr := stderr.Close()
 			if pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
@@ -147,21 +152,25 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				"processID", newProc.ID,
 				"error", err,
 			)
+
 			return "", fmt.Errorf("error setting up stdout pipe for the process '%s': %w", newProc.ID, err)
 		}
 
 		waitForOutputHandlers.Add(1)
+
 		go s.scanRunCmdOut(stdout, output.OutTypeStdout, newProc, &waitForOutputHandlers)
 
 		stdin, err := newProc.cmd.StdinPipe()
 		if err != nil {
 			s.processes.Remove(newProc.ID)
+
 			pipeErr := stdout.Close()
 			if pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
 					"error", pipeErr,
 				)
 			}
+
 			pipeErr = stderr.Close()
 			if pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
@@ -176,10 +185,12 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 
 			return "", fmt.Errorf("error setting up stdin pipe for the process '%s': %w", newProc.ID, err)
 		}
+
 		newProc.Stdin = &stdin
 
-		if err := newProc.cmd.Start(); err != nil {
+		if startErr := newProc.cmd.Start(); startErr != nil {
 			s.processes.Remove(newProc.ID)
+
 			pipeErr := stdout.Close()
 			if pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
@@ -206,15 +217,15 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 				"error", err,
 				"cmd", newProc.cmd,
 			)
-			return "", fmt.Errorf("error starting process '%s': %w", newProc.ID, err)
+
+			return "", fmt.Errorf("error starting process '%s': %w", newProc.ID, startErr)
 		}
 
 		go func() {
 			waitForOutputHandlers.Wait()
 
 			// We need to wait for all pipe closes to finish before we can wait for the process to exit (mentioned in the docs).
-			err := newProc.cmd.Wait()
-			if err != nil {
+			if waitErr := newProc.cmd.Wait(); waitErr != nil {
 				s.logger.Warnw("Failed waiting for process",
 					"processID", newProc.ID,
 					"error", err,
@@ -222,12 +233,13 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 			}
 
 			s.processes.Remove(newProc.ID)
-			pipeErr := stdin.Close()
-			if pipeErr != nil {
+
+			if pipeErr := stdin.Close(); pipeErr != nil {
 				s.logger.Warnw("Failed to close pipe",
 					"error", pipeErr,
 				)
 			}
+
 			err = s.exitSubs.Notify(newProc.ID, newProc.cmd.ProcessState.ExitCode())
 			if err != nil {
 				s.logger.Errorw("Failed to send exit notification",
@@ -238,12 +250,14 @@ func (s *Service) Start(id ID, cmd string, envVars *map[string]string, rootdir s
 		}()
 
 		s.logger.Infow("Started new process", "processID", newProc.ID)
+
 		return newProc.ID, nil
 	}
 
 	s.logger.Infow("Process with this ID already exists",
 		"processID", id,
 	)
+
 	return proc.ID, nil
 }
 
@@ -258,6 +272,7 @@ func (s *Service) Stdin(id ID, data string) error {
 		s.logger.Errorw("Failed to find process",
 			"processID", id,
 		)
+
 		return fmt.Errorf("error finding process '%s'", id)
 	}
 
@@ -268,6 +283,7 @@ func (s *Service) Stdin(id ID, data string) error {
 			"error", err,
 			"stdin", data,
 		)
+
 		return fmt.Errorf("error writing stdin to process '%s': %w", id, err)
 	}
 
@@ -292,7 +308,8 @@ func (s *Service) OnExit(ctx context.Context, id ID) (*rpc.Subscription, error) 
 			"ctx", ctx,
 			"error", err,
 		)
-		return nil, err
+
+		return nil, fmt.Errorf("error creating an exit subscription from context: %w", err)
 	}
 
 	go func() {
@@ -320,7 +337,8 @@ func (s *Service) OnStdout(ctx context.Context, id ID) (*rpc.Subscription, error
 			"ctx", ctx,
 			"error", err,
 		)
-		return nil, err
+
+		return nil, fmt.Errorf("error creating a stdout subscription from context: %w", err)
 	}
 
 	go func() {
@@ -351,7 +369,8 @@ func (s *Service) OnStderr(ctx context.Context, id ID) (*rpc.Subscription, error
 			"ctx", ctx,
 			"error", err,
 		)
-		return nil, err
+
+		return nil, fmt.Errorf("error creating a stderr subscription from context: %w", err)
 	}
 
 	go func() {

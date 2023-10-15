@@ -16,9 +16,11 @@ func (sf *ScannerFilter) Match(proc *GOnetstat.Process) bool {
 	}
 
 	ipMatch := false
+
 	for _, ip := range sf.IPs {
 		if ip == proc.Ip {
 			ipMatch = true
+
 			break
 		}
 	}

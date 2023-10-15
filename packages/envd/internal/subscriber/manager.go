@@ -32,6 +32,7 @@ func (m *Manager) Notify(topic string, data interface{}) error {
 			}
 		}
 	}
+
 	return nil
 }
 

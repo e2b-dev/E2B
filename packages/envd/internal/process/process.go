@@ -65,6 +65,7 @@ func (p *Process) Kill() {
 			"processID", p.ID,
 			"cmd", p.cmd,
 		)
+
 		return
 	}
 
@@ -86,5 +87,6 @@ func (p *Process) Kill() {
 
 func (p *Process) WriteStdin(data string) error {
 	_, err := io.WriteString(*p.Stdin, data)
-	return err
+
+	return fmt.Errorf("error writing to stdin of process '%s': %w", p.ID, err)
 }

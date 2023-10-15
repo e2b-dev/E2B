@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"fmt"
 
 	netstat "github.com/drael/GOnetstat"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -66,7 +67,7 @@ func (s *Service) ScanOpenedPorts(ctx context.Context) (*rpc.Subscription, error
 			"error", err,
 		)
 
-		return nil, err
+		return nil, fmt.Errorf("error creating a scan opened ports subscription from context: %w", err)
 	}
 
 	return sub.Subscription, nil
