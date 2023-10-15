@@ -1,6 +1,6 @@
 from importlib.metadata import version
 
-from e2b.constants import INSTANCE_DOMAIN
+from e2b.constants import API_HOST
 from e2b.api.metadata import default_headers
 
 pydantic_version = version("pydantic")
@@ -17,7 +17,7 @@ else:
 # Defining the host is optional and defaults to https://api.e2b.dev
 # See configuration.py for a list of all supported configuration parameters.
 configuration = client.Configuration(
-    host=f"https://{INSTANCE_DOMAIN}",
+    host=API_HOST,
 )
 
 
