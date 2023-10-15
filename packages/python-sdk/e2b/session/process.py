@@ -357,6 +357,7 @@ class ProcessManager:
                     env_vars,
                     cwd,
                 ],
+                timeout=timeout,
             )
             logger.info(f"Started process (id: {process_id})")
             return Process(

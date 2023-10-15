@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from queue import Queue
 from threading import Event
 from typing import Any, Callable, Dict, Iterator, List, Union
@@ -13,7 +13,8 @@ from jsonrpcclient.responses import Response
 from pydantic import BaseModel, PrivateAttr, ConfigDict
 from websockets.typing import Data
 
-from e2b.session.exception import RpcException
+from e2b.constants import TIMEOUT
+from e2b.session.exception import RpcException, TimeoutException
 from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.threads import shutdown_executor
@@ -100,7 +101,9 @@ class SessionRpc(BaseModel):
         started.wait()
         logger.info("WebSocket started")
 
-    def send_message(self, method: str, params: List[Any]) -> Any:
+    def send_message(
+        self, method: str, params: List[Any], timeout: float = TIMEOUT
+    ) -> Any:
         id = next(self._id_generator)
         request = request_json(method, params, id)
         future_reply = DeferredFuture(self._process_cleanup)
@@ -110,7 +113,13 @@ class SessionRpc(BaseModel):
             logger.debug(f"WebSocket queueing message: {request}")
             self._queue_in.put(request)
             logger.debug(f"WebSocket waiting for reply: {request}")
-            r = future_reply.result()
+            try:
+                r = future_reply.result(timeout=timeout)
+            except TimeoutError as e:
+                logger.error(f"WebSocket timed out while waiting for: {request} {e}")
+                raise TimeoutException(
+                    f"WebSocket timed out while waiting for: {request} {e}"
+                )
             return r
         except Exception as e:
             logger.error(f"WebSocket received error while waiting for: {request} {e}")

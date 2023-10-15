@@ -2,6 +2,7 @@ import logging
 import urllib.parse
 from os import path
 from typing import Any, Callable, List, Literal, Optional, Union, IO
+
 import requests
 
 from e2b.constants import TIMEOUT, ENVD_PORT
@@ -64,13 +65,14 @@ class Session(SessionConnection):
     def __init__(
         self,
         id: Union[Environment, str],
-        api_key: Optional[str],
+        api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
         on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
         on_stdout: Optional[Callable[[str], Any]] = None,
         on_stderr: Optional[Callable[[str], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
@@ -102,16 +104,6 @@ class Session(SessionConnection):
         if cwd and cwd.startswith("~"):
             cwd = cwd.replace("~", "/home/user")
 
-        super().__init__(
-            id=id,
-            api_key=api_key,
-            cwd=cwd,
-            env_vars=env_vars,
-            _debug_hostname=_debug_hostname,
-            _debug_port=_debug_port,
-            _debug_dev_env=_debug_dev_env,
-            on_close=self._close_services,
-        )
         self._code_snippet = CodeSnippetManager(
             session=self,
             on_scan_ports=on_scan_ports,
@@ -121,15 +113,26 @@ class Session(SessionConnection):
         self._process = ProcessManager(
             session=self, on_stdout=on_stdout, on_stderr=on_stderr, on_exit=on_exit
         )
+        super().__init__(
+            id=id,
+            api_key=api_key,
+            cwd=cwd,
+            env_vars=env_vars,
+            _debug_hostname=_debug_hostname,
+            _debug_port=_debug_port,
+            _debug_dev_env=_debug_dev_env,
+            on_close=self._close_services,
+            timeout=timeout,
+        )
 
-    def open(self, timeout: Optional[float] = TIMEOUT) -> None:
+    def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Opens the session.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         logger.info(f"Opening session {self._id}")
-        super().open()
+        super()._open(timeout=timeout)
         self._code_snippet._subscribe()
         logger.info(f"Session {self._id} opened")
         if self.cwd:
@@ -157,31 +160,35 @@ class Session(SessionConnection):
         protocol = "http" if self._debug_dev_env == "local" else "https"
         return f"{protocol}://{ENVD_PORT}-{hostname}/file"
 
-    def upload_file(self, file: IO) -> str:
+    def upload_file(self, file: IO, timeout: Optional[float] = TIMEOUT) -> str:
         """
         Uploads a file to the session.
         The file will be uploaded to the user's home (`/home/user`) directory with the same name.
         If a file with the same name already exists, it will be overwritten.
 
         :param file: The file to upload
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         files = {"file": file}
-        r = requests.post(self.file_url(), files=files)
+        r = requests.post(self.file_url(), files=files, timeout=timeout)
         if r.status_code != 200:
             raise Exception(f"Failed to upload file: {r.reason} {r.text}")
 
         filename = path.basename(file.name)
         return f"/home/user/{filename}"
 
-    def download_file(self, remote_path: str) -> bytes:
+    def download_file(
+        self, remote_path: str, timeout: Optional[float] = TIMEOUT
+    ) -> bytes:
         """
         Downloads a file from the session and returns it's content as bytes.
 
         :param remote_path: The path of the file to download
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
         encoded_path = urllib.parse.quote(remote_path)
         url = f"{self.file_url()}?path={encoded_path}"
-        r = requests.get(url)
+        r = requests.get(url, timeout=timeout)
 
         if r.status_code != 200:
             raise Exception(
@@ -189,65 +196,8 @@ class Session(SessionConnection):
             )
         return r.content
 
-    async def __aenter__(self):
-        self.open()
+    def __enter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-
-    @classmethod
-    def create(
-        cls,
-        id: Union[Environment, str],
-        api_key: Optional[str] = None,
-        cwd: Optional[str] = None,
-        env_vars: Optional[EnvVars] = None,
-        on_scan_ports: Optional[Callable[[List[OpenPort]], Any]] = None,
-        on_stdout: Optional[Callable[[str], Any]] = None,
-        on_stderr: Optional[Callable[[str], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
-        timeout: Optional[float] = TIMEOUT,
-        _debug_hostname: Optional[str] = None,
-        _debug_port: Optional[int] = None,
-        _debug_dev_env: Optional[Literal["remote", "local"]] = None,
-    ):
-        """
-        Creates a new cloud environment session.
-
-        :param id: ID of the environment or the environment type template.
-        Can be one of the following environment type templates or a custom environment ID:
-        - `Nodejs`
-        - `Bash`
-        - `Python`
-        - `Java`
-        - `Go`
-        - `Rust`
-        - `PHP`
-        - `Perl`
-        - `DotNET`
-
-        :param api_key: The API key to use
-        :param cwd: The current working directory to use
-        :param env_vars: Environment variables to set
-        :param on_scan_ports: A callback to handle opened ports
-        :param on_stdout: A default callback that is called when stdout with a newline is received from the process
-        :param on_stderr: A default callback that is called when stderr with a newline is received from the process
-        :param on_exit: A default callback that is called when the process exits
-        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
-        """
-        session = cls(
-            id=id,
-            api_key=api_key,
-            cwd=cwd,
-            env_vars=env_vars,
-            on_scan_ports=on_scan_ports,
-            on_stdout=on_stdout,
-            on_stderr=on_stderr,
-            on_exit=on_exit,
-            _debug_hostname=_debug_hostname,
-            _debug_port=_debug_port,
-            _debug_dev_env=_debug_dev_env,
-        )
-        session.open(timeout=timeout)
-        return session

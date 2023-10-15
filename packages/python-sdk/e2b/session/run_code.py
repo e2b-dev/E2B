@@ -61,7 +61,7 @@ def run_code(
             f'Invalid runtime "{runtime}". Please contact us (hello@e2b.dev) if you need support for this runtime'
         )
 
-    session = Session.create(id=env_id, api_key=api_key)
+    session = Session(id=env_id, api_key=api_key)
     session.filesystem.write(filepath, code)
 
     proc = session.process.start(cmd=f"{binary} {filepath}")

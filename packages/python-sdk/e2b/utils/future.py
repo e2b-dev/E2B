@@ -16,8 +16,8 @@ class DeferredFuture(Generic[T]):
         if not self._future.done():
             self._future.set_result(result)
 
-    def result(self) -> T:
-        return self._future.result()
+    def result(self, timeout: Optional[float] = None) -> T:
+        return self._future.result(timeout=timeout)
 
     def done(self) -> bool:
         return self._future.done()

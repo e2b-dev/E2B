@@ -32,36 +32,44 @@ class FilesystemManager:
     def cwd(self) -> str:
         return self._session.cwd
 
-    def read_bytes(self, path: str) -> bytes:
+    def read_bytes(self, path: str, timeout: Optional[float] = TIMEOUT) -> bytes:
         """
         Reads the whole content of a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
 
         :param path: path to a file
+        :param timeout: timeout for the call
         :return: byte array representing the content of a file
         """
         path = resolve_path(path, self.cwd)
-        result: str = self._session._call(self._service_name, "readBase64", [path])
+        result: str = self._session._call(
+            self._service_name, "readBase64", [path], timeout=timeout
+        )
         return base64.b64decode(result)
 
-    def write_bytes(self, path: str, content: bytes) -> None:
+    def write_bytes(
+        self, path: str, content: bytes, timeout: Optional[float] = TIMEOUT
+    ) -> None:
         """
         Writes content to a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
 
         :param path: path to a file
+        :param timeout: timeout for the call
         :param content: byte array representing the content to write
         """
         path = resolve_path(path, self.cwd)
         base64_content = base64.b64encode(content).decode("utf-8")
-        self._session._call(self._service_name, "writeBase64", [path, base64_content])
+        self._session._call(
+            self._service_name, "writeBase64", [path, base64_content], timeout=timeout
+        )
 
     def read(self, path: str, timeout: Optional[float] = TIMEOUT) -> str:
         """
         Reads the whole content of a file as an array of bytes.
 
         :param path: Path to a file
-        :param timeout: Timeout for the call
+        :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         :return: Content of a file
         """
         logger.debug(f"Reading file {path}")

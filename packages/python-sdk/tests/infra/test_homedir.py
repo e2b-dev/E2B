@@ -2,7 +2,7 @@ from e2b import Session
 
 
 def test_homedir():
-    session = Session.create("Bash")
+    session = Session("Bash")
 
     process = session.process.start("echo $HOME")
     process.wait()

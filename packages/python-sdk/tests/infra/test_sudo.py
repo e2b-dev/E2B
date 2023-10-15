@@ -2,7 +2,7 @@ from e2b import Session
 
 
 def test_sudo():
-    session = Session.create("Nodejs")
+    session = Session("Nodejs")
 
     process = session.process.start("sudo echo test")
     process.wait()

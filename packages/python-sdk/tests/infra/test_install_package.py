@@ -2,7 +2,7 @@ from e2b import Session
 
 
 def test_python_package():
-    session = Session.create("Python3")
+    session = Session("Python3")
 
     process = session.process.start("pip install pip-install-test")
     process.wait()

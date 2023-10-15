@@ -2,12 +2,13 @@ import asyncio
 import functools
 import logging
 import traceback
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from os import getenv
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
 
 from pydantic import BaseModel
+from urllib3.exceptions import ReadTimeoutError
 
 from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
@@ -22,6 +23,7 @@ from e2b.session.exception import (
     AuthenticationException,
     MultipleExceptions,
     SessionException,
+    TimeoutException,
 )
 from e2b.session.session_rpc import Notification, SessionRpc
 from e2b.utils.future import DeferredFuture
@@ -60,10 +62,11 @@ class SessionConnection:
         api_key: Optional[str],
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,
+        on_close: Optional[Callable[[], Any]] = None,
+        timeout: Optional[float] = TIMEOUT,
         _debug_hostname: Optional[str] = None,
         _debug_port: Optional[int] = None,
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
-        on_close: Optional[Callable[[], Any]] = None,
     ):
         api_key = api_key or getenv("E2B_API_KEY")
 
@@ -90,6 +93,8 @@ class SessionConnection:
         self._finished = DeferredFuture(self._process_cleanup)
 
         logger.info(f"Session for code snippet {self._id} initialized")
+
+        self._open(timeout=timeout)
 
     def get_hostname(self, port: Optional[int] = None):
         """
@@ -144,7 +149,7 @@ class SessionConnection:
             cleanup()
         self._process_cleanup.clear()
 
-    def open(self) -> None:
+    def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Open a connection to a new session.
 
@@ -162,6 +167,7 @@ class SessionConnection:
                 self._session = api.sessions_post(
                     models.NewSession(codeSnippetID=self._id, editEnabled=False),
                     api_key=self._api_key,
+                    _request_timeout=timeout,
                 )
                 logger.info(
                     f"Session {self._session.code_snippet_id} created (id:{self._session.session_id})"
@@ -176,6 +182,12 @@ class SessionConnection:
                 self._process_cleanup.append(self._refreshing_task.cancel)
                 self._process_cleanup.append(lambda: shutdown_executor(executor))
 
+        except ReadTimeoutError as e:
+            logger.error(f"Failed to acquire session: {e}")
+            self._close()
+            raise TimeoutException(
+                f"Failed to acquire session: {e}",
+            ) from e
         except Exception as e:
             logger.error(f"Failed to acquire session")
             self._close()
@@ -192,7 +204,11 @@ class SessionConnection:
                 on_message=self._handle_notification,
             )
             self._rpc.connect()
+        except TimeoutError as e:
+            print(e)
+            raise e
         except Exception as e:
+            print(e)
             self._close()
             raise e
 
@@ -202,14 +218,14 @@ class SessionConnection:
         method: str,
         params: List[Any] = None,
         timeout: Optional[float] = TIMEOUT,
-    ):
+    ) -> Any:
         if not params:
             params = []
 
         if not self.is_open:
             raise SessionException("Session is not open")
 
-        return self._rpc.send_message(f"{service}_{method}", params)
+        return self._rpc.send_message(f"{service}_{method}", params, timeout=timeout)
 
     def _handle_subscriptions(
         self,
