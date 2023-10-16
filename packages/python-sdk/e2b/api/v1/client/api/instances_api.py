@@ -18,7 +18,6 @@ import warnings
 
 from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
-from typing import overload, Optional, Union, Awaitable
 
 from pydantic import StrictStr
 
@@ -42,22 +41,10 @@ class InstancesApi(object):
             api_client = ApiClient.get_default()
         self.api_client = api_client
 
-    @overload
-    async def instances_instance_id_refreshes_post(
-        self, instance_id: StrictStr, **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
-    @overload
-    def instances_instance_id_refreshes_post(
-        self, instance_id: StrictStr, async_req: Optional[bool] = True, **kwargs
-    ) -> None:  # noqa: E501
-        ...
-
     @validate_arguments
     def instances_instance_id_refreshes_post(
-        self, instance_id: StrictStr, async_req: Optional[bool] = None, **kwargs
-    ) -> Union[None, Awaitable[None]]:  # noqa: E501
+        self, instance_id: StrictStr, **kwargs
+    ) -> None:  # noqa: E501
         """instances_instance_id_refreshes_post  # noqa: E501
 
         Refresh the instance extending its time to live  # noqa: E501
@@ -85,8 +72,6 @@ class InstancesApi(object):
             raise ValueError(
                 "Error! Please call the instances_instance_id_refreshes_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"
             )
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.instances_instance_id_refreshes_post_with_http_info(
             instance_id, **kwargs
         )  # noqa: E501
@@ -201,22 +186,10 @@ class InstancesApi(object):
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def instances_post(
-        self, new_instance: NewInstance, **kwargs
-    ) -> Instance:  # noqa: E501
-        ...
-
-    @overload
-    def instances_post(
-        self, new_instance: NewInstance, async_req: Optional[bool] = True, **kwargs
-    ) -> Instance:  # noqa: E501
-        ...
-
     @validate_arguments
     def instances_post(
-        self, new_instance: NewInstance, async_req: Optional[bool] = None, **kwargs
-    ) -> Union[Instance, Awaitable[Instance]]:  # noqa: E501
+        self, new_instance: NewInstance, **kwargs
+    ) -> Instance:  # noqa: E501
         """instances_post  # noqa: E501
 
         Create an instance from the environment  # noqa: E501
@@ -244,8 +217,6 @@ class InstancesApi(object):
             raise ValueError(
                 "Error! Please call the instances_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"
             )
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.instances_post_with_http_info(new_instance, **kwargs)  # noqa: E501
 
     @validate_arguments

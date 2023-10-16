@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import Future
 from typing import Any, Awaitable, Callable, Generic, List, Optional, TypeVar
 
 T = TypeVar("T")
@@ -7,7 +8,7 @@ T = TypeVar("T")
 # Check if using event is not better for most use cases
 class DeferredFuture(Generic[T]):
     def __init__(self, cleanup_list: Optional[List[Callable[[], Any]]] = None):
-        self._future = asyncio.Future()
+        self._future = Future()
         if cleanup_list is not None:
             cleanup_list.append(self.cancel)
 
@@ -15,9 +16,11 @@ class DeferredFuture(Generic[T]):
         if not self._future.done():
             self._future.set_result(result)
 
-    def __await__(self):
-        result = yield from self._future.__await__()
-        return result
+    def result(self, timeout: Optional[float] = None) -> T:
+        return self._future.result(timeout=timeout)
+
+    def done(self) -> bool:
+        return self._future.done()
 
     def cancel(self):
         if not self._future.done():

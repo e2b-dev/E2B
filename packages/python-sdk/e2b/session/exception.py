@@ -44,3 +44,7 @@ class AuthenticationException(SessionException):
 
 class UnsupportedRuntimeException(SessionException):
     pass
+
+
+class TimeoutException(SessionException):
+    pass

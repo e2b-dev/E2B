@@ -1,11 +1,11 @@
 from e2b import Session
 
 
-async def test_sudo():
-    session = await Session.create("Nodejs")
+def test_sudo():
+    session = Session("Nodejs")
 
-    process = await session.process.start("sudo echo test")
-    await process
+    process = session.process.start("sudo echo test")
+    process.wait()
     output = process.stdout
     assert output == "test"
-    await session.close()
+    session.close()

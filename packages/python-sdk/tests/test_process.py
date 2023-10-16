@@ -3,30 +3,30 @@ from unittest.mock import MagicMock
 from e2b import Session
 
 
-async def test_process_expected_stdout():
+def test_process_expected_stdout():
     # TODO: Implement this once we fix envd stdout/stderr race condition
     pass
 
 
-async def test_process_expected_stderr():
+def test_process_expected_stderr():
     # TODO: Implement this once we fix envd stdout/stderr race condition
     pass
 
 
-async def test_process_on_stdout_stderr():
-    session = await Session.create("Nodejs")
+def test_process_on_stdout_stderr():
+    session = Session("Nodejs")
 
     stdout = []
     stderr = []
 
-    proc = await session.process.start(
+    proc = session.process.start(
         "pwd",
         on_stdout=lambda data: stdout.append(data),
         on_stderr=lambda data: stderr.append(data),
         cwd="/tmp",
     )
 
-    output = await proc
+    output = proc.wait()
 
     assert not output.error
     assert output.stdout == "/tmp"
@@ -35,34 +35,34 @@ async def test_process_on_stdout_stderr():
     assert stderr == []
     assert proc.exit_code == 0
 
-    await session.close()
+    session.close()
 
 
-async def test_process_on_exit():
-    session = await Session.create("Nodejs")
+def test_process_on_exit():
+    session = Session("Nodejs")
 
     on_exit = MagicMock()
 
-    proc = await session.process.start(
+    proc = session.process.start(
         "pwd",
         on_exit=lambda: on_exit(),
     )
 
-    await proc
+    proc.wait()
     on_exit.assert_called_once()
 
-    await session.close()
+    session.close()
 
 
-async def test_process_send_stdin():
-    session = await Session.create("Nodejs")
+def test_process_send_stdin():
+    session = Session("Nodejs")
 
-    proc = await session.process.start(
+    proc = session.process.start(
         'read -r line; echo "$line"',
         cwd="/code",
     )
-    await proc.send_stdin("ping\n")
-    await proc
+    proc.send_stdin("ping\n")
+    proc.wait()
 
     assert proc.output.stdout == "ping"
 
@@ -71,34 +71,34 @@ async def test_process_send_stdin():
     assert message.line == "ping"
     assert not message.error
 
-    await session.close()
+    session.close()
 
 
-async def test_default_on_exit():
+def test_default_on_exit():
     on_exit = MagicMock()
 
-    session = await Session.create("Nodejs", on_exit=lambda: on_exit())
-    proc = await session.process.start(
+    session = Session("Nodejs", on_exit=lambda: on_exit())
+    proc = session.process.start(
         "pwd",
         on_exit=lambda: print("EXIT"),
     )
-    await proc
+    proc.wait()
     on_exit.assert_not_called()
 
-    proc = await session.process.start(
+    proc = session.process.start(
         "pwd",
     )
-    await proc
+    proc.wait()
     on_exit.assert_called_once()
 
-    await session.close()
+    session.close()
 
 
-async def test_process_default_on_stdout_stderr():
+def test_process_default_on_stdout_stderr():
     on_stdout = MagicMock()
     on_stderr = MagicMock()
 
-    session = await Session.create(
+    session = Session(
         "Nodejs",
         on_stdout=lambda data: on_stdout(),
         on_stderr=lambda data: on_stderr(),
@@ -108,21 +108,21 @@ async def test_process_default_on_stdout_stderr():
     stdout = []
     stderr = []
 
-    proc = await session.process.start(
+    proc = session.process.start(
         code,
         on_stdout=lambda data: stdout.append(data),
         on_stderr=lambda data: stderr.append(data),
     )
 
-    await proc
+    proc.wait()
     on_stdout.assert_not_called()
     on_stderr.assert_not_called()
 
-    proc = await session.process.start(code)
-    await proc
+    proc = session.process.start(code)
+    proc.wait()
 
     on_stdout.assert_called_once()
     on_stderr.assert_called()
     assert proc.exit_code == 1
 
-    await session.close()
+    session.close()
