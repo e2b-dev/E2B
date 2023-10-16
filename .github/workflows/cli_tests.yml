@@ -21,7 +21,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - uses: pnpm/action-setup@v2
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 7
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -29,6 +33,11 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
