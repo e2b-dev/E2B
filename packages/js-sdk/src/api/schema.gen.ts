@@ -106,6 +106,10 @@ export interface paths {
         path: {
           envID: components["parameters"]["envID"];
         };
+        query: {
+          /** Index of the starting build log that should be returned with the environment */
+          logs?: number;
+        };
       };
       responses: {
         /** Successfully returned the environment */
@@ -129,6 +133,11 @@ export interface components {
       envID: string;
     };
     Environment: {
+      /**
+       * @description Build logs
+       * @default []
+       */
+      logs: string[];
       /** @description Identifier of the environment */
       envID: string;
       /**
