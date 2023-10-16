@@ -6,7 +6,7 @@ on:
       - 'supabase/functions/**'
       - '.github/workflows/supabase.yml'
     branches:
-      - production
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
