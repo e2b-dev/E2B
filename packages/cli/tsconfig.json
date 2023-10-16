@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": [
-      "ES2020",
-      "webworker"
-    ],
+    "lib": ["ES2020", "webworker"],
     "module": "CommonJS",
     "allowJs": true,
     "declaration": true,
@@ -26,11 +23,9 @@
     "allowSyntheticDefaultImports": true,
     "outDir": "dist",
     "baseUrl": ".",
-    "rootDirs": [
-      "src"
-    ],
+    "rootDirs": ["src"],
     "paths": {
-      "@e2b/sdk": ["../js-sdk/src"],
+      "@e2b/sdk": ["../js-sdk/src"]
     }
   }
 }

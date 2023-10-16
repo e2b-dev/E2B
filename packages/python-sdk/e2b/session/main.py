@@ -1,11 +1,10 @@
 import logging
 import urllib.parse
 from os import path
-from typing import Any, Callable, List, Literal, Optional, Union, IO
+from typing import IO, Any, Callable, List, Literal, Optional, Union
 
 import requests
-
-from e2b.constants import TIMEOUT, ENVD_PORT
+from e2b.constants import ENVD_PORT, TIMEOUT
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
 from e2b.session.env_vars import EnvVars
 from e2b.session.filesystem import FilesystemManager
@@ -30,7 +29,9 @@ Environment = Literal[
 
 class Session(SessionConnection):
     """
-    E2B cloud environment gives your agent a full cloud development environment that's sandboxed. That means:
+    E2B cloud environment.
+    Gives your agent a full cloud development environment that's sandboxed.
+    That means:
 
     - Access to Linux OS
     - Using filesystem (create, list, and delete files and dirs)
@@ -78,7 +79,7 @@ class Session(SessionConnection):
         _debug_dev_env: Optional[Literal["remote", "local"]] = None,
     ):
         """
-        Creates a new cloud environment session.
+        Create a new cloud environment session.
 
         :param id: ID of the environment or the environment type template.
         Can be one of the following environment type templates or a custom environment ID:
@@ -127,7 +128,7 @@ class Session(SessionConnection):
 
     def _open(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Opens the session.
+        Open the session.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """
@@ -144,14 +145,14 @@ class Session(SessionConnection):
 
     def close(self) -> None:
         """
-        Closes the session.
+        Close the session.
         """
         super().close()
         self._close()
 
     def file_url(self) -> str:
         """
-        Returns a URL that can be used to upload files to the session via a multipart/form-data POST request.
+        Return a URL that can be used to upload files to the session via a multipart/form-data POST request.
         This is useful if you're uploading files directly from the browser.
         The file will be uploaded to the user's home directory with the same name.
         If a file with the same name already exists, it will be overwritten.
@@ -162,7 +163,7 @@ class Session(SessionConnection):
 
     def upload_file(self, file: IO, timeout: Optional[float] = TIMEOUT) -> str:
         """
-        Uploads a file to the session.
+        Upload a file to the session.
         The file will be uploaded to the user's home (`/home/user`) directory with the same name.
         If a file with the same name already exists, it will be overwritten.
 
@@ -181,7 +182,7 @@ class Session(SessionConnection):
         self, remote_path: str, timeout: Optional[float] = TIMEOUT
     ) -> bytes:
         """
-        Downloads a file from the session and returns it's content as bytes.
+        Download a file from the session and returns it's content as bytes.
 
         :param remote_path: The path of the file to download
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time

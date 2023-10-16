@@ -13,13 +13,13 @@
 
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
 
-
-from pydantic import BaseModel, Field
 from e2b.api.v1.client.models.environment_state import EnvironmentState
+from pydantic import BaseModel, Field
 
 
 class EnvironmentStateUpdate(BaseModel):

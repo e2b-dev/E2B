@@ -97,8 +97,8 @@ export default {
         loaderDots: {
           to: {
             opacity: '0.1',
-            transform: 'translate3d(0, -0.3rem, 0)' // TODO: More parametric
-          }
+            transform: 'translate3d(0, -0.3rem, 0)', // TODO: More parametric
+          },
         },
         'accordion-down': {
           // @ts-ignore
@@ -110,12 +110,8 @@ export default {
           // @ts-ignore
           to: { height: 0 },
         },
-      }
+      },
     },
   },
-  plugins: [
-    typographyPlugin, 
-    headlessuiPlugin,
-    animatePlugin,
-  ],
+  plugins: [typographyPlugin, headlessuiPlugin, animatePlugin],
 } satisfies Config

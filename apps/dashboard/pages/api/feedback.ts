@@ -6,13 +6,13 @@ import { serverCreds } from 'db/credentials'
 import { PostFeedback } from 'hooks/useAddFeedback'
 
 async function postFeedback(req: NextApiRequest, res: NextApiResponse) {
-  const {
-    feedback,
-  } = req.body as PostFeedback
+  const { feedback } = req.body as PostFeedback
 
   try {
     const supabase = createServerSupabaseClient({ req, res }, serverCreds)
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     if (!session) {
       return res.status(401).json({
         error: 'not_authenticated',
@@ -39,10 +39,7 @@ async function postFeedback(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     await postFeedback(req, res)
     return

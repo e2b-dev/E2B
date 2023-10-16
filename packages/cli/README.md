@@ -23,7 +23,6 @@ e2b login
 <details>
 <summary>Authenticate without the ability to open browser</summary>
 
-
 To authenticate without the ability to open browser, you can provide E2B_ACCESS_TOKEN as an environment variable.
 Obtain your E2B_ACCESS_TOKEN from at [e2b.dev/docs](https://e2b.dev/docs).
 
@@ -35,14 +34,15 @@ E2B_ACCESS_TOKEN=sk_e2b_... e2b login
 
 ## Commands
 
-🔜 All commands can be called with a `--path <path-to-dir>` flag that changes the directory where the command will be called, without the need to call `cd`.
+🔜 All commands can be called with a `--path <path-to-dir>` flag that changes the directory where the command will be
+called, without the need to call `cd`.
 
-```
+```text
 -V, --version    Display e2b CLI version
 -h, --help       display help for command
 ```
 
-```
+```text
 help [command]   display help for command
 
 login            Login to e2b

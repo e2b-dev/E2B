@@ -12,12 +12,15 @@ export interface Props {
 function Textarea({ value = '', className, placeholder, onChange, isOpen }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(function handleFocus() {
-    if (!ref) return
-    if (isOpen) {
-      ref.current?.focus()
-    }
-  }, [isOpen])
+  useEffect(
+    function handleFocus() {
+      if (!ref) return
+      if (isOpen) {
+        ref.current?.focus()
+      }
+    },
+    [isOpen],
+  )
 
   return (
     <textarea

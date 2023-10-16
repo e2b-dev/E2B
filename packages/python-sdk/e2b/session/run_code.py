@@ -1,5 +1,5 @@
 from os import getenv
-from typing import Literal, Union, Optional
+from typing import Literal, Optional, Union
 
 from . import Session
 from .exception import UnsupportedRuntimeException
@@ -25,7 +25,7 @@ def run_code(
     api_key: Optional[str] = None,
 ):
     """
-    Runs code in a sandboxed cloud playground and return the stdout and stderr
+    Run code in a sandboxed cloud playground and return the stdout and stderr
     `run_ode` wraps the `Session` class and provides a simple interface for running code in a sandboxed environment
     without any need to manage lifecycle of the session.
     `run_code` automatically loads the E2B API key from the `E2B_API_KEY` environment variable.

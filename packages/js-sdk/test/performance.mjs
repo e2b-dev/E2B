@@ -1,13 +1,12 @@
-import {writeFileSync} from 'fs'
+import { writeFileSync } from 'fs'
 
-import {Session} from '../dist/cjs/index.js'
+import { Session } from '../dist/cjs/index.js'
 
 const reportSummaryFile = process.env.SUMMARY_FILE || './test.md'
 
 const codeSnippetIDs = ['5udkAFHBVrGz']
 const samplePerID = 15
 const upperBoundary = 1000 // 1s
-
 
 async function spinSession(id) {
   console.log('Creating session...')
@@ -23,10 +22,7 @@ async function spinSession(id) {
     const endTime = performance.now()
     return endTime - startTime
   } catch (e) {
-    console.error(
-      `Measuring ${id} failed`,
-      e,
-    )
+    console.error(`Measuring ${id} failed`, e)
   } finally {
     ;(async () => {
       try {
@@ -101,7 +97,7 @@ async function main() {
 
   for (const id of codeSnippetIDs) {
     const entry = await sample(id, samplePerID)
-    entries = {...entries, ...entry}
+    entries = { ...entries, ...entry }
   }
 
   // for (const id of codeSnippetIDs) {

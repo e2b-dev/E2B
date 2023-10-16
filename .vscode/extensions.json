@@ -4,6 +4,6 @@
     "dbaeumer.vscode-eslint",
     "ms-python.vscode-pylance",
     "ms-python.python",
-    "bradlc.vscode-tailwindcss",
+    "bradlc.vscode-tailwindcss"
   ]
 }

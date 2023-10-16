@@ -10,9 +10,7 @@ function StarUs() {
       className="flex items-center space-x-1 text-xs text-gray-400 hover:text-white transition-all"
     >
       <StarIcon size="14px" />
-      <span>
-        Star us on GitHub
-      </span>
+      <span>Star us on GitHub</span>
     </Link>
   )
 }

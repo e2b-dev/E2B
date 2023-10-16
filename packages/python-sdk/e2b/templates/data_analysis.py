@@ -1,11 +1,10 @@
 import logging
 import time
-from typing import Optional, Callable, Any, Tuple, List, Union
-
-from pydantic import BaseModel, PrivateAttr
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from e2b import EnvVars, Session
 from e2b.constants import TIMEOUT
+from pydantic import BaseModel, PrivateAttr
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,7 @@ class DataAnalysis(Session):
         watcher.start()
 
         epoch_time = time.time()
-        codefile_path = f"/tmp/main-{epoch_time}.py"
+        codefile_path = f"/tmp/main-{epoch_time}.py"  # nosec
         self.filesystem.write(codefile_path, code)
 
         process = self.process.start(

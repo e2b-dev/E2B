@@ -3,7 +3,7 @@ from os import path
 from time import sleep
 from typing import List
 
-from e2b import Session, FilesystemEvent
+from e2b import FilesystemEvent, Session
 
 
 def test_list_files():

@@ -1,5 +1,4 @@
 import pytest
-
 from e2b import Session
 from e2b.session.exception import TimeoutException
 

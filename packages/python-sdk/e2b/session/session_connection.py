@@ -7,15 +7,12 @@ from os import getenv
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
 
-from pydantic import BaseModel
-from urllib3.exceptions import ReadTimeoutError
-
 from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
+    ENVD_PORT,
     SESSION_DOMAIN,
     SESSION_REFRESH_PERIOD,
     TIMEOUT,
-    ENVD_PORT,
     WS_ROUTE,
 )
 from e2b.session.env_vars import EnvVars
@@ -29,6 +26,8 @@ from e2b.session.session_rpc import Notification, SessionRpc
 from e2b.utils.future import DeferredFuture
 from e2b.utils.str import camel_case_to_snake_case
 from e2b.utils.threads import shutdown_executor
+from pydantic import BaseModel
+from urllib3.exceptions import ReadTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +128,7 @@ class SessionConnection:
         Close the session and unsubscribe from all the subscriptions.
         """
         self._close()
-        logger.info(f"Session closed")
+        logger.info("Session closed")
 
     def _close(self):
         if self._is_open and self._session:
@@ -189,7 +188,7 @@ class SessionConnection:
                 f"Failed to acquire session: {e}",
             ) from e
         except Exception as e:
-            logger.error(f"Failed to acquire session")
+            logger.error("Failed to acquire session")
             self._close()
             raise e
 

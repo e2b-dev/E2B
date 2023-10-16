@@ -22,7 +22,7 @@ export interface Database {
           project_id: string
           route_id: string | null
           secrets: string | null
-          state: Database["public"]["Enums"]["deployment_state"] | null
+          state: Database['public']['Enums']['deployment_state'] | null
           url: string | null
         }
         Insert: {
@@ -37,7 +37,7 @@ export interface Database {
           project_id: string
           route_id?: string | null
           secrets?: string | null
-          state?: Database["public"]["Enums"]["deployment_state"] | null
+          state?: Database['public']['Enums']['deployment_state'] | null
           url?: string | null
         }
         Update: {
@@ -52,16 +52,16 @@ export interface Database {
           project_id?: string
           route_id?: string | null
           secrets?: string | null
-          state?: Database["public"]["Enums"]["deployment_state"] | null
+          state?: Database['public']['Enums']['deployment_state'] | null
           url?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "deployments_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'deployments_project_id_fkey'
+            columns: ['project_id']
+            referencedRelation: 'projects'
+            referencedColumns: ['id']
+          },
         ]
       }
       feedback: {
@@ -88,11 +88,11 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "feedback_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'feedback_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
         ]
       }
       log_files: {
@@ -131,29 +131,29 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "log_files_deployment_id_fkey"
-            columns: ["deployment_id"]
-            referencedRelation: "deployments"
-            referencedColumns: ["id"]
+            foreignKeyName: 'log_files_deployment_id_fkey'
+            columns: ['deployment_id']
+            referencedRelation: 'deployments'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "log_files_deployment_id_fkey"
-            columns: ["deployment_id"]
-            referencedRelation: "decrypted_deployments"
-            referencedColumns: ["id"]
+            foreignKeyName: 'log_files_deployment_id_fkey'
+            columns: ['deployment_id']
+            referencedRelation: 'decrypted_deployments'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "log_files_log_upload_id_fkey"
-            columns: ["log_upload_id"]
-            referencedRelation: "log_uploads"
-            referencedColumns: ["id"]
+            foreignKeyName: 'log_files_log_upload_id_fkey'
+            columns: ['log_upload_id']
+            referencedRelation: 'log_uploads'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "log_files_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'log_files_project_id_fkey'
+            columns: ['project_id']
+            referencedRelation: 'projects'
+            referencedColumns: ['id']
+          },
         ]
       }
       log_uploads: {
@@ -180,11 +180,11 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "log_uploads_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'log_uploads_project_id_fkey'
+            columns: ['project_id']
+            referencedRelation: 'projects'
+            referencedColumns: ['id']
+          },
         ]
       }
       projects: {
@@ -220,11 +220,11 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "projects_team_id_fkey"
-            columns: ["team_id"]
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'projects_team_id_fkey'
+            columns: ['team_id']
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
+          },
         ]
       }
       team_api_keys: {
@@ -245,11 +245,11 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "team_api_keys_team_id_fkey"
-            columns: ["team_id"]
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'team_api_keys_team_id_fkey'
+            columns: ['team_id']
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
+          },
         ]
       }
       teams: {
@@ -291,17 +291,17 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "users_teams_team_id_fkey"
-            columns: ["team_id"]
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
+            foreignKeyName: 'users_teams_team_id_fkey'
+            columns: ['team_id']
+            referencedRelation: 'teams'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "users_teams_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'users_teams_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
         ]
       }
     }
@@ -320,7 +320,7 @@ export interface Database {
           project_id: string | null
           route_id: string | null
           secrets: string | null
-          state: Database["public"]["Enums"]["deployment_state"] | null
+          state: Database['public']['Enums']['deployment_state'] | null
           url: string | null
         }
         Insert: {
@@ -336,7 +336,7 @@ export interface Database {
           project_id?: string | null
           route_id?: string | null
           secrets?: string | null
-          state?: Database["public"]["Enums"]["deployment_state"] | null
+          state?: Database['public']['Enums']['deployment_state'] | null
           url?: string | null
         }
         Update: {
@@ -352,16 +352,16 @@ export interface Database {
           project_id?: string | null
           route_id?: string | null
           secrets?: string | null
-          state?: Database["public"]["Enums"]["deployment_state"] | null
+          state?: Database['public']['Enums']['deployment_state'] | null
           url?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "deployments_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
+            foreignKeyName: 'deployments_project_id_fkey'
+            columns: ['project_id']
+            referencedRelation: 'projects'
+            referencedColumns: ['id']
+          },
         ]
       }
     }
@@ -379,7 +379,7 @@ export interface Database {
       }
     }
     Enums: {
-      deployment_state: "generating" | "deploying" | "finished" | "error"
+      deployment_state: 'generating' | 'deploying' | 'finished' | 'error'
     }
     CompositeTypes: {
       [_ in never]: never

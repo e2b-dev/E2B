@@ -12,26 +12,21 @@
 """
 
 
-import re  # noqa: F401
 import io
+import re  # noqa: F401
 import warnings
-
-from pydantic import validate_arguments, ValidationError
-from typing_extensions import Annotated
-
-from pydantic import StrictStr
-
 from typing import List
 
+from e2b.api.v1.client.api_client import ApiClient
+from e2b.api.v1.client.api_response import ApiResponse
+from e2b.api.v1.client.exceptions import ApiTypeError, ApiValueError  # noqa: F401
 from e2b.api.v1.client.models.environment import Environment
 from e2b.api.v1.client.models.environment_state_update import EnvironmentStateUpdate
 from e2b.api.v1.client.models.environment_title_update import EnvironmentTitleUpdate
 from e2b.api.v1.client.models.envs_get200_response_inner import EnvsGet200ResponseInner
 from e2b.api.v1.client.models.new_environment import NewEnvironment
-
-from e2b.api.v1.client.api_client import ApiClient
-from e2b.api.v1.client.api_response import ApiResponse
-from e2b.api.v1.client.exceptions import ApiTypeError, ApiValueError  # noqa: F401
+from pydantic import StrictStr, ValidationError, validate_arguments
+from typing_extensions import Annotated
 
 
 class EnvsApi(object):

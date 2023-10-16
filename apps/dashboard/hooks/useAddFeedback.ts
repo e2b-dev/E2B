@@ -1,13 +1,11 @@
 import { useCallback } from 'react'
 import useSWRMutation from 'swr/mutation'
 
-
 export interface PostFeedback {
   feedback: string
 }
 
-export interface PostFeedbackResponse {
-}
+export interface PostFeedbackResponse {}
 
 // TODO: Call supabase directly + set row level security
 async function handlePostFeedback(url: string, { arg }: { arg: PostFeedback }) {
@@ -18,16 +16,17 @@ async function handlePostFeedback(url: string, { arg }: { arg: PostFeedback }) {
       'Content-Type': 'application/json',
     },
   })
-  return await response.json() as PostFeedbackResponse
+  return (await response.json()) as PostFeedbackResponse
 }
 
 export function useAddFeedback() {
-  const {
-    trigger,
-  } = useSWRMutation('/api/feedback', handlePostFeedback)
+  const { trigger } = useSWRMutation('/api/feedback', handlePostFeedback)
 
-  return useCallback(async (feedback: string) =>
-    trigger({
-      feedback,
-    }), [trigger])
+  return useCallback(
+    async (feedback: string) =>
+      trigger({
+        feedback,
+      }),
+    [trigger],
+  )
 }

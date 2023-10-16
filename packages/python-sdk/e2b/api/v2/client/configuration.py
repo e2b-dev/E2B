@@ -13,12 +13,12 @@
 
 
 import copy
+import http.client as httplib
 import logging
 import multiprocessing
 import sys
-import urllib3
 
-import http.client as httplib
+import urllib3
 
 JSON_SCHEMA_VALIDATION_KEYWORDS = {
     "multipleOf",

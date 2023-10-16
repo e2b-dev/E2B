@@ -1,5 +1,9 @@
 import { useRouter } from 'next/router'
-import { useSessionContext, useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
+import {
+  useSessionContext,
+  useSupabaseClient,
+  useUser,
+} from '@supabase/auth-helpers-react'
 import { useEffect, useState } from 'react'
 import { Github } from 'lucide-react'
 
@@ -30,7 +34,7 @@ function SignIn() {
         options: {
           redirectTo: window.location.href,
           scopes: 'email',
-        }
+        },
       })
     } catch {
       setIsSigningIn(false)
@@ -52,12 +56,8 @@ function SignIn() {
             onClick={signInWithGitHub}
             disabled={isLoading}
           >
-            {isLoading &&
-              <Spinner />
-            }
-            {!isLoading &&
-              <Github size={16} />
-            }
+            {isLoading && <Spinner />}
+            {!isLoading && <Github size={16} />}
             <span className="">Continue with GitHub</span>
           </button>
         </div>

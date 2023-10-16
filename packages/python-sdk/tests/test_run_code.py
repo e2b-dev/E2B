@@ -1,5 +1,4 @@
 import pytest
-
 from e2b import run_code
 from e2b.session.exception import UnsupportedRuntimeException
 
@@ -14,5 +13,5 @@ def test_run_code():
 
 def test_unsupported_runtime():
     code = "console.log('hello'); throw new Error('error')"
-    with pytest.raises(UnsupportedRuntimeException) as e:
+    with pytest.raises(UnsupportedRuntimeException):
         run_code("unsupported", code)

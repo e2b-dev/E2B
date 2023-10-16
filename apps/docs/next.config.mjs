@@ -31,7 +31,7 @@ function getFilesHash(rootPath) {
     shasum.update(delimiter)
   }
 
-  fsWalk.walkSync(rootPath, { stats: true }).forEach((e) => {
+  fsWalk.walkSync(rootPath, { stats: true }).forEach(e => {
     if (!e.stats.isDirectory()) {
       if (e.path.includes(`/node_modules/`)) return // ignore node_modules which may contain symlinks
       const content = fs.readFileSync(e.path, 'utf8')
@@ -48,7 +48,7 @@ const codeSnippetsDir = path.resolve('./src/code')
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   basePath: '/docs',
-  webpack: (config) => {
+  webpack: config => {
     const codeFilesHash = getFilesHash(codeSnippetsDir)
     config.cache.version = config.cache.version + delimiter + codeFilesHash
     return config
@@ -89,7 +89,7 @@ export default withSearch(
         tunnelRoute: '/monitoring',
         hideSourceMaps: true,
         disableLogger: true,
-      }
-    )
-  )
+      },
+    ),
+  ),
 )

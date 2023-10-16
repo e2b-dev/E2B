@@ -64,7 +64,6 @@
   },
   "devDependencies": {
     "@nodelib/fs.walk": "^2.0.0",
-    "eslint-config-next": "13.4.19",
     "sharp": "^0.32.0"
   }
 }

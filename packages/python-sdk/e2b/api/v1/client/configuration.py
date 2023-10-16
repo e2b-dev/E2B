@@ -13,12 +13,12 @@
 
 
 import copy
+import http.client as httplib
 import logging
 import multiprocessing
 import sys
-import urllib3
 
-import http.client as httplib
+import urllib3
 from e2b.api.v1.client.exceptions import ApiValueError
 
 JSON_SCHEMA_VALIDATION_KEYWORDS = {

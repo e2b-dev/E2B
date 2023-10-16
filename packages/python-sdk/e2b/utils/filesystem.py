@@ -8,18 +8,18 @@ def resolve_path(path: str, cwd: Optional[str] = None) -> str:
     if path.startswith("./"):
         result = PurePosixPath(cwd or "/home/user", path).as_posix()
         if not cwd:
-            warnings.warn(warning.format("./", result))
+            warnings.warn(warning.format("./", result), stacklevel=2)
         return result
 
     if path.startswith("../"):
         result = PurePosixPath(cwd or "/home/user", path).as_posix()
         if not cwd:
-            warnings.warn(warning.format("../", result))
+            warnings.warn(warning.format("../", result), stacklevel=2)
         return result
 
     if path.startswith("~/"):
         result = PurePosixPath("/home/user", path[2:]).as_posix()
-        warnings.warn(warning.format("~/", result))
+        warnings.warn(warning.format("~/", result), stacklevel=2)
         return result
 
     if not path.startswith("/") and cwd:

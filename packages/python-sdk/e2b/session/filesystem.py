@@ -2,13 +2,12 @@ import base64
 import logging
 from typing import Any, List, Optional
 
-from pydantic import BaseModel
-
 from e2b.constants import TIMEOUT
 from e2b.session.exception import FilesystemException, RpcException
 from e2b.session.filesystem_watcher import FilesystemWatcher
 from e2b.session.session_connection import SessionConnection
 from e2b.utils.filesystem import resolve_path
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class FilesystemManager:
 
     def read_bytes(self, path: str, timeout: Optional[float] = TIMEOUT) -> bytes:
         """
-        Reads the whole content of a file as a byte array.
+        Read the whole content of a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
 
         :param path: path to a file
@@ -51,7 +50,7 @@ class FilesystemManager:
         self, path: str, content: bytes, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
-        Writes content to a file as a byte array.
+        Write content to a file as a byte array.
         This can be used when you cannot represent the data as an UTF-8 string.
 
         :param path: path to a file
@@ -66,7 +65,7 @@ class FilesystemManager:
 
     def read(self, path: str, timeout: Optional[float] = TIMEOUT) -> str:
         """
-        Reads the whole content of a file as an array of bytes.
+        Read the whole content of a file as an array of bytes.
 
         :param path: Path to a file
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
@@ -88,7 +87,7 @@ class FilesystemManager:
         self, path: str, content: str, timeout: Optional[float] = TIMEOUT
     ) -> None:
         """
-        Writes content to a file.
+        Write content to a file.
 
         :param path: Path to a file
         :param content: Content to write
@@ -107,7 +106,7 @@ class FilesystemManager:
 
     def remove(self, path: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Removes a file or a directory.
+        Remove a file or a directory.
 
         :param path: Path to a file or a directory
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
@@ -147,7 +146,7 @@ class FilesystemManager:
 
     def make_dir(self, path: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Creates a new directory and all directories along the way if needed on the specified path.
+        Create a new directory and all directories along the way if needed on the specified path.
 
         :param path: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
@@ -163,7 +162,7 @@ class FilesystemManager:
 
     def watch_dir(self, path: str) -> FilesystemWatcher:
         """
-        Watches directory for filesystem events.
+        Watche directory for filesystem events.
 
         :param path: Path to a directory that will be watched
 

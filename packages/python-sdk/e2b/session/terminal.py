@@ -2,8 +2,6 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, List, Optional
 
-from pydantic import BaseModel
-
 from e2b.constants import TIMEOUT
 from e2b.session.env_vars import EnvVars
 from e2b.session.exception import MultipleExceptions, RpcException, TerminalException
@@ -11,6 +9,7 @@ from e2b.session.session_connection import SessionConnection
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
 from e2b.utils.threads import shutdown_executor
+from pydantic import BaseModel
 
 logger = logging.getLogger(__file__)
 
@@ -57,7 +56,7 @@ class Terminal:
 
     def wait(self):
         """
-        Waits till the terminal session exits.
+        Wait till the terminal session exits.
         """
         return self.finished.result()
 
@@ -77,7 +76,7 @@ class Terminal:
 
     def send_data(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Sends data to the terminal standard input.
+        Send data to the terminal standard input.
 
         :param data: Data to send
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time

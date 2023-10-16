@@ -23,10 +23,10 @@ function sendSlackMessage(email: string, feedback: string) {
   })
 }
 
-serve(async (req) => {
+serve(async req => {
   /**
    * Sends a Slack message to the configured channel when a new feedback is created.
-  */
+   */
   const data = await req.json()
   const {
     record: { email, text },
@@ -36,14 +36,13 @@ serve(async (req) => {
   try {
     await sendSlackMessage(email, text)
     console.log('Successfully sent Slack message')
-    return new Response(undefined, {status: 200})
-  }
-  catch (error) {
+    return new Response(undefined, { status: 200 })
+  } catch (error) {
     console.error(`Failed to send Slack message: ${error}`)
     const body = {
       error: 'Failed to send Slack message',
       message: error.message,
     }
-    return new Response(JSON.stringify(body), {status: 400})
+    return new Response(JSON.stringify(body), { status: 400 })
   }
 })

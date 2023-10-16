@@ -39,7 +39,7 @@ jobs:
 
   changes:
     name: Repository changes
-    needs: [ is_release ]
+    needs: [is_release]
     if: needs.is_release.outputs.release == 'true'
     runs-on: ubuntu-latest
     outputs:
@@ -78,33 +78,29 @@ jobs:
               - 'packages/cli/**'
               - '.github/workflows/cli_tests.yml'
 
-      - name: Read Version file
-        id: getversion
-        run: echo "::set-output name=version::$(cat VERSION)"
-
   python-tests:
     name: Python SDK Tests
-    needs: [ changes ]
+    needs: [changes]
     if: needs.changes.outputs.python-sdk == 'true'
     uses: ./.github/workflows/python_sdk_tests.yml
     secrets: inherit
 
   js-tests:
     name: JS SDK Tests
-    needs: [ changes ]
+    needs: [changes]
     if: needs.changes.outputs.js-sdk == 'true'
     uses: ./.github/workflows/js_sdk_tests.yml
     secrets: inherit
 
   cli-tests:
     name: CLI Tests
-    needs: [ changes ]
+    needs: [changes]
     if: needs.changes.outputs.cli == 'true'
     uses: ./.github/workflows/cli_tests.yml
     secrets: inherit
 
   release:
-    needs: [ python-tests, js-tests, cli-tests ]
+    needs: [python-tests, js-tests, cli-tests, is_release]
     if: always() && needs.is_release.outputs.release == 'true'
     name: Release
     runs-on: ubuntu-latest
@@ -115,7 +111,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
@@ -164,7 +160,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   report-failure:
-    needs: [ python-tests, js-tests, cli-tests, release ]
+    needs: [python-tests, js-tests, cli-tests, release]
     if: failure()
     name: Release Failed - Slack Notification
     runs-on: ubuntu-latest

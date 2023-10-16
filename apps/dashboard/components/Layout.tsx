@@ -1,17 +1,11 @@
-import {
-  PropsWithChildren,
-  useEffect,
-  useState,
-} from 'react'
+import { PropsWithChildren, useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
 import clsx from 'clsx'
 import { useRouter } from 'next/router'
 import { Inter } from 'next/font/google'
 import { usePostHog } from 'posthog-js/react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
-import {
-  Menu,
-} from 'lucide-react'
+import { Menu } from 'lucide-react'
 import Script from 'next/script'
 
 import DashboardDesktopSidebar from 'components/Sidebar/DashboardDesktopSidebar'
@@ -53,17 +47,23 @@ function Layout({ children }: PropsWithChildren) {
     router.push('/sign')
   }
 
-  useEffect(function handleDistinctID() {
-    setDistinctID(posthog?.get_distinct_id())
-  }, [posthog])
+  useEffect(
+    function handleDistinctID() {
+      setDistinctID(posthog?.get_distinct_id())
+    },
+    [posthog],
+  )
 
-  useEffect(function identifyUser() {
-    if (user) {
-      posthog?.identify(user.id, {
-        email: user.email,
-      })
-    }
-  }, [posthog, user])
+  useEffect(
+    function identifyUser() {
+      if (user) {
+        posthog?.identify(user.id, {
+          email: user.email,
+        })
+      }
+    },
+    [posthog, user],
+  )
 
   return (
     <>
@@ -82,40 +82,46 @@ function Layout({ children }: PropsWithChildren) {
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${gtag.GA_TRACKING_ID}`}
       />
-      {(router.pathname.startsWith('/agent') || router.pathname.startsWith('/sign'))
-        ?
-        <div className={clsx(
-          inter.variable,
-          'font-sans',
-          'flex',
-          'h-full',
-          'w-full',
-          'flex-1',
-          'flex-col',
-          'overflow-hidden',
-        )}>
-          {children}
-        </div>
-        :
-        <>
-          <style jsx global>
-            {`
-        :root {
-          --font-inter: ${inter.variable};
-        }
-        `}
-          </style>
-          <div className={clsx(
+      {router.pathname.startsWith('/agent') || router.pathname.startsWith('/sign') ? (
+        <div
+          className={clsx(
+            inter.variable,
             'font-sans',
-            'flex-1',
             'flex',
-            'items-start',
-            'justify-start',
-            'p-2',
             'h-full',
             'w-full',
+            'flex-1',
+            'flex-col',
             'overflow-hidden',
-          )}>
+          )}
+        >
+          {children}
+        </div>
+      ) : (
+        <>
+          <style
+            jsx
+            global
+          >
+            {`
+              :root {
+                --font-inter: ${inter.variable};
+              }
+            `}
+          </style>
+          <div
+            className={clsx(
+              'font-sans',
+              'flex-1',
+              'flex',
+              'items-start',
+              'justify-start',
+              'p-2',
+              'h-full',
+              'w-full',
+              'overflow-hidden',
+            )}
+          >
             <DashboardMobileSidebar
               isSidebarOpen={isSidebarOpen}
               onSetSidebarOpen={setIsSidebarOpen}
@@ -159,7 +165,7 @@ function Layout({ children }: PropsWithChildren) {
             </div>
           </div>
         </>
-      }
+      )}
     </>
   )
 }

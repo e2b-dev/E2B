@@ -13,12 +13,12 @@
 
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
-
-
 from typing import Optional
+
 from pydantic import BaseModel, Field, StrictStr
 
 

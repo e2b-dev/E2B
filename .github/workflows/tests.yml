@@ -2,7 +2,7 @@ name: Periodic tests via Python SDK
 
 on:
   schedule:
-    - cron: "17 */8 * * *"
+    - cron: 17 */8 * * *
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1

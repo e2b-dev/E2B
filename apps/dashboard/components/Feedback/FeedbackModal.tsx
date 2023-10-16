@@ -41,7 +41,7 @@ function FeedbackModal({ isOpen, onClose, onSend }: Props) {
 
   return (
     <div className="relative flex flex-row-reverse">
-      {isOpen &&
+      {isOpen && (
         <form
           ref={ref}
           autoCapitalize="off"
@@ -77,17 +77,13 @@ function FeedbackModal({ isOpen, onClose, onSend }: Props) {
             onClick={saveFeedback}
             disabled={isSavingFeedback || feedback.trim() === ''}
           >
-            {isSavingFeedback &&
-              <SpinnerIcon />
-            }
+            {isSavingFeedback && <SpinnerIcon />}
 
-            {!isSavingFeedback &&
-              <Send size="14px" />
-            }
+            {!isSavingFeedback && <Send size="14px" />}
             <span className="text-sm">Send</span>
           </button>
         </form>
-      }
+      )}
     </div>
   )
 }

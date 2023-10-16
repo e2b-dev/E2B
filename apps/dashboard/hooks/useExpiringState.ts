@@ -12,17 +12,28 @@ function useExpiringState<T>({
 }: Props<T>): [T, (value: T) => void] {
   const [value, setValue] = useState(defaultValue)
 
-  const enqueExpiration = useMemo(() => debounce(() => {
-    setValue(defaultValue)
-  }, timeout, {
-    leading: false,
-    trailing: true,
-  }), [timeout, defaultValue])
+  const enqueExpiration = useMemo(
+    () =>
+      debounce(
+        () => {
+          setValue(defaultValue)
+        },
+        timeout,
+        {
+          leading: false,
+          trailing: true,
+        },
+      ),
+    [timeout, defaultValue],
+  )
 
-  const set = useCallback((newValue: T) => {
-    setValue(newValue)
-    enqueExpiration()
-  }, [enqueExpiration])
+  const set = useCallback(
+    (newValue: T) => {
+      setValue(newValue)
+      enqueExpiration()
+    },
+    [enqueExpiration],
+  )
 
   return [value, set]
 }

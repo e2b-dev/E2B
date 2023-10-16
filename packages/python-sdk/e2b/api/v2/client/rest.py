@@ -17,20 +17,18 @@ import json
 import logging
 import re
 import ssl
+from urllib.parse import quote_plus, urlencode
 
-from urllib.parse import urlencode, quote_plus
 import urllib3
-
 from e2b.api.v2.client.exceptions import (
     ApiException,
-    UnauthorizedException,
+    ApiValueError,
+    BadRequestException,
     ForbiddenException,
     NotFoundException,
     ServiceException,
-    ApiValueError,
-    BadRequestException,
+    UnauthorizedException,
 )
-
 
 logger = logging.getLogger(__name__)
 

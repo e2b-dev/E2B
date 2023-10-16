@@ -2,9 +2,7 @@ import { Fragment } from 'react'
 import Link from 'next/link'
 import { Dialog, Transition } from '@headlessui/react'
 import clsx from 'clsx'
-import {
-  X, LogOut
-} from 'lucide-react'
+import { X, LogOut } from 'lucide-react'
 import { useRouter } from 'next/router'
 
 import { Navigation } from './navigation'
@@ -25,8 +23,15 @@ function DashboardMobileSidebar({
   const router = useRouter()
 
   return (
-    <Transition.Root show={isSidebarOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50 xl:hidden" onClose={onSetSidebarOpen}>
+    <Transition.Root
+      show={isSidebarOpen}
+      as={Fragment}
+    >
+      <Dialog
+        as="div"
+        className="relative z-50 xl:hidden"
+        onClose={onSetSidebarOpen}
+      >
         <Transition.Child
           as={Fragment}
           enter="transition-opacity ease-linear duration-300"
@@ -60,9 +65,16 @@ function DashboardMobileSidebar({
                 leaveTo="opacity-0"
               >
                 <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                  <button type="button" className="-m-2.5 p-2.5" onClick={() => onSetSidebarOpen(false)}>
+                  <button
+                    type="button"
+                    className="-m-2.5 p-2.5"
+                    onClick={() => onSetSidebarOpen(false)}
+                  >
                     <span className="sr-only">Close sidebar</span>
-                    <X className="text-white" aria-hidden="true" />
+                    <X
+                      className="text-white"
+                      aria-hidden="true"
+                    />
                   </button>
                 </div>
               </Transition.Child>
@@ -70,10 +82,16 @@ function DashboardMobileSidebar({
               <div className="flex grow flex-col gap-y-6 overflow-y-auto text-xl bg-gray-800 px-8 ring-1 ring-white/10">
                 {/* Logo */}
                 <nav className="flex flex-1 flex-col">
-                  <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                  <ul
+                    role="list"
+                    className="flex flex-1 flex-col gap-y-7"
+                  >
                     <li>
-                      <ul role="list" className="py-8 space-y-1">
-                        {navigation.map((item) => (
+                      <ul
+                        role="list"
+                        className="py-8 space-y-1"
+                      >
+                        {navigation.map(item => (
                           <li key={item.name}>
                             <Link
                               href={'/'}
@@ -81,10 +99,14 @@ function DashboardMobileSidebar({
                                 router.pathname === '/'
                                   ? 'bg-gray-800 text-white'
                                   : 'text-gray-400 hover:text-white hover:bg-gray-800',
-                                'group gap-x-3 rounded-md px-2 py-1 leading-6 font-semibold flex items-center'
+                                'group gap-x-3 rounded-md px-2 py-1 leading-6 font-semibold flex items-center',
                               )}
                             >
-                              <item.icon size={16} className="shrink-0" aria-hidden="true" />
+                              <item.icon
+                                size={16}
+                                className="shrink-0"
+                                aria-hidden="true"
+                              />
                               {item.name}
                             </Link>
                           </li>
@@ -92,9 +114,7 @@ function DashboardMobileSidebar({
                       </ul>
                     </li>
                     <li className="mt-auto w-full">
-                      <div
-                        className="w-full flex py-8 font-semibold text-white"
-                      >
+                      <div className="w-full flex py-8 font-semibold text-white">
                         <button
                           className="flex items-center space-x-2 font-semibold text-gray-400 hover:text-white transition-all"
                           onClick={onSignOut}

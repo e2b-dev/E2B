@@ -3,7 +3,6 @@ from os import getenv
 
 import requests
 from dotenv import load_dotenv
-
 from e2b.templates.data_analysis import DataAnalysis
 
 load_dotenv()
@@ -17,7 +16,8 @@ def main():
 
     with open("data/netflix.csv", "wb") as f:
         response = requests.get(
-            "https://storage.googleapis.com/e2b-examples/netflix.csv"
+            "https://storage.googleapis.com/e2b-examples/netflix.csv",
+            timeout=60,
         )
         f.write(response.content)
 

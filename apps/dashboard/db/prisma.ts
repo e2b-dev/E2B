@@ -9,7 +9,7 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   //check if there is already a connection to the database
   if (!(global as any).prisma) {
-    (global as any).prisma = new PrismaClient()
+    ;(global as any).prisma = new PrismaClient()
   }
   prisma = (global as any).prisma
 }

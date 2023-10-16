@@ -7,7 +7,7 @@ import Settings from 'components/Settings'
 import { client as posthog } from 'utils/posthog'
 import { generateApiKey } from 'utils/apiKey'
 
-export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
+export const getServerSideProps: GetServerSideProps<Props> = async ctx => {
   const supabase = createServerSupabaseClient(ctx, serverCreds)
   const {
     data: { session },
@@ -44,12 +44,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
             user_id: {
               equals: session.user.id,
             },
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   })
-
 
   if (!apiKey) {
     const user = await prisma.auth_users.findUniqueOrThrow({
@@ -66,10 +65,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
               is_default: {
                 equals: true,
               },
-            }
+            },
           },
         },
-      }
+      },
     })
 
     let defaultTeam = user.users_teams[0].teams
@@ -111,13 +110,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       groups: { team: defaultTeam.id },
     })
   }
-  
 
   return {
     props: {
       user: session.user,
       apiKey: apiKey!.api_key,
-    }
+    },
   }
 }
 
@@ -127,7 +125,12 @@ interface Props {
 }
 
 function SettingsPage({ apiKey, user }: Props) {
-  return <Settings apiKey={apiKey} user={user} />
+  return (
+    <Settings
+      apiKey={apiKey}
+      user={user}
+    />
+  )
 }
 
 export default SettingsPage

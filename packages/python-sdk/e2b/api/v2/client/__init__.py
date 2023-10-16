@@ -20,17 +20,19 @@ __version__ = "1.0.0"
 from e2b.api.v2.client.api.default_api import DefaultApi
 from e2b.api.v2.client.api.envs_api import EnvsApi
 from e2b.api.v2.client.api.sessions_api import SessionsApi
+from e2b.api.v2.client.api_client import ApiClient
 
 # import ApiClient
 from e2b.api.v2.client.api_response import ApiResponse
-from e2b.api.v2.client.api_client import ApiClient
 from e2b.api.v2.client.configuration import Configuration
-from e2b.api.v2.client.exceptions import OpenApiException
-from e2b.api.v2.client.exceptions import ApiTypeError
-from e2b.api.v2.client.exceptions import ApiValueError
-from e2b.api.v2.client.exceptions import ApiKeyError
-from e2b.api.v2.client.exceptions import ApiAttributeError
-from e2b.api.v2.client.exceptions import ApiException
+from e2b.api.v2.client.exceptions import (
+    ApiAttributeError,
+    ApiException,
+    ApiKeyError,
+    ApiTypeError,
+    ApiValueError,
+    OpenApiException,
+)
 
 # import models into sdk package
 from e2b.api.v2.client.models.environment import Environment

@@ -4,6 +4,7 @@
 https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46
 
 ## Setup
+
 How to setup building, package.json, etc.
 
 ## Useful packages
@@ -22,6 +23,7 @@ How to setup building, package.json, etc.
 - update-notifier - adds notifications about updates
 
 ## QOL improvement to standard CLI development/maintanence/usage
+
 - octa/web auth?
 - docs generation
 - add to homebrew
@@ -33,6 +35,7 @@ How to setup building, package.json, etc.
 - add fast automatic updating - either via downloading new CLI version or by downloading part of a command from some central DB that the command maintainer can quickly modify to reflect changes to the workflow
 
 ## Best Practices for Offering a CLI
+
 Now that we’ve evidenced a growing trend of CLI support across the industry, what best practices are there for maintaining one?
 
 Juniper vs Cisco: Compare the two main CLI style families, and see which works best for you. Ideskog favors the Juniper style for its structure, consistency, and well-defined elements.
@@ -76,7 +79,7 @@ Tools for generating fake data on development servers or fixtures for writing un
 
 https://github.com/slackhq/magic-cli
 
-----------------------------------------------
+---
 
 https://github.com/OpenAPITools/openapi-generator#openapi-generator
 

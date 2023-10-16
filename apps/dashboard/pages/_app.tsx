@@ -22,17 +22,22 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     // Disable session recording when not in production
     disable_session_recording: process.env.NODE_ENV !== 'production',
     advanced_disable_toolbar_metrics: true,
-    loaded: (posthog) => {
+    loaded: posthog => {
       // Enable debug mode in development
       if (process.env.NODE_ENV === 'development') {
         posthog.debug()
       }
-    }
+    },
   })
 }
 
-function App({ Component, pageProps }: AppProps<{ initialSession?: Session, project?: projects }>) {
-  const [supabaseClient] = useState(() => createBrowserSupabaseClient<Database>(clientCreds))
+function App({
+  Component,
+  pageProps,
+}: AppProps<{ initialSession?: Session; project?: projects }>) {
+  const [supabaseClient] = useState(() =>
+    createBrowserSupabaseClient<Database>(clientCreds),
+  )
   const router = useRouter()
 
   const meta = {
@@ -53,16 +58,18 @@ function App({ Component, pageProps }: AppProps<{ initialSession?: Session, proj
   }, [])
 
   return (
-    <PostHogProvider
-      client={process.env.NEXT_PUBLIC_POSTHOG_KEY ? posthog : undefined}
-    >
+    <PostHogProvider client={process.env.NEXT_PUBLIC_POSTHOG_KEY ? posthog : undefined}>
       <SessionContextProvider
         supabaseClient={supabaseClient}
         initialSession={pageProps.initialSession}
       >
         <Head>
           <title>{meta.title}</title>
-          <link rel="icon" href="/favicon.png" sizes="any" />
+          <link
+            rel="icon"
+            href="/favicon.png"
+            sizes="any"
+          />
           <meta
             content="follow, index"
             name="robots"

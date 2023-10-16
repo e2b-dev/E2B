@@ -1,7 +1,7 @@
 # Changesets
 
-To add changeset run: 
-    
+To add changeset run:
+
 ```bash
 npx changeset
 ```

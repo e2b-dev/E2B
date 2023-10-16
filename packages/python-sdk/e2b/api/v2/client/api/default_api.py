@@ -12,17 +12,15 @@
 """  # noqa: E501
 
 
-import re  # noqa: F401
 import io
+import re  # noqa: F401
 import warnings
-
-from pydantic import validate_call, ValidationError
-from typing_extensions import Annotated
-
 
 from e2b.api.v2.client.api_client import ApiClient
 from e2b.api.v2.client.api_response import ApiResponse
 from e2b.api.v2.client.exceptions import ApiTypeError, ApiValueError  # noqa: F401
+from pydantic import ValidationError, validate_call
+from typing_extensions import Annotated
 
 
 class DefaultApi:

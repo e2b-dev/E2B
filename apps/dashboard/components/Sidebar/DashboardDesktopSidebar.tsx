@@ -11,10 +11,7 @@ export interface Props {
   navigation: Navigation
 }
 
-function DashboardDesktopSidebar({
-  onSignOut,
-  navigation,
-}: Props) {
+function DashboardDesktopSidebar({ onSignOut, navigation }: Props) {
   const router = useRouter()
   const posthog = usePostHog()
 
@@ -23,13 +20,17 @@ function DashboardDesktopSidebar({
       <div className="flex grow flex-col gap-y-4 overflow-y-auto bg-gray-800 px-4 border border-white/5 rounded-md">
         {/* Logo */}
         <nav className="flex flex-1 flex-col space-y-8 py-4">
-          <div className="font-bold text-gray-100">
-            e2b
-          </div>
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <div className="font-bold text-gray-100">e2b</div>
+          <ul
+            role="list"
+            className="flex flex-1 flex-col gap-y-7"
+          >
             <li>
-              <ul role="list" className="-mx-2 space-y-1">
-                {navigation.map((item) => (
+              <ul
+                role="list"
+                className="-mx-2 space-y-1"
+              >
+                {navigation.map(item => (
                   <li key={item.name}>
                     <Link
                       href={'/'}
@@ -37,7 +38,7 @@ function DashboardDesktopSidebar({
                         router.pathname === '/'
                           ? 'bg-[#1F2437] text-white'
                           : 'text-gray-400 hover:text-white hover:bg-[#1F2437]',
-                        'group gap-x-3 rounded-md transition-all px-2 py-1 leading-6 font-semibold flex items-center'
+                        'group gap-x-3 rounded-md transition-all px-2 py-1 leading-6 font-semibold flex items-center',
                       )}
                       onClick={() => {
                         posthog?.capture('clicked navigation item', {
@@ -45,7 +46,11 @@ function DashboardDesktopSidebar({
                         })
                       }}
                     >
-                      <item.icon size={16} className="shrink-0" aria-hidden="true" />
+                      <item.icon
+                        size={16}
+                        className="shrink-0"
+                        aria-hidden="true"
+                      />
                       {item.name}
                     </Link>
                   </li>
@@ -53,9 +58,7 @@ function DashboardDesktopSidebar({
               </ul>
             </li>
             <li className="-mx-6 mt-auto">
-              <div
-                className="flex items-center gap-x-4 px-6 font-semibold leading-6 text-white"
-              >
+              <div className="flex items-center gap-x-4 px-6 font-semibold leading-6 text-white">
                 <button
                   className="flex items-center align-middle space-x-3 font-semibold text-gray-400 hover:text-white transition-all"
                   onClick={onSignOut}

@@ -6,13 +6,16 @@ import FeedbackModal from './FeedbackModal'
 
 function Feedback() {
   const [isFeedbackVisible, setIsFeedbackVisible] = useState(false)
-  const [isFinished, setIsFinished] = useExpiringState({ defaultValue: false, timeout: 4000 })
+  const [isFinished, setIsFinished] = useExpiringState({
+    defaultValue: false,
+    timeout: 4000,
+  })
 
   return (
     <div className="flex flex-col items-end flex-1">
       <FeedbackButton
         isOpen={isFeedbackVisible || isFinished}
-        onClick={(e) => {
+        onClick={e => {
           e.preventDefault()
           e.stopPropagation()
           setIsFeedbackVisible(f => !f)

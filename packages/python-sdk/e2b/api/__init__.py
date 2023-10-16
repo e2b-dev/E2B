@@ -3,8 +3,8 @@ from importlib.metadata import version
 pydantic_version = version("pydantic")
 if pydantic_version < "2.0.0":
     import e2b.api.v1.client as client
-    import e2b.api.v1.client.models as models
     import e2b.api.v1.client.exceptions as exceptions
+    import e2b.api.v1.client.models as models
 else:
     import e2b.api.v2.client as client
     import e2b.api.v2.client.models as models

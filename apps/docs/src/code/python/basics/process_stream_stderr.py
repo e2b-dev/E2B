@@ -1,8 +1,10 @@
 import asyncio
 from os import getenv
+
 from e2b import Session
 
 E2B_API_KEY = getenv("E2B_API_KEY")
+
 
 async def main():
     session = await Session.create(
@@ -24,5 +26,6 @@ async def main():
     # output: [process] /bin/bash: line 1: go: command not found
 
     await session.close()
+
 
 asyncio.run(main())

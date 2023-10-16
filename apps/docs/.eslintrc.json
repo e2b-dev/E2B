@@ -1,9 +1,6 @@
 {
   "root": true,
-  "extends": [
-    "../../.eslintrc.cjs",
-    "next/core-web-vitals"
-  ],
+  "extends": ["../../.eslintrc.cjs", "next/core-web-vitals"],
   "overrides": [
     {
       "files": ["src/code/**/*.js"],

@@ -46,10 +46,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "eslint.validate": [
-    "javascript",
-    "typescript"
-  ],
+  "eslint.validate": ["javascript", "typescript"],
   "debug.javascript.codelens.npmScripts": "never",
   "editor.codeLens": true,
   "editor.suggest.localityBonus": true,
@@ -62,7 +59,7 @@
   "python.autoComplete.extraPaths": [
     "./**",
     "./packages/python-sdk/**",
-    "./packages/python-sdk/.venv/bin/python",
+    "./packages/python-sdk/.venv/bin/python"
   ],
   "python.defaultInterpreterPath": "./packages/python-sdk/.venv/bin/python",
   "python.analysis.extraPaths": [
@@ -72,7 +69,7 @@
   ],
   // Disable Pylint and use just Pylance
   "python.linting.enabled": false,
-  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.typeCheckingMode": "basic"
   // "python.analysis.pylanceLspClientEnabled": true,
   // "python.analysis.inlayHints.functionReturnTypes": true,
   // "python.analysis.inlayHints.pytestParameters": true,

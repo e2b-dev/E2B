@@ -14,21 +14,20 @@
 
 import atexit
 import datetime
-from dateutil.parser import parse
 import json
 import mimetypes
-from multiprocessing.pool import ThreadPool
 import os
 import re
 import tempfile
-
+from multiprocessing.pool import ThreadPool
 from urllib.parse import quote
 
-from e2b.api.v2.client.configuration import Configuration
-from e2b.api.v2.client.api_response import ApiResponse
 import e2b.api.v2.client.models
+from dateutil.parser import parse
 from e2b.api.v2.client import rest
-from e2b.api.v2.client.exceptions import ApiValueError, ApiException
+from e2b.api.v2.client.api_response import ApiResponse
+from e2b.api.v2.client.configuration import Configuration
+from e2b.api.v2.client.exceptions import ApiException, ApiValueError
 
 
 class ApiClient:

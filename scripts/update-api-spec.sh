@@ -5,8 +5,9 @@ set -eu
 # This script is used to update the spec/openapi.yml file from the api repo
 
 # Check if the remote is set
-if [ -z "$(git remote get-url api)" ]; then
-  git remote add api git@github.com:e2b-dev/infra.git
+REMOTE=$(git remote get-url api)
+if [ -z "${REMOTE}" ]; then
+	git remote add api git@github.com:e2b-dev/infra.git
 fi
 
 # Get the current branch
@@ -22,7 +23,7 @@ git checkout api/main -B temp_api_branch
 git subtree split --prefix=spec -b temp_spec_branch
 
 # Checkout the branch
-git checkout "$BRANCH"
+git checkout "${BRANCH}"
 
 # Merge the changes
 git subtree merge --prefix=spec temp_spec_branch --squash

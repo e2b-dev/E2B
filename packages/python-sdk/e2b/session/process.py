@@ -1,17 +1,7 @@
 import logging
-import warnings
 from asyncio.exceptions import TimeoutError
 from concurrent.futures import ThreadPoolExecutor
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    List,
-    Optional,
-)
-
-from pydantic import BaseModel
+from typing import Any, Callable, ClassVar, Dict, List, Optional
 
 from e2b.constants import TIMEOUT
 from e2b.session.env_vars import EnvVars
@@ -21,20 +11,21 @@ from e2b.session.session_connection import SessionConnection
 from e2b.utils.future import DeferredFuture
 from e2b.utils.id import create_id
 from e2b.utils.threads import shutdown_executor
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
 class ProcessMessage(BaseModel):
     """
-    A message from a process
+    A message from a process.
     """
 
     line: str
     error: bool = False
     timestamp: int
     """
-    Unix epoch in nanoseconds
+    Unix epoch in nanoseconds.
     """
 
     def __str__(self):
@@ -55,14 +46,14 @@ class ProcessOutput(BaseModel):
     @property
     def stdout(self) -> str:
         """
-        The stdout from the process
+        The stdout from the process.
         """
         return self.delimiter.join(out.line for out in self.messages if not out.error)
 
     @property
     def stderr(self) -> str:
         """
-        The stderr from the process
+        The stderr from the process.
         """
         return self.delimiter.join(out.line for out in self.messages if out.error)
 
@@ -112,35 +103,35 @@ class Process:
     @property
     def output(self) -> ProcessOutput:
         """
-        The output from the process
+        The output from the process.
         """
         return self._output
 
     @property
     def stdout(self) -> str:
         """
-        The stdout from the process
+        The stdout from the process.
         """
         return self._output.stdout
 
     @property
     def stderr(self) -> str:
         """
-        The stderr from the process
+        The stderr from the process.
         """
         return self._output.stderr
 
     @property
     def error(self) -> bool:
         """
-        True if the process has written to stderr
+        True if the process has written to stderr.
         """
         return self._output.error
 
     @property
     def output_messages(self) -> List[ProcessMessage]:
         """
-        The output messages from the process
+        The output messages from the process.
         """
         return self._output.messages
 
@@ -161,13 +152,13 @@ class Process:
 
     def wait(self):
         """
-        Waits for the process to exit.
+        Wait for the process to exit.
         """
         return self._finished.result()
 
     def send_stdin(self, data: str, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Sends data to the process stdin.
+        Send data to the process stdin.
 
         :param data: Data to send
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
@@ -184,7 +175,7 @@ class Process:
 
     async def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
-        Kills the process.
+        Kill the process.
 
         :param timeout: Specify the duration, in seconds to give the method to finish its execution before it times out (default is 60 seconds). If set to None, the method will continue to wait until it completes, regardless of time
         """

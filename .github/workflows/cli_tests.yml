@@ -5,7 +5,7 @@ on:
     paths:
       - packages/cli/**/*
       - .github/workflows/cli_tests.yml
-  workflow_call:
+  workflow_call: # yamllint disable-line rule:empty-values
 
 permissions:
   contents: read
@@ -26,8 +26,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: 16.x
+          registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Install dependencies

@@ -7,25 +7,22 @@ from queue import Queue
 from threading import Event
 from typing import Any, Callable, Dict, Iterator, List, Union
 
-from jsonrpcclient import Error, Ok, request_json
-from jsonrpcclient.id_generators import decimal as decimal_id_generator
-from jsonrpcclient.responses import Response
-from pydantic import BaseModel, PrivateAttr, ConfigDict
-from websockets.typing import Data
-
 from e2b.constants import TIMEOUT
 from e2b.session.exception import RpcException, TimeoutException
 from e2b.session.websocket_client import WebSocket
 from e2b.utils.future import DeferredFuture, run_async_func_in_new_loop
 from e2b.utils.threads import shutdown_executor
+from jsonrpcclient import Error, Ok, request_json
+from jsonrpcclient.id_generators import decimal as decimal_id_generator
+from jsonrpcclient.responses import Response
+from pydantic import BaseModel, ConfigDict, PrivateAttr
+from websockets.typing import Data
 
 logger = logging.getLogger(__name__)
 STOP_SIGN = object()
 
 
 class Notification(BaseModel):
-    """Nofification"""
-
     method: str
     params: Dict
 
@@ -34,7 +31,7 @@ Message = Union[Response, Notification]
 
 
 def to_response_or_notification(response: Dict[str, Any]) -> Message:
-    """Create a Response namedtuple from a dict"""
+    """Create a Response namedtuple from a dict."""
     if "error" in response:
         return Error(
             response["error"]["code"],
@@ -120,8 +117,8 @@ class SessionRpc(BaseModel):
             except TimeoutError as e:
                 logger.error(f"WebSocket timed out while waiting for: {request} {e}")
                 raise TimeoutException(
-                    f"WebSocket timed out while waiting for: {request} {e}"
-                )
+                    f"WebSocket timed out while waiting for: {request}"
+                ) from e
             return r
         except Exception as e:
             logger.error(f"WebSocket received error while waiting for: {request} {e}")
