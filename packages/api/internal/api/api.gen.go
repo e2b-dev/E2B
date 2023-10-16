@@ -21,7 +21,7 @@ type ServerInterface interface {
 	PostEnvs(c *gin.Context)
 
 	// (GET /envs/{envID})
-	GetEnvsEnvID(c *gin.Context, envID EnvID)
+	GetEnvsEnvID(c *gin.Context, envID EnvID, params GetEnvsEnvIDParams)
 
 	// (GET /health)
 	GetHealth(c *gin.Context)
@@ -88,6 +88,17 @@ func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
 
 	c.Set(AccessTokenAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEnvsEnvIDParams
+
+	// ------------- Optional query parameter "logs" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "logs", c.Request.URL.Query(), &params.Logs)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter logs: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -95,7 +106,7 @@ func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetEnvsEnvID(c, envID)
+	siw.Handler.GetEnvsEnvID(c, envID, params)
 }
 
 // GetHealth operation middleware

@@ -24,6 +24,9 @@ type Environment struct {
 	// EnvID Identifier of the environment
 	EnvID string `json:"envID"`
 
+	// Logs Build logs
+	Logs []string `json:"logs"`
+
 	// Public Whether the environment is public or only accessible by the team
 	Public bool `json:"public"`
 
@@ -89,6 +92,12 @@ type PostEnvsMultipartBody struct {
 
 	// EnvID ID of the environment, only present if the environment should be rebuilt
 	EnvID *string `json:"envID,omitempty"`
+}
+
+// GetEnvsEnvIDParams defines parameters for GetEnvsEnvID.
+type GetEnvsEnvIDParams struct {
+	// Logs Index of the starting build log that should be returned with the environment
+	Logs *int `form:"logs,omitempty" json:"logs,omitempty"`
 }
 
 // PostEnvsMultipartRequestBody defines body for PostEnvs for multipart/form-data ContentType.
