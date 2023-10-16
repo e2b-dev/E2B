@@ -1,5 +1,4 @@
 import logging
-import warnings
 from asyncio.exceptions import TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
@@ -101,7 +100,7 @@ class Process:
         self._output = output
 
     @property
-    def exit_code(self) -> int | None:
+    def exit_code(self) -> Optional[int]:
         """
         The exit code of the last process started by this manager.
         """

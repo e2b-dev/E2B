@@ -1,9 +1,9 @@
 import logging
 import urllib.parse
-import requests
-
 from os import path
 from typing import Any, Callable, List, Literal, Optional, IO
+
+import requests
 
 from e2b.constants import TIMEOUT, ENVD_PORT
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
@@ -54,7 +54,7 @@ class Session(SessionConnection):
 
     def __init__(
         self,
-        id: Union[Environment, str],
+        id: str,
         api_key: Optional[str] = None,
         cwd: Optional[str] = None,
         env_vars: Optional[EnvVars] = None,

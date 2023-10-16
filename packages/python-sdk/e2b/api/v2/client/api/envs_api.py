@@ -18,7 +18,6 @@ import warnings
 
 from pydantic import validate_call, ValidationError
 from typing_extensions import Annotated
-from typing import overload, Optional, Union, Awaitable
 
 from typing_extensions import Annotated
 from pydantic import Field, StrictBytes, StrictStr
@@ -44,22 +43,8 @@ class EnvsApi:
             api_client = ApiClient.get_default()
         self.api_client = api_client
 
-    @overload
-    async def envs_env_id_get(
-        self, env_id: StrictStr, **kwargs
-    ) -> Environment:  # noqa: E501
-        ...
-
-    @overload
-    def envs_env_id_get(
-        self, env_id: StrictStr, async_req: Optional[bool] = True, **kwargs
-    ) -> Environment:  # noqa: E501
-        ...
-
     @validate_call
-    def envs_env_id_get(
-        self, env_id: StrictStr, async_req: Optional[bool] = None, **kwargs
-    ) -> Union[Environment, Awaitable[Environment]]:  # noqa: E501
+    def envs_env_id_get(self, env_id: StrictStr, **kwargs) -> Environment:  # noqa: E501
         """envs_env_id_get  # noqa: E501
 
         Get environment info  # noqa: E501
@@ -86,8 +71,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_env_id_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_env_id_get_with_http_info(env_id, **kwargs)  # noqa: E501
 
     @validate_call
@@ -205,20 +188,8 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_get(self, **kwargs) -> List[Environment]:  # noqa: E501
-        ...
-
-    @overload
-    def envs_get(
-        self, async_req: Optional[bool] = True, **kwargs
-    ) -> List[Environment]:  # noqa: E501
-        ...
-
     @validate_call
-    def envs_get(
-        self, async_req: Optional[bool] = None, **kwargs
-    ) -> Union[List[Environment], Awaitable[List[Environment]]]:  # noqa: E501
+    def envs_get(self, **kwargs) -> List[Environment]:  # noqa: E501
         """envs_get  # noqa: E501
 
         List all environments  # noqa: E501
@@ -243,8 +214,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_get_with_http_info(**kwargs)  # noqa: E501
 
     @validate_call
@@ -355,43 +324,6 @@ class EnvsApi:
             _request_auth=_params.get("_request_auth"),
         )
 
-    @overload
-    async def envs_post(
-        self,
-        build_context: Annotated[
-            Union[StrictBytes, StrictStr],
-            Field(..., description="Docker build context"),
-        ],
-        dockerfile: Annotated[StrictStr, Field(..., description="Dockerfile content")],
-        env_id: Annotated[
-            Optional[StrictStr],
-            Field(
-                description="ID of the environment, only present if the environment should be rebuilt"
-            ),
-        ] = None,
-        **kwargs
-    ) -> Environment:  # noqa: E501
-        ...
-
-    @overload
-    def envs_post(
-        self,
-        build_context: Annotated[
-            Union[StrictBytes, StrictStr],
-            Field(..., description="Docker build context"),
-        ],
-        dockerfile: Annotated[StrictStr, Field(..., description="Dockerfile content")],
-        env_id: Annotated[
-            Optional[StrictStr],
-            Field(
-                description="ID of the environment, only present if the environment should be rebuilt"
-            ),
-        ] = None,
-        async_req: Optional[bool] = True,
-        **kwargs
-    ) -> Environment:  # noqa: E501
-        ...
-
     @validate_call
     def envs_post(
         self,
@@ -406,9 +338,8 @@ class EnvsApi:
                 description="ID of the environment, only present if the environment should be rebuilt"
             ),
         ] = None,
-        async_req: Optional[bool] = None,
         **kwargs
-    ) -> Union[Environment, Awaitable[Environment]]:  # noqa: E501
+    ) -> Environment:  # noqa: E501
         """envs_post  # noqa: E501
 
         Create a new environment  # noqa: E501
@@ -439,8 +370,6 @@ class EnvsApi:
         if "_preload_content" in kwargs:
             message = "Error! Please call the envs_post_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data"  # noqa: E501
             raise ValueError(message)
-        if async_req is not None:
-            kwargs["async_req"] = async_req
         return self.envs_post_with_http_info(
             build_context, dockerfile, env_id, **kwargs
         )  # noqa: E501

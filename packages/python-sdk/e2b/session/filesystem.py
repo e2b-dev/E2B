@@ -29,7 +29,7 @@ class FilesystemManager:
         self._session = session
 
     @property
-    def cwd(self) -> str | None:
+    def cwd(self) -> Optional[str]:
         return self._session.cwd
 
     def read_bytes(self, path: str, timeout: Optional[float] = TIMEOUT) -> bytes:

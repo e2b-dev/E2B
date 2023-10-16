@@ -132,7 +132,7 @@ class SessionConnection:
         logger.info(f"Session closed")
 
     def _close(self):
-        if self._is_open and self._session:
+        if self._is_open and self._instance:
             logger.info(
                 f"Closing session {self._instance.env_id} (id: {self._instance.instance_id})"
             )
@@ -161,12 +161,11 @@ class SessionConnection:
             self._is_open = True
 
         try:
-            with client.ApiClient(configuration) as api_client:
-                api = client.SessionsApi(api_client)
+            with E2BApiClient(api_key=self._api_key) as api_client:
+                api = client.InstancesApi(api_client)
 
-                self._session = api.sessions_post(
-                    models.NewSession(codeSnippetID=self._id, editEnabled=False),
-                    api_key=self._api_key,
+                self._instance = api.instances_post(
+                    models.NewInstance(envID=self._id, editEnabled=False),
                     _request_timeout=timeout,
                 )
                 logger.info(
@@ -176,7 +175,7 @@ class SessionConnection:
                 # We could potentially use asyncio.to_thread() but that requires Python 3.9+
                 executor = ThreadPoolExecutor(thread_name_prefix="e2b-refresh")
                 self._refreshing_task = executor.submit(
-                    self._refresh, self._session.session_id
+                    self._refresh, self._instance.instance_id
                 )
 
                 self._process_cleanup.append(self._refreshing_task.cancel)
@@ -303,7 +302,7 @@ class SessionConnection:
     def _refresh(self, instance_id: str):
         try:
             logger.info(
-                f"Started refreshing session {self._session.code_snippet_id} (id: {session_id})"
+                f"Started refreshing session {self._instance.env_id} (id: {instance_id})"
             )
 
             current_retry = 0
@@ -313,12 +312,12 @@ class SessionConnection:
                 while True:
                     if not self._is_open:
                         logger.debug(
-                            f"Cannot refresh session - it was closed. {self._session}"
+                            f"Cannot refresh session - it was closed. {self._instance.instance_id}"
                         )
                         return
                     sleep(INSTANCE_REFRESH_PERIOD)
                     try:
-                        api.instances_instance_id_refreshes_post(session_id)
+                        api.instances_instance_id_refreshes_post(instance_id)
                         logger.debug(f"Refreshed session {instance_id}")
                     except exceptions.ApiException as e:
                         if e.status == 404:
