@@ -4,7 +4,6 @@
   "commit": false,
   "fixed": [],
   "ignore": [
-    "e2b-dashboard",
     "e2b-docs",
     "reverse-proxy"
   ],
