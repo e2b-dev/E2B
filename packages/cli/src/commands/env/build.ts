@@ -2,19 +2,19 @@ import * as commander from 'commander'
 import * as commonTags from 'common-tags'
 import * as fs from 'fs'
 import * as fsPromise from 'fs/promises'
-import * as Blob from 'cross-blob' // Remove cross-blob when dropping node 16 support
+// Remove cross-blob when dropping node 16 support
 // Remove cross-blob when dropping node 16 support
 import * as fData from 'formdata-node' // Remove formdata-node when dropping node 16 support
 import * as nodeFetch from 'node-fetch'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
-import * as tar from 'tar-fs'
 
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
 import { asBold, asFormattedError, asLocal, asLocalRelative } from 'src/utils/format'
 import { pathOption } from 'src/options'
+import { createBlobFromFiles } from 'src/docker/archive'
 
 const getEnv = e2b.withAccessToken(e2b.api.path('/envs/{envID}').method('get').create())
 
@@ -83,27 +83,7 @@ export const buildCommand = new commander.Command('build')
 
         // It should be possible to pipe directly to the API
         // instead of creating a blob in memory then streaming.
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          const chunks: any[] = []
-
-          const pack = tar.pack(root, {
-            entries: filePaths.map(({ rootPath }) => rootPath),
-          })
-
-          pack.on('data', chunk => {
-            chunks.push(chunk)
-          })
-
-          pack.on('end', () => {
-            const blob = new Blob.default(chunks)
-            resolve(blob)
-          })
-
-          pack.on('error', error => {
-            reject(new Error(`Error creating tar blob: ${error.message}`))
-          })
-        })
-
+        const blob = await createBlobFromFiles(root, filePaths)
         formData.append('buildContext', blob, 'env.tar.gz.e2b')
 
         const apiRes = await nodeFetch.default(`https://${e2b.API_DOMAIN}/envs`, {
