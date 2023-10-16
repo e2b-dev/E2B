@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "rm-next-cache": "rm -rf .next/cache"
+    "rm-next-cache": "rm -rf .next/cache",
+    "check-deps": "knip"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
@@ -64,7 +65,9 @@
   },
   "devDependencies": {
     "@nodelib/fs.walk": "^2.0.0",
+    "@types/mdx": "^2.0.8",
     "eslint-config-next": "13.4.19",
+    "knip": "^2.25.2",
     "sharp": "^0.32.0"
   }
 }
