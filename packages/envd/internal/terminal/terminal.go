@@ -107,8 +107,11 @@ func (t *Terminal) Destroy() {
 
 func (t *Terminal) Write(b []byte) error {
 	_, err := t.tty.Write(b)
+	if err != nil {
+		return fmt.Errorf("error writing to terminal '%s': %w", t.ID, err)
+	}
 
-	return fmt.Errorf("error writing to terminal '%s': %w", t.ID, err)
+	return nil
 }
 
 func (t *Terminal) Resize(cols, rows uint16) error {
