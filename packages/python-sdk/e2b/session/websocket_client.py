@@ -62,7 +62,7 @@ class WebSocket:
         websocket_connector = connect(self.url, max_size=None, max_queue=None)
         websocket_connector.BACKOFF_MIN = 1
         websocket_connector.BACKOFF_FACTOR = 1
-        websocket_connector.BACKOFF_INITIAL = 1
+        websocket_connector.BACKOFF_INITIAL = 0.4
         async for websocket in websocket_connector:
             try:
                 self._ws = websocket

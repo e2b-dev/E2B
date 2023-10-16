@@ -2,13 +2,14 @@ import asyncio
 import functools
 import logging
 import traceback
+import warnings
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from os import getenv
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
 
 from pydantic import BaseModel
-from urllib3.exceptions import ReadTimeoutError
+from urllib3.exceptions import MaxRetryError, ConnectTimeoutError
 
 from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
@@ -96,6 +97,11 @@ class SessionConnection:
 
         self._open(timeout=timeout)
 
+    @classmethod
+    def create(cls, *args, **kwargs):
+        warnings.warn("Session.create() is deprecated, use Session() instead")
+        return cls(*args, **kwargs)
+
     def get_hostname(self, port: Optional[int] = None):
         """
         Get the hostname for the session or for the specified session's port.
@@ -182,12 +188,14 @@ class SessionConnection:
                 self._process_cleanup.append(self._refreshing_task.cancel)
                 self._process_cleanup.append(lambda: shutdown_executor(executor))
 
-        except ReadTimeoutError as e:
-            logger.error(f"Failed to acquire session: {e}")
+        except MaxRetryError as e:
+            logger.error(f"Failed to acquire session")
             self._close()
-            raise TimeoutException(
-                f"Failed to acquire session: {e}",
-            ) from e
+            if isinstance(e.reason, ConnectTimeoutError):
+                raise TimeoutException(
+                    f"Failed to acquire session: {e}",
+                ) from e
+            raise e
         except Exception as e:
             logger.error(f"Failed to acquire session")
             self._close()
@@ -238,11 +246,7 @@ class SessionConnection:
         def unsub_all():
             return lambda: functools.reduce(
                 lambda _, f: f(),
-                [
-                    unsub
-                    for unsub in results
-                    if not isinstance(unsub, Exception) and unsub
-                ],
+                [unsub for unsub in results if not isinstance(unsub, Exception)],
             )
 
         if len(exceptions) > 0:
@@ -286,7 +290,9 @@ class SessionConnection:
         self._subscribers[sub_id] = Subscription(
             service=service, id=sub_id, handler=handler
         )
-        logger.info(f"Subscribed to {service} {camel_case_to_snake_case(method)}")
+        logger.debug(
+            f"Subscribed to {service} {camel_case_to_snake_case(method)} (sub id: {sub_id})"
+        )
 
         def unsub():
             self._unsubscribe(sub_id, timeout=timeout)

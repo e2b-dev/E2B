@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.ERROR)
 
 
 def main():
-    s = Session("Nodejs", api_key=E2B_API_KEY, timeout=0.0001)
+    s = Session("Nodejs", api_key=E2B_API_KEY)
     a = s.process.start("ls -la /var ")
     a.wait()
     print(a.stdout)
