@@ -19,10 +19,8 @@ import {
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 
-const secInMs = 1000
-
-const envCheckInterval = 1000 // 1 sec
-const maxBuildTime = 10 * 60 * 1000 // 10 min
+const envCheckInterval = 1_000 // 1 sec
+const maxBuildTime = 10 * 60 * 1_000 // 10 min
 
 const getEnv = e2b.withAccessToken(e2b.api.path('/envs/{envID}').method('get').create())
 
@@ -75,7 +73,7 @@ export const buildCommand = new commander.Command('build')
         }
 
         console.log(
-          `Preparing environment build (${filePaths.length} files in Docker build context)...`,
+          `Preparing environment build (${filePaths.length} files in Docker build context)`,
         )
 
         const formData = new fData.FormData()
@@ -111,7 +109,7 @@ export const buildCommand = new commander.Command('build')
           public: boolean
           status: 'building' | 'error' | 'ready'
         }
-        console.log(`Started building environment ${asFormattedEnvironment(resJson)}...`)
+        console.log(`Started building environment ${asFormattedEnvironment(resJson)}`)
 
         await waitForBuildFinish(accessToken, resJson.envID)
       } catch (err: unknown) {
@@ -126,7 +124,7 @@ async function waitForBuildFinish(accessToken: string, envID: string) {
   let logsOffset = 0
 
   function elapsed() {
-    return Math.floor(Date.now() - startedAt.getTime() / secInMs)
+    return Date.now() - startedAt.getTime()
   }
 
   let env: Awaited<ReturnType<typeof getEnv>> | undefined
