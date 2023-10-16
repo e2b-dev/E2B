@@ -21,3 +21,7 @@ from .session import (
     TerminalOutput,
     run_code,
 )
+
+from .templates import (
+    DataAnalysis,
+)

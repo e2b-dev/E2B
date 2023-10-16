@@ -1,5 +1,4 @@
 import logging
-import warnings
 from asyncio.exceptions import TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
@@ -314,7 +313,6 @@ class ProcessManager:
 
         def exit_handler():
             future_exit.result()
-            logger.error("Process exit handler started")
             logger.info(
                 f"Handling process exit (id: {process_id})",
             )
@@ -335,7 +333,6 @@ class ProcessManager:
 
         def trigger_exit():
             logger.info(f"Exiting the process (id: {process_id})")
-            logger.error("Process exit handler triggered")
             future_exit(None)
             future_exit_handler_finish.result()
             logger.debug(f"Exited the process (id: {process_id})")
