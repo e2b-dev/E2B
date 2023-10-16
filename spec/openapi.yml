@@ -75,7 +75,14 @@ components:
         - envID
         - status
         - public
+        - logs
       properties:
+        logs:
+          default: []
+          description: Build logs
+          type: array
+          items:
+            type: string
         envID:
           type: string
           description: Identifier of the environment
@@ -133,13 +140,12 @@ paths:
         401:
           $ref: "#/components/responses/401"
 
-
   /instances:
     post:
       description: Create an instance from the environment
       tags: [instances]
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -164,8 +170,8 @@ paths:
     post:
       description: Refresh the instance extending its time to live
       security:
-        - ApiKeyAuth: [ ]
-      tags: [ instances ]
+        - ApiKeyAuth: []
+      tags: [instances]
       parameters:
         - $ref: "#/components/parameters/instanceID"
       responses:
@@ -185,7 +191,7 @@ paths:
       description: List all environments
       tags: [envs]
       security:
-        - AccessTokenAuth: [ ]
+        - AccessTokenAuth: []
       responses:
         200:
           description: Successfully returned all environments
@@ -202,9 +208,9 @@ paths:
           $ref: "#/components/responses/500"
     post:
       description: Create a new environment
-      tags: [ envs ]
+      tags: [envs]
       security:
-        - AccessTokenAuth: [ ]
+        - AccessTokenAuth: []
       requestBody:
         required: true
         content:
@@ -246,9 +252,15 @@ paths:
       description: Get environment info
       tags: [envs]
       security:
-        - AccessTokenAuth: [ ]
+        - AccessTokenAuth: []
       parameters:
         - $ref: "#/components/parameters/envID"
+        - in: query
+          name: logs
+          schema:
+            default: 0
+            type: integer
+          description: Index of the starting build log that should be returned with the environment
       responses:
         200:
           description: Successfully returned the environment
