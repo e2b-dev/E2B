@@ -1,15 +1,16 @@
 import filecmp
 from os import path
+
 from e2b import Session
 
 
-async def test_download():
+def test_download():
     file_name = "video.webm"
     local_dir = "tests/assets"
 
     local_path = path.join(local_dir, file_name)
 
-    session = await Session.create("Nodejs")
+    session = Session("Nodejs")
 
     # Upload the file first (it's uploaded to /home/user)
     with open(local_path, "rb") as f:
@@ -23,4 +24,4 @@ async def test_download():
     # Compare the downloaded file with the original
     assert filecmp.cmp(local_path, path.join(local_dir, "video-downloaded.webm"))
 
-    await session.close()
+    session.close()

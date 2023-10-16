@@ -4,15 +4,15 @@ from typing import Optional, Callable, Any, Tuple, List, Union
 
 from pydantic import BaseModel, PrivateAttr
 
+from e2b import EnvVars, Session
 from e2b.constants import TIMEOUT
-from e2b import EnvVars, SyncSession
 
 logger = logging.getLogger(__name__)
 
 
 class Artifact(BaseModel):
     name: str
-    _session: SyncSession = PrivateAttr()
+    _session: Session = PrivateAttr()
 
     def __init__(self, **data: Any):
         super().__init__(**data)
@@ -24,7 +24,8 @@ class Artifact(BaseModel):
     def download(self) -> bytes:
         return self._session.download_file(self.name)
 
-class DataAnalysis(SyncSession):
+
+class DataAnalysis(Session):
     env_id = "Python3-DataAnalysis"
 
     def __init__(
@@ -47,10 +48,6 @@ class DataAnalysis(SyncSession):
             on_stderr=on_stderr,
             on_exit=on_exit,
         )
-        self.open()
-
-    def create(self, *args, **kwargs):
-        raise Exception("Wrong syntax. Use only `DataAnalysis(...)`")
 
     def run_python(
         self,
@@ -65,7 +62,7 @@ class DataAnalysis(SyncSession):
     ) -> Tuple[str, str, List[Artifact]]:
         artifacts = set()
 
-        def register_artifacts(event: Any):
+        def register_artifacts(event: Any) -> None:
             if event.operation == "Create":
                 artifact = Artifact(name=event.path, _session=self)
                 artifacts.add(artifact)
@@ -84,7 +81,7 @@ class DataAnalysis(SyncSession):
         self.filesystem.write(codefile_path, code)
 
         process = self.process.start(
-            f'python {codefile_path}',
+            f"python {codefile_path}",
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             on_exit=on_exit,
@@ -99,11 +96,13 @@ class DataAnalysis(SyncSession):
 
         return process.output.stdout, process.output.stderr, list(artifacts)
 
-    def install_python_packages(self, package_names: Union[str, List[str]]):
+    def install_python_packages(
+        self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
+    ) -> None:
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
-        process = self.process.start(f"pip install {package_names}")
+        process = self.process.start(f"pip install {package_names}", timeout=timeout)
         process.wait()
 
         if process.exit_code != 0:
@@ -111,11 +110,13 @@ class DataAnalysis(SyncSession):
                 f"Failed to install package {package_names}: {process.output.stderr}"
             )
 
-    def install_system_packages(self, package_names: Union[str, List[str]]):
+    def install_system_packages(
+        self, package_names: Union[str, List[str]], timeout: Optional[float] = TIMEOUT
+    ) -> None:
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
-        process = self.process.start(f"apt-get {package_names}")
+        process = self.process.start(f"apt-get {package_names}", timeout=timeout)
         process.wait()
 
         if process.exit_code != 0:

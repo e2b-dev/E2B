@@ -1,45 +1,45 @@
 from e2b import Session
 
 
-async def test_env_vars():
-    session = await Session.create("Bash")
+def test_env_vars():
+    session = Session("Bash")
 
-    process = await session.process.start("echo $FOO", env_vars={"FOO": "BAR"})
-    await process
+    process = session.process.start("echo $FOO", env_vars={"FOO": "BAR"})
+    process.wait()
     output = process.stdout
     assert output == "BAR"
 
-    await session.close()
+    session.close()
 
 
-async def test_profile_env_vars():
-    session = await Session.create("Bash")
+def test_profile_env_vars():
+    session = Session("Bash")
 
-    await session.filesystem.write("/home/user/.profile", "export FOO=BAR")
-    process = await session.process.start("echo $FOO")
-    await process
+    session.filesystem.write("/home/user/.profile", "export FOO=BAR")
+    process = session.process.start("echo $FOO")
+    process.wait()
     output = process.stdout
     assert output == "BAR"
 
-    await session.close()
+    session.close()
 
 
-async def test_default_env_vars():
-    session = await Session.create("Bash", env_vars={"FOO": "BAR"})
-    process = await session.process.start("echo $FOO")
-    await process
+def test_default_env_vars():
+    session = Session("Bash", env_vars={"FOO": "BAR"})
+    process = session.process.start("echo $FOO")
+    process.wait()
     output = process.stdout
     assert output == "BAR"
 
-    await session.close()
+    session.close()
 
 
-async def test_overriding_env_vars():
-    session = await Session.create("Bash", env_vars={"FOO": "BAR"})
+def test_overriding_env_vars():
+    session = Session("Bash", env_vars={"FOO": "BAR"})
 
-    process = await session.process.start("echo $FOO", env_vars={"FOO": "QUX"})
-    await process
+    process = session.process.start("echo $FOO", env_vars={"FOO": "QUX"})
+    process.wait()
     output = process.stdout
     assert output == "QUX"
 
-    await session.close()
+    session.close()
