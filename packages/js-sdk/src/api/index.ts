@@ -1,9 +1,9 @@
 import 'cross-fetch/polyfill'
 import { Fetcher, TypedFetch, OpArgType } from 'openapi-typescript-fetch'
-import platform from 'platform'
 
 import { API_HOST } from '../constants'
 import type { components, paths } from './schema.gen'
+import { defaultHeaders } from './metadata'
 
 const client = Fetcher.for<paths>()
 
@@ -12,14 +12,7 @@ type ClientType = typeof client
 client.configure({
   baseUrl: API_HOST,
   init: {
-    headers: {
-      package_version: '__pkgVersion__',
-      lang: 'js',
-      engine: platform.name || 'unknown',
-      lang_version: platform.version || 'unknown',
-      system: platform.os?.family || 'unknown',
-      publisher: 'e2b',
-    },
+    headers: defaultHeaders,
   },
 })
 
