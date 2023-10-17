@@ -4,12 +4,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 test('upload and download file', async () => {
-  const session = await Session.create({
-    id: 'Nodejs',
-    __debug_hostname: 'localhost',
-    __debug_port: 49982,
-    __debug_devEnv: 'local',
-  })
+  const session = await Session.create({ id: 'Nodejs' })
 
   const localFile = fs.readFileSync(path.join(__dirname, '/assets/video.webm'))
 
