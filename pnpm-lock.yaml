@@ -351,15 +351,18 @@ importers:
       bufferutil:
         specifier: ^4.0.7
         version: 4.0.7
+      cross-blob:
+        specifier: ^3.0.2
+        version: 3.0.2
       cross-fetch:
         specifier: ^3.1.5
         version: 3.1.8
       form-data:
         specifier: ^4.0.0
         version: 4.0.0
-      node-fetch:
-        specifier: ^2.7.0
-        version: 2.7.0
+      formdata-polyfill:
+        specifier: ^4.0.10
+        version: 4.0.10
       normalize-path:
         specifier: ^3.0.0
         version: 3.0.0
@@ -403,6 +406,9 @@ importers:
       jsdom:
         specifier: ^22.1.0
         version: 22.1.0(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+      knip:
+        specifier: ^2.25.2
+        version: 2.25.2
       markdown-it:
         specifier: ^13.0.2
         version: 13.0.2

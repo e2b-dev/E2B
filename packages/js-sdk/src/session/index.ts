@@ -1,6 +1,7 @@
 import normalizePath from 'normalize-path'
-import FormData from 'form-data'
-import fetch from 'node-fetch'
+import fetch from 'cross-fetch'
+import { FormData } from 'formdata-polyfill/esm.min.js'
+import Blob from 'cross-blob'
 
 import { ENVD_PORT } from '../constants'
 import { components } from '../api'
@@ -389,7 +390,7 @@ export class Session extends SessionConnection {
 
     const portsHandler = this.onScanPorts
       ? (ports: { State: string; Ip: string; Port: number }[]) =>
-          this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
+        this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
       : undefined
 
     await this.handleSubscriptions(
@@ -412,9 +413,14 @@ export class Session extends SessionConnection {
    */
   async uploadFile(file: Buffer | Blob, filename: string) {
     const formData = new FormData()
-    formData.append('file', file, {
+
+    formData.append(
+      'file',
+      file instanceof Blob
+        ? file
+        : new Blob([file.buffer], { type: 'application/octet-stream' }),
       filename,
-    })
+    )
 
     const response = await fetch(this.fileURL, {
       method: 'POST',
