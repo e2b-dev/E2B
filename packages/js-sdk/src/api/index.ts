@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill'
 import { Fetcher } from 'openapi-typescript-fetch'
 import platform from 'platform'
 
