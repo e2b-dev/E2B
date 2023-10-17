@@ -1,11 +1,11 @@
 import logging
 import urllib.parse
+import requests
+
 from os import path
 from typing import Any, Callable, List, Literal, Optional, Union, IO
 
-import requests
-
-from e2b.constants import TIMEOUT, ENVD_PORT
+from e2b.constants import TIMEOUT, ENVD_PORT, FILE_ROUTE
 from e2b.session.code_snippet import CodeSnippetManager, OpenPort
 from e2b.session.env_vars import EnvVars
 from e2b.session.filesystem import FilesystemManager
@@ -156,9 +156,12 @@ class Session(SessionConnection):
         The file will be uploaded to the user's home directory with the same name.
         If a file with the same name already exists, it will be overwritten.
         """
-        hostname = self.get_hostname(self._debug_port)
+        hostname = self.get_hostname(self._debug_port or ENVD_PORT)
         protocol = "http" if self._debug_dev_env == "local" else "https"
-        return f"{protocol}://{ENVD_PORT}-{hostname}/file"
+
+        file_url = f"{protocol}://{hostname}{FILE_ROUTE}"
+
+        return file_url
 
     def upload_file(self, file: IO, timeout: Optional[float] = TIMEOUT) -> str:
         """
