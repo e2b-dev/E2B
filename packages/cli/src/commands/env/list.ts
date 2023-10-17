@@ -3,7 +3,6 @@ import * as commander from 'commander'
 import * as e2b from '@e2b/sdk'
 
 import { ensureAccessToken } from 'src/api'
-import { asFormattedError } from 'src/utils/format'
 
 const listEnvs = e2b.withAccessToken(e2b.api.path('/envs').method('get').create())
 
@@ -33,7 +32,7 @@ export const listCommand = new commander.Command('list')
 
       process.stdout.write('\n')
     } catch (err: any) {
-      console.error(asFormattedError(undefined, err))
+      console.error(err)
       process.exit(1)
     }
   })

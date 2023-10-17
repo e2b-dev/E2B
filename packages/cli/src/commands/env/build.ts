@@ -9,12 +9,7 @@ import * as e2b from '@e2b/sdk'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import {
-  asBold,
-  asFormattedEnvironment,
-  asFormattedError,
-  asLocalRelative,
-} from 'src/utils/format'
+import { asBold, asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 import {
@@ -81,10 +76,10 @@ export const buildCommand = new commander.Command('build')
           `Preparing environment building (${filePaths.length} files in Docker build context).`,
         )
 
-        const { dockerfileContent, dockerfileRelativePath, dockerfilePath } =
-          getDockerfile(root, opts.dockerfile)
-
-        console.log('->', dockerfileContent, dockerfileRelativePath, dockerfilePath)
+        const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
+          root,
+          opts.dockerfile,
+        )
 
         console.log(
           `Found ${asLocalRelative(
@@ -111,30 +106,13 @@ export const buildCommand = new commander.Command('build')
         )
         formData.append('buildContext', blob, 'env.tar.gz.e2b')
 
-        const apiRes = await nodeFetch.default(`https://${e2b.API_DOMAIN}/envs`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-          body: formData,
-        })
+        const build = await buildEnv(accessToken, formData)
 
-        if (!apiRes.ok) {
-          const resJson = (await apiRes.json()) as { message: string }
-          console.log('res', resJson)
-          throw new Error(
-            `API request failed: ${apiRes.statusText}, ${resJson?.message ?? 'no message'
-            }`,
-          )
-        }
-        const resJson = (await apiRes.json()) as {
-          envID: string
-          public: boolean
-          status: 'building' | 'error' | 'ready'
-        }
-        console.log(`Started building environment ${asFormattedEnvironment(resJson)}`)
+        console.log(`Started building environment ${asFormattedEnvironment(build)}`)
 
-        await waitForBuildFinish(accessToken, resJson.envID)
+        await waitForBuildFinish(accessToken, build.envID)
       } catch (err: any) {
-        console.error(asFormattedError(undefined, err))
+        console.error(err)
         process.exit(1)
       }
     },
@@ -236,4 +214,45 @@ function getDockerfile(root: string, file?: string) {
       '--dockerfile <file>',
     )} option.`,
   )
+}
+
+async function buildEnv(
+  accessToken: string,
+  body: fData.FormData,
+): Promise<
+  Omit<
+    e2b.paths['/envs']['post']['responses']['202']['content']['application/json'],
+    'logs'
+  >
+> {
+  const res = await nodeFetch.default(`https://${e2b.API_DOMAIN}/envs`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body,
+  })
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    const error:
+      | e2b.paths['/envs']['post']['responses']['401']['content']['application/json']
+      | e2b.paths['/envs']['post']['responses']['500']['content']['application/json'] =
+      data as any
+
+    if (error.code === 401) {
+      throw new Error(
+        `Authentication error: ${res.statusText}, ${error.message ?? 'no message'}`,
+      )
+    }
+
+    if (error.code === 500) {
+      throw new Error(`Server error: ${res.statusText}, ${error.message ?? 'no message'}`)
+    }
+
+    throw new Error(
+      `API request failed: ${res.statusText}, ${error.message ?? 'no message'}`,
+    )
+  }
+
+  return data as any
 }

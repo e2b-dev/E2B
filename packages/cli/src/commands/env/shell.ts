@@ -4,7 +4,7 @@ import * as commander from 'commander'
 import { ensureAPIKey } from 'src/api'
 import { reqIDArgument } from 'src/arguments'
 import { spawnConnectedTerminal } from 'src/terminal'
-import { asBold, asFormattedEnvironment, asFormattedError } from 'src/utils/format'
+import { asBold, asFormattedEnvironment } from 'src/utils/format'
 
 export const shellCommand = new commander.Command('shell')
   .description('Connect terminal to environment')
@@ -21,7 +21,7 @@ export const shellCommand = new commander.Command('shell')
       // We also don't want to call session.close because that would disconnect other users from the edit session.
       process.exit(0)
     } catch (err: any) {
-      console.error(asFormattedError(undefined, err))
+      console.error(err)
       process.exit(1)
     }
   })

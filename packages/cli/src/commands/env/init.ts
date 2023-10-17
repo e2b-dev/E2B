@@ -6,7 +6,7 @@ import * as path from 'path'
 import { basicDockerfile, defaultDockerfileName } from 'src/docker/constants'
 import { pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
-import { asFormattedError, asLocalRelative } from 'src/utils/format'
+import { asLocalRelative } from 'src/utils/format'
 
 export const initCommand = new commander.Command('init')
   .description(
@@ -36,7 +36,7 @@ export const initCommand = new commander.Command('init')
 
       console.log(`Created ${asLocalRelative(relativePath)}\n`)
     } catch (err: any) {
-      console.error(asFormattedError(undefined, err))
+      console.error(err)
       process.exit(1)
     }
   })

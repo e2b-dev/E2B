@@ -35,7 +35,6 @@ export async function createBlobFromFiles(
       map: header => {
         const rewrite = absoluteRewrites.find(({ oldPath }) => header.name === oldPath)
         if (rewrite) {
-          console.log('replacing', header.name, 'with', rewrite.newPath)
           header.name = rewrite.newPath
         }
         return header
