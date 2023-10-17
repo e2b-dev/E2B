@@ -44,14 +44,18 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 func pingHandler(w http.ResponseWriter, r *http.Request) {
 	logger.Info("/ping request")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("pong"))
+
+	_, err := w.Write([]byte("pong"))
+	if err != nil {
+		logger.Error("Error writing response:", err)
+	}
 }
 
 func fileHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-	case "GET":
+	case http.MethodGet:
 		file.Download(logger, w, r)
-	case "POST":
+	case http.MethodPost:
 		file.Upload(logger, w, r)
 	default:
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -147,6 +151,7 @@ func main() {
 
 	router := mux.NewRouter()
 	wsHandler = rpcServer.WebsocketHandler([]string{"*"})
+
 	router.HandleFunc("/ws", serveWs)
 	// The /ping route is used for the terminal extension to check if envd is running.
 	router.HandleFunc("/ping", pingHandler)
