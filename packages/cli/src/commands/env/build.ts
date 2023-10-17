@@ -142,7 +142,7 @@ export const buildCommand = new commander.Command('build')
 
 async function waitForBuildFinish(accessToken: string, envID: string) {
   const startedAt = new Date()
-  const logsOffset = 0
+  let logsOffset = 0
 
   function elapsed() {
     return Date.now() - startedAt.getTime()
@@ -153,7 +153,7 @@ async function waitForBuildFinish(accessToken: string, envID: string) {
   do {
     await wait(envCheckInterval)
     env = await getEnv(accessToken, { envID, logs: logsOffset })
-    // logsOffset += env.data.logs.length
+    logsOffset += env.data.logs.length
 
     switch (env.data.status) {
       case 'building':
