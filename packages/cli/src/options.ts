@@ -4,5 +4,5 @@ import { asBold } from './utils/format'
 
 export const pathOption = new commander.Option(
   '-p, --path <path>',
-  `Call this command in ${asBold('<path>')} directory`,
+  `Change root directory where command is executed to ${asBold('<path>')} directory`,
 )

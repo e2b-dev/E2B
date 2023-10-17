@@ -9,37 +9,51 @@ import * as e2b from '@e2b/sdk'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
-import { asBold, asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
+import {
+  asBold,
+  asFormattedEnvironment,
+  asLocal,
+  asLocalRelative,
+} from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
-import {
-  basicDockerfile,
-  defaultDockerfileName,
-  fallbackDockerfileName,
-} from 'src/docker/constants'
+import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
 
 const envCheckInterval = 1_000 // 1 sec
 const maxBuildTime = 10 * 60 * 1_000 // 10 min
 
-const getEnv = e2b.withAccessToken(e2b.api.path('/envs/{envID}').method('get').create())
+const getEnv = e2b.withAccessToken(
+  e2b.api.path('/envs/{envID}/builds/{buildID}').method('get').create(),
+)
 
 export const buildCommand = new commander.Command('build')
-  .description('Build environment')
+  .description(
+    `Build environment defined by ${asLocalRelative(
+      'e2b.Dockerfile',
+    )} or ${asLocalRelative(
+      'Dockerfile',
+    )} in root directory. By default the root directory is the current working directory`,
+  )
   .argument(
     '[id]',
-    `Specify ${asBold(
+    `Specify ${asBold('[id]')} of environment to rebuild it.If you don's specify ${asBold(
       '[id]',
-    )} to rebuild an existing environment. Otherwise, a new environment will be created.`,
+    )} new environment will be created`,
   )
   .addOption(pathOption)
   .option(
     '-G, --no-gitignore',
-    `Ignore ${asLocalRelative('.gitignore')} file in the root directory`,
+    `Ignore ${asLocalRelative('.gitignore')} file in root directory`,
   )
-  .option('-d, --dockerfile <file>', 'Specify path to Dockerfile', basicDockerfile)
+  .option(
+    '-d, --dockerfile <file>',
+    `Specify path to Dockerfile.By default E2B tries to find ${asLocal(
+      'e2b.Dockerfile',
+    )} or ${asLocal('Dockerfile')} in root directory`,
+  )
   .option(
     '-D, --no-dockerignore',
-    `Ignore ${asLocalRelative('.dockerignore')} file in the root directory`,
+    `Ignore ${asLocalRelative('.dockerignore')} file in root directory`,
   )
   .alias('bd')
   .action(
@@ -66,14 +80,14 @@ export const buildCommand = new commander.Command('build')
         if (!filePaths.length) {
           console.log(commonTags.stripIndent`
           No allowed files found in ${asLocalRelative(root)}.
-          Note that .gitignore and .dockerignore files are respected by default when building the environment via from Dockerfile,
-          use --no-gitignore and --no-dockerignore to override.
+          Note that.gitignore and.dockerignore files are respected by default when building the environment via from Dockerfile,
+  use--no - gitignore and--no - dockerignore to override.
        `)
           return
         }
 
         console.log(
-          `Preparing environment building (${filePaths.length} files in Docker build context).`,
+          `Preparing environment building(${filePaths.length} files in Docker build context).`,
         )
 
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
@@ -108,9 +122,9 @@ export const buildCommand = new commander.Command('build')
 
         const build = await buildEnv(accessToken, formData)
 
-        console.log(`Started building environment ${asFormattedEnvironment(build)}`)
+        console.log(`Started building environment ${asFormattedEnvironment(build)} `)
 
-        await waitForBuildFinish(accessToken, build.envID)
+        await waitForBuildFinish(accessToken, build.envID, build.buildID)
       } catch (err: any) {
         console.error(err)
         process.exit(1)
@@ -118,7 +132,7 @@ export const buildCommand = new commander.Command('build')
     },
   )
 
-async function waitForBuildFinish(accessToken: string, envID: string) {
+async function waitForBuildFinish(accessToken: string, envID: string, buildID: string) {
   const startedAt = new Date()
   let logsOffset = 0
 
@@ -130,7 +144,7 @@ async function waitForBuildFinish(accessToken: string, envID: string) {
 
   do {
     await wait(envCheckInterval)
-    env = await getEnv(accessToken, { envID, logs: logsOffset })
+    env = await getEnv(accessToken, { envID, logsOffset, buildID })
     logsOffset += env.data.logs.length
 
     switch (env.data.status) {
@@ -210,7 +224,7 @@ function getDockerfile(root: string, file?: string) {
   throw new Error(
     `No ${asLocalRelative(defaultDockerfileRelativePath)} or ${asLocalRelative(
       fallbackDockerfileRelativeName,
-    )} found in the root directory. You can specify a custom Dockerfile with ${asBold(
+    )} found in the root directory.You can specify a custom Dockerfile with ${asBold(
       '--dockerfile <file>',
     )} option.`,
   )

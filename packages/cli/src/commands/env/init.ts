@@ -10,7 +10,7 @@ import { asLocalRelative } from 'src/utils/format'
 
 export const initCommand = new commander.Command('init')
   .description(
-    'Create a basic E2B `Dockerfile` in the current directory. You can then run `e2b env build` to build an environment from this Dockerfile.',
+    'Create basic E2B `e2b.Dockerfile` in root directory. You can then run `e2b env build` to build environment from this Dockerfile.',
   )
   .addOption(pathOption)
   .alias('it')

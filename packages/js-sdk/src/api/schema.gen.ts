@@ -99,16 +99,17 @@ export interface paths {
       };
     };
   };
-  "/envs/{envID}": {
+  "/envs/{envID}/builds/{buildID}": {
     /** Get environment info */
     get: {
       parameters: {
         path: {
           envID: components["parameters"]["envID"];
+          buildID: components["parameters"]["buildID"];
         };
         query: {
           /** Index of the starting build log that should be returned with the environment */
-          logs?: number;
+          logsOffset?: number;
         };
       };
       responses: {
@@ -121,6 +122,37 @@ export interface paths {
         401: components["responses"]["401"];
         404: components["responses"]["404"];
         500: components["responses"]["500"];
+      };
+    };
+  };
+  "/envs/{envID}/builds/{buildID}/logs": {
+    /** Add a build log */
+    post: {
+      parameters: {
+        path: {
+          envID: components["parameters"]["envID"];
+          buildID: components["parameters"]["buildID"];
+        };
+      };
+      responses: {
+        /** Successfully added log */
+        201: unknown;
+        401: components["responses"]["401"];
+        /** Error adding a build log - build not found */
+        404: {
+          content: {
+            "application/json": components["schemas"]["Error"];
+          };
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** @description API secret */
+            apiSecret: string;
+            logs: string[];
+          };
+        };
       };
     };
   };
@@ -140,6 +172,8 @@ export interface components {
       logs: string[];
       /** @description Identifier of the environment */
       envID: string;
+      /** @description Identifier of the build */
+      buildID: string;
       /**
        * @description Status of the environment
        * @enum {string}
@@ -194,6 +228,7 @@ export interface components {
   };
   parameters: {
     envID: string;
+    buildID: string;
     instanceID: string;
   };
 }

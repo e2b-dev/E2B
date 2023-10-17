@@ -27,6 +27,12 @@ components:
       required: true
       schema:
         type: string
+    buildID:
+      name: buildID
+      in: path
+      required: true
+      schema:
+        type: string
     instanceID:
       name: instanceID
       in: path
@@ -73,6 +79,7 @@ components:
     Environment:
       required:
         - envID
+        - buildID
         - status
         - public
         - logs
@@ -86,6 +93,9 @@ components:
         envID:
           type: string
           description: Identifier of the environment
+        buildID:
+          type: string
+          description: Identifier of the build
         status:
           type: string
           description: Status of the environment
@@ -247,7 +257,7 @@ paths:
         500:
           $ref: "#/components/responses/500"
 
-  /envs/{envID}:
+  /envs/{envID}/builds/{buildID}:
     get:
       description: Get environment info
       tags: [envs]
@@ -255,8 +265,9 @@ paths:
         - AccessTokenAuth: []
       parameters:
         - $ref: "#/components/parameters/envID"
+        - $ref: "#/components/parameters/buildID"
         - in: query
-          name: logs
+          name: logsOffset
           schema:
             default: 0
             type: integer
@@ -274,3 +285,39 @@ paths:
           $ref: "#/components/responses/404"
         500:
           $ref: "#/components/responses/500"
+
+  /envs/{envID}/builds/{buildID}/logs:
+    post:
+      description: Add a build log
+      tags: [envs]
+      parameters:
+        - $ref: "#/components/parameters/envID"
+        - $ref: "#/components/parameters/buildID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - apiSecret
+                - logs
+              properties:
+                apiSecret:
+                  description: API secret
+                  type: string
+                logs:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        201:
+          description: Successfully added log
+        401:
+          $ref: "#/components/responses/401"
+        404:
+          description: Error adding a build log - build not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
