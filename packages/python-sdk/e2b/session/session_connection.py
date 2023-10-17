@@ -9,7 +9,7 @@ from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
 
 from pydantic import BaseModel
-from urllib3.exceptions import MaxRetryError, ConnectTimeoutError
+from urllib3.exceptions import ReadTimeoutError, MaxRetryError, ConnectTimeoutError
 
 from e2b.api import client, configuration, exceptions, models
 from e2b.constants import (
@@ -188,9 +188,13 @@ class SessionConnection:
                 self._process_cleanup.append(self._refreshing_task.cancel)
                 self._process_cleanup.append(lambda: shutdown_executor(executor))
 
-        except MaxRetryError as e:
+        except ReadTimeoutError as e:
             logger.error(f"Failed to acquire session")
             self._close()
+            raise TimeoutException(
+                f"Failed to acquire session: {e}",
+            ) from e
+        except MaxRetryError as e:
             if isinstance(e.reason, ConnectTimeoutError):
                 raise TimeoutException(
                     f"Failed to acquire session: {e}",
