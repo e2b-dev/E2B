@@ -1,18 +1,12 @@
 import * as commander from 'commander'
-import * as fs from 'fs/promises'
+import * as fsPromises from 'fs/promises'
+import * as fs from 'fs'
 import * as path from 'path'
 
+import { basicDockerfile, dockerfileName } from 'src/docker/constants'
 import { pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
 import { asFormattedError, asLocalRelative } from 'src/utils/format'
-
-const basicDockerfile = `# You can use most Debian-based base images
-FROM ubuntu: 20.04
-
-# Install dependencies and customize environment
-`
-
-const dockerFileName = 'Dockerfile'
 
 export const initCommand = new commander.Command('init')
   .description(
@@ -25,12 +19,20 @@ export const initCommand = new commander.Command('init')
       process.stdout.write('\n')
 
       const root = getRoot(opts.path)
+      const filepath = path.join(root, dockerfileName)
 
-      fs.writeFile(path.join(root, dockerFileName), basicDockerfile)
+      const fileExists = fs.existsSync(filepath)
 
       const relativePath = opts.path
-        ? path.join(opts.path, dockerFileName)
-        : dockerFileName
+        ? path.join(opts.path, dockerfileName)
+        : dockerfileName
+
+      if (fileExists) {
+        console.log(`Dockerfile ${asLocalRelative(relativePath)} already exists`)
+        return
+      }
+
+      await fsPromises.writeFile(filepath, basicDockerfile)
 
       console.log(`Created ${asLocalRelative(relativePath)}`)
 
