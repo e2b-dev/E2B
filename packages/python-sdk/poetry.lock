@@ -817,6 +817,21 @@ tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
 testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "pytest-dotenv"
+version = "0.5.2"
+description = "A py.test plugin that parses environment files before running tests"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pytest-dotenv-0.5.2.tar.gz", hash = "sha256:2dc6c3ac6d8764c71c6d2804e902d0ff810fa19692e95fe138aefc9b1aa73732"},
+    {file = "pytest_dotenv-0.5.2-py3-none-any.whl", hash = "sha256:40a2cece120a213898afaa5407673f6bd924b1fa7eafce6bda0e8abffe2f710f"},
+]
+
+[package.dependencies]
+pytest = ">=5.0.0"
+python-dotenv = ">=0.9.1"
+
+[[package]]
 name = "pytest-xdist"
 version = "3.3.1"
 description = "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
@@ -1104,4 +1119,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "58881bb28e738261cc2a33f2f7c3b5e1a265a45fb9551a9e4dd0f4d26247db86"
+content-hash = "92ceca04431e9bf42805e2b4228eaf0859b25e42ee3e6f4569bdbdf36751692c"
