@@ -67,6 +67,7 @@ class SessionRpc(BaseModel):
         while True:
             data = self._queue_out.get()
             if data == STOP_SIGN:
+                logger.debug("WebSocket received sign to stop.")
                 break
             logger.debug(f"WebSocket received message: {data}".strip())
             self._receive_message(data)

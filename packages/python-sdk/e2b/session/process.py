@@ -234,7 +234,7 @@ class ProcessManager:
         process_id: Optional[str] = None,
         timeout: Optional[float] = TIMEOUT,
     ) -> Process:
-        logger.info(f"Starting process (id: {process_id}): {cmd}")
+        logger.info(f"Starting process: {cmd}")
         env_vars = env_vars or {}
         env_vars = {**self._session.env_vars, **env_vars}
 
@@ -251,6 +251,7 @@ class ProcessManager:
 
         def handle_exit(exit_code: int):
             output.exit_code = exit_code
+            logger.info(f"Process {process_id} exited with exit code {exit_code}")
             future_exit(True)
 
         def handle_stdout(data: Dict[Any, Any]):
@@ -313,7 +314,6 @@ class ProcessManager:
 
         def exit_handler():
             future_exit.result()
-            logger.error("Process exit handler started")
             logger.info(
                 f"Handling process exit (id: {process_id})",
             )
@@ -334,7 +334,6 @@ class ProcessManager:
 
         def trigger_exit():
             logger.info(f"Exiting the process (id: {process_id})")
-            logger.error("Process exit handler triggered")
             future_exit(None)
             future_exit_handler_finish.result()
             logger.debug(f"Exited the process (id: {process_id})")

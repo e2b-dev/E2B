@@ -32,3 +32,7 @@ from .constants import (
     INSTANCE_DOMAIN,
     API_HOST,
 )
+
+from .templates import (
+    DataAnalysis,
+)
