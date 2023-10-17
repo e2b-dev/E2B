@@ -1,7 +1,8 @@
 import { Session } from '@e2b/sdk'
 
 // 1. Start cloud playground
-const session = await Session.create({ // $HighlightLine
+const session = await Session.create({
+  // $HighlightLine
   id: 'Nodejs', // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
   apiKey: process.env.E2B_API_KEY,
 })

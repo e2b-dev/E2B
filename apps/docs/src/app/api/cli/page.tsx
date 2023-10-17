@@ -50,7 +50,7 @@ export default function Page() {
   } else if (state === 'success') {
     content = (
       <>
-        <div className="text-brand-400 font-bold">Successfully linked</div>
+        <div className="font-bold text-brand-400">Successfully linked</div>
         <div>You can close this page and start using CLI.</div>
       </>
     )

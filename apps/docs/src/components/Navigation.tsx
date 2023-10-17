@@ -103,10 +103,12 @@ function NavLink({
             >
               {tag}
             </Tag>
-            <span className="truncate">{children}</span>
+            <span className={clsx('truncate', active ? 'text-white' : '')}>
+              {children}
+            </span>
           </div>
         ) : (
-          <span className="truncate">{children}</span>
+          <span className={clsx('truncate', active ? 'text-white' : '')}>{children}</span>
         )}
       </div>
     </Link>
@@ -150,7 +152,7 @@ function ActivePageMarker({ group, pathname }: { group: NavGroup; pathname: stri
   return (
     <motion.div
       layout
-      className="bg-brand-500 absolute left-2 h-6 w-px"
+      className="absolute left-2 h-6 w-px bg-brand-500"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: 0.2 } }}
       exit={{ opacity: 0 }}

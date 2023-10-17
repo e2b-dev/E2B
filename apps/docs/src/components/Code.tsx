@@ -178,7 +178,7 @@ function CodePanel({
               <>
                 <span>Running</span>
                 <LoaderIcon
-                  className="text-brand-400 group-hover:text-brand-300 h-4 w-4 animate-spin transition-all"
+                  className="h-4 w-4 animate-spin text-brand-400 transition-all group-hover:text-brand-300"
                   strokeWidth={2.5}
                 />
               </>
@@ -186,7 +186,7 @@ function CodePanel({
               <>
                 <span>Run</span>
                 <PlayIcon
-                  className="text-brand-400 group-hover:text-brand-300 h-4 w-4 transition-all"
+                  className="h-4 w-4 text-brand-400 transition-all group-hover:text-brand-300"
                   strokeWidth={2.5}
                 />
               </>
