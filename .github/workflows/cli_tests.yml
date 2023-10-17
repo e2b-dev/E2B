@@ -1,10 +1,6 @@
 name: Test CLI
 
 on:
-  push:
-    paths:
-      - packages/cli/**/*
-      - .github/workflows/cli_tests.yml
   workflow_call:
 
 permissions:

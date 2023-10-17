@@ -1,14 +1,6 @@
 name: Test JS SDK
 
 on:
-  push:
-    # Tests are already running on main before release
-    branches:
-      - '**'
-      - '!main'
-    paths:
-      - packages/js-sdk/**/*
-      - .github/workflows/js_sdk_tests.yml
   workflow_call:
     secrets:
       E2B_API_KEY:
