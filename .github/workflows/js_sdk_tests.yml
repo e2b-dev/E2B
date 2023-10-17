@@ -32,7 +32,7 @@ jobs:
         uses: pnpm/action-setup@v2
         id: pnpm-install
         with:
-          version: 7
+          version: 8
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -45,6 +45,7 @@ jobs:
       - name: Configure pnpm
         run: |
           pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
 
       - name: Install pnpm
         run: pnpm install --frozen-lockfile
