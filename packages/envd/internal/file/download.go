@@ -1,6 +1,7 @@
 package file
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -25,7 +26,7 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 	file, err := os.Open(filePath)
 	if err != nil {
 		logger.Error("Error opening file:", err)
-		http.Error(w, "File not found", http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("File not found: %s", err.Error()), http.StatusNotFound)
 
 		return
 	}
@@ -42,7 +43,7 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 	_, err = file.Read(fileHeader)
 	if err != nil {
 		logger.Error("Error reading file header:", err)
-		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error reading file: %s", err.Error()), http.StatusInternalServerError)
 
 		return
 	}
@@ -59,7 +60,7 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 	_, err = file.Seek(0, 0)
 	if err != nil {
 		logger.Error("Error seeking file:", err)
-		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error reading file: %s", err.Error()), http.StatusInternalServerError)
 
 		return
 	}
@@ -67,7 +68,7 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 	_, err = io.Copy(w, file)
 	if err != nil {
 		logger.Error("Error copying file to response:", err)
-		http.Error(w, "Error reading file", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error reading file: %s", err.Error()), http.StatusInternalServerError)
 
 		return
 	}

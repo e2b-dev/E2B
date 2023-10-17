@@ -19,7 +19,7 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 	if err := r.ParseMultipartForm(MaxUploadSize); err != nil {
 		logger.Error("Error parsing multipart form:", err)
-		http.Error(w, "The uploaded file is too big. Please choose an file that's less than 100MB in size", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("The uploaded file is too big. Please choose an file that's less than 100MB in size: %s", err.Error()), http.StatusBadRequest)
 
 		return
 	}
