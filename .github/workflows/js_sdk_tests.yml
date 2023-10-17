@@ -45,6 +45,7 @@ jobs:
       - name: Configure pnpm
         run: |
           pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
 
       - name: Install pnpm
         run: pnpm install --frozen-lockfile
