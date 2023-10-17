@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -179,24 +178,25 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		},
 	}
 
-	entries, err := os.ReadDir(r.env.PkgsPath)
-	if err != nil {
-		errMsg := fmt.Errorf("error reading packages directory %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
+	// Skipping the copying packages for offline installation now
+	// entries, err := os.ReadDir(r.env.PkgsPath)
+	// if err != nil {
+	// 	errMsg := fmt.Errorf("error reading packages directory %w", err)
+	// 	telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return errMsg
-	}
+	// 	return errMsg
+	// }
 
-	telemetry.ReportEvent(childCtx, "read packages directory")
+	// telemetry.ReportEvent(childCtx, "read packages directory")
 
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			filesToTar = append(filesToTar, fileToTar{
-				localPath: path.Join(r.env.PkgsPath, entry.Name()),
-				tarPath:   path.Join(pkgsDirPath, entry.Name()),
-			})
-		}
-	}
+	// for _, entry := range entries {
+	// 	if !entry.IsDir() {
+	// 		filesToTar = append(filesToTar, fileToTar{
+	// 			localPath: path.Join(r.env.PkgsPath, entry.Name()),
+	// 			tarPath:   path.Join(pkgsDirPath, entry.Name()),
+	// 		})
+	// 	}
+	// }
 
 	pr, pw := io.Pipe()
 
