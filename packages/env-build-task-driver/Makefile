@@ -3,11 +3,11 @@ client := gcloud compute instances list --format='csv(name)' | grep "client"
 upload:
 	./upload.sh
 
-build-debug:
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -race -gcflags=all="-N -l" -o bin/debug/ .
-
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/ .
+
+build-debug:
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -race -gcflags=all="-N -l" -o bin/debug/ .
 
 generate:
 	cd internal/client && swagger generate client -f firecracker.yml -A firecracker
@@ -34,4 +34,4 @@ update-driver-locally:
 	sudo supervisorctl restart nomad
 
 test:
-	sudo go run main.go -env zu6biammj4nr19vmspq5 -build 07ed806d-239d-b4cd-6189-4621769edc34
+	sudo go run -race -gcflags=all="-N -l" main.go -env zu6biammj4nr19vmspq5 -build 07ed806d-239d-b4cd-6189-4621769edc34

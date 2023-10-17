@@ -10,10 +10,7 @@ build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/envd .
 
 build-debug:
-	go build -gcflags=all="-N -l" -o bin/debug/envd
-
-build-debug-race:
-	CGO_ENABLED=1 go build -race -gcflags=all="-N -l" -o bin/debug/envd
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -race -gcflags=all="-N -l" -o bin/debug/envd
 
 build-docker:
 	DOCKER_BUILDKIT=1 docker build -t envd-debug . -f debug.Dockerfile
@@ -80,3 +77,8 @@ update-envd:
 	./upload-local.sh
 	gcloud compute ssh $$($(client)) -- 'sudo rm -rf /fc-vm/envd && \
 	sudo cp /mnt/disks/envs-pipeline/envd /fc-vm/envd'
+
+update-envd-locally:
+	make build
+	./upload-local.sh
+	cp /mnt/disks/envs-pipeline/envd /fc-vm/envd
