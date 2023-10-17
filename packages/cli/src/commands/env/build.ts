@@ -239,7 +239,7 @@ async function buildEnv(
     'logs'
   >
 > {
-  const res = await nodeFetch.default(`https://${e2b.API_DOMAIN}/envs`, {
+  const res = await nodeFetch.default(`${e2b.API_HOST}/envs`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body,

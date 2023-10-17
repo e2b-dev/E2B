@@ -1,3 +1,11 @@
+from .api import (
+    E2BApiClient,
+    client,
+)
+from .constants import (
+    INSTANCE_DOMAIN,
+    API_HOST,
+)
 from .session import (
     Session,
     FilesystemOperation,
@@ -21,18 +29,6 @@ from .session import (
     TerminalOutput,
     run_code,
 )
-
-from .api import (
-    E2BApiClient,
-    client,
-)
-
-from .constants import (
-    API_DOMAIN,
-    INSTANCE_DOMAIN,
-    API_HOST,
-)
-
 from .templates import (
     DataAnalysis,
 )
