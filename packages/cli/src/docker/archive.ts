@@ -7,12 +7,29 @@ export interface FilePath {
   name: string
 }
 
-export async function createBlobFromFiles(root: string, filePaths: FilePath[]) {
+export interface FileRewrite {
+  oldPath: string
+  newPath: string
+}
+
+export async function createBlobFromFiles(
+  root: string,
+  filePaths: FilePath[],
+  rewrites: FileRewrite[],
+) {
   const blob = await new Promise<Blob>((resolve, reject) => {
     const chunks: any[] = []
 
     const pack = tar.pack(root, {
       entries: filePaths.map(({ rootPath }) => rootPath),
+      ignore: (name: string) => rewrites.some(({ oldPath }) => name === oldPath),
+      map: header => {
+        const rewrite = rewrites.find(({ oldPath }) => header.name === oldPath)
+        if (rewrite) {
+          header.name = rewrite.newPath
+        }
+        return header
+      },
     })
 
     pack.on('data', (chunk: any) => {

@@ -22,7 +22,7 @@ export const listCommand = new commander.Command('list')
       const envs = envsResponse.data
 
       if (!envs?.length) {
-        console.log('No environments found')
+        console.log('No environments found.')
       } else {
         envs
           .sort((a, b) => a.envID.localeCompare(b.envID))

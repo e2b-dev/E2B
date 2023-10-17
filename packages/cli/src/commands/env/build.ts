@@ -1,7 +1,6 @@
 import * as commander from 'commander'
 import * as commonTags from 'common-tags'
 import * as fs from 'fs'
-import * as fsPromise from 'fs/promises'
 import * as fData from 'formdata-node' // Remove formdata-node when dropping node 16 support
 import * as nodeFetch from 'node-fetch'
 import * as path from 'path'
@@ -18,6 +17,11 @@ import {
 } from 'src/utils/format'
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
+import {
+  basicDockerfile,
+  defaultDockerfileName,
+  fallbackDockerfileName,
+} from 'src/docker/constants'
 
 const envCheckInterval = 1_000 // 1 sec
 const maxBuildTime = 10 * 60 * 1_000 // 10 min
@@ -37,6 +41,7 @@ export const buildCommand = new commander.Command('build')
     '-G, --no-gitignore',
     `Ignore ${asLocalRelative('.gitignore')} file in the root directory`,
   )
+  .option('-d, --dockerfile <file>', 'Specify path to Dockerfile', basicDockerfile)
   .option(
     '-D, --no-dockerignore',
     `Ignore ${asLocalRelative('.dockerignore')} file in the root directory`,
@@ -45,7 +50,12 @@ export const buildCommand = new commander.Command('build')
   .action(
     async (
       id: string | undefined,
-      opts: { path?: string; gitignore?: boolean; dockerignore?: boolean },
+      opts: {
+        path?: string
+        gitignore?: boolean
+        dockerignore?: boolean
+        file?: string
+      },
     ) => {
       try {
         const accessToken = ensureAccessToken()
@@ -67,18 +77,64 @@ export const buildCommand = new commander.Command('build')
           return
         }
 
-        const dockerFilePath = path.join(root, 'Dockerfile')
-        if (!fs.existsSync(dockerFilePath)) {
-          throw new Error('No Dockerfile found in the root directory')
+        console.log(
+          `Preparing environment building (${filePaths.length} files in Docker build context).`,
+        )
+
+        let dockerfilePath: string | undefined
+        let dockerfileContent: string | undefined
+        let dockerfileRelativePath: string | undefined
+
+        // Check if user specified custom Dockerfile exists
+        if (opts.file) {
+          dockerfilePath = path.join(root, opts.file)
+          dockerfileContent = loadFile(dockerfilePath)
+          dockerfileRelativePath = path.resolve(root, dockerfilePath)
+
+          if (dockerfileContent === undefined) {
+            throw new Error(
+              `No ${asLocalRelative(
+                dockerfileRelativePath,
+              )} found in the root directory.`,
+            )
+          }
+        } else {
+          // Check if default dockerfile e2b.Dockerfile exists
+          dockerfilePath = path.join(root, defaultDockerfileName)
+          dockerfileContent = loadFile(dockerfilePath)
+
+          const defaultDockerfileRelativePath = path.resolve(root, dockerfilePath)
+          dockerfileRelativePath = defaultDockerfileRelativePath
+
+          let fallbackDockerfileRelativeName: string | undefined
+
+          // Check if fallback Dockerfile exists
+          if (dockerfileContent === undefined) {
+            dockerfilePath = path.join(root, fallbackDockerfileName)
+            dockerfileContent = loadFile(dockerfilePath)
+            fallbackDockerfileRelativeName = path.resolve(root, dockerfilePath)
+            dockerfileRelativePath = defaultDockerfileRelativePath
+          }
+
+          if (dockerfileContent === undefined) {
+            throw new Error(
+              `No ${asLocalRelative(defaultDockerfileRelativePath)} or ${asLocalRelative(
+                fallbackDockerfileRelativeName,
+              )} found in the root directory.`,
+            )
+          }
+
+          dockerfileRelativePath = defaultDockerfileRelativePath
         }
 
         console.log(
-          `Preparing environment build (${filePaths.length} files in Docker build context)`,
+          `Found ${asLocalRelative(
+            dockerfileRelativePath,
+          )} that will be used to build the environment.`,
         )
 
         const formData = new fData.FormData()
 
-        const dockerfileContent = await fsPromise.readFile(dockerFilePath, 'utf-8')
         formData.append('dockerfile', dockerfileContent)
 
         if (id) {
@@ -87,7 +143,13 @@ export const buildCommand = new commander.Command('build')
 
         // It should be possible to pipe directly to the API
         // instead of creating a blob in memory then streaming.
-        const blob = await createBlobFromFiles(root, filePaths)
+        const blob = await createBlobFromFiles(
+          root,
+          filePaths,
+          dockerfileRelativePath !== fallbackDockerfileName
+            ? [{ oldPath: dockerfileRelativePath, newPath: fallbackDockerfileName }]
+            : [],
+        )
         formData.append('buildContext', blob, 'env.tar.gz.e2b')
 
         const apiRes = await nodeFetch.default(`https://${e2b.API_DOMAIN}/envs`, {
@@ -140,14 +202,22 @@ async function waitForBuildFinish(accessToken: string, envID: string) {
         break
       case 'ready':
         console.log(
-          `✅ \nBuilding environment ${asFormattedEnvironment(env.data)} finished`,
+          `✅ \nBuilding environment ${asFormattedEnvironment(env.data)} finished.`,
         )
         break
 
       case 'error':
         throw new Error(
-          `\nBuilding environment ${asFormattedEnvironment(env.data)} failed`,
+          `\nBuilding environment ${asFormattedEnvironment(env.data)} failed.`,
         )
     }
   } while (env.data.status === 'building' && elapsed() < maxBuildTime)
+}
+
+function loadFile(filePath: string) {
+  if (!fs.existsSync(filePath)) {
+    return undefined
+  }
+
+  return fs.readFileSync(filePath, 'utf-8')
 }
