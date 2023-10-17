@@ -54,6 +54,7 @@ class DataAnalysis(Session):
         code: str,
         on_stdout: Optional[Callable[[str], Any]] = None,
         on_stderr: Optional[Callable[[str], Any]] = None,
+        on_artifact: Optional[Callable[[Artifact], Any]] = None,
         on_exit: Optional[Callable[[int], Any]] = None,
         env_vars: Optional[EnvVars] = None,
         cwd: str = "",
@@ -63,12 +64,13 @@ class DataAnalysis(Session):
         artifacts = set()
 
         def register_artifacts(event: Any) -> None:
+            on_artifact_func = on_artifact or self.on_artifact
             if event.operation == "Create":
                 artifact = Artifact(name=event.path, _session=self)
                 artifacts.add(artifact)
-                if self.on_artifact:
+                if on_artifact_func:
                     try:
-                        self.on_artifact(artifact)
+                        on_artifact_func(artifact)
                     except Exception as e:
                         logger.error("Failed to process artifact", exc_info=e)
 
