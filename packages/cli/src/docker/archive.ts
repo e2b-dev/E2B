@@ -1,5 +1,6 @@
 import * as Blob from 'cross-blob' // Remove cross-blob when dropping node 16 support
 import * as tar from 'tar-fs'
+import * as path from 'path'
 
 export interface FilePath {
   path: string
@@ -17,15 +18,24 @@ export async function createBlobFromFiles(
   filePaths: FilePath[],
   rewrites: FileRewrite[],
 ) {
+  const absoluteRewrites = rewrites.map(({ oldPath, newPath }) => ({
+    oldPath: path.join(path.sep, oldPath),
+    newPath: path.join(path.sep, newPath),
+  }))
+
   const blob = await new Promise<Blob>((resolve, reject) => {
     const chunks: any[] = []
 
     const pack = tar.pack(root, {
-      entries: filePaths.map(({ rootPath }) => rootPath),
-      ignore: (name: string) => rewrites.some(({ oldPath }) => name === oldPath),
+      entries: filePaths
+        .filter(f =>
+          absoluteRewrites.every(({ oldPath }) => path.resolve(oldPath) !== f.path),
+        )
+        .map(({ rootPath }) => rootPath),
       map: header => {
-        const rewrite = rewrites.find(({ oldPath }) => header.name === oldPath)
+        const rewrite = absoluteRewrites.find(({ oldPath }) => header.name === oldPath)
         if (rewrite) {
+          console.log('replacing', header.name, 'with', rewrite.newPath)
           header.name = rewrite.newPath
         }
         return header

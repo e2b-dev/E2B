@@ -54,7 +54,7 @@ export const buildCommand = new commander.Command('build')
         path?: string
         gitignore?: boolean
         dockerignore?: boolean
-        file?: string
+        dockerfile?: string
       },
     ) => {
       try {
@@ -81,51 +81,10 @@ export const buildCommand = new commander.Command('build')
           `Preparing environment building (${filePaths.length} files in Docker build context).`,
         )
 
-        let dockerfilePath: string | undefined
-        let dockerfileContent: string | undefined
-        let dockerfileRelativePath: string | undefined
+        const { dockerfileContent, dockerfileRelativePath, dockerfilePath } =
+          getDockerfile(root, opts.dockerfile)
 
-        // Check if user specified custom Dockerfile exists
-        if (opts.file) {
-          dockerfilePath = path.join(root, opts.file)
-          dockerfileContent = loadFile(dockerfilePath)
-          dockerfileRelativePath = path.resolve(root, dockerfilePath)
-
-          if (dockerfileContent === undefined) {
-            throw new Error(
-              `No ${asLocalRelative(
-                dockerfileRelativePath,
-              )} found in the root directory.`,
-            )
-          }
-        } else {
-          // Check if default dockerfile e2b.Dockerfile exists
-          dockerfilePath = path.join(root, defaultDockerfileName)
-          dockerfileContent = loadFile(dockerfilePath)
-
-          const defaultDockerfileRelativePath = path.resolve(root, dockerfilePath)
-          dockerfileRelativePath = defaultDockerfileRelativePath
-
-          let fallbackDockerfileRelativeName: string | undefined
-
-          // Check if fallback Dockerfile exists
-          if (dockerfileContent === undefined) {
-            dockerfilePath = path.join(root, fallbackDockerfileName)
-            dockerfileContent = loadFile(dockerfilePath)
-            fallbackDockerfileRelativeName = path.resolve(root, dockerfilePath)
-            dockerfileRelativePath = defaultDockerfileRelativePath
-          }
-
-          if (dockerfileContent === undefined) {
-            throw new Error(
-              `No ${asLocalRelative(defaultDockerfileRelativePath)} or ${asLocalRelative(
-                fallbackDockerfileRelativeName,
-              )} found in the root directory.`,
-            )
-          }
-
-          dockerfileRelativePath = defaultDockerfileRelativePath
-        }
+        console.log('->', dockerfileContent, dockerfileRelativePath, dockerfilePath)
 
         console.log(
           `Found ${asLocalRelative(
@@ -174,8 +133,8 @@ export const buildCommand = new commander.Command('build')
         console.log(`Started building environment ${asFormattedEnvironment(resJson)}`)
 
         await waitForBuildFinish(accessToken, resJson.envID)
-      } catch (err: unknown) {
-        console.error(asFormattedError((err as Error).message), err)
+      } catch (err: any) {
+        console.error(asFormattedError(undefined, err))
         process.exit(1)
       }
     },
@@ -183,7 +142,7 @@ export const buildCommand = new commander.Command('build')
 
 async function waitForBuildFinish(accessToken: string, envID: string) {
   const startedAt = new Date()
-  let logsOffset = 0
+  const logsOffset = 0
 
   function elapsed() {
     return Date.now() - startedAt.getTime()
@@ -194,7 +153,7 @@ async function waitForBuildFinish(accessToken: string, envID: string) {
   do {
     await wait(envCheckInterval)
     env = await getEnv(accessToken, { envID, logs: logsOffset })
-    logsOffset += env.data.logs.length
+    // logsOffset += env.data.logs.length
 
     switch (env.data.status) {
       case 'building':
@@ -220,4 +179,61 @@ function loadFile(filePath: string) {
   }
 
   return fs.readFileSync(filePath, 'utf-8')
+}
+
+function getDockerfile(root: string, file?: string) {
+  // Check if user specified custom Dockerfile exists
+  if (file) {
+    const dockerfilePath = path.join(root, file)
+    const dockerfileContent = loadFile(dockerfilePath)
+    const dockerfileRelativePath = path.relative(root, dockerfilePath)
+
+    if (dockerfileContent === undefined) {
+      throw new Error(
+        `No ${asLocalRelative(dockerfileRelativePath)} found in the root directory.`,
+      )
+    }
+
+    return {
+      dockerfilePath,
+      dockerfileContent,
+      dockerfileRelativePath,
+    }
+  }
+
+  // Check if default dockerfile e2b.Dockerfile exists
+  let dockerfilePath = path.join(root, defaultDockerfileName)
+  let dockerfileContent = loadFile(dockerfilePath)
+  const defaultDockerfileRelativePath = path.relative(root, dockerfilePath)
+  let dockerfileRelativePath = defaultDockerfileRelativePath
+
+  if (dockerfileContent !== undefined) {
+    return {
+      dockerfilePath,
+      dockerfileContent,
+      dockerfileRelativePath,
+    }
+  }
+
+  // Check if fallback Dockerfile exists
+  dockerfilePath = path.join(root, fallbackDockerfileName)
+  dockerfileContent = loadFile(dockerfilePath)
+  const fallbackDockerfileRelativeName = path.relative(root, dockerfilePath)
+  dockerfileRelativePath = fallbackDockerfileRelativeName
+
+  if (dockerfileContent !== undefined) {
+    return {
+      dockerfilePath,
+      dockerfileContent,
+      dockerfileRelativePath,
+    }
+  }
+
+  throw new Error(
+    `No ${asLocalRelative(defaultDockerfileRelativePath)} or ${asLocalRelative(
+      fallbackDockerfileRelativeName,
+    )} found in the root directory. You can specify a custom Dockerfile with ${asBold(
+      '--dockerfile <file>',
+    )} option.`,
+  )
 }

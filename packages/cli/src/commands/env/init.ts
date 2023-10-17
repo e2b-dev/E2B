@@ -35,8 +35,8 @@ export const initCommand = new commander.Command('init')
       await fsPromises.writeFile(filepath, basicDockerfile)
 
       console.log(`Created ${asLocalRelative(relativePath)}\n`)
-    } catch (err: unknown) {
-      console.error(asFormattedError((err as Error).message))
+    } catch (err: any) {
+      console.error(asFormattedError(undefined, err))
       process.exit(1)
     }
   })

@@ -21,7 +21,7 @@ export const shellCommand = new commander.Command('shell')
       // We also don't want to call session.close because that would disconnect other users from the edit session.
       process.exit(0)
     } catch (err: any) {
-      console.error(asFormattedError(err.message))
+      console.error(asFormattedError(undefined, err))
       process.exit(1)
     }
   })

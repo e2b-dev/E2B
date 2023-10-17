@@ -32,8 +32,8 @@ export const listCommand = new commander.Command('list')
       }
 
       process.stdout.write('\n')
-    } catch (err: unknown) {
-      console.error(asFormattedError((err as Error).message))
+    } catch (err: any) {
+      console.error(asFormattedError(undefined, err))
       process.exit(1)
     }
   })

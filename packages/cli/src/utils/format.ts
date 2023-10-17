@@ -11,8 +11,8 @@ export function asFormattedEnvironment(
   return `${id}`
 }
 
-export function asFormattedError(text: string, err?: any) {
-  return chalk.default.redBright(`> ${text} ${err ? ':\n' + err : ''}\n`)
+export function asFormattedError(text: string | undefined, err?: any) {
+  return chalk.default.redBright(`${text ? `${text} \n` : ''}${err ? err.stack : ''}\n`)
 }
 
 export function asDim(content?: string) {
