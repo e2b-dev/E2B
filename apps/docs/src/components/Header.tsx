@@ -7,6 +7,7 @@ import {
   useIsInsideMobileNavigation,
   useMobileNavigationStore,
 } from '@/components/MobileNavigation'
+import { Logo } from '@/components/Logo'
 import { MobileSearch, Search } from '@/components/Search'
 import { Auth } from '@/components/Auth'
 import { HeaderSeparator } from '@/components/HeaderUtils'
@@ -96,8 +97,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
           href="/"
           aria-label="Home"
         >
-          {/* <Logo className="h-6" /> */}
-          <h1 className="font-tile text-xl font-bold">E2B</h1>
+          <Logo className="h-6" />
         </Link>
       </div>
       <div className="flex items-center gap-4">

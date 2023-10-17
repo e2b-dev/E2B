@@ -13,7 +13,6 @@ import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth'
 import { Feedback } from '@/components/Feedback'
 import {
-  Binary,
   ChevronRightSquare,
   Folder,
   FolderTree,
@@ -151,7 +150,7 @@ function ActivePageMarker({ group, pathname }: { group: NavGroup; pathname: stri
   return (
     <motion.div
       layout
-      className="absolute left-2 h-6 w-px bg-emerald-500"
+      className="bg-brand-500 absolute left-2 h-6 w-px"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: 0.2 } }}
       exit={{ opacity: 0 }}
@@ -270,7 +269,7 @@ function NavigationGroup({ group, className }) {
 
 export const navigation = [
   {
-    title: 'E2B - Sandbox Runtime for LLM',
+    title: 'Sandbox Runtime for LLM',
     links: [
       { title: 'Introduction', href: '/' },
       { title: 'Pricing', href: '/pricing' },
@@ -366,16 +365,17 @@ export const navigation = [
         title: 'Running Processes',
         href: '/playgrounds/process',
       },
-      {
-        icon: (
-          <Binary
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Executing Code',
-        href: '/playgrounds/execute',
-      },
+      // TODO: Remove
+      // {
+      //   icon: (
+      //     <Binary
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Executing Code',
+      //   href: '/playgrounds/execute',
+      // },
       {
         icon: (
           <FileUp
