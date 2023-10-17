@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill'
 import { Fetcher, TypedFetch, OpArgType } from 'openapi-typescript-fetch'
 
 import { API_HOST } from '../constants'

@@ -11,3 +11,5 @@ export const INSTANCE_DOMAIN = 'e2b.dev'
 
 export const ENVD_PORT = 49982
 export const WS_ROUTE = '/ws'
+
+export const FILE_ROUTE = '/file'

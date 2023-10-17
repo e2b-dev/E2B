@@ -11,3 +11,4 @@ INSTANCE_DOMAIN = "e2b.dev"
 
 ENVD_PORT = 49982
 WS_ROUTE = "/ws"
+FILE_ROUTE = "/file"
