@@ -35,3 +35,7 @@ export function asLocalRelative(absolutePathInLocal?: string) {
   if (!absolutePathInLocal) return ''
   return asLocal('./' + cwdRelative(absolutePathInLocal))
 }
+
+export function asBuildLogs(content: string) {
+  return chalk.default.blueBright(content)
+}

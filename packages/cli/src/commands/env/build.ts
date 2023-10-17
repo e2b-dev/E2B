@@ -11,6 +11,7 @@ import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
 import {
   asBold,
+  asBuildLogs,
   asFormattedEnvironment,
   asLocal,
   asLocalRelative,
@@ -142,6 +143,7 @@ async function waitForBuildFinish(accessToken: string, envID: string, buildID: s
 
   let env: Awaited<ReturnType<typeof getEnv>> | undefined
 
+  process.stdout.write('\n')
   do {
     await wait(envCheckInterval)
     env = await getEnv(accessToken, { envID, logsOffset, buildID })
@@ -149,17 +151,17 @@ async function waitForBuildFinish(accessToken: string, envID: string, buildID: s
 
     switch (env.data.status) {
       case 'building':
-        env.data.logs.forEach(console.log)
+        env.data.logs.forEach(line => process.stdout.write(asBuildLogs(line)))
         break
       case 'ready':
         console.log(
-          `✅ \nBuilding environment ${asFormattedEnvironment(env.data)} finished.`,
+          `✅ \n\nBuilding environment ${asFormattedEnvironment(env.data)} finished.`,
         )
         break
 
       case 'error':
         throw new Error(
-          `\nBuilding environment ${asFormattedEnvironment(env.data)} failed.`,
+          `\n\nBuilding environment ${asFormattedEnvironment(env.data)} failed.`,
         )
     }
   } while (env.data.status === 'building' && elapsed() < maxBuildTime)
