@@ -15,7 +15,7 @@ export async function createBlobFromFiles(root: string, filePaths: FilePath[]) {
       entries: filePaths.map(({ rootPath }) => rootPath),
     })
 
-    pack.on('data', chunk => {
+    pack.on('data', (chunk: any) => {
       chunks.push(chunk)
     })
 
@@ -24,7 +24,7 @@ export async function createBlobFromFiles(root: string, filePaths: FilePath[]) {
       resolve(blob)
     })
 
-    pack.on('error', error => {
+    pack.on('error', (error: any) => {
       reject(new Error(`Error creating tar blob: ${error.message}`))
     })
   })
