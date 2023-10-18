@@ -79,10 +79,6 @@
     "typescript"
   ],
   "dependencies": {
-    "@types/node-fetch": "^2.6.6",
-    "cross-fetch": "^4.0.0",
-    "form-data": "^4.0.0",
-    "node-fetch": "^3.3.2",
     "cross-blob": "^3.0.2",
     "formdata-polyfill": "^4.0.10",
     "normalize-path": "^3.0.0",
