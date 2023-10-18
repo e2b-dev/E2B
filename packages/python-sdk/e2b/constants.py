@@ -5,3 +5,4 @@ TIMEOUT = 60
 SESSION_DOMAIN = "ondevbook.com"
 ENVD_PORT = 49982
 WS_ROUTE = "/ws"
+FILE_ROUTE = "/file"

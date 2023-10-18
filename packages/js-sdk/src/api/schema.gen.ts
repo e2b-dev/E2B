@@ -3,106 +3,10 @@
  * Do not make direct changes to the file.
  */
 
+
 export interface paths {
-  "/health": {
-    /** Health check */
-    get: {
-      responses: {
-        /** Request was successful */
-        200: unknown;
-        401: components["responses"]["401"];
-      };
-    };
-  };
-  "/sessions": {
-    /** List all sessions */
-    get: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-      };
-      responses: {
-        /** Successfully returned all sessions */
-        200: {
-          content: {
-            "application/json": components["schemas"]["Session"][];
-          };
-        };
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-    /** Create a session on the server */
-    post: {
-      parameters: {
-        query: {
-          api_key?: components["parameters"]["apiKeyOpt"];
-        };
-      };
-      responses: {
-        /** Successfully created a session */
-        201: {
-          content: {
-            "application/json": components["schemas"]["Session"];
-          };
-        };
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["NewSession"];
-        };
-      };
-    };
-  };
-  "/sessions/{sessionID}": {
-    /** Delete a session on the server */
-    delete: {
-      parameters: {
-        query: {
-          api_key: components["parameters"]["apiKeyReq"];
-        };
-        path: {
-          sessionID: components["parameters"]["sessionID"];
-        };
-      };
-      responses: {
-        /** Successfully deleted the session */
-        204: never;
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
-  "/sessions/{sessionID}/refresh": {
-    /** Refresh the session extending its time to live */
-    post: {
-      parameters: {
-        query: {
-          api_key?: components["parameters"]["apiKeyOpt"];
-        };
-        path: {
-          sessionID: components["parameters"]["sessionID"];
-        };
-      };
-      responses: {
-        /** Successfully refreshed the session */
-        204: never;
-        401: components["responses"]["401"];
-        /** Error refreshing session - session not found */
-        404: {
-          content: {
-            "application/json": components["schemas"]["Error"];
-          };
-        };
-      };
-    };
-  };
   "/envs": {
-    /** List all environments */
+    /** @description List all environments */
     get: {
       parameters: {
         query: {
@@ -110,7 +14,7 @@ export interface paths {
         };
       };
       responses: {
-        /** Successfully returned all environments */
+        /** @description Successfully returned all environments */
         200: {
           content: {
             "application/json": components["schemas"]["Environment"][];
@@ -120,15 +24,20 @@ export interface paths {
         500: components["responses"]["500"];
       };
     };
-    /** Create a new environment */
+    /** @description Create a new environment */
     post: {
       parameters: {
         query: {
           api_key: components["parameters"]["apiKeyReq"];
         };
       };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NewEnvironment"];
+        };
+      };
       responses: {
-        /** Successfully created an environment */
+        /** @description Successfully created an environment */
         200: {
           content: {
             "application/json": components["schemas"]["Environment"];
@@ -138,15 +47,10 @@ export interface paths {
         401: components["responses"]["401"];
         500: components["responses"]["500"];
       };
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["NewEnvironment"];
-        };
-      };
     };
   };
   "/envs/{codeSnippetID}": {
-    /** Create a new env for a code snippet */
+    /** @description Create a new env for a code snippet */
     post: {
       parameters: {
         query: {
@@ -156,20 +60,22 @@ export interface paths {
           codeSnippetID: components["parameters"]["codeSnippetID"];
         };
       };
-      responses: {
-        /** Successfully created an environment */
-        204: never;
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
       requestBody: {
         content: {
           "application/json": components["schemas"]["NewEnvironment"];
         };
       };
+      responses: {
+        /** @description Successfully created an environment */
+        204: {
+          content: never;
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
     };
-    /** Delete the code snippet environment */
+    /** @description Delete the code snippet environment */
     delete: {
       parameters: {
         query: {
@@ -180,9 +86,11 @@ export interface paths {
         };
       };
       responses: {
-        /** Successfully deleted the environment */
-        204: never;
-        /** Cannot delete the environment */
+        /** @description Successfully deleted the environment */
+        204: {
+          content: never;
+        };
+        /** @description Cannot delete the environment */
         400: {
           content: {
             "application/json": components["schemas"]["Error"];
@@ -192,7 +100,7 @@ export interface paths {
         500: components["responses"]["500"];
       };
     };
-    /** Update the environment of the code snippet to match the edit environment */
+    /** @description Update the environment of the code snippet to match the edit environment */
     patch: {
       parameters: {
         query: {
@@ -203,8 +111,10 @@ export interface paths {
         };
       };
       responses: {
-        /** Updated the edit environment for code snippet */
-        204: never;
+        /** @description Updated the edit environment for code snippet */
+        204: {
+          content: never;
+        };
         400: components["responses"]["400"];
         401: components["responses"]["401"];
         500: components["responses"]["500"];
@@ -212,7 +122,7 @@ export interface paths {
     };
   };
   "/envs/{codeSnippetID}/state": {
-    /** Update the state of the environment */
+    /** @description Update the state of the environment */
     put: {
       parameters: {
         query: {
@@ -221,22 +131,24 @@ export interface paths {
         path: {
           codeSnippetID: components["parameters"]["codeSnippetID"];
         };
-      };
-      responses: {
-        /** Updated the state of environment */
-        204: never;
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
       };
       requestBody: {
         content: {
           "application/json": components["schemas"]["EnvironmentStateUpdate"];
         };
       };
+      responses: {
+        /** @description Updated the state of environment */
+        204: {
+          content: never;
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+      };
     };
   };
   "/envs/{codeSnippetID}/title": {
-    /** Update the title of the environment */
+    /** @description Update the title of the environment */
     put: {
       parameters: {
         query: {
@@ -246,69 +158,142 @@ export interface paths {
           codeSnippetID: components["parameters"]["codeSnippetID"];
         };
       };
-      responses: {
-        /** Updated the title of the code snippet */
-        204: never;
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-      };
       requestBody: {
         content: {
           "application/json": components["schemas"]["EnvironmentTitleUpdate"];
+        };
+      };
+      responses: {
+        /** @description Updated the title of the code snippet */
+        204: {
+          content: never;
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+      };
+    };
+  };
+  "/health": {
+    /** @description Health check */
+    get: {
+      responses: {
+        /** @description Request was successful */
+        200: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+      };
+    };
+  };
+  "/sessions": {
+    /** @description List all sessions */
+    get: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
+        };
+      };
+      responses: {
+        /** @description Successfully returned all sessions */
+        200: {
+          content: {
+            "application/json": components["schemas"]["Session"][];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+    /** @description Create a session on the server */
+    post: {
+      parameters: {
+        query?: {
+          api_key?: components["parameters"]["apiKeyOpt"];
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NewSession"];
+        };
+      };
+      responses: {
+        /** @description Successfully created a session */
+        201: {
+          content: {
+            "application/json": components["schemas"]["Session"];
+          };
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/sessions/{sessionID}": {
+    /** @description Delete a session on the server */
+    delete: {
+      parameters: {
+        query: {
+          api_key: components["parameters"]["apiKeyReq"];
+        };
+        path: {
+          sessionID: components["parameters"]["sessionID"];
+        };
+      };
+      responses: {
+        /** @description Successfully deleted the session */
+        204: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+    };
+  };
+  "/sessions/{sessionID}/refresh": {
+    /** @description Refresh the session extending its time to live */
+    post: {
+      parameters: {
+        query?: {
+          api_key?: components["parameters"]["apiKeyOpt"];
+        };
+        path: {
+          sessionID: components["parameters"]["sessionID"];
+        };
+      };
+      responses: {
+        /** @description Successfully refreshed the session */
+        204: {
+          content: never;
+        };
+        401: components["responses"]["401"];
+        /** @description Error refreshing session - session not found */
+        404: {
+          content: {
+            "application/json": components["schemas"]["Error"];
+          };
         };
       };
     };
   };
 }
 
+export type webhooks = Record<string, never>;
+
 export interface components {
   schemas: {
-    /** @enum {string} */
-    Template:
-      | "Nodejs"
-      | "Go"
-      | "Bash"
-      | "Rust"
-      | "Python3"
-      | "PHP"
-      | "Java"
-      | "Perl"
-      | "DotNET";
-    /** @enum {string} */
-    EnvironmentState: "Building" | "Failed" | "Done";
     Environment: {
       id: string;
       template?: string;
       title?: string;
     };
-    NewEnvironment: {
-      title?: string;
-      template: string;
-    };
+    /** @enum {string} */
+    EnvironmentState: "Building" | "Failed" | "Done";
     EnvironmentStateUpdate: {
       state: components["schemas"]["EnvironmentState"];
     };
     EnvironmentTitleUpdate: {
       title?: string;
-    };
-    NewSession: {
-      /**
-       * @description Option determining if the session is a shared persistent edit session
-       * @default false
-       */
-      editEnabled?: boolean;
-      /** @description Identifier of a code snippet which which is the environment associated */
-      codeSnippetID: string;
-    };
-    Session: {
-      /** @description Identifier of a code snippet which which is the environment associated */
-      codeSnippetID: string;
-      /** @description Information if the session is a shared persistent edit session */
-      editEnabled: boolean;
-      /** @description Identifier of the session */
-      sessionID: string;
-      /** @description Identifier of the client */
-      clientID: string;
     };
     Error: {
       /**
@@ -319,21 +304,46 @@ export interface components {
       /** @description Error */
       message: string;
     };
+    NewEnvironment: {
+      template: string;
+      title?: string;
+    };
+    NewSession: {
+      /** @description Identifier of a code snippet which which is the environment associated */
+      codeSnippetID: string;
+      /**
+       * @description Option determining if the session is a shared persistent edit session
+       * @default false
+       */
+      editEnabled?: boolean;
+    };
+    Session: {
+      /** @description Identifier of the client */
+      clientID: string;
+      /** @description Identifier of a code snippet which which is the environment associated */
+      codeSnippetID: string;
+      /** @description Information if the session is a shared persistent edit session */
+      editEnabled: boolean;
+      /** @description Identifier of the session */
+      sessionID: string;
+    };
+    /** @enum {string} */
+    Template: "Nodejs" | "Go" | "Bash" | "Rust" | "Python3" | "PHP" | "Java" | "Perl" | "DotNET";
   };
   responses: {
-    /** Bad request */
+    /** @description Bad request */
     400: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** Authentication error */
+    /** @description Authentication error */
     401: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** Server error */
+    /** @description Server error */
     500: {
       content: {
         "application/json": components["schemas"]["Error"];
@@ -341,13 +351,18 @@ export interface components {
     };
   };
   parameters: {
-    apiKeyOpt: string;
+    apiKeyOpt?: string;
     apiKeyReq: string;
     codeSnippetID: string;
     sessionID: string;
   };
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 
-export interface operations {}
+export type $defs = Record<string, never>;
 
-export interface external {}
+export type external = Record<string, never>;
+
+export type operations = Record<string, never>;

@@ -4,7 +4,7 @@ import autoExternal from 'rollup-plugin-auto-external'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
 import typescript from 'rollup-plugin-typescript2'
 
-import pkg from './package.json'
+import pkg from './package.json' assert { type: 'json' }
 
 export default {
   input: 'src/index.ts',
@@ -29,7 +29,6 @@ export default {
       sourcemap: true,
     },
   ],
-  external: ['cross-fetch', 'cross-fetch/polyfill'],
   plugins: [
     autoExternal({ builtins: false }),
     typescript({

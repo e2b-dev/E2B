@@ -1,8 +1,8 @@
 import normalizePath from 'normalize-path'
-import FormData from 'form-data'
-import fetch from 'node-fetch'
+import { FormData } from 'formdata-polyfill/esm.min.js'
+import Blob from 'cross-blob'
 
-import { ENVD_PORT } from '../constants'
+import { ENVD_PORT, FILE_ROUTE } from '../constants'
 import { components } from '../api'
 import { id } from '../utils/id'
 import { createDeferredPromise, formatSettledErrors, withTimeout } from '../utils/promise'
@@ -369,9 +369,11 @@ export class Session extends SessionConnection {
    * If a file with the same name already exists, it will be overwritten.
    */
   public get fileURL() {
-    const hostname = this.getHostname(this.opts.__debug_port)
     const protocol = this.opts.__debug_devEnv === 'local' ? 'http' : 'https'
-    return `${protocol}://${ENVD_PORT}-${hostname}/file`
+    const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
+    const fileURL = `${protocol}://${hostname}${FILE_ROUTE}`
+
+    return fileURL
   }
 
   static async create(opts: SessionOpts) {
@@ -389,7 +391,7 @@ export class Session extends SessionConnection {
 
     const portsHandler = this.onScanPorts
       ? (ports: { State: string; Ip: string; Port: number }[]) =>
-          this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
+        this.onScanPorts?.(ports.map(p => ({ ip: p.Ip, port: p.Port, state: p.State })))
       : undefined
 
     await this.handleSubscriptions(
@@ -411,14 +413,17 @@ export class Session extends SessionConnection {
    *
    */
   async uploadFile(file: Buffer | Blob, filename: string) {
-    const formData = new FormData()
-    formData.append('file', file, {
-      filename,
-    })
+    const body = new FormData()
 
+    const blob =
+      file instanceof Blob ? file : new Blob([file], { type: 'application/octet-stream' })
+
+    body.append('file', blob, filename)
+
+    // TODO: Ensure the this is bound in this function
     const response = await fetch(this.fileURL, {
       method: 'POST',
-      body: formData,
+      body,
     })
 
     if (!response.ok) {
@@ -432,35 +437,26 @@ export class Session extends SessionConnection {
   async downloadFile(remotePath: string, format?: DownloadFileFormat) {
     remotePath = encodeURIComponent(remotePath)
 
+    // TODO: Ensure the this is bound in this function
     const response = await fetch(`${this.fileURL}?path=${remotePath}`)
     if (!response.ok) {
       const text = await response.text()
       throw new Error(`Failed to download file '${remotePath}': ${text}`)
     }
 
-    let data
     switch (format) {
       case 'base64':
-        data = await response.arrayBuffer()
-        data = Buffer.from(data).toString('base64')
-        break
+        return Buffer.from(await response.arrayBuffer()).toString('base64')
       case 'blob':
-        data = await response.blob()
-        break
+        return await response.blob()
       case 'buffer':
-        data = Buffer.from(await response.arrayBuffer())
-        break
+        return Buffer.from(await response.arrayBuffer())
       case 'arraybuffer':
-        data = await response.arrayBuffer()
-        break
+        return await response.arrayBuffer()
       case 'text':
-        data = await response.text()
-        break
+        return await response.text()
       default:
-        data = await response.arrayBuffer()
-        break
+        return await response.arrayBuffer()
     }
-
-    return data
   }
 }
