@@ -1,10 +1,9 @@
 import * as commander from 'commander'
 import * as commonTags from 'common-tags'
 import * as fs from 'fs'
-import * as fData from 'formdata-node' // Remove formdata-node when dropping node 16 support
-import * as nodeFetch from 'node-fetch'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
+import { FormData } from 'formdata-polyfill/esm.min.js'
 
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
@@ -88,7 +87,7 @@ export const buildCommand = new commander.Command('build')
         }
 
         console.log(
-          `Preparing environment building(${filePaths.length} files in Docker build context).`,
+          `Preparing environment building (${filePaths.length} files in Docker build context).`,
         )
 
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
@@ -102,12 +101,12 @@ export const buildCommand = new commander.Command('build')
           )} that will be used to build the environment.`,
         )
 
-        const formData = new fData.FormData()
+        const body = new FormData()
 
-        formData.append('dockerfile', dockerfileContent)
+        body.append('dockerfile', dockerfileContent)
 
         if (id) {
-          formData.append('envID', id)
+          body.append('envID', id)
         }
 
         // It should be possible to pipe directly to the API
@@ -119,9 +118,9 @@ export const buildCommand = new commander.Command('build')
             ? [{ oldPath: dockerfileRelativePath, newPath: fallbackDockerfileName }]
             : [],
         )
-        formData.append('buildContext', blob, 'env.tar.gz.e2b')
+        body.append('buildContext', blob, 'env.tar.gz.e2b')
 
-        const build = await buildEnv(accessToken, formData)
+        const build = await buildEnv(accessToken, body)
 
         console.log(`Started building environment ${asFormattedEnvironment(build)} `)
 
@@ -234,14 +233,14 @@ function getDockerfile(root: string, file?: string) {
 
 async function buildEnv(
   accessToken: string,
-  body: fData.FormData,
+  body: FormData,
 ): Promise<
   Omit<
     e2b.paths['/envs']['post']['responses']['202']['content']['application/json'],
     'logs'
   >
 > {
-  const res = await nodeFetch.default(`${e2b.API_HOST}/envs`, {
+  const res = await fetch(`${e2b.API_HOST}/envs`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body,

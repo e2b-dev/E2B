@@ -1,4 +1,3 @@
-import * as Blob from 'cross-blob' // Remove cross-blob when dropping node 16 support
 import * as tar from 'tar-fs'
 import * as path from 'path'
 
@@ -24,7 +23,7 @@ export async function createBlobFromFiles(
   }))
 
   const blob = await new Promise<Blob>((resolve, reject) => {
-    const chunks: any[] = []
+    const chunks: BlobPart[] = []
 
     const pack = tar.pack(root, {
       entries: filePaths
@@ -41,12 +40,12 @@ export async function createBlobFromFiles(
       },
     })
 
-    pack.on('data', (chunk: any) => {
+    pack.on('data', (chunk: BlobPart) => {
       chunks.push(chunk)
     })
 
     pack.on('end', () => {
-      const blob = new Blob.default(chunks)
+      const blob = new Blob(chunks)
       resolve(blob)
     })
 

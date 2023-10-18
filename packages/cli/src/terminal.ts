@@ -1,4 +1,4 @@
-import * as sdk from '@e2b/sdk'
+import * as e2b from '@e2b/sdk'
 
 import { createDeferredPromise } from './utils/promise'
 
@@ -10,7 +10,7 @@ function getStdoutSize() {
 }
 
 export async function spawnConnectedTerminal(
-  terminal: sdk.TerminalManager,
+  terminal: e2b.TerminalManager,
   introText: string,
   exitText: string,
 ) {
