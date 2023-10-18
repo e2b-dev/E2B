@@ -1,4 +1,5 @@
 import filecmp
+
 from os import path
 from time import sleep
 from typing import List
@@ -7,7 +8,7 @@ from e2b import Session, FilesystemEvent
 
 
 def test_list_files():
-    session = Session("Nodejs")
+    session = Session("Bash")
     session.filesystem.make_dir("/test/new")
 
     ls = session.filesystem.list("/test")
@@ -17,7 +18,7 @@ def test_list_files():
 
 
 def test_create_file():
-    session = Session("Nodejs")
+    session = Session("Bash")
     session.filesystem.make_dir("/test")
     session.filesystem.write("/test/test.txt", "Hello World!")
 
@@ -28,7 +29,7 @@ def test_create_file():
 
 
 def test_read_and_write():
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     session.filesystem.write("/tmp/test.txt", "Hello World!")
 
@@ -39,7 +40,7 @@ def test_read_and_write():
 
 
 def test_list_delete_files():
-    session = Session("Nodejs")
+    session = Session("Bash")
     session.filesystem.make_dir("/test/new")
 
     ls = session.filesystem.list("/test")
@@ -54,7 +55,7 @@ def test_list_delete_files():
 
 
 def test_watch_dir():
-    session = Session("Nodejs")
+    session = Session("Bash")
     session.filesystem.write("/tmp/test.txt", "Hello")
 
     watcher = session.filesystem.watch_dir("/tmp")
@@ -87,7 +88,7 @@ def test_write_bytes():
     # TODO: This test isn't complete since we can't verify the size of the file inside session.
     # We don't have any SDK function to get the size of a file inside session.
 
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     # Upload the file
     with open(local_path, "rb") as f:
@@ -112,7 +113,7 @@ def test_read_bytes():
     # TODO: This test isn't complete since we can't verify the size of the file inside session.
     # We don't have any SDK function to get the size of a file inside session.
 
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     # Upload the file first
     with open(local_path, "rb") as f:

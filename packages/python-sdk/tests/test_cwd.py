@@ -1,10 +1,9 @@
 import pytest
-
 from e2b import Session
 
 
 def test_process_cwd():
-    session = Session("Nodejs", cwd="/code/app")
+    session = Session("Bash", cwd="/code/app")
 
     proc = session.process.start("pwd")
     output = proc.wait()
@@ -13,7 +12,7 @@ def test_process_cwd():
 
 
 def test_filesystem_cwd():
-    session = Session("Nodejs", cwd="/code/app")
+    session = Session("Bash", cwd="/code/app")
 
     session.filesystem.write("hello.txt", "Hello VM!")
     proc = session.process.start("cat /code/app/hello.txt")
@@ -24,7 +23,7 @@ def test_filesystem_cwd():
 
 
 def test_change_cwd():
-    session = Session("Nodejs", cwd="/code/app")
+    session = Session("Bash", cwd="/code/app")
 
     # change dir to /home/user
     session.cwd = "/home/user"
@@ -44,7 +43,7 @@ def test_change_cwd():
 
 
 def test_initial_cwd_with_tilde():
-    session = Session("Nodejs", cwd="~/code/")
+    session = Session("Bash", cwd="~/code/")
 
     proc = session.process.start("pwd")
     output = proc.wait()
@@ -54,7 +53,7 @@ def test_initial_cwd_with_tilde():
 
 
 def test_relative_paths():
-    session = Session("Nodejs", cwd="/home/user")
+    session = Session("Bash", cwd="/home/user")
 
     session.filesystem.make_dir("./code")
     session.filesystem.write("./code/hello.txt", "Hello Vasek!")
@@ -71,7 +70,7 @@ def test_relative_paths():
 
 
 def test_warnings():
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     with pytest.warns(Warning):
         session.filesystem.write("./hello.txt", "Hello Vasek!")

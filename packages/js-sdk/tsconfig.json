@@ -2,7 +2,10 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "es6",
-    "lib": ["dom", "ESNext"],
+    "lib": [
+      "dom",
+      "ESNext"
+    ],
     "sourceMap": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -16,6 +19,12 @@
     "isolatedModules": true,
     "declaration": true
   },
-  "include": ["src"],
-  "exclude": ["dist", "node_modules", "rollup.config.js"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "rollup.config.js"
+  ]
 }

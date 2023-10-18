@@ -3,15 +3,17 @@ import { expect, test } from 'vitest'
 import { Session } from '../src'
 import { TimeoutError } from '../src/error.ts'
 
+import { id } from './setup.mjs'
+
 // TODO: Make it work on CI and re-enable!
 test.skip('timeout session', async () => {
-  await expect(Session.create({ id: 'Nodejs', timeout: 10 })).rejects.toThrow()
+  await expect(Session.create({ id, timeout: 10 })).rejects.toThrow()
 })
 
 // TODO: Make it work on CI and re-enable!
 test.skip('dont timeout session', async () => {
   const session = await Session.create({
-    id: 'Nodejs',
+    id,
     timeout: 10000,
   })
   await session.close()
@@ -19,7 +21,7 @@ test.skip('dont timeout session', async () => {
 
 // TODO: Make it work on CI and re-enable!
 test.skip('timeout filesystem', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
   await expect(
     session.filesystem.write('/home/test.txt', 'Hello World', { timeout: 10 }),
   ).rejects.toThrow(TimeoutError)
@@ -53,20 +55,16 @@ test.skip('timeout process', async () => {
 })
 
 // TODO: Waiting for https://github.com/vitest-dev/vitest/issues/3119
-test.skip(
-  'timeout longer than cmd should not leak',
-  () =>
-    new Promise(async resolve => {
-      const session = await Session.create({ id: 'Nodejs' })
-      const proc = await session.process.start({
-        cmd: "node -e 'setTimeout(() => {}, 1000)'", // should take around 1 second
-        onExit: () => {
-          // TODO: Verify that process finished after successful cmd, and not after timeout
-          resolve()
-        },
-        timeout: 10_000, // but we give it 10 seconds
-      })
-      await proc.finished
-    }),
-  { timeout: 12_000 },
-)
+test.skip('timeout longer than cmd should not leak', () =>
+  new Promise(async resolve => {
+    const session = await Session.create({ id: 'Nodejs' })
+    const proc = await session.process.start({
+      cmd: "node -e 'setTimeout(() => {}, 1000)'", // should take around 1 second
+      onExit: () => {
+        // TODO: Verify that process finished after successful cmd, and not after timeout
+        resolve()
+      },
+      timeout: 10_000, // but we give it 10 seconds
+    })
+    await proc.finished
+  }))

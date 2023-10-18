@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.9.3",
   "scripts": {
-    "test": "poetry run pytest -n auto",
+    "test": "poetry run pytest -n 1",
     "postVersion": "poetry version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
     "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",
     "pretest": "poetry install"

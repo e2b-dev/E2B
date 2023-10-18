@@ -14,7 +14,7 @@ def test_process_expected_stderr():
 
 
 def test_process_on_stdout_stderr():
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     stdout = []
     stderr = []
@@ -39,7 +39,7 @@ def test_process_on_stdout_stderr():
 
 
 def test_process_on_exit():
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     on_exit = MagicMock()
 
@@ -55,7 +55,7 @@ def test_process_on_exit():
 
 
 def test_process_send_stdin():
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     proc = session.process.start(
         'read -r line; echo "$line"',
@@ -77,7 +77,7 @@ def test_process_send_stdin():
 def test_default_on_exit():
     on_exit = MagicMock()
 
-    session = Session("Nodejs", on_exit=lambda: on_exit())
+    session = Session("Bash", on_exit=lambda: on_exit())
     proc = session.process.start(
         "pwd",
         on_exit=lambda: print("EXIT"),

@@ -1,8 +1,10 @@
 import { Session } from '../src'
 import { expect, test, vi } from 'vitest'
 
+import { id } from './setup.mjs'
+
 test('process on stdout/stderr', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
   const stdout = []
   const stderr = []
@@ -34,7 +36,7 @@ test('process expected stderr', async () => {
 })
 
 test('process on exit', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
   const onExit = vi.fn(() => { })
 
@@ -50,7 +52,7 @@ test('process on exit', async () => {
 })
 
 test('process send stdin', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
   const process = await session.process.start({
     cmd: 'read -r line; echo "$line"',
@@ -72,7 +74,7 @@ test('process send stdin', async () => {
 test('test default on exit', async () => {
   const onExit = vi.fn(() => { })
 
-  const session = await Session.create({ id: 'Nodejs', onExit })
+  const session = await Session.create({ id, onExit })
   const processOverride = await session.process.start({
     cmd: 'pwd',
     onExit: console.log,

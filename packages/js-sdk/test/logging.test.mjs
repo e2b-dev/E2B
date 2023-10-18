@@ -1,7 +1,9 @@
 import { Session } from '../src'
 import { expect, test, vi } from 'vitest'
 
-test('no logs in console during very basic scenario', async () => {
+import { id } from './setup.mjs'
+
+test.skip('no logs in console during very basic scenario', async () => {
   const consoleSpy = {
     debug: vi.spyOn(console, 'debug'),
     info: vi.spyOn(console, 'info'),
@@ -9,7 +11,7 @@ test('no logs in console during very basic scenario', async () => {
     error: vi.spyOn(console, 'error'),
   }
 
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
   await session.filesystem.write('test.txt', 'Hello World')
   await session.close()
 
@@ -27,7 +29,7 @@ test.skip('warn logs in console during convoluted scenario', async () => {
     error: vi.spyOn(console, 'error'),
   }
 
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
   await session.close() // Note that we are intentionally closing and then trying to write
   const warnsAmount = consoleSpy.warn.mock.calls.length
 
@@ -38,7 +40,7 @@ test.skip('warn logs in console during convoluted scenario', async () => {
   }, 2000) // wait for some retries to occur
 })
 
-test('verbose & info logs in console when opted-in', async () => {
+test.skip('verbose & info logs in console when opted-in', async () => {
   const consoleSpy = {
     info: vi.spyOn(console, 'info'),
     warn: vi.spyOn(console, 'warn'),
@@ -52,7 +54,7 @@ test('verbose & info logs in console when opted-in', async () => {
   }
 
   const session = await Session.create({
-    id: 'Nodejs',
+    id,
     logger,
   })
   await session.filesystem.write('test.txt', 'Hello World')

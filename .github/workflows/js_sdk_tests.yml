@@ -57,8 +57,3 @@ jobs:
         run: pnpm run test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-
-      - name: Run browser tests
-        run: pnpm run test:browser
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

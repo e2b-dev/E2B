@@ -1,6 +1,6 @@
 import filecmp
-from os import path
 
+from os import path
 from e2b import Session
 
 
@@ -10,7 +10,7 @@ def test_download():
 
     local_path = path.join(local_dir, file_name)
 
-    session = Session("Nodejs")
+    session = Session("Bash")
 
     # Upload the file first (it's uploaded to /home/user)
     with open(local_path, "rb") as f:
