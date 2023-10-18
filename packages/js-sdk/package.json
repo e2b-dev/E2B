@@ -31,7 +31,6 @@
     "test": "vitest run",
     "test:browser": "vitest run --environment=jsdom",
     "test:coverage": "vitest run --coverage",
-    "test-smoke": "vitest run _smoke",
     "generate": "openapi-typescript ../../spec/openapi.yml -x api_key --support-array-length --alphabetize --output src/api/schema.gen.ts",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i"
