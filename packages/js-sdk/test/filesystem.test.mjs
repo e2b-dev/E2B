@@ -24,37 +24,45 @@ test('create file', async () => {
   await session.close()
 })
 
-test('read and write', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+test(
+  'read and write',
+  async () => {
+    const session = await Session.create({ id: 'Nodejs' })
 
-  // String
-  await session.filesystem.write('/tmp/test.txt', 'Hello World!')
-  const content = await session.filesystem.read('/tmp/test.txt')
-  expect(content).toEqual('Hello World!')
+    // String
+    await session.filesystem.write('/tmp/test.txt', 'Hello World!')
+    const content = await session.filesystem.read('/tmp/test.txt')
+    expect(content).toEqual('Hello World!')
 
-  // Binary file
-  const binaryFile = fs.readFileSync(path.join(__dirname, '/assets/video.webm'))
-  await session.filesystem.writeBytes('/tmp/video.webm', binaryFile)
-  const binaryContent = await session.filesystem.readBytes('/tmp/video.webm')
-  expect(binaryContent).toEqual(binaryFile)
+    // Binary file
+    const binaryFile = fs.readFileSync(path.join(__dirname, '/assets/video.webm'))
+    await session.filesystem.writeBytes('/tmp/video.webm', binaryFile)
+    const binaryContent = await session.filesystem.readBytes('/tmp/video.webm')
+    expect(binaryContent).toEqual(binaryFile)
 
-  await session.close()
-})
+    await session.close()
+  },
+  { timeout: 10_000 },
+)
 
-test('list delete files', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
-  await session.filesystem.makeDir('/test/new')
+test(
+  'list delete files',
+  async () => {
+    const session = await Session.create({ id: 'Nodejs' })
+    await session.filesystem.makeDir('/test/new')
 
-  let ls = await session.filesystem.list('/test')
-  expect(ls.map(x => x.name)).toEqual(['new'])
+    let ls = await session.filesystem.list('/test')
+    expect(ls.map(x => x.name)).toEqual(['new'])
 
-  await session.filesystem.remove('/test/new')
+    await session.filesystem.remove('/test/new')
 
-  ls = await session.filesystem.list('/test')
-  expect(ls.map(x => x.name)).toEqual([])
+    ls = await session.filesystem.list('/test')
+    expect(ls.map(x => x.name)).toEqual([])
 
-  await session.close()
-})
+    await session.close()
+  },
+  { timeout: 10_000 },
+)
 
 test(
   'watch dir',
