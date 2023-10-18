@@ -58,8 +58,7 @@ test('list delete files', async () => {
 })
 
 test('watch dir', async () => {
-  const session = new Session({ id })
-  await session.open()
+  const session = await Session.create({ id })
   await session.filesystem.write('/tmp/test.txt', 'Hello')
 
   const watcher = session.filesystem.watchDir('/tmp')

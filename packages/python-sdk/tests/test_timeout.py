@@ -5,8 +5,13 @@ from e2b.session.exception import TimeoutException
 
 
 def test_create_session_timeout():
+    session: Session | None = None
+
     with pytest.raises(TimeoutException):
-        Session("Bash", timeout=0.01)
+        session = Session("Bash", timeout=0.01)
+
+    if session:
+        session.close()
 
 
 def test_process_timeout():
