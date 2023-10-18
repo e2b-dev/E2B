@@ -21,7 +21,7 @@ variable "nomad_version" {
 variable "firecracker_version" {
   type        = string
   description = "Firecracker version must be prefixed with 'v'"
-  default     = "v1.4.1"
+  default     = "v1.5.0"
 }
 
 variable "kernel_version" {
