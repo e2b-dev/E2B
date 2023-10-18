@@ -36,7 +36,7 @@ test('process expected stderr', async () => {
 test('process on exit', async () => {
   const session = await Session.create({ id: 'Nodejs' })
 
-  const onExit = vi.fn(() => {})
+  const onExit = vi.fn(() => { })
 
   const process = await session.process.start({
     cmd: 'pwd',
@@ -70,7 +70,7 @@ test('process send stdin', async () => {
 }, 10000)
 
 test('test default on exit', async () => {
-  const onExit = vi.fn(() => {})
+  const onExit = vi.fn(() => { })
 
   const session = await Session.create({ id: 'Nodejs', onExit })
   const processOverride = await session.process.start({
@@ -91,15 +91,15 @@ test('test default on exit', async () => {
 })
 
 test('test default on stdout/stderr', async () => {
-  const onStdout = vi.fn(() => {})
-  const onStderr = vi.fn(() => {})
+  const onStdout = vi.fn(() => { })
+  const onStderr = vi.fn(() => { })
 
   const session = await Session.create({ id: 'Nodejs', onStdout, onStderr })
 
   const processOverride = await session.process.start({
     cmd: "node -e \"console.log('Hello'); throw new Error('Ooopsie -_-')\"",
-    onStdout: () => {},
-    onStderr: () => {},
+    onStdout: () => { },
+    onStderr: () => { },
   })
 
   await processOverride.finished
