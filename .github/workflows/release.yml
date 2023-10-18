@@ -39,7 +39,7 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
-      - name: Install npm dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Check if new version
