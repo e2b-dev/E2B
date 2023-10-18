@@ -22,7 +22,7 @@ test(
 
     // filesystem respects cwd
     {
-      await session.filesystem.write('hello.txt', `Hello VM!`)
+      await session.filesystem.write('hello.txt', 'Hello VM!')
       const proc = await session.process.start({ cmd: 'cat /home/user/hello.txt' })
       await proc.finished
       const out = proc.output.stdout

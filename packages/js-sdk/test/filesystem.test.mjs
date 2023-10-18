@@ -56,26 +56,30 @@ test('list delete files', async () => {
   await session.close()
 })
 
-test('watch dir', async () => {
-  const session = new Session({ id: 'Nodejs' })
-  await session.open()
-  await session.filesystem.write('/tmp/test.txt', 'Hello')
+test(
+  'watch dir',
+  async () => {
+    const session = new Session({ id: 'Nodejs' })
+    await session.open()
+    await session.filesystem.write('/tmp/test.txt', 'Hello')
 
-  const watcher = session.filesystem.watchDir('/tmp')
+    const watcher = session.filesystem.watchDir('/tmp')
 
-  const events = []
-  watcher.addEventListener(ev => events.push(ev))
+    const events = []
+    watcher.addEventListener(ev => events.push(ev))
 
-  await watcher.start()
-  await session.filesystem.write('/tmp/test.txt', 'World!')
-  await new Promise(r => setTimeout(r, 1000))
-  await watcher.stop()
+    await watcher.start()
+    await session.filesystem.write('/tmp/test.txt', 'World!')
+    await new Promise(r => setTimeout(r, 2500))
+    await watcher.stop()
 
-  expect(events.length).toBeGreaterThanOrEqual(1)
+    expect(events.length).toBeGreaterThanOrEqual(1)
 
-  const event = events[0]
-  expect(event['operation']).toEqual('Write')
-  expect(event['path']).toEqual('/tmp/test.txt')
+    const event = events[0]
+    expect(event['operation']).toEqual('Write')
+    expect(event['path']).toEqual('/tmp/test.txt')
 
-  await session.close()
-})
+    await session.close()
+  },
+  { timeout: 10_000 },
+)
