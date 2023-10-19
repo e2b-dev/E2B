@@ -159,6 +159,7 @@ async function waitForBuildFinish(accessToken: string, envID: string, buildID: s
         break
 
       case 'error':
+        env.data.logs.forEach(line => process.stdout.write(asBuildLogs(line)))
         throw new Error(
           `\n\nBuilding environment ${asFormattedEnvironment(env.data)} failed.`,
         )

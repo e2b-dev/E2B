@@ -3,7 +3,7 @@
 import * as updateNotifier from 'update-notifier'
 
 import * as packageJSON from '../package.json'
-import { program } from './commands/index'
+import { program } from './commands'
 
 export const pkg = packageJSON
 
