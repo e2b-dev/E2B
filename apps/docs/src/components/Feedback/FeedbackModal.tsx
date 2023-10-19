@@ -86,7 +86,7 @@ function FeedbackModal({ open, setOpen, onSend }) {
             <Send size="14px" />
           )}
 
-          <span className="text-sm">Send</span>
+          <span className="text-base">Send</span>
         </Button>
       </form>
     </DialogAnimated>

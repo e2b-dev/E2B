@@ -42,7 +42,7 @@ export default function typographyStyles({ theme }: PluginUtils) {
 
         // Base
         color: 'var(--tw-prose-body)',
-        fontSize: theme('fontSize.sm')[0],
+        fontSize: theme('fontSize.base')[0],
         lineHeight: theme('lineHeight.7'),
 
         // Layout
@@ -63,8 +63,8 @@ export default function typographyStyles({ theme }: PluginUtils) {
           marginBottom: theme('spacing.6'),
         },
         '[class~="lead"]': {
-          fontSize: theme('fontSize.base')[0],
-          ...theme('fontSize.base')[1],
+          fontSize: theme('fontSize.lg')[0],
+          ...theme('fontSize.lg')[1],
         },
 
         // Lists
@@ -184,21 +184,21 @@ export default function typographyStyles({ theme }: PluginUtils) {
         h1: {
           color: 'var(--tw-prose-headings)',
           fontWeight: '700',
-          fontSize: theme('fontSize.2xl')[0],
+          fontSize: theme('fontSize.3xl')[0],
           ...theme('fontSize.2xl')[1],
           marginBottom: theme('spacing.2'),
         },
         h2: {
           color: 'var(--tw-prose-headings)',
           fontWeight: '600',
-          fontSize: theme('fontSize.lg')[0],
+          fontSize: theme('fontSize.xl')[0],
           ...theme('fontSize.lg')[1],
           marginTop: theme('spacing.16'),
           marginBottom: theme('spacing.2'),
         },
         h3: {
           color: 'var(--tw-prose-headings)',
-          fontSize: theme('fontSize.base')[0],
+          fontSize: theme('fontSize.lg')[0],
           ...theme('fontSize.base')[1],
           fontWeight: '600',
           marginTop: theme('spacing.10'),
@@ -281,7 +281,8 @@ export default function typographyStyles({ theme }: PluginUtils) {
         // Inline elements
         a: {
           color: 'var(--tw-prose-links)',
-          textDecoration: 'underline transparent',
+          textDecoration: `underline ${theme('colors.brand.500 / 0.3')}`,
+          textDecorationThickness: '2px',
           fontWeight: '500',
           transitionProperty: 'color, text-decoration-color',
           transitionDuration: theme('transitionDuration.DEFAULT'),

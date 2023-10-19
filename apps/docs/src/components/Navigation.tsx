@@ -25,6 +25,9 @@ import {
   FileDown,
   Variable,
   TextQuote,
+  HeartHandshake,
+  DollarSign,
+  Hammer,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -175,14 +178,13 @@ function NavigationGroup({ group, className }) {
     [initialPathname, useSectionStore(s => s.sections)],
     isInsideMobileNavigation,
   )
-
   const isActiveGroup = activeGroupIndex(group, pathname) !== -1
 
   return (
     <li className={clsx('relative mt-6', className)}>
       <motion.h2
         layout="position"
-        className="text-xs font-semibold text-zinc-900 dark:text-white"
+        className="text-sm font-semibold text-zinc-900 dark:text-white"
       >
         {group.title}
       </motion.h2>
@@ -221,7 +223,11 @@ function NavigationGroup({ group, className }) {
               <NavLink
                 className="font-medium"
                 href={link.href}
-                active={`/docs${link.href}` === pathname}
+                active={
+                  `/docs${link.href}` === pathname ||
+                  // Special case for index (/)
+                  (link.href == '/' && pathname == '/docs')
+                }
                 isFontMono={link.isFontMono}
                 icon={link.icon}
                 tag={link.tag}
@@ -271,13 +277,38 @@ function NavigationGroup({ group, className }) {
 
 export const navigation = [
   {
-    title: 'Sandbox Runtime for LLM',
+    title: 'Overview',
     links: [
       { title: 'Introduction', href: '/' },
-      { title: 'Pricing', href: '/pricing' },
       {
-        title: 'Example: Build Code Interpreter',
-        href: '/guide/simple-gpt4-code-interpreter',
+        icon: (
+          <HeartHandshake
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Open source',
+        href: '/open-source',
+      },
+      {
+        icon: (
+          <DollarSign
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Pricing',
+        href: '/pricing',
+      },
+      {
+        icon: (
+          <ShieldQuestion
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Getting help',
+        href: '/getting-help',
       },
     ],
   },
@@ -306,6 +337,29 @@ export const navigation = [
       },
       {
         icon: (
+          <Hammer
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Example: Build Code Interpreter',
+        href: '/guide/simple-gpt4-code-interpreter',
+      },
+    ],
+  },
+  // {
+  //   title: 'Use Cases & Guides',
+  //   links: [
+  //     { title: '[TODO] AI Data Analysis & Code Interpreter', href: '/' },
+  //     { title: '[TODO] Run LLM-Generated Code', href: '/' },
+  //   ],
+  // },
+  {
+    title: 'Sandbox API',
+    links: [
+      { title: 'Overview', href: '/playgrounds/overview' },
+      {
+        icon: (
           <AlertOctagon
             strokeWidth={1}
             size={20}
@@ -314,39 +368,16 @@ export const navigation = [
         title: 'Current Limitations',
         href: '/playgrounds/limitations',
       },
-      {
-        icon: (
-          <ShieldQuestion
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: '[TODO] Support',
-        href: '/playgrounds/limitations',
-      },
-    ],
-  },
-  {
-    title: 'Use Cases & Guides',
-    links: [
-      { title: '[TODO] AI Data Analysis & Code Interpreter', href: '/' },
-      { title: '[TODO] Run LLM-Generated Code', href: '/' },
-    ],
-  },
-  {
-    title: 'API',
-    links: [
-      { title: 'Overview', href: '/playgrounds/overview' },
-      {
-        icon: (
-          <Variable
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: '[TODO] Environment Variables',
-        href: '/playgrounds/filesystem',
-      },
+      // {
+      //   icon: (
+      //     <Variable
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: '[TODO] Environment Variables',
+      //   href: '/playgrounds/envs',
+      // },
       {
         icon: (
           <FolderTree
@@ -364,7 +395,7 @@ export const navigation = [
             size={20}
           />
         ),
-        title: 'Running Processes',
+        title: 'Process',
         href: '/playgrounds/process',
       },
       // TODO: Remove
@@ -408,16 +439,26 @@ export const navigation = [
         title: 'Working Directory',
         href: '/playgrounds/cwd',
       },
-      {
-        icon: (
-          <TextQuote
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: '[TODO] Logging',
-        href: '/playgrounds/debugging',
-      },
+      // {
+      //   icon: (
+      //     <TextQuote
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: '[TODO] Streaming',
+      //   href: '/playgrounds/streaming',
+      // },
+      // {
+      //   icon: (
+      //     <TextQuote
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: '[TODO] Debug logs',
+      //   href: '/playgrounds/debugging',
+      // },
       {
         icon: (
           <Timer
@@ -522,10 +563,7 @@ export function Navigation(props) {
           />
         ))}
         <li className="z-10 mt-6">
-          <Feedback
-            variant="secondary"
-            className="w-full"
-          />
+          <Feedback className="w-full" />
         </li>
         <li
           /* -1.5rem to stretch outside the padding of the parent list */

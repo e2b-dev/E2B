@@ -3,27 +3,88 @@ import { UseCases } from '@/components/UseCases'
 import { HeroPattern } from '@/components/HeroPattern'
 import { Button } from '@/components/Button'
 import { ButtonLoginToken } from '@/components/ButtonLoginToken'
+import { useSignIn } from '@/utils/useSignIn'
 
-export const metadata = {
-  title: 'E2B Documentation - Cloud for AI Agents Apps',
-  description:
-    'Sandboxed cloud environments for AI agents & apps with a single line of code',
-}
+{/* // export const metadata = {
+//   title: 'E2B Documentation - Sandbox Runtime for LLMs',
+//   description:
+//     'Sandboxed cloud environments for AI agents & apps with a single line of code',
+// } */}
 
-export const sections = [
-  // { title: 'Next Steps', id: 'next-steps' },
-  // { title: 'How It Works', id: 'how-it-works' },
-]
+{/* <HeroPattern /> */}
 
-<HeroPattern />
+# Runtime Sandbox for Large Language Models
 
-# What is E2B?
+Sandboxes allow AI apps to have long running cloud environments where large language models can use the same tools as human do. {{ className: 'lead' }}
 
-**Sandboxed cloud environments for AI agents & AI apps {{ className: 'lead' }}**
+## Use cases
+Our Sandboxes are general purpose machines powered by Ubuntu. Most of the things your AI app or agent can do locally can also be done in our sandboxes.
+Here's a few use cases:
 
-With E2B, you can create AI playgrounds. In these AI playgrounds, you can let your AI agents and apps:
+- **AI data analysis**
+- **Code interpreter**
+- **Run LLM-generated code**
+- **Coding copilots and agents**
+- **AI powered browsers in cloud**
 
-- [Run any code](/agents/exec) and terminal command in a sandboxed environment
+## Quick start
+
+### 1. Create an account
+<Button variant="textLink">Sign in</Button> with your GitHub acccount.
+
+### 2. Get your API key
+After sign in, get [your API key](/getting-started/api-key).
+
+### 3. Install the E2B SDK
+We offer both JS and Python SDK.
+
+<CodeGroup isRunnable={false}>
+```bash {{ language: 'js' }}
+npm i @e2b/sdk
+```
+
+```bash {{ language: 'python' }}
+pip install e2b
+```
+</CodeGroup>
+
+### 4. Start up the sandbox
+<CodeGroup isRunnable={false}>
+```js {{ language: 'js' }}
+// 1. Import E2B
+import { Session } from '@e2b/sdk'
+
+// 2. Get your Sandbox session
+const session = await Session({
+  // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
+  id: 'Nodejs',
+})
+
+// 3. Close the session once done
+await session.close()
+```
+
+```python {{ language: 'python' }}
+# 1. Import E2B
+from e2b import Session
+
+# 2. Get your Sandbox session
+session = Session(
+  # or "Bash", "Python3", "Java", "Go", "Rust", "PHP", "Perl", "DotNET"
+  id: "Nodejs",
+)
+
+# 3. Close the session once done
+session.close()
+```
+</CodeGroup>
+
+
+### 🎉 Build your AI app
+
+Now you can let your AI app control the sandbox by using our [Sandbox API](/sandbox/overview).
+
+{/* - [Run any code](/agents/exec) and terminal command in a sandboxed environment
 - [Start any process](/playgrounds/process) (even long-running such as a database)
 - [Run any shell command](/agents/shell-commands)
 - [Upload and download files](/playgrounds/filesystem#write-bytes)
@@ -42,21 +103,11 @@ With E2B, you can create AI playgrounds. In these AI playgrounds, you can let yo
   <ButtonLoginToken />
 </div>
 
+
 ## Start cloud playground
 
-<CodeGroup isRunnable={false}>
-
-```bash {{ language: 'js' }}
-npm i @e2b/sdk
-```
-
-```bash {{ language: 'python' }}
-pip install e2b
-```
-
-</CodeGroup>
 
 <CodeGroupAutoload
   path="quickstart"
   isRunnable={false}
-/>
+/> */}

@@ -18,18 +18,12 @@ function FeedbackButton({ onClick, isFinished, variant, className }) {
     >
       {isFinished ? (
         <>
-          <Check
-            size={14}
-            className=""
-          />
+          <Check size={14} />
           <span className="text-sm">Thank you!</span>
         </>
       ) : (
         <div className="flex flex-row items-center gap-2">
-          <MessageCircle
-            size={14}
-            className=""
-          />
+          <MessageCircle size={14} />
           <span className="text-sm">Send feedback to CEO</span>
         </div>
       )}
