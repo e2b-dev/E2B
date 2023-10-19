@@ -2,7 +2,6 @@
 
 openapi := ../../spec/openapi.yml
 codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
-sqlboiler := go run github.com/volatiletech/sqlboiler/v4@latest
 
 GCP_PROJECT := e2b-prod
 IMAGE := orchestration/api
@@ -12,12 +11,8 @@ generate:
 	$(codegen) -old-config-style -generate gin --package api $(openapi) > internal/api/api.gen.go
 	$(codegen) -old-config-style -generate types --package api $(openapi) > internal/api/types.gen.go
 	$(codegen) -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
-	PSQL_PASS=$(PSQL_PASS) \
-	PSQL_HOST=$(PSQL_HOST) \
-	PSQL_PORT=$(PSQL_PORT) \
-	PSQL_USER=$(PSQL_USER) \
-	PSQL_DBNAME=$(PSQL_DBNAME) \
-	$(sqlboiler) psql -o ./internal/db/models --no-context
+	go generate ./internal/db/ent/generate.go
+
 
 .PHONY: build
 build:

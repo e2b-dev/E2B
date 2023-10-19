@@ -36,13 +36,15 @@ type APIStore struct {
 func NewAPIStore() *APIStore {
 	fmt.Println("Initializing API store")
 
+	ctx := context.Background()
+
 	tracer := otel.Tracer("api")
 
 	nomadClient := nomad.InitNomadClient()
 
 	fmt.Println("Initialized Nomad client")
 
-	supabaseClient, err := db.NewClient()
+	supabaseClient, err := db.NewClient(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing Supabase client\n: %s", err)
 		panic(err)
@@ -94,8 +96,6 @@ func NewAPIStore() *APIStore {
 	} else {
 		fmt.Println("Skipping syncing sessions with Nomad, running locally")
 	}
-
-	ctx := context.Background()
 
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
@@ -165,29 +165,29 @@ func (a *APIStore) GetHealth(c *gin.Context) {
 }
 
 func (a *APIStore) GetTeamFromAPIKey(apiKey string) (string, error) {
-	team, err := a.supabase.GetTeamID(apiKey)
+	teamID, err := a.supabase.GetTeamID(apiKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get get team from db for api key: %w", err)
 	}
 
-	if team == nil {
+	if teamID == "" {
 		return "", fmt.Errorf("failed to get a team from api key")
 	}
 
-	return team.ID, nil
+	return teamID, nil
 }
 
 func (a *APIStore) GetUserFromAccessToken(accessToken string) (string, error) {
-	user, err := a.supabase.GetUserID(accessToken)
+	userID, err := a.supabase.GetUserID(accessToken)
 	if err != nil {
 		return "", fmt.Errorf("failed to get get user from db for access token: %w", err)
 	}
 
-	if user == nil {
+	if userID == "" {
 		return "", fmt.Errorf("failed to get a user from access token")
 	}
 
-	return user.ID, nil
+	return userID, nil
 }
 
 func (a *APIStore) DeleteInstance(instanceID string, purge bool) *api.APIError {

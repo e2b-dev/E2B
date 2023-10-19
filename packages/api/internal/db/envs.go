@@ -2,17 +2,13 @@ package db
 
 import (
 	"fmt"
-
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-
-	"github.com/volatiletech/sqlboiler/v4/boil"
-
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/db/models"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+	"github.com/google/uuid"
 )
 
 func (db *DB) DeleteEnv(envID string) error {
-	_, err := models.Envs(models.EnvWhere.ID.EQ(envID)).DeleteAll(db.Client)
+	_, err := db.Client.Env.Delete().Where(env.ID(envID)).Exec(db.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete env '%s': %w", envID, err)
 	}
@@ -21,20 +17,26 @@ func (db *DB) DeleteEnv(envID string) error {
 }
 
 func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
-	publicWhere := models.EnvWhere.Public.EQ(true)
-	teamWhere := models.EnvWhere.TeamID.EQ(teamID)
+	//publicWhere := models.EnvWhere.Public.EQ(true)
+	//teamWhere := models.EnvWhere.TeamID.EQ(teamID)
+	//
+	//envs, err := models.Envs(publicWhere, qm.Or2(teamWhere)).All(db.Client)
+	id, err := uuid.Parse(teamID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse teamID: %w", err)
+	}
 
-	envs, err := models.Envs(publicWhere, qm.Or2(teamWhere)).All(db.Client)
+	envs, err := db.Client.Env.Query().Where(env.Or(env.TeamID(id), env.Public(true))).All(db.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list envs: %w", err)
 	}
 
-	for _, env := range envs {
+	for _, item := range envs {
 		result = append(result, &api.Environment{
-			EnvID:   env.ID,
+			EnvID:   item.ID,
 			BuildID: "",
-			Status:  api.EnvironmentStatus(env.Status),
-			Public:  env.Public,
+			Status:  api.EnvironmentStatus(item.Status),
+			Public:  item.Public,
 			Logs:    nil,
 		})
 	}
@@ -44,21 +46,17 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 
 var ErrEnvNotFound = fmt.Errorf("env not found")
 
-func (db *DB) GetEnv(envID string, teamID string) (env *api.Environment, err error) {
-	publicWhere := models.EnvWhere.Public.EQ(true)
-	teamWhere := models.EnvWhere.TeamID.EQ(teamID)
-	envWhere := models.EnvWhere.ID.EQ(envID)
-
-	dbEnvs, err := models.Envs(qm.Expr(publicWhere, qm.Or2(teamWhere)), envWhere).All(db.Client)
+func (db *DB) GetEnv(envID string, teamID string) (result *api.Environment, err error) {
+	id, err := uuid.Parse(teamID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list envs: %w", err)
+		return nil, fmt.Errorf("failed to parse teamID: %w", err)
 	}
 
-	if len(dbEnvs) == 0 {
-		return nil, ErrEnvNotFound
-	}
+	dbEnv, err := db.Client.Env.Query().Where(env.Or(env.ID(envID), env.Public(true)), env.TeamID(id)).Only(db.ctx)
 
-	dbEnv := dbEnvs[0]
+	if err != nil {
+		return nil, fmt.Errorf("failed to get env: %w", err)
+	}
 
 	return &api.Environment{
 		EnvID:   dbEnv.ID,
@@ -70,14 +68,13 @@ func (db *DB) GetEnv(envID string, teamID string) (env *api.Environment, err err
 }
 
 func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.Environment, error) {
-	env := &models.Env{
-		ID:         envID,
-		TeamID:     teamID,
-		Dockerfile: dockerfile,
-		Public:     false,
+	id, err := uuid.Parse(teamID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse teamID: %w", err)
 	}
 
-	err := env.Insert(db.Client, boil.Infer())
+	e, err := db.Client.Env.Create().SetID(envID).SetTeamID(id).SetStatus(env.StatusBuilding).SetDockerfile(dockerfile).SetPublic(false).Save(db.ctx)
+
 	if err != nil {
 		errMsg := fmt.Errorf("failed to create env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
 
@@ -86,18 +83,18 @@ func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.En
 		return nil, errMsg
 	}
 
-	return &api.Environment{EnvID: envID, BuildID: "", Logs: nil, Status: api.EnvironmentStatusBuilding, Public: false}, nil
+	return &api.Environment{
+		EnvID:   e.ID,
+		BuildID: "",
+		Status:  api.EnvironmentStatus(e.Status),
+		Logs:    nil,
+		Public:  e.Public,
+	}, nil
 }
 
 func (db *DB) UpdateDockerfileEnv(envID string, dockerfile string) (*api.Environment, error) {
-	env := &models.Env{
-		ID:         envID,
-		Dockerfile: dockerfile,
-		Public:     false,
-		Status:     models.EnvStatusEnumBuilding,
-	}
+	e, err := db.Client.Env.UpdateOneID(envID).SetDockerfile(dockerfile).Save(db.ctx)
 
-	rowsAffected, err := env.Update(db.Client, boil.Whitelist("status", "dockerfile"))
 	if err != nil {
 		errMsg := fmt.Errorf("failed to update env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
 
@@ -106,42 +103,30 @@ func (db *DB) UpdateDockerfileEnv(envID string, dockerfile string) (*api.Environ
 		return nil, errMsg
 	}
 
-	if rowsAffected == 0 {
-		return nil, fmt.Errorf("didn't find env to update, env with id '%s'", envID)
-	}
-
-	return &api.Environment{EnvID: envID, BuildID: "", Logs: nil, Status: api.EnvironmentStatusBuilding, Public: false}, nil
+	return &api.Environment{EnvID: e.ID, BuildID: "", Logs: nil, Status: api.EnvironmentStatusBuilding, Public: e.Public}, nil
 }
 
-func (db *DB) UpdateStatusEnv(envID string, status models.EnvStatusEnum) (*api.Environment, error) {
-	env := &models.Env{
-		ID:     envID,
-		Status: status,
-	}
+func (db *DB) UpdateStatusEnv(envID string, status env.Status) (*api.Environment, error) {
+	e, err := db.Client.Env.UpdateOneID(envID).SetStatus(status).Save(db.ctx)
 
-	rowsAffected, err := env.Update(db.Client, boil.Whitelist("status"))
 	if err != nil {
-		errMsg := fmt.Errorf("failed to update env with id '%s': %w", envID, err)
+		errMsg := fmt.Errorf("failed to update env with id '%s' with status '%s': %w", envID, status, err)
 
 		fmt.Println(errMsg.Error())
 
 		return nil, errMsg
 	}
 
-	if rowsAffected == 0 {
-		return nil, fmt.Errorf("didn't find env to update to, env with id '%s'", envID)
-	}
-
-	return &api.Environment{EnvID: envID, BuildID: "", Logs: nil, Status: api.EnvironmentStatus(status), Public: false}, nil
+	return &api.Environment{EnvID: e.ID, BuildID: "", Logs: nil, Status: api.EnvironmentStatus(e.Status), Public: e.Public}, nil
 }
 
 func (db *DB) HasEnvAccess(envID string, teamID string, public bool) (bool, error) {
-	env, err := db.GetEnv(envID, teamID)
+	e, err := db.GetEnv(envID, teamID)
 	if err != nil {
 		return false, fmt.Errorf("failed to get env '%s': %w", envID, err)
 	}
 
-	if !public && env.Public {
+	if !public && e.Public {
 		return false, nil
 	}
 

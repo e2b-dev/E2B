@@ -2,47 +2,40 @@ package db
 
 import (
 	"fmt"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-
-	"github.com/e2b-dev/infra/packages/api/internal/db/models"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
 )
 
-type team struct {
-	ID string `json:"team_id"`
-}
+func (db *DB) GetTeamID(apiKey string) (string, error) {
+	result, err := db.Client.TeamApiKey.Query().WithTeam().Where(teamapikey.ID(apiKey)).QueryTeam().Where(team.IsDefault(true)).Only(db.ctx)
 
-func (db *DB) GetTeamID(apiKey string) (*team, error) {
-	joinTeam := qm.InnerJoin(models.TableNames.Teams + " on " + models.TableNames.TeamAPIKeys + "." + models.TeamAPIKeyColumns.TeamID + " = " + models.TableNames.Teams + "." + models.TeamColumns.ID)
-	result, err := models.TeamAPIKeys(qm.Load(models.TeamAPIKeyRels.Team), models.TeamAPIKeyWhere.APIKey.EQ(apiKey), joinTeam).One(db.Client)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get team from API key: %w", err)
 
 		fmt.Println(errMsg.Error())
 
-		return nil, errMsg
+		return "", errMsg
 	}
-
-	if result.R.Team.IsBlocked {
+	//
+	if result.IsBlocked {
 		errMsg := fmt.Errorf("team is blocked")
-		return nil, errMsg
+		return "", errMsg
 	}
-
-	return &team{result.TeamID}, nil
+	//
+	return result.ID.String(), nil
 }
 
-type user struct {
-	ID string `json:"user_id"`
-}
+func (db *DB) GetUserID(token string) (string, error) {
+	result, err := db.Client.AccessToken.Query().Where(accesstoken.ID(token)).Only(db.ctx)
 
-func (db *DB) GetUserID(accessToken string) (*user, error) {
-	result, err := models.AccessTokens(models.AccessTokenWhere.AccessToken.EQ(accessToken)).One(db.Client)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get user from access token: %w", err)
 
 		fmt.Println(errMsg.Error())
 
-		return nil, errMsg
+		return "", errMsg
 	}
 
-	return &user{result.UserID}, nil
+	return result.UserID.String(), nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
 	"io"
 	"net/http"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
-	"github.com/e2b-dev/infra/packages/api/internal/db/models"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 )
 
@@ -36,16 +36,16 @@ func (a *APIStore) buildEnv(ctx context.Context, envID string, buildID string, c
 		return
 	}
 
-	var buildStatus models.EnvStatusEnum
+	var buildStatus env.Status
 
 	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret)
 	if err != nil {
 		err = fmt.Errorf("error when starting build: %w", err)
 		ReportCriticalError(childCtx, err)
 
-		buildStatus = models.EnvStatusEnumError
+		buildStatus = env.StatusError
 	} else {
-		buildStatus = models.EnvStatusEnumReady
+		buildStatus = env.StatusReady
 	}
 
 	_, err = a.supabase.UpdateStatusEnv(envID, buildStatus)
@@ -64,7 +64,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 	SetAttributes(ctx, attribute.String("env.user_id", userID))
 
-	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
+	teamID, err := a.supabase.GetDefaultTeamFromUserID(userID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
@@ -74,7 +74,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	SetAttributes(ctx, attribute.String("env.team_id", team.ID))
+	SetAttributes(ctx, attribute.String("env.team_id", teamID))
 
 	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
 	if err != nil {
@@ -105,14 +105,14 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	var env *api.Environment
+	var result *api.Environment
 
 	envID := c.PostForm("envID")
 
 	if envID == "" {
 		envID = utils.GenerateID()
 		SetAttributes(ctx, attribute.String("env.id", envID))
-		env, err = a.supabase.CreateEnv(envID, team.ID, c.PostForm("dockerfile"))
+		result, err = a.supabase.CreateEnv(envID, teamID, c.PostForm("dockerfile"))
 
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when creating env: %s", err))
@@ -127,7 +127,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	} else {
 		SetAttributes(ctx, attribute.String("env.id", envID))
 
-		hasAccess, accessErr := a.supabase.HasEnvAccess(envID, team.ID, false)
+		hasAccess, accessErr := a.supabase.HasEnvAccess(envID, teamID, false)
 		if accessErr != nil {
 			a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The environment '%s' does not exist", envID))
 
@@ -144,7 +144,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 			return
 		}
-		env, err = a.supabase.UpdateDockerfileEnv(envID, c.PostForm("dockerfile"))
+		result, err = a.supabase.UpdateDockerfileEnv(envID, c.PostForm("dockerfile"))
 
 		if err != nil {
 			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating envs: %s", err))
@@ -166,7 +166,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	env.BuildID = buildID
+	result.BuildID = buildID
 
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
@@ -179,12 +179,12 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		childSpan.End()
 	}()
 
-	a.IdentifyAnalyticsTeam(team.ID)
+	a.IdentifyAnalyticsTeam(teamID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsUserEvent(userID, team.ID, "created environment", properties.
+	a.CreateAnalyticsUserEvent(userID, teamID, "created environment", properties.
 		Set("environment", envID))
 
-	c.JSON(http.StatusOK, env)
+	c.JSON(http.StatusOK, result)
 }
 
 func (a *APIStore) GetEnvs(
@@ -194,7 +194,7 @@ func (a *APIStore) GetEnvs(
 
 	userID := c.Value(constants.UserIDContextKey).(string)
 
-	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
+	teamID, err := a.supabase.GetDefaultTeamFromUserID(userID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
@@ -204,9 +204,9 @@ func (a *APIStore) GetEnvs(
 		return
 	}
 
-	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", team.ID))
+	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", teamID))
 
-	envs, err := a.supabase.GetEnvs(team.ID)
+	envs, err := a.supabase.GetEnvs(teamID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting envs: %s", err))
 
@@ -218,9 +218,9 @@ func (a *APIStore) GetEnvs(
 
 	ReportEvent(ctx, "listed environments")
 
-	a.IdentifyAnalyticsTeam(team.ID)
+	a.IdentifyAnalyticsTeam(teamID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsUserEvent(userID, team.ID, "listed environments", properties)
+	a.CreateAnalyticsUserEvent(userID, teamID, "listed environments", properties)
 
 	c.JSON(http.StatusOK, envs)
 }
@@ -229,9 +229,9 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 	ctx := c.Request.Context()
 
 	userID := c.Value(constants.UserIDContextKey).(string)
-	team, err := a.supabase.GetDefaultTeamFromUserID(userID)
+	teamID, err := a.supabase.GetDefaultTeamFromUserID(userID)
 
-	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", team.ID))
+	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", teamID))
 
 	if err != nil {
 		errMsg := fmt.Errorf("error when getting default team: %w", err)
@@ -242,7 +242,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		return
 	}
 
-	env, err := a.supabase.GetEnv(envID, team.ID)
+	result, err := a.supabase.GetEnv(envID, teamID)
 	if errors.Is(err, db.ErrEnvNotFound) {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
 
@@ -263,24 +263,24 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 	ReportEvent(ctx, "got environment detail")
 
-	env.BuildID = buildID
+	result.BuildID = buildID
 
 	logs, err := a.dockerBuildLogs.Get(envID, buildID)
 	if err == nil {
-		env.Logs = logs[*params.LogsOffset:]
+		result.Logs = logs[*params.LogsOffset:]
 	} else {
-		env.Logs = []string{}
+		result.Logs = []string{}
 		msg := fmt.Sprintf("no logs found for env %s and build %s", envID, buildID)
 		ReportEvent(ctx, msg)
 	}
 
 	ReportEvent(ctx, "got environment build logs")
 
-	a.IdentifyAnalyticsTeam(team.ID)
+	a.IdentifyAnalyticsTeam(teamID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsUserEvent(userID, team.ID, "got environment detail", properties.Set("environment", envID))
+	a.CreateAnalyticsUserEvent(userID, teamID, "got environment detail", properties.Set("environment", envID))
 
-	c.JSON(http.StatusOK, env)
+	c.JSON(http.StatusOK, result)
 }
 
 func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvID, buildID string) {
