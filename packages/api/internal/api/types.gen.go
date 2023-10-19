@@ -21,6 +21,9 @@ const (
 
 // Environment defines model for Environment.
 type Environment struct {
+	// BuildID Identifier of the build
+	BuildID string `json:"buildID"`
+
 	// EnvID Identifier of the environment
 	EnvID string `json:"envID"`
 
@@ -64,6 +67,9 @@ type NewInstance struct {
 	EnvID string `json:"envID"`
 }
 
+// BuildID defines model for buildID.
+type BuildID = string
+
 // EnvID defines model for envID.
 type EnvID = string
 
@@ -94,14 +100,24 @@ type PostEnvsMultipartBody struct {
 	EnvID *string `json:"envID,omitempty"`
 }
 
-// GetEnvsEnvIDParams defines parameters for GetEnvsEnvID.
-type GetEnvsEnvIDParams struct {
-	// Logs Index of the starting build log that should be returned with the environment
-	Logs *int `form:"logs,omitempty" json:"logs,omitempty"`
+// GetEnvsEnvIDBuildsBuildIDParams defines parameters for GetEnvsEnvIDBuildsBuildID.
+type GetEnvsEnvIDBuildsBuildIDParams struct {
+	// LogsOffset Index of the starting build log that should be returned with the environment
+	LogsOffset *int `form:"logsOffset,omitempty" json:"logsOffset,omitempty"`
+}
+
+// PostEnvsEnvIDBuildsBuildIDLogsJSONBody defines parameters for PostEnvsEnvIDBuildsBuildIDLogs.
+type PostEnvsEnvIDBuildsBuildIDLogsJSONBody struct {
+	// ApiSecret API secret
+	ApiSecret string   `json:"apiSecret"`
+	Logs      []string `json:"logs"`
 }
 
 // PostEnvsMultipartRequestBody defines body for PostEnvs for multipart/form-data ContentType.
 type PostEnvsMultipartRequestBody PostEnvsMultipartBody
+
+// PostEnvsEnvIDBuildsBuildIDLogsJSONRequestBody defines body for PostEnvsEnvIDBuildsBuildIDLogs for application/json ContentType.
+type PostEnvsEnvIDBuildsBuildIDLogsJSONRequestBody PostEnvsEnvIDBuildsBuildIDLogsJSONBody
 
 // PostInstancesJSONRequestBody defines body for PostInstances for application/json ContentType.
 type PostInstancesJSONRequestBody = NewInstance

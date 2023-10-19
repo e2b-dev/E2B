@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/go-hclog"
@@ -91,15 +90,15 @@ func NewPlugin(logger hclog.Logger) drivers.DriverPlugin {
 	}
 
 	return &Driver{
-		tracer:         tracer,
-		docker:         client,
+		tracer:             tracer,
+		docker:             client,
 		legacyDockerClient: legacyClient,
-		eventer:        eventer.NewEventer(ctx, logger),
-		config:         &Config{},
-		tasks:          newTaskStore(),
-		ctx:            ctx,
-		signalShutdown: cancel,
-		logger:         logger,
+		eventer:            eventer.NewEventer(ctx, logger),
+		config:             &Config{},
+		tasks:              newTaskStore(),
+		ctx:                ctx,
+		signalShutdown:     cancel,
+		logger:             logger,
 	}
 }
 

@@ -10,7 +10,7 @@ RUN go mod download
 COPY internal internal
 COPY main.go main.go
 
-RUN make build
+RUN --mount=type=cache,target=/root/.cache/go-build make build
 
 FROM alpine:3.17
 

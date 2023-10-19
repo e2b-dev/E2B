@@ -38,6 +38,20 @@ type Rootfs struct {
 	env *Env
 }
 
+type MultiWriter struct {
+	writers []io.Writer
+}
+
+func (mw *MultiWriter) Write(p []byte) (n int, err error) {
+	for _, writer := range mw.writers {
+		_, err := writer.Write(p)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return len(p), nil
+}
+
 func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *client.Client, legacyDocker *docker.Client) (*Rootfs, error) {
 	childCtx, childSpan := tracer.Start(ctx, "new-rootfs")
 	defer childSpan.End()
@@ -48,14 +62,13 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
+	defer rootfs.cleanupDockerImage(childCtx, tracer)
 	err := rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
 		return nil, errMsg
 	}
-
-	defer rootfs.cleanupDockerImage(childCtx, tracer)
 
 	err = rootfs.createRootfsFile(childCtx, tracer)
 	if err != nil {
@@ -99,21 +112,29 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	defer innerBuildSpan.End()
 
 	buildOutputWriter := telemetry.NewEventWriter(innerBuildCtx, "docker-build-output")
+	writer := &MultiWriter{
+		writers: []io.Writer{buildOutputWriter, r.env.BuildLogsWriter},
+	}
 
 	err = r.legacyClient.BuildImage(docker.BuildImageOptions{
 		Context:      buildCtx,
 		Dockerfile:   dockerfileName,
 		InputStream:  dockerContextFile,
-		OutputStream: buildOutputWriter,
+		OutputStream: writer,
 		Name:         r.dockerTag(),
 	})
+
 	if err != nil {
+		r.env.BuildLogsWriter.Write([]byte(err.Error() + "\n"))
+		r.env.BuildLogsWriter.Write([]byte("Build failed, received error while building docker image.\n"))
+
 		errMsg := fmt.Errorf("error building docker image for env %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
 		return errMsg
 	}
 
+	r.env.BuildLogsWriter.Write([]byte("Running postprocessing. It can take up to few minutes.\n"))
 	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
 
 	return nil

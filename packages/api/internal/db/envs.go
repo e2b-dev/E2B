@@ -5,9 +5,10 @@ import (
 
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db/models"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 func (db *DB) DeleteEnv(envID string) error {
@@ -30,9 +31,11 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 
 	for _, env := range envs {
 		result = append(result, &api.Environment{
-			EnvID:  env.ID,
-			Status: api.EnvironmentStatus(env.Status),
-			Public: env.Public,
+			EnvID:   env.ID,
+			BuildID: "",
+			Status:  api.EnvironmentStatus(env.Status),
+			Public:  env.Public,
+			Logs:    nil,
 		})
 	}
 
@@ -58,9 +61,11 @@ func (db *DB) GetEnv(envID string, teamID string) (env *api.Environment, err err
 	dbEnv := dbEnvs[0]
 
 	return &api.Environment{
-		EnvID:  dbEnv.ID,
-		Status: api.EnvironmentStatus(dbEnv.Status),
-		Public: dbEnv.Public,
+		EnvID:   dbEnv.ID,
+		BuildID: "",
+		Status:  api.EnvironmentStatus(dbEnv.Status),
+		Logs:    nil,
+		Public:  dbEnv.Public,
 	}, nil
 }
 
@@ -81,7 +86,7 @@ func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.En
 		return nil, errMsg
 	}
 
-	return &api.Environment{EnvID: envID, Status: api.EnvironmentStatusBuilding, Public: false}, nil
+	return &api.Environment{EnvID: envID, BuildID: "", Logs: nil, Status: api.EnvironmentStatusBuilding, Public: false}, nil
 }
 
 func (db *DB) UpdateDockerfileEnv(envID string, dockerfile string) (*api.Environment, error) {
@@ -105,7 +110,7 @@ func (db *DB) UpdateDockerfileEnv(envID string, dockerfile string) (*api.Environ
 		return nil, fmt.Errorf("didn't find env to update, env with id '%s'", envID)
 	}
 
-	return &api.Environment{EnvID: envID, Status: api.EnvironmentStatusBuilding, Public: false}, nil
+	return &api.Environment{EnvID: envID, BuildID: "", Logs: nil, Status: api.EnvironmentStatusBuilding, Public: false}, nil
 }
 
 func (db *DB) UpdateStatusEnv(envID string, status models.EnvStatusEnum) (*api.Environment, error) {
@@ -127,7 +132,7 @@ func (db *DB) UpdateStatusEnv(envID string, status models.EnvStatusEnum) (*api.E
 		return nil, fmt.Errorf("didn't find env to update to, env with id '%s'", envID)
 	}
 
-	return &api.Environment{EnvID: envID, Status: api.EnvironmentStatus(status), Public: false}, nil
+	return &api.Environment{EnvID: envID, BuildID: "", Logs: nil, Status: api.EnvironmentStatus(status), Public: false}, nil
 }
 
 func (db *DB) HasEnvAccess(envID string, teamID string, public bool) (bool, error) {

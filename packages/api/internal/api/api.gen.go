@@ -20,8 +20,11 @@ type ServerInterface interface {
 	// (POST /envs)
 	PostEnvs(c *gin.Context)
 
-	// (GET /envs/{envID})
-	GetEnvsEnvID(c *gin.Context, envID EnvID, params GetEnvsEnvIDParams)
+	// (GET /envs/{envID}/builds/{buildID})
+	GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID EnvID, buildID BuildID, params GetEnvsEnvIDBuildsBuildIDParams)
+
+	// (POST /envs/{envID}/builds/{buildID}/logs)
+	PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID EnvID, buildID BuildID)
 
 	// (GET /health)
 	GetHealth(c *gin.Context)
@@ -72,8 +75,8 @@ func (siw *ServerInterfaceWrapper) PostEnvs(c *gin.Context) {
 	siw.Handler.PostEnvs(c)
 }
 
-// GetEnvsEnvID operation middleware
-func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
+// GetEnvsEnvIDBuildsBuildID operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvsEnvIDBuildsBuildID(c *gin.Context) {
 
 	var err error
 
@@ -86,16 +89,25 @@ func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
 		return
 	}
 
+	// ------------- Path parameter "buildID" -------------
+	var buildID BuildID
+
+	err = runtime.BindStyledParameter("simple", false, "buildID", c.Param("buildID"), &buildID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter buildID: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	c.Set(AccessTokenAuthScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetEnvsEnvIDParams
+	var params GetEnvsEnvIDBuildsBuildIDParams
 
-	// ------------- Optional query parameter "logs" -------------
+	// ------------- Optional query parameter "logsOffset" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "logs", c.Request.URL.Query(), &params.Logs)
+	err = runtime.BindQueryParameter("form", true, false, "logsOffset", c.Request.URL.Query(), &params.LogsOffset)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter logs: %w", err), http.StatusBadRequest)
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter logsOffset: %w", err), http.StatusBadRequest)
 		return
 	}
 
@@ -106,7 +118,40 @@ func (siw *ServerInterfaceWrapper) GetEnvsEnvID(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetEnvsEnvID(c, envID, params)
+	siw.Handler.GetEnvsEnvIDBuildsBuildID(c, envID, buildID, params)
+}
+
+// PostEnvsEnvIDBuildsBuildIDLogs operation middleware
+func (siw *ServerInterfaceWrapper) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "envID" -------------
+	var envID EnvID
+
+	err = runtime.BindStyledParameter("simple", false, "envID", c.Param("envID"), &envID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter envID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Path parameter "buildID" -------------
+	var buildID BuildID
+
+	err = runtime.BindStyledParameter("simple", false, "buildID", c.Param("buildID"), &buildID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter buildID: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.PostEnvsEnvIDBuildsBuildIDLogs(c, envID, buildID)
 }
 
 // GetHealth operation middleware
@@ -192,7 +237,8 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 
 	router.GET(options.BaseURL+"/envs", wrapper.GetEnvs)
 	router.POST(options.BaseURL+"/envs", wrapper.PostEnvs)
-	router.GET(options.BaseURL+"/envs/:envID", wrapper.GetEnvsEnvID)
+	router.GET(options.BaseURL+"/envs/:envID/builds/:buildID", wrapper.GetEnvsEnvIDBuildsBuildID)
+	router.POST(options.BaseURL+"/envs/:envID/builds/:buildID/logs", wrapper.PostEnvsEnvIDBuildsBuildIDLogs)
 	router.GET(options.BaseURL+"/health", wrapper.GetHealth)
 	router.POST(options.BaseURL+"/instances", wrapper.PostInstances)
 	router.POST(options.BaseURL+"/instances/:instanceID/refreshes", wrapper.PostInstancesInstanceIDRefreshes)

@@ -3,6 +3,7 @@ package env
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -63,6 +64,9 @@ type Env struct {
 
 	// The amount of free disk to allocate to the VM, in MiB.
 	DiskSizeMB int64
+
+	// Path to the directory where the temporary files for the build are stored.
+	BuildLogsWriter io.Writer
 }
 
 //go:embed provision.sh

@@ -36,6 +36,7 @@ func (n *NomadClient) BuildEnvJob(
 	envID string,
 	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
 	buildID string,
+	apiSecret string,
 ) error {
 	childCtx, childSpan := t.Start(ctx, "build-env-job",
 		trace.WithAttributes(
@@ -55,6 +56,7 @@ func (n *NomadClient) BuildEnvJob(
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
+		APISecret  string
 		BuildID    string
 		EnvID      string
 		SpanID     string
@@ -66,6 +68,7 @@ func (n *NomadClient) BuildEnvJob(
 		MemoryMB   int
 		DiskSizeMB int
 	}{
+		APISecret:  apiSecret,
 		BuildID:    buildID,
 		SpanID:     spanID,
 		DiskSizeMB: defaultDiskSizeMB,
