@@ -17,7 +17,7 @@ on:
         required: true
 
 env:
-  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/infra/plugin-cache
 
 jobs:
   deploy:
