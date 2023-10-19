@@ -52,8 +52,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.6.4
-        version: 0.6.5
+        specifier: ^0.7.0
+        version: 0.7.0
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -891,21 +891,19 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@e2b/sdk@0.6.5:
-    resolution: {integrity: sha512-foE/XBxmaK9ecPUDUoE9LiYROWmIxTl3jtJkGrAL1pDXgK4pgirN9seob/38vRRJNQLSmZc1uoW27BoTEyREcw==}
+  /@e2b/sdk@0.7.0:
+    resolution: {integrity: sha512-VxLwx79ITninzlj7D+qvtgJxwFtOf4KZ+Iz0xN/VkrUQenZ9zglJv8fT8otRRszYavioYHd2QkpruGYnuDGpqg==}
+    engines: {node: '>=18'}
     dependencies:
-      '@types/node-fetch': 2.6.5
-      bufferutil: 4.0.7
-      cross-fetch: 3.1.8
-      form-data: 4.0.0
-      node-fetch: 2.7.0
+      cross-blob: 3.0.2
+      formdata-polyfill: 4.0.10
       normalize-path: 3.0.0
       openapi-typescript-fetch: 1.1.3
       platform: 1.3.6
-      rpc-websocket-client: 1.1.4(bufferutil@4.0.7)(utf-8-validate@5.0.10)
-      utf-8-validate: 5.0.10
+      rpc-websocket-client: 1.1.4
     transitivePeerDependencies:
-      - encoding
+      - bufferutil
+      - utf-8-validate
     dev: false
 
   /@emotion/is-prop-valid@0.8.8:
@@ -3270,6 +3268,7 @@ packages:
     dependencies:
       '@types/node': 18.17.18
       form-data: 4.0.0
+    dev: true
 
   /@types/node@12.20.55:
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
@@ -3294,6 +3293,12 @@ packages:
     resolution: {integrity: sha512-eWO4K2Ji70QzKUqRy6oyJWUeB7+g2cRagT3T/nxYibYcT4y2BDL8lqolRXjTHmkZCdJfIPaY73KbJAZmcryxTQ==}
     dependencies:
       undici-types: 5.25.3
+
+  /@types/node@20.8.7:
+    resolution: {integrity: sha512-21TKHHh3eUHIi2MloeptJWALuCu5H7HQTdTrWIFReA8ad+aggoX+lRes3ex7/FtpC+sVUpFMQ+QTfYr74mruiQ==}
+    dependencies:
+      undici-types: 5.25.3
+    dev: false
 
   /@types/normalize-package-data@2.4.1:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
@@ -4343,6 +4348,7 @@ packages:
 
   /asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
+    dev: true
 
   /autoprefixer@10.4.15(postcss@8.4.30):
     resolution: {integrity: sha512-KCuPB8ZCIqFdA4HwKXsvz7j6gvSDNhDP7WnUjBleRkKjPdvCmHFuQ77ocavI8FT6NdvlBnE2UFr2H4Mycn8Vew==}
@@ -4959,6 +4965,7 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
+    dev: true
 
   /comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
@@ -5376,6 +5383,7 @@ packages:
   /delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
+    dev: true
 
   /delegates@1.0.0:
     resolution: {integrity: sha512-bd2L678uiWATM6m5Z1VzNCErI3jiGzt6HGY8OVICs40JQq/HALfbyNJmp0UDakEY4pMMaN0Ly5om/B1VI/+xfQ==}
@@ -5804,31 +5812,6 @@ packages:
       esutils: 2.0.3
     optionalDependencies:
       source-map: 0.6.1
-    dev: true
-
-  /eslint-config-next@13.4.19(eslint@8.49.0)(typescript@4.9.5):
-    resolution: {integrity: sha512-WE8367sqMnjhWHvR5OivmfwENRQ1ixfNE9hZwQqNCsd+iM3KnuMc1V8Pt6ytgjxjf23D+xbesADv9x3xaKfT3g==}
-    peerDependencies:
-      eslint: ^7.23.0 || ^8.0.0
-      typescript: '>=3.3.1'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-    dependencies:
-      '@next/eslint-plugin-next': 13.4.19
-      '@rushstack/eslint-patch': 1.4.0
-      '@typescript-eslint/parser': 6.7.2(eslint@8.49.0)(typescript@4.9.5)
-      eslint: 8.49.0
-      eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.6.0(@typescript-eslint/parser@6.7.2)(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.28.1)(eslint@8.49.0)
-      eslint-plugin-import: 2.28.1(@typescript-eslint/parser@6.7.2)(eslint@8.49.0)
-      eslint-plugin-jsx-a11y: 6.7.1(eslint@8.49.0)
-      eslint-plugin-react: 7.33.2(eslint@8.49.0)
-      eslint-plugin-react-hooks: 4.6.0(eslint@8.49.0)
-      typescript: 4.9.5
-    transitivePeerDependencies:
-      - eslint-import-resolver-webpack
-      - supports-color
     dev: true
 
   /eslint-config-next@13.4.19(eslint@8.49.0)(typescript@5.1.6):
@@ -6511,6 +6494,7 @@ packages:
       asynckit: 0.4.0
       combined-stream: 1.0.8
       mime-types: 2.1.35
+    dev: true
 
   /formdata-node@4.4.1:
     resolution: {integrity: sha512-0iirZp3uVDjVGt9p49aTaqjk84TrglENEDuqfdlZQ1roC9CWlPk6Avf8EEnZNcAqPonwkG35x4n3ww/1THYAeQ==}
@@ -7690,7 +7674,7 @@ packages:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 20.8.6
+      '@types/node': 20.8.7
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: false
@@ -11032,18 +11016,6 @@ packages:
       - utf-8-validate
     dev: false
 
-  /rpc-websocket-client@1.1.4(bufferutil@4.0.7)(utf-8-validate@5.0.10):
-    resolution: {integrity: sha512-UDMVcsNDJ3WET+0EFdmseYX+60MOCA3BpgpZ5dbtiGsqHo+9uWfgNbPZ4iGDtNcX+EUhCt/Y7C0fTmUU3CkkWA==}
-    engines: {node: '>=6.0.0'}
-    dependencies:
-      isomorphic-ws: 4.0.1(ws@7.5.9)
-      uuid: 3.4.0
-      ws: 7.5.9(bufferutil@4.0.7)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
   /rrweb-cssom@0.6.0:
     resolution: {integrity: sha512-APM0Gt1KoXBz0iIkkdB/kfvGOwC4UuJFeG/c+yV7wSc7q96cG/kJ0HiYCnzivD9SB53cLV1MlHFNfOuPaadYSw==}
     dev: true
@@ -13104,22 +13076,6 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
-    dev: false
-
-  /ws@7.5.9(bufferutil@4.0.7)(utf-8-validate@5.0.10):
-    resolution: {integrity: sha512-F+P9Jil7UiSKSkppIiD94dN07AwvFixvLIj1Og1Rl9GGMuNipJnV9JzjD6XuqmAeiswGvUmNLjr5cFuXwNS77Q==}
-    engines: {node: '>=8.3.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: ^5.0.2
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-    dependencies:
-      bufferutil: 4.0.7
-      utf-8-validate: 5.0.10
     dev: false
 
   /ws@8.13.0:
