@@ -24,4 +24,5 @@ from .session import (
 
 from .templates import (
     DataAnalysis,
+    Artifact,
 )
