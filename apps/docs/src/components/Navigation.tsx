@@ -23,8 +23,6 @@ import {
   Timer,
   FileUp,
   FileDown,
-  Variable,
-  TextQuote,
   HeartHandshake,
   DollarSign,
   Hammer,
