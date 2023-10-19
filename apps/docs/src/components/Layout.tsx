@@ -8,6 +8,7 @@ import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { Navigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
+import { Logo } from '@/components/Logo'
 
 export function Layout({
   children,
@@ -27,13 +28,12 @@ export function Layout({
           className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex"
         >
           <div className="contents lg:pointer-events-auto lg:block lg:w-72 lg:overflow-y-auto lg:border-r lg:border-zinc-900/10 lg:px-6 lg:pb-8 lg:pt-4 lg:dark:border-white/10 xl:w-80">
-            <div className="hidden lg:flex">
+            <div className="relative top-1 hidden items-start justify-start lg:flex">
               <Link
                 href="/"
                 aria-label="Home"
               >
-                <h1 className="text-xl font-bold">E2B</h1>
-                {/* <Logo className="h-6" /> */}
+                <Logo className="h-6" />
               </Link>
             </div>
             <Header />

@@ -1,4 +1,4 @@
-import {Session} from '@e2b/sdk'
+import { Session } from '@e2b/sdk'
 
 // You can pass an API key explicitly
 const explicitAPIKey = await Session.create({

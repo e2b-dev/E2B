@@ -13,15 +13,19 @@ import { remToPx } from '@/lib/remToPx'
 import { Auth } from '@/components/Auth'
 import { Feedback } from '@/components/Feedback'
 import {
-  Binary,
-  Bug,
   ChevronRightSquare,
   Folder,
   FolderTree,
   KeyRound,
   Settings,
-  ShieldAlert,
+  AlertOctagon,
+  ShieldQuestion,
   Timer,
+  FileUp,
+  FileDown,
+  HeartHandshake,
+  DollarSign,
+  Hammer,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -100,10 +104,12 @@ function NavLink({
             >
               {tag}
             </Tag>
-            <span className="truncate">{children}</span>
+            <span className={clsx('truncate', active ? 'text-white' : '')}>
+              {children}
+            </span>
           </div>
         ) : (
-          <span className="truncate">{children}</span>
+          <span className={clsx('truncate', active ? 'text-white' : '')}>{children}</span>
         )}
       </div>
     </Link>
@@ -147,7 +153,7 @@ function ActivePageMarker({ group, pathname }: { group: NavGroup; pathname: stri
   return (
     <motion.div
       layout
-      className="absolute left-2 h-6 w-px bg-emerald-500"
+      className="absolute left-2 h-6 w-px bg-brand-500"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: 0.2 } }}
       exit={{ opacity: 0 }}
@@ -170,14 +176,13 @@ function NavigationGroup({ group, className }) {
     [initialPathname, useSectionStore(s => s.sections)],
     isInsideMobileNavigation,
   )
-
   const isActiveGroup = activeGroupIndex(group, pathname) !== -1
 
   return (
     <li className={clsx('relative mt-6', className)}>
       <motion.h2
         layout="position"
-        className="text-xs font-semibold text-zinc-900 dark:text-white"
+        className="text-sm font-semibold text-zinc-900 dark:text-white"
       >
         {group.title}
       </motion.h2>
@@ -216,7 +221,11 @@ function NavigationGroup({ group, className }) {
               <NavLink
                 className="font-medium"
                 href={link.href}
-                active={`/docs${link.href}` === pathname}
+                active={
+                  `/docs${link.href}` === pathname ||
+                  // Special case for index (/)
+                  (link.href == '/' && pathname == '/docs')
+                }
                 isFontMono={link.isFontMono}
                 icon={link.icon}
                 tag={link.tag}
@@ -266,13 +275,38 @@ function NavigationGroup({ group, className }) {
 
 export const navigation = [
   {
-    title: 'Introduction',
+    title: 'Overview',
     links: [
-      { title: 'What is E2B & AI Playgrounds?', href: '/' },
-      { title: 'Pricing', href: '/pricing' },
+      { title: 'Introduction', href: '/' },
       {
-        title: 'Example: Build Code Interpreter',
-        href: '/guide/simple-gpt4-code-interpreter',
+        icon: (
+          <HeartHandshake
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Open source',
+        href: '/open-source',
+      },
+      {
+        icon: (
+          <DollarSign
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Pricing',
+        href: '/pricing',
+      },
+      {
+        icon: (
+          <ShieldQuestion
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Getting help',
+        href: '/getting-help',
       },
     ],
   },
@@ -299,29 +333,49 @@ export const navigation = [
         title: 'API Key',
         href: '/getting-started/api-key',
       },
-      // { title: 'SDK Basics', href: '/getting-started/basics' },
-      // { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
-      // { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
-      // {
-      //   title: 'SDK Multiple Processes',
-      //   href: '/getting-started/sdk-multiple-processes',
-      // },
-    ],
-  },
-  {
-    title: 'AI Playgrounds SDK',
-    links: [
-      { title: 'Overview', href: '/playgrounds/overview' },
       {
         icon: (
-          <ShieldAlert
+          <Hammer
             strokeWidth={1}
             size={20}
           />
         ),
-        title: 'Limitations',
+        title: 'Example: Build Code Interpreter',
+        href: '/guide/simple-gpt4-code-interpreter',
+      },
+    ],
+  },
+  // {
+  //   title: 'Use Cases & Guides',
+  //   links: [
+  //     { title: '[TODO] AI Data Analysis & Code Interpreter', href: '/' },
+  //     { title: '[TODO] Run LLM-Generated Code', href: '/' },
+  //   ],
+  // },
+  {
+    title: 'Sandbox API',
+    links: [
+      { title: 'Overview', href: '/playgrounds/overview' },
+      {
+        icon: (
+          <AlertOctagon
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Current Limitations',
         href: '/playgrounds/limitations',
       },
+      // {
+      //   icon: (
+      //     <Variable
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: '[TODO] Environment Variables',
+      //   href: '/playgrounds/envs',
+      // },
       {
         icon: (
           <FolderTree
@@ -339,39 +393,40 @@ export const navigation = [
             size={20}
           />
         ),
-        title: 'Running Processes',
+        title: 'Process',
         href: '/playgrounds/process',
       },
+      // TODO: Remove
+      // {
+      //   icon: (
+      //     <Binary
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: 'Executing Code',
+      //   href: '/playgrounds/execute',
+      // },
       {
         icon: (
-          <Binary
+          <FileUp
             strokeWidth={1}
             size={20}
           />
         ),
-        title: 'Executing Code',
-        href: '/playgrounds/execute',
+        title: 'Upload Files',
+        href: '/playgrounds/upload',
       },
-      // {
-      //   icon: (
-      //     <FileUp
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Upload Files',
-      //   href: '/playgrounds/upload',
-      // },
-      // {
-      //   icon: (
-      //     <FileDown
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Download Files',
-      //   href: '/playgrounds/download',
-      // },
+      {
+        icon: (
+          <FileDown
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Download Files',
+        href: '/playgrounds/download',
+      },
       {
         icon: (
           <Folder
@@ -382,16 +437,26 @@ export const navigation = [
         title: 'Working Directory',
         href: '/playgrounds/cwd',
       },
-      {
-        icon: (
-          <Bug
-            strokeWidth={1}
-            size={20}
-          />
-        ),
-        title: 'Debugging',
-        href: '/playgrounds/debugging',
-      },
+      // {
+      //   icon: (
+      //     <TextQuote
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: '[TODO] Streaming',
+      //   href: '/playgrounds/streaming',
+      // },
+      // {
+      //   icon: (
+      //     <TextQuote
+      //       strokeWidth={1}
+      //       size={20}
+      //     />
+      //   ),
+      //   title: '[TODO] Debug logs',
+      //   href: '/playgrounds/debugging',
+      // },
       {
         icon: (
           <Timer
@@ -404,18 +469,18 @@ export const navigation = [
       },
     ],
   },
-  {
-    title: 'AI Agents Use Case',
-    links: [
-      { title: 'Execute Code', href: '/agents/exec' },
-      // { title: 'Installing Dependencies', href: '/agents/deps' },
-      { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
-      { title: 'Run Shell Commands', href: '/agents/shell-commands' },
-      // { title: 'Read File', href: '/agents/read' },
-      // { title: 'Write File', href: '/agents/write' },
-      // TODO: Guide for building ffmpeg agent
-    ],
-  },
+  // {
+  //   title: 'AI Agents Use Case',
+  //   links: [
+  //     { title: 'Execute Code', href: '/agents/exec' },
+  //     // { title: 'Installing Dependencies', href: '/agents/deps' },
+  //     { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
+  //     { title: 'Run Shell Commands', href: '/agents/shell-commands' },
+  //     // { title: 'Read File', href: '/agents/read' },
+  //     // { title: 'Write File', href: '/agents/write' },
+  //     // TODO: Guide for building ffmpeg agent
+  //   ],
+  // },
 
   // {
   //   title: 'AI Environments',
@@ -496,10 +561,7 @@ export function Navigation(props) {
           />
         ))}
         <li className="z-10 mt-6">
-          <Feedback
-            variant="secondary"
-            className="w-full"
-          />
+          <Feedback className="w-full" />
         </li>
         <li
           /* -1.5rem to stretch outside the padding of the parent list */

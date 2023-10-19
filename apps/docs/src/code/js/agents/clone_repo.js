@@ -8,7 +8,8 @@ const session = await Session.create({
 })
 
 // 2. Start a process that will clone a repository
-let proc = await session.process.start({ // $HighlightLine
+let proc = await session.process.start({
+  // $HighlightLine
   cmd: 'git clone https://github.com/cruip/open-react-template.git /code/open-react-template', // $HighlightLine
   onStderr: data => console.log(data.line), // $HighlightLine
   onStdout: data => console.log(data.line), // $HighlightLine
