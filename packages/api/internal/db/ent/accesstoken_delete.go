@@ -41,7 +41,7 @@ func (atd *AccessTokenDelete) ExecX(ctx context.Context) int {
 }
 
 func (atd *AccessTokenDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(accesstoken.Table, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
+	_spec := sqlgraph.NewDeleteSpec(accesstoken.Table, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeInt))
 	_spec.Node.Schema = atd.schemaConfig.AccessToken
 	ctx = internal.NewSchemaConfigContext(ctx, atd.schemaConfig)
 	if ps := atd.mutation.predicates; len(ps) > 0 {

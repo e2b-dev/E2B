@@ -28,6 +28,14 @@ func (takc *TeamApiKeyCreate) SetCreatedAt(t time.Time) *TeamApiKeyCreate {
 	return takc
 }
 
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (takc *TeamApiKeyCreate) SetNillableCreatedAt(t *time.Time) *TeamApiKeyCreate {
+	if t != nil {
+		takc.SetCreatedAt(*t)
+	}
+	return takc
+}
+
 // SetTeamID sets the "team_id" field.
 func (takc *TeamApiKeyCreate) SetTeamID(u uuid.UUID) *TeamApiKeyCreate {
 	takc.mutation.SetTeamID(u)
@@ -62,6 +70,7 @@ func (takc *TeamApiKeyCreate) Mutation() *TeamApiKeyMutation {
 
 // Save creates the TeamApiKey in the database.
 func (takc *TeamApiKeyCreate) Save(ctx context.Context) (*TeamApiKey, error) {
+	takc.defaults()
 	return withHooks(ctx, takc.sqlSave, takc.mutation, takc.hooks)
 }
 
@@ -84,6 +93,14 @@ func (takc *TeamApiKeyCreate) Exec(ctx context.Context) error {
 func (takc *TeamApiKeyCreate) ExecX(ctx context.Context) {
 	if err := takc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (takc *TeamApiKeyCreate) defaults() {
+	if _, ok := takc.mutation.CreatedAt(); !ok {
+		v := teamapikey.DefaultCreatedAt()
+		takc.mutation.SetCreatedAt(v)
 	}
 }
 
@@ -177,6 +194,7 @@ func (takcb *TeamApiKeyCreateBulk) Save(ctx context.Context) ([]*TeamApiKey, err
 	for i := range takcb.builders {
 		func(i int, root context.Context) {
 			builder := takcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TeamApiKeyMutation)
 				if !ok {

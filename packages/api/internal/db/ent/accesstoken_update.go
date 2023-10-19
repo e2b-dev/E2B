@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -34,12 +33,6 @@ func (atu *AccessTokenUpdate) Where(ps ...predicate.AccessToken) *AccessTokenUpd
 // SetUserID sets the "user_id" field.
 func (atu *AccessTokenUpdate) SetUserID(u uuid.UUID) *AccessTokenUpdate {
 	atu.mutation.SetUserID(u)
-	return atu
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (atu *AccessTokenUpdate) SetCreatedAt(t time.Time) *AccessTokenUpdate {
-	atu.mutation.SetCreatedAt(t)
 	return atu
 }
 
@@ -112,7 +105,7 @@ func (atu *AccessTokenUpdate) ExecX(ctx context.Context) {
 }
 
 func (atu *AccessTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
+	_spec := sqlgraph.NewUpdateSpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeInt))
 	if ps := atu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -122,9 +115,6 @@ func (atu *AccessTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := atu.mutation.UserID(); ok {
 		_spec.SetField(accesstoken.FieldUserID, field.TypeUUID, value)
-	}
-	if value, ok := atu.mutation.CreatedAt(); ok {
-		_spec.SetField(accesstoken.FieldCreatedAt, field.TypeTime, value)
 	}
 	if atu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -199,12 +189,6 @@ type AccessTokenUpdateOne struct {
 // SetUserID sets the "user_id" field.
 func (atuo *AccessTokenUpdateOne) SetUserID(u uuid.UUID) *AccessTokenUpdateOne {
 	atuo.mutation.SetUserID(u)
-	return atuo
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (atuo *AccessTokenUpdateOne) SetCreatedAt(t time.Time) *AccessTokenUpdateOne {
-	atuo.mutation.SetCreatedAt(t)
 	return atuo
 }
 
@@ -290,7 +274,7 @@ func (atuo *AccessTokenUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (atuo *AccessTokenUpdateOne) sqlSave(ctx context.Context) (_node *AccessToken, err error) {
-	_spec := sqlgraph.NewUpdateSpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
+	_spec := sqlgraph.NewUpdateSpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeInt))
 	id, ok := atuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AccessToken.id" for update`)}
@@ -317,9 +301,6 @@ func (atuo *AccessTokenUpdateOne) sqlSave(ctx context.Context) (_node *AccessTok
 	}
 	if value, ok := atuo.mutation.UserID(); ok {
 		_spec.SetField(accesstoken.FieldUserID, field.TypeUUID, value)
-	}
-	if value, ok := atuo.mutation.CreatedAt(); ok {
-		_spec.SetField(accesstoken.FieldCreatedAt, field.TypeTime, value)
 	}
 	if atuo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{

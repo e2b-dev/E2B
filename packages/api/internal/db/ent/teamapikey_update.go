@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,12 +27,6 @@ type TeamApiKeyUpdate struct {
 // Where appends a list predicates to the TeamApiKeyUpdate builder.
 func (taku *TeamApiKeyUpdate) Where(ps ...predicate.TeamApiKey) *TeamApiKeyUpdate {
 	taku.mutation.Where(ps...)
-	return taku
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (taku *TeamApiKeyUpdate) SetCreatedAt(t time.Time) *TeamApiKeyUpdate {
-	taku.mutation.SetCreatedAt(t)
 	return taku
 }
 
@@ -120,9 +113,6 @@ func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := taku.mutation.CreatedAt(); ok {
-		_spec.SetField(teamapikey.FieldCreatedAt, field.TypeTime, value)
-	}
 	if value, ok := taku.mutation.TeamID(); ok {
 		_spec.SetField(teamapikey.FieldTeamID, field.TypeUUID, value)
 	}
@@ -194,12 +184,6 @@ type TeamApiKeyUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *TeamApiKeyMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (takuo *TeamApiKeyUpdateOne) SetCreatedAt(t time.Time) *TeamApiKeyUpdateOne {
-	takuo.mutation.SetCreatedAt(t)
-	return takuo
 }
 
 // SetTeamID sets the "team_id" field.
@@ -314,9 +298,6 @@ func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKe
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := takuo.mutation.CreatedAt(); ok {
-		_spec.SetField(teamapikey.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := takuo.mutation.TeamID(); ok {
 		_spec.SetField(teamapikey.FieldTeamID, field.TypeUUID, value)

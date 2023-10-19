@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -14,8 +15,10 @@ type Env struct {
 
 func (Env) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id"),
-		field.Time("created_at"),
+		field.String("id").Immutable(),
+		field.Time("created_at").Immutable().Annotations(
+			entsql.Default("CURRENT_TIMESTAMP"),
+		),
 		field.UUID("team_id", uuid.UUID{}),
 		field.String("dockerfile"),
 		field.Enum("status").Values("building", "ready", "error"),

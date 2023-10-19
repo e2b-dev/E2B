@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,12 +27,6 @@ type EnvUpdate struct {
 // Where appends a list predicates to the EnvUpdate builder.
 func (eu *EnvUpdate) Where(ps ...predicate.Env) *EnvUpdate {
 	eu.mutation.Where(ps...)
-	return eu
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (eu *EnvUpdate) SetCreatedAt(t time.Time) *EnvUpdate {
-	eu.mutation.SetCreatedAt(t)
 	return eu
 }
 
@@ -157,9 +150,6 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := eu.mutation.CreatedAt(); ok {
-		_spec.SetField(env.FieldCreatedAt, field.TypeTime, value)
-	}
 	if value, ok := eu.mutation.TeamID(); ok {
 		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)
 	}
@@ -243,12 +233,6 @@ type EnvUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *EnvMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (euo *EnvUpdateOne) SetCreatedAt(t time.Time) *EnvUpdateOne {
-	euo.mutation.SetCreatedAt(t)
-	return euo
 }
 
 // SetTeamID sets the "team_id" field.
@@ -400,9 +384,6 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := euo.mutation.CreatedAt(); ok {
-		_spec.SetField(env.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := euo.mutation.TeamID(); ok {
 		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)

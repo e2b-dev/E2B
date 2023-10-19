@@ -43,7 +43,8 @@ type AccessTokenMutation struct {
 	config
 	op            Op
 	typ           string
-	id            *string
+	id            *int
+	access_token  *string
 	user_id       *uuid.UUID
 	created_at    *time.Time
 	clearedFields map[string]struct{}
@@ -75,7 +76,7 @@ func newAccessTokenMutation(c config, op Op, opts ...accesstokenOption) *AccessT
 }
 
 // withAccessTokenID sets the ID field of the mutation.
-func withAccessTokenID(id string) accesstokenOption {
+func withAccessTokenID(id int) accesstokenOption {
 	return func(m *AccessTokenMutation) {
 		var (
 			err   error
@@ -125,15 +126,9 @@ func (m AccessTokenMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of AccessToken entities.
-func (m *AccessTokenMutation) SetID(id string) {
-	m.id = &id
-}
-
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *AccessTokenMutation) ID() (id string, exists bool) {
+func (m *AccessTokenMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -144,12 +139,12 @@ func (m *AccessTokenMutation) ID() (id string, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *AccessTokenMutation) IDs(ctx context.Context) ([]string, error) {
+func (m *AccessTokenMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []string{id}, nil
+			return []int{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -157,6 +152,42 @@ func (m *AccessTokenMutation) IDs(ctx context.Context) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetAccessToken sets the "access_token" field.
+func (m *AccessTokenMutation) SetAccessToken(s string) {
+	m.access_token = &s
+}
+
+// AccessToken returns the value of the "access_token" field in the mutation.
+func (m *AccessTokenMutation) AccessToken() (r string, exists bool) {
+	v := m.access_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessToken returns the old "access_token" field's value of the AccessToken entity.
+// If the AccessToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccessTokenMutation) OldAccessToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessToken: %w", err)
+	}
+	return oldValue.AccessToken, nil
+}
+
+// ResetAccessToken resets all changes to the "access_token" field.
+func (m *AccessTokenMutation) ResetAccessToken() {
+	m.access_token = nil
 }
 
 // SetUserID sets the "user_id" field.
@@ -319,7 +350,10 @@ func (m *AccessTokenMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AccessTokenMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
+	if m.access_token != nil {
+		fields = append(fields, accesstoken.FieldAccessToken)
+	}
 	if m.user_id != nil {
 		fields = append(fields, accesstoken.FieldUserID)
 	}
@@ -334,6 +368,8 @@ func (m *AccessTokenMutation) Fields() []string {
 // schema.
 func (m *AccessTokenMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case accesstoken.FieldAccessToken:
+		return m.AccessToken()
 	case accesstoken.FieldUserID:
 		return m.UserID()
 	case accesstoken.FieldCreatedAt:
@@ -347,6 +383,8 @@ func (m *AccessTokenMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *AccessTokenMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case accesstoken.FieldAccessToken:
+		return m.OldAccessToken(ctx)
 	case accesstoken.FieldUserID:
 		return m.OldUserID(ctx)
 	case accesstoken.FieldCreatedAt:
@@ -360,6 +398,13 @@ func (m *AccessTokenMutation) OldField(ctx context.Context, name string) (ent.Va
 // type.
 func (m *AccessTokenMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case accesstoken.FieldAccessToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessToken(v)
+		return nil
 	case accesstoken.FieldUserID:
 		v, ok := value.(uuid.UUID)
 		if !ok {
@@ -423,6 +468,9 @@ func (m *AccessTokenMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *AccessTokenMutation) ResetField(name string) error {
 	switch name {
+	case accesstoken.FieldAccessToken:
+		m.ResetAccessToken()
+		return nil
 	case accesstoken.FieldUserID:
 		m.ResetUserID()
 		return nil

@@ -10,9 +10,10 @@ import (
 var (
 	// AccessTokensColumns holds the columns for the "access_tokens" table.
 	AccessTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "access_token", Type: field.TypeString, Unique: true},
 		{Name: "user_id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 	}
 	// AccessTokensTable holds the schema information for the "access_tokens" table.
 	AccessTokensTable = &schema.Table{
@@ -23,7 +24,7 @@ var (
 	// EnvsColumns holds the columns for the "envs" table.
 	EnvsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "team_id", Type: field.TypeUUID},
 		{Name: "dockerfile", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"building", "ready", "error"}},
@@ -39,7 +40,7 @@ var (
 	// TeamsColumns holds the columns for the "teams" table.
 	TeamsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "is_default", Type: field.TypeBool},
 		{Name: "name", Type: field.TypeString},
 		{Name: "is_blocked", Type: field.TypeBool},
@@ -69,7 +70,7 @@ var (
 	// TeamAPIKeysColumns holds the columns for the "team_api_keys" table.
 	TeamAPIKeysColumns = []*schema.Column{
 		{Name: "api_key", Type: field.TypeString},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "team_id", Type: field.TypeUUID},
 	}
 	// TeamAPIKeysTable holds the schema information for the "team_api_keys" table.
@@ -82,7 +83,7 @@ var (
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "email", Type: field.TypeString},
-		{Name: "access_token_users", Type: field.TypeString, Nullable: true},
+		{Name: "access_token_users", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{

@@ -2,8 +2,28 @@
 
 package ent
 
+import (
+	"time"
+
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/schema"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+)
+
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	teamFields := schema.Team{}.Fields()
+	_ = teamFields
+	// teamDescCreatedAt is the schema descriptor for created_at field.
+	teamDescCreatedAt := teamFields[1].Descriptor()
+	// team.DefaultCreatedAt holds the default value on creation for the created_at field.
+	team.DefaultCreatedAt = teamDescCreatedAt.Default.(func() time.Time)
+	teamapikeyFields := schema.TeamApiKey{}.Fields()
+	_ = teamapikeyFields
+	// teamapikeyDescCreatedAt is the schema descriptor for created_at field.
+	teamapikeyDescCreatedAt := teamapikeyFields[1].Descriptor()
+	// teamapikey.DefaultCreatedAt holds the default value on creation for the created_at field.
+	teamapikey.DefaultCreatedAt = teamapikeyDescCreatedAt.Default.(func() time.Time)
 }

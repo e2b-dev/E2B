@@ -29,6 +29,14 @@ func (tc *TeamCreate) SetCreatedAt(t time.Time) *TeamCreate {
 	return tc
 }
 
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (tc *TeamCreate) SetNillableCreatedAt(t *time.Time) *TeamCreate {
+	if t != nil {
+		tc.SetCreatedAt(*t)
+	}
+	return tc
+}
+
 // SetIsDefault sets the "is_default" field.
 func (tc *TeamCreate) SetIsDefault(b bool) *TeamCreate {
 	tc.mutation.SetIsDefault(b)
@@ -90,6 +98,7 @@ func (tc *TeamCreate) Mutation() *TeamMutation {
 
 // Save creates the Team in the database.
 func (tc *TeamCreate) Save(ctx context.Context) (*Team, error) {
+	tc.defaults()
 	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
@@ -112,6 +121,14 @@ func (tc *TeamCreate) Exec(ctx context.Context) error {
 func (tc *TeamCreate) ExecX(ctx context.Context) {
 	if err := tc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (tc *TeamCreate) defaults() {
+	if _, ok := tc.mutation.CreatedAt(); !ok {
+		v := team.DefaultCreatedAt()
+		tc.mutation.SetCreatedAt(v)
 	}
 }
 
@@ -236,6 +253,7 @@ func (tcb *TeamCreateBulk) Save(ctx context.Context) ([]*Team, error) {
 	for i := range tcb.builders {
 		func(i int, root context.Context) {
 			builder := tcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TeamMutation)
 				if !ok {
