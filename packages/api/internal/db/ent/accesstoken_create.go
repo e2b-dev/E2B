@@ -22,12 +22,6 @@ type AccessTokenCreate struct {
 	hooks    []Hook
 }
 
-// SetAccessToken sets the "access_token" field.
-func (atc *AccessTokenCreate) SetAccessToken(s string) *AccessTokenCreate {
-	atc.mutation.SetAccessToken(s)
-	return atc
-}
-
 // SetUserID sets the "user_id" field.
 func (atc *AccessTokenCreate) SetUserID(u uuid.UUID) *AccessTokenCreate {
 	atc.mutation.SetUserID(u)
@@ -37,6 +31,12 @@ func (atc *AccessTokenCreate) SetUserID(u uuid.UUID) *AccessTokenCreate {
 // SetCreatedAt sets the "created_at" field.
 func (atc *AccessTokenCreate) SetCreatedAt(t time.Time) *AccessTokenCreate {
 	atc.mutation.SetCreatedAt(t)
+	return atc
+}
+
+// SetID sets the "id" field.
+func (atc *AccessTokenCreate) SetID(s string) *AccessTokenCreate {
+	atc.mutation.SetID(s)
 	return atc
 }
 
@@ -89,9 +89,6 @@ func (atc *AccessTokenCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (atc *AccessTokenCreate) check() error {
-	if _, ok := atc.mutation.AccessToken(); !ok {
-		return &ValidationError{Name: "access_token", err: errors.New(`ent: missing required field "AccessToken.access_token"`)}
-	}
 	if _, ok := atc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "AccessToken.user_id"`)}
 	}
@@ -112,8 +109,13 @@ func (atc *AccessTokenCreate) sqlSave(ctx context.Context) (*AccessToken, error)
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(string); ok {
+			_node.ID = id
+		} else {
+			return nil, fmt.Errorf("unexpected AccessToken.ID type: %T", _spec.ID.Value)
+		}
+	}
 	atc.mutation.id = &_node.ID
 	atc.mutation.done = true
 	return _node, nil
@@ -122,12 +124,12 @@ func (atc *AccessTokenCreate) sqlSave(ctx context.Context) (*AccessToken, error)
 func (atc *AccessTokenCreate) createSpec() (*AccessToken, *sqlgraph.CreateSpec) {
 	var (
 		_node = &AccessToken{config: atc.config}
-		_spec = sqlgraph.NewCreateSpec(accesstoken.Table, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(accesstoken.Table, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
 	)
 	_spec.Schema = atc.schemaConfig.AccessToken
-	if value, ok := atc.mutation.AccessToken(); ok {
-		_spec.SetField(accesstoken.FieldAccessToken, field.TypeString, value)
-		_node.AccessToken = value
+	if id, ok := atc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = id
 	}
 	if value, ok := atc.mutation.UserID(); ok {
 		_spec.SetField(accesstoken.FieldUserID, field.TypeUUID, value)
@@ -201,10 +203,6 @@ func (atcb *AccessTokenCreateBulk) Save(ctx context.Context) ([]*AccessToken, er
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

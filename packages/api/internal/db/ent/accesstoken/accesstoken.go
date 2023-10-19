@@ -11,15 +11,15 @@ const (
 	// Label holds the string label denoting the accesstoken type in the database.
 	Label = "access_token"
 	// FieldID holds the string denoting the id field in the database.
-	FieldID = "id"
-	// FieldAccessToken holds the string denoting the access_token field in the database.
-	FieldAccessToken = "access_token"
+	FieldID = "access_token"
 	// FieldUserID holds the string denoting the user_id field in the database.
 	FieldUserID = "user_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
+	// UserFieldID holds the string denoting the ID field of the User.
+	UserFieldID = "id"
 	// Table holds the table name of the accesstoken in the database.
 	Table = "access_tokens"
 	// UsersTable is the table that holds the users relation/edge.
@@ -34,7 +34,6 @@ const (
 // Columns holds all SQL columns for accesstoken fields.
 var Columns = []string{
 	FieldID,
-	FieldAccessToken,
 	FieldUserID,
 	FieldCreatedAt,
 }
@@ -55,11 +54,6 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
-}
-
-// ByAccessToken orders the results by the access_token field.
-func ByAccessToken(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAccessToken, opts...).ToFunc()
 }
 
 // ByUserID orders the results by the user_id field.
@@ -88,7 +82,7 @@ func ByUsers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 func newUsersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(UsersInverseTable, FieldID),
+		sqlgraph.To(UsersInverseTable, UserFieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, UsersTable, UsersColumn),
 	)
 }

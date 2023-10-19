@@ -13,53 +13,58 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.AccessToken {
+func ID(id string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.AccessToken {
+func IDEQ(id string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.AccessToken {
+func IDNEQ(id string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.AccessToken {
+func IDIn(ids ...string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.AccessToken {
+func IDNotIn(ids ...string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.AccessToken {
+func IDGT(id string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.AccessToken {
+func IDGTE(id string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.AccessToken {
+func IDLT(id string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.AccessToken {
+func IDLTE(id string) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldLTE(FieldID, id))
 }
 
-// AccessToken applies equality check predicate on the "access_token" field. It's identical to AccessTokenEQ.
-func AccessToken(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldEQ(FieldAccessToken, v))
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.AccessToken {
+	return predicate.AccessToken(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.AccessToken {
+	return predicate.AccessToken(sql.FieldContainsFold(FieldID, id))
 }
 
 // UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
@@ -70,71 +75,6 @@ func UserID(v uuid.UUID) predicate.AccessToken {
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.AccessToken {
 	return predicate.AccessToken(sql.FieldEQ(FieldCreatedAt, v))
-}
-
-// AccessTokenEQ applies the EQ predicate on the "access_token" field.
-func AccessTokenEQ(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldEQ(FieldAccessToken, v))
-}
-
-// AccessTokenNEQ applies the NEQ predicate on the "access_token" field.
-func AccessTokenNEQ(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldNEQ(FieldAccessToken, v))
-}
-
-// AccessTokenIn applies the In predicate on the "access_token" field.
-func AccessTokenIn(vs ...string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldIn(FieldAccessToken, vs...))
-}
-
-// AccessTokenNotIn applies the NotIn predicate on the "access_token" field.
-func AccessTokenNotIn(vs ...string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldNotIn(FieldAccessToken, vs...))
-}
-
-// AccessTokenGT applies the GT predicate on the "access_token" field.
-func AccessTokenGT(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldGT(FieldAccessToken, v))
-}
-
-// AccessTokenGTE applies the GTE predicate on the "access_token" field.
-func AccessTokenGTE(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldGTE(FieldAccessToken, v))
-}
-
-// AccessTokenLT applies the LT predicate on the "access_token" field.
-func AccessTokenLT(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldLT(FieldAccessToken, v))
-}
-
-// AccessTokenLTE applies the LTE predicate on the "access_token" field.
-func AccessTokenLTE(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldLTE(FieldAccessToken, v))
-}
-
-// AccessTokenContains applies the Contains predicate on the "access_token" field.
-func AccessTokenContains(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldContains(FieldAccessToken, v))
-}
-
-// AccessTokenHasPrefix applies the HasPrefix predicate on the "access_token" field.
-func AccessTokenHasPrefix(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldHasPrefix(FieldAccessToken, v))
-}
-
-// AccessTokenHasSuffix applies the HasSuffix predicate on the "access_token" field.
-func AccessTokenHasSuffix(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldHasSuffix(FieldAccessToken, v))
-}
-
-// AccessTokenEqualFold applies the EqualFold predicate on the "access_token" field.
-func AccessTokenEqualFold(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldEqualFold(FieldAccessToken, v))
-}
-
-// AccessTokenContainsFold applies the ContainsFold predicate on the "access_token" field.
-func AccessTokenContainsFold(v string) predicate.AccessToken {
-	return predicate.AccessToken(sql.FieldContainsFold(FieldAccessToken, v))
 }
 
 // UserIDEQ applies the EQ predicate on the "user_id" field.

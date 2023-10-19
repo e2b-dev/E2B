@@ -110,8 +110,8 @@ func (atq *AccessTokenQuery) FirstX(ctx context.Context) *AccessToken {
 
 // FirstID returns the first AccessToken ID from the query.
 // Returns a *NotFoundError when no AccessToken ID was found.
-func (atq *AccessTokenQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (atq *AccessTokenQuery) FirstID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = atq.Limit(1).IDs(setContextOp(ctx, atq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -123,7 +123,7 @@ func (atq *AccessTokenQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (atq *AccessTokenQuery) FirstIDX(ctx context.Context) int {
+func (atq *AccessTokenQuery) FirstIDX(ctx context.Context) string {
 	id, err := atq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -161,8 +161,8 @@ func (atq *AccessTokenQuery) OnlyX(ctx context.Context) *AccessToken {
 // OnlyID is like Only, but returns the only AccessToken ID in the query.
 // Returns a *NotSingularError when more than one AccessToken ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (atq *AccessTokenQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (atq *AccessTokenQuery) OnlyID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = atq.Limit(2).IDs(setContextOp(ctx, atq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -178,7 +178,7 @@ func (atq *AccessTokenQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (atq *AccessTokenQuery) OnlyIDX(ctx context.Context) int {
+func (atq *AccessTokenQuery) OnlyIDX(ctx context.Context) string {
 	id, err := atq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -206,7 +206,7 @@ func (atq *AccessTokenQuery) AllX(ctx context.Context) []*AccessToken {
 }
 
 // IDs executes the query and returns a list of AccessToken IDs.
-func (atq *AccessTokenQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (atq *AccessTokenQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if atq.ctx.Unique == nil && atq.path != nil {
 		atq.Unique(true)
 	}
@@ -218,7 +218,7 @@ func (atq *AccessTokenQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (atq *AccessTokenQuery) IDsX(ctx context.Context) []int {
+func (atq *AccessTokenQuery) IDsX(ctx context.Context) []string {
 	ids, err := atq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -302,12 +302,12 @@ func (atq *AccessTokenQuery) WithUsers(opts ...func(*UserQuery)) *AccessTokenQue
 // Example:
 //
 //	var v []struct {
-//		AccessToken string `json:"access_token,omitempty"`
+//		UserID uuid.UUID `json:"user_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.AccessToken.Query().
-//		GroupBy(accesstoken.FieldAccessToken).
+//		GroupBy(accesstoken.FieldUserID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (atq *AccessTokenQuery) GroupBy(field string, fields ...string) *AccessTokenGroupBy {
@@ -325,11 +325,11 @@ func (atq *AccessTokenQuery) GroupBy(field string, fields ...string) *AccessToke
 // Example:
 //
 //	var v []struct {
-//		AccessToken string `json:"access_token,omitempty"`
+//		UserID uuid.UUID `json:"user_id,omitempty"`
 //	}
 //
 //	client.AccessToken.Query().
-//		Select(accesstoken.FieldAccessToken).
+//		Select(accesstoken.FieldUserID).
 //		Scan(ctx, &v)
 func (atq *AccessTokenQuery) Select(fields ...string) *AccessTokenSelect {
 	atq.ctx.Fields = append(atq.ctx.Fields, fields...)
@@ -410,7 +410,7 @@ func (atq *AccessTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 
 func (atq *AccessTokenQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*AccessToken, init func(*AccessToken), assign func(*AccessToken, *User)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*AccessToken)
+	nodeids := make(map[string]*AccessToken)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -452,7 +452,7 @@ func (atq *AccessTokenQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (atq *AccessTokenQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(accesstoken.Table, accesstoken.Columns, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
 	_spec.From = atq.sql
 	if unique := atq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

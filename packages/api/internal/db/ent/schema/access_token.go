@@ -14,7 +14,7 @@ type AccessToken struct {
 
 func (AccessToken) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("access_token").Unique().Immutable(),
+		field.String("id").Unique().StorageKey("access_token").Immutable(),
 		field.UUID("user_id", uuid.UUID{}),
 		field.Time("created_at").Immutable().Annotations(
 			entsql.Default("CURRENT_TIMESTAMP"),

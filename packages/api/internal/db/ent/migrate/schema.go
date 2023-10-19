@@ -10,7 +10,6 @@ import (
 var (
 	// AccessTokensColumns holds the columns for the "access_tokens" table.
 	AccessTokensColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "access_token", Type: field.TypeString, Unique: true},
 		{Name: "user_id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
@@ -83,7 +82,7 @@ var (
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "email", Type: field.TypeString},
-		{Name: "access_token_users", Type: field.TypeInt, Nullable: true},
+		{Name: "access_token_users", Type: field.TypeString, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
