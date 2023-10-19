@@ -17,7 +17,7 @@ on:
         required: true
 
 env:
-  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/infra/plugin-cache
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
 
 jobs:
   deploy:
@@ -42,11 +42,11 @@ jobs:
       - name: Create Terraform Plugin Cache Dir
         run: mkdir --parents $TF_PLUGIN_CACHE_DIR
 
-      - name: Cache Terraform
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+#      - name: Cache Terraform
+#        uses: actions/cache@v3
+#        with:
+#          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+#          key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
 
       - name: Init Terraform
         run: make init
