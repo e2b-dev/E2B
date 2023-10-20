@@ -15,6 +15,10 @@ import (
 const MaxUploadSize = 100 * 1024 * 1024 // 100MB
 
 func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
+	logger.Info(
+		"Starting file upload",
+	)
+
 	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadSize)
 
 	if err := r.ParseMultipartForm(MaxUploadSize); err != nil {
@@ -23,6 +27,8 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	logger.Info("Multipart form parsed successfully")
 
 	// The argument to FormFile must match the name attribute
 	// of the file input on the frontend
@@ -33,6 +39,8 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	logger.Info("File retrieved successfully")
 
 	defer func() {
 		closeErr := file.Close()
@@ -68,6 +76,12 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger.Infow("File created successfully",
+		"path", newFilePath,
+	)
+
+	logger.Infow("File created successfully")
+
 	defer func() {
 		closeErr := dst.Close()
 		if closeErr != nil {
@@ -89,5 +103,5 @@ func Upload(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Upload successful")
+	logger.Info("Upload complete")
 }

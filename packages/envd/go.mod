@@ -7,6 +7,7 @@ require (
 	github.com/drael/GOnetstat v0.0.0-20201004132414-bf4a88b0bdab
 	github.com/ethereum/go-ethereum v1.12.2
 	github.com/fsnotify/fsnotify v1.6.0
+	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/rs/xid v1.5.0
@@ -15,6 +16,7 @@ require (
 
 require (
 	github.com/deckarep/golang-set/v2 v2.3.1 // indirect
+	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect

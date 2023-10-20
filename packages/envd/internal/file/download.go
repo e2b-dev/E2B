@@ -14,6 +14,10 @@ import (
 const FileHeaderByteSize = 512
 
 func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request) {
+	logger.Info(
+		"Starting file download",
+	)
+
 	filePath := r.URL.Query().Get("path")
 	if filePath == "" {
 		http.Error(w, "File path is required", http.StatusBadRequest)
@@ -30,6 +34,8 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 
 		return
 	}
+
+	logger.Info("File opened successfully")
 
 	defer func() {
 		closeErr := file.Close()
@@ -72,4 +78,6 @@ func Download(logger *zap.SugaredLogger, w http.ResponseWriter, r *http.Request)
 
 		return
 	}
+
+	logger.Info("File download complete")
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
@@ -161,10 +162,10 @@ func main() {
 	router.HandleFunc("/file", fileHandler)
 
 	server := &http.Server{
-		ReadTimeout:  40 * time.Second,
-		WriteTimeout: 40 * time.Second,
+		ReadTimeout:  300 * time.Second,
+		WriteTimeout: 300 * time.Second,
 		Addr:         fmt.Sprintf("0.0.0.0:%d", serverPort),
-		Handler:      router,
+		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", "PUT"}), handlers.AllowedOrigins([]string{"*"}))(router),
 	}
 
 	logger.Infow("Starting server",
