@@ -17,7 +17,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "declaration": true
+    "declaration": true,
   },
   "include": [
     "src"
@@ -25,6 +25,6 @@
   "exclude": [
     "dist",
     "node_modules",
-    "rollup.config.js"
+    "tsup.config.js"
   ]
 }

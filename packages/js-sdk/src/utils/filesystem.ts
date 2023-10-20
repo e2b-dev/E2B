@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'path-browserify'
 import { Logger } from '../session/sessionConnection'
 
 export const resolvePath = (

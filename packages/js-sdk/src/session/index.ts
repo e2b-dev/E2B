@@ -1,5 +1,3 @@
-import 'formdata-polyfill/esm.min.js'
-
 import normalizePath from 'normalize-path'
 
 import { ENVD_PORT, FILE_ROUTE } from '../constants'
@@ -428,7 +426,9 @@ export class Session extends SessionConnection {
 
     if (!response.ok) {
       const text = await response.text()
-      throw new Error(`Failed to upload file: ${text}`)
+      throw new Error(
+        `Failed to upload file ${response.status} - ${response.statusText}: ${text}`,
+      )
     }
 
     return `/home/user/${filename}`

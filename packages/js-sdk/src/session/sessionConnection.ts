@@ -220,8 +220,7 @@ export class SessionConnection {
       this.rpc.onError(err => {
         // not warn, because this is somewhat expected behaviour during initialization
         this.logger.debug?.(
-          `Error in WS session "${this.session?.sessionID}": ${
-            err.message ?? err.code ?? err.toString()
+          `Error in WS session "${this.session?.sessionID}": ${err.message ?? err.code ?? err.toString()
           }. Trying to reconnect...`,
         )
       })
@@ -265,8 +264,7 @@ export class SessionConnection {
           } catch (err: any) {
             // not warn, because this is somewhat expected behaviour during initialization
             this.logger.debug?.(
-              `Failed reconnecting to session "${this.session?.sessionID}": ${
-                err.message ?? err.code ?? err.toString()
+              `Failed reconnecting to session "${this.session?.sessionID}": ${err.message ?? err.code ?? err.toString()
               }`,
             )
           }
@@ -285,8 +283,7 @@ export class SessionConnection {
       } catch (err: any) {
         // not warn, because this is somewhat expected behaviour during initialization
         this.logger.debug?.(
-          `Error connecting to session "${this.session?.sessionID}": ${
-            err.message ?? err.code ?? err.toString()
+          `Error connecting to session "${this.session?.sessionID}": ${err.message ?? err.code ?? err.toString()
           }`,
         )
       }
@@ -357,8 +354,7 @@ export class SessionConnection {
     if (typeof subID !== 'string') {
       throw new Error(
         // eslint-disable-next-line prettier/prettier
-        `Cannot subscribe to ${service}_${method}${
-          params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
+        `Cannot subscribe to ${service}_${method}${params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
         }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
           subID,
         )}`,
@@ -372,8 +368,7 @@ export class SessionConnection {
     })
     this.logger.debug?.(
       // eslint-disable-next-line prettier/prettier
-      `Subscribed to "${service}_${method}"${
-        params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
+      `Subscribed to "${service}_${method}"${params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
       } with id "${subID}"`,
     )
 
