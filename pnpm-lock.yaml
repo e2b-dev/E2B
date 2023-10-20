@@ -52,8 +52,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.7.2
-        version: 0.7.2
+        specifier: ^0.7.3
+        version: 0.7.3
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -885,13 +885,13 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@e2b/sdk@0.7.2:
-    resolution: {integrity: sha512-1Jvo9XDfxPzda0w3CVsweZMtsHquK//0js3qRwkVf7VB5VBez7/7vrk1qfFttbXwr6L/M8hpjRqfVWazDlmDwQ==}
+  /@e2b/sdk@0.7.3:
+    resolution: {integrity: sha512-vWoiJWBWvCVbwzHGKqQ6+KLsspSrQZF281aFHV9q4WEGCKBJDZStT88dI7pAe1lqg4gqD3kf1IbSpbp3s4NJGw==}
     engines: {node: '>=18'}
     dependencies:
-      formdata-polyfill: 4.0.10
       normalize-path: 3.0.0
       openapi-typescript-fetch: 1.1.3
+      path-browserify: 1.0.1
       platform: 1.3.6
       rpc-websocket-client: 1.1.4
     transitivePeerDependencies:
