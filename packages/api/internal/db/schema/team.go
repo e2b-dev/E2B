@@ -15,7 +15,7 @@ type Team struct {
 
 func (Team) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).Immutable(),
+		field.UUID("id", uuid.UUID{}).Immutable().Unique(),
 		field.Time("created_at").Immutable().Default(time.Now).Annotations(
 			entsql.Default("CURRENT_TIMESTAMP"),
 		),

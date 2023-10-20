@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/schema"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/e2b-dev/infra/packages/api/internal/db/schema"
 )
 
 // The init function reads all schema descriptors with runtime code

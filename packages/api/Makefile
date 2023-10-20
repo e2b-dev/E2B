@@ -11,7 +11,8 @@ generate:
 	$(codegen) -old-config-style -generate gin --package api $(openapi) > internal/api/api.gen.go
 	$(codegen) -old-config-style -generate types --package api $(openapi) > internal/api/types.gen.go
 	$(codegen) -old-config-style -generate spec --package api $(openapi) > internal/api/spec.gen.go
-	go generate ./internal/db/ent/generate.go
+	rm -rf internal/db/ent
+	go generate ./internal/db/schema/generate.go
 
 
 .PHONY: build

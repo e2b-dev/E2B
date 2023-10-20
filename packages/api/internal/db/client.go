@@ -22,7 +22,7 @@ func NewClient(ctx context.Context) (*DB, error) {
 		return nil, fmt.Errorf("database URL is empty")
 	}
 
-	client, err := ent.Open(dialect.Postgres, databaseURL, ent.AlternateSchema(ent.SchemaConfig{
+	client, err := ent.Open(dialect.Postgres, databaseURL, ent.Debug(), ent.AlternateSchema(ent.SchemaConfig{
 		User: "auth",
 	}))
 	if err != nil {
