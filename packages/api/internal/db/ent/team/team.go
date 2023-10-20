@@ -24,8 +24,12 @@ const (
 	FieldIsBlocked = "is_blocked"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
+	// EdgeTeamAPIKeys holds the string denoting the team_api_keys edge name in mutations.
+	EdgeTeamAPIKeys = "team_api_keys"
 	// EdgeUsersTeams holds the string denoting the users_teams edge name in mutations.
 	EdgeUsersTeams = "users_teams"
+	// TeamApiKeyFieldID holds the string denoting the ID field of the TeamApiKey.
+	TeamApiKeyFieldID = "api_key"
 	// Table holds the table name of the team in the database.
 	Table = "teams"
 	// UsersTable is the table that holds the users relation/edge. The primary key declared below.
@@ -33,6 +37,13 @@ const (
 	// UsersInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UsersInverseTable = "users"
+	// TeamAPIKeysTable is the table that holds the team_api_keys relation/edge.
+	TeamAPIKeysTable = "team_api_keys"
+	// TeamAPIKeysInverseTable is the table name for the TeamApiKey entity.
+	// It exists in this package in order to avoid circular dependency with the "teamapikey" package.
+	TeamAPIKeysInverseTable = "team_api_keys"
+	// TeamAPIKeysColumn is the table column denoting the team_api_keys relation/edge.
+	TeamAPIKeysColumn = "team_id"
 	// UsersTeamsTable is the table that holds the users_teams relation/edge.
 	UsersTeamsTable = "users_teams"
 	// UsersTeamsInverseTable is the table name for the UsersTeams entity.
@@ -55,7 +66,6 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"env_team",
-	"team_api_key_team",
 }
 
 var (
@@ -126,6 +136,20 @@ func ByUsers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByTeamAPIKeysCount orders the results by team_api_keys count.
+func ByTeamAPIKeysCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTeamAPIKeysStep(), opts...)
+	}
+}
+
+// ByTeamAPIKeys orders the results by team_api_keys terms.
+func ByTeamAPIKeys(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTeamAPIKeysStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUsersTeamsCount orders the results by users_teams count.
 func ByUsersTeamsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -144,6 +168,13 @@ func newUsersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UsersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, false, UsersTable, UsersPrimaryKey...),
+	)
+}
+func newTeamAPIKeysStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TeamAPIKeysInverseTable, TeamApiKeyFieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TeamAPIKeysTable, TeamAPIKeysColumn),
 	)
 }
 func newUsersTeamsStep() *sqlgraph.Step {

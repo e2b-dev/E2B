@@ -1237,23 +1237,26 @@ func (m *EnvMutation) ResetEdge(name string) error {
 // TeamMutation represents an operation that mutates the Team nodes in the graph.
 type TeamMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *uuid.UUID
-	created_at         *time.Time
-	is_default         *bool
-	name               *string
-	is_blocked         *bool
-	clearedFields      map[string]struct{}
-	users              map[uuid.UUID]struct{}
-	removedusers       map[uuid.UUID]struct{}
-	clearedusers       bool
-	users_teams        map[int]struct{}
-	removedusers_teams map[int]struct{}
-	clearedusers_teams bool
-	done               bool
-	oldValue           func(context.Context) (*Team, error)
-	predicates         []predicate.Team
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	is_default           *bool
+	name                 *string
+	is_blocked           *bool
+	clearedFields        map[string]struct{}
+	users                map[uuid.UUID]struct{}
+	removedusers         map[uuid.UUID]struct{}
+	clearedusers         bool
+	team_api_keys        map[string]struct{}
+	removedteam_api_keys map[string]struct{}
+	clearedteam_api_keys bool
+	users_teams          map[int]struct{}
+	removedusers_teams   map[int]struct{}
+	clearedusers_teams   bool
+	done                 bool
+	oldValue             func(context.Context) (*Team, error)
+	predicates           []predicate.Team
 }
 
 var _ ent.Mutation = (*TeamMutation)(nil)
@@ -1558,6 +1561,60 @@ func (m *TeamMutation) ResetUsers() {
 	m.removedusers = nil
 }
 
+// AddTeamAPIKeyIDs adds the "team_api_keys" edge to the TeamApiKey entity by ids.
+func (m *TeamMutation) AddTeamAPIKeyIDs(ids ...string) {
+	if m.team_api_keys == nil {
+		m.team_api_keys = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.team_api_keys[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTeamAPIKeys clears the "team_api_keys" edge to the TeamApiKey entity.
+func (m *TeamMutation) ClearTeamAPIKeys() {
+	m.clearedteam_api_keys = true
+}
+
+// TeamAPIKeysCleared reports if the "team_api_keys" edge to the TeamApiKey entity was cleared.
+func (m *TeamMutation) TeamAPIKeysCleared() bool {
+	return m.clearedteam_api_keys
+}
+
+// RemoveTeamAPIKeyIDs removes the "team_api_keys" edge to the TeamApiKey entity by IDs.
+func (m *TeamMutation) RemoveTeamAPIKeyIDs(ids ...string) {
+	if m.removedteam_api_keys == nil {
+		m.removedteam_api_keys = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.team_api_keys, ids[i])
+		m.removedteam_api_keys[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTeamAPIKeys returns the removed IDs of the "team_api_keys" edge to the TeamApiKey entity.
+func (m *TeamMutation) RemovedTeamAPIKeysIDs() (ids []string) {
+	for id := range m.removedteam_api_keys {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TeamAPIKeysIDs returns the "team_api_keys" edge IDs in the mutation.
+func (m *TeamMutation) TeamAPIKeysIDs() (ids []string) {
+	for id := range m.team_api_keys {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTeamAPIKeys resets all changes to the "team_api_keys" edge.
+func (m *TeamMutation) ResetTeamAPIKeys() {
+	m.team_api_keys = nil
+	m.clearedteam_api_keys = false
+	m.removedteam_api_keys = nil
+}
+
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by ids.
 func (m *TeamMutation) AddUsersTeamIDs(ids ...int) {
 	if m.users_teams == nil {
@@ -1796,9 +1853,12 @@ func (m *TeamMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TeamMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.users != nil {
 		edges = append(edges, team.EdgeUsers)
+	}
+	if m.team_api_keys != nil {
+		edges = append(edges, team.EdgeTeamAPIKeys)
 	}
 	if m.users_teams != nil {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -1816,6 +1876,12 @@ func (m *TeamMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case team.EdgeTeamAPIKeys:
+		ids := make([]ent.Value, 0, len(m.team_api_keys))
+		for id := range m.team_api_keys {
+			ids = append(ids, id)
+		}
+		return ids
 	case team.EdgeUsersTeams:
 		ids := make([]ent.Value, 0, len(m.users_teams))
 		for id := range m.users_teams {
@@ -1828,9 +1894,12 @@ func (m *TeamMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeamMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedusers != nil {
 		edges = append(edges, team.EdgeUsers)
+	}
+	if m.removedteam_api_keys != nil {
+		edges = append(edges, team.EdgeTeamAPIKeys)
 	}
 	if m.removedusers_teams != nil {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -1848,6 +1917,12 @@ func (m *TeamMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case team.EdgeTeamAPIKeys:
+		ids := make([]ent.Value, 0, len(m.removedteam_api_keys))
+		for id := range m.removedteam_api_keys {
+			ids = append(ids, id)
+		}
+		return ids
 	case team.EdgeUsersTeams:
 		ids := make([]ent.Value, 0, len(m.removedusers_teams))
 		for id := range m.removedusers_teams {
@@ -1860,9 +1935,12 @@ func (m *TeamMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TeamMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedusers {
 		edges = append(edges, team.EdgeUsers)
+	}
+	if m.clearedteam_api_keys {
+		edges = append(edges, team.EdgeTeamAPIKeys)
 	}
 	if m.clearedusers_teams {
 		edges = append(edges, team.EdgeUsersTeams)
@@ -1876,6 +1954,8 @@ func (m *TeamMutation) EdgeCleared(name string) bool {
 	switch name {
 	case team.EdgeUsers:
 		return m.clearedusers
+	case team.EdgeTeamAPIKeys:
+		return m.clearedteam_api_keys
 	case team.EdgeUsersTeams:
 		return m.clearedusers_teams
 	}
@@ -1897,6 +1977,9 @@ func (m *TeamMutation) ResetEdge(name string) error {
 	case team.EdgeUsers:
 		m.ResetUsers()
 		return nil
+	case team.EdgeTeamAPIKeys:
+		m.ResetTeamAPIKeys()
+		return nil
 	case team.EdgeUsersTeams:
 		m.ResetUsersTeams()
 		return nil
@@ -1911,10 +1994,8 @@ type TeamApiKeyMutation struct {
 	typ           string
 	id            *string
 	created_at    *time.Time
-	team_id       *uuid.UUID
 	clearedFields map[string]struct{}
-	team          map[uuid.UUID]struct{}
-	removedteam   map[uuid.UUID]struct{}
+	team          *uuid.UUID
 	clearedteam   bool
 	done          bool
 	oldValue      func(context.Context) (*TeamApiKey, error)
@@ -2063,12 +2144,12 @@ func (m *TeamApiKeyMutation) ResetCreatedAt() {
 
 // SetTeamID sets the "team_id" field.
 func (m *TeamApiKeyMutation) SetTeamID(u uuid.UUID) {
-	m.team_id = &u
+	m.team = &u
 }
 
 // TeamID returns the value of the "team_id" field in the mutation.
 func (m *TeamApiKeyMutation) TeamID() (r uuid.UUID, exists bool) {
-	v := m.team_id
+	v := m.team
 	if v == nil {
 		return
 	}
@@ -2094,22 +2175,13 @@ func (m *TeamApiKeyMutation) OldTeamID(ctx context.Context) (v uuid.UUID, err er
 
 // ResetTeamID resets all changes to the "team_id" field.
 func (m *TeamApiKeyMutation) ResetTeamID() {
-	m.team_id = nil
-}
-
-// AddTeamIDs adds the "team" edge to the Team entity by ids.
-func (m *TeamApiKeyMutation) AddTeamIDs(ids ...uuid.UUID) {
-	if m.team == nil {
-		m.team = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.team[ids[i]] = struct{}{}
-	}
+	m.team = nil
 }
 
 // ClearTeam clears the "team" edge to the Team entity.
 func (m *TeamApiKeyMutation) ClearTeam() {
 	m.clearedteam = true
+	m.clearedFields[teamapikey.FieldTeamID] = struct{}{}
 }
 
 // TeamCleared reports if the "team" edge to the Team entity was cleared.
@@ -2117,29 +2189,12 @@ func (m *TeamApiKeyMutation) TeamCleared() bool {
 	return m.clearedteam
 }
 
-// RemoveTeamIDs removes the "team" edge to the Team entity by IDs.
-func (m *TeamApiKeyMutation) RemoveTeamIDs(ids ...uuid.UUID) {
-	if m.removedteam == nil {
-		m.removedteam = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.team, ids[i])
-		m.removedteam[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedTeam returns the removed IDs of the "team" edge to the Team entity.
-func (m *TeamApiKeyMutation) RemovedTeamIDs() (ids []uuid.UUID) {
-	for id := range m.removedteam {
-		ids = append(ids, id)
-	}
-	return
-}
-
 // TeamIDs returns the "team" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TeamID instead. It exists only for internal usage by the builders.
 func (m *TeamApiKeyMutation) TeamIDs() (ids []uuid.UUID) {
-	for id := range m.team {
-		ids = append(ids, id)
+	if id := m.team; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -2148,7 +2203,6 @@ func (m *TeamApiKeyMutation) TeamIDs() (ids []uuid.UUID) {
 func (m *TeamApiKeyMutation) ResetTeam() {
 	m.team = nil
 	m.clearedteam = false
-	m.removedteam = nil
 }
 
 // Where appends a list predicates to the TeamApiKeyMutation builder.
@@ -2189,7 +2243,7 @@ func (m *TeamApiKeyMutation) Fields() []string {
 	if m.created_at != nil {
 		fields = append(fields, teamapikey.FieldCreatedAt)
 	}
-	if m.team_id != nil {
+	if m.team != nil {
 		fields = append(fields, teamapikey.FieldTeamID)
 	}
 	return fields
@@ -2313,11 +2367,9 @@ func (m *TeamApiKeyMutation) AddedEdges() []string {
 func (m *TeamApiKeyMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case teamapikey.EdgeTeam:
-		ids := make([]ent.Value, 0, len(m.team))
-		for id := range m.team {
-			ids = append(ids, id)
+		if id := m.team; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -2325,23 +2377,12 @@ func (m *TeamApiKeyMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeamApiKeyMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removedteam != nil {
-		edges = append(edges, teamapikey.EdgeTeam)
-	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *TeamApiKeyMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case teamapikey.EdgeTeam:
-		ids := make([]ent.Value, 0, len(m.removedteam))
-		for id := range m.removedteam {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
@@ -2368,6 +2409,9 @@ func (m *TeamApiKeyMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TeamApiKeyMutation) ClearEdge(name string) error {
 	switch name {
+	case teamapikey.EdgeTeam:
+		m.ClearTeam()
+		return nil
 	}
 	return fmt.Errorf("unknown TeamApiKey unique edge %s", name)
 }

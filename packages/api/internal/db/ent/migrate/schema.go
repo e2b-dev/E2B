@@ -44,7 +44,6 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "is_blocked", Type: field.TypeBool},
 		{Name: "env_team", Type: field.TypeString, Nullable: true},
-		{Name: "team_api_key_team", Type: field.TypeString, Nullable: true},
 	}
 	// TeamsTable holds the schema information for the "teams" table.
 	TeamsTable = &schema.Table{
@@ -56,12 +55,6 @@ var (
 				Symbol:     "teams_envs_team",
 				Columns:    []*schema.Column{TeamsColumns[5]},
 				RefColumns: []*schema.Column{EnvsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "teams_team_api_keys_team",
-				Columns:    []*schema.Column{TeamsColumns[6]},
-				RefColumns: []*schema.Column{TeamAPIKeysColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -77,6 +70,14 @@ var (
 		Name:       "team_api_keys",
 		Columns:    TeamAPIKeysColumns,
 		PrimaryKey: []*schema.Column{TeamAPIKeysColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "team_api_keys_teams_team_api_keys",
+				Columns:    []*schema.Column{TeamAPIKeysColumns[2]},
+				RefColumns: []*schema.Column{TeamsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -144,7 +145,7 @@ var (
 
 func init() {
 	TeamsTable.ForeignKeys[0].RefTable = EnvsTable
-	TeamsTable.ForeignKeys[1].RefTable = TeamAPIKeysTable
+	TeamAPIKeysTable.ForeignKeys[0].RefTable = TeamsTable
 	UsersTable.ForeignKeys[0].RefTable = AccessTokensTable
 	UsersTeamsTable.ForeignKeys[0].RefTable = UsersTable
 	UsersTeamsTable.ForeignKeys[1].RefTable = TeamsTable

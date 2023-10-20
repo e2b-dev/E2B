@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/predicate"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
+	"github.com/google/uuid"
 )
 
 // TeamApiKeyQuery is the builder for querying TeamApiKey entities.
@@ -75,11 +75,11 @@ func (takq *TeamApiKeyQuery) QueryTeam() *TeamQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(teamapikey.Table, teamapikey.FieldID, selector),
 			sqlgraph.To(team.Table, team.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teamapikey.TeamTable, teamapikey.TeamColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, teamapikey.TeamTable, teamapikey.TeamColumn),
 		)
 		schemaConfig := takq.schemaConfig
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.TeamApiKey
 		fromU = sqlgraph.SetNeighbors(takq.driver.Dialect(), step)
 		return fromU, nil
 	}
@@ -399,9 +399,8 @@ func (takq *TeamApiKeyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		return nodes, nil
 	}
 	if query := takq.withTeam; query != nil {
-		if err := takq.loadTeam(ctx, query, nodes,
-			func(n *TeamApiKey) { n.Edges.Team = []*Team{} },
-			func(n *TeamApiKey, e *Team) { n.Edges.Team = append(n.Edges.Team, e) }); err != nil {
+		if err := takq.loadTeam(ctx, query, nodes, nil,
+			func(n *TeamApiKey, e *Team) { n.Edges.Team = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -409,33 +408,31 @@ func (takq *TeamApiKeyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 }
 
 func (takq *TeamApiKeyQuery) loadTeam(ctx context.Context, query *TeamQuery, nodes []*TeamApiKey, init func(*TeamApiKey), assign func(*TeamApiKey, *Team)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*TeamApiKey)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*TeamApiKey)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].TeamID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.Team(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(teamapikey.TeamColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(team.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.team_api_key_team
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "team_api_key_team" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "team_api_key_team" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "team_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
@@ -466,6 +463,9 @@ func (takq *TeamApiKeyQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != teamapikey.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if takq.withTeam != nil {
+			_spec.Node.AddColumnOnce(teamapikey.FieldTeamID)
 		}
 	}
 	if ps := takq.predicates; len(ps) > 0 {

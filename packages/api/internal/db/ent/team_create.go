@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/user"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/usersteams"
 	"github.com/google/uuid"
@@ -74,6 +75,21 @@ func (tc *TeamCreate) AddUsers(u ...*User) *TeamCreate {
 		ids[i] = u[i].ID
 	}
 	return tc.AddUserIDs(ids...)
+}
+
+// AddTeamAPIKeyIDs adds the "team_api_keys" edge to the TeamApiKey entity by IDs.
+func (tc *TeamCreate) AddTeamAPIKeyIDs(ids ...string) *TeamCreate {
+	tc.mutation.AddTeamAPIKeyIDs(ids...)
+	return tc
+}
+
+// AddTeamAPIKeys adds the "team_api_keys" edges to the TeamApiKey entity.
+func (tc *TeamCreate) AddTeamAPIKeys(t ...*TeamApiKey) *TeamCreate {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tc.AddTeamAPIKeyIDs(ids...)
 }
 
 // AddUsersTeamIDs adds the "users_teams" edge to the UsersTeams entity by IDs.
@@ -210,6 +226,23 @@ func (tc *TeamCreate) createSpec() (*Team, *sqlgraph.CreateSpec) {
 			},
 		}
 		edge.Schema = tc.schemaConfig.UsersTeams
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.TeamAPIKeysIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   team.TeamAPIKeysTable,
+			Columns: []string{team.TeamAPIKeysColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString),
+			},
+		}
+		edge.Schema = tc.schemaConfig.TeamApiKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

@@ -28,21 +28,22 @@ type Team struct {
 	IsBlocked bool `json:"is_blocked,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeamQuery when eager-loading is set.
-	Edges             TeamEdges `json:"edges"`
-	env_team          *string
-	team_api_key_team *string
-	selectValues      sql.SelectValues
+	Edges        TeamEdges `json:"edges"`
+	env_team     *string
+	selectValues sql.SelectValues
 }
 
 // TeamEdges holds the relations/edges for other nodes in the graph.
 type TeamEdges struct {
 	// Users holds the value of the users edge.
 	Users []*User `json:"users,omitempty"`
+	// TeamAPIKeys holds the value of the team_api_keys edge.
+	TeamAPIKeys []*TeamApiKey `json:"team_api_keys,omitempty"`
 	// UsersTeams holds the value of the users_teams edge.
 	UsersTeams []*UsersTeams `json:"users_teams,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // UsersOrErr returns the Users value or an error if the edge
@@ -54,10 +55,19 @@ func (e TeamEdges) UsersOrErr() ([]*User, error) {
 	return nil, &NotLoadedError{edge: "users"}
 }
 
+// TeamAPIKeysOrErr returns the TeamAPIKeys value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeamEdges) TeamAPIKeysOrErr() ([]*TeamApiKey, error) {
+	if e.loadedTypes[1] {
+		return e.TeamAPIKeys, nil
+	}
+	return nil, &NotLoadedError{edge: "team_api_keys"}
+}
+
 // UsersTeamsOrErr returns the UsersTeams value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeamEdges) UsersTeamsOrErr() ([]*UsersTeams, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.UsersTeams, nil
 	}
 	return nil, &NotLoadedError{edge: "users_teams"}
@@ -77,8 +87,6 @@ func (*Team) scanValues(columns []string) ([]any, error) {
 		case team.FieldID:
 			values[i] = new(uuid.UUID)
 		case team.ForeignKeys[0]: // env_team
-			values[i] = new(sql.NullString)
-		case team.ForeignKeys[1]: // team_api_key_team
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -132,13 +140,6 @@ func (t *Team) assignValues(columns []string, values []any) error {
 				t.env_team = new(string)
 				*t.env_team = value.String
 			}
-		case team.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field team_api_key_team", values[i])
-			} else if value.Valid {
-				t.team_api_key_team = new(string)
-				*t.team_api_key_team = value.String
-			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
 		}
@@ -155,6 +156,11 @@ func (t *Team) Value(name string) (ent.Value, error) {
 // QueryUsers queries the "users" edge of the Team entity.
 func (t *Team) QueryUsers() *UserQuery {
 	return NewTeamClient(t.config).QueryUsers(t)
+}
+
+// QueryTeamAPIKeys queries the "team_api_keys" edge of the Team entity.
+func (t *Team) QueryTeamAPIKeys() *TeamApiKeyQuery {
+	return NewTeamClient(t.config).QueryTeamAPIKeys(t)
 }
 
 // QueryUsersTeams queries the "users_teams" edge of the Team entity.

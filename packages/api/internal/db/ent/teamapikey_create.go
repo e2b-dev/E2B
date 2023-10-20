@@ -48,19 +48,9 @@ func (takc *TeamApiKeyCreate) SetID(s string) *TeamApiKeyCreate {
 	return takc
 }
 
-// AddTeamIDs adds the "team" edge to the Team entity by IDs.
-func (takc *TeamApiKeyCreate) AddTeamIDs(ids ...uuid.UUID) *TeamApiKeyCreate {
-	takc.mutation.AddTeamIDs(ids...)
-	return takc
-}
-
-// AddTeam adds the "team" edges to the Team entity.
-func (takc *TeamApiKeyCreate) AddTeam(t ...*Team) *TeamApiKeyCreate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return takc.AddTeamIDs(ids...)
+// SetTeam sets the "team" edge to the Team entity.
+func (takc *TeamApiKeyCreate) SetTeam(t *Team) *TeamApiKeyCreate {
+	return takc.SetTeamID(t.ID)
 }
 
 // Mutation returns the TeamApiKeyMutation object of the builder.
@@ -112,6 +102,9 @@ func (takc *TeamApiKeyCreate) check() error {
 	if _, ok := takc.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team_id", err: errors.New(`ent: missing required field "TeamApiKey.team_id"`)}
 	}
+	if _, ok := takc.mutation.TeamID(); !ok {
+		return &ValidationError{Name: "team", err: errors.New(`ent: missing required edge "TeamApiKey.team"`)}
+	}
 	return nil
 }
 
@@ -152,14 +145,10 @@ func (takc *TeamApiKeyCreate) createSpec() (*TeamApiKey, *sqlgraph.CreateSpec) {
 		_spec.SetField(teamapikey.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := takc.mutation.TeamID(); ok {
-		_spec.SetField(teamapikey.FieldTeamID, field.TypeUUID, value)
-		_node.TeamID = value
-	}
 	if nodes := takc.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   teamapikey.TeamTable,
 			Columns: []string{teamapikey.TeamColumn},
 			Bidi:    false,
@@ -167,10 +156,11 @@ func (takc *TeamApiKeyCreate) createSpec() (*TeamApiKey, *sqlgraph.CreateSpec) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = takc.schemaConfig.Team
+		edge.Schema = takc.schemaConfig.TeamApiKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.TeamID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

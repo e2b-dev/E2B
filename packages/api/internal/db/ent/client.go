@@ -676,6 +676,25 @@ func (c *TeamClient) QueryUsers(t *Team) *UserQuery {
 	return query
 }
 
+// QueryTeamAPIKeys queries the team_api_keys edge of a Team.
+func (c *TeamClient) QueryTeamAPIKeys(t *Team) *TeamApiKeyQuery {
+	query := (&TeamApiKeyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(team.Table, team.FieldID, id),
+			sqlgraph.To(teamapikey.Table, teamapikey.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, team.TeamAPIKeysTable, team.TeamAPIKeysColumn),
+		)
+		schemaConfig := t.schemaConfig
+		step.To.Schema = schemaConfig.TeamApiKey
+		step.Edge.Schema = schemaConfig.TeamApiKey
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUsersTeams queries the users_teams edge of a Team.
 func (c *TeamClient) QueryUsersTeams(t *Team) *UsersTeamsQuery {
 	query := (&UsersTeamsClient{config: c.config}).Query()
@@ -836,11 +855,11 @@ func (c *TeamApiKeyClient) QueryTeam(tak *TeamApiKey) *TeamQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(teamapikey.Table, teamapikey.FieldID, id),
 			sqlgraph.To(team.Table, team.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teamapikey.TeamTable, teamapikey.TeamColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, teamapikey.TeamTable, teamapikey.TeamColumn),
 		)
 		schemaConfig := tak.schemaConfig
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.TeamApiKey
 		fromV = sqlgraph.Neighbors(tak.driver.Dialect(), step)
 		return fromV, nil
 	}

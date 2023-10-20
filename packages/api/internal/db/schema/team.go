@@ -27,5 +27,6 @@ func (Team) Fields() []ent.Field {
 func (Team) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("users", User.Type).Through("users_teams", UsersTeams.Type),
+		edge.To("team_api_keys", TeamApiKey.Type),
 	}
 }

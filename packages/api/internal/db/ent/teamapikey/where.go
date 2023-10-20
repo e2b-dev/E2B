@@ -137,36 +137,16 @@ func TeamIDNotIn(vs ...uuid.UUID) predicate.TeamApiKey {
 	return predicate.TeamApiKey(sql.FieldNotIn(FieldTeamID, vs...))
 }
 
-// TeamIDGT applies the GT predicate on the "team_id" field.
-func TeamIDGT(v uuid.UUID) predicate.TeamApiKey {
-	return predicate.TeamApiKey(sql.FieldGT(FieldTeamID, v))
-}
-
-// TeamIDGTE applies the GTE predicate on the "team_id" field.
-func TeamIDGTE(v uuid.UUID) predicate.TeamApiKey {
-	return predicate.TeamApiKey(sql.FieldGTE(FieldTeamID, v))
-}
-
-// TeamIDLT applies the LT predicate on the "team_id" field.
-func TeamIDLT(v uuid.UUID) predicate.TeamApiKey {
-	return predicate.TeamApiKey(sql.FieldLT(FieldTeamID, v))
-}
-
-// TeamIDLTE applies the LTE predicate on the "team_id" field.
-func TeamIDLTE(v uuid.UUID) predicate.TeamApiKey {
-	return predicate.TeamApiKey(sql.FieldLTE(FieldTeamID, v))
-}
-
 // HasTeam applies the HasEdge predicate on the "team" edge.
 func HasTeam() predicate.TeamApiKey {
 	return predicate.TeamApiKey(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, TeamTable, TeamColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, TeamTable, TeamColumn),
 		)
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.TeamApiKey
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
@@ -177,7 +157,7 @@ func HasTeamWith(preds ...predicate.Team) predicate.TeamApiKey {
 		step := newTeamStep()
 		schemaConfig := internal.SchemaConfigFromContext(s.Context())
 		step.To.Schema = schemaConfig.Team
-		step.Edge.Schema = schemaConfig.Team
+		step.Edge.Schema = schemaConfig.TeamApiKey
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

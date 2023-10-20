@@ -36,19 +36,9 @@ func (taku *TeamApiKeyUpdate) SetTeamID(u uuid.UUID) *TeamApiKeyUpdate {
 	return taku
 }
 
-// AddTeamIDs adds the "team" edge to the Team entity by IDs.
-func (taku *TeamApiKeyUpdate) AddTeamIDs(ids ...uuid.UUID) *TeamApiKeyUpdate {
-	taku.mutation.AddTeamIDs(ids...)
-	return taku
-}
-
-// AddTeam adds the "team" edges to the Team entity.
-func (taku *TeamApiKeyUpdate) AddTeam(t ...*Team) *TeamApiKeyUpdate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return taku.AddTeamIDs(ids...)
+// SetTeam sets the "team" edge to the Team entity.
+func (taku *TeamApiKeyUpdate) SetTeam(t *Team) *TeamApiKeyUpdate {
+	return taku.SetTeamID(t.ID)
 }
 
 // Mutation returns the TeamApiKeyMutation object of the builder.
@@ -56,25 +46,10 @@ func (taku *TeamApiKeyUpdate) Mutation() *TeamApiKeyMutation {
 	return taku.mutation
 }
 
-// ClearTeam clears all "team" edges to the Team entity.
+// ClearTeam clears the "team" edge to the Team entity.
 func (taku *TeamApiKeyUpdate) ClearTeam() *TeamApiKeyUpdate {
 	taku.mutation.ClearTeam()
 	return taku
-}
-
-// RemoveTeamIDs removes the "team" edge to Team entities by IDs.
-func (taku *TeamApiKeyUpdate) RemoveTeamIDs(ids ...uuid.UUID) *TeamApiKeyUpdate {
-	taku.mutation.RemoveTeamIDs(ids...)
-	return taku
-}
-
-// RemoveTeam removes "team" edges to Team entities.
-func (taku *TeamApiKeyUpdate) RemoveTeam(t ...*Team) *TeamApiKeyUpdate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return taku.RemoveTeamIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -104,7 +79,18 @@ func (taku *TeamApiKeyUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (taku *TeamApiKeyUpdate) check() error {
+	if _, ok := taku.mutation.TeamID(); taku.mutation.TeamCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "TeamApiKey.team"`)
+	}
+	return nil
+}
+
 func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := taku.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(teamapikey.Table, teamapikey.Columns, sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString))
 	if ps := taku.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -113,13 +99,10 @@ func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := taku.mutation.TeamID(); ok {
-		_spec.SetField(teamapikey.FieldTeamID, field.TypeUUID, value)
-	}
 	if taku.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   teamapikey.TeamTable,
 			Columns: []string{teamapikey.TeamColumn},
 			Bidi:    false,
@@ -127,30 +110,13 @@ func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = taku.schemaConfig.Team
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := taku.mutation.RemovedTeamIDs(); len(nodes) > 0 && !taku.mutation.TeamCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teamapikey.TeamTable,
-			Columns: []string{teamapikey.TeamColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
-			},
-		}
-		edge.Schema = taku.schemaConfig.Team
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
+		edge.Schema = taku.schemaConfig.TeamApiKey
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := taku.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   teamapikey.TeamTable,
 			Columns: []string{teamapikey.TeamColumn},
 			Bidi:    false,
@@ -158,7 +124,7 @@ func (taku *TeamApiKeyUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = taku.schemaConfig.Team
+		edge.Schema = taku.schemaConfig.TeamApiKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
@@ -192,19 +158,9 @@ func (takuo *TeamApiKeyUpdateOne) SetTeamID(u uuid.UUID) *TeamApiKeyUpdateOne {
 	return takuo
 }
 
-// AddTeamIDs adds the "team" edge to the Team entity by IDs.
-func (takuo *TeamApiKeyUpdateOne) AddTeamIDs(ids ...uuid.UUID) *TeamApiKeyUpdateOne {
-	takuo.mutation.AddTeamIDs(ids...)
-	return takuo
-}
-
-// AddTeam adds the "team" edges to the Team entity.
-func (takuo *TeamApiKeyUpdateOne) AddTeam(t ...*Team) *TeamApiKeyUpdateOne {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return takuo.AddTeamIDs(ids...)
+// SetTeam sets the "team" edge to the Team entity.
+func (takuo *TeamApiKeyUpdateOne) SetTeam(t *Team) *TeamApiKeyUpdateOne {
+	return takuo.SetTeamID(t.ID)
 }
 
 // Mutation returns the TeamApiKeyMutation object of the builder.
@@ -212,25 +168,10 @@ func (takuo *TeamApiKeyUpdateOne) Mutation() *TeamApiKeyMutation {
 	return takuo.mutation
 }
 
-// ClearTeam clears all "team" edges to the Team entity.
+// ClearTeam clears the "team" edge to the Team entity.
 func (takuo *TeamApiKeyUpdateOne) ClearTeam() *TeamApiKeyUpdateOne {
 	takuo.mutation.ClearTeam()
 	return takuo
-}
-
-// RemoveTeamIDs removes the "team" edge to Team entities by IDs.
-func (takuo *TeamApiKeyUpdateOne) RemoveTeamIDs(ids ...uuid.UUID) *TeamApiKeyUpdateOne {
-	takuo.mutation.RemoveTeamIDs(ids...)
-	return takuo
-}
-
-// RemoveTeam removes "team" edges to Team entities.
-func (takuo *TeamApiKeyUpdateOne) RemoveTeam(t ...*Team) *TeamApiKeyUpdateOne {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return takuo.RemoveTeamIDs(ids...)
 }
 
 // Where appends a list predicates to the TeamApiKeyUpdate builder.
@@ -273,7 +214,18 @@ func (takuo *TeamApiKeyUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (takuo *TeamApiKeyUpdateOne) check() error {
+	if _, ok := takuo.mutation.TeamID(); takuo.mutation.TeamCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "TeamApiKey.team"`)
+	}
+	return nil
+}
+
 func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKey, err error) {
+	if err := takuo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(teamapikey.Table, teamapikey.Columns, sqlgraph.NewFieldSpec(teamapikey.FieldID, field.TypeString))
 	id, ok := takuo.mutation.ID()
 	if !ok {
@@ -299,13 +251,10 @@ func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKe
 			}
 		}
 	}
-	if value, ok := takuo.mutation.TeamID(); ok {
-		_spec.SetField(teamapikey.FieldTeamID, field.TypeUUID, value)
-	}
 	if takuo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   teamapikey.TeamTable,
 			Columns: []string{teamapikey.TeamColumn},
 			Bidi:    false,
@@ -313,30 +262,13 @@ func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKe
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = takuo.schemaConfig.Team
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := takuo.mutation.RemovedTeamIDs(); len(nodes) > 0 && !takuo.mutation.TeamCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teamapikey.TeamTable,
-			Columns: []string{teamapikey.TeamColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
-			},
-		}
-		edge.Schema = takuo.schemaConfig.Team
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
+		edge.Schema = takuo.schemaConfig.TeamApiKey
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := takuo.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   teamapikey.TeamTable,
 			Columns: []string{teamapikey.TeamColumn},
 			Bidi:    false,
@@ -344,7 +276,7 @@ func (takuo *TeamApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *TeamApiKe
 				IDSpec: sqlgraph.NewFieldSpec(team.FieldID, field.TypeUUID),
 			},
 		}
-		edge.Schema = takuo.schemaConfig.Team
+		edge.Schema = takuo.schemaConfig.TeamApiKey
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}

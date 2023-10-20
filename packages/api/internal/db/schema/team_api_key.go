@@ -25,7 +25,9 @@ func (TeamApiKey) Fields() []ent.Field {
 }
 func (TeamApiKey) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("team", Team.Type),
+		edge.From("team", Team.Type).Unique().Required().
+			Ref("team_api_keys").
+			Field("team_id"),
 	}
 }
 func (TeamApiKey) Annotations() []schema.Annotation {
