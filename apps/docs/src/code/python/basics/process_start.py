@@ -1,16 +1,15 @@
-import asyncio
 from os import getenv
 from e2b import Session
 
 E2B_API_KEY = getenv("E2B_API_KEY")
 
-async def main():
-  session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
+def main():
+  session = Session.create(id="Nodejs", api_key=E2B_API_KEY)
 
-  npm_init = await session.process.start("npm init -y") # $HighlightLine
-  await npm_init
+  npm_init = session.process.start("npm init -y") # $HighlightLine
+  npm_init.wait()
   print(npm_init.stdout)
 
-  await session.close()
+  session.close()
 
-asyncio.run(main())
+main()

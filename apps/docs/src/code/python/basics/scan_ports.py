@@ -1,4 +1,4 @@
-import asyncio
+import time
 from os import getenv
 from e2b import Session
 
@@ -22,19 +22,19 @@ def print_new_port_and_url(open_ports, session):
       port_url = f"https://{host}"
       print(port, port_url)
 
-async def main():
-  session = await Session.create(
+def main():
+  session = Session.create(
     id="Python3",
     api_key=E2B_API_KEY,
     on_scan_ports=lambda open_ports: print_new_port_and_url(open_ports, session) # $HighlightLine
   )
 
   # Start a new server on port 8000 inside the playground.
-  proc = await session.process.start("python3 -m http.server 8000")
+  proc = session.process.start("python3 -m http.server 8000")
 
   # Wait 10 seconds and then kill the server and close the session.
-  await asyncio.sleep(10)
-  await proc.kill()
-  await session.close()
+  time.sleep(10)
+  proc.kill()
+  session.close()
 
-asyncio.run(main())
+main()
