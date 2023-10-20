@@ -49,7 +49,6 @@
   "dependencies": {
     "@e2b/sdk": "workspace:*",
     "@balena/dockerignore": "^1.0.2",
-    "@e2b/sdk": "workspace:*",
     "@nodelib/fs.walk": "^2.0.0",
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",
