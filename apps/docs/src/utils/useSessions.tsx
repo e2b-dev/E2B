@@ -24,7 +24,7 @@ const envIds = {
 }
 
 const preps = {
-  js: 'npm init es6 -y && npm install @e2b/sdk',
+  js: 'npm init es6 -y && npm install @e2b/sdk@0.6.4',
   py: 'pip install e2b',
 }
 
