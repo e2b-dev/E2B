@@ -36,6 +36,7 @@
     "update-deps": "ncu -u && pnpm i"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.4",
     "@types/node": "^20.8.6",
     "@types/normalize-path": "^3.0.0",
@@ -50,6 +51,8 @@
     "openai": "^4.12.4",
     "openapi-typescript": "^6.7.0",
     "rollup": "^4.1.4",
+    "rollup-plugin-auto-external": "^2.0.0",
+    "rollup-plugin-polyfill-node": "^0.12.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6",

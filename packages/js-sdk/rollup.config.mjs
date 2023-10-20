@@ -1,4 +1,7 @@
+import nodeResolve from '@rollup/plugin-node-resolve'
 import replace from '@rollup/plugin-replace'
+import autoExternal from 'rollup-plugin-auto-external'
+import nodePolyfills from 'rollup-plugin-polyfill-node'
 import typescript from 'rollup-plugin-typescript2'
 
 import pkg from './package.json' assert { type: 'json' }
@@ -27,9 +30,15 @@ export default {
     },
   ],
   plugins: [
+    autoExternal({ builtins: false }),
     typescript({
       clean: false,
       check: false, // uncomment when TS gives you weird errors when running vitest
+    }),
+    nodePolyfills(),
+    nodeResolve({
+      preferBuiltins: true,
+      browser: true,
     }),
     // Beware: Using @rollup/plugin-json caused wrong structure of dist directory
     // It should be dist/cjs/*files* and with json plugin it's dist/cjs/src/*files*
