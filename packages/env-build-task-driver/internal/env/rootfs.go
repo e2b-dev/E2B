@@ -4,11 +4,6 @@ import (
 	"archive/tar"
 	"context"
 	"fmt"
-	"io"
-	"os"
-	"os/exec"
-	"path"
-
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -17,6 +12,9 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"io"
+	"os"
+	"os/exec"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
@@ -210,7 +208,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "created container")
 
 	defer func() {
-		history, err := r.client.ImageHistory(ctx, r.dockerTag())
+		history, err := r.legacyClient.ImageHistory(r.dockerTag())
 		if err != nil {
 			errMsg := fmt.Errorf("error getting image history %w", err)
 			telemetry.ReportError(ctx, errMsg)
@@ -222,23 +220,23 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 				break
 			}
 
-			info, _, err := r.client.ImageInspectWithRaw(ctx, hist.ID)
+			info, err := r.legacyClient.InspectImage(hist.ID)
 			if err != nil {
 				errMsg := fmt.Errorf("error inspecting image %w", err)
 				telemetry.ReportError(ctx, errMsg)
 			}
-
-			folder := path.Dir(info.GraphDriver.Data["UpperDir"])
-			err = os.RemoveAll(folder)
-
-			if err != nil {
-				errMsg := fmt.Errorf("error removing folder %w", err)
-				telemetry.ReportError(ctx, errMsg)
-			}
-			r.client.ImageRemove(ctx, hist.ID, types.ImageRemoveOptions{
-				Force:         true,
-				PruneChildren: true,
-			})
+			fmt.Println(info.Config)
+			//folder := path.Dir(info.Config)
+			//err = os.RemoveAll(folder)
+			//
+			//if err != nil {
+			//	errMsg := fmt.Errorf("error removing folder %w", err)
+			//	telemetry.ReportError(ctx, errMsg)
+			//}
+			//r.client.ImageRemove(ctx, hist.ID, types.ImageRemoveOptions{
+			//	Force:         true,
+			//	PruneChildren: true,
+			//})
 		}
 
 		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
@@ -249,12 +247,12 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			errMsg := fmt.Errorf("error removing container %w", err)
 			telemetry.ReportError(ctx, errMsg)
 		}
-		history, err = r.client.ImageHistory(ctx, r.dockerTag())
+		historyNew, err := r.client.ImageHistory(ctx, r.dockerTag())
 		if err != nil {
 			errMsg := fmt.Errorf("error getting image history %w", err)
 			telemetry.ReportError(ctx, errMsg)
 		} else {
-			telemetry.ReportEvent(ctx, "got image history", attribute.Int("historySize", len(history)))
+			telemetry.ReportEvent(ctx, "got image history", attribute.Int("historySize", len(historyNew)))
 		}
 
 	}()
