@@ -1,5 +1,3 @@
-import 'formdata-polyfill'
-
 import normalizePath from 'normalize-path'
 
 import { ENVD_PORT, FILE_ROUTE } from '../constants'
