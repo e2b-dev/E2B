@@ -52,8 +52,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.7.1
-        version: 0.7.1
+        specifier: ^0.7.2
+        version: 0.7.2
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -110,7 +110,7 @@ importers:
         version: 8.10.0
       autoprefixer:
         specifier: ^10.4.7
-        version: 10.4.15(postcss@8.4.30)
+        version: 10.4.15(postcss@8.4.31)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -906,8 +906,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@e2b/sdk@0.7.1:
-    resolution: {integrity: sha512-Sc+BlpOynt0vX8scOtb9Pjo/KQmmn9FTbXfDTqPtlg3DPXxFBayQ5ZqpxnLcDW+Uqohn6M6LCt9QpQUZqkrRNw==}
+  /@e2b/sdk@0.7.2:
+    resolution: {integrity: sha512-1Jvo9XDfxPzda0w3CVsweZMtsHquK//0js3qRwkVf7VB5VBez7/7vrk1qfFttbXwr6L/M8hpjRqfVWazDlmDwQ==}
     engines: {node: '>=18'}
     dependencies:
       formdata-polyfill: 4.0.10
@@ -4356,7 +4356,7 @@ packages:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
     dev: true
 
-  /autoprefixer@10.4.15(postcss@8.4.30):
+  /autoprefixer@10.4.15(postcss@8.4.31):
     resolution: {integrity: sha512-KCuPB8ZCIqFdA4HwKXsvz7j6gvSDNhDP7WnUjBleRkKjPdvCmHFuQ77ocavI8FT6NdvlBnE2UFr2H4Mycn8Vew==}
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
@@ -4368,7 +4368,7 @@ packages:
       fraction.js: 4.3.6
       normalize-range: 0.1.2
       picocolors: 1.0.0
-      postcss: 8.4.30
+      postcss: 8.4.31
       postcss-value-parser: 4.2.0
     dev: false
 
@@ -10155,6 +10155,7 @@ packages:
       nanoid: 3.3.6
       picocolors: 1.0.0
       source-map-js: 1.0.2
+    dev: false
 
   /postcss@8.4.31:
     resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
@@ -10163,7 +10164,6 @@ packages:
       nanoid: 3.3.6
       picocolors: 1.0.0
       source-map-js: 1.0.2
-    dev: false
 
   /posthog-js@1.79.0:
     resolution: {integrity: sha512-NgIGAXPkbmvKYcyOTkaNJYPTLvrXQqhWztkJ/v5NkF5CFdZucorc9OOPmZbGk+SLtHfK/8ilNyz6ql6JjBkkbQ==}
@@ -12634,7 +12634,7 @@ packages:
     dependencies:
       '@types/node': 20.8.7
       esbuild: 0.18.20
-      postcss: 8.4.30
+      postcss: 8.4.31
       rollup: 3.29.2
     optionalDependencies:
       fsevents: 2.3.3
