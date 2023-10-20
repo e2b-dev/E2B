@@ -1,4 +1,4 @@
-import 'formdata-polyfill'
+import 'formdata-polyfill/esm.min.js'
 
 import normalizePath from 'normalize-path'
 
