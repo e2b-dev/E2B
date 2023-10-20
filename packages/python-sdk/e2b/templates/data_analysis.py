@@ -118,7 +118,7 @@ class DataAnalysis(Session):
         if isinstance(package_names, list):
             package_names = " ".join(package_names)
 
-        process = self.process.start(f"sudo apt-get install {package_names}", timeout=timeout)
+        process = self.process.start(f"sudo apt-get -y install {package_names}", timeout=timeout)
         process.wait()
 
         if process.exit_code != 0:
