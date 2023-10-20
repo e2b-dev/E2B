@@ -90,7 +90,9 @@ export class DataAnalysis extends Session {
       packageName = packageName.join(' ')
     }
 
-    const proc = await this.process.start({ cmd: `sudo apt-get install ${packageName}` })
+    const proc = await this.process.start({
+      cmd: `sudo apt-get -y install ${packageName}`,
+    })
     await proc.wait()
 
     if (proc.output.exitCode !== 0) {
