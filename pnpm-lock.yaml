@@ -248,6 +248,9 @@ importers:
       '@devbookhq/sdk':
         specifier: ^2.6.88
         version: 2.6.95
+      '@e2b/sdk':
+        specifier: ^0.7.3
+        version: 0.7.3
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -362,8 +365,8 @@ importers:
         version: 1.1.4
     devDependencies:
       '@types/node':
-        specifier: ^20.8.6
-        version: 20.8.7
+        specifier: ^18.18.6
+        version: 18.18.6
       '@types/normalize-path':
         specifier: ^3.0.0
         version: 3.0.1
@@ -9942,6 +9945,7 @@ packages:
 
   /safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
+    requiresBuild: true
 
   /scheduler@0.23.0:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}

@@ -48,7 +48,7 @@
   "dependencies": {
     "@balena/dockerignore": "^1.0.2",
     "@devbookhq/sdk": "^2.6.88",
-    "@e2b/sdk": "^0.7.0",
+    "@e2b/sdk": "^0.7.3",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^1.2.8",
     "@types/tar-fs": "^2.0.2",
