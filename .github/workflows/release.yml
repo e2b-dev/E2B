@@ -136,19 +136,13 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        id: pnpm-install
-        with:
-          version: 8
+      - uses: pnpm/action-setup@v2
 
-      - name: Setup Node
+      - name: Setup Node.js 18
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: 18
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
 
       - name: Configure pnpm
         run: |
