@@ -36,10 +36,10 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Build Package
+      - name: Test build
         run: poetry build
 
       - name: Run tests
-        run: poetry run pytest -n auto
+        run: poetry run pytest -n 1 --verbose
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

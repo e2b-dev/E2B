@@ -406,8 +406,7 @@ export class Session extends SessionConnection {
    * The file will be uploaded to the user's home directory with the same name.
    * If a file with the same name already exists, it will be overwritten.
    *
-   * **Use this method only in the non-browser environment.
-   * In the browser environment, use the `uploadURL()` method and upload the file driectly via POST multipart/form-data**
+   * **You can use the {@link Session.fileURL} property and upload file directly via POST multipart/form-data**
    *
    */
   async uploadFile(file: Buffer | Blob, filename: string) {
@@ -426,7 +425,9 @@ export class Session extends SessionConnection {
 
     if (!response.ok) {
       const text = await response.text()
-      throw new Error(`Failed to upload file: ${text}`)
+      throw new Error(
+        `Failed to upload file ${response.status} - ${response.statusText}: ${text}`,
+      )
     }
 
     return `/home/user/${filename}`

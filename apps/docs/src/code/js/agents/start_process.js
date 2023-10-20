@@ -8,7 +8,8 @@ const session = await Session.create({
 })
 
 // 2. Start the shell commdand
-let proc = await session.process.start({ // $HighlightLine
+let proc = await session.process.start({
+  // $HighlightLine
   // Print names of all running processes
   cmd: "ps aux | tr -s ' ' | cut -d ' ' -f 11", // $HighlightLine
   // Stream stdout and stderr

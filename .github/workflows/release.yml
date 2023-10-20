@@ -39,7 +39,7 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
-      - name: Install npm dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Check if new version
@@ -126,7 +126,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.10"
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
@@ -136,19 +136,13 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        id: pnpm-install
-        with:
-          version: 8
+      - uses: pnpm/action-setup@v2
 
-      - name: Setup Node
+      - name: Setup Node.js 18
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: 18
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
 
       - name: Configure pnpm
         run: |

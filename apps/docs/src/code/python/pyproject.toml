@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-e2b = "^0.3.0"
+e2b = "^0.9.3"
 
 
 [build-system]

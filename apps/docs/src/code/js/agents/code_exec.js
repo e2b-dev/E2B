@@ -18,13 +18,13 @@ const code = `
 `
 await session.filesystem.write('/code/index.js', code)
 
-
 // 3. Start the execution of the JavaScript file we saved
-const proc = await session.process.start({ // $HighlightLine
+const proc = await session.process.start({
+  // $HighlightLine
   cmd: 'node /code/index.js', // $HighlightLine
   // 4. Stream stdout, stderr
-  onStdout: (data) => console.log(data.line), // $HighlightLine
-  onStderr: (data) => console.log(data.line), // $HighlightLine
+  onStdout: data => console.log(data.line), // $HighlightLine
+  onStderr: data => console.log(data.line), // $HighlightLine
 }) // $HighlightLine
 
 // 4. Wait for the process to finish

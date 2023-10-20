@@ -1,13 +1,13 @@
 @layer base {
   :root {
     --shiki-color-text: theme('colors.white');
-    --shiki-token-constant: theme('colors.emerald.300');
-    --shiki-token-string: theme('colors.emerald.300');
+    --shiki-token-constant: theme('colors.brand.300');
+    --shiki-token-string: theme('colors.brand.300');
     --shiki-token-comment: theme('colors.zinc.500');
     --shiki-token-keyword: theme('colors.sky.300');
     --shiki-token-parameter: theme('colors.pink.300');
     --shiki-token-function: theme('colors.violet.300');
-    --shiki-token-string-expression: theme('colors.emerald.300');
+    --shiki-token-string-expression: theme('colors.brand.300');
     --shiki-token-punctuation: theme('colors.zinc.200');
   }
 
@@ -15,20 +15,17 @@
     position: relative; /* holds highlight element */
     z-index: 1; /* force above the highlight defined below */
   }
-  
+
   code[class*='language-'] .Code-line_highlighted:before {
     content: '';
     position: absolute;
     left: -16px; /* align nicely with code border */
-    top: -5px; bottom: -5px; /* breathing space */
-    border-left: 3px solid theme('colors.emerald.500');
+    top: -5px;
+    bottom: -5px; /* breathing space */
+    border-left: 3px solid theme('colors.brand.500');
     width: 300px; /* arbitrary value, looks nice */
     /* TODO: Theme colors */
-    background: linear-gradient(
-      to right,
-      hsl(240, 3%, 21%),
-      #1d1d20
-    );
+    background: linear-gradient(to right, hsl(240, 3%, 21%), #1d1d20);
     pointer-events: none;
     z-index: -1; /* force below code */
   }
@@ -123,10 +120,9 @@
 }
 
 .circle {
-  @apply w-[5px] h-[5px] mx-[2px] relative top-[-1px] bg-gray-500 rounded-full;
+  @apply relative top-[-1px] mx-[2px] h-[5px] w-[5px] rounded-full bg-gray-500;
 }
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-

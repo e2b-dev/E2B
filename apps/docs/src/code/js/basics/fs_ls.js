@@ -6,7 +6,7 @@ const session = await Session.create({
 })
 
 const dirContent = await session.filesystem.list('/') // $HighlightLine
-dirContent.forEach((item) => {
+dirContent.forEach(item => {
   console.log(item.name)
 })
 

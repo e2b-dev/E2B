@@ -8,7 +8,7 @@ const session = await Session.create({
 // This example will print back the string we send to the process using `sendStdin()`
 
 const proc = await session.process.start({
-  cmd: 'while IFS= read -r line; do echo \"$line\"; sleep 1; done',
+  cmd: 'while IFS= read -r line; do echo "$line"; sleep 1; done',
   onStdout: output => console.log(output),
 })
 await proc.sendStdin('AI Playground\n') // $HighlightLine

@@ -34,6 +34,16 @@ export default {
     typography: typographyStyles,
     extend: {
       colors: {
+        brand: {
+          900: '#FF0000',
+          800: '#FF3300',
+          700: '#FF6600',
+          600: '#FF8800',
+          500: '#F1944E',
+          400: '#F6A951',
+          300: '#F9C78B',
+          200: '#FDE3C4',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -97,8 +107,8 @@ export default {
         loaderDots: {
           to: {
             opacity: '0.1',
-            transform: 'translate3d(0, -0.3rem, 0)' // TODO: More parametric
-          }
+            transform: 'translate3d(0, -0.3rem, 0)', // TODO: More parametric
+          },
         },
         'accordion-down': {
           // @ts-ignore
@@ -110,12 +120,8 @@ export default {
           // @ts-ignore
           to: { height: 0 },
         },
-      }
+      },
     },
   },
-  plugins: [
-    typographyPlugin, 
-    headlessuiPlugin,
-    animatePlugin,
-  ],
+  plugins: [typographyPlugin, headlessuiPlugin, animatePlugin],
 } satisfies Config

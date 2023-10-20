@@ -52,7 +52,7 @@ export function CopyButton({
         customPositionClassNames,
         'group/button absolute overflow-hidden rounded-full border border-zinc-700 py-1 pl-2 pr-3 text-2xs font-medium opacity-0 transition focus:opacity-100 group-hover:opacity-100',
         copied
-          ? 'bg-emerald-400/20 ring-1 ring-inset ring-emerald-400/20'
+          ? 'bg-brand-400/20 ring-1 ring-inset ring-brand-400/20'
           : 'dark:hover:bg-red-500/ bg-white/5 hover:bg-white/7.5 dark:bg-white/2.5',
       )}
       onClick={() => {
@@ -75,7 +75,7 @@ export function CopyButton({
       <span
         aria-hidden={!copied}
         className={clsx(
-          'pointer-events-none absolute inset-0 flex items-center justify-center text-emerald-400 transition duration-300',
+          'pointer-events-none absolute inset-0 flex items-center justify-center text-brand-400 transition duration-300',
           !copied && 'translate-y-1.5 opacity-0',
         )}
       >

@@ -3,8 +3,10 @@ import { expect, test } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+import { id } from './setup.mjs'
+
 test('upload and download file', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
   const localFile = fs.readFileSync(path.join(__dirname, '/assets/video.webm'))
 

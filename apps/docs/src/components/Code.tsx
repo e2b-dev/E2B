@@ -178,7 +178,7 @@ function CodePanel({
               <>
                 <span>Running</span>
                 <LoaderIcon
-                  className="h-4 w-4 animate-spin text-emerald-400 transition-all group-hover:text-emerald-300"
+                  className="h-4 w-4 animate-spin text-brand-400 transition-all group-hover:text-brand-300"
                   strokeWidth={2.5}
                 />
               </>
@@ -186,7 +186,7 @@ function CodePanel({
               <>
                 <span>Run</span>
                 <PlayIcon
-                  className="h-4 w-4 text-emerald-400 transition-all group-hover:text-emerald-300"
+                  className="h-4 w-4 text-brand-400 transition-all group-hover:text-brand-300"
                   strokeWidth={2.5}
                 />
               </>
@@ -237,7 +237,7 @@ export function CodeGroupHeader({
                 className={clsx(
                   'border-b py-3 transition ui-not-focus-visible:outline-none',
                   childIndex === selectedIndex
-                    ? 'border-emerald-500 text-emerald-400'
+                    ? 'border-brand-500 text-brand-400'
                     : 'border-transparent text-zinc-400 hover:text-zinc-300',
                 )}
               >

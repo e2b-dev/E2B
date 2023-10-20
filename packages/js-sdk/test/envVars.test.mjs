@@ -1,12 +1,14 @@
-import {Session} from '../src'
-import {expect, test} from 'vitest'
+import { Session } from '../src'
+import { expect, test } from 'vitest'
+
+import { id } from './setup.mjs'
 
 test('test_env_vars', async () => {
-  const session = await Session.create({id: 'Bash'})
+  const session = await Session.create({ id })
 
   const process = await session.process.start({
     cmd: 'echo $FOO',
-    envVars: {FOO: 'BAR'},
+    envVars: { FOO: 'BAR' },
   })
   await process.finished
   const output = process.output.stdout
@@ -16,10 +18,10 @@ test('test_env_vars', async () => {
 })
 
 test('test_profile_env_vars', async () => {
-  const session = await Session.create({id: 'Bash'})
+  const session = await Session.create({ id })
 
   await session.filesystem.write('/home/user/.profile', 'export FOO=BAR')
-  const process = await session.process.start({cmd: 'echo $FOO'})
+  const process = await session.process.start({ cmd: 'echo $FOO' })
   await process.finished
   const output = process.output.stdout
   expect(output).toEqual('BAR')
@@ -28,9 +30,9 @@ test('test_profile_env_vars', async () => {
 })
 
 test('test_default_env_vars', async () => {
-  const session = await Session.create({id: 'Bash', envVars: {FOO: 'BAR'}})
+  const session = await Session.create({ id, envVars: { FOO: 'BAR' } })
 
-  const process = await session.process.start({cmd: 'echo $FOO'})
+  const process = await session.process.start({ cmd: 'echo $FOO' })
   await process.finished
   const output = process.output.stdout
   expect(output).toEqual('BAR')
@@ -39,11 +41,11 @@ test('test_default_env_vars', async () => {
 })
 
 test('test_overriding_env_vars', async () => {
-  const session = await Session.create({id: 'Bash', envVars: {FOO: 'BAR'}})
+  const session = await Session.create({ id, envVars: { FOO: 'BAR' } })
 
   const process = await session.process.start({
     cmd: 'echo $FOO',
-    envVars: {FOO: 'QUX'},
+    envVars: { FOO: 'QUX' },
   })
   await process.finished
   const output = process.output.stdout

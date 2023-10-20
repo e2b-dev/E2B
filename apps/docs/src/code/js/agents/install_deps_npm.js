@@ -13,8 +13,8 @@ console.log('Installing lodash...')
 const proc = await session.process.start({
   cmd: 'npm install lodash', // $HighlightLine
   cwd: '/code', // $HighlightLine
-  onStdout: (data) => console.log('[INFO] ', data.line),
-  onStderr: (data) => console.log('[WARN | ERROR] ', data.line),
+  onStdout: data => console.log('[INFO] ', data.line),
+  onStderr: data => console.log('[WARN | ERROR] ', data.line),
 })
 // Wait for the process to finish
 await proc.wait()
@@ -30,8 +30,8 @@ await session.filesystem.write('/code/index.js', code)
 console.log('Running code...')
 const codeRun = await session.process.start({
   cmd: 'node /code/index.js',
-  onStdout: (data) => console.log('[INFO] ', data.line),
-  onStderr: (data) => console.log('[WARN | ERROR] ', data.line),
+  onStdout: data => console.log('[INFO] ', data.line),
+  onStderr: data => console.log('[WARN | ERROR] ', data.line),
 })
 await codeRun.wait()
 

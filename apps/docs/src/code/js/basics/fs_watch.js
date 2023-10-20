@@ -12,7 +12,6 @@ watcher.addEventListener(event => {
 })
 await watcher.start() // $HighlightLine
 
-
 // Create files in the /home directory inside the playground
 // We'll receive notifications for these events through the watcher we created above.
 for (let i = 0; i < 10; i++) {

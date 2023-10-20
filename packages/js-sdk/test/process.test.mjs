@@ -1,8 +1,10 @@
 import { Session } from '../src'
 import { expect, test, vi } from 'vitest'
 
+import { id } from './setup.mjs'
+
 test('process on stdout/stderr', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
   const stdout = []
   const stderr = []
@@ -34,9 +36,9 @@ test('process expected stderr', async () => {
 })
 
 test('process on exit', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
-  const onExit = vi.fn(() => {})
+  const onExit = vi.fn(() => { })
 
   const process = await session.process.start({
     cmd: 'pwd',
@@ -50,7 +52,7 @@ test('process on exit', async () => {
 })
 
 test('process send stdin', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
   const process = await session.process.start({
     cmd: 'read -r line; echo "$line"',
@@ -70,9 +72,9 @@ test('process send stdin', async () => {
 }, 10000)
 
 test('test default on exit', async () => {
-  const onExit = vi.fn(() => {})
+  const onExit = vi.fn(() => { })
 
-  const session = await Session.create({ id: 'Nodejs', onExit })
+  const session = await Session.create({ id, onExit })
   const processOverride = await session.process.start({
     cmd: 'pwd',
     onExit: console.log,
@@ -91,15 +93,15 @@ test('test default on exit', async () => {
 })
 
 test('test default on stdout/stderr', async () => {
-  const onStdout = vi.fn(() => {})
-  const onStderr = vi.fn(() => {})
+  const onStdout = vi.fn(() => { })
+  const onStderr = vi.fn(() => { })
 
   const session = await Session.create({ id: 'Nodejs', onStdout, onStderr })
 
   const processOverride = await session.process.start({
     cmd: "node -e \"console.log('Hello'); throw new Error('Ooopsie -_-')\"",
-    onStdout: () => {},
-    onStderr: () => {},
+    onStdout: () => { },
+    onStderr: () => { },
   })
 
   await processOverride.finished

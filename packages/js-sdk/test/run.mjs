@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { Session, runCode } from '../dist/cjs/index.js'
+import { Session, runCode } from '../dist/index.js'
 
 async function localSession() {
   return await Session.create({

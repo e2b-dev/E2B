@@ -1,7 +1,10 @@
 import platform from 'platform'
 
+import { version } from '../../package.json'
+
+
 export const defaultHeaders = {
-  package_version: '__pkgVersion__',
+  package_version: version,
   lang: 'js',
   engine: platform.name || 'unknown',
   lang_version: platform.version || 'unknown',

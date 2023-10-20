@@ -39,7 +39,7 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
-      - name: Install pnpm
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Test build
@@ -47,10 +47,5 @@ jobs:
 
       - name: Run node tests
         run: pnpm run test
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-
-      - name: Run browser tests
-        run: pnpm run test:browser
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

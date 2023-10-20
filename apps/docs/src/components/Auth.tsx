@@ -9,6 +9,7 @@ import { HeaderSeparator } from '@/components/HeaderUtils'
 import { usePostHog } from 'posthog-js/react'
 import { obfuscateSecret } from '@/utils/obfuscate'
 import { useSignIn } from '@/utils/useSignIn'
+
 import { Popover, PopoverContent, PopoverTrigger } from './ui/Popover'
 
 function CopyableSecret({

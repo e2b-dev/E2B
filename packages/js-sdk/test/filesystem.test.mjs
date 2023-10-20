@@ -2,9 +2,10 @@ import { Session } from '../src'
 import { expect, test } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { id } from './setup.mjs'
 
 test('list files', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
   await session.filesystem.makeDir('/test/new')
 
   const ls = await session.filesystem.list('/test')
@@ -14,7 +15,7 @@ test('list files', async () => {
 })
 
 test('create file', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
   await session.filesystem.makeDir('/test')
   await session.filesystem.write('/test/test.txt', 'Hello World!')
 
@@ -25,7 +26,7 @@ test('create file', async () => {
 })
 
 test('read and write', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
 
   // String
   await session.filesystem.write('/tmp/test.txt', 'Hello World!')
@@ -42,7 +43,7 @@ test('read and write', async () => {
 })
 
 test('list delete files', async () => {
-  const session = await Session.create({ id: 'Nodejs' })
+  const session = await Session.create({ id })
   await session.filesystem.makeDir('/test/new')
 
   let ls = await session.filesystem.list('/test')
@@ -57,8 +58,7 @@ test('list delete files', async () => {
 })
 
 test('watch dir', async () => {
-  const session = new Session({ id: 'Nodejs' })
-  await session.open()
+  const session = await Session.create({ id })
   await session.filesystem.write('/tmp/test.txt', 'Hello')
 
   const watcher = session.filesystem.watchDir('/tmp')
@@ -68,7 +68,7 @@ test('watch dir', async () => {
 
   await watcher.start()
   await session.filesystem.write('/tmp/test.txt', 'World!')
-  await new Promise(r => setTimeout(r, 1000))
+  await new Promise(r => setTimeout(r, 2500))
   await watcher.stop()
 
   expect(events.length).toBeGreaterThanOrEqual(1)

@@ -3,13 +3,64 @@
  * Do not make direct changes to the file.
  */
 
-
 export interface paths {
-  "/envs": {
-    /** @description List all environments */
+  "/health": {
+    /** Health check */
     get: {
       responses: {
-        /** @description Successfully returned all environments */
+        /** Request was successful */
+        200: unknown;
+        401: components["responses"]["401"];
+      };
+    };
+  };
+  "/instances": {
+    /** Create an instance from the environment */
+    post: {
+      responses: {
+        /** The instance was created successfully */
+        201: {
+          content: {
+            "application/json": components["schemas"]["Instance"];
+          };
+        };
+        400: components["responses"]["400"];
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NewInstance"];
+        };
+      };
+    };
+  };
+  "/instances/{instanceID}/refreshes": {
+    /** Refresh the instance extending its time to live */
+    post: {
+      parameters: {
+        path: {
+          instanceID: components["parameters"]["instanceID"];
+        };
+      };
+      responses: {
+        /** Successfully refreshed the instance */
+        204: never;
+        401: components["responses"]["401"];
+        /** Error refreshing instance - not found */
+        404: {
+          content: {
+            "application/json": components["schemas"]["Error"];
+          };
+        };
+      };
+    };
+  };
+  "/envs": {
+    /** List all environments */
+    get: {
+      responses: {
+        /** Successfully returned all environments */
         200: {
           content: {
             "application/json": components["schemas"]["Environment"][];
@@ -19,8 +70,18 @@ export interface paths {
         500: components["responses"]["500"];
       };
     };
-    /** @description Create a new environment */
+    /** Create a new environment */
     post: {
+      responses: {
+        /** The build has started */
+        202: {
+          content: {
+            "application/json": components["schemas"]["Environment"];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
       requestBody: {
         content: {
           "multipart/form-data": {
@@ -36,33 +97,23 @@ export interface paths {
           };
         };
       };
-      responses: {
-        /** @description The build has started */
-        202: {
-          content: {
-            "application/json": components["schemas"]["Environment"];
-          };
-        };
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
     };
   };
   "/envs/{envID}/builds/{buildID}": {
-    /** @description Get environment info */
+    /** Get environment info */
     get: {
       parameters: {
-        query?: {
-          /** @description Index of the starting build log that should be returned with the environment */
-          logsOffset?: number;
-        };
         path: {
           envID: components["parameters"]["envID"];
           buildID: components["parameters"]["buildID"];
         };
+        query: {
+          /** Index of the starting build log that should be returned with the environment */
+          logsOffset?: number;
+        };
       };
       responses: {
-        /** @description Successfully returned the environment */
+        /** Successfully returned the environment */
         200: {
           content: {
             "application/json": components["schemas"]["Environment"];
@@ -75,12 +126,23 @@ export interface paths {
     };
   };
   "/envs/{envID}/builds/{buildID}/logs": {
-    /** @description Add a build log */
+    /** Add a build log */
     post: {
       parameters: {
         path: {
           envID: components["parameters"]["envID"];
           buildID: components["parameters"]["buildID"];
+        };
+      };
+      responses: {
+        /** Successfully added log */
+        201: unknown;
+        401: components["responses"]["401"];
+        /** Error adding a build log - build not found */
+        404: {
+          content: {
+            "application/json": components["schemas"]["Error"];
+          };
         };
       };
       requestBody: {
@@ -92,100 +154,41 @@ export interface paths {
           };
         };
       };
-      responses: {
-        /** @description Successfully added log */
-        201: {
-          content: never;
-        };
-        401: components["responses"]["401"];
-        /** @description Error adding a build log - build not found */
-        404: {
-          content: {
-            "application/json": components["schemas"]["Error"];
-          };
-        };
-      };
-    };
-  };
-  "/health": {
-    /** @description Health check */
-    get: {
-      responses: {
-        /** @description Request was successful */
-        200: {
-          content: never;
-        };
-        401: components["responses"]["401"];
-      };
-    };
-  };
-  "/instances": {
-    /** @description Create an instance from the environment */
-    post: {
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["NewInstance"];
-        };
-      };
-      responses: {
-        /** @description The instance was created successfully */
-        201: {
-          content: {
-            "application/json": components["schemas"]["Instance"];
-          };
-        };
-        400: components["responses"]["400"];
-        401: components["responses"]["401"];
-        500: components["responses"]["500"];
-      };
-    };
-  };
-  "/instances/{instanceID}/refreshes": {
-    /** @description Refresh the instance extending its time to live */
-    post: {
-      parameters: {
-        path: {
-          instanceID: components["parameters"]["instanceID"];
-        };
-      };
-      responses: {
-        /** @description Successfully refreshed the instance */
-        204: {
-          content: never;
-        };
-        401: components["responses"]["401"];
-        /** @description Error refreshing instance - not found */
-        404: {
-          content: {
-            "application/json": components["schemas"]["Error"];
-          };
-        };
-      };
     };
   };
 }
 
-export type webhooks = Record<string, never>;
-
 export interface components {
   schemas: {
-    Environment: {
-      /** @description Identifier of the build */
-      buildID: string;
-      /** @description Identifier of the environment */
+    NewInstance: {
+      /** @description Identifier of the required environment */
       envID: string;
+    };
+    Environment: {
       /**
        * @description Build logs
        * @default []
        */
       logs: string[];
-      /** @description Whether the environment is public or only accessible by the team */
-      public: boolean;
+      /** @description Identifier of the environment */
+      envID: string;
+      /** @description Identifier of the build */
+      buildID: string;
       /**
        * @description Status of the environment
        * @enum {string}
        */
       status: "building" | "ready" | "error";
+      /** @description Whether the environment is public or only accessible by the team */
+      public: boolean;
+    };
+    Instance: {
+      /** @description Identifier of the environment from which is the instance created */
+      envID: string;
+      /** @description Identifier of the instance */
+      instanceID: string;
+      /** @description Identifier of the client */
+      clientID: string;
     };
     Error: {
       /**
@@ -196,39 +199,27 @@ export interface components {
       /** @description Error */
       message: string;
     };
-    Instance: {
-      /** @description Identifier of the client */
-      clientID: string;
-      /** @description Identifier of the environment from which is the instance created */
-      envID: string;
-      /** @description Identifier of the instance */
-      instanceID: string;
-    };
-    NewInstance: {
-      /** @description Identifier of the required environment */
-      envID: string;
-    };
   };
   responses: {
-    /** @description Bad request */
+    /** Bad request */
     400: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description Authentication error */
+    /** Authentication error */
     401: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description Not found */
+    /** Not found */
     404: {
       content: {
         "application/json": components["schemas"]["Error"];
       };
     };
-    /** @description Server error */
+    /** Server error */
     500: {
       content: {
         "application/json": components["schemas"]["Error"];
@@ -236,17 +227,12 @@ export interface components {
     };
   };
   parameters: {
-    buildID: string;
     envID: string;
+    buildID: string;
     instanceID: string;
   };
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
 }
 
-export type $defs = Record<string, never>;
+export interface operations {}
 
-export type external = Record<string, never>;
-
-export type operations = Record<string, never>;
+export interface external {}

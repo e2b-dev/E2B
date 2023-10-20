@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from os import getenv
 from e2b import Session
@@ -28,9 +27,9 @@ handler.setFormatter(formatter)
 e2b_logger.addHandler(handler) # $HighlightLine
 
 
-async def main():
-  session = await Session.create(id="Nodejs", api_key=E2B_API_KEY)
-  await session.filesystem.write("test.txt", "Hello World")
-  await session.close()
+def main():
+  session = Session.create(id="Nodejs", api_key=E2B_API_KEY)
+  session.filesystem.write("test.txt", "Hello World")
+  session.close()
 
-asyncio.run(main())
+main()
