@@ -853,9 +853,22 @@ func (m *EnvMutation) OldBuildID(ctx context.Context) (v uuid.UUID, err error) {
 	return oldValue.BuildID, nil
 }
 
+// ClearBuildID clears the value of the "build_id" field.
+func (m *EnvMutation) ClearBuildID() {
+	m.build_id = nil
+	m.clearedFields[env.FieldBuildID] = struct{}{}
+}
+
+// BuildIDCleared returns if the "build_id" field was cleared in this mutation.
+func (m *EnvMutation) BuildIDCleared() bool {
+	_, ok := m.clearedFields[env.FieldBuildID]
+	return ok
+}
+
 // ResetBuildID resets all changes to the "build_id" field.
 func (m *EnvMutation) ResetBuildID() {
 	m.build_id = nil
+	delete(m.clearedFields, env.FieldBuildID)
 }
 
 // AddTeamIDs adds the "team" edge to the Team entity by ids.
@@ -1086,7 +1099,11 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EnvMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(env.FieldBuildID) {
+		fields = append(fields, env.FieldBuildID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1099,6 +1116,11 @@ func (m *EnvMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EnvMutation) ClearField(name string) error {
+	switch name {
+	case env.FieldBuildID:
+		m.ClearBuildID()
+		return nil
+	}
 	return fmt.Errorf("unknown Env nullable field %s", name)
 }
 

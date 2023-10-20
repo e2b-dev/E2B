@@ -28,6 +28,14 @@ func (ec *EnvCreate) SetCreatedAt(t time.Time) *EnvCreate {
 	return ec
 }
 
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableCreatedAt(t *time.Time) *EnvCreate {
+	if t != nil {
+		ec.SetCreatedAt(*t)
+	}
+	return ec
+}
+
 // SetTeamID sets the "team_id" field.
 func (ec *EnvCreate) SetTeamID(u uuid.UUID) *EnvCreate {
 	ec.mutation.SetTeamID(u)
@@ -55,6 +63,14 @@ func (ec *EnvCreate) SetPublic(b bool) *EnvCreate {
 // SetBuildID sets the "build_id" field.
 func (ec *EnvCreate) SetBuildID(u uuid.UUID) *EnvCreate {
 	ec.mutation.SetBuildID(u)
+	return ec
+}
+
+// SetNillableBuildID sets the "build_id" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableBuildID(u *uuid.UUID) *EnvCreate {
+	if u != nil {
+		ec.SetBuildID(*u)
+	}
 	return ec
 }
 
@@ -86,6 +102,7 @@ func (ec *EnvCreate) Mutation() *EnvMutation {
 
 // Save creates the Env in the database.
 func (ec *EnvCreate) Save(ctx context.Context) (*Env, error) {
+	ec.defaults()
 	return withHooks(ctx, ec.sqlSave, ec.mutation, ec.hooks)
 }
 
@@ -111,6 +128,14 @@ func (ec *EnvCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (ec *EnvCreate) defaults() {
+	if _, ok := ec.mutation.CreatedAt(); !ok {
+		v := env.DefaultCreatedAt()
+		ec.mutation.SetCreatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (ec *EnvCreate) check() error {
 	if _, ok := ec.mutation.CreatedAt(); !ok {
@@ -132,9 +157,6 @@ func (ec *EnvCreate) check() error {
 	}
 	if _, ok := ec.mutation.Public(); !ok {
 		return &ValidationError{Name: "public", err: errors.New(`ent: missing required field "Env.public"`)}
-	}
-	if _, ok := ec.mutation.BuildID(); !ok {
-		return &ValidationError{Name: "build_id", err: errors.New(`ent: missing required field "Env.build_id"`)}
 	}
 	return nil
 }
@@ -234,6 +256,7 @@ func (ecb *EnvCreateBulk) Save(ctx context.Context) ([]*Env, error) {
 	for i := range ecb.builders {
 		func(i int, root context.Context) {
 			builder := ecb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*EnvMutation)
 				if !ok {

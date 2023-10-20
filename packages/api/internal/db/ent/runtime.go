@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/schema"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/team"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/teamapikey"
@@ -14,6 +15,12 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	envFields := schema.Env{}.Fields()
+	_ = envFields
+	// envDescCreatedAt is the schema descriptor for created_at field.
+	envDescCreatedAt := envFields[1].Descriptor()
+	// env.DefaultCreatedAt holds the default value on creation for the created_at field.
+	env.DefaultCreatedAt = envDescCreatedAt.Default.(func() time.Time)
 	teamFields := schema.Team{}.Fields()
 	_ = teamFields
 	// teamDescCreatedAt is the schema descriptor for created_at field.

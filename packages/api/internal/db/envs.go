@@ -76,7 +76,7 @@ func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.En
 	e, err := db.Client.Env.Create().SetID(envID).SetTeamID(id).SetStatus(env.StatusBuilding).SetDockerfile(dockerfile).SetPublic(false).Save(db.ctx)
 
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
+		errMsg := fmt.Errorf("failed to create env with id '%s': %w", envID, err)
 
 		fmt.Println(errMsg.Error())
 

@@ -307,6 +307,16 @@ func BuildIDLTE(v uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldBuildID, v))
 }
 
+// BuildIDIsNil applies the IsNil predicate on the "build_id" field.
+func BuildIDIsNil() predicate.Env {
+	return predicate.Env(sql.FieldIsNull(FieldBuildID))
+}
+
+// BuildIDNotNil applies the NotNil predicate on the "build_id" field.
+func BuildIDNotNil() predicate.Env {
+	return predicate.Env(sql.FieldNotNull(FieldBuildID))
+}
+
 // HasTeam applies the HasEdge predicate on the "team" edge.
 func HasTeam() predicate.Env {
 	return predicate.Env(func(s *sql.Selector) {

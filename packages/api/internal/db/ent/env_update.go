@@ -60,6 +60,20 @@ func (eu *EnvUpdate) SetBuildID(u uuid.UUID) *EnvUpdate {
 	return eu
 }
 
+// SetNillableBuildID sets the "build_id" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableBuildID(u *uuid.UUID) *EnvUpdate {
+	if u != nil {
+		eu.SetBuildID(*u)
+	}
+	return eu
+}
+
+// ClearBuildID clears the value of the "build_id" field.
+func (eu *EnvUpdate) ClearBuildID() *EnvUpdate {
+	eu.mutation.ClearBuildID()
+	return eu
+}
+
 // AddTeamIDs adds the "team" edge to the Team entity by IDs.
 func (eu *EnvUpdate) AddTeamIDs(ids ...uuid.UUID) *EnvUpdate {
 	eu.mutation.AddTeamIDs(ids...)
@@ -165,6 +179,9 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := eu.mutation.BuildID(); ok {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
 	}
+	if eu.mutation.BuildIDCleared() {
+		_spec.ClearField(env.FieldBuildID, field.TypeUUID)
+	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -262,6 +279,20 @@ func (euo *EnvUpdateOne) SetPublic(b bool) *EnvUpdateOne {
 // SetBuildID sets the "build_id" field.
 func (euo *EnvUpdateOne) SetBuildID(u uuid.UUID) *EnvUpdateOne {
 	euo.mutation.SetBuildID(u)
+	return euo
+}
+
+// SetNillableBuildID sets the "build_id" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableBuildID(u *uuid.UUID) *EnvUpdateOne {
+	if u != nil {
+		euo.SetBuildID(*u)
+	}
+	return euo
+}
+
+// ClearBuildID clears the value of the "build_id" field.
+func (euo *EnvUpdateOne) ClearBuildID() *EnvUpdateOne {
+	euo.mutation.ClearBuildID()
 	return euo
 }
 
@@ -399,6 +430,9 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if value, ok := euo.mutation.BuildID(); ok {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
+	}
+	if euo.mutation.BuildIDCleared() {
+		_spec.ClearField(env.FieldBuildID, field.TypeUUID)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{

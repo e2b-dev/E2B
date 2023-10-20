@@ -28,7 +28,7 @@ var (
 		{Name: "dockerfile", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"building", "ready", "error"}},
 		{Name: "public", Type: field.TypeBool},
-		{Name: "build_id", Type: field.TypeUUID},
+		{Name: "build_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
 	EnvsTable = &schema.Table{
