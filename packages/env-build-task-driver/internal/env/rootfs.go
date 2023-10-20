@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -62,11 +63,11 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
-	defer rootfs.cleanupDockerImage(childCtx, tracer)
 	err := rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
+		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
 
@@ -74,6 +75,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
 
+		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
 
@@ -140,6 +142,31 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	return nil
 }
 
+func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "push-docker-image")
+	defer childSpan.End()
+
+	logs, err := r.client.ImagePush(childCtx, r.dockerTag(), types.ImagePushOptions{})
+	if err != nil {
+		errMsg := fmt.Errorf("error pushing image %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	err = logs.Close()
+	if err != nil {
+		errMsg := fmt.Errorf("error closing logs %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "pushed image")
+
+	return nil
+}
+
 func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 	childCtx, childSpan := tracer.Start(ctx, "cleanup-docker-image")
 	defer childSpan.End()
@@ -183,13 +210,53 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "created container")
 
 	defer func() {
+		history, err := r.client.ImageHistory(ctx, r.dockerTag())
+		if err != nil {
+			errMsg := fmt.Errorf("error getting image history %w", err)
+			telemetry.ReportError(ctx, errMsg)
+		}
+
+		for i := range history {
+			hist := history[len(history)-i-1]
+			if hist.ID == "" {
+				break
+			}
+
+			info, _, err := r.client.ImageInspectWithRaw(ctx, hist.ID)
+			if err != nil {
+				errMsg := fmt.Errorf("error inspecting image %w", err)
+				telemetry.ReportError(ctx, errMsg)
+			}
+
+			folder := path.Dir(info.GraphDriver.Data["UpperDir"])
+			err = os.RemoveAll(folder)
+
+			if err != nil {
+				errMsg := fmt.Errorf("error removing folder %w", err)
+				telemetry.ReportError(ctx, errMsg)
+			}
+			r.client.ImageRemove(ctx, hist.ID, types.ImageRemoveOptions{
+				Force:         true,
+				PruneChildren: true,
+			})
+		}
+
 		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
-			Force: true,
+			Force:         true,
+			RemoveVolumes: true,
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error removing container %w", err)
 			telemetry.ReportError(ctx, errMsg)
 		}
+		history, err = r.client.ImageHistory(ctx, r.dockerTag())
+		if err != nil {
+			errMsg := fmt.Errorf("error getting image history %w", err)
+			telemetry.ReportError(ctx, errMsg)
+		} else {
+			telemetry.ReportEvent(ctx, "got image history", attribute.Int("historySize", len(history)))
+		}
+
 	}()
 
 	filesToTar := []fileToTar{
