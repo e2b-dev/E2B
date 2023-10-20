@@ -1,6 +1,6 @@
+import 'formdata-polyfill'
+
 import normalizePath from 'normalize-path'
-import { FormData } from 'formdata-polyfill/esm.min.js'
-import Blob from 'cross-blob'
 
 import { ENVD_PORT, FILE_ROUTE } from '../constants'
 import { components } from '../api'

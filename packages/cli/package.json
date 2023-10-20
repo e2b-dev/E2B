@@ -46,6 +46,7 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
+    "@e2b/sdk": "workspace:*",
     "@balena/dockerignore": "^1.0.2",
     "@devbookhq/sdk": "^2.6.88",
     "@iarna/toml": "^2.2.5",
