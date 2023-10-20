@@ -52,7 +52,7 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: workspace:*
+        specifier: ^0.7.0
         version: link:../../packages/js-sdk
       '@headlessui/react':
         specifier: ^1.7.15
@@ -249,7 +249,7 @@ importers:
         specifier: ^2.6.88
         version: 2.6.95
       '@e2b/sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../js-sdk
       '@iarna/toml':
         specifier: ^2.2.5
