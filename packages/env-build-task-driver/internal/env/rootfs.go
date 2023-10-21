@@ -3,8 +3,12 @@ package env
 import (
 	"archive/tar"
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"strings"
+
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -14,10 +18,6 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"io"
-	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
@@ -64,6 +64,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
+	defer rootfs.cleanupDockerImage(childCtx, tracer)
 	err := rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
@@ -188,7 +189,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 	usedOverlays := map[string]bool{}
 
 	for _, c := range containers {
-		cmd := exec.Command("docker", "container", "inspect", c.ID)
+		cmd := exec.Command("sh", "-c" ,"'docker container inspect " + c.ID +"'", "|", "jq", ".[0].GraphDriver.Data.UpperDir")
 		output, err := cmd.Output()
 
 		if err != nil {
@@ -196,24 +197,10 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 			telemetry.ReportError(childCtx, errMsg)
 		}
 
-		var parsedOutput []map[string]map[string]map[string]string
-		err = json.Unmarshal(output, &parsedOutput)
-
-		if err != nil {
-			errMsg := fmt.Errorf("error parsing container output %w", err)
-			telemetry.ReportError(childCtx, errMsg)
-		}
-
-		diffs := strings.Split(parsedOutput[0]["GraphDriver"]["Data"]["LowerDir"], ":")
+		diffs := strings.Split(string(output), ":")
 		for _, diff := range diffs {
 			usedOverlays[diff] = true
 		}
-	}
-
-	folders, err := os.ReadDir("/var/lib/docker/overlay2")
-	if err != nil {
-		errMsg := fmt.Errorf("error reading overlay2 directory %w", err)
-		telemetry.ReportError(childCtx, errMsg)
 	}
 
 	mounts, err := mountinfo.GetMounts(FilterFunc)
@@ -231,6 +218,12 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 				telemetry.ReportError(childCtx, errMsg)
 			}
 		}
+	}
+
+	folders, err := os.ReadDir("/var/lib/docker/overlay2")
+	if err != nil {
+		errMsg := fmt.Errorf("error reading overlay2 directory %w", err)
+		telemetry.ReportError(childCtx, errMsg)
 	}
 	for _, folder := range folders {
 		if !usedOverlays[folder.Name()] {
