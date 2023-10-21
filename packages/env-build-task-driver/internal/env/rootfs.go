@@ -14,7 +14,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/moby/sys/mountinfo"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -204,16 +203,16 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 	}
 
 	cmd := exec.Command("umount", x.ContainerJSONBase.GraphDriver.Data["MergeDirDir"])
-	err = cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		errMsg := fmt.Errorf("error unmounting %w", err)
 		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, string(output))
 	}
 
 	folder := strings.TrimSuffix(strings.TrimPrefix(x.ContainerJSONBase.GraphDriver.Data["MergeDirDir"], "/var/lib/docker/overlay2"), "/merged")
-
 	err = os.RemoveAll("/var/lib/docker/overlay2/" + folder)
-	err = os.RemoveAll("/var/lib/docker/overlay2/" + folder + "-init")
 
 	if err != nil {
 		errMsg := fmt.Errorf("error removing folder %w", err)
@@ -529,7 +528,4 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return cont.ID, nil
-}
-func FilterFunc(info *mountinfo.Info) (skip, stop bool) {
-	return info.FSType == "overlay", false
 }
