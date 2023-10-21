@@ -173,15 +173,20 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 	defer childSpan.End()
 
 	x, err := r.client.ContainerInspect(childCtx, contID)
-	fmt.Println(x.Config.WorkingDir)
-	cmd := exec.Command("sh", "-c", "'docker container inspect "+contID+"'", "|", "jq", ".[0].GraphDriver.Data.MergeDir")
-	output, err := cmd.Output()
 
 	if err != nil {
 		errMsg := fmt.Errorf("error inspecting container %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
+	err = r.client.ContainerRemove(ctx, contID, types.ContainerRemoveOptions{
+		Force:         true,
+		RemoveVolumes: true,
+	})
+	if err != nil {
+		errMsg := fmt.Errorf("error removing container %w", err)
+		telemetry.ReportError(ctx, errMsg)
+	}
 	_, err = r.client.ImageRemove(childCtx, r.dockerTag(), types.ImageRemoveOptions{
 		Force:         true,
 		PruneChildren: true,
@@ -198,16 +203,18 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
-	cmd = exec.Command("umount", string(output))
+	cmd := exec.Command("umount", x.ContainerJSONBase.GraphDriver.Data["MergeDirDir"])
 	err = cmd.Run()
 	if err != nil {
 		errMsg := fmt.Errorf("error unmounting %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
-	folder := strings.TrimSuffix(strings.TrimPrefix(string(output), "/var/lib/docker/overlay2"), "/merged")
+	folder := strings.TrimSuffix(strings.TrimPrefix(x.ContainerJSONBase.GraphDriver.Data["MergeDirDir"], "/var/lib/docker/overlay2"), "/merged")
 
 	err = os.RemoveAll("/var/lib/docker/overlay2/" + folder)
+	err = os.RemoveAll("/var/lib/docker/overlay2/" + folder + "-init")
+
 	if err != nil {
 		errMsg := fmt.Errorf("error removing folder %w", err)
 		telemetry.ReportError(childCtx, errMsg)
@@ -240,17 +247,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 	}
 
 	telemetry.ReportEvent(childCtx, "created container")
-
-	defer func() {
-		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
-			Force:         true,
-			RemoveVolumes: true,
-		})
-		if err != nil {
-			errMsg := fmt.Errorf("error removing container %w", err)
-			telemetry.ReportError(ctx, errMsg)
-		}
-	}()
 
 	filesToTar := []fileToTar{
 		{
