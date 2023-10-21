@@ -172,6 +172,8 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 	childCtx, childSpan := tracer.Start(ctx, "cleanup-docker-image")
 	defer childSpan.End()
 
+	x, err := r.client.ContainerInspect(childCtx, contID)
+	fmt.Println(x.Config.WorkingDir)
 	cmd := exec.Command("sh", "-c", "'docker container inspect "+contID+"'", "|", "jq", ".[0].GraphDriver.Data.MergeDir")
 	output, err := cmd.Output()
 
