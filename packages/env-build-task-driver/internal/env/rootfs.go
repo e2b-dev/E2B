@@ -3,18 +3,21 @@ package env
 import (
 	"archive/tar"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/moby/sys/mountinfo"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
@@ -170,8 +173,8 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 	defer childSpan.End()
 
 	_, err := r.client.ImageRemove(childCtx, r.dockerTag(), types.ImageRemoveOptions{
-		Force:         false,
-		PruneChildren: false,
+		Force:         true,
+		PruneChildren: true,
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error removing image %w", err)
@@ -179,6 +182,66 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 	} else {
 		telemetry.ReportEvent(childCtx, "removed image")
 	}
+
+	containers, err := r.client.ContainerList(childCtx, types.ContainerListOptions{All: true})
+
+	usedOverlays := map[string]bool{}
+
+	for _, c := range containers {
+		cmd := exec.Command("docker", "container", "inspect", c.ID)
+		output, err := cmd.Output()
+
+		if err != nil {
+			errMsg := fmt.Errorf("error inspecting container %w", err)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+
+		var parsedOutput []map[string]map[string]map[string]string
+		err = json.Unmarshal(output, &parsedOutput)
+
+		if err != nil {
+			errMsg := fmt.Errorf("error parsing container output %w", err)
+			telemetry.ReportError(childCtx, errMsg)
+		}
+
+		diffs := strings.Split(parsedOutput[0]["GraphDriver"]["Data"]["LowerDir"], ":")
+		for _, diff := range diffs {
+			usedOverlays[diff] = true
+		}
+	}
+
+	folders, err := os.ReadDir("/var/lib/docker/overlay2")
+	if err != nil {
+		errMsg := fmt.Errorf("error reading overlay2 directory %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	}
+
+	mounts, err := mountinfo.GetMounts(FilterFunc)
+	if err != nil {
+		errMsg := fmt.Errorf("error getting mounts %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	}
+
+	for _, mount := range mounts {
+		if !usedOverlays[strings.TrimSuffix(strings.TrimPrefix(mount.Mountpoint, "/var/lib/docker/overlay2"), "/merged")] {
+			cmd := exec.Command("umount", mount.Mountpoint)
+			err = cmd.Run()
+			if err != nil {
+				errMsg := fmt.Errorf("error unmounting %w", err)
+				telemetry.ReportError(childCtx, errMsg)
+			}
+		}
+	}
+	for _, folder := range folders {
+		if !usedOverlays[folder.Name()] {
+			err = os.RemoveAll("/var/lib/docker/overlay2/" + folder.Name())
+			if err != nil {
+				errMsg := fmt.Errorf("error removing folder %w", err)
+				telemetry.ReportError(childCtx, errMsg)
+			}
+		}
+	}
+
 }
 
 func (r *Rootfs) dockerTag() string {
@@ -538,4 +601,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
 	return nil
+}
+func FilterFunc(info *mountinfo.Info) (skip, stop bool) {
+	return info.FSType == "overlay", false
 }
