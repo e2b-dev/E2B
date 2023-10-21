@@ -52,8 +52,8 @@ importers:
         specifier: ^1.7.3
         version: 1.11.0(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)(search-insights@2.8.3)
       '@e2b/sdk':
-        specifier: ^0.7.4
-        version: 0.7.4
+        specifier: ^0.7.5
+        version: 0.7.5
       '@headlessui/react':
         specifier: ^1.7.15
         version: 1.7.17(react-dom@18.2.0)(react@18.2.0)
@@ -884,8 +884,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@e2b/sdk@0.7.4:
-    resolution: {integrity: sha512-ISBkjiiCVEQNJjgG1cnd3ZF8JZhyryAz5fYEud93Qbzpu9wZkOzEgt2btaWcCnVuy2Mmxw1rYm697zkaRbbd2A==}
+  /@e2b/sdk@0.7.5:
+    resolution: {integrity: sha512-SwpHZ0wKkYHlhSLQZUf+KyTOjXJYW9pWjIZtgavNbLb5n2RFN6CsZXjKbsTYcuHwg+SkJSs17zZWiqZaEKWMNw==}
     engines: {node: '>=18'}
     dependencies:
       normalize-path: 3.0.0
