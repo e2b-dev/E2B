@@ -202,7 +202,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
-	cmd := exec.Command("umount", x.ContainerJSONBase.GraphDriver.Data["MergeDirDir"])
+	cmd := exec.Command("umount", x.ContainerJSONBase.GraphDriver.Data["MergedDir"])
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		errMsg := fmt.Errorf("error unmounting %w", err)
