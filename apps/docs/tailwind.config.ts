@@ -130,4 +130,7 @@ export default {
     animatePlugin,
     tailwidScrollbar,
   ],
+  // variants: {
+  //   scrollbar: ['rounded'],
+  // },
 } satisfies Config

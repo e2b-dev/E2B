@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 
@@ -8,7 +7,6 @@ import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { Navigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
-import { Logo } from '@/components/Logo'
 
 export function Layout({
   children,
@@ -25,37 +23,42 @@ export function Layout({
       <div className="h-full lg:ml-[var(--sidebar-nav-width)]">
         <motion.header
           layoutScroll
-          className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex"
+          className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:top-[60px] lg:z-40 lg:flex"
         >
           <div
+            id="sidebar"
             className="
-              scrollbar
-              scrollbar-thumb-red-900
-              scrollbar-track-blue-100
+              scrollbar-thin
+              scrollbar-thumb-[#5A5A5A]
               contents
               lg:pointer-events-auto
               lg:block
               lg:w-[var(--sidebar-nav-width)]
               lg:overflow-y-auto
-              lg:border-r
-              lg:border-zinc-900/10
               lg:px-6
-              lg:pb-8 lg:pt-4 lg:dark:border-white/10
+              lg:pb-8
             "
           >
-            <div className="relative top-1 hidden items-start justify-start lg:flex">
-              <Link
-                href="/"
-                aria-label="Home"
-              >
-                <Logo className="h-6" />
-              </Link>
-            </div>
             <Header />
-            <Navigation className="hidden lg:mt-10 lg:block" />
+            <Navigation className="hidden lg:my-4 lg:block" />
           </div>
         </motion.header>
-        <div className="relative flex h-full flex-col px-4 pt-14 sm:px-6 lg:px-8">
+        <div
+          className="
+          relative
+          flex
+          h-full
+          flex-col
+          px-4
+          pt-14
+          sm:px-6
+          lg:ml-1
+          lg:border-l
+          lg:border-zinc-900/10
+          lg:px-8
+          lg:dark:border-white/10
+          "
+        >
           <main className="flex-auto">{children}</main>
           <Footer />
         </div>

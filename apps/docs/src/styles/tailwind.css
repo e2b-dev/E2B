@@ -33,6 +33,13 @@
   [inert] ::-webkit-scrollbar {
     display: none;
   }
+
+  #sidebar::-webkit-scrollbar-track {
+    border-radius: 10px;
+  }
+  #sidebar::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+  }
 }
 
 /* Shadcn */
@@ -69,9 +76,6 @@
     --radius: 0.5rem;
 
     --sidebar-nav-width: 376px;
-    --sidebar-scrollbar-track-bg: red;
-    --sidebar-scrollbar-thumb-bg: blue;
-    --sidebar-scrollbar-thumb-hover-bg: green;
   }
 
   .dark {
