@@ -211,7 +211,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 		telemetry.ReportEvent(childCtx, string(output))
 	}
 
-	folder := strings.TrimSuffix(strings.TrimPrefix(x.ContainerJSONBase.GraphDriver.Data["MergeDirDir"], "/var/lib/docker/overlay2"), "/merged")
+	folder := strings.TrimSuffix(strings.TrimPrefix(x.ContainerJSONBase.GraphDriver.Data["MergedDir"], "/var/lib/docker/overlay2"), "/merged")
 	err = os.RemoveAll("/var/lib/docker/overlay2/" + folder)
 
 	if err != nil {
