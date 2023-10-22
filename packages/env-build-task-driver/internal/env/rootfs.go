@@ -69,18 +69,18 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
-		rootfs.cleanupDockerImage(childCtx, tracer, "")
+		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
 
-	contID, err := rootfs.createRootfsFile(childCtx, tracer)
+	err = rootfs.createRootfsFile(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
 
-		rootfs.cleanupDockerImage(childCtx, tracer, "")
+		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
-	rootfs.cleanupDockerImage(childCtx, tracer, contID)
+	rootfs.cleanupDockerImage(childCtx, tracer)
 	return rootfs, nil
 }
 
@@ -169,26 +169,34 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 	return nil
 }
 
-func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, contID string) {
+func (r *Rootfs) removeDockerOverlays(ctx context.Context, tracer trace.Tracer, overlay string) {
+	childCtx, childSpan := tracer.Start(ctx, "remove-docker-overlays")
+	defer childSpan.End()
+
+	err := unix.Unmount(overlay, unix.MNT_DETACH)
+	if err != nil {
+		errMsg := fmt.Errorf("error unmounting %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "unmounted overlay")
+	}
+
+	folder := strings.TrimSuffix(overlay, "/merged")
+	err = os.RemoveAll(folder)
+
+	if err != nil {
+		errMsg := fmt.Errorf("error removing folder %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	} else {
+		telemetry.ReportEvent(childCtx, "removed overlay folder")
+	}
+}
+
+func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 	childCtx, childSpan := tracer.Start(ctx, "cleanup-docker-image")
 	defer childSpan.End()
 
-	cont, err := r.client.ContainerInspect(childCtx, contID)
-
-	if err != nil {
-		errMsg := fmt.Errorf("error inspecting container %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	}
-
-	err = r.client.ContainerRemove(ctx, contID, types.ContainerRemoveOptions{
-		Force:         true,
-		RemoveVolumes: true,
-	})
-	if err != nil {
-		errMsg := fmt.Errorf("error removing container %w", err)
-		telemetry.ReportError(ctx, errMsg)
-	}
-	_, err = r.client.ImageRemove(childCtx, r.dockerTag(), types.ImageRemoveOptions{
+	_, err := r.client.ImageRemove(childCtx, r.dockerTag(), types.ImageRemoveOptions{
 		Force:         true,
 		PruneChildren: true,
 	})
@@ -198,32 +206,13 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 	} else {
 		telemetry.ReportEvent(childCtx, "removed image")
 	}
-
-	err = unix.Unmount(cont.ContainerJSONBase.GraphDriver.Data["MergedDir"], unix.MNT_DETACH)
-	if err != nil {
-		errMsg := fmt.Errorf("error unmounting %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	} else {
-		telemetry.ReportEvent(childCtx, "unmounted overlay")
-	}
-
-	folder := strings.TrimSuffix(cont.ContainerJSONBase.GraphDriver.Data["MergedDir"], "/merged")
-	err = os.RemoveAll(folder)
-
-	if err != nil {
-		errMsg := fmt.Errorf("error removing folder %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	} else {
-		telemetry.ReportEvent(childCtx, "removed overlay folder")
-	}
-
 }
 
 func (r *Rootfs) dockerTag() string {
 	return r.env.DockerRegistry + "/" + r.env.EnvID + ":" + r.env.BuildID
 }
 
-func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (string, error) {
+func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
@@ -240,8 +229,26 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error creating container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
+	defer func() {
+		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
+			Force:         true,
+			RemoveVolumes: true,
+		})
+		if err != nil {
+			errMsg := fmt.Errorf("error removing container %w", err)
+			telemetry.ReportError(ctx, errMsg)
+		}
+	}()
+
+	containerInfo, err := r.client.ContainerInspect(childCtx, cont.ID)
+	if err != nil {
+		errMsg := fmt.Errorf("error inspecting container %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+	}
+
+	defer r.removeDockerOverlays(childCtx, tracer, containerInfo.ContainerJSONBase.GraphDriver.Data["MergedDir"])
 
 	telemetry.ReportEvent(childCtx, "created container")
 
@@ -317,7 +324,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error copying envd to container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "copied envd to container")
@@ -327,7 +334,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error starting container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "started container")
@@ -365,14 +372,14 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 			errMsg := fmt.Errorf("error waiting for container %w", waitErr)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 
-			return "", errMsg
+			return errMsg
 		}
 	case response := <-wait:
 		if response.Error != nil {
 			errMsg := fmt.Errorf("error waiting for container - code %d: %s", response.StatusCode, response.Error.Message)
 			telemetry.ReportCriticalError(childCtx, errMsg)
 
-			return "", errMsg
+			return errMsg
 		}
 	}
 
@@ -383,7 +390,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error inspecting container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "inspected container")
@@ -392,7 +399,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("container is still running")
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	if inspection.State.ExitCode != 0 {
@@ -405,7 +412,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 			attribute.Bool("oom", inspection.State.OOMKilled),
 		)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	containerReader, err := r.client.ContainerExport(childCtx, cont.ID)
@@ -413,7 +420,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error copying from container %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "started copying from container")
@@ -433,7 +440,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "created rootfs file")
@@ -455,7 +462,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "converted container tar to ext4")
@@ -476,7 +483,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error making rootfs file writable %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "made rootfs file writable")
@@ -486,7 +493,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error statting rootfs file %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "statted rootfs file")
@@ -499,7 +506,7 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error truncating rootfs file %w to size of build + defaultDiskSizeMB", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "truncated rootfs file to size of build + defaultDiskSizeMB")
@@ -520,10 +527,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) (str
 		errMsg := fmt.Errorf("error resizing rootfs file %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
 
-		return "", errMsg
+		return errMsg
 	}
 
 	telemetry.ReportEvent(childCtx, "resized rootfs file")
 
-	return cont.ID, nil
+	return nil
 }
