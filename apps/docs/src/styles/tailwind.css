@@ -69,6 +69,9 @@
     --radius: 0.5rem;
 
     --sidebar-nav-width: 376px;
+    --sidebar-scrollbar-track-bg: red;
+    --sidebar-scrollbar-thumb-bg: blue;
+    --sidebar-scrollbar-thumb-hover-bg: green;
   }
 
   .dark {

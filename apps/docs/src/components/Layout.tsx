@@ -29,6 +29,9 @@ export function Layout({
         >
           <div
             className="
+              scrollbar
+              scrollbar-thumb-red-900
+              scrollbar-track-blue-100
               contents
               lg:pointer-events-auto
               lg:block
@@ -37,9 +40,7 @@ export function Layout({
               lg:border-r
               lg:border-zinc-900/10
               lg:px-6
-              lg:pb-8
-              lg:pt-4
-              lg:dark:border-white/10
+              lg:pb-8 lg:pt-4 lg:dark:border-white/10
             "
           >
             <div className="relative top-1 hidden items-start justify-start lg:flex">

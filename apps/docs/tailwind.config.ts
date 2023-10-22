@@ -3,6 +3,7 @@ import typographyStyles from './typography'
 import typographyPlugin from '@tailwindcss/typography'
 import headlessuiPlugin from '@headlessui/tailwindcss'
 import animatePlugin from 'tailwindcss-animate'
+import tailwidScrollbar from 'tailwind-scrollbar'
 
 export default {
   content: ['./src/**/*.{js,mjs,jsx,ts,tsx,mdx}'],
@@ -123,5 +124,10 @@ export default {
       },
     },
   },
-  plugins: [typographyPlugin, headlessuiPlugin, animatePlugin],
+  plugins: [
+    typographyPlugin,
+    headlessuiPlugin,
+    animatePlugin,
+    tailwidScrollbar,
+  ],
 } satisfies Config
