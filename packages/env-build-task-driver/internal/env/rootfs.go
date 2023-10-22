@@ -197,11 +197,6 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 		telemetry.ReportEvent(childCtx, "removed image")
 	}
 
-	if err != nil {
-		errMsg := fmt.Errorf("error getting mounts %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	}
-
 	cmd := exec.Command("umount", x.ContainerJSONBase.GraphDriver.Data["MergedDir"])
 	output, err := cmd.CombinedOutput()
 	if err != nil {
