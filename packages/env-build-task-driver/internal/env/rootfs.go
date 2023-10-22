@@ -143,31 +143,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	return nil
 }
 
-func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error {
-	childCtx, childSpan := tracer.Start(ctx, "push-docker-image")
-	defer childSpan.End()
-
-	logs, err := r.client.ImagePush(childCtx, r.dockerTag(), types.ImagePushOptions{})
-	if err != nil {
-		errMsg := fmt.Errorf("error pushing image %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	err = logs.Close()
-	if err != nil {
-		errMsg := fmt.Errorf("error closing logs %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "pushed image")
-
-	return nil
-}
-
 func (r *Rootfs) removeDockerOverlays(ctx context.Context, tracer trace.Tracer, overlay string) {
 	childCtx, childSpan := tracer.Start(ctx, "remove-docker-overlays")
 	defer childSpan.End()
@@ -230,6 +205,9 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 		return errMsg
 	}
+
+	telemetry.ReportEvent(childCtx, "created container")
+
 	defer func() {
 		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
 			Force:         true,
