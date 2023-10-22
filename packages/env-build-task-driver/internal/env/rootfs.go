@@ -4,12 +4,12 @@ import (
 	"archive/tar"
 	"context"
 	"fmt"
-	"golang.org/x/sys/unix"
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
@@ -173,7 +173,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 	childCtx, childSpan := tracer.Start(ctx, "cleanup-docker-image")
 	defer childSpan.End()
 
-	x, err := r.client.ContainerInspect(childCtx, contID)
+	cont, err := r.client.ContainerInspect(childCtx, contID)
 
 	if err != nil {
 		errMsg := fmt.Errorf("error inspecting container %w", err)
@@ -199,7 +199,7 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 		telemetry.ReportEvent(childCtx, "removed image")
 	}
 
-	err = unix.Unmount(x.ContainerJSONBase.GraphDriver.Data["MergedDir"], unix.MNT_DETACH)
+	err = unix.Unmount(cont.ContainerJSONBase.GraphDriver.Data["MergedDir"], unix.MNT_DETACH)
 	if err != nil {
 		errMsg := fmt.Errorf("error unmounting %w", err)
 		telemetry.ReportError(childCtx, errMsg)
@@ -207,8 +207,8 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer, co
 		telemetry.ReportEvent(childCtx, "unmounted overlay")
 	}
 
-	folder := strings.TrimSuffix(strings.TrimPrefix(x.ContainerJSONBase.GraphDriver.Data["MergedDir"], "/var/lib/docker/overlay2"), "/merged")
-	err = os.RemoveAll(path.Join("/var/lib/docker/overlay2", folder))
+	folder := strings.TrimSuffix(cont.ContainerJSONBase.GraphDriver.Data["MergedDir"], "/merged")
+	err = os.RemoveAll(folder)
 
 	if err != nil {
 		errMsg := fmt.Errorf("error removing folder %w", err)
