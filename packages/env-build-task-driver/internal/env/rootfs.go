@@ -65,11 +65,11 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
+	defer rootfs.cleanupDockerImage(childCtx, tracer)
 	err := rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
-		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
 
@@ -77,10 +77,9 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
 
-		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
-	rootfs.cleanupDockerImage(childCtx, tracer)
+
 	return rootfs, nil
 }
 
