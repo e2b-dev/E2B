@@ -340,18 +340,11 @@ export const navigation = [
             size={20}
           />
         ),
-        title: 'Example: Build Code Interpreter',
+        title: 'Example: Run LLM-generated code',
         href: '/guide/simple-gpt4-code-interpreter',
       },
     ],
   },
-  // {
-  //   title: 'Use Cases & Guides',
-  //   links: [
-  //     { title: '[TODO] AI Data Analysis & Code Interpreter', href: '/' },
-  //     { title: '[TODO] Run LLM-Generated Code', href: '/' },
-  //   ],
-  // },
   {
     title: 'Sandbox API',
     links: [
@@ -467,6 +460,42 @@ export const navigation = [
         title: 'Timeouts',
         href: '/playgrounds/timeouts',
       },
+    ],
+  },
+  {
+    title: 'Sandbox Templates',
+    links: [
+      { title: 'Overview', href: '/sandbox/templates/overview' },
+      { title: 'Custom', href: '/sandbox/templates/custom' },
+      { title: 'Premade: Data Analysis', href: '/sandbox/templates/data-analysis' },
+    ],
+  },
+  {
+    title: 'Guides',
+    links: [
+      { title: 'AI Data Analysis With GPT-4', href: '/' },
+      { title: 'GPT-4 Cloud Browser Assistant', href: '/' },
+      { title: 'Custom Code Interpreter', href: '/' },
+    ],
+  },
+  {
+    title: 'Framework Integrations',
+    links: [
+      { title: 'LangChain', href: '/' },
+      { title: 'LlamaIndex', href: '/' },
+      { title: 'Rivet', href: '/' },
+      { title: 'AutoGen', href: '/' },
+      { title: 'Fixie', href: '/' },
+      { title: 'Hugging Face Agents', href: '/' },
+      { title: 'AgentLabs', href: '/' },
+    ],
+  },
+  {
+    title: 'LLMs Integrations',
+    links: [
+      { title: 'OpenAI', href: '/' },
+      { title: 'Hugging Face', href: '/' },
+      { title: 'Replicate', href: '/' },
     ],
   },
   // {
