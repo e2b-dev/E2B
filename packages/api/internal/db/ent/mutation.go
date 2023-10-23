@@ -526,7 +526,6 @@ type EnvMutation struct {
 	created_at    *time.Time
 	team_id       *uuid.UUID
 	dockerfile    *string
-	status        *env.Status
 	public        *bool
 	build_id      *uuid.UUID
 	clearedFields map[string]struct{}
@@ -750,42 +749,6 @@ func (m *EnvMutation) ResetDockerfile() {
 	m.dockerfile = nil
 }
 
-// SetStatus sets the "status" field.
-func (m *EnvMutation) SetStatus(e env.Status) {
-	m.status = &e
-}
-
-// Status returns the value of the "status" field in the mutation.
-func (m *EnvMutation) Status() (r env.Status, exists bool) {
-	v := m.status
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldStatus returns the old "status" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldStatus(ctx context.Context) (v env.Status, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldStatus requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
-	}
-	return oldValue.Status, nil
-}
-
-// ResetStatus resets all changes to the "status" field.
-func (m *EnvMutation) ResetStatus() {
-	m.status = nil
-}
-
 // SetPublic sets the "public" field.
 func (m *EnvMutation) SetPublic(b bool) {
 	m.public = &b
@@ -853,22 +816,9 @@ func (m *EnvMutation) OldBuildID(ctx context.Context) (v uuid.UUID, err error) {
 	return oldValue.BuildID, nil
 }
 
-// ClearBuildID clears the value of the "build_id" field.
-func (m *EnvMutation) ClearBuildID() {
-	m.build_id = nil
-	m.clearedFields[env.FieldBuildID] = struct{}{}
-}
-
-// BuildIDCleared returns if the "build_id" field was cleared in this mutation.
-func (m *EnvMutation) BuildIDCleared() bool {
-	_, ok := m.clearedFields[env.FieldBuildID]
-	return ok
-}
-
 // ResetBuildID resets all changes to the "build_id" field.
 func (m *EnvMutation) ResetBuildID() {
 	m.build_id = nil
-	delete(m.clearedFields, env.FieldBuildID)
 }
 
 // AddTeamIDs adds the "team" edge to the Team entity by ids.
@@ -959,7 +909,7 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
 	}
@@ -968,9 +918,6 @@ func (m *EnvMutation) Fields() []string {
 	}
 	if m.dockerfile != nil {
 		fields = append(fields, env.FieldDockerfile)
-	}
-	if m.status != nil {
-		fields = append(fields, env.FieldStatus)
 	}
 	if m.public != nil {
 		fields = append(fields, env.FieldPublic)
@@ -992,8 +939,6 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 		return m.TeamID()
 	case env.FieldDockerfile:
 		return m.Dockerfile()
-	case env.FieldStatus:
-		return m.Status()
 	case env.FieldPublic:
 		return m.Public()
 	case env.FieldBuildID:
@@ -1013,8 +958,6 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldTeamID(ctx)
 	case env.FieldDockerfile:
 		return m.OldDockerfile(ctx)
-	case env.FieldStatus:
-		return m.OldStatus(ctx)
 	case env.FieldPublic:
 		return m.OldPublic(ctx)
 	case env.FieldBuildID:
@@ -1048,13 +991,6 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDockerfile(v)
-		return nil
-	case env.FieldStatus:
-		v, ok := value.(env.Status)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetStatus(v)
 		return nil
 	case env.FieldPublic:
 		v, ok := value.(bool)
@@ -1099,11 +1035,7 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EnvMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(env.FieldBuildID) {
-		fields = append(fields, env.FieldBuildID)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1116,11 +1048,6 @@ func (m *EnvMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EnvMutation) ClearField(name string) error {
-	switch name {
-	case env.FieldBuildID:
-		m.ClearBuildID()
-		return nil
-	}
 	return fmt.Errorf("unknown Env nullable field %s", name)
 }
 
@@ -1136,9 +1063,6 @@ func (m *EnvMutation) ResetField(name string) error {
 		return nil
 	case env.FieldDockerfile:
 		m.ResetDockerfile()
-		return nil
-	case env.FieldStatus:
-		m.ResetStatus()
 		return nil
 	case env.FieldPublic:
 		m.ResetPublic()

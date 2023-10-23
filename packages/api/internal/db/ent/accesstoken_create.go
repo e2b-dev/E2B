@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/accesstoken"
@@ -20,6 +22,7 @@ type AccessTokenCreate struct {
 	config
 	mutation *AccessTokenMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetUserID sets the "user_id" field.
@@ -127,6 +130,7 @@ func (atc *AccessTokenCreate) createSpec() (*AccessToken, *sqlgraph.CreateSpec) 
 		_spec = sqlgraph.NewCreateSpec(accesstoken.Table, sqlgraph.NewFieldSpec(accesstoken.FieldID, field.TypeString))
 	)
 	_spec.Schema = atc.schemaConfig.AccessToken
+	_spec.OnConflict = atc.conflict
 	if id, ok := atc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -159,11 +163,176 @@ func (atc *AccessTokenCreate) createSpec() (*AccessToken, *sqlgraph.CreateSpec) 
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AccessToken.Create().
+//		SetUserID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AccessTokenUpsert) {
+//			SetUserID(v+v).
+//		}).
+//		Exec(ctx)
+func (atc *AccessTokenCreate) OnConflict(opts ...sql.ConflictOption) *AccessTokenUpsertOne {
+	atc.conflict = opts
+	return &AccessTokenUpsertOne{
+		create: atc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AccessToken.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (atc *AccessTokenCreate) OnConflictColumns(columns ...string) *AccessTokenUpsertOne {
+	atc.conflict = append(atc.conflict, sql.ConflictColumns(columns...))
+	return &AccessTokenUpsertOne{
+		create: atc,
+	}
+}
+
+type (
+	// AccessTokenUpsertOne is the builder for "upsert"-ing
+	//  one AccessToken node.
+	AccessTokenUpsertOne struct {
+		create *AccessTokenCreate
+	}
+
+	// AccessTokenUpsert is the "OnConflict" setter.
+	AccessTokenUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetUserID sets the "user_id" field.
+func (u *AccessTokenUpsert) SetUserID(v uuid.UUID) *AccessTokenUpsert {
+	u.Set(accesstoken.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *AccessTokenUpsert) UpdateUserID() *AccessTokenUpsert {
+	u.SetExcluded(accesstoken.FieldUserID)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AccessToken.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(accesstoken.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AccessTokenUpsertOne) UpdateNewValues() *AccessTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(accesstoken.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(accesstoken.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AccessToken.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AccessTokenUpsertOne) Ignore() *AccessTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AccessTokenUpsertOne) DoNothing() *AccessTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AccessTokenCreate.OnConflict
+// documentation for more info.
+func (u *AccessTokenUpsertOne) Update(set func(*AccessTokenUpsert)) *AccessTokenUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AccessTokenUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *AccessTokenUpsertOne) SetUserID(v uuid.UUID) *AccessTokenUpsertOne {
+	return u.Update(func(s *AccessTokenUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *AccessTokenUpsertOne) UpdateUserID() *AccessTokenUpsertOne {
+	return u.Update(func(s *AccessTokenUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// Exec executes the query.
+func (u *AccessTokenUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AccessTokenCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AccessTokenUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AccessTokenUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AccessTokenUpsertOne.ID is not supported by MySQL driver. Use AccessTokenUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AccessTokenUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AccessTokenCreateBulk is the builder for creating many AccessToken entities in bulk.
 type AccessTokenCreateBulk struct {
 	config
 	err      error
 	builders []*AccessTokenCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AccessToken entities in the database.
@@ -192,6 +361,7 @@ func (atcb *AccessTokenCreateBulk) Save(ctx context.Context) ([]*AccessToken, er
 					_, err = mutators[i+1].Mutate(root, atcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = atcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, atcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -238,6 +408,137 @@ func (atcb *AccessTokenCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (atcb *AccessTokenCreateBulk) ExecX(ctx context.Context) {
 	if err := atcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AccessToken.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AccessTokenUpsert) {
+//			SetUserID(v+v).
+//		}).
+//		Exec(ctx)
+func (atcb *AccessTokenCreateBulk) OnConflict(opts ...sql.ConflictOption) *AccessTokenUpsertBulk {
+	atcb.conflict = opts
+	return &AccessTokenUpsertBulk{
+		create: atcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AccessToken.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (atcb *AccessTokenCreateBulk) OnConflictColumns(columns ...string) *AccessTokenUpsertBulk {
+	atcb.conflict = append(atcb.conflict, sql.ConflictColumns(columns...))
+	return &AccessTokenUpsertBulk{
+		create: atcb,
+	}
+}
+
+// AccessTokenUpsertBulk is the builder for "upsert"-ing
+// a bulk of AccessToken nodes.
+type AccessTokenUpsertBulk struct {
+	create *AccessTokenCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AccessToken.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(accesstoken.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AccessTokenUpsertBulk) UpdateNewValues() *AccessTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(accesstoken.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(accesstoken.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AccessToken.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AccessTokenUpsertBulk) Ignore() *AccessTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AccessTokenUpsertBulk) DoNothing() *AccessTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AccessTokenCreateBulk.OnConflict
+// documentation for more info.
+func (u *AccessTokenUpsertBulk) Update(set func(*AccessTokenUpsert)) *AccessTokenUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AccessTokenUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *AccessTokenUpsertBulk) SetUserID(v uuid.UUID) *AccessTokenUpsertBulk {
+	return u.Update(func(s *AccessTokenUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *AccessTokenUpsertBulk) UpdateUserID() *AccessTokenUpsertBulk {
+	return u.Update(func(s *AccessTokenUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// Exec executes the query.
+func (u *AccessTokenUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AccessTokenCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AccessTokenCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AccessTokenUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

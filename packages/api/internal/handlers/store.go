@@ -29,7 +29,7 @@ type APIStore struct {
 	nomad                      *nomad.NomadClient
 	supabase                   *db.DB
 	cloudStorage               *cloudStorage
-	dockerBuildLogs            *utils.BuildLogsCache
+	buildCache                 *utils.BuildCache
 	apiSecret                  string
 	googleServiceAccountBase64 string
 }
@@ -115,7 +115,7 @@ func NewAPIStore() *APIStore {
 		apiSecret = "SUPER_SECR3T_4PI_K3Y"
 	}
 
-	dockerBuildLogs := utils.NewBuildLogsCache()
+	buildCache := utils.NewBuildCache()
 
 	return &APIStore{
 		Ctx:                        ctx,
@@ -126,7 +126,7 @@ func NewAPIStore() *APIStore {
 		posthog:                    posthogClient,
 		cloudStorage:               cStorage,
 		apiSecret:                  apiSecret,
-		dockerBuildLogs:            dockerBuildLogs,
+		buildCache:                 buildCache,
 		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
 	}
 }

@@ -42,12 +42,6 @@ func (eu *EnvUpdate) SetDockerfile(s string) *EnvUpdate {
 	return eu
 }
 
-// SetStatus sets the "status" field.
-func (eu *EnvUpdate) SetStatus(e env.Status) *EnvUpdate {
-	eu.mutation.SetStatus(e)
-	return eu
-}
-
 // SetPublic sets the "public" field.
 func (eu *EnvUpdate) SetPublic(b bool) *EnvUpdate {
 	eu.mutation.SetPublic(b)
@@ -57,20 +51,6 @@ func (eu *EnvUpdate) SetPublic(b bool) *EnvUpdate {
 // SetBuildID sets the "build_id" field.
 func (eu *EnvUpdate) SetBuildID(u uuid.UUID) *EnvUpdate {
 	eu.mutation.SetBuildID(u)
-	return eu
-}
-
-// SetNillableBuildID sets the "build_id" field if the given value is not nil.
-func (eu *EnvUpdate) SetNillableBuildID(u *uuid.UUID) *EnvUpdate {
-	if u != nil {
-		eu.SetBuildID(*u)
-	}
-	return eu
-}
-
-// ClearBuildID clears the value of the "build_id" field.
-func (eu *EnvUpdate) ClearBuildID() *EnvUpdate {
-	eu.mutation.ClearBuildID()
 	return eu
 }
 
@@ -142,20 +122,7 @@ func (eu *EnvUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (eu *EnvUpdate) check() error {
-	if v, ok := eu.mutation.Status(); ok {
-		if err := env.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Env.status": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := eu.check(); err != nil {
-		return n, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(env.Table, env.Columns, sqlgraph.NewFieldSpec(env.FieldID, field.TypeString))
 	if ps := eu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -170,17 +137,11 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := eu.mutation.Dockerfile(); ok {
 		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
 	}
-	if value, ok := eu.mutation.Status(); ok {
-		_spec.SetField(env.FieldStatus, field.TypeEnum, value)
-	}
 	if value, ok := eu.mutation.Public(); ok {
 		_spec.SetField(env.FieldPublic, field.TypeBool, value)
 	}
 	if value, ok := eu.mutation.BuildID(); ok {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
-	}
-	if eu.mutation.BuildIDCleared() {
-		_spec.ClearField(env.FieldBuildID, field.TypeUUID)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -264,12 +225,6 @@ func (euo *EnvUpdateOne) SetDockerfile(s string) *EnvUpdateOne {
 	return euo
 }
 
-// SetStatus sets the "status" field.
-func (euo *EnvUpdateOne) SetStatus(e env.Status) *EnvUpdateOne {
-	euo.mutation.SetStatus(e)
-	return euo
-}
-
 // SetPublic sets the "public" field.
 func (euo *EnvUpdateOne) SetPublic(b bool) *EnvUpdateOne {
 	euo.mutation.SetPublic(b)
@@ -279,20 +234,6 @@ func (euo *EnvUpdateOne) SetPublic(b bool) *EnvUpdateOne {
 // SetBuildID sets the "build_id" field.
 func (euo *EnvUpdateOne) SetBuildID(u uuid.UUID) *EnvUpdateOne {
 	euo.mutation.SetBuildID(u)
-	return euo
-}
-
-// SetNillableBuildID sets the "build_id" field if the given value is not nil.
-func (euo *EnvUpdateOne) SetNillableBuildID(u *uuid.UUID) *EnvUpdateOne {
-	if u != nil {
-		euo.SetBuildID(*u)
-	}
-	return euo
-}
-
-// ClearBuildID clears the value of the "build_id" field.
-func (euo *EnvUpdateOne) ClearBuildID() *EnvUpdateOne {
-	euo.mutation.ClearBuildID()
 	return euo
 }
 
@@ -377,20 +318,7 @@ func (euo *EnvUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (euo *EnvUpdateOne) check() error {
-	if v, ok := euo.mutation.Status(); ok {
-		if err := env.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Env.status": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
-	if err := euo.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(env.Table, env.Columns, sqlgraph.NewFieldSpec(env.FieldID, field.TypeString))
 	id, ok := euo.mutation.ID()
 	if !ok {
@@ -422,17 +350,11 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	if value, ok := euo.mutation.Dockerfile(); ok {
 		_spec.SetField(env.FieldDockerfile, field.TypeString, value)
 	}
-	if value, ok := euo.mutation.Status(); ok {
-		_spec.SetField(env.FieldStatus, field.TypeEnum, value)
-	}
 	if value, ok := euo.mutation.Public(); ok {
 		_spec.SetField(env.FieldPublic, field.TypeBool, value)
 	}
 	if value, ok := euo.mutation.BuildID(); ok {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
-	}
-	if euo.mutation.BuildIDCleared() {
-		_spec.ClearField(env.FieldBuildID, field.TypeUUID)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{

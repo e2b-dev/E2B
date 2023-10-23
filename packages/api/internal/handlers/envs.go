@@ -2,25 +2,21 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
 	"io"
 	"net/http"
 	"strings"
 
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/db"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 )
 
-func (a *APIStore) buildEnv(ctx context.Context, envID string, buildID string, content io.Reader) {
+func (a *APIStore) buildEnv(ctx context.Context, teamID string, envID string, buildID string, dockerfile string, content io.Reader) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
@@ -36,23 +32,32 @@ func (a *APIStore) buildEnv(ctx context.Context, envID string, buildID string, c
 		return
 	}
 
-	var buildStatus env.Status
-
 	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64)
 	if err != nil {
 		err = fmt.Errorf("error when starting build: %w", err)
 		ReportCriticalError(childCtx, err)
 
-		buildStatus = env.StatusError
-	} else {
-		buildStatus = env.StatusReady
+		err = a.buildCache.SetDone(envID, buildID, api.EnvironmentBuildStatusError)
+		if err != nil {
+			err = fmt.Errorf("error when setting build done in logs: %w", err)
+			ReportCriticalError(childCtx, err)
+		}
+		return
 	}
 
-	_, err = a.supabase.UpdateStatusEnv(envID, buildStatus)
+	err = a.supabase.UpsertEnv(teamID, envID, buildID, dockerfile)
+
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)
 		ReportCriticalError(childCtx, err)
 	}
+
+	err = a.buildCache.SetDone(envID, buildID, api.EnvironmentBuildStatusReady)
+	if err != nil {
+		err = fmt.Errorf("error when setting build done in logs: %w", err)
+		ReportCriticalError(childCtx, err)
+	}
+
 }
 
 func (a *APIStore) PostEnvs(c *gin.Context) {
@@ -105,25 +110,22 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	var result *api.Environment
+	buildID, err := uuid.GenerateUUID()
+	if err != nil {
+		err = fmt.Errorf("error when generating build id: %w", err)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
 
 	envID := c.PostForm("envID")
-
 	if envID == "" {
 		envID = utils.GenerateID()
 		SetAttributes(ctx, attribute.String("env.id", envID))
-		result, err = a.supabase.CreateEnv(envID, teamID, c.PostForm("dockerfile"))
 
-		if err != nil {
-			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when creating env: %s", err))
+		a.buildCache.Create(teamID, envID, buildID)
 
-			errMsg := fmt.Errorf("error when creating env: %w", err)
-			ReportCriticalError(ctx, errMsg)
-
-			return
-		}
-
-		ReportEvent(ctx, "created new environment")
+		ReportEvent(ctx, "started creating new environment")
 	} else {
 		SetAttributes(ctx, attribute.String("env.id", envID))
 
@@ -144,37 +146,28 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 			return
 		}
-		result, err = a.supabase.UpdateDockerfileEnv(envID, c.PostForm("dockerfile"))
 
+		err = a.buildCache.CreateIfNotExists(teamID, envID, buildID)
 		if err != nil {
-			a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when updating envs: %s", err))
+			a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
 
-			errMsg := fmt.Errorf("error when updating envs: %w", err)
-			ReportCriticalError(ctx, errMsg)
+			err = fmt.Errorf("build is already running build for %s", envID)
+			ReportCriticalError(ctx, err)
 
 			return
 		}
 
-		ReportEvent(ctx, "updated environment")
+		ReportEvent(ctx, "started updating environment")
 	}
 
-	buildID, err := uuid.GenerateUUID()
-	if err != nil {
-		err = fmt.Errorf("error when generating build id: %w", err)
-		ReportCriticalError(ctx, err)
-
-		return
-	}
-
-	result.BuildID = buildID
-
+	dockerfile := c.PostForm("dockerfile")
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
 			trace.ContextWithSpanContext(a.Ctx, span.SpanContext()),
 			"background-build-env",
 		)
 
-		a.buildEnv(buildContext, envID, buildID, fileContent)
+		a.buildEnv(buildContext, teamID, envID, buildID, dockerfile, fileContent)
 
 		childSpan.End()
 	}()
@@ -184,9 +177,16 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	a.CreateAnalyticsUserEvent(userID, teamID, "created environment", properties.
 		Set("environment", envID))
 
+	result := &api.Environment{
+		EnvID:   envID,
+		BuildID: buildID,
+		Public:  false,
+	}
+
 	c.JSON(http.StatusOK, result)
 }
 
+// GetEnvs serves to list envs (e.g. in CLI)
 func (a *APIStore) GetEnvs(
 	c *gin.Context,
 ) {
@@ -225,6 +225,7 @@ func (a *APIStore) GetEnvs(
 	c.JSON(http.StatusOK, envs)
 }
 
+// GetEnvsEnvIDBuildsBuildID serves to get an env build status (e.g. to CLI)
 func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, buildID api.BuildID, params api.GetEnvsEnvIDBuildsBuildIDParams) {
 	ctx := c.Request.Context()
 
@@ -242,39 +243,32 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		return
 	}
 
-	result, err := a.supabase.GetEnv(envID, teamID)
-	if errors.Is(err, db.ErrEnvNotFound) {
-		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error when getting env: %s", err))
-
-		err = fmt.Errorf("error when getting env: %w", err)
-		ReportCriticalError(ctx, err)
-
-		return
-	}
-
+	dockerBuild, err := a.buildCache.Get(envID, buildID)
 	if err != nil {
-		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting env: %s", err))
+		msg := fmt.Errorf("didn't find cache for env %s and build %s", envID, buildID)
+		a.sendAPIStoreError(c, http.StatusNotFound, msg.Error())
 
-		err = fmt.Errorf("error when getting env: %w", err)
-		ReportCriticalError(ctx, err)
+		ReportError(ctx, msg)
 
 		return
 	}
 
-	ReportEvent(ctx, "got environment detail")
+	if teamID != dockerBuild.TeamID {
+		msg := fmt.Errorf("user doesn't have access to env '%s'", envID)
+		a.sendAPIStoreError(c, http.StatusForbidden, msg.Error())
 
-	result.BuildID = buildID
+		ReportError(ctx, msg)
 
-	logs, err := a.dockerBuildLogs.Get(envID, buildID)
-	if err == nil {
-		result.Logs = logs[*params.LogsOffset:]
-	} else {
-		result.Logs = []string{}
-		msg := fmt.Sprintf("no logs found for env %s and build %s", envID, buildID)
-		ReportEvent(ctx, msg)
+		return
 	}
 
-	ReportEvent(ctx, "got environment build logs")
+	result := api.EnvironmentBuild{
+		Logs:    dockerBuild.Logs[*params.LogsOffset:],
+		EnvID:   envID,
+		BuildID: buildID,
+		Status:  &dockerBuild.Status,
+	}
+	ReportEvent(ctx, "got environment build")
 
 	a.IdentifyAnalyticsTeam(teamID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -283,6 +277,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 	c.JSON(http.StatusOK, result)
 }
 
+// PostEnvsEnvIDBuildsBuildIDLogs serves to add logs from the Build Driver
 func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvID, buildID string) {
 	ctx := c.Request.Context()
 
@@ -299,12 +294,12 @@ func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvI
 		return
 	}
 
-	err = a.dockerBuildLogs.Append(envID, buildID, body.Logs)
+	err = a.buildCache.Append(envID, buildID, body.Logs)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when saving docker build logs: %s", err))
 
 		err = fmt.Errorf("error when saving docker build logs: %w", err)
-		ReportCriticalError(ctx, err)
+		ReportError(ctx, err)
 
 		return
 	}
