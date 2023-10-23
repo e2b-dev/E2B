@@ -191,14 +191,14 @@ async function waitForBuildFinish(accessToken: string, envID: string, buildID: s
         break
       case 'ready':
         console.log(
-          ` \n\n✅ Building environment ${asFormattedEnvironment(env.data)} finished.`,
+          `\n✅ Building environment ${asFormattedEnvironment(env.data)} finished.\n`,
         )
         break
 
       case 'error':
         env.data.logs.forEach(line => process.stdout.write(asBuildLogs(line)))
         throw new Error(
-          `\n\nBuilding environment ${asFormattedEnvironment(env.data)} failed.`,
+          `\nBuilding environment ${asFormattedEnvironment(env.data)} failed.\n`,
         )
     }
   } while (env.data.status === 'building' && elapsed() < maxBuildTime)
