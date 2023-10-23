@@ -245,9 +245,6 @@ importers:
       '@balena/dockerignore':
         specifier: ^1.0.2
         version: 1.0.2
-      '@devbookhq/sdk':
-        specifier: ^2.6.88
-        version: 2.6.95
       '@e2b/sdk':
         specifier: ^0.7.5
         version: 0.7.5
@@ -829,19 +826,6 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
-
-  /@devbookhq/sdk@2.6.95:
-    resolution: {integrity: sha512-nAj/BWV30Miemt/bPhAwUnh8J5dzXOhLtF4AtcTDuSPFFhmc6IhJLy+pgvQhOP9FELrwo/NXdcGQZftVt16EQw==}
-    dependencies:
-      cross-fetch: 3.1.8
-      normalize-path: 3.0.0
-      openapi-typescript-fetch: 1.1.3
-      rpc-websocket-client: 1.1.4
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - utf-8-validate
-    dev: false
 
   /@e2b/sdk@0.7.5:
     resolution: {integrity: sha512-SwpHZ0wKkYHlhSLQZUf+KyTOjXJYW9pWjIZtgavNbLb5n2RFN6CsZXjKbsTYcuHwg+SkJSs17zZWiqZaEKWMNw==}

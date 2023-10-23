@@ -44,11 +44,12 @@
     "package.json"
   ],
   "bin": {
-    "e2b": "dist/index.js"
+    "e2b": "dist/index.js",
+    "E2B": "dist/index.js",
+    "E2b": "dist/index.js"
   },
   "dependencies": {
     "@balena/dockerignore": "^1.0.2",
-    "@devbookhq/sdk": "^2.6.88",
     "@e2b/sdk": "^0.7.5",
     "@iarna/toml": "^2.2.5",
     "@nodelib/fs.walk": "^2.0.0",

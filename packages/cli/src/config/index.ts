@@ -1,49 +1,34 @@
-import * as toml from '@iarna/toml'
-import * as fs from 'fs'
-import * as fsPromise from 'fs/promises'
-import * as path from 'path'
 import * as yup from 'yup'
-import * as dockerNames from 'docker-names'
+import * as toml from '@iarna/toml'
+import * as fsPromise from 'fs/promises'
+import * as fs from 'fs'
+import * as path from 'path'
 
-import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
 import { getFiles } from '../utils/filesystem'
+import { asFormattedEnvironment, asLocalRelative } from 'src/utils/format'
 
-export const configName = 'e2b.json'
+export const configName = 'e2b.toml'
 
-const configCommentHeader = '# This is a config for a e2b environment'
+const configCommentHeader = `# This is a config for E2B environment
 
-export function randomTitle() {
-  return dockerNames.getRandomName().replace('_', '-')
-}
+`
 
 export const configSchema = yup.object({
   id: yup.string().required(),
-  title: yup.string().default(randomTitle),
+  dockerfile: yup.string().required(),
 })
 
-export type E2bConfig = yup.InferType<typeof configSchema>
+export type E2BConfig = yup.InferType<typeof configSchema>
 
 export async function loadConfig(configPath: string) {
-  try {
-    const configExists = fs.existsSync(configPath)
-    if (!configExists) {
-      throw new Error(`Config on path ${asLocalRelative(configPath)} not found`)
-    }
-
-    const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
-    const config = toml.parse(tomlRaw)
-    return (await configSchema.validate(config)) as E2bConfig
-  } catch (err: any) {
-    throw new Error(
-      `E2b environment config ${asLocalRelative(configPath)} cannot be loaded: ${err.message
-      }`,
-    )
-  }
+  const tomlRaw = await fsPromise.readFile(configPath, 'utf-8')
+  const config = toml.parse(tomlRaw)
+  return (await configSchema.validate(config)) as E2BConfig
 }
 
 export async function saveConfig(
   configPath: string,
-  config: E2bConfig,
+  config: E2BConfig,
   overwrite?: boolean,
 ) {
   try {
@@ -62,8 +47,10 @@ export async function saveConfig(
     await fsPromise.writeFile(configPath, configCommentHeader + tomlRaw)
   } catch (err: any) {
     throw new Error(
-      `e2b environment config ${asFormattedEnvironment(
-        config,
+      `E2B environment config ${asFormattedEnvironment(
+        {
+          envID: config.id,
+        },
         configPath,
       )} cannot be saved: ${err.message}`,
     )
@@ -84,11 +71,11 @@ export async function getNestedConfigs(rootPath: string) {
 
 export async function loadConfigs(rootPath: string, nested?: boolean) {
   const configPaths = nested
-    ? (await getNestedConfigs(rootPath)).map((c: { path: any }) => c.path)
+    ? (await getNestedConfigs(rootPath)).map(c => c.path)
     : [getConfigPath(rootPath)]
 
   return Promise.all(
-    configPaths.map(async (configPath: string) => {
+    configPaths.map(async configPath => {
       const config = await loadConfig(configPath)
       return {
         ...config,

@@ -2,14 +2,12 @@ import * as e2b from '@e2b/sdk'
 import * as commander from 'commander'
 
 import { ensureAPIKey } from 'src/api'
-import { reqIDArgument } from 'src/arguments'
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asFormattedEnvironment } from 'src/utils/format'
 
 export const shellCommand = new commander.Command('shell')
   .description('Connect terminal to environment')
   .argument('<id>', `Connect to environment specified by ${asBold('<id>')}`)
-  .addArgument(reqIDArgument)
   .alias('sh')
   .action(async (id: string) => {
     try {

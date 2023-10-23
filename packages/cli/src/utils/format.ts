@@ -5,10 +5,12 @@ import { cwdRelative } from './filesystem'
 
 export function asFormattedEnvironment(
   env: Pick<e2b.components['schemas']['Environment'], 'envID'>,
-  localPath?: string,
+  configLocalPath?: string,
 ) {
   const id = asBold(env.envID)
-  const configPath = localPath ? asDim(' <-> ') + asLocalRelative(localPath) : ''
+  const configPath = configLocalPath
+    ? asDim(' <-> ') + asLocalRelative(configLocalPath)
+    : ''
 
   return `${id}${configPath}`
 }

@@ -3,8 +3,8 @@ import * as commonTags from 'common-tags'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
-import { FormData } from 'formdata-polyfill/esm.min.js'
 
+import { FormData } from 'formdata-polyfill/esm.min.js'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
@@ -18,6 +18,7 @@ import {
 import { pathOption } from 'src/options'
 import { createBlobFromFiles } from 'src/docker/archive'
 import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
+import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 
 const envCheckInterval = 1_000 // 1 sec
 const maxBuildTime = 10 * 60 * 1_000 // 10 min
@@ -29,10 +30,12 @@ const getEnv = e2b.withAccessToken(
 export const buildCommand = new commander.Command('build')
   .description(
     `Build environment defined by ${asLocalRelative(
-      'e2b.Dockerfile',
+      defaultDockerfileName,
     )} or ${asLocalRelative(
-      'Dockerfile',
-    )} in root directory. By default the root directory is the current working directory`,
+      fallbackDockerfileName,
+    )} in root directory. By default the root directory is the current working directory. This command also creates ${asLocal(
+      configName,
+    )} config`,
   )
   .argument(
     '[id]',
@@ -48,8 +51,8 @@ export const buildCommand = new commander.Command('build')
   .option(
     '-d, --dockerfile <file>',
     `Specify path to Dockerfile.By default E2B tries to find ${asLocal(
-      'e2b.Dockerfile',
-    )} or ${asLocal('Dockerfile')} in root directory`,
+      defaultDockerfileName,
+    )} or ${asLocal(fallbackDockerfileName)} in root directory`,
   )
   .option(
     '-D, --no-dockerignore',
@@ -70,7 +73,30 @@ export const buildCommand = new commander.Command('build')
         const accessToken = ensureAccessToken()
         process.stdout.write('\n')
 
+        let envID = id
+        let dockerfile = opts.dockerfile
+
         const root = getRoot(opts.path)
+        const configPath = getConfigPath(root)
+
+        const config = fs.existsSync(configPath)
+          ? await loadConfig(configPath)
+          : undefined
+
+        const relativeConfigPath = path.relative(root, configPath)
+
+        if (config) {
+          console.log(
+            `Found environment ${asFormattedEnvironment(
+              {
+                envID: config.id,
+              },
+              relativeConfigPath,
+            )}`,
+          )
+          envID = config.id
+          dockerfile = config.dockerfile
+        }
 
         const filePaths = await getFiles(root, {
           respectGitignore: opts.gitignore,
@@ -92,7 +118,7 @@ export const buildCommand = new commander.Command('build')
 
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
           root,
-          opts.dockerfile,
+          dockerfile,
         )
 
         console.log(
@@ -105,8 +131,8 @@ export const buildCommand = new commander.Command('build')
 
         body.append('dockerfile', dockerfileContent)
 
-        if (id) {
-          body.append('envID', id)
+        if (envID) {
+          body.append('envID', envID)
         }
 
         // It should be possible to pipe directly to the API
@@ -125,6 +151,18 @@ export const buildCommand = new commander.Command('build')
         console.log(`Started building environment ${asFormattedEnvironment(build)} `)
 
         await waitForBuildFinish(accessToken, build.envID, build.buildID)
+
+        if (!config) {
+          await saveConfig(
+            configPath,
+            {
+              id: build.envID,
+              dockerfile: dockerfileRelativePath,
+            },
+            true,
+          )
+          console.log(`Created config ${asLocalRelative(relativeConfigPath)}`)
+        }
       } catch (err: any) {
         console.error(err)
         process.exit(1)
@@ -154,7 +192,7 @@ async function waitForBuildFinish(accessToken: string, envID: string, buildID: s
         break
       case 'ready':
         console.log(
-          `✅ \n\nBuilding environment ${asFormattedEnvironment(env.data)} finished.`,
+          ` \n\n✅ Building environment ${asFormattedEnvironment(env.data)} finished.`,
         )
         break
 
