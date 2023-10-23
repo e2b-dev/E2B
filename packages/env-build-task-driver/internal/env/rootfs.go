@@ -137,7 +137,7 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 		return errMsg
 	}
 
-	r.env.BuildLogsWriter.Write([]byte("Running postprocessing. It can take up to few minutes.\n"))
+	r.env.BuildLogsWriter.Write([]byte("\nRunning postprocessing. It can take up to few minutes.\n"))
 	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
 
 	return nil
