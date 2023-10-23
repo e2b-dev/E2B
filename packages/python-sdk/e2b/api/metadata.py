@@ -2,14 +2,14 @@ import platform
 from importlib import metadata
 
 default_headers = {
-    "package_version": metadata.version("e2b"),
-    "runtime": "python",
     "lang": "python",
     "lang_version": platform.python_version(),
-    "system": platform.system(),
+    "machine": platform.machine(),
     "os": platform.platform(),
+    "package_version": metadata.version("e2b"),
+    "processor": platform.processor(),
     "publisher": "e2b",
     "release": platform.release(),
-    "machine": platform.machine(),
-    "processor": platform.processor(),
+    "runtime": "python",
+    "system": platform.system(),
 }

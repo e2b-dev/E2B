@@ -3,10 +3,11 @@ import platform from 'platform'
 import { version } from '../../package.json'
 
 export const defaultHeaders = {
-  package_version: version,
+  browser: typeof window === 'undefined' ? undefined : platform.name,
   lang: 'js',
-  runtime: platform.name || 'unknown',
   lang_version: platform.version || 'unknown',
-  system: platform.os?.family || 'unknown',
+  package_version: version,
   publisher: 'e2b',
+  runtime: typeof window === 'undefined' ? 'node' : 'browser',
+  system: platform.os?.family || 'unknown',
 }
