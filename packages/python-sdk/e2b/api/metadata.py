@@ -3,6 +3,7 @@ from importlib import metadata
 
 default_headers = {
     "package_version": metadata.version("e2b"),
+    "runtime": "python",
     "lang": "python",
     "lang_version": platform.python_version(),
     "system": platform.system(),

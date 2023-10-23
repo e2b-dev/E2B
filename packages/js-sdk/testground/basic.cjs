@@ -1,4 +1,4 @@
-const e2b = require("../dist/cjs/index")
+const e2b = require("../dist")
 
 async function main() {
   const session = await e2b.Session.create({
