@@ -4,7 +4,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as e2b from '@e2b/sdk'
 
-import { FormData } from 'formdata-polyfill/esm.min.js'
 import { wait } from 'src/utils/wait'
 import { ensureAccessToken } from 'src/api'
 import { getFiles, getRoot } from 'src/utils/filesystem'
