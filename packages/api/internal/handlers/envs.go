@@ -38,7 +38,7 @@ func (a *APIStore) buildEnv(ctx context.Context, envID string, buildID string, c
 
 	var buildStatus env.Status
 
-	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret)
+	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64)
 	if err != nil {
 		err = fmt.Errorf("error when starting build: %w", err)
 		ReportCriticalError(childCtx, err)

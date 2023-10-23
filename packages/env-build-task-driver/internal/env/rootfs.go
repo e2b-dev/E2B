@@ -3,7 +3,10 @@ package env
 import (
 	"archive/tar"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types/registry"
 	"io"
 	"os"
 	"os/exec"
@@ -136,6 +139,53 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 
 	r.env.BuildLogsWriter.Write([]byte("Running postprocessing. It can take up to few minutes.\n"))
 	telemetry.ReportEvent(childCtx, "finished docker image build", attribute.String("tag", r.dockerTag()))
+
+	return nil
+}
+
+func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error {
+	childCtx, childSpan := tracer.Start(ctx, "push-docker-image")
+	defer childSpan.End()
+
+	authConfig := registry.AuthConfig{
+		Username: "_json_key_base64",
+		Password: r.env.GoogleServiceAccountBase64,
+	}
+	authConfigBytes, err := json.Marshal(authConfig)
+	if err != nil {
+		fmt.Println("Error marshaling auth config:", err)
+		return err
+	}
+	authConfigBase64 := base64.URLEncoding.EncodeToString(authConfigBytes)
+
+	logs, err := r.client.ImagePush(childCtx, r.dockerTag(), types.ImagePushOptions{
+		RegistryAuth: authConfigBase64,
+	})
+
+	if err != nil {
+		errMsg := fmt.Errorf("error pushing image %w", err)
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	_, err = io.Copy(os.Stdout, logs)
+	if err != nil {
+		errMsg := fmt.Errorf("error copying logs %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	err = logs.Close()
+	if err != nil {
+		errMsg := fmt.Errorf("error closing logs %w", err)
+		telemetry.ReportError(childCtx, errMsg)
+
+		return errMsg
+	}
+
+	telemetry.ReportEvent(childCtx, "pushed image")
 
 	return nil
 }

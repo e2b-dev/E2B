@@ -34,6 +34,7 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
         FIRECRACKER_BINARY_PATH = "/usr/bin/firecracker"
         CONTEXT_FILE_NAME = "context.tar.gz"
         API_SECRET = "{{ .APISecret }}"
+        GOOGLE_SERVICE_ACCOUNT_BASE64 = "{{ .GoogleServiceAccountBase64 }}"
       }
 
       config {

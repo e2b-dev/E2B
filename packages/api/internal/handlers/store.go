@@ -22,15 +22,16 @@ import (
 )
 
 type APIStore struct {
-	Ctx             context.Context
-	posthog         posthog.Client
-	tracer          trace.Tracer
-	cache           *nomad.InstanceCache
-	nomad           *nomad.NomadClient
-	supabase        *db.DB
-	cloudStorage    *cloudStorage
-	dockerBuildLogs *utils.BuildLogsCache
-	apiSecret       string
+	Ctx                        context.Context
+	posthog                    posthog.Client
+	tracer                     trace.Tracer
+	cache                      *nomad.InstanceCache
+	nomad                      *nomad.NomadClient
+	supabase                   *db.DB
+	cloudStorage               *cloudStorage
+	dockerBuildLogs            *utils.BuildLogsCache
+	apiSecret                  string
+	googleServiceAccountBase64 string
 }
 
 func NewAPIStore() *APIStore {
@@ -117,15 +118,16 @@ func NewAPIStore() *APIStore {
 	dockerBuildLogs := utils.NewBuildLogsCache()
 
 	return &APIStore{
-		Ctx:             ctx,
-		nomad:           nomadClient,
-		supabase:        supabaseClient,
-		cache:           cache,
-		tracer:          tracer,
-		posthog:         posthogClient,
-		cloudStorage:    cStorage,
-		apiSecret:       apiSecret,
-		dockerBuildLogs: dockerBuildLogs,
+		Ctx:                        ctx,
+		nomad:                      nomadClient,
+		supabase:                   supabaseClient,
+		cache:                      cache,
+		tracer:                     tracer,
+		posthog:                    posthogClient,
+		cloudStorage:               cStorage,
+		apiSecret:                  apiSecret,
+		dockerBuildLogs:            dockerBuildLogs,
+		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
 	}
 }
 

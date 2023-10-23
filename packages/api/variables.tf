@@ -38,3 +38,7 @@ variable "logs_proxy_address" {
 variable "environment" {
   type = string
 }
+
+variable "google_service_account_secret" {
+  type = string
+}
