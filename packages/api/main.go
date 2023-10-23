@@ -62,7 +62,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 		"Content-Length",
 		"Content-Type",
 		// Custom headers sent from SDK
-		"runtime",
+		"browser",
 		"lang",
 		"lang_version",
 		"machine",
@@ -71,6 +71,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 		"processor",
 		"publisher",
 		"release",
+		"runtime",
 		"system",
 	}
 	r.Use(cors.New(config))
