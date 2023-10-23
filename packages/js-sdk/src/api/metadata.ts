@@ -8,6 +8,6 @@ export const defaultHeaders = {
   lang_version: platform.version || 'unknown',
   package_version: version,
   publisher: 'e2b',
-  runtime: typeof window === 'undefined' ? 'node' : 'browser',
+  sdk_runtime: typeof window === 'undefined' ? 'node' : 'browser',
   system: platform.os?.family || 'unknown',
 }
