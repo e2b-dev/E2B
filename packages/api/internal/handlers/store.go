@@ -242,6 +242,7 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 func (a *APIStore) GetPackageToPosthogProperties(header *http.Header) posthog.Properties {
 	properties := posthog.NewProperties().
 		Set("package_version", header.Get("package_version")).
+		Set("runtime", header.Get("runtime")).
 		Set("lang", header.Get("lang")).
 		Set("lang_version", header.Get("lang_version")).
 		Set("system", header.Get("system")).
