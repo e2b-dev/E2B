@@ -71,7 +71,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 		"processor",
 		"publisher",
 		"release",
-		"runtime",
+		"sdk_runtime",
 		"system",
 	}
 	r.Use(cors.New(config))
