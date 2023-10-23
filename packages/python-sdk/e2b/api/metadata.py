@@ -10,6 +10,6 @@ default_headers = {
     "processor": platform.processor(),
     "publisher": "e2b",
     "release": platform.release(),
-    "runtime": "python",
+    "sdk_runtime": "python",
     "system": platform.system(),
 }
