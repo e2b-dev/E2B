@@ -62,7 +62,7 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 		"Content-Length",
 		"Content-Type",
 		// Custom headers sent from SDK
-		"engine",
+		"runtime",
 		"lang",
 		"lang_version",
 		"machine",
