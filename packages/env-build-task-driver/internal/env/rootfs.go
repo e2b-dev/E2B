@@ -32,7 +32,6 @@ const (
 	dockerfileName = "Dockerfile"
 	// Path to the envd in the FC VM.
 	envdRootfsPath = "/usr/bin/envd"
-	pkgsDirPath    = "/tmp/pkgs"
 	toMBShift      = 20
 	// Max size of the rootfs file in MB.
 	maxRootfsSize = 5000 << toMBShift
@@ -69,11 +68,11 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		env:          env,
 	}
 
-	defer rootfs.cleanupDockerImage(childCtx, tracer)
 	err := rootfs.buildDockerImage(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
+		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
 
@@ -81,6 +80,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
 
+		rootfs.cleanupDockerImage(childCtx, tracer)
 		return nil, errMsg
 	}
 
@@ -150,6 +150,9 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 func (r *Rootfs) removeDockerOverlays(ctx context.Context, tracer trace.Tracer, overlay string) {
 	childCtx, childSpan := tracer.Start(ctx, "remove-docker-overlays")
 	defer childSpan.End()
+
+	// CHECK: What are all the dirs that we can delete in the overlay2 folder?
+	// CHECK: Where is the actually 500mb per container build coming from? Even after unmounting we should be able to find where the space is being used.
 
 	err := unix.Unmount(overlay, unix.MNT_DETACH)
 	if err != nil {
@@ -240,10 +243,16 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
+	// CHECK: Try using the legacy client
+	// err := r.legacyClient.CreateContainer(docker.CreateContainerOptions{
+	// 	Name: r.dockerTag(),
+	// })
+
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
-		Image:        r.dockerTag(),
-		Entrypoint:   []string{"/bin/bash", "-c"},
-		User:         "root",
+		Image:      r.dockerTag(),
+		Entrypoint: []string{"/bin/bash", "-c"},
+		User:       "root",
+		// CHECK: Could invoking a Cmd that always ends be a problem?
 		Cmd:          []string{r.env.ProvisionScript()},
 		Tty:          false,
 		AttachStdout: true,
@@ -258,24 +267,52 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "created container")
 
-	defer func() {
-		err = r.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{
-			Force:         true,
-			RemoveVolumes: true,
-		})
-		if err != nil {
-			errMsg := fmt.Errorf("error removing container %w", err)
-			telemetry.ReportError(ctx, errMsg)
-		}
-	}()
-
 	containerInfo, err := r.client.ContainerInspect(childCtx, cont.ID)
 	if err != nil {
 		errMsg := fmt.Errorf("error inspecting container %w", err)
 		telemetry.ReportError(childCtx, errMsg)
 	}
 
-	defer r.removeDockerOverlays(childCtx, tracer, containerInfo.ContainerJSONBase.GraphDriver.Data["MergedDir"])
+	defer func() {
+		cleanupContext, cleanupSpan := tracer.Start(
+			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
+			"cleanup-container",
+		)
+		defer cleanupSpan.End()
+
+		// CHECK: Should we try to stop the container?
+		// err = r.legacyClient.StopContainerWithContext(cont.ID, 0, cleanupContext)
+		// if err != nil {
+		// 	errMsg := fmt.Errorf("error stopping container %w", err)
+		// 	telemetry.ReportError(cleanupContext, errMsg)
+		// } else {
+		// 	telemetry.ReportEvent(cleanupContext, "stopped container")
+		// }
+
+		// CHECK: Can we prune containers?
+		// r.legacyClient.PruneContainers(docker.PruneContainersOptions{})
+
+		err = r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
+			ID:            cont.ID,
+			RemoveVolumes: true,
+			// CHECK: Should we not use the force here?
+			Force:   false,
+			Context: cleanupContext,
+		})
+		if err != nil {
+			errMsg := fmt.Errorf("error removing container %w", err)
+			telemetry.ReportError(cleanupContext, errMsg)
+		} else {
+			telemetry.ReportEvent(cleanupContext, "removed container")
+		}
+
+		// CHECK: Can we prune the build cache?
+		// r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
+		// })
+
+		// CHECK: Could using the docker buildkit be the problems when cleaning cache? Does the cache behaves differently?
+		r.removeDockerOverlays(cleanupContext, tracer, containerInfo.ContainerJSONBase.GraphDriver.Data["MergedDir"])
+	}()
 
 	telemetry.ReportEvent(childCtx, "created container")
 
@@ -285,26 +322,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			tarPath:   envdRootfsPath,
 		},
 	}
-
-	// Skipping the copying packages for offline installation now
-	// entries, err := os.ReadDir(r.env.PkgsPath)
-	// if err != nil {
-	// 	errMsg := fmt.Errorf("error reading packages directory %w", err)
-	// 	telemetry.ReportCriticalError(childCtx, errMsg)
-
-	// 	return errMsg
-	// }
-
-	// telemetry.ReportEvent(childCtx, "read packages directory")
-
-	// for _, entry := range entries {
-	// 	if !entry.IsDir() {
-	// 		filesToTar = append(filesToTar, fileToTar{
-	// 			localPath: path.Join(r.env.PkgsPath, entry.Name()),
-	// 			tarPath:   path.Join(pkgsDirPath, entry.Name()),
-	// 		})
-	// 	}
-	// }
 
 	pr, pw := io.Pipe()
 
