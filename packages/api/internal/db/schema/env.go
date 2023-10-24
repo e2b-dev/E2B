@@ -23,9 +23,8 @@ func (Env) Fields() []ent.Field {
 			),
 		field.UUID("team_id", uuid.UUID{}),
 		field.String("dockerfile"),
-		field.Enum("status").Values("building", "ready", "error"),
 		field.Bool("public"),
-		field.UUID("build_id", uuid.UUID{}).Optional(),
+		field.UUID("build_id", uuid.UUID{}),
 	}
 }
 func (Env) Edges() []ent.Edge {

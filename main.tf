@@ -26,6 +26,11 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
+resource "google_service_account" "infra_instances_service_account" {
+  account_id   = "infra-instances-1"
+  display_name = "Infra Instances Service Account"
+}
+
 module "github-tf" {
   source = "./github-tf"
 
@@ -54,10 +59,11 @@ module "cluster" {
   logs_health_proxy_port = var.logs_health_proxy_port
   logs_proxy_port        = var.logs_proxy_port
 
-  session_proxy_port       = var.session_proxy_port
-  client_proxy_health_port = var.client_proxy_health_port
-  client_proxy_port        = var.client_proxy_port
-  api_port                 = var.api_port
+  session_proxy_port           = var.session_proxy_port
+  client_proxy_health_port     = var.client_proxy_health_port
+  client_proxy_port            = var.client_proxy_port
+  api_port                     = var.api_port
+  google_service_account_email = google_service_account.infra_instances_service_account.email
 }
 
 data "google_compute_global_address" "orch_server_consul_ip" {
@@ -142,16 +148,23 @@ data "google_storage_bucket" "e2b-envs-docker-context" {
   name = "e2b-envs-docker-context"
 }
 
+
+resource "google_service_account_key" "google_service_key" {
+  service_account_id = google_service_account.infra_instances_service_account.name
+}
+
+
 module "api" {
   source = "./packages/api"
 
   gcp_zone = var.gcp_zone
 
-  logs_proxy_address = "http://${module.cluster.logs_proxy_ip}"
-  nomad_address      = "http://${module.cluster.server_proxy_ip}"
-  nomad_token        = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
-  consul_token       = data.google_secret_manager_secret_version.consul_acl_token.secret_data
-  api_port           = var.api_port
-  environment        = var.environment
-  bucket_name        = data.google_storage_bucket.e2b-envs-docker-context.name
+  logs_proxy_address            = "http://${module.cluster.logs_proxy_ip}"
+  nomad_address                 = "http://${module.cluster.server_proxy_ip}"
+  nomad_token                   = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
+  consul_token                  = data.google_secret_manager_secret_version.consul_acl_token.secret_data
+  api_port                      = var.api_port
+  environment                   = var.environment
+  bucket_name                   = data.google_storage_bucket.e2b-envs-docker-context.name
+  google_service_account_secret = google_service_account_key.google_service_key.private_key
 }

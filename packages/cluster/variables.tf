@@ -97,3 +97,8 @@ variable "logs_health_proxy_port" {
     health_path = string
   })
 }
+
+
+variable "google_service_account_email" {
+  type = string
+}

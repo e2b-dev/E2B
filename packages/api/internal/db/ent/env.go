@@ -24,8 +24,6 @@ type Env struct {
 	TeamID uuid.UUID `json:"team_id,omitempty"`
 	// Dockerfile holds the value of the "dockerfile" field.
 	Dockerfile string `json:"dockerfile,omitempty"`
-	// Status holds the value of the "status" field.
-	Status env.Status `json:"status,omitempty"`
 	// Public holds the value of the "public" field.
 	Public bool `json:"public,omitempty"`
 	// BuildID holds the value of the "build_id" field.
@@ -61,7 +59,7 @@ func (*Env) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case env.FieldPublic:
 			values[i] = new(sql.NullBool)
-		case env.FieldID, env.FieldDockerfile, env.FieldStatus:
+		case env.FieldID, env.FieldDockerfile:
 			values[i] = new(sql.NullString)
 		case env.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -105,12 +103,6 @@ func (e *Env) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field dockerfile", values[i])
 			} else if value.Valid {
 				e.Dockerfile = value.String
-			}
-		case env.FieldStatus:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field status", values[i])
-			} else if value.Valid {
-				e.Status = env.Status(value.String)
 			}
 		case env.FieldPublic:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -173,9 +165,6 @@ func (e *Env) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("dockerfile=")
 	builder.WriteString(e.Dockerfile)
-	builder.WriteString(", ")
-	builder.WriteString("status=")
-	builder.WriteString(fmt.Sprintf("%v", e.Status))
 	builder.WriteString(", ")
 	builder.WriteString("public=")
 	builder.WriteString(fmt.Sprintf("%v", e.Public))

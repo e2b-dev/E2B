@@ -77,8 +77,22 @@ components:
       required:
         - envID
         - buildID
-        - status
         - public
+      properties:
+        envID:
+          type: string
+          description: Identifier of the environment
+        buildID:
+          type: string
+          description: Identifier of the last successful build for given environment
+        public:
+          type: boolean
+          description: Whether the environment is public or only accessible by the team
+    EnvironmentBuild:
+      required:
+        - envID
+        - buildID
+        - finished
         - logs
       properties:
         logs:
@@ -100,9 +114,6 @@ components:
             - building
             - ready
             - error
-        public:
-          type: boolean
-          description: Whether the environment is public or only accessible by the team
 
     Instance:
       required:
@@ -251,7 +262,7 @@ paths:
 
   /envs/{envID}/builds/{buildID}:
     get:
-      description: Get environment info
+      description: Get environment build info
       tags: [envs]
       security:
         - AccessTokenAuth: []
@@ -270,7 +281,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Environment"
+                $ref: "#/components/schemas/EnvironmentBuild"
         401:
           $ref: "#/components/responses/401"
         404:

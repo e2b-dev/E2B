@@ -237,26 +237,6 @@ func DockerfileContainsFold(v string) predicate.Env {
 	return predicate.Env(sql.FieldContainsFold(FieldDockerfile, v))
 }
 
-// StatusEQ applies the EQ predicate on the "status" field.
-func StatusEQ(v Status) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldStatus, v))
-}
-
-// StatusNEQ applies the NEQ predicate on the "status" field.
-func StatusNEQ(v Status) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldStatus, v))
-}
-
-// StatusIn applies the In predicate on the "status" field.
-func StatusIn(vs ...Status) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldStatus, vs...))
-}
-
-// StatusNotIn applies the NotIn predicate on the "status" field.
-func StatusNotIn(vs ...Status) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldStatus, vs...))
-}
-
 // PublicEQ applies the EQ predicate on the "public" field.
 func PublicEQ(v bool) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldPublic, v))
@@ -305,16 +285,6 @@ func BuildIDLT(v uuid.UUID) predicate.Env {
 // BuildIDLTE applies the LTE predicate on the "build_id" field.
 func BuildIDLTE(v uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldBuildID, v))
-}
-
-// BuildIDIsNil applies the IsNil predicate on the "build_id" field.
-func BuildIDIsNil() predicate.Env {
-	return predicate.Env(sql.FieldIsNull(FieldBuildID))
-}
-
-// BuildIDNotNil applies the NotNil predicate on the "build_id" field.
-func BuildIDNotNil() predicate.Env {
-	return predicate.Env(sql.FieldNotNull(FieldBuildID))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

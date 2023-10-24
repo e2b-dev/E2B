@@ -3,7 +3,6 @@
 package env
 
 import (
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -21,8 +20,6 @@ const (
 	FieldTeamID = "team_id"
 	// FieldDockerfile holds the string denoting the dockerfile field in the database.
 	FieldDockerfile = "dockerfile"
-	// FieldStatus holds the string denoting the status field in the database.
-	FieldStatus = "status"
 	// FieldPublic holds the string denoting the public field in the database.
 	FieldPublic = "public"
 	// FieldBuildID holds the string denoting the build_id field in the database.
@@ -46,7 +43,6 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldTeamID,
 	FieldDockerfile,
-	FieldStatus,
 	FieldPublic,
 	FieldBuildID,
 }
@@ -65,30 +61,6 @@ var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )
-
-// Status defines the type for the "status" enum field.
-type Status string
-
-// Status values.
-const (
-	StatusBuilding Status = "building"
-	StatusReady    Status = "ready"
-	StatusError    Status = "error"
-)
-
-func (s Status) String() string {
-	return string(s)
-}
-
-// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
-func StatusValidator(s Status) error {
-	switch s {
-	case StatusBuilding, StatusReady, StatusError:
-		return nil
-	default:
-		return fmt.Errorf("env: invalid enum value for status field: %q", s)
-	}
-}
 
 // OrderOption defines the ordering options for the Env queries.
 type OrderOption func(*sql.Selector)
@@ -111,11 +83,6 @@ func ByTeamID(opts ...sql.OrderTermOption) OrderOption {
 // ByDockerfile orders the results by the dockerfile field.
 func ByDockerfile(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDockerfile, opts...).ToFunc()
-}
-
-// ByStatus orders the results by the status field.
-func ByStatus(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByPublic orders the results by the public field.

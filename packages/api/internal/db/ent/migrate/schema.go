@@ -26,9 +26,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "team_id", Type: field.TypeUUID},
 		{Name: "dockerfile", Type: field.TypeString},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"building", "ready", "error"}},
 		{Name: "public", Type: field.TypeBool},
-		{Name: "build_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "build_id", Type: field.TypeUUID},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
 	EnvsTable = &schema.Table{

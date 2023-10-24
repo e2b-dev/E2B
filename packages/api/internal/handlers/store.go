@@ -22,15 +22,16 @@ import (
 )
 
 type APIStore struct {
-	Ctx             context.Context
-	posthog         posthog.Client
-	tracer          trace.Tracer
-	cache           *nomad.InstanceCache
-	nomad           *nomad.NomadClient
-	supabase        *db.DB
-	cloudStorage    *cloudStorage
-	dockerBuildLogs *utils.BuildLogsCache
-	apiSecret       string
+	Ctx                        context.Context
+	posthog                    posthog.Client
+	tracer                     trace.Tracer
+	cache                      *nomad.InstanceCache
+	nomad                      *nomad.NomadClient
+	supabase                   *db.DB
+	cloudStorage               *cloudStorage
+	buildCache                 *utils.BuildCache
+	apiSecret                  string
+	googleServiceAccountBase64 string
 }
 
 func NewAPIStore() *APIStore {
@@ -114,18 +115,19 @@ func NewAPIStore() *APIStore {
 		apiSecret = "SUPER_SECR3T_4PI_K3Y"
 	}
 
-	dockerBuildLogs := utils.NewBuildLogsCache()
+	buildCache := utils.NewBuildCache()
 
 	return &APIStore{
-		Ctx:             ctx,
-		nomad:           nomadClient,
-		supabase:        supabaseClient,
-		cache:           cache,
-		tracer:          tracer,
-		posthog:         posthogClient,
-		cloudStorage:    cStorage,
-		apiSecret:       apiSecret,
-		dockerBuildLogs: dockerBuildLogs,
+		Ctx:                        ctx,
+		nomad:                      nomadClient,
+		supabase:                   supabaseClient,
+		cache:                      cache,
+		tracer:                     tracer,
+		posthog:                    posthogClient,
+		cloudStorage:               cStorage,
+		apiSecret:                  apiSecret,
+		buildCache:                 buildCache,
+		googleServiceAccountBase64: os.Getenv("GOOGLE_SERVICE_ACCOUNT_BASE64"),
 	}
 }
 
@@ -239,15 +241,17 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 
 func (a *APIStore) GetPackageToPosthogProperties(header *http.Header) posthog.Properties {
 	properties := posthog.NewProperties().
-		Set("package_version", header.Get("package_version")).
+		Set("browser", header.Get("browser")).
 		Set("lang", header.Get("lang")).
 		Set("lang_version", header.Get("lang_version")).
-		Set("system", header.Get("system")).
+		Set("machine", header.Get("machine")).
 		Set("os", header.Get("os")).
+		Set("package_version", header.Get("package_version")).
+		Set("processor", header.Get("processor")).
 		Set("publisher", header.Get("publisher")).
 		Set("release", header.Get("release")).
-		Set("machine", header.Get("machine")).
-		Set("processor", header.Get("processor"))
+		Set("sdk_runtime", header.Get("sdk_runtime")).
+		Set("system", header.Get("system"))
 
 	return properties
 }

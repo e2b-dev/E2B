@@ -34,10 +34,8 @@ func (db *DB) GetEnvs(teamID string) (result []*api.Environment, err error) {
 	for _, item := range envs {
 		result = append(result, &api.Environment{
 			EnvID:   item.ID,
-			BuildID: "",
-			Status:  api.EnvironmentStatus(item.Status),
+			BuildID: item.BuildID.String(),
 			Public:  item.Public,
-			Logs:    nil,
 		})
 	}
 
@@ -55,69 +53,41 @@ func (db *DB) GetEnv(envID string, teamID string) (result *api.Environment, err 
 	dbEnv, err := db.Client.Env.Query().Where(env.Or(env.ID(envID), env.Public(true)), env.TeamID(id)).Only(db.ctx)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get env: %w", err)
+		return nil, ErrEnvNotFound
 	}
 
 	return &api.Environment{
 		EnvID:   dbEnv.ID,
-		BuildID: "",
-		Status:  api.EnvironmentStatus(dbEnv.Status),
-		Logs:    nil,
+		BuildID: dbEnv.BuildID.String(),
 		Public:  dbEnv.Public,
 	}, nil
 }
 
-func (db *DB) CreateEnv(envID string, teamID string, dockerfile string) (*api.Environment, error) {
-	id, err := uuid.Parse(teamID)
+func (db *DB) UpsertEnv(teamID, envID, buildID, dockerfile string) error {
+	teamUUID, err := uuid.Parse(teamID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse teamID: %w", err)
+		return fmt.Errorf("failed to parse teamID: %w", err)
 	}
 
-	e, err := db.Client.Env.Create().SetID(envID).SetTeamID(id).SetStatus(env.StatusBuilding).SetDockerfile(dockerfile).SetPublic(false).Save(db.ctx)
+	buildUUID, err := uuid.Parse(buildID)
+	if err != nil {
+		return fmt.Errorf("failed to parse teamID: %w", err)
+	}
+
+	err = db.Client.Env.Create().SetID(envID).SetBuildID(buildUUID).SetTeamID(teamUUID).SetDockerfile(dockerfile).SetPublic(false).
+		OnConflictColumns(env.FieldID).
+		UpdateBuildID().UpdateDockerfile().
+		Exec(db.ctx)
 
 	if err != nil {
-		errMsg := fmt.Errorf("failed to create env with id '%s': %w", envID, err)
+		errMsg := fmt.Errorf("failed to upsert env with id '%s': %w", envID, err)
 
 		fmt.Println(errMsg.Error())
 
-		return nil, errMsg
+		return errMsg
 	}
 
-	return &api.Environment{
-		EnvID:   e.ID,
-		BuildID: "",
-		Status:  api.EnvironmentStatus(e.Status),
-		Logs:    nil,
-		Public:  e.Public,
-	}, nil
-}
-
-func (db *DB) UpdateDockerfileEnv(envID string, dockerfile string) (*api.Environment, error) {
-	e, err := db.Client.Env.UpdateOneID(envID).SetDockerfile(dockerfile).Save(db.ctx)
-
-	if err != nil {
-		errMsg := fmt.Errorf("failed to update env with id '%s' with Dockerfile '%s': %w", envID, dockerfile, err)
-
-		fmt.Println(errMsg.Error())
-
-		return nil, errMsg
-	}
-
-	return &api.Environment{EnvID: e.ID, BuildID: "", Logs: nil, Status: api.EnvironmentStatusBuilding, Public: e.Public}, nil
-}
-
-func (db *DB) UpdateStatusEnv(envID string, status env.Status) (*api.Environment, error) {
-	e, err := db.Client.Env.UpdateOneID(envID).SetStatus(status).Save(db.ctx)
-
-	if err != nil {
-		errMsg := fmt.Errorf("failed to update env with id '%s' with status '%s': %w", envID, status, err)
-
-		fmt.Println(errMsg.Error())
-
-		return nil, errMsg
-	}
-
-	return &api.Environment{EnvID: e.ID, BuildID: "", Logs: nil, Status: api.EnvironmentStatus(e.Status), Public: e.Public}, nil
+	return nil
 }
 
 func (db *DB) HasEnvAccess(envID string, teamID string, public bool) (bool, error) {

@@ -80,24 +80,26 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
 	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 	apiSecret := cfg.Env["API_SECRET"]
+	googleServiceAccountBase64 := cfg.Env["GOOGLE_SERVICE_ACCOUNT_BASE64"]
 
 	writer := env.NewWriter(taskConfig.EnvID, taskConfig.BuildID, apiSecret)
 
 	env := env.Env{
-		BuildID:               taskConfig.BuildID,
-		EnvID:                 taskConfig.EnvID,
-		EnvsDiskPath:          envsDisk,
-		PkgsPath:              pkgsPath,
-		VCpuCount:             taskConfig.VCpuCount,
-		MemoryMB:              taskConfig.MemoryMB,
-		DockerContextsPath:    contextsPath,
-		DockerRegistry:        registry,
-		KernelImagePath:       kernelImagePath,
-		DiskSizeMB:            taskConfig.DiskSizeMB,
-		FirecrackerBinaryPath: firecrackerBinaryPath,
-		EnvdPath:              envdPath,
-		ContextFileName:       contextFileName,
-		BuildLogsWriter:       writer,
+		BuildID:                    taskConfig.BuildID,
+		EnvID:                      taskConfig.EnvID,
+		EnvsDiskPath:               envsDisk,
+		PkgsPath:                   pkgsPath,
+		VCpuCount:                  taskConfig.VCpuCount,
+		MemoryMB:                   taskConfig.MemoryMB,
+		DockerContextsPath:         contextsPath,
+		DockerRegistry:             registry,
+		KernelImagePath:            kernelImagePath,
+		DiskSizeMB:                 taskConfig.DiskSizeMB,
+		FirecrackerBinaryPath:      firecrackerBinaryPath,
+		EnvdPath:                   envdPath,
+		ContextFileName:            contextFileName,
+		BuildLogsWriter:            writer,
+		GoogleServiceAccountBase64: googleServiceAccountBase64,
 	}
 
 	cancellableBuildContext, cancel := context.WithCancel(d.ctx)
