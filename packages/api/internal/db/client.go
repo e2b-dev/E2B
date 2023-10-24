@@ -7,7 +7,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"os"
 
-	_ "github.com/volatiletech/sqlboiler/v4/drivers/sqlboiler-psql/driver"
+	_ "github.com/lib/pq"
 )
 
 type DB struct {
