@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/docker/api/types/registry"
 	"io"
 	"os"
 	"os/exec"
@@ -14,6 +13,7 @@ import (
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -161,7 +161,6 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 	logs, err := r.client.ImagePush(childCtx, r.dockerTag(), types.ImagePushOptions{
 		RegistryAuth: authConfigBase64,
 	})
-
 	if err != nil {
 		errMsg := fmt.Errorf("error pushing image %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)
