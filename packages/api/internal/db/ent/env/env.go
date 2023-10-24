@@ -3,7 +3,6 @@
 package env
 
 import (
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -17,16 +16,18 @@ const (
 	FieldID = "id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
 	// FieldTeamID holds the string denoting the team_id field in the database.
 	FieldTeamID = "team_id"
 	// FieldDockerfile holds the string denoting the dockerfile field in the database.
 	FieldDockerfile = "dockerfile"
-	// FieldStatus holds the string denoting the status field in the database.
-	FieldStatus = "status"
 	// FieldPublic holds the string denoting the public field in the database.
 	FieldPublic = "public"
 	// FieldBuildID holds the string denoting the build_id field in the database.
 	FieldBuildID = "build_id"
+	// FieldBuildCount holds the string denoting the build_count field in the database.
+	FieldBuildCount = "build_count"
 	// EdgeTeam holds the string denoting the team edge name in mutations.
 	EdgeTeam = "team"
 	// Table holds the table name of the env in the database.
@@ -44,11 +45,12 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
+	FieldUpdatedAt,
 	FieldTeamID,
 	FieldDockerfile,
-	FieldStatus,
 	FieldPublic,
 	FieldBuildID,
+	FieldBuildCount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -64,31 +66,11 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
+	DefaultUpdatedAt func() time.Time
+	// DefaultBuildCount holds the default value on creation for the "build_count" field.
+	DefaultBuildCount int
 )
-
-// Status defines the type for the "status" enum field.
-type Status string
-
-// Status values.
-const (
-	StatusBuilding Status = "building"
-	StatusReady    Status = "ready"
-	StatusError    Status = "error"
-)
-
-func (s Status) String() string {
-	return string(s)
-}
-
-// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
-func StatusValidator(s Status) error {
-	switch s {
-	case StatusBuilding, StatusReady, StatusError:
-		return nil
-	default:
-		return fmt.Errorf("env: invalid enum value for status field: %q", s)
-	}
-}
 
 // OrderOption defines the ordering options for the Env queries.
 type OrderOption func(*sql.Selector)
@@ -103,6 +85,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
 }
 
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
 // ByTeamID orders the results by the team_id field.
 func ByTeamID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTeamID, opts...).ToFunc()
@@ -113,11 +100,6 @@ func ByDockerfile(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDockerfile, opts...).ToFunc()
 }
 
-// ByStatus orders the results by the status field.
-func ByStatus(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldStatus, opts...).ToFunc()
-}
-
 // ByPublic orders the results by the public field.
 func ByPublic(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPublic, opts...).ToFunc()
@@ -126,6 +108,11 @@ func ByPublic(opts ...sql.OrderTermOption) OrderOption {
 // ByBuildID orders the results by the build_id field.
 func ByBuildID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildID, opts...).ToFunc()
+}
+
+// ByBuildCount orders the results by the build_count field.
+func ByBuildCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuildCount, opts...).ToFunc()
 }
 
 // ByTeamCount orders the results by team count.

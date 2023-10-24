@@ -72,6 +72,11 @@ func CreatedAt(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldCreatedAt, v))
 }
 
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
 // TeamID applies equality check predicate on the "team_id" field. It's identical to TeamIDEQ.
 func TeamID(v uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldTeamID, v))
@@ -90,6 +95,11 @@ func Public(v bool) predicate.Env {
 // BuildID applies equality check predicate on the "build_id" field. It's identical to BuildIDEQ.
 func BuildID(v uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldBuildID, v))
+}
+
+// BuildCount applies equality check predicate on the "build_count" field. It's identical to BuildCountEQ.
+func BuildCount(v int) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldBuildCount, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -130,6 +140,46 @@ func CreatedAtLT(v time.Time) predicate.Env {
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // TeamIDEQ applies the EQ predicate on the "team_id" field.
@@ -237,26 +287,6 @@ func DockerfileContainsFold(v string) predicate.Env {
 	return predicate.Env(sql.FieldContainsFold(FieldDockerfile, v))
 }
 
-// StatusEQ applies the EQ predicate on the "status" field.
-func StatusEQ(v Status) predicate.Env {
-	return predicate.Env(sql.FieldEQ(FieldStatus, v))
-}
-
-// StatusNEQ applies the NEQ predicate on the "status" field.
-func StatusNEQ(v Status) predicate.Env {
-	return predicate.Env(sql.FieldNEQ(FieldStatus, v))
-}
-
-// StatusIn applies the In predicate on the "status" field.
-func StatusIn(vs ...Status) predicate.Env {
-	return predicate.Env(sql.FieldIn(FieldStatus, vs...))
-}
-
-// StatusNotIn applies the NotIn predicate on the "status" field.
-func StatusNotIn(vs ...Status) predicate.Env {
-	return predicate.Env(sql.FieldNotIn(FieldStatus, vs...))
-}
-
 // PublicEQ applies the EQ predicate on the "public" field.
 func PublicEQ(v bool) predicate.Env {
 	return predicate.Env(sql.FieldEQ(FieldPublic, v))
@@ -307,14 +337,44 @@ func BuildIDLTE(v uuid.UUID) predicate.Env {
 	return predicate.Env(sql.FieldLTE(FieldBuildID, v))
 }
 
-// BuildIDIsNil applies the IsNil predicate on the "build_id" field.
-func BuildIDIsNil() predicate.Env {
-	return predicate.Env(sql.FieldIsNull(FieldBuildID))
+// BuildCountEQ applies the EQ predicate on the "build_count" field.
+func BuildCountEQ(v int) predicate.Env {
+	return predicate.Env(sql.FieldEQ(FieldBuildCount, v))
 }
 
-// BuildIDNotNil applies the NotNil predicate on the "build_id" field.
-func BuildIDNotNil() predicate.Env {
-	return predicate.Env(sql.FieldNotNull(FieldBuildID))
+// BuildCountNEQ applies the NEQ predicate on the "build_count" field.
+func BuildCountNEQ(v int) predicate.Env {
+	return predicate.Env(sql.FieldNEQ(FieldBuildCount, v))
+}
+
+// BuildCountIn applies the In predicate on the "build_count" field.
+func BuildCountIn(vs ...int) predicate.Env {
+	return predicate.Env(sql.FieldIn(FieldBuildCount, vs...))
+}
+
+// BuildCountNotIn applies the NotIn predicate on the "build_count" field.
+func BuildCountNotIn(vs ...int) predicate.Env {
+	return predicate.Env(sql.FieldNotIn(FieldBuildCount, vs...))
+}
+
+// BuildCountGT applies the GT predicate on the "build_count" field.
+func BuildCountGT(v int) predicate.Env {
+	return predicate.Env(sql.FieldGT(FieldBuildCount, v))
+}
+
+// BuildCountGTE applies the GTE predicate on the "build_count" field.
+func BuildCountGTE(v int) predicate.Env {
+	return predicate.Env(sql.FieldGTE(FieldBuildCount, v))
+}
+
+// BuildCountLT applies the LT predicate on the "build_count" field.
+func BuildCountLT(v int) predicate.Env {
+	return predicate.Env(sql.FieldLT(FieldBuildCount, v))
+}
+
+// BuildCountLTE applies the LTE predicate on the "build_count" field.
+func BuildCountLTE(v int) predicate.Env {
+	return predicate.Env(sql.FieldLTE(FieldBuildCount, v))
 }
 
 // HasTeam applies the HasEdge predicate on the "team" edge.

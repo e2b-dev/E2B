@@ -520,22 +520,24 @@ func (m *AccessTokenMutation) ResetEdge(name string) error {
 // EnvMutation represents an operation that mutates the Env nodes in the graph.
 type EnvMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *string
-	created_at    *time.Time
-	team_id       *uuid.UUID
-	dockerfile    *string
-	status        *env.Status
-	public        *bool
-	build_id      *uuid.UUID
-	clearedFields map[string]struct{}
-	team          map[uuid.UUID]struct{}
-	removedteam   map[uuid.UUID]struct{}
-	clearedteam   bool
-	done          bool
-	oldValue      func(context.Context) (*Env, error)
-	predicates    []predicate.Env
+	op             Op
+	typ            string
+	id             *string
+	created_at     *time.Time
+	updated_at     *time.Time
+	team_id        *uuid.UUID
+	dockerfile     *string
+	public         *bool
+	build_id       *uuid.UUID
+	build_count    *int
+	addbuild_count *int
+	clearedFields  map[string]struct{}
+	team           map[uuid.UUID]struct{}
+	removedteam    map[uuid.UUID]struct{}
+	clearedteam    bool
+	done           bool
+	oldValue       func(context.Context) (*Env, error)
+	predicates     []predicate.Env
 }
 
 var _ ent.Mutation = (*EnvMutation)(nil)
@@ -678,6 +680,42 @@ func (m *EnvMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EnvMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EnvMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EnvMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
 // SetTeamID sets the "team_id" field.
 func (m *EnvMutation) SetTeamID(u uuid.UUID) {
 	m.team_id = &u
@@ -750,42 +788,6 @@ func (m *EnvMutation) ResetDockerfile() {
 	m.dockerfile = nil
 }
 
-// SetStatus sets the "status" field.
-func (m *EnvMutation) SetStatus(e env.Status) {
-	m.status = &e
-}
-
-// Status returns the value of the "status" field in the mutation.
-func (m *EnvMutation) Status() (r env.Status, exists bool) {
-	v := m.status
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldStatus returns the old "status" field's value of the Env entity.
-// If the Env object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EnvMutation) OldStatus(ctx context.Context) (v env.Status, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldStatus requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
-	}
-	return oldValue.Status, nil
-}
-
-// ResetStatus resets all changes to the "status" field.
-func (m *EnvMutation) ResetStatus() {
-	m.status = nil
-}
-
 // SetPublic sets the "public" field.
 func (m *EnvMutation) SetPublic(b bool) {
 	m.public = &b
@@ -853,22 +855,65 @@ func (m *EnvMutation) OldBuildID(ctx context.Context) (v uuid.UUID, err error) {
 	return oldValue.BuildID, nil
 }
 
-// ClearBuildID clears the value of the "build_id" field.
-func (m *EnvMutation) ClearBuildID() {
-	m.build_id = nil
-	m.clearedFields[env.FieldBuildID] = struct{}{}
-}
-
-// BuildIDCleared returns if the "build_id" field was cleared in this mutation.
-func (m *EnvMutation) BuildIDCleared() bool {
-	_, ok := m.clearedFields[env.FieldBuildID]
-	return ok
-}
-
 // ResetBuildID resets all changes to the "build_id" field.
 func (m *EnvMutation) ResetBuildID() {
 	m.build_id = nil
-	delete(m.clearedFields, env.FieldBuildID)
+}
+
+// SetBuildCount sets the "build_count" field.
+func (m *EnvMutation) SetBuildCount(i int) {
+	m.build_count = &i
+	m.addbuild_count = nil
+}
+
+// BuildCount returns the value of the "build_count" field in the mutation.
+func (m *EnvMutation) BuildCount() (r int, exists bool) {
+	v := m.build_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBuildCount returns the old "build_count" field's value of the Env entity.
+// If the Env object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EnvMutation) OldBuildCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBuildCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBuildCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBuildCount: %w", err)
+	}
+	return oldValue.BuildCount, nil
+}
+
+// AddBuildCount adds i to the "build_count" field.
+func (m *EnvMutation) AddBuildCount(i int) {
+	if m.addbuild_count != nil {
+		*m.addbuild_count += i
+	} else {
+		m.addbuild_count = &i
+	}
+}
+
+// AddedBuildCount returns the value that was added to the "build_count" field in this mutation.
+func (m *EnvMutation) AddedBuildCount() (r int, exists bool) {
+	v := m.addbuild_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBuildCount resets all changes to the "build_count" field.
+func (m *EnvMutation) ResetBuildCount() {
+	m.build_count = nil
+	m.addbuild_count = nil
 }
 
 // AddTeamIDs adds the "team" edge to the Team entity by ids.
@@ -959,9 +1004,12 @@ func (m *EnvMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EnvMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, env.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, env.FieldUpdatedAt)
 	}
 	if m.team_id != nil {
 		fields = append(fields, env.FieldTeamID)
@@ -969,14 +1017,14 @@ func (m *EnvMutation) Fields() []string {
 	if m.dockerfile != nil {
 		fields = append(fields, env.FieldDockerfile)
 	}
-	if m.status != nil {
-		fields = append(fields, env.FieldStatus)
-	}
 	if m.public != nil {
 		fields = append(fields, env.FieldPublic)
 	}
 	if m.build_id != nil {
 		fields = append(fields, env.FieldBuildID)
+	}
+	if m.build_count != nil {
+		fields = append(fields, env.FieldBuildCount)
 	}
 	return fields
 }
@@ -988,16 +1036,18 @@ func (m *EnvMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case env.FieldCreatedAt:
 		return m.CreatedAt()
+	case env.FieldUpdatedAt:
+		return m.UpdatedAt()
 	case env.FieldTeamID:
 		return m.TeamID()
 	case env.FieldDockerfile:
 		return m.Dockerfile()
-	case env.FieldStatus:
-		return m.Status()
 	case env.FieldPublic:
 		return m.Public()
 	case env.FieldBuildID:
 		return m.BuildID()
+	case env.FieldBuildCount:
+		return m.BuildCount()
 	}
 	return nil, false
 }
@@ -1009,16 +1059,18 @@ func (m *EnvMutation) OldField(ctx context.Context, name string) (ent.Value, err
 	switch name {
 	case env.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
+	case env.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	case env.FieldTeamID:
 		return m.OldTeamID(ctx)
 	case env.FieldDockerfile:
 		return m.OldDockerfile(ctx)
-	case env.FieldStatus:
-		return m.OldStatus(ctx)
 	case env.FieldPublic:
 		return m.OldPublic(ctx)
 	case env.FieldBuildID:
 		return m.OldBuildID(ctx)
+	case env.FieldBuildCount:
+		return m.OldBuildCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown Env field %s", name)
 }
@@ -1035,6 +1087,13 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCreatedAt(v)
 		return nil
+	case env.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
 	case env.FieldTeamID:
 		v, ok := value.(uuid.UUID)
 		if !ok {
@@ -1048,13 +1107,6 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDockerfile(v)
-		return nil
-	case env.FieldStatus:
-		v, ok := value.(env.Status)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetStatus(v)
 		return nil
 	case env.FieldPublic:
 		v, ok := value.(bool)
@@ -1070,6 +1122,13 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBuildID(v)
 		return nil
+	case env.FieldBuildCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBuildCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)
 }
@@ -1077,13 +1136,21 @@ func (m *EnvMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *EnvMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addbuild_count != nil {
+		fields = append(fields, env.FieldBuildCount)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *EnvMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case env.FieldBuildCount:
+		return m.AddedBuildCount()
+	}
 	return nil, false
 }
 
@@ -1092,6 +1159,13 @@ func (m *EnvMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *EnvMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case env.FieldBuildCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBuildCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Env numeric field %s", name)
 }
@@ -1099,11 +1173,7 @@ func (m *EnvMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EnvMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(env.FieldBuildID) {
-		fields = append(fields, env.FieldBuildID)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1116,11 +1186,6 @@ func (m *EnvMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EnvMutation) ClearField(name string) error {
-	switch name {
-	case env.FieldBuildID:
-		m.ClearBuildID()
-		return nil
-	}
 	return fmt.Errorf("unknown Env nullable field %s", name)
 }
 
@@ -1131,20 +1196,23 @@ func (m *EnvMutation) ResetField(name string) error {
 	case env.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
+	case env.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
 	case env.FieldTeamID:
 		m.ResetTeamID()
 		return nil
 	case env.FieldDockerfile:
 		m.ResetDockerfile()
 		return nil
-	case env.FieldStatus:
-		m.ResetStatus()
-		return nil
 	case env.FieldPublic:
 		m.ResetPublic()
 		return nil
 	case env.FieldBuildID:
 		m.ResetBuildID()
+		return nil
+	case env.FieldBuildCount:
+		m.ResetBuildCount()
 		return nil
 	}
 	return fmt.Errorf("unknown Env field %s", name)

@@ -9,6 +9,7 @@ import (
 const (
 	teamGroup                = "team"
 	placeholderTeamGroupUser = "backend"
+	placeholderProperty      = "first interaction"
 )
 
 func (a *APIStore) IdentifyAnalyticsTeam(teamID string) {
@@ -16,7 +17,7 @@ func (a *APIStore) IdentifyAnalyticsTeam(teamID string) {
 		Type: teamGroup,
 		Key:  teamID,
 		Properties: posthog.NewProperties().
-			Set("session_tried", true),
+			Set(placeholderProperty, true),
 	},
 	)
 	if err != nil {

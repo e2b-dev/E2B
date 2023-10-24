@@ -57,20 +57,21 @@ resource "nomad_job" "api" {
   hcl2 {
     enabled = true
     vars = {
-      gcp_zone                   = var.gcp_zone
-      api_port_name              = var.api_port.name
-      api_port_number            = var.api_port.port
-      image_name                 = resource.docker_image.api_image.repo_digest
-      supabase_connection_string = data.google_secret_manager_secret_version.supabase_connection_string.secret_data
-      posthog_api_key            = data.google_secret_manager_secret_version.posthog_api_key.secret_data
-      api_admin_key              = data.google_secret_manager_secret_version.api_admin_key.secret_data
-      logs_proxy_address         = var.logs_proxy_address
-      nomad_address              = var.nomad_address
-      nomad_token                = var.nomad_token
-      consul_token               = var.consul_token
-      environment                = var.environment
-      bucket_name                = var.bucket_name
-      api_secret                 = resource.random_password.api_secret.result
+      gcp_zone                      = var.gcp_zone
+      api_port_name                 = var.api_port.name
+      api_port_number               = var.api_port.port
+      image_name                    = docker_image.api_image.repo_digest
+      supabase_connection_string    = data.google_secret_manager_secret_version.supabase_connection_string.secret_data
+      posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
+      api_admin_key                 = data.google_secret_manager_secret_version.api_admin_key.secret_data
+      logs_proxy_address            = var.logs_proxy_address
+      nomad_address                 = var.nomad_address
+      nomad_token                   = var.nomad_token
+      consul_token                  = var.consul_token
+      environment                   = var.environment
+      bucket_name                   = var.bucket_name
+      api_secret                    = random_password.api_secret.result
+      google_service_account_secret = var.google_service_account_secret
     }
   }
 }

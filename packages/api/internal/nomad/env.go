@@ -37,6 +37,7 @@ func (n *NomadClient) BuildEnvJob(
 	// build is used to separate builds of the same env that can start simultaneously. Should be an UUID generated on server.
 	buildID string,
 	apiSecret string,
+	googleServiceAccountBase64 string,
 ) error {
 	childCtx, childSpan := t.Start(ctx, "build-env-job",
 		trace.WithAttributes(
@@ -56,29 +57,31 @@ func (n *NomadClient) BuildEnvJob(
 	var jobDef bytes.Buffer
 
 	jobVars := struct {
-		APISecret  string
-		BuildID    string
-		EnvID      string
-		SpanID     string
-		TraceID    string
-		JobName    string
-		TaskName   string
-		EnvsDisk   string
-		VCpuCount  int
-		MemoryMB   int
-		DiskSizeMB int
+		APISecret                  string
+		BuildID                    string
+		EnvID                      string
+		SpanID                     string
+		TraceID                    string
+		JobName                    string
+		TaskName                   string
+		EnvsDisk                   string
+		VCpuCount                  int
+		MemoryMB                   int
+		DiskSizeMB                 int
+		GoogleServiceAccountBase64 string
 	}{
-		APISecret:  apiSecret,
-		BuildID:    buildID,
-		SpanID:     spanID,
-		DiskSizeMB: defaultDiskSizeMB,
-		VCpuCount:  defaultVCpuCount,
-		MemoryMB:   defaultMemoryMB,
-		TraceID:    traceID,
-		EnvID:      envID,
-		TaskName:   defaultTaskName,
-		JobName:    buildJobName,
-		EnvsDisk:   envsDisk,
+		APISecret:                  apiSecret,
+		BuildID:                    buildID,
+		SpanID:                     spanID,
+		DiskSizeMB:                 defaultDiskSizeMB,
+		VCpuCount:                  defaultVCpuCount,
+		MemoryMB:                   defaultMemoryMB,
+		TraceID:                    traceID,
+		EnvID:                      envID,
+		TaskName:                   defaultTaskName,
+		JobName:                    buildJobName,
+		EnvsDisk:                   envsDisk,
+		GoogleServiceAccountBase64: googleServiceAccountBase64,
 	}
 
 	err := envBuildTemplate.Execute(&jobDef, jobVars)
@@ -109,7 +112,7 @@ func (n *NomadClient) BuildEnvJob(
 		return fmt.Errorf("error waiting for env '%s' build: %w", envID, finishErr.Err)
 	}
 
-	delErr := n.DeleteEnvBuild(*job.ID, false)
+	delErr := n.DeleteEnvBuild(*job.ID, true)
 	if delErr != nil {
 		return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, delErr)
 	}
