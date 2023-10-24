@@ -76,7 +76,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	envsDisk := cfg.Env["ENVS_DISK"]
 	kernelImagePath := cfg.Env["KERNEL_IMAGE_PATH"]
 	envdPath := cfg.Env["ENVD_PATH"]
-	pkgsPath := cfg.Env["PKGS_PATH"]
 	firecrackerBinaryPath := cfg.Env["FIRECRACKER_BINARY_PATH"]
 	contextFileName := cfg.Env["CONTEXT_FILE_NAME"]
 	apiSecret := cfg.Env["API_SECRET"]
@@ -88,7 +87,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		BuildID:                    taskConfig.BuildID,
 		EnvID:                      taskConfig.EnvID,
 		EnvsDiskPath:               envsDisk,
-		PkgsPath:                   pkgsPath,
 		VCpuCount:                  taskConfig.VCpuCount,
 		MemoryMB:                   taskConfig.MemoryMB,
 		DockerContextsPath:         contextsPath,

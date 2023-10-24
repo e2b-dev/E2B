@@ -6,9 +6,6 @@ echo "Starting provisioning script."
 apt-get update --download-only
 DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server chrony sudo systemd socat
 
-# Some packages are missing depending on the distro version so this is not realiable way to install then offline right now.
-# DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/pkgs/*.deb && rm /tmp/pkgs/*.deb
-
 # Set up autologin.
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
 cat <<EOF >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf

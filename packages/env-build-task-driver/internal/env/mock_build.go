@@ -2,6 +2,7 @@ package env
 
 import (
 	"context"
+
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
 	"go.opentelemetry.io/otel"
@@ -28,7 +29,6 @@ func MockBuild(envID, buildID string) {
 	kernelImagePath := "/fc-vm/vmlinux.bin"
 	firecrackerBinaryPath := "/usr/bin/firecracker"
 	envdPath := "/fc-vm/envd"
-	pkgsPath := "/fc-vm/pkgs"
 	contextFileName := "context.tar.gz"
 	vCPUCount := int64(1)
 	memoryMB := int64(512)
@@ -42,7 +42,6 @@ func MockBuild(envID, buildID string) {
 		EnvID:                 envID,
 		EnvsDiskPath:          envsDisk,
 		VCpuCount:             vCPUCount,
-		PkgsPath:              pkgsPath,
 		MemoryMB:              memoryMB,
 		DockerContextsPath:    contextsPath,
 		DockerRegistry:        registry,

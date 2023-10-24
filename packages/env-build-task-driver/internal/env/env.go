@@ -50,10 +50,6 @@ type Env struct {
 	// Path to the envd.
 	EnvdPath string
 
-	// Path to the pkgs to install.
-	// Only installs packages in this dir not packages in subdirs.
-	PkgsPath string
-
 	ContextFileName string
 
 	// The number of vCPUs to allocate to the VM.

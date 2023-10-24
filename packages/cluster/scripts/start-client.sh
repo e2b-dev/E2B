@@ -31,10 +31,6 @@ mkdir -p $env_pipeline_local_dir
 sudo cp /mnt/disks/envs-pipeline/envd $env_pipeline_local_dir/envd
 sudo chmod +x $env_pipeline_local_dir/envd
 
-# Copy packages to install during provisioning
-mkdir -p $env_pipeline_local_dir/pkgs
-sudo cp /mnt/disks/envs-pipeline/pkgs/* $env_pipeline_local_dir/pkgs
-
 mkdir -p /mnt/disks/docker-contexts
 gcsfuse -o=allow_other --implicit-dirs e2b-envs-docker-context /mnt/disks/docker-contexts
 
