@@ -3,9 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/posthog/posthog-go"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
@@ -16,7 +18,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func (a *APIStore) buildEnv(ctx context.Context, teamID string, envID string, buildID string, dockerfile string, content io.Reader) {
+func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID, dockerfile string, content io.Reader, posthogProperties posthog.Properties) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
@@ -24,7 +26,18 @@ func (a *APIStore) buildEnv(ctx context.Context, teamID string, envID string, bu
 	)
 	defer childSpan.End()
 
-	_, err := a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), content)
+	var err error
+	startTime := time.Now()
+	defer func() {
+		a.CreateAnalyticsUserEvent(userID, teamID, "built environment", posthogProperties.
+			Set("environment", envID).
+			Set("build_id", buildID).
+			Set("duration", time.Since(startTime).String()).
+			Set("success", err != nil),
+		)
+	}()
+
+	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), content)
 	if err != nil {
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
 		ReportCriticalError(childCtx, err)
@@ -57,7 +70,6 @@ func (a *APIStore) buildEnv(ctx context.Context, teamID string, envID string, bu
 		err = fmt.Errorf("error when setting build done in logs: %w", err)
 		ReportCriticalError(childCtx, err)
 	}
-
 }
 
 func (a *APIStore) PostEnvs(c *gin.Context) {
@@ -80,6 +92,25 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	}
 
 	SetAttributes(ctx, attribute.String("env.team_id", teamID))
+
+	envID := c.PostForm("envID")
+	dockerfile := c.PostForm("dockerfile")
+
+	buildID, err := uuid.GenerateUUID()
+	if err != nil {
+		err = fmt.Errorf("error when generating build id: %w", err)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
+
+	a.IdentifyAnalyticsTeam(teamID)
+	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
+	a.CreateAnalyticsUserEvent(userID, teamID, "submitted environment build request ", properties.
+		Set("environment", envID).
+		Set("build_id", buildID).
+		Set("dockerfile", dockerfile),
+	)
 
 	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
 	if err != nil {
@@ -110,15 +141,6 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	buildID, err := uuid.GenerateUUID()
-	if err != nil {
-		err = fmt.Errorf("error when generating build id: %w", err)
-		ReportCriticalError(ctx, err)
-
-		return
-	}
-
-	envID := c.PostForm("envID")
 	if envID == "" {
 		envID = utils.GenerateID()
 		SetAttributes(ctx, attribute.String("env.id", envID))
@@ -160,22 +182,16 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		ReportEvent(ctx, "started updating environment")
 	}
 
-	dockerfile := c.PostForm("dockerfile")
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
 			trace.ContextWithSpanContext(a.Ctx, span.SpanContext()),
 			"background-build-env",
 		)
 
-		a.buildEnv(buildContext, teamID, envID, buildID, dockerfile, fileContent)
+		a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties)
 
 		childSpan.End()
 	}()
-
-	a.IdentifyAnalyticsTeam(teamID)
-	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
-	a.CreateAnalyticsUserEvent(userID, teamID, "created environment", properties.
-		Set("environment", envID))
 
 	result := &api.Environment{
 		EnvID:   envID,
