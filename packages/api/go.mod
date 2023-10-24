@@ -14,10 +14,10 @@ require (
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/nomad/api v0.0.0-20230929073114-b44cef0e66fa
 	github.com/jellydator/ttlcache/v3 v3.1.0
+	github.com/lib/pq v1.10.6
 	github.com/lightstep/otel-launcher-go v1.10.1
 	github.com/oapi-codegen/runtime v1.0.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
-	github.com/volatiletech/sqlboiler/v4 v4.15.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.34.0
 	go.opentelemetry.io/otel v1.9.0
 	go.opentelemetry.io/otel/trace v1.9.0
@@ -34,7 +34,6 @@ require (
 	github.com/bytedance/sonic v1.10.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
-	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -46,13 +45,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/hcl/v2 v2.13.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
-	github.com/lib/pq v1.10.6 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
-	github.com/spf13/cast v1.5.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/volatiletech/inflect v0.0.1 // indirect
-	github.com/volatiletech/strmangle v0.0.5 // indirect
 	github.com/zclconf/go-cty v1.8.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
