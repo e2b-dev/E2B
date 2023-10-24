@@ -18,6 +18,7 @@ import (
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
