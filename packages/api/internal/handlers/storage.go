@@ -9,6 +9,8 @@ import (
 	"cloud.google.com/go/storage"
 )
 
+const streamFileUploadTimeout = 50 * time.Second
+
 type cloudStorage struct {
 	client  *storage.Client
 	context context.Context
@@ -17,7 +19,7 @@ type cloudStorage struct {
 
 // streamFileUpload uploads an object via a stream and returns the path to the file.
 func (cs *cloudStorage) streamFileUpload(name string, content io.Reader) (*string, error) {
-	ctx, cancel := context.WithTimeout(cs.context, time.Second*50)
+	ctx, cancel := context.WithTimeout(cs.context, streamFileUploadTimeout)
 	defer cancel()
 
 	// Upload an object with storage.Writer.

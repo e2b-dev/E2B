@@ -2,9 +2,11 @@ package db
 
 import (
 	"fmt"
+
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
+
 	"github.com/google/uuid"
 )
 
@@ -52,7 +54,6 @@ func (db *DB) GetEnv(envID string, teamID string) (result *api.Environment, err 
 	}
 
 	dbEnv, err := db.Client.Env.Query().Where(env.Or(env.ID(envID), env.Public(true)), env.TeamID(id)).Only(db.ctx)
-
 	if err != nil {
 		return nil, ErrEnvNotFound
 	}

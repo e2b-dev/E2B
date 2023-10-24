@@ -8,13 +8,12 @@ import (
 	"os"
 	"time"
 
-	"cloud.google.com/go/storage"
-
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/db"
 	"github.com/e2b-dev/infra/packages/api/internal/nomad"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
 
+	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"

@@ -65,10 +65,10 @@ func (n *NomadClient) BuildEnvJob(
 		JobName                    string
 		TaskName                   string
 		EnvsDisk                   string
+		GoogleServiceAccountBase64 string
 		VCpuCount                  int
 		MemoryMB                   int
 		DiskSizeMB                 int
-		GoogleServiceAccountBase64 string
 	}{
 		APISecret:                  apiSecret,
 		BuildID:                    buildID,

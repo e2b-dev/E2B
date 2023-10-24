@@ -20,10 +20,8 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-
-	"go.opentelemetry.io/otel"
-
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"

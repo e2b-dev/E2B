@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
-	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/getkin/kin-openapi/openapi3filter"
 )
 

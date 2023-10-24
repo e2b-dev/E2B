@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/posthog/posthog-go"
 	"io"
 	"net/http"
 	"strings"
@@ -12,8 +11,10 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-uuid"
+	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -27,7 +28,9 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 	defer childSpan.End()
 
 	var err error
+
 	startTime := time.Now()
+
 	defer func() {
 		a.CreateAnalyticsUserEvent(userID, teamID, "built environment", posthogProperties.
 			Set("environment", envID).
@@ -55,6 +58,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 			err = fmt.Errorf("error when setting build done in logs: %w", err)
 			ReportCriticalError(childCtx, err)
 		}
+
 		return
 	}
 
@@ -284,6 +288,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		BuildID: buildID,
 		Status:  &dockerBuild.Status,
 	}
+
 	ReportEvent(ctx, "got environment build")
 
 	a.IdentifyAnalyticsTeam(teamID)

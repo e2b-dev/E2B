@@ -1,13 +1,14 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"time"
 )
 
 type TeamApiKey struct {
@@ -23,6 +24,7 @@ func (TeamApiKey) Fields() []ent.Field {
 		field.UUID("team_id", uuid.UUID{}),
 	}
 }
+
 func (TeamApiKey) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("team", Team.Type).Unique().Required().
@@ -30,6 +32,7 @@ func (TeamApiKey) Edges() []ent.Edge {
 			Field("team_id"),
 	}
 }
+
 func (TeamApiKey) Annotations() []schema.Annotation {
 	return nil
 }

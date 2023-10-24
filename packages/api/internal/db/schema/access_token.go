@@ -21,6 +21,7 @@ func (AccessToken) Fields() []ent.Field {
 		),
 	}
 }
+
 func (AccessToken) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("users", User.Type),

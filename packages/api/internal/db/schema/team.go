@@ -1,12 +1,13 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"time"
 )
 
 type Team struct {
@@ -24,6 +25,7 @@ func (Team) Fields() []ent.Field {
 		field.Bool("is_blocked"),
 	}
 }
+
 func (Team) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("users", User.Type).Through("users_teams", UsersTeams.Type),

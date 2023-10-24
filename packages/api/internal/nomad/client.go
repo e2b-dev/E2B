@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+
 	"github.com/hashicorp/nomad/api"
 )
 

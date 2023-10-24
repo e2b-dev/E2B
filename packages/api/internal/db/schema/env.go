@@ -1,13 +1,14 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"time"
 )
 
 type Env struct {
@@ -29,9 +30,11 @@ func (Env) Fields() []ent.Field {
 		field.Int("build_count").Default(1),
 	}
 }
+
 func (Env) Edges() []ent.Edge {
 	return []ent.Edge{edge.To("team", Team.Type)}
 }
+
 func (Env) Annotations() []schema.Annotation {
 	return nil
 }

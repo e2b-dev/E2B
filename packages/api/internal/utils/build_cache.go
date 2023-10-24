@@ -2,15 +2,16 @@ package utils
 
 import (
 	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"sync"
 	"time"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
 
 	"github.com/jellydator/ttlcache/v3"
 )
 
 const (
-	logsExpiration = time.Second * 60 * 5 // 5 minutes
+	logsExpiration = time.Minute * 5 // 5 minutes
 )
 
 type Build struct {
@@ -40,6 +41,7 @@ func (c *BuildCache) get(envID string, buildID string) (Build, error) {
 		if item.Value().BuildID != buildID {
 			return Build{}, fmt.Errorf("received logs for another build %s env %s", buildID, envID)
 		}
+
 		return item.Value(), nil
 	}
 
@@ -117,7 +119,6 @@ func (c *BuildCache) SetDone(envID string, buildID string, status api.Environmen
 	defer c.mutex.Unlock()
 
 	item, err := c.get(envID, buildID)
-
 	if err != nil {
 		return fmt.Errorf("build %s not found in cache: %w", buildID, err)
 	}

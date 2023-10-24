@@ -2,12 +2,14 @@ package db
 
 import (
 	"context"
+	"fmt"
+	"os"
+
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
+
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
-	"fmt"
-	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	_ "github.com/lib/pq"
-	"os"
 )
 
 type DB struct {

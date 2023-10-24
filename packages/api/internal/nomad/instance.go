@@ -11,12 +11,12 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
+
 	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
 )
 
 const (
