@@ -248,6 +248,8 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	// 	Name: r.dockerTag(),
 	// })
 
+	// CHECK: Should we use container exec instead of creating a container with a CMD script that will exit?
+
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
 		Image:      r.dockerTag(),
 		Entrypoint: []string{"/bin/bash", "-c"},
