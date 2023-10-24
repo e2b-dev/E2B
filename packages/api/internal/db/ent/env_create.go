@@ -39,6 +39,20 @@ func (ec *EnvCreate) SetNillableCreatedAt(t *time.Time) *EnvCreate {
 	return ec
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (ec *EnvCreate) SetUpdatedAt(t time.Time) *EnvCreate {
+	ec.mutation.SetUpdatedAt(t)
+	return ec
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableUpdatedAt(t *time.Time) *EnvCreate {
+	if t != nil {
+		ec.SetUpdatedAt(*t)
+	}
+	return ec
+}
+
 // SetTeamID sets the "team_id" field.
 func (ec *EnvCreate) SetTeamID(u uuid.UUID) *EnvCreate {
 	ec.mutation.SetTeamID(u)
@@ -60,6 +74,20 @@ func (ec *EnvCreate) SetPublic(b bool) *EnvCreate {
 // SetBuildID sets the "build_id" field.
 func (ec *EnvCreate) SetBuildID(u uuid.UUID) *EnvCreate {
 	ec.mutation.SetBuildID(u)
+	return ec
+}
+
+// SetBuildCount sets the "build_count" field.
+func (ec *EnvCreate) SetBuildCount(i int) *EnvCreate {
+	ec.mutation.SetBuildCount(i)
+	return ec
+}
+
+// SetNillableBuildCount sets the "build_count" field if the given value is not nil.
+func (ec *EnvCreate) SetNillableBuildCount(i *int) *EnvCreate {
+	if i != nil {
+		ec.SetBuildCount(*i)
+	}
 	return ec
 }
 
@@ -123,12 +151,23 @@ func (ec *EnvCreate) defaults() {
 		v := env.DefaultCreatedAt()
 		ec.mutation.SetCreatedAt(v)
 	}
+	if _, ok := ec.mutation.UpdatedAt(); !ok {
+		v := env.DefaultUpdatedAt()
+		ec.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := ec.mutation.BuildCount(); !ok {
+		v := env.DefaultBuildCount
+		ec.mutation.SetBuildCount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (ec *EnvCreate) check() error {
 	if _, ok := ec.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Env.created_at"`)}
+	}
+	if _, ok := ec.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Env.updated_at"`)}
 	}
 	if _, ok := ec.mutation.TeamID(); !ok {
 		return &ValidationError{Name: "team_id", err: errors.New(`ent: missing required field "Env.team_id"`)}
@@ -141,6 +180,9 @@ func (ec *EnvCreate) check() error {
 	}
 	if _, ok := ec.mutation.BuildID(); !ok {
 		return &ValidationError{Name: "build_id", err: errors.New(`ent: missing required field "Env.build_id"`)}
+	}
+	if _, ok := ec.mutation.BuildCount(); !ok {
+		return &ValidationError{Name: "build_count", err: errors.New(`ent: missing required field "Env.build_count"`)}
 	}
 	return nil
 }
@@ -183,6 +225,10 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 		_spec.SetField(env.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
+	if value, ok := ec.mutation.UpdatedAt(); ok {
+		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
 	if value, ok := ec.mutation.TeamID(); ok {
 		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)
 		_node.TeamID = value
@@ -198,6 +244,10 @@ func (ec *EnvCreate) createSpec() (*Env, *sqlgraph.CreateSpec) {
 	if value, ok := ec.mutation.BuildID(); ok {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
 		_node.BuildID = value
+	}
+	if value, ok := ec.mutation.BuildCount(); ok {
+		_spec.SetField(env.FieldBuildCount, field.TypeInt, value)
+		_node.BuildCount = value
 	}
 	if nodes := ec.mutation.TeamIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -268,6 +318,18 @@ type (
 	}
 )
 
+// SetUpdatedAt sets the "updated_at" field.
+func (u *EnvUpsert) SetUpdatedAt(v time.Time) *EnvUpsert {
+	u.Set(env.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateUpdatedAt() *EnvUpsert {
+	u.SetExcluded(env.FieldUpdatedAt)
+	return u
+}
+
 // SetTeamID sets the "team_id" field.
 func (u *EnvUpsert) SetTeamID(v uuid.UUID) *EnvUpsert {
 	u.Set(env.FieldTeamID, v)
@@ -313,6 +375,24 @@ func (u *EnvUpsert) SetBuildID(v uuid.UUID) *EnvUpsert {
 // UpdateBuildID sets the "build_id" field to the value that was provided on create.
 func (u *EnvUpsert) UpdateBuildID() *EnvUpsert {
 	u.SetExcluded(env.FieldBuildID)
+	return u
+}
+
+// SetBuildCount sets the "build_count" field.
+func (u *EnvUpsert) SetBuildCount(v int) *EnvUpsert {
+	u.Set(env.FieldBuildCount, v)
+	return u
+}
+
+// UpdateBuildCount sets the "build_count" field to the value that was provided on create.
+func (u *EnvUpsert) UpdateBuildCount() *EnvUpsert {
+	u.SetExcluded(env.FieldBuildCount)
+	return u
+}
+
+// AddBuildCount adds v to the "build_count" field.
+func (u *EnvUpsert) AddBuildCount(v int) *EnvUpsert {
+	u.Add(env.FieldBuildCount, v)
 	return u
 }
 
@@ -365,6 +445,20 @@ func (u *EnvUpsertOne) Update(set func(*EnvUpsert)) *EnvUpsertOne {
 		set(&EnvUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *EnvUpsertOne) SetUpdatedAt(v time.Time) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateUpdatedAt() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateUpdatedAt()
+	})
 }
 
 // SetTeamID sets the "team_id" field.
@@ -420,6 +514,27 @@ func (u *EnvUpsertOne) SetBuildID(v uuid.UUID) *EnvUpsertOne {
 func (u *EnvUpsertOne) UpdateBuildID() *EnvUpsertOne {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateBuildID()
+	})
+}
+
+// SetBuildCount sets the "build_count" field.
+func (u *EnvUpsertOne) SetBuildCount(v int) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetBuildCount(v)
+	})
+}
+
+// AddBuildCount adds v to the "build_count" field.
+func (u *EnvUpsertOne) AddBuildCount(v int) *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddBuildCount(v)
+	})
+}
+
+// UpdateBuildCount sets the "build_count" field to the value that was provided on create.
+func (u *EnvUpsertOne) UpdateBuildCount() *EnvUpsertOne {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateBuildCount()
 	})
 }
 
@@ -641,6 +756,20 @@ func (u *EnvUpsertBulk) Update(set func(*EnvUpsert)) *EnvUpsertBulk {
 	return u
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (u *EnvUpsertBulk) SetUpdatedAt(v time.Time) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateUpdatedAt() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
 // SetTeamID sets the "team_id" field.
 func (u *EnvUpsertBulk) SetTeamID(v uuid.UUID) *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
@@ -694,6 +823,27 @@ func (u *EnvUpsertBulk) SetBuildID(v uuid.UUID) *EnvUpsertBulk {
 func (u *EnvUpsertBulk) UpdateBuildID() *EnvUpsertBulk {
 	return u.Update(func(s *EnvUpsert) {
 		s.UpdateBuildID()
+	})
+}
+
+// SetBuildCount sets the "build_count" field.
+func (u *EnvUpsertBulk) SetBuildCount(v int) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.SetBuildCount(v)
+	})
+}
+
+// AddBuildCount adds v to the "build_count" field.
+func (u *EnvUpsertBulk) AddBuildCount(v int) *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.AddBuildCount(v)
+	})
+}
+
+// UpdateBuildCount sets the "build_count" field to the value that was provided on create.
+func (u *EnvUpsertBulk) UpdateBuildCount() *EnvUpsertBulk {
+	return u.Update(func(s *EnvUpsert) {
+		s.UpdateBuildCount()
 	})
 }
 

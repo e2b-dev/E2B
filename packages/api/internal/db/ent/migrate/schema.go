@@ -24,10 +24,12 @@ var (
 	EnvsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "team_id", Type: field.TypeUUID},
 		{Name: "dockerfile", Type: field.TypeString},
 		{Name: "public", Type: field.TypeBool},
 		{Name: "build_id", Type: field.TypeUUID},
+		{Name: "build_count", Type: field.TypeInt, Default: 1},
 	}
 	// EnvsTable holds the schema information for the "envs" table.
 	EnvsTable = &schema.Table{

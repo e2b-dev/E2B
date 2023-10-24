@@ -21,10 +21,12 @@ func (Env) Fields() []ent.Field {
 			Annotations(
 				entsql.Default("CURRENT_TIMESTAMP"),
 			),
+		field.Time("updated_at").Default(time.Now),
 		field.UUID("team_id", uuid.UUID{}),
 		field.String("dockerfile"),
 		field.Bool("public"),
 		field.UUID("build_id", uuid.UUID{}),
+		field.Int("build_count").Default(1),
 	}
 }
 func (Env) Edges() []ent.Edge {

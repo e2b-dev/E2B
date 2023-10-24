@@ -21,6 +21,14 @@ func init() {
 	envDescCreatedAt := envFields[1].Descriptor()
 	// env.DefaultCreatedAt holds the default value on creation for the created_at field.
 	env.DefaultCreatedAt = envDescCreatedAt.Default.(func() time.Time)
+	// envDescUpdatedAt is the schema descriptor for updated_at field.
+	envDescUpdatedAt := envFields[2].Descriptor()
+	// env.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	env.DefaultUpdatedAt = envDescUpdatedAt.Default.(func() time.Time)
+	// envDescBuildCount is the schema descriptor for build_count field.
+	envDescBuildCount := envFields[7].Descriptor()
+	// env.DefaultBuildCount holds the default value on creation for the build_count field.
+	env.DefaultBuildCount = envDescBuildCount.Default.(int)
 	teamFields := schema.Team{}.Fields()
 	_ = teamFields
 	// teamDescCreatedAt is the schema descriptor for created_at field.

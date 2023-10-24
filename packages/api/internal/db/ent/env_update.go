@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -30,6 +31,20 @@ func (eu *EnvUpdate) Where(ps ...predicate.Env) *EnvUpdate {
 	return eu
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (eu *EnvUpdate) SetUpdatedAt(t time.Time) *EnvUpdate {
+	eu.mutation.SetUpdatedAt(t)
+	return eu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableUpdatedAt(t *time.Time) *EnvUpdate {
+	if t != nil {
+		eu.SetUpdatedAt(*t)
+	}
+	return eu
+}
+
 // SetTeamID sets the "team_id" field.
 func (eu *EnvUpdate) SetTeamID(u uuid.UUID) *EnvUpdate {
 	eu.mutation.SetTeamID(u)
@@ -51,6 +66,27 @@ func (eu *EnvUpdate) SetPublic(b bool) *EnvUpdate {
 // SetBuildID sets the "build_id" field.
 func (eu *EnvUpdate) SetBuildID(u uuid.UUID) *EnvUpdate {
 	eu.mutation.SetBuildID(u)
+	return eu
+}
+
+// SetBuildCount sets the "build_count" field.
+func (eu *EnvUpdate) SetBuildCount(i int) *EnvUpdate {
+	eu.mutation.ResetBuildCount()
+	eu.mutation.SetBuildCount(i)
+	return eu
+}
+
+// SetNillableBuildCount sets the "build_count" field if the given value is not nil.
+func (eu *EnvUpdate) SetNillableBuildCount(i *int) *EnvUpdate {
+	if i != nil {
+		eu.SetBuildCount(*i)
+	}
+	return eu
+}
+
+// AddBuildCount adds i to the "build_count" field.
+func (eu *EnvUpdate) AddBuildCount(i int) *EnvUpdate {
+	eu.mutation.AddBuildCount(i)
 	return eu
 }
 
@@ -131,6 +167,9 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := eu.mutation.UpdatedAt(); ok {
+		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := eu.mutation.TeamID(); ok {
 		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)
 	}
@@ -142,6 +181,12 @@ func (eu *EnvUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := eu.mutation.BuildID(); ok {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
+	}
+	if value, ok := eu.mutation.BuildCount(); ok {
+		_spec.SetField(env.FieldBuildCount, field.TypeInt, value)
+	}
+	if value, ok := eu.mutation.AddedBuildCount(); ok {
+		_spec.AddField(env.FieldBuildCount, field.TypeInt, value)
 	}
 	if eu.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -213,6 +258,20 @@ type EnvUpdateOne struct {
 	mutation *EnvMutation
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (euo *EnvUpdateOne) SetUpdatedAt(t time.Time) *EnvUpdateOne {
+	euo.mutation.SetUpdatedAt(t)
+	return euo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableUpdatedAt(t *time.Time) *EnvUpdateOne {
+	if t != nil {
+		euo.SetUpdatedAt(*t)
+	}
+	return euo
+}
+
 // SetTeamID sets the "team_id" field.
 func (euo *EnvUpdateOne) SetTeamID(u uuid.UUID) *EnvUpdateOne {
 	euo.mutation.SetTeamID(u)
@@ -234,6 +293,27 @@ func (euo *EnvUpdateOne) SetPublic(b bool) *EnvUpdateOne {
 // SetBuildID sets the "build_id" field.
 func (euo *EnvUpdateOne) SetBuildID(u uuid.UUID) *EnvUpdateOne {
 	euo.mutation.SetBuildID(u)
+	return euo
+}
+
+// SetBuildCount sets the "build_count" field.
+func (euo *EnvUpdateOne) SetBuildCount(i int) *EnvUpdateOne {
+	euo.mutation.ResetBuildCount()
+	euo.mutation.SetBuildCount(i)
+	return euo
+}
+
+// SetNillableBuildCount sets the "build_count" field if the given value is not nil.
+func (euo *EnvUpdateOne) SetNillableBuildCount(i *int) *EnvUpdateOne {
+	if i != nil {
+		euo.SetBuildCount(*i)
+	}
+	return euo
+}
+
+// AddBuildCount adds i to the "build_count" field.
+func (euo *EnvUpdateOne) AddBuildCount(i int) *EnvUpdateOne {
+	euo.mutation.AddBuildCount(i)
 	return euo
 }
 
@@ -344,6 +424,9 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 			}
 		}
 	}
+	if value, ok := euo.mutation.UpdatedAt(); ok {
+		_spec.SetField(env.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := euo.mutation.TeamID(); ok {
 		_spec.SetField(env.FieldTeamID, field.TypeUUID, value)
 	}
@@ -355,6 +438,12 @@ func (euo *EnvUpdateOne) sqlSave(ctx context.Context) (_node *Env, err error) {
 	}
 	if value, ok := euo.mutation.BuildID(); ok {
 		_spec.SetField(env.FieldBuildID, field.TypeUUID, value)
+	}
+	if value, ok := euo.mutation.BuildCount(); ok {
+		_spec.SetField(env.FieldBuildCount, field.TypeInt, value)
+	}
+	if value, ok := euo.mutation.AddedBuildCount(); ok {
+		_spec.AddField(env.FieldBuildCount, field.TypeInt, value)
 	}
 	if euo.mutation.TeamCleared() {
 		edge := &sqlgraph.EdgeSpec{

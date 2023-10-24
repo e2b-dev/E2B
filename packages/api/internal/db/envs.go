@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/db/ent"
 	"github.com/e2b-dev/infra/packages/api/internal/db/ent/env"
 	"github.com/google/uuid"
 )
@@ -76,7 +77,10 @@ func (db *DB) UpsertEnv(teamID, envID, buildID, dockerfile string) error {
 
 	err = db.Client.Env.Create().SetID(envID).SetBuildID(buildUUID).SetTeamID(teamUUID).SetDockerfile(dockerfile).SetPublic(false).
 		OnConflictColumns(env.FieldID).
-		UpdateBuildID().UpdateDockerfile().
+		UpdateBuildID().UpdateDockerfile().UpdateUpdatedAt().
+		Update(func(e *ent.EnvUpsert) {
+			e.AddBuildCount(1)
+		}).
 		Exec(db.ctx)
 
 	if err != nil {

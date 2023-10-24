@@ -20,6 +20,8 @@ type Env struct {
 	ID string `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// TeamID holds the value of the "team_id" field.
 	TeamID uuid.UUID `json:"team_id,omitempty"`
 	// Dockerfile holds the value of the "dockerfile" field.
@@ -28,6 +30,8 @@ type Env struct {
 	Public bool `json:"public,omitempty"`
 	// BuildID holds the value of the "build_id" field.
 	BuildID uuid.UUID `json:"build_id,omitempty"`
+	// BuildCount holds the value of the "build_count" field.
+	BuildCount int `json:"build_count,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EnvQuery when eager-loading is set.
 	Edges        EnvEdges `json:"edges"`
@@ -59,9 +63,11 @@ func (*Env) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case env.FieldPublic:
 			values[i] = new(sql.NullBool)
+		case env.FieldBuildCount:
+			values[i] = new(sql.NullInt64)
 		case env.FieldID, env.FieldDockerfile:
 			values[i] = new(sql.NullString)
-		case env.FieldCreatedAt:
+		case env.FieldCreatedAt, env.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case env.FieldTeamID, env.FieldBuildID:
 			values[i] = new(uuid.UUID)
@@ -92,6 +98,12 @@ func (e *Env) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				e.CreatedAt = value.Time
 			}
+		case env.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				e.UpdatedAt = value.Time
+			}
 		case env.FieldTeamID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field team_id", values[i])
@@ -115,6 +127,12 @@ func (e *Env) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field build_id", values[i])
 			} else if value != nil {
 				e.BuildID = *value
+			}
+		case env.FieldBuildCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field build_count", values[i])
+			} else if value.Valid {
+				e.BuildCount = int(value.Int64)
 			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
@@ -160,6 +178,9 @@ func (e *Env) String() string {
 	builder.WriteString("created_at=")
 	builder.WriteString(e.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(e.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("team_id=")
 	builder.WriteString(fmt.Sprintf("%v", e.TeamID))
 	builder.WriteString(", ")
@@ -171,6 +192,9 @@ func (e *Env) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("build_id=")
 	builder.WriteString(fmt.Sprintf("%v", e.BuildID))
+	builder.WriteString(", ")
+	builder.WriteString("build_count=")
+	builder.WriteString(fmt.Sprintf("%v", e.BuildCount))
 	builder.WriteByte(')')
 	return builder.String()
 }
