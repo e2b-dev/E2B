@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/go-hclog"

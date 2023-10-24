@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	API_HOST      = "http://localhost:50001"
+	APIHost       = "http://localhost:50001"
 	flushInterval = time.Millisecond * 200
 )
 
@@ -46,19 +46,15 @@ func (w BuildLogsWriter) sendLogsAPICall(logs []string) error {
 		return err
 	}
 
-	response, err := w.httpClient.Post(API_HOST+"/envs/"+w.envID+"/builds/"+w.buildID+"/logs", "application/json", bytes.NewBuffer(jsonData))
-
+	response, err := w.httpClient.Post(APIHost+"/envs/"+w.envID+"/builds/"+w.buildID+"/logs", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		err = fmt.Errorf("error posting logs to API: %w", err)
 
 		return err
 	}
-	defer response.Body.Close()
 
-	if err != nil {
-		err = fmt.Errorf("error posting logs to API: %w", err)
-		return err
-	}
+	response.Body.Close()
+
 	return nil
 }
 

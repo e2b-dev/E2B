@@ -2,17 +2,15 @@ package env
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	_ "embed"
-
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )

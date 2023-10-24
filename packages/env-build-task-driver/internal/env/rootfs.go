@@ -11,10 +11,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/docker/docker/api/types/registry"
-
-	"golang.org/x/sys/unix"
-
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -24,6 +20,7 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sys/unix"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
@@ -49,13 +46,14 @@ type MultiWriter struct {
 	writers []io.Writer
 }
 
-func (mw *MultiWriter) Write(p []byte) (n int, err error) {
+func (mw *MultiWriter) Write(p []byte) (int, error) {
 	for _, writer := range mw.writers {
 		_, err := writer.Write(p)
 		if err != nil {
 			return 0, err
 		}
 	}
+
 	return len(p), nil
 }
 
@@ -74,6 +72,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		errMsg := fmt.Errorf("error building docker image %w", err)
 
 		rootfs.cleanupDockerImage(childCtx, tracer)
+
 		return nil, errMsg
 	}
 
@@ -82,6 +81,7 @@ func NewRootfs(ctx context.Context, tracer trace.Tracer, env *Env, docker *clien
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
 
 		rootfs.cleanupDockerImage(childCtx, tracer)
+
 		return nil, errMsg
 	}
 
@@ -182,11 +182,14 @@ func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error
 		Username: "_json_key_base64",
 		Password: r.env.GoogleServiceAccountBase64,
 	}
+
 	authConfigBytes, err := json.Marshal(authConfig)
 	if err != nil {
-		fmt.Println("Error marshaling auth config:", err)
-		return err
+		errMsg := fmt.Errorf("error marshaling auth config %w", err)
+
+		return errMsg
 	}
+
 	authConfigBase64 := base64.URLEncoding.EncodeToString(authConfigBytes)
 
 	logs, err := r.client.ImagePush(childCtx, r.dockerTag(), types.ImagePushOptions{

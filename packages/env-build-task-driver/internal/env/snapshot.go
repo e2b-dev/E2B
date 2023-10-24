@@ -29,9 +29,8 @@ const (
 	fcIfaceID  = "eth0"
 	tmpDirPath = "/tmp"
 
-
 	socketReadyCheckInterval = 100 * time.Millisecond
-	socketWaitTimeout = 2 * time.Second
+	socketWaitTimeout        = 2 * time.Second
 
 	waitTimeForFCConfig = 500 * time.Millisecond
 )

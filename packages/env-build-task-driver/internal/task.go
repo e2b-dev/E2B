@@ -8,6 +8,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"
 	"github.com/hashicorp/nomad/plugins/shared/hclspec"
@@ -135,7 +136,15 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		defer childBuildSpan.End()
 
 		h.run(buildContext, d.tracer, d.docker, d.legacyDockerClient)
-		writer.Close()
+
+		err := writer.Close()
+		if err != nil {
+			errMsg := fmt.Errorf("error closing build logs writer: %w", err)
+			telemetry.ReportError(buildContext, errMsg)
+		} else {
+			telemetry.ReportEvent(buildContext, "build logs writer closed")
+		}
+
 		<-writer.Done
 	}()
 

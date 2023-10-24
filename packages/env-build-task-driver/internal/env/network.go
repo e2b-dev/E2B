@@ -37,6 +37,7 @@ func NewFCNetwork(ctx context.Context, tracer trace.Tracer, env *Env) (*FCNetwor
 	err := network.setup(childCtx, tracer)
 	if err != nil {
 		errMsg := fmt.Errorf("error setting up network %w", err)
+
 		network.Cleanup(childCtx, tracer)
 
 		return nil, errMsg

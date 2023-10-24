@@ -3,17 +3,15 @@ package main
 import (
 	"flag"
 	"net/http"
+	_ "net/http/pprof"
 	"time"
 
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
+	"github.com/lightstep/otel-launcher-go/launcher"
 
 	driver "github.com/e2b-dev/infra/packages/env-build-task-driver/internal"
 	env "github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
-
-	_ "net/http/pprof"
-
-	"github.com/lightstep/otel-launcher-go/launcher"
 )
 
 const (
