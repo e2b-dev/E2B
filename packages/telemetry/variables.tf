@@ -2,7 +2,19 @@ variable "gcp_zone" {
   type = string
 }
 
-variable "lightstep_api_key" {
+variable "grafana_traces_endpoint" {
+  type = string
+}
+
+variable "grafana_metrics_endpoint" {
+  type = string
+}
+
+variable "grafana_logs_endpoint" {
+  type = string
+}
+
+variable "grafana_api_key" {
   type = string
 }
 

@@ -87,10 +87,6 @@ provider "nomad" {
   secret_id = data.google_secret_manager_secret_version.nomad_acl_token.secret_data
 }
 
-data "google_secret_manager_secret_version" "lightstep_api_key" {
-  secret = "lightstep-api-key"
-}
-
 data "google_secret_manager_secret_version" "betterstack_logs_api_key" {
   secret = "betterstack-logs-api-key"
 }
@@ -114,14 +110,37 @@ resource "consul_acl_token_policy_attachment" "attachment" {
   policy   = consul_acl_policy.agent.name
 }
 
+data "google_secret_manager_secret_version" "grafana_api_key" {
+  secret = "grafana-api-key"
+}
+
+data "google_secret_manager_secret_version" "grafana_traces_endpoint" {
+  secret = "grafana-traces-endpoint"
+}
+
+data "google_secret_manager_secret_version" "grafana_logs_endpoint" {
+  secret = "grafana-logs-endpoint"
+}
+
+data "google_secret_manager_secret_version" "grafana_metrics_endpoint" {
+  secret = "grafana-metrics-endpoint"
+}
+
 module "telemetry" {
   source = "./packages/telemetry"
 
-  logs_health_proxy_port   = var.logs_health_proxy_port
-  logs_proxy_port          = var.logs_proxy_port
-  lightstep_api_key        = data.google_secret_manager_secret_version.lightstep_api_key.secret_data
+  logs_health_proxy_port = var.logs_health_proxy_port
+  logs_proxy_port        = var.logs_proxy_port
+
+  gcp_zone = var.gcp_zone
+
   betterstack_logs_api_key = data.google_secret_manager_secret_version.betterstack_logs_api_key.secret_data
-  gcp_zone                 = var.gcp_zone
+
+  grafana_traces_endpoint  = data.google_secret_manager_secret_version.grafana_traces_endpoint.secret_data
+  grafana_logs_endpoint    = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
+  grafana_metrics_endpoint = data.google_secret_manager_secret_version.grafana_metrics_endpoint.secret_data
+
+  grafana_api_key = data.google_secret_manager_secret_version.grafana_api_key.secret_data
 }
 
 module "session_proxy" {

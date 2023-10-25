@@ -2,12 +2,24 @@ variable "gcp_zone" {
   type = string
 }
 
-variable "lightstep_api_key" {
+variable "grafana_api_key" {
+  type = string
+}
+
+variable "grafana_logs_endpoint" {
+  type = string
+}
+
+variable "grafana_traces_endpoint" {
+  type = string
+}
+
+variable "grafana_metrics_endpoint" {
   type = string
 }
 
 variables {
-  otel_image = "otel/opentelemetry-collector-contrib:0.70.0"
+  otel_image = "otel/opentelemetry-collector-contrib:0.88.0"
 }
 
 job "otel-collector" {
@@ -74,18 +86,17 @@ job "otel-collector" {
 
       template {
         data = <<EOF
-# Ops agent uses some additional otel receivers like file, syslog, tcp.
 receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: '0.0.0.0:4317'
+        endpoint: "0.0.0.0:4317"
   nginx/client-proxy:
-    endpoint: 'http://localhost:3001/status'
-    collection_interval: 10s
+    endpoint: "http://localhost:3001/status"
+    collection_interval: 60s
   nginx/session-proxy:
-    endpoint: 'http://localhost:3004/status'
-    collection_interval: 10s
+    endpoint: "http://localhost:3004/status"
+    collection_interval: 60s
   hostmetrics:
     collection_interval: 30s
     scrapers:
@@ -101,22 +112,42 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: nomad
+        - job_name: integrations/nomad
           scrape_interval: 10s
           scrape_timeout: 5s
-          metrics_path: '/v1/metrics'
+          metrics_path: "/v1/metrics"
           params:
-            format: ['prometheus']
+            format: ["prometheus"]
           static_configs:
-            - targets: ['localhost:4646']
-        - job_name: consul
-          scrape_interval: 10s
+            - targets:
+                [
+                  "nomad1:4646",
+                  "nomad2:4646",
+                  "nomad3:4646",
+                  "nomad-client1:4646",
+                  "localhost:4646",
+                ]
+          metric_relabel_configs:
+            - action: keep
+              regex: nomad_client_allocated_cpu|nomad_client_allocated_disk|nomad_client_allocated_memory|nomad_client_allocs_cpu_total_percent|nomad_client_allocs_cpu_total_ticks|nomad_client_allocs_memory_cache|nomad_client_allocs_memory_rss|nomad_client_host_cpu_idle|nomad_client_host_disk_available|nomad_client_host_disk_inodes_percent|nomad_client_host_disk_size|nomad_client_host_memory_available|nomad_client_host_memory_free|nomad_client_host_memory_total|nomad_client_host_memory_used|nomad_client_unallocated_cpu|nomad_client_unallocated_disk|nomad_client_unallocated_memory|nomad_client_uptime
+              source_labels:
+                - __name__
+        - job_name: integrations/consul
+          scrape_interval: 60s
           scrape_timeout: 5s
-          metrics_path: '/v1/agent/metrics'
+          metrics_path: "/v1/agent/metrics"
           params:
-            format: ['prometheus']
+            format: ["prometheus"]
           static_configs:
-            - targets: ['localhost:8500']
+            - targets: ["localhost:8500"]
+          relabel_configs:
+            - replacement: "integrations/consul"
+              target_label: job
+          metric_relabel_configs:
+            - action: keep
+              regex: consul_raft_leader|consul_raft_leader_lastcontact_count|consul_raft_peers|consul_up
+              source_labels:
+                - __name__
 
 processors:
   attributes/session-proxy:
@@ -130,7 +161,6 @@ processors:
         value: client
         action: upsert
   batch:
-    timeout: 5s
   resourcedetection:
     detectors: [gcp]
   metricstransform:
@@ -146,66 +176,64 @@ processors:
         new_name: "binary"
 
 extensions:
+  bearertokenauth/grafana:
+    token: "${var.grafana_api_key}"
   health_check:
 
 exporters:
-  otlp/lightstep:
-    endpoint: ingest.lightstep.com:443
-    headers:
-      "lightstep-access-token": ${var.lightstep_api_key}
-  googlecloud:
-    # Google Cloud Monitoring returns an error if any of the points are invalid, but still accepts the valid points.
-    # Retrying successfully sent points is guaranteed to fail because the points were already written.
-    # This results in a loop of unnecessary retries.  For now, disable retry_on_failure.
-    retry_on_failure:
-      enabled: false
-    log:
-      default_log_name: opentelemetry.io/collector-exported-log
+  otlp/grafana_cloud_traces:
+    endpoint: "${var.grafana_traces_endpoint}"
+    auth:
+      authenticator: bearertokenauth/grafana
+
+  loki/grafana_cloud_logs:
+    endpoint: "${var.grafana_logs_endpoint}"
+    auth:
+      authenticator: bearertokenauth/grafana
+
+  prometheusremotewrite/grafana_cloud_metrics:
+    endpoint: "${var.grafana_metrics_endpoint}"
+    auth:
+      authenticator: bearertokenauth/grafana
+
 service:
-  extensions: [health_check]
-  telemetry:
-    logs:
-      level: debug
+  extensions:
+    - bearertokenauth/grafana
+    - health_check
   pipelines:
     metrics/client-proxy:
       receivers:
         - nginx/client-proxy
       processors: [attributes/client-proxy, batch]
       exporters:
-        - otlp/lightstep
+        - prometheusremotewrite/grafana_cloud_metrics
     metrics/session-proxy:
       receivers:
         - nginx/session-proxy
       processors: [attributes/session-proxy, batch]
       exporters:
-        - otlp/lightstep
-    # metrics/gcp:
-    #   receivers: 
-    #     - hostmetrics
-    #   processors: [resourcedetection, metricstransform, batch]
-    #   exporters:
-    #     - googlecloud
+        - prometheusremotewrite/grafana_cloud_metrics
     metrics:
-      receivers: 
+      receivers:
         - prometheus
         - hostmetrics
         - otlp
       processors: [batch]
       exporters:
-        - otlp/lightstep
+        - prometheusremotewrite/grafana_cloud_metrics
     traces:
       receivers:
         - otlp
       processors: [batch]
       exporters:
-        - otlp/lightstep
+        - otlp/grafana_cloud_traces
     logs:
       receivers:
         - otlp
       processors: [batch]
       exporters:
-        - otlp/lightstep
-    
+        - loki/grafana_cloud_logs
+
 EOF
 
         destination = "local/config/otel-collector-config.yaml"

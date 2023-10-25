@@ -4,8 +4,12 @@ resource "nomad_job" "otel-collector" {
   hcl2 {
     enabled = true
     vars = {
-      lightstep_api_key = var.lightstep_api_key
-      gcp_zone          = var.gcp_zone
+      grafana_traces_endpoint  = var.grafana_traces_endpoint
+      grafana_logs_endpoint    = var.grafana_logs_endpoint
+      grafana_metrics_endpoint = var.grafana_metrics_endpoint
+      grafana_api_key          = var.grafana_api_key
+
+      gcp_zone = var.gcp_zone
     }
   }
 }
