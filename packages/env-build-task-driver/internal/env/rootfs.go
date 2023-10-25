@@ -9,18 +9,17 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/Microsoft/hcsshim/ext4/tar2ext4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	docker "github.com/fsouza/go-dockerclient"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/sys/unix"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
 )
@@ -148,32 +147,6 @@ func (r *Rootfs) buildDockerImage(ctx context.Context, tracer trace.Tracer) erro
 	return nil
 }
 
-func (r *Rootfs) removeDockerOverlays(ctx context.Context, tracer trace.Tracer, overlay string) {
-	childCtx, childSpan := tracer.Start(ctx, "remove-docker-overlays")
-	defer childSpan.End()
-
-	// CHECK: What are all the dirs that we can delete in the overlay2 folder?
-	// CHECK: Where is the actually 500mb per container build coming from? Even after unmounting we should be able to find where the space is being used.
-
-	err := unix.Unmount(overlay, unix.MNT_DETACH)
-	if err != nil {
-		errMsg := fmt.Errorf("error unmounting %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	} else {
-		telemetry.ReportEvent(childCtx, "unmounted overlay")
-	}
-
-	folder := strings.TrimSuffix(overlay, "/merged")
-	err = os.RemoveAll(folder)
-
-	if err != nil {
-		errMsg := fmt.Errorf("error removing folder %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	} else {
-		telemetry.ReportEvent(childCtx, "removed overlay folder")
-	}
-}
-
 func (r *Rootfs) pushDockerImage(ctx context.Context, tracer trace.Tracer) error {
 	childCtx, childSpan := tracer.Start(ctx, "push-docker-image")
 	defer childSpan.End()
@@ -228,8 +201,8 @@ func (r *Rootfs) cleanupDockerImage(ctx context.Context, tracer trace.Tracer) {
 	defer childSpan.End()
 
 	_, err := r.client.ImageRemove(childCtx, r.dockerTag(), types.ImageRemoveOptions{
-		Force:         true,
-		PruneChildren: true,
+		Force:         false,
+		PruneChildren: false,
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error removing image %w", err)
@@ -247,18 +220,10 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	childCtx, childSpan := tracer.Start(ctx, "create-rootfs-file")
 	defer childSpan.End()
 
-	// CHECK: Try using the legacy client
-	// err := r.legacyClient.CreateContainer(docker.CreateContainerOptions{
-	// 	Name: r.dockerTag(),
-	// })
-
-	// CHECK: Should we use container exec instead of creating a container with a CMD script that will exit?
-
 	cont, err := r.client.ContainerCreate(childCtx, &container.Config{
-		Image:      r.dockerTag(),
-		Entrypoint: []string{"/bin/bash", "-c"},
-		User:       "root",
-		// CHECK: Could invoking a Cmd that always ends be a problem?
+		Image:        r.dockerTag(),
+		Entrypoint:   []string{"/bin/bash", "-c"},
+		User:         "root",
 		Cmd:          []string{r.env.ProvisionScript()},
 		Tty:          false,
 		AttachStdout: true,
@@ -273,12 +238,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	telemetry.ReportEvent(childCtx, "created container")
 
-	containerInfo, err := r.client.ContainerInspect(childCtx, cont.ID)
-	if err != nil {
-		errMsg := fmt.Errorf("error inspecting container %w", err)
-		telemetry.ReportError(childCtx, errMsg)
-	}
-
 	defer func() {
 		cleanupContext, cleanupSpan := tracer.Start(
 			trace.ContextWithSpanContext(context.Background(), childSpan.SpanContext()),
@@ -286,24 +245,11 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		)
 		defer cleanupSpan.End()
 
-		// CHECK: Should we try to stop the container?
-		// err = r.legacyClient.StopContainerWithContext(cont.ID, 0, cleanupContext)
-		// if err != nil {
-		// 	errMsg := fmt.Errorf("error stopping container %w", err)
-		// 	telemetry.ReportError(cleanupContext, errMsg)
-		// } else {
-		// 	telemetry.ReportEvent(cleanupContext, "stopped container")
-		// }
-
-		// CHECK: Can we prune containers?
-		// r.legacyClient.PruneContainers(docker.PruneContainersOptions{})
-
 		err = r.legacyClient.RemoveContainer(docker.RemoveContainerOptions{
 			ID:            cont.ID,
 			RemoveVolumes: true,
-			// CHECK: Should we not use the force here?
-			Force:   false,
-			Context: cleanupContext,
+			Force:         true,
+			Context:       cleanupContext,
 		})
 		if err != nil {
 			errMsg := fmt.Errorf("error removing container %w", err)
@@ -312,12 +258,35 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 			telemetry.ReportEvent(cleanupContext, "removed container")
 		}
 
-		// CHECK: Can we prune the build cache?
-		// r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
-		// })
+		// Move prunning to separate goroutine
+		cacheTimeout := filters.Arg("until", "12h")
 
-		// CHECK: Could using the docker buildkit be the problems when cleaning cache? Does the cache behaves differently?
-		r.removeDockerOverlays(cleanupContext, tracer, containerInfo.ContainerJSONBase.GraphDriver.Data["MergedDir"])
+		_, err = r.client.BuildCachePrune(cleanupContext, types.BuildCachePruneOptions{
+			Filters: filters.NewArgs(cacheTimeout),
+			All:     true,
+		})
+		if err != nil {
+			errMsg := fmt.Errorf("error pruning build cache %w", err)
+			telemetry.ReportError(cleanupContext, errMsg)
+		} else {
+			telemetry.ReportEvent(cleanupContext, "pruned build cache")
+		}
+
+		_, err = r.client.ImagesPrune(cleanupContext, filters.NewArgs(cacheTimeout))
+		if err != nil {
+			errMsg := fmt.Errorf("error pruning images %w", err)
+			telemetry.ReportError(cleanupContext, errMsg)
+		} else {
+			telemetry.ReportEvent(cleanupContext, "pruned images")
+		}
+
+		_, err = r.client.ContainersPrune(cleanupContext, filters.NewArgs(cacheTimeout))
+		if err != nil {
+			errMsg := fmt.Errorf("error pruning containers %w", err)
+			telemetry.ReportError(cleanupContext, errMsg)
+		} else {
+			telemetry.ReportEvent(cleanupContext, "pruned containers")
+		}
 	}()
 
 	telemetry.ReportEvent(childCtx, "created container")
@@ -367,8 +336,11 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 	}()
 
 	// Copy tar to the container
-	err = r.client.CopyToContainer(childCtx, cont.ID, "/", pr, types.CopyToContainerOptions{
-		AllowOverwriteDirWithFile: true,
+	err = r.legacyClient.UploadToContainer(cont.ID, docker.UploadToContainerOptions{
+		InputStream:          pr,
+		Path:                 "/",
+		Context:              childCtx,
+		NoOverwriteDirNonDir: false,
 	})
 	if err != nil {
 		errMsg := fmt.Errorf("error copying envd to container %w", err)
@@ -465,26 +437,6 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		return errMsg
 	}
 
-	containerReader, err := r.client.ContainerExport(childCtx, cont.ID)
-	if err != nil {
-		errMsg := fmt.Errorf("error copying from container %w", err)
-		telemetry.ReportCriticalError(childCtx, errMsg)
-
-		return errMsg
-	}
-
-	telemetry.ReportEvent(childCtx, "started copying from container")
-
-	defer func() {
-		containerErr := containerReader.Close()
-		if containerErr != nil {
-			errMsg := fmt.Errorf("error closing container reader %w", containerErr)
-			telemetry.ReportError(childCtx, errMsg)
-		} else {
-			telemetry.ReportEvent(childCtx, "closed container reader")
-		}
-	}()
-
 	rootfsFile, err := os.Create(r.env.tmpRootfsPath())
 	if err != nil {
 		errMsg := fmt.Errorf("error creating rootfs file %w", err)
@@ -505,9 +457,33 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 		}
 	}()
 
+	pr, pw = io.Pipe()
+
+	go func() {
+		err := r.legacyClient.DownloadFromContainer(cont.ID, docker.DownloadFromContainerOptions{
+			Context:      childCtx,
+			Path:         "/",
+			OutputStream: pw,
+		})
+		if err != nil {
+			errMsg := fmt.Errorf("error downloading from container %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "downloaded from container")
+		}
+
+		err = pw.Close()
+		if err != nil {
+			errMsg := fmt.Errorf("error closing pipe %w", err)
+			telemetry.ReportCriticalError(childCtx, errMsg)
+		} else {
+			telemetry.ReportEvent(childCtx, "closed pipe")
+		}
+	}()
+
 	// This package creates a read-only ext4 filesystem from a tar archive.
 	// We need to use another program to make the filesystem writable.
-	err = tar2ext4.ConvertTarToExt4(containerReader, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
+	err = tar2ext4.ConvertTarToExt4(pr, rootfsFile, tar2ext4.MaximumDiskSize(maxRootfsSize))
 	if err != nil {
 		errMsg := fmt.Errorf("error converting tar to ext4 %w", err)
 		telemetry.ReportCriticalError(childCtx, errMsg)

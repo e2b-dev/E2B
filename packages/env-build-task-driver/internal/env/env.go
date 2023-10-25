@@ -151,7 +151,6 @@ func (e *Env) Build(ctx context.Context, tracer trace.Tracer, docker *client.Cli
 				"push-docker-image-and-cleanup",
 			)
 			defer pushSpan.End()
-			defer rootfs.cleanupDockerImage(pushContext, tracer)
 
 			if err != nil {
 				// We will not push the docker image if we failed to create the rootfs.
