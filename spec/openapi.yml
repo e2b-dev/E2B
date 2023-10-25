@@ -241,9 +241,51 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
+            encoding:
+              buildContext:
+                contentType: application/octet-stream
+
+      responses:
+        202:
+          description: The build has started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  /envs/{envID}:
+    post:
+      description: Rebuild an environment
+      tags: [envs]
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/envID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - buildContext
+                - dockerfile
+                - envID
+              properties:
+                buildContext:
+                  description: Docker build context
+                  type: string
+                  format: binary
+                dockerfile:
+                  type: string
+                  description: Dockerfile content
                 envID:
                   type: string
-                  description: ID of the environment, only present if the environment should be rebuilt
+                  description: ID of the environment
             encoding:
               buildContext:
                 contentType: application/octet-stream
