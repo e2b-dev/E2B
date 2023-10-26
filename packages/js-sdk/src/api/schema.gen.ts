@@ -47,12 +47,7 @@ export interface paths {
         /** Successfully refreshed the instance */
         204: never;
         401: components["responses"]["401"];
-        /** Error refreshing instance - not found */
-        404: {
-          content: {
-            "application/json": components["schemas"]["Error"];
-          };
-        };
+        404: components["responses"]["404"];
       };
     };
   };
@@ -92,15 +87,48 @@ export interface paths {
             buildContext: string;
             /** @description Dockerfile content */
             dockerfile: string;
-            /** @description ID of the environment, only present if the environment should be rebuilt */
-            envID?: string;
+          };
+        };
+      };
+    };
+  };
+  "/envs/{envID}": {
+    /** Rebuild an environment */
+    post: {
+      parameters: {
+        path: {
+          envID: components["parameters"]["envID"];
+        };
+      };
+      responses: {
+        /** The build has started */
+        202: {
+          content: {
+            "application/json": components["schemas"]["Environment"];
+          };
+        };
+        401: components["responses"]["401"];
+        500: components["responses"]["500"];
+      };
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            /**
+             * Format: binary
+             * @description Docker build context
+             */
+            buildContext: string;
+            /** @description Dockerfile content */
+            dockerfile: string;
+            /** @description ID of the environment */
+            envID: string;
           };
         };
       };
     };
   };
   "/envs/{envID}/builds/{buildID}": {
-    /** Get environment info */
+    /** Get environment build info */
     get: {
       parameters: {
         path: {
@@ -116,7 +144,7 @@ export interface paths {
         /** Successfully returned the environment */
         200: {
           content: {
-            "application/json": components["schemas"]["Environment"];
+            "application/json": components["schemas"]["EnvironmentBuild"];
           };
         };
         401: components["responses"]["401"];
@@ -138,12 +166,7 @@ export interface paths {
         /** Successfully added log */
         201: unknown;
         401: components["responses"]["401"];
-        /** Error adding a build log - build not found */
-        404: {
-          content: {
-            "application/json": components["schemas"]["Error"];
-          };
-        };
+        404: components["responses"]["404"];
       };
       requestBody: {
         content: {
@@ -165,6 +188,14 @@ export interface components {
       envID: string;
     };
     Environment: {
+      /** @description Identifier of the environment */
+      envID: string;
+      /** @description Identifier of the last successful build for given environment */
+      buildID: string;
+      /** @description Whether the environment is public or only accessible by the team */
+      public: boolean;
+    };
+    EnvironmentBuild: {
       /**
        * @description Build logs
        * @default []
@@ -178,9 +209,9 @@ export interface components {
        * @description Status of the environment
        * @enum {string}
        */
-      status: "building" | "ready" | "error";
-      /** @description Whether the environment is public or only accessible by the team */
-      public: boolean;
+      status?: "building" | "ready" | "error";
+    } & {
+      finished: unknown;
     };
     Instance: {
       /** @description Identifier of the environment from which is the instance created */
