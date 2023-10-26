@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
-	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/shared/utils"
-	log "github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/nomad/plugins"
 	"net/http"
 	_ "net/http/pprof"
+
+	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
+	shared "github.com/e2b-dev/infra/packages/shared/pkg"
+	log "github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/nomad/plugins"
 
 	driver "github.com/e2b-dev/infra/packages/env-build-task-driver/internal"
 )
@@ -37,7 +38,7 @@ func main() {
 		return
 	}
 
-	shutdown, err := utils.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
+	shutdown, err := shared.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
 	if err != nil {
 		log.Fmt("failed to initialize OTLP exporter: %v", err)
 	}

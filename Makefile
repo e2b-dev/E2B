@@ -1,5 +1,8 @@
 -include .env
 
+GCP_PROJECT := e2b-prod
+IMAGE := orchestration/api
+
 server := gcloud compute instances list --format='csv(name)' | grep "server"
 
 tf_vars := TF_VAR_client_machine_type=$(CLIENT_MACHINE_TYPE) \

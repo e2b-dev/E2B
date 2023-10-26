@@ -1,4 +1,4 @@
-package utils
+package pkg
 
 import (
 	"context"
@@ -34,7 +34,6 @@ func InitOTLPExporter(serviceName string, serviceVersion string, extraAttributes
 	}
 
 	hostname, err := os.Hostname()
-
 	if err != nil {
 		hostname = "unknown"
 	}
@@ -53,7 +52,6 @@ func InitOTLPExporter(serviceName string, serviceVersion string, extraAttributes
 			semconv.DeploymentEnvironment(env),
 		),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
@@ -66,7 +64,6 @@ func InitOTLPExporter(serviceName string, serviceVersion string, extraAttributes
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
 	}
@@ -77,7 +74,6 @@ func InitOTLPExporter(serviceName string, serviceVersion string, extraAttributes
 		otlptracegrpc.WithGRPCConn(conn),
 		otlptracegrpc.WithCompressor(gzip.Name),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
 	}

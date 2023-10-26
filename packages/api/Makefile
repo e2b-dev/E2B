@@ -3,9 +3,6 @@
 openapi := ../../spec/openapi.yml
 codegen := go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 
-GCP_PROJECT := e2b-prod
-IMAGE := orchestration/api
-
 .PHONY: generate
 generate:
 	$(codegen) -old-config-style -generate gin --package api $(openapi) > internal/api/api.gen.go

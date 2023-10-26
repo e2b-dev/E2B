@@ -7,6 +7,8 @@ WORKDIR /build/shared
 COPY packages/shared/go.mod packages/shared/go.sum ./
 RUN go mod download
 
+COPY packages/shared/pkg pkg
+
 WORKDIR /build/api
 
 COPY packages/api/go.mod packages/api/go.sum packages/api/Makefile ./
