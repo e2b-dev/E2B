@@ -130,10 +130,6 @@ export const buildCommand = new commander.Command('build')
 
         body.append('dockerfile', dockerfileContent)
 
-        if (envID) {
-          body.append('envID', envID)
-        }
-
         // It should be possible to pipe directly to the API
         // instead of creating a blob in memory then streaming.
         const blob = await createBlobFromFiles(
@@ -145,7 +141,7 @@ export const buildCommand = new commander.Command('build')
         )
         body.append('buildContext', blob, 'env.tar.gz.e2b')
 
-        const build = await buildEnv(accessToken, body)
+        const build = await buildEnv(accessToken, body, envID)
 
         console.log(`Started building environment ${asFormattedEnvironment(build)} `)
 
@@ -272,13 +268,14 @@ function getDockerfile(root: string, file?: string) {
 async function buildEnv(
   accessToken: string,
   body: FormData,
+  envID?: string,
 ): Promise<
   Omit<
     e2b.paths['/envs']['post']['responses']['202']['content']['application/json'],
     'logs'
   >
 > {
-  const res = await fetch(`${e2b.API_HOST}/envs`, {
+  const res = await fetch(e2b.API_HOST + (envID ? `/envs/${envID}` : '/envs'), {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body,
