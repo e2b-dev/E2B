@@ -44,9 +44,9 @@ type ButtonProps = {
   disabled?: boolean
   arrow?: 'left' | 'right'
 } & (
-  | React.ComponentPropsWithoutRef<typeof Link>
-  | (React.ComponentPropsWithoutRef<'button'> & { href?: undefined })
-)
+    | React.ComponentPropsWithoutRef<typeof Link>
+    | (React.ComponentPropsWithoutRef<'button'> & { href?: undefined })
+  )
 
 export function Button({
   variant = 'primary',
@@ -75,11 +75,11 @@ export function Button({
   )
 
   const inner = (
-    <>
+    <div className="flex items-center gap-2">
       {arrow === 'left' && arrowIcon}
       {children}
       {arrow === 'right' && arrowIcon}
-    </>
+    </div>
   )
 
   if (typeof props.href === 'undefined') {

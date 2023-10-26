@@ -22,7 +22,6 @@ function printNewPortAndURL(openPorts, session) {
 
 const session = await Session.create({
   id: 'Python3',
-  apiKey: process.env.E2B_API_KEY,
   onScanPorts: openPorts => printNewPortAndURL(openPorts, session), // $HighlightLine
 })
 

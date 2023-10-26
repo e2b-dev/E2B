@@ -5,7 +5,6 @@ const session = await Session.create({
   // Select the right runtime
   // 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
   id: 'Nodejs',
-  apiKey: process.env.E2B_API_KEY,
 })
 
 // 2. Save the JavaScript code to a file inside the playground

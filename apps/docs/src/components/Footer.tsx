@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { Button } from '@/components/Button'
-import { navigation } from '@/components/Navigation'
+import { routes } from '@/components/Navigation/routes'
 import { TwitterIcon } from '@/components/icons/TwitterIcon'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 import { DiscordIcon } from '@/components/icons/DiscordIcon'
@@ -45,7 +45,7 @@ function PageNavigation() {
   // Running on the server, there's bug with usePathname() and basePath https://github.com/vercel/next.js/issues/52700
   if (typeof window === 'undefined' && initialPathname === '/') initialPathname = '/docs'
 
-  const allPages = navigation.flatMap(group => group.links)
+  const allPages = routes.flatMap(group => group.links)
   const currentPageIndex = allPages.findIndex(page => page.href === initialPathname)
 
   if (currentPageIndex === -1) return null

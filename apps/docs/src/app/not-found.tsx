@@ -15,7 +15,7 @@ export default function NotFound() {
         </p>
         <Button
           href="/"
-          arrow="right"
+          arrow="left"
           className="mt-8"
         >
           Back to docs

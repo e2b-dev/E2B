@@ -1,12 +1,6 @@
-from os import getenv
 from e2b import Session
 
-E2B_API_KEY = getenv("E2B_API_KEY")
+# Timeout 3s for the session to open
+session = Session.create(id="Nodejs", timeout=3) # $HighlightLine
 
-def main():
-  # Timeout for the session to open
-  session = Session.create(id="Nodejs", api_key=E2B_API_KEY, timeout=5) # $HighlightLine
-
-  session.close()
-
-main()
+session.close()

@@ -1,0 +1,57 @@
+## List directory
+
+<CodeGroupAutoload
+  path="basics/fs_ls"
+  isRunnable={true}
+/>
+
+## Create directory
+
+A creation of a directory will fail if any directory on the path doesn't exist yet.
+For example, if you want to create a directory `/home/user/new_dir` and `/home/user` doesn't exist yet, you'll get an error.
+
+<CodeGroupAutoload
+  path="basics/fs_mkdir"
+  isRunnable={false}
+/>
+
+## Write to file
+
+When writing to a file that doesn't exist, the file will get created.
+
+When writing to a file that already exists, the file will get overwritten.
+
+When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
+<CodeGroupAutoload
+  path="basics/fs_write"
+  isRunnable={true}
+/>
+
+## Read from file
+
+<CodeGroupAutoload
+  path="basics/fs_read"
+  isRunnable={true}
+/>
+
+## Write bytes
+
+<CodeGroupAutoload
+  path="basics/fs_write_bytes"
+  isRunnable={true}
+/>
+
+## Read bytes
+
+<CodeGroupAutoload
+  path="basics/fs_read_bytes"
+  isRunnable={true}
+/>
+
+## Watch directory for changes
+
+<CodeGroupAutoload
+  path="basics/fs_watch"
+  isRunnable={true}
+/>

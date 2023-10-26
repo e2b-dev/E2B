@@ -3,6 +3,7 @@ import typographyStyles from './typography'
 import typographyPlugin from '@tailwindcss/typography'
 import headlessuiPlugin from '@headlessui/tailwindcss'
 import animatePlugin from 'tailwindcss-animate'
+import tailwidScrollbar from 'tailwind-scrollbar'
 
 export default {
   content: ['./src/**/*.{js,mjs,jsx,ts,tsx,mdx}'],
@@ -34,15 +35,34 @@ export default {
     typography: typographyStyles,
     extend: {
       colors: {
+        scrollbar: '#5A5A5A',
+        gray: {
+          25: '#FCFCFC',
+          50: '#FAFAFA',
+          100: '#F5F5F5',
+          200: '#EBEBEB',
+          300: '#E0E0E0',
+          400: '#CCCCCC',
+          500: '#999999',
+          600: '#666666',
+          700: '#525252',
+          800: '#333333',
+          900: '#1E1E1E',
+          1000: '#0A0A0A',
+        },
         brand: {
-          900: '#FF0000',
-          800: '#FF3300',
-          700: '#FF6600',
-          600: '#FF8800',
-          500: '#F1944E',
-          400: '#F6A951',
-          300: '#F9C78B',
-          200: '#FDE3C4',
+          1000: '#1A0E00',
+          900: '#331B00',
+          800: '#663600',
+          700: '#995100',
+          600: '#CC6D00',
+          500: '#E57B00',
+          400: '#FF8800',
+          300: '#FF9F33',
+          200: '#FFB766',
+          100: '#FFCF99',
+          50: '#FFE7CC',
+          25: '#FFF3E5',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -123,5 +143,10 @@ export default {
       },
     },
   },
-  plugins: [typographyPlugin, headlessuiPlugin, animatePlugin],
+  plugins: [
+    typographyPlugin,
+    headlessuiPlugin,
+    animatePlugin,
+    tailwidScrollbar,
+  ],
 } satisfies Config

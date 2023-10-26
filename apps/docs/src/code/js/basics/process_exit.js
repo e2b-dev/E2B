@@ -2,7 +2,6 @@ import { Session } from '@e2b/sdk'
 
 const session = await Session.create({
   id: 'Nodejs',
-  apiKey: process.env.E2B_API_KEY,
   onExit: () => console.log('[session]', 'process ended'), // $HighlightLine
 })
 

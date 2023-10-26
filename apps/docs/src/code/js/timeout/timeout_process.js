@@ -1,11 +1,8 @@
 import { Session } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
-  apiKey: process.env.E2B_API_KEY,
-})
+const session = await Session.create({ id: 'Nodejs' })
 
-// Timeout for the process to start
+// Timeout 3s for the process to start
 const npmInit = await session.process.start({
   cmd: 'npm init -y',
   timeout: 3000, // $HighlightLine

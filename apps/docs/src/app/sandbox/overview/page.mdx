@@ -1,0 +1,25 @@
+# Overview
+
+The E2B's LLM sandboxes are isolated cloud environments for your AI apps. These LLM sandboxes are an ideal fit for building AI assistants like coding copilots, code interpreters, AI data analysts, AI browser assistant, and similar.
+
+Using the sandboxes allows for a secure way to run the unpredictable LLM-generated code and safe LLM tool usage without the potential harm to you and your users.
+
+Additionally, each running instance of your AI app can have its own separate sandbox without you worrying about any infrastructure, networking, or security.
+
+## How sandboxes work  under the hood
+
+When you create a new sandbox session, we start a small VM in our cloud. This VM is running a Ubuntu OS and itt takes about 400-600ms to start it.
+
+Inside this sanbdox, your AI app can run any code, start any program program, access the internet to download or upload data, use the filesystem, start a web server, and more.
+
+To start and control the LLM sandbox, use the [E2B SDK](/getting-started/installation) for Python or JavaScript.
+
+<CodeGroupAutoload
+  title="Starting LLM Sandbox"
+  path="basics/init"
+/>
+
+{/*
+## Next steps
+
+TODO */}
