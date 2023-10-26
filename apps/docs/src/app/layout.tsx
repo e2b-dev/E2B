@@ -1,3 +1,4 @@
+import { Metadata } from 'next'
 import glob from 'fast-glob'
 import { Analytics } from '@vercel/analytics/react'
 
@@ -8,7 +9,7 @@ import '@/styles/tailwind.css'
 import { PostHogAnalytics } from '@/utils/usePostHog'
 import { Section } from '@/components/SectionProvider'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: {
     template: '%s - E2B Documentation',
     default: 'E2B Documentation',
