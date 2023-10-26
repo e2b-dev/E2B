@@ -7,7 +7,12 @@ resource "nomad_job" "otel-collector" {
       grafana_traces_endpoint  = var.grafana_traces_endpoint
       grafana_logs_endpoint    = var.grafana_logs_endpoint
       grafana_metrics_endpoint = var.grafana_metrics_endpoint
-      grafana_api_key          = var.grafana_api_key
+
+      grafana_traces_username  = var.grafana_traces_username
+      grafana_logs_username    = var.grafana_logs_username
+      grafana_metrics_username = var.grafana_metrics_username
+
+      grafana_api_key = var.grafana_api_key
 
       gcp_zone = var.gcp_zone
     }

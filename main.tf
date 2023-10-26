@@ -126,6 +126,18 @@ data "google_secret_manager_secret_version" "grafana_metrics_endpoint" {
   secret = "grafana-metrics-endpoint"
 }
 
+data "google_secret_manager_secret_version" "grafana_traces_username" {
+  secret = "grafana-traces-username"
+}
+
+data "google_secret_manager_secret_version" "grafana_logs_username" {
+  secret = "grafana-logs-username"
+}
+
+data "google_secret_manager_secret_version" "grafana_metrics_username" {
+  secret = "grafana-metrics-username"
+}
+
 module "telemetry" {
   source = "./packages/telemetry"
 
@@ -139,6 +151,10 @@ module "telemetry" {
   grafana_traces_endpoint  = data.google_secret_manager_secret_version.grafana_traces_endpoint.secret_data
   grafana_logs_endpoint    = data.google_secret_manager_secret_version.grafana_logs_endpoint.secret_data
   grafana_metrics_endpoint = data.google_secret_manager_secret_version.grafana_metrics_endpoint.secret_data
+
+  grafana_traces_username  = data.google_secret_manager_secret_version.grafana_traces_username.secret_data
+  grafana_logs_username    = data.google_secret_manager_secret_version.grafana_logs_username.secret_data
+  grafana_metrics_username = data.google_secret_manager_secret_version.grafana_metrics_username.secret_data
 
   grafana_api_key = data.google_secret_manager_secret_version.grafana_api_key.secret_data
 }

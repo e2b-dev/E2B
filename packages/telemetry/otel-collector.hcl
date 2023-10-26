@@ -6,6 +6,18 @@ variable "grafana_api_key" {
   type = string
 }
 
+variable "grafana_logs_username" {
+  type = string
+}
+
+variable "grafana_traces_username" {
+  type = string
+}
+
+variable "grafana_metrics_username" {
+  type = string
+}
+
 variable "grafana_logs_endpoint" {
   type = string
 }
@@ -173,29 +185,41 @@ processors:
         new_name: "binary"
 
 extensions:
-  bearertokenauth/grafana:
-    token: "${var.grafana_api_key}"
+  basicauth/grafana_cloud_traces:
+    client_auth:
+      username: "${var.grafana_traces_username}"
+      password: "${var.grafana_api_key}"
+  basicauth/grafana_cloud_metrics:
+    client_auth:
+      username: "${var.grafana_metrics_username}"
+      password: "${var.grafana_api_key}"
+  basicauth/grafana_cloud_logs:
+    client_auth:
+      username: "${var.grafana_logs_username}"
+      password: "${var.grafana_api_key}"
   health_check:
 
 exporters:
   otlp/grafana_cloud_traces:
     endpoint: "${var.grafana_traces_endpoint}"
     auth:
-      authenticator: bearertokenauth/grafana
+      authenticator: basicauth/grafana_cloud_traces
 
   loki/grafana_cloud_logs:
     endpoint: "${var.grafana_logs_endpoint}"
     auth:
-      authenticator: bearertokenauth/grafana
+      authenticator: basicauth/grafana_cloud_logs
 
   prometheusremotewrite/grafana_cloud_metrics:
     endpoint: "${var.grafana_metrics_endpoint}"
     auth:
-      authenticator: bearertokenauth/grafana
+      authenticator: basicauth/grafana_cloud_metrics
 
 service:
   extensions:
-    - bearertokenauth/grafana
+    - basicauth/grafana_cloud_traces
+    - basicauth/grafana_cloud_metrics
+    - basicauth/grafana_cloud_logs
     - health_check
   pipelines:
     metrics/client-proxy:
