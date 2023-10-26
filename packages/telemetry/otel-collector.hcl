@@ -111,18 +111,22 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: integrations/nomad
-          scrape_interval: 15s
+        - job_name: nomad
+          scrape_interval: 10s
           scrape_timeout: 5s
-          metrics_path: "/v1/metrics"
+          metrics_path: '/v1/metrics'
           params:
-            format: ["prometheus"]
+            format: ['prometheus']
           static_configs:
-            - targets: ["localhost:4646"]
-          metric_relabel_configs:
-            - action: keep
-              source_labels:
-                - __name__
+            - targets: ['localhost:4646']
+        - job_name: consul
+          scrape_interval: 10s
+          scrape_timeout: 5s
+          metrics_path: '/v1/agent/metrics'
+          params:
+            format: ['prometheus']
+          static_configs:
+            - targets: ['localhost:8500']
 
 processors:
   batch:
