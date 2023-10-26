@@ -17,8 +17,6 @@
 __version__ = "1.0.0"
 
 # import apis into sdk package
-from e2b.api.v2.client.api.default_api import DefaultApi
-from e2b.api.v2.client.api.envs_api import EnvsApi
 from e2b.api.v2.client.api.instances_api import InstancesApi
 
 # import ApiClient
@@ -34,6 +32,10 @@ from e2b.api.v2.client.exceptions import ApiException
 
 # import models into sdk package
 from e2b.api.v2.client.models.environment import Environment
+from e2b.api.v2.client.models.environment_build import EnvironmentBuild
+from e2b.api.v2.client.models.envs_env_id_builds_build_id_logs_post_request import (
+    EnvsEnvIDBuildsBuildIDLogsPostRequest,
+)
 from e2b.api.v2.client.models.error import Error
 from e2b.api.v2.client.models.instance import Instance
 from e2b.api.v2.client.models.new_instance import NewInstance

@@ -34,36 +34,43 @@ import e2b.api.v1.client
 from e2b.api.v1.client.rest import ApiException
 from pprint import pprint
 
-# Defining the host is optional and defaults to https://api.e2b.dev/v1
+# Defining the host is optional and defaults to https://api.e2b.dev
 # See configuration.py for a list of all supported configuration parameters.
 configuration = e2b.api.v1.client.Configuration(
-    host = "https://api.e2b.dev/v1"
+    host = "https://api.e2b.dev"
 )
 
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: ApiKeyAuth
+configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
 
 
 # Enter a context with an instance of the API client
 with e2b.api.v1.client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = e2b.api.v1.client.DefaultApi(api_client)
+    api_instance = e2b.api.v1.client.InstancesApi(api_client)
+    instance_id = 'instance_id_example' # str | 
 
     try:
-        api_instance.health_get()
+        api_instance.instances_instance_id_refreshes_post(instance_id)
     except ApiException as e:
-        print("Exception when calling DefaultApi->health_get: %s\n" % e)
+        print("Exception when calling InstancesApi->instances_instance_id_refreshes_post: %s\n" % e)
 
 ```
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *https://api.e2b.dev/v1*
+All URIs are relative to *https://api.e2b.dev*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**health_get**](e2b/api/v1/client/docs/DefaultApi.md#health_get) | **GET** /health | 
-*EnvsApi* | [**envs_env_id_get**](e2b/api/v1/client/docs/EnvsApi.md#envs_env_id_get) | **GET** /envs/{envID} | 
-*EnvsApi* | [**envs_get**](e2b/api/v1/client/docs/EnvsApi.md#envs_get) | **GET** /envs | 
-*EnvsApi* | [**envs_post**](e2b/api/v1/client/docs/EnvsApi.md#envs_post) | **POST** /envs | 
 *InstancesApi* | [**instances_instance_id_refreshes_post**](e2b/api/v1/client/docs/InstancesApi.md#instances_instance_id_refreshes_post) | **POST** /instances/{instanceID}/refreshes | 
 *InstancesApi* | [**instances_post**](e2b/api/v1/client/docs/InstancesApi.md#instances_post) | **POST** /instances | 
 
@@ -71,6 +78,8 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [Environment](e2b/api/v1/client/docs/Environment.md)
+ - [EnvironmentBuild](e2b/api/v1/client/docs/EnvironmentBuild.md)
+ - [EnvsEnvIDBuildsBuildIDLogsPostRequest](e2b/api/v1/client/docs/EnvsEnvIDBuildsBuildIDLogsPostRequest.md)
  - [EnvsGet200ResponseInner](e2b/api/v1/client/docs/EnvsGet200ResponseInner.md)
  - [Error](e2b/api/v1/client/docs/Error.md)
  - [Instance](e2b/api/v1/client/docs/Instance.md)

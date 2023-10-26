@@ -18,26 +18,35 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictBool, StrictStr
+from typing import List, Optional
+from pydantic import BaseModel, Field, StrictStr, conlist, field_validator
 
 
-class Environment(BaseModel):
+class EnvironmentBuild(BaseModel):
     """
-    Environment
+    EnvironmentBuild
     """
 
+    logs: conlist(StrictStr) = Field(..., description="Build logs")
     env_id: StrictStr = Field(
         ..., alias="envID", description="Identifier of the environment"
     )
     build_id: StrictStr = Field(
-        ...,
-        alias="buildID",
-        description="Identifier of the last successful build for given environment",
+        ..., alias="buildID", description="Identifier of the build"
     )
-    public: StrictBool = Field(
-        ...,
-        description="Whether the environment is public or only accessible by the team",
-    )
+    status: Optional[StrictStr] = Field(None, description="Status of the environment")
+
+    @field_validator("status")
+    def status_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in ("building", "ready", "error"):
+            raise ValueError(
+                "must be one of enum values ('building', 'ready', 'error')"
+            )
+        return value
 
     """Pydantic configuration"""
     model_config = {
@@ -54,8 +63,8 @@ class Environment(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Environment:
-        """Create an instance of Environment from a JSON string"""
+    def from_json(cls, json_str: str) -> EnvironmentBuild:
+        """Create an instance of EnvironmentBuild from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -64,27 +73,28 @@ class Environment(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> Environment:
-        """Create an instance of Environment from a dict"""
+    def from_dict(cls, obj: dict) -> EnvironmentBuild:
+        """Create an instance of EnvironmentBuild from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return Environment.model_validate(obj)
+            return EnvironmentBuild.model_validate(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
-            if _key not in ["envID", "buildID", "public"]:
+            if _key not in ["logs", "envID", "buildID", "status"]:
                 raise ValueError(
-                    "Error due to additional fields (not defined in Environment) in the input: "
+                    "Error due to additional fields (not defined in EnvironmentBuild) in the input: "
                     + obj
                 )
 
-        _obj = Environment.model_validate(
+        _obj = EnvironmentBuild.model_validate(
             {
+                "logs": obj.get("logs"),
                 "env_id": obj.get("envID"),
                 "build_id": obj.get("buildID"),
-                "public": obj.get("public"),
+                "status": obj.get("status"),
             }
         )
         return _obj

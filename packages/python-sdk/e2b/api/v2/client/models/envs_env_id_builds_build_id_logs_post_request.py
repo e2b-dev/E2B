@@ -18,26 +18,17 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictBool, StrictStr
+from typing import List
+from pydantic import BaseModel, Field, StrictStr, conlist
 
 
-class Environment(BaseModel):
+class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
     """
-    Environment
+    EnvsEnvIDBuildsBuildIDLogsPostRequest
     """
 
-    env_id: StrictStr = Field(
-        ..., alias="envID", description="Identifier of the environment"
-    )
-    build_id: StrictStr = Field(
-        ...,
-        alias="buildID",
-        description="Identifier of the last successful build for given environment",
-    )
-    public: StrictBool = Field(
-        ...,
-        description="Whether the environment is public or only accessible by the team",
-    )
+    api_secret: StrictStr = Field(..., alias="apiSecret", description="API secret")
+    logs: conlist(StrictStr) = Field(...)
 
     """Pydantic configuration"""
     model_config = {
@@ -54,8 +45,8 @@ class Environment(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Environment:
-        """Create an instance of Environment from a JSON string"""
+    def from_json(cls, json_str: str) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
+        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -64,27 +55,23 @@ class Environment(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> Environment:
-        """Create an instance of Environment from a dict"""
+    def from_dict(cls, obj: dict) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
+        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return Environment.model_validate(obj)
+            return EnvsEnvIDBuildsBuildIDLogsPostRequest.model_validate(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
-            if _key not in ["envID", "buildID", "public"]:
+            if _key not in ["apiSecret", "logs"]:
                 raise ValueError(
-                    "Error due to additional fields (not defined in Environment) in the input: "
+                    "Error due to additional fields (not defined in EnvsEnvIDBuildsBuildIDLogsPostRequest) in the input: "
                     + obj
                 )
 
-        _obj = Environment.model_validate(
-            {
-                "env_id": obj.get("envID"),
-                "build_id": obj.get("buildID"),
-                "public": obj.get("public"),
-            }
+        _obj = EnvsEnvIDBuildsBuildIDLogsPostRequest.model_validate(
+            {"api_secret": obj.get("apiSecret"), "logs": obj.get("logs")}
         )
         return _obj

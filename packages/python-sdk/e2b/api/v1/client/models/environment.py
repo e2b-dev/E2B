@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictBool, StrictStr, validator
+from pydantic import BaseModel, Field, StrictBool, StrictStr
 
 
 class Environment(BaseModel):
@@ -29,21 +29,16 @@ class Environment(BaseModel):
     env_id: StrictStr = Field(
         ..., alias="envID", description="Identifier of the environment"
     )
-    status: StrictStr = Field(..., description="Status of the environment")
+    build_id: StrictStr = Field(
+        ...,
+        alias="buildID",
+        description="Identifier of the last successful build for given environment",
+    )
     public: StrictBool = Field(
         ...,
         description="Whether the environment is public or only accessible by the team",
     )
-    __properties = ["envID", "status", "public"]
-
-    @validator("status")
-    def status_validate_enum(cls, value):
-        """Validates the enum"""
-        if value not in ("building", "ready", "error"):
-            raise ValueError(
-                "must be one of enum values ('building', 'ready', 'error')"
-            )
-        return value
+    __properties = ["envID", "buildID", "public"]
 
     class Config:
         """Pydantic configuration"""
@@ -89,7 +84,7 @@ class Environment(BaseModel):
         _obj = Environment.parse_obj(
             {
                 "env_id": obj.get("envID"),
-                "status": obj.get("status"),
+                "build_id": obj.get("buildID"),
                 "public": obj.get("public"),
             }
         )

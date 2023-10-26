@@ -18,27 +18,36 @@ import re  # noqa: F401
 import json
 
 
-from pydantic import BaseModel, Field, StrictBool, StrictStr
+from typing import List, Optional
+from pydantic import BaseModel, Field, StrictStr, conlist, validator
 
 
-class EnvsGet200ResponseInner(BaseModel):
+class EnvironmentBuild(BaseModel):
     """
-    EnvsGet200ResponseInner
+    EnvironmentBuild
     """
 
+    logs: conlist(StrictStr) = Field(..., description="Build logs")
     env_id: StrictStr = Field(
         ..., alias="envID", description="Identifier of the environment"
     )
     build_id: StrictStr = Field(
-        ...,
-        alias="buildID",
-        description="Identifier of the last successful build for given environment",
+        ..., alias="buildID", description="Identifier of the build"
     )
-    public: StrictBool = Field(
-        ...,
-        description="Whether the environment is public or only accessible by the team",
-    )
-    __properties = ["envID", "buildID", "public"]
+    status: Optional[StrictStr] = Field(None, description="Status of the environment")
+    __properties = ["logs", "envID", "buildID", "status"]
+
+    @validator("status")
+    def status_validate_enum(cls, value):
+        """Validates the enum"""
+        if value is None:
+            return value
+
+        if value not in ("building", "ready", "error"):
+            raise ValueError(
+                "must be one of enum values ('building', 'ready', 'error')"
+            )
+        return value
 
     class Config:
         """Pydantic configuration"""
@@ -55,8 +64,8 @@ class EnvsGet200ResponseInner(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> EnvsGet200ResponseInner:
-        """Create an instance of EnvsGet200ResponseInner from a JSON string"""
+    def from_json(cls, json_str: str) -> EnvironmentBuild:
+        """Create an instance of EnvironmentBuild from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -65,27 +74,28 @@ class EnvsGet200ResponseInner(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> EnvsGet200ResponseInner:
-        """Create an instance of EnvsGet200ResponseInner from a dict"""
+    def from_dict(cls, obj: dict) -> EnvironmentBuild:
+        """Create an instance of EnvironmentBuild from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return EnvsGet200ResponseInner.parse_obj(obj)
+            return EnvironmentBuild.parse_obj(obj)
 
         # raise errors for additional fields in the input
         for _key in obj.keys():
             if _key not in cls.__properties:
                 raise ValueError(
-                    "Error due to additional fields (not defined in EnvsGet200ResponseInner) in the input: "
+                    "Error due to additional fields (not defined in EnvironmentBuild) in the input: "
                     + obj
                 )
 
-        _obj = EnvsGet200ResponseInner.parse_obj(
+        _obj = EnvironmentBuild.parse_obj(
             {
+                "logs": obj.get("logs"),
                 "env_id": obj.get("envID"),
                 "build_id": obj.get("buildID"),
-                "public": obj.get("public"),
+                "status": obj.get("status"),
             }
         )
         return _obj

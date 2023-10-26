@@ -15,6 +15,10 @@
 
 # import models into model package
 from e2b.api.v2.client.models.environment import Environment
+from e2b.api.v2.client.models.environment_build import EnvironmentBuild
+from e2b.api.v2.client.models.envs_env_id_builds_build_id_logs_post_request import (
+    EnvsEnvIDBuildsBuildIDLogsPostRequest,
+)
 from e2b.api.v2.client.models.error import Error
 from e2b.api.v2.client.models.instance import Instance
 from e2b.api.v2.client.models.new_instance import NewInstance
