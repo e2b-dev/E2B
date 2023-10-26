@@ -56,6 +56,10 @@ job "otel-collector" {
       port "grpc" {
         to = 4317
       }
+
+      port "http" {
+        to = 4318
+      }
     }
 
     service {
@@ -88,6 +92,7 @@ job "otel-collector" {
           "metrics",
           "grpc",
           "health",
+          "http",
         ]
       }
 
@@ -102,87 +107,26 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: "0.0.0.0:4317"
-  nginx/client-proxy:
-    endpoint: "http://localhost:3001/status"
-    collection_interval: 60s
-  nginx/session-proxy:
-    endpoint: "http://localhost:3004/status"
-    collection_interval: 60s
-  hostmetrics:
-    collection_interval: 30s
-    scrapers:
-      cpu:
-      disk:
-      filesystem:
-      load:
-      memory:
-      network:
-      paging:
-      # Not working right now
-      # process:
-      processes:
+      http:
   prometheus:
     config:
       scrape_configs:
         - job_name: integrations/nomad
-          scrape_interval: 10s
+          scrape_interval: 15s
           scrape_timeout: 5s
           metrics_path: "/v1/metrics"
           params:
             format: ["prometheus"]
           static_configs:
-            - targets:
-                [
-                  "localhost:4646",
-                ]
+            - targets: ["localhost:4646"]
           metric_relabel_configs:
             - action: keep
               regex: nomad_client_allocated_cpu|nomad_client_allocated_disk|nomad_client_allocated_memory|nomad_client_allocs_cpu_total_percent|nomad_client_allocs_cpu_total_ticks|nomad_client_allocs_memory_cache|nomad_client_allocs_memory_rss|nomad_client_host_cpu_idle|nomad_client_host_disk_available|nomad_client_host_disk_inodes_percent|nomad_client_host_disk_size|nomad_client_host_memory_available|nomad_client_host_memory_free|nomad_client_host_memory_total|nomad_client_host_memory_used|nomad_client_unallocated_cpu|nomad_client_unallocated_disk|nomad_client_unallocated_memory|nomad_client_uptime
               source_labels:
                 - __name__
-        - job_name: integrations/consul
-          scrape_interval: 60s
-          scrape_timeout: 5s
-          metrics_path: "/v1/agent/metrics"
-          params:
-            format: ["prometheus"]
-          static_configs:
-            - targets: ["localhost:8500"]
-          relabel_configs:
-            - replacement: "integrations/consul"
-              target_label: job
-          metric_relabel_configs:
-            - action: keep
-              regex: consul_raft_leader|consul_raft_leader_lastcontact_count|consul_raft_peers|consul_up
-              source_labels:
-                - __name__
 
 processors:
-  attributes/session-proxy:
-    actions:
-      - key: proxy
-        value: session
-        action: upsert
-  attributes/client-proxy:
-    actions:
-      - key: proxy
-        value: client
-        action: upsert
   batch:
-  resourcedetection:
-    detectors: [gcp]
-  metricstransform:
-    transforms:
-      - include: "host.name"
-        action: update
-        new_name: "hostname"
-      - include: "process.pid"
-        action: update
-        new_name: "pid"
-      - include: "process.executable.name"
-        action: update
-        new_name: "binary"
 
 extensions:
   basicauth/grafana_cloud_traces:
@@ -204,12 +148,10 @@ exporters:
     endpoint: "${var.grafana_traces_endpoint}"
     auth:
       authenticator: basicauth/grafana_cloud_traces
-
   loki/grafana_cloud_logs:
     endpoint: "${var.grafana_logs_endpoint}"
     auth:
       authenticator: basicauth/grafana_cloud_logs
-
   prometheusremotewrite/grafana_cloud_metrics:
     endpoint: "${var.grafana_metrics_endpoint}"
     auth:
@@ -222,22 +164,9 @@ service:
     - basicauth/grafana_cloud_logs
     - health_check
   pipelines:
-    metrics/client-proxy:
-      receivers:
-        - nginx/client-proxy
-      processors: [attributes/client-proxy, batch]
-      exporters:
-        - prometheusremotewrite/grafana_cloud_metrics
-    metrics/session-proxy:
-      receivers:
-        - nginx/session-proxy
-      processors: [attributes/session-proxy, batch]
-      exporters:
-        - prometheusremotewrite/grafana_cloud_metrics
     metrics:
       receivers:
         - prometheus
-        - hostmetrics
         - otlp
       processors: [batch]
       exporters:
