@@ -107,7 +107,8 @@ receivers:
       memory:
       network:
       paging:
-      process:
+      # Not working right now
+      # process:
       processes:
   prometheus:
     config:
@@ -121,10 +122,6 @@ receivers:
           static_configs:
             - targets:
                 [
-                  "nomad1:4646",
-                  "nomad2:4646",
-                  "nomad3:4646",
-                  "nomad-client1:4646",
                   "localhost:4646",
                 ]
           metric_relabel_configs:
