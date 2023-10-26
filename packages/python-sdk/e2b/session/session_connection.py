@@ -1,9 +1,8 @@
-import asyncio
 import functools
 import logging
 import traceback
 import warnings
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from concurrent.futures import ThreadPoolExecutor, TimeoutError, Future
 from os import getenv
 from time import sleep
 from typing import Any, Callable, List, Literal, Optional, Union
@@ -88,7 +87,7 @@ class SessionConnection:
         self._session: Optional[models.Session] = None
         self._is_open = False
         self._process_cleanup: List[Callable[[], Any]] = []
-        self._refreshing_task: Optional[asyncio.Future] = None
+        self._refreshing_task: Optional[Future] = None
         self._subscribers = {}
         self._rpc: Optional[SessionRpc] = None
         self._finished = DeferredFuture(self._process_cleanup)
@@ -179,7 +178,6 @@ class SessionConnection:
                     f"Session {self._session.code_snippet_id} created (id:{self._session.session_id})"
                 )
 
-                # We could potentially use asyncio.to_thread() but that requires Python 3.9+
                 executor = ThreadPoolExecutor(thread_name_prefix="e2b-refresh")
                 self._refreshing_task = executor.submit(
                     self._refresh, self._session.session_id

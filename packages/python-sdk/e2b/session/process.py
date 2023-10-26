@@ -1,5 +1,4 @@
 import logging
-from asyncio.exceptions import TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
@@ -181,7 +180,7 @@ class Process:
         except RpcException as e:
             raise ProcessException(e.message) from e
 
-    async def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
+    def kill(self, timeout: Optional[float] = TIMEOUT) -> None:
         """
         Kills the process.
 
