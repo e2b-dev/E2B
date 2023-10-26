@@ -4,10 +4,7 @@ info:
   title: E2B API
 
 servers:
-  - url: "{server}/v1"
-    variables:
-      server:
-        default: https://api.e2b.dev
+  - url: https://api.e2b.dev
 
 components:
   securitySchemes:
@@ -80,8 +77,22 @@ components:
       required:
         - envID
         - buildID
-        - status
         - public
+      properties:
+        envID:
+          type: string
+          description: Identifier of the environment
+        buildID:
+          type: string
+          description: Identifier of the last successful build for given environment
+        public:
+          type: boolean
+          description: Whether the environment is public or only accessible by the team
+    EnvironmentBuild:
+      required:
+        - envID
+        - buildID
+        - finished
         - logs
       properties:
         logs:
@@ -103,9 +114,6 @@ components:
             - building
             - ready
             - error
-        public:
-          type: boolean
-          description: Whether the environment is public or only accessible by the team
 
     Instance:
       required:
@@ -190,12 +198,7 @@ paths:
         401:
           $ref: "#/components/responses/401"
         404:
-          description: Error refreshing instance - not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
+          $ref: "#/components/responses/404"
   /envs:
     get:
       description: List all environments
@@ -238,9 +241,51 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
+            encoding:
+              buildContext:
+                contentType: application/octet-stream
+
+      responses:
+        202:
+          description: The build has started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Environment"
+        401:
+          $ref: "#/components/responses/401"
+        500:
+          $ref: "#/components/responses/500"
+
+  /envs/{envID}:
+    post:
+      description: Rebuild an environment
+      tags: [envs]
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/envID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - buildContext
+                - dockerfile
+                - envID
+              properties:
+                buildContext:
+                  description: Docker build context
+                  type: string
+                  format: binary
+                dockerfile:
+                  type: string
+                  description: Dockerfile content
                 envID:
                   type: string
-                  description: ID of the environment, only present if the environment should be rebuilt
+                  description: ID of the environment
             encoding:
               buildContext:
                 contentType: application/octet-stream
@@ -259,7 +304,7 @@ paths:
 
   /envs/{envID}/builds/{buildID}:
     get:
-      description: Get environment info
+      description: Get environment build info
       tags: [envs]
       security:
         - AccessTokenAuth: []
@@ -278,7 +323,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Environment"
+                $ref: "#/components/schemas/EnvironmentBuild"
         401:
           $ref: "#/components/responses/401"
         404:
@@ -316,8 +361,4 @@ paths:
         401:
           $ref: "#/components/responses/401"
         404:
-          description: Error adding a build log - build not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/404"
