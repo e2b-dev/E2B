@@ -274,7 +274,6 @@ paths:
               required:
                 - buildContext
                 - dockerfile
-                - envID
               properties:
                 buildContext:
                   description: Docker build context
@@ -283,9 +282,6 @@ paths:
                 dockerfile:
                   type: string
                   description: Dockerfile content
-                envID:
-                  type: string
-                  description: ID of the environment
             encoding:
               buildContext:
                 contentType: application/octet-stream

@@ -113,9 +113,6 @@ type PostEnvsEnvIDMultipartBody struct {
 
 	// Dockerfile Dockerfile content
 	Dockerfile string `json:"dockerfile"`
-
-	// EnvID ID of the environment
-	EnvID string `json:"envID"`
 }
 
 // GetEnvsEnvIDBuildsBuildIDParams defines parameters for GetEnvsEnvIDBuildsBuildID.
