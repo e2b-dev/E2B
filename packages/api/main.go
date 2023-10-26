@@ -6,37 +6,26 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/getkin/kin-openapi/openapi3filter"
-
-	"github.com/gin-contrib/cors"
-	"github.com/lightstep/otel-launcher-go/launcher"
-
-	"github.com/gin-contrib/pprof"
-
+	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
-
-	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
+	"github.com/e2b-dev/infra/packages/shared/utils"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	serviceName               = "orchestration-api"
-	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
+	serviceName = "orchestration-api"
 )
 
 var ignoreLoggingForPaths = []string{"/health"}
 
-func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
-	swagger, err := api.GetSwagger()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
-		os.Exit(1)
-	}
-
+func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *http.Server {
 	// Clear out the servers array in the swagger spec, that skips validating
 	// that server names match. We don't know how this thing will be run.
 	swagger.Servers = nil
@@ -45,8 +34,11 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 
 	pprof.Register(r, "debug/pprof")
 
-	// We use custom otelgin middleware because we want to log 4xx errors in the otel
-	otelMiddleware := customMiddleware.ExcludeRoutes(customMiddleware.Otel(serviceName), ignoreLoggingForPaths...)
+	// We use custom otelgin middleware because we want to log 4xx errors in the utils
+	otelMiddleware := customMiddleware.ExcludeRoutes(
+		customMiddleware.Otel(serviceName),
+		ignoreLoggingForPaths...,
+	)
 	r.Use(
 		otelMiddleware,
 		gin.LoggerWithWriter(gin.DefaultWriter, ignoreLoggingForPaths...),
@@ -77,7 +69,10 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 	r.Use(cors.New(config))
 
 	// Create a team API Key auth validator
-	AuthenticationFunc := customMiddleware.CreateAuthenticationFunc(apiStore.GetTeamFromAPIKey, apiStore.GetUserFromAccessToken)
+	AuthenticationFunc := customMiddleware.CreateAuthenticationFunc(
+		apiStore.GetTeamFromAPIKey,
+		apiStore.GetUserFromAccessToken,
+	)
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
@@ -102,7 +97,6 @@ func NewGinServer(apiStore *handlers.APIStore, port int) *http.Server {
 func main() {
 	fmt.Println("Initializing...")
 
-	telemetryAPIKey := flag.String("telemetry-api", "", "api key for telemetry")
 	port := flag.Int("port", 80, "Port for test HTTP server")
 	flag.Parse()
 
@@ -112,30 +106,23 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	if *telemetryAPIKey == "" {
-		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
-			launcher.WithMetricReportingPeriod(20*time.Second),
-			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterInsecure(true),
-			launcher.WithSpanExporterInsecure(true),
-			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-		)
-		defer otelLauncher.Shutdown()
-	} else {
-		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(serviceName),
-			launcher.WithAccessToken(*telemetryAPIKey),
-		)
-		defer otelLauncher.Shutdown()
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
 	}
+
+	shutdown, err := utils.InitOTLPExporter(serviceName, swagger.Info.Version)
+	if err != nil {
+		log.Fatalf("failed to initialize OTLP exporter: %v", err)
+	}
+	defer shutdown()
 
 	// Create an instance of our handler which satisfies the generated interface
 	apiStore := handlers.NewAPIStore()
 	defer apiStore.Close()
 
-	s := NewGinServer(apiStore, *port)
+	s := NewGinServer(apiStore, swagger, *port)
 
 	// And we serve HTTP until the world ends.
 	log.Fatal(s.ListenAndServe())
