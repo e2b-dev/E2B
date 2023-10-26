@@ -115,6 +115,7 @@ func main() {
 	shutdown, err := shared.InitOTLPExporter(serviceName, swagger.Info.Version)
 	if err != nil {
 		log.Fatalf("failed to initialize OTLP exporter: %v", err)
+		os.Exit(1)
 	}
 	defer shutdown()
 

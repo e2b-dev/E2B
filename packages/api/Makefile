@@ -31,7 +31,7 @@ run:
 	GOOGLE_CLOUD_STORAGE_BUCKET=$(GOOGLE_CLOUD_STORAGE_BUCKET) \
 	GOTRACEBACK=crash \
 	GODEBUG=madvdontneed=1 \
-	./bin/api --port 3000 -telemetry-api=$(TELEMETRY_API_KEY)
+	./bin/api --port 3000
 
 
 # You run the parametrized command like this:

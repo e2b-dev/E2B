@@ -32,6 +32,21 @@
       "asRoot": true,
     },
     {
+      "name": "Debug api",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "buildFlags": "-race -gcflags=all=\"-N -l\"",
+      "program": "${workspaceFolder}/packages/api/main.go",
+      "args": [
+        "--port",
+        "3000"
+      ],
+      "console": "integratedTerminal",
+      "asRoot": true,
+      "envFile": "${workspaceFolder}/packages/api/.env"
+    },
+    {
       "name": "Attach to Process",
       "type": "go",
       "request": "attach",
