@@ -1,22 +1,13 @@
 package main
 
 import (
-	"flag"
-	"net/http"
-	"time"
-
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
-
-	driver "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal"
-
+	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/lightstep/otel-launcher-go/launcher"
-)
-
-const (
-	otelCollectorGRPCEndpoint = "0.0.0.0:4317"
+	driver "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal"
+	"github.com/e2b-dev/infra/packages/shared/utils"
 )
 
 func configurePlugin() {
@@ -25,28 +16,11 @@ func configurePlugin() {
 		http.ListenAndServe(":6061", nil)
 	}()
 
-	telemetryAPIKey := flag.String("telemetry-api", "", "api key for telemetry")
-	flag.Parse()
-
-	if *telemetryAPIKey == "" {
-		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(driver.PluginName),
-			launcher.WithServiceVersion(driver.PluginVersion),
-			launcher.WithMetricReportingPeriod(10*time.Second),
-			launcher.WithSpanExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterEndpoint(otelCollectorGRPCEndpoint),
-			launcher.WithMetricExporterInsecure(true),
-			launcher.WithPropagators([]string{"tracecontext", "baggage"}),
-			launcher.WithSpanExporterInsecure(true),
-		)
-		defer otelLauncher.Shutdown()
-	} else {
-		otelLauncher := launcher.ConfigureOpentelemetry(
-			launcher.WithServiceName(driver.PluginName),
-			launcher.WithAccessToken(*telemetryAPIKey),
-		)
-		defer otelLauncher.Shutdown()
+	shutdown, err := utils.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
+	if err != nil {
+		log.Fmt("failed to initialize OTLP exporter: %v", err)
 	}
+	defer shutdown()
 
 	plugins.Serve(factory)
 }
@@ -61,13 +35,5 @@ func main() {
 		http.ListenAndServe(":6062", nil)
 	}()
 
-	test := flag.Bool("test", false, "test")
-
-	flag.Parse()
-
-	if *test {
-		// driver.TestCreateNetwork()
-	} else {
-		configurePlugin()
-	}
+	configurePlugin()
 }
