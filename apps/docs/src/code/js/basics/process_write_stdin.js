@@ -1,9 +1,6 @@
 import { Session } from '@e2b/sdk'
 
-const session = await Session.create({
-  id: 'Nodejs',
-  apiKey: process.env.E2B_API_KEY,
-})
+const session = await Session.create({ id: 'Nodejs' })
 
 // This example will print back the string we send to the process using `sendStdin()`
 

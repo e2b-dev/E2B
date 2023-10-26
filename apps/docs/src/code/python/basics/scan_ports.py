@@ -1,8 +1,5 @@
 import time
-from os import getenv
 from e2b import Session
-
-E2B_API_KEY = getenv("E2B_API_KEY")
 
 # List of ports that have already been printed
 printed_ports = []
@@ -22,19 +19,15 @@ def print_new_port_and_url(open_ports, session):
       port_url = f"https://{host}"
       print(port, port_url)
 
-def main():
-  session = Session.create(
-    id="Python3",
-    api_key=E2B_API_KEY,
-    on_scan_ports=lambda open_ports: print_new_port_and_url(open_ports, session) # $HighlightLine
-  )
+session = Session.create(
+  id="Python3",
+  on_scan_ports=lambda open_ports: print_new_port_and_url(open_ports, session) # $HighlightLine
+)
 
-  # Start a new server on port 8000 inside the playground.
-  proc = session.process.start("python3 -m http.server 8000")
+# Start a new server on port 8000 inside the playground.
+proc = session.process.start("python3 -m http.server 8000")
 
-  # Wait 10 seconds and then kill the server and close the session.
-  time.sleep(10)
-  proc.kill()
-  session.close()
-
-main()
+# Wait 10 seconds and then kill the server and close the session.
+time.sleep(10)
+proc.kill()
+session.close()

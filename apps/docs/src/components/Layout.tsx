@@ -29,7 +29,7 @@ export function Layout({
             id="sidebar"
             className="
               scrollbar-thin
-              scrollbar-thumb-[#5A5A5A]
+              scrollbar-thumb-scrollbar
               contents
               lg:pointer-events-auto
               lg:block
@@ -59,7 +59,9 @@ export function Layout({
           lg:dark:border-white/10
           "
         >
-          <main className="flex-auto">{children}</main>
+          <main className="
+            flex-auto
+          ">{children}</main>
           <Footer />
         </div>
       </div>

@@ -27,7 +27,7 @@ export default function typographyStyles({ theme }: PluginUtils) {
         '--tw-prose-invert-links': theme('colors.brand.400'),
         '--tw-prose-invert-links-hover': theme('colors.brand.500'),
         '--tw-prose-invert-links-underline': theme('colors.brand.500 / 0.3'),
-        '--tw-prose-invert-bold': theme('colors.white'),
+        '--tw-prose-invert-bold': theme('colors.zinc.300'),
         '--tw-prose-invert-counters': theme('colors.zinc.400'),
         '--tw-prose-invert-bullets': theme('colors.zinc.600'),
         '--tw-prose-invert-hr': theme('colors.white / 0.05'),

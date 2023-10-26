@@ -20,7 +20,7 @@ import {
 } from '@algolia/autocomplete-core'
 import clsx from 'clsx'
 
-import { navigation } from '@/components/Navigation'
+import { routes } from '@/components/Navigation/routes'
 import { type Result } from '@/mdx/search.mjs'
 import { DialogAnimated } from '@/components/DialogAnimated'
 
@@ -199,7 +199,7 @@ function SearchResult({
 }) {
   const id = useId()
 
-  const sectionTitle = navigation.find(section =>
+  const sectionTitle = routes.find(section =>
     section.links.find(link => link.href === result.url.split('#')[0]),
   )?.title
   const hierarchy = [sectionTitle, result.pageTitle].filter(
