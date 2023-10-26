@@ -121,7 +121,6 @@ receivers:
             - targets: ["localhost:4646"]
           metric_relabel_configs:
             - action: keep
-              regex: nomad_client_allocated_cpu|nomad_client_allocated_disk|nomad_client_allocated_memory|nomad_client_allocs_cpu_total_percent|nomad_client_allocs_cpu_total_ticks|nomad_client_allocs_memory_cache|nomad_client_allocs_memory_rss|nomad_client_host_cpu_idle|nomad_client_host_disk_available|nomad_client_host_disk_inodes_percent|nomad_client_host_disk_size|nomad_client_host_memory_available|nomad_client_host_memory_free|nomad_client_host_memory_total|nomad_client_host_memory_used|nomad_client_unallocated_cpu|nomad_client_unallocated_disk|nomad_client_unallocated_memory|nomad_client_uptime
               source_labels:
                 - __name__
 
