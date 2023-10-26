@@ -1,8 +1,6 @@
-FROM python:3.11
+FROM python:3.11.6
 
-ARG DEBIAN_FRONTEND=noninteractive
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
   build-essential curl git util-linux
 
 ENV PIP_DEFAULT_TIMEOUT=100 \
@@ -11,7 +9,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
 
 WORKDIR /code
 
-COPY requirements.txt /requirements.txt
+COPY ./requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 RUN mkdir -p /home/user/artifacts
