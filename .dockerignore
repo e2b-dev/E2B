@@ -1,0 +1,19 @@
+# Ignore everything
+*
+
+# Allow files and directories
+!/packages/api
+!/packages/shared
+!go.work
+!go.work.sum
+
+/packages/api/bin
+/packages/api/README.md
+/packages/api/.gitignore
+/packages/api/api.hcl
+/packages/api/Dockerfile
+/packages/api/main.tf
+/packages/api/variables.tf
+
+/.dockerfile
+/Dockerfile

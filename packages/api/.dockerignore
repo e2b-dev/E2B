@@ -1,8 +1,0 @@
-bin
-README.md
-.gitignore
-.dockerignore
-api.hcl
-Dockerfile
-main.tf
-variables.tf
