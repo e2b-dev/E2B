@@ -130,6 +130,7 @@ receivers:
 
 processors:
   batch:
+    timeout: 5s
 
 extensions:
   basicauth/grafana_cloud_traces:
@@ -161,6 +162,9 @@ exporters:
       authenticator: basicauth/grafana_cloud_metrics
 
 service:
+  telemetry:
+    logs:
+      level: debug
   extensions:
     - basicauth/grafana_cloud_traces
     - basicauth/grafana_cloud_metrics
