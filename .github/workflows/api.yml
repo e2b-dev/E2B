@@ -36,9 +36,8 @@ jobs:
       - name: Build and Push
         uses: docker/build-push-action@v3
         with:
-          context: "{{defaultContext}}"
           push: true
-          file: "{context}/api.Dockerfile"
+          file: "api.Dockerfile"
           tags: ${{ env.IMAGE_TAG }}
           cache-from: type=gha,scope=api
           cache-to: type=gha,scope=api
