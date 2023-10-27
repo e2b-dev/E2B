@@ -9,9 +9,13 @@ terraform {
       source  = "kreuzwerker/docker"
       version = "2.16.0"
     }
+    checkmate = {
+      source = "tetratelabs/checkmate"
+      version = "1.5.0"
+    }
   }
 }
-
+provider "checkmate" {}
 provider "docker" {}
 
 provider "google-beta" {
@@ -96,6 +100,26 @@ provider "consul" {
   token   = data.google_secret_manager_secret_version.consul_acl_token.secret_data
 }
 
+resource "checkmate_http_health" "consul_health_check" {
+  # This is the url of the endpoint we want to check
+  url = "http://${data.google_compute_global_address.orch_server_consul_ip.address}/v1/health/service/api?passing=true"
+
+  # Will perform an HTTP GET request
+  method = "GET"
+
+  # The overall test should not take longer than 10 seconds
+  timeout = 600000
+
+  # Wait 0.1 seconds between attempts
+  interval = 100
+
+  # Expect a status 200 OK
+  status_code = 200
+
+  # We want 2 successes in a row
+  consecutive_successes = 2
+}
+
 resource "consul_acl_policy" "agent" {
   name  = "agent"
   rules = <<-RULE
@@ -103,6 +127,7 @@ resource "consul_acl_policy" "agent" {
       policy = "deny"
     }
     RULE
+  depends_on = [checkmate_http_health.consul_health_check]
 }
 
 resource "consul_acl_token_policy_attachment" "attachment" {
@@ -138,6 +163,27 @@ data "google_secret_manager_secret_version" "grafana_metrics_username" {
   secret = "grafana-metrics-username"
 }
 
+
+resource "checkmate_http_health" "nomad_health_check" {
+  # This is the url of the endpoint we want to check
+  url = "http://${data.google_compute_global_address.orch_server_consul_ip.address}/v1/health/service/api?passing=true"
+
+  # Will perform an HTTP GET request
+  method = "GET"
+
+  # The overall test should not take longer than 10 seconds
+  timeout = 600000
+
+  # Wait 0.1 seconds between attempts
+  interval = 100
+
+  # Expect a status 200 OK
+  status_code = 200
+
+  # We want 2 successes in a row
+  consecutive_successes = 2
+}
+
 module "telemetry" {
   source = "./packages/telemetry"
 
@@ -157,6 +203,8 @@ module "telemetry" {
   grafana_metrics_username = data.google_secret_manager_secret_version.grafana_metrics_username.secret_data
 
   grafana_api_key = data.google_secret_manager_secret_version.grafana_api_key.secret_data
+
+  depends_on = [checkmate_http_health.nomad_health_check]
 }
 
 module "session_proxy" {
@@ -167,6 +215,8 @@ module "session_proxy" {
   session_proxy_service_name = var.session_proxy_service_name
 
   session_proxy_port = var.session_proxy_port
+
+  depends_on = [checkmate_http_health.nomad_health_check]
 }
 
 module "client_proxy" {
@@ -202,4 +252,6 @@ module "api" {
   environment                   = var.environment
   bucket_name                   = data.google_storage_bucket.e2b-envs-docker-context.name
   google_service_account_secret = google_service_account_key.google_service_key.private_key
+
+  depends_on = [checkmate_http_health.nomad_health_check]
 }

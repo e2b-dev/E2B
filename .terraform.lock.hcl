@@ -145,3 +145,26 @@ provider "registry.terraform.io/kreuzwerker/docker" {
     "zh:fd634e973eb2b6483a1ce9251801a393d04cb496f8e83ffcf3f0c4cad8c18f4c",
   ]
 }
+
+provider "registry.terraform.io/tetratelabs/checkmate" {
+  version     = "1.5.0"
+  constraints = "1.5.0"
+  hashes = [
+    "h1:uOZLFoZySzV3UDnmDvg0YQk9A/PApsIeKNk6n4lvJDM=",
+    "zh:009a67274e0e846220e38c4a5ddba79c89388bceec445a1a7eb0089ea591cd3c",
+    "zh:0ed1201557c07ce8db95b69a0d6a149399c9accd4868306797d14b24a29ae8f4",
+    "zh:241db57628c4a71993200024866e176b853ed0aa0373619eaee0670ea99f1388",
+    "zh:4e480f27ff5386708390f3ebb32f4ece64c8e81fe8dd01398e2f0f6da9f428e3",
+    "zh:5b141e1c494d91318352e34341755bc95c4801ffa5646cda8bb146b96da9d097",
+    "zh:6495141ad16618e638744c620f57938fb883e3d44634089e75c8ed2fedaa0234",
+    "zh:672a79af993fbbc6f532ecd36b5ad00afb22623aa0fb21edb90738ca8caa992c",
+    "zh:6dfbf08f60392c62abaf1def319113091d34bb796ea819d85c8ff9c873ad93ae",
+    "zh:73e876ef1803a92cd1aaf62066e87128c5d3c4b4166e7ba87f198c0ecdf2d812",
+    "zh:7e0f981cd863ba95b11eabbd9b1fdb3920ecc31bdfd4e67dcadc091e876e594b",
+    "zh:890df766e9b839623b1f0437355032a3c006226a6c200cd911e15ee1a9014e9f",
+    "zh:99b8f857bf47a292707d27982dd2f7873e0f4b8bdbbcbe18afd7d49656d507d4",
+    "zh:c43daa013ef8258a07b5df38cffc445920fe62571c0c1fd7af39088218dbd513",
+    "zh:d7b09c4c9ff5c140bcd51e6300bf3689050daf3ca0b970bd913431fcb0c6129a",
+    "zh:eb6e5d569ceecf54abc8079b3270c53279f3f524f91baa635dde2365686e65cf",
+  ]
+}
