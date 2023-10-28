@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
-
 	"github.com/jellydator/ttlcache/v3"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 const (
@@ -23,7 +25,8 @@ type InstanceInfo struct {
 }
 
 type InstanceCache struct {
-	cache *ttlcache.Cache[string, InstanceInfo]
+	cache   *ttlcache.Cache[string, InstanceInfo]
+	counter metric.Int64UpDownCounter
 }
 
 // Add the instance to the cache and start expiration timer.
@@ -39,7 +42,7 @@ func (c *InstanceCache) Add(instance *api.Instance, teamID *string, startTime *t
 	}
 
 	c.cache.Set(instance.InstanceID, instanceData, ttlcache.DefaultTTL)
-
+	c.counter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("instance_id", instance.InstanceID)))
 	return nil
 }
 
@@ -89,17 +92,31 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 		ttlcache.WithTTL[string, InstanceInfo](instanceExpiration),
 	)
 
+	meter := otel.GetMeterProvider().Meter("nomad")
+	counter, err := meter.Int64UpDownCounter(
+		"running_instances",
+		metric.WithDescription(
+			"Number of running instances.",
+		),
+		metric.WithUnit("{instance}"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %+v", er, err.Err)
 			}
+			counter.Add(ctx, -1, metric.WithAttributes(attribute.String("instance_id", i.Value().Instance.InstanceID)))
 		}
 	})
 
 	instanceCache := &InstanceCache{
-		cache: cache,
+		cache:   cache,
+		counter: counter,
 	}
 
 	for _, instance := range initialInstances {

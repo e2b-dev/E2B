@@ -101,8 +101,12 @@ func InitOTLPExporter(serviceName string, serviceVersion string, extraAttributes
 
 	meterProvider := metric.NewMeterProvider(
 		metric.WithResource(res),
-		metric.WithReader(metric.NewPeriodicReader(metricExporter,
-			metric.WithInterval(metricExportPeriod))),
+		metric.WithReader(
+			metric.NewPeriodicReader(
+				metricExporter,
+				metric.WithInterval(metricExportPeriod),
+			),
+		),
 	)
 	if err != nil {
 		panic(err)
