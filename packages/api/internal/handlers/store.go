@@ -82,12 +82,12 @@ func NewAPIStore() *APIStore {
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current sessions from Nomad\n: %+v", instancesErr.Err)
+			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %+v", instancesErr.Err)
 		}
 
 		initialInstances = instances
 	} else {
-		fmt.Println("Skipping loading sessions from Nomad, running locally")
+		fmt.Println("Skipping loading instances from Nomad, running locally")
 	}
 	meter := otel.GetMeterProvider().Meter("nomad")
 
@@ -102,11 +102,12 @@ func NewAPIStore() *APIStore {
 		panic(err)
 	}
 	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
+	go cache.RemoveAfterMaxInstanceLength()
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		go cache.KeepInSync(nomadClient)
 	} else {
-		fmt.Println("Skipping syncing sessions with Nomad, running locally")
+		fmt.Println("Skipping syncing intances with Nomad, running locally")
 	}
 
 	storageClient, err := storage.NewClient(ctx)
@@ -234,11 +235,11 @@ func getDeleteInstanceFunction(nomad *nomad.NomadClient, posthogClient posthog.C
 func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, instanceID string, teamID *string, startTime *time.Time, purge bool) *api.APIError {
 	delErr := nomad.DeleteInstance(instanceID, purge)
 	if delErr != nil {
-		errMsg := fmt.Errorf("cannot delete session '%s': %w", instanceID, delErr.Err)
+		errMsg := fmt.Errorf("cannot delete instance '%s': %w", instanceID, delErr.Err)
 
 		return &api.APIError{
 			Err:       errMsg,
-			ClientMsg: "Cannot delete the session right now",
+			ClientMsg: "Cannot delete the instance right now",
 			Code:      http.StatusInternalServerError,
 		}
 	}
@@ -246,9 +247,9 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 	if teamID != nil && startTime != nil {
 		err := posthogClient.Enqueue(posthog.Capture{
 			DistinctId: "backend",
-			Event:      "closed_session",
+			Event:      "closed_instance",
 			Properties: posthog.NewProperties().
-				Set("session_id", instanceID).Set("duration", time.Since(*startTime).Seconds()),
+				Set("instance_id", instanceID).Set("duration", time.Since(*startTime).Seconds()),
 			Groups: posthog.NewGroups().
 				Set("team", teamID),
 		})

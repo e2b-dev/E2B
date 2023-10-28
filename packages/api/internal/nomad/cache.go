@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	instanceExpiration = time.Second * 12
-	cacheSyncTime      = time.Second * 180
+	instanceExpiration        = time.Second * 12
+	cacheSyncTime             = time.Second * 180
+	maxInstanceLength         = time.Hour * 24
+	maxInstanceLengthInterval = time.Second * 30
 )
 
 type InstanceInfo struct {
@@ -76,7 +78,8 @@ func (c *InstanceCache) Exists(instanceID string) bool {
 func (c *InstanceCache) Sync(instances []*api.Instance) {
 	for _, instance := range instances {
 		if !c.Exists(instance.InstanceID) {
-			err := c.Add(instance, nil, nil)
+			now := time.Now()
+			err := c.Add(instance, nil, &now)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error adding instance to cache: %w", err))
 			}
@@ -128,6 +131,18 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %+v", err.Err)
 		} else {
 			c.Sync(activeInstances)
+		}
+	}
+}
+
+// RemoveAfterMaxInstanceLength Remove instances that are older than maxInstanceLength
+func (c *InstanceCache) RemoveAfterMaxInstanceLength() {
+	for {
+		time.Sleep(maxInstanceLengthInterval)
+		for _, item := range c.cache.Items() {
+			if (time.Since(*item.Value().StartTime)) > maxInstanceLength {
+				c.cache.Delete(item.Key())
+			}
 		}
 	}
 }
