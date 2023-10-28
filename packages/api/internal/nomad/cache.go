@@ -8,7 +8,6 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/jellydator/ttlcache/v3"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -87,22 +86,10 @@ func (c *InstanceCache) Sync(instances []*api.Instance) {
 
 // We will need to either use Redis for storing active instances OR retrieve them from Nomad when we start API to keep everything in sync
 // We are retrieving the tasks from Nomad now.
-func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*api.Instance) *InstanceCache {
+func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.APIError, initialInstances []*api.Instance, counter metric.Int64UpDownCounter) *InstanceCache {
 	cache := ttlcache.New(
 		ttlcache.WithTTL[string, InstanceInfo](instanceExpiration),
 	)
-
-	meter := otel.GetMeterProvider().Meter("nomad")
-	counter, err := meter.Int64UpDownCounter(
-		"running_instances",
-		metric.WithDescription(
-			"Number of running instances.",
-		),
-		metric.WithUnit("{instance}"),
-	)
-	if err != nil {
-		panic(err)
-	}
 
 	cache.OnEviction(func(ctx context.Context, er ttlcache.EvictionReason, i *ttlcache.Item[string, InstanceInfo]) {
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {

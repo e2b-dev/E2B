@@ -133,6 +133,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		return
 	}
 
+	a.buildCache.Create(teamID, envID, buildID)
 	ReportEvent(ctx, "started updating environment")
 
 	go func() {

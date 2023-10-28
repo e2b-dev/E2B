@@ -8,16 +8,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-	"github.com/e2b-dev/infra/packages/api/internal/db"
-	"github.com/e2b-dev/infra/packages/api/internal/nomad"
-	"github.com/e2b-dev/infra/packages/api/internal/utils"
-
 	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/posthog/posthog-go"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
+	"github.com/e2b-dev/infra/packages/api/internal/db"
+	"github.com/e2b-dev/infra/packages/api/internal/nomad"
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 )
 
 type APIStore struct {
@@ -88,8 +89,19 @@ func NewAPIStore() *APIStore {
 	} else {
 		fmt.Println("Skipping loading sessions from Nomad, running locally")
 	}
+	meter := otel.GetMeterProvider().Meter("nomad")
 
-	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances)
+	instancesCounter, err := meter.Int64UpDownCounter(
+		"api.env.instance.running",
+		metric.WithDescription(
+			"Number of running instances.",
+		),
+		metric.WithUnit("{instance}"),
+	)
+	if err != nil {
+		panic(err)
+	}
+	cache := nomad.NewInstanceCache(getDeleteInstanceFunction(nomadClient, posthogClient), initialInstances, instancesCounter)
 
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		go cache.KeepInSync(nomadClient)
@@ -114,7 +126,17 @@ func NewAPIStore() *APIStore {
 		apiSecret = "SUPER_SECR3T_4PI_K3Y"
 	}
 
-	buildCache := utils.NewBuildCache()
+	buildCounter, err := meter.Int64UpDownCounter(
+		"api.env.build.running",
+		metric.WithDescription(
+			"Number of running builds.",
+		),
+		metric.WithUnit("{build}"),
+	)
+	if err != nil {
+		panic(err)
+	}
+	buildCache := utils.NewBuildCache(buildCounter)
 
 	return &APIStore{
 		Ctx:                        ctx,
