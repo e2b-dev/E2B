@@ -10,7 +10,7 @@ terraform {
       version = "2.16.0"
     }
     checkmate = {
-      source = "tetratelabs/checkmate"
+      source  = "tetratelabs/checkmate"
       version = "1.5.0"
     }
   }
@@ -121,8 +121,8 @@ resource "checkmate_http_health" "consul_health_check" {
 }
 
 resource "consul_acl_policy" "agent" {
-  name  = "agent"
-  rules = <<-RULE
+  name       = "agent"
+  rules      = <<-RULE
     key_prefix "" {
       policy = "deny"
     }

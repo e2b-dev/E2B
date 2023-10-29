@@ -114,19 +114,18 @@ receivers:
         - job_name: nomad
           scrape_interval: 10s
           scrape_timeout: 5s
+          evaluation_interval: 10s
           metrics_path: '/v1/metrics'
           params:
             format: ['prometheus']
-          static_configs:
-            - targets: ['localhost:4646']
-        - job_name: consul
-          scrape_interval: 10s
-          scrape_timeout: 5s
-          metrics_path: '/v1/agent/metrics'
-          params:
-            format: ['prometheus']
-          static_configs:
-            - targets: ['localhost:8500']
+          consul_sd_configs:
+          - server: '{{ env "NOMAD_IP_prometheus_ui" }}:8500'
+            services: ['nomad-client', 'nomad', 'api', 'client-proxy', 'session-proxy', 'otel-collector', 'logs-collector']
+
+          relabel_configs:
+          - source_labels: ['__meta_consul_tags']
+            regex: '(.*)http(.*)'
+            action: keep
 
 processors:
   batch:
