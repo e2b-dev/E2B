@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"sync"
 	"time"
 
@@ -22,14 +25,16 @@ type Build struct {
 }
 
 type BuildCache struct {
-	cache *ttlcache.Cache[string, Build]
-	mutex sync.RWMutex
+	cache   *ttlcache.Cache[string, Build]
+	counter metric.Int64UpDownCounter
+	mutex   sync.RWMutex
 }
 
-func NewBuildCache() *BuildCache {
+func NewBuildCache(counter metric.Int64UpDownCounter) *BuildCache {
+	cache := ttlcache.New(ttlcache.WithTTL[string, Build](logsExpiration))
 	return &BuildCache{
-		cache: ttlcache.New(ttlcache.WithTTL[string, Build](logsExpiration)),
-		mutex: sync.RWMutex{},
+		cache:   cache,
+		counter: counter,
 	}
 }
 
@@ -111,6 +116,12 @@ func (c *BuildCache) Create(teamID string, envID string, buildID string) {
 		Logs:    []string{},
 	}
 	c.cache.Set(envID, buildLog, logsExpiration)
+	c.counter.Add(
+		context.Background(),
+		1,
+		metric.WithAttributes(attribute.String("env_id", envID)),
+		metric.WithAttributes(attribute.String("build_id", buildID)),
+	)
 }
 
 // SetDone marks the build as finished
@@ -129,6 +140,11 @@ func (c *BuildCache) SetDone(envID string, buildID string, status api.Environmen
 		Logs:    item.Logs,
 		TeamID:  item.TeamID,
 	}, logsExpiration)
+
+	c.counter.Add(context.Background(), -1,
+		metric.WithAttributes(attribute.String("env_id", envID)),
+		metric.WithAttributes(attribute.String("build_id", buildID)),
+	)
 
 	return nil
 }
