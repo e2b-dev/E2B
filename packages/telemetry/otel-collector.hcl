@@ -114,7 +114,6 @@ receivers:
         - job_name: nomad
           scrape_interval: 10s
           scrape_timeout: 5s
-          evaluation_interval: 10s
           metrics_path: '/v1/metrics'
           params:
             format: ['prometheus']
