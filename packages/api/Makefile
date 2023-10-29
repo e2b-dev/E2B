@@ -23,7 +23,6 @@ build-debug:
 .PHONY: run
 run:
 	make build-debug
-	API_ADMIN_KEY=test \
 	NOMAD_ADDRESS=https://nomad.e2b.dev \
 	NOMAD_TOKEN=$(NOMAD_TOKEN) \
 	CONSUL_TOKEN=$(CONSUL_TOKEN) \

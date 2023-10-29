@@ -29,10 +29,6 @@ data "google_secret_manager_secret_version" "posthog_api_key" {
   secret = "posthog-api-key"
 }
 
-data "google_secret_manager_secret_version" "api_admin_key" {
-  secret = "api-admin-key"
-}
-
 resource "random_password" "api_secret" {
   length = 32
 }
@@ -63,7 +59,6 @@ resource "nomad_job" "api" {
       image_name                    = docker_image.api_image.repo_digest
       supabase_connection_string    = data.google_secret_manager_secret_version.supabase_connection_string.secret_data
       posthog_api_key               = data.google_secret_manager_secret_version.posthog_api_key.secret_data
-      api_admin_key                 = data.google_secret_manager_secret_version.api_admin_key.secret_data
       logs_proxy_address            = var.logs_proxy_address
       nomad_address                 = var.nomad_address
       nomad_token                   = var.nomad_token

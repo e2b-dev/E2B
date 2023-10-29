@@ -48,11 +48,6 @@ variable "posthog_api_key" {
   default = ""
 }
 
-variable "api_admin_key" {
-  type    = string
-  default = ""
-}
-
 variable "environment" {
   type    = string
   default = ""
@@ -115,7 +110,6 @@ job "orchestration-api" {
         CONSUL_TOKEN                  = var.consul_token
         SUPABASE_CONNECTION_STRING    = var.supabase_connection_string
         POSTHOG_API_KEY               = var.posthog_api_key
-        API_ADMIN_KEY                 = var.api_admin_key
         ENVIRONMENT                   = var.environment
         GOOGLE_CLOUD_STORAGE_BUCKET   = var.bucket_name
         API_SECRET                    = var.api_secret
