@@ -166,12 +166,12 @@ module "gce_lb_http_nomad" {
         request_path        = "/v1/status/peers"
         port                = 4646
         host                = null
-        logging             = null
+        logging             = false
       }
 
       log_config = {
-        enable      = true
-        sample_rate = 1.0
+        enable      = false
+        sample_rate = 0.0
       }
 
       groups = [
@@ -249,12 +249,12 @@ module "gce_lb_http_consul" {
         request_path        = "/v1/status/peers"
         port                = 8500
         host                = null
-        logging             = null
+        logging             = false
       }
 
       log_config = {
-        enable      = true
-        sample_rate = 1.0
+        enable      = false
+        sample_rate = 0.0
       }
 
       groups = [

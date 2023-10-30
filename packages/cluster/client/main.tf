@@ -211,12 +211,12 @@ module "gce_lb_http" {
         request_path        = var.client_proxy_health_port.path
         port                = var.client_proxy_health_port.port
         host                = null
-        logging             = null
+        logging             = false
       }
 
       log_config = {
-        enable      = true
-        sample_rate = 1.0
+        enable      = false
+        sample_rate = 0.0
       }
 
       groups = [
@@ -263,12 +263,12 @@ module "gce_lb_http" {
         request_path        = var.api_port.health_path
         port                = var.api_port.port
         host                = null
-        logging             = null
+        logging             = false
       }
 
       log_config = {
-        enable      = true
-        sample_rate = 1.0
+        enable      = false
+        sample_rate = 0.0
       }
 
       groups = [
@@ -339,8 +339,8 @@ module "gce_lb_http_logs" {
       }
 
       log_config = {
-        enable      = true
-        sample_rate = 1.0
+        enable      = false
+        sample_rate = 0.0
       }
 
       groups = [
