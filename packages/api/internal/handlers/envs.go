@@ -41,6 +41,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 	SetAttributes(ctx, attribute.String("env.id", envID))
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
+
 	dockerfile, buildID, fileContent, err := a.getBuildData(c, ctx, userID, teamID, envID, properties)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when getting build data: %s", err))
@@ -51,17 +52,44 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		return
 	}
 
-	a.buildCache.Create(teamID, envID, buildID)
+	err = a.buildCache.Create(teamID, envID, buildID)
+	if err != nil {
+		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
+
+		err = fmt.Errorf("build is already running build for %s", envID)
+		ReportCriticalError(ctx, err)
+
+		return
+	}
 
 	ReportEvent(ctx, "started creating new environment")
 
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
-			trace.ContextWithSpanContext(a.Ctx, span.SpanContext()),
+			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
 
-		a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties)
+		var status api.EnvironmentBuildStatus
+
+		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties)
+		if buildErr != nil {
+			status = api.EnvironmentBuildStatusError
+
+			err = fmt.Errorf("error when building env: %w", buildErr)
+
+			ReportCriticalError(buildContext, err)
+		} else {
+			status = api.EnvironmentBuildStatusReady
+
+			ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+		}
+
+		cacheErr := a.buildCache.SetDone(envID, buildID, status)
+		if err != nil {
+			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
+			ReportCriticalError(buildContext, cacheErr)
+		}
 
 		childSpan.End()
 	}()
@@ -95,6 +123,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 	SetAttributes(ctx, attribute.String("env.id", envID))
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
+
 	dockerfile, buildID, fileContent, err := a.getBuildData(c, ctx, userID, teamID, envID, properties)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when getting build data: %s", err))
@@ -114,6 +143,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 		return
 	}
+
 	if !hasAccess {
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
@@ -123,7 +153,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		return
 	}
 
-	err = a.buildCache.CreateIfNotExists(teamID, envID, buildID)
+	err = a.buildCache.Create(teamID, envID, buildID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
 
@@ -133,16 +163,34 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		return
 	}
 
-	a.buildCache.Create(teamID, envID, buildID)
 	ReportEvent(ctx, "started updating environment")
 
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
-			trace.ContextWithSpanContext(a.Ctx, span.SpanContext()),
+			trace.ContextWithSpanContext(context.Background(), span.SpanContext()),
 			"background-build-env",
 		)
 
-		a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties)
+		var status api.EnvironmentBuildStatus
+
+		buildErr := a.buildEnv(buildContext, userID, teamID, envID, buildID, dockerfile, fileContent, properties)
+		if buildErr != nil {
+			status = api.EnvironmentBuildStatusError
+
+			err = fmt.Errorf("error when building env: %w", buildErr)
+
+			ReportCriticalError(buildContext, err)
+		} else {
+			status = api.EnvironmentBuildStatusReady
+
+			ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+		}
+
+		cacheErr := a.buildCache.SetDone(envID, buildID, status)
+		if err != nil {
+			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
+			ReportCriticalError(buildContext, cacheErr)
+		}
 
 		childSpan.End()
 	}()
@@ -215,7 +263,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 
 	dockerBuild, err := a.buildCache.Get(envID, buildID)
 	if err != nil {
-		msg := fmt.Errorf("didn't find cache for env %s and build %s", envID, buildID)
+		msg := fmt.Errorf("error finding cache for env %s and build %s", envID, buildID)
 		a.sendAPIStoreError(c, http.StatusNotFound, msg.Error())
 
 		ReportError(ctx, msg)
@@ -280,15 +328,13 @@ func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvI
 	c.JSON(http.StatusCreated, nil)
 }
 
-func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID, dockerfile string, content io.Reader, posthogProperties posthog.Properties) {
+func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID, dockerfile string, content io.Reader, posthogProperties posthog.Properties) (err error) {
 	childCtx, childSpan := a.tracer.Start(ctx, "build-env",
 		trace.WithAttributes(
 			attribute.String("env_id", envID),
 		),
 	)
 	defer childSpan.End()
-
-	var err error
 
 	startTime := time.Now()
 
@@ -306,7 +352,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
 		ReportCriticalError(childCtx, err)
 
-		return
+		return err
 	}
 
 	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64)
@@ -314,13 +360,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 		err = fmt.Errorf("error when starting build: %w", err)
 		ReportCriticalError(childCtx, err)
 
-		err = a.buildCache.SetDone(envID, buildID, api.EnvironmentBuildStatusError)
-		if err != nil {
-			err = fmt.Errorf("error when setting build done in logs: %w", err)
-			ReportCriticalError(childCtx, err)
-		}
-
-		return
+		return err
 	}
 
 	err = a.supabase.UpsertEnv(teamID, envID, buildID, dockerfile)
@@ -328,13 +368,11 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)
 		ReportCriticalError(childCtx, err)
+
+		return err
 	}
 
-	err = a.buildCache.SetDone(envID, buildID, api.EnvironmentBuildStatusReady)
-	if err != nil {
-		err = fmt.Errorf("error when setting build done in logs: %w", err)
-		ReportCriticalError(childCtx, err)
-	}
+	return nil
 }
 
 func (a *APIStore) getBuildData(c *gin.Context, ctx context.Context, userID, teamID, envID string, properties posthog.Properties) (dockerfile, buildID string, fileContent io.ReadCloser, err error) {
@@ -348,6 +386,7 @@ func (a *APIStore) getBuildData(c *gin.Context, ctx context.Context, userID, tea
 	fileContent, fileHandler, err := c.Request.FormFile("buildContext")
 	if err != nil {
 		err = fmt.Errorf("error when parsing form data: %w", err)
+
 		return dockerfile, buildID, fileContent, err
 	}
 
@@ -367,7 +406,7 @@ func (a *APIStore) getBuildData(c *gin.Context, ctx context.Context, userID, tea
 		err = fmt.Errorf("build context doesn't have correct extension, the file is %s", fileHandler.Filename)
 		ReportCriticalError(ctx, err)
 
-		return
+		return dockerfile, buildID, fileContent, err
 	}
 
 	dockerfile = c.PostForm("dockerfile")

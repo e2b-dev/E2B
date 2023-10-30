@@ -3,14 +3,14 @@ package utils
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 	"sync"
 	"time"
 
-	"github.com/e2b-dev/infra/packages/api/internal/api"
-
 	"github.com/jellydator/ttlcache/v3"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+
+	"github.com/e2b-dev/infra/packages/api/internal/api"
 )
 
 const (
@@ -27,46 +27,41 @@ type Build struct {
 type BuildCache struct {
 	cache   *ttlcache.Cache[string, Build]
 	counter metric.Int64UpDownCounter
-	mutex   sync.RWMutex
+	mu      sync.RWMutex
 }
 
 func NewBuildCache(counter metric.Int64UpDownCounter) *BuildCache {
 	cache := ttlcache.New(ttlcache.WithTTL[string, Build](logsExpiration))
+
 	return &BuildCache{
 		cache:   cache,
 		counter: counter,
 	}
 }
 
-// get returns the build info without locking the mutex
-func (c *BuildCache) get(envID string, buildID string) (Build, error) {
+// Get returns the build info
+func (c *BuildCache) Get(envID string, buildID string) (*Build, error) {
 	item := c.cache.Get(envID)
 
-	if item != nil {
-		if item.Value().BuildID != buildID {
-			return Build{}, fmt.Errorf("received logs for another build %s env %s", buildID, envID)
-		}
-
-		return item.Value(), nil
+	if item == nil {
+		return nil, fmt.Errorf("build for %s not found in cache", envID)
 	}
 
-	return Build{}, fmt.Errorf("build for %s not found in cache", envID)
-}
+	value := item.Value()
 
-// Get returns the build info
-func (c *BuildCache) Get(envID string, buildID string) (Build, error) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+	if value.BuildID != buildID {
+		return nil, fmt.Errorf("received logs for another build %s env %s", buildID, envID)
+	}
 
-	return c.get(envID, buildID)
+	return &value, nil
 }
 
 // Append appends logs to the build
 func (c *BuildCache) Append(envID, buildID string, logs []string) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	item, err := c.get(envID, buildID)
+	item, err := c.Get(envID, buildID)
 	if err != nil {
 		err = fmt.Errorf("build for %s not found in cache: %w", envID, err)
 
@@ -84,52 +79,33 @@ func (c *BuildCache) Append(envID, buildID string, logs []string) error {
 }
 
 // CreateIfNotExists creates a new build if it doesn't exist in the cache or the build was already finished
-func (c *BuildCache) CreateIfNotExists(teamID, envID, buildID string) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+func (c *BuildCache) Create(teamID, envID, buildID string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	item := c.cache.Get(envID)
 	if item != nil && item.Value().Status == api.EnvironmentBuildStatusBuilding {
 		return fmt.Errorf("build for %s already exists in cache", envID)
 	}
 
-	buildLog := Build{
+	c.cache.Set(envID, Build{
 		BuildID: buildID,
 		TeamID:  teamID,
 		Status:  api.EnvironmentBuildStatusBuilding,
 		Logs:    []string{},
-	}
-	c.cache.Set(envID, buildLog, logsExpiration)
+	}, logsExpiration)
+
+	c.updateCounter(envID, buildID, 1)
 
 	return nil
 }
 
-// Create creates a new build in the cache
-func (c *BuildCache) Create(teamID string, envID string, buildID string) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	buildLog := Build{
-		BuildID: buildID,
-		TeamID:  teamID,
-		Status:  api.EnvironmentBuildStatusBuilding,
-		Logs:    []string{},
-	}
-	c.cache.Set(envID, buildLog, logsExpiration)
-	c.counter.Add(
-		context.Background(),
-		1,
-		metric.WithAttributes(attribute.String("env_id", envID)),
-		metric.WithAttributes(attribute.String("build_id", buildID)),
-	)
-}
-
 // SetDone marks the build as finished
 func (c *BuildCache) SetDone(envID string, buildID string, status api.EnvironmentBuildStatus) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	item, err := c.get(envID, buildID)
+	item, err := c.Get(envID, buildID)
 	if err != nil {
 		return fmt.Errorf("build %s not found in cache: %w", buildID, err)
 	}
@@ -141,10 +117,14 @@ func (c *BuildCache) SetDone(envID string, buildID string, status api.Environmen
 		TeamID:  item.TeamID,
 	}, logsExpiration)
 
-	c.counter.Add(context.Background(), -1,
+	c.updateCounter(envID, buildID, -1)
+
+	return nil
+}
+
+func (c *BuildCache) updateCounter(envID, buildID string, value int64) {
+	c.counter.Add(context.Background(), value,
 		metric.WithAttributes(attribute.String("env_id", envID)),
 		metric.WithAttributes(attribute.String("build_id", buildID)),
 	)
-
-	return nil
 }
