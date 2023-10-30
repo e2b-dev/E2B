@@ -54,13 +54,11 @@ func NewAPIStore() *APIStore {
 	fmt.Println("Initialized Supabase client")
 
 	posthogAPIKey := os.Getenv("POSTHOG_API_KEY")
-	posthogVerbose := true
 	posthogLogger := posthog.StdLogger(log.New(os.Stderr, "posthog ", log.LstdFlags))
 
 	if posthogAPIKey == "" {
 		fmt.Println("No Posthog API key provided, silencing logs")
 
-		posthogVerbose = false
 		writer := &utils.NoOpWriter{}
 		posthogLogger = posthog.StdLogger(log.New(writer, "posthog ", log.LstdFlags))
 	}
@@ -68,7 +66,7 @@ func NewAPIStore() *APIStore {
 	posthogClient, posthogErr := posthog.NewWithConfig(posthogAPIKey, posthog.Config{
 		Interval:  30 * time.Second,
 		BatchSize: 100,
-		Verbose:   posthogVerbose,
+		Verbose:   false,
 		Logger:    posthogLogger,
 	})
 
