@@ -178,7 +178,31 @@ async function waitForBuildFinish(accessToken: string, envID: string, buildID: s
   process.stdout.write('\n')
   do {
     await wait(envCheckInterval)
-    env = await getEnv(accessToken, { envID, logsOffset, buildID })
+
+    try {
+      env = await getEnv(accessToken, { envID, logsOffset, buildID })
+    } catch (e) {
+      if (e instanceof getEnv.Error) {
+        const error = e.getActualType()
+        if (error.status === 401) {
+          throw new Error(
+            `Error getting build info - (${error.status}) bad request: ${error.data.message}`,
+          )
+        }
+        if (error.status === 404) {
+          throw new Error(
+            `Error getting build info - (${error.status}) not found: ${error.data.message}`,
+          )
+        }
+        if (error.status === 500) {
+          throw new Error(
+            `Error getting build info - (${error.status}) server error: ${error.data.message}`,
+          )
+        }
+      }
+      throw e
+    }
+
     logsOffset += env.data.logs.length
 
     switch (env.data.status) {
