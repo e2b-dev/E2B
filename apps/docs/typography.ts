@@ -280,7 +280,8 @@ export default function typographyStyles({ theme }: PluginUtils) {
 
         // Inline elements
         a: {
-          color: 'var(--tw-prose-links)',
+          // color: 'var(--tw-prose-links)',
+          color: theme('colors.brand.500'),
           textDecoration: `underline ${theme('colors.brand.500 / 0.3')}`,
           textDecorationThickness: '2px',
           fontWeight: '500',
