@@ -36,14 +36,14 @@ func main() {
 		// Start of mock build for testing
 		env.MockBuild(*envID, *buildID)
 		return
-	}
+	} else {
+		shutdown, err := telemetry.InitOTLPExporter("prod", driver.PluginName, driver.PluginVersion)
+		if err != nil {
+			log.Fmt("failed to initialize OTLP exporter: %v", err)
+		}
 
-	shutdown, err := telemetry.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
-	if err != nil {
-		log.Fmt("failed to initialize OTLP exporter: %v", err)
+		defer shutdown()
 	}
-
-	defer shutdown()
 
 	plugins.Serve(factory)
 }

@@ -17,7 +17,7 @@ func configurePlugin() {
 		http.ListenAndServe(":6061", nil)
 	}()
 
-	shutdown, err := telemetry.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
+	shutdown, err := telemetry.InitOTLPExporter("prod", driver.PluginName, driver.PluginVersion)
 	if err != nil {
 		log.Fmt("failed to initialize OTLP exporter: %v", err)
 	}

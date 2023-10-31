@@ -32,12 +32,7 @@ type ExtraAttribute struct {
 }
 
 // InitOTLPExporter initializes an OTLP exporter, and configures the corresponding trace providers.
-func InitOTLPExporter(serviceName string, serviceVersion string, extraAttributes ...attribute.KeyValue) (func(), error) {
-	env := os.Getenv("ENVIRONMENT")
-	if env == "" {
-		return func() {}, nil
-	}
-
+func InitOTLPExporter(env, serviceName, serviceVersion string, extraAttributes ...attribute.KeyValue) (func(), error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "unknown"

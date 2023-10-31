@@ -14,10 +14,31 @@ resource "google_storage_bucket_iam_member" "envs-pipeline-iam" {
   member = "serviceAccount:${var.google_service_account_email}"
 }
 
+resource "google_storage_bucket_iam_member" "instance_setup_bucket_iam" {
+  bucket = var.setup_bucket
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${var.google_service_account_email}"
+}
+
 resource "google_project_iam_member" "service-account-roles" {
   project = var.gcp_project_id
   role    = "roles/editor"
   member  = "serviceAccount:${var.google_service_account_email}"
+}
+
+variable "setup_files" {
+  type = map(string)
+  default = {
+    "scripts/run-nomad.sh"  = "run-nomad.sh",
+    "scripts/run-consul.sh" = "run-consul.sh"
+  }
+}
+
+resource "google_storage_bucket_object" "setup_config_objects" {
+  for_each = var.setup_files
+  name     = each.value
+  source   = "${path.module}/${each.key}"
+  bucket   = var.setup_bucket
 }
 
 module "server_cluster" {
@@ -26,6 +47,7 @@ module "server_cluster" {
   startup_script = templatefile("${path.module}/scripts/start-server.sh", {
     num_servers      = var.server_cluster_size
     cluster_tag_name = var.cluster_tag_name
+    scripts_bucket   = var.setup_bucket
   })
   instance_group_update_policy_min_ready_sec = 0
 
@@ -40,6 +62,8 @@ module "server_cluster" {
   network_name   = var.network_name
 
   service_account_email = var.google_service_account_email
+
+  depends_on = [google_storage_bucket_object.setup_config_objects]
 }
 
 module "client_cluster" {
@@ -47,6 +71,7 @@ module "client_cluster" {
 
   startup_script = templatefile("${path.module}/scripts/start-client.sh", {
     cluster_tag_name = var.cluster_tag_name
+    scripts_bucket   = var.setup_bucket
   })
   instance_group_update_policy_min_ready_sec = 0
 
@@ -69,6 +94,8 @@ module "client_cluster" {
   api_port = var.api_port
 
   service_account_email = var.google_service_account_email
+
+  depends_on = [google_storage_bucket_object.setup_config_objects]
 }
 
 resource "google_compute_firewall" "orchstrator_firewall_ingress" {

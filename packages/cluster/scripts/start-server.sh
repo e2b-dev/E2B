@@ -7,7 +7,10 @@ set -e
 
 # Send the log output from this script to user-data.log, syslog, and the console
 # Inspired by https://alestic.com/2010/12/ec2-user-data-output/
-exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
-# These variables are passed in via Terraform template interplation
-/opt/consul/bin/run-consul.sh --server --cluster-tag-name "${cluster_tag_name}" & /opt/nomad/bin/run-nomad.sh --server --num-servers "${num_servers}"
+gsutil cp gs://${scripts_bucket}/run-consul.sh /opt/consul/bin/run-consul.sh
+gsutil cp gs://${scripts_bucket}/run-nomad.sh /opt/nomad/bin/run-nomad.sh
+
+/opt/consul/bin/run-consul.sh --server --cluster-tag-name "${cluster_tag_name}" &
+/opt/nomad/bin/run-nomad.sh --server --num-servers "${num_servers}"

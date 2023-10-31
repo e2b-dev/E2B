@@ -184,6 +184,10 @@ client {
   }
 }
 leave_on_terminate = true
+
+plugin "env-instance-task-driver" {}
+plugin "env-build-task-driver" {}
+
 EOF
     )
   fi
@@ -206,14 +210,6 @@ $client_config
 $server_config
 
 plugin_dir = "/opt/nomad/plugins"
-plugin "env-instance-task-driver" {}
-plugin "env-build-task-driver" {}
-
-plugin "raw_exec" {
-  config {
-    enabled = true
-  }
-}
 
 plugin "docker" {
   config {

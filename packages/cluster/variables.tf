@@ -4,6 +4,11 @@ variable "cluster_tag_name" {
   default     = "orch"
 }
 
+variable "setup_bucket" {
+  type    = string
+  default = "e2b-instance-setup"
+}
+
 variable "server_image_family" {
   type    = string
   default = "orch"

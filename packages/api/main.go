@@ -112,12 +112,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	shutdown, err := telemetry.InitOTLPExporter(serviceName, swagger.Info.Version)
-	if err != nil {
-		log.Fatalf("failed to initialize OTLP exporter: %v", err)
-		os.Exit(1)
+	env := os.Getenv("ENVIRONMENT")
+	if env != "" {
+		shutdown, otelError := telemetry.InitOTLPExporter(env, serviceName, swagger.Info.Version)
+		if err != nil {
+			log.Fatalf("failed to initialize OTLP exporter: %v", otelError)
+			os.Exit(1)
+		}
+
+		defer shutdown()
 	}
-	defer shutdown()
 
 	// Create an instance of our handler which satisfies the generated interface
 	apiStore := handlers.NewAPIStore()
@@ -126,5 +130,8 @@ func main() {
 	s := NewGinServer(apiStore, swagger, *port)
 
 	// And we serve HTTP until the world ends.
-	log.Fatal(s.ListenAndServe())
+	err = s.ListenAndServe()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "server error: %+v", err)
+	}
 }
