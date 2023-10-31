@@ -1,4 +1,5 @@
 import { Session } from '@e2b/sdk'
+import fs from 'node:fs'
 
 const session = await Session.create({ id: 'Nodejs' })
 
