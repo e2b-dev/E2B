@@ -86,7 +86,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
         className={clsx(
           'absolute inset-x-0 top-full h-px transition',
           (isInsideMobileNavigation || !mobileNavIsOpen) &&
-            'bg-zinc-900/7.5 dark:bg-white/7.5',
+          'bg-zinc-900/7.5 dark:bg-white/7.5',
         )}
       />
       <div className="relative top-1 hidden items-start justify-start lg:flex">

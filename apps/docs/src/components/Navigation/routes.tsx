@@ -13,6 +13,7 @@ import {
   Link,
   FileUp,
   FileDown,
+  Variable,
 } from 'lucide-react'
 
 export const routes = [
@@ -106,19 +107,19 @@ export const routes = [
             size={20}
           />
         ),
-        title: 'Resources',
+        title: 'Sandbox Resources',
         href: '/sandbox/resources',
       },
-      // {
-      //   icon: (
-      //     <Variable
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: '[TODO] Environment Variables',
-      //   href: '/sandbox/envs',
-      // },
+      {
+        icon: (
+          <Variable
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Environment Variables',
+        href: '/sandbox/envs',
+      },
       {
         icon: (
           <FolderTree
