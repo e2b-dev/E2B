@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
-	"github.com/e2b-dev/infra/packages/api/internal/handlers"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
-	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	middleware "github.com/oapi-codegen/gin-middleware"
 )
 
 var (
@@ -69,7 +69,7 @@ func (a *authenticator) Authenticate(ctx context.Context, input *openapi3filter.
 		return fmt.Errorf("%s %w", a.errorMessage, err)
 	}
 
-	handlers.ReportEvent(ctx, "Validated "+a.securitySchemeName)
+	telemetry.ReportEvent(ctx, "Validated "+a.securitySchemeName)
 	// Set the property on the gin context
 	middleware.GetGinContext(ctx).Set(a.contextKey, id)
 

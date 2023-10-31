@@ -11,6 +11,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-uuid"
@@ -29,16 +30,18 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
 		err = fmt.Errorf("error when getting default team: %w", err)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
 
-	SetAttributes(ctx, attribute.String("env.user_id", userID))
-	SetAttributes(ctx, attribute.String("env.team_id", teamID))
-
 	envID := utils.GenerateID()
-	SetAttributes(ctx, attribute.String("env.id", envID))
+
+	telemetry.SetAttributes(ctx,
+		attribute.String("env.user_id", userID),
+		attribute.String("env.team_id", teamID),
+		attribute.String("env.id", envID),
+	)
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 
@@ -47,7 +50,7 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when getting build data: %s", err))
 
 		err = fmt.Errorf("error when getting build data: %w", err)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
@@ -57,12 +60,12 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
 
 		err = fmt.Errorf("build is already running build for %s", envID)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
 
-	ReportEvent(ctx, "started creating new environment")
+	telemetry.ReportEvent(ctx, "started creating new environment")
 
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
@@ -78,17 +81,17 @@ func (a *APIStore) PostEnvs(c *gin.Context) {
 
 			err = fmt.Errorf("error when building env: %w", buildErr)
 
-			ReportCriticalError(buildContext, err)
+			telemetry.ReportCriticalError(buildContext, err)
 		} else {
 			status = api.EnvironmentBuildStatusReady
 
-			ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
 		}
 
 		cacheErr := a.buildCache.SetDone(envID, buildID, status)
 		if err != nil {
 			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
-			ReportCriticalError(buildContext, cacheErr)
+			telemetry.ReportCriticalError(buildContext, cacheErr)
 		}
 
 		childSpan.End()
@@ -113,14 +116,16 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
 		err = fmt.Errorf("error when getting default team: %w", err)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
 
-	SetAttributes(ctx, attribute.String("env.user_id", userID))
-	SetAttributes(ctx, attribute.String("env.team_id", teamID))
-	SetAttributes(ctx, attribute.String("env.id", envID))
+	telemetry.SetAttributes(ctx,
+		attribute.String("env.user_id", userID),
+		attribute.String("env.team_id", teamID),
+		attribute.String("env.id", envID),
+	)
 
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
 
@@ -129,7 +134,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		a.sendAPIStoreError(c, http.StatusBadRequest, fmt.Sprintf("Error when getting build data: %s", err))
 
 		err = fmt.Errorf("error when getting build data: %w", err)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
@@ -139,7 +144,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("The environment '%s' does not exist", envID))
 
 		errMsg := fmt.Errorf("error env not found: %w", accessErr)
-		ReportError(ctx, errMsg)
+		telemetry.ReportError(ctx, errMsg)
 
 		return
 	}
@@ -148,7 +153,7 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		a.sendAPIStoreError(c, http.StatusForbidden, "You don't have access to this environment")
 
 		errMsg := fmt.Errorf("user doesn't have access to env '%s'", envID)
-		ReportError(ctx, errMsg)
+		telemetry.ReportError(ctx, errMsg)
 
 		return
 	}
@@ -158,12 +163,12 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 		a.sendAPIStoreError(c, http.StatusConflict, fmt.Sprintf("There's already running build for %s", envID))
 
 		err = fmt.Errorf("build is already running build for %s", envID)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
 
-	ReportEvent(ctx, "started updating environment")
+	telemetry.ReportEvent(ctx, "started updating environment")
 
 	go func() {
 		buildContext, childSpan := a.tracer.Start(
@@ -179,17 +184,17 @@ func (a *APIStore) PostEnvsEnvID(c *gin.Context, envID api.EnvID) {
 
 			err = fmt.Errorf("error when building env: %w", buildErr)
 
-			ReportCriticalError(buildContext, err)
+			telemetry.ReportCriticalError(buildContext, err)
 		} else {
 			status = api.EnvironmentBuildStatusReady
 
-			ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
+			telemetry.ReportEvent(buildContext, "created new environment", attribute.String("env_id", envID))
 		}
 
 		cacheErr := a.buildCache.SetDone(envID, buildID, status)
 		if err != nil {
 			err = fmt.Errorf("error when setting build done in logs: %w", cacheErr)
-			ReportCriticalError(buildContext, cacheErr)
+			telemetry.ReportCriticalError(buildContext, cacheErr)
 		}
 
 		childSpan.End()
@@ -217,24 +222,27 @@ func (a *APIStore) GetEnvs(
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting default team: %s", err))
 
 		err = fmt.Errorf("error when getting default team: %w", err)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
 
-	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", teamID))
+	telemetry.SetAttributes(ctx,
+		attribute.String("env.user_id", userID),
+		attribute.String("env.team_id", teamID),
+	)
 
 	envs, err := a.supabase.GetEnvs(teamID)
 	if err != nil {
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when getting envs: %s", err))
 
 		err = fmt.Errorf("error when getting envs: %w", err)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return
 	}
 
-	ReportEvent(ctx, "listed environments")
+	telemetry.ReportEvent(ctx, "listed environments")
 
 	a.IdentifyAnalyticsTeam(teamID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -250,13 +258,16 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 	userID := c.Value(constants.UserIDContextKey).(string)
 	teamID, err := a.supabase.GetDefaultTeamFromUserID(userID)
 
-	SetAttributes(ctx, attribute.String("env.user_id", userID), attribute.String("env.team_id", teamID))
+	telemetry.SetAttributes(ctx,
+		attribute.String("env.user_id", userID),
+		attribute.String("env.team_id", teamID),
+	)
 
 	if err != nil {
 		errMsg := fmt.Errorf("error when getting default team: %w", err)
 		a.sendAPIStoreError(c, http.StatusInternalServerError, errMsg.Error())
 
-		ReportCriticalError(ctx, errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 
 		return
 	}
@@ -266,7 +277,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		msg := fmt.Errorf("error finding cache for env %s and build %s", envID, buildID)
 		a.sendAPIStoreError(c, http.StatusNotFound, msg.Error())
 
-		ReportError(ctx, msg)
+		telemetry.ReportError(ctx, msg)
 
 		return
 	}
@@ -275,7 +286,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		msg := fmt.Errorf("user doesn't have access to env '%s'", envID)
 		a.sendAPIStoreError(c, http.StatusForbidden, msg.Error())
 
-		ReportError(ctx, msg)
+		telemetry.ReportError(ctx, msg)
 
 		return
 	}
@@ -287,7 +298,7 @@ func (a *APIStore) GetEnvsEnvIDBuildsBuildID(c *gin.Context, envID api.EnvID, bu
 		Status:  &dockerBuild.Status,
 	}
 
-	ReportEvent(ctx, "got environment build")
+	telemetry.ReportEvent(ctx, "got environment build")
 
 	a.IdentifyAnalyticsTeam(teamID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -318,12 +329,12 @@ func (a *APIStore) PostEnvsEnvIDBuildsBuildIDLogs(c *gin.Context, envID api.EnvI
 		a.sendAPIStoreError(c, http.StatusInternalServerError, fmt.Sprintf("Error when saving docker build logs: %s", err))
 
 		err = fmt.Errorf("error when saving docker build logs: %w", err)
-		ReportError(ctx, err)
+		telemetry.ReportError(ctx, err)
 
 		return
 	}
 
-	ReportEvent(ctx, "got docker build log")
+	telemetry.ReportEvent(ctx, "got docker build log")
 
 	c.JSON(http.StatusCreated, nil)
 }
@@ -350,7 +361,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 	_, err = a.cloudStorage.streamFileUpload(strings.Join([]string{"v1", envID, buildID, "context.tar.gz"}, "/"), content)
 	if err != nil {
 		err = fmt.Errorf("error when uploading file to cloud storage: %w", err)
-		ReportCriticalError(childCtx, err)
+		telemetry.ReportCriticalError(childCtx, err)
 
 		return err
 	}
@@ -358,7 +369,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 	err = a.nomad.BuildEnvJob(a.tracer, childCtx, envID, buildID, a.apiSecret, a.googleServiceAccountBase64)
 	if err != nil {
 		err = fmt.Errorf("error when starting build: %w", err)
-		ReportCriticalError(childCtx, err)
+		telemetry.ReportCriticalError(childCtx, err)
 
 		return err
 	}
@@ -367,7 +378,7 @@ func (a *APIStore) buildEnv(ctx context.Context, userID, teamID, envID, buildID,
 
 	if err != nil {
 		err = fmt.Errorf("error when updating env: %w", err)
-		ReportCriticalError(childCtx, err)
+		telemetry.ReportCriticalError(childCtx, err)
 
 		return err
 	}
@@ -395,7 +406,7 @@ func (a *APIStore) getBuildData(c *gin.Context, ctx context.Context, userID, tea
 		if closeErr != nil {
 			errMsg := fmt.Errorf("error when closing file: %w", closeErr)
 
-			ReportError(ctx, errMsg)
+			telemetry.ReportError(ctx, errMsg)
 		}
 	}()
 
@@ -404,7 +415,7 @@ func (a *APIStore) getBuildData(c *gin.Context, ctx context.Context, userID, tea
 		a.sendAPIStoreError(c, http.StatusBadRequest, "Build context must be a tar.gz.e2b file")
 
 		err = fmt.Errorf("build context doesn't have correct extension, the file is %s", fileHandler.Filename)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return dockerfile, buildID, fileContent, err
 	}
@@ -414,7 +425,7 @@ func (a *APIStore) getBuildData(c *gin.Context, ctx context.Context, userID, tea
 	buildID, err = uuid.GenerateUUID()
 	if err != nil {
 		err = fmt.Errorf("error when generating build id: %w", err)
-		ReportCriticalError(ctx, err)
+		telemetry.ReportCriticalError(ctx, err)
 
 		return dockerfile, buildID, fileContent, err
 	}

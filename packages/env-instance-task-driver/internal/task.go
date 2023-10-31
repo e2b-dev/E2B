@@ -80,8 +80,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 	)
 
 	d.logger.Info("starting firecracker task", "task_cfg", hclog.Fmt("%+v", taskConfig))
-	handle := drivers.NewTaskHandle(taskHandleVersion)
-	handle.Config = cfg
 
 	// Get slot from Consul KV
 	ipSlot, err := slot.New(
@@ -182,6 +180,9 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		TaskConfig: cfg,
 		StartedAt:  h.startedAt,
 	}
+
+	handle := drivers.NewTaskHandle(taskHandleVersion)
+	handle.Config = cfg
 
 	if err = handle.SetDriverState(&driverState); err != nil {
 		fc.Machine.StopVMM()

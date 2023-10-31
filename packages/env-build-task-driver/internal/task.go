@@ -66,9 +66,6 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 
 	d.logger.Info("starting task", "task_cfg", hclog.Fmt("%+v", taskConfig))
 
-	handle := drivers.NewTaskHandle(taskHandleVersion)
-	handle.Config = cfg
-
 	_, childSpan := telemetry.GetContextFromRemote(ctx, d.tracer, "start-task", taskConfig.SpanID, taskConfig.TraceID)
 	defer childSpan.End()
 
@@ -118,6 +115,9 @@ func (d *Driver) StartTask(cfg *drivers.TaskConfig) (*drivers.TaskHandle, *drive
 		TaskConfig: cfg,
 		StartedAt:  h.startedAt,
 	}
+
+	handle := drivers.NewTaskHandle(taskHandleVersion)
+	handle.Config = cfg
 
 	if err := handle.SetDriverState(&driverState); err != nil {
 		return nil, nil, fmt.Errorf("failed to set driver state: %w", err)

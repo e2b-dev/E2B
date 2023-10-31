@@ -7,6 +7,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/constants"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
@@ -41,18 +42,18 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	SetAttributes(ctx, attribute.String("instance.team_id", teamID))
+	telemetry.SetAttributes(ctx, attribute.String("instance.team_id", teamID))
 
 	instance, instanceErr := a.nomad.CreateInstance(a.tracer, ctx, envID)
 	if instanceErr != nil {
 		errMsg := fmt.Errorf("error when creating instance: %w", instanceErr.Err)
-		ReportCriticalError(ctx, errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, instanceErr.Code, instanceErr.ClientMsg)
 
 		return
 	}
 
-	ReportEvent(ctx, "created environment instance")
+	telemetry.ReportEvent(ctx, "created environment instance")
 
 	a.IdentifyAnalyticsTeam(teamID)
 	properties := a.GetPackageToPosthogProperties(&c.Request.Header)
@@ -63,14 +64,14 @@ func (a *APIStore) PostInstances(
 	startingTime := time.Now()
 	if cacheErr := a.cache.Add(instance, &teamID, &startingTime); cacheErr != nil {
 		errMsg := fmt.Errorf("error when adding instance to cache: %w", cacheErr)
-		ReportError(ctx, errMsg)
+		telemetry.ReportError(ctx, errMsg)
 
 		delErr := a.DeleteInstance(instance.InstanceID, true)
 		if delErr != nil {
 			delErrMsg := fmt.Errorf("couldn't delete instance that couldn't be added to cache: %w", delErr.Err)
-			ReportError(ctx, delErrMsg)
+			telemetry.ReportError(ctx, delErrMsg)
 		} else {
-			ReportEvent(ctx, "deleted instance that couldn't be added to cache")
+			telemetry.ReportEvent(ctx, "deleted instance that couldn't be added to cache")
 		}
 
 		a.sendAPIStoreError(c, http.StatusInternalServerError, "Cannot create a environment instance right now")
@@ -78,7 +79,7 @@ func (a *APIStore) PostInstances(
 		return
 	}
 
-	SetAttributes(ctx,
+	telemetry.SetAttributes(ctx,
 		attribute.String("instance_id", instance.InstanceID),
 	)
 
@@ -91,7 +92,7 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 ) {
 	ctx := c.Request.Context()
 
-	SetAttributes(ctx,
+	telemetry.SetAttributes(ctx,
 		attribute.String("instance_id", instanceID),
 	)
 
@@ -100,13 +101,13 @@ func (a *APIStore) PostInstancesInstanceIDRefreshes(
 	err := a.cache.Refresh(instanceID)
 	if err != nil {
 		errMsg := fmt.Errorf("error when refreshing instance: %w", err)
-		ReportCriticalError(ctx, errMsg)
+		telemetry.ReportCriticalError(ctx, errMsg)
 		a.sendAPIStoreError(c, http.StatusNotFound, fmt.Sprintf("Error refreshing instance - instance '%s' was not found", instanceID))
 
 		return
 	}
 
-	ReportEvent(ctx, "refreshed instance")
+	telemetry.ReportEvent(ctx, "refreshed instance")
 
 	c.Status(http.StatusNoContent)
 }

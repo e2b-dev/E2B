@@ -22,6 +22,7 @@ func InitOTLPExporter(serviceName, serviceVersion string) func() {
 		launcher.WithSpanExporterInsecure(true),
 		launcher.WithPropagators([]string{"tracecontext", "baggage"}),
 	)
+
 	return func() {
 		otelLauncher.Shutdown()
 	}

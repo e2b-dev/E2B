@@ -16,6 +16,7 @@ require (
 	github.com/hashicorp/nomad/api v0.0.0-20231025154117-de2876092812
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/lib/pq v1.10.9
+	github.com/oapi-codegen/gin-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.0.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.45.0
