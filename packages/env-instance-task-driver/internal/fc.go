@@ -68,7 +68,8 @@ func loadSnapshot(ctx context.Context, socketPath, envPath string, d *Driver, me
 	memfilePath := filepath.Join(envPath, envSetup.MemfileName)
 	snapfilePath := filepath.Join(envPath, envSetup.SnapfileName)
 
-	childSpan.SetAttributes(
+	telemetry.SetAttributes(
+		childCtx,
 		attribute.String("memfile_path", memfilePath),
 		attribute.String("snapfile_path", snapfilePath),
 	)
@@ -286,7 +287,8 @@ func (d *Driver) initializeFC(
 		BuildDirPath: env.BuildDirPath,
 	}
 
-	childSpan.SetAttributes(
+	telemetry.SetAttributes(
+		childCtx,
 		attribute.String("alloc_id", info.AllocId),
 		attribute.String("pid", info.Pid),
 		attribute.String("socket_path", info.SocketPath),

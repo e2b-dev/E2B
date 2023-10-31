@@ -14,9 +14,9 @@ func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 
 	if len(attrs) == 0 {
-		fmt.Printf("Attrs set: %+v\n", attrs)
-	} else {
 		fmt.Printf("No attrs set")
+	} else {
+		fmt.Printf("Attrs set: %+v\n", attrs)
 	}
 
 	span.SetAttributes(attrs...)

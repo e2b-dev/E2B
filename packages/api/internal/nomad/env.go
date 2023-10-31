@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -49,7 +50,8 @@ func (n *NomadClient) BuildEnvJob(
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()
 
-	childSpan.SetAttributes(
+	telemetry.SetAttributes(
+		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
 	)

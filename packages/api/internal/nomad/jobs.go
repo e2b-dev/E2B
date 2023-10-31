@@ -150,6 +150,9 @@ func (n *NomadClient) getFirstAlloc(job *api.JobListStub, taskName string, runni
 }
 
 func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, result chan AllocResult, timeout time.Duration) {
+	childCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	sub := n.newSubscriber(jobID, taskState)
 
 	defer n.subscribers.Remove(jobID)
@@ -159,7 +162,7 @@ func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, r
 	case err := <-sub.events:
 		result <- err
 
-	case <-ctx.Done():
+	case <-childCtx.Done():
 		result <- AllocResult{
 			Err:   fmt.Errorf("waiting for job '%s' canceled", jobID),
 			Alloc: nil,

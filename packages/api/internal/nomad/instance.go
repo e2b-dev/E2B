@@ -13,6 +13,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	nomadAPI "github.com/hashicorp/nomad/api"
 	"go.opentelemetry.io/otel/attribute"
@@ -79,7 +80,8 @@ func (n *NomadClient) CreateInstance(
 	traceID := childSpan.SpanContext().TraceID().String()
 	spanID := childSpan.SpanContext().SpanID().String()
 
-	childSpan.SetAttributes(
+	telemetry.SetAttributes(
+		childCtx,
 		attribute.String("passed_trace_id_hex", traceID),
 		attribute.String("passed_span_id_hex", spanID),
 	)
@@ -146,6 +148,8 @@ func (n *NomadClient) CreateInstance(
 		}
 	}
 
+	telemetry.ReportEvent(childCtx, "Started waiting for job to start")
+
 	allocResult := <-result
 	if allocResult.Err != nil {
 		errMsg := fmt.Errorf("failed to create instance of environment '%s': %w", envID, allocResult.Err)
@@ -168,7 +172,10 @@ func (n *NomadClient) CreateInstance(
 		}
 	}
 
-	childSpan.SetAttributes(
+	telemetry.ReportEvent(childCtx, "Finished waitng for the job start")
+
+	telemetry.SetAttributes(
+		childCtx,
 		attribute.String("instance_id", instanceID),
 	)
 

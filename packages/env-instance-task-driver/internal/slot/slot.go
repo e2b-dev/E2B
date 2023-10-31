@@ -154,7 +154,8 @@ func New(ctx context.Context, nodeID, instanceID, consulToken string, tracer tra
 	}
 	telemetry.ReportEvent(childCtx, "ip slot reserved")
 
-	childSpan.SetAttributes(
+	telemetry.SetAttributes(
+		childCtx,
 		attribute.String("kv_key", slot.KVKey),
 		attribute.String("node_short_id", slot.NodeShortID),
 		attribute.String("instance_id", slot.InstanceID),
