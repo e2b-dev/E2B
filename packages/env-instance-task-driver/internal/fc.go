@@ -243,13 +243,13 @@ func (d *Driver) initializeFC(
 		env.EnvPath,
 		d,
 		struct {
-			SessionID     string `json:"sessionID"`
-			CodeSnippetID string `json:"codeSnippetID"`
-			Address       string `json:"address"`
+			InstanceID string `json:"instanceID"`
+			EnvID      string `json:"envID"`
+			Address    string `json:"address"`
 		}{
-			SessionID:     slot.InstanceID,
-			CodeSnippetID: taskConfig.EnvID,
-			Address:       taskConfig.LogsProxyAddress,
+			InstanceID: slot.InstanceID,
+			EnvID:      taskConfig.EnvID,
+			Address:    taskConfig.LogsProxyAddress,
 		},
 	); err != nil {
 		m.StopVMM()

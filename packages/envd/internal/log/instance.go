@@ -15,28 +15,28 @@ const (
 
 var mmdsTokenExpiration = 60 * time.Second
 
-type sessionWriter struct{}
+type instanceLogsWriter struct{}
 
 type opts struct {
-	SessionID     string `json:"sessionID"`
-	CodeSnippetID string `json:"codeSnippetID"`
-	Address       string `json:"address"`
+	InstanceID string `json:"instanceID"`
+	EnvID      string `json:"envID"`
+	Address    string `json:"address"`
 }
 
 func addOptsToJSON(jsonLogs []byte, opts *opts) ([]byte, error) {
 	parsed := make(map[string]interface{})
 
-	json.Unmarshal(jsonLogs, &parsed)
+	err := json.Unmarshal(jsonLogs, &parsed)
+	if err != nil {
+		return nil, err
+	}
 
-	parsed["sessionID"] = opts.SessionID
-	parsed["codeSnippetID"] = opts.CodeSnippetID
+	parsed["instanceID"] = opts.InstanceID
+	parsed["envID"] = opts.EnvID
 
 	data, err := json.Marshal(parsed)
-	return data, err
-}
 
-func newSessionWriter() *sessionWriter {
-	return &sessionWriter{}
+	return data, err
 }
 
 func getMMDSToken(client http.Client) (string, error) {
@@ -72,6 +72,7 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	request.Header["X-metadata-token"] = []string{token}
 	request.Header["Accept"] = []string{"application/json"}
 
@@ -79,6 +80,7 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
@@ -87,6 +89,7 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 	}
 
 	var opts opts
+
 	err = json.Unmarshal(body, &opts)
 	if err != nil {
 		return nil, err
@@ -96,22 +99,23 @@ func getMMDSOpts(client http.Client, token string) (*opts, error) {
 		return nil, fmt.Errorf("no 'address' in mmds opts")
 	}
 
-	if opts.CodeSnippetID == "" {
-		return nil, fmt.Errorf("no 'codeSnippetID' in mmds opts")
+	if opts.EnvID == "" {
+		return nil, fmt.Errorf("no 'envID' in mmds opts")
 	}
 
-	if opts.SessionID == "" {
-		return nil, fmt.Errorf("no 'sessionID' in mmds opts")
+	if opts.InstanceID == "" {
+		return nil, fmt.Errorf("no 'instanceID' in mmds opts")
 	}
 
 	return &opts, nil
 }
 
-func sendSessionLogs(client http.Client, logs []byte, address string) error {
+func sendInstanceLogs(client http.Client, logs []byte, address string) error {
 	request, err := http.NewRequest("POST", address, bytes.NewBuffer(logs))
 	if err != nil {
 		return err
 	}
+
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := client.Do(request)
@@ -131,29 +135,33 @@ func sendLogs(logs []byte) {
 	mmdsToken, err := getMMDSToken(client)
 	if err != nil {
 		fmt.Printf("error getting mmds token: %w", err)
+
 		return
 	}
 
 	mmdsOpts, err := getMMDSOpts(client, mmdsToken)
 	if err != nil {
-		fmt.Printf("error getting session logging options from mmds (token %s): %+v", mmdsToken, err)
+		fmt.Printf("error getting instance logging options from mmds (token %s): %+v", mmdsToken, err)
+
 		return
 	}
 
-	sessionLogs, err := addOptsToJSON(logs, mmdsOpts)
+	instanceLogs, err := addOptsToJSON(logs, mmdsOpts)
 	if err != nil {
-		fmt.Printf("error adding session logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+		fmt.Printf("error adding instance logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+
 		return
 	}
 
-	err = sendSessionLogs(client, sessionLogs, mmdsOpts.Address)
+	err = sendInstanceLogs(client, instanceLogs, mmdsOpts.Address)
 	if err != nil {
-		fmt.Printf("error sending session logs: %+v", err)
+		fmt.Printf("error sending instance logs: %+v", err)
+
 		return
 	}
 }
 
-func (w *sessionWriter) Write(logs []byte) (int, error) {
+func (w *instanceLogsWriter) Write(logs []byte) (int, error) {
 	go sendLogs(logs)
 
 	return len(logs), nil

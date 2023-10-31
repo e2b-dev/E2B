@@ -60,15 +60,13 @@ func NewLogger(logDir string, debug, mmds bool) (*zap.SugaredLogger, error) {
 	// mmds is enabled, create a logger that sends logs with info from the FC's MMDS
 	var combinedLogger *zap.Logger
 
-	sessionWriter := newSessionWriter()
-
 	level := zap.ErrorLevel
 
 	core := zapcore.NewTee(
 		l.Core(),
 		zapcore.NewCore(
 			zapcore.NewJSONEncoder(cfg.EncoderConfig),
-			zapcore.AddSync(sessionWriter),
+			zapcore.AddSync(&instanceLogsWriter{}),
 			level,
 		),
 	)
