@@ -1,10 +1,10 @@
 # Current Working Directory
 
-You can set working directory either for the whole session, a filesystem operation, or a new process.
+You can set a working directory either for the whole session, a filesystem operation, or a new process.
 
 ## Session
 
-If the current working directory for the session is not set, it will default to home directory - `/home/user`.
+If the current working directory for the session is not set, it will default to the home directory - `/home/user`.
 
 <CodeGroupAutoload path="cwd/session" />
 
@@ -16,6 +16,6 @@ All filesystem operations with relative paths are relative to the current workin
 
 ## Process
 
-If you set working directory for session, all processes will inherit it. You can override it for each process.
+If you set a working directory for the session, all processes will inherit it. You can override it for each process.
 
 <CodeGroupAutoload path="cwd/process"/>
