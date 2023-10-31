@@ -6,16 +6,18 @@ import (
 	"net/http"
 	"os"
 
-	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
 	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
+	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 const (
@@ -33,9 +35,8 @@ func NewGinServer(apiStore *handlers.APIStore, swagger *openapi3.T, port int) *h
 
 	pprof.Register(r, "debug/pprof")
 
-	// We use custom otelgin middleware because we want to log 4xx errors in the utils
 	otelMiddleware := customMiddleware.ExcludeRoutes(
-		customMiddleware.Otel(serviceName),
+		otelgin.Middleware(serviceName),
 		ignoreLoggingForPaths...,
 	)
 	r.Use(
