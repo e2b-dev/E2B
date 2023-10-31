@@ -133,10 +133,7 @@ func (n *NomadClient) CreateInstance(
 	result := make(chan AllocResult)
 	defer close(result)
 
-	waitCtx, cancel := context.WithTimeout(childCtx, instanceStartTimeout)
-	defer cancel()
-
-	go n.WaitForJob(waitCtx, *job.ID, taskRunningState, result)
+	go n.WaitForJob(childCtx, *job.ID, taskRunningState, result, instanceStartTimeout)
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {

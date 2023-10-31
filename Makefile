@@ -67,7 +67,7 @@ build-all:
 	$(MAKE) -C packages/env-instance-task-driver build
 	$(MAKE) -C packages/env-build-task-driver build
 
-.PHONY: push-docker
-push-docker:
+.PHONY: update-api
+update-api:
 	docker buildx install # sets up the buildx as default docker builder (otherwise the command below won't work)
 	docker build --platform linux/amd64 --tag us-central1-docker.pkg.dev/$(GCP_PROJECT)/$(IMAGE) --push -f api.Dockerfile .

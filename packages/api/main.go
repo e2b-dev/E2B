@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -113,13 +112,8 @@ func main() {
 	}
 
 	env := os.Getenv("ENVIRONMENT")
-	if env != "" {
-		shutdown, otelError := telemetry.InitOTLPExporter(env, serviceName, swagger.Info.Version)
-		if err != nil {
-			log.Fatalf("failed to initialize OTLP exporter: %v", otelError)
-			os.Exit(1)
-		}
-
+	if env == "prod" {
+		shutdown := telemetry.InitOTLPExporter(serviceName, swagger.Info.Version)
 		defer shutdown()
 	}
 

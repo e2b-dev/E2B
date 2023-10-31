@@ -97,10 +97,7 @@ func (n *NomadClient) BuildEnvJob(
 	result := make(chan AllocResult)
 	defer close(result)
 
-	waitCtx, cancel := context.WithTimeout(childCtx, buildFinishTimeout)
-	defer cancel()
-
-	go n.WaitForJob(waitCtx, *job.ID, taskDeadState, result)
+	go n.WaitForJob(childCtx, *job.ID, taskDeadState, result, buildFinishTimeout)
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {

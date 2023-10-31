@@ -149,8 +149,9 @@ func (n *NomadClient) getFirstAlloc(job *api.JobListStub, taskName string, runni
 	return nil, nil, fmt.Errorf("no allocation with the task name %s found", taskName)
 }
 
-func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, result chan AllocResult) {
+func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, result chan AllocResult, timeout time.Duration) {
 	sub := n.newSubscriber(jobID, taskState)
+
 	defer n.subscribers.Remove(jobID)
 	defer close(sub.events)
 
