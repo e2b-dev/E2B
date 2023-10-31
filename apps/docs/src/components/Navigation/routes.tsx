@@ -11,6 +11,8 @@ import {
   Hammer,
   Cpu,
   Link,
+  FileUp,
+  FileDown,
 } from 'lucide-react'
 
 export const routes = [
@@ -148,26 +150,6 @@ export const routes = [
       //   title: 'Executing Code',
       //   href: '/sandbox/execute',
       // },
-      // {
-      //   icon: (
-      //     <FileUp
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Upload Files',
-      //   href: '/sandbox/upload',
-      // },
-      // {
-      //   icon: (
-      //     <FileDown
-      //       strokeWidth={1}
-      //       size={20}
-      //     />
-      //   ),
-      //   title: 'Download Files',
-      //   href: '/sandbox/download',
-      // },
       {
         icon: (
           <Folder
@@ -207,6 +189,26 @@ export const routes = [
         ),
         title: 'Sandbox URL',
         href: '/sandbox/url',
+      },
+      {
+        icon: (
+          <FileUp
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Upload Files',
+        href: '/sandbox/upload',
+      },
+      {
+        icon: (
+          <FileDown
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Download Files',
+        href: '/sandbox/download',
       },
       {
         icon: (
