@@ -15,7 +15,7 @@ import (
 
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 type taskHandle struct {

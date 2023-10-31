@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
-	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins/drivers"

@@ -16,12 +16,12 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/client"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/client/operations"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/client/models"
 	envSetup "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/env"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client"
+	"github.com/e2b-dev/infra/packages/shared/pkg/fc/client/operations"
+	"github.com/e2b-dev/infra/packages/shared/pkg/fc/models"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (

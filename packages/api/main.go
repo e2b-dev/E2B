@@ -11,7 +11,7 @@ import (
 	"github.com/e2b-dev/infra/packages/api/internal/api"
 	"github.com/e2b-dev/infra/packages/api/internal/handlers"
 	customMiddleware "github.com/e2b-dev/infra/packages/api/internal/middleware"
-	shared "github.com/e2b-dev/infra/packages/shared/pkg"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/gin-contrib/cors"
@@ -112,7 +112,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	shutdown, err := shared.InitOTLPExporter(serviceName, swagger.Info.Version)
+	shutdown, err := telemetry.InitOTLPExporter(serviceName, swagger.Info.Version)
 	if err != nil {
 		log.Fatalf("failed to initialize OTLP exporter: %v", err)
 		os.Exit(1)

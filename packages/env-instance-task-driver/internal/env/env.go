@@ -6,9 +6,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/KarpelesLab/reflink"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
+	"github.com/KarpelesLab/reflink"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )

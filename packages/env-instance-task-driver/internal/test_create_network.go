@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/coreos/go-iptables/iptables"
 	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/slot"
-	"github.com/e2b-dev/infra/packages/env-instance-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
+
+	"github.com/coreos/go-iptables/iptables"
 	"github.com/txn2/txeh"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
-	"go.opentelemetry.io/otel/trace"
-
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestCreateNetwork() {

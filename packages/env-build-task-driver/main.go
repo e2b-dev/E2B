@@ -6,7 +6,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/env"
-	shared "github.com/e2b-dev/infra/packages/shared/pkg"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 	log "github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/nomad/plugins"
 
@@ -38,7 +38,7 @@ func main() {
 		return
 	}
 
-	shutdown, err := shared.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
+	shutdown, err := telemetry.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
 	if err != nil {
 		log.Fmt("failed to initialize OTLP exporter: %v", err)
 	}

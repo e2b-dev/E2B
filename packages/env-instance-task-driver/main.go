@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/nomad/plugins"
 
 	driver "github.com/e2b-dev/infra/packages/env-instance-task-driver/internal"
-	shared "github.com/e2b-dev/infra/packages/shared/pkg"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 func configurePlugin() {
@@ -17,7 +17,7 @@ func configurePlugin() {
 		http.ListenAndServe(":6061", nil)
 	}()
 
-	shutdown, err := shared.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
+	shutdown, err := telemetry.InitOTLPExporter(driver.PluginName, driver.PluginVersion)
 	if err != nil {
 		log.Fmt("failed to initialize OTLP exporter: %v", err)
 	}

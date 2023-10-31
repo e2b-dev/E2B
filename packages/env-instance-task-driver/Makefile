@@ -9,9 +9,6 @@ build:
 build-debug:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -race -gcflags=all="-N -l" -o bin/debug/ .
 
-generate:
-	cd internal/client && swagger generate client -f firecracker.yml -A firecracker
-
 # request for the pprof works in the browser but there are some problems with the requests from terminal
 # You run the parametrized command like this:
 # make client-ip=34.72.208.46 metric=heap interval=90 run-profiler

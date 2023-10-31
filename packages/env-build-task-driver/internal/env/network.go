@@ -10,7 +10,7 @@ import (
 	"github.com/vishvananda/netns"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/e2b-dev/infra/packages/env-build-task-driver/internal/telemetry"
+	"github.com/e2b-dev/infra/packages/shared/pkg/telemetry"
 )
 
 const (
