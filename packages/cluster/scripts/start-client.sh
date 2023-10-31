@@ -46,6 +46,8 @@ sudo chmod +x /opt/nomad/plugins/env-instance-task-driver
 gsutil cp gs://${scripts_bucket}/run-consul.sh /opt/consul/bin/run-consul.sh
 gsutil cp gs://${scripts_bucket}/run-nomad.sh /opt/nomad/bin/run-nomad.sh
 
+chmod +x /opt/consul/bin/run-consul.sh /opt/nomad/bin/run-nomad.sh
+
 # These variables are passed in via Terraform template interpolation
 /opt/consul/bin/run-consul.sh --client --cluster-tag-name "${cluster_tag_name}" &
 /opt/nomad/bin/run-nomad.sh --client &
