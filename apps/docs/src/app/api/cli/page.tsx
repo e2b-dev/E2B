@@ -85,7 +85,7 @@ export default function Page() {
   return (
     <div>
       {/* It's not easy to override RootLayout without grouping everything into `(root)` dir */}
-      {/* So I'm hacking custom layout with full modal overlay */}
+      {/* So I'm hacking a custom layout with full modal overlay */}
       {/* https://github.com/vercel/next.js/issues/50591 */}
       <DialogAnimated
         open={true}
