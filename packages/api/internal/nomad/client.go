@@ -22,17 +22,15 @@ type NomadClient struct {
 }
 
 func InitNomadClient() *NomadClient {
-	config := api.Config{
+	client, err := api.NewClient(&api.Config{
 		Address:  nomadAddress,
 		SecretID: nomadToken,
-	}
-
-	client, err := api.NewClient(&config)
+	})
 	if err != nil {
 		log.Fatalf("Error determining current working dir\n> %s\n", err)
 	}
 
-	listenCtx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 
 	n := &NomadClient{
 		client:      client,
@@ -40,7 +38,7 @@ func InitNomadClient() *NomadClient {
 		cancel:      cancel,
 	}
 
-	go n.ListenToJobs(listenCtx)
+	go n.ListenToJobs(ctx)
 
 	return n
 }

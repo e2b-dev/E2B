@@ -389,6 +389,11 @@ func (r *Rootfs) createRootfsFile(ctx context.Context, tracer trace.Tracer) erro
 
 	wait, errWait := r.client.ContainerWait(childCtx, cont.ID, container.WaitConditionNotRunning)
 	select {
+	case <-childCtx.Done():
+		errMsg := fmt.Errorf("error waiting for container %w", childCtx.Err())
+		telemetry.ReportCriticalError(childCtx, errMsg)
+
+		return errMsg
 	case waitErr := <-errWait:
 		if waitErr != nil {
 			errMsg := fmt.Errorf("error waiting for container %w", waitErr)

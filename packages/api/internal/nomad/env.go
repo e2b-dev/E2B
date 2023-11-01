@@ -96,27 +96,33 @@ func (n *NomadClient) BuildEnvJob(
 		return fmt.Errorf("failed to parse the HCL job file %+s: %w", jobDef.String(), err)
 	}
 
-	result := make(chan AllocResult)
-	defer close(result)
-
-	go n.WaitForJob(childCtx, *job.ID, taskDeadState, result, buildFinishTimeout)
+	sub := n.newSubscriber(*job.ID, taskDeadState)
+	defer sub.close()
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
 		return fmt.Errorf("failed to register '%s%s' job: %w", buildJobNameWithSlash, jobVars.EnvID, err)
 	}
 
-	finishErr := <-result
-	if finishErr.Err != nil {
-		return fmt.Errorf("error waiting for env '%s' build: %w", envID, finishErr.Err)
-	}
+	select {
+	case <-childCtx.Done():
+		cleanupErr := n.DeleteEnvBuild(*job.ID, false)
+		if cleanupErr != nil {
+			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
+		}
 
-	delErr := n.DeleteEnvBuild(*job.ID, true)
-	if delErr != nil {
-		return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, delErr)
-	}
+		return fmt.Errorf("error waiting for env '%s' build", envID)
+	case <-time.After(buildFinishTimeout):
+		cleanupErr := n.DeleteEnvBuild(*job.ID, false)
+		if cleanupErr != nil {
+			return fmt.Errorf("error in cleanup after failing to create instance of environment '%s': %w", envID, cleanupErr)
+		}
 
-	return nil
+		return fmt.Errorf("timeout waiting for env '%s' build", envID)
+
+	case <-sub.wait:
+		return nil
+	}
 }
 
 func (n *NomadClient) DeleteEnvBuild(jobID string, purge bool) error {

@@ -132,10 +132,8 @@ func (n *NomadClient) CreateInstance(
 		}
 	}
 
-	result := make(chan AllocResult)
-	defer close(result)
-
-	go n.WaitForJob(childCtx, *job.ID, taskRunningState, result, instanceStartTimeout)
+	sub := n.newSubscriber(*job.ID, taskRunningState)
+	defer sub.close()
 
 	_, _, err = n.client.Jobs().Register(job, nil)
 	if err != nil {
@@ -150,13 +148,13 @@ func (n *NomadClient) CreateInstance(
 
 	telemetry.ReportEvent(childCtx, "Started waiting for job to start")
 
-	allocResult := <-result
-	if allocResult.Err != nil {
-		errMsg := fmt.Errorf("failed to create instance of environment '%s': %w", envID, allocResult.Err)
+	select {
+	case <-ctx.Done():
+		errMsg := fmt.Errorf("error waiting for env '%s' build: %w", envID, ctx.Err())
 
-		apiErr := n.DeleteInstance(instanceID, false)
-		if apiErr != nil {
-			cleanupErr := fmt.Errorf("error in cleanup after failing to create instance of environment error: %w: %w", apiErr.Err, errMsg)
+		delErr := n.DeleteInstance(instanceID, false)
+		if delErr != nil {
+			cleanupErr := fmt.Errorf("error in cleanup after failing to create instance of environment error: %w: %w", delErr.Err, errMsg)
 
 			return nil, &api.APIError{
 				Err:       cleanupErr,
@@ -170,32 +168,39 @@ func (n *NomadClient) CreateInstance(
 			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
-	}
+	case <-time.After(instanceStartTimeout):
+		errMsg := fmt.Errorf("failed to create instance of environment '%s'", envID)
 
-	telemetry.ReportEvent(childCtx, "Finished waitng for the job start")
+		delErr := n.DeleteInstance(instanceID, false)
+		if delErr != nil {
+			cleanupErr := fmt.Errorf("error in cleanup after failing to create instance of environment error: %w: %w", delErr.Err, errMsg)
 
-	telemetry.SetAttributes(
-		childCtx,
-		attribute.String("instance_id", instanceID),
-	)
-
-	if allocResult.Alloc == nil {
-		errMsg := fmt.Errorf("allocation is nil")
+			return nil, &api.APIError{
+				Err:       cleanupErr,
+				ClientMsg: "Cannot create a environment instance right now",
+				Code:      http.StatusInternalServerError,
+			}
+		}
 
 		return nil, &api.APIError{
 			Err:       errMsg,
 			ClientMsg: "Cannot create a environment instance right now",
 			Code:      http.StatusInternalServerError,
 		}
-	}
+	case alloc := <-sub.wait:
+		telemetry.ReportEvent(childCtx, "Finished waitng for the job start")
 
-	instance := &api.Instance{
-		ClientID:   strings.Clone(allocResult.Alloc.NodeID[:shortNodeIDLength]),
-		InstanceID: instanceID,
-		EnvID:      envID,
-	}
+		telemetry.SetAttributes(
+			childCtx,
+			attribute.String("instance_id", instanceID),
+		)
 
-	return instance, nil
+		return &api.Instance{
+			ClientID:   strings.Clone(alloc.NodeID[:shortNodeIDLength]),
+			InstanceID: instanceID,
+			EnvID:      envID,
+		}, nil
+	}
 }
 
 func (n *NomadClient) DeleteInstance(instanceID string, purge bool) *api.APIError {

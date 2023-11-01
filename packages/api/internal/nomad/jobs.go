@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/e2b-dev/infra/packages/api/internal/utils"
 	"github.com/hashicorp/nomad/api"
 )
 
@@ -28,23 +29,26 @@ var allowedSubscriptionJobs = []string{
 	instanceJobNameWithSlash,
 }
 
-type AllocResult struct {
-	Alloc *api.AllocationListStub
-	Err   error
+type jobSubscriber struct {
+	subscribers *utils.Map[*jobSubscriber]
+	wait        chan api.AllocationListStub
+	jobID       string
+	taskState   string
 }
 
-type jobSubscriber struct {
-	jobID     string
-	events    chan api.AllocationListStub
-	taskState string
+func (s *jobSubscriber) close() {
+	close(s.wait)
+	s.subscribers.Remove(s.jobID)
 }
 
 func (n *NomadClient) newSubscriber(jobID string, taskState string) *jobSubscriber {
 	sub := &jobSubscriber{
-		jobID:     jobID,
-		events:    make(chan api.AllocationListStub),
-		taskState: taskState,
+		jobID:       jobID,
+		wait:        make(chan api.AllocationListStub),
+		taskState:   taskState,
+		subscribers: n.subscribers,
 	}
+
 	n.subscribers.Insert(jobID, sub)
 
 	return sub
@@ -112,6 +116,10 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 		return
 	}
 
+	if sub.taskState == taskRunningState {
+		sub.wait <- *alloc
+	}
+
 	if alloc.TaskStates[defaultTaskName] == nil {
 		return
 	}
@@ -124,30 +132,6 @@ func (n *NomadClient) processAllocs(alloc *api.AllocationListStub) {
 
 		fallthrough
 	case taskDeadState:
-		sub.events <- *alloc
-	}
-}
-
-func (n *NomadClient) WaitForJob(ctx context.Context, jobID, taskState string, result chan AllocResult, timeout time.Duration) {
-	childCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	sub := n.newSubscriber(jobID, taskState)
-
-	defer n.subscribers.Remove(jobID)
-	defer close(sub.events)
-
-	select {
-	case alloc := <-sub.events:
-		result <- AllocResult{
-			Err:   nil,
-			Alloc: &alloc,
-		}
-
-	case <-childCtx.Done():
-		result <- AllocResult{
-			Err:   fmt.Errorf("waiting for job '%s' canceled", jobID),
-			Alloc: nil,
-		}
+		sub.wait <- *alloc
 	}
 }
