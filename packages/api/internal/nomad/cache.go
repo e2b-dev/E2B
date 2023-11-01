@@ -98,7 +98,7 @@ func NewInstanceCache(deleteInstance func(data InstanceInfo, purge bool) *api.AP
 		if er == ttlcache.EvictionReasonExpired || er == ttlcache.EvictionReasonDeleted {
 			err := deleteInstance(i.Value(), true)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %+v", er, err.Err)
+				fmt.Fprintf(os.Stderr, "Error deleting instance (%v)\n: %v\n", er, err.Err)
 			}
 			counter.Add(ctx, -1, metric.WithAttributes(attribute.String("instance_id", i.Value().Instance.InstanceID)))
 		}
@@ -128,7 +128,7 @@ func (c *InstanceCache) KeepInSync(client *NomadClient) {
 
 		activeInstances, err := client.GetInstances()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %+v", err.Err)
+			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", err.Err)
 		} else {
 			c.Sync(activeInstances)
 		}

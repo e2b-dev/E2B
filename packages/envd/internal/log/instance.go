@@ -135,21 +135,21 @@ func sendLogs(logs []byte) {
 
 	mmdsToken, err := getMMDSToken(client)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error getting mmds token: %w", err)
+		fmt.Fprintf(os.Stderr, "error getting mmds token: %v\n", err)
 
 		return
 	}
 
 	mmdsOpts, err := getMMDSOpts(client, mmdsToken)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error getting instance logging options from mmds (token %s): %+v", mmdsToken, err)
+		fmt.Fprintf(os.Stderr, "error getting instance logging options from mmds (token %s): %v\n", mmdsToken, err)
 
 		return
 	}
 
 	instanceLogs, err := addOptsToJSON(logs, mmdsOpts)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error adding instance logging options (%+v) to JSON (%+v) with logs : %+v", mmdsOpts, logs, err)
+		fmt.Fprintf(os.Stderr, "error adding instance logging options (%+v) to JSON (%+v) with logs : %v\n", mmdsOpts, logs, err)
 
 		return
 	}

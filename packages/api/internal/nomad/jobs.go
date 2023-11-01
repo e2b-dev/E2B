@@ -3,7 +3,7 @@ package nomad
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -82,7 +82,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 					PerPage:   pageSize,
 				})
 				if err != nil {
-					log.Printf("Error getting jobs: %v\n", err)
+					fmt.Fprintf(os.Stderr, "Error getting jobs: %v\n", err)
 
 					return
 				}
@@ -99,7 +99,7 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 			}
 
 		case <-ctx.Done():
-			log.Println("Context canceled, stopping ListenToJobs")
+			fmt.Println("Context canceled, stopping ListenToJobs")
 
 			return
 		}

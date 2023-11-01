@@ -47,7 +47,7 @@ func NewAPIStore() *APIStore {
 
 	supabaseClient, err := db.NewClient(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing Supabase client\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error initializing Supabase client\n: %v\n", err)
 		panic(err)
 	}
 
@@ -79,7 +79,7 @@ func NewAPIStore() *APIStore {
 	if os.Getenv("ENVIRONMENT") == "prod" {
 		instances, instancesErr := nomadClient.GetInstances()
 		if instancesErr != nil {
-			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %+v", instancesErr.Err)
+			fmt.Fprintf(os.Stderr, "Error loading current instances from Nomad\n: %v\n", instancesErr.Err)
 		}
 
 		initialInstances = instances
@@ -109,7 +109,7 @@ func NewAPIStore() *APIStore {
 
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error initializing Cloud Storage client\n: %v\n", err)
 		panic(err)
 	}
 
@@ -156,12 +156,12 @@ func (a *APIStore) Close() {
 
 	err := a.posthog.Close()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing Posthog client\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error closing Posthog client\n: %v\n", err)
 	}
 
 	err = a.cloudStorage.client.Close()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing Cloud Storage client\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error closing Cloud Storage client\n: %v\n", err)
 	}
 }
 
@@ -175,7 +175,7 @@ func (a *APIStore) sendAPIStoreError(c *gin.Context, code int, message string) {
 
 	err := c.Error(fmt.Errorf(message))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error sending error: %s", err)
+		fmt.Fprintf(os.Stderr, "Error sending error: %v\n", err)
 	}
 
 	c.JSON(code, apiErr)
@@ -251,7 +251,7 @@ func deleteInstance(nomad *nomad.NomadClient, posthogClient posthog.Client, inst
 				Set("team", teamID),
 		})
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error sending Posthog event: %s", err)
+			fmt.Fprintf(os.Stderr, "error sending Posthog event: %v\n", err)
 		}
 	}
 

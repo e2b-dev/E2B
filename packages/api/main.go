@@ -108,7 +108,7 @@ func main() {
 
 	swagger, err := api.GetSwagger()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -127,6 +127,6 @@ func main() {
 	// And we serve HTTP until the world ends.
 	err = s.ListenAndServe()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "server error: %+v", err)
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 	}
 }
