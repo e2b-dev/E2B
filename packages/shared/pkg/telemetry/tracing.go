@@ -16,7 +16,7 @@ func SetAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 	if len(attrs) == 0 {
 		fmt.Printf("No attrs set")
 	} else {
-		fmt.Printf("Attrs set: %+v\n", attrs)
+		fmt.Printf("Attrs set: %v\n", attrs)
 	}
 
 	span.SetAttributes(attrs...)
@@ -28,7 +28,7 @@ func ReportEvent(ctx context.Context, name string, attrs ...attribute.KeyValue) 
 	if len(attrs) == 0 {
 		fmt.Printf("-> %s\n", name)
 	} else {
-		fmt.Printf("-> %s - %+v\n", name, attrs)
+		fmt.Printf("-> %s - %v\n", name, attrs)
 	}
 
 	span.AddEvent(name,
@@ -42,7 +42,7 @@ func ReportCriticalError(ctx context.Context, err error, attrs ...attribute.KeyV
 	if len(attrs) == 0 {
 		fmt.Fprintf(os.Stderr, "Critical error: %v\n", err)
 	} else {
-		fmt.Fprintf(os.Stderr, "Critical error: %v - %+v\n", err, attrs)
+		fmt.Fprintf(os.Stderr, "Critical error: %v - %v\n", err, attrs)
 	}
 
 	span.RecordError(err,
@@ -61,7 +61,7 @@ func ReportError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	if len(attrs) == 0 {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	} else {
-		fmt.Fprintf(os.Stderr, "Error: %v - %+v\n", err, attrs)
+		fmt.Fprintf(os.Stderr, "Error: %v - %v\n", err, attrs)
 	}
 
 	span.RecordError(err,
@@ -101,7 +101,7 @@ func GetContextFromRemote(ctx context.Context, tracer trace.Tracer, name, spanID
 
 	return tracer.Start(
 		trace.ContextWithRemoteSpanContext(ctx, remoteCtx),
-		"start-task",
+		name,
 		trace.WithLinks(
 			trace.LinkFromContext(ctx, attribute.String("link", "validation")),
 		),
