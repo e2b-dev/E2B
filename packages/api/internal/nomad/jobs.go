@@ -63,17 +63,19 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 				continue
 			}
 
-			var filterParts []string
+			filterParts := make([]string, len(subscribers))
+
+			var i int
 
 			for jobID := range subscribers {
-				filterParts = append(filterParts, jobID)
+				filterParts[i] = jobID
+				i++
 			}
 
 			filterString := strings.Join(filterParts, "|")
 
 			allocs, _, err := n.client.Allocations().List(&api.QueryOptions{
-				Filter:  fmt.Sprintf("JobID matches \"%s\"", filterString),
-				Reverse: true,
+				Filter: fmt.Sprintf("JobID matches \"%s\"", filterString),
 			})
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error getting jobs: %v\n", err)
