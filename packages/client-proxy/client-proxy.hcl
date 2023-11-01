@@ -29,7 +29,7 @@ variable "session_proxy_service_name" {
 job "client-proxy" {
   datacenters = [var.gcp_zone]
 
-  priority = 60
+  priority = 80
 
   group "client-proxy" {
     network {
@@ -60,7 +60,7 @@ job "client-proxy" {
 
       resources {
         memory = 128
-        cpu    = 200
+        cpu    = 128
       }
 
       config {

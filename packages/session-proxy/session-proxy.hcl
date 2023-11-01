@@ -21,7 +21,7 @@ variable "session_proxy_service_name" {
 job "session-proxy" {
   datacenters = [var.gcp_zone]
 
-  priority = 60
+  priority = 80
 
   meta {
     label1 = "job"
@@ -79,7 +79,7 @@ job "session-proxy" {
 
       resources {
         memory = 128
-        cpu    = 200
+        cpu    = 128
       }
 
       template {

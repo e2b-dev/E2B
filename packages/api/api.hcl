@@ -98,9 +98,9 @@ job "orchestration-api" {
       driver = "docker"
 
       resources {
-        memory     = 256
+        memory     = 512
         memory_max = 2048
-        cpu        = 500
+        cpu        = 1024
       }
 
       env {

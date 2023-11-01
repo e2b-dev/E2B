@@ -97,8 +97,8 @@ job "otel-collector" {
       }
 
       resources {
-        memory = 400
-        cpu    = 400
+        memory = 256
+        cpu    = 256
       }
 
       template {

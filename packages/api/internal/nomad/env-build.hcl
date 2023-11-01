@@ -31,8 +31,8 @@ job "{{ .JobName }}/{{ .EnvID }}-{{ .BuildID }}" {
       }
 
       resources {
-        memory = 256
-        cpu = 256
+        memory = 512
+        cpu = 512
       }
 
       config {

@@ -26,7 +26,7 @@ job "logs-collector" {
   datacenters = [var.gcp_zone]
   type        = "service"
 
-  priority = 95
+  priority = 85
 
   group "collector" {
     count = 1
@@ -78,7 +78,7 @@ job "logs-collector" {
 
       resources {
         memory = 128
-        cpu    = 200
+        cpu    = 128
       }
 
       template {
