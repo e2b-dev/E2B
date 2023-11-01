@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/e2b-dev/infra/packages/api/internal/utils"
+
 	"github.com/hashicorp/nomad/api"
 )
 
@@ -21,11 +22,6 @@ const (
 
 	jobCheckInterval = 100 * time.Millisecond
 )
-
-var allowedSubscriptionJobs = []string{
-	buildJobNameWithSlash,
-	instanceJobNameWithSlash,
-}
 
 type jobSubscriber struct {
 	subscribers *utils.Map[*jobSubscriber]
@@ -56,19 +52,23 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 	ticker := time.NewTicker(jobCheckInterval)
 	defer ticker.Stop()
 
-	filterParts := make([]string, len(allowedSubscriptionJobs))
-
-	for i, job := range allowedSubscriptionJobs {
-		filterParts[i] = fmt.Sprintf("JobID contains \"%s\"", job)
-	}
-
-	filterString := strings.Join(filterParts, " or ")
-
 	for {
 		select {
 		// Loop with a ticker work differently than a loop with sleep.
 		// The ticker will tick every 100ms, but if the loop takes more than 100ms to run, the ticker will tick again immediately.
 		case <-ticker.C:
+			var filterParts []string
+
+			for jobID := range n.subscribers.Items() {
+				filterParts = append(filterParts, fmt.Sprintf("JobID == \"%s\"", jobID))
+			}
+
+			if len(filterParts) == 0 {
+				continue
+			}
+
+			filterString := strings.Join(filterParts, " or ")
+
 			allocs, _, err := n.client.Allocations().List(&api.QueryOptions{
 				Filter:  filterString,
 				Reverse: true,
