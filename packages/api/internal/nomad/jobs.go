@@ -57,20 +57,22 @@ func (n *NomadClient) ListenToJobs(ctx context.Context) {
 		// Loop with a ticker work differently than a loop with sleep.
 		// The ticker will tick every 100ms, but if the loop takes more than 100ms to run, the ticker will tick again immediately.
 		case <-ticker.C:
-			var filterParts []string
+			subscribers := n.subscribers.Items()
 
-			for jobID := range n.subscribers.Items() {
-				filterParts = append(filterParts, fmt.Sprintf("JobID == \"%s\"", jobID))
-			}
-
-			if len(filterParts) == 0 {
+			if len(subscribers) == 0 {
 				continue
 			}
 
-			filterString := strings.Join(filterParts, " or ")
+			var filterParts []string
+
+			for jobID := range subscribers {
+				filterParts = append(filterParts, jobID)
+			}
+
+			filterString := strings.Join(filterParts, "|")
 
 			allocs, _, err := n.client.Allocations().List(&api.QueryOptions{
-				Filter:  filterString,
+				Filter:  fmt.Sprintf("JobID matches \"%s\"", filterString),
 				Reverse: true,
 			})
 			if err != nil {
