@@ -49,7 +49,7 @@ export const buildCommand = new commander.Command('build')
   )
   .option(
     '-d, --dockerfile <file>',
-    `Specify path to Dockerfile.By default E2B tries to find ${asLocal(
+    `Specify path to Dockerfile. By default E2B tries to find ${asLocal(
       defaultDockerfileName,
     )} or ${asLocal(fallbackDockerfileName)} in root directory`,
   )
@@ -222,6 +222,7 @@ async function waitForBuildFinish(accessToken: string, envID: string, buildID: s
         )
     }
   } while (env.data.status === 'building' && elapsed() < maxBuildTime)
+  //   TODO: add timeout
 }
 
 function loadFile(filePath: string) {

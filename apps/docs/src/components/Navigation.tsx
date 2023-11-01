@@ -26,6 +26,7 @@ import {
   HeartHandshake,
   DollarSign,
   Hammer,
+  ToyBrick,
 } from 'lucide-react'
 
 interface NavGroup {
@@ -544,6 +545,21 @@ export const navigation = [
   // { title: 'e2b.spreadsheet', href: '/reference/spreadsheet', isFontMono: true },
   // ],
   // },
+  {
+    title: 'Custom Sandbox',
+    links: [
+      {
+        icon: (
+          <ToyBrick
+            strokeWidth={1}
+            size={20}
+          />
+        ),
+        title: 'Overview',
+        href: '/custom-envs/overview',
+      },
+    ],
+  },
 ]
 
 export function Navigation(props) {
