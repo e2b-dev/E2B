@@ -2,9 +2,9 @@ from e2b import Sandbox
 
 sandbox = Sandbox.create(id="Nodejs")
 
-file_in_bytes = sandbox.download_file('path/to/remote/file/inside/sandbox') # $HighlightLine
+file_in_bytes = sandbox.download_file('path/to/remote/file/inside/sandbox')  # $HighlightLine
 # Save file to local filesystem
-with open('path/to/local/file', 'wb') as f: # $HighlightLine
-  f.write(file_in_bytes) # $HighlightLine
+with open('path/to/local/file', 'wb') as f:  # $HighlightLine
+    f.write(file_in_bytes)  # $HighlightLine
 
 sandbox.close()

@@ -14,7 +14,7 @@ async function spinSandbox(id) {
   try {
     const startTime = performance.now()
     sandbox = new Sandbox({
-      id,
+      id
       // debug: true,
     })
     sandbox.open()
@@ -24,7 +24,7 @@ async function spinSandbox(id) {
   } catch (e) {
     console.error(`Measuring ${id} failed`, e)
   } finally {
-    ; (async () => {
+    ;(async () => {
       try {
         // await sandbox?.close()
       } catch (e) {
@@ -77,16 +77,16 @@ async function sample(id, size) {
     return {
       [entryName]: {
         result: `${averageTime}ms ${averageTime < upperBoundary ? ':heavy_check_mark:' : ':x:'
-          }`,
-        size,
-      },
+        }`,
+        size
+      }
     }
   } catch (e) {
     return {
       [entryName]: {
         size,
-        result: e.message,
-      },
+        result: e.message
+      }
     }
   }
 }

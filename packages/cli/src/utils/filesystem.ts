@@ -1,11 +1,11 @@
-import * as dockerIgnore from "@balena/dockerignore";
-import * as fsWalk from "@nodelib/fs.walk";
-import * as fs from "fs";
-import * as gitIgnore from "ignore";
-import * as path from "path";
-import * as util from "util";
+import * as dockerIgnore from '@balena/dockerignore'
+import * as fsWalk from '@nodelib/fs.walk'
+import * as fs from 'fs'
+import * as gitIgnore from 'ignore'
+import * as path from 'path'
+import * as util from 'util'
 
-const walk = util.promisify(fsWalk.walk);
+const walk = util.promisify(fsWalk.walk)
 
 /**
  * Asynchronously retrieves files from a specified root path.
@@ -26,25 +26,25 @@ export async function getFiles(
     respectDockerignore?: boolean;
   },
 ) {
-  let gitignore: gitIgnore.Ignore | undefined;
+  let gitignore: gitIgnore.Ignore | undefined
   if (opts?.respectGitignore) {
-    const gitignorePath = path.join(rootPath, ".gitignore");
+    const gitignorePath = path.join(rootPath, '.gitignore')
     if (fs.existsSync(gitignorePath)) {
       gitignore = gitIgnore
         .default()
-        .add(fs.readFileSync(gitignorePath).toString());
+        .add(fs.readFileSync(gitignorePath).toString())
     }
   }
 
-  let dockerignore: { ignores: (path: string) => boolean } | undefined;
+  let dockerignore: { ignores: (path: string) => boolean } | undefined
   if (opts?.respectDockerignore) {
-    const dockerignorePath = path.join(rootPath, ".dockerignore");
+    const dockerignorePath = path.join(rootPath, '.dockerignore')
     if (fs.existsSync(dockerignorePath)) {
-      const dockerIgnoreContent = fs.readFileSync(dockerignorePath, "utf-8");
+      const dockerIgnoreContent = fs.readFileSync(dockerignorePath, 'utf-8')
       const dockerIgnoreLines = dockerIgnoreContent
-        .split("\n")
-        .map((line) => line.trim());
-      dockerignore = dockerIgnore.default().add(dockerIgnoreLines);
+        .split('\n')
+        .map((line) => line.trim())
+      dockerignore = dockerIgnore.default().add(dockerIgnoreLines)
     }
   }
 
@@ -58,29 +58,29 @@ export async function getFiles(
         !(
           dockerignore && dockerignore.ignores(path.relative(rootPath, e.path))
         ),
-      ].every(Boolean);
+      ].every(Boolean)
     },
     stats: true,
-  });
+  })
 
   return await Promise.all(
     entries.map(async (e) => {
       return {
         path: e.path as string,
-        rootPath: path.join("/", path.relative(rootPath, e.path)),
+        rootPath: path.join('/', path.relative(rootPath, e.path)),
         name: e.name as string,
-      };
+      }
     }),
-  );
+  )
 }
 
 export function getRoot(templatePath?: string) {
-  const defaultPath = process.cwd();
-  if (!templatePath) return defaultPath;
-  if (path.isAbsolute(templatePath)) return templatePath;
-  return path.resolve(defaultPath, templatePath);
+  const defaultPath = process.cwd()
+  if (!templatePath) return defaultPath
+  if (path.isAbsolute(templatePath)) return templatePath
+  return path.resolve(defaultPath, templatePath)
 }
 
 export function cwdRelative(absolutePath: string) {
-  return path.relative(process.cwd(), absolutePath);
+  return path.relative(process.cwd(), absolutePath)
 }

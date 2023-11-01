@@ -4,7 +4,7 @@ import { Sandbox } from "@e2b/sdk";
 const sandbox = await Sandbox.create({
   // $HighlightLine
   id: "Nodejs", // or 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-  apiKey: process.env.E2B_API_KEY,
+  apiKey: process.env.E2B_API_KEY
 });
 
 // 2. Use filesystem

@@ -10,7 +10,7 @@ function enhance(sandbox) {
       cmd,
       ...opts,
       onStdout: ({ line }) => console.log(`[🔹 ${cmdSlug}]`, line),
-      onStderr: ({ line }) => console.log(`[🔸 ${cmdSlug}]`, line),
+      onStderr: ({ line }) => console.log(`[🔸 ${cmdSlug}]`, line)
     });
     await proc.finished;
     return proc.output.stdout.trim();
@@ -34,6 +34,7 @@ function enhance(sandbox) {
 }
 
 const printedPorts = [];
+
 function printNewPortAndURL(openPorts, sandbox) {
   openPorts.forEach((port) => {
     if (!printedPorts.includes(port.port)) {
@@ -46,7 +47,7 @@ function printNewPortAndURL(openPorts, sandbox) {
 async function main() {
   const sandbox = await e2b.Sandbox.create({
     id: "Nodejs",
-    apiKey: process.env.E2B_API_KEY,
+    apiKey: process.env.E2B_API_KEY
     // onScanPorts: openPorts => printNewPortAndURL(openPorts, sandbox),
   });
   enhance(sandbox);

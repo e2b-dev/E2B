@@ -1,30 +1,30 @@
-const e2b = require("../dist")
+const e2b = require('../dist')
 
 async function main() {
   const sandbox = await e2b.Sandbox.create({
     id: 'Nodejs',
     apiKey: process.env.E2B_API_KEY
   })
-  
+
   await sandbox.filesystem.write(
     '/code/package.json',
     JSON.stringify({
       dependencies: {
-        "is-odd": '3.0.1',
-      },
-    }),
+        'is-odd': '3.0.1'
+      }
+    })
   )
-  
+
   const proc = await sandbox.process.start({
     cmd: 'npm i --silent',
-    envVars: { NPM_CONFIG_UPDATE_NOTIFIER: "false" },
+    envVars: { NPM_CONFIG_UPDATE_NOTIFIER: 'false' },
     cwd: '/code',
     onStdout: ({ line }) => console.log('STDOUT', line),
-    onStderr: ({ line }) => console.log('STDERR', line),
+    onStderr: ({ line }) => console.log('STDERR', line)
   })
-  
+
   await proc.finished
-  
+
   // list node_modules
   const files = await sandbox.filesystem.list('/code/node_modules')
   console.log(
@@ -32,9 +32,9 @@ async function main() {
     files
       .map(f => f.name)
       .slice(0, 10)
-      .join(', '),
+      .join(', ')
   )
-  
+
   await sandbox.close()
 }
 

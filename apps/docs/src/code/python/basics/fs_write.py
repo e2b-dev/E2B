@@ -8,7 +8,7 @@ sandbox = Sandbox.create(id="Nodejs")
 # - overwrite the file if it exists
 
 # Write the content of the file '/hello.txt'
-sandbox.filesystem.write("/hello.txt", "Hello World!") # $HighlightLine
+sandbox.filesystem.write("/hello.txt", "Hello World!")  # $HighlightLine
 
 # The following would fail because '/dir' doesn't exist
 # sandbox.filesystem.write("/dir/hello.txt", "Hello World!")

@@ -2,7 +2,7 @@ from e2b import Sandbox
 
 sandbox = Sandbox.create(
     id="Nodejs",
-    on_exit=lambda: print("[sandbox]", "process ended"), # $HighlightLine
+    on_exit=lambda: print("[sandbox]", "process ended"),  # $HighlightLine
 )
 
 proc = sandbox.process.start('echo "Hello World!"')
@@ -11,7 +11,7 @@ proc.wait()
 
 proc_with_custom_handler = sandbox.process.start(
     'echo "Hello World!"',
-    on_exit=lambda: print("[process]", "process ended"), # $HighlightLine
+    on_exit=lambda: print("[process]", "process ended"),  # $HighlightLine
 )
 proc_with_custom_handler.wait()
 # output: [process] process ended

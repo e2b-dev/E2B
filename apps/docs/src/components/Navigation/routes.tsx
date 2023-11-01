@@ -1,20 +1,20 @@
 import {
   ChevronRightSquare,
+  Cpu,
+  DollarSign,
+  FileDown,
+  FileUp,
   Folder,
   FolderTree,
+  Hammer,
+  HeartHandshake,
   KeyRound,
+  Link,
   Settings,
   ShieldQuestion,
   Timer,
-  HeartHandshake,
-  DollarSign,
-  Hammer,
-  Cpu,
-  Link,
-  FileUp,
-  FileDown,
-  Variable,
   ToyBrick,
+  Variable,
 } from 'lucide-react'
 
 export const routes = [

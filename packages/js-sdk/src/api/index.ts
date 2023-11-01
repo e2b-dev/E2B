@@ -1,4 +1,4 @@
-import { Fetcher, TypedFetch, OpArgType } from 'openapi-typescript-fetch'
+import { Fetcher, OpArgType, TypedFetch } from 'openapi-typescript-fetch'
 
 import { API_HOST } from '../constants'
 import type { components, paths } from './schema.gen'

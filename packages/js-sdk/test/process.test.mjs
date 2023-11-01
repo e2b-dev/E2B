@@ -13,7 +13,7 @@ test('process on stdout/stderr', async () => {
     cmd: 'pwd',
     onStdout: data => stdout.push(data),
     onStderr: data => stderr.push(data),
-    cwd: '/tmp',
+    cwd: '/tmp'
   })
 
   const output = await process.finished
@@ -38,11 +38,12 @@ test('process expected stderr', async () => {
 test('process on exit', async () => {
   const sandbox = await Sandbox.create({ id })
 
-  const onExit = vi.fn(() => { })
+  const onExit = vi.fn(() => {
+  })
 
   const process = await sandbox.process.start({
     cmd: 'pwd',
-    onExit,
+    onExit
   })
 
   await process.finished
@@ -56,7 +57,7 @@ test('process send stdin', async () => {
 
   const process = await sandbox.process.start({
     cmd: 'read -r line; echo "$line"',
-    cwd: '/code',
+    cwd: '/code'
   })
   await process.sendStdin('ping\n')
   await process.finished
@@ -72,18 +73,19 @@ test('process send stdin', async () => {
 }, 10000)
 
 test('test default on exit', async () => {
-  const onExit = vi.fn(() => { })
+  const onExit = vi.fn(() => {
+  })
 
   const sandbox = await Sandbox.create({ id, onExit })
   const processOverride = await sandbox.process.start({
     cmd: 'pwd',
-    onExit: console.log,
+    onExit: console.log
   })
   await processOverride.finished
   expect(onExit).not.toHaveBeenCalled()
 
   const process = await sandbox.process.start({
-    cmd: 'pwd',
+    cmd: 'pwd'
   })
 
   await process.finished
@@ -93,15 +95,19 @@ test('test default on exit', async () => {
 })
 
 test('test default on stdout/stderr', async () => {
-  const onStdout = vi.fn(() => { })
-  const onStderr = vi.fn(() => { })
+  const onStdout = vi.fn(() => {
+  })
+  const onStderr = vi.fn(() => {
+  })
 
   const sandbox = await Sandbox.create({ id: 'Nodejs', onStdout, onStderr })
 
   const processOverride = await sandbox.process.start({
-    cmd: "node -e \"console.log('Hello'); throw new Error('Ooopsie -_-')\"",
-    onStdout: () => { },
-    onStderr: () => { },
+    cmd: 'node -e "console.log(\'Hello\'); throw new Error(\'Ooopsie -_-\')"',
+    onStdout: () => {
+    },
+    onStderr: () => {
+    }
   })
 
   await processOverride.finished
@@ -109,7 +115,7 @@ test('test default on stdout/stderr', async () => {
   expect(onStderr).not.toHaveBeenCalled()
 
   const process = await sandbox.process.start({
-    cmd: "node -e \"console.log('Hello'); throw new Error('Ooopsie -_-')\"",
+    cmd: 'node -e "console.log(\'Hello\'); throw new Error(\'Ooopsie -_-\')"'
   })
 
   await process.finished

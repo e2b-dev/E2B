@@ -8,7 +8,7 @@ proc = sandbox.process.start(
     "while IFS= read -r line; do echo \"$line\"; sleep 1; done",
     on_stdout=print,
 )
-proc.send_stdin("AI Playground\n") # $HighlightLine
+proc.send_stdin("AI Playground\n")  # $HighlightLine
 proc.kill()
 
 sandbox.close()

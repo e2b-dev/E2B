@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsup'
+import {defineConfig} from 'tsup'
 
 import * as packageJSON from './package.json'
 
@@ -12,6 +12,6 @@ export default defineConfig({
   format: 'cjs',
   clean: true,
   noExternal: Object.keys(packageJSON.dependencies).filter(
-    f => !excludedPackages.includes(f),
-  ),
+    f => !excludedPackages.includes(f)
+  )
 })

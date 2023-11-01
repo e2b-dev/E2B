@@ -1,25 +1,15 @@
-import { IRpcNotification, RpcWebSocketClient } from "rpc-websocket-client";
+import { IRpcNotification, RpcWebSocketClient } from 'rpc-websocket-client'
 
-import api, { components, withAPIKey } from "../api";
-import {
-  ENVD_PORT,
-  SANDBOX_DOMAIN,
-  WS_RECONNECT_INTERVAL,
-  WS_ROUTE,
-  SANDBOX_REFRESH_PERIOD,
-} from "../constants";
-import { AuthenticationError } from "../error";
-import {
-  assertFulfilled,
-  formatSettledErrors,
-  withTimeout,
-} from "../utils/promise";
-import wait from "../utils/wait";
-import { codeSnippetService } from "./codeSnippet";
-import { filesystemService } from "./filesystem";
-import { processService } from "./process";
-import { terminalService } from "./terminal";
-import { EnvVars } from "./envVars";
+import api, { components, withAPIKey } from '../api'
+import { ENVD_PORT, SANDBOX_DOMAIN, SANDBOX_REFRESH_PERIOD, WS_RECONNECT_INTERVAL, WS_ROUTE } from '../constants'
+import { AuthenticationError } from '../error'
+import { assertFulfilled, formatSettledErrors, withTimeout } from '../utils/promise'
+import wait from '../utils/wait'
+import { codeSnippetService } from './codeSnippet'
+import { filesystemService } from './filesystem'
+import { processService } from './process'
+import { terminalService } from './terminal'
+import { EnvVars } from './envVars'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SubscriptionHandler = (result: any) => void;
@@ -51,7 +41,7 @@ export interface SandboxConnectionOpts {
   logger?: Logger;
   __debug_hostname?: string;
   __debug_port?: number;
-  __debug_devEnv?: "remote" | "local";
+  __debug_devEnv?: 'remote' | 'local';
 }
 
 export interface CallOpts {
@@ -59,48 +49,48 @@ export interface CallOpts {
 }
 
 const createSandbox = withAPIKey(
-  api.path("/instances").method("post").create(),
-);
+  api.path('/instances').method('post').create(),
+)
 const refreshSandbox = withAPIKey(
-  api.path("/instances/{instanceID}/refreshes").method("post").create(),
-);
+  api.path('/instances/{instanceID}/refreshes').method('post').create(),
+)
 
 export class SandboxConnection {
-  cwd: string | undefined;
-  envVars: EnvVars;
+  cwd: string | undefined
+  envVars: EnvVars
 
-  protected readonly logger: Logger;
-  protected sandbox?: components["schemas"]["Instance"];
-  protected isOpen = false;
+  protected readonly logger: Logger
+  protected sandbox?: components['schemas']['Instance']
+  protected isOpen = false
 
-  private readonly apiKey: string;
-  private readonly rpc = new RpcWebSocketClient();
-  private subscribers: Subscriber[] = [];
+  private readonly apiKey: string
+  private readonly rpc = new RpcWebSocketClient()
+  private subscribers: Subscriber[] = []
 
   // let's keep opts readonly, but public - for convenience, mainly when debugging
   constructor(readonly opts: SandboxConnectionOpts) {
-    const apiKey = opts.apiKey || process.env.E2B_API_KEY;
+    const apiKey = opts.apiKey || process.env.E2B_API_KEY
     if (!apiKey) {
       throw new AuthenticationError(
-        "API key is required, please visit https://e2b.dev/docs to get your API key",
-      );
+        'API key is required, please visit https://e2b.dev/docs to get your API key',
+      )
     }
-    this.apiKey = apiKey;
+    this.apiKey = apiKey
 
-    this.cwd = opts.cwd;
-    if (this.cwd && this.cwd.startsWith("~")) {
-      this.cwd = this.cwd.replace("~", "/home/user");
+    this.cwd = opts.cwd
+    if (this.cwd && this.cwd.startsWith('~')) {
+      this.cwd = this.cwd.replace('~', '/home/user')
     }
 
-    this.envVars = opts.envVars || {};
+    this.envVars = opts.envVars || {}
     this.logger = opts.logger ?? {
       // by default, we log to the console
       // we don't log debug messages by default
       info: console.info,
       warn: console.warn,
       error: console.error,
-    };
-    this.logger.info?.(`Sandbox "${opts.id}" initialized`);
+    }
+    this.logger.info?.(`Sandbox "${opts.id}" initialized`)
   }
 
   /**
@@ -114,24 +104,24 @@ export class SandboxConnection {
   getHostname(port?: number) {
     if (this.opts.__debug_hostname) {
       // Debugging remotely (with GitPod) and on local needs different formats of the hostname.
-      if (port && this.opts.__debug_devEnv === "remote") {
-        return `${port}-${this.opts.__debug_hostname}`;
+      if (port && this.opts.__debug_devEnv === 'remote') {
+        return `${port}-${this.opts.__debug_hostname}`
       } else if (port) {
-        return `${this.opts.__debug_hostname}:${port}`;
+        return `${this.opts.__debug_hostname}:${port}`
       } else {
-        return this.opts.__debug_hostname;
+        return this.opts.__debug_hostname
       }
     }
 
     if (!this.sandbox) {
-      return undefined;
+      return undefined
     }
 
-    const hostname = `${this.sandbox.instanceID}-${this.sandbox.clientID}.${SANDBOX_DOMAIN}`;
+    const hostname = `${this.sandbox.instanceID}-${this.sandbox.clientID}.${SANDBOX_DOMAIN}`
     if (port) {
-      return `${port}-${hostname}`;
+      return `${port}-${hostname}`
     } else {
-      return hostname;
+      return hostname
     }
   }
 
@@ -142,24 +132,24 @@ export class SandboxConnection {
    */
   async close() {
     if (this.isOpen) {
-      this.logger.debug?.(`Closing sandbox "${this.sandbox?.instanceID}"`);
-      this.isOpen = false;
+      this.logger.debug?.(`Closing sandbox "${this.sandbox?.instanceID}"`)
+      this.isOpen = false
 
-      this.logger.debug?.("Unsubscribing...");
+      this.logger.debug?.('Unsubscribing...')
       const results = await Promise.allSettled(
         this.subscribers.map((s) => this.unsubscribe(s.subID)),
-      );
+      )
       results.forEach((r) => {
-        if (r.status === "rejected") {
-          this.logger.warn?.(`Failed to unsubscribe: "${r.reason}"`);
+        if (r.status === 'rejected') {
+          this.logger.warn?.(`Failed to unsubscribe: "${r.reason}"`)
         }
-      });
+      })
 
       // This is `ws` way of closing connection
-      this.rpc.ws?.terminate?.();
+      this.rpc.ws?.terminate?.()
       // This is the browser WebSocket way of closing connection
-      this.rpc.ws?.close?.();
-      this.logger.info?.("Disconnected from the sandbox");
+      this.rpc.ws?.close?.()
+      this.logger.info?.('Disconnected from the sandbox')
     }
   }
 
@@ -173,53 +163,53 @@ export class SandboxConnection {
   async open(opts: CallOpts) {
     const open = async () => {
       if (this.isOpen || !!this.sandbox) {
-        throw new Error("Sandbox connect was already called");
+        throw new Error('Sandbox connect was already called')
       } else {
-        this.isOpen = true;
+        this.isOpen = true
       }
-      this.logger.debug?.("Opening sandbox...");
+      this.logger.debug?.('Opening sandbox...')
 
       if (!this.opts.__debug_hostname) {
         try {
           const res = await createSandbox(this.apiKey, {
             envID: this.opts.id,
-          });
+          })
 
-          this.sandbox = res.data;
-          this.logger.debug?.(`Acquired sandbox "${this.sandbox.instanceID}"`);
+          this.sandbox = res.data
+          this.logger.debug?.(`Acquired sandbox "${this.sandbox.instanceID}"`)
 
-          this.refresh(this.sandbox.instanceID);
+          this.refresh(this.sandbox.instanceID)
         } catch (e) {
           if (e instanceof createSandbox.Error) {
-            const error = e.getActualType();
+            const error = e.getActualType()
             if (error.status === 400) {
               throw new Error(
                 `Error creating sandbox - (${error.status}) bad request: ${error.data.message}`,
-              );
+              )
             }
             if (error.status === 401) {
               throw new Error(
                 `Error creating sandbox - (${error.status}) unauthenticated: ${error.data.message}`,
-              );
+              )
             }
             if (error.status === 500) {
               throw new Error(
                 `Error creating sandbox - (${error.status}) server error: ${error.data.message}`,
-              );
+              )
             }
           }
-          throw e;
+          throw e
         }
       }
 
-      const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT);
+      const hostname = this.getHostname(this.opts.__debug_port || ENVD_PORT)
 
       if (!hostname) {
-        throw new Error("Cannot get sandbox's hostname");
+        throw new Error('Cannot get sandbox\'s hostname')
       }
 
-      const protocol = this.opts.__debug_devEnv === "local" ? "ws" : "wss";
-      const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`;
+      const protocol = this.opts.__debug_devEnv === 'local' ? 'ws' : 'wss'
+      const sandboxURL = `${protocol}://${hostname}${WS_ROUTE}`
 
       this.rpc.onError((err) => {
         // not warn, because this is somewhat expected behaviour during initialization
@@ -227,50 +217,50 @@ export class SandboxConnection {
           `Error in WebSocket of sandbox "${this.sandbox?.instanceID}": ${
             err.message ?? err.code ?? err.toString()
           }. Trying to reconnect...`,
-        );
-      });
+        )
+      })
 
-      let isFinished = false;
-      let resolveOpening: (() => void) | undefined;
-      let rejectOpening: (() => void) | undefined;
+      let isFinished = false
+      let resolveOpening: (() => void) | undefined
+      let rejectOpening: (() => void) | undefined
 
       const openingPromise = new Promise<void>((resolve, reject) => {
         resolveOpening = () => {
-          if (isFinished) return;
-          isFinished = true;
-          resolve();
-        };
+          if (isFinished) return
+          isFinished = true
+          resolve()
+        }
         rejectOpening = () => {
-          if (isFinished) return;
-          isFinished = true;
-          reject();
-        };
-      });
+          if (isFinished) return
+          isFinished = true
+          reject()
+        }
+      })
 
       this.rpc.onOpen(() => {
         this.logger.debug?.(
           `Connected to sandbox "${this.sandbox?.instanceID}"`,
-        );
-        resolveOpening?.();
-      });
+        )
+        resolveOpening?.()
+      })
 
       this.rpc.onClose(async () => {
         this.logger.debug?.(
           `Closing WebSocket connection to sandbox "${this.sandbox?.instanceID}"`,
-        );
+        )
         if (this.isOpen) {
-          await wait(WS_RECONNECT_INTERVAL);
+          await wait(WS_RECONNECT_INTERVAL)
           this.logger.debug?.(
             `Reconnecting to sandbox "${this.sandbox?.instanceID}"`,
-          );
+          )
           try {
             // When the WS connection closes the subscribers in devbookd are removed.
             // We want to delete the subscriber handlers here so there are no orphans.
-            this.subscribers = [];
-            await this.rpc.connect(sandboxURL);
+            this.subscribers = []
+            await this.rpc.connect(sandboxURL)
             this.logger.debug?.(
               `Reconnected to sandbox "${this.sandbox?.instanceID}"`,
-            );
+            )
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (err: any) {
             // not warn, because this is somewhat expected behaviour during initialization
@@ -278,20 +268,20 @@ export class SandboxConnection {
               `Failed reconnecting to sandbox "${this.sandbox?.instanceID}": ${
                 err.message ?? err.code ?? err.toString()
               }`,
-            );
+            )
           }
         } else {
-          rejectOpening?.();
+          rejectOpening?.()
         }
-      });
+      })
 
-      this.rpc.onNotification.push(this.handleNotification.bind(this));
+      this.rpc.onNotification.push(this.handleNotification.bind(this))
 
       try {
         this.logger.debug?.(
           `Connection to sandbox "${this.sandbox?.instanceID}"`,
-        );
-        await this.rpc.connect(sandboxURL);
+        )
+        await this.rpc.connect(sandboxURL)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
@@ -300,13 +290,13 @@ export class SandboxConnection {
           `Error connecting to sandbox "${this.sandbox?.instanceID}": ${
             err.message ?? err.code ?? err.toString()
           }`,
-        );
+        )
       }
 
-      await openingPromise;
-      return this;
-    };
-    return await withTimeout(open, opts?.timeout)();
+      await openingPromise
+      return this
+    }
+    return await withTimeout(open, opts?.timeout)()
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -316,56 +306,56 @@ export class SandboxConnection {
     params?: any[],
     opts?: CallOpts,
   ) {
-    this.logger.debug?.(`Calling "${service}_${method}" with params:`, params);
+    this.logger.debug?.(`Calling "${service}_${method}" with params:`, params)
 
     // Without the async function, the `this` context is lost.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const call = async (method: string, params?: any[]) =>
-      await this.rpc.call(method, params);
+      await this.rpc.call(method, params)
 
     return await withTimeout(call, opts?.timeout)(
       `${service}_${method}`,
       params,
-    );
+    )
   }
 
   async handleSubscriptions<
-    T extends (ReturnType<SandboxConnection["subscribe"]> | undefined)[],
+    T extends (ReturnType<SandboxConnection['subscribe']> | undefined)[],
   >(
     ...subs: T
   ): Promise<{
     [P in keyof T]: Awaited<T[P]>;
   }> {
-    const results = await Promise.allSettled(subs);
+    const results = await Promise.allSettled(subs)
 
-    if (results.every((r) => r.status === "fulfilled")) {
+    if (results.every((r) => r.status === 'fulfilled')) {
       return results.map((r) =>
-        r.status === "fulfilled" ? r.value : undefined,
+        r.status === 'fulfilled' ? r.value : undefined,
       ) as {
         [P in keyof T]: Awaited<T[P]>;
-      };
+      }
     }
 
     await Promise.all(
       results
         .filter(assertFulfilled)
         .map((r) => (r.value ? this.unsubscribe(r.value) : undefined)),
-    );
+    )
 
-    throw new Error(formatSettledErrors(results));
+    throw new Error(formatSettledErrors(results))
   }
 
   // eslint-disable-next-line @typescript-eslint/member-ordering
   async unsubscribe(subID: string) {
-    const subscription = this.subscribers.find((s) => s.subID === subID);
-    if (!subscription) return;
+    const subscription = this.subscribers.find((s) => s.subID === subID)
+    if (!subscription) return
 
-    await this.call(subscription.service, "unsubscribe", [subscription.subID]);
+    await this.call(subscription.service, 'unsubscribe', [subscription.subID])
 
-    this.subscribers = this.subscribers.filter((s) => s !== subscription);
+    this.subscribers = this.subscribers.filter((s) => s !== subscription)
     this.logger.debug?.(
       `Unsubscribed '${subID}' from '${subscription.service}'`,
-    );
+    )
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/member-ordering
@@ -376,43 +366,41 @@ export class SandboxConnection {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...params: any[]
   ) {
-    const subID = await this.call(service, "subscribe", [method, ...params]);
+    const subID = await this.call(service, 'subscribe', [method, ...params])
 
-    if (typeof subID !== "string") {
+    if (typeof subID !== 'string') {
       throw new Error(
-        // eslint-disable-next-line prettier/prettier
         `Cannot subscribe to ${service}_${method}${
-          params.length > 0 ? " with params [" + params.join(", ") + "]" : ""
+          params.length > 0 ? ' with params [' + params.join(', ') + ']' : ''
         }. Expected response should have been a subscription ID, instead we got ${JSON.stringify(
           subID,
         )}`,
-      );
+      )
     }
 
     this.subscribers.push({
       handler,
       service,
       subID,
-    });
+    })
     this.logger.debug?.(
-      // eslint-disable-next-line prettier/prettier
       `Subscribed to "${service}_${method}"${
-        params.length > 0 ? " with params [" + params.join(", ") + "] and" : ""
+        params.length > 0 ? ' with params [' + params.join(', ') + '] and' : ''
       } with id "${subID}"`,
-    );
+    )
 
-    return subID;
+    return subID
   }
 
   private handleNotification(data: IRpcNotification) {
-    this.logger.debug?.("Handling notification:", data);
+    this.logger.debug?.('Handling notification:', data)
     this.subscribers
       .filter((s) => s.subID === data.params?.subscription)
-      .forEach((s) => s.handler(data.params?.result));
+      .forEach((s) => s.handler(data.params?.result))
   }
 
   private async refresh(instanceID: string) {
-    this.logger.debug?.(`Started refreshing sandbox "${instanceID}"`);
+    this.logger.debug?.(`Started refreshing sandbox "${instanceID}"`)
 
     try {
       // eslint-disable-next-line no-constant-condition
@@ -420,36 +408,36 @@ export class SandboxConnection {
         if (!this.isOpen) {
           this.logger.debug?.(
             `Cannot refresh sandbox ${this.sandbox?.instanceID} - it was closed`,
-          );
-          return;
+          )
+          return
         }
 
-        await wait(SANDBOX_REFRESH_PERIOD);
+        await wait(SANDBOX_REFRESH_PERIOD)
 
         try {
-          this.logger.debug?.(`Refreshed sandbox "${instanceID}"`);
+          this.logger.debug?.(`Refreshed sandbox "${instanceID}"`)
 
           await refreshSandbox(this.apiKey, {
             instanceID,
-          });
+          })
         } catch (e) {
           if (e instanceof refreshSandbox.Error) {
-            const error = e.getActualType();
+            const error = e.getActualType()
             if (error.status === 404) {
               this.logger.warn?.(
                 `Error refreshing sandbox - (${error.status}): ${error.data.message}`,
-              );
-              return;
+              )
+              return
             }
             this.logger.warn?.(
               `Refreshing sandbox "${instanceID}" failed - (${error.status})`,
-            );
+            )
           }
         }
       }
     } finally {
-      this.logger.debug?.(`Stopped refreshing sandbox "${instanceID}"`);
-      await this.close();
+      this.logger.debug?.(`Stopped refreshing sandbox "${instanceID}"`)
+      await this.close()
     }
   }
 }

@@ -1,7 +1,7 @@
-import { EnvVars } from "./envVars";
-import { CallOpts, SandboxConnection } from "./sandboxConnection";
+import { EnvVars } from './envVars'
+import { CallOpts, SandboxConnection } from './sandboxConnection'
 
-export const processService = "process";
+export const processService = 'process'
 
 /**
  * A message from a process.
@@ -15,11 +15,10 @@ export class ProcessMessage {
     public readonly timestamp: number,
     public readonly error: boolean,
   ) {
-    // eslint-disable-next-line prettier/prettier
   }
 
   public toString() {
-    return this.line;
+    return this.line
   }
 }
 
@@ -27,27 +26,29 @@ export class ProcessMessage {
  * Output from a process.
  */
 export class ProcessOutput {
-  private readonly delimiter = "\n";
-  private readonly messages: ProcessMessage[] = [];
-  private _error = false;
-  private _exitCode?: number;
-  private _finished = false;
+  private readonly delimiter = '\n'
+  private readonly messages: ProcessMessage[] = []
+  private _finished = false
+
+  private _error = false
+
+  /**
+   * Whether the process has errored.
+   */
+  get error(): boolean {
+    return this._error
+  }
+
+  private _exitCode?: number
 
   /**
    * The exit code of the process.
    */
   get exitCode(): number | undefined {
     if (!this._finished) {
-      throw new Error("Process has not finished yet");
+      throw new Error('Process has not finished yet')
     }
-    return this._exitCode;
-  }
-
-  /**
-   * Whether the process has errored.
-   */
-  get error(): boolean {
-    return this._error;
+    return this._exitCode
   }
 
   /**
@@ -57,7 +58,7 @@ export class ProcessOutput {
     return this.messages
       .filter((out) => !out.error)
       .map((out) => out.line)
-      .join(this.delimiter);
+      .join(this.delimiter)
   }
 
   /**
@@ -67,29 +68,29 @@ export class ProcessOutput {
     return this.messages
       .filter((out) => out.error)
       .map((out) => out.line)
-      .join(this.delimiter);
+      .join(this.delimiter)
   }
 
   addStdout(message: ProcessMessage) {
-    this.insertByTimestamp(message);
+    this.insertByTimestamp(message)
   }
 
   addStderr(message: ProcessMessage) {
-    this._error = true;
-    this.insertByTimestamp(message);
+    this._error = true
+    this.insertByTimestamp(message)
   }
 
   setExitCode(exitCode: number) {
-    this._exitCode = exitCode;
-    this._finished = true;
+    this._exitCode = exitCode
+    this._finished = true
   }
 
   private insertByTimestamp(message: ProcessMessage) {
-    let i = this.messages.length - 1;
+    let i = this.messages.length - 1
     while (i >= 0 && this.messages[i].timestamp > message.timestamp) {
-      i -= 1;
+      i -= 1
     }
-    this.messages.splice(i + 1, 0, message);
+    this.messages.splice(i + 1, 0, message)
   }
 }
 
@@ -100,7 +101,7 @@ export class Process {
   /**
    * @deprecated use .wait() instead
    */
-  readonly finished: Promise<ProcessOutput>;
+  readonly finished: Promise<ProcessOutput>
 
   constructor(
     readonly processID: string,
@@ -109,7 +110,7 @@ export class Process {
     finished: Promise<ProcessOutput>,
     readonly output: ProcessOutput,
   ) {
-    this.finished = finished;
+    this.finished = finished
   }
 
   /**
@@ -117,10 +118,10 @@ export class Process {
    */
   async kill(): Promise<void> {
     try {
-      await this.sandbox.call(processService, "kill", [this.processID]);
+      await this.sandbox.call(processService, 'kill', [this.processID])
     } finally {
-      this.triggerExit();
-      await this.finished;
+      this.triggerExit()
+      await this.finished
     }
   }
 
@@ -128,7 +129,7 @@ export class Process {
    * Waits for the process to finish.
    */
   async wait(): Promise<ProcessOutput> {
-    return this.finished;
+    return this.finished
   }
 
   /**
@@ -141,12 +142,13 @@ export class Process {
   async sendStdin(data: string, opts?: CallOpts): Promise<void> {
     await this.sandbox.call(
       processService,
-      "stdin",
+      'stdin',
       [this.processID, data],
       opts,
-    );
+    )
   }
 }
+
 export interface ProcessOpts {
   cmd: string;
   onStdout?: (out: ProcessMessage) => void;

@@ -8,7 +8,7 @@ test('test_env_vars', async () => {
 
   const process = await sandbox.process.start({
     cmd: 'echo $FOO',
-    envVars: { FOO: 'BAR' },
+    envVars: { FOO: 'BAR' }
   })
   await process.wait()
   const output = process.output.stdout
@@ -45,7 +45,7 @@ test('test_overriding_env_vars', async () => {
 
   const process = await sandbox.process.start({
     cmd: 'echo $FOO',
-    envVars: { FOO: 'QUX' },
+    envVars: { FOO: 'QUX' }
   })
   await process.wait()
   const output = process.output.stdout

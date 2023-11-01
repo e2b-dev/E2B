@@ -1,10 +1,10 @@
 import fs from 'fs'
-import { Sandbox, runCode } from '../dist/index.js'
+import { runCode, Sandbox } from '../dist/index.js'
 
 async function localSandbox() {
   return await Sandbox.create({
     id: 'Nodejs',
-    apiKey: process.env.E2B_API_KEY,
+    apiKey: process.env.E2B_API_KEY
     // __debug_hostname: 'localhost',
     // __debug_port: 49982,
     // __debug_devEnv: 'local',

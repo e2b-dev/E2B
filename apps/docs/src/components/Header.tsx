@@ -2,11 +2,7 @@ import { forwardRef, useEffect } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import {
-  MobileNavigation,
-  useIsInsideMobileNavigation,
-  useMobileNavigationStore,
-} from '@/components/MobileNavigation'
+import { MobileNavigation, useIsInsideMobileNavigation, useMobileNavigationStore } from '@/components/MobileNavigation'
 import { Logo } from '@/components/Logo'
 import { MobileSearch, Search } from '@/components/Search'
 import { Auth } from '@/components/Auth'
@@ -94,17 +90,17 @@ export const Header = forwardRef(function Header({ className }, ref) {
           href="/"
           aria-label="Home"
         >
-          <Logo className="h-6" />
+          <Logo className="h-6"/>
         </Link>
       </div>
-      <Search />
+      <Search/>
       <div className="flex items-center gap-5 lg:hidden">
-        <MobileNavigation />
+        <MobileNavigation/>
         <Link
           href="/"
           aria-label="Home"
         >
-          <Logo className="h-6" />
+          <Logo className="h-6"/>
         </Link>
       </div>
       <div className="flex items-center gap-4">
@@ -117,24 +113,24 @@ export const Header = forwardRef(function Header({ className }, ref) {
               href={`https://discord.gg/${config.discord.slug}`}
               stat={discordUsers}
               statType="discordUsers"
-              icon={<DiscordIcon className="h-5 w-5 fill-current" />}
+              icon={<DiscordIcon className="h-5 w-5 fill-current"/>}
             />
             <TopLevelNavItem
               href={config.github.url}
               stat={githubStars}
               statType="githubStars"
-              icon={<GitHubIcon className="h-5 w-5 fill-current" />}
+              icon={<GitHubIcon className="h-5 w-5 fill-current"/>}
             />
             <TopLevelNavItem
               href={config.twitter.url}
-              icon={<TwitterIcon className="h-5 w-5 fill-current" />}
+              icon={<TwitterIcon className="h-5 w-5 fill-current"/>}
             />
           </ul>
         </nav>
-        <HeaderSeparator />
-        <MobileSearch />
+        <HeaderSeparator/>
+        <MobileSearch/>
         <div className="hidden min-[540px]:contents">
-          <Auth />
+          <Auth/>
         </div>
       </div>
     </motion.div>

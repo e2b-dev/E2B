@@ -145,7 +145,7 @@ export function Logo(props) {
           y2="195.449"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="white" />
+          <stop stopColor="white"/>
           <stop
             offset="0.720129"
             stopColor="#FF8800"

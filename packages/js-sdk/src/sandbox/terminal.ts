@@ -1,17 +1,17 @@
-import { EnvVars } from "./envVars";
-import { SandboxConnection } from "./sandboxConnection";
+import { EnvVars } from './envVars'
+import { SandboxConnection } from './sandboxConnection'
 
-export const terminalService = "terminal";
+export const terminalService = 'terminal'
 
 export class TerminalOutput {
-  private _data = "";
+  private _data = ''
 
   get data() {
-    return this._data;
+    return this._data
   }
 
   addData(data: string) {
-    this._data += data;
+    this._data += data
   }
 }
 
@@ -23,7 +23,7 @@ export class Terminal {
   /**
    * @deprecated use .wait() instead
    */
-  readonly finished: Promise<TerminalOutput>;
+  readonly finished: Promise<TerminalOutput>
 
   constructor(
     readonly terminalID: string,
@@ -32,11 +32,11 @@ export class Terminal {
     finished: Promise<TerminalOutput>,
     readonly output: TerminalOutput,
   ) {
-    this.finished = finished;
+    this.finished = finished
   }
 
   get data() {
-    return this.output.data;
+    return this.output.data
   }
 
   /**
@@ -45,10 +45,10 @@ export class Terminal {
   async kill(): Promise<void> {
     try {
       // TODO: Change the "destroy" to "kill" in devbookd
-      await this.sandbox.call(terminalService, "destroy", [this.terminalID]);
+      await this.sandbox.call(terminalService, 'destroy', [this.terminalID])
     } finally {
-      this.triggerExit();
-      await this.finished;
+      this.triggerExit()
+      await this.finished
     }
   }
 
@@ -56,7 +56,7 @@ export class Terminal {
    * Waits for the terminal to finish.
    */
   async wait(): Promise<TerminalOutput> {
-    return this.finished;
+    return this.finished
   }
 
   /**
@@ -65,7 +65,7 @@ export class Terminal {
    * @param data Data to send
    */
   async sendData(data: string): Promise<void> {
-    await this.sandbox.call(terminalService, "data", [this.terminalID, data]);
+    await this.sandbox.call(terminalService, 'data', [this.terminalID, data])
   }
 
   /**
@@ -75,11 +75,11 @@ export class Terminal {
    * @param rows Number of rows
    */
   async resize({ cols, rows }: { cols: number; rows: number }): Promise<void> {
-    await this.sandbox.call(terminalService, "resize", [
+    await this.sandbox.call(terminalService, 'resize', [
       this.terminalID,
       cols,
       rows,
-    ]);
+    ])
   }
 }
 

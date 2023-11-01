@@ -10,10 +10,10 @@ import { GitHubIcon } from '@/components/icons/GitHubIcon'
 import { DiscordIcon } from '@/components/icons/DiscordIcon'
 
 function PageLink({
-  label,
-  page,
-  previous = false,
-}: {
+                    label,
+                    page,
+                    previous = false,
+                  }: {
   label: string
   page: { href: string; title: string }
   previous?: boolean
@@ -79,10 +79,10 @@ function PageNavigation() {
 }
 
 function SocialLink({
-  href,
-  icon: Icon,
-  children,
-}: {
+                      href,
+                      icon: Icon,
+                      children,
+                    }: {
   href: string
   icon: React.ComponentType<{ className?: string }>
   children: React.ReactNode
@@ -93,14 +93,15 @@ function SocialLink({
       className="group"
     >
       <span className="sr-only">{children}</span>
-      <Icon className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-zinc-500" />
+      <Icon className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-zinc-500"/>
     </Link>
   )
 }
 
 function SmallPrint() {
   return (
-    <div className="flex flex-col items-start items-center justify-between gap-5 border-t border-zinc-900/5 pt-8 dark:border-white/5 sm:flex-row">
+    <div
+      className="flex flex-col items-start items-center justify-between gap-5 border-t border-zinc-900/5 pt-8 dark:border-white/5 sm:flex-row">
       <div className="flex flex-col items-center justify-start lg:items-start">
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
           &copy; FoundryLabs, Inc. {new Date().getFullYear()}. All rights reserved.
@@ -136,8 +137,8 @@ function SmallPrint() {
 export function Footer() {
   return (
     <footer className="mx-auto w-full max-w-2xl space-y-10 pb-16 lg:max-w-5xl">
-      <PageNavigation />
-      <SmallPrint />
+      <PageNavigation/>
+      <SmallPrint/>
     </footer>
   )
 }

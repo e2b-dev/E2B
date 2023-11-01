@@ -1,10 +1,9 @@
-from os import getenv
 from e2b import Sandbox
 
 sandbox = Sandbox.create(id="Nodejs")
 
 # Read the '/etc/hosts' file
-file_content = sandbox.filesystem.read('/etc/hosts') # $HighlightLine
+file_content = sandbox.filesystem.read('/etc/hosts')  # $HighlightLine
 
 # Prints something like:
 # 127.0.0.1       localhost

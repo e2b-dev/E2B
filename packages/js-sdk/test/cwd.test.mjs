@@ -6,7 +6,7 @@ import { id } from './setup.mjs'
 test('custom cwd', async () => {
   const sandbox = await Sandbox.create({
     id,
-    cwd: '/code/app',
+    cwd: '/code/app'
   })
 
   // change dir to /home/user
@@ -91,7 +91,7 @@ test('test_relative_paths', async () => {
 test('test_warnings', async () => {
   const sandbox = await Sandbox.create({
     id,
-    logger: { warn: vi.spyOn(console, 'warn') },
+    logger: { warn: vi.spyOn(console, 'warn') }
   })
   await sandbox.filesystem.write('./hello.txt', 'Hello Vasek!')
   expect(console.warn).toHaveBeenCalledTimes(1)

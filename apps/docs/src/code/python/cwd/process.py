@@ -12,4 +12,3 @@ print(process_cwd.output.stdout)
 # output: "/home"
 
 sandbox.close()
-

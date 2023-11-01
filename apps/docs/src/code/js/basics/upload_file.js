@@ -19,7 +19,7 @@ const remotePath = await sandbox.uploadFile(fileBuffer, filename); // $Highlight
 // const remotePath = await sandbox.uploadFile(fileBlob, 'data.csv')
 
 console.log(
-  `The file was uploaded to '${remotePath}' path inside the sandbox `,
+  `The file was uploaded to '${remotePath}' path inside the sandbox `
 );
 
 await sandbox.close();

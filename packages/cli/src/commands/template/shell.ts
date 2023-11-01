@@ -1,46 +1,46 @@
-import * as e2b from "@e2b/sdk";
-import * as commander from "commander";
+import * as e2b from '@e2b/sdk'
+import * as commander from 'commander'
 
-import { ensureAPIKey } from "src/api";
-import { spawnConnectedTerminal } from "src/terminal";
-import { asBold, asFormattedSandboxTemplate } from "src/utils/format";
+import { ensureAPIKey } from 'src/api'
+import { spawnConnectedTerminal } from 'src/terminal'
+import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 
-export const shellCommand = new commander.Command("shell")
-  .description("Connect terminal to sandbox")
-  .argument("<id>", `Connect to sandbox specified by ${asBold("<id>")}`)
-  .alias("sh")
+export const shellCommand = new commander.Command('shell')
+  .description('Connect terminal to sandbox')
+  .argument('<id>', `Connect to sandbox specified by ${asBold('<id>')}`)
+  .alias('sh')
   .action(async (id: string) => {
     try {
-      const apiKey = ensureAPIKey();
+      const apiKey = ensureAPIKey()
 
-      const template: Pick<e2b.components["schemas"]["Environment"], "envID"> =
+      const template: Pick<e2b.components['schemas']['Environment'], 'envID'> =
         {
           envID: id,
-        };
+        }
 
-      await connectSandbox({ apiKey, template: template });
+      await connectSandbox({ apiKey, template: template })
       // We explicitly call exit because the sandbox is keeping the program alive.
       // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
-      process.exit(0);
+      process.exit(0)
     } catch (err: any) {
-      console.error(err);
-      process.exit(1);
+      console.error(err)
+      process.exit(1)
     }
-  });
+  })
 
 async function connectSandbox({
-  apiKey,
-  template,
-}: {
+                                apiKey,
+                                template,
+                              }: {
   apiKey: string;
-  template: Pick<e2b.components["schemas"]["Environment"], "envID">;
+  template: Pick<e2b.components['schemas']['Environment'], 'envID'>;
 }) {
   const sandbox = new e2b.Sandbox({
     apiKey,
     id: template.envID,
-  });
+  })
 
-  await sandbox.open({});
+  await sandbox.open({})
 
   if (sandbox.terminal) {
     const { exited } = await spawnConnectedTerminal(
@@ -51,15 +51,15 @@ async function connectSandbox({
       `Disconnecting terminal from sandbox ${asFormattedSandboxTemplate(
         template,
       )}`,
-    );
+    )
 
-    await exited;
+    await exited
     console.log(
       `Closing terminal connection to sandbox ${asFormattedSandboxTemplate(
         template,
       )}`,
-    );
+    )
   } else {
-    throw new Error("Cannot start terminal - no sandbox");
+    throw new Error('Cannot start terminal - no sandbox')
   }
 }

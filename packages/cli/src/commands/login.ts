@@ -6,7 +6,7 @@ import * as open from 'open'
 import * as path from 'path'
 
 import { pkg } from 'src'
-import { getUserConfig, USER_CONFIG_PATH, UserConfig, DOCS_BASE } from 'src/user'
+import { DOCS_BASE, getUserConfig, USER_CONFIG_PATH, UserConfig } from 'src/user'
 import { asBold, asFormattedError } from 'src/utils/format'
 
 export const loginCommand = new commander.Command('login')
@@ -51,9 +51,12 @@ async function signInWithBrowser(): Promise<UserConfig> {
       // Close the HTTP connection to prevent `server.close()` from hanging
       res.setHeader('connection', 'close')
       const followUpUrl = new URL(`${DOCS_BASE}/api/cli`)
-      const searchParams = new URL(req.url || '/', 'http://localhost').searchParams
-      const searchParamsObj = Object.fromEntries(searchParams.entries()) as UserConfig & {
-        error?: string
+      const searchParams = new URL(req.url || '/', 'http://localhost')
+        .searchParams
+      const searchParamsObj = Object.fromEntries(
+        searchParams.entries(),
+      ) as UserConfig & {
+        error?: string;
       }
       const { error } = searchParamsObj
       if (error) {

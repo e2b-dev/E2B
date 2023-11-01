@@ -3,7 +3,7 @@ import { Sandbox } from "@e2b/sdk";
 const sandbox = await Sandbox.create({ id: "Nodejs" });
 
 const npmInit = await sandbox.process.start({
-  cmd: "npm init -y", // $HighlightLine
+  cmd: "npm init -y" // $HighlightLine
 });
 await npmInit.wait();
 

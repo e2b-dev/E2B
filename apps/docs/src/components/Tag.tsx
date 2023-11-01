@@ -41,10 +41,10 @@ const valueColorMap = {
 } as Record<string, keyof typeof colorStyles>
 
 export function Tag({
-  children,
-  variant = 'medium',
-  color = valueColorMap[children] ?? 'emerald',
-}: {
+                      children,
+                      variant = 'medium',
+                      color = valueColorMap[children] ?? 'emerald',
+                    }: {
   // eslint-disable-next-line @typescript-eslint/ban-types
   children: keyof typeof valueColorMap & (string | {})
   variant?: keyof typeof variantStyles

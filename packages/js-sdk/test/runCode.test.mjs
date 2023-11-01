@@ -16,6 +16,6 @@ raise Exception("err")
 
 test('run code using unsupported runtime', async () => {
   await expect(() => runCode('Unsupported', 'print("hello")')).rejects.toThrowError(
-    "isn't supported",
+    'isn\'t supported'
   )
 })

@@ -70,7 +70,8 @@ export default function Page() {
       <>
         <div className="font-bold text-red-500">Error</div>
         <div>Something went wrong, please try again</div>
-        <pre>{searchParamsObj.error}</pre> {/* TODO: Nicer, but it should never happen */}
+        <pre>{searchParamsObj.error}</pre>
+        {/* TODO: Nicer, but it should never happen */}
       </>
     )
   } else if (state === 'success') {
@@ -115,7 +116,8 @@ export default function Page() {
       {/* https://github.com/vercel/next.js/issues/50591 */}
       <DialogAnimated
         open={true}
-        setOpen={() => { }} // intentionally prevent closing
+        setOpen={() => {
+        }} // intentionally prevent closing
       >
         <div className="py-6 sm:py-12">
           <div className="mx-auto px-6 lg:px-8">
@@ -127,13 +129,13 @@ export default function Page() {
               "
               >
                 <span className="text-gray-200">
-                  <LaptopIcon size={60} />
+                  <LaptopIcon size={60}/>
                 </span>
                 <span className="text-gray-400">
-                  <Link2Icon size={30} />
+                  <Link2Icon size={30}/>
                 </span>
                 <span className="text-gray-200">
-                  <CloudIcon size={60} />
+                  <CloudIcon size={60}/>
                 </span>
               </p>
               <h2 className="mt-6 text-base font-semibold leading-7">

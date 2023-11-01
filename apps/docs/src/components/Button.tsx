@@ -44,18 +44,18 @@ type ButtonProps = {
   disabled?: boolean
   arrow?: 'left' | 'right'
 } & (
-    | React.ComponentPropsWithoutRef<typeof Link>
-    | (React.ComponentPropsWithoutRef<'button'> & { href?: undefined })
+  | React.ComponentPropsWithoutRef<typeof Link>
+  | (React.ComponentPropsWithoutRef<'button'> & { href?: undefined })
   )
 
 export function Button({
-  variant = 'primary',
-  disabled = false,
-  className,
-  children,
-  arrow,
-  ...props
-}: ButtonProps) {
+                         variant = 'primary',
+                         disabled = false,
+                         className,
+                         children,
+                         arrow,
+                         ...props
+                       }: ButtonProps) {
   className = clsx(
     'inline-flex gap-0.5 justify-center overflow-hidden text-base font-medium transition',
     variantStyles[variant],

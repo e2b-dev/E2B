@@ -2,12 +2,12 @@ import { Sandbox } from "@e2b/sdk";
 
 const sandbox = await Sandbox.create({
   id: "Nodejs",
-  cwd: "/home/user/code", // $HighlightLine
+  cwd: "/home/user/code" // $HighlightLine
 });
 
 await sandbox.filesystem.write("hello.txt", "Welcome to E2B!"); // $HighlightLine
 const proc = await sandbox.process.start({
-  cmd: "cat /home/user/code/hello.txt",
+  cmd: "cat /home/user/code/hello.txt"
 });
 await proc.wait();
 console.log(proc.output.stdout);

@@ -37,7 +37,7 @@ export function Providers({ children }) {
       disableTransitionOnChange
       forcedTheme="dark"
     >
-      <ThemeWatcher />
+      <ThemeWatcher/>
       <CustomUserContextProvider>
         <PostHogProvider>{children}</PostHogProvider>
       </CustomUserContextProvider>

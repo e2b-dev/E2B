@@ -22,12 +22,12 @@ function printNewPortAndURL(openPorts, sandbox) {
 
 const sandbox = await Sandbox.create({
   id: "Python3",
-  onScanPorts: (openPorts) => printNewPortAndURL(openPorts, sandbox), // $HighlightLine
+  onScanPorts: (openPorts) => printNewPortAndURL(openPorts, sandbox) // $HighlightLine
 });
 
 // Start a new server on port 8000 inside the playground.
 const proc = await sandbox.process.start({
-  cmd: "python3 -m http.server 8000",
+  cmd: "python3 -m http.server 8000"
 }); // $HighlightLine
 
 // Wait 10 seconds and then kill the server and close the sandbox.

@@ -1,11 +1,11 @@
-import FilesystemWatcher from "./filesystemWatcher";
-import { CallOpts } from "./sandboxConnection";
+import FilesystemWatcher from './filesystemWatcher'
+import { CallOpts } from './sandboxConnection'
 
-export const filesystemService = "filesystem";
+export const filesystemService = 'filesystem'
 
 export interface FileInfo {
   isDir: boolean;
-  name: string;
+  name: string
 }
 
 export interface FilesystemManager {

@@ -9,4 +9,6 @@ export const pkg = packageJSON
 
 updateNotifier.default({ pkg }).notify()
 
-program.version(packageJSON.version, undefined, 'Display e2b CLI version').parse()
+program
+  .version(packageJSON.version, undefined, 'Display e2b CLI version')
+  .parse()

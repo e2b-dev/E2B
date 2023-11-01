@@ -6,7 +6,7 @@ const sandbox = await Sandbox.create({ id: "Nodejs" });
 
 const proc = await sandbox.process.start({
   cmd: 'while IFS= read -r line; do echo "$line"; sleep 1; done',
-  onStdout: (output) => console.log(output),
+  onStdout: (output) => console.log(output)
 });
 await proc.sendStdin("AI Playground\n"); // $HighlightLine
 await proc.kill();

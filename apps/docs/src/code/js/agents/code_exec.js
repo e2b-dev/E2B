@@ -4,7 +4,7 @@ import { Sandbox } from "@e2b/sdk";
 const sandbox = await Sandbox.create({
   // Select the right runtime
   // 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
-  id: "Nodejs",
+  id: "Nodejs"
 });
 
 // 2. Save the JavaScript code to a file inside the playground
@@ -23,7 +23,7 @@ const proc = await sandbox.process.start({
   cmd: "node /code/index.js", // $HighlightLine
   // 4. Stream stdout, stderr
   onStdout: (data) => console.log(data.line), // $HighlightLine
-  onStderr: (data) => console.log(data.line), // $HighlightLine
+  onStderr: (data) => console.log(data.line) // $HighlightLine
 }); // $HighlightLine
 
 // 4. Wait for the process to finish

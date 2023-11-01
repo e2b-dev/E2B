@@ -2,7 +2,7 @@ import { Sandbox } from "@e2b/sdk";
 
 const sandbox = await Sandbox.create({
   id: "Nodejs",
-  cwd: "/code", // $HighlightLine
+  cwd: "/code" // $HighlightLine
 });
 
 const sandboxCwd = await sandbox.process.start({ cmd: "pwd" }); // $HighlightLine

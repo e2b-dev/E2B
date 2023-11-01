@@ -14,7 +14,7 @@ test.skip('timeout sandbox', async () => {
 test.skip('dont timeout sandbox', async () => {
   const sandbox = await Sandbox.create({
     id,
-    timeout: 10000,
+    timeout: 10000
   })
   await sandbox.close()
 })
@@ -23,20 +23,20 @@ test.skip('dont timeout sandbox', async () => {
 test.skip('timeout filesystem', async () => {
   const sandbox = await Sandbox.create({ id })
   await expect(
-    sandbox.filesystem.write('/home/test.txt', 'Hello World', { timeout: 10 }),
+    sandbox.filesystem.write('/home/test.txt', 'Hello World', { timeout: 10 })
   ).rejects.toThrow(TimeoutError)
   await expect(
-    sandbox.filesystem.read('/home/test.txt', { timeout: 10 }),
+    sandbox.filesystem.read('/home/test.txt', { timeout: 10 })
   ).rejects.toThrow(TimeoutError)
   await expect(sandbox.filesystem.list('/home', { timeout: 10 })).rejects.toThrow(
-    TimeoutError,
+    TimeoutError
   )
   await expect(
-    sandbox.filesystem.makeDir('/home/test/', { timeout: 10 }),
+    sandbox.filesystem.makeDir('/home/test/', { timeout: 10 })
   ).rejects.toThrow(TimeoutError)
   await sandbox.filesystem.write('/home/test.txt', 'Hello World')
   await expect(
-    sandbox.filesystem.remove('/home/test.txt', { timeout: 10 }),
+    sandbox.filesystem.remove('/home/test.txt', { timeout: 10 })
   ).rejects.toThrow(TimeoutError)
 })
 
@@ -44,13 +44,13 @@ test.skip('timeout filesystem', async () => {
 test.skip('timeout process', async () => {
   const sandbox = await Sandbox.create({ id: 'Nodejs' })
   await expect(
-    sandbox.process.start({ cmd: "node -e 'setTimeout(() => {}, 10000)'", timeout: 10 }),
+    sandbox.process.start({ cmd: 'node -e \'setTimeout(() => {}, 10000)\'', timeout: 10 })
   ).rejects.toThrow(TimeoutError)
   const process = await sandbox.process.start({
-    cmd: "while true; do echo 'Hello World'; sleep 1; done",
+    cmd: 'while true; do echo \'Hello World\'; sleep 1; done'
   })
   await expect(process.sendStdin('Hello World', { timeout: 10 })).rejects.toThrow(
-    TimeoutError,
+    TimeoutError
   )
 })
 
@@ -59,12 +59,12 @@ test.skip('timeout longer than cmd should not leak', () =>
   new Promise(async resolve => {
     const sandbox = await Sandbox.create({ id: 'Nodejs' })
     const proc = await sandbox.process.start({
-      cmd: "node -e 'setTimeout(() => {}, 1000)'", // should take around 1 second
+      cmd: 'node -e \'setTimeout(() => {}, 1000)\'', // should take around 1 second
       onExit: () => {
         // TODO: Verify that process finished after successful cmd, and not after timeout
         resolve()
       },
-      timeout: 10_000, // but we give it 10 seconds
+      timeout: 10_000 // but we give it 10 seconds
     })
     await proc.finished
   }))

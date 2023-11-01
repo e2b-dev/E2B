@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react'
-import { type StoreApi, createStore, useStore } from 'zustand'
+import { createStore, type StoreApi, useStore } from 'zustand'
 
 import { remToPx } from '@/lib/remToPx'
 
@@ -19,10 +19,10 @@ interface SectionState {
   visibleSections: Array<string>
   setVisibleSections: (visibleSections: Array<string>) => void
   registerHeading: ({
-    id,
-    ref,
-    offsetRem,
-  }: {
+                      id,
+                      ref,
+                      offsetRem,
+                    }: {
     id: string
     ref: React.RefObject<HTMLHeadingElement>
     offsetRem: number
@@ -117,9 +117,9 @@ const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export function SectionProvider({
-  sections,
-  children,
-}: {
+                                  sections,
+                                  children,
+                                }: {
   sections: Array<Section>
   children: React.ReactNode
 }) {

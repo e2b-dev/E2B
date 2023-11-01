@@ -12,7 +12,7 @@ function Playground() {
   async function initPlayground() {
     const sandbox = await Sandbox.create({
       id: "Nodejs",
-      apiKey: process.env.NEXT_PUBLIC_E2B_API_KEY,
+      apiKey: process.env.NEXT_PUBLIC_E2B_API_KEY
     });
     setURL("https://" + sandbox.getHostname(3000));
     setPlayground(sandbox);
@@ -25,7 +25,7 @@ function Playground() {
   return (
     <div>
       <h2>Playground</h2>
-      {url && <iframe style={{ width: "100%", height: "400px" }} src={url} />}
+      {url && <iframe style={{ width: "100%", height: "400px" }} src={url}/>}
     </div>
   );
 }

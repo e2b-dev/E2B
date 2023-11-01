@@ -8,7 +8,7 @@ test.skip('no logs in console during very basic scenario', async () => {
     debug: vi.spyOn(console, 'debug'),
     info: vi.spyOn(console, 'info'),
     warn: vi.spyOn(console, 'warn'),
-    error: vi.spyOn(console, 'error'),
+    error: vi.spyOn(console, 'error')
   }
 
   const sandbox = await Sandbox.create({ id })
@@ -26,7 +26,7 @@ test.skip('warn logs in console during convoluted scenario', async () => {
     debug: vi.spyOn(console, 'debug'),
     info: vi.spyOn(console, 'info'),
     warn: vi.spyOn(console, 'warn'),
-    error: vi.spyOn(console, 'error'),
+    error: vi.spyOn(console, 'error')
   }
 
   const sandbox = await Sandbox.create({ id })
@@ -44,18 +44,18 @@ test.skip('verbose & info logs in console when opted-in', async () => {
   const consoleSpy = {
     info: vi.spyOn(console, 'info'),
     warn: vi.spyOn(console, 'warn'),
-    error: vi.spyOn(console, 'error'),
+    error: vi.spyOn(console, 'error')
   }
 
   const logger = {
     info: console.info,
     warn: console.warn,
-    error: console.error,
+    error: console.error
   }
 
   const sandbox = await Sandbox.create({
     id,
-    logger,
+    logger
   })
   await sandbox.filesystem.write('test.txt', 'Hello World')
   await sandbox.close()

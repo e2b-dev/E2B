@@ -5,7 +5,7 @@ const sandbox = await Sandbox.create({
   // Select the right runtime
   // 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
   id: "Python3",
-  apiKey: process.env.E2B_API_KEY,
+  apiKey: process.env.E2B_API_KEY
 });
 
 // 2. Save the LLM-generated code inside the playground
@@ -18,7 +18,7 @@ const proc = await sandbox.process.start({
   cmd: "python /main.py", // $HighlightLine
   // 4. Stream stdout, stderr
   onStdout: (data) => console.log(data.line), // $HighlightLine
-  onStderr: (data) => console.log(data.line), // $HighlightLine
+  onStderr: (data) => console.log(data.line) // $HighlightLine
 }); // $HighlightLine
 
 // 4. Wait for the process to finish

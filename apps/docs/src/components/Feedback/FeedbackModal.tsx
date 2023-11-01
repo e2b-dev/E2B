@@ -81,9 +81,9 @@ function FeedbackModal({ open, setOpen, onSend }) {
         >
           {isSavingFeedback ? (
             // @ts-ignore
-            <SpinnerIcon />
+            <SpinnerIcon/>
           ) : (
-            <Send size="14px" />
+            <Send size="14px"/>
           )}
 
           <span className="text-base">Send</span>

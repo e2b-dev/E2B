@@ -39,7 +39,7 @@ export async function spawnConnectedTerminal(
     terminalSession.resize(getStdoutSize()),
   )
 
-  const stdinListener = process.stdin.on('data', data =>
+  const stdinListener = process.stdin.on('data', (data) =>
     terminalSession.sendData(data.toString('utf8')),
   )
 

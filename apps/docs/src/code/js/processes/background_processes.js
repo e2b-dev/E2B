@@ -2,7 +2,7 @@ import { Sandbox } from "@e2b/sdk";
 
 const sandbox = await Sandbox.create({
   id: "Python3",
-  apiKey: process.env.E2B_API_KEY,
+  apiKey: process.env.E2B_API_KEY
 });
 
 function sleep(ms) {
@@ -14,7 +14,7 @@ function sleep(ms) {
 const backgroundServer = await sandbox.process.start({
   // $HighlightLine
   cmd: "python3 -m http.server 8000", // $HighlightLine
-  onStdout: (output) => console.log(output), // $HighlightLine
+  onStdout: (output) => console.log(output) // $HighlightLine
 }); // $HighlightLine
 
 // Wait for the server to be accessible
@@ -22,7 +22,7 @@ await sleep(1000);
 
 // Start another process that creates a request to server
 const serverRequest = await sandbox.process.start({
-  cmd: "curl localhost:8000",
+  cmd: "curl localhost:8000"
 });
 
 // Wait for the server request to finish running

@@ -4,7 +4,7 @@ import { Sandbox } from "@e2b/sdk";
 const sandbox = await Sandbox.create({
   // 'Node', 'Bash', 'Python3', 'Java', 'Go', 'Rust', 'PHP', 'Perl', 'DotNET'
   id: "Nodejs",
-  apiKey: process.env.E2B_API_KEY,
+  apiKey: process.env.E2B_API_KEY
 });
 
 // 2. Start a process that will clone a repository
@@ -12,7 +12,7 @@ let proc = await sandbox.process.start({
   // $HighlightLine
   cmd: "git clone https://github.com/cruip/open-react-template.git /code/open-react-template", // $HighlightLine
   onStderr: (data) => console.log(data.line), // $HighlightLine
-  onStdout: (data) => console.log(data.line), // $HighlightLine
+  onStdout: (data) => console.log(data.line) // $HighlightLine
 }); // $HighlightLine
 // 3. Wait for the process to finish
 await proc.wait();
@@ -27,7 +27,7 @@ proc = await sandbox.process.start({
   cmd: "npm install",
   cwd: "/code/open-react-template",
   onStdout: (data) => console.log(data.line),
-  onStderr: (data) => console.log(data.line),
+  onStderr: (data) => console.log(data.line)
 });
 await proc.wait();
 
